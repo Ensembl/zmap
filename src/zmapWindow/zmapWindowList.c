@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 12 13:24 2004 (rnc)
+ * Last edited: Nov 15 16:31 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.12 2004-11-12 13:26:44 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.13 2004-11-15 16:33:49 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,8 +61,7 @@ typedef struct _ListColStruct {
 /* function prototypes ***************************************************/
 static void addItemToList(GQuark key_id, gpointer data, gpointer user_data);
 static int  tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
-static void scrollToItem(FooCanvas *canvas, guint id, double start, double end, 
-			 gchar *type, double x_coord);
+static void scrollToItem(FooCanvas *canvas, guint id, double start, double end, gchar *type);
 static void recalcScrollRegion(ZMapCanvasDataStruct *canvasData, double start, double end);
 static void quitListCB   (GtkWidget *window, gpointer data);
 
@@ -271,7 +270,7 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 
   if (start)
     {
-      scrollToItem(canvasData->canvas, id, (double)start, (double)end, type, x_coord);
+      scrollToItem(canvasData->canvas, id, (double)start, (double)end, type);
       gtk_widget_show_all(GTK_WIDGET(canvasData->window->parent_widget));
     }
   
@@ -288,7 +287,7 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
  * and highlight it.
  */
 static void scrollToItem(FooCanvas *canvas, guint id, double start, double end, 
-			 gchar *type, double x_coord)
+			 gchar *type)
 {
   ZMapCanvasDataStruct *canvasData;
   int cx, cy;
