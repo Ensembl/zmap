@@ -26,18 +26,18 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar 18 09:54 2004 (edgrif)
+ * Last edited: Mar 22 11:26 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.1 2004-03-18 10:40:57 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.2 2004-03-22 13:32:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <AceConn.h>
-#include <zmapServer_P.h>
+#include <ZMap/zmapServerPrototype.h>
 #include <acedbServer_P.h>
 
 
-
+static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 char *host, int port,
 				 char *userid, char *passwd, int timeout) ;
@@ -48,13 +48,12 @@ static gboolean closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
 
 
-
-
 /* Compulsory routine, without this we can't do anything....returns a list of functions
  * that can be used to contact an acedb server. The functions are only visible through
  * this struct. */
 void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
 {
+  acedb_funcs->global_init = globalInit ;
   acedb_funcs->create = createConnection ;
   acedb_funcs->open = openConnection ;
   acedb_funcs->request = request ;
@@ -67,10 +66,21 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
 
 
 
-
 /* 
  * ---------------------  Internal routines.  ---------------------
  */
+
+
+/* For stuff that just needs to be done once at the beginning..... */
+static gboolean globalInit(void)
+{
+  gboolean result = TRUE ;
+
+
+
+  return result ;
+}
+
 
 
 static gboolean createConnection(void **server_out,
