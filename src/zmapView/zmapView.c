@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 28 14:09 2004 (edgrif)
+ * Last edited: Aug 16 14:04 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.15 2004-07-29 08:50:28 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.16 2004-08-18 15:02:54 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,9 +54,9 @@ static gint zmapIdleCB(gpointer cb_data) ;
 /* I'm not sure if we need this anymore, I think we will just do it with multiple callbacks... */
 static void zmapWindowCB(void *cb_data, int reason) ;
 
-void scrollCB(ZMapWindow window, void *caller_data) ;
-void focusCB(ZMapWindow window, void *caller_data) ;
-void destroyCB(ZMapWindow window, void *caller_data) ;
+static void scrollCB(ZMapWindow window, void *caller_data) ;
+static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature) ;
+static void destroyCB(ZMapWindow window, void *caller_data) ;
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
 static void stopStateConnectionChecking(ZMapView zmap_view) ;
@@ -96,7 +96,7 @@ static GData *getTypesFromFile(void) ;
 static ZMapViewCallbacks view_cbs_G = NULL ;
 
 /* Callbacks back to us from the level below, i.e. zMapWindow. */
-ZMapWindowCallbacksStruct window_cbs_G = {scrollCB, focusCB, destroyCB} ;
+ZMapWindowCallbacksStruct window_cbs_G = {scrollCB, clickCB, destroyCB} ;
 
 
 
@@ -115,13 +115,13 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
 {
   zMapAssert(!view_cbs_G) ;
 
-  zMapAssert(callbacks && callbacks->load_data && callbacks->focus && callbacks->destroy) ;
+  zMapAssert(callbacks && callbacks->load_data && callbacks->click && callbacks->destroy) ;
 
   view_cbs_G = g_new0(ZMapViewCallbacksStruct, 1) ;
 
   view_cbs_G->load_data = callbacks->load_data ;
-  view_cbs_G->focus = callbacks->focus ;
-  view_cbs_G->destroy = callbacks->destroy ;
+  view_cbs_G->click     = callbacks->click ;
+  view_cbs_G->destroy   = callbacks->destroy ;
 
 
   /* Init windows.... */
@@ -490,7 +490,7 @@ static gint zmapIdleCB(gpointer cb_data)
 
 
 
-void scrollCB(ZMapWindow window, void *caller_data)
+static void scrollCB(ZMapWindow window, void *caller_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
 
@@ -501,7 +501,7 @@ void scrollCB(ZMapWindow window, void *caller_data)
 }
 
 
-void focusCB(ZMapWindow window, void *caller_data)
+static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
 
@@ -509,7 +509,7 @@ void focusCB(ZMapWindow window, void *caller_data)
   /* Is there any focus stuff we want to do here ??? */
 
   /* Pass back a ZMapViewWindow as it has both the View and the window. */
-  (*(view_cbs_G->focus))(view_window, view_window->parent_view->app_data) ;
+  (*(view_cbs_G->click))(view_window, view_window->parent_view->app_data, feature) ;
 
   return ;
 }
@@ -517,7 +517,7 @@ void focusCB(ZMapWindow window, void *caller_data)
 
 /* DOES THIS EVER ACTUALLY HAPPEN........... */
 /* Called when an underlying window is destroyed. */
-void destroyCB(ZMapWindow window, void *caller_data)
+static void destroyCB(ZMapWindow window, void *caller_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
 

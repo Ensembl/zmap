@@ -1,4 +1,4 @@
-/*  File: zmapTopWindow.c
+/*  File: zmapControlWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
  *-------------------------------------------------------------------
@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Jul 15 15:53 2004 (edgrif)
+ * Last edited: Aug 18 09:38 2004 (rnc)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.8 2004-07-15 15:08:06 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.9 2004-08-18 14:59:57 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,7 @@ static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 gboolean zmapControlWindowCreate(ZMap zmap)
 {
   gboolean result = TRUE ;
-  GtkWidget *toplevel, *vbox, *menubar, *button_frame ;
+  GtkWidget *toplevel, *vbox, *menubar, *button_frame;
 
   zmap->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
@@ -60,6 +60,9 @@ gboolean zmapControlWindowCreate(ZMap zmap)
 
   button_frame = zmapControlWindowMakeButtons(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), button_frame, FALSE, TRUE, 0);
+
+  zmap->info_panel = gtk_entry_new();
+  gtk_box_pack_start(GTK_BOX(vbox), zmap->info_panel, FALSE, TRUE, 0);
 
   zmap->navview_frame = zmapControlWindowMakeFrame(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), zmap->navview_frame, TRUE, TRUE, 0);

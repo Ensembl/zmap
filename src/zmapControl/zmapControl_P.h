@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Aug  4 07:59 2004 (edgrif)
+ * Last edited: Aug 11 16:47 2004 (rnc)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.17 2004-08-04 07:11:32 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.18 2004-08-18 15:00:25 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -71,6 +71,8 @@ typedef struct _ZMapStruct
 
   /* Widget stuff for the Zmap. */
   GtkWidget       *toplevel ;				    /* top level widget of zmap window. */
+
+  GtkWidget       *info_panel;                              /* show details of object clicked on */
 
   GtkWidget       *navview_frame ;			    /* Holds all the navigator/view stuff. */
 

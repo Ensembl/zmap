@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 27 18:34 2004 (edgrif)
+ * Last edited: Aug 18 09:34 2004 (rnc)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.26 2004-07-27 17:41:42 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.27 2004-08-18 14:59:08 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,7 +64,7 @@ static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
 static ZMapView addView(ZMap zmap, char *sequence) ;
 
 static void dataLoadCB(ZMapView view, void *app_data) ;
-static void focusCB(ZMapViewWindow view_window, void *app_data) ;
+static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feature) ;
 static void viewKilledCB(ZMapView view, void *app_data) ;
 static gboolean lookForViewWindow(GNode *node, gpointer data) ;
 
@@ -81,7 +81,7 @@ static ZMapCallbacks zmap_cbs_G = NULL ;
 
 
 /* Callbacks back to us from the level below, i.e. zMapView. */
-ZMapViewCallbacksStruct view_cbs_G = {dataLoadCB, focusCB, viewKilledCB} ;
+ZMapViewCallbacksStruct view_cbs_G = {dataLoadCB, clickCB, viewKilledCB} ;
 
 
 
@@ -278,6 +278,7 @@ gboolean zMapDestroy(ZMap zmap)
  * with the gui.
  * 
  */
+
 
 
 /* Called when the user kills the toplevel window of the ZMap either by clicking the "quit"
@@ -568,11 +569,13 @@ static void dataLoadCB(ZMapView view, void *app_data)
 
 /* Gets called when someone clicks in one of the zmap windows.... 
 * Note that although we get pane data,  */
-static void focusCB(ZMapViewWindow view_window, void *app_data)
+static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feature)
 {
   ZMap zmap = (ZMap)app_data ;
   ZMapView view = zMapViewGetView(view_window) ;
   ZMapPaneViewSearchStruct view_search ;
+  GString *str = g_string_new("");
+
 
   view_search.view_window = view_window ;
   view_search.parent_pane = NULL ;
@@ -585,6 +588,16 @@ static void focusCB(ZMapViewWindow view_window, void *app_data)
   /* If view has features then change the window title. */
   updateControl(zmap, view) ;
 
+  if (feature) // if user clicked on a specific object
+    {
+      printf("clickCB\n");
+      g_string_printf(str, "%s %d %d %f", 
+		      feature->name,
+		      feature->x1,
+		      feature->x2,
+		      feature->score);
+      gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), str->str);
+    }
   return ;
 }
 

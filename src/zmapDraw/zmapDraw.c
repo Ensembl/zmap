@@ -1,4 +1,4 @@
-/*  Last edited: Jul 27 17:45 2004 (edgrif) */
+/*  Last edited: Aug 16 10:10 2004 (rnc) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -58,23 +58,24 @@ void zmapDisplayText(FooCanvasGroup *group, char *text, char *colour, double x, 
   return;
 }
 
-void zmapDrawBox (FooCanvasItem *group, double x1, double y1, 
-	      double x2, double y2, 
-	      char *line_colour, char *fill_colour)
+FooCanvasItem *zmapDrawBox (FooCanvasItem *group, double x1, double y1, 
+			    double x2, double y2, 
+			    char *line_colour, char *fill_colour)
 {
-  foo_canvas_item_new(FOO_CANVAS_GROUP(group),
-                        foo_canvas_rect_get_type(),
-                        "x1"           , (double)x1 ,
-                        "y1"           , (double)y1 ,
-                        "x2"           , (double)x2,
-                        "y2"           , (double)y2,
-                        "outline_color", line_colour          ,
-                        "fill_color"   , fill_colour          ,
-                        "width_units"  , (double)1,
-                        NULL);
+  FooCanvasItem *item;
+  item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
+			     foo_canvas_rect_get_type(),
+			     "x1"           , (double)x1 ,
+			     "y1"           , (double)y1 ,
+			     "x2"           , (double)x2,
+			     "y2"           , (double)y2,
+			     "outline_color", line_colour          ,
+			     "fill_color"   , fill_colour          ,
+			     "width_units"  , (double)1,
+			     NULL);
                                                                                 
          
-  return;                                                                       
+  return item;                                                                       
 }
 
 

@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 22 11:40 2004 (rnc)
+ * Last edited: Aug 17 12:38 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.25 2004-07-22 15:43:08 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.26 2004-08-18 15:05:42 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,10 +40,11 @@
 #include <ZMap/zmapFeature.h>
 #include <zmapWindow_P.h>
 #include <ZMap/zmapDraw.h>
-
+#include <ZMap/zmapWindowDrawFeatures.h>
 
 static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void canvasClickCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature);
 
 
 /* These callback routines are static because they are set just once for the lifetime of the
@@ -52,7 +53,8 @@ static void canvasClickCB(GtkWidget *widget, GdkEventClient *event, gpointer dat
 /* Callbacks we make back to the level above us. */
 static ZMapWindowCallbacks window_cbs_G = NULL ;
 
-
+/* Callbacks to us from the level below, ie zmapWindowDrawFeatures */
+ZMapFeatureCallbacksStruct feature_cbs_G = { clickCB };
 
 /* This routine must be called just once before any other windows routine, it is undefined
  * if the caller calls this routine more than once. The caller must supply all of the callback
@@ -64,13 +66,16 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
 {
   zMapAssert(!window_cbs_G) ;
 
-  zMapAssert(callbacks && callbacks->scroll && callbacks->focus && callbacks->destroy) ;
+  zMapAssert(callbacks && callbacks->scroll && callbacks->click && callbacks->destroy) ;
+
 
   window_cbs_G = g_new0(ZMapWindowCallbacksStruct, 1) ;
 
-  window_cbs_G->scroll = callbacks->scroll ;
-  window_cbs_G->focus = callbacks->focus ;
+  window_cbs_G->scroll  = callbacks->scroll ;
+  window_cbs_G->click   = callbacks->click ;
   window_cbs_G->destroy = callbacks->destroy ;
+
+  zMapFeatureInit(&feature_cbs_G);
 
   return ;
 }
@@ -108,7 +113,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   gtk_container_add(GTK_CONTAINER(window->parent_widget), window->scrolledWindow) ;
 
 
-  /* this had disappeared...non idea why......... */
+  /* this had disappeared...no idea why......... */
   gtk_signal_connect(GTK_OBJECT(window->toplevel), "client_event", 
 		     GTK_SIGNAL_FUNC(dataEventCB), (gpointer)window) ;
 
@@ -152,7 +157,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 			NULL);
   
   g_signal_connect(GTK_OBJECT(window->canvas), "button_press_event",
-		   GTK_SIGNAL_FUNC(canvasClickCB), window) ;
+		   GTK_SIGNAL_FUNC(canvasClickCB), (gpointer)window) ;
 
   window->group = foo_canvas_item_new(foo_canvas_root(window->canvas),
                         foo_canvas_group_get_type(),
@@ -167,7 +172,6 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
 
   /* This should all be in some kind of routine to draw the whole canvas in one go.... */
-  //  zmMainScale(FOO_CANVAS(canvas), 30, 0, 1000);
 
   /* should this be done by caller ??..... */
   gtk_widget_show_all(window->parent_widget) ;
@@ -325,7 +329,11 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
 
 
 
-
+static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature)
+{
+  (*(window_cbs_G->click))(window, caller_data, feature);
+  return;
+}
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -390,7 +398,7 @@ static void canvasClickCB(GtkWidget *widget, GdkEventClient *event, gpointer dat
 
 
   /* Call the callers routine for button clicks. */
-  window_cbs_G->focus(window, window->app_data) ;
+  window_cbs_G->click(window, window->app_data, NULL) ;
 
 
   return ;
