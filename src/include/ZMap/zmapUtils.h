@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Jun 15 15:53 2004 (edgrif)
+ * Last edited: Jun 25 10:09 2004 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.5 2004-06-18 11:04:26 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.6 2004-06-25 13:35:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -56,10 +56,13 @@
 
 #endif /* __GNUC__ */
 
+
+
 #include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapUtilsCheck.h>
 #include <ZMap/zmapUtilsMesg.h>
 #include <ZMap/zmapUtilsLog.h>
+#include <ZMap/zmapReadLine.h>
 
 
 
@@ -92,7 +95,12 @@ gboolean zMapFileEmpty(char *filepath) ;
 #define ZMAP_MAKESTRING(x) ZMAP_PUTSTRING(x)
 
 
-
+/* routines to return basic version/information about zmap. */
+char *zMapGetAppName(void) ;
+char *zMapGetAppTitle(void) ;
+int zMapGetVersion(void) ;
+char *zMapGetVersionString(void) ;
+char *zMapGetCopyrightString(void) ;
 
 
 
