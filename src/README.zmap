@@ -1,0 +1,50 @@
+
+
+Install notes for ZMap.
+-----------------------
+
+- maybe see install autotools for alpha
+
+- zmap uses gmake on all platforms, it requires certain macros, e.g. VPATH
+that gmake supports. On linux "make" is gmake, on the Alpha you must
+explicitly say "gmake".
+
+- you must run "make depend" before you run the first make. We don't do this
+by default because it would be run nearly all the time and this would be
+irritating.
+
+
+
+
+======================== ZMap source directory ==============================
+
+This directory contains all the source code to build zmap, the subdirectories
+are:
+
+
+zmapmanager	This directory contains the "main" for the zmap client and
+		calls the rest of the code below via the interface in zmapcontrol.
+
+
+zmapcontrol	the interface and controlling code for the window/threads etc.
+
+zmapthreads	code to start/run/kill threads talking to servers.
+
+zmapwindow	code to produce the ZMap window.
+
+
+zmaputils	A bundle of utility code.
+
+
+Install autotools/dependencies for alpha
+----------------------------------------
+
+I had a small amount of trouble with this so here's roughly what I did.
+
+Got  src tar.gz  for m4  (1.4.1), autoconf  (2.59),  automake (1.9.5),
+libtool  (1.5.14), gnome-common  (CVS HEAD  cvs.gnome.org/viewcvs) and
+gtk-doc (1.3).  All installed  reasonably easy except gtk-doc which is
+required for  the libfoocanvas autogen.sh script.  I  ended up copying
+and  modifying  a   linux  install  across  to  $PREFIX/etc/xml/config
+$PREFIX/share/.. note that  the paths in the former  must point to the
+paths of the latter.
