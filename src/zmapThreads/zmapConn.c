@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 21 17:00 2004 (edgrif)
+ * Last edited: Jul 29 09:26 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConn.c,v 1.7 2004-07-21 16:07:12 edgrif Exp $
+ * CVS info:   $Id: zmapConn.c,v 1.8 2004-07-29 08:45:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -161,7 +161,8 @@ char *zMapVarGetRequestString(ZMapThreadRequest signalled_state)
 char *zMapVarGetReplyString(ZMapThreadReply signalled_state)
 {
   char *str_states[] = {"ZMAP_REPLY_INIT", "ZMAP_REPLY_WAIT",
-			"ZMAP_REPLY_GOTDATA", "ZMAP_REPLY_DIED", "ZMAP_REPLY_CANCELLED"} ;
+			"ZMAP_REPLY_GOTDATA",  "ZMAP_REPLY_REQERROR",
+			"ZMAP_REPLY_DIED", "ZMAP_REPLY_CANCELLED"} ;
 
   return str_states[signalled_state] ;
 }

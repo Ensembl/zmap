@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  7 10:25 2004 (edgrif)
+ * Last edited: Jul 29 09:27 2004 (edgrif)
  * Created: Thu Jul 24 14:35:58 2003 (edgrif)
- * CVS info:   $Id: zmapConn.h,v 1.3 2004-04-08 16:22:05 edgrif Exp $
+ * CVS info:   $Id: zmapConn.h,v 1.4 2004-07-29 08:45:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONN_H
@@ -38,13 +38,15 @@
 extern gboolean zmap_thr_debug_G ;
 
 
+/* If you change these two enumerated types you must update zMapVarGetRequestString() or
+ * zMapVarGetReplyString() accordingly. */
+
 /* Requests to a slave thread. */
 typedef enum {ZMAP_REQUEST_INIT, ZMAP_REQUEST_WAIT, ZMAP_REQUEST_TIMED_OUT,
 	      ZMAP_REQUEST_GETDATA} ZMapThreadRequest ;
 
-
 /* Replies from a slave thread. */
-typedef enum {ZMAP_REPLY_INIT, ZMAP_REPLY_WAIT, ZMAP_REPLY_GOTDATA,
+typedef enum {ZMAP_REPLY_INIT, ZMAP_REPLY_WAIT, ZMAP_REPLY_GOTDATA, ZMAP_REPLY_REQERROR,
 	      ZMAP_REPLY_DIED, ZMAP_REPLY_CANCELLED} ZMapThreadReply ;
 
 
