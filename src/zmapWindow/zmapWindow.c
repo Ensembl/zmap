@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 14 13:47 2004 (edgrif)
+ * Last edited: Jul 15 15:00 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.17 2004-07-14 12:52:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.18 2004-07-15 16:34:12 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapWindow_P.h>
-#include <zmapDraw.h>
+#include <ZMap/zmapDraw.h>
 
 
 static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
@@ -167,7 +167,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
 
   /* This should all be in some kind of routine to draw the whole canvas in one go.... */
-  zmMainScale(FOO_CANVAS(canvas), 30, 0, 1000);
+  //  zmMainScale(FOO_CANVAS(canvas), 30, 0, 1000);
 
   /* should this be done by caller ??..... */
   gtk_widget_show_all(window->parent_widget) ;
@@ -246,7 +246,7 @@ void zMapWindowDestroy(ZMapWindow window)
 {
   zMapDebug("%s", "GUI: in window destroy...\n") ;
 
-  gtk_widget_destroy(window->toplevel) ;
+  //  gtk_widget_destroy(window->toplevel) ;
 
   if (window->sequence)
     g_free(window->sequence) ;
@@ -292,18 +292,17 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
        * you can get data from there.... just undef the one you want... */
 
       //#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      feature_context = testGetGFF() ;			    /* Data read from a file... */
+      //      feature_context = testGetGFF() ;			    /* Data read from a file... */
       //#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	//      feature_context = (ZMapFeatureContext)data ;	    /* Data from a server... */
+      feature_context = (ZMapFeatureContext)data ;	    /* Data from a server... */
 
 
       /* ****Remember that someone needs to free the data passed over....****  */
 
 
       /* <<<<<<<<<<<<<  ROB, this is where calls to your drawing code need to go  >>>>>>>>>>>> */
-
-      zmapWindowDrawFeatures(feature_context) ;
+      zmapWindowDrawFeatures(window->canvas, feature_context) ;
 
 
       g_free(window_data) ;				    /* Free the WindowData struct. */
@@ -418,23 +417,26 @@ void zMapWindowSetBorderWidth(GtkWidget *container, int width)
 
 ScreenCoord zMapWindowGetScaleOffset(ZMapWindow window)
 {
-  return window->scaleOffset;
+  //  return window->scaleOffset;
+  return 0;
 }
 
 
 void zMapWindowSetScaleOffset(ZMapWindow window, ScreenCoord offset)
 {
-  window->scaleOffset = offset;
+  //  window->scaleOffset = offset;
   return;
 }
 
 
 Coord zMapWindowGetCoord(ZMapWindow window, char *field)
 {
-  if (field == "s")
+  /*  if (field == "s")
     return window->navStart;
   else
     return window->navEnd;
+  */
+  return 0;
 }
 
 
