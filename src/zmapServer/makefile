@@ -61,3 +61,27 @@ build_servers: forcemake
 	fi ; \
 	echo ; \
 	done
+
+depend: depend_servers
+
+depend_servers: forcemake
+	@echo
+	@echo "Making $(MAKEDEPEND_FILE) files in subdirectories..."
+	@for d in $(ALL_SERVER_DIRS); do \
+	(cd $$d ; $(TEST) -e $(MAKEDEPEND_FILE) || touch $(MAKEDEPEND_FILE)) ; \
+	(cd $$d ; $(TEST) -w $(MAKEDEPEND_FILE) || chmod u+w $(MAKEDEPEND_FILE)) ; \
+	done
+	@echo "done..."
+	@echo 'Running makedepend in subdirs...'
+	@for d in $(ALL_SERVER_DIRS); do \
+	echo ; \
+	RC=0 ; \
+	(cd $$d ; echo 'make depend in '$$d ; $(MAKE) 'depend') || RC=1 ; \
+	if  [ $$RC -eq 1 ] ; \
+	then \
+	  echo "*** make in $$d failed ***" ; \
+	  exit 1 ; \
+	fi ; \
+	echo ; \
+	done
+	@echo "done..."

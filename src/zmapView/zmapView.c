@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 21 12:10 2004 (edgrif)
+ * Last edited: Jul 27 08:46 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.12 2004-07-21 11:14:39 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.13 2004-07-27 12:01:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -106,9 +106,8 @@ ZMapWindowCallbacksStruct window_cbs_G = {scrollCB, focusCB, destroyCB} ;
  */
 
 
-/* This routine must be called just once before any other views routine, it is undefined
- * if the caller calls this routine more than once. The caller must supply all of the callback
- * routines.
+/* This routine must be called just once before any other views routine,
+ * the caller must supply all of the callback routines.
  * 
  * Note that since this routine is called once per application we do not bother freeing it
  * via some kind of views terminate routine. */
@@ -159,36 +158,42 @@ ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 {
   ZMapViewWindow view_window ;
 
-  view_window = g_new0(ZMapViewWindowStruct, 1) ;
-  view_window->parent_view = zmap_view ;		    /* back pointer. */
-
-  if ((view_window->window = zMapWindowCreate(parent_widget, zmap_view->sequence, view_window)))
+  if (zmap_view->state != ZMAPVIEW_DYING)
     {
-      zmap_view->parent_widget = parent_widget ;
+      view_window = g_new0(ZMapViewWindowStruct, 1) ;
+      view_window->parent_view = zmap_view ;		    /* back pointer. */
 
-      /* add to list of windows.... */
-      zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
-
-      /* We may be adding a a window to something that is already connected or this may be
-       * the first window to be added. */
-      if (zmap_view->state == ZMAPVIEW_INIT)
+      if ((view_window->window = zMapWindowCreate(parent_widget, zmap_view->sequence, view_window)))
 	{
-	  zmap_view->state = ZMAPVIEW_NOT_CONNECTED ;
+	  zmap_view->parent_widget = parent_widget ;
 
-	  /* Start polling function that checks state of this view and its connections. */
-	  startStateConnectionChecking(zmap_view) ;
+	  /* add to list of windows.... */
+	  zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
+
+	  /* We may be the first window to added, or there may already be others. */
+	  if (zmap_view->state == ZMAPVIEW_INIT)
+	    {
+	      zmap_view->state = ZMAPVIEW_NOT_CONNECTED ;
+
+	      /* Start polling function that checks state of this view and its connections, note
+	       * that at this stage there is no data to display. */
+	      startStateConnectionChecking(zmap_view) ;
+	    }
+	  else if (zmap_view->state == ZMAPVIEW_RUNNING)
+	    {
+	      /* If we are running then we should display the current data in the new window we
+	       * have just created. */
+	      zMapWindowDisplayData(view_window->window,
+				    (void *)(zmap_view->features), zmap_view->types) ;
+
+	    }
 	}
-      else if (zmap_view->state == ZMAPVIEW_RUNNING)
+      else
 	{
-	  /* If we are running then we should display the current data. */
-	  zMapWindowDisplayData(view_window->window, (void *)(zmap_view->features), zmap_view->types) ;
-
+	  /* should glog and/or gerror at this stage....really need g_errors.... */
+	  g_free(view_window) ;
+	  view_window = NULL ;
 	}
-    }
-  else
-    {
-      g_free(view_window) ;
-      view_window = NULL ;
     }
 
   return view_window ;
@@ -206,7 +211,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
   if (zmap_view->state != ZMAPVIEW_NOT_CONNECTED)
     {
       /* Probably we should indicate to caller what the problem was here....
-       * e.g. if we are resetting then say we are resetting etc..... */
+       * e.g. if we are resetting then say we are resetting etc.....again we need g_error here. */
       result = FALSE ;
     }
   else

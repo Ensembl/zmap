@@ -15,6 +15,18 @@
 #
 
 
+
+#
+# Make stuff...
+#
+
+# We use makedepend to do our dependency tracking and it puts its output into a file
+# with this name in each directory.
+MAKEDEPEND_FILE = makedepend.out
+
+
+
+
 # lots of open source software uses pkg-config, this is the stuff we need:
 PACKAGE_CONFIG = 
 PACKAGE_PATH = 

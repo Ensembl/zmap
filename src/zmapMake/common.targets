@@ -33,6 +33,15 @@ clean :
 	@echo "$(CURRENT_OBJ) removed from $(CURRENT_LIB)"
 
 
+
+# ok there is a bootstrapping problem here in that this makefile won't load unless
+# the makedepend file is already there...so need to attend to that....
+depend :
+	@$(TEST) -w $(MAKEDEPEND_FILE) || chmod u+w $(MAKEDEPEND_FILE)
+	makedepend -f$(MAKEDEPEND_FILE) -- $(CFLAGS) -- $(CURRENT_SRC) 
+
+include $(MAKEDEPEND_FILE)
+
 #
 # include some targets needed by all levels of make.
 #

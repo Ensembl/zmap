@@ -52,6 +52,31 @@ libs: makebindir
 	done
 
 
+# creates makedepend files in subdiretories if needed, this must be done before any make is done
+# would be best if this was done via dependencies...
+depend: forcemake
+	@echo
+	@echo "Making $(MAKEDEPEND_FILE) files in subdirectories..."
+	@for d in $(MAKE_DIRS); do \
+	(cd $$d ; $(TEST) -e $(MAKEDEPEND_FILE) || touch $(MAKEDEPEND_FILE)) ; \
+	(cd $$d ; $(TEST) -w $(MAKEDEPEND_FILE) || chmod u+w $(MAKEDEPEND_FILE)) ; \
+	done
+	@echo "done..."
+	@echo 'Running makedepend in subdirs...'
+	@for d in $(MAKE_DIRS); do \
+	echo ; \
+	RC=0 ; \
+	(cd $$d ; echo 'make '$@' in '$$d ; $(MAKE) $@) || RC=1 ; \
+	if  [ $$RC -eq 1 ] ; \
+	then \
+	  echo "*** make in $$d failed ***" ; \
+	  exit 1 ; \
+	fi ; \
+	echo ; \
+	done
+	@echo "done..."
+
+
 zmap : makebindir
 	@cd $(APP_DIR) ; echo ; echo 'make '$@ ; $(MAKE) $@ ; echo
 
