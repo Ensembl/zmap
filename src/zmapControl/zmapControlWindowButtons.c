@@ -23,26 +23,31 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  *
- * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Implement the buttons on the zmap.
+ *              
+ * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul  2 19:16 2004 (edgrif)
+ * Last edited: Jul  9 17:43 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.7 2004-07-02 18:23:42 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.8 2004-07-14 09:07:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapWindow.h>
 #include <zmapControl_P.h>
-#include <zmapControlSplit.h>
 
 
 
 static void newCB(GtkWidget *widget, gpointer cb_data) ;
 static void loadCB(GtkWidget *widget, gpointer cb_data) ;
 static void stopCB(GtkWidget *widget, gpointer cb_data) ;
+static void zoomInCB(GtkWindow *widget, gpointer cb_data) ;
+static void zoomOutCB(GtkWindow *widget, gpointer cb_data) ;
+static void splitPaneCB(GtkWidget *widget, gpointer data) ;
+static void splitHPaneCB(GtkWidget *widget, gpointer data) ;
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
+
 
 
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
@@ -75,22 +80,22 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 
   hsplit_button = gtk_button_new_with_label("H-Split");
   gtk_signal_connect(GTK_OBJECT(hsplit_button), "clicked",
-		     GTK_SIGNAL_FUNC(splitPane), (gpointer)zmap) ;
+		     GTK_SIGNAL_FUNC(splitPaneCB), (gpointer)zmap) ;
   gtk_box_pack_start(GTK_BOX(hbox), hsplit_button, FALSE, FALSE, 0) ;
 
   vsplit_button = gtk_button_new_with_label("V-Split");
   gtk_signal_connect(GTK_OBJECT(vsplit_button), "clicked",
-		     GTK_SIGNAL_FUNC(splitHPane), (gpointer)zmap) ;
+		     GTK_SIGNAL_FUNC(splitHPaneCB), (gpointer)zmap) ;
   gtk_box_pack_start(GTK_BOX(hbox), vsplit_button, FALSE, FALSE, 0) ;
                                                                                            
   zoomin_button = gtk_button_new_with_label("Zoom In");
   gtk_signal_connect(GTK_OBJECT(zoomin_button), "clicked",
-		     GTK_SIGNAL_FUNC(zoomIn), (gpointer)zmap);
+		     GTK_SIGNAL_FUNC(zoomInCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomin_button, FALSE, FALSE, 0) ;
                                                                                            
   zoomout_button = gtk_button_new_with_label("Zoom Out");
   gtk_signal_connect(GTK_OBJECT(zoomout_button), "clicked",
-		     GTK_SIGNAL_FUNC(zoomOut), (gpointer)zmap);
+		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
                                                                                            
   quit_button = gtk_button_new_with_label("Quit") ;
@@ -162,11 +167,74 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
 
-  if (zmap->panesTree)
-    g_node_destroy(zmap->panesTree);
-
   zmapControlTopLevelKillCB(zmap) ;
 
   return ;
 }
 
+void zoomInCB(GtkWindow *widget, gpointer cb_data)
+{
+  ZMap zmap = (ZMap)cb_data ;
+  ZMapPane pane = zmap->focuspane ;
+
+  zMapWindowZoom(zMapViewGetWindow(pane->curr_view_window), 2.0) ;
+
+  return;
+}
+
+
+void zoomOutCB(GtkWindow *widget, gpointer cb_data)
+{
+  ZMap zmap = (ZMap)cb_data ;
+  ZMapPane pane = zmap->focuspane ;
+
+  zMapWindowZoom(zMapViewGetWindow(pane->curr_view_window), 0.5) ;
+
+  return;
+}
+
+
+static void splitPaneCB(GtkWidget *widget, gpointer data)
+{
+  ZMap zmap = (ZMap)data ;
+  ZMapPane pane ;
+  GtkWidget *parent_widget = NULL ;
+  ZMapViewWindow view_window ;
+
+  /* this all needs to do view stuff here and return a parent widget............ */
+  parent_widget = splitPane(zmap) ;
+
+  pane = zmap->focuspane ;
+
+  view_window = zMapViewAddWindow(zMapViewGetView(pane->curr_view_window), parent_widget) ;
+
+  pane->curr_view_window = view_window ;		    /* new focus window ?? */
+
+  /* We'll need to update the display..... */
+  gtk_widget_show_all(zmap->toplevel) ;
+
+  return ;
+}
+
+
+static void splitHPaneCB(GtkWidget *widget, gpointer data)
+{
+  ZMap zmap = (ZMap)data ;
+  ZMapPane pane ;
+  GtkWidget *parent_widget = NULL ;
+  ZMapViewWindow view_window ;
+
+  /* this all needs to do view stuff here and return a parent widget............ */
+  parent_widget = splitHPane(zmap) ;
+
+  pane = zmap->focuspane ;
+
+  view_window = zMapViewAddWindow(zMapViewGetView(pane->curr_view_window), parent_widget) ;
+
+  pane->curr_view_window = view_window ;		    /* new focus window ?? */
+
+  /* We'll need to update the display..... */
+  gtk_widget_show_all(zmap->toplevel) ;
+
+  return ;
+}
