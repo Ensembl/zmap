@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb  3 14:56 2005 (edgrif)
+ * Last edited: Mar 28 08:06 2005 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.13 2005-02-03 14:57:15 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.14 2005-04-05 14:27:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -338,7 +338,7 @@ static gboolean destroyConnection(void *server_in)
 static void addMapping(ZMapFeatureContext feature_context)
 {
 
-  feature_context->parent_name = g_strdup(feature_context->sequence_name) ;
+  feature_context->parent_name = feature_context->sequence_name ;
 
   feature_context->parent_span.x1
     = feature_context->sequence_to_parent.p1 = feature_context->sequence_to_parent.c1

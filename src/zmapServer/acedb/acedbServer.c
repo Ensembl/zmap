@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Feb  3 14:36 2005 (edgrif)
+ * Last edited: Mar 28 08:06 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.23 2005-02-03 14:59:46 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.24 2005-04-05 14:27:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -719,7 +719,8 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       parent_to_self.p1 = parent_to_self.c1 = 1 ;
       parent_to_self.p2 = parent_to_self.c2 = parent_length ;
 
-      feature_context->parent_name = parent_name ;	    /* No need to copy, has been allocated. */
+      feature_context->parent_name = g_quark_from_string(parent_name) ;
+      g_free(parent_name) ;
 
       if (feature_context->sequence_to_parent.p1 < feature_context->sequence_to_parent.p2)
 	{
