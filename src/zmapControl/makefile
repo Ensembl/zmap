@@ -14,8 +14,8 @@ ROOT_DIRECTORY = ..
 #ONT_PRIV_HDRS = ZMap_P.h zmapTopWindow_P.h
 ONT_PRIV_HDRS = ZMap_P.h
 PUB_HDRS = ZMap.h
-CONT_SRC = zmapControl.c zmapTopWindow.c zmapTopWindowButtons.c zmapTopWindowFrame.c zmapTopWindowMenubar.c
-CONT_OBJ = zmapControl.o zmapTopWindow.o zmapTopWindowButtons.o zmapTopWindowFrame.o zmapTopWindowMenubar.o
+CONT_SRC = zmapControl.c zmapControlWindow.c zmapControlWindowButtons.c zmapControlWindowFrame.c zmapControlWindowMenubar.c
+CONT_OBJ = zmapControl.o zmapControlWindow.o zmapControlWindowButtons.o zmapControlWindowFrame.o zmapControlWindowMenubar.o
 
 
 
