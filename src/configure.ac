@@ -76,6 +76,7 @@ AC_PROG_LN_S
 
 # gtk first
 GTK2_MODULES="pango >= 0.1 gtk+-2.0 glib-2.0 gthread-2.0"
+#PKG_CHECK_MODULES(GTK, $GTK2_MODULES,,)
 PKG_CHECK_MODULES(GTK, $GTK2_MODULES,,)
 
 # now foocanvas
@@ -131,6 +132,10 @@ CPPFLAGS="$CPPFLAGS $ACECONN_CFLAGS"
 LDFLAGS="$LDFLAGS $ACECONN_LIBS"
 
 AC_CHECK_LIB(AceConn, [main], [],AC_MSG_ERROR(where is AceConn), -lmd5)
+
+
+
+#AC_CHECK_LIB(popt, [poptFreeContext], [],AC_MSG_ERROR(where is popt))
 
 # and substitute values....
 # Should be able to use @VARIABLE@ in Makefile.am
