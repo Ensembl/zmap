@@ -26,9 +26,9 @@
  *              
  * Exported functions: None, all functions internal to zmapApp.
  * HISTORY:
- * Last edited: Oct 18 14:52 2004 (edgrif)
+ * Last edited: Nov 22 09:21 2004 (edgrif)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.9 2004-11-05 14:22:06 edgrif Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.10 2004-11-22 11:50:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -111,7 +111,6 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
 static void stopThreadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
-  int row ;
 
   printf("not implemented yet\n") ;
 

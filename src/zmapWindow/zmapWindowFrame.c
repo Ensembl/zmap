@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  8 14:39 2004 (edgrif)
+ * Last edited: Nov 19 16:55 2004 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapWindowFrame.c,v 1.4 2004-07-14 09:12:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFrame.c,v 1.5 2004-11-22 11:50:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,7 +68,7 @@ GtkWidget *zmapWindowMakeFrame(ZMapWindow window)
 {
   GtkWidget *frame ;
   GtkWidget *vbox ;
-  GtkWidget *scrwin, *canvas ;
+  GtkWidget *scrwin ;
 
   gchar *frame_title ;
 

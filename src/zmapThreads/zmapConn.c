@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 11 14:39 2004 (edgrif)
+ * Last edited: Nov 19 16:55 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConn.c,v 1.14 2004-11-12 11:58:27 edgrif Exp $
+ * CVS info:   $Id: zmapConn.c,v 1.15 2004-11-22 11:50:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -200,8 +200,6 @@ void zMapConnKill(ZMapConnection connection)
 /* Release the connections resources, don't do this until the slave thread has gone. */
 void zMapConnDestroy(ZMapConnection connection)
 {
-  int status ;
-
   ZMAP_THR_DEBUG(("GUI: destroying connection for thread %x\n", connection->thread_id)) ;
 
   zmapVarDestroy(&connection->reply) ;

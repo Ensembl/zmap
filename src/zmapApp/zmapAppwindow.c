@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 15 15:26 2004 (edgrif)
+ * Last edited: Nov 22 09:22 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.16 2004-11-19 14:05:32 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.17 2004-11-22 11:50:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,6 @@
 #include <zmapApp_P.h>
 
 
-static void checkThreads(void) ;
 static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
 static void quitCB(GtkWidget *widget, gpointer data) ;
@@ -54,10 +53,9 @@ int test_overlap = 0 ;
 
 int zmapMainMakeAppWindow(int argc, char *argv[])
 {
-  int main_rc = EXIT_SUCCESS ;
   ZMapAppContext app_context ;
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
-  GtkWidget *kill_button, *quit_button ;
+  GtkWidget *quit_button ;
   char *sequence ;
   int start, end ;
 

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 15 10:14 2004 (rnc)
+ * Last edited: Nov 19 16:55 2004 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.11 2004-11-15 10:14:46 rnc Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.12 2004-11-22 11:50:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,6 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent) ;
 GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 {
   GtkWidget *frame ;
-  GtkWidget *vbox ;
 
   frame = gtk_frame_new(NULL) ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;

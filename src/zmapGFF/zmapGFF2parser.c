@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov 19 13:44 2004 (edgrif)
+ * Last edited: Nov 22 10:12 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.16 2004-11-19 14:33:49 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.17 2004-11-22 11:50:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,10 +47,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 			       ZMapFeatureType feature_type,
 			       int start, int end, double score, ZMapStrand strand,
 			       ZMapPhase phase, char *attributes) ;
-static gboolean addDataToFeature(ZMapFeature feature, char *name,
-				 char *sequence, char *source, ZMapFeatureType feature_type,
-				 int start, int end, double score, ZMapStrand strand,
-				 ZMapPhase phase, char *attributes) ;
 static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
 			       int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
@@ -590,7 +586,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   gboolean result = FALSE ;
   char *feature_name_id = NULL, *feature_name = NULL ;
   ZMapFeature feature = NULL ;
-  char *first_attr = NULL ;
   ZMapGFFParserFeatureSet feature_set = NULL ; ;
   gboolean feature_has_name ;
   ZMapFeature new_feature ;

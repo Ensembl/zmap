@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Nov 11 15:26 2004 (edgrif)
+ * Last edited: Nov 19 16:55 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.37 2004-11-12 11:52:32 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.38 2004-11-22 11:50:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,6 @@ typedef struct
 
 static ZMap createZMap(void *app_data) ;
 static void destroyZMap(ZMap zmap) ;
-static void createZMapWindow(ZMap zmap) ;
 static void killZMap(ZMap zmap) ;
 static void killFinal(ZMap zmap) ;
 static void killViews(ZMap zmap) ;
@@ -118,7 +117,6 @@ void zMapInit(ZMapCallbacks callbacks)
 ZMap zMapCreate(void *app_data)
 {
   ZMap zmap = NULL ;
-  gboolean debug ;
 
   /* No callbacks, then no zmap creation. */
   zMapAssert(zmap_cbs_G) ;
@@ -356,8 +354,6 @@ void zmapControlResetCB(ZMap zmap)
 /* Put new data into an existing View. */
 void zmapControlNewCB(ZMap zmap, char *testing_text)
 {
-  gboolean status = FALSE ;
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

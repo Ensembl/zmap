@@ -26,13 +26,14 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov 12 11:40 2004 (edgrif)
+ * Last edited: Nov 22 09:18 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.17 2004-11-12 11:57:13 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.18 2004-11-22 11:50:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
+#include <stdio.h>
 #include <AceConn.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGFF.h>
@@ -179,7 +180,6 @@ static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext c
   AcedbServer server = (AcedbServer)server_in ;
   gboolean status ;
   ZMapFeatureContext feature_context ;
-  char *method_str ;
 
   server->sequence = g_strdup(context->sequence) ;
   server->start = context->start ;
@@ -211,9 +211,6 @@ static ZMapServerResponseType request(void *server_in, ZMapFeatureContext *featu
 {
   ZMapServerResponseType result ;
   AcedbServer server = (AcedbServer)server_in ;
-  char *acedb_request = NULL ;
-  void *reply = NULL ;
-  int reply_len = 0 ;
   gboolean status ;
   ZMapFeatureContext feature_context ;
 
@@ -403,8 +400,6 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
-  gboolean found_gff_start ;
-
 
   /* Here we can convert the GFF that comes back, in the end we should be doing a number of
    * calls to AceConnRequest() as the server slices...but that will need a change to my

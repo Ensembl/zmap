@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Nov 11 14:39 2004 (edgrif)
+ * Last edited: Nov 19 16:55 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.19 2004-11-12 11:58:57 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.20 2004-11-22 11:50:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -97,7 +97,6 @@ void *zmapNewThread(void *thread_args)
   void *global_init_data ;
   ZMapConnection connection = (ZMapConnection)thread_args ;
   ZMapRequest thread_state = &(connection->request) ;
-  int status ;
   TIMESPEC timeout ;
   ZMapThreadRequest signalled_state ;
   ZMapServerSetContext context ;

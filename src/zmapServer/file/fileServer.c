@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Nov 12 11:03 2004 (edgrif)
+ * Last edited: Nov 22 09:19 2004 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.6 2004-11-12 11:54:23 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.7 2004-11-22 11:50:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -263,7 +263,7 @@ static ZMapServerResponseType closeConnection(void *server_in)
 
   if (g_io_channel_shutdown(server->gff_file, FALSE, &(server->gff_file_err)) != G_IO_STATUS_NORMAL)
     {
-      zMapLogCritical("Could not close feature file \"%s\"", server->gff_file) ;
+      zMapLogCritical("Could not close feature file \"%s\"", server->file_path) ;
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
 

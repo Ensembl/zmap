@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov 12 13:20 2004 (rnc)
+ * Last edited: Nov 19 16:55 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.32 2004-11-12 13:20:51 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.33 2004-11-22 11:50:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -324,7 +324,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      else
 		{
 		  zMapLogWarning("Could not connect to %s protocol server "
-				 "on %s, port %s", protocol, machine, port) ;
+				 "on %s, port %d", protocol, machine, port) ;
 		}
 	    }
 

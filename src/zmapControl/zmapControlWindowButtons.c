@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  4 11:48 2004 (edgrif)
+ * Last edited: Nov 19 16:55 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.17 2004-11-04 12:43:42 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.18 2004-11-22 11:50:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,7 +66,11 @@ typedef struct
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 {
   GtkWidget *frame ;
-  GtkWidget *hbox, *new_button, *load_button, *stop_button, *quit_button,
+  GtkWidget *hbox, *new_button,
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    *load_button,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    *stop_button, *quit_button,
     *hsplit_button, *vsplit_button, *zoomin_button, *zoomout_button,
     *close_button ;
 
@@ -191,9 +195,6 @@ void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status
 static void loadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
-  ZMapFeatureContext feature_context ;
-  GtkWidget *topWindow;
-  char *title;
 
   zmapControlLoadCB(zmap) ;
 

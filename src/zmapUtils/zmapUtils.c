@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Nov 15 16:03 2004 (edgrif)
+ * Last edited: Nov 19 16:55 2004 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.8 2004-11-19 14:30:30 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.9 2004-11-22 11:50:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -254,7 +254,6 @@ char *zMapGetTimeString(void)
 gboolean zMapStr2Int(char *str, int *int_out)
 {
   gboolean result = FALSE ;
-  char *endptr ;
   long int retval ;
 
   zMapAssert(str && *str) ;
