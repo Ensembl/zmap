@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Apr  7 10:19 2004 (edgrif)
+ * Last edited: Apr 26 18:48 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.6 2004-04-08 16:35:29 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.7 2004-04-27 09:43:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,7 +36,8 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap_P.h>
 
-#include <../zmapThreads/zmapConn_P.h>
+#include <../zmapThreads/zmapConn_P.h>			    /* UGH, why have I put this here.... */
+
 
 /* ZMap debugging output. */
 gboolean zmap_debug_G = TRUE ; 
@@ -96,11 +97,6 @@ ZMap zMapCreate(char *sequence, void *app_data, ZMapCallbackFunc destroy_cb, ZMa
 gboolean zMapConnect(ZMap zmap)
 {
   gboolean result = TRUE ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  char **server_list = NULL ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   ZMapConfigStanzaSet server_list = NULL ;
 
   if (zmap->state != ZMAP_INIT)
@@ -114,22 +110,18 @@ gboolean zMapConnect(ZMap zmap)
       if (result)
 	{
 	  ZMapConfigStanza server_stanza ;
-	  ZMapConfigStanzaElementStruct server_elements[] = {{"host", ZMAPCONFIG_STRING, {FALSE}},
-							     {"port", ZMAPCONFIG_INT, {FALSE}},
-							     {"protocol", ZMAPCONFIG_STRING, {FALSE}},
-							     {NULL, -1, {FALSE}}} ;
+	  ZMapConfigStanzaElementStruct server_elements[] = {{"host", ZMAPCONFIG_STRING, {NULL}},
+							     {"port", ZMAPCONFIG_INT, {NULL}},
+							     {"protocol", ZMAPCONFIG_STRING, {NULL}},
+							     {NULL, -1, {NULL}}} ;
+
+	  /* Set defaults...just set port, host and protocol are done by default. */
+	  server_elements[1].data.i = -1 ;
 
 	  server_stanza = zMapConfigMakeStanza("server", server_elements) ;
 
-	  if (!zMapConfigGetStanzas(zmap->config, server_stanza, &server_list))
+	  if (!zMapConfigFindStanzas(zmap->config, server_stanza, &server_list))
 	    result = FALSE ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (!(zMapConfigGetServers(zmap->config, &server_list)))
-	    result = FALSE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	}
 
       /* Set up connections to the named servers. */
@@ -146,16 +138,13 @@ gboolean zMapConnect(ZMap zmap)
 	  while (result
 		 && ((next_server = zMapConfigGetNextStanza(server_list, next_server)) != NULL))
 	    {
-	      ZMapConfigStanzaElement element ;
 	      char *machine, *protocol ;
 	      int port ;
 	      ZMapConnection connection ;
 
-
 	      machine = zMapConfigGetElementString(next_server, "host") ;
 	      port = zMapConfigGetElementInt(next_server, "port") ;
 	      protocol = zMapConfigGetElementString(next_server, "protocol") ;
-
 
 	      if ((connection = zMapConnCreate(machine, port, protocol, zmap->sequence)))
 		{
@@ -173,40 +162,9 @@ gboolean zMapConnect(ZMap zmap)
 	    result = FALSE ;
 	}
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Set up connections to the named servers. */
-      if (result)
-	{
-	  char **next = server_list ;
-	  int connections = 0 ;
-
-	  /* Current error handling policy is to connect to servers that we can and
-	   * report errors for those where we fail but to carry on and set up the ZMap. */
-	  while (result && *next != NULL)
-	    {
-	      char *machine, *port, *protocol ;
-	      ZMapConnection connection ;
-
-	      if (getServer(*next, &machine, &port, &protocol)
-		  && (connection = zMapConnCreate(machine, port, protocol, zmap->sequence)))
-		{
-		  zmap->connection_list = g_list_append(zmap->connection_list, connection) ;
-		  connections++ ;
-		}
-	      else
-		{
-		  zMapWarning("Could not connect to %s protocol server "
-			      "on %s, port %s", protocol, machine, port) ;
-		}
-
-	      next++ ;
-	    }
-
-	  if (!connections)
-	    result = FALSE ;
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      /* clean up. */
+      if (server_list)
+	zMapConfigDeleteStanzaSet(server_list) ;
 
 
       /* If everything is ok then set up idle routine to check the connections,
