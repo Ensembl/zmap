@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov 22 09:18 2004 (edgrif)
+ * Last edited: Dec 13 14:11 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.18 2004-11-22 11:50:38 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.19 2004-12-13 15:18:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,7 +53,8 @@ static gboolean createConnection(void **server_out,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType setContext(void *server, ZMapServerSetContext context) ;
-static ZMapServerResponseType request(void *server_conn, ZMapFeatureContext *feature_context_out) ;
+static ZMapServerResponseType requestSeqFeatures(void *server_conn,
+						 ZMapProtocoltGetFeatures get_seqfeatures) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static gboolean destroyConnection(void *server) ;
@@ -63,6 +64,7 @@ static void addTypeName(GQuark key_id, gpointer data, gpointer user_data) ;
 
 
 static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
+static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
 static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
 static gboolean getSMapping(AcedbServer server, char *class,
 			    char *sequence, int start, int end,
@@ -72,11 +74,10 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
 			      int *obj_length_out) ;
 
 static gboolean checkServerVersion(AcedbServer server) ;
+static gboolean findSequence(AcedbServer server) ;
+static gboolean setQuietMode(AcedbServer server) ;
 
 
-/* 
- *    Although these routines are static they form the external interface to the acedb server.
- */
 
 
 /* Compulsory routine, without this we can't do anything....returns a list of functions
@@ -88,7 +89,7 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->create = createConnection ;
   acedb_funcs->open = openConnection ;
   acedb_funcs->set_context = setContext ;
-  acedb_funcs->request = request ;
+  acedb_funcs->request = requestSeqFeatures ;
   acedb_funcs->errmsg = lastErrorMsg ;
   acedb_funcs->close = closeConnection;
   acedb_funcs->destroy = destroyConnection ;
@@ -98,14 +99,15 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
 
 
 
+/* 
+ *    Although these routines are static they form the external interface to the acedb server.
+ */
 
 
 /* For stuff that just needs to be done once at the beginning..... */
 static gboolean globalInit(void)
 {
   gboolean result = TRUE ;
-
-
 
   return result ;
 }
@@ -133,7 +135,7 @@ static gboolean createConnection(void **server_out,
       else
 	{
 	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-			 "Requested server version is was %s but minimum supported is %s.",
+			 "Requested server version was %s but minimum supported is %s.",
 			 version_str, ACEDB_SERVER_MIN_VERSION) ;
 	  server->version_str = g_strdup(ACEDB_SERVER_MIN_VERSION) ;
 	}
@@ -151,6 +153,9 @@ static gboolean createConnection(void **server_out,
 }
 
 
+/* When we open the connection we not only check the acedb version of the server but also
+ * set "quiet" mode on so that we can get dna, gff and other stuff back unadulterated by
+ * extraneous information. */
 static ZMapServerResponseType openConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
@@ -158,7 +163,7 @@ static ZMapServerResponseType openConnection(void *server_in)
 
   if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
     {
-      if (checkServerVersion(server))
+      if (checkServerVersion(server) && setQuietMode(server))
 	result = ZMAP_SERVERRESPONSE_OK ;
       else
 	{
@@ -189,7 +194,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext c
   /* May want this to be dynamic some time, i.e. redone every time there is a request ? */
   server->method_str = getMethodString(context->types) ;
 
-  feature_context = zMapFeatureContextCreate() ;
+  feature_context = zMapFeatureContextCreate(server->sequence) ;
 
   if (!(status = getSequenceMapping(server, feature_context)))
     {
@@ -206,30 +211,41 @@ static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext c
 }
 
 
-
-static ZMapServerResponseType request(void *server_in, ZMapFeatureContext *feature_context_out)
+/* Get features and/or sequence. */
+static ZMapServerResponseType requestSeqFeatures(void *server_in,
+						 ZMapProtocoltGetFeatures get_seqfeatures)
 {
   ZMapServerResponseType result ;
   AcedbServer server = (AcedbServer)server_in ;
-  gboolean status ;
+  gboolean status = TRUE ;
   ZMapFeatureContext feature_context ;
 
 
-  /* We should check that there is a feature context here and report an error if there isn't... */
+  /* We should check that there is a sequence context here and report an error if there isn't... */
 
   result = ZMAP_SERVERRESPONSE_OK ;
   server->last_err_status = ACECONN_OK ;
 
   /* We should be using the start/end info. in context for the below stuff... */
 
-  feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
+  feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
   *feature_context = *(server->current_context) ;	    /* n.b. struct copy. */
 
-  if ((status = sequenceRequest(server, feature_context)))
+
+  if (get_seqfeatures->request == ZMAP_PROTOCOLREQUEST_SEQUENCE
+      || get_seqfeatures->request == ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE)
+    status = dnaRequest(server, feature_context) ;
+
+  if (status
+      && (get_seqfeatures->request == ZMAP_PROTOCOLREQUEST_FEATURES
+	  || get_seqfeatures->request == ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE))
+    status = sequenceRequest(server, feature_context) ;
+
+  if (status)
     {
-      *feature_context_out = feature_context ;
+      get_seqfeatures->feature_context_out = feature_context ;
     }
   else
     {
@@ -255,7 +271,8 @@ static ZMapServerResponseType request(void *server_in, ZMapFeatureContext *featu
     }
 
   /* We need a feature context call here which will free stuff correctly...this is not right
-     * as there are features etc to do....need a set of feature context calls...... */
+     * as there are features etc to do....need a set of feature context calls......
+     * ALSO YOU WALLY....THE FREE NEEDS TO BE DONE IN sequenceRequest() */
   if (!status)
     g_free(feature_context) ;
 
@@ -400,6 +417,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
+
 
   /* Here we can convert the GFF that comes back, in the end we should be doing a number of
    * calls to AceConnRequest() as the server slices...but that will need a change to my
@@ -576,6 +594,60 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
 }
 
 
+/* bit of an issue over returning error messages here.....sort this out as some errors many be
+ * aceconn errors, others may be data processing errors, e.g. in GFF etc., e.g.
+ * 
+ * 
+ */
+static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_context)
+{
+  gboolean result = FALSE ;
+  char *acedb_request = NULL ;
+  void *reply = NULL ;
+  int reply_len = 0 ;
+
+
+  /* Because the acedb "dna" command works on the current keyset, we have to find the sequence
+   * first before we can get its dna. A bit poor really but otherwise
+   * we will have to add a new code to acedb to do the dna for a named key. */
+  if (findSequence(server))
+    {
+      /* Here we get all the dna in one go, in the end we should be doing a number of
+       * calls to AceConnRequest() as the server slices...but that will need a change to my
+       * AceConn package....
+       * -u says get the dna as a single unformatted C string.*/
+      acedb_request =  g_strdup_printf("dna -u -x1 %d -x2 %d", server->start, server->end) ;
+
+      server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len) ;
+      if (server->last_err_status == ACECONN_OK)
+	{
+	  if ((reply_len - 1) != feature_context->length)
+	    {
+	      server->last_err_msg = g_strdup_printf("DNA request failed (\"%s\"),  "
+						     "expected dna length: %d "
+						     "returned length: %d",
+						     acedb_request,
+						     feature_context->length, (reply_len -1)) ;
+	      result = FALSE ;
+	    }
+	  else
+	    {
+	      feature_context->seq.type = ZMAPSEQUENCE_DNA ;
+	      feature_context->seq.length = feature_context->length ;
+	      feature_context->seq.sequence = reply ;
+	      result = TRUE ;
+	    }
+	}
+
+      g_free(acedb_request) ;
+    }
+
+  return result ;
+}
+
+
+
+
 /* Tries to smap sequence into whatever its parent is, if the call fails then we set all the
  * mappings in feature_context to be something sensible...we hope....
  */
@@ -600,8 +672,11 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
 
   if (getSMapping(server, NULL, server->sequence, server->start, server->end,
 		  &parent_class, &parent_name, &sequence_to_parent)
+      && ((server->end - server->start + 1) == (sequence_to_parent.c2 - sequence_to_parent.c1 + 1))
       && getSMapLength(server, parent_class, parent_name, &parent_length))
     {
+      feature_context->length = sequence_to_parent.c2 - sequence_to_parent.c1 + 1 ;
+
       parent_to_self.p1 = parent_to_self.c1 = 1 ;
       parent_to_self.p2 = parent_to_self.c2 = parent_length ;
 
@@ -864,6 +939,97 @@ static gboolean checkServerVersion(AcedbServer server)
 
 	  g_free(reply) ;
 	}
+    }
+
+  return result ;
+}
+
+
+/* Makes "find sequence x" request to get sequence into current keyset on server.
+ * Returns TRUE if sequence found, returns FALSE otherwise.
+ *
+ * Command and output to do this are like this:
+ * 
+ * acedb> find sequence b0250
+ * 
+ * // Found 1 objects in this class
+ * // 1 Active Objects
+ * 
+ * 
+ */
+static gboolean findSequence(AcedbServer server)
+{
+  gboolean result = FALSE ;
+  char *command = "find sequence" ;
+  char *acedb_request = NULL ;
+  void *reply = NULL ;
+  int reply_len = 0 ;
+
+  acedb_request =  g_strdup_printf("%s %s", command, server->sequence) ;
+
+  if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
+						&reply, &reply_len)) == ACECONN_OK)
+    {
+      char *reply_text = (char *)reply ;
+      char *scan_text = reply_text ;
+      char *next_line = NULL ;
+
+      /* Scan lines for "Found" and then extract the version, release and update numbers. */
+      while ((next_line = strtok(scan_text, "\n")))
+	{
+	  scan_text = NULL ;
+	  
+	  if (strstr(next_line, "Found"))
+	    {
+	      /* Parse this string: "// Found 1 objects in this class" */
+	      char *next ;
+	      int num_obj ;
+	      
+	      next = strtok(next_line, " ") ;
+	      next = strtok(NULL, " ") ;
+	      next = strtok(NULL, " ") ;
+
+	      num_obj = atoi(next) ;
+
+	      if (num_obj == 1)
+		result = TRUE ;
+	      else
+		server->last_err_msg = g_strdup_printf("Expected to find \"1\" object with name %s, "
+						       "but found %d objects.",
+						       server->sequence, num_obj) ;
+	      break ;
+	    }
+	}
+      
+      g_free(reply) ;
+    }
+
+  return result ;
+}
+
+
+/* Makes "quiet -on" request to stop acedb outputting all sorts of informational junk
+ * for every single request. Returns TRUE if request ok, returns FALSE otherwise.
+ *
+ * (n.b. if the request was successful then there is no output from the command !)
+ * 
+ */
+static gboolean setQuietMode(AcedbServer server)
+{
+  gboolean result = FALSE ;
+  char *command = "quiet -on" ;
+  char *acedb_request = NULL ;
+  void *reply = NULL ;
+  int reply_len = 0 ;
+
+  acedb_request =  g_strdup_printf("%s", command) ;
+
+  if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
+						&reply, &reply_len)) == ACECONN_OK)
+    {
+      result = TRUE ;
+      
+      g_free(reply) ;
     }
 
   return result ;
