@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Mar  9 12:11 2005 (edgrif)
+ * Last edited: Apr  5 16:59 2005 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.4 2005-03-09 14:54:45 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.5 2005-04-05 16:00:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -162,6 +162,9 @@ void zmapControlRemoveWindow(ZMap zmap)
   /* Remove from hash of viewwindows to frames */
   remove = g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
   zMapAssert(remove) ;
+
+  /* Make sure we reset focus because we just removed the view it points to ! */
+  zmap->focus_viewwindow = NULL ;
 
   /* Having removed one window we need to refocus on another, if there is one....... */
   if (remaining_view)
