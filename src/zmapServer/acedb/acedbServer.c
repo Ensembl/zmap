@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Aug  2 14:58 2004 (edgrif)
+ * Last edited: Sep 13 09:29 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.6 2004-08-02 14:11:37 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.7 2004-09-13 12:59:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,7 +46,7 @@ static gboolean createConnection(void **server_out,
 static gboolean openConnection(void *server) ;
 static ZMapServerResponseType request(void *server, ZMapServerRequestType request,
 				      char *sequence, ZMapFeatureContext *feature_context_out) ;
-char *lastErrorMsg(void *server) ;
+static char *lastErrorMsg(void *server) ;
 static gboolean closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
 
