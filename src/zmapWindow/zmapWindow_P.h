@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb  4 16:44 2005 (edgrif)
+ * Last edited: Feb 25 16:23 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.41 2005-02-10 16:42:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.42 2005-02-25 16:45:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -72,19 +72,50 @@ enum
   } ;
 
 
-/* Represents a column group. */
+
+
+/* Represents a column, which is a set of features of one type. */
 typedef struct
 {
   /* which one to use here ?? */
   gchar *type_name ;
   GQuark key_id ;
 
-  FooCanvasItem *group ;
+  FooCanvasItem *column_group ;				    /* The whole column. */
+  FooCanvasItem *forward_group, *reverse_group ;	    /* The forward and reverse groups. */
 
   gboolean forward ;
   ZMapFeatureTypeStyle type ;
 
 } ZMapWindowColumnStruct, *ZMapWindowColumn ;
+
+
+
+/* Represents all the columns of features for one of possibly multiple sets of data being viewed
+ * in a window. */
+typedef struct ZMapWindowAlignmentStructName
+{
+  GQuark alignment_id ;
+
+  ZMapWindow window ;					    /* our parent window. */
+
+  FooCanvasItem *alignment_group ;			    /* Group containing all columns for
+							       this alignment. */
+
+  GPtrArray *columns ;					    /* All ZMapWindowColumn's in the alignment. */
+
+  double col_gap ;					    /* space between columns. */
+
+  /* we should keep pointers to the columns for the forward/reverse that are the last ones in each
+     direction then we can ask them dynamically for the position of their groups on the screen. */
+
+  double               forward_column_pos ;
+  double               reverse_column_pos ;
+
+
+
+
+} ZMapWindowAlignmentStruct, *ZMapWindowAlignment ;
 
 
 
@@ -118,16 +149,21 @@ typedef struct _ZMapWindowStruct
   void          *app_data ;
   gulong         exposeHandlerCB ;
 
-  GData         *types;
-  GPtrArray     *featureListWindows;
-  GData         *featureItems;            /*!< enables unambiguous link between features and canvas items. */
-  GData         *longItems;               /*!< features >30k long need to be cropped as we zoom in. */
 
-  GPtrArray     *columns;				    /* keep track of canvas columns */
+  GData         *alignments ;
+
+  GData         *types ;
+
+  GPtrArray     *featureListWindows ;
+
+  GData         *featureItems ;            /*!< enables unambiguous link between features and canvas items. */
+
+  GData         *longItems ;               /*!< features >30k long need to be cropped as we zoom in. */
 
 
 
 
+  /* This all needs to move and for scale to be in a separate window..... */
   FooCanvasItem *scaleBarGroup;           /* canvas item in which we build the scalebar */
   double         scaleBarOffset;
   int major_scale_units, minor_scale_units ;		    /* Major/minor tick marks on scale. */
@@ -138,6 +174,7 @@ typedef struct _ZMapWindowStruct
   double         seqLength;
   double         seq_start ;
   double         seq_end ;
+
 
   ZMapFeatureTypeStyle focusType;         /* type of the item which has focus */
   gchar               *typeName;          
@@ -210,6 +247,16 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 			    GData *types) ;
 
 void zmapHideUnhideColumns(ZMapWindow window) ;
+
+
+
+ZMapWindowAlignment zmapWindowAlignmentCreate(char *align_name, ZMapWindow window,
+					      FooCanvasGroup *parent_group) ;
+FooCanvasItem *zmapWindowAlignmentAddColumn(ZMapWindowAlignment alignment, char *source_name,
+					    double position, ZMapFeatureTypeStyle type) ;
+void zmapWindowAlignmentHideUnhideColumns(ZMapWindowAlignment alignment) ;
+
+ZMapWindowAlignment zmapWindowAlignmentDestroy(ZMapWindowAlignment alignment) ;
 
 
 #endif /* !ZMAP_WINDOW_P_H */

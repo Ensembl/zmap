@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  4 17:13 2005 (edgrif)
+ * Last edited: Feb 24 16:54 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.61 2005-02-10 16:42:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.62 2005-02-25 16:45:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,10 +72,11 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 static gboolean getConfiguration(ZMapWindow window) ;
 static void sendClientEvent     (ZMapWindow window, FeatureSets) ;
 
-
 static void moveWindow(ZMapWindow window, guint state, guint keyval) ;
 static void scrollWindow(ZMapWindow window, guint state, guint keyval) ;
 static void changeRegion(ZMapWindow window, guint keyval) ;
+
+void hideAlignmentCols(GQuark key_id, gpointer data, gpointer user_data) ;
 
 
 
@@ -148,8 +149,6 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   window->zoom_status = ZMAP_ZOOM_INIT ;
   window->canvas_maxwin_size = ZMAP_WINDOW_MAX_WINDOW ;
 
-  window->columns = g_ptr_array_new() ;
-
   /* Some things for window can be specified in the configuration file. */
   getConfiguration(window) ;
 
@@ -189,14 +188,18 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 			 GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
 
 
-  /* I'm going to try attaching this to the root group instead..... */
-  g_signal_connect_after(GTK_OBJECT(foo_canvas_root(window->canvas)), "event",
-			 GTK_SIGNAL_FUNC(canvasRootEventCB), (gpointer)window) ;
+  /* Wierdly this doesn't get run _unless_ the click/event happens on a child of the
+   * root first...sigh..... */
+  g_signal_connect(GTK_OBJECT(foo_canvas_root(window->canvas)), "event",
+		   GTK_SIGNAL_FUNC(canvasRootEventCB), (gpointer)window) ;
+
   
+  /* NONE OF THIS SHOULD BE HARD CODED................. */
   /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
   GTK_LAYOUT(canvas)->vadjustment->step_increment = ZMAP_WINDOW_STEP_INCREMENT;
   GTK_LAYOUT(canvas)->hadjustment->step_increment = ZMAP_WINDOW_STEP_INCREMENT;
   GTK_LAYOUT(canvas)->vadjustment->page_increment = ZMAP_WINDOW_PAGE_INCREMENT;
+
 
   gtk_widget_show_all(window->parent_widget) ;
 
@@ -384,13 +387,6 @@ void zMapWindowDestroy(ZMapWindow window)
     }
   
 
-  if (window->columns)
-    {
-      /* We should first call a foreach routine to free off the canvas obj. etc. */
-
-      g_ptr_array_free(window->columns, TRUE) ;
-    }
-  
   g_datalist_clear(&(window->featureItems));
   g_datalist_clear(&(window->longItems));
   g_free(window) ;
@@ -502,10 +498,10 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
       bot = window->seq_end ;
     }
 
+
   /* Set the new scroll_region and the new zoom. N.B. may need to do a "freeze" of the canvas here
    * to avoid a double redraw....but that might never happen actually, depends how much there is
    * in the Xlib buffer so not lets worry about it. */
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* These don't work but I may not be using them correctly, more research needed, look
@@ -527,10 +523,20 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
   foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
 
+
   /* Now hide/show any columns that have specific show/hide zoom factors set. */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (window->columns)
     zmapHideUnhideColumns(window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  /* N.B. We could pass something else in other than the window as user_date.... */
+  if (window->alignments)
+    g_datalist_foreach(&window->alignments, hideAlignmentCols, window) ;
+
+
+
   
+
   /* Redraw the scale bar. NB On splitting a window, scaleBarGroup is null at this point. */
   if (FOO_IS_CANVAS_ITEM (window->scaleBarGroup))
     gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
@@ -672,34 +678,6 @@ void zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data)
   return;
 }
 
-
-
-void zmapHideUnhideColumns(ZMapWindow window)
-{
-  int i;
-  ZMapWindowColumn column;
-  double min_mag;
-
-  for ( i = 0; i < window->columns->len; i++ )
-    {
-      column = g_ptr_array_index(window->columns, i);
-
-      /* type->min_mag is in bases per line, but window->zoom_factor is pixels per base */
-      min_mag = (column->type->min_mag ? window->max_zoom/column->type->min_mag : 0.0);
-
-      if (window->zoom_factor > min_mag)
-	{
-	  if (column->forward)
-	    foo_canvas_item_show(column->group);
-	  else if (column->type->showUpStrand)
-	    foo_canvas_item_show(column->group);
-	}
-      else
-	foo_canvas_item_hide(column->group) ;
-    }
-
-  return ;
-}
 
 
 
@@ -1120,7 +1098,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
     case GDK_BUTTON_PRESS:
       {
-	printf("GENERAL canvas event handler - CLICK\n") ;
+	printf("GENERAL event handler - CLICK\n") ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1227,7 +1205,7 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
     {
     case GDK_BUTTON_PRESS:
       {
-	printf("ROOT canvas event handler - CLICK\n") ;
+	printf("ROOT group event handler - CLICK\n") ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1235,7 +1213,7 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 	window_cbs_G->click(window, window->app_data, NULL) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	
-	event_handled = TRUE ;
+	event_handled = FALSE ;
 	break ;
       }
     case GDK_BUTTON_RELEASE:
@@ -1262,3 +1240,13 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
   return event_handled ;
 }
 
+
+void hideAlignmentCols(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)user_data ;
+  ZMapWindowAlignment alignment = (ZMapWindowAlignment)data ;
+
+  zmapWindowAlignmentHideUnhideColumns(alignment) ;
+
+  return ;
+}
