@@ -1,6 +1,6 @@
 /*  File: zmapConfig.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2003
+ *  Copyright (c) Sanger Institute, 2004
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,31 +18,34 @@
  * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * and was written by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
+ * originated by
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: 
+ * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 21 18:10 2004 (edgrif)
- * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.h,v 1.1 2004-01-21 18:16:21 edgrif Exp $
+ * Last edited: Jan 23 13:16 2004 (edgrif)
+ * Created: Fri Jan 23 13:10:06 2004 (edgrif)
+ * CVS info:   $Id: zmapConfig.h,v 1.2 2004-03-03 12:50:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_H
 #define ZMAP_CONFIG_H
 
-#include <ZMap/zmapSys.h>
+#include <glib.h>
 
-
-/* not sure if this is needed.... */
+/* Opaque type, contains config info. */
 typedef struct _ZMapConfigStruct *ZMapConfig ;
 
 
 ZMapConfig zMapConfigInit(char *config_file) ;
 
-gboolean zMapConfigGetPorts(ZMapConfig config, char **ports) ;
 
+gboolean zMapConfigGetServers(ZMapConfig config, char ***servers) ;
+
+
+void zMapConfigDelete(ZMapConfig config) ;
 
 
 #endif /* !ZMAP_CONFIG_H */
