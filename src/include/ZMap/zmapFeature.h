@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Jun 15 15:21 2004 (edgrif)
+ * Last edited: Jun 25 10:44 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.1 2004-06-18 10:57:17 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.2 2004-06-25 13:32:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -125,12 +125,9 @@ typedef struct
 
 
 
-
-
-
-
-/* zmap-flavour seg structure that holds the data to be displayed */
-
+/* Structure describing a single feature, the feature may be compound (e.g. have exons/introns
+ *  etc.) or a single span or point, e.g. an allele.
+ *  */
 typedef struct ZMapFeatureStruct_ 
 {
   ZMapFeatureID id ;					    /* unique DB identifier. */
@@ -165,7 +162,7 @@ typedef struct ZMapFeatureStruct_
 
 
 
-/* Holds a set of features. */
+/* Holds a set of ZMapFeature's. */
 typedef struct ZMapFeatureSetStruct_
 {
   char *source ;					    /* e.g. "Genewise predictions" */
@@ -173,6 +170,20 @@ typedef struct ZMapFeatureSetStruct_
   GArray *features ;					    /* An array of ZMapFeatureStruct. */
 
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
+
+
+
+/* Holds a set of ZMapFeatureSet's.
+ * Structure would usually contain a complete set of data from a server for a particular span
+ * of a sequence. */
+typedef struct ZMapFeatureContextStruct_
+{
+  char *sequence ;					    /* The sequence to be displayed. */
+  int start, end ;					    /* start, end coords in the sequence. */
+
+  GData *features ;					    /* A set of ZMapFeatureSet. */
+
+} ZMapFeatureContextStruct, *ZMapFeatureContext ;
 
 
 
