@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Jul 13 17:54 2004 (edgrif)
+ * Last edited: Jul 15 15:15 2004 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.4 2004-07-14 09:01:27 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.5 2004-07-15 15:04:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -61,6 +61,7 @@ typedef void (*ZMapViewCallbackFunc)(ZMapView zmap_view, void *app_data) ;
  * to a window. */
 typedef struct _ZMapViewCallbacksStruct
 {
+  ZMapViewCallbackFunc load_data ;
   ZMapViewWindowCallbackFunc button_click ;
   ZMapViewCallbackFunc destroy ;
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
@@ -89,14 +90,13 @@ gboolean zMapViewLoad(ZMapView zmap_view, char *sequence) ; /* sequence == NULL 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Don't exist but will be needed. */
-
-gboolean zMapViewAddViewWindow(GtkWidget *parent_widget, ZMapView zmap_view) ;
-gboolean zMapViewDeleteViewWindow(ZMapView zmap_view) ;
+gboolean zMapViewDeleteWindow(ZMapViewWindow view_window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
 gboolean zMapViewReset(ZMapView zmap_view) ;
+
 char *zMapViewGetSequence(ZMapView zmap_view) ;
+ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
 ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
 char *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
