@@ -27,9 +27,9 @@
  *              
  * Exported functions: none, dummy file.
  * HISTORY:
- * Last edited: Apr 21 09:00 2004 (edgrif)
+ * Last edited: Apr 21 09:36 2004 (edgrif)
  * Created: Tue Apr 20 09:54:38 2004 (edgrif)
- * CVS info:   $Id: ZMapDoxyMainPage,v 1.1 2004-04-21 08:01:13 edgrif Exp $
+ * CVS info:   $Id: ZMapDoxyMainPage,v 1.2 2004-04-21 08:36:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,20 +40,24 @@
  * ZMap is a stand alone client successor to FMap, the main virtual
  * sequence viewer/annotation tool of Acedb.
  * 
+ * \section license ZMap License
+ * 
+ * Copyright (c) 2004 <A href="http://www.sanger.ac.uk/">Sanger Institute</A>
+ *
+ * Permission to use, copy, modify, and distribute this software and its documentation
+ * under the terms of the GNU General Public License is hereby granted.
+ * No representations are made about the suitability of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ * See the
+ * <A href="http://www.gnu.org/copyleft/gpl.txt">GNU General Public License</A>
+ * for more details.
+ * 
  * \section authors Authors
  *
  * ZMap was originally written by 
  * <A href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</A>
  * and <A href="mailto:rnc@sanger.ac.uk">Rob Clack</A>
  * of the Sanger Institute and is currently maintained by them.
- * 
- * \section copyright Copyright
- * 
- * ZMap is Copyright (c) <A href="http://www.sanger.ac.uk/">Sanger Institute</A>, 2004
- * 
- * and is distributed under the
- * <A href="http://www.gnu.org/copyleft/gpl.txt">GNU General Public License</A>
- * 
  * 
  * 
  *  */
