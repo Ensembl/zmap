@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 15 17:15 2004 (rnc)
+ * Last edited: Jul 20 15:13 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.10 2004-07-15 16:31:14 rnc Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.11 2004-07-21 08:43:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,19 @@ static void zoomOutCB(GtkWindow *widget, gpointer cb_data) ;
 static void splitPaneCB(GtkWidget *widget, gpointer data) ;
 static void splitHPaneCB(GtkWidget *widget, gpointer data) ;
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
+
+/* This lot may need to go into a separate file sometime to give more general purpose dialog code. */
+static char *getSequenceName(void) ;
+static void okCB(GtkWidget *widget, gpointer cb_data) ;
+static void cancelCB(GtkWidget *widget, gpointer cb_data) ;
+typedef struct
+{
+  GtkWidget *dialog ;
+  GtkWidget *entry ;
+  char *new_sequence ;
+} ZmapSequenceCallbackStruct, *ZmapSequenceCallback ;
+
+
 
 
 
@@ -148,16 +161,89 @@ static void stopCB(GtkWidget *widget, gpointer cb_data)
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void newCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
 
   /* The string is for testing only, in the full code there should be a dialog box that enables
    * the user to provide a whole load of info. */
-  zmapControlNewCB(zmap, "eds_sequence") ;
+  zmapControlNewCB(zmap, "Y38H6C") ;
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static void newCB(GtkWidget *widget, gpointer cb_data)
+{
+  ZMap zmap = (ZMap)cb_data ;
+  ZMapPane pane ;
+  GtkWidget *parent_widget = NULL ;
+  ZMapView view ;
+  ZMapViewWindow view_window ;
+  char *new_sequence ;
+
+  /* THIS ROUTINE AND THE WHOLE PANE/VIEW INTERFACE NEEDS SOME MAJOR TIDYING UP..... */
+
+  /* Get a new sequence to show.... */
+  if ((new_sequence = getSequenceName()))
+    {
+
+      /* this all needs to do view stuff here and return a parent widget............ */
+      parent_widget = splitPane(zmap) ;
+
+      pane = zmap->focuspane ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* At this point split func does the add call to add a window to an existing view, we want
+       * to add a new view and add a window to that..... */
+      view_window = zMapViewAddWindow(zMapViewGetView(pane->curr_view_window), parent_widget) ;
+
+      pane->curr_view_window = view_window ;		    /* new focus window ?? */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+      /* THIS USED TO BE HERE AND WE SHOULD GO BACK TO USING IT BUT ALL THIS NEEDS TIDYING
+       * UP FIRST.....ESPECIALLY THE PANE STUFF.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zmapControlNewCB(zmap, "Y38H6C") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      /* this code cut/pasted from addView() in zmapcontrol...needs clearing up.... */
+
+      if ((view = zMapViewCreate(new_sequence, (void *)zmap))
+	  && (view_window = zMapViewAddWindow(view, pane->view_parent_box))
+	  && zMapViewConnect(view))
+	{
+	  /* add to list of views.... */
+	  zmap->view_list = g_list_append(zmap->view_list, view) ;
+      
+	  zmap->focuspane->curr_view_window = view_window ;
+
+	  zmap->firstTime = FALSE ;
+
+	  zmap->state = ZMAP_VIEWS ;
+
+
+	  /* Look in focus pane and set title bar/navigator etc......really this should all be
+	   * in one focus routine......which we need to remove from zmapAddPane..... */
+
+
+	  /* We've added a view so better update everything... */
+	  gtk_widget_show_all(zmap->toplevel) ;
+	}
+    }
+
+
+  return ;
+}
+
+
+
+
+
 
 static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
@@ -231,6 +317,71 @@ static void splitHPaneCB(GtkWidget *widget, gpointer data)
 
   /* We'll need to update the display..... */
   gtk_widget_show_all(zmap->toplevel) ;
+
+  return ;
+}
+
+
+
+static char *getSequenceName(void)
+{
+  char *sequence_name = NULL ;
+  GtkWidget *dialog, *label, *text, *ok_button, *cancel_button ;
+  ZmapSequenceCallbackStruct cb_data = {NULL, NULL} ;
+
+  cb_data.dialog = dialog = gtk_dialog_new() ;
+ 
+  gtk_window_set_title(GTK_WINDOW(dialog), "ZMap - Enter New Sequence") ;
+
+  label = gtk_label_new("Sequence Name:") ;
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), label, TRUE, TRUE, 0) ;
+
+  cb_data.entry = text = gtk_entry_new() ;
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), text, TRUE, TRUE, 0) ;
+
+  ok_button = gtk_button_new_with_label("OK") ;
+  GTK_WIDGET_SET_FLAGS(ok_button, GTK_CAN_DEFAULT) ;
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->action_area), ok_button, FALSE, FALSE, 0) ;
+  gtk_widget_grab_default(ok_button) ;
+  gtk_signal_connect(GTK_OBJECT(ok_button), "clicked", GTK_SIGNAL_FUNC(okCB), &cb_data) ;
+
+  cancel_button = gtk_button_new_with_label("Cancel") ;
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->action_area), cancel_button, FALSE, FALSE, 0) ;
+  gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked", GTK_SIGNAL_FUNC(cancelCB), &cb_data) ;
+
+  gtk_widget_show_all(dialog) ;
+
+  gtk_main() ;
+
+  sequence_name = cb_data.new_sequence ;
+
+  return sequence_name ;
+}
+
+
+static void okCB(GtkWidget *widget, gpointer cb_data)
+{
+  ZmapSequenceCallback mydata = (ZmapSequenceCallback)cb_data ;
+  char *text ;
+
+  if ((text = (char *)gtk_entry_get_text(GTK_ENTRY(mydata->entry)))
+      && *text)						    /* entry returns "" for no string. */
+    mydata->new_sequence = g_strdup(text) ;
+
+  gtk_widget_destroy(mydata->dialog) ;
+
+  gtk_main_quit() ;
+
+  return ;
+}
+
+static void cancelCB(GtkWidget *widget, gpointer cb_data)
+{
+  ZmapSequenceCallback mydata = (ZmapSequenceCallback)cb_data ;
+
+  gtk_widget_destroy(mydata->dialog) ;
+
+  gtk_main_quit() ;
 
   return ;
 }
