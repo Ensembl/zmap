@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May  7 08:17 2004 (edgrif)
+ * Last edited: May 12 16:15 2004 (edgrif)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.1 2004-05-07 09:27:01 edgrif Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.2 2004-05-17 14:24:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,7 +76,7 @@ char *zMapGetDir(char *directory_in, gboolean home_relative)
   /* If directory is relative to HOME then prepend HOME. */
   if (home_relative)
     {
-      base_dir = g_get_home_dir() ;			    /* glib docs say home_dir string should not
+      base_dir = (char *)g_get_home_dir() ;		    /* glib docs say home_dir string should not
 							       be freed. */
       directory = g_build_path(ZMAP_SEPARATOR, base_dir, directory_in, NULL) ;
     }
