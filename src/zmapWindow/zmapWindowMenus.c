@@ -28,9 +28,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Mar 16 15:42 2005 (edgrif)
+ * Last edited: Mar 18 11:36 2005 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.1 2005-03-16 15:51:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.2 2005-03-18 11:44:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,8 +56,8 @@
  * a working menu system. We may have to revisit this if they decide to remove
  * item factories.
  * 
- * Do not get confused by the different callback prototypes for itemfactories, we must use
- * the GtkItemFactoryCallback1 prototype.
+ * Do not get confused by the different callback prototypes specified for itemfactories,
+ * we must use the GtkItemFactoryCallback1 prototype.
  * 
  * Here is the typedef for the item factory struct:
  *
@@ -82,7 +82,9 @@
 /* Passed into our callback by gtk menu code. */
 typedef struct
 {
-  ZMapWindowMenuItem callers_menu ;
+  ZMapWindowMenuItem callers_menu_copy ;
+  GtkItemFactoryEntry *factory_items ;
+  int num_factory_items ;
 } CallbackDataStruct, *CallbackData ;
 
 
@@ -133,21 +135,22 @@ void zMapWindowMakeMenu(char *menu_title, ZMapWindowMenuItemStruct menu_items[],
   CallbackData our_cb_data ;
 
 
-  /* Make a copy of the callers menu for use in our callback. */
-  menu_copy = copyMenu(menu_items, &num_menu_items) ;
-
   /* Set up our callback data, we use this to call our callers callback. */
   our_cb_data = g_new0(CallbackDataStruct, 1) ;
-  our_cb_data->callers_menu = menu_copy ;
+
+
+  /* Make a copy of the callers menu for use in our callback. */
+  our_cb_data->callers_menu_copy = menu_copy = copyMenu(menu_items, &num_menu_items) ;
 
 
   /*
    * Make the actual gtk item factory.
    */
 
-  num_factory_items = num_menu_items + 2 ;
-  item = factory_items = g_new0(GtkItemFactoryEntry, num_factory_items) ;
-							    /* + 2 items for title + separator. */
+  our_cb_data->num_factory_items = num_factory_items = num_menu_items + 2 ;
+							    /* + 2 for title + separator items. */
+  our_cb_data->factory_items = item = factory_items = g_new0(GtkItemFactoryEntry, num_factory_items) ;
+				
 
   /* Do title/separator. */
   item->path = makeMenuItemName(menu_title) ;
@@ -178,13 +181,6 @@ void zMapWindowMakeMenu(char *menu_title, ZMapWindowMenuItemStruct menu_items[],
   gtk_item_factory_popup(item_factory, (guint)button_event->x_root, (guint)button_event->y_root,
 			 button_event->button, button_event->time) ;
 
-  /* Clean up the item factory input data. */
-  for (i = 0, item = factory_items ; i < num_factory_items ; i++)
-    {
-      g_free(item->path) ;
-    }
-  g_free(factory_items) ;
-
   return ;
 }
 
@@ -200,14 +196,13 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
 {
   CallbackData our_data = (CallbackData)callback_data ;
   ZMapWindowMenuItem caller_menu_item ;
+  GtkItemFactoryEntry *item ;
+  int i ;
 
-  caller_menu_item = our_data->callers_menu + callback_action ;
+  caller_menu_item = our_data->callers_menu_copy + callback_action ;
 
   /* Call the original menu item callback with its callback data and its id. */
   (caller_menu_item->callback_func)(caller_menu_item->id, caller_menu_item->callback_data) ;
-
-  destroyMenu(our_data->callers_menu) ;
-  g_free(our_data) ;
 
 
   /* What this is trying to do is make sure that menu gets destroyed. It is popped down
@@ -215,6 +210,23 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
    * You seem to have to set both the item_factory path and the widget path to the
    * same thing otherwise it moans.... */
   gtk_item_factories_path_delete(ITEM_FACTORY_NAME, ITEM_FACTORY_NAME) ;
+
+  /* Get rid of our copy of the callers original menu. */
+  destroyMenu(our_data->callers_menu_copy) ;
+
+  /* Now we have got rid of the factory, clean up the item factory input data we created
+   * when we made the menu. NOTE that we do this here because on some systems if we delete
+   * this before the menu is popped up the GTK menu code segfaults...this is poor because
+   * it should be taking its own copy of our data....sigh... */
+  for (i = 0, item = our_data->factory_items ; i < our_data->num_factory_items ; i++)
+    {
+      g_free(item->path) ;
+      item++ ;
+    }
+  g_free(our_data->factory_items) ;
+
+  /* Now free the callback data struct. */
+  g_free(our_data) ;
 
   return ;
 }
