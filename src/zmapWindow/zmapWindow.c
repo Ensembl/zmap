@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 21 17:01 2004 (edgrif)
+ * Last edited: Jul 22 11:40 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.24 2004-07-21 16:07:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.25 2004-07-22 15:43:08 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -309,7 +309,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
 
 
       /* <<<<<<<<<<<<<  ROB, this is where calls to your drawing code need to go  >>>>>>>>>>>> */
-      zmapWindowDrawFeatures(window->canvas, feature_context, window_data->types) ;
+      zmapWindowDrawFeatures(window, feature_context, window_data->types) ;
 
 
       g_free(window_data) ;				    /* Free the WindowData struct. */
