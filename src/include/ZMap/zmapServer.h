@@ -23,12 +23,13 @@
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk and
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Generalised server interface, hides acedb/das/file
+ *              details from caller.
+ *
  * HISTORY:
- * Last edited: Sep 16 13:50 2004 (edgrif)
+ * Last edited: Sep 17 10:53 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.5 2004-09-17 08:39:26 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.6 2004-09-17 12:40:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -36,22 +37,10 @@
 
 #include <glib.h>
 #include <ZMap/zmapFeature.h>
-
+#include <ZMap/zmapProtocol.h>
 
 /* Opaque type, represents a connection to a database server. */
 typedef struct _ZMapServerStruct *ZMapServer ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* I think I don't need this now, too complex......... */
-
-/* Opaque type, represents a sequence context which can be used to get data/features/dna etc.
- * The server is implicit in the context so once you have one of these you do not need to
- * specify the server. */
-typedef struct _ZMapServerContextStruct *ZMapServerContext ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -104,8 +93,6 @@ typedef enum {ZMAP_SERVERRESPONSE_OK,
 /* This routine must be called before any other server routines and must only be called once.
  * It is the callers responsibility to make sure this happens. */
 gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out) ;
-
-
 /* Provide matching Termination routine ???? */
 
 
@@ -113,9 +100,7 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_
 				    char *host, int port, char *protocol,
 				    char *userid, char *passwd) ;
 
-
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
-
 
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence, int start, int end) ;
 
