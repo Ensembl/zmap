@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul  9 17:43 2004 (edgrif)
+ * Last edited: Jul 15 15:51 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.8 2004-07-14 09:07:09 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.9 2004-07-15 15:10:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -128,17 +128,6 @@ static void loadCB(GtkWidget *widget, gpointer cb_data)
   char *title;
 
   zmapControlLoadCB(zmap) ;
-
-  // only here temporarily until we find out why it's not working in zmapWindow.c
-  feature_context = testGetGFF() ;			    /* Data read from a file... */
-
-
-  /* ROB, THIS MAY NEED TO BE REWRITTEN, WHICH SEQUENCE NAME SHOULD GO IN THE WINDOW TITLE
-   * IF MULTIPLE SEQUENCES ARE DISPLAYED ? */
-  title = g_strdup_printf("ZMap - %s", feature_context->sequence) ;
-  gtk_window_set_title(GTK_WINDOW(zmap->toplevel), title) ;
-
-  zmapWindowDrawFeatures(feature_context) ;
 
   return ;
 }
