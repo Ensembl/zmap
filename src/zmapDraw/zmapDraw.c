@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 20 15:20 2004 (rnc)
+ * Last edited: Oct 21 14:42 2004 (rnc)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.15 2004-10-20 14:41:47 rnc Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.16 2004-10-21 13:55:21 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,13 +163,15 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 			      "x",(double)offset,
 			      "y",(double)0.0,
 			      NULL);
-
+ 
   /* yellow bar separates forward from reverse strands. Draw first so scalebar text
   ** overlies it. */
   zmapDrawBox(FOO_CANVAS_ITEM(group), 0.0, start, 3.0, end, &white, &yellow); 
 										    
   /* major ticks and text */
-  for (seqPos = start, scalePos = start; seqPos < end; seqPos += iUnit, scalePos += iUnit)
+  for (seqPos = start, scalePos = start; 
+       seqPos < end; 
+       seqPos += iUnit, scalePos += iUnit)
     {
       zmapDrawLine(FOO_CANVAS_GROUP(group), 32.0, scalePos, 40.0, scalePos, &black, 1.0);
       buf[0] = unitName[unitType] ; buf[1] = 0 ;
@@ -177,14 +179,20 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
       if (width < strlen (cp))
         width = strlen (cp) ;
       zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", (31.0 - (5.0 * width)), scalePos); 
+
+      /* There's a bug whereby very long objects are corrupted when you zoom right in,
+      ** so instead of a single long line, we draw it in several short sections. */  
+      if (scalePos > start)
+	zmapDrawLine(FOO_CANVAS_GROUP(group), 40.0, (scalePos-iUnit), 40.0, scalePos, &black, 1.0);
     }		     
   
+  /* draw the last segment of the vertical line of the scalebar. */
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 40.0, (scalePos-iUnit), 40.0, end, &black, 1.0);
+
   /* minor ticks */
   for (seqPos = start, scalePos = start; seqPos < end; seqPos += iSubunit, scalePos += iSubunit)
       zmapDrawLine(FOO_CANVAS_GROUP(group), 35.0, scalePos, 40.0, scalePos, &black, 1.0);
 
-  /* long vertical line */
-  zmapDrawLine(FOO_CANVAS_GROUP(group), 40.0, start, 40.0, end, &black, 1.0);
 
   return group;
 }
