@@ -26,14 +26,15 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 15:40 2004 (edgrif)
+ * Last edited: Jun 28 11:23 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.3 2004-05-27 13:41:29 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.4 2004-06-28 15:07:35 rnc Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap_P.h>
+#include <../zmapWindow/zmapsplit.h>
 
 static void newCB(GtkWidget *widget, gpointer cb_data) ;
 static void loadCB(GtkWidget *widget, gpointer cb_data) ;
@@ -44,7 +45,8 @@ static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 {
   GtkWidget *frame ;
-  GtkWidget *hbox, *new_button, *load_button, *stop_button, *quit_button ;
+  GtkWidget *hbox, *new_button, *load_button, *stop_button, *quit_button,
+    *hsplit_button, *vsplit_button, *zoomin_button, *zoomout_button ;
 
   frame = gtk_frame_new(NULL);
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -68,6 +70,26 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(newCB), (gpointer)zmap) ;
   gtk_box_pack_start(GTK_BOX(hbox), new_button, FALSE, FALSE, 0) ;
 
+  hsplit_button = gtk_button_new_with_label("H-Split");
+  gtk_signal_connect(GTK_OBJECT(hsplit_button), "clicked",
+		     GTK_SIGNAL_FUNC(splitPane), (gpointer)zmap->zMapWindow);
+  gtk_box_pack_start(GTK_BOX(hbox), hsplit_button, FALSE, FALSE, 0) ;
+
+  vsplit_button = gtk_button_new_with_label("V-Split");
+  gtk_signal_connect(GTK_OBJECT(vsplit_button), "clicked",
+		     GTK_SIGNAL_FUNC(splitHPane), (gpointer)zmap->zMapWindow);
+  gtk_box_pack_start(GTK_BOX(hbox), vsplit_button, FALSE, FALSE, 0) ;
+                                                                                           
+  zoomin_button = gtk_button_new_with_label("Zoom In");
+  gtk_signal_connect(GTK_OBJECT(zoomin_button), "clicked",
+		     GTK_SIGNAL_FUNC(zoomIn), (gpointer)zmap->zMapWindow);
+  gtk_box_pack_start(GTK_BOX(hbox), zoomin_button, FALSE, FALSE, 0) ;
+                                                                                           
+  zoomout_button = gtk_button_new_with_label("Zoom Out");
+  gtk_signal_connect(GTK_OBJECT(zoomout_button), "clicked",
+		     GTK_SIGNAL_FUNC(zoomOut), (gpointer)zmap->zMapWindow);
+  gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
+                                                                                           
   quit_button = gtk_button_new_with_label("Quit") ;
   gtk_signal_connect(GTK_OBJECT(quit_button), "clicked",
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)zmap) ;
