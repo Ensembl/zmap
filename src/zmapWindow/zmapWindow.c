@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul  2 19:06 2004 (edgrif)
+ * Last edited: Jul 13 16:24 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.15 2004-07-02 18:24:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.16 2004-07-14 09:12:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,36 +43,134 @@
 
 
 static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static void canvasClickCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+
+
+/* These callback routines are static because they are set just once for the lifetime of the
+ * process. */
+
+/* Callbacks we make back to the level above us. */
+static ZMapWindowCallbacks window_cbs_G = NULL ;
 
 
 
-ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence,
-			    zmapVoidIntCallbackFunc app_routine, void *app_data)
+/* This routine must be called just once before any other windows routine, it is undefined
+ * if the caller calls this routine more than once. The caller must supply all of the callback
+ * routines.
+ * 
+ * Note that since this routine is called once per application we do not bother freeing it
+ * via some kind of windows terminate routine. */
+void zMapWindowInit(ZMapWindowCallbacks callbacks)
+{
+  zMapAssert(!window_cbs_G) ;
+
+  zMapAssert(callbacks && callbacks->scroll && callbacks->button_click && callbacks->destroy) ;
+
+  window_cbs_G = g_new0(ZMapWindowCallbacksStruct, 1) ;
+
+  window_cbs_G->scroll = callbacks->scroll ;
+  window_cbs_G->button_click = callbacks->button_click ;
+  window_cbs_G->destroy = callbacks->destroy ;
+
+  return ;
+}
+
+
+
+/* We will need to allow caller to specify a routine that gets called whenever the user
+ * scrolls.....needed to update the navigator...... */
+/* and we will need a callback for focus events as well..... */
+/* I think probably we should insist on being supplied with a sequence.... */
+ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data)
 {
   ZMapWindow window ;
-  GtkWidget *toplevel, *vbox, *menubar, *button_frame, *connect_frame ;
+  GtkWidget *vbox, *menubar, *button_frame, *connect_frame ;
+  GtkWidget *canvas ;
+  GtkAdjustment *adj ; 
 
-  window = g_new(ZMapWindowStruct, sizeof(ZMapWindowStruct)) ;
+  /* No callbacks, then no window creation. */
+  zMapAssert(window_cbs_G) ;
 
-  if (sequence)
-    window->sequence = g_strdup(sequence) ;
-  window->app_routine = app_routine ;
+  zMapAssert(parent_widget && sequence && *sequence && app_data) ;
+
+  window = g_new(ZMapWindowStruct, 1) ;
+  window->sequence = g_strdup(sequence) ;
   window->app_data = app_data ;
-  window->zmap_atom = gdk_atom_intern(ZMAP_ATOM, FALSE) ;
   window->parent_widget = parent_widget ;
 
-  /* Make the vbox the toplevel for now, it gets sent the client event, 
-   * we may also want to register a "destroy" callback at some time as this
-   * may be useful. */
-  window->toplevel = toplevel = vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_container_add(GTK_CONTAINER(window->parent_widget), vbox) ;
-  gtk_signal_connect(GTK_OBJECT(vbox), "client_event", 
+  window->zmap_atom = gdk_atom_intern(ZMAP_ATOM, FALSE) ;
+
+  window->zoom_factor = 1 ;
+
+
+  /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
+  window->toplevel = window->scrolledWindow = gtk_scrolled_window_new(NULL, NULL) ;
+  gtk_container_add(GTK_CONTAINER(window->parent_widget), window->scrolledWindow) ;
+
+
+  /* this had disappeared...non idea why......... */
+  gtk_signal_connect(GTK_OBJECT(window->toplevel), "client_event", 
 		     GTK_SIGNAL_FUNC(dataEventCB), (gpointer)window) ;
 
-  connect_frame = zmapWindowMakeFrame(window) ;
-  gtk_box_pack_start(GTK_BOX(vbox), connect_frame, TRUE, TRUE, 0);
 
-  gtk_widget_show_all(toplevel) ;
+  /* always show scrollbars, however big the display */
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(window->scrolledWindow),
+				 GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS) ;
+
+  adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow)) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* I think this is all broken, navChange certainly does not do the right things.... */
+
+  /* Its also the wrong place....navChange should be when the view changes.... */
+
+  g_signal_connect(GTK_OBJECT(adj), "value_changed", GTK_SIGNAL_FUNC(navUpdate), (gpointer)(window));
+  g_signal_connect(GTK_OBJECT(adj), "changed", GTK_SIGNAL_FUNC(navChange), (gpointer)(window)); 
+
+
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  canvas = foo_canvas_new();
+  /* add the canvas to the scrolled window */
+  gtk_container_add(GTK_CONTAINER(window->scrolledWindow), canvas) ;
+
+
+  window->canvas = FOO_CANVAS(canvas);
+  foo_canvas_set_scroll_region(window->canvas, 0.0, 0.0, 1000, 1000);
+  window->background = foo_canvas_item_new(foo_canvas_root(window->canvas),
+	 		foo_canvas_rect_get_type(),
+			"x1",(double)0,
+			"y1",(double)0,
+			"x2",(double)1000,
+			"y2",(double)1000,
+		 	"fill_color", "white",
+			"outline_color", "dark gray",
+			NULL);
+  
+  g_signal_connect(GTK_OBJECT(window->canvas), "button_press_event",
+		   GTK_SIGNAL_FUNC(canvasClickCB), window) ;
+
+  window->group = foo_canvas_item_new(foo_canvas_root(window->canvas),
+                        foo_canvas_group_get_type(),
+                        "x", (double)100,
+                        "y", (double)100 ,
+                        NULL);
+
+  /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
+  /* Using a member of ZMapPane means I can adjust it if necessary when we zoom. */
+  GTK_LAYOUT(canvas)->vadjustment->step_increment = window->step_increment;
+  GTK_LAYOUT(canvas)->hadjustment->step_increment = window->step_increment;
+
+
+  /* This should all be in some kind of routine to draw the whole canvas in one go.... */
+  zmMainScale(FOO_CANVAS(canvas), 30, 0, 1000);
+
+  /* should this be done by caller ??..... */
+  gtk_widget_show_all(window->parent_widget) ;
 
   return(window) ;
 }
@@ -111,6 +209,20 @@ void zMapWindowDisplayData(ZMapWindow window, void *data)
 
   gtk_signal_emit_by_name(GTK_OBJECT(window->toplevel), "client_event",
 			  &event, &ret_val) ;
+
+  return ;
+}
+
+
+/* Zooming: we don't zoom as such, we scale the group, doubling the
+ * y axis but leaving x at 1.  This enlarges lengthways, while keeping
+ * the width the same. */
+void zMapWindowZoom(ZMapWindow window, double zoom_factor)
+{
+  window->zoom_factor *= zoom_factor ;
+
+  /* do we need to do anything else like redraw ?? */
+  foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
 
   return ;
 }
@@ -208,6 +320,8 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
 
 
 
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
 /* Previous dummy routine...... */
@@ -262,6 +376,19 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+static void canvasClickCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
+{
+  ZMapWindow window = (ZMapWindow)data ;
+
+
+  /* Call the callers routine for button clicks. */
+  window_cbs_G->button_click(window, window->app_data) ;
+
+
+  return ;
+}
 
 
 
@@ -407,6 +534,189 @@ void zMapRegionFreeDNA(ZMapRegion *region)
   g_array_free(region->dna, TRUE);
   return;
 }
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+// ZMapPane functions
+
+void zMapPaneNewBox2Col(ZMapPane pane, int elements)
+{
+  pane->box2col = g_array_sized_new(FALSE, TRUE, sizeof(ZMapColumn), elements);
+
+  return ;
+}
+
+
+
+
+/* MOVED FROM zmapWindow.c, THEY BE IN THE WRONG PLACE OR NOT EVEN NEEDED...... */
+
+
+
+GArray *zMapPaneSetBox2Col(ZMapPane pane, ZMapColumn *col, int index)
+{
+  return g_array_insert_val(pane->box2col, index, col);
+}
+
+ZMapColumn *zMapPaneGetBox2Col(ZMapPane pane, int index)
+{
+  return &g_array_index(pane->box2col, ZMapColumn, index);
+}
+
+
+void zMapPaneFreeBox2Col(ZMapPane pane)
+{
+  if (pane->box2col)
+    g_array_free(pane->box2col, TRUE);
+  return;
+}
+
+
+void zMapPaneNewBox2Seg(ZMapPane pane, int elements)
+{
+  pane->box2seg = g_array_sized_new(FALSE, TRUE, sizeof(ZMapFeatureStruct), elements);
+
+  return ;
+}
+
+GArray *zMapPaneSetBox2Seg(ZMapPane pane, ZMapColumn *seg, int index)
+{
+  return g_array_insert_val(pane->box2seg, index, seg);
+}
+
+ZMapFeature zMapPaneGetBox2Seg(ZMapPane pane, int index)
+{
+  return &g_array_index(pane->box2seg, ZMapFeatureStruct, index);
+}
+
+void zMapPaneFreeBox2Seg(ZMapPane pane)
+{
+  if (pane->box2seg)
+    g_array_free(pane->box2seg, TRUE);
+  return;
+}
+
+
+FooCanvasItem *zMapPaneGetGroup(ZMapPane pane)
+{
+  return pane->group;
+}
+
+
+FooCanvas *zMapPaneGetCanvas(ZMapPane pane)
+{
+  return pane->canvas;
+}
+
+GPtrArray *zMapPaneGetCols(ZMapPane pane)
+{
+  return &pane->cols;
+}
+
+
+int          zMapPaneGetDNAwidth       (ZMapPane pane)
+{
+  return pane->DNAwidth;
+}
+
+
+void zMapPaneSetDNAwidth       (ZMapPane pane, int width)
+{
+  pane->DNAwidth = 100;
+  return;
+}
+
+
+void zMapPaneSetStepInc        (ZMapPane pane, int incr)
+{
+  pane->step_increment = incr;
+  return;
+}
+
+
+int zMapPaneGetHeight(ZMapPane pane)
+{
+  return pane->graphHeight;
+}
+
+InvarCoord zMapPaneGetCentre(ZMapPane pane)
+{
+  return pane->centre;
+}
+
+
+float zMapPaneGetBPL (ZMapPane pane)
+{
+  return pane->basesPerLine;
+}
+
+
+/* all the zmappanexxx calls can go now, just reference window struct directly... */
+void drawWindow(ZMapWindow window)
+{
+  float offset = 5;
+  float maxOffset = 0;
+  int   frameCol, i, frame = -1;
+  float oldPriority = -100000;
+  
+
+  zMapPaneFreeBox2Col(pane);
+  zMapPaneFreeBox2Seg(pane);
+  zMapPaneNewBox2Col(pane, 500);
+  zMapPaneNewBox2Seg(pane, 500);
+
+
+  for (i = 0; i < zMapPaneGetCols(pane)->len; i++)
+  
+    { 
+      ZMapColumn *col = g_ptr_array_index(zMapPaneGetCols(pane), i);
+      float offsetSave = -1;
+     
+      /* frame : -1 -> No frame column.
+	         0,1,2 -> current frame.
+      */
+      
+      if ((frame == -1) && col->isFrame)
+	{
+	  /* First framed column, move into frame mode. */
+	  frame = 0;
+	  frameCol = i;
+	}
+      else if ((frame == 0 || frame == 1) && !col->isFrame)
+	{
+	  /* in frame mode and reached end of framed columns: backtrack */
+	  frame++;
+	  i = frameCol;
+	  col = g_ptr_array_index(zMapPaneGetCols(pane), i);
+	}
+      else if ((frame == 2) && !col->isFrame)
+	{
+	  /* in frame mode, reach end of framed columns, done last frame. */
+	  frame = -1;
+	}
+      else if (col->priority < oldPriority + 0.01001)
+	offsetSave = offset;
+     
+      (*col->drawFunc)(pane, col, &offset, frame);
+
+       oldPriority = col->priority;
+       if (offset > maxOffset)
+	maxOffset = offset;
+
+      if (offsetSave > 0)
+	offset = offsetSave;
+      
+    }
+  return;
+}
+  
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 
 
 /****************** end of file ************************************/
