@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  8 10:51 2004 (edgrif)
+ * Last edited: Nov 11 15:22 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.47 2004-11-09 14:45:42 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.48 2004-11-12 12:00:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #include <ZMap/zmapFeature.h>
 #include <zmapWindow_P.h>
 #include <ZMap/zmapDraw.h>
-#include <ZMap/zmapWindowDrawFeatures.h>
+
 
 #define XWIN_MAXSIZE 30000.0   /* XWindows height limit is about 32k */
 

@@ -28,17 +28,15 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  8 15:07 2004 (edgrif)
+ * Last edited: Nov 11 15:26 2004 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.10 2004-11-09 14:46:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.11 2004-11-12 12:01:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 
 #include <glib.h>
 #include <zmapWindow_P.h>
-#include <ZMap/zmapWindowDrawFeatures.h>
-#include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
 
 enum { NAME, START, END, TYPE, FEATURE_TYPE, N_COLUMNS };
