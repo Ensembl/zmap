@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 27 08:46 2004 (edgrif)
+ * Last edited: Jul 27 16:32 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.13 2004-07-27 12:01:46 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.14 2004-07-27 15:35:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -308,27 +308,23 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 /* Signal threads that we want data to stick into the ZMap */
 gboolean zMapViewLoad(ZMapView zmap_view, char *sequence)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  if (zmap_view->state == ZMAPVIEW_INIT
-      || zmap_view->state == ZMAPVIEW_RESETTING || zmap_view->state == ZMAPVIEW_DYING)
-    result = FALSE ;
-  else
+  /* Perhaps we should return a "wrong state" warning here.... */
+  if (zmap_view->state == ZMAPVIEW_RUNNING)
     {
-      if (zmap_view->state == ZMAPVIEW_NOT_CONNECTED)
-	result = zMapViewConnect(zmap_view) ;
+      /* THIS IS NOT NEARLY ENOUGH...NEED TO FREE ANY PREVIOUS SEQUENCE.... */
 
-      if (result)
+      if (sequence && *sequence)
 	{
-	  if (sequence && *sequence)
-	    {
-	      if (zmap_view->sequence)
-		g_free(zmap_view->sequence) ;
-	      zmap_view->sequence = g_strdup(sequence) ;
-	    }
-
-	  loadDataConnections(zmap_view, zmap_view->sequence) ;
+	  if (zmap_view->sequence)
+	    g_free(zmap_view->sequence) ;
+	  zmap_view->sequence = g_strdup(sequence) ;
 	}
+
+      loadDataConnections(zmap_view, zmap_view->sequence) ;
+
+      result = TRUE ;
     }
 
   return result ;
@@ -393,7 +389,7 @@ ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view)
   return features ;
 }
 
-
+/* N.B. we don't exclude ZMAPVIEW_DYING because caller may want to know that ! */
 ZMapViewState zMapViewGetStatus(ZMapView zmap_view)
 {
   return zmap_view->state ;
@@ -416,17 +412,27 @@ char *zMapViewGetStatusStr(ZMapViewState state)
 
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
 {
+  ZMapWindow window = NULL ;
+
   zMapAssert(view_window) ;
 
-  return view_window->window ;
+  if (view_window->parent_view->state != ZMAPVIEW_DYING)
+    window = view_window->window ;
+
+  return window ;
 }
 
 
 ZMapView zMapViewGetView(ZMapViewWindow view_window)
 {
+  ZMapView view = NULL ;
+
   zMapAssert(view_window) ;
 
-  return view_window->parent_view ;
+  if (view_window->parent_view->state != ZMAPVIEW_DYING)
+    view = view_window->parent_view ;
+
+  return view ;
 }
 
 
@@ -440,7 +446,7 @@ gboolean zMapViewDestroy(ZMapView zmap_view)
 
   if (zmap_view->state != ZMAPVIEW_DYING)
     {
-      /* init state has no GUI components, otherwise chop the GUI. */
+      /* All states except init have GUI components which need to be destroyed. */
       if (zmap_view->state != ZMAPVIEW_INIT)
 	killGUI(zmap_view) ;
 
@@ -566,6 +572,8 @@ static void zmapWindowCB(void *cb_data, int reason)
 }
 
 
+
+/* I KNOW NOTHING ABOUT ANY OF THIS IS ABOUT.....OR EVEN IF IT IS IN THE RIGHT PLACE.... */
 
 int zMapViewGetRegionLength(ZMapView view)
 {
