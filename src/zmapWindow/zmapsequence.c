@@ -1,3 +1,4 @@
+/*  Last edited: Apr 15 12:49 2004 (rnc) */
 /*  file: zmapsequence.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -24,11 +25,11 @@
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  */
 
-#include <wh/graph.h>
-#include <wh/gex.h>
-#include <wzmap/seqregion.h>
-#include <wzmap/zmapcontrol.h>
-#include <wh/dna.h>
+#include <../acedb/graph.h>
+#include <../acedb/gex.h>
+#include <../acedb/dna.h>
+#include <seqregion.h>
+#include <zmapcontrol.h>
 
 #ifdef ZMAP
 
