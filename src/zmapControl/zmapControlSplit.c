@@ -1,4 +1,4 @@
-/*  Last edited: Dec 20 09:51 2004 (edgrif) */
+/*  Last edited: Jan  7 12:14 2005 (edgrif) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -196,9 +196,6 @@ void addPane(ZMap zmap, char orientation)
 
   /* focus on the new pane */
   zmapRecordFocus(pane);
-  gtk_widget_grab_focus(pane->frame);
-
-
 
   /* if we do this first time, a little blank box appears before the main display */
   if (!zmap->firstTime) 
@@ -381,9 +378,8 @@ void closePane(GtkWidget *widget, gpointer data)
        * a canvas and scroll bars) after closing multiply-split windows, but life 
        * is short! */
       zmapRecordFocus(next->data);
-      gtk_widget_grab_focus(((ZMapPane)next->data)->frame);
 
-      
+
       resizePanes(zmap);                                                                                
     }
 
