@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jan  5 15:04 2005 (edgrif)
+ * Last edited: Jan  7 14:44 2005 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.24 2005-01-07 12:18:37 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.25 2005-01-10 09:53:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -36,6 +36,7 @@
 #include <gtk/gtk.h>
 #include <ZMap/zmapSys.h>
 #include <ZMap/zmapView.h>
+#include <ZMap/zmapNavigator.h>
 #include <ZMap/zmapControl.h>
 
 
@@ -104,38 +105,6 @@ typedef struct _ZMapStruct
 
 
 
-/* callback we can register with zmapnavigator, gets called when user releases the scrollbar. */
-typedef void (*ZMapNavigatorScrollValue)(void *user_data, double start, double end) ;
-
-
-/* Data associated with the navigator. */
-typedef struct _ZMapNavStruct 
-{
-  ZMapSpanStruct parent_span ;				    /* Start/end of parent of sequence. */
-  ZMapMapBlockStruct sequence_to_parent ;		    /* how this sequence maps to parent. */
-
-  /* The region locator showing the position/extent of this sequence region
-   * within the total sequence. */
-  GtkWidget *navVBox ;
-  GtkWidget *navVScroll ;
-  GtkWidget *topLabel ;
-  GtkWidget *botLabel ;
-
-  /* The window locator showing the position/extent of the window within the region, this changes
-   * as the user zooms and when they move the scrolling window via the special keys. */
-  GtkWidget *wind_vbox ;
-  GtkWidget *wind_scroll ;
-  GtkWidget *wind_top_label ;
-  GtkWidget *wind_bot_label ;
-  double wind_top, wind_bot ;
-
-  /* Caller can register a call back which we call when user releases button when moving window
-   * locator. */
-  ZMapNavigatorScrollValue cb_func ;
-  void *user_data ;
-
-} ZMapNavStruct ;
-
 
 
 /* Data associated with one scrolling pane. */
@@ -166,16 +135,6 @@ void zmapControlWindowDoTheZoom(ZMap zmap, double zoom) ;
 void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status) ;
 
 
-/* NOTE THIS CANNOT BE COMPLETE...WHERE IS THE DESTRUCTOR.....We could split out navigator
- * into a separate package, which would be sensible actually, if only so we can have shorter
- * names. */
-ZMapNavigator zmapControlNavigatorCreate(GtkWidget **top_widg_out) ;
-void zmapControlNavigatorSetWindowCallback(ZMapNavigator navigator,
-					   ZMapNavigatorScrollValue cb_func, void *user_data) ;
-void zmapControlNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos) ;
-void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext features) ;
-
-
 
 void zmapControlTopLevelKillCB(ZMap zmap) ;
 void zmapControlLoadCB        (ZMap zmap) ;
@@ -191,25 +150,10 @@ void zmapRecordFocus(ZMapPane pane) ;
 ZMapPane zmapAddPane(ZMap zmap, char orientation) ;
 
 
-
-
 GtkWidget *splitPane(ZMap zmap) ;
 GtkWidget *splitHPane(ZMap zmap) ;
 
-
 void  closePane       (GtkWidget *widget, gpointer data);
-
-
-
-void  drawNavigator  (ZMap zmap) ;
-void  drawWindow     (ZMapPane pane);
-void  zMapZoomToolbar(ZMapWindow window);
-void  navScale       (FooCanvas *canvas, float offset, int start, int end);
-
-
-
-void         navUpdate                 (GtkAdjustment *adj, gpointer p);
-void         navChange                 (GtkAdjustment *adj, gpointer p);
 
 
 #endif /* !ZMAP_CONTROL_P_H */
