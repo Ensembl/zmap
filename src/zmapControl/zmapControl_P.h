@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Dec 16 15:59 2004 (edgrif)
+ * Last edited: Jan  5 15:04 2005 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.23 2004-12-20 10:59:24 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.24 2005-01-07 12:18:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -103,6 +103,11 @@ typedef struct _ZMapStruct
 
 
 
+
+/* callback we can register with zmapnavigator, gets called when user releases the scrollbar. */
+typedef void (*ZMapNavigatorScrollValue)(void *user_data, double start, double end) ;
+
+
 /* Data associated with the navigator. */
 typedef struct _ZMapNavStruct 
 {
@@ -124,6 +129,10 @@ typedef struct _ZMapNavStruct
   GtkWidget *wind_bot_label ;
   double wind_top, wind_bot ;
 
+  /* Caller can register a call back which we call when user releases button when moving window
+   * locator. */
+  ZMapNavigatorScrollValue cb_func ;
+  void *user_data ;
 
 } ZMapNavStruct ;
 
@@ -145,6 +154,7 @@ typedef struct _ZMapPaneStruct
 
 
 
+
 /* Functions internal to zmapControl. */
 gboolean   zmapControlWindowCreate     (ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap) ;
@@ -156,8 +166,12 @@ void zmapControlWindowDoTheZoom(ZMap zmap, double zoom) ;
 void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status) ;
 
 
-/* NOTE THIS CANNOT BE COMPLETE...WHERE IS THE DESTRUCTOR..... */
+/* NOTE THIS CANNOT BE COMPLETE...WHERE IS THE DESTRUCTOR.....We could split out navigator
+ * into a separate package, which would be sensible actually, if only so we can have shorter
+ * names. */
 ZMapNavigator zmapControlNavigatorCreate(GtkWidget **top_widg_out) ;
+void zmapControlNavigatorSetWindowCallback(ZMapNavigator navigator,
+					   ZMapNavigatorScrollValue cb_func, void *user_data) ;
 void zmapControlNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos) ;
 void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext features) ;
 
