@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul  1 09:52 2004 (edgrif)
+ * Last edited: Jul  2 14:06 2004 (rnc)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.12 2004-07-01 09:25:28 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.13 2004-07-02 13:37:00 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -305,6 +305,446 @@ void zmapControlNewCB(ZMap zmap, char *testing_text)
     }
 
   return ;
+}
+
+
+/* For now, just moving functions from zmapWindow/zmapcontrol.c */
+
+/* zMapDisplay
+ * Main entry point for the zmap code.  Called by zMapWindowCreate.
+ * The first param is the display window, then two callback routines to 
+ * allow zmap to interrogate a data-source. Then a void pointer to a
+ * structure used in the process.  Although zmap doesn't need to know
+ * directly about this structure, it needs to pass the pointer back
+ * during callbacks, so AceDB can use it. 
+ *
+ * This will all have to change, now we're acedb-independent.
+ *
+ * We create the display window, then call the Activate 
+ * callback routine to get the data, passing it a ZMapRegion in
+ * which to create fmap-flavour segs for us to display, then
+ * build the columns in the display.
+ */
+
+gboolean zMapDisplay(ZMap        zmap,
+		 Activate_cb act_cb,
+		 Calc_cb     calc_cb,
+		 void       *region,
+		 char       *seqspec, 
+		 char       *fromspec, 
+		 gboolean        isOldGraph)
+{
+  ZMapWindow window = zmap->zMapWindow;
+
+  //  Coord x1, x2;    
+  //  zMapWindowSetHandle(window);
+
+  zMapWindowSetFrame(window, zmap->view_parent);        
+  zMapWindowSetFirstTime(window, TRUE);                 /* used in addPane() */
+
+  /* make the window in which to display the data */
+  createZMapWindow(window);
+
+  drawNavigator(window);
+
+  drawWindow(zMapWindowGetFocuspane(window));
+
+  return TRUE;
+
+}
+
+
+/* createZMapWindow ***************************************************************
+ * Creates the root node in the panesTree (which helps keep track of all the
+ * display panels).  The root node has no data, only children.
+ * 
+ * Puts an hbox into vbox1, then packs 2 toolbars into the hbox.  We may not want
+ * to keep it like that.  Then puts an hpane below that and stuffs the navigator
+ * in as child1.  Calls zMapZoomToolbar to build the rest and puts what it does
+ * in as child2.
+ */
+
+void createZMapWindow(ZMapWindow window)
+{
+  ZMapPane pane = NULL;
+ 
+  zMapWindowSetPanesTree(window, g_node_new(pane));
+  zMapWindowSetHpane(window, gtk_hpaned_new());
+                                                                                           
+  /* After the toolbars comes an hpane, so the user can adjust the width
+   * of the navigator pane */
+  gtk_container_add(GTK_CONTAINER(zMapWindowGetFrame(window)), zMapWindowGetHpane(window));
+                                                                                           
+  zMapWindowSetNavigator(window, gtk_scrolled_window_new(NULL, NULL));
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(zMapWindowGetNavigator(window)), 
+				 GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+  gtk_widget_set_size_request(zMapWindowGetNavigator(window), 100, -1);
+
+  gtk_paned_pack1(GTK_PANED(zMapWindowGetHpane(window)), 
+		  zMapWindowGetNavigator(window),
+                  TRUE, TRUE);
+                                                                                           
+  /* create the splittable pane and pack it into the hpane as child2. */
+  zMapWindowSetDisplayVbox(window, gtk_vbox_new(FALSE,0));
+
+  addPane(window, 'v');
+
+  gtk_widget_set_size_request(zMapWindowGetDisplayVbox(window), 750, -1);
+  gtk_paned_pack2(GTK_PANED(zMapWindowGetHpane(window)), 
+		  zMapWindowGetDisplayVbox(window)
+		  , TRUE, TRUE);
+
+  return;
+}
+
+
+
+void drawWindow(ZMapPane pane)
+{
+  float offset = 5;
+  float maxOffset = 0;
+  int   frameCol, i, frame = -1;
+  float oldPriority = -100000;
+  
+  zMapPaneFreeBox2Col(pane);
+  zMapPaneFreeBox2Seg(pane);
+  zMapPaneNewBox2Col(pane, 500);
+  zMapPaneNewBox2Seg(pane, 500);
+
+  for (i = 0; i < zMapPaneGetCols(pane)->len; i++)
+   
+    { 
+      ZMapColumn *col = g_ptr_array_index(zMapPaneGetCols(pane), i);
+      float offsetSave = -1;
+     
+      /* frame : -1 -> No frame column.
+	         0,1,2 -> current frame.
+      */
+      
+      if ((frame == -1) && col->isFrame)
+	{
+	  /* First framed column, move into frame mode. */
+	  frame = 0;
+	  frameCol = i;
+	}
+      else if ((frame == 0 || frame == 1) && !col->isFrame)
+	{
+	  /* in frame mode and reached end of framed columns: backtrack */
+	  frame++;
+	  i = frameCol;
+	  col = g_ptr_array_index(zMapPaneGetCols(pane), i);
+	}
+      else if ((frame == 2) && !col->isFrame)
+	{
+	  /* in frame mode, reach end of framed columns, done last frame. */
+	  frame = -1;
+	}
+      else if (col->priority < oldPriority + 0.01001)
+	offsetSave = offset;
+     
+      (*col->drawFunc)(pane, col, &offset, frame);
+
+       oldPriority = col->priority;
+       if (offset > maxOffset)
+	maxOffset = offset;
+
+      if (offsetSave > 0)
+	offset = offsetSave;
+      
+    }
+  return;
+}
+  
+	      
+ 
+/* addPane is called each time we add a new pane. Creates a new frame, scrolled
+ * window and canvas.  First time through it sticks them in the window->zoomvbox, 
+ * thereafter it packs them into the lower part of the focus pane.
+ *
+ * Splitting goes like this: we make a (h or v) pane, add a new frame to the child1 
+ * position of that, then reparent the scrolled window containing the canvas into 
+ * the new frame. That's the shrinkPane() function. 
+ * Then in addPane we add a new frame in the child2 position, and into that we
+ * load a new scrolled window and canvas. 
+*/
+void addPane(ZMapWindow window, char orientation)
+{
+  ZMapPane pane = (ZMapPane)malloc(sizeof(ZMapPaneStruct));
+  GtkAdjustment *adj; 
+  GtkWidget *w;
+  GNode *node = NULL;
+
+  /* set up ZMapPane for this window */
+  pane->window = window;
+  pane->DNAwidth = 100;
+  pane->step_increment = 10;
+
+  pane->box2col = g_array_sized_new(FALSE, TRUE, sizeof(ZMapColumn), 50);
+  pane->frame          = gtk_frame_new(NULL);
+  pane->scrolledWindow = gtk_scrolled_window_new (NULL, NULL);
+
+  /* The idea of the GNode tree is that panes split horizontally, ie
+   * one above the other, end up as siblings in the tree, while panes
+   * split vertically (side by side) are parents/children.  In theory
+   * this enables us to get the sizing right. In practice it's not
+   * perfect yet.*/
+  if (zMapWindowGetFirstTime(window)) 
+    { 
+      pane->zoomFactor   = 1;
+      g_node_append_data(zMapWindowGetPanesTree(window), pane);
+    }
+  else
+    {
+      pane->zoomFactor   = zMapWindowGetFocuspane(window)->zoomFactor;
+      node = g_node_find (zMapWindowGetPanesTree(window),
+			  G_IN_ORDER,
+			  G_TRAVERSE_ALL,
+			  zMapWindowGetFocuspane(window));
+      if (orientation == 'h')
+	  g_node_append_data(node->parent, pane);
+      else
+	  g_node_append_data(node, pane);
+    }
+
+  /* draw the canvas */
+  gdk_rgb_init();
+  w = foo_canvas_new();
+
+  pane->canvas = FOO_CANVAS(w);
+  foo_canvas_set_scroll_region(pane->canvas, 0.0, 0.0, 1000, 1000);
+  pane->background = foo_canvas_item_new(foo_canvas_root(pane->canvas),
+	 		foo_canvas_rect_get_type(),
+			"x1",(double)0,
+			"y1",(double)0,
+			"x2",(double)1000,
+			"y2",(double)1000,
+		 	"fill_color", "white",
+			"outline_color", "dark gray",
+			NULL);
+  
+  /* when the user clicks a button in the view, call recordFocus() */
+  g_signal_connect (GTK_OBJECT (pane->canvas), "button_press_event",
+		    GTK_SIGNAL_FUNC (recordFocus), pane);
+
+  pane->group = foo_canvas_item_new(foo_canvas_root(pane->canvas),
+                        foo_canvas_group_get_type(),
+                        "x", (double)100,
+                        "y", (double)100 ,
+                        NULL);
+
+  /* add the canvas to the scrolled window */
+  gtk_container_add(GTK_CONTAINER(pane->scrolledWindow),w);
+
+  /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
+  /* Using a member of ZMapPane means I can adjust it if necessary when we zoom. */
+  GTK_LAYOUT (w)->vadjustment->step_increment = pane->step_increment;
+  GTK_LAYOUT (w)->hadjustment->step_increment = pane->step_increment;
+
+  /* add the scrolled window to the frame */
+  gtk_container_add(GTK_CONTAINER(pane->frame),pane->scrolledWindow);
+
+  /* First time through, we add the frame to the main vbox. 
+   * Subsequently it goes in the lower half of the current pane. */
+  if (zMapWindowGetFirstTime(window))
+    gtk_box_pack_start(GTK_BOX(zMapWindowGetDisplayVbox(window)), pane->frame, TRUE, TRUE, 0);
+  else
+    gtk_paned_pack2(GTK_PANED(zMapWindowGetFocuspane(window)->pane), pane->frame, TRUE, TRUE);
+
+
+  /* always show scrollbars, however big the display */
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(pane->scrolledWindow),
+       GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
+
+  adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(pane->scrolledWindow)); 
+
+  //  g_signal_connect(GTK_OBJECT(adj), "value_changed", GTK_SIGNAL_FUNC(navUpdate), (gpointer)(pane));
+  //  g_signal_connect(GTK_OBJECT(adj), "changed", GTK_SIGNAL_FUNC(navChange), (gpointer)(pane)); 
+
+  /* focus on the new pane */
+  recordFocus(NULL, NULL, pane);
+  gtk_widget_grab_focus(pane->frame);
+
+  /* if we do this first time, a little blank box appears before the main display */
+  if (!zMapWindowGetFirstTime(window)) 
+    gtk_widget_show_all (zMapWindowGetFrame(window));
+
+  zMapWindowSetFirstTime(window, FALSE);
+
+  zmMainScale(pane->canvas, 30, 0, 1000);
+  return;
+}
+
+
+void drawNavigator(ZMapWindow window)
+{
+  GtkWidget *w;
+  GtkRequisition req;
+  
+  w = foo_canvas_new();
+
+  zMapWindowSetNavCanvas(window, FOO_CANVAS(w));
+  foo_canvas_set_scroll_region(zMapWindowGetNavCanvas(window), 0.0, 0.0, 200.0, 500.0);
+ 
+  foo_canvas_item_new(foo_canvas_root(zMapWindowGetNavCanvas(window)),
+			foo_canvas_rect_get_type(),
+			"x1",(double)0.0,
+			"y1",(double)0.0,
+			"x2",(double)200.0,
+			"y2",(double)500.0,
+			"fill_color", "white",
+			NULL);
+
+  gtk_container_add(GTK_CONTAINER(zMapWindowGetNavigator(window)), w);
+
+}
+
+/* I'll need to put this somewhere else soon enough */
+void navScale(FooCanvas *canvas, float offset, int start, int end)
+{
+  int x, width = 5, count;
+  FooCanvasItem *group;
+
+  group = foo_canvas_item_new(foo_canvas_root(canvas),
+			foo_canvas_group_get_type(),
+			"x",(double)offset,
+			"y",(double)0.0,
+			NULL);
+ 
+  for (x = start, count = 1 ; x < end ; x += 10, count++)
+    {
+      drawLine(FOO_CANVAS_GROUP(group), offset-5, x, offset, x, "black", 1.0);
+      char text[25];
+      sprintf(text,"%dk", x);
+      if (count == 1)
+	displayText(FOO_CANVAS_GROUP(group), text, offset + 20, x); 
+      if (count > 9) count = 0;
+    }
+			     
+  drawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, end, "black", 1.0);
+  return;
+
+}
+
+
+
+/* Not entirely convinced this is the right place for these
+** public functions accessing private structure members
+*/
+int zMapWindowGetHeight(ZMapWindow window)
+{
+  return zMapWindowGetFocuspane(window)->graphHeight;
+}
+
+// ZMapPane functions
+
+void zMapPaneNewBox2Col(ZMapPane pane, int elements)
+{
+  pane->box2col = g_array_sized_new(FALSE, TRUE, sizeof(ZMapColumn), elements);
+
+  return ;
+}
+
+
+
+GArray *zMapPaneSetBox2Col(ZMapPane pane, ZMapColumn *col, int index)
+{
+  return g_array_insert_val(pane->box2col, index, col);
+}
+
+ZMapColumn *zMapPaneGetBox2Col(ZMapPane pane, int index)
+{
+  return &g_array_index(pane->box2col, ZMapColumn, index);
+}
+
+
+void zMapPaneFreeBox2Col(ZMapPane pane)
+{
+  if (pane->box2col)
+    g_array_free(pane->box2col, TRUE);
+  return;
+}
+
+
+void zMapPaneNewBox2Seg(ZMapPane pane, int elements)
+{
+  pane->box2seg = g_array_sized_new(FALSE, TRUE, sizeof(ZMapFeatureStruct), elements);
+
+  return ;
+}
+
+GArray *zMapPaneSetBox2Seg(ZMapPane pane, ZMapColumn *seg, int index)
+{
+  return g_array_insert_val(pane->box2seg, index, seg);
+}
+
+ZMapFeature zMapPaneGetBox2Seg(ZMapPane pane, int index)
+{
+  return &g_array_index(pane->box2seg, ZMapFeatureStruct, index);
+}
+
+void zMapPaneFreeBox2Seg(ZMapPane pane)
+{
+  if (pane->box2seg)
+    g_array_free(pane->box2seg, TRUE);
+  return;
+}
+
+
+FooCanvasItem *zMapPaneGetGroup(ZMapPane pane)
+{
+  return pane->group;
+}
+
+
+ZMapWindow zMapPaneGetZMapWindow(ZMapPane pane)
+{
+  return pane->window;
+}
+
+FooCanvas *zMapPaneGetCanvas(ZMapPane pane)
+{
+  return pane->canvas;
+}
+
+GPtrArray *zMapPaneGetCols(ZMapPane pane)
+{
+  return &pane->cols;
+}
+
+
+int          zMapPaneGetDNAwidth       (ZMapPane pane)
+{
+  return pane->DNAwidth;
+}
+
+
+void zMapPaneSetDNAwidth       (ZMapPane pane, int width)
+{
+  pane->DNAwidth = 100;
+  return;
+}
+
+void zMapPaneSetStepInc        (ZMapPane pane, int incr)
+{
+  pane->step_increment = incr;
+  return;
+}
+
+
+int zMapPaneGetHeight(ZMapPane pane)
+{
+  return pane->graphHeight;
+}
+
+InvarCoord zMapPaneGetCentre(ZMapPane pane)
+{
+  return pane->centre;
+}
+
+
+float zMapPaneGetBPL (ZMapPane pane)
+{
+  return pane->basesPerLine;
 }
 
 
