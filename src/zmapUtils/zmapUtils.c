@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Jun 23 15:17 2004 (edgrif)
+ * Last edited: Jul  1 16:50 2004 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.2 2004-06-25 13:40:56 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.3 2004-07-02 18:24:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,28 +36,74 @@
 
 
 
+/*! @defgroup zmaputils   zMapUtils: utilities for ZMap
+ * @{
+ * 
+ * \brief  Utilities for ZMap.
+ * 
+ * zMapUtils routines provide services such as debugging, testing and logging,
+ * string handling, file utilities and GUI functions. They are general routines
+ * used by all of ZMap.
+ *
+ *  */
+
+
+
+
+/*!
+ * Returns a single number representing the Version/Release/Update of the ZMap code.
+ *
+ * @param   void  None.
+ * @return        The version as an integer.
+ *  */
 int zMapGetVersion(void)
 {
   return ZMAP_MAKE_VERSION_NUMBER(ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
 }
 
 
+/*!
+ * Returns a string representing the Version/Release/Update of the ZMap code.
+ *
+ * @param   void  None.
+ * @return        The version number as a string.
+ *  */
 char *zMapGetVersionString(void)
 {
   return ZMAP_MAKE_VERSION_STRING(ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
 }
 
+
+/*!
+ * Returns a string which is the name of the ZMap application.
+ *
+ * @param   void  None.
+ * @return        The applications name as a string.
+ *  */
 char *zMapGetAppName(void)
 {
   return ZMAP_TITLE ;
 }
 
+
+/*!
+ * Returns a string which is a brief decription of the ZMap application.
+ *
+ * @param   void  None.
+ * @return        The applications description as a string.
+ *  */
 char *zMapGetAppTitle(void)
 {
   return ZMAP_MAKE_TITLE_STRING(ZMAP_TITLE, ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
 }
 
 
+/*!
+ * Returns a copyright string for the ZMap application.
+ *
+ * @param void  None.
+ * @return      The copyright as a string.
+ *  */
 char *zMapGetCopyrightString(void)
 {
   return ZMAP_COPYRIGHT_STRING(ZMAP_TITLE, ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE, ZMAP_DESCRIPTION) ;
@@ -65,6 +111,15 @@ char *zMapGetCopyrightString(void)
 
 
 
+/*!
+ * Formats and displays a message, note that the message may be displayed in a window
+ * or at the terminal depending on how the message system has been initialised.
+ *
+ * @param msg_type      The type of message: information, warning etc.
+ * @param format        A printf() style format string.
+ * @param ...           The parameters matching the format string.
+ * @return              nothing
+ *  */
 void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
 {
   va_list args ;
@@ -81,3 +136,6 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
 
   return ;
 }
+
+/*! @} end of zmaputils docs. */
+
