@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 22 14:08 2004 (rnc)
+ * Last edited: Nov 15 10:14 2004 (rnc)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.10 2004-09-27 09:18:57 rnc Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.11 2004-11-15 10:14:46 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,11 +56,6 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 /* createNavViewWindow ***************************************************************
  * Creates the root node in the panesTree (which helps keep track of all the
  * display panels).  The root node has no data, only children.
- * 
- * Puts an hbox into vbox1, then packs 2 toolbars into the hbox.  We may not want
- * to keep it like that.  Then puts an hpane below that and stuffs the navigator
- * in as child1.  Calls zMapZoomToolbar to build the rest and puts what it does
- * in as child2.
  */
 static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 {
