@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Nov 12 11:45 2004 (edgrif)
+ * Last edited: Dec 13 15:15 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.16 2004-11-12 11:54:54 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.17 2004-12-13 15:16:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -191,15 +191,21 @@ ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapProtocolAny requ
       /* OK, THIS IS WHERE WE NEED TO DECODE THE REQUESTS...... */
       ZMapProtocolAny req_any = (ZMapProtocolAny)request ;
 
+
+
+      /* This switch is pointless at the moment but I expect to have do some preprocessing on some
+       * requests at some time. */
       switch (req_any->request)
 	{
+	case ZMAP_PROTOCOLREQUEST_FEATURES:
 	case ZMAP_PROTOCOLREQUEST_SEQUENCE:
+	case ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE:
 	  {
 	    ZMapProtocoltGetFeatures get_features = (ZMapProtocoltGetFeatures)req_any ;
 
 
 	    result = server->last_response
-	      = (server->funcs->request)(server->server_conn, &(get_features->feature_context_out)) ;
+	      = (server->funcs->request)(server->server_conn, get_features) ;
 
 	    break ;
 	  }
