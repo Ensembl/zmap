@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  6 13:40 2004 (rnc)
+ * Last edited: Dec 13 10:25 2004 (rnc)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.18 2004-12-06 14:17:22 rnc Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.19 2004-12-13 10:26:57 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -195,15 +195,10 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
       if (width < strlen (cp))
         width = strlen (cp) ;
       zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", (29.0 - (5.0 * width)), scalePos); 
-
-      /* There's a bug whereby very long objects are corrupted when you zoom right in,
-      ** so instead of a single long line, we draw it in several short sections. */  
-      if (scalePos > start)
-	zmapDrawLine(FOO_CANVAS_GROUP(group), 40.0, (scalePos-iUnit), 40.0, scalePos, &black, 1.0);
     }		     
   
-  /* draw the last segment of the vertical line of the scalebar. */
-  zmapDrawLine(FOO_CANVAS_GROUP(group), 40.0, (scalePos-iUnit), 40.0, end, &black, 1.0);
+  /* draw the vertical line of the scalebar. */
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 40.0, start, 40.0, end, &black, 1.0);
 
   /* minor ticks */
   for (seqPos = start, scalePos = start; seqPos < end; seqPos += iSubunit, scalePos += iSubunit)
