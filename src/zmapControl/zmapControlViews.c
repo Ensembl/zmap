@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Jan 24 11:11 2005 (edgrif)
+ * Last edited: Jan 25 17:41 2005 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.1 2005-01-24 11:52:41 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.2 2005-01-25 17:48:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -52,8 +52,8 @@ typedef struct
 
 
 
-/* GTK didn't introduce a function call to do this until at least release 2.6, I hope this 
- * is correct, no easy way to check exactly when function calls were introduced. */
+/* GTK didn't introduce a function call to get at pane children until at least release 2.6,
+ * I hope this is correct, no easy way to check exactly when function calls were introduced. */
 #if ((GTK_MAJOR_VERSION == 2) && (GTK_MINOR_VERSION == 6))
 #define myGetChild(WIDGET, CHILD_NUMBER)         \
   (gtk_paned_get_child##CHILD_NUMBER(GTK_PANED(WIDGET)))
@@ -63,21 +63,9 @@ typedef struct
 #endif
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void  shrinkPane      (ZMap zmap) ;
-static void  resizePanes     (ZMap zmap) ;
-static void  resizeOnePane   (GNode     *node, gpointer user_data);
-static void  shrinkHPane     (ZMap zmap);
-static int   unfocus         (GNode     *node, gpointer data);
-static void  exciseNode      (GNode     *node);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 static ZMapPaneChild whichChildOfPane(GtkWidget *child) ;
 static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame, GtkOrientation orientation) ;
 static GtkWidget *closePane(GtkWidget *close_frame) ;
-
-
 
 static ZMapViewWindow widget2ViewWindow(GHashTable* hash_table, GtkWidget *widget) ;
 static void findViewWindow(gpointer key, gpointer value, gpointer user_data) ;
@@ -86,36 +74,48 @@ static void findViewWindow(gpointer key, gpointer value, gpointer user_data) ;
 
 
 /* Not a great name as it may not split and orientation may be ignored..... */
-void zmapControlSplitInsertWindow(ZMap zmap, GtkOrientation orientation)
+void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation orientation)
 {
-  GtkWidget *curr_view, *view_container ;
+  GtkWidget *curr_container, *view_container ;
   ZMapViewWindow view_window ;
   ZMapView zmap_view ;
   ZMapWindow zmap_window ;
 
+  /* If there is a focus window then that will be the one we split and we need to find out
+   * the container parent of that canvas. */
   if (zmap->focus_viewwindow)
+    curr_container = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
+  else
+    curr_container = NULL ;
+
+  /* If we are adding a new view then there won't yet be a window for it, if we are splitting
+   * an existing view then if it has a window we need to split that, otherwise we need to add
+   * the first window to that view. */
+  zmap_window = NULL ;
+  if (new_view)
     {
-      curr_view = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
-      zmap_view = zMapViewGetView(zmap->focus_viewwindow) ;
-      zmap_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+      zmap_view = new_view ;
     }
   else
     {
-      curr_view = NULL ;
-
-      /* UGH, I don't like this, seems a bit addhoc to just grab the only view.... */
-      zMapAssert((g_list_length(zmap->view_list) == 1)) ;
-      zmap_view = (ZMapView)(g_list_first(zmap->view_list)->data) ;
-
-      zmap_window = NULL ;
+      if (zmap->focus_viewwindow)
+	{
+	  zmap_view = zMapViewGetView(zmap->focus_viewwindow) ;
+	  zmap_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+	}
+      else
+	{
+	  /* UGH, I don't like this, seems a bit addhoc to just grab the only view.... */
+	  zMapAssert((g_list_length(zmap->view_list) == 1)) ;
+	  zmap_view = (ZMapView)(g_list_first(zmap->view_list)->data) ;
+	}
     }
 
-  view_container = zmapControlAddWindow(zmap, curr_view, orientation) ;
+  /* Add a new container that will hold the new view window. */
+  view_container = zmapControlAddWindow(zmap, curr_container, orientation) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  view_window = zMapViewAddWindow(zmap_view, view_container, zmap_window) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  /* Either add a completely new view window to the container or copy an existing view
+   * window into it. */
   if (!zmap_window)
     view_window = zMapViewMakeWindow(zmap_view, view_container) ;
   else
@@ -131,7 +131,6 @@ void zmapControlSplitInsertWindow(ZMap zmap, GtkOrientation orientation)
    * the user will not get visual feedback that a window is the focus window. */
   if (!zmap->focus_viewwindow)
     zmapControlSetWindowFocus(zmap, view_window) ;
-
 
   /* We'll need to update the display..... */
   gtk_widget_show_all(zmap->toplevel) ;
@@ -327,36 +326,37 @@ static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame, GtkOrientatio
 
 
 /* Close the container in one half of a pane, reparent the container in the other half into
- * the that panes parent, get rid of the original pane. Returns the container that we keep. */
+ * the that panes parent, get rid of the original pane.
+ * Returns a new/current direct container of a view. */
 static GtkWidget *closePane(GtkWidget *close_frame)
 {
-  GtkWidget *keep_frame ;
+  GtkWidget *keep_container, *keep_frame = NULL ;
   GtkWidget *parent_pane, *parents_parent ;
   ZMapPaneChild close_child, parent_parent_child ;
 
   parent_pane = gtk_widget_get_parent(close_frame) ;
   zMapAssert(GTK_IS_PANED(parent_pane)) ;
 
-  /* Find out which child of the pane the close_frame is and hence record the frame we want to keep. */
+  /* Find out which child of the pane the close_frame is and hence record the container
+   * (n.b. might be another frame or might be a pane containing more panes/frames)
+   * frame we want to keep. */
   close_child = whichChildOfPane(close_frame) ;
   if (close_child == ZMAP_PANE_CHILD_1)
-    keep_frame = myGetChild(parent_pane, 2) ;
+    keep_container = myGetChild(parent_pane, 2) ;
   else
-    keep_frame = myGetChild(parent_pane, 1) ;
+    keep_container = myGetChild(parent_pane, 1) ;
 
 
-  /* This seems tacky to be at this level......... */
-
-
-  /* Remove the keep_frame from its container, we will insert it into the place where
+  /* Remove the keep_container from its container, we will insert it into the place where
    * its parent was originally. */
-  keep_frame = gtk_widget_ref(keep_frame) ;
-  gtk_container_remove(GTK_CONTAINER(parent_pane), keep_frame) ;
+  keep_container = gtk_widget_ref(keep_container) ;
+  zMapAssert(GTK_IS_PANED(keep_container) || GTK_IS_FRAME(keep_container)) ;
+  gtk_container_remove(GTK_CONTAINER(parent_pane), keep_container) ;
 
 
   /* Find out what the parent of the parent_pane is, if its not a pane then we simply insert
-   * keep_frame into it, if it is a pane, we need to know which child of it our parent_pane
-   * is so we insert the keep_frame in the correct place. */
+   * keep_container into it, if it is a pane, we need to know which child of it our parent_pane
+   * is so we insert the keep_container in the correct place. */
   parents_parent = gtk_widget_get_parent(parent_pane) ;
   if (GTK_IS_PANED(parents_parent))
     {
@@ -367,24 +367,31 @@ static GtkWidget *closePane(GtkWidget *close_frame)
   /* Destroy the parent_pane, this will also destroy the close_frame as it is still a child. */
   gtk_widget_destroy(parent_pane) ;
 
-
-  /* Put the keep frame into the parent_parent. */
+  /* Put the keep_container into the parent_parent. */
   if (!GTK_IS_PANED(parents_parent))
     {
-      gtk_box_pack_start(GTK_BOX(parents_parent), keep_frame, TRUE, TRUE, 0) ;
+      gtk_box_pack_start(GTK_BOX(parents_parent), keep_container, TRUE, TRUE, 0) ;
     }
   else
     {
       if (parent_parent_child == ZMAP_PANE_CHILD_1)
-	gtk_paned_pack1(GTK_PANED(parents_parent), keep_frame, TRUE, TRUE) ;
+	gtk_paned_pack1(GTK_PANED(parents_parent), keep_container, TRUE, TRUE) ;
       else
-	gtk_paned_pack2(GTK_PANED(parents_parent), keep_frame, TRUE, TRUE) ;
-
+	gtk_paned_pack2(GTK_PANED(parents_parent), keep_container, TRUE, TRUE) ;
     }
 
+  /* Now dereference the keep_container as its now back in a container. */
+  gtk_widget_unref(keep_container) ;
 
-  /* Now dereference the keep_frame as its now back in a container. */
-  gtk_widget_unref(keep_frame) ;
+  /* The keep_container may be a frame _but_ it may also be a pane and its children may be
+   * panes so we have to go down until we find a child that is a frame to return as the
+   * new current frame. (Note that we arbitrarily go down the child1 children until we find
+   * a frame.) */
+  while (GTK_IS_PANED(keep_container))
+    {
+      keep_container = myGetChild(keep_container, 1) ;
+    }
+  keep_frame = keep_container ;
 
   return keep_frame ;
 }
@@ -467,22 +474,6 @@ static ZMapPaneChild whichChildOfPane(GtkWidget *child)
   pane_parent = gtk_widget_get_parent(child) ;
   zMapAssert(GTK_IS_PANED(pane_parent)) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* These calls look like they are only in a later version of GTK2 so I have to access the
-   * paned struct directly here...sigh.... */
-  if (gtk_paned_get_child1(GTK_PANED(pane_parent)) == child)
-    close_child = ZMAP_PANE_CHILD_1 ;
-  else if (gtk_paned_get_child2(GTK_PANED(pane_parent)) == child)
-    close_child = ZMAP_PANE_CHILD_2 ;
-  zMapAssert(close_child != ZMAP_PANE_NONE) ;
-
-  if ((GTK_PANED(pane_parent))->child1 == child)
-    close_child = ZMAP_PANE_CHILD_1 ;
-  else if ((GTK_PANED(pane_parent))->child2 == child)
-    close_child = ZMAP_PANE_CHILD_2 ;
-  zMapAssert(close_child != ZMAP_PANE_NONE) ;		    /* Should never happen. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   if (myGetChild(pane_parent, 1) == child)
     pane_child = ZMAP_PANE_CHILD_1 ;
   else if (myGetChild(pane_parent, 2) == child)
@@ -492,389 +483,3 @@ static ZMapPaneChild whichChildOfPane(GtkWidget *child)
   return pane_child ;
 }
 
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zmapControlUnSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
-{
-  GtkWidget *viewwindow_frame ;
-  ZMapWindow window ;
-  ZMapWindowZoomStatus zoom_status ;
-  GdkColor color ;
-
-  viewwindow_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, new_viewwindow) ;
-
-  gtk_frame_set_shadow_type(GTK_FRAME(viewwindow_frame), GTK_SHADOW_OUT) ;
-
-  gtk_widget_modify_bg(GTK_WIDGET(viewwindow_frame), GTK_STATE_NORMAL, NULL) ;
-  gtk_widget_modify_fg(GTK_WIDGET(viewwindow_frame), GTK_STATE_NORMAL, NULL) ;
-
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-
-
-
-/* Returns a widget that can be used as the parent of any child to be inserted into the new pane. */
-GtkWidget *splitHPane(ZMap zmap)
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapPane new_pane ;
-
-  /* slim the old pane */
-  shrinkHPane(zmap);
-
-  /* add a new pane next to the old one */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  new_pane = zmapAddPane(zmap, 'v');
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* focus on the new pane */
-  zmapRecordFocus(new_pane) ;
-
-
-  /* I'm not happy this is right Rob, shouldn't this actually be obtained from a new view or an
-   * existing one.... */
-  zmapControlWindowSetZoomButtons(zmap, ZMAP_ZOOM_MID);
-
-
-
-  gtk_widget_set_sensitive(zmap->close_but, TRUE);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* resize all the panes to fit the width */
-  resizeHPanes(zmap);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return new_pane->frame ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return NULL ;
-}
-
-
-
-
-void closePane(GtkWidget *widget, gpointer data)
-{
-  ZMap zmap = (ZMap)data ;
-  GtkWidget *pane_up1, *pane_up2, *frame = NULL;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* This is cumbersome! The problem is that each time we split the window,
-   * we add a pane to the current frame, then delete the corresponding node
-   * from the panesTree.  When we delete panes from the display, we also need
-   * to remove these extra frames as they become empty. */
-  pane_up1 = gtk_widget_get_ancestor(zmap->focuspane->frame, GTK_TYPE_PANED);
-  frame    = gtk_widget_get_ancestor(pane_up1, GTK_TYPE_FRAME);
-  pane_up2 = gtk_widget_get_ancestor(frame, GTK_TYPE_PANED);
-
-  /* THIS SHOULD BE A CALL TO VIEW....IT BEGS THE QUESTION OF WHETHER DESTROYING A PANE
-   * MEANS DESTROYING THE ATTACHED VIEW AS WELL........ */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_object_destroy(GTK_OBJECT(zmap->focuspane->canvas));
-  gtk_widget_destroy(zmap->focuspane->scrolledWindow);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  
-  children = gtk_container_get_children(GTK_CONTAINER(pane_up1));
-  if (children == NULL)
-    gtk_widget_destroy(pane_up1);
-
-  children = gtk_container_get_children(GTK_CONTAINER(frame));
-  if (children == NULL)
-    gtk_widget_destroy(frame);
-				
-  if (pane_up2) /* can't be certain there will be one */
-    {	    
-      children = gtk_container_get_children(GTK_CONTAINER(pane_up2));
-      if (children == NULL)
-	gtk_widget_destroy(pane_up2);
-    }
-  if (children)
-    g_list_free(children);
-  
-  /* Remove entry from the list of windows. */
-  /* Destroy any featureListWindows for this window at the same time. */
-  {
-    ZMapViewWindow view_window = zmap->focuspane->curr_view_window;
-    GList *list;
-    
-    zMapWindowDestroyLists(zMapViewGetWindow(view_window));
-    
-    list = g_list_remove(zMapViewGetWindowList(view_window),
-			 zmap->focuspane->curr_view_window); 
-    /* Update the ZMapWindow->window_list with the new list address. */
-    zMapViewSetWindowList(view_window, list);
-  }
-       
-  /* UM, WE DON'T SEEM TO DESTROY THE PANE HERE ???????????? */
-  gtk_widget_destroy(zmap->focuspane->frame);
-  free(zmap->focuspane) ;
-            
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* In theory, by this point all redundant panes and frames have been destroyed.
-   * In reality, I have seen 'hanging' panes (grey squares of window lacking
-   * a canvas and scroll bars) after closing multiply-split windows, but life 
-   * is short! */
-  zmapRecordFocus(next->data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  
-
-  resizePanes(zmap);                                                                                
-
-  if (panes == 2)  /* that is, there were 2 panes until we just closed one */
-    gtk_widget_set_sensitive(zmap->close_but, FALSE);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return ;
-}
-
-
-
-
-
-
-
-
-
-
-
-/* static functions **********************************************/
-
-
-static int unfocus(GNode *node, gpointer data)
-{
-  ZMapPane pane = (ZMapPane)node->data;
-  GdkColor color;
-
-  if (pane) /* skip the actual root node which is not a valid widget */
-    {
-      gtk_frame_set_shadow_type(GTK_FRAME(pane->frame), GTK_SHADOW_NONE);
-
-      gtk_widget_modify_bg(GTK_WIDGET(pane->frame), GTK_STATE_NORMAL, NULL) ;
-    }
-  return 0;  
-}
-
-
-
-/* shrinkPane is not quite the right name for this function.  We don't
- * actually shrink the pane, we add a new pane and frame and reposition
- * the scrolled window into that.  Later on we resize all panes. */
-static void shrinkPane(ZMap zmap)
-{
-  ZMapPane pane ;
-  GdkColor color;
-
-  /* create a new vpane and hook the old scrolled window up to it */
-  pane = g_new0(ZMapPaneStruct, 1) ;
-  pane->zmap = zmap ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  pane->pane = gtk_vpaned_new() ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-  /* I think this is correct ??? */
-  pane->frame = zmap->focuspane->frame ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gdk_color_parse("dark grey", &color);
-  gtk_widget_modify_bg(GTK_WIDGET(zmap->focuspane->frame), GTK_STATE_NORMAL, &color);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  pane->curr_view_window = zmap->focuspane->curr_view_window ;
-
-
-  /* reparent the scrolled window into the new frame & pack1 the frame into the new vpane,
-   * then add the new vpane to the frame of the pane which currently has focus, ie that being split.  */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_widget_reparent(GTK_WIDGET(zmap->focuspane->scrolledWindow), pane->frame);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_widget_reparent(GTK_WIDGET(zmap->focuspane->view_parent_box), pane->frame);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_paned_pack1(GTK_PANED(pane->pane), pane->frame, TRUE, TRUE);
-  gtk_container_add(GTK_CONTAINER(zmap->focuspane->frame), pane->pane);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* remove the old ZMapPane from panesTree, and add the new one */
-  node = g_node_find(zmap->panesTree,
-		     G_IN_ORDER,
-		     G_TRAVERSE_ALL,
-		     (gpointer)zmap->focuspane) ;
-  g_node_append_data(node->parent, pane);
-
-  exciseNode(node);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* do we really need this? */
-  /*  gtk_widget_hide(zMapWindowGetFocuspane(window)->frame); */
-  zmap->focuspane = pane ;
-
-  return;
-}
-
-
-/* resizing the panes doesn't really work too well, but it's not too
- * bad for a few panes and time is short. */
-static void resizePanes(ZMap zmap)
-{
-  GtkRequisition req;
-  GNode *node = NULL;
-  GNode *last = NULL;
-  guint panes = 0;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* count how many panes there are in this column */
-  node = g_node_find(zmap->panesTree,
-		     G_IN_ORDER,
-		     G_TRAVERSE_ALL,
-		     zmap->focuspane) ;
-
-  last =  g_node_last_child(node->parent);
-  /* first child is number 0 */
-  panes = g_node_child_position(node->parent,last);
-
-  if (panes == 0)
-    panes = 1;
-
-  /* get size of the window & divide it by the number of panes.
-   * Note there's a small kludge here to adjust for a better fit.
-   * Don't know why it needs the -8. */
-  gtk_widget_size_request(GTK_WIDGET(zmap->pane_vbox), &req);
-  req.height = (req.height/panes) - 8;
-
-  g_node_children_foreach(zmap->panesTree, 
-		  G_TRAVERSE_LEAFS, 
-		  resizeOnePane, 
-		  &req);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return;
-}
-
-
-static void resizeOnePane(GNode *node, gpointer data)
-{
-  ZMapPane pane = (ZMapPane)node->data;
-  GtkRequisition *req = (GtkRequisition*)data;
-
-  if (pane)  
-    gtk_widget_set_size_request (GTK_WIDGET (pane->frame), req->width, req->height);
-
-  return;
-}  
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* shrinkHPane is not quite the right name for this function.  We don't
- * actually shrink the pane, we add a new, half-size one and reposition
- * the scrolled window into that */
-static void shrinkHPane(ZMap zmap)
-{
-  ZMapPane pane ;
-
-  /* create a new hpane and hook the old scrolled window up to it */
-  pane = g_new0(ZMapPaneStruct, 1) ;
-  pane->zmap = zmap ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  pane->pane = gtk_hpaned_new() ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-  /* I think this is correct ??? */
-  pane->frame = zmap->focuspane->frame ;
-
-  pane->curr_view_window = zmap->focuspane->curr_view_window ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_widget_reparent(GTK_WIDGET(zmap->focuspane->scrolledWindow), pane->frame);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_widget_reparent(GTK_WIDGET(zmap->focuspane->view_parent_box), pane->frame);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_paned_pack1(GTK_PANED(pane->pane), pane->frame, TRUE, TRUE);
-  gtk_container_add(GTK_CONTAINER(zmap->focuspane->frame), pane->pane);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* add new pane to windowsTree. */
-  node = g_node_find(zmap->panesTree,
-		     G_IN_ORDER,
-		     G_TRAVERSE_ALL,
-		     zmap->focuspane);
-  g_node_append_data(node->parent, pane);
-
-  exciseNode(node);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* do we really need this? */  
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_widget_hide(zmap->focuspane->frame);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  zmap->focuspane = pane ;
-
-  return;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-/********************* end of file ********************************/
