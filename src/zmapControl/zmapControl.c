@@ -26,26 +26,17 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jan 10 09:44 2005 (edgrif)
+ * Last edited: Jan 20 16:56 2005 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.43 2005-01-10 09:50:16 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.44 2005-01-24 11:31:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
-
 #include <gtk/gtk.h>
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapControl_P.h>
-
-
-/* Used in searching panes for a view_window... */
-typedef struct
-{
-  ZMapViewWindow view_window ;
-  ZMapPane parent_pane ;
-} ZMapPaneViewSearchStruct, *ZMapPaneViewSearch ;
 
 
 static ZMap createZMap(void *app_data) ;
@@ -55,27 +46,28 @@ static void killFinal(ZMap zmap) ;
 static void killViews(ZMap zmap) ;
 static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
 static ZMapView addView(ZMap zmap, char *sequence, int start, int end) ;
+static gboolean lookForViewWindow(GNode *node, gpointer data) ;
+static void updateControl(ZMap zmap, ZMapView view) ;
 
 static void dataLoadCB(ZMapView view, void *app_data, void *view_data) ;
+static void enterCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void clickCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void visibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
 
-static gboolean lookForViewWindow(GNode *node, gpointer data) ;
-static void updateControl(ZMap zmap, ZMapView view) ;
 
 
+/* These variables holding callback routine information are static because they are
+ * set just once for the lifetime of the process. */
 
-/* These callback routines are static because they are set just once for the lifetime of the
- * process. */
-
-
-/* Callbacks we make back to the level above us. */
+/* Holds callbacks the level above us has asked to be called back on. */
 static ZMapCallbacks zmap_cbs_G = NULL ;
 
-
-/* Callbacks back to us from the level below, i.e. zMapView. */
-ZMapViewCallbacksStruct view_cbs_G = {dataLoadCB, clickCB, visibilityChangeCB, viewKilledCB} ;
+/* Holds callbacks we set in the level below us to be called back on. */
+ZMapViewCallbacksStruct view_cbs_G = {enterCB, leaveCB,
+				      dataLoadCB, clickCB,
+				      visibilityChangeCB, viewKilledCB} ;
 
 
 
@@ -111,7 +103,6 @@ void zMapInit(ZMapCallbacks callbacks)
 
 
 
-
 /* Create a new zmap which is blank with no views. Returns NULL on failure.
  * Note how I casually assume that none of this can fail. */
 ZMap zMapCreate(void *app_data)
@@ -140,8 +131,6 @@ ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end)
   zMapAssert(zmap && sequence && *sequence
 	     && (start > 0 && (end == 0 || end > start))) ;
 
-  //  zmapViewPrintHeight("zMapAddView", zmap->focuspane->curr_view_window);
-  
   view = addView(zmap, sequence, start, end) ;
 
   return view ;
@@ -306,9 +295,9 @@ void zmapControlLoadCB(ZMap zmap)
        * of global load of all views if there is no current selected view, or perhaps be an error 
        * if no view is selected....perhaps there should always be a selected view. */
 
-      zMapAssert(zmap->focuspane) ;
+      zMapAssert(zmap->focus_viewwindow) ;
 
-      curr_view = zMapViewGetView(zmap->focuspane->curr_view_window) ;
+      curr_view = zMapViewGetView(zmap->focus_viewwindow) ;
 
       if (zMapViewGetStatus(curr_view) == ZMAPVIEW_INIT)
 	status = zMapViewConnect(curr_view) ;
@@ -329,9 +318,7 @@ void zmapControlResetCB(ZMap zmap)
     {
       ZMapView curr_view ;
 
-      zMapAssert(zmap->focuspane) ;
-
-      curr_view = zMapViewGetView(zmap->focuspane->curr_view_window) ;
+      curr_view = zMapViewGetView(zmap->focus_viewwindow) ;
 
       /* for now we are just doing the current view but this will need to change to allow a kind
        * of global load of all views if there is no current selected view, or perhaps be an error 
@@ -378,7 +365,6 @@ void zmapControlNewCB(ZMap zmap, char *testing_text)
 /* Put a new view into a zmap. */
 void zmapControlNewViewCB(ZMap zmap, char *new_sequence)
 {
-  ZMapPane pane ;
   GtkWidget *parent_widget = NULL ;
   ZMapView view ;
   ZMapViewWindow view_window ;
@@ -387,34 +373,38 @@ void zmapControlNewViewCB(ZMap zmap, char *new_sequence)
   int start = 1, end = 0 ;
 
 
-
   /* THIS ROUTINE AND THE WHOLE PANE/VIEW INTERFACE NEEDS SOME MAJOR TIDYING UP..... */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
   /* this all needs to do view stuff here and return a parent widget............ */
   parent_widget = splitPane(zmap) ;
 
-  pane = zmap->focuspane ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* At this point split func does the add call to add a window to an existing view, we want
    * to add a new view and add a window to that..... */
   view_window = zMapViewAddWindow(zMapViewGetView(pane->curr_view_window), parent_widget) ;
 
   pane->curr_view_window = view_window ;		    /* new focus window ?? */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* this code cut/pasted from addView()...needs clearing up.... */
 
   if ((view = zMapViewCreate(new_sequence, start, end, (void *)zmap))
-      && (view_window = zMapViewAddWindow(view, pane->view_parent_box, NULL))
+      && (view_window = zMapViewAddWindow(view, pane->frame, NULL))
       && zMapViewConnect(view))
     {
       /* add to list of views.... */
       zmap->view_list = g_list_append(zmap->view_list, view) ;
       
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmap->focuspane->curr_view_window = view_window ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       zmap->firstTime = FALSE ;
 
@@ -428,6 +418,8 @@ void zmapControlNewViewCB(ZMap zmap, char *new_sequence)
       /* We've added a view so better update everything... */
       gtk_widget_show_all(zmap->toplevel) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -453,10 +445,10 @@ static ZMap createZMap(void *app_data)
   zmap_num++ ;
   zmap->zmap_id = g_strdup_printf("ZMap.%d", zmap_num) ;
 
-  zmap->firstTime = TRUE ;				    /* used in addPane() */
-
   zmap->app_data = app_data ;
 
+  /* Use default hashing functions, but THINK ABOUT THIS, MAY NEED TO ATTACH DESTROY FUNCTIONS. */
+  zmap->viewwindow_2_parent = g_hash_table_new(NULL, NULL) ;
 
   return zmap ;
 }
@@ -466,10 +458,9 @@ static ZMap createZMap(void *app_data)
  * and other resources have gone. */
 static void destroyZMap(ZMap zmap)
 {
-  if (zmap->panesTree)
-    g_node_destroy(zmap->panesTree);
-
   g_free(zmap->zmap_id) ;
+
+  g_hash_table_destroy(zmap->viewwindow_2_parent) ;
 
   g_free(zmap) ;
 
@@ -518,42 +509,21 @@ static ZMapView addView(ZMap zmap, char *sequence, int start, int end)
 {
   ZMapView view = NULL ;
   ZMapViewWindow view_window = NULL ;
-  ZMapPane new_pane ;
+  GtkWidget *curr_view, *new_parent, *view_parent ;
+
+  /* this is a bit clutzy, it is irrelevant for the first window.... */
+  GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;
 
 
-  /* Going to try this here..........
-   * this routine should really return a pane ptr which we could use below.....rather than
-   * the implicit focuspane setting.....we need to set the focus_pane back here.... */
-  new_pane = zmapAddPane(zmap, 'v') ;
-
-
-  /* focus on the new pane */
-  zmapRecordFocus(new_pane) ;
-
-  if ((view = zMapViewCreate(sequence, start, end, (void *)zmap))
-      && (view_window = zMapViewAddWindow(view, new_pane->view_parent_box, NULL)))
+  if ((view = zMapViewCreate(sequence, start, end, (void *)zmap)))
     {
       /* add to list of views.... */
       zmap->view_list = g_list_append(zmap->view_list, view) ;
-      
-      zmap->focuspane->curr_view_window = view_window ;
 
-      zmap->firstTime = FALSE ;
+      zmapControlSplitInsertWindow(zmap, orientation) ;
 
       zmap->state = ZMAP_VIEWS ;
-
-
-      /* Look in focus pane and set title bar/navigator etc......really this should all be
-       * in one focus routine......which we need to remove from zmapAddPane..... */
-
-
-      /* We've added a view so better update everything... */
-      gtk_widget_show_all(zmap->toplevel) ;
     }
-  /* bug, should remove the pane if the addview fails..... */
-
-
-
 
   return view ;
 }
@@ -579,30 +549,24 @@ static void clickCB(ZMapViewWindow view_window, void *app_data, void *view_data)
   ZMap zmap = (ZMap)app_data ;
   ZMapFeature feature = (ZMapFeature)view_data ;
   ZMapView view = zMapViewGetView(view_window) ;
-  ZMapPaneViewSearchStruct view_search ;
-  GString *str = g_string_new("");
-
-
-  view_search.view_window = view_window ;
-  view_search.parent_pane = NULL ;
-  g_node_traverse(zmap->panesTree, G_IN_ORDER, G_TRAVERSE_ALL, -1, lookForViewWindow, &view_search) ;
-  zMapAssert(view_search.parent_pane) ;
-
-  /* Change focus.... */
-  zmapRecordFocus(view_search.parent_pane) ;
 
   /* If view has features then change the window title. */
   updateControl(zmap, view) ;
 
-  if (feature) /* if user clicked on a specific object */
+ /* if user clicked on a specific object */
+  if (feature)
     {
+      GString *str = g_string_new("") ;
+
       g_string_printf(str, "%s   %d   %d   %s   %s", 
 		      feature->name,
 		      feature->x1,
 		      feature->x2,
 		      zmapFeatureLookUpEnum(feature->type, TYPE_ENUM), 
 		      feature->method_name);
-      gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), str->str);
+      gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), str->str) ;
+
+      g_string_free(str, TRUE) ;
     }
 
   return ;
@@ -622,7 +586,27 @@ static void visibilityChangeCB(ZMapViewWindow view_window, void *app_data, void 
   return ;
 }
 
+static void enterCB(ZMapViewWindow view_window, void *app_data, void *view_data)
+{
+  ZMap zmap = (ZMap)app_data ;
 
+  zmapControlSetWindowFocus(zmap, view_window) ;
+
+  return ;
+}
+
+static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data)
+{
+  ZMap zmap = (ZMap)app_data ;
+
+  zmapControlUnSetWindowFocus(zmap, view_window) ;
+
+  return ;
+}
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean lookForViewWindow(GNode *node, gpointer data)
 {
   gboolean found_view_window = FALSE ;
@@ -642,6 +626,8 @@ static gboolean lookForViewWindow(GNode *node, gpointer data)
 
   return found_view_window ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -735,15 +721,19 @@ static void updateControl(ZMap zmap, ZMapView view)
 {
 
   /* We only do this if the view is the current one. */
-  if ((view = zMapViewGetView(zmap->focuspane->curr_view_window)))
+  if ((view = zMapViewGetView(zmap->focus_viewwindow)))
     {
       ZMapFeatureContext features ;
+      double top, bottom ;
       char *title, *seq_name ;
 
       features = zMapViewGetFeatures(view) ;
 
-      zMapNavigatorSetView(zmap->navigator, features) ; /* n.b. features may be NULL for
-							   blank views. */
+      zMapViewGetVisible(zmap->focus_viewwindow, &top, &bottom) ;
+
+      zMapNavigatorSetView(zmap->navigator, features, top, bottom) ;
+							    /* n.b. features may be NULL for
+							       blank views. */
 
 
       /* Update title bar of zmap window. */
@@ -757,7 +747,7 @@ static void updateControl(ZMap zmap, ZMapView view)
 
       /* Set up zoom buttons. */
       {
-	ZMapWindow window = zMapViewGetWindow(zmap->focuspane->curr_view_window) ;
+	ZMapWindow window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 	ZMapWindowZoomStatus zoom_status = zMapWindowGetZoomStatus(window) ;
 
 	zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
