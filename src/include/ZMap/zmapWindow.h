@@ -27,9 +27,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jun 30 15:41 2004 (edgrif)
+ * Last edited: Jul  2 14:32 2004 (rnc)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.6 2004-07-01 09:24:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.7 2004-07-02 13:33:12 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -42,75 +42,16 @@
 #include <ZMap/zmapFeature.h>
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapcommon.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-//#include <zmapcontrol.h>
-
-
-
 
 /* Opaque type, represents an individual ZMap window. */
 typedef struct _ZMapWindowStruct *ZMapWindow ;
-
-/* Opaque type, represents an individual ZMap display pane */
 typedef struct _ZMapPaneStruct *ZMapPane;
 
-
-// zmapcolumn * a coupla others are temporarily public just for my own convenience.
-
-//typedef struct _ZMapColumnStruct ZMapColumn;
-//struct zMapColumn;
-typedef struct zMapColumn ZMapColumn;
-
-/* callback function prototypes********************************
- * These must be here as they're referred to in zMapColumn below
- */
-typedef void (*colDrawFunc)  (ZMapPane pane, ZMapColumn *col,
-			      float *offset, int frame);
-typedef void (*colConfFunc)  (void);
-typedef void (*colInitFunc)  (ZMapPane pane, ZMapColumn *col);
-typedef void (*colSelectFunc)(ZMapPane pane, ZMapColumn *col,
-			      void *seg, int box, 
-			      double x, double y,
-			      gboolean isSelect);
-
-/**************************************************************/
-
-struct zMapColumn {
-  ZMapPane      pane;
-  colInitFunc   initFunc;
-  colDrawFunc   drawFunc;
-  colConfFunc   configFunc;
-  colSelectFunc selectFunc;
-  gboolean          isFrame;
-  float         priority;
-  char         *name;
-  float         startx, endx; /* filled in by drawing code */
-  methodID      meth;         /* method */
-  ZMapFeatureType        type;
-  void         *private;
-};
-
-
-struct ZMapColDefs {
-  colInitFunc   initFunc;
-  colDrawFunc   drawFunc;
-  colConfFunc   configFunc;
-  colSelectFunc selectFunc;
-  gboolean          isFrame;
-  float         priority; /* only for default columns. */
-  char         *name;
-  ZMapFeatureType        type;
-}; 
-
-
-typedef struct {
-  ZMapWindow window;             /* the window pane  */
-  Calc_cb    calc_cb;            /* callback routine */
-  void      *seqRegion;          /* AceDB region     */
-} ZMapCallbackData;
+//typedef struct {
+//  ZMapWindow window;             /* the window pane  */
+//  Calc_cb    calc_cb;            /* callback routine */
+//  void      *seqRegion;          /* AceDB region     */
+//} ZMapCallbackData;
 
 
 
@@ -129,10 +70,6 @@ void         zMapWindowDestroy         (ZMapWindow window) ;
 
 ZMapWindow   zMapWindowCreateZMapWindow(void);
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-STORE_HANDLE zMapWindowGetHandle       (ZMapWindow window);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 void         zMapWindowSetHandle       (ZMapWindow window);
 void         zMapWindowCreateRegion    (ZMapWindow window);
 GNode       *zMapWindowGetPanesTree    (ZMapWindow window);
@@ -140,18 +77,19 @@ void         zMapWindowSetPanesTree    (ZMapWindow window, GNode *node);
 void         zMapWindowSetFirstTime    (ZMapWindow window, gboolean value);
 ZMapPane     zMapWindowGetFocuspane    (ZMapWindow window);
 void         zMapWindowSetFocuspane    (ZMapWindow window, ZMapPane pane);
-int          zMapWindowGetRegionLength (ZMapWindow window);
-Coord        zMapWindowGetRegionArea   (ZMapWindow window, int area);
-void         zMapWindowSetRegionArea   (ZMapWindow window, Coord area, int num);
-gboolean         zMapWindowGetRegionReverse(ZMapWindow window);
-ScreenCoord  zMapWindowGetScaleOffset  (ZMapWindow window);
-void         zMapWindowSetScaleOffset  (ZMapWindow window, ScreenCoord offset);
-Coord        zMapWindowGetCoord        (ZMapWindow window, char *field);
-void         zMapWindowSetCoord        (ZMapWindow window, char *field, int size);
-ScreenCoord  zMapWindowGetScreenCoord  (ZMapWindow window, Coord coord, int height);
-ScreenCoord  zMapWindowGetScreenCoord1 (ZMapWindow window, int height);
-ScreenCoord  zMapWindowGetScreenCoord2 (ZMapWindow window, int height);
-InvarCoord   zMapWindowGetOrigin       (ZMapWindow window);
+
+/* I don't know whether we're even going to use these datatypes, so for
+** expediency I'm commenting these out until it becomes clearer. */
+
+//ScreenCoord  zMapWindowGetScaleOffset  (ZMapWindow window);
+//void         zMapWindowSetScaleOffset  (ZMapWindow window, ScreenCoord offset);
+//Coord        zMapWindowGetCoord        (ZMapWindow window, char *field);
+//void         zMapWindowSetCoord        (ZMapWindow window, char *field, int size);
+//ScreenCoord  zMapWindowGetScreenCoord  (ZMapWindow window, Coord coord, int height);
+//ScreenCoord  zMapWindowGetScreenCoord1 (ZMapWindow window, int height);
+//ScreenCoord  zMapWindowGetScreenCoord2 (ZMapWindow window, int height);
+//InvarCoord   zMapWindowGetOrigin       (ZMapWindow window);
+
 int          zMapWindowGetRegionSize   (ZMapWindow window);
 
 GtkWidget   *zMapWindowGetFrame        (ZMapWindow window);
@@ -167,8 +105,8 @@ GtkWidget   *zMapWindowGetNavigator    (ZMapWindow window);
 void         zMapWindowSetNavigator    (ZMapWindow window, GtkWidget *navigator);
 FooCanvas   *zMapWindowGetNavCanvas    (ZMapWindow window);
 void         zMapWindowSetNavCanvas    (ZMapWindow window, FooCanvas *navcanvas);
-GtkWidget   *zMapWindowGetZoomVbox     (ZMapWindow window);
-void         zMapWindowSetZoomVbox     (ZMapWindow window, GtkWidget *vbox);
+GtkWidget   *zMapWindowGetDisplayVbox  (ZMapWindow window);
+void         zMapWindowSetDisplayVbox  (ZMapWindow window, GtkWidget *vbox);
 
 float        zmMainScale               (FooCanvas *canvas, float offset, int start, int end);
 
@@ -183,31 +121,18 @@ void         zMapRegionFreeSegs        (ZMapRegion *region);
 GArray      *zMapRegionGetDNA          (ZMapRegion *region);
 void         zMapRegionFreeDNA         (ZMapRegion *region);
 
-void         zMapPaneNewBox2Col        (ZMapPane pane, int elements);
-ZMapColumn  *zMapPaneGetBox2Col        (ZMapPane pane, int index);
-GArray      *zMapPaneSetBox2Col        (ZMapPane pane, ZMapColumn *col, int index);
-void         zMapPaneFreeBox2Col       (ZMapPane pane);
-void         zMapPaneNewBox2Seg        (ZMapPane pane, int elements);
-ZMapFeature zMapPaneGetBox2Seg        (ZMapPane pane, int index);
-GArray      *zMapPaneSetBox2Seg        (ZMapPane pane, ZMapColumn *seg, int index);
-void         zMapPaneFreeBox2Seg       (ZMapPane pane);
-ZMapRegion  *zMapPaneGetZMapRegion     (ZMapPane pane);
-FooCanvasItem *zMapPaneGetGroup        (ZMapPane pane);
-ZMapWindow   zMapPaneGetZMapWindow     (ZMapPane pane);
-FooCanvas   *zMapPaneGetCanvas         (ZMapPane pane);
-GPtrArray   *zMapPaneGetCols           (ZMapPane pane);
-int          zMapPaneGetDNAwidth       (ZMapPane pane);
-void         zMapPaneSetDNAwidth       (ZMapPane pane, int width);
-void         zMapPaneSetStepInc        (ZMapPane pane, int incr);
-int          zMapPaneGetHeight         (ZMapPane pane);
-InvarCoord   zMapPaneGetCentre         (ZMapPane pane);
-float        zMapPaneGetBPL            (ZMapPane pane);
-
-void         addPane                   (ZMapWindow  window, char orientation);
 int          recordFocus               (GtkWidget *widget, GdkEvent *event, gpointer data); 
 void         navUpdate                 (GtkAdjustment *adj, gpointer p);
 void         navChange                 (GtkAdjustment *adj, gpointer p);
 
 void         drawNavigatorWind         (ZMapPane pane);
+
+void         zMapWindowDrawFeatures    (ZMapWindow window, ZMapFeatureContext feature_context);
+
+
+/* TEST SCAFFOLDING............... */
+ZMapFeatureContext testGetGFF(void) ;
+
+
 
 #endif /* !ZMAP_WINDOW_H */
