@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  3 14:40 2005 (edgrif)
+ * Last edited: Feb  4 08:58 2005 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.2 2005-02-03 15:01:34 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.3 2005-02-10 16:38:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -278,7 +278,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     }
 
 
-
+  /* Get a copy of the context to use in fetching the features and/or sequence. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
       feature_context = zMapServerCopyContext(server) ;
@@ -287,6 +287,8 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
  
 
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
+      && (features->type == ZMAP_SERVERREQ_FEATURES
+	  || features->type == ZMAP_SERVERREQ_FEATURE_SEQUENCE)
       && zMapServerGetFeatures(server, feature_context) != ZMAP_SERVERRESPONSE_OK)
     {
       *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
@@ -302,6 +304,8 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     }
 
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
+      && (features->type == ZMAP_SERVERREQ_SEQUENCE
+	  || features->type == ZMAP_SERVERREQ_FEATURE_SEQUENCE)
       && zMapServerGetSequence(server, feature_context) != ZMAP_SERVERRESPONSE_OK)
     {
       *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
