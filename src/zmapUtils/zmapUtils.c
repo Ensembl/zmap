@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Oct  1 14:29 2004 (edgrif)
+ * Last edited: Nov 12 09:18 2004 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.6 2004-10-04 12:52:26 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.7 2004-11-12 11:51:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,10 +44,12 @@
 
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-
 #include <zmapUtils_P.h>
 
+
+
+static gboolean getVersionNumbers(char *version_str,
+				  int *version_out, int *release_out, int *update_out) ;
 
 
 /*! @defgroup zmaputils   zMapUtils: utilities for ZMap
@@ -89,6 +91,42 @@ char *zMapGetVersionString(void)
 {
   return ZMAP_MAKE_VERSION_STRING(ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
 }
+
+
+/*!
+ * Compares version strings in the format "VVVV.RRRR.UUUU", e.g. "4.8.3".
+ * Returns TRUE if test_version is the same or newer than reference_version,
+ * FALSE otherwise. The function is dumb in that it doesn't really check the format
+ * of the strings so you put rubbish in, rubbish will come out.
+ *
+ * @param reference_version      The version against which the comparison will be made.
+ * @param test_version           The version string to be tested.
+ * @return                       TRUE or FALSE
+ *  */
+gboolean zMapCompareVersionStings(char *reference_version, char *test_version)
+{
+  gboolean result = FALSE ;
+  char *ref_str, *test_str ;
+  int ref_vers, ref_rel, ref_upd, test_vers, test_rel, test_upd ;
+
+  ref_str = g_strdup(reference_version) ;
+  test_str = g_strdup(test_version) ;
+
+  if ((result = getVersionNumbers(ref_str, &ref_vers, &ref_rel, &ref_upd))
+      && (result = getVersionNumbers(test_str, &test_vers, &test_rel, &test_upd)))
+    {
+      if (test_vers >= ref_vers && test_rel >= ref_rel && test_upd >= ref_upd)
+	result = TRUE ;
+      else
+	result = FALSE ;
+    }
+
+  g_free(ref_str) ;
+  g_free(test_str) ;
+
+  return result ;
+}
+
 
 
 /*!
@@ -237,6 +275,33 @@ gboolean zMapStr2LongInt(char *str, long int *long_int_out)
       *long_int_out = retval ;
     }
 
+
+  return result ;
+}
+
+
+
+
+static gboolean getVersionNumbers(char *version_str,
+				  int *version_out, int *release_out, int *update_out)
+{
+  gboolean result = FALSE ;
+  char *next ;
+  int version, release, update ;
+
+  if (((next = strtok(version_str, "."))
+       && (version = atoi(next)))
+      && ((next = strtok(NULL, "."))
+	  && (release = atoi(next)))
+      && ((next = strtok(NULL, "."))
+	  && (update = atoi(next))))
+    {
+      result = TRUE ;
+      *version_out = version ;
+      *release_out = release ;
+      *update_out = update ;
+    }
+  
 
   return result ;
 }
