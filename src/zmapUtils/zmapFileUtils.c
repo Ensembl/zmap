@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May 12 16:15 2004 (edgrif)
+ * Last edited: Sep 13 09:23 2004 (edgrif)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.2 2004-05-17 14:24:00 edgrif Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.3 2004-09-13 13:00:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,12 @@
 #include <unistd.h>
 #include <strings.h>
 #include <zmapUtils_P.h>
+
+
+static char *getRelOrAbsPath(char *path_in, gboolean home_relative) ;
+
+
+/* SORT OUT THIS FILE, THE FUNCTIONS ALL NEED RATIONALISING INTO SOMETHING MORE SENSIBLE... */
 
 
 /* Not sure if this is really necessary....maybe.... */
@@ -116,6 +122,55 @@ char *zMapGetDir(char *directory_in, gboolean home_relative)
     }
 
   return directory ;
+}
+
+
+
+
+/* If path is absolute then returns a copy of that path, if the path is relative
+ * then returns $PWD/path. */
+char *zMapGetPath(char *path_in)
+{
+  char *path ;
+
+  path = getRelOrAbsPath(path_in, FALSE) ;
+
+  return path ;
+}
+
+
+/* If path is absolute then returns a copy of that path, if the path is relative
+ * then returns $PWD/path. */
+static char *getRelOrAbsPath(char *path_in, gboolean home_relative)
+{
+  char *path = NULL ;
+  gboolean absolute ;
+  gboolean status = FALSE ;
+  char *base_dir ;
+  struct stat stat_buf ;
+
+  if (g_path_is_absolute(path_in))
+    {
+      path = g_strdup(path_in) ;
+    }
+  else
+    {
+      /* If path is relative to HOME then prepend HOME. */
+      if (home_relative)
+	{
+	  base_dir = (char *)g_get_home_dir() ;		    /* glib docs say home_dir string should not
+							       be freed. */
+	  path = g_build_path(ZMAP_SEPARATOR, base_dir, path_in, NULL) ;
+	}
+      else
+	{
+	  base_dir = g_get_current_dir() ;
+	  path = g_build_path(ZMAP_SEPARATOR, base_dir, path_in, NULL) ;
+	  g_free(base_dir) ;
+	}
+    }
+
+  return path ;
 }
 
 
