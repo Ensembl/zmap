@@ -1,4 +1,4 @@
-/*  Last edited: Jul  2 10:14 2004 (rnc) */
+/*  Last edited: Jul  6 10:20 2004 (rnc) */
 /*  file: zmapbccol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -36,7 +36,7 @@
 #include <glib.h>
 
 #include <ZMap/zmapFeature.h>
-#include <zmapDraw.h>
+#include <ZMap/zmapDraw.h>
 #include <seqregion.h>
 
 /* A lot of this comes direct from acedb.......... */
@@ -134,9 +134,6 @@ typedef struct {
   float fmax ;
   BUMP bump ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  Associator cluster ;		/* only non-zero if METHOD_CLUSTER */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   GHashTable* cluster ;
 
   int clusterCount ;
@@ -427,8 +424,8 @@ void zMapGeneDraw(ZMapPane pane, ZMapColumn *col, float *offset, int frame)
 		/* TODO: if e1 < e2 then it's on the reverse strand so needs different handling */
 		if (e1 > e2); 
 		  
-		drawLine(FOO_CANVAS_GROUP(group), x+(width/2), e1, x+width, middle, colours[meth->colour], 1.0);
-		drawLine(FOO_CANVAS_GROUP(group), x+width, middle, x+(width/2), e2, colours[meth->colour], 1.0);
+		zmapDrawLine(FOO_CANVAS_GROUP(group), x+(width/2), e1, x+width, middle, colours[meth->colour], 1.0);
+		zmapDrawLine(FOO_CANVAS_GROUP(group), x+width, middle, x+(width/2), e2, colours[meth->colour], 1.0);
 	      }
 	    
 	    for (j = 0; j <exons->len; j++)
@@ -438,9 +435,9 @@ void zMapGeneDraw(ZMapPane pane, ZMapColumn *col, float *offset, int frame)
 
 		/* if e1 < e2 then it's on the reverse strand so needs different handling */
 		if (e1 < e2)
-		  drawBox(group, x, e1, x+width, e2, "black", colours[meth->colour]);
+		  zmapDrawBox(group, x, e1, x+width, e2, "black", colours[meth->colour]);
 		else
-		  drawBox(group, x, e2, x+width, e1, "red", colours[meth->colour]);
+		  zmapDrawBox(group, x, e2, x+width, e1, "red", colours[meth->colour]);
 	      }
 	  }
       }
