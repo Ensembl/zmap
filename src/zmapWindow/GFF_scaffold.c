@@ -1,4 +1,4 @@
-/*  Last edited: Jun 18 10:50 2004 (edgrif) */
+/*  Last edited: Jun 22 12:05 2004 (edgrif) */
 /* This is a temporary file only to help with testing....it will go once GFF code is combined
  * into the threads etc. code proper.... */
 
@@ -8,12 +8,12 @@
 #include <ZMap/zmapConfig.h>
 
 
-static GArray *parseGFF(char *filename) ;
+static GData *parseGFF(char *filename) ;
 
 
-GArray *testGetGFF(void)
+GData *testGetGFF(void)
 {
-  GArray *features = NULL ;
+  GData *features = NULL ;
   ZMapConfig config ;
   char *GFF_file = NULL ;
 
@@ -57,9 +57,9 @@ GArray *testGetGFF(void)
 
 
 
-static GArray *parseGFF(char *filename)
+static GData *parseGFF(char *filename)
 {
-  GArray *features = NULL ;
+  GData *features = NULL ;
   GIOChannel* gff_file ;
   GError *gff_file_err = NULL ;
 
@@ -70,13 +70,13 @@ static GArray *parseGFF(char *filename)
       GString* gff_line ;
       GIOStatus status ;
       gsize terminator_pos = 0 ;
-      gboolean free_arrays = FALSE ;
+      gboolean free_arrays = FALSE, parse_only = FALSE ;
 
 
       gff_line = g_string_sized_new(2000) ;		    /* Probably not many lines will be >
 							       2k chars. */
 
-      parser = zMapGFFCreateParser() ;
+      parser = zMapGFFCreateParser(parse_only) ;
 
       while ((status = g_io_channel_read_line_string(gff_file, gff_line, &terminator_pos,
 						     &gff_file_err)) == G_IO_STATUS_NORMAL)

@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 18 10:59 2004 (edgrif)
+ * Last edited: Jun 22 09:57 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.8 2004-06-18 11:01:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.9 2004-06-22 12:25:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -176,7 +176,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
       /* OK, can ignore data here and just call my dummied up GFF routine to deliver some
        * features for Rob to draw..... */
       {
-	GArray *features ;
+	GData *features ;
 
 
 	features = testGetGFF() ;
