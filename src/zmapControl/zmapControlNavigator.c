@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 27 08:59 2004 (edgrif)
+ * Last edited: Aug  2 14:01 2004 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.10 2004-07-27 08:35:39 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.11 2004-08-02 14:05:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,16 +51,25 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
   /* Need a vbox so we can add a label with sequence size at the bottom later,
    * we set it to a fixed width so that the text is always visible. */
   zmap->navigator->navVBox = gtk_vbox_new(FALSE, 0);
-  gtk_widget_set_usize(GTK_WIDGET(zmap->navigator->navVBox), 150, -2) ;
+  gtk_widget_set_usize(GTK_WIDGET(zmap->navigator->navVBox), 250, -2) ;
 
   zmap->navigator->topLabel = gtk_label_new(TOPTEXT_NO_SCALE) ;
   gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->topLabel, FALSE, TRUE, 0);
 
-  /* if we want to change the max, we'll have to destroy and recreate the vscale. */
-  zmap->navigator->navVScale = gtk_vscale_new_with_range(0, req.height, increment);
-  gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navVScale, TRUE, TRUE, 0);
-  gtk_scale_set_value_pos(GTK_SCALE(zmap->navigator->navVScale), GTK_POS_LEFT);
-  gtk_scale_set_draw_value(GTK_SCALE(zmap->navigator->navVScale), TRUE);
+
+  /* Make the navigator with a default, "blank" adjustment obj. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zmap->navigator->default_adjustment = gtk_adjustment_new(0.0, 1.0, 100.0, 1, 1, 1) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  zmap->navigator->default_adjustment = gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ;
+
+  zmap->navigator->navVScale = gtk_vscale_new(GTK_ADJUSTMENT(zmap->navigator->default_adjustment)) ;
+  gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navVScale, TRUE, TRUE, 0) ;
+  gtk_scale_set_value_pos(GTK_SCALE(zmap->navigator->navVScale), GTK_POS_LEFT) ;
+  gtk_scale_set_draw_value(GTK_SCALE(zmap->navigator->navVScale), TRUE) ;
+
 
   /* Note how we pack the label at the end of the vbox and set "expand" to FALSE so that it
    * remains small and the vscale expands to fill the rest of the box. */
@@ -82,15 +91,35 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext fea
   /* May be called with no sequence to parent mapping so must set default navigator for this. */
   if (features)
     {
+      GtkObject *curr_adjuster, *new_adjuster ;
+
       navigator->parent_span = features->parent_span ;	    /* n.b. struct copy. */
       navigator->sequence_to_parent = features->sequence_to_parent ; /* n.b. struct copy. */
 
       top_str = g_strdup_printf("%d", navigator->parent_span.x1) ;
       bot_str = g_strdup_printf("%d", navigator->parent_span.x2) ;
 
-      gtk_range_set_range(GTK_RANGE(navigator->navVScale),
-			  navigator->parent_span.x1, navigator->parent_span.x2) ;
-      gtk_range_set_value(GTK_RANGE(navigator->navVScale), navigator->sequence_to_parent.p1);
+      /* Make a new adjustment object to represent the new sequence within its parent, note that
+       * sequence may be reversed relative to parent so we may need scale to be reversed. */
+      curr_adjuster = (GtkObject *)gtk_range_get_adjustment(GTK_RANGE(navigator->navVScale)) ;
+
+      if (navigator->sequence_to_parent.p1 > navigator->sequence_to_parent.p2)
+	gtk_range_set_inverted(GTK_RANGE(navigator->navVScale), TRUE) ;
+
+      new_adjuster = gtk_adjustment_new((((gdouble)(navigator->sequence_to_parent.p1
+						    + navigator->sequence_to_parent.p2)) / 2.0),
+					(gdouble)navigator->parent_span.x1,
+					(gdouble)navigator->parent_span.x2,
+					10.0,		    /* step incr, wild guess... */
+					1000,		    /* page incr, wild guess... */
+					(gdouble)(abs(navigator->sequence_to_parent.p2
+						      - navigator->sequence_to_parent.p1) + 1)) ;
+
+      gtk_range_set_adjustment(GTK_RANGE(navigator->navVScale), GTK_ADJUSTMENT(new_adjuster)) ;
+
+      /* If the current adjustment is not the default then free it. */
+      if (curr_adjuster != navigator->default_adjustment)
+	gtk_object_destroy(curr_adjuster) ;
     }
   else
     {
@@ -101,6 +130,11 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext fea
 
       top_str = g_strdup(TOPTEXT_NO_SCALE) ;
       bot_str = g_strdup(BOTTEXT_NO_SCALE) ;
+
+
+      gtk_range_set_adjustment(GTK_RANGE(navigator->navVScale),
+			       GTK_ADJUSTMENT(navigator->default_adjustment)) ;
+
     }
 
 
