@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan  6 15:21 2005 (edgrif)
+ * Last edited: Jan 20 13:26 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.38 2005-01-07 12:30:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.39 2005-01-24 11:47:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -51,6 +51,27 @@
 /* This is the name of the window config stanza. */
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
 
+
+
+/* X Windows has some limits that are part of the protocol, this means they cannot
+ * be changed any time soon...they impinge on the canvas which could have a very
+ * large windows indeed. Unfortunately X just silently resets the window to size
+ * 1 when you try to create larger windows....now read on...
+ * 
+ * The largest X window that can be created has max dimensions of 65535 (i.e. an
+ * unsigned short), you can easily test this for a server by creating a window and
+ * then querying its size, you should find this is the max. window size you can have.
+ * 
+ * BUT....you can't really make use of a window this size _because_ when positioning
+ * anything (other windows, lines etc.), the coordinates are given via _signed_ ints.
+ * This means that the maximum position you can specify must in the range -32768
+ * to 32767. In a way this makes sense because it means that you can have a window
+ * that covers this entire span and so position things anywhere inside it. In a way
+ * its completely crap and confusing.......
+ * 
+ */
+
+
 enum
   {
     ZMAP_WINDOW_TEXT_BORDER = 2,			    /* border above/below dna text. */
@@ -72,6 +93,10 @@ typedef struct _ZMapWindowStruct
   GtkWidget     *scrolledWindow;                            /* points to toplevel */
   FooCanvas     *canvas;				    /* where we paint the display */
 
+  ZMapWindowCallbacks caller_cbs ;			    /* table of callbacks registered by
+							     * our caller. */
+
+
   double         zoom_factor ;
   ZMapWindowZoomStatus zoom_status ;   /* For short sequences that are displayed at max. zoom initially. */
   double         min_zoom ;				    /* min/max allowable zoom. */
@@ -79,12 +104,6 @@ typedef struct _ZMapWindowStruct
   int            canvas_maxwin_size ;			    /* 30,000 is the maximum (default). */
   int            border_pixels ;			    /* top/bottom border to sequence. */
   double         text_height;                               /* used to calculate min/max zoom */
-  double         current_x;                                /* for scrolling a split window to */
-  double         current_y;                                /* the same place as its sister. */
-  double         scroll_x1;                                
-  double         scroll_y1;                                
-  double         scroll_x2;                                
-  double         scroll_y2;                                
 
   GtkWidget     *text ;
   GdkAtom        zmap_atom ;
@@ -159,46 +178,12 @@ typedef struct _ZMapColStruct
 } ZMapColStruct, *ZMapCol;
 
 
-/* parameters passed between the various functions drawing the features on the canvas */
-typedef struct _ZMapCanvasDataStruct
-{
-  ZMapWindow           window;
-  FooCanvas           *canvas;
-  FooCanvasItem       *forward_column_group;
-  FooCanvasItem       *reverse_column_group; 
-  double               forward_column_pos;
-  double               reverse_column_pos;  
-  ZMapFeatureContext   feature_context;
-  ZMapFeatureSet       feature_set;
-  GQuark               context_key;
-  ZMapFeatureTypeStyle thisType;
-
-} ZMapCanvasDataStruct, *ZMapCanvasData;
-
-
-/* the function to be ultimately called when the user clicks on a canvas item. */
-typedef gboolean (*ZMapFeatureCallbackFunc)(ZMapWindow window, ZMapFeatureItem featureItem);
-
-
-/* Set of callback routines that allow the caller to be notified when events happen
- * to a feature. */
-typedef struct _ZMapFeatureCallbacksStruct
-{
-  ZMapWindowCallbackFunc click ;
-  ZMapFeatureCallbackFunc       rightClick;
-} ZMapFeatureCallbacksStruct, *ZMapFeatureCallbacks ;
-
-
 
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 
-
-
 void zmapWindowHighlightObject(FooCanvasItem *feature, ZMapWindow window, ZMapFeatureTypeStyle thisType);
-
-void zmapFeatureInit(ZMapFeatureCallbacks callbacks) ;
 
 void zmapWindowPrintCanvas(FooCanvas *canvas) ;
 
