@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 25 11:49 2004 (edgrif)
+ * Last edited: Jul 29 14:57 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.3 2004-06-25 13:34:40 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.4 2004-08-02 14:08:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -42,8 +42,14 @@
 typedef struct _ZMapServerStruct *ZMapServer ;
 
 
+/* Types of the server request, i.e. for sequence, for methods etc. */
+typedef enum {ZMAP_SERVERREQ_INVALID = 0, ZMAP_SERVERREQ_SEQUENCE} ZMapServerRequestType ;
 
-typedef enum {ZMAP_SERVERREQ_INVALID, ZMAP_SERVERREQ_SEQUENCE} ZMapServerRequestType ;
+
+/* Possible responses to a server request. */
+typedef enum {ZMAP_SERVERRESPONSE_OK,
+	      ZMAP_SERVERRESPONSE_BADREQ, ZMAP_SERVERRESPONSE_REQFAIL,
+	      ZMAP_SERVERRESPONSE_TIMEDOUT, ZMAP_SERVERRESPONSE_SERVERDIED} ZMapServerResponseType ;
 
 
 
@@ -62,22 +68,19 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_
 gboolean zMapServerOpenConnection(ZMapServer server) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-gboolean zMapServerRequest(ZMapServer server, char *request, char **reply, int *reply_len) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 /* Probably where we have "features" we actually need to return a void *  which could point to
  * one of a number of datatypes depending on the type of the request. AND the char* sequence
  * is temp. as well..... */
-gboolean zMapServerRequest(ZMapServer server, ZMapServerRequestType request,
-			   char *sequence, ZMapFeatureContext *feature_context) ;
+ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapServerRequestType request,
+					 char *sequence, ZMapFeatureContext *feature_context) ;
 
 gboolean zMapServerCloseConnection(ZMapServer server) ;
 
 gboolean zMapServerFreeConnection(ZMapServer server) ;
 
 char *zMapServerLastErrorMsg(ZMapServer server) ;
+
+
 
 
 #endif /* !ZMAP_SERVER_H */

@@ -1,4 +1,4 @@
-/*  File: zmapServer_P.h
+/*  File: zmapServerPrototype.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
  *-------------------------------------------------------------------
@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Jun 25 11:50 2004 (edgrif)
+ * Last edited: Jul 29 14:58 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.2 2004-06-25 13:34:40 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.3 2004-08-02 14:08:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -48,7 +48,8 @@ typedef gboolean (*ZMapServerCreateFunc) (void **server_conn,
 					  char *host, int port,
 					  char *userid, char *passwd, int timeout) ;
 typedef gboolean (*ZMapServerOpenFunc)   (void *server_conn) ;
-typedef gboolean (*ZMapServerRequestFunc)(void *server_conn, ZMapServerRequestType request,
+typedef ZMapServerResponseType
+                 (*ZMapServerRequestFunc)(void *server_conn, ZMapServerRequestType request,
 					  char *sequence, ZMapFeatureContext *feature_context) ;
 typedef char *   (*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
 typedef gboolean (*ZMapServerCloseFunc)  (void *server_conn) ;
