@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 15 16:47 2004 (rnc)
+ * Last edited: Nov 16 08:43 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.14 2004-11-15 16:50:13 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.15 2004-11-16 08:46:12 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -213,8 +213,7 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
  * If necessary, recalculate the scroll region, then scroll to the item
  * and highlight it.
  */
-void zMapWindowScrollToItem(FooCanvas *canvas, guint id, double start, double end, 
-			 gchar *type)
+void zMapWindowScrollToItem(ZMapWindow window, gchar *type, guint id) 
 {
   ZMapCanvasDataStruct *canvasData;
   int cx, cy;
@@ -223,14 +222,14 @@ void zMapWindowScrollToItem(FooCanvas *canvas, guint id, double start, double en
   ZMapFeatureItem featureItem;
   ZMapFeature feature;
 
-  canvasData = g_object_get_data(G_OBJECT(canvas), dataKey);  
+  canvasData = g_object_get_data(G_OBJECT(window->canvas), dataKey);  
   zMapAssert(canvasData->feature_context);
 
   canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), type);
   zMapAssert(canvasData->thisType);
 
   /* The selected object might be outside the current scroll region. */
-  recalcScrollRegion(canvasData, start, end);
+  recalcScrollRegion(canvasData, feature->x1, feature->x2);
 
   /* featureItem holds canvasItem and ptr to the feature_set containing the feature. */
   featureItem =  g_datalist_id_get_data(&(canvasData->window->featureItems), id);
@@ -240,8 +239,8 @@ void zMapWindowScrollToItem(FooCanvas *canvas, guint id, double start, double en
   ** Note that because we zoom asymmetrically, we only convert the y coord 
   ** to canvas coordinates, leaving the x as is.  */
   foo_canvas_item_get_bounds(featureItem->canvasItem, &x1, &y1, &x2, &y2); /* world coords */
-  foo_canvas_w2c(canvas, 0.0, y1, &cx, &cy); 
-  foo_canvas_scroll_to(canvas, (int)x1, cy);                               /* canvas pixels */
+  foo_canvas_w2c(window->canvas, 0.0, y1, &cx, &cy); 
+  foo_canvas_scroll_to(window->canvas, (int)x1, cy);                       /* canvas pixels */
 
   foo_canvas_item_raise_to_top(featureItem->canvasItem);
       
@@ -319,7 +318,7 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 
   if (start)
     {
-      zMapWindowScrollToItem(canvasData->canvas, id, (double)start, (double)end, type);
+      zMapWindowScrollToItem(canvasData->window, type, id);
       gtk_widget_show_all(GTK_WIDGET(canvasData->window->parent_widget));
     }
   
