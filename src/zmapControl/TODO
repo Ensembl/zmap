@@ -23,3 +23,10 @@ and it doesn't seem to break anything, but it does suggest the split/close proce
 entirely under control.
 
 
+
+
+XREMOTE:  code should be moved out of acedb tree into a new directory and it should
+have a separate header that defines the atoms used. Apps can then use this to include
+and respond to commands etc.
+
+
