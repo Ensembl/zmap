@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Nov 19 16:55 2004 (edgrif)
+ * Last edited: Dec 13 13:31 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.20 2004-11-22 11:50:38 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.21 2004-12-13 15:18:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -181,7 +181,12 @@ void *zmapNewThread(void *thread_args)
 
 
       req_features = g_new0(ZMapProtocolGetFeaturesStruct, 1) ;
-      req_features->request = ZMAP_PROTOCOLREQUEST_SEQUENCE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      req_features->request = ZMAP_PROTOCOLREQUEST_FEATURES ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      req_features->request = ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE ;
+
 
       if (zMapServerRequest(thread_cb->server, (ZMapProtocolAny)req_features) == ZMAP_SERVERRESPONSE_OK)
 	{
