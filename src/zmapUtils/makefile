@@ -6,8 +6,8 @@
 # local macros
 UTILS_PRIV_HDRS = ZMap_P.h
 PUB_HDRS = ZMap.h
-UTILS_SRC = zmapUtils.c zmapGUIutils.c
-UTILS_OBJ = zmapUtils.o zmapGUIutils.o
+UTILS_SRC = zmapUtils.c zmapGUIutils.c zmapLogging.c zmapFileUtils.c
+UTILS_OBJ = zmapUtils.o zmapGUIutils.o zmapLogging.o zmapFileUtils.o
 
 
 #
@@ -17,6 +17,7 @@ CURRENT_LIB = $(ZMAP_LIB)
 CURRENT_OBJ = $(UTILS_OBJ)
 CURRENT_DEP = $(PUB_HDRS) $(UTILS_PRIV_HDRS)
 CURRENT_SRC = $(UTILS_PRIV_HDRS) $(UTILS_SRC)
+
 
 #
 # point to common make include file which contains all the rules etc.
