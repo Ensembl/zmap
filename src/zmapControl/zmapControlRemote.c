@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jan 12 16:21 2005 (edgrif)
+ * Last edited: Mar 31 10:27 2005 (edgrif)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.3 2005-01-24 11:33:03 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.4 2005-04-05 14:37:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -240,7 +240,7 @@ static char *findFeature(ZMap zmap, char *command_text)
   gboolean parse_error ;
   char *next ;
   char *keyword, *value ;
-  gchar *type = NULL ;
+  gchar *style = NULL ;
   ZMapFeatureType feature_type = ZMAPFEATURE_INVALID ;
   char *feature_name = NULL ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
@@ -262,7 +262,7 @@ static char *findFeature(ZMap zmap, char *command_text)
 
 
       if (g_ascii_strcasecmp(keyword, "method") == 0)
-	type = g_strdup(value) ;
+	style = g_strdup(value) ;
       else if (g_ascii_strcasecmp(keyword, "type") == 0)
 	{
 	  /* we need a convertor from string -> SO compliant feature type here....needed in
@@ -277,10 +277,10 @@ static char *findFeature(ZMap zmap, char *command_text)
 	{
 	  if (g_ascii_strcasecmp(value, "F") == 0
 	      || g_ascii_strcasecmp(value, "+") == 0)
-	    strand = ZMAPSTRAND_DOWN ;
+	    strand = ZMAPSTRAND_FORWARD ;
 	  else if (g_ascii_strcasecmp(value, "C") == 0
 		   || g_ascii_strcasecmp(value, "-") == 0)
-	    strand = ZMAPSTRAND_UP ;
+	    strand = ZMAPSTRAND_REVERSE ;
 	}
       else if (g_ascii_strcasecmp(keyword, "q_start") == 0)
 	query_start = atoi(value) ;
@@ -303,21 +303,19 @@ static char *findFeature(ZMap zmap, char *command_text)
 
   if (!result)
     {
-      if (type && *type && feature_type != ZMAPFEATURE_INVALID && feature_name && *feature_name
+      if (style && *style && feature_type != ZMAPFEATURE_INVALID && feature_name && *feature_name
 	  && strand
 	  && start != 0 && end != 0
 	  && (feature_type == ZMAPFEATURE_HOMOL && query_start != 0 && query_end != 0))
 	{
-	  char *feature_id ;
-	  GQuark feature_quark ;
+	  ZMapWindow window ;
+	  FooCanvasItem *item ;
 
-	  /* The xremote return codes don't really cover everything we would like them to... */
-	  if (zMapFeatureSetCoords(strand, &start, &end, &query_start, &query_end)
-	      && (feature_id = zMapFeatureCreateID(feature_type, feature_name, start, end,
-						   query_start, query_end))
-	      && (feature_quark = g_quark_try_string(feature_id))
-	      && (zMapWindowScrollToItem(zMapViewGetWindow(zmap->focus_viewwindow),
-					 type, feature_quark)))
+	  window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+
+	  if ((item = zMapWindowFindFeatureItemByName(window, style, feature_type, feature_name,
+						      strand, start, end, query_start, query_end))
+	      && (zMapWindowScrollToItem(zMapViewGetWindow(zmap->focus_viewwindow), item)))
 	    result = XREMOTE_S_200_COMMAND_EXECUTED ;
 	  else
 	    result = XREMOTE_S_500_COMMAND_UNPARSABLE ;
@@ -329,8 +327,8 @@ static char *findFeature(ZMap zmap, char *command_text)
     }
 
   /* Clean up. */
-  if (type)
-    g_free(type) ;
+  if (style)
+    g_free(style) ;
   if (feature_name)
     g_free(feature_name) ;
 
