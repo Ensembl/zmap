@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Aug 13 16:26 2004 (rnc)
+ * Last edited: Sep  1 16:32 2004 (rnc)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.6 2004-08-18 14:50:55 rnc Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.7 2004-09-02 08:54:55 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -43,9 +43,10 @@
 
 float zmapDrawScale(FooCanvas *canvas, float offset, int start, int end) ;
 void  zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
-		   char *colour, double thickness);
-FooCanvasItem *zmapDrawBox(FooCanvasItem *group, double x1, double y1, 
-			   double x2, double y2, char *line_colour, char *fill_colour);
+		   GdkColor *colour, double thickness);
+FooCanvasItem *zmapDrawBox(FooCanvasItem *group, 
+			   double x1, double y1, double x2, double y2, 
+			   GdkColor *line_colour, GdkColor *fill_colour);
 void  zmapDisplayText(FooCanvasGroup *group, char *text, char *colour, double x, double y);
 
 

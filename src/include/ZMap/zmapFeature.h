@@ -25,15 +25,16 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Jul 27 08:13 2004 (edgrif)
+ * Last edited: Sep  1 16:21 2004 (rnc)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.10 2004-07-27 07:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.11 2004-09-02 08:55:21 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
 
 #include <glib.h>
+#include <gtk/gtk.h>
 
 /* A unique ID for each feature created, can be used to unabiguously query for that feature
  * in a database. The feature id ZMAPFEATUREID_NULL is guaranteed not to equate to any feature
@@ -307,9 +308,9 @@ typedef enum {ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_BUMP, ZMAPOVERLAP_CLUSTER } ZMap
 
 typedef struct ZMapFeatureTypeStyleStruct_
 {
-  char *outline ;					    /* Surround/line colour. */
-  char *foreground ;					    /* Overlaid on background. */
-  char *background ;					    /* Fill colour. */
+  GdkColor outline ;					    /* Surround/line colour. */
+  GdkColor foreground ;					    /* Overlaid on background. */
+  GdkColor background ;					    /* Fill colour. */
   float right_priority ;
   ZMapFeatureWidthStyle width_style ;
   ZMapFeatureOverlapStyle overlap_style ;
