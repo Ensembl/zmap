@@ -25,23 +25,24 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Sep 15 15:13 2004 (edgrif)
+ * Last edited: Sep 17 11:15 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.12 2004-09-17 08:32:19 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.13 2004-09-17 12:41:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-/* With some additional calls in the zmapConn code I could get rid of the need for
- * the private header here...... */
 
+#include <strings.h>
 /* YOU SHOULD BE AWARE THAT ON SOME PLATFORMS (E.G. ALPHAS) THERE SEEMS TO BE SOME INTERACTION
  * BETWEEN pthread.h AND gtk.h SUCH THAT IF pthread.h COMES FIRST THEN gtk.h INCLUDES GET MESSED
  * UP AND THIS FILE WILL NOT COMPILE.... */
-
-#include <strings.h>
 #include <pthread.h>
 #include <ZMap/zmapUtils.h>
+
+/* With some additional calls in the zmapConn code I could get rid of the need for
+ * the private header here...... */
 #include <zmapConn_P.h>
+
 #include <zmapSlave_P.h>
 
 
@@ -161,6 +162,30 @@ void *zmapNewThread(void *thread_args)
       goto clean_up ;
     }
 
+
+  if (connection->load_features)
+    {
+      ZMapServerResponseType server_response ;
+      ZMapProtocoltGetFeatures req_features ;
+
+      req_features = g_new0(ZMapProtocolGetFeaturesStruct, 1) ;
+      req_features->request = ZMAP_PROTOCOLREQUEST_SEQUENCE ;
+
+      if (zMapServerRequest(thread_cb->server, (void *)req_features) == ZMAP_SERVERRESPONSE_OK)
+	{
+	  /* Signal that we got some data. */
+	  zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA, req_features) ;
+	}
+      else
+	{
+	  g_free(req_features) ;
+
+	  thread_cb->thread_died = TRUE ;
+	  thread_cb->initial_error = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNREQUEST,
+						     zMapServerLastErrorMsg(thread_cb->server)) ;
+	  goto clean_up ;
+	}
+    }
   
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -208,14 +233,6 @@ void *zmapNewThread(void *thread_args)
 	  /* this needs changing according to request.... */
 	  ZMAP_THR_DEBUG(("%x: servicing request....\n", connection->thread_id)) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  thread_cb->server_request = ZMAP_SERVERREQ_SEQUENCE ;
-
-	  server_response = zMapServerRequest(thread_cb->server, thread_cb->server_request,
-					      sequence, &(thread_cb->feature_context)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	  server_response = zMapServerRequest(thread_cb->server, request) ;
 
 	  switch (server_response)
@@ -225,14 +242,7 @@ void *zmapNewThread(void *thread_args)
 		ZMAP_THR_DEBUG(("%x: got all data....\n", connection->thread_id)) ;
 
 		/* Signal that we got some data. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA,
-					(void *)(thread_cb->feature_context)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 		zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA, request) ;
-
 		
 		request = NULL ;			    /* Reset, we don't free this data. */
 		break ;
