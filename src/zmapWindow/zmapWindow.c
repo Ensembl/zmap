@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 21 10:21 2004 (rnc)
+ * Last edited: Sep 28 09:43 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.31 2004-09-27 15:09:13 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.32 2004-09-28 08:45:13 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,6 +96,8 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   GtkWidget *canvas ;
   GtkAdjustment *adj ; 
   GdkColor color;
+
+  ZMapCanvasDataStruct *canvasData = g_new0(ZMapCanvasDataStruct, 1);
 
   /* No callbacks, then no window creation. */
   zMapAssert(window_cbs_G) ;
@@ -168,6 +170,10 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   GTK_LAYOUT(canvas)->vadjustment->step_increment = window->step_increment;
   GTK_LAYOUT(canvas)->hadjustment->step_increment = window->step_increment;
 
+
+  canvasData->window = window;
+  canvasData->canvas = window->canvas;
+  g_object_set_data(G_OBJECT(window->canvas), "canvasData", canvasData);
 
   /* This should all be in some kind of routine to draw the whole canvas in one go.... */
 
@@ -260,45 +266,31 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   GtkAdjustment *adjust;
   int direction = +1;
 
+  ZMapCanvasDataStruct *canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
+
   if (zoom_factor < 1.0)
       direction = -1;
 
-  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
+  
+  if (window->zoom_factor < 256) /* x256 is roughly 1 base per line */
+    {
+      foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
 
-  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
-  wy = adjust->page_size;
+      adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
+      wy = adjust->page_size;
 
-  window->zoom_factor *= zoom_factor ;
+      window->zoom_factor *= zoom_factor ;
 
-  /* do we need to do anything else like redraw ?? */
-  foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
+      /* do we need to do anything else like redraw ?? */
+      foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
 
-  z = (y * zoom_factor) + ((wy * zoom_factor / 4.0) * direction);
-  foo_canvas_scroll_to(window->canvas, x, z );
+      z = (y * zoom_factor) + ((wy * zoom_factor / 4.0) * direction);
+      foo_canvas_scroll_to(window->canvas, x, z );
+    }
 
   return ;
 }
 
-/*
-void zMapWindowZoomIn(ZMapWindow window)
-{
-  int x, y, wy, z;
-  GtkAdjustment *adjust;
-
-  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
-
-  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
-  wy = adjust->page_size;
-
-  zMapWindowZoom(window, 2.0);
-*/  /* y and wy must be adjusted because we zoom by 2x.*/ /*
-  z = (y * 2) + (wy / 2) * direction;
-  foo_canvas_scroll_to(window->canvas, x, z );
-
-  return;
-}
-
-*/
 
 /* The vadjustment changes when the user stretches or shrinks the window and  
 ** the scroll_region y2 * zoom_factor equates to that when the whole scroll 
