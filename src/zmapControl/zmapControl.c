@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 15 15:53 2004 (edgrif)
+ * Last edited: Jul 15 17:29 2004 (rnc)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.16 2004-07-15 15:06:12 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.17 2004-07-15 16:29:25 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -133,7 +133,8 @@ ZMap zMapCreate(void *app_data)
 
 
   /* Hack to read methods from a file in $HOME/.ZMap for now..... */
-  zMapAssert(zmap->types = getTypesFromFile()) ;
+  // temporarily commented out during code merge
+  //  zMapAssert(zmap->types = getTypesFromFile()) ;
 
 
   /* Make the main/toplevel window for the ZMap. */
@@ -475,6 +476,7 @@ static ZMapView addView(ZMap zmap, char *sequence)
    * the implicit focuspane setting.....we need to set the focus_pane back here.... */
   new_pane = zmapAddPane(zmap, 'v') ;
 
+
   /* focus on the new pane */
   zmapRecordFocus(new_pane) ;
 
@@ -533,8 +535,9 @@ static void dataLoadCB(ZMapView view, void *app_data)
 }
 
 
-/* Gets called when someone clicks in one of the zmap windows....
- * Note that although we get pane data,  */
+
+/* Gets called when someone clicks in one of the zmap windows.... 
+* Note that although we get pane data,  */
 static void butClickCB(ZMapViewWindow view_window, void *app_data)
 {
   ZMap zmap = (ZMap)app_data ;
@@ -664,7 +667,6 @@ static gboolean findViewInZMap(ZMap zmap, ZMapView view)
 
 
 
-
 /* This is a temporary routine to read type/method/source (call it what you will)
  * information from a file in the users $HOME/.ZMap directory. */
 static GData *getTypesFromFile(void)
@@ -739,3 +741,4 @@ static GData *getTypesFromFile(void)
 
   return types ;
 }
+
