@@ -12,17 +12,19 @@ MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
 # local macros
 WIND_PRIV_HDRS = zmapWindow_P.h
 
-PUB_HDRS = seqregion.h stringbucket.h zmapcommon.h zmapcontrol.h zmap.h zmapWindow.h 
+PUB_HDRS = seqregion.h stringbucket.h zmapDraw.h zmapWindow.h 
 #PUB_HDRS = zmapWindow.h 
 
 WIND_SRC = seqregion.c stringbucket.c \
-	zmapbccol.c zmapcols.c zmapcontrol.c \
-	zmapsequence.c zmapsplit.c zmapWindow.c zmapWindowFrame.c GFF_scaffold.c
+	zmapbccol.c zmapcols.c zmapDraw.c \
+	zmapsequence.c zmapWindow.c zmapWindowFrame.c GFF_scaffold.c \
+	zmapWindowDrawFeatures.c
 #WIND_SRC = zmapWindow.c zmapWindowFrame.c
 
 WIND_OBJ = seqregion.o stringbucket.o \
-	zmapbccol.o zmapcols.o zmapcontrol.o \
-	zmapsequence.o zmapsplit.o zmapWindow.o zmapWindowFrame.o GFF_scaffold.o
+	zmapbccol.o zmapcols.o zmapDraw.o \
+	zmapsequence.o zmapWindow.o zmapWindowFrame.o GFF_scaffold.o \
+	zmapWindowDrawFeatures.o		
 #WIND_OBJ = zmapWindow.o zmapWindowFrame.o
 
 ZMAP_LIB = libzmap.a
