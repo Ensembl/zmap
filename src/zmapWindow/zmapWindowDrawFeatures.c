@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 22 16:08 2004 (rnc)
+ * Last edited: Jul 26 11:04 2004 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.8 2004-07-22 15:42:12 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.9 2004-07-27 07:37:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,7 +75,9 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
   // adjust the canvas to suit the sequence we're displaying
   foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2);
   foo_canvas_item_set(window->background, 
-		      "y2", (double)(feature_context->sequence_to_parent.c2 * params.height/params.length) + 100);
+		      "y2", ((double)(feature_context->sequence_to_parent.c2
+				      * params.height/params.length) + 100),
+		      NULL) ;
 
   result = zmapDrawScale(canvas, offset, 
 			 feature_context->sequence_to_parent.c1, 
