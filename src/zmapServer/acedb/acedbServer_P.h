@@ -24,22 +24,35 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Oct 13 21:11 2004 (edgrif)
+ * Last edited: Nov 12 11:09 2004 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.4 2004-10-14 10:18:54 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.5 2004-11-12 11:57:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
 #define ACEDB_SERVER_P_H
 
+
+/* For ZMap to be able to use the GFF returned by the acedb server we need the -rawmethods option
+ * for the "seqfeatures" command and this is only available from acedb 4.9.28 onwards. */
+#define ACEDB_SERVER_MIN_VERSION "4.9.28"
+
+
+#define ACEDB_PROTOCOL_STR "Acedb"			    /* For error messages. */
+
+
 /* Holds all the state we need to manage the acedb connection. */
 typedef struct _AcedbServerStruct
 {
+  char *host ;
+
   AceConnection connection ;
 
-  AceConnStatus last_err_status ;			    /* Needed so we can return err mesgs
+  AceConnStatus last_err_status ;			    /* Needed so we can return err msgs
 							       for aceconn errors. */
   char *last_err_msg ;
+
+  char *version_str ;					    /* For checking server is at right level. */
 
   /* this is the virtual sequence context information, probably need to add to this... */
   char *sequence ;
