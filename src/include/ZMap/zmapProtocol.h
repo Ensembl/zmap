@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Nov  9 10:39 2004 (edgrif)
+ * Last edited: Dec 13 10:13 2004 (edgrif)
  * Created: Wed Sep 15 11:46:18 2004 (edgrif)
- * CVS info:   $Id: zmapProtocol.h,v 1.3 2004-11-09 14:29:29 edgrif Exp $
+ * CVS info:   $Id: zmapProtocol.h,v 1.4 2004-12-13 15:12:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -46,7 +46,11 @@ typedef enum
 
     ZMAP_PROTOCOLREQUEST_TYPES,				    /* Get the feature types. */
 
-    ZMAP_PROTOCOLREQUEST_SEQUENCE			    /* Get the features. */
+    ZMAP_PROTOCOLREQUEST_FEATURES,			    /* Get the features. */
+
+    ZMAP_PROTOCOLREQUEST_SEQUENCE,			    /* Get the sequence. */
+
+    ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE,		    /* Get the features + sequence. */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* these are things I would like to do but have not implemented yet.... */
