@@ -1,4 +1,4 @@
-/*  Last edited: Oct 14 15:32 2004 (edgrif) */
+/*  Last edited: Nov  8 16:25 2004 (edgrif) */
 /* This is a temporary file only to help with testing....it will go once GFF code is combined
  * into the threads etc. code proper.... */
 
@@ -82,7 +82,7 @@ static ZMapFeatureContext parseGFF(char *filename)
       gff_line = g_string_sized_new(2000) ;		    /* Probably not many lines will be >
 							       2k chars. */
 
-      parser = zMapGFFCreateParser(parse_only) ;
+      parser = zMapGFFCreateParser(NULL, parse_only) ;
 
       while ((status = g_io_channel_read_line_string(gff_file, gff_line, &terminator_pos,
 						     &gff_file_err)) == G_IO_STATUS_NORMAL)
