@@ -1,3 +1,4 @@
+/*  Last edited: Nov 20 14:21 2003 (rnc) */
 /*  file: zmapbccol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -266,7 +267,8 @@ void zMapGeneDraw(ZMapWindow *window, ZMapColumn *col, float *offset, int frame)
   int box;
   nbcPrivate *bc = (nbcPrivate *)col->private;
   float maxwidth = *offset;
-  if (meth->flags & METHOD_BUMPABLE)
+
+  if (meth && (meth->flags & METHOD_BUMPABLE))
     bc->bump = bumpCreate(30, 0);
   else
     bc->bump = NULL;
@@ -282,7 +284,10 @@ void zMapGeneDraw(ZMapWindow *window, ZMapColumn *col, float *offset, int frame)
 	    float e1, e2, y, x; 
 	    int xoff = 1;
 	    struct geneSelectData *sd;
-	    bumpItem(bc->bump, 1, seg->x2 - seg->x1, &xoff, &y);
+
+	    if (bc->bump)
+	      bumpItem(bc->bump, 1, seg->x2 - seg->x1, &xoff, &y);
+
 	    x = *offset + xoff;
 	    if (x > maxwidth)
 	      maxwidth = x;
