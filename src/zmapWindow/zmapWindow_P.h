@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar  8 15:43 2005 (edgrif)
+ * Last edited: Mar 16 14:58 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.44 2005-03-08 15:46:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.45 2005-03-16 15:54:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -117,6 +117,8 @@ typedef struct
   /* which one to use here ?? */
   gchar *type_name ;
   GQuark key_id ;
+
+  ZMapWindowAlignmentBlock parent_block ;		    /* Our Alignment block parent. */
 
   FooCanvasItem *column_group ;				    /* The whole column. */
   FooCanvasItem *forward_group, *reverse_group ;	    /* The forward and reverse groups. */
@@ -236,6 +238,9 @@ typedef struct
 
 
 
+
+
+
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
@@ -277,6 +282,8 @@ FooCanvasItem *zmapWindowAlignmentGetColumn(ZMapWindowColumn column_group, ZMapS
 void zmapWindowAlignmentHideUnhideColumns(ZMapWindowAlignmentBlock block) ;
 
 ZMapWindowAlignment zmapWindowAlignmentDestroy(ZMapWindowAlignment alignment) ;
+
+
 
 
 #endif /* !ZMAP_WINDOW_P_H */
