@@ -44,7 +44,7 @@ ACECONN_LIB_FLAGS = -L$(ACECONN_LIB_DIR) -lAceConn -lmd5
 
 
 zmap: $(APP_CC_MAIN_OBJ) $(ZMAPAPP_LIB) $(ZMAP_LIB) $(ZMAPTHR_LIB)
-	$(CC)  -g -pthread  -o $(BINDIR)/$@ $(BINDIR)/zmapAppmain_c.o $(LDFLAGS) $(ZMAP_LIB_FLAGS)  $(ACECONN_LIB_FLAGS) $(GNOME_LIBS) $(GTK_LIBS)
+	$(CC)  -g -pthread  -o $(BINDIR)/$@ $(BINDIR)/zmapAppmain_c.o $(LDFLAGS) $(ALL_LIBS)
 	@echo 'zmap (C version) make...'
 
 #	$(CC)  -g -pthread  -o $(BINDIR)/$@ `gtk-config --libs` $(BINDIR)/zmapAppmain_c.o $(ZMAP_LIB_FLAGS) $(ACECONN_LIB_FLAGS) $(GNOME_LIBS) $(GTK_LIBS)
