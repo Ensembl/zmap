@@ -11,15 +11,11 @@ MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
 
 # local macros
 #WIND_PRIV_HDRS = zmapWindow_P.h
-
+WIND_PRIV_HDRS = 
 PUB_HDRS =  zmapDraw.h
-#PUB_HDRS = zmapWindow.h 
-
 WIND_SRC = zmapDraw.c
-
 WIND_OBJ = zmapDraw.o
 
-ZMAP_LIB = libzmap.a
 
 #FUNCS = zmapfuncs.c zmapfuncs.h
 
