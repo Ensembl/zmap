@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 28 09:43 2004 (rnc)
+ * Last edited: Sep 28 10:02 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.32 2004-09-28 08:45:13 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.33 2004-09-28 09:03:20 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,7 +96,6 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   GtkWidget *canvas ;
   GtkAdjustment *adj ; 
   GdkColor color;
-
   ZMapCanvasDataStruct *canvasData = g_new0(ZMapCanvasDataStruct, 1);
 
   /* No callbacks, then no window creation. */
@@ -140,8 +139,6 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   g_signal_connect(GTK_OBJECT(adj), "value_changed", GTK_SIGNAL_FUNC(navUpdate), (gpointer)(window));
   g_signal_connect(GTK_OBJECT(adj), "changed", GTK_SIGNAL_FUNC(navChange), (gpointer)(window)); 
 
-
-
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -170,12 +167,11 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   GTK_LAYOUT(canvas)->vadjustment->step_increment = window->step_increment;
   GTK_LAYOUT(canvas)->hadjustment->step_increment = window->step_increment;
 
-
   canvasData->window = window;
   canvasData->canvas = window->canvas;
   g_object_set_data(G_OBJECT(window->canvas), "canvasData", canvasData);
 
-  /* This should all be in some kind of routine to draw the whole canvas in one go.... */
+  /* This should all be  in some kind of routine to draw the whole canvas in one go.... */
 
   /* should this be done by caller ??..... */
   gtk_widget_show_all(window->parent_widget) ;
@@ -249,6 +245,7 @@ void zMapWindowDestroy(ZMapWindow window)
   if (window->featureListWindow)
     gtk_widget_destroy(window->featureListWindow);
 
+ /* ah, but has the window been destroyed? Then the canvas will, too */
   canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
   g_free(canvasData);
   g_free(window) ;
@@ -265,13 +262,11 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   int x, y, wy, z;
   GtkAdjustment *adjust;
   int direction = +1;
-
   ZMapCanvasDataStruct *canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
 
   if (zoom_factor < 1.0)
       direction = -1;
 
-  
   if (window->zoom_factor < 256) /* x256 is roughly 1 base per line */
     {
       foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
@@ -618,7 +613,8 @@ GArray *zMapRegionGetDNA(ZMapRegion *region)
 void zMapRegionFreeDNA(ZMapRegion *region)
 {
   g_array_free(region->dna, TRUE);
-  return;
+  return; 
+
 }
 
 
