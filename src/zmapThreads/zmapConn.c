@@ -26,13 +26,14 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  2 10:39 2004 (edgrif)
+ * Last edited: Mar 12 14:30 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConn.c,v 1.3 2004-03-03 12:04:18 edgrif Exp $
+ * CVS info:   $Id: zmapConn.c,v 1.4 2004-03-12 15:57:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
+#include <ZMap/zmapUtils.h>
 #include <zmapConn_P.h>
 
 /* Turn on/off all debugging messages for threads. */
@@ -55,27 +56,28 @@ ZMapConnection zMapConnCreate(char *machine, char *port, char *protocol, char *s
   /* ok to just set state here because we have not started the thread yet.... */
   zmapCondVarCreate(&(connection->request)) ;
   connection->request.state = ZMAP_REQUEST_WAIT ;
+  connection->request.state = NULL ;
 
   zmapVarCreate(&(connection->reply)) ;
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   connection->reply.state = ZMAP_REPLY_INIT ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   connection->reply.state = ZMAP_REPLY_WAIT ;
-
+  connection->reply.data = NULL ;
+  connection->reply.error_msg = NULL ;
 
   /* Set the new threads attributes so it will run "detached", we do not want anything from them.
    * when they die, we want them to go away and release their resources. */
   if (status == 0
       && (status = pthread_attr_init(&thread_attr)) != 0)
     {
-      ZMAPSYSERR(status, "Create thread attibutes") ;
+      ZMAPFATALSYSERR(status, "%s", "Create thread attibutes") ;
     }
 
   if (status == 0
       && (status = pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED)) != 0)
     {
-      ZMAPSYSERR(status, "Set thread detached attibute") ;
+      ZMAPFATALSYSERR(status, "%s", "Set thread detached attibute") ;
     }
 
 
@@ -83,7 +85,7 @@ ZMapConnection zMapConnCreate(char *machine, char *port, char *protocol, char *s
   if (status == 0
       && (status = pthread_create(&thread_id, &thread_attr, zmapNewThread, (void *)connection)) != 0)
     {
-      ZMAPSYSERR(status, "Thread creation") ;
+      ZMAPFATALSYSERR(status, "%s", "Thread creation") ;
     }
 
   if (status == 0)
@@ -101,9 +103,9 @@ ZMapConnection zMapConnCreate(char *machine, char *port, char *protocol, char *s
 
 
 
-void zMapConnLoadData(ZMapConnection connection)
+void zMapConnLoadData(ZMapConnection connection, gchar *data)
 {
-  zmapCondVarSignal(&connection->request, ZMAP_REQUEST_GETDATA) ;
+  zmapCondVarSignal(&connection->request, ZMAP_REQUEST_GETDATA, data) ;
 
   return ;
 }
@@ -181,7 +183,7 @@ void zMapConnKill(ZMapConnection connection)
   /* Signal the thread to cancel it */
   if ((status = pthread_cancel(connection->thread_id)) != 0)
     {
-      ZMAPSYSERR(status, "Thread cancel") ;
+      ZMAPFATALSYSERR(status, "%s", "Thread cancel") ;
     }
 
   return ;
@@ -199,7 +201,6 @@ void zMapConnDestroy(ZMapConnection connection)
   zmapCondVarDestroy(&(connection->request)) ;
 
   g_free(connection->machine) ;
-  g_free(connection->sequence) ;
 
   g_free(connection) ;
 
@@ -224,7 +225,6 @@ static ZMapConnection createConnection(char *machine, char *port, char *protocol
   connection->machine = g_strdup(machine) ;
   connection->port = atoi(port) ;
   connection->protocol = g_strdup(protocol) ;
-  connection->sequence = g_strdup(sequence) ;
 
   return connection ;
 }
@@ -236,8 +236,6 @@ static void destroyConnection(ZMapConnection connection)
 {
   g_free(connection->machine) ;
   g_free(connection->protocol) ;
-  g_free(connection->sequence) ;
-
 
   /* Setting this to zero prevents subtle bugs where calling code continues
    * to try to reuse a defunct control block. */
