@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 13 16:14 2004 (edgrif)
+ * Last edited: Jul 14 16:06 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.12 2004-07-14 09:13:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.13 2004-07-15 16:35:43 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -67,7 +67,6 @@ typedef struct _ZMapWindowStruct
   double       zoom_factor ;
   int          step_increment;
 
-
   GtkWidget *text ;
 
   GdkAtom zmap_atom ;
@@ -83,12 +82,6 @@ typedef struct _ZMapWindowStruct
   /* Is this even used ??????? */
   InvarCoord      origin; /* that base which is VisibleCoord 1 */
 
-
-
-  /* ugh, this should not be here......... */
-  /* navigator stuff */
-  Coord           navStart, navEnd; /* Start drawing the Nav bar from here */
-  ScreenCoord     scaleOffset;
 
 } ZMapWindowStruct ;
 
