@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Dec 14 10:04 2004 (edgrif)
+ * Last edited: Feb  2 13:48 2005 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.10 2004-12-15 14:11:46 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.11 2005-02-02 14:35:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,8 +48,11 @@ static gboolean createConnection(void **server_out,
 				 char *host, int port, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
-static ZMapServerResponseType setContext(void *server, ZMapServerSetContext context) ;
-static ZMapServerResponseType request(void *server_conn, ZMapProtocolAny request) ;
+static ZMapServerResponseType setContext(void *server, char *sequence,
+					 int start, int end, GData *types) ;
+static ZMapFeatureContext copyContext(void *server_conn) ;
+static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
@@ -57,9 +60,6 @@ static gboolean destroyConnection(void *server) ;
 static void addMapping(ZMapFeatureContext feature_context) ;
 
 
-/* 
- *    Although these routines are static they form the external interface to the file server.
- */
 
 
 /* Compulsory routine, without this we can't do anything....returns a list of functions
@@ -71,7 +71,9 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs)
   file_funcs->create = createConnection ;
   file_funcs->open = openConnection ;
   file_funcs->set_context = setContext ;
-  file_funcs->request = request ;
+  file_funcs->copy_context = copyContext ;
+  file_funcs->get_features = getFeatures ;
+  file_funcs->get_sequence = getSequence ;
   file_funcs->errmsg = lastErrorMsg ;
   file_funcs->close = closeConnection;
   file_funcs->destroy = destroyConnection ;
@@ -80,7 +82,9 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs)
 }
 
 
-
+/* 
+ *    Although these routines are static they form the external interface to the file server.
+ */
 
 
 /* For stuff that just needs to be done once at the beginning..... */
@@ -140,21 +144,50 @@ static ZMapServerResponseType openConnection(void *server_in)
 
 
 /* I'm not sure if I want to create any context here yet.... */
-static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext context)
+static ZMapServerResponseType setContext(void *server_in, char *sequence,
+					 int start, int end, GData *types)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ; ;
   FileServer server = (FileServer)server_in ;
 
-  server->sequence = g_strdup(context->sequence) ;
-  server->start = context->start ;
-  server->end = context->end ;
-  server->types = context->types ;
+  server->sequence = g_strdup(sequence) ;
+  server->start = start ;
+  server->end = end ;
+  server->types = types ;
 
   return result ;
 }
 
 
+/* dummy routine...... */
+static ZMapFeatureContext copyContext(void *server_in)
+{
+  ZMapFeatureContext context = NULL ;
+  FileServer server = (FileServer)server_in ;
 
+
+  return context ;
+}
+
+
+
+static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+
+  return result ;
+}
+
+static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context_out)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+
+  return result ;
+}
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* DEFFUNCT, NEEDS SHOVING INTO THE TWO ABOVE ROUTINES.... */
 static ZMapServerResponseType request(void *server_in, ZMapProtocolAny request)
 {
   ZMapServerResponseType result ;
@@ -228,6 +261,8 @@ static ZMapServerResponseType request(void *server_in, ZMapProtocolAny request)
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* slightly contorted as we potentially have GErrors from various glib ops. but also our

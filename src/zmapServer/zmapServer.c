@@ -26,15 +26,14 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Dec 14 10:14 2004 (edgrif)
+ * Last edited: Feb  2 14:20 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.18 2004-12-15 14:11:46 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.19 2005-02-02 14:38:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <strings.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapProtocol.h>
 #include <zmapServer_P.h>
 
 
@@ -78,7 +77,9 @@ gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out)
   /* All functions MUST be specified. */
   zMapAssert(serverfuncs->global_init
 	     && serverfuncs->create && serverfuncs->open
-	     && serverfuncs->set_context && serverfuncs->request && serverfuncs->errmsg
+	     && serverfuncs->set_context
+	     && serverfuncs->get_features && serverfuncs->get_sequence
+	     && serverfuncs->errmsg
 	     && serverfuncs->close && serverfuncs->destroy) ;
   
   /* Call the global init function. */
@@ -151,25 +152,27 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server)
 }
 
 
-ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapServerSetContext context)
+ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence,
+					    int start, int end, GData *types)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
     {
-      if (!context->sequence || !*(context->sequence)
-	  || (context->end != 0 && context->start > context->end))
+      if (!sequence || !*sequence
+	  || (end != 0 && start > end))
 	{
 	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
 	  ZMAPSERVER_LOG(Warning, server->protocol, server->host, "Cannot set server context:%s%s",
-			 ((!context->sequence || !*(context->sequence))
+			 ((sequence || !*sequence)
 			  ? " no sequence name" : ""),
-			 ((context->end != 0 && context->start > context->end)
+			 ((end != 0 && start > end)
 			  ? "bad coords, start > end" : "")) ;
 	}
       else
 	{
-	  result = server->last_response = (server->funcs->set_context)(server->server_conn, context) ;
+	  result = server->last_response
+	    = (server->funcs->set_context)(server->server_conn, sequence, start, end, types) ;
 
 	  if (result != ZMAP_SERVERRESPONSE_OK)
 	    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
@@ -181,40 +184,25 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapServerSetCont
 }
 
 
+ZMapFeatureContext zMapServerCopyContext(ZMapServer server)
+{
+  ZMapFeatureContext feature_context ;
 
-ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapProtocolAny request)
+  feature_context = (server->funcs->copy_context)(server->server_conn) ;
+
+  return feature_context ;
+}
+
+
+ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
     {
-      /* OK, THIS IS WHERE WE NEED TO DECODE THE REQUESTS...... */
-      ZMapProtocolAny req_any = (ZMapProtocolAny)request ;
 
-
-
-      /* This switch is pointless at the moment but I expect to have do some preprocessing on some
-       * requests at some time. */
-      switch (req_any->request)
-	{
-	case ZMAP_PROTOCOLREQUEST_FEATURES:
-	case ZMAP_PROTOCOLREQUEST_SEQUENCE:
-	case ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE:
-	  {
-	    result = server->last_response
-	      = (server->funcs->request)(server->server_conn, req_any) ;
-
-	    break ;
-	  }
-	default:
-	  {	  
-	    ZMAPSERVER_LOG(Fatal, server->protocol, server->host,
-			   "Unknown request type: %d", req_any->request) ; /* Exit appl. */
-	    break ;
-	  }
-	}
-
-
+      result = server->last_response
+	= (server->funcs->get_features)(server->server_conn, feature_context) ;
 
 
       if (result != ZMAP_SERVERRESPONSE_OK)
@@ -225,6 +213,23 @@ ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapProtocolAny requ
   return result ;
 }
 
+
+ZMapServerResponseType zMapServerGetSequence(ZMapServer server, ZMapFeatureContext feature_context)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
+    {
+      result = server->last_response
+	= (server->funcs->get_sequence)(server->server_conn, feature_context) ;
+
+      if (result != ZMAP_SERVERRESPONSE_OK)
+	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
+							(server->funcs->errmsg)(server->server_conn)) ;
+    }
+
+  return result ;
+}
 
 
 

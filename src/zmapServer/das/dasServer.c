@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Dec 14 10:07 2004 (edgrif)
+ * Last edited: Feb  2 14:29 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.8 2004-12-15 14:11:47 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.9 2005-02-02 14:36:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,12 +43,18 @@ static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 char *host, int port, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
-static gboolean openConnection(void *server) ;
-static gboolean request(void *server, ZMapProtocolAny request) ;
-static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data) ;
+static ZMapServerResponseType openConnection(void *server) ;
+static ZMapServerResponseType setContext(void *server,  char *sequence,
+					 int start, int end, GData *types) ;
+static ZMapFeatureContext copyContext(void *server_conn) ;
+static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context) ;
+static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context) ;
 static char *lastErrorMsg(void *server) ;
-static gboolean closeConnection(void *server) ;
+static ZMapServerResponseType closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
+
+
+static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data) ;
 
 
 
@@ -64,7 +70,10 @@ void dasGetServerFuncs(ZMapServerFuncs das_funcs)
   das_funcs->global_init = globalInit ;
   das_funcs->create = createConnection ;
   das_funcs->open = openConnection ;
-  das_funcs->request = request ;
+  das_funcs->set_context = setContext ;
+  das_funcs->copy_context = copyContext ;
+  das_funcs->get_features = getFeatures ;
+  das_funcs->get_sequence = getSequence ;
   das_funcs->errmsg = lastErrorMsg ;
   das_funcs->close = closeConnection;
   das_funcs->destroy = destroyConnection ;
@@ -166,9 +175,9 @@ static gboolean createConnection(void **server_out,
 }
 
 
-static gboolean openConnection(void *server_in)
+static ZMapServerResponseType openConnection(void *server_in)
 {
-  gboolean result = TRUE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   DasServer server = (DasServer)server_in ;
 
 
@@ -179,6 +188,50 @@ static gboolean openConnection(void *server_in)
   return result ;
 }
 
+
+static ZMapServerResponseType setContext(void *server_in,  char *sequence,
+					 int start, int end, GData *types)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+
+  /* This operation needs implementing....... */
+
+  return result ;
+}
+
+
+/* dummy routine...... */
+static ZMapFeatureContext copyContext(void *server_in)
+{
+  ZMapFeatureContext context = NULL ;
+  DasServer server = (DasServer)server_in ;
+
+  return context ;
+}
+
+
+
+static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+
+  return result ;
+}
+
+
+static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+
+  return result ;
+}
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* This function is defunct now, its code should be used to implement the getFeatures() and
+ * getSequence() functions. */
 
 /* OH, OK, THE HTTP BIT SHOULD BE THE REQUEST IN HERE PROBABLY.... */
 static gboolean request(void *server_in, ZMapProtocolAny request)
@@ -227,6 +280,8 @@ static gboolean request(void *server_in, ZMapProtocolAny request)
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* N.B. last error may be NULL. */
@@ -239,9 +294,9 @@ static char *lastErrorMsg(void *server_in)
 
 
 /* Close any connections that curl may have and clean up the xml parser. */
-static gboolean closeConnection(void *server_in)
+static ZMapServerResponseType closeConnection(void *server_in)
 {
-  gboolean result = TRUE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   DasServer server = (DasServer)server_in ;
 
   curl_easy_cleanup(server->curl_handle);

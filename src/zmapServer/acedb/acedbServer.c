@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Dec 14 10:05 2004 (edgrif)
+ * Last edited: Feb  1 15:55 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.21 2004-12-15 14:11:47 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.22 2005-02-02 14:36:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,17 +52,19 @@ static gboolean createConnection(void **server_out,
 				 char *host, int port, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
-static ZMapServerResponseType setContext(void *server, ZMapServerSetContext context) ;
-static ZMapServerResponseType request(void *server_conn,
-				      ZMapProtocolAny request) ;
+static ZMapServerResponseType setContext(void *server,  char *sequence,
+					 int start, int end, GData *types) ;
+ZMapFeatureContext copyContext(void *server) ;
+static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static gboolean destroyConnection(void *server) ;
 
+
+
 static char *getMethodString(GData *types) ;
 static void addTypeName(GQuark key_id, gpointer data, gpointer user_data) ;
-
-
 static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
 static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
 static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
@@ -89,7 +91,9 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->create = createConnection ;
   acedb_funcs->open = openConnection ;
   acedb_funcs->set_context = setContext ;
-  acedb_funcs->request = request ;
+  acedb_funcs->copy_context = copyContext ;
+  acedb_funcs->get_features = getFeatures ;
+  acedb_funcs->get_sequence = getSequence ;
   acedb_funcs->errmsg = lastErrorMsg ;
   acedb_funcs->close = closeConnection;
   acedb_funcs->destroy = destroyConnection ;
@@ -177,22 +181,29 @@ static ZMapServerResponseType openConnection(void *server_in)
 }
 
 
+
+/* the struct/param handling will not work in these routines now and needs sorting out.... */
+
+
 /* I'm not sure if I need to create a context actually in the acedb server, really it could be a keyset
  * or a virtual sequence...don't know if we can do this via gif interface.... */
-static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext context)
+static ZMapServerResponseType setContext(void *server_in,  char *sequence,
+					 int start, int end, GData *types)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
   gboolean status ;
   ZMapFeatureContext feature_context ;
 
-  server->sequence = g_strdup(context->sequence) ;
-  server->start = context->start ;
-  server->end = context->end ;
-  server->types = context->types ;
+  server->sequence = g_strdup(sequence) ;
+  server->start = start ;
+  server->end = end ;
+  server->types = types ;
+
 
   /* May want this to be dynamic some time, i.e. redone every time there is a request ? */
-  server->method_str = getMethodString(context->types) ;
+  server->method_str = getMethodString(server->types) ;
+
 
   feature_context = zMapFeatureContextCreate(server->sequence) ;
 
@@ -211,42 +222,36 @@ static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext c
 }
 
 
-/* Get features and/or sequence. */
-static ZMapServerResponseType request(void *server_in, ZMapProtocolAny request)
+
+ZMapFeatureContext copyContext(void *server_in)
+{
+  AcedbServer server = (AcedbServer)server_in ;
+  ZMapFeatureContext feature_context ;
+
+  /* This should be via a feature context "copy" constructor..... */
+  feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
+
+  *feature_context = *(server->current_context) ;	    /* n.b. struct copy. */
+
+  return feature_context ;
+}
+
+
+
+
+/* Get features sequence. */
+static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result ;
   AcedbServer server = (AcedbServer)server_in ;
-  gboolean status = TRUE ;
-  ZMapFeatureContext feature_context ;
-  ZMapProtocolGetFeatures get_seqfeatures = (ZMapProtocolGetFeatures)request ;
 
   /* We should check that there is a sequence context here and report an error if there isn't... */
 
   result = ZMAP_SERVERRESPONSE_OK ;
   server->last_err_status = ACECONN_OK ;
 
-  /* We should be using the start/end info. in context for the below stuff... */
 
-
-  feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
-
-  *feature_context = *(server->current_context) ;	    /* n.b. struct copy. */
-
-
-  if (get_seqfeatures->request == ZMAP_PROTOCOLREQUEST_SEQUENCE
-      || get_seqfeatures->request == ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE)
-    status = dnaRequest(server, feature_context) ;
-
-  if (status
-      && (get_seqfeatures->request == ZMAP_PROTOCOLREQUEST_FEATURES
-	  || get_seqfeatures->request == ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE))
-    status = sequenceRequest(server, feature_context) ;
-
-  if (status)
-    {
-      get_seqfeatures->feature_context_out = feature_context ;
-    }
-  else
+  if (!sequenceRequest(server, feature_context))
     {
       /* If the call failed it may be that the connection failed or that the data coming
        * back had a problem. */
@@ -269,11 +274,47 @@ static ZMapServerResponseType request(void *server_in, ZMapProtocolAny request)
 		     server->sequence, server->last_err_msg) ;
     }
 
-  /* We need a feature context call here which will free stuff correctly...this is not right
-     * as there are features etc to do....need a set of feature context calls......
-     * ALSO YOU WALLY....THE FREE NEEDS TO BE DONE IN sequenceRequest() */
-  if (!status)
-    g_free(feature_context) ;
+
+  return result ;
+}
+
+
+
+/* Get features and/or sequence. */
+static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context)
+{
+  ZMapServerResponseType result ;
+  AcedbServer server = (AcedbServer)server_in ;
+
+  /* We should check that there is a sequence context here and report an error if there isn't... */
+
+  result = ZMAP_SERVERRESPONSE_OK ;
+  server->last_err_status = ACECONN_OK ;
+
+  /* We should be using the start/end info. in context for the below stuff... */
+  if (!dnaRequest(server, feature_context))
+    {
+      /* If the call failed it may be that the connection failed or that the data coming
+       * back had a problem. */
+      if (server->last_err_status == ACECONN_OK)
+	{
+	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	}
+      else if (server->last_err_status == ACECONN_TIMEDOUT)
+	{
+	  result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
+	}
+      else
+	{
+	  /* Probably we will want to analyse the response more than this ! */
+	  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+	}
+
+      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+		     "Could not map %s because: %s",
+		     server->sequence, server->last_err_msg) ;
+    }
+
 
   return result ;
 }
@@ -373,7 +414,6 @@ static void addTypeName(GQuark key_id, gpointer unused, gpointer user_data)
 {
   char *type_name = NULL ;
   ZMapTypesString types_data = (ZMapTypesString)user_data ;
-  GString *str = (GString *)user_data ;
 
   type_name = (char *)g_quark_to_string(key_id) ;
 
