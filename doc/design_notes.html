@@ -79,14 +79,27 @@ other such stuff, e.g. how about indicating start/end_not_found etc.
 
 
 
+<H2>Gnome Canvas</H2>
 
+<H3>Memory usage</H3>
+
+<P>An experiment with creating rectangles in a gnome canvas showed that memory overhead
+is quite high. The upshot is that each canvas_item rectangle costs about 2600 bytes, this
+is probably because each one is represented by a GObject.
+
+<P>You can see a plot of this data by running gnuplot and displaying the file
+gnome_canvas_mem_usage from this docs directory.
+
+<pre>&gt; gnuplot
+gnuplot&gt; plot "gnome_canvas_mem_usage"
+</pre>
 
 
 
 <HR>
 <ADDRESS><a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a></ADDRESS>
 <!-- hhmts start -->
-Last modified: Fri Dec 12 14:32:10 GMT 2003
+Last modified: Thu Jan 15 11:28:57 GMT 2004
 <!-- hhmts end -->
 </BODY>
 </HTML>
