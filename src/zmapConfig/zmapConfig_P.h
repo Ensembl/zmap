@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 27 11:12 2004 (edgrif)
+ * Last edited: Feb 10 13:45 2005 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapConfig_P.h,v 1.5 2004-05-27 13:42:43 edgrif Exp $
+ * CVS info:   $Id: zmapConfig_P.h,v 1.6 2005-02-10 16:36:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_P_H
@@ -35,10 +35,6 @@
 
 #include <ZMap/zmapConfig.h>
 
-
-
-/* Default name of configuration file. */
-#define ZMAP_CONFIG_FILE        "ZMap"
 
 
 /* A stanza consisting of a name and a set of elements. */
