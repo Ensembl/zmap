@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 18 16:49 2004 (rnc)
+ * Last edited: Nov 26 09:18 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.34 2004-11-19 10:09:55 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.35 2004-11-29 13:57:29 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -78,10 +78,12 @@ typedef struct _ZMapWindowStruct
   double         max_zoom ;
   int            canvas_maxwin_size ;			    /* 30,000 is the maximum (default). */
   int            border_pixels ;			    /* top/bottom border to sequence. */
+  double         text_height;                               /* used to calculate min/max zoom */
 
   GtkWidget     *text ;
   GdkAtom        zmap_atom ;
   void          *app_data ;
+  gulong         realizeHandlerCB;
 
   GData         *types;
   GPtrArray     *featureListWindows;
@@ -188,6 +190,8 @@ gboolean zMapFeatureClickCB(ZMapWindow window, ZMapFeature feature);
 FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 			     double offset, double zoom_factor, 
 			     int start, int end);
+double zmapWindowCalcZoomFactor(ZMapWindow window);
+void   zmapWindowCalcMaxZoom   (ZMapWindow window);
 
 
 #endif /* !ZMAP_WINDOW_P_H */
