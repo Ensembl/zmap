@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Feb  2 11:31 2005 (edgrif)
+ * Last edited: Mar 24 18:41 2005 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.14 2005-02-02 14:59:33 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.15 2005-04-05 14:25:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -110,9 +110,6 @@ typedef struct _ZMapViewStruct
    * These are the stylesheets in effect for the feature sets, this set is a merge of all the
    * sets from the various servers. */
   GData          *types ;
-
-
-  ZMapRegion  *zMapRegion; /* the region holding all the SEGS - may be redundant*/
 
 } ZMapViewStruct ;
 

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar 18 10:26 2005 (edgrif)
+ * Last edited: Apr  5 15:23 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.50 2005-03-23 07:59:35 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.51 2005-04-05 14:25:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -735,51 +735,6 @@ static void destroyCB(ZMapWindow window, void *caller_data, void *window_data)
 
 
 
-
-
-/* I KNOW NOTHING ABOUT ANY OF THIS IS ABOUT.....OR EVEN IF IT IS IN THE RIGHT PLACE.... */
-
-int zMapViewGetRegionLength(ZMapView view)
-{
-  return view->zMapRegion->length;
-}
-
-Coord zMapViewGetRegionArea(ZMapView view, int num)
-{
-  if (num == 1)
-    return view->zMapRegion->area1;
-  else
-    return view->zMapRegion->area2;
-}
-
-void zMapViewSetRegionArea(ZMapView view, Coord area, int num)
-{
-  if (num == 1)
-    view->zMapRegion->area1 = area;
-  else
-    view->zMapRegion->area2 = area;
-
-return;
-}
-
-gboolean zMapViewGetRegionReverse(ZMapView view)
-{
-  return view->zMapRegion->rootIsReverse;
-}
-
-
-int zMapViewGetRegionSize (ZMapView view)
-{
-  return view->zMapRegion->area2 - view->zMapRegion->area1;
-}
-
-
-ZMapRegion *zMapViewGetZMapRegion(ZMapView view)
-{
-  return view->zMapRegion;
-}
-
-
 /*
  *  ------------------- Internal functions -------------------
  */
@@ -1421,15 +1376,8 @@ static void freeContext(ZMapFeatureContext feature_context)
 {
   zMapAssert(feature_context) ;
 
-  if (feature_context->sequence_name)
-    g_free(feature_context->sequence_name) ;
-
-  if (feature_context->parent_name)
-    g_free(feature_context->parent_name) ;
-
   if (feature_context->feature_sets)
     g_datalist_clear(&(feature_context->feature_sets)) ;
-
 
   return ;
 }
@@ -1485,6 +1433,10 @@ static void visibilityChangeCB(ZMapWindow window, void *caller_data, void *windo
 
 
 
+/* I REALLY DON'T KNOW WHAT TO SAY ABOUT THIS BIT OF CODE, WHAT ON EARTH IS IT TRYING
+ * TO ACHIEVE...WHAT ARE ALL THESE ACCESSOR FUNCTIONS DOING (zMapWindowGetTypeName ETC)
+ * THIS SEEMS COMPLETELY OUT OF WHACK........... */
+
 /* When a window is split, we set the zoom status of all windows
  */
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data)
@@ -1498,14 +1450,22 @@ static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_d
 
 static void setZoomStatus(gpointer data, gpointer user_data)
 {
-  ZMapViewWindow view_window = (ZMapViewWindow)data;
+  ZMapViewWindow view_window = (ZMapViewWindow)data ;
 
-  zMapWindowSetMinZoom(view_window->window);
-  zMapWindowSetZoomStatus(view_window->window);
+  zMapWindowSetMinZoom(view_window->window) ;
+  zMapWindowSetZoomStatus(view_window->window) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Would be better to have a function that just scrolls to the current focus item...?? */
+
   if (zMapWindowGetFocusQuark(view_window->window))
     zMapWindowScrollToItem(view_window->window, 
 			   zMapWindowGetTypeName(view_window->window), 
-			   zMapWindowGetFocusQuark(view_window->window));
+			   zMapWindowGetFocusQuark(view_window->window)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   
   return;
 }
