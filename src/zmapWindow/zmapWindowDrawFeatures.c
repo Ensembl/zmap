@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 13 21:47 2004 (edgrif)
+ * Last edited: Oct 14 16:28 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.20 2004-10-14 08:43:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.21 2004-10-14 15:28:26 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -110,6 +110,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
   double         wx;
   GtkAdjustment *adj;
   ZMapCanvasDataStruct *canvasData;
+  double x, y;
  
   if (feature_context)  /* Split an empty pane and you get here with no feature_context */
     {
@@ -124,12 +125,13 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 
 
       /* make the sequence fit the default window */
-      canvasData->seqLength =
-	feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1 + 1 ;
+      canvasData->seqLength = feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1 + 1;
 
       adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
 
-      window->zoom_factor = adj->page_size / canvasData->seqLength;
+      window->zoom_factor = (adj->page_size) / canvasData->seqLength;
+      foo_canvas_c2w(window->canvas, adj->page_size, 0.0, &x, &y);
+      //      printf("page_size (world) is %f\n", x);
 
       zMapWindowZoom(window, 1.0);  /* already adjusted the zoom_factor, so 1.0 is right here. */
 
@@ -139,7 +141,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
       if (canvasData->seqLength < 0)
 	canvasData->seqLength *= -1.0;
 
-      result = zmapDrawScale(window->canvas, window->scrolledWindow, 
+      result = zmapDrawScale(canvasData->canvas, window->scrolledWindow, 
 			     canvasData->scaleBarOffset, 1.0,
 			     feature_context->sequence_to_parent.c1, 
 			     feature_context->sequence_to_parent.c2);
@@ -174,11 +176,13 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
   const gchar   *itemDataKey = "feature_set";
   FeatureKeys    featureKeys;
   FooCanvasItem *boundingBox;
-  double         wx, wy;
+  double         x1, y1, x2, y2;
   GdkColor       white;
+  GdkColor       pink;
 
 
   gdk_color_parse("white", &white);
+  gdk_color_parse("pink", &pink);
 
   /* NB for each column we create a new canvas group, with the initial y coordinate set to
   ** 5.0 (#define BORDER 5.0 in zmapDraw.h) to just drop it a teeny bit from the top of the
@@ -201,24 +205,22 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
       zMapLogWarning("No ZMapType (aka method) found for source: %s", feature_set->source);
   else
     {
-      /* calculate top position in world coords; ignore x dimension */
-      foo_canvas_c2w(canvasData->canvas, 0, BORDER, &wx, &wy);
-
       canvasData->column_position += column_spacing;
 
       canvasData->columnGroup = foo_canvas_item_new(foo_canvas_root(canvasData->canvas),
 						foo_canvas_group_get_type(),
 						"x", (double)canvasData->column_position,
-						"y", (double)wy,
+						"y", (double)0.0,
 						NULL);
 
+      foo_canvas_get_scroll_region(canvasData->window->canvas, &x1, &y1, &x2, &y2);
 
       boundingBox = foo_canvas_item_new(FOO_CANVAS_GROUP(canvasData->columnGroup),
 					foo_canvas_rect_get_type(),
 					"x1", (double)0.0,
 					"y1", (double)0.0,
 					"x2", (double)canvasData->thisType->width,
-					"y2", (double)canvasData->height - (2 * wy),
+					"y2", (double)y2,
 					"fill_color_gdk", &white,
 					NULL);
 
@@ -245,14 +247,14 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
 	  canvasData->revColGroup = foo_canvas_item_new(foo_canvas_root(canvasData->canvas),
 						    foo_canvas_group_get_type(),
 						    "x", (double)canvasData->revColPos,
-						    "y", (double)wy,
+						    "y", (double)0.0,
 						    NULL);
 	  boundingBox = foo_canvas_item_new(FOO_CANVAS_GROUP(canvasData->revColGroup),
 					    foo_canvas_rect_get_type(),
 					    "x1", (double)0.0,
 					    "y1", (double)0.0,
 					    "x2", (double)canvasData->thisType->width,
-					    "y2", (double)canvasData->height - (2 * wy),
+					    "y2", (double)y2,
 					    "fill_color_gdk", &white,
 					    NULL);
 
@@ -279,9 +281,10 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
 	  
 	}
 
-      foo_canvas_set_scroll_region(canvasData->window->canvas, 1.0, -5.0, 
+
+      foo_canvas_set_scroll_region(canvasData->window->canvas, 1.0, -10.0, 
 				   canvasData->column_position + 20, 
-				   canvasData->seqLength + 5.0);
+				   canvasData->seqLength);
 
       g_datalist_foreach(&(feature_set->features), zmapWindowProcessFeature, canvasData) ;
     }
@@ -334,27 +337,18 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
     {
       switch (zMapFeature->type)
 	{
-	case ZMAPFEATURE_BASIC: case ZMAPFEATURE_VARIATION:     /* type 0 is a basic, 5 is allele */
+	case ZMAPFEATURE_BASIC: case ZMAPFEATURE_HOMOL:         /* type 0 is basic, 1 is homol */
+	case ZMAPFEATURE_VARIATION:                             /* 5 is allele */
 	case ZMAPFEATURE_BOUNDARY: case ZMAPFEATURE_SEQUENCE:   /* boundary is 6, sequence is 7 */
 
 	  g_string_append_printf(buf, "\n");
 
 	  canvasData->feature_group = columnGroup;
 	  
-	  /* calculate position in world coords */
-	  foo_canvas_c2w(canvasData->canvas, 
-			 0,
-			 (zMapFeature->x1 + BORDER) * canvasData->window->zoom_factor * MULT, 
-			 &dummy, &y1);
-	  foo_canvas_c2w(canvasData->canvas, 
-			 0,
-			 (zMapFeature->x2 + BORDER) * canvasData->window->zoom_factor * MULT, 
-			 &dummy, &y2);
-
 	  object = zmapDrawBox(FOO_CANVAS_ITEM(columnGroup), 0.0,
-			       y1,
+			       zMapFeature->x1,
 			       canvasData->thisType->width, 
-			       y2,
+			       zMapFeature->x2,
 			       &canvasData->thisType->outline,
 			       &canvasData->thisType->foreground);
 	
@@ -369,52 +363,12 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 	  
 	  break;
 
-	case ZMAPFEATURE_HOMOL:     /* type 1 is a homol */
-
-	  g_string_append_printf(buf, "\n");
-
-	  canvasData->feature_group = columnGroup;
-	  
-	  /* calculate position in world coords */
-	  foo_canvas_c2w(canvasData->canvas, 
-			 0,
-			 (zMapFeature->x1 + BORDER) * canvasData->window->zoom_factor * MULT, 
-			 &dummy, &y1);
-
-	  foo_canvas_c2w(canvasData->canvas, 
-			 0,
-			 (zMapFeature->x2 + BORDER) * canvasData->window->zoom_factor * MULT, 
-			 &dummy, &y2);
-
-	  object = zmapDrawBox(FOO_CANVAS_ITEM(columnGroup), 0.0,
-			       y1,
-			       canvasData->thisType->width, 
-			       y2,
-			       &canvasData->thisType->outline, 
-			       &canvasData->thisType->foreground);
-
-
-	  g_signal_connect(G_OBJECT(object), "event",
-			   G_CALLBACK(handleCanvasEvent), canvasData) ;
-
-	  itemDataKey = "feature";
-	  g_object_set_data(G_OBJECT(object), itemDataKey, featureKeys);
-	  itemDataKey = "canvasData";
-	  g_object_set_data(G_OBJECT(object), itemDataKey, canvasData);
-
-	  break;
-
-
 	case ZMAPFEATURE_TRANSCRIPT:     /* type 4 is a transcript */
-	  foo_canvas_c2w(canvasData->canvas, 
-			 0.0,
-			 (zMapFeature->x1 + BORDER) * canvasData->window->zoom_factor * MULT, 
-			 &dummy, &y1);
 
 	  feature_group = foo_canvas_item_new(FOO_CANVAS_GROUP(columnGroup),
 					      foo_canvas_group_get_type(),
 					      "x", (double)0.0,
-					      "y", (double)y1,
+					      "y", (double)zMapFeature->x1,
 					      NULL);
       
 	  canvasData->feature_group = feature_group;
@@ -423,63 +377,32 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 	    {
 	      zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
 	      prevSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j-1);
-	      //middle = (((prevSpan->x2 + zMapSpan->x1)/2) - zMapFeature->x1) * canvasData->window->zoom_factor;
-	      //y0 = (prevSpan->x1 - zMapFeature->x1) * canvasData->window->zoom_factor; /* y coord of preceding
-	      //								    exon */							    
-	      //y1 = (prevSpan->x2 - zMapFeature->x1) * canvasData->window->zoom_factor;
-	      //y2 = (zMapSpan->x1 - zMapFeature->x1) * canvasData->window->zoom_factor;
-
-	      /* calculate position in world coords */
-	      foo_canvas_c2w(canvasData->canvas, 
-			     0.0,
-			(((prevSpan->x2 + zMapSpan->x1)/2 - zMapFeature->x1) + BORDER) * canvasData->window->zoom_factor * MULT, 
-			     &dummy, &middle);
-
-	      foo_canvas_c2w(canvasData->canvas, 
-			     0.0,
-			     (prevSpan->x2 - zMapFeature->x1 + BORDER) * canvasData->window->zoom_factor * MULT, 
-			     &dummy, &y1);
-
-	      foo_canvas_c2w(canvasData->canvas, 
-			     0.0,
-			     (zMapSpan->x1 - zMapFeature->x1 + BORDER) * canvasData->window->zoom_factor * MULT, 
-			     &dummy, &y2);
-
-	      if (y2 > y1)
+	      if (zMapSpan->x1 > prevSpan->x2)
 		{
 		  zmapDrawLine(FOO_CANVAS_GROUP(feature_group), 
-			       canvasData->thisType->width/2, y1,
-			       canvasData->thisType->width  , middle, 
+			       canvasData->thisType->width/2, 
+			       prevSpan->x2 - zMapFeature->x1,
+			       canvasData->thisType->width  ,
+			       ((prevSpan->x2 + zMapSpan->x1)/2) - zMapFeature->x1,
 			       &canvasData->thisType->foreground, line_width);
 
 		  zmapDrawLine(FOO_CANVAS_GROUP(feature_group), 
-			       canvasData->thisType->width  , middle, 
-			       canvasData->thisType->width/2, y2, 
+			       canvasData->thisType->width  , 
+			       ((prevSpan->x2 + zMapSpan->x1)/2) - zMapFeature->x1,
+			       canvasData->thisType->width/2, 
+			       zMapSpan->x1 - zMapFeature->x1, 
 			       &canvasData->thisType->foreground, line_width);
 		}
 	    }
 	  for (j = 0; j < zMapFeature->feature.transcript.exons->len; j++)
 	    {
 	      zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
-	      /* calculate position in world coords */
-	      foo_canvas_c2w(canvasData->canvas, 
-			     0.0,
-			     (zMapSpan->x1 - zMapFeature->x1 + BORDER) * canvasData->window->zoom_factor * MULT, 
-			     &dummy, &y1);
-	      
-	      foo_canvas_c2w(canvasData->canvas, 
-			     0.0,
-			     (zMapSpan->x2 - zMapFeature->x1 + BORDER) * canvasData->window->zoom_factor * MULT, 
-			     &dummy, &y2);
-	      
-	      /*	      if (j == 0)
-		zmapDisplayText(FOO_CANVAS_GROUP(feature_group), zMapFeature->name, 
-				"brown", 40.0, y1);
-	      */
-	      object = zmapDrawBox(feature_group, 0.0,
-				   y1,
+
+	      object = zmapDrawBox(feature_group, 
+				   0.0,
+				   zMapSpan->x1 - zMapFeature->x1, 
 				   canvasData->thisType->width,
-				   y2,
+				   zMapSpan->x2 - zMapFeature->x1, 
 				   &canvasData->thisType->outline, 
 				   &canvasData->thisType->foreground);
 
@@ -583,7 +506,7 @@ static gboolean freeObjectKeys(GtkWidget *widget, gpointer data)
 
 
 void zmapHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData)
-{
+{                                               
   GdkColor outline;
   GdkColor foreground;
 
@@ -591,8 +514,8 @@ void zmapHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *canvasDat
   /* if any other feature is currently in focus, revert it to its std colours */
   if (canvasData->focusFeature)
     foo_canvas_item_set(FOO_CANVAS_ITEM(canvasData->focusFeature),
-			"outline_color_gdk", &canvasData->thisType->outline,
- 			"fill_color_gdk"   , &canvasData->thisType->foreground,
+			"outline_color_gdk", &canvasData->focusType->outline,
+ 			"fill_color_gdk"   , &canvasData->focusType->foreground,
 			NULL);
 
   /* set outline and foreground GdkColors to be the inverse of current settings */
