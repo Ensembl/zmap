@@ -44,7 +44,7 @@ pkgconfig_DATA = zmap.pc
 bin_PROGRAMS = zmap
 
 # should this be zmap_OBJECTS ??????
-zmap_SOURCES = zmapApp/zmapAppmain_c.c 
+zmap_SOURCES = $(top_srcdir)/zmapApp/zmapApp_P.h 
 #	zmapApp/zmapApp_P.h \
 #	zmapApp/zmapAppwindow.c \
 #	zmapApp/zmapAppmenubar.c \
