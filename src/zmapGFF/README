@@ -1,0 +1,12 @@
+================================================================================   
+ZMapGFF
+
+
+This directory contains the code that parses GFF lines and constructs ZMapFeature's
+from the lines. The intention is that the code will eventually parse either GFF
+v2 or v3. Currently the code only does v2 as this is the supported version of
+GFF and v3 format is still in the melting pot.
+
+The GFF parser needs to handed lines to parse, it deliberately does not deal with
+issues of data sources, this is so that is can be coupled to any source and large
+GFF documents can be parsed a line at a time.
