@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Feb  2 14:20 2005 (edgrif)
+ * Last edited: Feb  3 14:37 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.19 2005-02-02 14:38:02 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.20 2005-02-03 14:59:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -97,16 +97,20 @@ gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out)
 
 
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
-				    char *host, int port, char *protocol, int timeout,
-				    char *version_str,
+				    char *host, int port, char *protocol, char *format,
+				    int timeout, char *version_str,
 				    char *userid, char *passwd)
 {
   gboolean result = TRUE ;
   ZMapServer server ;
   ZMapServerFuncs serverfuncs = (ZMapServerFuncs)global_data ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* we must have as a minumum the host name and a protocol, everything else is optional. */
   zMapAssert(host && *host && protocol && *protocol) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   server = g_new0(ZMapServerStruct, 1) ;		    /* n.b. crashes on failure. */
   *server_out = server ;
@@ -116,7 +120,7 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
 
   if (result)
     {
-      if ((server->funcs->create)(&(server->server_conn), host, port, version_str,
+      if ((server->funcs->create)(&(server->server_conn), host, port, format, version_str,
 				  userid, passwd, timeout))
 	{
 	  server->host = g_strdup(host) ;

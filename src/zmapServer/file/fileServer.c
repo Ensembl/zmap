@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb  3 10:24 2005 (rds)
+ * Last edited: Feb  3 14:56 2005 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.12 2005-02-03 10:28:10 rds Exp $
+ * CVS info:   $Id: fileServer.c,v 1.13 2005-02-03 14:57:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@
 
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 char *host, int port, char *version_str,
+				 char *host, int port, char *format, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType setContext(void *server, char *sequence,
@@ -106,7 +106,7 @@ static gboolean globalInit(void)
  * 
  *  */
 static gboolean createConnection(void **server_out,
-				 char *host, int port, char *version_str,
+				 char *host, int port, char *format, char *version_str,
 				 char *userid, char *passwd, int timeout)
 {
   gboolean result = TRUE ;

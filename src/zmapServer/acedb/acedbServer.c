@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Feb  1 15:55 2005 (edgrif)
+ * Last edited: Feb  3 14:36 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.22 2005-02-02 14:36:44 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.23 2005-02-03 14:59:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,7 +49,7 @@ typedef struct
 
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 char *host, int port, char *version_str,
+				 char *host, int port, char *format, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType setContext(void *server,  char *sequence,
@@ -119,7 +119,7 @@ static gboolean globalInit(void)
 
 
 static gboolean createConnection(void **server_out,
-				 char *host, int port, char *version_str,
+				 char *host, int port, char *format, char *version_str,
 				 char *userid, char *passwd, int timeout)
 {
   gboolean result = FALSE ;

@@ -26,9 +26,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Feb  2 14:12 2005 (edgrif)
+ * Last edited: Feb  3 14:39 2005 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.11 2005-02-02 14:34:56 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.12 2005-02-03 14:54:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -51,8 +51,8 @@ typedef enum {ZMAP_SERVERRESPONSE_OK,
  * Provide matching Termination routine ???? */
 gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out) ;
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
-				    char *host, int port, char *protocol, int timeout,
-				    char *version_str,
+				    char *host, int port, char *protocol,  char *format,
+				    int timeout, char *version_str,
 				    char *userid, char *passwd) ;
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence,

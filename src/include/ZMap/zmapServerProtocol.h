@@ -28,9 +28,9 @@
  *              give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Feb  2 11:56 2005 (edgrif)
+ * Last edited: Feb  3 14:33 2005 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.1 2005-02-02 14:54:41 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.2 2005-02-03 14:54:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -88,9 +88,10 @@ typedef struct
 {
   ZMapServerReqType type ;
 
+  char *protocol ;
   char *machine ;
   int port ;
-  char *protocol ;
+  char *format ;
   int timeout ;
   char *version ;
 } ZMapServerReqOpenStruct, *ZMapServerReqOpen ;
@@ -153,11 +154,11 @@ typedef union
 
 
 
-/* Handler routine which decodes the request into server calls in the thread. */
 ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 					      void *request_in, void **reply_out,
 					      char **err_msg_out) ;
 
+ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_msg_out) ;
 
 
 #endif /* !ZMAP_PROTOCOL_H */

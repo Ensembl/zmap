@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Feb  1 15:21 2005 (edgrif)
+ * Last edited: Feb  3 14:35 2005 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.7 2005-02-02 14:38:31 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.8 2005-02-03 15:01:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -48,7 +48,7 @@
  * of a particular protocol. */
 typedef gboolean (*ZMapServerGlobalFunc)(void) ;
 typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
-					 char *host, int port, char *version_str,
+					 char *host, int port, char *format, char *version_str,
 					 char *userid, char *passwd, int timeout) ;
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn) ;
 

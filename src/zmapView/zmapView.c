@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  1 16:24 2005 (edgrif)
+ * Last edited: Feb  3 14:50 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.42 2005-02-02 14:52:48 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.43 2005-02-03 15:00:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,7 +71,7 @@ static void killGUI(ZMapView zmap_view) ;
 static void killConnections(ZMapView zmap_view) ;
 
 static ZMapViewConnection createConnection(ZMapView zmap_view,
-					   char *machine, int port, char *protocol,
+					   char *machine, int port, char *protocol, char *format,
 					   int timeout, char *version, char *types_file,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end) ;
@@ -310,20 +310,28 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 
       zmapViewBusy(zmap_view, TRUE) ;
 
+
+
+
+      /* IT WOULD PROBABLY BE BETTER IF THIS CONFIG READING CODE WAS PART OF THE ZMAPSERVER
+       * CODE AS IT IS MORECLOSELY TIED TO THAT THAN TO ZMAPVIEW..... */
+
+
       /* We need to retrieve the connect data here from the config stuff.... */
       if (result && (config = zMapConfigCreate()))
 	{
 	  ZMapConfigStanza server_stanza ;
-	  /* If you change this resource array be sure to check that the subsequent
+	  /* NOTE: If you change this resource array be sure to check that the subsequent
 	   * initialisation is still correct. */
 	  ZMapConfigStanzaElementStruct server_elements[] = {{"host", ZMAPCONFIG_STRING, {NULL}},
 							     {"port", ZMAPCONFIG_INT, {NULL}},
 							     {"protocol", ZMAPCONFIG_STRING, {NULL}},
 							     {"timeout", ZMAPCONFIG_INT, {NULL}},
-							     {"version", ZMAPCONFIG_STRING, {"4.9.28"}},
+							     {"version", ZMAPCONFIG_STRING, {NULL}},
 							     {"sequence", ZMAPCONFIG_BOOL, {NULL}},
 							     {"writeback", ZMAPCONFIG_BOOL, {NULL}},
-							     {"typesfile", ZMAPCONFIG_STRING, {NULL}},
+							     {"stylesfile", ZMAPCONFIG_STRING, {NULL}},
+							     {"format", ZMAPCONFIG_STRING, {NULL}},
 							     {NULL, -1, {NULL}}} ;
 
 	  /* Set defaults for any element that is not a string. */
@@ -333,7 +341,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	  server_elements[6].data.b = FALSE ;
 
 
-	  server_stanza = zMapConfigMakeStanza("server", server_elements) ;
+	  server_stanza = zMapConfigMakeStanza("source", server_elements) ;
 
 	  if (!zMapConfigFindStanzas(config, server_stanza, &server_list))
 	    result = FALSE ;
@@ -355,9 +363,9 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	  while (result
 		 && ((next_server = zMapConfigGetNextStanza(server_list, next_server)) != NULL))
 	    {
-	      char *machine, *protocol ;
+	      char *machine, *protocol, *format ;
 	      int port, timeout ;
-	      char *version, *types_file ;
+	      char *version, *styles_file ;
 	      gboolean sequence_server, writeback_server ;
 	      ZMapViewConnection view_con ;
 
@@ -366,9 +374,10 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      machine = zMapConfigGetElementString(next_server, "host") ;
 	      port = zMapConfigGetElementInt(next_server, "port") ;
 	      protocol = zMapConfigGetElementString(next_server, "protocol") ;
+	      format = zMapConfigGetElementString(next_server, "format") ;
 	      timeout = zMapConfigGetElementInt(next_server, "timeout") ;
 	      version = zMapConfigGetElementString(next_server, "version") ;
-	      types_file = zMapConfigGetElementString(next_server, "typesfile") ;
+	      styles_file = zMapConfigGetElementString(next_server, "stylesfile") ;
 
 	      /* We only record the first sequence and writeback servers found, this means you
 	       * can only have one each of these which seems sensible. */
@@ -377,16 +386,27 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      if (!zmap_view->writeback_server)
 		writeback_server = zMapConfigGetElementBool(next_server, "writeback") ;
 
-	      if (!machine || !protocol || !types_file)
+	      if (strcmp(protocol, "file") != 0 && (!machine || !protocol || !styles_file))
 		{
 		  /* Types is temporary, in the end no types file will mean we read the types
 		   * dynamically from the server. */
 		  zMapLogWarning("%s",
-				 "Found \"server\" stanza without valid \"host\", \"protocol\" "
+				 "Found \"source\" stanza for a server "
+				 "without valid \"host\", \"protocol\" "
+				 "or \"typesfile\", so stanza was ignored.") ;
+		}
+	      else if (strcmp(protocol, "file") == 0  && (!format || !styles_file))
+		{
+		  /* Types is temporary, in the end no types file will mean we read the types
+		   * dynamically from the server. */
+		  zMapLogWarning("%s",
+				 "Found \"source\" stanza for a file "
+				 "without valid \"format\" "
 				 "or \"typesfile\", so stanza was ignored.") ;
 		}
 	      else if ((view_con = createConnection(zmap_view, machine, port, protocol,
-						    timeout, version, types_file,
+						    format,
+						    timeout, version, styles_file,
 						    sequence_server, writeback_server,
 						    zmap_view->sequence,
 						    zmap_view->start, zmap_view->end)))
@@ -1163,10 +1183,6 @@ static void loadDataConnections(ZMapView zmap_view)
       do
 	{
 	  ZMapViewConnection view_con ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  ZMapConnection connection ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	  ZMapThread thread ;
 
 	  ZMapServerReqGetFeatures req_features ;
@@ -1245,10 +1261,6 @@ static void killConnections(ZMapView zmap_view)
   do
     {
       ZMapViewConnection view_con ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      ZMapConnection connection ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       ZMapThread thread ;
 
       view_con = list_item->data ;
@@ -1266,37 +1278,34 @@ static void killConnections(ZMapView zmap_view)
 
 /* Allocate a connection and send over the request to get the sequence displayed. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
-					   char *machine, int port, char *protocol,
-					   int timeout, char *version, char *types_file,
+					   char *machine, int port, char *protocol, char *format,
+					   int timeout, char *version, char *styles_file,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end)
 {
   ZMapViewConnection view_con = NULL ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapConnection connection ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapThread thread ;
 
 
   /* Create the thread to service the connection requests, we give it a function that it will call
-   * to decode the requests we send it. */
-  if ((thread = zMapThreadCreate(zMapServerRequestHandler)))
+   * to decode the requests we send it and a terminate function. */
+  if ((thread = zMapThreadCreate(zMapServerRequestHandler, zMapServerTerminateHandler)))
     {
       ZMapServerReqOpenLoad open_load = NULL ;
       GData *types ;
 
       /* in the end the types files will be optional..... */
-      types = zMapFeatureTypeGetFromFile(types_file) ;
+      types = zMapFeatureTypeGetFromFile(styles_file) ;
 
 
       /* Build the intial request. */
       open_load = g_new0(ZMapServerReqOpenLoadStruct, 1) ;
       open_load->type = ZMAP_SERVERREQ_OPENLOAD ;
 
+      open_load->open.protocol = g_strdup(protocol) ;
       open_load->open.machine = g_strdup(machine) ;
       open_load->open.port = port ;
-      open_load->open.protocol = g_strdup(protocol) ;
+      open_load->open.format = g_strdup(format) ;
       open_load->open.timeout = timeout ;
       open_load->open.version = g_strdup(version) ;
 
@@ -1310,15 +1319,6 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       else
 	open_load->features.type = ZMAP_SERVERREQ_FEATURES ;
 
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if ((thread = zMapThreadCreate(machine, port, protocol, timeout, version,
-				     sequence, start, end, types,
-				     (void *)open_load))) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       zMapThreadRequest(thread, (void *)open_load) ;
 
