@@ -26,15 +26,18 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 11 15:56 2004 (edgrif)
+ * Last edited: Mar 22 13:10 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.3 2004-03-12 15:59:27 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.4 2004-03-22 13:35:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 /* With some additional calls in the zmapConn code I could get rid of the need for
  * the private header here...... */
 
+#include <strings.h>
+#include <pthread.h>
+#include <ZMap/zmapUtils.h>
 #include <zmapConn_P.h>
 #include <ZMap/zmapServer.h>
 #include <zmapSlave_P.h>
@@ -44,8 +47,35 @@
 enum {ZMAP_SLAVE_REQ_BUFSIZE = 512} ;
 
 
+/* Some protocols have global init/cleanup functions that must only be called once, this type/list
+ * allows us to do this. */
+typedef struct
+{
+  char *protocol ;
+  gboolean init_called ;
+  void *global_init_data ;
+  gboolean cleanup_called ;
+} ZMapProtocolInitStruct, *ZMapProtocolInit ;
+
+typedef struct
+{
+  pthread_mutex_t mutex ;				    /* Protects access to init/cleanup list. */
+  GList *protocol_list ;				    /* init/cleanup list. */
+} ZMapProtocolInitListStruct, *ZMapProtocolInitList ;
+
+
+
 
 static void cleanUpThread(void *thread_args) ;
+static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, char *protocol,
+				   void **global_init_data) ;
+static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
+
+
+
+/* Set up the list, note the special pthread macro that makes sure mutex is set up before
+ * any threads can use it. */
+static ZMapProtocolInitListStruct protocol_init_G = {PTHREAD_MUTEX_INITIALIZER, NULL} ;
 
 
 
@@ -61,6 +91,7 @@ static void cleanUpThread(void *thread_args) ;
 void *zmapNewThread(void *thread_args)
 {
   zmapThreadCB thread_cb ;
+  void *global_init_data ;
   ZMapConnection connection = (ZMapConnection)thread_args ;
   ZMapRequest thread_state = &(connection->request) ;
   int status ;
@@ -84,7 +115,15 @@ void *zmapNewThread(void *thread_args)
    * cleanup routine is called. */
   pthread_cleanup_push(cleanUpThread, (void *)thread_cb) ;
 
-  if (!zMapServerCreateConnection(&(thread_cb->server), connection->machine, connection->port,
+
+  /* Check if we need to call the global init function of the protocol, this is a
+   * function that should only be called once. */
+  protocolGlobalInitFunc(&protocol_init_G, connection->protocol, &global_init_data) ;
+
+
+  /* Create the connection block for this specific server connection. */
+  if (!zMapServerCreateConnection(&(thread_cb->server), global_init_data,
+				  connection->machine, connection->port, connection->protocol,
 				  "any", "any"))
     {
       thread_cb->thread_died = TRUE ;
@@ -137,6 +176,7 @@ void *zmapNewThread(void *thread_args)
 	{
 	  static int failure = 0 ;
 	  char *server_command ;
+	  int reply_len = 0 ;
 
 	  /* Is it an error to not have a sequence ????? */
 	  if (!sequence)
@@ -148,7 +188,7 @@ void *zmapNewThread(void *thread_args)
 			   "gif seqget %s ; seqfeatures", sequence) ;
 
 	  if (!zMapServerRequest(thread_cb->server, thread_cb->server_request->str,
-				 &(thread_cb->server_reply)))
+				 &(thread_cb->server_reply), &reply_len))
 	    {
 	      thread_cb->thread_died = TRUE ;
 
@@ -275,3 +315,63 @@ static void cleanUpThread(void *thread_args)
 }
 
 
+
+/* Static/global list of protocols and whether their global init/cleanup functions have been
+ * called. These are functions that must only be called once. */
+static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, char *protocol,
+				   void **global_init_data_out)
+{
+  int status ;
+  GList *curr_ptr ;
+  ZMapProtocolInit init ;
+
+  if ((status = pthread_mutex_lock(&(protocols->mutex))) != 0)
+    {
+      ZMAPFATALSYSERR(status, "%s", "protocolGlobalInitFunc() mutex lock") ;
+    }
+
+  /* If we don't find the protocol in the list then add it, initialised to FALSE. */
+  if (!(curr_ptr = g_list_find_custom(protocols->protocol_list, protocol, findProtocol)))
+    {
+      init = (ZMapProtocolInit)g_new(ZMapProtocolInitStruct, 1) ;
+      init->protocol = g_strdup(protocol) ;
+      init->init_called = init->cleanup_called = FALSE ;
+      init->global_init_data = NULL ;
+
+      protocols->protocol_list = g_list_prepend(protocols->protocol_list, init) ;
+    }
+  else
+    init = curr_ptr->data ;
+
+  /* Call the init routine if its not been called yet and either way return the global_init_data. */
+  if (!init->init_called)
+    {
+      if (!zMapServerGlobalInit(protocol, &(init->global_init_data)))
+	ZMAPFATALERR("Initialisation call for %s protocol failed.", protocol) ;
+
+      init->init_called = TRUE ;
+    }
+
+  *global_init_data_out = init->global_init_data ;
+
+  if ((status = pthread_mutex_unlock(&(protocols->mutex))) != 0)
+    {
+      ZMAPFATALSYSERR(status, "%s", "protocolGlobalInitFunc() mutex unlock") ;
+    }
+
+  return ;
+}
+
+/* Compare a protocol in the list with the supplied one. Just a straight string
+ * comparison currently. */
+static int findProtocol(gconstpointer list_data, gconstpointer custom_data)
+{
+  int result ;
+  char *list_protocol = ((ZMapProtocolInit)list_data)->protocol, *protocol = (char *)custom_data ;
+
+  result = strcasecmp(list_protocol, protocol) ;
+
+  return result ;
+}
+  
+ 
