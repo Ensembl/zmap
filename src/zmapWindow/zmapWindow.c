@@ -19,18 +19,17 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: Provides interface functions for controlling a data
  *              display window.
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 19 15:46 2004 (rnc)
+ * Last edited: Oct 20 14:09 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.40 2004-10-19 14:46:35 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.41 2004-10-20 13:13:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +41,7 @@
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapWindowDrawFeatures.h>
 
-#define WINDOW_LIMIT 30000.0   /* XWindows height limit is about 32k */
+#define XWIN_MAXSIZE 30000.0   /* XWindows height limit is about 32k */
 #define PIXELS_PER_BASE 20.0   /* arbitrary text size to limit zooming in.  Must be tied
 			       ** in to actual text size dynamically some time soon. */
 
@@ -99,9 +98,9 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   ZMapWindow window ;
   GtkWidget *vbox, *menubar, *button_frame, *connect_frame ;
   GtkWidget *canvas ;
-  GtkAdjustment *adj ; 
+  GtkAdjustment *v_adj,*h_adj ; 
   GdkColor color;
-  ZMapCanvasDataStruct *canvasData = g_new0(ZMapCanvasDataStruct, 1);
+  ZMapCanvasDataStruct *canvasData = NULL ;
 
   /* No callbacks, then no window creation. */
   zMapAssert(window_cbs_G) ;
@@ -133,23 +132,11 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(window->scrolledWindow),
 				 GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS) ;
 
-  adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow)) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* I think this is all broken, navChange certainly does not do the right things.... */
-
-  /* Its also the wrong place....navChange should be when the view changes.... */
-
-  g_signal_connect(GTK_OBJECT(adj), "value_changed", GTK_SIGNAL_FUNC(navUpdate), (gpointer)(window));
-  g_signal_connect(GTK_OBJECT(adj), "changed", GTK_SIGNAL_FUNC(navChange), (gpointer)(window)); 
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
+  /* Create the canvas, add it to the scrolled window so all the scrollbar stuff gets linked up
+   * and set the background to be white. */
   canvas = foo_canvas_new();
-  /* add the canvas to the scrolled window */
+
   gtk_container_add(GTK_CONTAINER(window->scrolledWindow), canvas) ;
 
   gdk_color_parse("white", &color);
@@ -160,24 +147,20 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   g_signal_connect(GTK_OBJECT(window->canvas), "button_press_event",
 		   GTK_SIGNAL_FUNC(canvasClickCB), (gpointer)window) ;
 
-  window->group = foo_canvas_item_new(foo_canvas_root(window->canvas),
-                        foo_canvas_group_get_type(),
-                        "x", (double)100,
-                        "y", (double)100 ,
-                        NULL);
 
   /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
-  /* Using a member of ZMapPane means I can adjust it if necessary when we zoom. */
   GTK_LAYOUT(canvas)->vadjustment->step_increment = window->step_increment;
   GTK_LAYOUT(canvas)->hadjustment->step_increment = window->step_increment;
 
+
+  /* This control block holds the state we need for controlling the canvas....should this be in
+   * the window struct in fact ?  Isn't there only one of these per window ? */
+  canvasData = g_new0(ZMapCanvasDataStruct, 1) ;
   canvasData->window = window;
   canvasData->canvas = window->canvas;
   g_object_set_data(G_OBJECT(window->canvas), "canvasData", canvasData);
 
-  /* This should all be  in some kind of routine to draw the whole canvas in one go.... */
-
-  /* should this be done by caller ??..... */
+  /* Get everything sized up....I don't know if this is really needed here or not. */
   gtk_widget_show_all(window->parent_widget) ;
 
   return(window) ; 
@@ -284,7 +267,7 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   
 
   foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
-  scroll_height = y2 - y1;
+  scroll_height = y2 - y1 + 1 ;
 
   /* In order to stay centred on wherever we are in the canvas while zooming, we get the 
   ** current position (offset), add half the page-size to get the centre of the screen,
@@ -324,11 +307,11 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 	{
 	  /* There's an X-Windows limit of 32k on the dimensions, above which objects
 	  ** are not drawn correctly, so we have to handle that here. */ 
-	  if ((scroll_height * window->zoom_factor) > WINDOW_LIMIT)
+	  if ((scroll_height * window->zoom_factor) > XWIN_MAXSIZE)
 	    {
 	      canvasData->reduced = TRUE;
 	      foo_canvas_c2w(window->canvas, x, y, &dummy, &y1);
-	      new_height = WINDOW_LIMIT/window->zoom_factor;
+	      new_height = XWIN_MAXSIZE/window->zoom_factor;
 	      y1 -= new_height/2.0;
 	      y2 = y1 + new_height;
 	      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
@@ -341,9 +324,9 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   else                                 /* zooming out */
     {
       canvasData->atLimit = FALSE;
-      if ((scroll_height * window->zoom_factor) < WINDOW_LIMIT)
+      if ((scroll_height * window->zoom_factor) < XWIN_MAXSIZE)
 	{
-	  new_height = WINDOW_LIMIT/(window->zoom_factor * 2.0);
+	  new_height = XWIN_MAXSIZE/(window->zoom_factor * 2.0);
 	  if (new_height < canvasData->seqLength)
 	    {
 	      foo_canvas_c2w(window->canvas, x, y, &dummy, &y1);

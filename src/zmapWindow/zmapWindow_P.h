@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 19 15:51 2004 (rnc)
+ * Last edited: Oct 20 14:10 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.22 2004-10-19 14:52:02 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.23 2004-10-20 13:13:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -131,8 +131,13 @@ typedef struct _ZMapCanvasDataStruct
   FooCanvasItem       *focusFeature;
 
   GIOChannel          *channel;
-  double               height;
+
+  /* The length, start and end of the segment of sequence to be shown, there will be _no_
+   * features outside of the start/end. */
   double               seqLength;
+  double               seq_start ;
+  double               seq_end ;
+
   double               scaleBarOffset;
   double               x;                   /* x coord of a column the user clicked */
   gboolean             reduced;             /* keep track of scroll region reduction */	

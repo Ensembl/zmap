@@ -1,30 +1,37 @@
-/*  Last edited: Oct 19 15:38 2004 (rnc) */
-/*  file: zmapcontrol.c
- *  Author: Simon Kelley (srk@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2003
+/*  File: zmapDraw.c
+ *  Author: Rob Clack (rnc@sanger.ac.uk)
+ *  Copyright (c) Sanger Institute, 2004
  *-------------------------------------------------------------------
- * Zmap is free software; you can redistribute it and/or
+ * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- *
+ * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * and was written by
- *      Rob Clack    (Sanger Institute, UK) rnc@sanger.ac.uk,
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ * originated by
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *
+ * Description: 
+ * Exported functions: See XXXXXXXXXXXXX.h
+ * HISTORY:
+ * Last edited: Oct 20 13:41 2004 (edgrif)
+ * Created: Wed Oct 20 09:19:16 2004 (edgrif)
+ * CVS info:   $Id: zmapDraw.c,v 1.14 2004-10-20 13:13:04 edgrif Exp $
+ *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <glib.h>
 #include <ZMap/zmapDraw.h>
 
@@ -32,16 +39,6 @@
 
 
 /* function prototypes ***********************************************/
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void drawGene (FooCanvas *canvas) ;
-static void zMapPick (int box, double x, double y);
-static void navPick  (int box, double x, double y);
-static void navDrag  (float *x, float *y, gboolean isDone);
-static void navResize(void);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
@@ -65,16 +62,18 @@ FooCanvasItem *zmapDrawBox (FooCanvasItem *group,
 			    GdkColor *line_colour, GdkColor *fill_colour)
 {
   FooCanvasItem *item;
+
   item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
 			     foo_canvas_rect_get_type(),
-			     "x1"               , (double)x1 ,
-			     "y1"               , (double)y1 ,
-			     "x2"               , (double)x2 ,
-			     "y2"               , (double)y2 ,
+			     "x1"               , x1 ,
+			     "y1"               , y1 ,
+			     "x2"               , x2 ,
+			     "y2"               , y2 ,
 			     "outline_color_gdk", line_colour,
 			     "fill_color_gdk"   , fill_colour,
-			     "width_units"      , (double)1.0,
+			     "width_units"      , 1.0,
 			     NULL);
+
   return item;                                                                       
 }
 
@@ -84,24 +83,25 @@ void zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double
 		  GdkColor *colour, double thickness)
 {
   FooCanvasPoints *points;
-									       
- /* allocate a new points array */
+
+  /* allocate a new points array */
   points = foo_canvas_points_new (2);
 				                                            
- /* fill out the points */
+  /* fill out the points */
   points->coords[0] = x1;
   points->coords[1] = y1;
   points->coords[2] = x2;
   points->coords[3] = y2;
- /* draw the line */
+
+  /* draw the line */
   foo_canvas_item_new(group,
-			foo_canvas_line_get_type(),
-			"points"     , points,
-			"fill_color_gdk" , colour,
-			"width_units", thickness,
-			NULL);
+		      foo_canvas_line_get_type(),
+		      "points"     , points,
+		      "fill_color_gdk" , colour,
+		      "width_units", thickness,
+		      NULL);
 		    
- /* free the points array */
+  /* free the points array */
   foo_canvas_points_free(points);
 
   return;
