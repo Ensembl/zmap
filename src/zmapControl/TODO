@@ -1,0 +1,14 @@
+================================================================================   
+ZMapControl
+
+
+
+The pane stuff needs some attention, particularly in the area of setting focus
+because focus setting includes lots of different operations like setting the
+window title, the navigator etc.....
+
+
+The window title needs to be updated to the sequence for the new view each time focus
+is changed........
+
+
