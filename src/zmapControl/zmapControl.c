@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Mar 19 11:19 2004 (edgrif)
+ * Last edited: Apr  7 10:19 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.5 2004-03-19 11:19:53 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.6 2004-04-08 16:35:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,7 +96,12 @@ ZMap zMapCreate(char *sequence, void *app_data, ZMapCallbackFunc destroy_cb, ZMa
 gboolean zMapConnect(ZMap zmap)
 {
   gboolean result = TRUE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   char **server_list = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  ZMapConfigStanzaSet server_list = NULL ;
 
   if (zmap->state != ZMAP_INIT)
     {
@@ -108,10 +113,68 @@ gboolean zMapConnect(ZMap zmap)
       /* We need to retrieve the connect data here from the config stuff.... */
       if (result)
 	{
+	  ZMapConfigStanza server_stanza ;
+	  ZMapConfigStanzaElementStruct server_elements[] = {{"host", ZMAPCONFIG_STRING, {FALSE}},
+							     {"port", ZMAPCONFIG_INT, {FALSE}},
+							     {"protocol", ZMAPCONFIG_STRING, {FALSE}},
+							     {NULL, -1, {FALSE}}} ;
+
+	  server_stanza = zMapConfigMakeStanza("server", server_elements) ;
+
+	  if (!zMapConfigGetStanzas(zmap->config, server_stanza, &server_list))
+	    result = FALSE ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (!(zMapConfigGetServers(zmap->config, &server_list)))
+	    result = FALSE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	}
+
+      /* Set up connections to the named servers. */
+      if (result)
+	{
+	  int connections = 0 ;
+	  ZMapConfigStanza next_server ;
+
+
+	  /* Current error handling policy is to connect to servers that we can and
+	   * report errors for those where we fail but to carry on and set up the ZMap
+	   * as long as at least one connection succeeds. */
+	  next_server = NULL ;
+	  while (result
+		 && ((next_server = zMapConfigGetNextStanza(server_list, next_server)) != NULL))
+	    {
+	      ZMapConfigStanzaElement element ;
+	      char *machine, *protocol ;
+	      int port ;
+	      ZMapConnection connection ;
+
+
+	      machine = zMapConfigGetElementString(next_server, "host") ;
+	      port = zMapConfigGetElementInt(next_server, "port") ;
+	      protocol = zMapConfigGetElementString(next_server, "protocol") ;
+
+
+	      if ((connection = zMapConnCreate(machine, port, protocol, zmap->sequence)))
+		{
+		  zmap->connection_list = g_list_append(zmap->connection_list, connection) ;
+		  connections++ ;
+		}
+	      else
+		{
+		  zMapWarning("Could not connect to %s protocol server "
+			      "on %s, port %s", protocol, machine, port) ;
+		}
+	    }
+
+	  if (!connections)
 	    result = FALSE ;
 	}
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Set up connections to the named servers. */
       if (result)
 	{
@@ -133,14 +196,8 @@ gboolean zMapConnect(ZMap zmap)
 		}
 	      else
 		{
-		  gchar *err_msg ;
-
-		  err_msg = g_strdup_printf("Could not connect to %s protocol server "
-					    "on %s, port %s", protocol, machine, port) ;
-
-		  zmapGUIShowMsg(err_msg) ;
-
-		  g_free(err_msg) ;
+		  zMapWarning("Could not connect to %s protocol server "
+			      "on %s, port %s", protocol, machine, port) ;
 		}
 
 	      next++ ;
@@ -149,6 +206,8 @@ gboolean zMapConnect(ZMap zmap)
 	  if (!connections)
 	    result = FALSE ;
 	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       /* If everything is ok then set up idle routine to check the connections,
        * otherwise signal failure and clean up. */
@@ -350,7 +409,7 @@ static void zmapWindowCB(void *cb_data, int reason)
     }
 
 
-  ZMAP_DEBUG("GUI: received %s from zmap window\n", debug) ;
+  zMapDebug("GUI: received %s from zmap window\n", debug) ;
 
   return ;
 }
@@ -462,14 +521,14 @@ static gboolean checkConnections(ZMap zmap)
       err_msg = NULL ;
       if (!(zMapConnGetReplyWithData(connection, &reply, &data, &err_msg)))
 	{
-	  ZMAP_DEBUG("GUI: thread %x, cannot access reply from thread - %s\n",
+	  zMapDebug("GUI: thread %x, cannot access reply from thread - %s\n",
 		     zMapConnGetThreadid(connection), err_msg) ;
 	}
       else
 	{
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  ZMAP_DEBUG("GUI: thread %x, thread reply = %s\n",
+	  zMapDebug("GUI: thread %x, thread reply = %s\n",
 		     zMapConnGetThreadid(connection),
 		     zMapVarGetReplyString(reply)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -483,7 +542,7 @@ static gboolean checkConnections(ZMap zmap)
 	    {
 	      if (zmap->state == ZMAP_RUNNING)
 		{
-		  ZMAP_DEBUG("GUI: thread %x, got data\n",
+		  zMapDebug("GUI: thread %x, got data\n",
 			     zMapConnGetThreadid(connection)) ;
 
 		  /* Is this right....????? check my logic here....  */
@@ -493,18 +552,18 @@ static gboolean checkConnections(ZMap zmap)
 		  zMapWindowDisplayData(zmap->window, data) ;
 		}
 	      else
-		ZMAP_DEBUG("GUI: thread %x, got data but ZMap state is - %s\n",
+		zMapDebug("GUI: thread %x, got data but ZMap state is - %s\n",
 			   zMapConnGetThreadid(connection), zMapGetZMapStatus(zmap)) ;
 
 	    }
 	  else if (reply == ZMAP_REPLY_DIED)
 	    {
 	      if (err_msg)
-		zmapGUIShowMsg(err_msg) ;
+		zMapWarning("%s", err_msg) ;
 
 
 	      /* This means the thread has failed for some reason and we should clean up. */
-	      ZMAP_DEBUG("GUI: thread %x has died so cleaning up....\n",
+	      zMapDebug("GUI: thread %x has died so cleaning up....\n",
 			 zMapConnGetThreadid(connection)) ;
 		  
 	      /* We are going to remove an item from the list so better move on from
@@ -521,7 +580,7 @@ static gboolean checkConnections(ZMap zmap)
 	       * so I think logically this cannot happen...???? */
 
 	      /* This means the thread was cancelled so we should clean up..... */
-	      ZMAP_DEBUG("GUI: thread %x has been cancelled so cleaning up....\n",
+	      zMapDebug("GUI: thread %x has been cancelled so cleaning up....\n",
 			 zMapConnGetThreadid(connection)) ;
 
 	      /* We are going to remove an item from the list so better move on from
@@ -559,7 +618,7 @@ static gboolean checkConnections(ZMap zmap)
 	{
 	  /* Threads have died because of their own errors....so what should we do ?
 	   * for now we kill the window and then the rest of ZMap..... */
-	  zmapGUIShowMsg("Cannot show ZMap because server connections have all died") ;
+	  zMapWarning("%s", "Cannot show ZMap because server connections have all died") ;
 
 	  killGUI(zmap) ;
 	  destroyZMap(zmap) ;
