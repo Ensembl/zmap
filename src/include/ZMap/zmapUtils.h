@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Jul  1 17:01 2004 (edgrif)
+ * Last edited: Sep 13 09:13 2004 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.7 2004-07-02 18:22:15 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.8 2004-09-13 12:50:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -89,7 +89,7 @@ char *zMapGetControlFileDir(char *directory_in) ;
 char *zMapGetDir(char *directory_in, gboolean home_relative) ;
 char *zMapGetFile(char *directory, char *filename) ;
 gboolean zMapFileEmpty(char *filepath) ;
-
+char *zMapGetPath(char *path_in) ;
 
 /* You can use ZMAP_MAKESTRING() to create a string version of a number:
  * 
