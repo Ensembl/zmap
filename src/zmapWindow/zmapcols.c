@@ -1,4 +1,4 @@
-/*  Last edited: Jul  1 10:10 2004 (edgrif) */
+/*  Last edited: Jul  2 14:42 2004 (rnc) */
 /*  file: zmapcols.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -26,13 +26,8 @@
  */
 
 #include <seqregion.h>
-#include <zmapcontrol.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapcommon.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#include <zmapDraw.h>
 #include <ZMap/zmapFeature.h>
-
 #include <ZMap/zmapWindow.h>
 
 /*************** function prototypes *****************************************/
@@ -44,10 +39,11 @@ static void zMapDNAColumn(ZMapPane pane, ZMapColumn *col,
 
 static void zMapScaleColumn(ZMapPane pane, ZMapColumn *col, float *offset, int frame)
 {
-  *offset = zmMainScale(zMapPaneGetCanvas(pane), *offset,
-			zmVisibleCoord(zMapPaneGetZMapWindow(pane), zmCoordFromScreen(pane, 0)),
-			zmVisibleCoord(zMapPaneGetZMapWindow(pane), 
-				       zmCoordFromScreen(pane, zMapPaneGetHeight(pane))));
+  //  *offset = zmMainScale(zMapPaneGetCanvas(pane), *offset,
+  //			zmVisibleCoord(zMapPaneGetZMapWindow(pane), zmCoordFromScreen(pane, 0)),
+  //			zmVisibleCoord(zMapPaneGetZMapWindow(pane), 
+  //				       zmCoordFromScreen(pane, zMapPaneGetHeight(pane))));
+  return;
 }
 
 
@@ -58,7 +54,7 @@ void zMapDNAColumn(ZMapPane pane, ZMapColumn *col,
   float offset = *offsetp;
   float max = offset;
   float BPL = zMapPaneGetBPL(pane);
-  ZMapRegion *zMapRegion = zMapPaneGetZMapRegion(pane);
+  ZMapRegion *zMapRegion; // = zMapPaneGetZMapRegion(pane);
   Coord seqstart = srCoord(zMapRegion, zMapPaneGetCentre(pane)) -
     (zMapPaneGetHeight(pane) * BPL) / 2;
   Coord seqend = srCoord(zMapRegion, zMapPaneGetCentre(pane)) +
@@ -80,7 +76,7 @@ void zMapDNAColumn(ZMapPane pane, ZMapColumn *col,
       char *dnap, buff[10];
       int j;
       ScreenCoord y =  zmScreenCoord(pane, i);
-      sprintf(buff, "%7d", zmVisibleCoord(zMapPaneGetZMapWindow(pane), i));
+      //      sprintf(buff, "%7d", zmVisibleCoord(zMapPaneGetZMapWindow(pane), i));
       //      graphText(buff, offset, y);
 
       dnap = &g_array_index(zMapRegion->dna,
@@ -117,15 +113,13 @@ static void pruneCols(ZMapPane pane)
      /* Remove Columns which have invalid methods */
 { 
   int i, j;
-  // NB all this farting about with &pane->cols must be wrong but I can't see why
-  printf("length is %d\n", zMapPaneGetCols(pane)->len);
   
   for (i = 0; i < zMapPaneGetCols(pane)->len; i++)
     {
       ZMapColumn *c = g_ptr_array_index(zMapPaneGetCols(pane), i);
 
-      if (c->type != ZMAPFEATURE_INVALID && c->meth
-	  && !srMethodFromID(zMapPaneGetZMapRegion(pane), c->meth))
+      if (c->type != ZMAPFEATURE_INVALID && c->meth)
+	  //	  && !srMethodFromID(zMapPaneGetZMapRegion(pane), c->meth))
 	{
 	  for (j = i+1; j < (zMapPaneGetCols(pane))->len; j++)
 	    g_ptr_array_remove_index(zMapPaneGetCols(pane), j-1); // = arr(pane->cols, j, ZMapColumn);
@@ -172,12 +166,12 @@ static void insertCol(ZMapPane pane, methodID meth, ZMapFeatureType type)
 	}
       else if ((type == defs[i].type))
 	{
-	  if (!(methp = srMethodFromID(zMapPaneGetZMapRegion(pane), meth)))
-	    {
+	  //	  if (!(methp = srMethodFromID(zMapPaneGetZMapRegion(pane), meth)))
+	  //	    {
 	      // TODO: sort out error handling here
-	      printf("Failed to find method in insertCol\n");
-	      exit;
-	    }
+	  //	      printf("Failed to find method in insertCol\n");
+	  //	      exit;
+	  //	    }
 	  name = (char*)g_string_new(methp->name); //previously hung on pane->window->handle);  
 	  priority = methp->priority;
 	}
@@ -248,7 +242,7 @@ static void insertCol(ZMapPane pane, methodID meth, ZMapFeatureType type)
 void buildCols(ZMapPane pane)
      /* Add a column for each method */
 {
-  ZMapRegion *zMapRegion = zMapPaneGetZMapRegion(pane);
+  ZMapRegion *zMapRegion; // = zMapPaneGetZMapRegion(pane);
   int i;
   for (i=0; i < zMapRegionGetSegs(zMapRegion)->len; i++)
       {
