@@ -13,7 +13,7 @@ MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
 WIND_PRIV_HDRS = zmapWindow_P.h
 
 #PUB_HDRS = seqregion.h stringbucket.h zmapDraw.h zmapWindow.h 
-PUB_HDRS = stringbucket.h zmapDraw.h zmapWindow.h 
+PUB_HDRS = stringbucket.h zmapDraw.h zmapWindow.h zmapWindowDrawFeatures.h
 
 #WIND_SRC = seqregion.c stringbucket.c \
 #	zmapbccol.c zmapcols.c \
