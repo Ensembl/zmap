@@ -1,0 +1,7 @@
+================================================================================   
+ZMapConfig
+
+
+This directory contains the code that deals with reading/writing configuration
+information into ZMaps configuration file(s). Currently much of this is just
+skeleton stuff.
