@@ -27,16 +27,15 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jul  2 18:57 2004 (edgrif)
+ * Last edited: Jul 13 15:49 2004 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.8 2004-07-02 18:22:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.9 2004-07-14 09:02:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
 #define ZMAP_WINDOW_H
 
 #include <glib.h>
-
 /* SHOULD CANVAS BE HERE...MAYBE, MAYBE NOT...... */
 #include <libfoocanvas/libfoocanvas.h>
 
@@ -49,31 +48,46 @@
 typedef struct _ZMapWindowStruct *ZMapWindow ;
 
 
-//typedef struct {
-//  ZMapWindow window;             /* the window pane  */
-//  Calc_cb    calc_cb;            /* callback routine */
-//  void      *seqRegion;          /* AceDB region     */
-//} ZMapCallbackData;
+/* General callback function for all window callbacks... */
+typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data) ;
+
+
+/* Set of callback routines that allow the caller to be notified when events happen
+ * to a window. */
+typedef struct _ZMapWindowCallbacksStruct
+{
+  ZMapWindowCallbackFunc scroll ;
+  ZMapWindowCallbackFunc button_click ;
+  ZMapWindowCallbackFunc destroy ;
+
+} ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 
 
 
-/******************* end of public stuff that might end up private */
-
-
+/* I AM UNCERTAIN ABOUT HOW MUCH THIS IS NEEDED....NEEDS LOOKING AT.... */
 /* Window stuff, callbacks, will need changing.... */
 typedef enum {ZMAP_WINDOW_INIT, ZMAP_WINDOW_LOAD,
 	      ZMAP_WINDOW_STOP, ZMAP_WINDOW_QUIT} ZmapWindowCmd ;
 
-ZMapWindow   zMapWindowCreate          (GtkWidget *parent_widget, char *sequence,
-					zmapVoidIntCallbackFunc app_routine, void *app_data) ;
-void         zMapWindowDisplayData     (ZMapWindow window, void *data) ;
-void         zMapWindowReset           (ZMapWindow window) ;
-void         zMapWindowDestroy         (ZMapWindow window) ;
 
-ZMapWindow   zMapWindowCreateZMapWindow(void);
 
-void         zMapWindowSetHandle       (ZMapWindow window);
-void         zMapWindowCreateRegion    (ZMapWindow window);
+void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
+ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data) ;
+void zMapWindowDisplayData(ZMapWindow window, void *data) ;
+void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
+void zMapWindowReset(ZMapWindow window) ;
+void zMapWindowDestroy(ZMapWindow window) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* WHAT IS THIS USED FOR ?????????? */
+
+ZMapWindow zMapWindowCreateZMapWindow(void);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+void zMapWindowSetHandle       (ZMapWindow window);
+void zMapWindowCreateRegion    (ZMapWindow window);
 
 
 /* I don't know whether we're even going to use these datatypes, so for
@@ -124,6 +138,19 @@ void         zmapWindowDrawFeatures    (ZMapFeatureContext feature_context);
 
 /* TEST SCAFFOLDING............... */
 ZMapFeatureContext testGetGFF(void) ;
+
+
+
+//typedef struct {
+//  ZMapWindow window;             /* the window pane  */
+//  Calc_cb    calc_cb;            /* callback routine */
+//  void      *seqRegion;          /* AceDB region     */
+//} ZMapCallbackData;
+
+
+
+/******************* end of public stuff that might end up private */
+
 
 
 
