@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jan  7 12:32 2005 (edgrif)
+ * Last edited: Mar 28 12:45 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.12 2005-01-07 12:32:59 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.13 2005-04-05 14:34:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -102,7 +102,7 @@ ZMapFeature zmapFeatureCreateEmpty(void)
   ZMapFeature feature ;
 
   feature = g_new0(ZMapFeatureStruct, 1) ;
-  feature->feature_id = ZMAPFEATURE_NULLQUARK ;
+  feature->unique_id = ZMAPFEATURE_NULLQUARK ;
   feature->db_id = ZMAPFEATUREID_NULL ;
   feature->type = ZMAPFEATURE_INVALID ;
 
@@ -118,7 +118,7 @@ ZMapFeature zmapFeatureCreateEmpty(void)
  * are different for different features.
  *  */
 gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
-				char *sequence, char *source, ZMapFeatureType feature_type,
+				char *sequence, GQuark style_id, ZMapFeatureType feature_type,
 				int start, int end, double score, ZMapStrand strand,
 				ZMapPhase phase,
 				ZMapHomolType homol_type, int query_start, int query_end)
@@ -128,16 +128,14 @@ gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char
   zMapAssert(feature) ;
 
   /* If its an empty feature then initialise... */
-  if (feature->feature_id == ZMAPFEATURE_NULLQUARK)
+  if (feature->unique_id == ZMAPFEATURE_NULLQUARK)
     {
-      feature->feature_id = g_quark_from_string(feature_name_id) ;
-      feature->name = g_strdup(name) ;
+      feature->unique_id = g_quark_from_string(feature_name_id) ;
+      feature->original_id = g_quark_from_string(name) ;
       feature->type = feature_type ;
       feature->x1 = start ;
       feature->x2 = end ;
-
-      feature->method_name = g_strdup(source) ;
-
+      feature->style = style_id ;
       feature->strand = strand ;
       feature->phase = phase ;
       feature->score = score ;
@@ -226,12 +224,6 @@ void zmapFeatureDestroy(ZMapFeature feature)
 {
   zMapAssert(feature) ;
 
-  if (feature->name)
-    g_free(feature->name) ;
-
-  if (feature->method_name)
-    g_free(feature->method_name) ;
-
   if (feature->type == ZMAPFEATURE_TRANSCRIPT)
     {
       if (feature->feature.transcript.exons)
@@ -252,9 +244,28 @@ void zmapFeatureDestroy(ZMapFeature feature)
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features)
 {
   ZMapFeatureSet feature_set ;
+  GQuark original_id, unique_id ;
+
+  unique_id = zMapStyleCreateID(source) ;
+  original_id = g_quark_from_string(source) ;
+
+  feature_set = zMapFeatureSetIDCreate(original_id, unique_id, features) ;
+
+  return feature_set ;
+}
+
+
+/* Features can be NULL if there are no features yet.....
+ * original_id  the original name of the feature set
+ * unique_id    some derivation of the original name or otherwise unique id to identify this
+ *              feature set. */
+ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GData *features)
+{
+  ZMapFeatureSet feature_set ;
 
   feature_set = g_new0(ZMapFeatureSetStruct, 1) ;
-  feature_set->source = g_strdup(source) ;
+  feature_set->unique_id = unique_id ;
+  feature_set->original_id = original_id ;
 
   if (!features)
     g_datalist_init(&(feature_set->features)) ;
@@ -272,9 +283,9 @@ gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature featur
 {
   gboolean result = FALSE ;
 
-  zMapAssert(feature_set && feature && feature->feature_id != ZMAPFEATURE_NULLQUARK) ;
+  zMapAssert(feature_set && feature && feature->unique_id != ZMAPFEATURE_NULLQUARK) ;
 
-  g_datalist_id_set_data_full(&(feature_set->features), feature->feature_id, feature,
+  g_datalist_id_set_data_full(&(feature_set->features), feature->unique_id, feature,
 			      destroyFeature) ;
 
   return result ;
@@ -294,9 +305,6 @@ void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
     }
   g_datalist_clear(&(feature_set->features)) ;
 
-
-  g_free(feature_set->source) ;
-
   g_free(feature_set) ;
 
   return ;
@@ -313,7 +321,7 @@ ZMapFeatureContext zMapFeatureContextCreate(char *sequence)
   feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
   if (sequence && *sequence)
-    feature_context->sequence_name = g_strdup(sequence) ;
+    feature_context->sequence_name = g_quark_from_string(sequence) ;
 
   return feature_context ;
 }
@@ -323,10 +331,10 @@ gboolean zMapFeatureContextAddFeatureSet(ZMapFeatureContext feature_context, ZMa
 {
   gboolean result = TRUE ;
 
-  zMapAssert(feature_context && feature_set && feature_set->source && *(feature_set->source)) ;
+  zMapAssert(feature_context && feature_set && feature_set->unique_id) ;
 
-  g_datalist_set_data_full(&(feature_context->feature_sets), feature_set->source, feature_set,
-			   destroyFeatureSet) ;
+  g_datalist_id_set_data_full(&(feature_context->feature_sets), feature_set->unique_id, feature_set,
+			      destroyFeatureSet) ;
 
   return result ;
 }
@@ -401,7 +409,7 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
       /* Check that certain basic things about the sequences to be merged are true....
        * this will probably have to be revised, for now we check that the name and length of the
        * sequences are the same. */
-      if (g_ascii_strcasecmp(current_context->sequence_name, new_context->sequence_name) == 0
+      if (current_context->sequence_name == new_context->sequence_name
 	  && current_context->features_to_sequence.p1 == new_context->features_to_sequence.p1
 	  && current_context->features_to_sequence.p2 == new_context->features_to_sequence.p2)
 	{
@@ -421,8 +429,8 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 	  if (diff_context->feature_sets)
 	    {
 	      /* Fill in the sequence/mapping details. */
-	      diff_context->sequence_name = g_strdup(current_context->sequence_name) ;
-	      diff_context->parent_name = g_strdup(current_context->parent_name) ;
+	      diff_context->sequence_name = current_context->sequence_name ;
+	      diff_context->parent_name = current_context->parent_name ;
 	      diff_context->parent_span = current_context->parent_span ; /* n.b. struct copies. */
 	      diff_context->sequence_to_parent = current_context->sequence_to_parent ;
 	      diff_context->features_to_sequence = current_context->features_to_sequence ;
@@ -493,10 +501,6 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
 			 (gpointer)feature_context) ;
     }
   g_datalist_clear(&(feature_context->feature_sets)) ;
-
-
-  if (feature_context->sequence_name)
-    g_free(feature_context->sequence_name) ;
 
   g_free(feature_context) ;
 
@@ -585,12 +589,14 @@ static void doNewFeatureSets(GQuark key_id, gpointer data, gpointer user_data)
   GData *new_feature_sets = *new_result ;
 
   ZMapFeatureSet current_set, diff_set ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   char *feature_set_name = NULL ;
 
-
   feature_set_name = (char *)g_quark_to_string(key_id) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  zMapAssert(strcmp(feature_set_name, new_set->source) == 0) ;
+  zMapAssert(key_id == new_set->unique_id) ;
 
 
   /* If the feature set is not in current then we can simply add it 
@@ -601,8 +607,8 @@ static void doNewFeatureSets(GQuark key_id, gpointer data, gpointer user_data)
        * and remove it from new. */
       ZMapFeatureSet unused ;
 
-      g_datalist_set_data(&(current_feature_sets), feature_set_name, new_set) ;
-      g_datalist_set_data(&(diff_feature_sets), feature_set_name, new_set) ;
+      g_datalist_id_set_data(&(current_feature_sets), key_id, new_set) ;
+      g_datalist_id_set_data(&(diff_feature_sets), key_id, new_set) ;
 
       /* Should remove from new set here but not sure if it will
        * work as part of a foreach loop....which is where this routine is called from... */
@@ -616,7 +622,7 @@ static void doNewFeatureSets(GQuark key_id, gpointer data, gpointer user_data)
     {
       FeatureSetStruct features ;
 
-      diff_set = zMapFeatureSetCreate(feature_set_name, NULL) ;
+      diff_set = zMapFeatureSetCreate((char *)g_quark_to_string(key_id), NULL) ;
 
       features.current_features = &(current_set->features);
       features.diff_features = &(diff_set->features) ;
@@ -628,7 +634,7 @@ static void doNewFeatureSets(GQuark key_id, gpointer data, gpointer user_data)
       /* after we have done this, if there are any features in the diff set then we must
        * add it to the diff_feature_set as above.... */
       if (diff_set->features)
-	g_datalist_set_data(&(diff_feature_sets), feature_set_name, diff_set) ;
+	g_datalist_id_set_data(&(diff_feature_sets), key_id, diff_set) ;
       else
 	zMapFeatureSetDestroy(diff_set, FALSE) ;
     }
@@ -663,7 +669,7 @@ static void doNewFeatures(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeature current_feature, diff_feature ;
 
 
-  zMapAssert(key_id == new_feature->feature_id) ;
+  zMapAssert(key_id == new_feature->unique_id) ;
 
   /* If the feature is not in the current feature set then we can simply add it, if its
    * already there then we don't do anything, i.e. we don't try and merge two features. */
