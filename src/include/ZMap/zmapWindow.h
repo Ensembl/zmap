@@ -27,9 +27,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Nov 18 14:33 2004 (rnc)
+ * Last edited: Nov 29 14:27 2004 (rnc)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.24 2004-11-19 10:07:33 rnc Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.25 2004-11-29 14:29:28 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -59,6 +59,7 @@ typedef struct _ZMapWindowCallbacksStruct
 {
   ZMapWindowCallbackFunc scroll ;
   ZMapWindowFeatureCallbackFunc click ;
+  ZMapWindowCallbackFunc setZoomStatus;
   ZMapWindowCallbackFunc destroy ;
 
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
@@ -78,14 +79,20 @@ typedef enum {ZMAP_ZOOM_INIT, ZMAP_ZOOM_MIN, ZMAP_ZOOM_MID, ZMAP_ZOOM_MAX,
 
 void       zMapWindowInit       (ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate     (GtkWidget *parent_widget, char *sequence, void *app_data) ;
+ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
+			  void *app_data, ZMapWindow old);
 void       zMapWindowDisplayData(ZMapWindow window,
 				 ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-				 GData *types) ;
+				 GData *types, void *zmap_view) ;
 ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 void       zMapWindowReset      (ZMapWindow window) ;
 
 GtkWidget   *zMapWindowGetWidget(ZMapWindow window);
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
+void                 zMapWindowSetZoomStatus(ZMapWindow window) ;
+double     zMapWindowGetZoomFactor(ZMapWindow window);
+void       zMapWindowSetZoomFactor(ZMapWindow window, double zoom_factor);
+void       zMapWindowSetMinZoom   (ZMapWindow window);
 
 void       zMapWindowDestroy    (ZMapWindow window) ;
 
