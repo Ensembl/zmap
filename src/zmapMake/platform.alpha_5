@@ -11,7 +11,7 @@ CC_COMMON = -DALPHA -g -pthread  $(INCLUDE_DIRS)
 # Level 4 is quite verbose, above that you get messages about _everything_, level3 is not
 # great as it doesn't report things like substituting gboolean for an enum type.
 CC = cc
-CFLAGS = -std $(CC_COMMON)   -msg_enable level3
+CFLAGS = -std $(CC_COMMON)   -msg_enable level4
 
 # C++ stuff.... -x makes sure DEC C++ compiler will use nnn.H files as C++ headers.
 CCC = cxx
