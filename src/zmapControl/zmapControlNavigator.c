@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 15 15:51 2004 (edgrif)
+ * Last edited: Jul 15 17:12 2004 (rnc)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.2 2004-07-15 15:06:52 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.3 2004-07-15 16:30:14 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -141,15 +141,15 @@ void navScale(FooCanvas *canvas, float offset, int start, int end)
  
   for (x = start, count = 1 ; x < end ; x += 10, count++)
     {
-      drawLine(FOO_CANVAS_GROUP(group), offset-5, x, offset, x, "black", 1.0);
+      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-5, x, offset, x, "black", 1.0);
       char text[25];
       sprintf(text,"%dk", x);
       if (count == 1)
-	displayText(FOO_CANVAS_GROUP(group), text, offset + 20, x); 
+	zmapDisplayText(FOO_CANVAS_GROUP(group), text, offset + 20, x); 
       if (count > 9) count = 0;
     }
 			     
-  drawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, end, "black", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, end, "black", 1.0);
 
   return;
 }

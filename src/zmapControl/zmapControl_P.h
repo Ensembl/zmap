@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul 15 15:52 2004 (edgrif)
+ * Last edited: Jul 15 17:16 2004 (rnc)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.6 2004-07-15 15:11:25 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.7 2004-07-15 16:31:50 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -58,14 +58,13 @@ typedef enum {
  * this top level window there will be one or more zmap "Views". */
 typedef struct _ZMapStruct
 {
-  gchar *zmap_id ;					    /* unique for each zmap.... */
+  gchar           *zmap_id ;	    /* unique for each zmap.... */
 
-  ZmapState state ;					    /* state of this zmap. */
+  ZmapState        state ;
 
   gboolean firstTime;
 
-  GdkAtom zmap_atom ;					    /* Used for communicating with zmap
-							       windows. */
+  GdkAtom zmap_atom ;					    /* Used for communicating with zmap */
 
   void *app_data ;					    /* Data passed back to all callbacks
 							       registered for this ZMap. */
@@ -80,9 +79,12 @@ typedef struct _ZMapStruct
   /* The navigator. */
   GtkWidget *navigator ;
   FooCanvas *navcanvas ;
+  GtkWidget *navHBox, *navVBox;
 
   /* The panes and views. */
 
+  //  GtkWidget       *displayvbox;
+  //  GtkWidget       *hbox;
   /* I'm not completely sure this is necessary....revisit this later.... */
   GtkWidget      *pane_vbox ;
 
@@ -90,6 +92,7 @@ typedef struct _ZMapStruct
   ZMapPane        focuspane ;
   GNode          *panesTree ;
 
+  //  ZMapView         curr_view ;
 
   /* List of views in this zmap. */
   GList *view_list ;
@@ -116,7 +119,6 @@ typedef struct _ZMapPaneStruct
   GtkWidget   *view_parent_box ;
 
 } ZMapPaneStruct ;
-
 
 
 /* Functions internal to zmapControl. */

@@ -1,4 +1,4 @@
-/*  Last edited: Jun 25 12:13 2004 (edgrif) */
+/*  Last edited: Jul  8 12:21 2004 (rnc) */
 /* This is a temporary file only to help with testing....it will go once GFF code is combined
  * into the threads etc. code proper.... */
 
@@ -9,6 +9,7 @@
 
 
 static ZMapFeatureContext parseGFF(char *filename) ;
+static void testfunc(GQuark key_id, gpointer data, gpointer user_data);
 
 
 ZMapFeatureContext testGetGFF(void)
@@ -107,11 +108,9 @@ static ZMapFeatureContext parseGFF(char *filename)
       /* Try getting the features. */
       feature_context = zmapGFFGetFeatures(parser) ;
 
-
       zMapGFFSetFreeOnDestroy(parser, free_arrays) ;
       zMapGFFDestroyParser(parser) ;
-      
-      
+            
       if (status == G_IO_STATUS_EOF)
 	{
 	  if (g_io_channel_shutdown(gff_file, FALSE, &gff_file_err) != G_IO_STATUS_NORMAL)
@@ -125,11 +124,28 @@ static ZMapFeatureContext parseGFF(char *filename)
 	  printf("Error reading lines from gff file\n") ;
 	  exit(-1) ;
 	}
-
+      
     }
-
 
   return feature_context ;
 }
+
+
+static void testfunc(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureSet zMapFeatureSet = (ZMapFeatureSet)data;
+  ZMapFeature zMapFeature;
+  int i; 
+
+    printf("GFF_scaffold.c; call %s\n", (char*)user_data);
+
+  for (i=0; i<zMapFeatureSet->features->len; i++)
+    {
+      zMapFeature = &g_array_index(zMapFeatureSet->features, ZMapFeatureStruct, i);
+      printf("processing %s, x1 is %d, x2 is %d\n", zMapFeature->name, zMapFeature->x1, zMapFeature->x2);
+    }
+  return;
+}
+
 
 

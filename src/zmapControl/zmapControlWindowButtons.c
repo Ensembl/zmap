@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 15 15:51 2004 (edgrif)
+ * Last edited: Jul 15 17:15 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.9 2004-07-15 15:10:17 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.10 2004-07-15 16:31:14 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,7 +54,8 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 {
   GtkWidget *frame ;
   GtkWidget *hbox, *new_button, *load_button, *stop_button, *quit_button,
-    *hsplit_button, *vsplit_button, *zoomin_button, *zoomout_button ;
+    *hsplit_button, *vsplit_button, *zoomin_button, *zoomout_button,
+    *close_button ;
 
   frame = gtk_frame_new(NULL);
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -97,7 +98,12 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_signal_connect(GTK_OBJECT(zoomout_button), "clicked",
 		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
-                                                                                           
+  /*
+  close_button = gtk_button_new_with_label("Close\nPane") ;
+  gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
+		     GTK_SIGNAL_FUNC(closePane), (gpointer)zmap) ;
+  gtk_box_pack_start(GTK_BOX(hbox), close_button, FALSE, FALSE, 0) ;
+  */
   quit_button = gtk_button_new_with_label("Quit") ;
   gtk_signal_connect(GTK_OBJECT(quit_button), "clicked",
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)zmap) ;
@@ -117,8 +123,9 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 /*
  *  ------------------- Internal functions -------------------
  */
+static void testfunc(GQuark key_id, gpointer data, gpointer user_data);
 
-/* These callbacks simple make calls to routines in zmapControl.c, this is because I want all
+/* These callbacks simply make calls to routines in zmapControl.c, this is because I want all
  * the state handling etc. to be in one file so that its easier to work on. */
 static void loadCB(GtkWidget *widget, gpointer cb_data)
 {
