@@ -25,9 +25,9 @@
  * Description: Interface for creating, controlling and destroying ZMaps.
  *              
  * HISTORY:
- * Last edited: Jul  2 16:54 2004 (edgrif)
+ * Last edited: Jul 13 15:57 2004 (edgrif)
  * Created: Mon Nov 17 08:04:32 2003 (edgrif)
- * CVS info:   $Id: zmapControl.h,v 1.4 2004-07-02 18:22:57 edgrif Exp $
+ * CVS info:   $Id: zmapControl.h,v 1.5 2004-07-14 09:00:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_H
@@ -100,7 +100,18 @@ typedef void (*ZMapCallbackFunc)(ZMap zmap, void *app_data) ;
 
 
 
-ZMap zMapCreate(void *app_data, ZMapCallbackFunc zmap_destroyed_cb) ;
+/* Set of callback routines that allow the caller to be notified when events happen
+ * to a ZMap. */
+typedef struct _ZMapCallbacksStruct
+{
+  ZMapCallbackFunc destroy ;
+} ZMapCallbacksStruct, *ZMapCallbacks ;
+
+
+
+
+void zMapInit(ZMapCallbacks callbacks) ;
+ZMap zMapCreate(void *app_data) ;
 
 /* NOW THIS IS WHERE WE NEED GERROR........ */
 ZMapView zMapAddView(ZMap zmap, char *sequence) ;
@@ -114,6 +125,9 @@ char *zMapGetZMapStatus(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
 gboolean zMapDestroy(ZMap zmap) ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 GPtrArray   *zMapPaneGetCols           (ZMapPane pane);
 void         zMapPaneNewBox2Col        (ZMapPane pane, int elements);
 ZMapColumn  *zMapPaneGetBox2Col        (ZMapPane pane, int index);
@@ -123,9 +137,11 @@ void         zMapPaneNewBox2Seg        (ZMapPane pane, int elements);
 ZMapFeature zMapPaneGetBox2Seg        (ZMapPane pane, int index);
 GArray      *zMapPaneSetBox2Seg        (ZMapPane pane, ZMapColumn *seg, int index);
 void         zMapPaneFreeBox2Seg       (ZMapPane pane);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 ZMapRegion  *zMapPaneGetZMapRegion     (ZMapPane pane);
 FooCanvasItem *zMapPaneGetGroup        (ZMapPane pane);
-ZMapWindow   zMapPaneGetZMapWindow     (ZMapPane pane);
 FooCanvas   *zMapPaneGetCanvas         (ZMapPane pane);
 int          zMapPaneGetDNAwidth       (ZMapPane pane);
 void         zMapPaneSetDNAwidth       (ZMapPane pane, int width);
