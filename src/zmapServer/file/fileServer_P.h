@@ -26,9 +26,9 @@
  *              of the server code.
  *              
  * HISTORY:
- * Last edited: Sep 13 09:26 2004 (edgrif)
+ * Last edited: Sep 15 15:47 2004 (edgrif)
  * Created: Fri Sep 10 18:42:18 2004 (edgrif)
- * CVS info:   $Id: fileServer_P.h,v 1.1 2004-09-13 13:01:54 edgrif Exp $
+ * CVS info:   $Id: fileServer_P.h,v 1.2 2004-09-17 08:38:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef FILE_SERVER_P_H
@@ -43,8 +43,11 @@ typedef struct _FileServerStruct
   GError *gff_file_err ;
 
   char *last_err_msg ;
-} FileServerStruct, *FileServer ;
 
+  char *sequence ;
+  int start, end ;
+
+} FileServerStruct, *FileServer ;
 
 
 #endif /* !FILE_SERVER_P_H */

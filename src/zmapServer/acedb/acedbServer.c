@@ -26,16 +26,16 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 13 09:29 2004 (edgrif)
+ * Last edited: Sep 16 15:49 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.7 2004-09-13 12:59:41 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.8 2004-09-17 08:38:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <AceConn.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapServerPrototype.h>
 #include <ZMap/zmapGFF.h>
+#include <zmapServerPrototype.h>
 #include <acedbServer_P.h>
 
 
@@ -43,11 +43,11 @@ static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 char *host, int port,
 				 char *userid, char *passwd, int timeout) ;
-static gboolean openConnection(void *server) ;
-static ZMapServerResponseType request(void *server, ZMapServerRequestType request,
-				      char *sequence, ZMapFeatureContext *feature_context_out) ;
+static ZMapServerResponseType openConnection(void *server) ;
+static ZMapServerResponseType setContext(void *server, char *sequence, int start, int end) ;
+static ZMapServerResponseType request(void *server_conn, ZMapFeatureContext *feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
-static gboolean closeConnection(void *server) ;
+static ZMapServerResponseType closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
 
 static gboolean sequenceRequest(AcedbServer server,
@@ -73,6 +73,7 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->global_init = globalInit ;
   acedb_funcs->create = createConnection ;
   acedb_funcs->open = openConnection ;
+  acedb_funcs->set_context = setContext ;
   acedb_funcs->request = request ;
   acedb_funcs->errmsg = lastErrorMsg ;
   acedb_funcs->close = closeConnection;
@@ -117,20 +118,49 @@ static gboolean createConnection(void **server_out,
 }
 
 
-static gboolean openConnection(void *server_in)
+static ZMapServerResponseType openConnection(void *server_in)
 {
-  gboolean result = FALSE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
 
   if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
-    result = TRUE ;
+    result = ZMAP_SERVERRESPONSE_OK ;
 
   return result ;
 }
 
 
-static ZMapServerResponseType request(void *server_in, ZMapServerRequestType request,
-				      char *sequence, ZMapFeatureContext *feature_context_out)
+/* I'm not sure if I need to create a context in the server for acedb, really it would be a keyset
+ * or a virtual sequence...don't know if we can do this via gif interface.... */
+static ZMapServerResponseType setContext(void *server_in, char *sequence, int start, int end)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+  AcedbServer server = (AcedbServer)server_in ;
+  gboolean status ;
+  ZMapFeatureContext feature_context ;
+
+  server->sequence = g_strdup(sequence) ;
+  server->start = start ;
+  server->end = end ;
+
+
+  feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
+
+  if (!(status = getSequenceMapping(server, server->sequence, feature_context)))
+    {
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+      zMapLogWarning("Could not map %s because: %s", server->sequence, server->last_err_msg) ;
+      g_free(feature_context) ;
+    }
+  else
+    server->current_context = feature_context ;
+
+  return result ;
+}
+
+
+
+static ZMapServerResponseType request(void *server_in, ZMapFeatureContext *feature_context_out)
 {
   ZMapServerResponseType result ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -139,12 +169,13 @@ static ZMapServerResponseType request(void *server_in, ZMapServerRequestType req
   int reply_len = 0 ;
 
 
+  /* We should check that there is a feature context here and report an error if there isn't... */
+
+
   result = ZMAP_SERVERRESPONSE_OK ;
   server->last_err_status = ACECONN_OK ;
 
-
-  /* Lash up for now, we will later need a  "ZMap request" -> "acedb request" translator. */
-  
+  /* We should be using the start/end info. in context for the below stuff... */
 
   {
     gboolean status ;
@@ -152,15 +183,25 @@ static ZMapServerResponseType request(void *server_in, ZMapServerRequestType req
 
     feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
+
+    *feature_context = *(server->current_context) ;	    /* n.b. struct copy. */
+    /* OK, NEED TO ADD START/END INFO HERE....... */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     /* Try and get the mapping of this sequence into its parent, if we fail then there is no point
      * in continuing as this means we cannot smap the sequence and hence cannot get its features. */
-    if (!(status = getSequenceMapping(server, sequence, feature_context)))
+    if (!(status = getSequenceMapping(server, server->sequence, feature_context)))
       {
-	zMapLogWarning("Could not map %s because: %s", sequence, server->last_err_msg) ;
+	result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	zMapLogWarning("Could not map %s because: %s", server->sequence, server->last_err_msg) ;
       }
     else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       {
-	if ((status = sequenceRequest(server, sequence, feature_context)))
+	if ((status = sequenceRequest(server, server->sequence, feature_context)))
 	  {
 	    *feature_context_out = feature_context ;
 	  }
@@ -182,7 +223,7 @@ static ZMapServerResponseType request(void *server_in, ZMapServerRequestType req
 		result = ZMAP_SERVERRESPONSE_SERVERDIED ;
 	      }
 
-	    zMapLogWarning("Could not map %s because: %s", sequence, server->last_err_msg) ;
+	    zMapLogWarning("Could not map %s because: %s", server->sequence, server->last_err_msg) ;
 	  }
       }
 

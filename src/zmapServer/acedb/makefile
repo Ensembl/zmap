@@ -24,7 +24,7 @@ CURRENT_LIB = $(ZMAPTHR_LIB)
 CURRENT_OBJ = $(SERV_OBJ)
 CURRENT_DEP = $(PUB_HDRS) $(SERV_PRIV_HDRS)
 CURRENT_SRC = $(SERV_PRIV_HDRS) $(SERV_SRC)
-CURRENT_INC = -I$(HOME)/acedb/CODE/Ace-Conn
+CURRENT_INC = -I.. -I$(HOME)/acedb/CODE/Ace-Conn
 
 #
 # include all common defines

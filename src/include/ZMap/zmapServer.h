@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 29 14:57 2004 (edgrif)
+ * Last edited: Sep 16 13:50 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.4 2004-08-02 14:08:30 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.5 2004-09-17 08:39:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -42,8 +42,56 @@
 typedef struct _ZMapServerStruct *ZMapServer ;
 
 
-/* Types of the server request, i.e. for sequence, for methods etc. */
-typedef enum {ZMAP_SERVERREQ_INVALID = 0, ZMAP_SERVERREQ_SEQUENCE} ZMapServerRequestType ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* I think I don't need this now, too complex......... */
+
+/* Opaque type, represents a sequence context which can be used to get data/features/dna etc.
+ * The server is implicit in the context so once you have one of these you do not need to
+ * specify the server. */
+typedef struct _ZMapServerContextStruct *ZMapServerContext ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* ALL THIS IN zmapProtocol.h now........... */
+
+
+/* Server requests can be of different types with different input parameters and returning
+ * different types of results. */
+
+typedef enum {ZMAP_SERVERREQ_INVALID = 0,
+	      ZMAP_SERVERREQ_SETCONTEXT,		    /* Set the sequence name/start/end. */
+	      ZMAP_SERVERREQ_SEQUENCE			    /* Get the features. */
+} ZMapServerRequestType ;
+
+
+/* Structs for request parameters and return values. */
+
+typedef struct
+{
+  char *sequence ;
+  int start, end ;
+} ZMapServerRequestContextStruct, *ZMapServerRequestContext ;
+
+
+typedef struct
+{
+  ZMapFeatureContext feature_context_out ;
+} ZMapServerRequestFeaturesStruct, *ZMapServertFeaturesContext ;
+
+
+typedef union
+{
+  ZMapServerRequestContext set_context ;
+  ZMapServertFeaturesContext get_features ;
+} ZMapServerRequest ;
+
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* Possible responses to a server request. */
@@ -65,22 +113,24 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_
 				    char *host, int port, char *protocol,
 				    char *userid, char *passwd) ;
 
-gboolean zMapServerOpenConnection(ZMapServer server) ;
+
+ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
 
 
-/* Probably where we have "features" we actually need to return a void *  which could point to
- * one of a number of datatypes depending on the type of the request. AND the char* sequence
- * is temp. as well..... */
-ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapServerRequestType request,
-					 char *sequence, ZMapFeatureContext *feature_context) ;
+ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence, int start, int end) ;
 
-gboolean zMapServerCloseConnection(ZMapServer server) ;
 
-gboolean zMapServerFreeConnection(ZMapServer server) ;
+/* The caller doesn't need to see the request...this seems not completely right, revisit later... */
+ZMapServerResponseType zMapServerRequest(ZMapServer server, void *request) ;
+
 
 char *zMapServerLastErrorMsg(ZMapServer server) ;
 
 
+ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) ;
+
+
+gboolean zMapServerFreeConnection(ZMapServer server) ;
 
 
 #endif /* !ZMAP_SERVER_H */

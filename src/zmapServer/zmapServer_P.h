@@ -20,22 +20,22 @@
  * This file is part of the ZMap genome database package
  * and was written by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk and
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 13 09:28 2004 (edgrif)
+ * Last edited: Sep 15 09:45 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer_P.h,v 1.4 2004-09-13 12:59:02 edgrif Exp $
+ * CVS info:   $Id: zmapServer_P.h,v 1.5 2004-09-17 08:38:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_P_H
 #define ZMAP_SERVER_P_H
 
-#include <ZMap/zmapServerPrototype.h>
 #include <ZMap/zmapServer.h>
+#include <zmapServerPrototype.h>
+
 
 
 
@@ -55,6 +55,16 @@ typedef struct _ZMapServerStruct
 
 
 } ZMapServerStruct ;
+
+
+/* A context for sequence operations. */
+typedef struct _ZMapServerContextStruct
+{
+  ZMapServer server ;
+
+  void *server_conn_context ;				    /* opaque type used for server calls. */
+
+} ZMapServerContextStruct ;
 
 
 

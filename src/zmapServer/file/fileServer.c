@@ -30,16 +30,16 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Sep 13 12:58 2004 (edgrif)
+ * Last edited: Sep 16 11:27 2004 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.1 2004-09-13 13:01:54 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.2 2004-09-17 08:38:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapServerPrototype.h>
 #include <ZMap/zmapGFF.h>
+#include <zmapServerPrototype.h>
 #include <fileServer_P.h>
 
 
@@ -47,11 +47,11 @@ static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 char *host, int port,
 				 char *userid, char *passwd, int timeout) ;
-static gboolean openConnection(void *server) ;
-static ZMapServerResponseType request(void *server, ZMapServerRequestType request,
-				      char *sequence, ZMapFeatureContext *feature_context_out) ;
+static ZMapServerResponseType openConnection(void *server) ;
+static ZMapServerResponseType setContext(void *server, char *sequence, int start, int end) ;
+static ZMapServerResponseType request(void *server_conn, ZMapFeatureContext *feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
-static gboolean closeConnection(void *server) ;
+static ZMapServerResponseType closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
 
 static void addMapping(ZMapFeatureContext feature_context) ;
@@ -70,6 +70,7 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs)
   file_funcs->global_init = globalInit ;
   file_funcs->create = createConnection ;
   file_funcs->open = openConnection ;
+  file_funcs->set_context = setContext ;
   file_funcs->request = request ;
   file_funcs->errmsg = lastErrorMsg ;
   file_funcs->close = closeConnection;
@@ -119,27 +120,41 @@ static gboolean createConnection(void **server_out,
 }
 
 
-static gboolean openConnection(void *server_in)
+static ZMapServerResponseType openConnection(void *server_in)
 {
-  gboolean result = FALSE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;
 
   if (server->gff_file)
     {
       zMapLogWarning("Feature file \"%s\" already open.", server->gff_file) ;
-      result = FALSE ;
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
   if ((server->gff_file = g_io_channel_new_file(server->file_path, "r", &(server->gff_file_err))))
     {
-      result = TRUE ;
+      result = ZMAP_SERVERRESPONSE_OK ;
     }
 
   return result ;
 }
 
 
-static ZMapServerResponseType request(void *server_in, ZMapServerRequestType request,
-				      char *sequence, ZMapFeatureContext *feature_context_out)
+/* I'm not sure if I want to create any context here yet.... */
+static ZMapServerResponseType setContext(void *server_in, char *sequence, int start, int end)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ; ;
+  FileServer server = (FileServer)server_in ;
+
+  server->sequence = g_strdup(sequence) ;
+  server->start = start ;
+  server->end = end ;
+
+  return result ;
+}
+
+
+
+static ZMapServerResponseType request(void *server_in, ZMapFeatureContext *feature_context_out)
 {
   ZMapServerResponseType result ;
   FileServer server = (FileServer)server_in ;
@@ -237,13 +252,13 @@ char *lastErrorMsg(void *server_in)
 
 static gboolean closeConnection(void *server_in)
 {
-  gboolean result = TRUE ;
+  gboolean result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_in ;
 
   if (g_io_channel_shutdown(server->gff_file, FALSE, &(server->gff_file_err)) != G_IO_STATUS_NORMAL)
     {
       zMapLogCritical("Could not close feature file \"%s\"", server->gff_file) ;
-      result = FALSE ;
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
 
   /* this seems to be required to destroy the GIOChannel.... */

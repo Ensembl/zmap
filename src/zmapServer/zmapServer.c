@@ -26,14 +26,15 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Sep 13 09:57 2004 (edgrif)
+ * Last edited: Sep 16 10:30 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.9 2004-09-13 12:58:42 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.10 2004-09-17 08:38:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <strings.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapProtocol.h>
 #include <zmapServer_P.h>
 
 
@@ -75,8 +76,9 @@ gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out)
     }
 
   /* All functions MUST be specified. */
-  zMapAssert(serverfuncs->global_init && serverfuncs->create && serverfuncs->open
-	     && serverfuncs->request && serverfuncs->errmsg
+  zMapAssert(serverfuncs->global_init
+	     && serverfuncs->create && serverfuncs->open
+	     && serverfuncs->set_context && serverfuncs->request && serverfuncs->errmsg
 	     && serverfuncs->close && serverfuncs->destroy) ;
   
   /* Call the global init function. */
@@ -131,28 +133,67 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
 }
 
 
-gboolean zMapServerOpenConnection(ZMapServer server)
+ZMapServerResponseType zMapServerOpenConnection(ZMapServer server)
 {
-  gboolean result = FALSE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
-  if ((server->funcs->open)(server->server_conn))
-    result = TRUE ;
-  else
+  result = server->last_response = (server->funcs->open)(server->server_conn) ;
+
+  if (result != ZMAP_SERVERRESPONSE_OK)
     server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
 
   return result ;
 }
 
 
-ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapServerRequestType request,
-					 char *sequence, ZMapFeatureContext *feature_context)
+
+ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence, int start, int end)
 {
-  ZMapServerResponseType result ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
     {
-      result = server->last_response = (server->funcs->request)(server->server_conn,
-								request, sequence, feature_context) ;
+      result = server->last_response = (server->funcs->set_context)(server->server_conn,
+								    sequence, start, end) ;
+      if (result != ZMAP_SERVERRESPONSE_OK)
+	server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
+    }
+
+  return result ;
+}
+
+
+
+ZMapServerResponseType zMapServerRequest(ZMapServer server, void *request)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
+    {
+      /* OK, THIS IS WHERE WE NEED TO DECODE THE REQUESTS...... */
+      ZMapProtocolAny req_any = (ZMapProtocolAny)request ;
+
+      switch (req_any->request)
+	{
+	case ZMAP_PROTOCOLREQUEST_SEQUENCE:
+	  {
+	    ZMapProtocoltGetFeatures get_features = (ZMapProtocoltGetFeatures)req_any ;
+
+
+	    result = server->last_response
+	      = (server->funcs->request)(server->server_conn, &(get_features->feature_context_out)) ;
+
+	    break ;
+	  }
+	default:
+	  {	  
+	    zMapLogFatal("Unknown request type: %d", req_any->request) ; /* Exit appl. */
+	    break ;
+	  }
+	}
+
+
+
 
       if (result != ZMAP_SERVERRESPONSE_OK)
 	server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
@@ -160,6 +201,8 @@ ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapServerRequestTyp
 
   return result ;
 }
+
+
 
 gboolean zMapServerCloseConnection(ZMapServer server)
 {

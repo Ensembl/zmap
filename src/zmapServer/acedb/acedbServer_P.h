@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul 29 12:24 2004 (edgrif)
+ * Last edited: Sep 16 15:48 2004 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.2 2004-08-02 14:11:37 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.3 2004-09-17 08:38:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -40,7 +40,14 @@ typedef struct _AcedbServerStruct
   AceConnStatus last_err_status ;			    /* Needed so we can return err mesgs
 							       for aceconn errors. */
   char *last_err_msg ;
+
+  /* this is the virtual sequence context information, probably need to add to this... */
+  char *sequence ;
+  int start, end ;					    /* Limits of where we want data for. */
+  ZMapFeatureContext current_context ;
+
 } AcedbServerStruct, *AcedbServer ;
+
 
 
 

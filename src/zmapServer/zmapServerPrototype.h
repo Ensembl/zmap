@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Sep 13 17:23 2004 (edgrif)
+ * Last edited: Sep 15 15:31 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.1 2004-09-15 09:09:13 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.2 2004-09-17 08:38:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -50,13 +50,41 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 					 char *userid, char *passwd, int timeout) ;
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn) ;
 typedef ZMapServerResponseType
-                 (*ZMapServerContextFunc)(void *server_conn, void **server_context,
-					  char *sequence, int start, int end)  ;
+                 (*ZMapServerSetContextFunc)(void *server_conn, char *sequence, int start, int end)  ;
 typedef ZMapServerResponseType
-                 (*ZMapServerRequestFunc)(void *server_context, ZMapFeatureContext *feature_context) ;
+                 (*ZMapServerRequestFunc)(void *server_conn, ZMapFeatureContext *feature_context) ;
 typedef char *   (*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
 typedef ZMapServerResponseType (*ZMapServerCloseFunc)  (void *server_conn) ;
 typedef gboolean (*ZMapServerDestroyFunc)(void *server_conn) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* Need these in the above, I think we can get rid of context, lets make it that context and
+ * connection are synonymous....i.e. only one context per connectionl..... */
+
+/* Establish a context which is then used when getting data for a particular bit of sequence,
+ * intention is that this is a cheap thing to do, it does not contruct the virtual seq. etc. */
+ZMapServerResponseType zMapServerCreateContext(ZMapServer server, ZMapServerContext *context_out,
+					       char *sequence, int start, int end) ;
+
+/* types must be null-terminated list... */
+ZMapServerResponseType ZMapServerSetTypes(ZMapServerContext context, char *types[]) ;
+
+
+/* this may too general and we may want to restrict to just a few types....and we should call it
+ * something like "get features" */
+ZMapServerResponseType zMapServerGetFeatures(ZMapServerContext context,
+					     ZMapFeatureContext *feature_context_out) ;
+
+
+/* this only destroys the context, it does not do anything to the server. */
+ZMapServerResponseType zMapServerDestroyContext(ZMapServerContext context) ;
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 
 typedef struct _ZMapServerFuncsStruct
@@ -64,7 +92,7 @@ typedef struct _ZMapServerFuncsStruct
   ZMapServerGlobalFunc global_init ;
   ZMapServerCreateFunc create ;
   ZMapServerOpenFunc open ;
-  ZMapServerContextFunc context_create ;
+  ZMapServerSetContextFunc set_context ;
   ZMapServerRequestFunc request ;
   ZMapServerGetErrorMsgFunc errmsg ;
   ZMapServerCloseFunc close ;
