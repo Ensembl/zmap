@@ -25,11 +25,13 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May  7 09:25 2004 (edgrif)
+ * Last edited: May 12 16:14 2004 (edgrif)
  * Created: Thu Apr 29 14:59:37 2004 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.1 2004-05-07 09:27:01 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.2 2004-05-17 14:24:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
+
+#include <stdio.h>
 
 #include <glib.h>
 #include <ZMap/zmapConfig.h>
