@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 12 14:30 2004 (edgrif)
+ * Last edited: Apr  8 16:24 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConn.c,v 1.4 2004-03-12 15:57:00 edgrif Exp $
+ * CVS info:   $Id: zmapConn.c,v 1.5 2004-04-08 16:50:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,11 +40,11 @@
 gboolean zmap_thr_debug_G = TRUE ;
 
 
-static ZMapConnection createConnection(char *machine, char *port, char *protocol, char *sequence) ;
+static ZMapConnection createConnection(char *machine, int port, char *protocol, char *sequence) ;
 static void destroyConnection(ZMapConnection connection) ;
 
 
-ZMapConnection zMapConnCreate(char *machine, char *port, char *protocol, char *sequence)
+ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, char *sequence)
 {
   ZMapConnection connection ;
   pthread_t thread_id ;
@@ -56,7 +56,7 @@ ZMapConnection zMapConnCreate(char *machine, char *port, char *protocol, char *s
   /* ok to just set state here because we have not started the thread yet.... */
   zmapCondVarCreate(&(connection->request)) ;
   connection->request.state = ZMAP_REQUEST_WAIT ;
-  connection->request.state = NULL ;
+  connection->request.data = NULL ;
 
   zmapVarCreate(&(connection->reply)) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -71,13 +71,13 @@ ZMapConnection zMapConnCreate(char *machine, char *port, char *protocol, char *s
   if (status == 0
       && (status = pthread_attr_init(&thread_attr)) != 0)
     {
-      ZMAPFATALSYSERR(status, "%s", "Create thread attibutes") ;
+      zMapLogFatalSysErr(status, "%s", "Create thread attibutes") ;
     }
 
   if (status == 0
       && (status = pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED)) != 0)
     {
-      ZMAPFATALSYSERR(status, "%s", "Set thread detached attibute") ;
+      zMapLogFatalSysErr(status, "%s", "Set thread detached attibute") ;
     }
 
 
@@ -85,7 +85,7 @@ ZMapConnection zMapConnCreate(char *machine, char *port, char *protocol, char *s
   if (status == 0
       && (status = pthread_create(&thread_id, &thread_attr, zmapNewThread, (void *)connection)) != 0)
     {
-      ZMAPFATALSYSERR(status, "%s", "Thread creation") ;
+      zMapLogFatalSysErr(status, "%s", "Thread creation") ;
     }
 
   if (status == 0)
@@ -183,7 +183,7 @@ void zMapConnKill(ZMapConnection connection)
   /* Signal the thread to cancel it */
   if ((status = pthread_cancel(connection->thread_id)) != 0)
     {
-      ZMAPFATALSYSERR(status, "%s", "Thread cancel") ;
+      zMapLogFatalSysErr(status, "%s", "Thread cancel") ;
     }
 
   return ;
@@ -216,14 +216,14 @@ void zMapConnDestroy(ZMapConnection connection)
 
 
 
-static ZMapConnection createConnection(char *machine, char *port, char *protocol, char *sequence)
+static ZMapConnection createConnection(char *machine, int port, char *protocol, char *sequence)
 {
   ZMapConnection connection ;
 
   connection = g_new(ZMapConnectionStruct, sizeof(ZMapConnectionStruct)) ;
 
   connection->machine = g_strdup(machine) ;
-  connection->port = atoi(port) ;
+  connection->port = port ;
   connection->protocol = g_strdup(protocol) ;
 
   return connection ;

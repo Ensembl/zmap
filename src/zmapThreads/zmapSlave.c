@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 22 13:10 2004 (edgrif)
+ * Last edited: Apr  8 16:18 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.4 2004-03-22 13:35:14 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.5 2004-04-08 16:50:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -327,7 +327,7 @@ static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, char *protoco
 
   if ((status = pthread_mutex_lock(&(protocols->mutex))) != 0)
     {
-      ZMAPFATALSYSERR(status, "%s", "protocolGlobalInitFunc() mutex lock") ;
+      zMapLogFatalSysErr(status, "%s", "protocolGlobalInitFunc() mutex lock") ;
     }
 
   /* If we don't find the protocol in the list then add it, initialised to FALSE. */
@@ -347,7 +347,7 @@ static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, char *protoco
   if (!init->init_called)
     {
       if (!zMapServerGlobalInit(protocol, &(init->global_init_data)))
-	ZMAPFATALERR("Initialisation call for %s protocol failed.", protocol) ;
+ 	zMapLogFatal("Initialisation call for %s protocol failed.", protocol) ;
 
       init->init_called = TRUE ;
     }
@@ -356,7 +356,7 @@ static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, char *protoco
 
   if ((status = pthread_mutex_unlock(&(protocols->mutex))) != 0)
     {
-      ZMAPFATALSYSERR(status, "%s", "protocolGlobalInitFunc() mutex unlock") ;
+      zMapLogFatalSysErr(status, "%s", "protocolGlobalInitFunc() mutex unlock") ;
     }
 
   return ;
