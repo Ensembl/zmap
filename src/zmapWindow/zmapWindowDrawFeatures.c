@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep  1 16:33 2004 (rnc)
+ * Last edited: Sep  3 14:22 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.12 2004-09-02 09:06:16 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.13 2004-09-03 13:23:52 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,7 @@
 
 static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
 static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user_data);
-static gboolean featureClickCB(ParamStruct *params);
+static gboolean featureClickCB(ParamStruct *params, ZMapFeature feature);
 static gboolean handleCanvasEvent(GtkWidget *widget, GdkEventClient *event, gpointer data);
 
 /* These callback routines are static because they are set just once for the lifetime of the
@@ -50,6 +50,12 @@ static gboolean handleCanvasEvent(GtkWidget *widget, GdkEventClient *event, gpoi
 static ZMapFeatureCallbacks feature_cbs_G = NULL ;
 
 static ParamStruct params;
+
+typedef struct _Keys {
+    ZMapFeatureSet feature_set;
+    GQuark context_key;
+    GQuark feature_key;
+} KeyStruct, *Keys;
 
 
 /* This routine must be called just once before any other windows routine, it is undefined
@@ -73,14 +79,14 @@ void zMapFeatureInit(ZMapFeatureCallbacks callbacks)
 
 
 
-static gboolean featureClickCB(ParamStruct *params)
+static gboolean featureClickCB(ParamStruct *params, ZMapFeature feature)
 {
 
   /* call the function pointed to. This will cascade up the hierarchy
   ** to zmapControl.c where details of the object clicked on will be
   ** displayed in zmap->info_panel. */
 
-  (*(feature_cbs_G->click))(params->window, params->window->app_data, params->feature);
+  (*(feature_cbs_G->click))(params->window, params->window->app_data, feature);
 
   return FALSE;  // FALSE allows any other connected function to be run.
 }
@@ -105,6 +111,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
       params.length = feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1;
       params.column_position = 20.0;
       params.types = types;
+      params.feature_context = feature_context;
 
       printf("parent c2: %d, child p2 %d\n", feature_context->sequence_to_parent.c2,
 	     feature_context->sequence_to_parent.p2);
@@ -153,6 +160,11 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
   // params->height performed in zmapWindowDrawFeatures.  Change them together or not at all.
   params->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(params->types), feature_set->source) ;
 
+  // context_key is used when a user clicks a canvas item.  The callback function needs to know
+  // which feature is associated with the clicked object, so we use the GQuarks to look it up.
+  params->feature_set = feature_set; 
+  params->context_key = key_id;
+
   if (!params->thisType) // ie no method for this source
       zMapLogWarning("No ZMapType (aka method) found for source: %s", feature_set->source);
   else
@@ -188,10 +200,15 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
   int x1, x2, y0, y1, y2;
   float middle, line_width = 1.0;
   double magFactor = params->height/params->length;
+  const gchar *key = "feature";
+  Keys keys;
 
   //  printf("type %d name %s\n", zMapFeature->type, zMapFeature->name);
 
-  params->feature = zMapFeature;
+  keys = g_new0(KeyStruct, 1);
+  keys->feature_set = params->feature_set;
+  keys->context_key = params->context_key;
+  keys->feature_key = key_id;
 
   switch (zMapFeature->type)
     {
@@ -209,6 +226,8 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 
 	  g_signal_connect(GTK_OBJECT(object), "event",
 			   GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
+	  
+	  g_object_set_data(G_OBJECT(object), key, keys);
 	}
       break;
 
@@ -222,8 +241,11 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 			       (zMapFeature->feature.homol.y2 * magFactor),
 			       &params->thisType->outline, 
 			       &params->thisType->foreground);
+
 	  g_signal_connect(GTK_OBJECT(object), "event",
 			   GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
+
+	  g_object_set_data(G_OBJECT(object), key, keys);
 	}
       break;
 
@@ -234,7 +256,6 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 				  "x", (double)params->column_position,
 				  "y", (double)zMapFeature->x1 * magFactor,
 				  NULL);
-
 
       for (j = 1; j < zMapFeature->feature.transcript.exons->len; j++)
 	{
@@ -280,6 +301,7 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 	      g_signal_connect(GTK_OBJECT(object), "event",
 			       GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
 
+	      g_object_set_data(G_OBJECT(object), key, keys);
 	    }
 	}
       break;
@@ -287,6 +309,7 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
     default:
       break;
     }
+
   
   return;
 }
@@ -295,11 +318,23 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 static gboolean handleCanvasEvent(GtkWidget *widget, GdkEventClient *event, gpointer data)
 {
   ParamStruct *params = (ParamStruct*)data;
+  ZMapFeatureContext feature_context;
+  ZMapFeatureSet feature_set;
+  ZMapFeature feature;
+  const gchar *key = "feature";
+  Keys keys;
 
   switch (event->type)
   {
   case GDK_BUTTON_PRESS:
-    featureClickCB(params);
+    // retrieve the KeyStruct from the clicked object, obtain the feature_set from that and the
+    // feature from that, using the two GQuarks, context_key and feature_key. Then call the 
+    // click callback function, passing params and feature so the details of the clicked object
+    // can be displayed in the info_panel.
+    keys = g_object_get_data(G_OBJECT(widget), key);  
+    feature_set = g_datalist_id_get_data(&(params->feature_context->feature_sets), keys->context_key);
+    feature = g_datalist_id_get_data(&(feature_set->features), keys->feature_key); 
+    featureClickCB(params, feature);                            
     return TRUE;
 
   default: return FALSE;

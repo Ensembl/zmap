@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Aug 18 09:34 2004 (rnc)
+ * Last edited: Sep  3 14:22 2004 (rnc)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.27 2004-08-18 14:59:08 rnc Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.28 2004-09-03 13:25:04 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -576,6 +576,11 @@ static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feat
   ZMapPaneViewSearchStruct view_search ;
   GString *str = g_string_new("");
 
+  // array of types must corresponed 1:1 with ZMapFeatureType enum in zmapFeature.h
+  // (apart from INVALID) as feature->type is used to index this array.
+  static char types[8][20+1] = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
+			  "VARIATION", "BOUNDARY", "SEQUENCE"} ;
+
 
   view_search.view_window = view_window ;
   view_search.parent_pane = NULL ;
@@ -590,12 +595,11 @@ static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feat
 
   if (feature) // if user clicked on a specific object
     {
-      printf("clickCB\n");
-      g_string_printf(str, "%s %d %d %f", 
+      g_string_printf(str, "%s   %d   %d   %s", 
 		      feature->name,
 		      feature->x1,
 		      feature->x2,
-		      feature->score);
+		      types[feature->type]);
       gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), str->str);
     }
   return ;

@@ -26,9 +26,9 @@
  *              on the canvas, calling drawing functions in zmapDraw
  *              to do so.
  * HISTORY:
- * Last edited: Aug 17 09:59 2004 (rnc)
+ * Last edited: Sep  3 08:48 2004 (rnc)
  * Created: Fri Aug 13 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.1 2004-08-18 15:05:01 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.2 2004-09-03 13:24:42 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_DRAWFEATURES_H
@@ -49,6 +49,9 @@ typedef struct _ParamStruct
   GData *types;
   ZMapFeatureTypeStyle thisType;
   ZMapFeature feature;
+  ZMapFeatureContext feature_context;
+  ZMapFeatureSet feature_set;
+  GQuark context_key;
 } ParamStruct;
 
 

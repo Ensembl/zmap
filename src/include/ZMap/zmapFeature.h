@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Sep  1 16:21 2004 (rnc)
+ * Last edited: Sep  2 12:16 2004 (rnc)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.11 2004-09-02 08:55:21 rnc Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.12 2004-09-03 13:25:26 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -82,6 +82,8 @@ typedef struct zMapRegionStruct ZMapRegion;
 typedef int methodID ;
 
 
+// ZMapFeatureType must correspond 1:1 with statuc char types array in zmapControl.c clickCB()
+// apart from INVALID, as the feature->type is used to index the array.
 /* What about "sequence", atg, and allele as basic feature types ?           */
 typedef enum {ZMAPFEATURE_INVALID = -1,
 	      ZMAPFEATURE_BASIC = 0, ZMAPFEATURE_HOMOL,
