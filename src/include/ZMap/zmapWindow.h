@@ -27,9 +27,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Oct 15 16:51 2004 (rnc)
+ * Last edited: Nov  2 15:57 2004 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.19 2004-10-15 16:07:56 rnc Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.20 2004-11-04 12:39:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -70,6 +70,10 @@ typedef struct _ZMapWindowCallbacksStruct
 typedef enum {ZMAP_WINDOW_INIT, ZMAP_WINDOW_LOAD,
 	      ZMAP_WINDOW_STOP, ZMAP_WINDOW_QUIT} ZmapWindowCmd ;
 
+/* indicates how far the zmap is zoomed, n.b. ZMAP_ZOOM_FIXED implies that the whole sequence
+ * is displayed at the maximum zoom. */
+typedef enum {ZMAP_ZOOM_INIT, ZMAP_ZOOM_MIN, ZMAP_ZOOM_MID, ZMAP_ZOOM_MAX,
+	      ZMAP_ZOOM_FIXED} ZMapWindowZoomStatus ;
 
 
 void       zMapWindowInit       (ZMapWindowCallbacks callbacks) ;
@@ -77,13 +81,13 @@ ZMapWindow zMapWindowCreate     (GtkWidget *parent_widget, char *sequence, void 
 void       zMapWindowDisplayData(ZMapWindow window,
 				 ZMapFeatureContext current_features, ZMapFeatureContext new_features,
 				 GData *types) ;
-void       zMapWindowZoom       (ZMapWindow window, double zoom_factor) ;
+ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 void       zMapWindowReset      (ZMapWindow window) ;
 
 GtkWidget   *zMapWindowGetWidget(ZMapWindow window);
+ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
+
 void       zMapWindowDestroy    (ZMapWindow window) ;
-
-
 
 void zMapWindowSetHandle       (ZMapWindow window);
 void zMapWindowCreateRegion    (ZMapWindow window);
