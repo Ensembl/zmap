@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Jun 29 13:48 2004 (edgrif)
+ * Last edited: Jun 29 13:52 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.2 2004-06-29 12:48:49 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.3 2004-06-29 12:52:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -202,7 +202,7 @@ static gboolean request(void *server_in, ZMapServerRequestType request,
 
   /* OK, this call actually contacts the http server and gets the data. */
   if (result &&
-l      ((server->curl_error = curl_easy_perform(server->curl_handle)) != CURLE_OK))
+      ((server->curl_error = curl_easy_perform(server->curl_handle)) != CURLE_OK))
     result = FALSE ;
 
   /* Dummy data.... */
