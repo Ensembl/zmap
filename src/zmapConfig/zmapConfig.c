@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Jan 23 10:43 2004 (edgrif)
+ * Last edited: Mar 22 13:03 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.2 2004-01-23 13:28:13 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.3 2004-03-22 13:18:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,8 +57,19 @@ gboolean zMapConfigGetServers(ZMapConfig config, char ***servers)
   gboolean result = TRUE ;
   static char *my_servers[] = {"griffin2 20000 acedb",
 			       "griffin2 20001 acedb",
-			       "griffin2 20002 acedb",
+			       "http://dev.acedb.org/das/ 0 das",
 			       NULL} ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* for debugging it is often good to have only one thread running. */
+
+  static char *my_servers[] = {"griffin2 20000 acedb",
+			       NULL} ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
   *servers = my_servers ;
 
