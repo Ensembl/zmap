@@ -11,10 +11,10 @@ MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
 
 
 # local macros
-PUB_HDRS = zmapSys.h zmapConn.h zmapServer.h
-APP_PRIV_HDRS = zmapConn_P.h zmapSlave_P.h
-APP_SRC = zmapConn.c zmapSlave.c zmapConnutils.c
-APP_OBJ = zmapConn.o zmapSlave.o zmapConnutils.o
+PUB_HDRS = zmapSys.h zmapServer.h
+APP_PRIV_HDRS =  zmapSlave_P.h
+APP_SRC = zmapThreads.c zmapSlave.c zmapThreadsUtils.c
+APP_OBJ = zmapThreads.o zmapSlave.o zmapThreadsUtils.o
 
 # the main routines will need some different treatment maybe...???? try putting
 # them all together, don't know if it will work.....
