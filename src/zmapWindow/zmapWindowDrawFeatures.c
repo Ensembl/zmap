@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 13 13:57 2004 (rnc)
+ * Last edited: Sep 14 10:30 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.14 2004-09-13 13:31:44 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.15 2004-09-14 09:32:30 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,9 +44,11 @@ typedef struct _ParamStruct
   ZMapWindow           window;
   FooCanvas           *thisCanvas;
   FooCanvasItem       *columnGroup;
+  FooCanvasItem       *revColGroup;         // a group for reverse strand features
   double               height;
   double               length;
   double               column_position;
+  double               revColPos;           // column position on reverse strand
   GData               *types;
   ZMapFeatureTypeStyle thisType;
   ZMapFeature          feature;
@@ -124,6 +126,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
   FooCanvas *canvas = window->canvas;
   GError    *channel_error = NULL;
 
+
   if (feature_context)  // Split an empty pane and you get here with no feature_context
     {
       foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);  // for display panel
@@ -159,7 +162,10 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 			     feature_context->sequence_to_parent.c1, 
 			     feature_context->sequence_to_parent.c2);
 
-      params.column_position = result + 100;  // a bit to the right of where we drew the scale bar
+      params.column_position = result + 100.0;  // a bit to the right of where we drew the scale bar
+      params.revColPos = result;                // and left of it for reverse strand stuff
+      // NB there's a flaw here: too many visible upstrand groups and we'll go left of the edge of
+      // the window.
 
       if (feature_context)
 	g_datalist_foreach(&(feature_context->feature_sets), zmapWindowProcessFeatureSet, &params);
@@ -169,6 +175,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
     g_error_free(channel_error);
 
   g_io_channel_shutdown(params.channel, TRUE, &channel_error);
+
   return;
 }
 
@@ -185,7 +192,7 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
 
 
   // NB for each column we create a new canvas group, with the initial y coordinate set to
-  // 10.0 to just drop it a teeny bit from the top of the window.  All items live in the group.
+  // 5.0 to just drop it a teeny bit from the top of the window.  All items live in the group.
   // Note that this y coord adjustment is directly linked to the the manipulation of 
   // params->height performed in zmapWindowDrawFeatures.  Change them together or not at all.
   params->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(params->types), feature_set->source) ;
@@ -200,14 +207,24 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
   else
     {
       params->column_position += column_spacing;
-  
+
       params->columnGroup = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
 						foo_canvas_group_get_type(),
 						"x", (double)params->column_position,
 						"y", (double)5.0,
 						NULL);
+      // if (showUpStrand) then create a reverse strand group as well
+      if (params->thisType->showUpStrand)
+	{
+	  params->revColGroup = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
+						    foo_canvas_group_get_type(),
+						    "x", (double)params->revColPos,
+						    "y", (double)5.0,
+						    NULL);
+	  params->revColPos -= column_spacing;
+	}
 
-      g_datalist_foreach(&(feature_set->features), zmapWindowProcessFeature, params) ;
+        g_datalist_foreach(&(feature_set->features), zmapWindowProcessFeature, params) ;
     }
   return ;
 }
@@ -226,7 +243,7 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
   ZMapSpan zMapSpan, prevSpan;
   ZMapAlignBlock *zMapAlign, *prevAlign;
   int i, j;
-  FooCanvasItem *feature_group, *object;
+  FooCanvasItem *columnGroup, *feature_group, *object = NULL;
   int x1, x2, y0, y1, y2;
   float middle, line_width = 1.0;
   double magFactor = (params->height / params->length) * 0.98;
@@ -236,7 +253,7 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
   GError *channel_error = NULL;
   gsize bytes_written;
 
-
+  // set up the primary details for printing
   g_string_printf(buf, "%s %d %d", 
 		  zMapFeature->name,
 		  zMapFeature->x1,
@@ -247,35 +264,41 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
   featureKeys->context_key = params->context_key;
   featureKeys->feature_key = key_id;
 
+  // decide whether this feature lives on the up or down strand
+  if (zMapFeature->strand == ZMAPSTRAND_DOWN || zMapFeature->strand == ZMAPSTRAND_NONE)
+      columnGroup = params->columnGroup;
+  else
+      columnGroup = params->revColGroup;
 
-  switch (zMapFeature->type)
+
+  if (zMapFeature->strand == ZMAPSTRAND_DOWN
+      || zMapFeature->strand == ZMAPSTRAND_NONE
+      || (zMapFeature->strand == ZMAPSTRAND_UP && params->thisType->showUpStrand == TRUE))
     {
-    case ZMAPFEATURE_BASIC: case ZMAPFEATURE_VARIATION:     /* type 0 is a basic, 5 is allele */
-    case ZMAPFEATURE_BOUNDARY: case ZMAPFEATURE_SEQUENCE:   /* boundary is 6, sequence is 7 */
-      g_string_append_printf(buf, "\n");
-
-      if (zMapFeature->x2 > zMapFeature->x1)
+      switch (zMapFeature->type)
 	{
-	  object = zmapDrawBox(FOO_CANVAS_ITEM(params->columnGroup), 0.0,
+	case ZMAPFEATURE_BASIC: case ZMAPFEATURE_VARIATION:     /* type 0 is a basic, 5 is allele */
+	case ZMAPFEATURE_BOUNDARY: case ZMAPFEATURE_SEQUENCE:   /* boundary is 6, sequence is 7 */
+	  g_string_append_printf(buf, "\n");
+	  
+	  object = zmapDrawBox(FOO_CANVAS_ITEM(columnGroup), 0.0,
 			       (zMapFeature->x1 * magFactor), 
 			       params->thisType->width, 
 			       (zMapFeature->x2 * magFactor),
 			       &params->thisType->outline,
 			       &params->thisType->foreground);
-
+	
 	  g_signal_connect(GTK_OBJECT(object), "event",
 			   GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
 	  
 	  g_object_set_data(G_OBJECT(object), itemDataKey, featureKeys);
-	}
-      break;
+	  
+	  break;
 
-    case ZMAPFEATURE_HOMOL:     /* type 1 is a homol */
-      g_string_append_printf(buf, "\n");
+	case ZMAPFEATURE_HOMOL:     /* type 1 is a homol */
+	  g_string_append_printf(buf, "\n");
 
-      if (zMapFeature->x2 > zMapFeature->x1)
-	{	      
-	  object = zmapDrawBox(FOO_CANVAS_ITEM(params->columnGroup), 0.0,
+	  object = zmapDrawBox(FOO_CANVAS_ITEM(columnGroup), 0.0,
 			       (zMapFeature->x1 * magFactor), 
 			       params->thisType->width, 
 			       (zMapFeature->x2 * magFactor), 
@@ -286,49 +309,45 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 			   GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
 
 	  g_object_set_data(G_OBJECT(object), itemDataKey, featureKeys);
-	}
-      break;
+
+	  break;
 
 
-    case ZMAPFEATURE_TRANSCRIPT:     /* type 4 is a transcript */
-      feature_group = foo_canvas_item_new(FOO_CANVAS_GROUP(params->columnGroup),
-					  foo_canvas_group_get_type(),
-					  "x", (double)0.0,
-					  "y", (double)zMapFeature->x1 * magFactor,
-					  NULL);
-
-      for (j = 1; j < zMapFeature->feature.transcript.exons->len; j++)
-	{
-	  zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
-	  prevSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j-1);
-	  middle = (((prevSpan->x2 + zMapSpan->x1)/2) - zMapFeature->x1) * magFactor;
-	  y0 = (prevSpan->x1 - zMapFeature->x1) * magFactor; // y coord of preceding exon
-	  y1 = (prevSpan->x2 - zMapFeature->x1) * magFactor;
-	  y2 = (zMapSpan->x1 - zMapFeature->x1) * magFactor;
-
-	  // skip this intron if its preceding exon is too small to draw. 
-	  // Note this is a kludge which will meet its come-uppance during zooming
-	  // because zooming doesn't revisit this block of code, so tiny exons will
-	  // appear when zoomed, but the intervening introns will be lost forever.
-
-	  if (y2 > y1 && y0+2 <= y1)
+	case ZMAPFEATURE_TRANSCRIPT:     /* type 4 is a transcript */
+	  feature_group = foo_canvas_item_new(FOO_CANVAS_GROUP(columnGroup),
+					      foo_canvas_group_get_type(),
+					      "x", (double)0.0,
+					      "y", (double)zMapFeature->x1 * magFactor,
+					      NULL);
+      
+	  for (j = 1; j < zMapFeature->feature.transcript.exons->len; j++)
 	    {
-	      zmapDrawLine(FOO_CANVAS_GROUP(feature_group), params->thisType->width/2, y1,
-			   params->thisType->width, middle, 
-			   &params->thisType->foreground, line_width);
-	      zmapDrawLine(FOO_CANVAS_GROUP(feature_group), params->thisType->width, middle, 
-			   params->thisType->width/2, y2, 
-			   &params->thisType->foreground, line_width);
+	      zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
+	      prevSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j-1);
+	      middle = (((prevSpan->x2 + zMapSpan->x1)/2) - zMapFeature->x1) * magFactor;
+	      y0 = (prevSpan->x1 - zMapFeature->x1) * magFactor; // y coord of preceding exon
+	      y1 = (prevSpan->x2 - zMapFeature->x1) * magFactor;
+	      y2 = (zMapSpan->x1 - zMapFeature->x1) * magFactor;
+
+	      // skip this intron if its preceding exon is too small to draw. 
+	      // Note this is a kludge which will meet its come-uppance during zooming
+	      // because zooming doesn't revisit this block of code, so tiny exons will
+	      // appear when zoomed, but the intervening introns will be lost forever.
+	  
+	      if (y2 > y1 && y0+2 <= y1)
+		{
+		  zmapDrawLine(FOO_CANVAS_GROUP(feature_group), params->thisType->width/2, y1,
+			       params->thisType->width, middle, 
+			       &params->thisType->foreground, line_width);
+		  zmapDrawLine(FOO_CANVAS_GROUP(feature_group), params->thisType->width, middle, 
+			       params->thisType->width/2, y2, 
+			       &params->thisType->foreground, line_width);
+		}
 	    }
-	}	  
-      for (j = 0; j < zMapFeature->feature.transcript.exons->len; j++)
-	{
-
-	  zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
-	      
-	  g_string_append_printf(buf, " Transcript: %d %d\n", zMapSpan->x1, zMapSpan->x2);
-	  if (zMapSpan->x2 > zMapSpan->x1)
+	  for (j = 0; j < zMapFeature->feature.transcript.exons->len; j++)
 	    {
+	      zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
+	      
 	      if (j == 0)
 		zmapDisplayText(FOO_CANVAS_GROUP(feature_group), zMapFeature->name, 
 				"brown",40.0, (zMapSpan->x1 - zMapFeature->x1) * magFactor); 
@@ -341,17 +360,20 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 
 	      g_signal_connect(GTK_OBJECT(object), "event",
 			       GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
-
+		  
 	      g_object_set_data(G_OBJECT(object), itemDataKey, featureKeys);
+
+	      // add transcript details for printing
+	      g_string_append_printf(buf, " Transcript: %d %d\n", zMapSpan->x1, zMapSpan->x2);
 	    }
+	  break;
+
+	default:
+	  printf("Not displaying %s type %d\n", zMapFeature->name, zMapFeature->type);
+	  break;
 	}
-      break;
-
-    default:
-      printf("Not displaying %s type %s\n", zMapFeature->name, zMapFeature->type);
-      break;
     }
-
+  // print the feature details to the output file
   g_io_channel_write_chars(params->channel, buf->str, -1, &bytes_written, &channel_error);
   g_string_free(buf, TRUE);
   if (channel_error)
@@ -360,7 +382,6 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
   if (object)
     g_signal_connect(GTK_OBJECT(object), "destroy",
 		     GTK_SIGNAL_FUNC(freeObjectKeys), featureKeys);
-  
   return;
 }
 

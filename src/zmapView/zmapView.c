@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep 13 14:35 2004 (rnc)
+ * Last edited: Sep 13 17:19 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.19 2004-09-13 13:35:27 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.20 2004-09-14 09:32:01 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1141,6 +1141,7 @@ static GData *getTypesFromFile(void)
 							{"foreground", ZMAPCONFIG_STRING, {"white"}},
 							{"background", ZMAPCONFIG_STRING, {"black"}},
 							{"width", ZMAPCONFIG_FLOAT, {NULL}},
+							{"showUpStrand", ZMAPCONFIG_BOOL, {NULL}},
 							{NULL, -1, {NULL}}} ;
 
 
@@ -1184,6 +1185,7 @@ static GData *getTypesFromFile(void)
 	      gdk_color_parse(zMapConfigGetElementString(next_types, "foreground"), &new_type->foreground) ;
 	      gdk_color_parse(zMapConfigGetElementString(next_types, "background"), &new_type->background) ;
 	      new_type->width = zMapConfigGetElementFloat(next_types, "width") ;
+	      new_type->showUpStrand = zMapConfigGetElementBool(next_types, "showUpStrand");
 
 	      g_datalist_set_data(&types, name, new_type) ;
 	      num_types++ ;
@@ -1231,9 +1233,7 @@ static void methodPrintFunc(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   char *style_name = (char *)g_quark_to_string(key_id) ;
   
-
-  printf("\t%s: \t%s \t%s \t%f\n", style_name, style->foreground, style->background, style->width) ;
-
+  printf("\t%s: \t%f \t%d\n", style_name, style->width, style->showUpStrand) ;
 
   return ;
 }
