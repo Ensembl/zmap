@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul 13 18:57 2004 (edgrif)
+ * Last edited: Jul 15 15:52 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.5 2004-07-14 09:08:43 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.6 2004-07-15 15:11:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -50,6 +50,7 @@ typedef enum {
   ZMAP_DYING						    /* ZMap is dying for some reason,
 							       cannot do anything in this state. */
 } ZmapState ;
+
 
 
 
@@ -91,12 +92,13 @@ typedef struct _ZMapStruct
 
 
   /* List of views in this zmap. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapView curr_view ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   GList *view_list ;
+
+
+  /* In DAS2 terminology methods are types...easy to change if we don't like the name.
+   * These are the stylesheets in effect for the feature sets. */
+  GData *types ;
+
 
 } ZMapStruct ;
 
@@ -118,12 +120,15 @@ typedef struct _ZMapPaneStruct
 
 
 /* Functions internal to zmapControl. */
-gboolean   zmapControlWindowCreate     (ZMap zmap, char *zmap_id) ;
+gboolean   zmapControlWindowCreate     (ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeFrame  (ZMap zmap) ;
-GtkWidget *zmapControlCreateNavigator(FooCanvas **canvas_out) ;
 void       zmapControlWindowDestroy    (ZMap zmap) ;
+
+
+GtkWidget *zmapControlNavigatorCreate(FooCanvas **canvas_out) ;
+void zmapControlNavigatorNewView(ZMapMapBlock sequence_to_parent) ;
 
 void zmapControlTopLevelKillCB(ZMap zmap) ;
 void zmapControlLoadCB        (ZMap zmap) ;
