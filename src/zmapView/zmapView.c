@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec  2 11:49 2004 (rnc)
+ * Last edited: Dec 13 14:19 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.36 2004-12-06 14:10:38 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.37 2004-12-13 15:20:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,7 +139,7 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file, int format)
 {
-  zmapFeatureDump(view_window->parent_view->features, file, format);
+  zMapFeatureDump(view_window->parent_view->features, file, format);
 
   return;
 }
@@ -869,6 +869,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      /* Process the different types of data coming back. */
 		      switch (req_any->request)
 			{
+			case ZMAP_PROTOCOLREQUEST_FEATURES:
+			case ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE:
 			case ZMAP_PROTOCOLREQUEST_SEQUENCE:
 			  {
 			    getFeatures(zmap_view, req_any) ;
@@ -1036,9 +1038,14 @@ static void loadDataConnections(ZMapView zmap_view)
 	  view_con = list_item->data ;
 	  connection = view_con->connection ;
 
-	  /* Need to construct a request to do the load of data, no longer need sequence here... */
+	  /* Need to construct a request to do the load of data... */
 	  req_features = g_new0(ZMapProtocolGetFeaturesStruct, 1) ;
-	  req_features->request = ZMAP_PROTOCOLREQUEST_SEQUENCE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  req_features->request = ZMAP_PROTOCOLREQUEST_FEATURES ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  req_features->request = ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE ;
+
 
 	  zMapConnRequest(connection, req_features) ;
 
