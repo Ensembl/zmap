@@ -26,15 +26,18 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  2 14:40 2004 (rnc)
+ * Last edited: Jul  2 19:16 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.6 2004-07-02 13:47:49 rnc Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.7 2004-07-02 18:23:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
+#include <ZMap/zmapWindow.h>
 #include <zmapControl_P.h>
 #include <zmapControlSplit.h>
+
+
 
 static void newCB(GtkWidget *widget, gpointer cb_data) ;
 static void loadCB(GtkWidget *widget, gpointer cb_data) ;
@@ -72,22 +75,22 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 
   hsplit_button = gtk_button_new_with_label("H-Split");
   gtk_signal_connect(GTK_OBJECT(hsplit_button), "clicked",
-		     GTK_SIGNAL_FUNC(splitPane), (gpointer)zmap->zMapWindow);
+		     GTK_SIGNAL_FUNC(splitPane), (gpointer)zmap) ;
   gtk_box_pack_start(GTK_BOX(hbox), hsplit_button, FALSE, FALSE, 0) ;
 
   vsplit_button = gtk_button_new_with_label("V-Split");
   gtk_signal_connect(GTK_OBJECT(vsplit_button), "clicked",
-		     GTK_SIGNAL_FUNC(splitHPane), (gpointer)zmap->zMapWindow);
+		     GTK_SIGNAL_FUNC(splitHPane), (gpointer)zmap) ;
   gtk_box_pack_start(GTK_BOX(hbox), vsplit_button, FALSE, FALSE, 0) ;
                                                                                            
   zoomin_button = gtk_button_new_with_label("Zoom In");
   gtk_signal_connect(GTK_OBJECT(zoomin_button), "clicked",
-		     GTK_SIGNAL_FUNC(zoomIn), (gpointer)zmap->zMapWindow);
+		     GTK_SIGNAL_FUNC(zoomIn), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomin_button, FALSE, FALSE, 0) ;
                                                                                            
   zoomout_button = gtk_button_new_with_label("Zoom Out");
   gtk_signal_connect(GTK_OBJECT(zoomout_button), "clicked",
-		     GTK_SIGNAL_FUNC(zoomOut), (gpointer)zmap->zMapWindow);
+		     GTK_SIGNAL_FUNC(zoomOut), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
                                                                                            
   quit_button = gtk_button_new_with_label("Quit") ;
@@ -116,13 +119,21 @@ static void loadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
   ZMapFeatureContext feature_context ;
+  GtkWidget *topWindow;
+  char *title;
 
   zmapControlLoadCB(zmap) ;
 
   // only here temporarily until we find out why it's not working in zmapWindow.c
   feature_context = testGetGFF() ;			    /* Data read from a file... */
 
-  zmapWindowDrawFeatures(zmap->zMapWindow, feature_context);
+
+  /* ROB, THIS MAY NEED TO BE REWRITTEN, WHICH SEQUENCE NAME SHOULD GO IN THE WINDOW TITLE
+   * IF MULTIPLE SEQUENCES ARE DISPLAYED ? */
+  title = g_strdup_printf("ZMap - %s", feature_context->sequence) ;
+  gtk_window_set_title(GTK_WINDOW(zmap->toplevel), title) ;
+
+  zmapWindowDrawFeatures(feature_context) ;
 
   return ;
 }
@@ -150,10 +161,9 @@ static void newCB(GtkWidget *widget, gpointer cb_data)
 static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
-  ZMapWindow window = zmap->zMapWindow;
 
-  if (zMapWindowGetPanesTree(window))
-    g_node_destroy(zMapWindowGetPanesTree(window));
+  if (zmap->panesTree)
+    g_node_destroy(zmap->panesTree);
 
   zmapControlTopLevelKillCB(zmap) ;
 

@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul  2 14:06 2004 (rnc)
+ * Last edited: Jul  2 19:06 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.13 2004-07-02 13:37:00 rnc Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.14 2004-07-02 18:23:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,6 +46,8 @@ gboolean zmap_debug_G = TRUE ;
 
 static ZMap createZMap(void *app_data, ZMapCallbackFunc app_cb) ;
 static void destroyZMap(ZMap zmap) ;
+
+static void createZMapWindow(ZMap zmap) ;
 
 static void killZMap(ZMap zmap) ;
 static void viewKilledCB(ZMapView view, void *app_data) ;
@@ -281,7 +283,6 @@ void zmapControlResetCB(ZMap zmap)
 	}
     }
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* this is not right, we may not need the resetting state at top level at all in fact..... */
   zmap->state = ZMAP_RESETTING ;
@@ -334,24 +335,48 @@ gboolean zMapDisplay(ZMap        zmap,
 		 char       *fromspec, 
 		 gboolean        isOldGraph)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapWindow window = zmap->zMapWindow;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   //  Coord x1, x2;    
   //  zMapWindowSetHandle(window);
 
-  zMapWindowSetFrame(window, zmap->view_parent);        
-  zMapWindowSetFirstTime(window, TRUE);                 /* used in addPane() */
+  zmap->frame = zmap->view_parent ;        
+
+  zmap->firstTime = TRUE ;				    /* used in addPane() */
 
   /* make the window in which to display the data */
-  createZMapWindow(window);
+  createZMapWindow(zmap);
 
-  drawNavigator(window);
+  drawNavigator(zmap);
 
-  drawWindow(zMapWindowGetFocuspane(window));
+  drawWindow(zmap->focuspane) ;
 
   return TRUE;
 
 }
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* Has to become redundant.......I hope......... */
+
+ZMapWindow zMapWindowCreateZMapWindow(void)
+{
+  ZMapWindow window = (ZMapWindow)malloc(sizeof(ZMapWindowStruct));
+
+  return window;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 
 
 /* createZMapWindow ***************************************************************
@@ -364,35 +389,36 @@ gboolean zMapDisplay(ZMap        zmap,
  * in as child2.
  */
 
-void createZMapWindow(ZMapWindow window)
+static void createZMapWindow(ZMap zmap)
 {
   ZMapPane pane = NULL;
  
-  zMapWindowSetPanesTree(window, g_node_new(pane));
-  zMapWindowSetHpane(window, gtk_hpaned_new());
+  zmap->panesTree = g_node_new(pane);
+
+  zmap->hpane = gtk_hpaned_new() ;
                                                                                            
   /* After the toolbars comes an hpane, so the user can adjust the width
    * of the navigator pane */
-  gtk_container_add(GTK_CONTAINER(zMapWindowGetFrame(window)), zMapWindowGetHpane(window));
+  gtk_container_add(GTK_CONTAINER(zmap->frame), zmap->hpane) ;
                                                                                            
-  zMapWindowSetNavigator(window, gtk_scrolled_window_new(NULL, NULL));
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(zMapWindowGetNavigator(window)), 
+  zmap->navigator = gtk_scrolled_window_new(NULL, NULL) ;
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(zmap->navigator), 
 				 GTK_POLICY_NEVER, GTK_POLICY_NEVER);
-  gtk_widget_set_size_request(zMapWindowGetNavigator(window), 100, -1);
+  gtk_widget_set_size_request(zmap->navigator, 100, -1);
 
-  gtk_paned_pack1(GTK_PANED(zMapWindowGetHpane(window)), 
-		  zMapWindowGetNavigator(window),
+
+  gtk_paned_pack1(GTK_PANED(zmap->hpane), 
+		  zmap->navigator,
                   TRUE, TRUE);
                                                                                            
   /* create the splittable pane and pack it into the hpane as child2. */
-  zMapWindowSetDisplayVbox(window, gtk_vbox_new(FALSE,0));
+  zmap->displayvbox = gtk_vbox_new(FALSE,0) ;
 
-  addPane(window, 'v');
+  addPane(zmap, 'v');
 
-  gtk_widget_set_size_request(zMapWindowGetDisplayVbox(window), 750, -1);
-  gtk_paned_pack2(GTK_PANED(zMapWindowGetHpane(window)), 
-		  zMapWindowGetDisplayVbox(window)
-		  , TRUE, TRUE);
+  gtk_widget_set_size_request(zmap->displayvbox, 750, -1);
+  gtk_paned_pack2(GTK_PANED(zmap->hpane), 
+		  zmap->displayvbox, TRUE, TRUE);
 
   return;
 }
@@ -467,7 +493,7 @@ void drawWindow(ZMapPane pane)
  * Then in addPane we add a new frame in the child2 position, and into that we
  * load a new scrolled window and canvas. 
 */
-void addPane(ZMapWindow window, char orientation)
+void addPane(ZMap zmap, char orientation)
 {
   ZMapPane pane = (ZMapPane)malloc(sizeof(ZMapPaneStruct));
   GtkAdjustment *adj; 
@@ -475,7 +501,7 @@ void addPane(ZMapWindow window, char orientation)
   GNode *node = NULL;
 
   /* set up ZMapPane for this window */
-  pane->window = window;
+  pane->zmap = zmap ;
   pane->DNAwidth = 100;
   pane->step_increment = 10;
 
@@ -488,18 +514,18 @@ void addPane(ZMapWindow window, char orientation)
    * split vertically (side by side) are parents/children.  In theory
    * this enables us to get the sizing right. In practice it's not
    * perfect yet.*/
-  if (zMapWindowGetFirstTime(window)) 
+  if (zmap->firstTime) 
     { 
       pane->zoomFactor   = 1;
-      g_node_append_data(zMapWindowGetPanesTree(window), pane);
+      g_node_append_data(zmap->panesTree, pane);
     }
   else
     {
-      pane->zoomFactor   = zMapWindowGetFocuspane(window)->zoomFactor;
-      node = g_node_find (zMapWindowGetPanesTree(window),
+      pane->zoomFactor  = zmap->focuspane->zoomFactor ;
+      node = g_node_find (zmap->panesTree,
 			  G_IN_ORDER,
 			  G_TRAVERSE_ALL,
-			  zMapWindowGetFocuspane(window));
+			  zmap->focuspane);
       if (orientation == 'h')
 	  g_node_append_data(node->parent, pane);
       else
@@ -545,10 +571,10 @@ void addPane(ZMapWindow window, char orientation)
 
   /* First time through, we add the frame to the main vbox. 
    * Subsequently it goes in the lower half of the current pane. */
-  if (zMapWindowGetFirstTime(window))
-    gtk_box_pack_start(GTK_BOX(zMapWindowGetDisplayVbox(window)), pane->frame, TRUE, TRUE, 0);
+  if (zmap->firstTime)
+    gtk_box_pack_start(GTK_BOX(zmap->displayvbox), pane->frame, TRUE, TRUE, 0);
   else
-    gtk_paned_pack2(GTK_PANED(zMapWindowGetFocuspane(window)->pane), pane->frame, TRUE, TRUE);
+    gtk_paned_pack2(GTK_PANED(zmap->focuspane->pane), pane->frame, TRUE, TRUE);
 
 
   /* always show scrollbars, however big the display */
@@ -557,35 +583,79 @@ void addPane(ZMapWindow window, char orientation)
 
   adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(pane->scrolledWindow)); 
 
-  //  g_signal_connect(GTK_OBJECT(adj), "value_changed", GTK_SIGNAL_FUNC(navUpdate), (gpointer)(pane));
-  //  g_signal_connect(GTK_OBJECT(adj), "changed", GTK_SIGNAL_FUNC(navChange), (gpointer)(pane)); 
+  g_signal_connect(GTK_OBJECT(adj), "value_changed", GTK_SIGNAL_FUNC(navUpdate), (gpointer)(pane));
+  g_signal_connect(GTK_OBJECT(adj), "changed", GTK_SIGNAL_FUNC(navChange), (gpointer)(pane)); 
 
   /* focus on the new pane */
   recordFocus(NULL, NULL, pane);
   gtk_widget_grab_focus(pane->frame);
 
   /* if we do this first time, a little blank box appears before the main display */
-  if (!zMapWindowGetFirstTime(window)) 
-    gtk_widget_show_all (zMapWindowGetFrame(window));
+  if (!zmap->firstTime) 
+    gtk_widget_show_all(zmap->frame) ;
 
-  zMapWindowSetFirstTime(window, FALSE);
+  zmap->firstTime = FALSE ;
 
   zmMainScale(pane->canvas, 30, 0, 1000);
   return;
 }
 
 
-void drawNavigator(ZMapWindow window)
+
+void navChange(GtkAdjustment *adj, gpointer p)
+{
+  ZMapPane pane = (ZMapPane)p;
+  
+  drawNavigator(pane->zmap) ;
+}
+
+
+
+void navUpdate(GtkAdjustment *adj, gpointer p)
+{
+  ZMapPane pane = (ZMapPane)p ;
+  ZMap zmap = pane->zmap ;
+  int height;
+  Coord startWind, endWind;
+  ScreenCoord startWindf, startScreenf, endWindf, lenWindf;
+  float x1, y1, x2, y2;
+
+  if (GTK_WIDGET_REALIZED(zmap->frame))
+    {
+
+      //  graphActivate(zMapWindowGetNavigator(window));
+      //  graphFitBounds(NULL, &height);
+      //  graphBoxDim(pane->scrollBox, &x1, &y1, &x2, &y2);
+      
+      //  startWind =  zmCoordFromScreen(pane, 0);
+      //  endWind =  zmCoordFromScreen(pane, zMapPaneGetHeight(pane));
+      
+      //  startWindf = zMapWindowGetScreenCoord(window, startWind, height);
+      //  endWindf = zMapWindowGetScreenCoord(window, endWind, height);
+      //  lenWindf = endWindf - startWindf;
+      
+      //  startScreenf = startWindf + lenWindf * (adj->value - adj->lower)/(adj->upper - adj->lower) ;
+      
+      //  graphBoxShift(pane->scrollBox, x1, startScreenf);
+    }
+
+  return ;
+}
+
+
+
+
+void drawNavigator(ZMap zmap)
 {
   GtkWidget *w;
   GtkRequisition req;
   
   w = foo_canvas_new();
 
-  zMapWindowSetNavCanvas(window, FOO_CANVAS(w));
-  foo_canvas_set_scroll_region(zMapWindowGetNavCanvas(window), 0.0, 0.0, 200.0, 500.0);
+  zmap->navcanvas = FOO_CANVAS(w) ;
+  foo_canvas_set_scroll_region(zmap->navcanvas, 0.0, 0.0, 200.0, 500.0);
  
-  foo_canvas_item_new(foo_canvas_root(zMapWindowGetNavCanvas(window)),
+  foo_canvas_item_new(foo_canvas_root(zmap->navcanvas),
 			foo_canvas_rect_get_type(),
 			"x1",(double)0.0,
 			"y1",(double)0.0,
@@ -594,7 +664,7 @@ void drawNavigator(ZMapWindow window)
 			"fill_color", "white",
 			NULL);
 
-  gtk_container_add(GTK_CONTAINER(zMapWindowGetNavigator(window)), w);
+  gtk_container_add(GTK_CONTAINER(zmap->navigator), w);
 
 }
 
@@ -627,13 +697,35 @@ void navScale(FooCanvas *canvas, float offset, int start, int end)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* UNUSED CURRENTLY..... */
+static void navResize(void)
+{
+  ZMapWindow window;
+  
+  //  if (graphAssFind(&navAssoc, &window))
+    drawNavigator(window);
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* THIS PROBABLY NEEDS TO BE REWRITTEN AND PUT IN ZMAPDRAW.C, THE WHOLE CONCEPT OF GRAPHHEIGHT IS
+ * ALMOST CERTAINLY DEFUNCT NOW....... */
+
 /* Not entirely convinced this is the right place for these
 ** public functions accessing private structure members
 */
 int zMapWindowGetHeight(ZMapWindow window)
 {
-  return zMapWindowGetFocuspane(window)->graphHeight;
+  return zmap->focuspane->graphHeight;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 // ZMapPane functions
 
@@ -643,6 +735,171 @@ void zMapPaneNewBox2Col(ZMapPane pane, int elements)
 
   return ;
 }
+
+
+
+
+/* MOVED FROM zmapWindow.c, THEY BE IN THE WRONG PLACE OR NOT EVEN NEEDED...... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+ZMapPane zMapWindowGetFocuspane(ZMapWindow window)
+{
+  return window->focuspane;
+}
+
+void zMapWindowSetFocuspane(ZMapWindow window, ZMapPane pane)
+{
+  window->focuspane = pane;
+  return;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+GNode *zMapWindowGetPanesTree(ZMapWindow window)
+{
+  return window->panesTree;
+}
+
+void zMapWindowSetPanesTree(ZMapWindow window, GNode *node)
+{
+  window->panesTree = node;
+  return;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+gboolean zMapWindowGetFirstTime(ZMapWindow window)
+{
+  return window->firstTime;
+}
+
+void zMapWindowSetFirstTime(ZMapWindow window, gboolean value)
+{
+  window->firstTime = value;
+  return;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+GtkWidget *zMapWindowGetHpane(ZMapWindow window)
+{
+  return window->hpane;
+}
+
+void zMapWindowSetHpane(ZMapWindow window, GtkWidget *hpane)
+{
+  window->hpane = hpane;
+  return;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+GtkWidget *zMapWindowGetNavigator(ZMapWindow window)
+{
+  return window->navigator;
+}
+
+
+void zMapWindowSetNavigator(ZMapWindow window, GtkWidget *navigator)
+{
+  window->navigator = navigator;
+  return;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+GtkWidget *zMapWindowGetFrame(ZMapWindow window)
+{
+  return window->frame;
+}
+
+void zMapWindowSetFrame(ZMapWindow window, GtkWidget *frame)
+{
+  window->frame = frame;
+  return;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+GtkWidget *zMapWindowGetVbox(ZMapWindow window)
+{
+  return window->vbox;
+}
+
+
+void zMapWindowSetVbox(ZMapWindow window, GtkWidget *vbox)
+{
+  window->vbox = vbox;
+  return;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+FooCanvas *zMapWindowGetNavCanvas(ZMapWindow window)
+{
+  return window->navcanvas;
+}
+
+
+void zMapWindowSetNavCanvas(ZMapWindow window, FooCanvas *navcanvas)
+{
+  window->navcanvas = navcanvas;
+  return;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+GtkWidget *zMapWindowGetDisplayVbox(ZMapWindow window)
+{
+  return window->displayvbox;
+}
+
+
+void zMapWindowSetDisplayVbox(ZMapWindow window, GtkWidget *vbox)
+{
+  window->displayvbox = vbox;
+  return;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+GtkWidget *zMapWindowGetHbox(ZMapWindow window)
+{
+  return window->hbox;
+}
+
+
+void zMapWindowSetHbox(ZMapWindow window, GtkWidget *hbox)
+{
+  window->hbox = hbox;
+  return;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 
 
 
@@ -696,10 +953,14 @@ FooCanvasItem *zMapPaneGetGroup(ZMapPane pane)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapWindow zMapPaneGetZMapWindow(ZMapPane pane)
 {
   return pane->window;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 FooCanvas *zMapPaneGetCanvas(ZMapPane pane)
 {

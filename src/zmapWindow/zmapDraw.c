@@ -1,4 +1,4 @@
-/*  Last edited: Jul  2 14:06 2004 (rnc) */
+/*  Last edited: Jul  2 19:06 2004 (edgrif) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -40,7 +40,7 @@ static void *navAssoc, *winAssoc;
 
 /* function prototypes ***********************************************/
 
-static void drawGene (ZMapWindow window);
+static void drawGene (FooCanvas *canvas) ;
 static void zMapPick (int box, double x, double y);
 static void navPick  (int box, double x, double y);
 static void navDrag  (float *x, float *y, gboolean isDone);
@@ -140,46 +140,6 @@ float zmMainScale(FooCanvas *canvas, float offset, int start, int end)
   drawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, end, "black", 1.0);
   return offset + width + 4 ;
 
-}
-
-
-
-
-void navChange(GtkAdjustment *adj, gpointer p)
-{
-  ZMapPane pane = (ZMapPane)p;
-  
-  drawNavigator(zMapPaneGetZMapWindow(pane));
-}
-
-
-
-void navUpdate(GtkAdjustment *adj, gpointer p)
-{
-  ZMapPane pane = (ZMapPane)p;
-  ZMapWindow window = zMapPaneGetZMapWindow(pane);
-  int height;
-  Coord startWind, endWind;
-  ScreenCoord startWindf, startScreenf, endWindf, lenWindf;
-  float x1, y1, x2, y2;
-
-  if (!GTK_WIDGET_REALIZED(zMapWindowGetFrame(window)))
-    return;
-
-  //  graphActivate(zMapWindowGetNavigator(window));
-  //  graphFitBounds(NULL, &height);
-  //  graphBoxDim(pane->scrollBox, &x1, &y1, &x2, &y2);
-
-  //  startWind =  zmCoordFromScreen(pane, 0);
-  //  endWind =  zmCoordFromScreen(pane, zMapPaneGetHeight(pane));
-  
-  //  startWindf = zMapWindowGetScreenCoord(window, startWind, height);
-  //  endWindf = zMapWindowGetScreenCoord(window, endWind, height);
-  //  lenWindf = endWindf - startWindf;
-  
-  //  startScreenf = startWindf + lenWindf * (adj->value - adj->lower)/(adj->upper - adj->lower) ;
-
-  //  graphBoxShift(pane->scrollBox, x1, startScreenf);
 }
 
 
@@ -300,17 +260,15 @@ static void zMapPick(int box, double x, double y)
 
 
 
-static void drawGene(ZMapWindow window)
+static void drawGene(FooCanvas *canvas)
 {
   FooCanvasItem *group;
-  ZMapPane pane = zMapWindowGetFocuspane(window);
-  FooCanvas *canvas = zMapPaneGetCanvas(pane);
 
   group = foo_canvas_item_new(foo_canvas_root(canvas),
-                        foo_canvas_group_get_type(),
-                        "x", (double)100,
-                        "y", (double)100 ,
-                        NULL);
+			      foo_canvas_group_get_type(),
+			      "x", (double)100,
+			      "y", (double)100 ,
+			      NULL);
 
   //group = window->focuspane->group;
 
@@ -453,12 +411,5 @@ static void navPick(int box, double x, double y)
     }
 }
 
-static void navResize(void)
-{
-  ZMapWindow window;
-  
-  //  if (graphAssFind(&navAssoc, &window))
-    drawNavigator(window);
-}
 
 /************************** end of file *********************************/

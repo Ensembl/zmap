@@ -27,15 +27,17 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jul  2 14:32 2004 (rnc)
+ * Last edited: Jul  2 18:57 2004 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.7 2004-07-02 13:33:12 rnc Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.8 2004-07-02 18:22:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
 #define ZMAP_WINDOW_H
 
 #include <glib.h>
+
+/* SHOULD CANVAS BE HERE...MAYBE, MAYBE NOT...... */
 #include <libfoocanvas/libfoocanvas.h>
 
 #include <ZMap/zmapSys.h>		       /* For callback funcs... */
@@ -45,7 +47,7 @@
 
 /* Opaque type, represents an individual ZMap window. */
 typedef struct _ZMapWindowStruct *ZMapWindow ;
-typedef struct _ZMapPaneStruct *ZMapPane;
+
 
 //typedef struct {
 //  ZMapWindow window;             /* the window pane  */
@@ -72,11 +74,7 @@ ZMapWindow   zMapWindowCreateZMapWindow(void);
 
 void         zMapWindowSetHandle       (ZMapWindow window);
 void         zMapWindowCreateRegion    (ZMapWindow window);
-GNode       *zMapWindowGetPanesTree    (ZMapWindow window);
-void         zMapWindowSetPanesTree    (ZMapWindow window, GNode *node);
-void         zMapWindowSetFirstTime    (ZMapWindow window, gboolean value);
-ZMapPane     zMapWindowGetFocuspane    (ZMapWindow window);
-void         zMapWindowSetFocuspane    (ZMapWindow window, ZMapPane pane);
+
 
 /* I don't know whether we're even going to use these datatypes, so for
 ** expediency I'm commenting these out until it becomes clearer. */
@@ -99,8 +97,6 @@ void         zMapWindowSetVbox         (ZMapWindow window, GtkWidget *vbox);
 void         zMapWindowSetBorderWidth  (GtkWidget *container, int width);
 GtkWidget   *zMapWindowGetHbox         (ZMapWindow window);
 void         zMapWindowSetHbox         (ZMapWindow window, GtkWidget *hbox);
-GtkWidget   *zMapWindowGetHpane        (ZMapWindow window);
-void         zMapWindowSetHpane        (ZMapWindow window, GtkWidget *hpane);
 GtkWidget   *zMapWindowGetNavigator    (ZMapWindow window);
 void         zMapWindowSetNavigator    (ZMapWindow window, GtkWidget *navigator);
 FooCanvas   *zMapWindowGetNavCanvas    (ZMapWindow window);
@@ -121,13 +117,9 @@ void         zMapRegionFreeSegs        (ZMapRegion *region);
 GArray      *zMapRegionGetDNA          (ZMapRegion *region);
 void         zMapRegionFreeDNA         (ZMapRegion *region);
 
-int          recordFocus               (GtkWidget *widget, GdkEvent *event, gpointer data); 
-void         navUpdate                 (GtkAdjustment *adj, gpointer p);
-void         navChange                 (GtkAdjustment *adj, gpointer p);
 
-void         drawNavigatorWind         (ZMapPane pane);
 
-void         zMapWindowDrawFeatures    (ZMapWindow window, ZMapFeatureContext feature_context);
+void         zmapWindowDrawFeatures    (ZMapFeatureContext feature_context);
 
 
 /* TEST SCAFFOLDING............... */

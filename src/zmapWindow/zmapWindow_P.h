@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  2 10:56 2004 (rnc)
+ * Last edited: Jul  2 17:34 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.10 2004-07-02 13:53:33 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.11 2004-07-02 18:24:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -59,20 +59,23 @@ typedef struct _ZMapWindowStruct
   STORE_HANDLE    handle;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  GtkWidget      *frame;
-  GtkWidget      *vbox;
-  GtkItemFactory *itemFactory;
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* code that references this is currently commented out..... */
   GtkWidget      *infoSpace;
-  GtkWidget      *navigator;
-  FooCanvas      *navcanvas;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  /* Is this even used ??????? */
   InvarCoord      origin; /* that base which is VisibleCoord 1 */
-  GtkWidget      *displayvbox;
-  GtkWidget      *toolbar;
-  GtkWidget      *hbox;
-  GtkWidget      *hpane;  /* allows the user to minimise the navigator pane */
-  GNode          *panesTree;
-  ZMapPane        focuspane;
-  gboolean        firstTime;
+
+
+
+
   /* navigator stuff */
   Coord           navStart, navEnd; /* Start drawing the Nav bar from here */
   ScreenCoord     scaleOffset;

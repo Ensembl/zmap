@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul  2 14:06 2004 (rnc)
+ * Last edited: Jul  2 18:57 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.3 2004-07-02 13:47:24 rnc Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.4 2004-07-02 18:23:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -70,6 +70,27 @@ typedef struct _ZMapStruct
 
 
   GtkWidget *toplevel ;
+
+  /* MOVED HERE FROM zmapWindow/    */
+  ZMapPane        focuspane ;
+  GNode          *panesTree ;
+  gboolean        firstTime;
+  GtkWidget      *hpane;  /* allows the user to minimise the navigator pane */
+  GtkWidget      *navigator;
+  GtkWidget      *frame;
+  GtkWidget      *vbox;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  GtkItemFactory *itemFactory;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  FooCanvas      *navcanvas;
+  GtkWidget      *displayvbox;
+  GtkWidget      *hbox;
+
+
+
+
+
+
   GtkWidget *view_parent ;
 
   ZMapView curr_view ;
@@ -89,7 +110,11 @@ typedef struct _ZMapStruct
 
 typedef struct _ZMapPaneStruct {
   /* Data associated with one scrolling pane. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapWindow   window;     /* parent */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMap zmap ;						    /* Back ptr to containing zmap. */
 
   GtkWidget   *graphWidget;
   GtkWidget   *vbox;
@@ -133,12 +158,31 @@ gboolean zMapDisplay(ZMap        zmap,
 		     char       *fromspec, 
 		     gboolean        isOldGraph);
 
-void  createZMapWindow (ZMapWindow window);
+void  addPane        (ZMap zmap, char orientation);
 
-void  addPane        (ZMapWindow  window, char orientation);
-void  drawNavigator  (ZMapWindow window);
+void  drawNavigator  (ZMap zmap) ;
 void  drawWindow     (ZMapPane pane);
 void  zMapZoomToolbar(ZMapWindow window);
 void  navScale       (FooCanvas *canvas, float offset, int start, int end);
+
+int          recordFocus               (GtkWidget *widget, GdkEvent *event, gpointer data); 
+
+void         navUpdate                 (GtkAdjustment *adj, gpointer p);
+void         navChange                 (GtkAdjustment *adj, gpointer p);
+
+
+
+
+/* Moved from ZMap/zmapWindow.h, these may be in the wrong place or not even needed. */
+ZMapPane     zMapWindowGetFocuspane    (ZMapWindow window);
+void         zMapWindowSetFocuspane    (ZMapWindow window, ZMapPane pane);
+GNode       *zMapWindowGetPanesTree    (ZMapWindow window);
+void         zMapWindowSetPanesTree    (ZMapWindow window, GNode *node);
+void         zMapWindowSetFirstTime    (ZMapWindow window, gboolean value);
+GtkWidget   *zMapWindowGetHpane        (ZMapWindow window);
+void         zMapWindowSetHpane        (ZMapWindow window, GtkWidget *hpane);
+
+
+
 
 #endif /* !ZMAP_CONTROL_P_H */

@@ -25,9 +25,9 @@
  * Description: Interface for creating, controlling and destroying ZMaps.
  *              
  * HISTORY:
- * Last edited: Jul  2 10:50 2004 (rnc)
+ * Last edited: Jul  2 16:54 2004 (edgrif)
  * Created: Mon Nov 17 08:04:32 2003 (edgrif)
- * CVS info:   $Id: zmapControl.h,v 1.3 2004-07-02 13:27:45 rnc Exp $
+ * CVS info:   $Id: zmapControl.h,v 1.4 2004-07-02 18:22:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_H
@@ -45,6 +45,11 @@
 typedef struct _ZMapStruct *ZMap ;
 
 typedef struct zMapColumn ZMapColumn;
+
+
+
+
+typedef struct _ZMapPaneStruct *ZMapPane ;
 
 /* callback function prototypes********************************
  * These must be here as they're referred to in zMapColumn below

@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul  1 10:27 2004 (rnc)
+ * Last edited: Jul  2 18:09 2004 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.1 2004-07-02 14:14:19 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.2 2004-07-02 18:24:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,20 +40,12 @@ static void zmapWindowProcessArray(GQuark key_id, gpointer data, gpointer user_d
 
 
 
-void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_context)
+void zmapWindowDrawFeatures(ZMapFeatureContext feature_context)
 {
   float column_spacing = 10.0;
-  GtkWidget *topWindow;
-  char *title;
 
-  if (!feature_context)
-    return;
-
-  title = g_strdup_printf("ZMap - %s", feature_context->sequence) ;
-  topWindow = gtk_widget_get_toplevel(window->frame);
-  gtk_window_set_title(GTK_WINDOW(topWindow), title) ;
-
-  g_datalist_foreach(&(feature_context->features), zmapWindowProcessArray, &column_spacing);
+  if (feature_context)
+    g_datalist_foreach(&(feature_context->features), zmapWindowProcessArray, &column_spacing);
 
   return;
 }

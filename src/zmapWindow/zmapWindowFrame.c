@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 23 14:29 2004 (rnc)
+ * Last edited: Jul  2 19:16 2004 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapWindowFrame.c,v 1.2 2004-06-28 14:29:59 rnc Exp $
+ * CVS info:   $Id: zmapWindowFrame.c,v 1.3 2004-07-02 18:24:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,13 +70,23 @@ GtkWidget *zmapWindowMakeFrame(ZMapWindow window)
 
   g_free(frame_title) ;
 
-  zMapWindowSetVbox(window, gtk_vbox_new(FALSE, 0)) ;
+  vbox = gtk_vbox_new(FALSE, 0) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* ROB THIS ALL NEEDS SORTING OUT, I THINK THE FRAME HIERACHY IS ALL OUT OF WHACK...*/
+
+  zMapWindowSetVbox(window, vbox) ;
   zMapWindowSetBorderWidth(zMapWindowGetVbox(window), 5);
   gtk_container_add (GTK_CONTAINER (frame), zMapWindowGetVbox(window));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-    scrwin = gtk_scrolled_window_new(NULL, NULL) ;
-    gtk_container_add(GTK_CONTAINER(vbox), scrwin) ;
+
+
+
+  scrwin = gtk_scrolled_window_new(NULL, NULL) ;
+  gtk_container_add(GTK_CONTAINER(vbox), scrwin) ;
 
 
   /* CODE TO CREATE THE ACTUAL ZMAP SHOULD GO HERE INSTEAD OF THIS DUMMY DATA.......... */

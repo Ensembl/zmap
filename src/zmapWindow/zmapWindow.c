@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul  2 14:42 2004 (rnc)
+ * Last edited: Jul  2 19:06 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.14 2004-07-02 13:52:14 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.15 2004-07-02 18:24:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -191,7 +191,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
 
       /* <<<<<<<<<<<<<  ROB, this is where calls to your drawing code need to go  >>>>>>>>>>>> */
 
-      zmapWindowDrawFeatures(window, feature_context);
+      zmapWindowDrawFeatures(feature_context) ;
 
 
       g_free(window_data) ;				    /* Free the WindowData struct. */
@@ -263,13 +263,6 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-ZMapWindow zMapWindowCreateZMapWindow(void)
-{
-  ZMapWindow window = (ZMapWindow)malloc(sizeof(ZMapWindowStruct));
-
-  return window;
-}
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -289,127 +282,9 @@ void zMapWindowSetHandle(ZMapWindow window)
 
 
 
-GNode *zMapWindowGetPanesTree(ZMapWindow window)
-{
-  return window->panesTree;
-}
-
-void zMapWindowSetPanesTree(ZMapWindow window, GNode *node)
-{
-  window->panesTree = node;
-  return;
-}
-
-gboolean zMapWindowGetFirstTime(ZMapWindow window)
-{
-  return window->firstTime;
-}
-
-void zMapWindowSetFirstTime(ZMapWindow window, gboolean value)
-{
-  window->firstTime = value;
-  return;
-}
-
-ZMapPane zMapWindowGetFocuspane(ZMapWindow window)
-{
-  return window->focuspane;
-}
-
-void zMapWindowSetFocuspane(ZMapWindow window, ZMapPane pane)
-{
-  window->focuspane = pane;
-  return;
-}
-
-GtkWidget *zMapWindowGetHbox(ZMapWindow window)
-{
-  return window->hbox;
-}
-
-
-void zMapWindowSetHbox(ZMapWindow window, GtkWidget *hbox)
-{
-  window->hbox = hbox;
-  return;
-}
-
-GtkWidget *zMapWindowGetHpane(ZMapWindow window)
-{
-  return window->hpane;
-}
-
-void zMapWindowSetHpane(ZMapWindow window, GtkWidget *hpane)
-{
-  window->hpane = hpane;
-  return;
-}
-
-GtkWidget *zMapWindowGetFrame(ZMapWindow window)
-{
-  return window->frame;
-}
-
-void zMapWindowSetFrame(ZMapWindow window, GtkWidget *frame)
-{
-  window->frame = frame;
-  return;
-}
-
-
-GtkWidget *zMapWindowGetVbox(ZMapWindow window)
-{
-  return window->vbox;
-}
-
-
-void zMapWindowSetVbox(ZMapWindow window, GtkWidget *vbox)
-{
-  window->vbox = vbox;
-  return;
-}
-
-
 void zMapWindowSetBorderWidth(GtkWidget *container, int width)
 {
   gtk_container_border_width(GTK_CONTAINER(container), width);
-  return;
-}
-
-
-GtkWidget *zMapWindowGetNavigator(ZMapWindow window)
-{
-  return window->navigator;
-}
-
-
-void zMapWindowSetNavigator(ZMapWindow window, GtkWidget *navigator)
-{
-  window->navigator = navigator;
-  return;
-}
-
-FooCanvas *zMapWindowGetNavCanvas(ZMapWindow window)
-{
-  return window->navcanvas;
-}
-
-
-void zMapWindowSetNavCanvas(ZMapWindow window, FooCanvas *navcanvas)
-{
-  window->navcanvas = navcanvas;
-  return;
-}
-
-GtkWidget *zMapWindowGetDisplayVbox(ZMapWindow window)
-{
-  return window->displayvbox;
-}
-
-
-void zMapWindowSetDisplayVbox(ZMapWindow window, GtkWidget *vbox)
-{
-  window->displayvbox = vbox;
   return;
 }
 
@@ -435,17 +310,19 @@ Coord zMapWindowGetCoord(ZMapWindow window, char *field)
     return window->navEnd;
 }
 
-/***************** commenting out until I know what we really need 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zMapWindowSetCoord(ZMapWindow window, char *field, int size)
 {
   if (field == "s")
     window->navStart = window->focuspane->zMapRegion->area1 - size;
   else
     window->navEnd = window->focuspane->zMapRegion->area2 + size;
-
+  
   if (window->navStart == window->navEnd)
     window->navEnd = window->navStart + 1;
-
+  
   return;
 }
 
@@ -465,8 +342,8 @@ ScreenCoord zMapWindowGetScreenCoord(ZMapWindow window, Coord coord, int height)
 {
   return height * (coord - window->navStart) / (window->navEnd - window->navStart);
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-******************* end of commented out code */
 
 InvarCoord zMapWindowGetOrigin(ZMapWindow window)
 {
