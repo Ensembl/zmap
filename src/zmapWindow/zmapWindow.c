@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 20 15:31 2004 (rnc)
+ * Last edited: Oct 21 14:09 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.42 2004-10-20 14:42:55 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.43 2004-10-21 13:09:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -152,7 +152,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
   GTK_LAYOUT(canvas)->vadjustment->step_increment = window->step_increment;
   GTK_LAYOUT(canvas)->hadjustment->step_increment = window->step_increment;
-  GTK_LAYOUT(canvas)->vadjustment->page_increment = window->page_increment;
+g  GTK_LAYOUT(canvas)->vadjustment->page_increment = window->page_increment;
 
 
 
@@ -255,117 +255,121 @@ void zMapWindowDestroy(ZMapWindow window)
 }
 
 
-/* Zooming: we don't zoom as such, we scale the group, doubling the
- * y axis but leaving x at 1.  This enlarges lengthways, while keeping
- * the width the same. */
+
+/* Zooming the canvas window in or out.
+ * Note that zooming is only in the Y axis, the X axis is not zoomed at all as we don't need
+ * to make the columns wider. This has required a local modification of the foocanvas.
+ * 
+ * window        the ZMapWindow (i.e. canvas) to be zoomed.
+ * zoom_factor   > 1.0 means zoom in, < 1.0 means zoom out.
+ * 
+ *  */
 void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 {
-  int x, y;
   GtkAdjustment *adjust;
-  int direction = +1;
-  ZMapCanvasDataStruct *canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
-  double x1, y1, x2, y2, scroll_height, new_height, adj_value = 0.0, width, height, unused;
-  GtkRequisition req;
+  ZMapCanvasDataStruct *canvasData ;
+  int x, y ;
+  double width, curr_pos = 0.0 ;
+  double new_zoom, canvas_zoom ;
+  double x1, y1, x2, y2 ;
+  double max_win_span, seq_span, new_win_span, new_canvas_span ;
+  double top, bot ;
+
+  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow)) ;
+
+  canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
 
 
-  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
-  scroll_height = y2 - y1 + 1 ;
-
-  /* In order to stay centred on wherever we are in the canvas while zooming, we get the 
-  ** current position (offset), add half the page-size to get the centre of the screen,
-  ** then convert to world coords and store those.    
-  ** After the zoom, we convert those values back to canvas pixels (changed by the call to
-  ** pixels_per_unit) and scroll to them. */
- 
-  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
-  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
-  y += adjust->page_size/2;
-  foo_canvas_c2w(window->canvas, x, y, &width, &height);
-
+  /* We don't zoom in further than is necessary to show individual bases or further out than
+   * is necessary to show the whole sequence. */
   /* long term I'm going to have to actually work out whether we're down to one base per line,
   ** but for now this is somewhere in the right ballpark. Assuming 20 pixels per base for now. */
-  if (zoom_factor > 1.0 && window->zoom_factor < PIXELS_PER_BASE) 
-      window->zoom_factor *= zoom_factor ;
-  else 
+  if ((zoom_factor > 1.0 && window->zoom_factor == PIXELS_PER_BASE)
+      || (zoom_factor < 1.0 && window->zoom_factor == adjust->page_size / canvasData->seqLength))
     {
-      if (zoom_factor < 1.0)
-	{
-	  if ((window->zoom_factor * zoom_factor) > adjust->page_size / canvasData->seqLength)
-	    window->zoom_factor *= zoom_factor;
-	  else 
-	    window->zoom_factor = adjust->page_size / canvasData->seqLength;
-	}
-      else
-	if (canvasData->column_position) 
-	  {
-	    canvasData->atLimit = TRUE;
-	    printf("Reached zoom-in limit of < 1 base per line. %f\n", window->zoom_factor);
-	  }
-    }
-      
-  if (zoom_factor > 1.0)        /* ie we're zooming in  */
-    {
-      if (!canvasData->atLimit)             /* stop at 1 base per line */
-	{
-	  /* There's an X-Windows limit of 32k on the dimensions, above which objects
-	  ** are not drawn correctly, so we have to handle that here. */ 
-	  if ((scroll_height * window->zoom_factor) > XWIN_MAXSIZE)
-	    {
-	      canvasData->reduced = TRUE;
-	      foo_canvas_c2w(window->canvas, x, y, &unused, &y1);
-	      new_height = XWIN_MAXSIZE/window->zoom_factor;
-	      y1 -= new_height/2.0;
-	      if (y1 < 1.0) 
-		y1 = 1.0;
-	      y2 = y1 + new_height;
-	      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
-	    }
-	  else
-	    if (!canvasData->reduced)
-	      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, canvasData->seqLength);
-	}
-    }
-  else                                 /* zooming out */
-    {
-      canvasData->atLimit = FALSE;
-      if ((scroll_height * window->zoom_factor) < XWIN_MAXSIZE)
-	{
-	  new_height = XWIN_MAXSIZE/(window->zoom_factor * 2.0);
-	  if (new_height < canvasData->seqLength)
-	    {
-	      foo_canvas_c2w(window->canvas, x, y, &unused, &y1);
-	      y1 -= new_height/2.0;
-	      if (y1 < 1.0) 
-		y1 = 1.0;
-	      y2 = y1 + new_height;
-	      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
-	    }
-	  else
-	    {
-	      canvasData->reduced = FALSE;
-	      foo_canvas_set_scroll_region(window->canvas, x1, 1.0, x2, canvasData->seqLength);
-	    }
-	}
-    }
-    
-  foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
-  
-  /* scroll to the same point on the canvas as you were at before zooming */ 
-  if (canvasData->focusFeature)
-    {
-      int cx, cy;
-      double wx1, wy1, wx2, wy2;
-      
-      foo_canvas_item_get_bounds(canvasData->focusFeature, &wx1, &wy1, &wx2, &wy2);
-      foo_canvas_w2c(window->canvas, wx1, wy1, &cx, &cy);
-      foo_canvas_scroll_to(window->canvas, cx, cy - (adjust->page_size/2));
-    }
-  else
-    {
-      foo_canvas_w2c(window->canvas, width, height, &x, &y);
-      foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      printf("At min or max zoom, no action taken\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      return ;
     }
 
+
+  /* Record the current position. */
+  /* In order to stay centred on wherever we are in the canvas while zooming, we get the 
+   * current position (offset), add half the page-size to get the centre of the screen,
+   * then convert to world coords and store those.    
+   * After the zoom, we convert those values back to canvas pixels (changed by the call to
+   * pixels_per_unit) and scroll to them. */
+  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
+  y += adjust->page_size / 2 ;
+  foo_canvas_c2w(window->canvas, x, y, &width, &curr_pos) ;
+
+
+
+  /* Calculate the zoom. */
+  new_zoom = window->zoom_factor * zoom_factor ;
+  if (new_zoom > PIXELS_PER_BASE)
+    window->zoom_factor = PIXELS_PER_BASE ;
+  else if (new_zoom < adjust->page_size / canvasData->seqLength)
+    window->zoom_factor = adjust->page_size / canvasData->seqLength ;
+  else
+    window->zoom_factor = new_zoom ;
+
+  canvas_zoom = 1 / window->zoom_factor ;
+
+
+  /* Calculate limits to what we can show. */
+  max_win_span = XWIN_MAXSIZE ;
+  seq_span = canvasData->seqLength * window->zoom_factor ;
+
+
+  /* Calculate the extent of the new span, new span must not exceed maximum X window size
+   * but we must display as much of the sequence as we can for zooming out. */
+  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+  new_win_span = y2 - y1 + 1 ;
+  new_win_span *= window->zoom_factor ;
+
+  new_win_span = (new_win_span >= max_win_span ?  max_win_span
+		  : (seq_span > max_win_span ? max_win_span
+		     : seq_span)) ;
+
+
+  /* Calculate the position of the new span clamping it within the extent of the sequence. */
+  new_canvas_span = new_win_span * canvas_zoom ;
+
+  top = curr_pos - (new_canvas_span / 2) ;
+  bot = curr_pos + (new_canvas_span / 2) ;
+
+  if (top < canvasData->seq_start)
+    {
+      bot = bot + (canvasData->seq_start - top) ;
+      top = canvasData->seq_start ;
+    }
+  else if (bot > canvasData->seq_end)
+    {
+      top = top - (bot - canvasData->seq_end) ;
+      bot = canvasData->seq_end ;
+    }
+
+  /* Set the new scroll_region and the new zoom. N.B. may need to do a "freeze" of the canvas here
+   * to avoid a double redraw....but that might never happen actually, depends how much there is
+   * in the Xlib buffer so not lets worry about it. */
+  foo_canvas_set_scroll_region(window->canvas, x1, top, x2, bot) ;
+  foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("zmapWindowZoom() -\tzoom: %f\tscroll_region: %f, %f, %f, %f\n",
+	 window->zoom_factor, x1, top, x2, bot) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* Scroll to the previous position. */
+  foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
+  foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
+
+  /* Now hide/show any columns that have specific show/hide zoom factors set. */
   g_datalist_foreach(&(canvasData->feature_context->feature_sets), hideUnhideColumn, canvasData) ;
   
   /* redraw the scale bar */
@@ -378,6 +382,8 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   
   return;
 }
+
+
 
 
 static void hideUnhideColumn(GQuark key_id, gpointer data, gpointer user_data)
