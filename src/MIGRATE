@@ -1,0 +1,130 @@
+
+MIGRATION
+---------
+
+A document to describe possible replace xace in otterlace system as they're 
+likely the first users of the new zmap.
+
+
+
+Otterlace Dataflow
+------------------
+
+ - simple UI interaction first
+1 Client -> (request list of datasets)         -> Server -> (reply xml)
+2 Client -> (request list of sequence sets)    -> MySQL  -> (reply perl hash)
+3 Client -> (request list of clones sequences) -> MySQL  -> (reply perl hash)
+
+ - more interesting clones stuff
+4 Client -> (request clone annot. features)    -> Server -> (reply xml)
+            (request clone analysis features)  -> MySQL  -> (reply perl hash)
+         
+5 Client -> (aceperl db handle)                -> ACeDB
+         -> create empty acedb database (file copy from ~humpub/otter)
+         -> transforms replys from 4 to acedb format, write files to local db dir
+         -> calls tace on database
+            | tace /var/tmp/acedb > init_parse.log
+            print "parse annotat.ace"
+            print "parse analysis.ace"
+         -> check the init_parse.log for errors
+
+ ...
+ - annotation by annotator.
+   This is either using otterlace  interface or acedb.  In the case of
+   the former the interface has to save to the ace database as well as
+   it's own objects. In the case of the latter the interface has to do
+   a resync to get information back to its data structures.
+   There are some editing  commands that the otterlace interface can't
+   handle.  From memory these include comments and evidence selection,
+   although Leo  is writing an  evidence selector at the  moment.  For
+   initial replacement I think we can/should agree some enhancement of
+   the otterlace interface to  support the full ediitng potential that
+   is currently available.
+
+So on edit in otterlace
+ Client -> xremote                            -> ACeDB
+And edit in ACeDB, user needs to ReSync
+ Client -> (tace/aceperl db handle)           -> ACeDB
+ ...
+
+ Client -> (tace/aceperl db handle)           -> ACeDB
+        -> db_handle->raw_query a set of canned queries 
+        -> transforms reply to xml
+ Client -> (request POST xml)                 -> Server
+
+
+Current Communication
+---------------------
+
+xwininfo - select the window id
+
+xremote via PerlModules/Hum/Ace/XaceRemote.pm
+commands used:
+         gif
+         seqget "seqName"
+         seqdisplay [-visible_coords start end]
+         seqactions -rev_comp
+         seqrecalc
+         save
+         parse filename
+         writeaccess -gain
+
+Using aceperl_db_handle i.e. Ace->connect() from 
+/usr/lib/perl5/site_perl/5.6.1/i386-linux/Ace.pm
+
+
+Here's the saving from local acedb to otter server.
+Sorry some code
+    my $ace    = $self->aceperl_db_handle;
+    my $client = $self->Client or confess "No Client attached";
+    # Get the Assembly object ...
+    $ace->raw_query(qq{find Assembly "$name"});
+    my $ace_txt = $ace->raw_query('show -a');
+    # ... its SubSequences ...
+    $ace->raw_query('query follow SubSequence where ! CDS_predicted_by');
+    $ace_txt .= $ace->raw_query('show -a');
+    # ... and all the Loci attached to the SubSequences.
+    $ace->raw_query('Follow Locus');
+    $ace_txt .= $ace->raw_query('show -a');
+    # List of people for Authors
+    $ace->raw_query(qq{find Person *});
+    $ace_txt .= $ace->raw_query('show -a');
+    # Then get the information for the TilePath
+    $ace->raw_query(qq{find Assembly "$name"});
+    $ace->raw_query('Follow AGP_Fragment');
+    # Do show -a on a restricted list of tags
+    foreach my $tag (qw{
+        Otter
+        DB_info
+        Annotation
+        })
+    {
+        $ace_txt .= $ace->raw_query("show -a $tag");
+    }
+    # Cleanup text
+    $ace_txt =~ s/\0//g;            # Remove nulls
+    $ace_txt =~ s{^\s*//.+}{\n}mg;  # Strip comments
+    # make xml from ace and send to server
+
+
+
+Swapping
+--------
+
+1) Xace can be replaced with  ZMap and a sgifaceserver.  All the other
+   data structures should  be able to stay as they  are with only some
+   of the communication changing.
+   Issues:
+   - replacing xwininfo, port and machine id
+   - Dynamic method creation
+   - Zmap config, fix the syntax
+   - Features,   compare   and   contrast   FMap  display   and   ZMap
+     display. Does ZMap look sane? Has it drawn all the information?...
+
+2) Supporting existing xremote calls.
+   Issues:
+   - Is the list above definitive?
+   - Check the editing sematics
+
+3) Support Blixem/Dotter spawning.  Otterlace can already spawn dotter.
+   
