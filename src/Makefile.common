@@ -6,7 +6,7 @@ NULL =
 ARFLAGS = rv
 
 # including ALPHA_POPT here is really bad FIND BETTER method
-AM_CPPFLAGS = -I$(top_srcdir)/include \
+AM_CPPFLAGS = -g -I$(top_srcdir)/include \
 	-I$(top_builddir) \
         @ALPHA_POPT@ \
 	@GTK_CFLAGS@ \
