@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Oct 13 13:41 2004 (edgrif)
+ * Last edited: Nov  4 10:30 2004 (rnc)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.16 2004-10-14 10:19:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.17 2004-11-08 10:19:52 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -44,6 +44,9 @@
 typedef unsigned int ZMapFeatureID ;
 enum {ZMAPFEATUREID_NULL = 0} ;
 
+
+/* Output format for dumping data to a file */
+enum format { TAB_DELIMITED, GFF }; 
 
 
 typedef int Coord ;					    /* we do need this here.... */
@@ -74,8 +77,8 @@ struct zMapRegionStruct {
 
 typedef struct zMapRegionStruct ZMapRegion;
 
-
-
+/* used by zmapLookUpEnums() to translate enums into strings */
+typedef enum { TYPE_ENUM, STRAND_ENUM, PHASE_ENUM } ZMapEnumType;  
 
 
 
@@ -84,10 +87,8 @@ typedef struct zMapRegionStruct ZMapRegion;
 typedef int methodID ;
 
 
-/* array of types must corresponed 1:1 with ZMapFeatureType enum */
-/* (apart from INVALID) as feature->type is used to index this array. */
-static char types[8][20+1] = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
-			      "VARIATION", "BOUNDARY", "SEQUENCE"} ;
+/* NB if you add to these enums, make sure any corresponding arrays in
+** zmapLookUpEnums() are kept in synch. */
 
 /* What about "sequence", atg, and allele as basic feature types ?           */
 typedef enum {ZMAPFEATURE_INVALID = -1,
@@ -214,9 +215,6 @@ typedef struct ZMapFeatureSetStruct_
 {
   char *source ;					    /* e.g. "Genewise predictions" */
 
-  FooCanvasItem *forCol;                                    /* column ids for hide/unhide while */
-  FooCanvasItem *revCol;				    /* zooming */
-
   GData *features ;					    /* A set of ZMapFeatureStruct. */
 
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
@@ -342,7 +340,7 @@ typedef struct ZMapFeatureTypeStyleStruct_
   ZMapFeatureWidthStyle width_style ;
   ZMapFeatureOverlapStyle overlap_style ;
   double    width ;					    /* column width */
-  float     min_mag, max_mag ;
+  int       min_mag, max_mag ;                              /* bases per line */
   float     min_score, max_score ;
   gboolean  showText ;
   gboolean  showUpStrand ;
@@ -447,5 +445,8 @@ typedef void (*Calc_cb)    (void *seqRegion,
 			    gboolean isReverse);
 
      
+
+char *zmapLookUpEnum (int id, int enumType);
+void  zmapFeatureDump(ZMapFeatureContext feature_context, char *file, int format);
 
 #endif /* ZMAP_FEATURE_H */
