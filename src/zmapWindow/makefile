@@ -5,9 +5,20 @@
 
 # local macros
 WIND_PRIV_HDRS = zmapWindow_P.h
-PUB_HDRS = zmapWindow.h
-WIND_SRC = zmapWindow.c zmapWindowFrame.c 
-WIND_OBJ = zmapWindow.o zmapWindowFrame.o 
+
+PUB_HDRS = seqregion.h stringbucket.h zmapcommon.h zmapcontrol.h zmap.h zmapWindow.h 
+
+WIND_SRC = seqregion.c stringbucket.c \
+	zmapbccol.c zmapcalls.c zmapcols.c zmapcontrol.c \
+	zmapsequence.c zmapsplit.c zmapWindow.c zmapWindowFrame.c
+
+WIND_OBJ = seqregion.o stringbucket.o \
+	zmapbccol.o zmapcalls.o zmapcols.o zmapcontrol.o \
+	zmapsequence.o zmapsplit.o zmapWindow.o zmapWindowFrame.o
+
+ZMAP_LIB = libzmap.a
+
+FUNCS = zmapfuncs.c zmapfuncs.h
 
 # the main routines will need some different treatment maybe...???? try putting
 # them all together, don't know if it will work.....
