@@ -1,0 +1,124 @@
+<HTML>
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<HEAD>
+<TITLE>ZMap Design</TITLE>
+</HEAD>
+
+<BODY>
+
+<blockquote>
+<P>The purpose of this document is to be a repository for all aspects of the design
+of ZMap.
+
+<P>Pictures are allowed, just include them in the cvs directory.
+
+
+
+<H1>Requirements, Wish Lists, Suggestions etc.</H1>
+
+<H2>Requirements</H2>
+
+<P>Record anything here that is essential to ZMap.
+
+
+<H3>Mapping in the client</H3>
+
+<P>We should strongly consider putting a modified (i.e. acedb-less SMap) into
+the client, this would allow the client to map different sorts of data onto
+its virtual sequence provided it had the initial mapping from the new data
+to its own virtual sequence.
+
+<P>This would be very powerful because it would mean the client could accept
+data from many sources and map it as long as it had the extent of the data
+in the virtual sequence.
+
+
+<H3>How to indicate strand</H3>
+
+<P>In acedb we have traditionally had the down strand to the right and the up strand
+to the left of the scale, this has some advantages but could be augmented visually
+with exons that had pointy bits to show their direction etc.
+
+<P>We could go for everything being shown on one side of a scale but this seems
+a bit retrograde to me, the display is actually something that marks the fmap
+out from other viewers in a good way.
+
+
+
+
+<H3>Richer glyph set</H3>
+
+<P>We need a richer glyph set, perhaps with exon shapes that indicate direction and
+other such stuff, e.g. how about indicating start/end_not_found etc.
+
+
+<h3>Gnome Canvas</h3>I think this might belong in coding_notes.shtml, rather than here.
+<p>Be a good idea to get rid of the graph package altogether if we can. Gnome Canvas
+seems a good candidate to replace it, but we need to check a few things first:
+<ul>
+  <li>Can it output PostScript & Gif as well as to the screen?
+      <p><font color="green">Ans: I think so.  This
+      <a href="http://mail.gnome.org/archives/gnome-print-list/2003-January/msg00023.html">thread</a>
+      from the gnome archives suggests such an interface was written in January 2003 and that it
+      now lives in libgnomecanvas.  There might be an example of how to use it in gnome-print/tests.</font>
+      
+  <li>How efficiently does it clip overlapping display objects?
+      <p><font color="green">Ans: Well, I think.  I've read various bits that imply it's intelligent in this way.
+      </font>
+      
+  <li>Can we paint a bigger area than is actually visible in the window so scrolling
+      to an area out of view is quick?
+      <p><font color="green">Ans: yes, see
+      <a href="http://developer.gnome.org/doc/books/WGA/gnome-canvas-using.html">here</a>.
+      You'll need to scroll down a page to the The Scrolling Region subheading.</font>
+      
+  <li>Can we make it (I'm almost certain we can) not display stuff which is smaller
+      than a given size, so it doesn't waste effort drawing stuff that's too small
+      to be useful?  
+      <p></p>
+  <li>Where possible, we should be using the gnome wrapper datatypes for portability, and
+      this raises the possibility of replacing the AceDB array functions with the gnome
+      ones.  Whether the latter actually provide all the functionality of the former I
+      haven't investigated, but it looks hopeful. GPtrArray is an array of pointers and
+      the g_ptr_array_free() function includes a BOOL parameter to indicate whether or
+      not the data pointed to is freed as well as the array itself.
+  <li>According to developer.gnome.org/doc/whitepapers/canvas/canvas.html you can choose
+      either of two rendering back-ends, an extremely fast one based on Xlib and another
+      based on Libart.  PostScript is mentioned in the same breath as Libart, so I'm
+      investigating further.
+      <p>The Xlib model, used via GDK, runs well over networks. The Libart model provides
+      a superset of the PostScript imaging model, allowing high-quality displays.
+</ul>
+
+
+<H2>Wish List</H2>
+
+<P>Record anything here that you would like to be considered but is non-essential.
+
+
+
+
+
+<H1>Design</H1>
+
+
+<H2>Overview</H2>
+
+<P>
+
+
+
+
+
+
+
+</blockquote>
+<HR>
+
+<!--#include virtual="/perl/footer" -->
+
+</BODY>
+</HTML>
