@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  8 11:48 2004 (rnc)
+ * Last edited: Nov  8 13:51 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.27 2004-11-08 12:05:53 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.28 2004-11-08 15:04:19 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -110,7 +110,6 @@ typedef struct
 /* used in handleCanvasEvent to obtain the actual feature that's been clicked on */
 typedef struct _FeatureKeys {
     ZMapFeatureSet feature_set;
-    GQuark context_key;
     GQuark feature_key;
 } FeatureKeyStruct, *FeatureKeys;
 
