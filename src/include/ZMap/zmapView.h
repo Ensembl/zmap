@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Nov  3 09:28 2004 (rnc)
+ * Last edited: Nov 22 11:00 2004 (rnc)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.12 2004-11-08 10:09:42 rnc Exp $
+ * CVS info:   $Id: zmapView.h,v 1.13 2004-11-29 14:25:04 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -114,7 +114,8 @@ typedef enum {
 
 void zMapViewInit(ZMapViewCallbacks callbacks) ;
 ZMapView zMapViewCreate(char *sequence,	int start, int end, void *app_data) ;
-ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
+ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget,
+				 ZMapWindow curr_view_window) ;
 gboolean zMapViewConnect(ZMapView zmap_view) ;
 gboolean zMapViewLoad (ZMapView zmap_view) ;
 
