@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 18 08:48 2004 (rnc)
+ * Last edited: Nov 18 16:49 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.33 2004-11-18 10:48:13 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.34 2004-11-19 10:09:55 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -115,7 +115,7 @@ typedef struct _ZMapFeatureItemStruct {   /*!< keyed on feature->id, gives acces
   ZMapFeatureSet feature_set;
   GQuark         feature_key;
   FooCanvasItem *canvasItem;
-  int            x_coord;
+  ZMapStrand     strand;
 } ZMapFeatureItemStruct, *ZMapFeatureItem;
 
 
@@ -158,7 +158,7 @@ typedef struct _ZMapCanvasDataStruct
 
 
 /* the function to be ultimately called when the user clicks on a canvas item. */
-typedef gboolean (*ZMapFeatureCallbackFunc)(ZMapWindow window, ZMapFeatureSet feature_set, int x_coord);
+typedef gboolean (*ZMapFeatureCallbackFunc)(ZMapWindow window, ZMapFeatureItem featureItem);
 
 
 /* Set of callback routines that allow the caller to be notified when events happen
@@ -183,7 +183,7 @@ void zmapFeatureInit(ZMapFeatureCallbacks callbacks) ;
 
 void zmapWindowPrintCanvas(FooCanvas *canvas) ;
 
-void zMapWindowCreateListWindow(ZMapWindow window, ZMapFeatureSet feature_set, int x_coord);
+void zMapWindowCreateListWindow(ZMapWindow window, ZMapFeatureItem featureItem);
 gboolean zMapFeatureClickCB(ZMapWindow window, ZMapFeature feature);
 FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 			     double offset, double zoom_factor, 
