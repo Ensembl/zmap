@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul 19 10:23 2004 (edgrif)
+ * Last edited: Jul 27 08:18 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.10 2004-07-19 09:24:42 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.11 2004-07-27 07:40:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -237,7 +237,8 @@ ZMapFeatureContext zmapGFFGetFeatures(ZMapGFFParser parser)
 	feature_context->features_to_sequence.c1 = parser->features_start ;
 	feature_context->features_to_sequence.c2 = parser->features_end ;
 
-	feature_context->parent_length = feature_context->sequence_to_parent.p2 + tmp_pad ;
+	feature_context->parent_span.x1 = 1 ;
+	feature_context->parent_span.x2 = feature_context->sequence_to_parent.p2 + tmp_pad ;
 	feature_context->parent = "chromsome_99" ;
       }
 

@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 21 16:59 2004 (edgrif)
+ * Last edited: Jul 26 13:40 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.24 2004-07-21 16:07:11 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.25 2004-07-27 07:40:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -661,18 +661,12 @@ static void updateControl(ZMap zmap, ZMapView view)
   if ((view = zMapViewGetView(zmap->focuspane->curr_view_window)))
     {
       ZMapFeatureContext features ;
-      ZMapMapBlock sequence_to_parent_mapping = NULL ;
       char *title, *seq_name ;
 
       features = zMapViewGetFeatures(view) ;
 
-      /* this is not correct, should be able to cope with something that is not yet loaded yet.....
-       * so navigator and title bar need to be able to display a default "blank" view.... */
-      /* Update navigator. */
-      if (features)
-	sequence_to_parent_mapping = &(features->sequence_to_parent) ;
-
-      zmapControlNavigatorNewView(zmap->navigator, sequence_to_parent_mapping) ;
+      zmapControlNavigatorNewView(zmap->navigator, features) ; /* n.b. features may be NULL for
+								  blank views. */
 
 
       /* Update title bar of zmap window. */

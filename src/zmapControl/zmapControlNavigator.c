@@ -26,16 +26,17 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 22 16:25 2004 (rnc)
+ * Last edited: Jul 27 08:16 2004 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.8 2004-07-22 15:48:18 rnc Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.9 2004-07-27 07:40:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 
 #include <zmapControl_P.h>
 
-#define NAV_NO_SCALE "<no data>"
+#define TOPTEXT_NO_SCALE "<no data>"
+#define BOTTEXT_NO_SCALE ""
 
 void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
 {
@@ -52,7 +53,7 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
   zmap->navigator->navVBox = gtk_vbox_new(FALSE, 0);
   gtk_widget_set_usize(GTK_WIDGET(zmap->navigator->navVBox), 150, -2) ;
 
-  zmap->navigator->topLabel = gtk_label_new(NAV_NO_SCALE) ;
+  zmap->navigator->topLabel = gtk_label_new(TOPTEXT_NO_SCALE) ;
   gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->topLabel, FALSE, TRUE, 0);
 
   /* if we want to change the max, we'll have to destroy and recreate the vscale. */
@@ -63,7 +64,7 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
 
   /* Note how we pack the label at the end of the vbox and set "expand" to FALSE so that it
    * remains small and the vscale expands to fill the rest of the box. */
-  zmap->navigator->botLabel = gtk_label_new(NAV_NO_SCALE) ;
+  zmap->navigator->botLabel = gtk_label_new(BOTTEXT_NO_SCALE) ;
   gtk_box_pack_end(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->botLabel, FALSE, TRUE, 0);
 
 
@@ -73,32 +74,39 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
 
 
 /* updates size/range to coords of the new view. */
-void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapMapBlock sequence_to_parent_mapping)
+void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext features)
 {
   GtkWidget *label;
-  gchar *str;
-
-  str = g_strdup_printf("%d", navigator->sequence_to_parent.c1) ;
-  gtk_label_set_text(GTK_LABEL(navigator->topLabel), str);
+  gchar *top_str, *bot_str ;
 
   /* May be called with no sequence to parent mapping so must set default navigator for this. */
-  if (sequence_to_parent_mapping)
+  if (features)
     {
-      navigator->sequence_to_parent = *sequence_to_parent_mapping ; /* n.b. struct copy */
-      str = g_strdup_printf("%d", navigator->sequence_to_parent.p2) ;
-      gtk_range_set_range(GTK_RANGE(navigator->navVScale), navigator->sequence_to_parent.c1,
-			  navigator->sequence_to_parent.p2);
+      navigator->parent_span = features->parent_span ;	    /* n.b. struct copy. */
+      navigator->sequence_to_parent = features->sequence_to_parent ; /* n.b. struct copy. */
+
+      top_str = g_strdup_printf("%d", navigator->parent_span.x1) ;
+      bot_str = g_strdup_printf("%d", navigator->parent_span.x2) ;
+
+      gtk_range_set_range(GTK_RANGE(navigator->navVScale),
+			  navigator->parent_span.x1, navigator->parent_span.x2) ;
       gtk_range_set_value(GTK_RANGE(navigator->navVScale), navigator->sequence_to_parent.p1);
     }
   else
     {
       navigator->sequence_to_parent.p1 = navigator->sequence_to_parent.p2
 	= navigator->sequence_to_parent.c1 = navigator->sequence_to_parent.c2 = 0 ;
-      str = g_strdup(NAV_NO_SCALE) ;
+
+      top_str = g_strdup(TOPTEXT_NO_SCALE) ;
+      bot_str = g_strdup(BOTTEXT_NO_SCALE) ;
     }
 
-  gtk_label_set_text(GTK_LABEL(navigator->botLabel), str);
-  g_free(str);
+
+  gtk_label_set_text(GTK_LABEL(navigator->topLabel), top_str) ;
+  gtk_label_set_text(GTK_LABEL(navigator->botLabel), bot_str) ;
+
+  g_free(top_str) ;
+  g_free(bot_str) ;
 
   return ;
 }
