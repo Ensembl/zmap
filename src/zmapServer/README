@@ -1,0 +1,7 @@
+================================================================================   
+Server interface
+
+Code that provides an interface to contacting a server over the network and
+asking for and collecting data from the server.
+
+Subdirectories contain any code required for particular servers.
