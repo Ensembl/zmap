@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Nov  4 11:59 2004 (edgrif)
+ * Last edited: Nov 29 15:17 2004 (rnc)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.21 2004-11-04 12:44:12 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.22 2004-11-29 16:29:56 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -80,7 +80,7 @@ typedef struct _ZMapStruct
 
 
   /* buttons etc. */
-  GtkWidget *zoomin_but, *zoomout_but ;
+  GtkWidget *zoomin_but, *zoomout_but, *close_but ;
 
   /* The navigator. */
   ZMapNavigator    navigator ;
