@@ -1,4 +1,4 @@
-/*  Last edited: Jul 15 12:01 2004 (edgrif) */
+/*  Last edited: Jul 15 17:16 2004 (rnc) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -43,7 +43,7 @@ static void navResize(void);
 
 /* functions ********************************************************/
 
-void displayText(FooCanvasGroup *group, char *text, double x, double y)
+void zmapDisplayText(FooCanvasGroup *group, char *text, double x, double y)
 {
   FooCanvasItem *item = foo_canvas_item_new(group,
 						FOO_TYPE_CANVAS_TEXT,
@@ -69,7 +69,7 @@ void zmRegBox(ZMapPane pane, int box, ZMapColumn *col, void *arg)
 
 
 /* This is just a noddy function I used to draw a small box on the canvas */
-void drawBox (FooCanvasItem *group, double x1, double y1, 
+void zmapDrawBox (FooCanvasItem *group, double x1, double y1, 
 	      double x2, double y2, 
 	      char *line_colour, char *fill_colour)
 {
@@ -89,7 +89,7 @@ void drawBox (FooCanvasItem *group, double x1, double y1,
 }
 
 /* This is just a noddy function I used to draw a line  on the canvas */
-void drawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
+void zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 		     char *colour, double thickness)
 {
   FooCanvasPoints *points;
@@ -117,28 +117,84 @@ void drawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2,
 }
                                                                                 
 
-float zmMainScale(FooCanvas *canvas, float offset, int start, int end)
+float zmapDrawScale(FooCanvas *canvas, float offset, int start, int end)
 {
-  int x, width = 5, count;
   FooCanvasItem *group;
+  GtkWidget *parent;
+  GtkRequisition req;   // think this is redundant
+  float mag = 1.0, cutoff, y;  // these may be too
+  int seqUnit;          // spacing, in bases, of tick on scalebar
+  int subunit;
+  int seqPos = 1;       // where we are, in bases, in the sequence
+  int width = 0;
+  int scalePos;         // where we are on the scalebar
+  int type;             // the nomial (ie whether we're working in K, M, etc)
+  int unitType;         // index into unitName array
+  char cp[20], unitName[] = { 0, 'k', 'M', 'G', 'T', 'P' }, buf[2] ;
+  int scaleUnit = 100;  // arbitrary spacing of ticks on the scalebar
+  int ticks;            // number of ticks on the scalebar
+  double x1, x2, y1, y2, height;  // canvas attributes
+
+  //  parent = gtk_widget_get_parent(GTK_WIDGET(canvas));         // get the scrolled window
+  //  gtk_widget_size_request(parent, &req);     
+  foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
+  height = y2 - y1;
+
+  ticks = height/scaleUnit;
+  seqUnit = (end - start)/ticks;
+
+  mag = height / (end - start);
+  if (mag == 0.0) mag = 1.0;
+  cutoff = 5/mag;
+
+  for (type = 1, unitType = 0 ; 
+       seqUnit > 0 && 1000 * type < seqUnit && unitType < 5; 
+       unitType++, type *= 1000) ;
+  /*
+  if (x>0)                          // ie not reversed - this bit needs attention
+    x = ((start/unit)+1)*unit;
+  else
+    x = ((start/unit)-1)*unit;  
+  */
+  seqPos = start;
+
+  seqUnit = ((seqUnit + type/2)/type) * type;  // round the unit sensibly
 
   group = foo_canvas_item_new(foo_canvas_root(canvas),
 			foo_canvas_group_get_type(),
 			"x",(double)offset,
-			"y",(double)0.0,
+			"y",(double)5.0,
 			NULL);
- 
+  /*
   for (x = start, count = 1 ; x < end ; x += 10, count++)
     {
-      drawLine(FOO_CANVAS_GROUP(group), offset-5, x, offset, x, "black", 1.0);
+      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-5, x, offset, x, "black", 1.0);
       char text[25];
       sprintf(text,"%d", x*10);
       if (count == 1)
-	displayText(FOO_CANVAS_GROUP(group), text, offset + 20, x); 
+	zmapDisplayText(FOO_CANVAS_GROUP(group), text, offset - 25, x); 
       if (count > 9) count = 0;
     }
-			     
-  drawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, end, "black", 1.0);
+  */
+
+  for (scalePos = 0; scalePos < height; scalePos += scaleUnit, seqPos += seqUnit)
+    {
+      y = (float)(seqPos - start)*mag;
+      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-5, scalePos, offset, scalePos, "black", 1.0);
+      buf[0] = unitName[unitType] ; buf[1] = 0 ;
+      sprintf (cp, "%d%s", seqPos/type, buf) ;
+      if (width < strlen (cp))
+        width = strlen (cp) ;
+      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, offset-20, scalePos-0.5); 
+
+    }		     
+  /*  for (x = ((start/unit)-1)*unit ; x < end ; x += subunit)
+    {
+      y = (float)(x-start)*mag;
+      zmapDrawLine(FOO_CANVAS_GROUP(group), offset+0.5, y, offset+1.0, y, "black", 1.0);
+    }
+  */			     
+  zmapDrawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, height, "black", 1.0); // long vertical line
   return offset + width + 4 ;
 
 }
@@ -237,7 +293,9 @@ static void zMapPick(int box, double x, double y)
   void *seg;
   static ZMapPane *oldWindow = NULL;
   static int oldBox = 0;
-  
+
+  /* don't actually know what this is doing
+  ** and not convinced I need to know today...  
   if (oldWindow && oldBox)
     {
       col = zMapPaneGetBox2Col(*oldWindow, oldBox);
@@ -258,7 +316,8 @@ static void zMapPick(int box, double x, double y)
       if (col && seg && col->selectFunc)
 	(*col->selectFunc)(*oldWindow, col, seg, oldBox, x, y, TRUE);
     }
-
+  */
+  return;
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -275,50 +334,50 @@ static void drawGene(FooCanvas *canvas)
 
   //group = window->focuspane->group;
 
-  /*  drawBox(group, 0.0, 220.0 ,"light blue", "white");
-  drawBox(group, 0.0, 260.0 ,"light blue", "white");
-  drawBox(group, 0.0, 300.0 ,"light blue", "white");
-  drawBox(group, 0.0, 320.0 ,"light blue", "white");
-  drawBox(group, 0.0, 360.0 ,"light blue", "white");
+  /*  zmapDrawBox(group, 0.0, 220.0 ,"light blue", "white");
+  zmapDrawBox(group, 0.0, 260.0 ,"light blue", "white");
+  zmapDrawBox(group, 0.0, 300.0 ,"light blue", "white");
+  zmapDrawBox(group, 0.0, 320.0 ,"light blue", "white");
+  zmapDrawBox(group, 0.0, 360.0 ,"light blue", "white");
 
-  drawLine(FOO_CANVAS_GROUP(group),  7.0, 223.0, 14.0, 240.0, "light blue", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 14.0, 240.0,  7.0, 260.0, "light blue", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group),  7.0, 263.0, 14.0, 280.0, "light blue", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 14.0, 280.0,  7.0, 300.0, "light blue", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group),  7.0, 303.0, 14.0, 310.0, "light blue", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 14.0, 310.0,  7.0, 320.0, "light blue", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group),  7.0, 323.0, 14.0, 340.0, "light blue", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 14.0, 340.0,  7.0, 360.0, "light blue", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group),  7.0, 223.0, 14.0, 240.0, "light blue", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 14.0, 240.0,  7.0, 260.0, "light blue", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group),  7.0, 263.0, 14.0, 280.0, "light blue", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 14.0, 280.0,  7.0, 300.0, "light blue", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group),  7.0, 303.0, 14.0, 310.0, "light blue", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 14.0, 310.0,  7.0, 320.0, "light blue", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group),  7.0, 323.0, 14.0, 340.0, "light blue", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 14.0, 340.0,  7.0, 360.0, "light blue", 1.0);
   
-  drawBox(group, 20.0, 20.0  ,"red", "white");
-  drawBox(group, 20.0, 60.0  ,"red", "white");
-  drawBox(group, 20.0, 100.0 ,"red", "white");
-  drawBox(group, 20.0, 120.0 ,"red", "white");
-  drawBox(group, 20.0, 160.0 ,"red", "white");
+  zmapDrawBox(group, 20.0, 20.0  ,"red", "white");
+  zmapDrawBox(group, 20.0, 60.0  ,"red", "white");
+  zmapDrawBox(group, 20.0, 100.0 ,"red", "white");
+  zmapDrawBox(group, 20.0, 120.0 ,"red", "white");
+  zmapDrawBox(group, 20.0, 160.0 ,"red", "white");
 
-  drawLine(FOO_CANVAS_GROUP(group), 27.0,  23.0, 34.0,  40.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 34.0,  40.0, 27.0,  60.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 27.0,  63.0, 34.0,  80.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 34.0,  80.0, 27.0, 100.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 27.0, 103.0, 34.0, 110.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 34.0, 110.0, 27.0, 120.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 27.0, 123.0, 34.0, 140.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 34.0, 140.0, 27.0, 160.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 27.0,  23.0, 34.0,  40.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 34.0,  40.0, 27.0,  60.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 27.0,  63.0, 34.0,  80.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 34.0,  80.0, 27.0, 100.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 27.0, 103.0, 34.0, 110.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 34.0, 110.0, 27.0, 120.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 27.0, 123.0, 34.0, 140.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 34.0, 140.0, 27.0, 160.0, "red", 1.0);
  
-  drawBox(group, 20.0, 320.0 ,"red", "white");
-  drawBox(group, 20.0, 360.0 ,"red", "white");
-  drawBox(group, 20.0, 380.0 ,"red", "white");
-  drawBox(group, 20.0, 420.0 ,"red", "white");
-  drawBox(group, 20.0, 460.0 ,"red", "white");
+  zmapDrawBox(group, 20.0, 320.0 ,"red", "white");
+  zmapDrawBox(group, 20.0, 360.0 ,"red", "white");
+  zmapDrawBox(group, 20.0, 380.0 ,"red", "white");
+  zmapDrawBox(group, 20.0, 420.0 ,"red", "white");
+  zmapDrawBox(group, 20.0, 460.0 ,"red", "white");
 
-  drawLine(FOO_CANVAS_GROUP(group), 27.0, 323.0, 34.0, 340.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 34.0, 340.0, 27.0, 360.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 27.0, 363.0, 34.0, 370.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 34.0, 370.0, 27.0, 380.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 27.0, 383.0, 34.0, 400.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 34.0, 400.0, 27.0, 420.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 27.0, 423.0, 34.0, 440.0, "red", 1.0);
-  drawLine(FOO_CANVAS_GROUP(group), 34.0, 440.0, 27.0, 460.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 27.0, 323.0, 34.0, 340.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 34.0, 340.0, 27.0, 360.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 27.0, 363.0, 34.0, 370.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 34.0, 370.0, 27.0, 380.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 27.0, 383.0, 34.0, 400.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 34.0, 400.0, 27.0, 420.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 27.0, 423.0, 34.0, 440.0, "red", 1.0);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 34.0, 440.0, 27.0, 460.0, "red", 1.0);
   */
   return;
 }

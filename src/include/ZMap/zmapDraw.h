@@ -1,4 +1,4 @@
-/*  Last edited: Jul  2 14:06 2004 (rnc) */
+/*  Last edited: Jul  9 09:28 2004 (rnc) */
 /*  file: zmapcontrol.h
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -51,19 +51,18 @@ void  zMapFeatureColumn(ZMapPane   pane, ZMapColumn *col,
 			float     *offset, int frame);
 void  buildCols        (ZMapPane   pane);
 void  makezMapDefaultColumns(ZMapPane  pane);
-/*float zmDrawScale     (FooCanvas *canvas, float offset, int start, int end);*/
-float zmDrawScale       (float     offset, int start, int end);
+float zmapDrawScale     (FooCanvas *canvas, float offset, int start, int end);
 void  nbcInit           (ZMapPane  pane, ZMapColumn *col);
 void  nbcSelect         (ZMapPane  pane, ZMapColumn *col,
 			 void     *seg, int box, double x, double y, gboolean isSelect);
 void  zMapGeneDraw      (ZMapPane  pane, ZMapColumn *col, float *offset, int frame);
 void  geneSelect        (ZMapPane  pane, ZMapColumn *col,
 			 void     *arg, int box, double x, double y, gboolean isSelect);
-void  drawLine          (FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
+void  zmapDrawLine          (FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 			 char *colour, double thickness);
-void  drawBox           (FooCanvasItem *group, double x1, double y1, 
+void  zmapDrawBox           (FooCanvasItem *group, double x1, double y1, 
 			 double x2, double y2, char *line_colour, char *fill_colour);
-void  displayText       (FooCanvasGroup *group, char *text, double x, double y);
+void  zmapDisplayText       (FooCanvasGroup *group, char *text, double x, double y);
 
 /* other routines *****************************************/
 
