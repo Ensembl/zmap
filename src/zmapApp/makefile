@@ -27,7 +27,6 @@ CURRENT_OBJ = $(APP_OBJ)
 CURRENT_DEP = $(PUB_HDRS) $(APP_PRIV_HDRS)
 CURRENT_SRC = $(APP_PRIV_HDRS) $(APP_SRC) $(APP_CC_MAIN_SRC)
 CURRENT_REMOVE = cd $(BINDIR) ; rm -f $(APP_EXE) $(APP_CC_MAIN_OBJ) $(APP_CCC_MAIN_OBJ)
-CURRENT_INC = -I/nfs/team71/acedb/edgrif/ZMap/popt/popt-ins/include
 
 #
 # include all common defines
