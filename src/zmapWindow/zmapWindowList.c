@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 19 13:20 2004 (rnc)
+ * Last edited: Nov 19 13:30 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.18 2004-11-19 13:24:27 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.19 2004-11-19 13:33:48 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -228,7 +228,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_i
 
   if (!(quarkString = g_quark_to_string(feature_id)))
     {
-      zMapLogWarning("Quark %d not a valid quark\n", feature_id) ;
+      zMapLogWarning("Quark %d, of type %s, not a valid quark\n", feature_id, type) ;
       result = FALSE;
     }
   else
@@ -330,7 +330,6 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
   double x_coord;
   gchar *name, *type;
   GQuark id;
-  gboolean ITEM_FOUND;  
 
   /* At present, when we display the list, it will scroll the main display
   ** to the first feature on the list.  This is not good but it's not my
@@ -346,8 +345,7 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 
   if (start)
     {
-      if ((ITEM_FOUND = zMapWindowScrollToItem(window, type, id)))  /* extra parens to zap 
-								     * compiler warning */
+      if (zMapWindowScrollToItem(window, type, id))
 	gtk_widget_show_all(GTK_WIDGET(window->parent_widget));
       else
 	zMapShowMsg(ZMAP_MSG_CRASH, "Quark %d of type %s not found in list of known features\n", id, type);
