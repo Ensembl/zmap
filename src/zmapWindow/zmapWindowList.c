@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 30 10:10 2004 (rnc)
+ * Last edited: Dec  6 13:19 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.21 2004-11-30 10:24:47 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.22 2004-12-06 14:20:25 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -244,6 +244,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_i
   ZMapFeatureTypeStyle thisType;
   gboolean result;
   G_CONST_RETURN gchar *quarkString;
+  GtkWidget *topWindow;
 
   if (!(quarkString = g_quark_to_string(feature_id)))
     {
@@ -261,16 +262,20 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_i
 	  thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(window->types), type);
 	  zMapAssert(thisType);
 	  
+	  topWindow = gtk_widget_get_toplevel(GTK_WIDGET(window->canvas));
+	  gtk_widget_show_all(topWindow);
+
 	  /* The selected object might be outside the current scroll region. */
 	  recalcScrollRegion(window, feature->x1, feature->x2);
 	  
 	  /* featureItem holds canvasItem and ptr to the feature_set containing the feature. */
 	  featureItem =  g_datalist_id_get_data(&(window->featureItems), feature_id);
 	  feature =  g_datalist_id_get_data(&(featureItem->feature_set->features), feature_id);
-	  
-	  /* scroll up or down to user's selection.  
-	  ** Note that because we zoom asymmetrically, we only convert the y coord 
-	  ** to canvas coordinates, leaving the x as is.  */
+
+	  if (window->longItems)
+	    g_datalist_foreach(&(window->longItems), zmapWindowCropLongFeature, window);
+
+	  /* scroll up or down to user's selection. */
 	  foo_canvas_item_get_bounds(featureItem->canvasItem, &x1, &y1, &x2, &y2); /* world coords */
 	  
 	  if (y1 <= 0.0)    /* we might be dealing with a multi-box item, eg transcript */
@@ -283,8 +288,11 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_i
 		y1 = py1;
 	    }
 	  
-	  height = GTK_WIDGET(window->canvas)->allocation.height;
+	  /* Note that because we zoom asymmetrically, we only convert the y coord 
+	  ** to canvas coordinates, leaving the x as is.  */
 	  foo_canvas_w2c(window->canvas, 0.0, y1, &cx, &cy); 
+
+	  height = GTK_WIDGET(window->canvas)->allocation.height;
 	  foo_canvas_scroll_to(window->canvas, (int)x1, cy - height/3);             /* canvas pixels */
 	  
 	  foo_canvas_item_raise_to_top(featureItem->canvasItem);
@@ -292,7 +300,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_i
 	  /* highlight the item */
 	  zmapWindowHighlightObject(featureItem->canvasItem, window, thisType);
 	  
-	  zMapFeatureClickCB(window, feature); /* show feature details on info_panel  */
+	  zMapWindowFeatureClickCB(window, feature); /* show feature details on info_panel  */
 	  
 	  window->focusFeature = featureItem->canvasItem;
 	  window->focusType = thisType;
@@ -403,6 +411,11 @@ static void recalcScrollRegion(ZMapWindow window, double start, double end)
       /* this shouldn't happen */
       if (y2 > window->seq_end)
 	  y2 = window->seq_end;
+
+      window->scroll_x1 = x1;
+      window->scroll_y1 = y1;
+      window->scroll_x2 = x2;
+      window->scroll_y2 = y2;
 
       foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
 

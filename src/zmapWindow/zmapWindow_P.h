@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 26 09:18 2004 (rnc)
+ * Last edited: Dec  6 13:19 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.35 2004-11-29 13:57:29 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.36 2004-12-06 14:18:38 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -79,6 +79,12 @@ typedef struct _ZMapWindowStruct
   int            canvas_maxwin_size ;			    /* 30,000 is the maximum (default). */
   int            border_pixels ;			    /* top/bottom border to sequence. */
   double         text_height;                               /* used to calculate min/max zoom */
+  double         current_x;                                /* for scrolling a split window to */
+  double         current_y;                                /* the same place as its sister. */
+  double         scroll_x1;                                
+  double         scroll_y1;                                
+  double         scroll_x2;                                
+  double         scroll_y2;                                
 
   GtkWidget     *text ;
   GdkAtom        zmap_atom ;
@@ -88,6 +94,7 @@ typedef struct _ZMapWindowStruct
   GData         *types;
   GPtrArray     *featureListWindows;
   GData         *featureItems;            /*!< enables unambiguous link between features and canvas items. */
+  GData         *longItems;               /*!< features >30k long need to be cropped as we zoom in. */
   GPtrArray     *columns;                 /* keep track of canvas columns */
 
   FooCanvasItem *scaleBarGroup;           /* canvas item in which we build the scalebar */
@@ -100,8 +107,9 @@ typedef struct _ZMapWindowStruct
   double         seq_end ;
 
   ZMapFeatureTypeStyle focusType;         /* type of the item which has focus */
+  gchar               *typeName;          
   FooCanvasItem       *focusFeature;      /* the item which has focus */
-
+  GQuark               focusQuark;        /* its GQuark */
   int            DNAwidth;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -111,6 +119,13 @@ typedef struct _ZMapWindowStruct
 } ZMapWindowStruct ;
 
 
+
+typedef struct _ZMapWindowLongItemStruct {
+  char          *name;
+  double         start;
+  double         end;
+  FooCanvasItem *canvasItem;
+} ZMapWindowLongItemStruct, *ZMapWindowLongItem;
 
 
 typedef struct _ZMapFeatureItemStruct {   /*!< keyed on feature->id, gives access to canvas item */
@@ -185,13 +200,12 @@ void zmapFeatureInit(ZMapFeatureCallbacks callbacks) ;
 
 void zmapWindowPrintCanvas(FooCanvas *canvas) ;
 
-void zMapWindowCreateListWindow(ZMapWindow window, ZMapFeatureItem featureItem);
-gboolean zMapFeatureClickCB(ZMapWindow window, ZMapFeature feature);
-FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
-			     double offset, double zoom_factor, 
-			     int start, int end);
-double zmapWindowCalcZoomFactor(ZMapWindow window);
-void   zmapWindowCalcMaxZoom   (ZMapWindow window);
+void     zMapWindowCreateListWindow(ZMapWindow window, ZMapFeatureItem featureItem);
+gboolean zMapWindowFeatureClickCB(ZMapWindow window, ZMapFeature feature);
+FooCanvasItem *zmapDrawScale    (FooCanvas *canvas, double offset, double zoom_factor, int start, int end);
+double zmapWindowCalcZoomFactor (ZMapWindow window);
+void   zmapWindowSetPageIncr    (ZMapWindow window);
+void   zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data);
 
 
 #endif /* !ZMAP_WINDOW_P_H */
