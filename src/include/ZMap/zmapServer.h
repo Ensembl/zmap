@@ -26,24 +26,31 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 22 10:42 2004 (edgrif)
+ * Last edited: Jun 25 11:49 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.2 2004-03-22 13:15:28 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.3 2004-06-25 13:34:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
 #define ZMAP_SERVER_H
 
 #include <glib.h>
+#include <ZMap/zmapFeature.h>
 
 
 /* Opaque type, represents a connection to a database server. */
 typedef struct _ZMapServerStruct *ZMapServer ;
 
 
+
+typedef enum {ZMAP_SERVERREQ_INVALID, ZMAP_SERVERREQ_SEQUENCE} ZMapServerRequestType ;
+
+
+
 /* This routine must be called before any other server routines and must only be called once.
  * It is the callers responsibility to make sure this happens. */
 gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out) ;
+
 
 /* Provide matching Termination routine ???? */
 
@@ -54,7 +61,17 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_
 
 gboolean zMapServerOpenConnection(ZMapServer server) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean zMapServerRequest(ZMapServer server, char *request, char **reply, int *reply_len) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* Probably where we have "features" we actually need to return a void *  which could point to
+ * one of a number of datatypes depending on the type of the request. AND the char* sequence
+ * is temp. as well..... */
+gboolean zMapServerRequest(ZMapServer server, ZMapServerRequestType request,
+			   char *sequence, ZMapFeatureContext *feature_context) ;
 
 gboolean zMapServerCloseConnection(ZMapServer server) ;
 

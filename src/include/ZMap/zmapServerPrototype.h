@@ -28,15 +28,17 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Mar 22 10:37 2004 (edgrif)
+ * Last edited: Jun 25 11:50 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.1 2004-04-08 16:14:20 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.2 2004-06-25 13:34:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
 #define ZMAP_SERVER_PROTOTYPEP_H
 
 #include <glib.h>
+#include <ZMap/zmapFeature.h>
+#include <ZMap/zmapServer.h>				    /* is this ok to go here, think about it... */
 
 /* Define function prototypes for generalised server calls, they all go in
  * the ZMapServerFuncsStruct struct that represents the calls for a server
@@ -46,8 +48,8 @@ typedef gboolean (*ZMapServerCreateFunc) (void **server_conn,
 					  char *host, int port,
 					  char *userid, char *passwd, int timeout) ;
 typedef gboolean (*ZMapServerOpenFunc)   (void *server_conn) ;
-typedef gboolean (*ZMapServerRequestFunc)(void *server_conn, char *request,
-					  void **reply, int *reply_len) ;
+typedef gboolean (*ZMapServerRequestFunc)(void *server_conn, ZMapServerRequestType request,
+					  char *sequence, ZMapFeatureContext *feature_context) ;
 typedef char *   (*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
 typedef gboolean (*ZMapServerCloseFunc)  (void *server_conn) ;
 typedef gboolean (*ZMapServerDestroyFunc)(void *server_conn) ;
