@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: May 20 10:33 2004 (edgrif)
+ * Last edited: Jul  1 14:53 2004 (rnc)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.3 2004-05-20 14:30:11 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.4 2004-07-02 13:50:25 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -59,8 +59,12 @@ typedef struct _ZMapViewStruct
   void *app_data ;
   ZMapViewCallbackFunc app_destroy_cb ;
 
+  ZMapRegion  *zMapRegion; /* the region holding all the SEGS - may be redundant*/
+
 } ZMapViewStruct ;
 
-
-
+int          zMapWindowGetRegionLength (ZMapWindow window);
+Coord        zMapWindowGetRegionArea   (ZMapWindow window, int area);
+void         zMapWindowSetRegionArea   (ZMapWindow window, Coord area, int num);
+gboolean     zMapWindowGetRegionReverse(ZMapWindow window);
 #endif /* !ZMAP_VIEW_P_H */
