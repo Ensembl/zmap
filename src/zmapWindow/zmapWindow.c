@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 28 10:02 2004 (rnc)
+ * Last edited: Sep 29 11:43 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.33 2004-09-28 09:03:20 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.34 2004-09-29 16:38:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -232,6 +232,11 @@ void zMapWindowReset(ZMapWindow window)
   return ;
 }
 
+
+GtkWidget *zMapWindowGetWidget(ZMapWindow window)
+{
+  return GTK_WIDGET(window->canvas) ;
+}
 
 void zMapWindowDestroy(ZMapWindow window)
 {
