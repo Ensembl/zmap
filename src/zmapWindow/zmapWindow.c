@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug  7 14:48 2003 (edgrif)
+ * Last edited: Nov 14 17:40 2003 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.1 2003-11-13 15:06:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.2 2003-11-14 17:40:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -194,8 +194,8 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
       ZMAP_DEBUG(("GUI: got dataEvent, contents: \"%s\"\n", string)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-      gtk_text_insert(GTK_TEXT(window->text), NULL, NULL, NULL, string, strlen(string)) ;
+      gtk_text_buffer_insert(gtk_text_view_get_buffer(GTK_TEXT_VIEW(window->text)),
+			     NULL, string, -1) ;	    /* -1 => insert whole string. */
 
       g_free(string) ;
       g_free(window_data) ;
