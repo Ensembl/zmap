@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Aug  2 14:01 2004 (edgrif)
+ * Last edited: Aug  4 08:01 2004 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.11 2004-08-02 14:05:11 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.12 2004-08-04 07:11:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,6 +43,7 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
   GtkRequisition req;
   int increment = 200;
   GtkWidget *vscale;
+  GtkObject *adjustment ;
 
   zmap->navigator = g_new0(ZMapNavStruct, 1);
 
@@ -58,14 +59,9 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
 
 
   /* Make the navigator with a default, "blank" adjustment obj. */
+  adjustment = gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmap->navigator->default_adjustment = gtk_adjustment_new(0.0, 1.0, 100.0, 1, 1, 1) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  zmap->navigator->default_adjustment = gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ;
-
-  zmap->navigator->navVScale = gtk_vscale_new(GTK_ADJUSTMENT(zmap->navigator->default_adjustment)) ;
+  zmap->navigator->navVScale = gtk_vscale_new(GTK_ADJUSTMENT(adjustment)) ;
   gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navVScale, TRUE, TRUE, 0) ;
   gtk_scale_set_value_pos(GTK_SCALE(zmap->navigator->navVScale), GTK_POS_LEFT) ;
   gtk_scale_set_draw_value(GTK_SCALE(zmap->navigator->navVScale), TRUE) ;
@@ -87,39 +83,32 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext fea
 {
   GtkWidget *label;
   gchar *top_str, *bot_str ;
+  GtkObject *adjuster ;
+
+
+  adjuster = (GtkObject *)gtk_range_get_adjustment(GTK_RANGE(navigator->navVScale)) ;
+  
 
   /* May be called with no sequence to parent mapping so must set default navigator for this. */
   if (features)
     {
-      GtkObject *curr_adjuster, *new_adjuster ;
-
       navigator->parent_span = features->parent_span ;	    /* n.b. struct copy. */
       navigator->sequence_to_parent = features->sequence_to_parent ; /* n.b. struct copy. */
 
       top_str = g_strdup_printf("%d", navigator->parent_span.x1) ;
       bot_str = g_strdup_printf("%d", navigator->parent_span.x2) ;
 
-      /* Make a new adjustment object to represent the new sequence within its parent, note that
-       * sequence may be reversed relative to parent so we may need scale to be reversed. */
-      curr_adjuster = (GtkObject *)gtk_range_get_adjustment(GTK_RANGE(navigator->navVScale)) ;
-
       if (navigator->sequence_to_parent.p1 > navigator->sequence_to_parent.p2)
 	gtk_range_set_inverted(GTK_RANGE(navigator->navVScale), TRUE) ;
 
-      new_adjuster = gtk_adjustment_new((((gdouble)(navigator->sequence_to_parent.p1
-						    + navigator->sequence_to_parent.p2)) / 2.0),
-					(gdouble)navigator->parent_span.x1,
-					(gdouble)navigator->parent_span.x2,
-					10.0,		    /* step incr, wild guess... */
-					1000,		    /* page incr, wild guess... */
-					(gdouble)(abs(navigator->sequence_to_parent.p2
-						      - navigator->sequence_to_parent.p1) + 1)) ;
-
-      gtk_range_set_adjustment(GTK_RANGE(navigator->navVScale), GTK_ADJUSTMENT(new_adjuster)) ;
-
-      /* If the current adjustment is not the default then free it. */
-      if (curr_adjuster != navigator->default_adjustment)
-	gtk_object_destroy(curr_adjuster) ;
+      GTK_ADJUSTMENT(adjuster)->value = (((gdouble)(navigator->sequence_to_parent.p1
+						    + navigator->sequence_to_parent.p2)) / 2.0) ;
+      GTK_ADJUSTMENT(adjuster)->lower = (gdouble)navigator->parent_span.x1 ;
+      GTK_ADJUSTMENT(adjuster)->upper = (gdouble)navigator->parent_span.x2 ;
+      GTK_ADJUSTMENT(adjuster)->step_increment = 10.0 ;	    /* step incr, wild guess... */
+      GTK_ADJUSTMENT(adjuster)->page_increment = 1000 ;	    /* page incr, wild guess... */
+      GTK_ADJUSTMENT(adjuster)->page_size = (gdouble)(abs(navigator->sequence_to_parent.p2
+							  - navigator->sequence_to_parent.p1) + 1) ;
     }
   else
     {
@@ -131,12 +120,15 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext fea
       top_str = g_strdup(TOPTEXT_NO_SCALE) ;
       bot_str = g_strdup(BOTTEXT_NO_SCALE) ;
 
-
-      gtk_range_set_adjustment(GTK_RANGE(navigator->navVScale),
-			       GTK_ADJUSTMENT(navigator->default_adjustment)) ;
-
+      GTK_ADJUSTMENT(adjuster)->value = 0.0 ;
+      GTK_ADJUSTMENT(adjuster)->lower = 0.0 ;
+      GTK_ADJUSTMENT(adjuster)->upper = 0.0 ;
+      GTK_ADJUSTMENT(adjuster)->step_increment = 0.0 ;
+      GTK_ADJUSTMENT(adjuster)->page_increment = 0.0 ;
+      GTK_ADJUSTMENT(adjuster)->page_size = 0.0 ;
     }
 
+  gtk_adjustment_changed(GTK_ADJUSTMENT(adjuster)) ;
 
   gtk_label_set_text(GTK_LABEL(navigator->topLabel), top_str) ;
   gtk_label_set_text(GTK_LABEL(navigator->botLabel), bot_str) ;
