@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan  7 14:49 2005 (edgrif)
+ * Last edited: Jan 20 16:23 2005 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.15 2005-01-10 09:52:54 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.16 2005-01-24 11:34:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,8 +64,6 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 {
   GtkWidget *nav_top ;
 
-  zmap->panesTree = g_node_new(NULL) ;
-
   /* Navigator and views are in an hpane, so the user can adjust the width
    * of the navigator and views. */
   zmap->hpane = gtk_hpaned_new() ;
@@ -77,8 +75,7 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
   gtk_paned_pack1(GTK_PANED(zmap->hpane), nav_top, FALSE, TRUE) ;
 
 
-  /* I'm not sure we actually need this intervening box, we could probably just set the size of
-   * the hpane.... */
+  /* This box contains what may be multiple views in paned widgets. */
   zmap->pane_vbox = gtk_vbox_new(FALSE,0) ;
 
   gtk_paned_pack2(GTK_PANED(zmap->hpane), 
@@ -97,7 +94,7 @@ static void valueCB(void *user_data, double start, double end)
 
   if (zmap->state == ZMAP_VIEWS)
     {
-      ZMapWindow window = zMapViewGetWindow(zmap->focuspane->curr_view_window) ;
+      ZMapWindow window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
       zMapWindowMove(window, start, end) ;
     }  

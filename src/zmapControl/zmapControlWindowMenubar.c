@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  4 11:46 2004 (rnc)
+ * Last edited: Jan 12 15:38 2005 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.4 2004-11-08 10:23:00 rnc Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.5 2005-01-24 11:35:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -114,7 +114,7 @@ static void featureDumpCB(gpointer cb_data, guint callback_action, GtkWidget *wi
   ZMap zmap = (ZMap)cb_data;
   gchar *file = g_strdup_printf(".ZMap/ZMapDump.td");
 
-  zmapViewFeatureDump(zmap->focuspane->curr_view_window, file, TAB_DELIMITED);
+  zmapViewFeatureDump(zmap->focus_viewwindow, file, TAB_DELIMITED);
   g_free (file);
   file = NULL;
 
