@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 20 17:03 2005 (edgrif)
+ * Last edited: Apr  5 13:52 2005 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.1 2005-01-24 13:22:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.2 2005-04-05 14:52:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,7 @@
 
 
 static void checkScrollRegion(ZMapWindow window, double start, double end) ;
-
+static void destroyFeaturesHash(gpointer data) ;
 
 
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out)
@@ -57,88 +57,206 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
 
 
 
-/** \Brief Scroll to the selected item.
- * 
+
+FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
+					       ZMapFeatureType feature_type, char *feature,
+					       ZMapStrand strand, int start, int end,
+					       int query_start, int query_end)
+{
+  FooCanvasItem *item = NULL ;
+
+  /* Need coords to be the right way round...they may be supplied wrongly as they may not have
+   * been mapped to our coord frame...there is a problem here which we will have to sort out... */
+  if (zMapFeatureSetCoords(strand, &start, &end, &query_start, &query_end))
+    {
+      char *feature_name ;
+      GQuark feature_id ;
+      char *style_name ;
+      GQuark style_id ;
+
+      /* Make a string name and see if the system knows about it, if not then forget it. */
+      if ((feature_name = zMapFeatureCreateName(feature_type, feature, strand, start, end,
+						query_start, query_end))
+	  && (feature_id = g_quark_try_string(feature_name))
+	  && (style_name = zMapStyleCreateName(style))
+	  && (style_id = g_quark_try_string(style_name)))
+	{
+	  item = zmapWindowFToIFindItem(window->feature_to_item, style_id, feature_id) ;
+	}
+    }
+
+  return item ;
+}
+
+
+/* Scroll to the specified item.
  * If necessary, recalculate the scroll region, then scroll to the item
  * and highlight it.
  */
-gboolean zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_id) 
+gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 {
-  int cx, cy, height;
-  double x1, y1, x2, y2;
-  ZMapFeatureItem featureItem = NULL;
-  ZMapFeature feature;
-  ZMapFeatureTypeStyle thisType;
-  gboolean result;
-  G_CONST_RETURN gchar *quarkString;
-  GtkWidget *topWindow;
+  gboolean result = FALSE ;
+  int cx, cy, height ;
+  double x1, y1, x2, y2 ;
+  ZMapFeature feature ;
 
-  if (!(quarkString = g_quark_to_string(feature_id)))
+  zMapAssert(window && item) ;
+
+  feature = g_object_get_data(G_OBJECT(item), "feature");  
+  zMapAssert(feature) ;					    /* this should never fail. */
+
+  /* May need to move scroll region if object is outside it. */
+  checkScrollRegion(window, feature->x1, feature->x2) ;
+
+  /* scroll up or down to user's selection. */
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2); /* world coords */
+	  
+  if (y1 <= 0.0)    /* we might be dealing with a multi-box item, eg transcript */
     {
-      zMapLogWarning("Quark %d, of type %s, not a valid quark\n", feature_id, type) ;
-      result = FALSE;
-    }
-  else
-    {
-      if ((featureItem = (ZMapFeatureItem)g_datalist_id_get_data(&(window->featureItems), feature_id)))
-	{
-	  feature = (ZMapFeature)g_datalist_id_get_data(&(featureItem->feature_set->features),
-							featureItem->feature_key) ;
-	  zMapAssert(feature) ;
-	  
-	  thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(window->types), type);
-	  zMapAssert(thisType);
-	  
-	  topWindow = gtk_widget_get_toplevel(GTK_WIDGET(window->canvas));
-	  gtk_widget_show_all(topWindow);
-
-
-	  /* featureItem holds canvasItem and ptr to the feature_set containing the feature. */
-	  featureItem = g_datalist_id_get_data(&(window->featureItems), feature_id);
-	  feature = g_datalist_id_get_data(&(featureItem->feature_set->features), feature_id);
-
-
-	  /* May need to move scroll region if object is outside it. */
-	  checkScrollRegion(window, feature->x1, feature->x2) ;
-
-
-	  /* scroll up or down to user's selection. */
-	  foo_canvas_item_get_bounds(featureItem->canvasItem, &x1, &y1, &x2, &y2); /* world coords */
-	  
-	  if (y1 <= 0.0)    /* we might be dealing with a multi-box item, eg transcript */
-	    {
-	      double px1, py1, px2, py2;
+      double px1, py1, px2, py2;
 	      
-	      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(featureItem->canvasItem->parent),
-					 &px1, &py1, &px2, &py2); 
-	      if (py1 > 0.0)
-		y1 = py1;
-	    }
+      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(item->parent),
+				 &px1, &py1, &px2, &py2); 
+      if (py1 > 0.0)
+	y1 = py1;
+    }
 	  
-	  /* Note that because we zoom asymmetrically, we only convert the y coord 
-	   * to canvas coordinates, leaving the x as is.  */
-	  foo_canvas_w2c(window->canvas, 0.0, y1, &cx, &cy); 
+  /* Note that because we zoom asymmetrically, we only convert the y coord 
+   * to canvas coordinates, leaving the x as is.  */
+  foo_canvas_w2c(window->canvas, 0.0, y1, &cx, &cy); 
 
-	  height = GTK_WIDGET(window->canvas)->allocation.height;
-	  foo_canvas_scroll_to(window->canvas, (int)x1, cy - height/3);             /* canvas pixels */
+  height = GTK_WIDGET(window->canvas)->allocation.height;
+  foo_canvas_scroll_to(window->canvas, (int)x1, cy - height/3);             /* canvas pixels */
 	  
-	  foo_canvas_item_raise_to_top(featureItem->canvasItem);
+  foo_canvas_item_raise_to_top(item);
 	  
-	  /* highlight the item */
-	  zmapWindowHighlightObject(featureItem->canvasItem, window, thisType);
+  /* highlight the item */
+  zmapWindowHighlightObject(window, item) ;
 	  
-	  zMapWindowFeatureClickCB(window, feature) ;	    /* show feature details on info_panel  */
-	  
-	  window->focusFeature = featureItem->canvasItem;
-	  window->focusType = thisType;
 
-	  result =  TRUE;
-	}
+  /* this shouldn't be here, it should either call the callback or the caller should be
+   * forced to do this explicitly via some kind of focus call..... */
+  zMapWindowFeatureClickCB(window, feature) ;	    /* show feature details on info_panel  */
 
-    }  /* else silently ignore the fact we've not found it. */
 
-  return result;
+  result = TRUE ;
+
+  return result ;
 }
+
+
+/* Prints out an items coords in world coords, good for debugging.... */
+void zmapWindowPrintItemCoords(FooCanvasItem *item)
+{
+  double x1, y1, x2, y2 ;
+
+  /* Gets bounding box in parents coord system. */
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+
+  my_foo_canvas_item_i2w(item, &x1, &y1) ;
+  my_foo_canvas_item_i2w(item, &x2, &y2) ;
+
+  printf("item coords:\t%f,%f -> %f,%f\n", x1, y1, x2, y2) ;
+
+
+  return ;
+}
+
+
+
+
+/* Create the table that hashes feature set ids to hash tables of features.
+ * NOTE that the glib hash stuff does not store anything except the pointers to the
+ * keys and values which is a pain if you are only hashing on ints....as I am.
+ * I've therefore decided to try using their "direct hash" stuff to only work on
+ * the pointers... */
+GHashTable *zmapWindowFToICreate(void)
+{
+  GHashTable *feature_to_item ;
+
+  feature_to_item = g_hash_table_new_full(g_direct_hash, g_direct_equal,
+					  NULL,		    /* Nothing to destroy for hash key. */
+					  destroyFeaturesHash) ;
+
+  return feature_to_item ;
+}
+
+
+/* Add a hash for the given feature set. The set may already exist if we are merging
+ * more data from another server, if so then no action is taken otherwise we would lose
+ * all our existing feature hashes ! */
+void zmapWindowFToIAddSet(GHashTable *feature_to_item_hash, GQuark set_id)
+{
+  GHashTable *new_set_hash ;
+
+  if (!(new_set_hash = (GHashTable *)g_hash_table_lookup(feature_to_item_hash,
+							 GUINT_TO_POINTER(set_id))))
+    {
+      new_set_hash = g_hash_table_new(g_direct_hash, g_direct_equal) ;
+      g_hash_table_insert(feature_to_item_hash, GUINT_TO_POINTER(set_id), new_set_hash) ;
+    }
+
+  return ;
+}
+
+
+void zmapWindowFToIAddFeature(GHashTable *feature_to_item_hash, GQuark set_id,
+			      GQuark feature_id, FooCanvasItem *item)
+{
+  GHashTable *set_hash ;
+
+  set_hash = (GHashTable *)g_hash_table_lookup(feature_to_item_hash, GUINT_TO_POINTER(set_id)) ;
+
+  g_hash_table_insert(set_hash, GUINT_TO_POINTER(feature_id), item) ;
+
+  return ;
+}
+
+
+/* Warning, may return null so result MUST BE TESTED by caller. */
+FooCanvasItem *zmapWindowFToIFindItem(GHashTable *feature_to_item_hash, GQuark set_id,
+				      GQuark feature_id)
+{
+  FooCanvasItem *item ;
+  GHashTable *set_hash ;
+
+  set_hash = (GHashTable *)g_hash_table_lookup(feature_to_item_hash, GUINT_TO_POINTER(set_id)) ;
+
+  item = (FooCanvasItem *)g_hash_table_lookup(set_hash, GUINT_TO_POINTER(feature_id)) ;
+
+  return item ;
+}
+
+
+/* Destroy the feature to item hash, this will cause all the individual feature to
+ * item hashes to be destroyed. */
+void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash)
+{
+  g_hash_table_destroy(feature_to_item_hash) ;
+
+  return ;
+}
+
+
+
+/* 
+ *                  Internal routines.
+ */
+
+
+
+/* Is called for all entries in the hash table of feature set ids -> hash table of features. For
+ * each one we need to destroy the feature hash table. Note no resources need to be destroyed,
+ * the hash table just needs to be removed. */
+static void destroyFeaturesHash(gpointer data)
+{
+  GHashTable *feature_hash_table = (GHashTable *)data ;
+
+  g_hash_table_destroy(feature_hash_table) ;
+
+  return ;
+}
+
 
 
 
