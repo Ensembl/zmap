@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Aug 16 14:04 2004 (rnc)
+ * Last edited: Sep  2 09:25 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.16 2004-08-18 15:02:54 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.17 2004-09-02 08:56:20 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1123,7 +1123,12 @@ static GData *getTypesFromFile(void)
   if ((config = zMapConfigCreateFromFile(NULL, types_file_name)))
     {
       ZMapConfigStanza types_stanza ;
+
+      // Set up default values for variables in the stanza.  Elements here must match
+      // those being loaded below or you might segfault.
+
       ZMapConfigStanzaElementStruct types_elements[] = {{"name", ZMAPCONFIG_STRING, {NULL}},
+							{"outline", ZMAPCONFIG_STRING, {"black"}},
 							{"foreground", ZMAPCONFIG_STRING, {"white"}},
 							{"background", ZMAPCONFIG_STRING, {"black"}},
 							{"width", ZMAPCONFIG_FLOAT, {NULL}},
@@ -1163,8 +1168,11 @@ static GData *getTypesFromFile(void)
 	    {
 	      ZMapFeatureTypeStyle new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
 
-	      new_type->foreground = g_strdup(zMapConfigGetElementString(next_types, "foreground")) ;
-	      new_type->background = g_strdup(zMapConfigGetElementString(next_types, "background")) ;
+	      // NB Elements here must match those pre-initialised above or you might segfault.
+
+	      gdk_color_parse(zMapConfigGetElementString(next_types, "outline"   ), &new_type->outline   ) ;
+	      gdk_color_parse(zMapConfigGetElementString(next_types, "foreground"), &new_type->foreground) ;
+	      gdk_color_parse(zMapConfigGetElementString(next_types, "background"), &new_type->background) ;
 	      new_type->width = zMapConfigGetElementFloat(next_types, "width") ;
 
 	      g_datalist_set_data(&types, name, new_type) ;
