@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 24 10:35 2005 (edgrif)
+ * Last edited: Jan 24 13:53 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.58 2005-01-24 11:44:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.59 2005-01-24 13:57:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,18 +76,11 @@ static void changeRegion(ZMapWindow window, guint keyval) ;
 
 
 
-/* These callback routines are static because they are set just once for the lifetime of the
+/* These structure is static because the callback routines are set just once for the lifetime of the
  * process. */
 
 /* Callbacks we make back to the level above us. */
 static ZMapWindowCallbacks window_cbs_G = NULL ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Callbacks to us from the level below, ie zmapWindowDrawFeatures */
-static ZMapFeatureCallbacksStruct feature_cbs_G = { clickCB, rightClickCB } ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -118,12 +111,6 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   window_cbs_G->visibilityChange = callbacks->visibilityChange ;
 
   window_cbs_G->destroy = callbacks->destroy ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapFeatureInit(&feature_cbs_G);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
@@ -259,15 +246,6 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
       foo_canvas_get_scroll_offsets(copy_window->canvas, &x, &y) ;
 
       foo_canvas_scroll_to(new->canvas, x, y) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      foo_canvas_get_scroll_offsets(new->canvas, &x, &y) ;
-
-      printf("here\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
     }
 			      
   return new ;
@@ -1248,160 +1226,3 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
   return event_handled ;
 }
 
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-STORE_HANDLE zMapWindowGetHandle(ZMapWindow window)
-{
-  return window->handle;
-}
-
-
-void zMapWindowSetHandle(ZMapWindow window)
-{
-  window->handle = NULL;
-  return;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zMapWindowSetBorderWidth(GtkWidget *container, int width)
-{
-  gtk_container_border_width(GTK_CONTAINER(container), width);
-  return;
-}
-
-
-ScreenCoord zMapWindowGetScaleOffset(ZMapWindow window)
-{
-  return 0;
-}
-
-
-void zMapWindowSetScaleOffset(ZMapWindow window, ScreenCoord offset)
-{
-  return;
-}
-
-
-Coord zMapWindowGetCoord(ZMapWindow window, char *field)
-{
-  /*  if (field == "s")
-    return window->navStart;
-  else
-    return window->navEnd;
-  */
-  return 0;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zMapWindowSetCoord(ZMapWindow window, char *field, int size)
-{
-  if (field == "s")
-    window->navStart = window->focuspane->zMapRegion->area1 - size;
-  else
-    window->navEnd = window->focuspane->zMapRegion->area2 + size;
-  
-  if (window->navStart == window->navEnd)
-    window->navEnd = window->navStart + 1;
-  
-  return;
-}
-
-
-ScreenCoord zMapWindowGetScreenCoord1(ZMapWindow window, int height)
-{
-  return zMapWindowGetScreenCoord(window, window->focuspane->zMapRegion->area1, height);
-}
-
-
-ScreenCoord zMapWindowGetScreenCoord2(ZMapWindow window, int height)
-{
-  return zMapWindowGetScreenCoord(window, window->focuspane->zMapRegion->area2, height);
-}
-
-ScreenCoord zMapWindowGetScreenCoord(ZMapWindow window, Coord coord, int height)
-{
-  return height * (coord - window->navStart) / (window->navEnd - window->navStart);
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* ZMapRegion functions */
-
-GPtrArray *zMapRegionNewMethods(ZMapRegion *region)
-{
-  return region->methods = g_ptr_array_new();
-}
-
-GPtrArray *zMapRegionGetMethods(ZMapRegion *region)
-{
-  return region->methods;
-}
-
-GPtrArray *zMapRegionGetOldMethods(ZMapRegion *region)
-{
-  return region->oldMethods;
-}
-
-void zMapRegionFreeMethods(ZMapRegion *region)
-{
-  g_ptr_array_free(region->methods, TRUE);
-  return;
-}
-
-void zMapRegionFreeOldMethods(ZMapRegion *region)
-{
-  g_ptr_array_free(region->oldMethods, TRUE);
-  return;
-}
-
-GArray *zMapRegionNewSegs(ZMapRegion *region)
-{
-  return region->segs = g_array_new(FALSE, FALSE, sizeof(ZMapFeatureStruct)) ;
-}
-
-GArray *zMapRegionGetSegs(ZMapRegion *region)
-{
-  return region->segs;
-}
-
-void zMapRegionFreeSegs(ZMapRegion *region)
-{
-  free(region->segs);
-  return;
-}
-
-
-GArray *zMapRegionGetDNA(ZMapRegion *region)
-{
-  return region->dna;
-}
-
-void zMapRegionFreeDNA(ZMapRegion *region)
-{
-  g_array_free(region->dna, TRUE);
-  return; 
-
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-/****************** end of file ************************************/

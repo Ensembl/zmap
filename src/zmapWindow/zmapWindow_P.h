@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 20 13:26 2005 (edgrif)
+ * Last edited: Jan 24 13:56 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.39 2005-01-24 11:47:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.40 2005-01-24 13:57:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -36,16 +36,7 @@
 
 #include <gtk/gtk.h>
 #include <ZMap/zmapWindow.h>
-
-
-/* Test scaffoling */
 #include <ZMap/zmapFeature.h>
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#define PIXELS_PER_BASE 20.0   /* arbitrary text size to limit zooming in.  Must be tied
-			       ** in to actual text size dynamically some time soon. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /* This is the name of the window config stanza. */
