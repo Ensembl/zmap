@@ -11,4 +11,11 @@ window title, the navigator etc.....
 The window title needs to be updated to the sequence for the new view each time focus
 is changed........
 
+When you split the display into several panes and then close them all down again leaving one,
+extra frames are being left, so the remaining window has several thin dark lines surrounding
+it instead of just one.  Clearly the close function is not destroying all the frames that are
+created during the split.  I'm leaving this as we don't think the users will do this too often
+and it doesn't seem to break anything, but it does suggest the split/close processing is not 
+entirely under control.
+
 
