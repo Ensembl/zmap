@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  1 14:24 2004 (edgrif)
+ * Last edited: Mar 11 15:43 2004 (edgrif)
  * Created: Thu Jul 24 14:36:08 2003 (edgrif)
- * CVS info:   $Id: zmapConn_P.h,v 1.3 2004-03-03 12:05:45 edgrif Exp $
+ * CVS info:   $Id: zmapConn_P.h,v 1.4 2004-03-12 16:00:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONN_PRIV_H
@@ -62,6 +62,7 @@ typedef struct
   pthread_mutex_t mutex ;				    /* controls access to this struct. */
   pthread_cond_t cond ;					    /* Slave waits on this. */
   ZMapThreadRequest state ;				    /* Contains request to slave. */
+  gchar *data ;						    /* Contains data for request. */
 } ZMapRequestStruct, *ZMapRequest ;
 
 /* Replies via a simpler mutex. */
@@ -69,8 +70,8 @@ typedef struct
 {
   pthread_mutex_t mutex ;				    /* controls access to this struct. */
   ZMapThreadReply state ;				    /* Contains reply from slave. */
-  char *data ;						    /* May also contain data for some replies. */
-  char *error_msg ;					    /* May contain error message for when
+  gchar *data ;						    /* May also contain data for some replies. */
+  gchar *error_msg ;					    /* May contain error message for when
 							       thread fails. */
 } ZMapReplyStruct, *ZMapReply ;
 
@@ -84,12 +85,12 @@ typedef struct _ZMapConnectionStruct
   gchar *machine ;
   int port ;
   gchar *protocol ;
-  gchar *sequence ;
   pthread_t thread_id ;
 
 
   /* These control the communication between the GUI thread and the connection threads,
-   * they are mutex locked and the request code makes use of the condition variable. */
+   * they are mutex locked and the request code makes use of the condition variable to
+   * communicate with slave threads. */
   ZMapRequestStruct request ;				    /* GUIs request. */
   ZMapReplyStruct reply ;				    /* Slaves reply. */
 
@@ -102,14 +103,11 @@ void *zmapNewThread(void *thread_args) ;
 
 /* Request routines. */
 void zmapCondVarCreate(ZMapRequest thread_state) ;
-void zmapCondVarSignal(ZMapRequest thread_state, ZMapThreadRequest new_state) ;
+void zmapCondVarSignal(ZMapRequest thread_state, ZMapThreadRequest new_state, gchar *data) ;
 void zmapCondVarWait(ZMapRequest thread_state, ZMapThreadRequest waiting_state) ;
 ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest waiting_state,
-				       TIMESPEC *timeout, gboolean reset_to_waiting) ;
+				       TIMESPEC *timeout, gboolean reset_to_waiting, gchar **data) ;
 void zmapCondVarDestroy(ZMapRequest thread_state) ;
-
-char *zmapVarGetRequestString(ZMapThreadRequest signalled_state) ;
-
 
 
 /* Reply routines. */
