@@ -72,12 +72,14 @@ ZMAP_INCLUDE = $(ROOT_DIRECTORY)/include
 
 GTK_INC = `$(PACKAGE_CONFIG) --cflags gtk+-2.0 glib-2.0`
 GNOME_INC = `$(GNOME_CONFIG) --cflags libgnomecanvas-2.0`
+FOO_INC = `$(GNOME_CONFIG) --cflags libfoocanvas`
 #GNOME_INC =
 
-INCLUDE_DIRS = $(GNOME_INC) $(GTK_INC) -I$(ZMAP_INCLUDE) -I. $(CURRENT_INC)
+INCLUDE_DIRS = $(FOO_INC) $(GNOME_INC) $(GTK_INC) -I$(ZMAP_INCLUDE) -I. $(CURRENT_INC)
 
 GTK_LIBS = `$(PACKAGE_CONFIG) --libs gtk+-2.0 gthread-2.0 glib-2.0`
 GNOME_LIBS = `$(GNOME_CONFIG) --libs libgnomecanvas-2.0`
+FOO_LIBS = `$(GNOME_CONFIG) --libs libfoocanvas`
 #GNOME_LIBS =
 
 
@@ -86,7 +88,7 @@ CURL_LIBS = `curl-config --libs`
 EXPAT_LIBS = -lexpat
 
 
-ALL_LIBS = $(ZMAP_LIB_FLAGS) $(ACECONN_LIB_FLAGS) $(GNOME_LIBS) $(GTK_LIBS) $(CURL_LIBS) $(EXPAT_LIBS) 
+ALL_LIBS = $(ZMAP_LIB_FLAGS) $(ACECONN_LIB_FLAGS) $(FOO_LIBS) $(GNOME_LIBS) $(GTK_LIBS) $(CURL_LIBS) $(EXPAT_LIBS) 
 
 
 #
