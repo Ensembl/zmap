@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep  3 14:22 2004 (rnc)
+ * Last edited: Sep 13 13:57 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.13 2004-09-03 13:23:52 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.14 2004-09-13 13:31:44 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,10 +38,37 @@
 #include <ZMap/zmapWindowDrawFeatures.h>
 
 
-static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
-static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user_data);
-static gboolean featureClickCB(ParamStruct *params, ZMapFeature feature);
-static gboolean handleCanvasEvent(GtkWidget *widget, GdkEventClient *event, gpointer data);
+// parameters passed between the various functions processing the features to be drawn on the canvas
+typedef struct _ParamStruct
+{
+  ZMapWindow           window;
+  FooCanvas           *thisCanvas;
+  FooCanvasItem       *columnGroup;
+  double               height;
+  double               length;
+  double               column_position;
+  GData               *types;
+  ZMapFeatureTypeStyle thisType;
+  ZMapFeature          feature;
+  ZMapFeatureContext   feature_context;
+  ZMapFeatureSet       feature_set;
+  GQuark               context_key;
+  GIOChannel          *channel;
+} ParamStruct;
+
+static ParamStruct params;
+
+
+// the function to be ultimately called when the user clicks on a canvas item.
+typedef void (*ZMapFeatureCallbackFunc)(ParamStruct *params);
+
+/******************** function prototypes *************************************************/
+
+static void     zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
+static void     zmapWindowProcessFeature   (GQuark key_id, gpointer data, gpointer user_data);
+static gboolean featureClickCB             (ParamStruct *params, ZMapFeature feature);
+static gboolean handleCanvasEvent          (GtkWidget *widget, GdkEventClient *event, gpointer data);
+static gboolean freeObjectKeys             (GtkWidget *widget, gpointer data);
 
 /* These callback routines are static because they are set just once for the lifetime of the
  * process. */
@@ -49,14 +76,9 @@ static gboolean handleCanvasEvent(GtkWidget *widget, GdkEventClient *event, gpoi
 /* Callbacks we make back to the level above us. */
 static ZMapFeatureCallbacks feature_cbs_G = NULL ;
 
-static ParamStruct params;
 
-typedef struct _Keys {
-    ZMapFeatureSet feature_set;
-    GQuark context_key;
-    GQuark feature_key;
-} KeyStruct, *Keys;
 
+/******************** start of function code **********************************************/
 
 /* This routine must be called just once before any other windows routine, it is undefined
  * if the caller calls this routine more than once. The caller must supply all of the callback
@@ -95,11 +117,12 @@ static gboolean featureClickCB(ParamStruct *params, ZMapFeature feature)
 
 void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_context, GData *types)
 {
-  double offset = 20.0;
+  double offset = 100.0;
   float result;
   double x1, x2, y1, y2;
   GtkWidget *parent, *label, *vbox, *vscale, *frame;
   FooCanvas *canvas = window->canvas;
+  GError    *channel_error = NULL;
 
   if (feature_context)  // Split an empty pane and you get here with no feature_context
     {
@@ -109,12 +132,12 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
       params.thisCanvas = canvas;
       params.height = (y2 - y1)*2.0; // arbitrarily increase the size for now
       params.length = feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1;
-      params.column_position = 20.0;
       params.types = types;
       params.feature_context = feature_context;
+      params.channel = g_io_channel_new_file("features.out", "w", &channel_error);
 
-      printf("parent c2: %d, child p2 %d\n", feature_context->sequence_to_parent.c2,
-	     feature_context->sequence_to_parent.p2);
+      if (!params.channel)
+	printf("Unable to open output channel.  %d %s\n", channel_error->code, channel_error->message);
 
       if (params.length < 0) params.length *= -1.0;
 
@@ -136,9 +159,16 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 			     feature_context->sequence_to_parent.c1, 
 			     feature_context->sequence_to_parent.c2);
 
+      params.column_position = result + 100;  // a bit to the right of where we drew the scale bar
+
       if (feature_context)
 	g_datalist_foreach(&(feature_context->feature_sets), zmapWindowProcessFeatureSet, &params);
     }
+
+  if (channel_error)
+    g_error_free(channel_error);
+
+  g_io_channel_shutdown(params.channel, TRUE, &channel_error);
   return;
 }
 
@@ -151,7 +181,7 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
   ParamStruct *params = (ParamStruct*)user_data;
 
   FooCanvasItem *col_group;  // each feature_set represents a column
-  double column_spacing = 40.0;
+  double column_spacing = 20.0;
 
 
   // NB for each column we create a new canvas group, with the initial y coordinate set to
@@ -174,7 +204,7 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
       params->columnGroup = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
 						foo_canvas_group_get_type(),
 						"x", (double)params->column_position,
-						"y", (double)10.0,
+						"y", (double)5.0,
 						NULL);
 
       g_datalist_foreach(&(feature_set->features), zmapWindowProcessFeature, params) ;
@@ -190,7 +220,7 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
 
 static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 {
-  ZMapFeature zMapFeature = (ZMapFeature)data ;
+  ZMapFeature zMapFeature = (ZMapFeature)data ; 
   ParamStruct *params = (ParamStruct*)user_data;
 
   ZMapSpan zMapSpan, prevSpan;
@@ -199,21 +229,30 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
   FooCanvasItem *feature_group, *object;
   int x1, x2, y0, y1, y2;
   float middle, line_width = 1.0;
-  double magFactor = params->height/params->length;
-  const gchar *key = "feature";
-  Keys keys;
+  double magFactor = (params->height / params->length) * 0.98;
+  const gchar *itemDataKey = "feature";
+  FeatureKeys featureKeys;
+  GString *buf = g_string_new("new");
+  GError *channel_error = NULL;
+  gsize bytes_written;
 
-  //  printf("type %d name %s\n", zMapFeature->type, zMapFeature->name);
 
-  keys = g_new0(KeyStruct, 1);
-  keys->feature_set = params->feature_set;
-  keys->context_key = params->context_key;
-  keys->feature_key = key_id;
+  g_string_printf(buf, "%s %d %d", 
+		  zMapFeature->name,
+		  zMapFeature->x1,
+		  zMapFeature->x2);
+
+  featureKeys = g_new0(FeatureKeyStruct, 1);
+  featureKeys->feature_set = params->feature_set;
+  featureKeys->context_key = params->context_key;
+  featureKeys->feature_key = key_id;
+
 
   switch (zMapFeature->type)
     {
     case ZMAPFEATURE_BASIC: case ZMAPFEATURE_VARIATION:     /* type 0 is a basic, 5 is allele */
     case ZMAPFEATURE_BOUNDARY: case ZMAPFEATURE_SEQUENCE:   /* boundary is 6, sequence is 7 */
+      g_string_append_printf(buf, "\n");
 
       if (zMapFeature->x2 > zMapFeature->x1)
 	{
@@ -227,35 +266,36 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 	  g_signal_connect(GTK_OBJECT(object), "event",
 			   GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
 	  
-	  g_object_set_data(G_OBJECT(object), key, keys);
+	  g_object_set_data(G_OBJECT(object), itemDataKey, featureKeys);
 	}
       break;
 
     case ZMAPFEATURE_HOMOL:     /* type 1 is a homol */
+      g_string_append_printf(buf, "\n");
 
-      if (zMapFeature->feature.homol.y2 > zMapFeature->feature.homol.y1)
+      if (zMapFeature->x2 > zMapFeature->x1)
 	{	      
 	  object = zmapDrawBox(FOO_CANVAS_ITEM(params->columnGroup), 0.0,
-			       (zMapFeature->feature.homol.y1 * magFactor), 
+			       (zMapFeature->x1 * magFactor), 
 			       params->thisType->width, 
-			       (zMapFeature->feature.homol.y2 * magFactor),
+			       (zMapFeature->x2 * magFactor), 
 			       &params->thisType->outline, 
 			       &params->thisType->foreground);
 
 	  g_signal_connect(GTK_OBJECT(object), "event",
 			   GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
 
-	  g_object_set_data(G_OBJECT(object), key, keys);
+	  g_object_set_data(G_OBJECT(object), itemDataKey, featureKeys);
 	}
       break;
 
 
     case ZMAPFEATURE_TRANSCRIPT:     /* type 4 is a transcript */
-      feature_group = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
-				  foo_canvas_group_get_type(),
-				  "x", (double)params->column_position,
-				  "y", (double)zMapFeature->x1 * magFactor,
-				  NULL);
+      feature_group = foo_canvas_item_new(FOO_CANVAS_GROUP(params->columnGroup),
+					  foo_canvas_group_get_type(),
+					  "x", (double)0.0,
+					  "y", (double)zMapFeature->x1 * magFactor,
+					  NULL);
 
       for (j = 1; j < zMapFeature->feature.transcript.exons->len; j++)
 	{
@@ -286,6 +326,7 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 
 	  zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
 	      
+	  g_string_append_printf(buf, " Transcript: %d %d\n", zMapSpan->x1, zMapSpan->x2);
 	  if (zMapSpan->x2 > zMapSpan->x1)
 	    {
 	      if (j == 0)
@@ -301,15 +342,24 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 	      g_signal_connect(GTK_OBJECT(object), "event",
 			       GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
 
-	      g_object_set_data(G_OBJECT(object), key, keys);
+	      g_object_set_data(G_OBJECT(object), itemDataKey, featureKeys);
 	    }
 	}
       break;
 
     default:
+      printf("Not displaying %s type %s\n", zMapFeature->name, zMapFeature->type);
       break;
     }
 
+  g_io_channel_write_chars(params->channel, buf->str, -1, &bytes_written, &channel_error);
+  g_string_free(buf, TRUE);
+  if (channel_error)
+    g_error_free(channel_error);
+
+  if (object)
+    g_signal_connect(GTK_OBJECT(object), "destroy",
+		     GTK_SIGNAL_FUNC(freeObjectKeys), featureKeys);
   
   return;
 }
@@ -321,29 +371,35 @@ static gboolean handleCanvasEvent(GtkWidget *widget, GdkEventClient *event, gpoi
   ZMapFeatureContext feature_context;
   ZMapFeatureSet feature_set;
   ZMapFeature feature;
-  const gchar *key = "feature";
-  Keys keys;
+  const gchar *itemDataKey = "feature";
+  FeatureKeys featureKeys;
+  gboolean result = FALSE;  // if not a BUTTON_PRESS, leave for any other event handlers.
 
-  switch (event->type)
+  if (event->type == GDK_BUTTON_PRESS)
   {
-  case GDK_BUTTON_PRESS:
-    // retrieve the KeyStruct from the clicked object, obtain the feature_set from that and the
+    // retrieve the FeatureKeyStruct from the clicked object, obtain the feature_set from that and the
     // feature from that, using the two GQuarks, context_key and feature_key. Then call the 
     // click callback function, passing params and feature so the details of the clicked object
     // can be displayed in the info_panel.
-    keys = g_object_get_data(G_OBJECT(widget), key);  
-    feature_set = g_datalist_id_get_data(&(params->feature_context->feature_sets), keys->context_key);
-    feature = g_datalist_id_get_data(&(feature_set->features), keys->feature_key); 
+    featureKeys = g_object_get_data(G_OBJECT(widget), itemDataKey);  
+    feature_set = g_datalist_id_get_data(&(params->feature_context->feature_sets), featureKeys->context_key);
+    feature = g_datalist_id_get_data(&(feature_set->features), featureKeys->feature_key); 
     featureClickCB(params, feature);                            
-    return TRUE;
-
-  default: return FALSE;
+    result = TRUE;
   }
-  /* Event not handled; try parent item */
-  return FALSE;
+
+  return result;
 
 }
 
 
+static gboolean freeObjectKeys(GtkWidget *widget, gpointer data)
+{
+  FeatureKeys featureKeys = (FeatureKeyStruct*)data;
+
+  g_free(featureKeys);
+
+  return FALSE;
+}
 
 /****************** end of file ************************************/
