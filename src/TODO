@@ -8,6 +8,30 @@ Everything should be under some kind of more general heading.
 
 
 
+BUILD
+-----
+
+We should move to an autoconf/make etc. system for builds, would be MUCH better.
+
+
+
+
+BUGS
+----
+
+- red border around windows
+
+When doing lots of window splitting we sometimes end up with two highlighted windows
+which seems not good. One window gets highlighted but not then unhighlighted, the
+actual focus window still seems good though and the highlighting of the "stuck" window
+can be undone by moving the pointer in and out of the window.
+
+
+
+
+
+
+
 CANVAS
 ------
 
