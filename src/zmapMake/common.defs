@@ -34,7 +34,8 @@ MAKEDEPEND_FILE = makedepend.$(ZMAP_PLATFORM)
 # lots of open source software uses pkg-config, this is the stuff we need:
 PACKAGE_CONFIG = 
 PACKAGE_PATH = 
-FOO_CANVAS_PATH = /nfs/disk100/acedb/foocanvas-ins/$(ZMAP_PLATFORM)
+#FOO_CANVAS_PATH = /nfs/disk100/acedb/foocanvas-ins/$(ZMAP_PLATFORM)
+FOO_CANVAS_PATH = /nfs/disk100/acedb/prefix/$(ZMAP_LOCAL)
 
 
 
