@@ -1,4 +1,4 @@
-/*  Last edited: Oct 13 09:14 2004 (rnc) */
+/*  Last edited: Oct 19 15:38 2004 (rnc) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -106,10 +106,12 @@ void zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double
 
   return;
 }
+
+
                                                                                 
 
 float zmapDrawScale(FooCanvas *canvas, GtkWidget *scrolledWindow, 
-		    float offset, double zoom_factor, int start, int end)
+		    double offset, double zoom_factor, int start, int end)
 {
   FooCanvasItem *group;
   float mag = 1.0, cutoff; 
@@ -129,6 +131,7 @@ float zmapDrawScale(FooCanvas *canvas, GtkWidget *scrolledWindow,
   GtkAdjustment *adj;
   int cx,cy;
   double wx, wy, wtop;
+  float u, sub;
   
   gdk_color_parse("black", &black);
   gdk_color_parse("yellow", &yellow);

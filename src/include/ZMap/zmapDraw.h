@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Oct  8 11:30 2004 (rnc)
+ * Last edited: Oct 19 15:38 2004 (rnc)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.9 2004-10-13 12:29:55 rnc Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.10 2004-10-19 14:42:34 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -43,7 +43,7 @@
 
 
 float zmapDrawScale(FooCanvas *canvas, GtkWidget *scrolledWindow,
-		    float offset, double zoom_factor, int start, int end) ;
+		    double offset, double zoom_factor, int start, int end) ;
 void  zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 		   GdkColor *colour, double thickness);
 FooCanvasItem *zmapDrawBox(FooCanvasItem *group, 
