@@ -26,13 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
-<<<<<<< zmapFeature.c
- * Last edited: Nov 19 11:46 2004 (edgrif)
-=======
- * Last edited: Nov 15 10:35 2004 (rnc)
->>>>>>> 1.6
+ * Last edited: Nov 22 16:30 2004 (rnc)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeature.c,v 1.7 2004-11-19 14:32:14 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.8 2004-11-22 16:31:46 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,29 +46,33 @@ static gboolean printLine(GIOChannel *channel, gchar *line);
 char *zmapLookUpEnum(int id, int enumType)
 {
   /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
-  static char *types[8]   = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
-			     "VARIATION", "BOUNDARY", "SEQUENCE"} ;
-  static char *strands[3] = {"ZMAPSTRAND_NONE", "ZMAPSTRAND_DOWN", "ZMAPSTRAND_UP" };
-  static char *phases[4]  = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" };
+  static char *types  [] = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
+			    "VARIATION", "BOUNDARY", "SEQUENCE"} ;
+  static char *strands[] = {"ZMAPSTRAND_NONE", "ZMAPSTRAND_DOWN", "ZMAPSTRAND_UP" };
+  static char *phases [] = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" };
+  char *str = NULL;
 
   switch (enumType)
     {
     case TYPE_ENUM:
-      return types[id];
+      str = types[id];
       break;
 
     case STRAND_ENUM:
-      return strands[id];
+      str = strands[id];
       break;
 
     case PHASE_ENUM:
-      return phases[id];
+      str = phases[id];
       break;
 
     default:
       break;
     }
-  return NULL;
+
+  zMapAssert(str);
+
+  return str;
 }
 
 char *zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
