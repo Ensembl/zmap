@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 13 10:26 2003 (edgrif)
+ * Last edited: Nov 17 17:33 2003 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.1 2003-11-13 15:06:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.2 2003-11-18 11:30:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -48,8 +48,8 @@ typedef struct _ZMapWindowStruct
 
   GdkAtom zmap_atom ;
 
-  zmapVoidIntCallbackFunc manager_routine ;
-  void *manager_data ;
+  zmapVoidIntCallbackFunc app_routine ;
+  void *app_data ;
 
 } ZMapWindowStruct ;
 

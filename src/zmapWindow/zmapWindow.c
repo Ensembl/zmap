@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 17:40 2003 (edgrif)
+ * Last edited: Nov 17 18:12 2003 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.2 2003-11-14 17:40:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.3 2003-11-18 11:30:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
 
 
 ZMapWindow zMapWindowCreate(char *machine, int port, char *sequence, 
-			    zmapVoidIntCallbackFunc manager_routine, void *manager_data)
+			    zmapVoidIntCallbackFunc app_routine, void *app_data)
 {
   ZMapWindow window ;
   GtkWidget *toplevel, *vbox, *menubar, *button_frame, *connect_frame ;
@@ -53,8 +53,8 @@ ZMapWindow zMapWindowCreate(char *machine, int port, char *sequence,
   window->machine = g_strdup(machine) ;
   window->port = port ;
   window->sequence = g_strdup(sequence) ;
-  window->manager_routine = manager_routine ;
-  window->manager_data = manager_data ;
+  window->app_routine = app_routine ;
+  window->app_data = app_data ;
   window->zmap_atom = gdk_atom_intern(ZMAP_ATOM, FALSE) ;
 
   title = g_strdup_printf("ZMap (%s, port %d): %s", machine, port,
@@ -161,7 +161,7 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapWindow window = (ZMapWindow)cb_data ;
 
-  (*(window->manager_routine))(window->manager_data, ZMAP_WINDOW_QUIT) ;
+  (*(window->app_routine))(window->app_data, ZMAP_WINDOW_QUIT) ;
 
   return ;
 }
@@ -194,8 +194,14 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
       ZMAP_DEBUG(("GUI: got dataEvent, contents: \"%s\"\n", string)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       gtk_text_buffer_insert(gtk_text_view_get_buffer(GTK_TEXT_VIEW(window->text)),
 			     NULL, string, -1) ;	    /* -1 => insert whole string. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(window->text)),
+			       string, -1) ;
 
       g_free(string) ;
       g_free(window_data) ;
