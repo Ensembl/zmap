@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov 29 12:01 2004 (rnc)
+ * Last edited: Nov 29 16:23 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.34 2004-11-29 14:24:05 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.35 2004-11-29 16:29:04 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -482,6 +482,25 @@ ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
     window = view_window->window ;
 
   return window ;
+}
+
+
+GList *zMapViewGetWindowList(ZMapViewWindow view_window)
+{
+  zMapAssert(view_window);
+
+  return view_window->parent_view->window_list;
+}
+
+
+void zMapViewSetWindowList(ZMapViewWindow view_window, GList *list)
+{
+  zMapAssert(view_window);
+  zMapAssert(list);
+
+  view_window->parent_view->window_list = list;
+
+  return;
 }
 
 
