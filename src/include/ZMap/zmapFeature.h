@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Jul 14 15:44 2004 (edgrif)
+ * Last edited: Jul 19 09:57 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.7 2004-07-15 15:02:57 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.8 2004-07-19 09:25:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -209,7 +209,7 @@ typedef struct ZMapFeatureSetStruct_
 {
   char *source ;					    /* e.g. "Genewise predictions" */
 
-  GArray *features ;					    /* An array of ZMapFeatureStruct. */
+  GData *features ;					    /* A set of ZMapFeatureStruct. */
 
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
@@ -230,7 +230,7 @@ typedef struct ZMapFeatureContextStruct_
 							       sequence, n.b. this feature set may only
 							       span part of the sequence. */
 
-  GData *features ;					    /* A set of ZMapFeatureSet. */
+  GData *feature_sets ;					    /* A set of ZMapFeatureSetStruct. */
 
 } ZMapFeatureContextStruct, *ZMapFeatureContext ;
 
