@@ -25,15 +25,16 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 21 14:42 2004 (rnc)
+ * Last edited: Nov  4 17:12 2004 (rnc)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.16 2004-10-21 13:55:21 rnc Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.17 2004-11-08 10:22:17 rnc Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <glib.h>
 #include <ZMap/zmapDraw.h>
+
 
 
 
@@ -130,7 +131,13 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   gdk_color_parse("yellow", &yellow);
 
   /* work out units and subunits for the scale bar */
-  cutoff = 50.0 / zoom_factor;    /* why 50.0? Arbitrary fudge factor modified from mapcontrol.c */
+  /* cutoff defines, via the while loop, the units for our major and minor ticks. This code was
+  ** all copied directly from acedb - w7/mapcontrol.c - which seems to assume that a screen line
+  ** is about 13 pixels high and that a major scalebar tick every 5 lines is about right. We work
+  ** in pixels, which is why we use 65 as our seed.  It's 5 times the number of bases/pixel. When
+  ** I work out how to get the line height from the canvas directly, I'll change this bit. */
+
+  cutoff = 65.0 / zoom_factor;    
   unit = subunit = 1.0 ;
 
   if (cutoff < 0)
@@ -155,7 +162,8 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   iSubunit = subunit + 0.5 ;
 
   /* calculate nomial ie thousands, millions, etc */
-  for (type = 1, unitType = 0 ; iUnit > 0 && 1000 * type < iUnit && unitType < 5; 
+  for (type = 1, unitType = 0 ; 
+       iUnit > 0 && 1000 * type < iUnit && unitType < 5; 
        unitType++, type *= 1000) ;
 
   group = foo_canvas_item_new(foo_canvas_root(canvas),
@@ -173,12 +181,12 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
        seqPos < end; 
        seqPos += iUnit, scalePos += iUnit)
     {
-      zmapDrawLine(FOO_CANVAS_GROUP(group), 32.0, scalePos, 40.0, scalePos, &black, 1.0);
+      zmapDrawLine(FOO_CANVAS_GROUP(group), 30.0, scalePos, 40.0, scalePos, &black, 1.0);
       buf[0] = unitName[unitType] ; buf[1] = 0 ;
       sprintf (cp, "%d%s", seqPos/type, buf) ;
       if (width < strlen (cp))
         width = strlen (cp) ;
-      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", (31.0 - (5.0 * width)), scalePos); 
+      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", (29.0 - (5.0 * width)), scalePos); 
 
       /* There's a bug whereby very long objects are corrupted when you zoom right in,
       ** so instead of a single long line, we draw it in several short sections. */  
@@ -192,7 +200,6 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   /* minor ticks */
   for (seqPos = start, scalePos = start; seqPos < end; seqPos += iSubunit, scalePos += iSubunit)
       zmapDrawLine(FOO_CANVAS_GROUP(group), 35.0, scalePos, 40.0, scalePos, &black, 1.0);
-
 
   return group;
 }
