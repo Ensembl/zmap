@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar 10 12:15 2005 (rds)
+ * Last edited: Mar 15 14:23 2005 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.48 2005-03-10 12:18:19 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.49 2005-03-15 14:31:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -362,23 +362,18 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      gboolean sequence_server, writeback_server ;
 	      ZMapViewConnection view_con ;
 
-	      /* There MUST be a host and a protocol, port is not needed for some protocols,
-	       * e.g. http, because it should be allowed to default. */
 	      url = zMapConfigGetElementString(next_server, "url") ;
 	      format = zMapConfigGetElementString(next_server, "format") ;
 	      timeout = zMapConfigGetElementInt(next_server, "timeout") ;
 	      version = zMapConfigGetElementString(next_server, "version") ;
 	      styles_file = zMapConfigGetElementString(next_server, "stylesfile") ;
 
-              url_struct = url_parse(url, &url_parse_error);
-              if(!url_struct)
-                zMapLogWarning("GUI: url %s did not parse, error was %s....\n",
-                               url, url_error(url_parse_error)) ;
-              else
-                zMapLogWarning("GUI: url %s looks ok, host: %s\nport: %d....\n",
-                               url_struct->url, 
-                               url_struct->host, 
-                               url_struct->port) ; 
+              /* url is absolutely required. Go on to next stanza if there isn't one.
+               * Done before anything else so as not to set seq/write servers to invalid locations  */
+              if(!url){
+                zMapLogWarning("GUI: %s", "computer says no url specified");
+                continue;
+              }
 
 	      /* We only record the first sequence and writeback servers found, this means you
 	       * can only have one each of these which seems sensible. */
@@ -387,8 +382,15 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      if (!zmap_view->writeback_server)
 		writeback_server = zMapConfigGetElementBool(next_server, "writeback") ;
 
-              
-              if (url_struct && (view_con = createConnection(zmap_view, url_struct,
+              /* Parse the url, only here if there is a url to parse */
+              url_struct = url_parse(url, &url_parse_error);
+              if (!url_struct)
+                {
+                  zMapLogWarning("GUI: url %s did not parse. Parse error < %s >\n",
+                                 url,
+                                 url_error(url_parse_error)) ;
+                }
+              else if (url_struct && (view_con = createConnection(zmap_view, url_struct,
 						    format,
 						    timeout, version, styles_file,
 						    sequence_server, writeback_server,
@@ -407,10 +409,13 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 		  if (!zMapFeatureTypeSetAugment(&(zmap_view->types), &(view_con->types)))
 		    zMapLogCritical("Could not merge types for server %s into existing types.", 
                                     url_struct->host) ;
-
 		}
 	      else
 		{
+                  zMapLogWarning("GUI: url %s looks ok, host: %s\nport: %d....\n",
+                                 url_struct->url, 
+                                 url_struct->host, 
+                                 url_struct->port) ; 
 		  zMapLogWarning("Could not connect to server on %s, port %d", 
                                  url_struct->host, 
                                  url_struct->port) ;
