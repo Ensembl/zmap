@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Mar 24 07:59 2005 (edgrif)
+ * Last edited: Apr  5 15:36 2005 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.33 2005-03-24 08:19:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.34 2005-04-05 14:37:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -120,24 +120,24 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 void zMapWindowMove(ZMapWindow window, double start, double end) ;
 void zMapWindowReset(ZMapWindow window) ;
 GtkWidget *zMapWindowGetWidget(ZMapWindow window);
+
+/* this looks like it needs some sorting out ! */
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
 void zMapWindowSetZoomStatus(ZMapWindow window) ;
 double zMapWindowGetZoomFactor(ZMapWindow window);
 void zMapWindowSetZoomFactor(ZMapWindow window, double zoom_factor);
 void zMapWindowSetMinZoom   (ZMapWindow window);
+
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
+FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
+					       ZMapFeatureType feature_type, char *feature_name,
+					       ZMapStrand strand, int start, int end,
+					       int query_start, int query_end) ;
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
-gboolean zMapWindowScrollToItem    (ZMapWindow window, gchar *type, GQuark feature_id);
+gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) ;
 void zMapWindowDestroyLists    (ZMapWindow window);
-GQuark zMapWindowGetFocusQuark   (ZMapWindow window);
-gchar *zMapWindowGetTypeName(ZMapWindow window);
 
 void zMapWindowDestroy(ZMapWindow window) ;
-
-
-
-
-
 
 
 /* this may be better in a utils directory...not sure.... */
