@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: May  7 10:42 2004 (edgrif)
+ * Last edited: Jun 23 09:40 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.7 2004-05-07 09:43:55 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.8 2004-06-23 08:42:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,23 @@ static void destroyConfig(ZMapConfig config) ;
  * \brief  Configuration File Handling.
  * 
  * zMapConfig routines read and write data from configuration files for ZMap.
+ * 
+ * The configuration file(s) for ZMap are a series of stanzas of the form:
+ * 
+ * <PRE>
+ * stanza_name                e.g.     server
+ * {                                   {
+ * resource = value                    host = "griffin"
+ * resource = value                    port = 18100
+ * }                                   protocol = "acedb"
+ *                                     }
+ *  </PRE>
+ * 
+ * Resources may take boolean, integer, float or string values.
+ *
+ * String values must be enclosed in double quotes, e.g. host = "griffin"
+ *
+ * Boolean values must be specified as either true or false, e.g. logging = false
  * 
  * zMapConfigCreate() reads all the configuration files and merges them
  * into a unified array of resources. Specific stanzas can then be found
