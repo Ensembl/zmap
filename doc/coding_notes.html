@@ -1,17 +1,17 @@
 <HTML>
 
 <HEAD>
-<TITLE>Coding Notes</TITLE>
+  <TITLE>Coding Notes</TITLE>
 </HEAD>
 
 <BODY>
-<H1>Coding Notes</H1>
+  <H1>Coding Notes</H1>
 
-<p>This is simply a collection of notes about coding stuff to maintain consistency.
+  <p>This is simply a collection of notes about coding stuff to maintain consistency.</p>
 
-<P>A good way to maintain consistency is have the editor do the indenting/commenting
+  <p>A good way to maintain consistency is have the editor do the indenting/commenting
 etc. If you use the right profile code then there are some emacs functions
-to do this which include:
+to do this which include:</p>
 
 <ul>
   <li><b>Alt-X indent-region</b> will indent the code for the marked region.
@@ -25,7 +25,7 @@ to do this which include:
 <P>The standard for code has been to indent by two for each block, there seems
 no reason to change it. Line length should be kept to somewhere between 80 and
 90 chars, i.e. something that will fit comfortably on to a screen with a reasonable
-font size. <b>BUT</b> exceeding this length occasionally is not a problem.
+font size. <b>BUT</b> exceeding this length occasionally is not a problem.</p>
 
 
 <pre><code>int func(void)
@@ -45,7 +45,7 @@ font size. <b>BUT</b> exceeding this length occasionally is not a problem.
 
 <h2>Commenting Style</h2>
 
-<P>Block comments and line comments should be in this style:
+<P>Block comments and line comments should be in this style:</P>
 
 
 <pre><code>
@@ -60,6 +60,28 @@ font size. <b>BUT</b> exceeding this length occasionally is not a problem.
 
 
 
+<<<<<<< coding_notes.html
+
+<h2>Naming Style</h2>
+
+<p>It's useful to distinguish between the following sets
+of functions that are external in the linker sense:
+</p>
+<ul>
+  <li>functions that are part of the external interface of a package</li>
+  <li>functions that are internal to the package but need to be shared by several
+files within the package.</li>
+</ul>
+
+<p>Hence the convention is:</p>
+<ul>
+  <li>zMapNNNNN for external interface functions</li>
+  <li>zmapNNNNN for functions that are internal to the package</li>
+</ul>
+</p>
+
+<!-- horizontal rule -->
+=======
 <h2>Type, Function and variable naming</h2>
 
 <P>General naming conventions:
@@ -100,7 +122,9 @@ functions and static functions:
 
 
 
+>>>>>>> 1.2
 <HR>
+
 <ADDRESS><a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a></ADDRESS>
 <!-- hhmts start -->
 Last modified: Tue Apr 27 15:41:36 BST 2004
