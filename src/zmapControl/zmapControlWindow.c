@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: May 27 12:19 2004 (edgrif)
+ * Last edited: Jun 25 13:50 2004 (rnc)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.3 2004-05-27 13:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.4 2004-06-28 15:06:39 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,11 +63,17 @@ gboolean zmapControlWindowCreate(ZMap zmap, char *zmap_id)
   menubar = zmapControlWindowMakeMenuBar(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
 
+  zmap->zMapWindow = zMapWindowCreateZMapWindow();
+
   button_frame = zmapControlWindowMakeButtons(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), button_frame, FALSE, TRUE, 0);
 
+  /* zmapWindow/zmapWindowFrame.c */
   zmap->view_parent = connect_frame = zmapControlWindowMakeFrame(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), connect_frame, TRUE, TRUE, 0);
+
+  /* zmapWindow/zmapcontrol.c */
+  zMapDisplay(zmap, NULL,NULL,NULL,NULL,NULL,FALSE);
 
   gtk_widget_show_all(toplevel) ;
 
