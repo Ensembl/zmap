@@ -1,4 +1,4 @@
-/*  Last edited: Jul  8 12:21 2004 (rnc) */
+/*  Last edited: Jul 19 10:01 2004 (edgrif) */
 /* This is a temporary file only to help with testing....it will go once GFF code is combined
  * into the threads etc. code proper.... */
 
@@ -9,7 +9,11 @@
 
 
 static ZMapFeatureContext parseGFF(char *filename) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void testfunc(GQuark key_id, gpointer data, gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 ZMapFeatureContext testGetGFF(void)
@@ -131,6 +135,8 @@ static ZMapFeatureContext parseGFF(char *filename)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void testfunc(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureSet zMapFeatureSet = (ZMapFeatureSet)data;
@@ -146,6 +152,8 @@ static void testfunc(GQuark key_id, gpointer data, gpointer user_data)
     }
   return;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
