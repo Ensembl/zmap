@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Sep 10 18:07 2004 (edgrif)
+ * Last edited: Sep 15 15:13 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.11 2004-09-10 17:12:30 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.12 2004-09-17 08:32:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,7 +109,11 @@ void *zmapNewThread(void *thread_args)
   thread_cb->thread_died = FALSE ;
   thread_cb->initial_error = NULL ;
   thread_cb->server = NULL ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   thread_cb->server_request = ZMAP_SERVERREQ_INVALID ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   thread_cb->server_reply = NULL ;
@@ -138,10 +142,21 @@ void *zmapNewThread(void *thread_args)
       goto clean_up ;
     }
 
-  if (!zMapServerOpenConnection(thread_cb->server))
+  if (zMapServerOpenConnection(thread_cb->server) != ZMAP_SERVERRESPONSE_OK)
     {
       thread_cb->thread_died = TRUE ;
       thread_cb->initial_error = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNOPEN,
+						 zMapServerLastErrorMsg(thread_cb->server)) ;
+      goto clean_up ;
+    }
+
+
+  /* Now we have the added step of creating a sequence context from the sequence start/end data. */
+  if (zMapServerSetContext(thread_cb->server, connection->sequence, connection->start, connection->end)
+      != ZMAP_SERVERRESPONSE_OK)
+    {
+      thread_cb->thread_died = TRUE ;
+      thread_cb->initial_error = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNCONTEXT,
 						 zMapServerLastErrorMsg(thread_cb->server)) ;
       goto clean_up ;
     }
@@ -160,16 +175,16 @@ void *zmapNewThread(void *thread_args)
 
   while (1)
     {
-      gchar *sequence ;
+      void *request ;
 
       ZMAP_THR_DEBUG(("%x: about to do timed wait\n", connection->thread_id)) ;
 
       /* this will crap over performance...asking the time all the time !! */
       timeout.tv_sec = 5 ;				    /* n.b. interface seems to absolute time. */
       timeout.tv_nsec = 0 ;
-      sequence = NULL ;
+      request = NULL ;
       signalled_state = zmapCondVarWaitTimed(thread_state, ZMAP_REQUEST_WAIT, &timeout, TRUE,
-					     &sequence) ;
+					     &request) ;
 
       /* The whole request bit needs sorting out...into types and data... */
 
@@ -187,17 +202,21 @@ void *zmapNewThread(void *thread_args)
 	  int reply_len = 0 ;
 	  ZMapServerResponseType server_response ;
 
-	  /* Must have a sequence at this stage.... */
-	  zMapAssert(*sequence) ;
+	  /* Must have a request at this stage.... */
+	  zMapAssert(request) ;
 
 	  /* this needs changing according to request.... */
-	  ZMAP_THR_DEBUG(("%x: getting sequence %s....\n", connection->thread_id, sequence)) ;
+	  ZMAP_THR_DEBUG(("%x: servicing request....\n", connection->thread_id)) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  thread_cb->server_request = ZMAP_SERVERREQ_SEQUENCE ;
-
 
 	  server_response = zMapServerRequest(thread_cb->server, thread_cb->server_request,
 					      sequence, &(thread_cb->feature_context)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  server_response = zMapServerRequest(thread_cb->server, request) ;
 
 	  switch (server_response)
 	    {
@@ -206,10 +225,16 @@ void *zmapNewThread(void *thread_args)
 		ZMAP_THR_DEBUG(("%x: got all data....\n", connection->thread_id)) ;
 
 		/* Signal that we got some data. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA,
 					(void *)(thread_cb->feature_context)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA, request) ;
+
 		
-		thread_cb->feature_context = NULL ;	    /* Reset, we don't free this data. */
+		request = NULL ;			    /* Reset, we don't free this data. */
 		break ;
 	      }
 	    case ZMAP_SERVERRESPONSE_TIMEDOUT:
@@ -218,7 +243,7 @@ void *zmapNewThread(void *thread_args)
 	      {
 		char *error_msg ;
 
-		ZMAP_THR_DEBUG(("%x: request for %s failed....\n", connection->thread_id, sequence)) ;
+		ZMAP_THR_DEBUG(("%x: request failed....\n", connection->thread_id)) ;
 
 		error_msg = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNREQUEST,
 					    zMapServerLastErrorMsg(thread_cb->server)) ;

@@ -25,9 +25,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep 10 17:01 2004 (edgrif)
+ * Last edited: Sep 17 09:31 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapSlave_P.h,v 1.5 2004-09-10 17:13:09 edgrif Exp $
+ * CVS info:   $Id: zmapSlave_P.h,v 1.6 2004-09-17 08:32:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SLAVE_P_H
@@ -49,17 +49,6 @@ typedef struct
 							       termination. */
 
   ZMapServer server ;					    /* The server for this thread..... */
-
-
-  /* this whole section is a lash up for now, we will need a more flexible mechanism in the future. */
-
-  /* Request... */
-  ZMapServerRequestType server_request ;
-
-  /* Reply.... */
-  ZMapFeatureContext feature_context ;
-
-
 } zmapThreadCBstruct, *zmapThreadCB ;
 
 
@@ -68,6 +57,7 @@ typedef struct
 /* Error messages, needs some refining. */
 #define ZMAPSLAVE_CONNCREATE  "Connection creation failed"
 #define ZMAPSLAVE_CONNOPEN    "Connection open failed"
+#define ZMAPSLAVE_CONNCONTEXT "Connection create context failed"
 #define ZMAPSLAVE_CONNREQUEST "Connection request failed"
 
 
