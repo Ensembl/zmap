@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 18 17:38 2004 (rnc)
+ * Last edited: Nov 19 13:20 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.17 2004-11-19 10:11:47 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.18 2004-11-19 13:24:27 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -223,58 +223,65 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_i
   ZMapFeatureItem featureItem = NULL;
   ZMapFeature feature;
   ZMapFeatureTypeStyle thisType;
+  gboolean result;
+  G_CONST_RETURN gchar *quarkString;
 
-  featureItem = (ZMapFeatureItem)g_datalist_id_get_data(&(window->featureItems), feature_id);
-  if (featureItem)
+  if (!(quarkString = g_quark_to_string(feature_id)))
     {
-      feature = (ZMapFeature)g_datalist_id_get_data(&(featureItem->feature_set->features), featureItem->feature_key);
-      zMapAssert(feature);
-      
-      thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(window->types), type);
-      zMapAssert(thisType);
-      
-      /* The selected object might be outside the current scroll region. */
-      recalcScrollRegion(window, feature->x1, feature->x2);
-      
-      /* featureItem holds canvasItem and ptr to the feature_set containing the feature. */
-      featureItem =  g_datalist_id_get_data(&(window->featureItems), feature_id);
-      feature =  g_datalist_id_get_data(&(featureItem->feature_set->features), feature_id);
-      
-      /* scroll up or down to user's selection.  
-      ** Note that because we zoom asymmetrically, we only convert the y coord 
-      ** to canvas coordinates, leaving the x as is.  */
-      foo_canvas_item_get_bounds(featureItem->canvasItem, &x1, &y1, &x2, &y2); /* world coords */
-
-      if (y1 <= 0.0)    /* we might be dealing with a multi-box item, eg transcript */
-	{
-	  double px1, py1, px2, py2;
-
-	  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(featureItem->canvasItem->parent),
-				     &px1, &py1, &px2, &py2); 
-	  if (py1 > 0.0)
-	      y1 = py1;
-	}
-
-      foo_canvas_w2c(window->canvas, 0.0, y1, &cx, &cy); 
-      foo_canvas_scroll_to(window->canvas, (int)x1, cy);                       /* canvas pixels */
-      
-      foo_canvas_item_raise_to_top(featureItem->canvasItem);
-      
-      /* highlight the item */
-      zmapWindowHighlightObject(featureItem->canvasItem, window, thisType);
-      
-      zMapFeatureClickCB(window, feature); /* show feature details on info_panel  */
-      
-      window->focusFeature = featureItem->canvasItem;
-      window->focusType = thisType;
-
-      return TRUE;
+      zMapLogWarning("Quark %d not a valid quark\n", feature_id) ;
+      result = FALSE;
     }
   else
     {
-      zMapLogWarning("Quark %d not found in list of known features\n", feature_id) ;
-      return FALSE;
-    }
+      featureItem = (ZMapFeatureItem)g_datalist_id_get_data(&(window->featureItems), feature_id);
+      if (featureItem)
+	{
+	  feature = (ZMapFeature)g_datalist_id_get_data(&(featureItem->feature_set->features), featureItem->feature_key);
+	  zMapAssert(feature);
+	  
+	  thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(window->types), type);
+	  zMapAssert(thisType);
+	  
+	  /* The selected object might be outside the current scroll region. */
+	  recalcScrollRegion(window, feature->x1, feature->x2);
+	  
+	  /* featureItem holds canvasItem and ptr to the feature_set containing the feature. */
+	  featureItem =  g_datalist_id_get_data(&(window->featureItems), feature_id);
+	  feature =  g_datalist_id_get_data(&(featureItem->feature_set->features), feature_id);
+	  
+	  /* scroll up or down to user's selection.  
+	  ** Note that because we zoom asymmetrically, we only convert the y coord 
+	  ** to canvas coordinates, leaving the x as is.  */
+	  foo_canvas_item_get_bounds(featureItem->canvasItem, &x1, &y1, &x2, &y2); /* world coords */
+	  
+	  if (y1 <= 0.0)    /* we might be dealing with a multi-box item, eg transcript */
+	    {
+	      double px1, py1, px2, py2;
+	      
+	      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(featureItem->canvasItem->parent),
+					 &px1, &py1, &px2, &py2); 
+	      if (py1 > 0.0)
+		y1 = py1;
+	    }
+	  
+	  foo_canvas_w2c(window->canvas, 0.0, y1, &cx, &cy); 
+	  foo_canvas_scroll_to(window->canvas, (int)x1, cy);                       /* canvas pixels */
+	  
+	  foo_canvas_item_raise_to_top(featureItem->canvasItem);
+	  
+	  /* highlight the item */
+	  zmapWindowHighlightObject(featureItem->canvasItem, window, thisType);
+	  
+	  zMapFeatureClickCB(window, feature); /* show feature details on info_panel  */
+	  
+	  window->focusFeature = featureItem->canvasItem;
+	  window->focusType = thisType;
+	  
+	  result =  TRUE;
+	}
+    }  /* else silently ignore the fact we've not found it. */
+
+  return result;
 }
 
 
@@ -339,7 +346,8 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 
   if (start)
     {
-      if (ITEM_FOUND = zMapWindowScrollToItem(window, type, id))
+      if ((ITEM_FOUND = zMapWindowScrollToItem(window, type, id)))  /* extra parens to zap 
+								     * compiler warning */
 	gtk_widget_show_all(GTK_WIDGET(window->parent_widget));
       else
 	zMapShowMsg(ZMAP_MSG_CRASH, "Quark %d of type %s not found in list of known features\n", id, type);
