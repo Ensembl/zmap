@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  4 14:33 2004 (rnc)
+ * Last edited: Nov  8 11:48 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.26 2004-11-08 10:26:30 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.27 2004-11-08 12:05:53 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -196,6 +196,9 @@ GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 void zmapFeatureInit(ZMapFeatureCallbacks callbacks) ;
 
 void zmapWindowPrintCanvas(FooCanvas *canvas) ;
+
+gboolean zMapFeatureClickCB  (ZMapCanvasDataStruct *canvasData, ZMapFeature feature);
+void     zMapHighlightObject (FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData);
 
 
 #endif /* !ZMAP_WINDOW_P_H */
