@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Oct  4 13:58 2004 (edgrif)
+ * Last edited: Oct  4 17:05 2004 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.11 2004-10-04 12:58:40 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.12 2004-10-14 10:25:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -112,15 +112,8 @@ typedef struct _ZMapViewConnectionStruct
 } ZMapViewConnectionStruct, *ZMapViewConnection ;
 
 
-
-
-gboolean zmapViewMergeFeatures(ZMapFeatureContext *current_context_inout,
-			       ZMapFeatureContext new_context) ;
-
-
 void zmapViewBusy(ZMapView zmap_view, gboolean busy) ;
 gboolean zmapAnyConnBusy(GList *connection_list) ;
-
 
 int          zMapWindowGetRegionLength (ZMapWindow window);
 Coord        zMapWindowGetRegionArea   (ZMapWindow window, int area);

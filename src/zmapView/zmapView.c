@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct  5 12:38 2004 (rnc)
+ * Last edited: Oct 13 14:47 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.25 2004-10-13 12:37:35 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.26 2004-10-14 10:25:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,7 +69,8 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 static void destroyConnection(ZMapViewConnection *view_conn) ;
 
 static void resetWindows(ZMapView zmap_view) ;
-static void displayDataWindows(ZMapView zmap_view, void *data) ;
+static void displayDataWindows(ZMapView zmap_view,
+			       ZMapFeatureContext all_features, ZMapFeatureContext new_features) ;
 static void killWindows(ZMapView zmap_view) ;
 
 
@@ -196,7 +197,7 @@ ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 	      /* If we are running then we should display the current data in the new window we
 	       * have just created. */
 	      zMapWindowDisplayData(view_window->window,
-				    (void *)(zmap_view->features), zmap_view->types) ;
+				    zmap_view->features, NULL, zmap_view->types) ;
 
 	    }
 
@@ -1080,7 +1081,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
   ZMapConnection connection ;
 
   if ((connection = zMapConnCreate(machine, port, protocol, timeout,
-				   sequence, start, end, load_features)))
+				   sequence, start, end, zmap_view->types, load_features)))
     {
       view_con = g_new0(ZMapViewConnectionStruct, 1) ;
       view_con->parent_view = zmap_view ;
@@ -1137,7 +1138,8 @@ static void resetWindows(ZMapView zmap_view)
 
 
 /* Signal all windows there is data to draw. */
-static void displayDataWindows(ZMapView zmap_view, void *data)
+static void displayDataWindows(ZMapView zmap_view,
+			       ZMapFeatureContext all_features, ZMapFeatureContext new_features)
 {
   GList* list_item ;
 
@@ -1149,7 +1151,8 @@ static void displayDataWindows(ZMapView zmap_view, void *data)
 
       view_window = list_item->data ;
 
-      zMapWindowDisplayData(view_window->window, data, zmap_view->types) ;
+      zMapWindowDisplayData(view_window->window,
+			    all_features, new_features, zmap_view->types) ;
     }
   while ((list_item = g_list_next(list_item))) ;
 
@@ -1198,16 +1201,22 @@ static void freeContext(ZMapFeatureContext feature_context)
 }
 
 
-
+/* Error handling is rubbish here...stuff needs to be free whether there is an error or not.
+ * 
+ * new_features should be freed (but not the data...ahhhh actually the merge should
+ * free any replicated data...yes, that is what should happen. Then when it comes to
+ * the diff we should not free the data but should free all our structs...
+ * 
+ *  */
 static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any)
 {
   ZMapProtocoltGetFeatures feature_req = (ZMapProtocoltGetFeatures)req_any ;
-  ZMapFeatureContext new_features = NULL ;
+  ZMapFeatureContext new_features = NULL, diff_context = NULL ;
 
   /* Merge new data with existing data (if any). */
   new_features = feature_req->feature_context_out ;
 
-  if (!zmapViewMergeFeatures(&(zmap_view->features), new_features))
+  if (!zMapFeatureContextMerge(&(zmap_view->features), new_features, &diff_context))
     zMapLogCritical("%s", "Cannot merge feature data from....") ;
   else
     {
@@ -1218,13 +1227,15 @@ static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any)
       freeContext(new_features) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+      /* Signal the ZMap that there is work to be done. */
+      displayDataWindows(zmap_view, zmap_view->features, diff_context) ;
+
+      /* signal our caller that we have data. */
+      (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data) ;
+
     }
-
-  /* Signal the ZMap that there is work to be done. */
-  displayDataWindows(zmap_view, (void *)(zmap_view->features)) ;
-
-  /* signal our caller that we have data. */
-  (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data) ;
 
   return ;
 }
