@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Jun 29 13:11 2004 (edgrif)
+ * Last edited: Jul  1 14:57 2004 (rnc)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.3 2004-06-30 09:11:37 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.4 2004-07-02 13:29:10 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -241,6 +241,42 @@ typedef struct {
 
 
 /* ALL OF THIS NEEDS SOME ATTENTION.......... */
+
+// the following structs all lifted from zmapcommon.h and may be unnecessary
+
+/* zmap-flavour seg structure that holds the data to be displayed */
+
+struct segStruct {
+  char *id; /* stringBucket */
+  methodID method;
+  /* NOTE: srType BOTH discriminates the union below, _and_ controls
+     the sort of column made.  Two segs with the same method but
+     different types will end up in different columns. */
+  //  srType type;
+  //  srStrand strand;
+  //  srPhase phase;
+  float score;
+  Coord x1, x2;
+  union {
+    struct {
+      int y1, y2;
+      //      srStrand strand;
+      float score;
+      GPtrArray align;
+    } homol;
+    struct {
+      Coord cdsStart, cdsEnd;
+      gboolean endNotFound;
+      GPtrArray exons;
+    } transcript;
+    struct {
+      char *id; /* backpointer */
+    } exon;
+  } u;
+};
+
+typedef struct segStruct SEG;
+
 
 typedef struct methodStruct
 {
