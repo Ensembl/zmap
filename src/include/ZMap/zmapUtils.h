@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Jun 25 10:09 2004 (edgrif)
+ * Last edited: Jul  1 17:01 2004 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.6 2004-06-25 13:35:18 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.7 2004-07-02 18:22:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -65,12 +65,18 @@
 #include <ZMap/zmapReadLine.h>
 
 
+/*! @addtogroup zmaputils
+ * @{
+ *  */
 
-/* Logging functions. */
+/*!
+ * Represents a ZMap logging object which will log messages, open/close the log etc. */
 typedef struct  _ZMapLogStruct *ZMapLog ;
 
-#define ZMAPLOG_STANZA  "logging"
+/*! @} end of zmaputils docs. */
 
+
+#define ZMAPLOG_STANZA  "logging"			    /* Does this need to be public ? */
 
 
 ZMapLog zMapLogCreate(char *logname) ;
