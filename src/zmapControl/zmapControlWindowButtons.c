@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jan 18 15:30 2005 (edgrif)
+ * Last edited: Jan 25 17:38 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.22 2005-01-24 11:34:12 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.23 2005-01-25 17:49:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -122,6 +122,9 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_box_pack_start(GTK_BOX(hbox), close_button, FALSE, FALSE, 0) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* We shouldn't do things like this, we should have a "state setter" function that does
+   * all the setting necessary.... */
+
   gtk_widget_set_sensitive(close_button, FALSE);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -259,7 +262,7 @@ static void vertSplitPaneCB(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = (ZMap)data ;
 
-  zmapControlSplitInsertWindow(zmap, GTK_ORIENTATION_VERTICAL) ;
+  zmapControlSplitInsertWindow(zmap, NULL, GTK_ORIENTATION_VERTICAL) ;
 
   return ;
 }
@@ -269,7 +272,7 @@ static void horizSplitPaneCB(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = (ZMap)data ;
 
-  zmapControlSplitInsertWindow(zmap, GTK_ORIENTATION_HORIZONTAL) ;
+  zmapControlSplitInsertWindow(zmap, NULL, GTK_ORIENTATION_HORIZONTAL) ;
 
   return ;
 }
