@@ -1,4 +1,4 @@
-/*  Last edited: Apr 15 12:46 2004 (rnc) */
+/*  Last edited: Jun 22 10:04 2004 (rnc) */
 /*  file: zmapbccol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -34,7 +34,8 @@
 #include <../acedb/method.h>
 #include <../acedb/bump.h>
 #include <zmapcontrol.h>
-#include <zmapcommon.h>
+#include <ZMap/zmapcommon.h>
+
 
 typedef enum { DEFAULT=0, WIDTH, OFFSET, HIST } BoxColModeType;
 
@@ -57,16 +58,17 @@ static void nbcFinalise(void *arg)
 {
   nbcPrivate *priv = (nbcPrivate *)arg;
   
-  if (priv->bump)
-    bumpDestroy(priv->bump);
+  //  if (priv->bump)
+  //    bumpDestroy(priv->bump);
 
   return;
 }
-void nbcInit(ZMapPane *pane, ZMapColumn *col)
+void nbcInit(ZMapPane pane, ZMapColumn *col)
 {
-  srMeth *meth = srMethodFromID(pane->zMapRegion, col->meth);
-  nbcPrivate *bc = handleAlloc(nbcFinalise, pane->window->handle,
-			       sizeof(nbcPrivate));
+  srMeth *meth = srMethodFromID(zMapPaneGetZMapRegion(pane), col->meth);
+  nbcPrivate *bc = (nbcPrivate*)malloc(sizeof(nbcPrivate));
+  //  nbcPrivate *bc = handleAlloc(nbcFinalise, zMapWindowGetHandle(pane->window),
+  // sizeof(nbcPrivate));
  
   col->private = bc;
 
@@ -215,8 +217,8 @@ static void nbcCalcBox (srMeth *methp, nbcPrivate *bc, float *x1p, float *x2p,
 	dx = 0.75 ;
 
       xoff = 1 ;
-      if (bc->bump)
-	bumpItem (bc->bump, 2, (y2-y1), &xoff, &y1) ;
+      //      if (bc->bump)
+      //	bumpItem (bc->bump, 2, (y2-y1), &xoff, &y1) ;
  #if 0
       else if (bc->cluster)	/* one subcolumn per key */
 	{
@@ -239,7 +241,9 @@ static void nbcCalcBox (srMeth *methp, nbcPrivate *bc, float *x1p, float *x2p,
       break ;
       
     default:
-      messcrash("Unknown bc->mode in fMapShowHomol(): %d", bc->mode) ;
+      //TODO: sort out error handling here
+      printf("Unknown bc->mode in fMapShowHomol(): %d", bc->mode) ;
+      exit;
     }
   
 
@@ -259,39 +263,50 @@ struct geneSelectData{
   int exonNumber;
 };
 
-void zMapGeneDraw(ZMapPane *pane, ZMapColumn *col, float *offset, int frame)
+void zMapGeneDraw(ZMapPane pane, ZMapColumn *col, float *offset, int frame)
 {
-  ZMapRegion *zMapRegion = pane->zMapRegion;
-  srMeth *meth = srMethodFromID(zMapRegion, col->meth);
-  int i, j;
-  int box;
-  nbcPrivate *bc = (nbcPrivate *)col->private;
-  float maxwidth = *offset;
-
+  ZMapRegion    *zMapRegion = zMapPaneGetZMapRegion(pane);
+  srMeth        *meth = srMethodFromID(zMapRegion, col->meth);
+  int            i, j;
+  int            box;
+  nbcPrivate    *bc = (nbcPrivate *)col->private;
+  float          maxwidth = *offset, width;
+  FooCanvasItem *group;
+  char           colours[30][10] = { "red", "blue", "pink", "green", "orange", "yellow", "purple", "cyan", "magenta",
+				     "red", "blue", "pink", "green", "orange", "yellow", "purple", "cyan", "magenta",
+				     "red", "blue", "pink", "green", "orange", "yellow", "purple", "cyan", "magenta" };
+				     /* I made these up.  Need to find out what meth->colour
+					equates to */
+				     
   /* temporary kludge */
   if (!zMapRegion) return;
 
-  if (meth && (meth->flags & METHOD_BUMPABLE))
-    bc->bump = bumpCreate(30, 0);
-  else
+  //  if (meth && (meth->flags & METHOD_BUMPABLE))
+  //    bc->bump = bumpCreate(30, 0);
+  //  else
     bc->bump = NULL;
 
-  for (i=0; i < arrayMax(zMapRegion->segs); i++)
+    for (i=0; i < zMapRegionGetSegs(zMapRegion)->len; i++)
       {
-	SEG *seg = arrp(zMapRegion->segs, i, SEG);
+	SEG *seg = &g_array_index(zMapRegionGetSegs(zMapRegion), SEG, i);
 	if (seg->method == col->meth &&
 	    seg->type == col->type &&
 	    zmIsOnScreen(pane, seg->x1, seg->x2))
 	  {
-	    Array exons = seg->u.transcript.exons;
-	    float e1, e2, y, x; 
+	    GArray *exons = g_array_new(FALSE, FALSE, sizeof(srExon));
+	    float e1, e2, x, y = 0;  /* y needs better default */ 
 	    int xoff = 1;
 	    struct geneSelectData *sd;
 
-	    if (bc->bump)
-	      bumpItem(bc->bump, 1, seg->x2 - seg->x1, &xoff, &y);
+	    exons = g_array_append_vals(exons,
+					&seg->u.transcript.exons, 
+					seg->u.transcript.exons.len);
+ 
+	    //	    if (bc->bump)
+	    //	      bumpItem(bc->bump, 1, seg->x2 - seg->x1, &xoff, &y);
 
-	    x = *offset + xoff;
+	    x = *offset + xoff + 30;
+
 	    if (x > maxwidth)
 	      maxwidth = x;
 	    
@@ -300,63 +315,65 @@ void zMapGeneDraw(ZMapPane *pane, ZMapColumn *col, float *offset, int frame)
 	       background on the adjoining intron obscures a little
 	       bit of the next exon. */
 
-	    for(j = 1; j <arrayMax(exons); j++)
+	    /* make a group to contain the gene */
+	    group = foo_canvas_item_new(FOO_CANVAS_GROUP(zMapPaneGetGroup(pane)),
+					foo_canvas_group_get_type(),
+					"x", (double)x,
+					"y", (double)y ,
+					NULL);
+
+	    width = meth->width * 15; /* arbitrary multiplier - needs to be rationalised */
+
+	    for (j = 1; j < exons->len; j++)
 	      { /* Intron */
 		float middle;
-		e1 = zmScreenCoord(col->pane, array(exons, j-1, srExon).x2);
-		e2 = zmScreenCoord(col->pane, array(exons, j, srExon).x1);
-		middle = 0.5 * (e1 + e2);
-		box = graphBoxStart();
-		sd = (struct geneSelectData *)
-		  halloc(sizeof(struct geneSelectData), pane->drawHandle);
-		sd->exonNumber = j;
-		sd->isIntron = TRUE;
-		sd->seg = seg;
-		zmRegBox(pane, box, col, sd);
-		graphLine(x+0.5, e1, x+0.9, middle);
-		graphLine(x+0.9, middle, x+0.5, e2);
-		graphBoxEnd();
-		graphBoxDraw(box, meth->colour, -1) ;
+
+		e1 = zmScreenCoord(col->pane, g_array_index(exons, srExon, j-1).x2);
+		e2 = zmScreenCoord(col->pane, g_array_index(exons, srExon, j  ).x1);
+		middle = (e1 + e2)/2.0;
+
+		/* TODO: if e1 < e2 then it's on the reverse strand so needs different handling */
+		if (e1 > e2); 
+		  
+		drawLine(FOO_CANVAS_GROUP(group), x+(width/2), e1, x+width, middle, colours[meth->colour], 1.0);
+		drawLine(FOO_CANVAS_GROUP(group), x+width, middle, x+(width/2), e2, colours[meth->colour], 1.0);
 	      }
 	    
-	    for (j = 0; j <arrayMax(exons); j++)
+	    for (j = 0; j <exons->len; j++)
 	      { /* exon */
-		struct geneSelectData *sd;
-		e1 = zmScreenCoord(col->pane, array(exons, j, srExon).x1);
-		e2 = zmScreenCoord(col->pane, array(exons, j, srExon).x2);
-		sd = (struct geneSelectData *)
-		  halloc(sizeof(struct geneSelectData), pane->drawHandle);
-		box = graphBoxStart();
-		sd->exonNumber = j;
-		sd->isIntron = FALSE;
-		sd->seg = seg;
-		e2 = zmScreenCoord(col->pane, array(exons, j, srExon).x2);
-		zmRegBox(pane, box, col, sd);
-		graphRectangle(x, e1, x+1, e2);
-		graphBoxEnd();
-		graphBoxDraw(box, meth->colour, -1) ;
+		e1 = zmScreenCoord(col->pane, g_array_index(exons, srExon, j).x1);
+		e2 = zmScreenCoord(col->pane, g_array_index(exons, srExon, j).x2);
+
+		/* if e1 < e2 then it's on the reverse strand so needs different handling */
+		if (e1 < e2)
+		  drawBox(group, x, e1, x+width, e2, "black", colours[meth->colour]);
+		else
+		  drawBox(group, x, e2, x+width, e1, "red", colours[meth->colour]);
 	      }
 	  }
       }
 
-  if (bc->bump) 
-    bumpDestroy (bc->bump);
+    //  if (bc->bump) 
+    //    bumpDestroy (bc->bump);
   
   *offset = maxwidth + 2.0 ;
   return;
 }
 
-void geneSelect(ZMapPane *pane, ZMapColumn *col,
+void geneSelect(ZMapPane pane, ZMapColumn *col,
 		void *arg, int box, double x, double y, BOOL isSelect)
 {
   struct geneSelectData *sd = (struct geneSelectData *)arg;
   SEG *seg = sd->seg;
-  Array exons = seg->u.transcript.exons;
+  GArray *exons = g_array_new(FALSE, FALSE, sizeof(srExon));
   Coord x1, x2;
   char *string;
-  srMeth *meth = srMethodFromID(pane->zMapRegion, col->meth);
+  srMeth *meth = srMethodFromID(zMapPaneGetZMapRegion(pane), col->meth);
   int colour = WHITE;
-  
+
+  exons = g_array_append_vals(exons, 
+			      &seg->u.transcript.exons,
+			      seg->u.transcript.exons.len);
   if (isSelect)
     {
     
@@ -364,65 +381,65 @@ void geneSelect(ZMapPane *pane, ZMapColumn *col,
       
       if (sd->isIntron)
 	{
-	  x1 = arr(exons, sd->exonNumber-1, srExon).x2 + 1 ;
-	  x2 = arr(exons, sd->exonNumber, srExon).x1 - 1 ;
+	  x1 = g_array_index(exons, srExon, sd->exonNumber-1).x2 + 1 ;
+	  x2 = g_array_index(exons, srExon, sd->exonNumber).x1 - 1 ;
 	}
       else
 	{
-	  x1 = arr(exons, sd->exonNumber, srExon).x1;
-	  x2 = arr(exons, sd->exonNumber, srExon).x2;
+	  x1 = g_array_index(exons, srExon, sd->exonNumber).x1;
+	  x2 = g_array_index(exons, srExon, sd->exonNumber).x2;
 	}
       
       string = g_strdup_printf("%s [%f] %d %d", 
 			       seg->id, seg->score, 
-			       zmVisibleCoord(pane->window, x1),
-			       zmVisibleCoord(pane->window, x2));
+			       zmVisibleCoord(zMapPaneGetZMapWindow(pane), x1),
+			       zmVisibleCoord(zMapPaneGetZMapWindow(pane), x2));
       
-      gtk_entry_set_text(GTK_ENTRY(pane->window->infoSpace), string);
+      //      gtk_entry_set_text(GTK_ENTRY(pane->window->infoSpace), string);
       g_free(string);
     }
   
-  graphBoxDraw(box, meth->colour, colour);
+  //  graphBoxDraw(box, meth->colour, colour);
 
   return;
 }
 
-void zMapFeatureColumn(ZMapPane *pane, ZMapColumn *col, float *offset, int frame)
+void zMapFeatureColumn(ZMapPane  pane, ZMapColumn *col, float *offset, int frame)
 {
-  ZMapRegion *zMapRegion = pane->zMapRegion;
+  ZMapRegion *zMapRegion = zMapPaneGetZMapRegion(pane);
   srMeth *meth = srMethodFromID(zMapRegion, col->meth);
   int i;
   nbcPrivate *bc = (nbcPrivate *)col->private;
   float maxwidth = *offset;
-  if (meth->flags & METHOD_BUMPABLE)
-    bc->bump = bumpCreate(30, 0);
-  else
+  //  if (meth->flags & METHOD_BUMPABLE)
+  //    bc->bump = bumpCreate(30, 0);
+  //  else
     bc->bump = NULL;
 
-  for (i=0; i < arrayMax(zMapRegion->segs); i++)
+    for (i=0; i < zMapRegionGetSegs(zMapRegion)->len; i++)
       {
-	SEG *seg = arrp(zMapRegion->segs, i, SEG);
+	SEG *seg = &g_array_index(zMapRegionGetSegs(zMapRegion), SEG, i);
 	if (seg->method == col->meth &&
 	    seg->type == col->type &&
 	    zmIsOnScreen(pane, seg->x1, seg->x2))
 	  {
-	    int box =  graphBoxStart();
+	    int box =  0; //graphBoxStart();
 	    float y1, y2, x1, x2;
 	    y1 = zmScreenCoord(col->pane, seg->x1);
 	    y2 = zmScreenCoord(col->pane, seg->x2+1) ;
 	    x1 = *offset;
 	    nbcCalcBox(meth, bc, &x1, &x2, &y1, &y2, seg->score);
-	    graphRectangle(x1, y1, x2, y2);
-	    graphBoxEnd();
-	    graphBoxDraw (box, BLACK, meth->colour) ;
+	    //	    graphRectangle(x1, y1, x2, y2);
+	    //	    graphBoxEnd();
+	    //	    graphBoxDraw (box, BLACK, meth->colour) ;
 	    zmRegBox(pane, box, col, seg);
 	    if (x2 > maxwidth)
 	      maxwidth = x2;
 	  }
       }
 
-  if (bc->bump) 
-    bumpDestroy (bc->bump);
+  //  if (bc->bump) 
+  //    bumpDestroy (bc->bump);
   
   *offset = maxwidth + 0.5 ;
   return;
@@ -430,16 +447,16 @@ void zMapFeatureColumn(ZMapPane *pane, ZMapColumn *col, float *offset, int frame
 
 
 
-void nbcSelect(ZMapPane *pane, ZMapColumn *col,
+void nbcSelect(ZMapPane pane, ZMapColumn *col,
 	     void *arg, int box, double x, double y, BOOL isSelect)
 {
   SEG *seg = (SEG *)arg;
   char *string = g_strdup_printf("%s [%f] %d %d", 
 				 seg->id, seg->score, 
-				 zmVisibleCoord(pane->window, seg->x1),
-				 zmVisibleCoord(pane->window, seg->x2));
+				 zmVisibleCoord(zMapPaneGetZMapWindow(pane), seg->x1),
+				 zmVisibleCoord(zMapPaneGetZMapWindow(pane), seg->x2));
 
-  gtk_entry_set_text(GTK_ENTRY(pane->window->infoSpace), string);
+  //  gtk_entry_set_text(GTK_ENTRY(pane->window->infoSpace), string);
   g_free(string);
   return;
 }
