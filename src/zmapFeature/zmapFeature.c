@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Nov 12 15:24 2004 (rnc)
+ * Last edited: Nov 15 10:35 2004 (rnc)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeature.c,v 1.5 2004-11-12 15:38:03 rnc Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.6 2004-11-15 10:37:32 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -115,10 +115,11 @@ void zmapFeatureDump(ZMapFeatureContext feature_context, char *file, int format)
 
 static void contextDump_TD(ZMapFeatureContext feature_context, GIOChannel *channel)
 {
-  GString *line = g_string_sized_new(150);
+  GString *line;
 
   if (feature_context)
     {
+      line  = g_string_sized_new(150);
       g_string_printf(line, "%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", 
 		      feature_context->sequence, 
 		      feature_context->parent,
@@ -149,10 +150,11 @@ static void setDump_TD(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data;
   GIOChannel *channel = (GIOChannel*)user_data;
-  GString *line = g_string_sized_new(50);
+  GString *line;
 
   if (feature_set)
     {
+      line = g_string_sized_new(50);
       g_string_printf(line, "%s\n", feature_set->source);
 
       /* Only proceed if there's no problem printing the line */
@@ -170,11 +172,12 @@ static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeature feature = (ZMapFeature)data;
   GIOChannel *channel = (GIOChannel*)user_data;
   char *type, *strand, *phase;
-  GString *line = g_string_sized_new(150);
+  GString *line;
   gboolean unused;
 
   if (feature)
     {
+      line = g_string_sized_new(150);
       type   = zmapLookUpEnum(feature->type, TYPE_ENUM);
       strand = zmapLookUpEnum(feature->strand, STRAND_ENUM);
       phase  = zmapLookUpEnum(feature->phase, PHASE_ENUM);
