@@ -12,6 +12,26 @@
 
 <H2>Coordinate Systems</H2>
 
+<P>The canvas has a coordinate system that goes from -inifinity to +inifinity for both
+x and y axes, how much of this is displayed is decided by the extent of the scroll_region.
+The scroll_region can be set to any size. The scale at which the scroll_region is projected
+on to the canvas window is decided by the pixels_per_unit of the canvas.
+
+<P>It is possible to set the scroll_region and pixels_per_unit so that the canvas window
+exceeds the X windows protocol limit of 65535, in actual fact the limit is actually
+32767 as coordinates in the protocol are specified with short ints. The canvas does not
+deal with this problem, you the application programmer have to deal with it.
+
+<P>We deal with this by allowing the window to expand until it reaches 30000 pixels, after
+this we zoom in further by reducing the scroll_region in line with the increasing pixels_per_unit
+to maintain a window size of 30000.
+
+<P>A further problem seems to be that even we do this, if there are objects which are longer
+than the scroll_region, then they are not displayed properly. This is probably because the
+canvas is not clipping their coordinates at all so they exceed the 32767 limit. Thus you have
+to clip long objects as well as handle the overall canvas window size.
+
+
 
 <H2>Event Handling</H2>
 
@@ -54,7 +74,7 @@ from handling of canvas <b>item</b> events.
 <HR>
 <ADDRESS><a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a></ADDRESS>
 <!-- hhmts start -->
-Last modified: Mon Jan 17 15:16:35 GMT 2005
+Last modified: Thu Jan 20 14:03:37 GMT 2005
 <!-- hhmts end -->
 </BODY>
 </HTML>
