@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 12 15:06 2003 (edgrif)
+ * Last edited: Nov 14 17:07 2003 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.1 2003-11-13 14:58:39 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.2 2003-11-14 17:45:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,8 +94,10 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
   gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
 		     GTK_SIGNAL_FUNC(createThreadCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(topbox), create_button, FALSE, FALSE, 0) ;
+
+  /* set create button as default. */
   GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
-  gtk_widget_grab_default(create_button) ;
+  gtk_window_set_default(GTK_WINDOW(app_context->app_widg), create_button) ;
 
 
   return frame ;
@@ -114,10 +116,10 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
   int row ;
   ZMapWinConn zmapconn ;
 
-  machine = gtk_entry_get_text(GTK_ENTRY(app_context->machine_widg)) ;
-  port_str = gtk_entry_get_text(GTK_ENTRY(app_context->port_widg)) ;
+  machine = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->machine_widg)) ;
+  port_str = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->port_widg)) ;
   port = atoi(port_str) ;
-  sequence = gtk_entry_get_text(GTK_ENTRY(app_context->sequence_widg)) ;
+  sequence = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->sequence_widg)) ;
 
 
   zmapconn = zMapManagerAdd(app_context->zmap_manager, machine, port, sequence) ;
