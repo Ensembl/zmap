@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 14:11 2003 (edgrif)
+ * Last edited: Feb 26 10:29 2004 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapAppmenubar.c,v 1.2 2003-11-14 17:46:51 edgrif Exp $
+ * CVS info:   $Id: zmapAppmenubar.c,v 1.3 2004-03-03 12:10:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,7 +96,7 @@ static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  zmapExit(app_context) ;
+  zmapAppExit(app_context) ;
 }
 
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w )
