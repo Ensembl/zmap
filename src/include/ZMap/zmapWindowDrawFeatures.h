@@ -26,9 +26,9 @@
  *              on the canvas, calling drawing functions in zmapDraw
  *              to do so.
  * HISTORY:
- * Last edited: Sep  3 08:48 2004 (rnc)
+ * Last edited: Sep 10 10:20 2004 (rnc)
  * Created: Fri Aug 13 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.2 2004-09-03 13:24:42 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.3 2004-09-13 13:37:39 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_DRAWFEATURES_H
@@ -38,24 +38,7 @@
 #include <ZMap/zmapFeature.h>
 
 
-typedef struct _ParamStruct
-{
-  ZMapWindow window;
-  FooCanvas *thisCanvas;
-  FooCanvasItem *columnGroup;
-  double height;
-  double length;
-  double column_position;
-  GData *types;
-  ZMapFeatureTypeStyle thisType;
-  ZMapFeature feature;
-  ZMapFeatureContext feature_context;
-  ZMapFeatureSet feature_set;
-  GQuark context_key;
-} ParamStruct;
 
-
-typedef void (*ZMapFeatureCallbackFunc)(ParamStruct *params);
 
 /* Set of callback routines that allow the caller to be notified when events happen
  * to a feature. */
