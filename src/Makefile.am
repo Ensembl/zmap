@@ -57,7 +57,7 @@ zmap_LDFLAGS = -L$(top_srcdir)/lib -lZMapApp -lZMap -lZMapThr -lZMap -lexpat -lp
 	$(ACECONN_LIBS) \
 	$(GTK_LIBS) \
 	$(FOOCANVAS_LIBS) \
-	$(CURL_LIBS)
+	$(LIBCURL)
 zmap_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 zmap_DEPENDENCIES = $(LIBS_ZMAP) src-copy

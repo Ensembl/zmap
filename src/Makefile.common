@@ -12,5 +12,5 @@ AM_CPPFLAGS = -g -I$(top_srcdir)/include \
 	@GTK_CFLAGS@ \
 	@FOOCANVAS_CFLAGS@ \
 	@ACECONN_CFLAGS@ \
-        @CURL_CFLAGS@ \
+        @LIBCURL_CPPFLAGS@ \
         $(NULL)

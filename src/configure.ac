@@ -85,10 +85,9 @@ PKG_CHECK_MODULES(GTK, $GTK2_MODULES,,)
 PKG_CHECK_MODULES(FOOCANVAS, libfoocanvas = 0.1,,AC_MSG_ERROR(foocanvas is required))
 
 # needs curl, we'll be looking using curl-config
-# use ac_path_lib (http://ac-archive.sourceforge.net/rleigh/ac_path_lib.m4)
-# stop looking with pkg-config
-AC_PATH_LIB_LIBCONFIG
-AC_PATH_LIB(curl, 7.13.0 -nocheck, [], [], [], AC_MSG_RESULT(Found ${CURL_LIBS}), AC_MSG_ERROR(curl-config not found.  please install or alter \$PATH = $PATH))
+# LIBCURL_CHECK_CONFIG ([DEFAULT-ACTION], [MINIMUM-VERSION],
+#                       [ACTION-IF-YES], [ACTION-IF-NO])
+LIBCURL_CHECK_CONFIG([],7.11.0,[],[AC_MSG_ERROR(Sorry we need at least version 7.11.0)])
 
 # AceConn & md5
 # Apologies for the monkeying around, but without a nice method for finding
