@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 31 14:01 2004 (edgrif)
+ * Last edited: Nov 12 10:20 2004 (rnc)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.2 2004-04-08 16:52:32 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.3 2004-11-12 10:23:01 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,7 +60,24 @@ void zmapGUIShowMsg(ZMapMsgType msg_type, char *msg)
   gtk_window_set_policy( GTK_WINDOW( dialog ), FALSE, FALSE, FALSE );
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  gtk_window_set_title( GTK_WINDOW( dialog ), "ZMAP - Error !" );
+  switch(msg_type)
+    {
+    case ZMAP_MSG_INFORMATION:
+      gtk_window_set_title( GTK_WINDOW( dialog ), "ZMAP - Information" );
+      break;
+    case ZMAP_MSG_WARNING:
+      gtk_window_set_title( GTK_WINDOW( dialog ), "ZMAP - Warning!" );
+      break;
+    case ZMAP_MSG_EXIT:
+      gtk_window_set_title( GTK_WINDOW( dialog ), "ZMAP - Error!" );
+      break;
+    case ZMAP_MSG_CRASH:
+      gtk_window_set_title( GTK_WINDOW( dialog ), "ZMAP - Crash!" );
+      break;
+    default:
+      gtk_window_set_title( GTK_WINDOW( dialog ), "ZMAP" );
+      break;
+    }
 
   gtk_container_set_border_width( GTK_CONTAINER(dialog), 5 );
 
