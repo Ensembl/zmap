@@ -12,18 +12,18 @@ MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
 # local macros
 WIND_PRIV_HDRS = zmapWindow_P.h
 
-#PUB_HDRS = seqregion.h stringbucket.h zmapcommon.h zmapcontrol.h zmap.h zmapWindow.h 
-PUB_HDRS = zmapWindow.h 
+PUB_HDRS = seqregion.h stringbucket.h zmapcommon.h zmapcontrol.h zmap.h zmapWindow.h 
+#PUB_HDRS = zmapWindow.h 
 
-#WIND_SRC = seqregion.c stringbucket.c \
-#	zmapbccol.c zmapcalls.c zmapcols.c zmapcontrol.c \
-#	zmapsequence.c zmapsplit.c zmapWindow.c zmapWindowFrame.c
-WIND_SRC = zmapWindow.c zmapWindowFrame.c GFF_scaffold.c
+WIND_SRC = seqregion.c stringbucket.c \
+	zmapbccol.c zmapcalls.c zmapcols.c zmapcontrol.c \
+	zmapsequence.c zmapsplit.c zmapWindow.c zmapWindowFrame.c GFF_scaffold.c
+#WIND_SRC = zmapWindow.c zmapWindowFrame.c
 
-#WIND_OBJ = seqregion.o stringbucket.o \
-#	zmapbccol.o zmapcalls.o zmapcols.o zmapcontrol.o \
-#	zmapsequence.o zmapsplit.o zmapWindow.o zmapWindowFrame.o
-WIND_OBJ = zmapWindow.o zmapWindowFrame.o GFF_scaffold.o
+WIND_OBJ = seqregion.o stringbucket.o \
+	zmapbccol.o zmapcalls.o zmapcols.o zmapcontrol.o \
+	zmapsequence.o zmapsplit.o zmapWindow.o zmapWindowFrame.o GFF_scaffold.o
+#WIND_OBJ = zmapWindow.o zmapWindowFrame.o
 
 ZMAP_LIB = libzmap.a
 
