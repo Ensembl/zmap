@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Sep 21 10:21 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.30 2004-09-21 13:10:27 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.31 2004-09-27 15:09:13 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@
 static void dataEventCB        (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void canvasClickCB      (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void clickCB            (ZMapWindow window, void *caller_data, ZMapFeature feature);
-static gboolean rightClickCB   (ParamStruct *params, ZMapFeatureSet feature_set);
+static gboolean rightClickCB   (ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
 static void addItemToList      (GQuark key_id, gpointer data, gpointer user_data);
 static void quitListCB         (GtkWidget *window, gpointer data);
 
@@ -233,6 +233,8 @@ void zMapWindowReset(ZMapWindow window)
 
 void zMapWindowDestroy(ZMapWindow window)
 {
+  ZMapCanvasDataStruct *canvasData;
+
   zMapDebug("%s", "GUI: in window destroy...\n") ;
 
   if (window->sequence)
@@ -241,7 +243,8 @@ void zMapWindowDestroy(ZMapWindow window)
   if (window->featureListWindow)
     gtk_widget_destroy(window->featureListWindow);
 
-  g_free(window->params);
+  canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
+  g_free(canvasData);
   g_free(window) ;
 
   return ;
@@ -403,10 +406,10 @@ static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature)
 }
 
 
-static gboolean rightClickCB(ParamStruct *params, ZMapFeatureSet feature_set)
+static gboolean rightClickCB(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set)
 {
   /* user selects new feature in this column */
-  zMapWindowCreateListWindow(params, feature_set);
+  zMapWindowCreateListWindow(canvasData, feature_set);
 
   return TRUE;
 }
