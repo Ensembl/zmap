@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 22 10:00 2004 (edgrif)
+ * Last edited: Jul 29 15:00 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer_P.h,v 1.2 2004-03-22 13:31:16 edgrif Exp $
+ * CVS info:   $Id: zmapServer_P.h,v 1.3 2004-08-02 14:09:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_P_H
@@ -50,6 +50,7 @@ typedef struct _ZMapServerStruct
 
   void *server_conn ;					    /* opaque type used for server calls. */
 
+  ZMapServerResponseType last_response ;		    /* For errors returned by connection. */
   char *last_error_msg ;
 
 

@@ -24,11 +24,11 @@
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: 
- * Exported functions: See zmapServer.h
+ * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Jul 21 17:00 2004 (edgrif)
+ * Last edited: Jul 29 14:59 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.7 2004-07-21 16:07:12 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.8 2004-08-02 14:09:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,6 +109,7 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
 	  server->host = g_strdup(host) ;
 	  server->port = port ;
 	  server->protocol = g_strdup(protocol) ;
+	  server->last_response = ZMAP_SERVERRESPONSE_OK ;
 	  server->last_error_msg = NULL ;
 
 	  result = TRUE ;
@@ -137,21 +138,19 @@ gboolean zMapServerOpenConnection(ZMapServer server)
 }
 
 
-/* NEED TO SORT OUT WHETHER WE RETURN C STRINGS OR NOT.... */ 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-gboolean zMapServerRequest(ZMapServer server, char *request, char **reply, int *reply_len)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-gboolean zMapServerRequest(ZMapServer server, ZMapServerRequestType request,
-			   char *sequence, ZMapFeatureContext *feature_context)
+ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapServerRequestType request,
+					 char *sequence, ZMapFeatureContext *feature_context)
 {
-  gboolean result = FALSE ;
+  ZMapServerResponseType result ;
 
-  if ((server->funcs->request)(server->server_conn, request, sequence, feature_context))
-    result = TRUE ;
-  else
-    server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
+    {
+      result = server->last_response = (server->funcs->request)(server->server_conn,
+								request, sequence, feature_context) ;
+
+      if (result != ZMAP_SERVERRESPONSE_OK)
+	server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
+    }
 
   return result ;
 }
@@ -160,12 +159,11 @@ gboolean zMapServerCloseConnection(ZMapServer server)
 {
   gboolean result = FALSE ;
 
-  if ((server->funcs->close)(server->server_conn))
+  if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
     {
-      result = TRUE ;
+      if (!(result = (server->funcs->close)(server->server_conn)))
+	server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
     }
-  else
-    server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
 
   return result ;
 }
