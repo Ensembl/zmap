@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  8 10:48 2004 (edgrif)
+ * Last edited: Nov  9 14:47 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.14 2004-11-08 10:50:09 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.15 2004-11-09 14:48:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -260,7 +260,7 @@ gboolean checkForCmdLineSequenceArgs(int argc, char *argv[],
 
   optionsTable[0].arg = userOptionsTable ;
 
-  optCon = poptGetContext(NULL, argc, argv, optionsTable, 0) ;
+  optCon = poptGetContext(NULL, argc, (const char **)argv, optionsTable, 0) ;
 
   /* Parse command line for coords and a sequence name, note coords are meaningless
    * without a sequence. */
@@ -269,7 +269,7 @@ gboolean checkForCmdLineSequenceArgs(int argc, char *argv[],
     {
       result = TRUE ;
 
-      if ((sequence = poptGetArg(optCon)))
+      if ((sequence = (char *)poptGetArg(optCon)))
 	{
 	  *sequence_out = sequence ;
 
