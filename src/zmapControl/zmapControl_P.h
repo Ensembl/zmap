@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul  1 09:58 2004 (edgrif)
+ * Last edited: Jul  2 14:06 2004 (rnc)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.2 2004-07-01 09:25:28 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.3 2004-07-02 13:47:24 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -38,8 +38,6 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapControl.h>
 
-/* this should not be here........ */
-#include <../zmapWindow/zmapWindow_P.h>
 
 
 /* The overall state of the zmap, we need this because both the zmap window and the its threads
@@ -89,17 +87,58 @@ typedef struct _ZMapStruct
 
 
 
+typedef struct _ZMapPaneStruct {
+  /* Data associated with one scrolling pane. */
+  ZMapWindow   window;     /* parent */
+
+  GtkWidget   *graphWidget;
+  GtkWidget   *vbox;
+  GtkWidget   *pane;
+  GtkWidget   *frame;
+  GtkWidget   *scrolledWindow;
+  FooCanvas   *canvas;     /* where we paint the display */
+  FooCanvasItem *background;
+  FooCanvasItem *group;
+  GtkWidget   *combo;
+  int          basesPerLine;
+  InvarCoord   centre;
+  int          graphHeight;
+  int          dragBox, scrollBox;
+  GPtrArray    cols;
+  GArray       *box2seg, *box2col;
+
+  int          DNAwidth;
+  double       zoomFactor;
+  int          step_increment;
+} ZMapPaneStruct;
+
+
 /* Functions internal to zmapControl. */
-gboolean zmapControlWindowCreate(ZMap zmap, char *zmap_id) ;
+gboolean   zmapControlWindowCreate     (ZMap zmap, char *zmap_id) ;
 GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap) ;
-GtkWidget *zmapControlWindowMakeFrame(ZMap zmap) ;
-void zmapControlWindowDestroy(ZMap zmap) ;
+GtkWidget *zmapControlWindowMakeFrame  (ZMap zmap) ;
+void       zmapControlWindowDestroy    (ZMap zmap) ;
 
 void zmapControlTopLevelKillCB(ZMap zmap) ;
-void zmapControlLoadCB(ZMap zmap) ;
-void zmapControlResetCB(ZMap zmap) ;
-void zmapControlNewCB(ZMap zmap, char *testing_text) ;
+void zmapControlLoadCB        (ZMap zmap) ;
+void zmapControlResetCB       (ZMap zmap) ;
+void zmapControlNewCB         (ZMap zmap, char *testing_text) ;
 
+gboolean zMapDisplay(ZMap        zmap,
+		     Activate_cb act_cb,
+		     Calc_cb     calc_cb,
+		     void       *region,
+		     char       *seqspec, 
+		     char       *fromspec, 
+		     gboolean        isOldGraph);
+
+void  createZMapWindow (ZMapWindow window);
+
+void  addPane        (ZMapWindow  window, char orientation);
+void  drawNavigator  (ZMapWindow window);
+void  drawWindow     (ZMapPane pane);
+void  zMapZoomToolbar(ZMapWindow window);
+void  navScale       (FooCanvas *canvas, float offset, int start, int end);
 
 #endif /* !ZMAP_CONTROL_P_H */

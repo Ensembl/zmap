@@ -26,15 +26,15 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  1 09:53 2004 (edgrif)
+ * Last edited: Jul  2 14:40 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.5 2004-07-01 09:25:28 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.6 2004-07-02 13:47:49 rnc Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <zmapControl_P.h>
-#include <../zmapWindow/zmapsplit.h>
+#include <zmapControlSplit.h>
 
 static void newCB(GtkWidget *widget, gpointer cb_data) ;
 static void loadCB(GtkWidget *widget, gpointer cb_data) ;
@@ -115,8 +115,14 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 static void loadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
+  ZMapFeatureContext feature_context ;
 
   zmapControlLoadCB(zmap) ;
+
+  // only here temporarily until we find out why it's not working in zmapWindow.c
+  feature_context = testGetGFF() ;			    /* Data read from a file... */
+
+  zmapWindowDrawFeatures(zmap->zMapWindow, feature_context);
 
   return ;
 }
@@ -144,6 +150,10 @@ static void newCB(GtkWidget *widget, gpointer cb_data)
 static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
+  ZMapWindow window = zmap->zMapWindow;
+
+  if (zMapWindowGetPanesTree(window))
+    g_node_destroy(zMapWindowGetPanesTree(window));
 
   zmapControlTopLevelKillCB(zmap) ;
 
