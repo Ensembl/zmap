@@ -1,4 +1,4 @@
-/*  Last edited: Jul 15 15:25 2004 (edgrif) */
+/*  Last edited: Sep  1 15:41 2004 (rnc) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -275,8 +275,6 @@ GtkWidget *splitHPane(ZMap zmap)
 
 
 
-/* THIS SEEMS NOT TO BE CALLED FROM ANYWHERE...IS THAT CORRECT ROB ? */
-
 void closePane(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = (ZMap)data ;
@@ -289,7 +287,6 @@ void closePane(GtkWidget *widget, gpointer data)
 
   /* count panes but forget the root node which isn't one */
   guint panes = g_node_n_nodes(zmap->panesTree, G_TRAVERSE_ALL) - 1;
-  int discard;  
 
   if (panes == 1)
     return;
@@ -336,7 +333,7 @@ void closePane(GtkWidget *widget, gpointer data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-      /* UM, WE DON'T SEE TO DESTROY THE PANE HERE ???????????? */
+      /* UM, WE DON'T SEEM TO DESTROY THE PANE HERE ???????????? */
       gtk_widget_destroy(zmap->focuspane->view_parent_box);
       gtk_widget_destroy(zmap->focuspane->frame);
       free(zmap->focuspane) ;
@@ -359,16 +356,12 @@ void closePane(GtkWidget *widget, gpointer data)
 	g_list_free(children);
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* THIS IS ALMOST CERTAINLY BROKEN COMPLETELY.......... */
-
       /* In theory, by this point all redundant panes and frames have been destroyed.
        * In reality, I have seen 'hanging' panes (grey squares of window lacking
        * a canvas and scroll bars) after closing multiply-split windows, but life 
        * is short! */
-      discard = zmapRecordFocus(NULL, NULL, next->data);
+      zmapRecordFocus(next->data);
       gtk_widget_grab_focus(((ZMapPane)next->data)->frame);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       
       resizePanes(zmap);                                                                                
@@ -403,15 +396,6 @@ void zmapRecordFocus(ZMapPane pane)
   gtk_frame_set_shadow_type(GTK_FRAME(pane->frame), GTK_SHADOW_IN);
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* OK, need a call to the zmapView code to set the focus.....e.g to set hightlight etc. */
-
-  foo_canvas_item_set(pane->background,
-			"fill_color", "white",
-			NULL);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   return ;
 }
 
@@ -420,8 +404,7 @@ void zmapRecordFocus(ZMapPane pane)
 
 /* static functions **********************************************/
 
-/* we probably won't do it like this in zmap, but for the purposes
- * of the prototype it's helpful to have unfocussed backgrounds grey */
+
 static int unfocus(GNode *node, gpointer data)
 {
   ZMapPane pane = (ZMapPane)node->data;
@@ -430,16 +413,11 @@ static int unfocus(GNode *node, gpointer data)
     {
       gtk_frame_set_shadow_type(GTK_FRAME(pane->frame), GTK_SHADOW_NONE);
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      foo_canvas_item_set(pane->background,
-			    "fill_color", "light grey",
-			    NULL);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     }
   return 0;  
 }
+
+
 
 /* shrinkPane is not quite the right name for this function.  We don't
  * actually shrink the pane, we add a new pane and frame and reposition
