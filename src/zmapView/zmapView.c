@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov  8 14:42 2004 (rnc)
+ * Last edited: Nov 11 15:26 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.30 2004-11-08 15:02:26 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.31 2004-11-12 12:02:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,6 @@
 #include <ZMap/zmapProtocol.h>
 #include <ZMap/zmapWindow.h>
 #include <zmapView_P.h>
-#include <ZMap/zmapFeature.h>
 
 
 
@@ -65,7 +64,8 @@ static void killGUI(ZMapView zmap_view) ;
 static void killConnections(ZMapView zmap_view) ;
 
 static ZMapViewConnection createConnection(ZMapView zmap_view,
-					   char *machine, int port, char *protocol, int timeout,
+					   char *machine, int port, char *protocol,
+					   int timeout, char *version,
 					   char *sequence, int start, int end, gboolean load_features) ;
 static void destroyConnection(ZMapViewConnection *view_conn) ;
 
@@ -264,6 +264,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 							     {"port", ZMAPCONFIG_INT, {NULL}},
 							     {"protocol", ZMAPCONFIG_STRING, {NULL}},
 							     {"timeout", ZMAPCONFIG_INT, {NULL}},
+							     {"version", ZMAPCONFIG_STRING, {"4.9.28"}},
 							     {NULL, -1, {NULL}}} ;
 
 	  /* Set defaults for any element that is not a string. */
@@ -294,6 +295,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	    {
 	      char *machine, *protocol ;
 	      int port, timeout ;
+	      char *version ;
 	      ZMapViewConnection view_con ;
 
 	      /* There MUST be a host and a protocol, port is not needed for some protocols,
@@ -302,6 +304,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      port = zMapConfigGetElementInt(next_server, "port") ;
 	      protocol = zMapConfigGetElementString(next_server, "protocol") ;
 	      timeout = zMapConfigGetElementInt(next_server, "timeout") ;
+	      version = zMapConfigGetElementString(next_server, "version") ;
 
 	      if (!machine || !protocol)
 		{
@@ -309,7 +312,8 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 				 "Found \"server\" stanza without valid \"host\" or \"protocol\", "
 				 "stanza was ignored.") ;
 		}
-	      else if ((view_con = createConnection(zmap_view, machine, port, protocol, timeout,
+	      else if ((view_con = createConnection(zmap_view, machine, port, protocol,
+						    timeout, version,
 						    zmap_view->sequence,
 						    zmap_view->start, zmap_view->end,
 						    load_features)))
@@ -1086,13 +1090,14 @@ static void killConnections(ZMapView zmap_view)
 
 /* Allocate and destroy ZMapViews record of a connection. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
-					   char *machine, int port, char *protocol, int timeout,
+					   char *machine, int port, char *protocol,
+					   int timeout, char *version,
 					   char *sequence, int start, int end, gboolean load_features)
 {
   ZMapViewConnection view_con = NULL ;
   ZMapConnection connection ;
 
-  if ((connection = zMapConnCreate(machine, port, protocol, timeout,
+  if ((connection = zMapConnCreate(machine, port, protocol, timeout, version,
 				   sequence, start, end, zmap_view->types, load_features)))
     {
       view_con = g_new0(ZMapViewConnectionStruct, 1) ;
