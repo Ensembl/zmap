@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: Mar  1 17:58 2004 (edgrif)
+ * Last edited: Mar 11 15:29 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.4 2004-03-03 12:18:38 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.5 2004-03-12 15:55:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,14 +63,8 @@ gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, ZMap *zmap_out)
   gboolean result = FALSE ;
   ZMap zmap = NULL ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if ((zmap = zMapCreate((void *)zmaps, managerCB, zmaps->config))
-      && zMapConnect(zmap, sequence))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   if ((zmap = zMapCreate(sequence, (void *)zmaps, managerCB, zmaps->config))
       && zMapConnect(zmap))
-
     {
       zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
       *zmap_out = zmap ;
@@ -108,10 +102,7 @@ gboolean zMapManagerReset(ZMap zmap)
 {
   gboolean result = TRUE ;
 
-  /* We need a new windows call to reset the window and blank it. */
-
-  /* We need to destroy the existing thread connection and start a new one...watch out,
-   * remember the destroy will be asynchronous..... */
+  result = zMapReset(zmap) ;
 
   return result ;
 }
