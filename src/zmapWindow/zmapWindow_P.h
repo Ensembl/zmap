@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 24 16:10 2004 (rnc)
+ * Last edited: Oct 12 16:03 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.19 2004-09-27 09:23:37 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.20 2004-10-13 12:34:58 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -132,8 +132,7 @@ typedef struct _ZMapCanvasDataStruct
 
   GIOChannel          *channel;
   double               height;
-  double               length;
-  double               magFactor;
+  double               seqLength;
   double               scaleBarOffset;
   double               x;                   /* x coord of a column the user clicked */
 } ZMapCanvasDataStruct;
