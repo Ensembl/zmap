@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 17:42 2004 (edgrif) */
+/*  Last edited: Jul 15 15:25 2004 (edgrif) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -120,10 +120,12 @@ ZMapPane zmapAddPane(ZMap zmap, char orientation)
     gtk_paned_pack2(GTK_PANED(zmap->focuspane->pane), pane->frame, TRUE, TRUE);
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* focus on the new pane */
   zmapRecordFocus(pane) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  gtk_widget_grab_focus(pane->frame);			    /* NEEDED ????? */
 
   return pane ;
 }
@@ -233,6 +235,10 @@ GtkWidget *splitPane(ZMap zmap)
   /* add a new pane below to the old one */
   new_pane = zmapAddPane(zmap, 'h') ;
 
+  /* focus on the new pane */
+  zmapRecordFocus(new_pane) ;
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* resize all the panes to fit the height */
   resizePanes(zmap) ;
@@ -252,6 +258,9 @@ GtkWidget *splitHPane(ZMap zmap)
 
   /* add a new pane next to the old one */
   new_pane = zmapAddPane(zmap, 'v');
+
+  /* focus on the new pane */
+  zmapRecordFocus(new_pane) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -395,7 +404,7 @@ void zmapRecordFocus(ZMapPane pane)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* OK, need a call to the zmapView code to set the focus..... */
+  /* OK, need a call to the zmapView code to set the focus.....e.g to set hightlight etc. */
 
   foo_canvas_item_set(pane->background,
 			"fill_color", "white",
