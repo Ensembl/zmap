@@ -26,15 +26,17 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 26 17:57 2004 (edgrif)
+ * Last edited: Mar 12 14:17 2004 (edgrif)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.5 2004-03-03 12:10:06 edgrif Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.6 2004-03-12 15:13:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <ZMap/zmapUtils.h>
 #include <zmapApp_P.h>
+
 
 static void loadThreadCB(GtkWidget *widget, gpointer cb_data) ;
 static void stopThreadCB(GtkWidget *widget, gpointer cb_data) ;
@@ -152,8 +154,8 @@ static void killThreadCB(GtkWidget *widget, gpointer cb_data)
       row = gtk_clist_find_row_from_data(GTK_CLIST(app_context->clist_widg),
 					 app_context->selected_zmap) ;
 
-      ZMAP_DEBUG(("GUI: kill thread for row %d with connection pointer: %x\n",
-		  row, app_context->selected_zmap)) ;
+      ZMAP_DEBUG("GUI: kill thread for row %d with connection pointer: %x\n",
+		 row, app_context->selected_zmap) ;
 
       zMapManagerKill(app_context->zmap_manager, app_context->selected_zmap) ;
 
@@ -218,7 +220,7 @@ static void unselectRow(GtkCList *clist, gint row, gint column, GdkEventButton *
 
   app_context->selected_zmap = NULL ;
 
-  ZMAP_DEBUG(("GUI: unselect row %d\n", row)) ;
+  ZMAP_DEBUG("GUI: unselect row %d\n", row) ;
 
   return ;
 }

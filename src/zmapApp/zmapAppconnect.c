@@ -26,16 +26,17 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 26 11:10 2004 (edgrif)
+ * Last edited: Mar 12 14:55 2004 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.5 2004-03-03 12:09:34 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.6 2004-03-12 15:13:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <zmapApp_P.h>
 #include <ZMap/zmapUtils.h>
+#include <zmapApp_P.h>
+
 
 static void createThreadCB(GtkWidget *widget, gpointer data) ;
 
@@ -106,8 +107,8 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
       gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, (gpointer)zmap) ;
       
 
-      ZMAP_DEBUG(("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
-		  (row + 1), row_text[0], row_text[1])) ;
+      ZMAP_DEBUG("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
+		 (row + 1), row_text[0], row_text[1]) ;
     }
 
   return ;
