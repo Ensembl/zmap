@@ -23,12 +23,15 @@
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: Implements the navigator window in a zmap.
+ *              We tried using a scale widget but you can't set the size
+ *              of the thumb with this widget which is useless so for
+ *              now we are using the scrollbar which looks naff...sigh.
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Aug  4 08:01 2004 (edgrif)
+ * Last edited: Sep 13 13:54 2004 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.12 2004-08-04 07:11:32 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.13 2004-09-13 12:57:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,11 +64,8 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
   /* Make the navigator with a default, "blank" adjustment obj. */
   adjustment = gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ;
 
-  zmap->navigator->navVScale = gtk_vscale_new(GTK_ADJUSTMENT(adjustment)) ;
-  gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navVScale, TRUE, TRUE, 0) ;
-  gtk_scale_set_value_pos(GTK_SCALE(zmap->navigator->navVScale), GTK_POS_LEFT) ;
-  gtk_scale_set_draw_value(GTK_SCALE(zmap->navigator->navVScale), TRUE) ;
-
+  zmap->navigator->navVScroll = gtk_vscrollbar_new(GTK_ADJUSTMENT(adjustment)) ;
+  gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navVScroll, TRUE, TRUE, 0) ;
 
   /* Note how we pack the label at the end of the vbox and set "expand" to FALSE so that it
    * remains small and the vscale expands to fill the rest of the box. */
@@ -85,9 +85,8 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext fea
   gchar *top_str, *bot_str ;
   GtkObject *adjuster ;
 
+  adjuster = (GtkObject *)gtk_range_get_adjustment(GTK_RANGE(navigator->navVScroll)) ;
 
-  adjuster = (GtkObject *)gtk_range_get_adjustment(GTK_RANGE(navigator->navVScale)) ;
-  
 
   /* May be called with no sequence to parent mapping so must set default navigator for this. */
   if (features)
@@ -97,9 +96,6 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext fea
 
       top_str = g_strdup_printf("%d", navigator->parent_span.x1) ;
       bot_str = g_strdup_printf("%d", navigator->parent_span.x2) ;
-
-      if (navigator->sequence_to_parent.p1 > navigator->sequence_to_parent.p2)
-	gtk_range_set_inverted(GTK_RANGE(navigator->navVScale), TRUE) ;
 
       GTK_ADJUSTMENT(adjuster)->value = (((gdouble)(navigator->sequence_to_parent.p1
 						    + navigator->sequence_to_parent.p2)) / 2.0) ;

@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Aug 18 16:39 2004 (rnc)
+ * Last edited: Sep 13 13:52 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.19 2004-09-02 08:52:04 rnc Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.20 2004-09-13 12:57:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -103,9 +103,10 @@ typedef struct _ZMapStruct
 typedef struct _ZMapNavStruct 
 {
   ZMapSpanStruct parent_span ;				    /* Start/end of parent of sequence. */
-  ZMapMapBlockStruct sequence_to_parent ;		    // how this sequence maps to parent
+  ZMapMapBlockStruct sequence_to_parent ;		    /* how this sequence maps to parent. */
+
   GtkWidget         *navVBox;
-  GtkWidget         *navVScale; 
+  GtkWidget         *navVScroll ; 
   GtkWidget         *topLabel;                           
   GtkWidget         *botLabel;                           
 } ZMapNavStruct;
