@@ -27,9 +27,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Sep 17 14:23 2004 (edgrif)
+ * Last edited: Sep 29 13:08 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.7 2004-09-23 13:39:06 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.8 2004-09-29 12:37:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -64,7 +64,7 @@ typedef enum {ZMAP_SERVERRESPONSE_OK,
 gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out) ;
 
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
-				    char *host, int port, char *protocol,
+				    char *host, int port, char *protocol, int timeout,
 				    char *userid, char *passwd) ;
 
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;

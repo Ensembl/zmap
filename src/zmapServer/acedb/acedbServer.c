@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 23 11:48 2004 (edgrif)
+ * Last edited: Sep 29 13:13 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.10 2004-09-23 13:40:31 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.11 2004-09-29 12:37:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,7 +112,7 @@ static gboolean createConnection(void **server_out,
   *server_out = (void *)server ;
 
   if ((server->last_err_status =
-       AceConnCreate(&(server->connection), host, port, userid, passwd, 20)) == ACECONN_OK)
+       AceConnCreate(&(server->connection), host, port, userid, passwd, timeout)) == ACECONN_OK)
     result = TRUE ;
 
   return result ;

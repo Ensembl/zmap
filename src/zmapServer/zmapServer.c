@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Sep 17 14:28 2004 (edgrif)
+ * Last edited: Sep 29 13:09 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.12 2004-09-23 13:39:45 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.13 2004-09-29 12:37:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,7 +96,7 @@ gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out)
 
 
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
-				    char *host, int port, char *protocol,
+				    char *host, int port, char *protocol, int timeout,
 				    char *userid, char *passwd)
 {
   gboolean result = TRUE ;
@@ -112,7 +112,7 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
 
   if (result)
     {
-      if ((server->funcs->create)(&(server->server_conn), host, port, userid, passwd, 20))
+      if ((server->funcs->create)(&(server->server_conn), host, port, userid, passwd, timeout))
 	{
 	  server->host = g_strdup(host) ;
 	  server->port = port ;

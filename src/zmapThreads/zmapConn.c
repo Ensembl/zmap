@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 17 10:59 2004 (edgrif)
+ * Last edited: Sep 29 13:20 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConn.c,v 1.10 2004-09-17 12:38:58 edgrif Exp $
+ * CVS info:   $Id: zmapConn.c,v 1.11 2004-09-29 12:37:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,12 +40,12 @@
 gboolean zmap_thr_debug_G = TRUE ;
 
 
-static ZMapConnection createConnection(char *machine, int port, char *protocol,
+static ZMapConnection createConnection(char *machine, int port, char *protocol, int timeout,
 				       char *sequence, int start, int end, gboolean load_features) ;
 static void destroyConnection(ZMapConnection connection) ;
 
 
-ZMapConnection zMapConnCreate(char *machine, int port, char *protocol,
+ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, int timeout,
 			      char *sequence, int start, int end, gboolean load_features)
 {
   ZMapConnection connection ;
@@ -53,7 +53,7 @@ ZMapConnection zMapConnCreate(char *machine, int port, char *protocol,
   pthread_attr_t thread_attr ;
   int status = 0 ;
 
-  connection = createConnection(machine, port, protocol, sequence, start, end, load_features) ;
+  connection = createConnection(machine, port, protocol, timeout, sequence, start, end, load_features) ;
 
   /* ok to just set state here because we have not started the thread yet.... */
   zmapCondVarCreate(&(connection->request)) ;
@@ -219,7 +219,7 @@ void zMapConnDestroy(ZMapConnection connection)
 
 
 
-static ZMapConnection createConnection(char *machine, int port, char *protocol,
+static ZMapConnection createConnection(char *machine, int port, char *protocol, int timeout,
 				       char *sequence, int start, int end, gboolean load_features)
 {
   ZMapConnection connection ;
@@ -229,6 +229,7 @@ static ZMapConnection createConnection(char *machine, int port, char *protocol,
   connection->machine = g_strdup(machine) ;
   connection->port = port ;
   connection->protocol = g_strdup(protocol) ;
+  connection->timeout = timeout ;
 
   connection->sequence =  g_strdup(sequence) ;
   connection->start = start ;

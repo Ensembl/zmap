@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep 17 10:58 2004 (edgrif)
+ * Last edited: Sep 29 12:53 2004 (edgrif)
  * Created: Thu Jul 24 14:35:58 2003 (edgrif)
- * CVS info:   $Id: zmapConn.h,v 1.6 2004-09-17 12:38:57 edgrif Exp $
+ * CVS info:   $Id: zmapConn.h,v 1.7 2004-09-29 12:37:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONN_H
@@ -53,7 +53,7 @@ typedef enum {ZMAP_REPLY_INIT, ZMAP_REPLY_WAIT, ZMAP_REPLY_GOTDATA, ZMAP_REPLY_R
 typedef struct _ZMapConnectionStruct *ZMapConnection ;
 
 
-ZMapConnection zMapConnCreate(char *machine, int port, char *protocol,
+ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, int timeout,
 			      char *sequence, int start, int end, gboolean load_features) ;
 
 void zMapConnRequest(ZMapConnection connection, void *request) ;

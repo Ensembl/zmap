@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Sep 17 14:31 2004 (edgrif)
+ * Last edited: Sep 29 13:07 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.14 2004-09-23 13:41:05 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.15 2004-09-29 12:37:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -134,7 +134,8 @@ void *zmapNewThread(void *thread_args)
 
   /* Create the connection block for this specific server connection. */
   if (!zMapServerCreateConnection(&(thread_cb->server), global_init_data,
-				  connection->machine, connection->port, connection->protocol,
+				  connection->machine, connection->port,
+				  connection->protocol, connection->timeout,
 				  "any", "any"))
     {
       thread_cb->thread_died = TRUE ;
