@@ -12,20 +12,13 @@ MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
 # local macros
 WIND_PRIV_HDRS = zmapWindow_P.h
 
-#PUB_HDRS = seqregion.h stringbucket.h zmapDraw.h zmapWindow.h 
-PUB_HDRS = stringbucket.h zmapDraw.h zmapWindow.h zmapWindowDrawFeatures.h
+PUB_HDRS = zmapDraw.h zmapWindow.h zmapWindowDrawFeatures.h
 
-#WIND_SRC = seqregion.c stringbucket.c \
-#	zmapbccol.c zmapcols.c \
-#	zmapWindow.c zmapWindowFrame.c GFF_scaffold.c \
-#	zmapWindowDrawFeatures.c
-WIND_SRC = zmapWindow.c zmapWindowFrame.c GFF_scaffold.c zmapWindowDrawFeatures.c zmapWindowList.c
+WIND_SRC = zmapWindow.c zmapWindowFrame.c GFF_scaffold.c zmapWindowDrawFeatures.c \
+           zmapWindowList.c zmapWindowUtils.c
 
-#WIND_OBJ = seqregion.o stringbucket.o \
-#	zmapbccol.o zmapcols.o \
-#	zmapWindow.o zmapWindowFrame.o GFF_scaffold.o \
-#	zmapWindowDrawFeatures.o		
-WIND_OBJ = zmapWindow.o zmapWindowFrame.o GFF_scaffold.o zmapWindowDrawFeatures.o zmapWindowList.o
+WIND_OBJ = zmapWindow.o zmapWindowFrame.o GFF_scaffold.o zmapWindowDrawFeatures.o \
+           zmapWindowList.o zmapWindowUtils.o
 
 #
 # These must all be set for the common includes to work.
