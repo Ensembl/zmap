@@ -25,7 +25,7 @@ to do this which include:
 <P>The standard for code has been to indent by two for each block, there seems
 no reason to change it. Line length should be kept to somewhere between 80 and
 90 chars, i.e. something that will fit comfortably on to a screen with a reasonable
-font size.
+font size. <b>BUT</b> exceeding this length occasionally is not a problem.
 
 
 <pre><code>int func(void)
@@ -60,10 +60,50 @@ font size.
 
 
 
+<h2>Type, Function and variable naming</h2>
+
+<P>General naming conventions:
+
+
+<ul>
+  <li><b>Types:</b> ThisIsATypeName
+  <li><b>Functions:</b> aFunctionName
+  <li><b>Variables:</b> a_variable_name
+</ul>
+
+
+
+<h3>Function names</h3>
+
+<P>Its useful to adopt different naming styles for external interface functions, internal interface
+functions and static functions:
+
+
+<ul>
+  <li><b>External interface functions</b> have external linkage, are declared in <b>public</b>
+      headers and should be named:
+      <ul>
+	<li><b>zMapXXXXX</b>
+      </ul>
+  <li><b>Internal interface functions</b> have external linkage, are declared in <b>private</b>
+      headers and should be named:
+      <ul>
+	<li><b>zmapXXXXX</b>
+      </ul>
+  <li><b>static functions</b> have internal linkage only, are declared within the file
+      where they are defined and should be named:
+      <ul>
+	<li><b>anythingYouLike</b>
+      </ul>
+</ul>
+
+
+
+
 <HR>
 <ADDRESS><a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a></ADDRESS>
 <!-- hhmts start -->
-Last modified: Fri Nov  7 09:30:36 GMT 2003
+Last modified: Tue Apr 27 15:41:36 BST 2004
 <!-- hhmts end -->
 </BODY>
 </HTML>
