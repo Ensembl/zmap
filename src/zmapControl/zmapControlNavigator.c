@@ -29,14 +29,16 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jan  5 14:55 2005 (edgrif)
+ * Last edited: Jan 10 09:40 2005 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.20 2005-01-07 12:13:46 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.21 2005-01-10 09:51:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <math.h>
+#include <gtk/gtk.h>
+#include <zmapNavigator_P.h>
 
-#include <zmapControl_P.h>
 
 #define TOPTEXT_NO_SCALE "<no data>"
 #define BOTTEXT_NO_SCALE ""
@@ -45,16 +47,16 @@
 static void valueCB(GtkAdjustment *adjustment, gpointer user_data) ;
 
 
-
-
-/* AGGGGHHHHH, THIS SHOULD BE AN "OBJECT" IN ITS OWN RIGHT.....LETS TRY AND MAKE IT BETTER */
-
-ZMapNavigator zmapControlNavigatorCreate(GtkWidget **top_widg_out)
+/* Create an instance of the navigator, this currently has two scroll bars,
+ * one to show the position of the region in its parent assembly and 
+ * one to show the position of the window within the canvas.
+ * The function returns the navigator instance but also its top container
+ * widget in top_widg_out. */
+ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out)
 {
   ZMapNavigator navigator ;
   GtkWidget *pane ;
   GtkObject *adjustment ;
-
   GtkWidget *vbox, *label, *scroll ;
 
   navigator = g_new0(ZMapNavStruct, 1);
@@ -112,8 +114,7 @@ ZMapNavigator zmapControlNavigatorCreate(GtkWidget **top_widg_out)
 
   navigator->wind_top = navigator->wind_bot = 0.0 ;
 
-
-  /* Set left hand (region view) pane closed. */
+  /* Set left hand (region view) pane closed by default. */
   gtk_paned_set_position(GTK_PANED(pane), 0) ;
 
   *top_widg_out = pane ;
@@ -121,8 +122,11 @@ ZMapNavigator zmapControlNavigatorCreate(GtkWidget **top_widg_out)
   return navigator ;
 }
 
-void zmapControlNavigatorSetWindowCallback(ZMapNavigator navigator,
-					   ZMapNavigatorScrollValue cb_func, void *user_data)
+
+/* Set function + data that Navigator will call each time the position of the region window
+ * is changed. */
+void zMapNavigatorSetWindowCallback(ZMapNavigator navigator,
+				    ZMapNavigatorScrollValue cb_func, void *user_data)
 {
   navigator->cb_func = cb_func ;
   navigator->user_data = user_data ;
@@ -131,14 +135,14 @@ void zmapControlNavigatorSetWindowCallback(ZMapNavigator navigator,
 }
 
 
-void zmapControlNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos)
+void zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos)
 {
   GtkObject *window_adjuster ;
 
   window_adjuster = (GtkObject *)gtk_range_get_adjustment(GTK_RANGE(navigator->wind_scroll)) ;
 
   GTK_ADJUSTMENT(window_adjuster)->value = top_pos ;
-  GTK_ADJUSTMENT(window_adjuster)->page_size = (gdouble)(abs(bot_pos - top_pos) + 1) ;
+  GTK_ADJUSTMENT(window_adjuster)->page_size = (gdouble)(fabs(bot_pos - top_pos) + 1) ;
 
   gtk_adjustment_changed(GTK_ADJUSTMENT(window_adjuster)) ;
 
@@ -148,7 +152,7 @@ void zmapControlNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, d
 
 
 /* updates size/range to coords of the new view. */
-void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext features)
+void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features)
 {
   GtkObject *region_adjuster, *window_adjuster ;
   gchar *region_top_str, *region_bot_str, *window_top_str, *window_bot_str ;
@@ -233,50 +237,21 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext fea
 }
 
 
-
-
-
-
-
-void navChange(GtkAdjustment *adj, gpointer p)
+/* Destroys a navigator instance, note there is not much to do here because we
+ * assume that our caller will destroy our parent widget will in turn destroy
+ * all our widgets. */
+void zMapNavigatorDestroy(ZMapNavigator navigator)
 {
-  ZMapPane pane = (ZMapPane)p;
-  
-  /* code needed.... */
+  g_free(navigator) ;
 
   return ;
 }
 
 
 
-void navUpdate(GtkAdjustment *adj, gpointer p)
-{
-  ZMapPane pane = (ZMapPane)p ;
-  ZMap zmap = pane->zmap ;
-
-  if (GTK_WIDGET_REALIZED(zmap->navview_frame))
-    {
-
-      /*  graphActivate(zMapWindowGetNavigator(window));
-      **  graphFitBounds(NULL, &height);
-      **  graphBoxDim(pane->scrollBox, &x1, &y1, &x2, &y2);
-      
-      **  startWind =  zmCoordFromScreen(pane, 0);
-      **  endWind =  zmCoordFromScreen(pane, zMapPaneGetHeight(pane));
-      
-      **  startWindf = zMapWindowGetScreenCoord(window, startWind, height);
-      **  endWindf = zMapWindowGetScreenCoord(window, endWind, height);
-      **  lenWindf = endWindf - startWindf;
-      
-      **  startScreenf = startWindf + lenWindf * (adj->value - adj->lower)/(adj->upper - adj->lower) ;
-      
-      **  graphBoxShift(pane->scrollBox, x1, startScreenf); */
-    }
-
-  return ;
-}
-
-
+/* 
+ *              Internal functions 
+ */
 
 
 
@@ -289,16 +264,6 @@ static void valueCB(GtkAdjustment *adjustment, gpointer user_data)
   if (navigator->cb_func)
     (*(navigator->cb_func))(navigator->user_data,
 			    adjustment->value, adjustment->value + adjustment->page_size) ;
-
-  return ;
-}
-
-
-/* UNUSED CURRENTLY but needed for when user alters the hpane interactively....... */
-static void navResize(void)
-{
-
-  /* code needed ????? */
 
   return ;
 }
