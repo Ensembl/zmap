@@ -1,4 +1,4 @@
-/*  Last edited: Sep 13 14:39 2004 (rnc) */
+/*  Last edited: Sep 21 10:50 2004 (rnc) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -112,20 +112,20 @@ float zmapDrawScale(FooCanvas *canvas, float offset, int start, int end)
 {
   FooCanvasItem *group;
   GtkWidget *parent;
-  GtkRequisition req;   // think this is redundant
-  float mag = 1.0, cutoff, y;  // these may be too
-  int seqUnit;          // spacing, in bases, of tick on scalebar
+  GtkRequisition req;   /* think this is redundant */
+  float mag = 1.0, cutoff, y;  /* these may be too */
+  int seqUnit;          /* spacing, in bases, of tick on scalebar */
   int subunit;
-  int seqPos = 1;       // where we are, in bases, in the sequence
+  int seqPos = 1;       /* where we are, in bases, in the sequence */
   int width = 0;
-  int scalePos;         // where we are on the scalebar
-  int scaleEnd;         // highest tick on scalebar
-  int type;             // the nomial (ie whether we're working in K, M, etc)
-  int unitType;         // index into unitName array
+  int scalePos;         /* where we are on the scalebar */
+  int scaleEnd;         /* highest tick on scalebar */
+  int type;             /* the nomial (ie whether we're working in K, M, etc) */
+  int unitType;         /* index into unitName array */
   char cp[20], unitName[] = { 0, 'k', 'M', 'G', 'T', 'P' }, buf[2] ;
-  int scaleUnit = 100;  // arbitrary spacing of ticks on the scalebar
-  int ticks;            // number of ticks on the scalebar
-  double x1, x2, y1, y2, height;  // canvas attributes
+  int scaleUnit = 100;  /* arbitrary spacing of ticks on the scalebar */
+  int ticks;            /* number of ticks on the scalebar */
+  double x1, x2, y1, y2, height;  /* canvas attributes */
   GdkColor black, yellow;
   
   gdk_color_parse("black", &black);
@@ -145,14 +145,14 @@ float zmapDrawScale(FooCanvas *canvas, float offset, int start, int end)
        seqUnit > 0 && 1000 * type < seqUnit && unitType < 5; 
        unitType++, type *= 1000) ;
   /*
-  if (x>0)                          // ie not reversed - this bit needs attention
+  if (x>0)                          
     x = ((start/unit)+1)*unit;
   else
     x = ((start/unit)-1)*unit;  
   */
   seqPos = start;
 
-  seqUnit = ((seqUnit + type/2)/type) * type;  // round the unit sensibly
+  seqUnit = ((seqUnit + type/2)/type) * type;  /* round the unit sensibly */
 
   group = foo_canvas_item_new(foo_canvas_root(canvas),
 			foo_canvas_group_get_type(),
@@ -160,8 +160,8 @@ float zmapDrawScale(FooCanvas *canvas, float offset, int start, int end)
 			"y",(double)5.0,
 			NULL);
 
-  for (scaleEnd = start; scaleEnd < end; scaleEnd += scaleUnit); // so at the end we're at the highest below the end
-  scaleEnd += seqUnit;                                           // marks the last tick on the scalebar
+  for (scaleEnd = start; scaleEnd < end; scaleEnd += scaleUnit); /* so at the end we're at the highest below the end */
+  scaleEnd += seqUnit;                                           /* marks the last tick on the scalebar */
 
   for (seqPos = start, scalePos = 0; seqPos < scaleEnd; seqPos += seqUnit, scalePos += scaleUnit)
     {
@@ -175,14 +175,14 @@ float zmapDrawScale(FooCanvas *canvas, float offset, int start, int end)
 
     }		     
 
-  // this is a separate block because sometimes I'm going to want not to run it 
-  for (scalePos = 0; scalePos < height; scalePos += scaleUnit/10)
+  /* this is a separate block because sometimes I'm going to want not to run it  */
+  for (scalePos = 0; scalePos < height - 20; scalePos += scaleUnit/10)
       zmapDrawLine(FOO_CANVAS_GROUP(group), offset-4, scalePos, offset, scalePos, &black, 1.0);
 
  
-  zmapDrawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, height, &black, 1.0); // long vertical line
+  zmapDrawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, height-20, &black, 1.0); /* long vertical line */
 
-  zmapDrawBox(FOO_CANVAS_ITEM(group), offset-38, 0, offset-33, height, &black, &yellow);
+  zmapDrawBox(FOO_CANVAS_ITEM(group), offset-38, 0, offset-33, height-20, &black, &yellow);
 
   return offset + width + 4 ;
 }
@@ -308,7 +308,7 @@ static void zMapPick(int box, double x, double y)
       oldWindow = NULL;
     }
   
-  //  if (graphAssFind(&winAssoc, &oldWindow))
+  /*  if (graphAssFind(&winAssoc, &oldWindow)) */
   if (oldWindow)
     {
       oldBox = box;
@@ -339,10 +339,10 @@ static void navDrag(float *x, float *y, gboolean isDone)
   ScreenCoord startWindf, endWindf, lenWindf;
   int height;
   
-  //  graphFitBounds(NULL, &height);
-  //  graphAssFind(&navAssoc, &window);
+  /*  graphFitBounds(NULL, &height);
+    graphAssFind(&navAssoc, &window);
 
-  /*  if (dragBox == zMapWindowGetFocuspane(window)->dragBox)
+    if (dragBox == zMapWindowGetFocuspane(window)->dragBox)
     {
       pane = zMapWindowGetFocuspane(window);
       *x = zMapWindowGetScaleOffset(window) - 0.3;
@@ -355,13 +355,13 @@ static void navDrag(float *x, float *y, gboolean isDone)
   
   startWindf = zMapWindowGetScreenCoord(window, startWind, height);
   endWindf   = zMapWindowGetScreenCoord(window, endWind, height);
-  */
-  //  startWindf = height * (startWind - zMapWindowGetCoord(window, "s"))
-  //                      / (zMapWindowGetCoord(window, "e") - zMapWindowGetCoord(window, "s"));
+  
+    startWindf = height * (startWind - zMapWindowGetCoord(window, "s"))
+                        / (zMapWindowGetCoord(window, "e") - zMapWindowGetCoord(window, "s"));
 
-  //  endWindf = height * (endWind - zMapWindowGetCoord(window, "s"))
-  //    / (zMapWindowGetCoord(window, "e") - zMapWindowGetCoord(window, "s"));
-  /*
+    endWindf = height * (endWind - zMapWindowGetCoord(window, "s"))
+      / (zMapWindowGetCoord(window, "e") - zMapWindowGetCoord(window, "s"));
+  
   lenWindf = endWindf - startWindf;
   
   
@@ -390,10 +390,10 @@ static void navDrag(float *x, float *y, gboolean isDone)
       */
       printf("Well, I'm in navDrag\n");
       
-      // we don't have a pane or window, so can't do anything with them here.
-      //      drawWindow(pane); 
-      //      graphActivate(zMapWindowGetNavigator(window));
-      //    }
+      /* we don't have a pane or window, so can't do anything with them here.
+      **      drawWindow(pane); 
+      **      graphActivate(zMapWindowGetNavigator(window));
+      **    } */
   
 }
 
@@ -404,13 +404,13 @@ static void navPick(int box, double x, double y)
 {
   ZMapWindow window;
 
-  //  graphAssFind(&navAssoc, &window);
+  /*  graphAssFind(&navAssoc, &window);
 
-  //  if (box == zMapWindowGetFocuspane(window)->dragBox)
-    {
-      dragBox = box;
-      //      graphBoxDrag(box, navDrag);
-    }
+  **  if (box == zMapWindowGetFocuspane(window)->dragBox)
+  **  {
+  **    dragBox = box;
+  **    graphBoxDrag(box, navDrag);
+  **  } */
 }
 
 
