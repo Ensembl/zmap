@@ -1,0 +1,12 @@
+================================================================================   
+ZMapView
+
+
+This directory contains the code that controls an instance of a "ZMapView".
+A ZMapView is created when a sequence is to be displayed and it includes one or
+more windows (not top level) that show the same or different views of a set of
+data and one or more server connections to get the data.
+
+This code is the interface by which the fetching/viewing of a single set of
+data is controlled, it is not an executable or a top level window in its own
+right but must be linked in with other code that makes calls to this code.
