@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Mar  2 10:25 2004 (edgrif)
+ * Last edited: Mar 12 14:37 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.3 2004-03-03 12:16:46 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.4 2004-03-12 15:53:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,6 +36,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap_P.h>
 
+#include <../zmapThreads/zmapConn_P.h>
 
 /* ZMap debugging output. */
 gboolean zmap_debug_G = TRUE ; 
@@ -44,14 +45,14 @@ gboolean zmap_debug_G = TRUE ;
 static gint zmapIdleCB(gpointer cb_data) ;
 static void zmapWindowCB(void *cb_data, int reason) ;
 
-ZMap createZMap(char *sequence, void *app_data, ZMapCallbackFunc destroy_cb, ZMapConfig config) ;
-void destroyZMap(ZMap zmap) ;
+static ZMap createZMap(char *sequence, void *app_data, ZMapCallbackFunc destroy_cb, ZMapConfig config) ;
+static void destroyZMap(ZMap zmap) ;
 
 static void startConnectionChecking(ZMap zmap) ;
 static void stopConnectionChecking(ZMap zmap) ;
 static gboolean checkConnections(ZMap zmap) ;
 
-static void loadDataConnections(ZMap zmap) ;
+static void loadDataConnections(ZMap zmap, char *sequence) ;
 
 static void killZMap(ZMap zmap) ;
 static void killGUI(ZMap zmap) ;
@@ -172,11 +173,24 @@ gboolean zMapLoad(ZMap zmap, char *sequence)
 {
   gboolean result = TRUE ;
 
-  if (zmap->state != ZMAP_RUNNING)
+  if (zmap->state == ZMAP_RESETTING || zmap->state == ZMAP_DYING)
     result = FALSE ;
   else
     {
-      loadDataConnections(zmap) ;
+      if (zmap->state == ZMAP_INIT)
+	result = zMapConnect(zmap) ;
+
+      if (result)
+	{
+	  if (sequence && *sequence)
+	    {
+	      if (zmap->sequence)
+		g_free(zmap->sequence) ;
+	      zmap->sequence = g_strdup(sequence) ;
+	    }
+
+	  loadDataConnections(zmap, zmap->sequence) ;
+	}
     }
 
   return result ;
@@ -205,10 +219,7 @@ gboolean zMapReset(ZMap zmap)
       zmap->state = ZMAP_RESETTING ;
 
       /* We need a new windows call to reset the window and blank it. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zMapWindowReset(zmap->window) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       /* We need to destroy the existing thread connection and wait until user loads a new
 	 sequence. */
@@ -269,8 +280,8 @@ gboolean zMapDestroy(ZMap zmap)
     {
       killGUI(zmap) ;
 
-      /* If we are resetting then the connections have already being killed. */
-      if (zmap->state != ZMAP_RESETTING)
+      /* If we are in init state or resetting then the connections have already being killed. */
+      if (zmap->state != ZMAP_INIT && zmap->state != ZMAP_RESETTING)
 	killConnections(zmap) ;
 
       /* Must set this as this will prevent any further interaction with the ZMap as
@@ -334,14 +345,12 @@ static void zmapWindowCB(void *cb_data, int reason)
   else if (window_cmd == ZMAP_WINDOW_STOP)
     {
       debug = "ZMAP_WINDOW_STOP" ;
+
+      zMapReset(zmap) ;
     }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMAP_DEBUG(("GUI: received %s from thread %x\n", debug,
-	      zMapConnGetThreadid(zmap->connection))) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  ZMAP_DEBUG("GUI: received %s from zmap window\n", debug) ;
 
   return ;
 }
@@ -354,7 +363,7 @@ static void zmapWindowCB(void *cb_data, int reason)
  */
 
 
-ZMap createZMap(char *sequence, void *app_data, ZMapCallbackFunc destroy_cb, ZMapConfig config)
+static ZMap createZMap(char *sequence, void *app_data, ZMapCallbackFunc destroy_cb, ZMapConfig config)
 {
   ZMap zmap = NULL ;
 
@@ -381,7 +390,7 @@ ZMap createZMap(char *sequence, void *app_data, ZMapCallbackFunc destroy_cb, ZMa
 
 /* Should only do this after the window and all threads have gone as this is our only handle
  * to these resources. */
-void destroyZMap(ZMap zmap)
+static void destroyZMap(ZMap zmap)
 {
   g_free(zmap->zmap_id) ;
 
@@ -444,8 +453,8 @@ static gboolean checkConnections(ZMap zmap)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      ZMAP_DEBUG(("GUI: checking connection for thread %x\n",
-		  zMapConnGetThreadid(connection))) ;
+      ZMAP_DEBUG("GUI: checking connection for thread %x\n",
+		  zMapConnGetThreadid(connection)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -453,16 +462,16 @@ static gboolean checkConnections(ZMap zmap)
       err_msg = NULL ;
       if (!(zMapConnGetReplyWithData(connection, &reply, &data, &err_msg)))
 	{
-	  ZMAP_DEBUG(("GUI: thread %x, cannot access reply from thread - %s\n",
-		      zMapConnGetThreadid(connection), err_msg)) ;
+	  ZMAP_DEBUG("GUI: thread %x, cannot access reply from thread - %s\n",
+		     zMapConnGetThreadid(connection), err_msg) ;
 	}
       else
 	{
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  ZMAP_DEBUG(("GUI: thread %x, thread reply = %s\n",
-		      zMapConnGetThreadid(connection),
-		      zMapVarGetReplyString(reply))) ;
+	  ZMAP_DEBUG("GUI: thread %x, thread reply = %s\n",
+		     zMapConnGetThreadid(connection),
+		     zMapVarGetReplyString(reply)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	      
@@ -474,18 +483,18 @@ static gboolean checkConnections(ZMap zmap)
 	    {
 	      if (zmap->state == ZMAP_RUNNING)
 		{
-		  ZMAP_DEBUG(("GUI: thread %x, got data\n",
-			      zMapConnGetThreadid(connection))) ;
+		  ZMAP_DEBUG("GUI: thread %x, got data\n",
+			     zMapConnGetThreadid(connection)) ;
 
 		  /* Is this right....????? check my logic here....  */
 		  zMapConnSetReply(connection, ZMAP_REPLY_WAIT) ;
 		  
 		  /* Signal the ZMap that there is work to be done. */
-		  zMapWindowSignalData(zmap->window, data) ;
+		  zMapWindowDisplayData(zmap->window, data) ;
 		}
 	      else
-		ZMAP_DEBUG(("GUI: thread %x, got data but ZMap state is - %s\n",
-			    zMapConnGetThreadid(connection), zMapGetZMapStatus(zmap))) ;
+		ZMAP_DEBUG("GUI: thread %x, got data but ZMap state is - %s\n",
+			   zMapConnGetThreadid(connection), zMapGetZMapStatus(zmap)) ;
 
 	    }
 	  else if (reply == ZMAP_REPLY_DIED)
@@ -495,8 +504,8 @@ static gboolean checkConnections(ZMap zmap)
 
 
 	      /* This means the thread has failed for some reason and we should clean up. */
-	      ZMAP_DEBUG(("GUI: thread %x has died so cleaning up....\n",
-			  zMapConnGetThreadid(connection))) ;
+	      ZMAP_DEBUG("GUI: thread %x has died so cleaning up....\n",
+			 zMapConnGetThreadid(connection)) ;
 		  
 	      /* We are going to remove an item from the list so better move on from
 	       * this item. */
@@ -512,8 +521,8 @@ static gboolean checkConnections(ZMap zmap)
 	       * so I think logically this cannot happen...???? */
 
 	      /* This means the thread was cancelled so we should clean up..... */
-	      ZMAP_DEBUG(("GUI: thread %x has been cancelled so cleaning up....\n",
-			  zMapConnGetThreadid(connection))) ;
+	      ZMAP_DEBUG("GUI: thread %x has been cancelled so cleaning up....\n",
+			 zMapConnGetThreadid(connection)) ;
 
 	      /* We are going to remove an item from the list so better move on from
 	       * this item. */
@@ -563,7 +572,7 @@ static gboolean checkConnections(ZMap zmap)
 }
 
 
-static void loadDataConnections(ZMap zmap)
+static void loadDataConnections(ZMap zmap, char *sequence)
 {
 
   if (zmap->connection_list)
@@ -579,7 +588,7 @@ static void loadDataConnections(ZMap zmap)
  	  connection = list_item->data ;
 
 	  /* ERROR HANDLING..... */
-	  zMapConnLoadData(connection) ;
+	  zMapConnLoadData(connection, sequence) ;
 
 	} while ((list_item = g_list_next(list_item))) ;
     }
