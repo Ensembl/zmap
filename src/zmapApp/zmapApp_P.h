@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 12 15:09 2003 (edgrif)
+ * Last edited: Nov 14 15:15 2003 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.1 2003-11-13 14:58:39 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.2 2003-11-14 17:44:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -38,7 +38,7 @@
 
 
 /* Minimum GTK version supported. */
-enum {ZMAP_GTK_MAJOR = 1, ZMAP_GTK_MINOR = 2, ZMAP_GTK_MICRO = 10} ;
+enum {ZMAP_GTK_MAJOR = 2, ZMAP_GTK_MINOR = 2, ZMAP_GTK_MICRO = 4} ;
 
 
 /* Overall application control struct. */
