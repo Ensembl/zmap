@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 10 10:40 2005 (edgrif)
+ * Last edited: Mar 22 16:00 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.65 2005-03-16 15:56:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.66 2005-03-23 07:55:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,6 +68,7 @@ static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer use
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 
 static gboolean getConfiguration(ZMapWindow window) ;
 static void sendClientEvent     (ZMapWindow window, FeatureSets) ;
@@ -195,7 +196,12 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   g_signal_connect(GTK_OBJECT(foo_canvas_root(window->canvas)), "event",
 		   GTK_SIGNAL_FUNC(canvasRootEventCB), (gpointer)window) ;
 
-  
+  /* Attach callback to monitor size changes in canvas, this works but bizarrely
+   * "configure-event" callbacks which are the pucker size change event are never called. */
+  g_signal_connect(GTK_OBJECT(window->canvas), "size-allocate",
+		   GTK_SIGNAL_FUNC(canvasSizeAllocateCB), (gpointer)window) ;
+
+ 
   /* NONE OF THIS SHOULD BE HARD CODED................. */
   /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
   GTK_LAYOUT(canvas)->vadjustment->step_increment = ZMAP_WINDOW_STEP_INCREMENT;
@@ -229,9 +235,15 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
       double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
       int x, y ;
 
+      /* this is a little hokey, it assumes we have split the parent window and therefore
+       * zoom will now be mid as there will be two scrolled windows... */
       new->zoom_factor        = copy_window->zoom_factor;
-      new->zoom_status        = copy_window->zoom_status = ZMAP_ZOOM_MID;
+      new->zoom_status        = copy_window->zoom_status = ZMAP_ZOOM_MID ;
+
+      /* What happened to min zoom ??????? */
       new->max_zoom           = copy_window->max_zoom;
+
+
       new->canvas_maxwin_size = copy_window->canvas_maxwin_size;
       new->border_pixels      = copy_window->border_pixels;
       new->DNAwidth           = copy_window->DNAwidth;
@@ -269,6 +281,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 }
 
 
+
+/* THE ZOOM STUFF NEEDS TIDYING UP V. MUCH..... */
 
 double zmapWindowCalcZoomFactor(ZMapWindow window)
 {
@@ -344,18 +358,6 @@ void zMapWindowReset(ZMapWindow window)
 }
 
 
-GtkWidget *zMapWindowGetWidget(ZMapWindow window)
-{
-  return GTK_WIDGET(window->canvas) ;
-}
-
-
-ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window)
-{
-  return window->zoom_status ;
-}
-
-
 void zmapWindowSetPageIncr(ZMapWindow window)
 {
   /* WHY IS THIS  - 50, you should have documented this Rob........ */
@@ -364,6 +366,21 @@ void zmapWindowSetPageIncr(ZMapWindow window)
     = GTK_WIDGET(window->canvas)->allocation.height - 50 ;
 
   return;
+}
+
+
+/* ugh, get rid of this.......... */
+GtkWidget *zMapWindowGetWidget(ZMapWindow window)
+{
+  return GTK_WIDGET(window->canvas) ;
+}
+
+
+/* This zoom stuff needs rationalising, see also the sizeAllocateCB routine.... */
+
+ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window)
+{
+  return window->zoom_status ;
 }
 
 
@@ -377,35 +394,6 @@ void zMapWindowSetZoomStatus(ZMapWindow window)
     window->zoom_status = ZMAP_ZOOM_MID;
 
   return;
-}
-
-void zMapWindowDestroy(ZMapWindow window)
-{
-  int i;
-  GtkWidget *widget;
-
-  zMapDebug("%s", "GUI: in window destroy...\n") ;
-
-  if (window->sequence)
-    g_free(window->sequence) ;
-
-  /* free the array of featureListWindows and the windows themselves */
-  if (window->featureListWindows)
-    {
-      for (i = 0; i < window->featureListWindows->len; i++)
-	{
-	  widget = g_ptr_array_index(window->featureListWindows, i);
-	  gtk_widget_destroy(widget);
-	}
-      g_ptr_array_free(window->featureListWindows, FALSE);
-    }
-  
-
-  g_datalist_clear(&(window->featureItems));
-  g_datalist_clear(&(window->longItems));
-  g_free(window) ;
-  
-  return ;
 }
 
 
@@ -459,12 +447,12 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
   /* Calculate the zoom. */
   new_zoom = window->zoom_factor * zoom_factor ;
-  if (new_zoom < window->min_zoom)
+  if (new_zoom <= window->min_zoom)
     {
       window->zoom_factor = window->min_zoom ;
       window->zoom_status = zoom_status = ZMAP_ZOOM_MIN ;
     }
-  else if (new_zoom > window->max_zoom)
+  else if (new_zoom >= window->max_zoom)
     {
       window->zoom_factor = window->max_zoom ;
       window->zoom_status = zoom_status = ZMAP_ZOOM_MAX ;
@@ -721,6 +709,36 @@ void zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data)
   return;
 }
 
+
+
+void zMapWindowDestroy(ZMapWindow window)
+{
+  int i;
+  GtkWidget *widget;
+
+  zMapDebug("%s", "GUI: in window destroy...\n") ;
+
+  if (window->sequence)
+    g_free(window->sequence) ;
+
+  /* free the array of featureListWindows and the windows themselves */
+  if (window->featureListWindows)
+    {
+      for (i = 0; i < window->featureListWindows->len; i++)
+	{
+	  widget = g_ptr_array_index(window->featureListWindows, i);
+	  gtk_widget_destroy(widget);
+	}
+      g_ptr_array_free(window->featureListWindows, FALSE);
+    }
+  
+
+  g_datalist_clear(&(window->featureItems));
+  g_datalist_clear(&(window->longItems));
+  g_free(window) ;
+  
+  return ;
+}
 
 
 
@@ -1315,6 +1333,63 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 
   return event_handled ;
 }
+
+
+/* This routine only gets called when the canvas widgets parent requests a resize, not when
+ * the canvas changes its own size through zooming. We need to take different action according
+ * to whether parent requests we get bigger or smaller:
+ * 
+ *      Parent requests bigger size: we need to recalculate with a larger zoom factor so features
+ *                                   fill the window.
+ * 
+ *     Parent requests smaller size: do nothing, the canvas will maintain its current size
+ *                                   and our parent scrolled window will adjust its scroll bars
+ *                                   accordingly (i.e. the canvas will reset its width/height
+ *                                   to its size before the parent request).
+ * 
+ * As far a I can tell the sizes in the allocation struct passed in match those in the canvas
+ * widget...always ???
+ */
+static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)user_data ;
+
+  if (window->width == 0 && window->height == 0)
+    {
+      /* First time through we just record the new size. */
+
+      window->width = widget->allocation.width ;
+      window->height = widget->allocation.height ;
+    }
+  else if (widget->allocation.width > window->width || widget->allocation.height > window->height)
+    {
+      /* parent widget has requested canvas size to increase. */
+
+      /* Note how actually we only zoom the height so this is redundant. This may need to be
+       * revisited some time... */
+      if (widget->allocation.width > window->width)
+	window->width = widget->allocation.width ;
+
+      if (widget->allocation.height > window->height)
+	{
+	  double new_zoom, zoom_factor ;
+
+	  window->height = widget->allocation.height ;
+
+	  /* agh...all this zoom stuff is not good...needs rationalising.... */
+	  new_zoom = window->height / window->seqLength ;
+	  window->min_zoom = new_zoom ;
+	  window->zoom_status = ZMAP_ZOOM_MID ;
+
+	  zoom_factor = new_zoom / window->zoom_factor ;
+
+	  zMapWindowZoom(window, zoom_factor) ;
+	}
+    }
+
+  return ;
+}
+
 
 
 void hideAlignmentCols(GQuark key_id, gpointer data, gpointer user_data)

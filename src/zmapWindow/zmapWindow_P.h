@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 16 14:58 2005 (edgrif)
+ * Last edited: Mar 22 13:28 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.45 2005-03-16 15:54:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.46 2005-03-23 07:55:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -150,7 +150,10 @@ typedef struct _ZMapWindowStruct
   ZMapWindowCallbacks caller_cbs ;			    /* table of callbacks registered by
 							     * our caller. */
 
-
+  gint width, height ;					    /* Used by a size allocate callback to
+							       monitor canvas size changes and
+							       remap the minimum size of the canvas if
+							       needed. */
   double         zoom_factor ;
   ZMapWindowZoomStatus zoom_status ;   /* For short sequences that are displayed at max. zoom initially. */
   double         min_zoom ;				    /* min/max allowable zoom. */
