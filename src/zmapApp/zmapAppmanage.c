@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 17:12 2003 (edgrif)
+ * Last edited: Nov 17 16:11 2003 (edgrif)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.2 2003-11-14 17:45:55 edgrif Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.3 2003-11-18 10:44:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -173,7 +173,7 @@ static void selectRow(GtkCList *clist, gint row, gint column, GdkEventButton *ev
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  app_context->selected_zmap = (ZMapWinConn)gtk_clist_get_row_data(clist, row) ;
+  app_context->selected_zmap = (ZMap)gtk_clist_get_row_data(clist, row) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 15:15 2003 (edgrif)
+ * Last edited: Nov 17 16:11 2003 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.2 2003-11-14 17:44:36 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.3 2003-11-18 10:44:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -53,7 +53,7 @@ typedef struct
   GtkWidget *clist_widg ;
 
   ZMapManager zmap_manager ;
-  ZMapWinConn selected_zmap ;
+  ZMap selected_zmap ;
 
 } ZMapAppContextStruct, *ZMapAppContext ;
 

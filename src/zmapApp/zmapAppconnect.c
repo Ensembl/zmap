@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 17:07 2003 (edgrif)
+ * Last edited: Nov 17 14:58 2003 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.2 2003-11-14 17:45:26 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.3 2003-11-18 10:44:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -114,7 +114,7 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
   char *sequence ;
   char *row_text[ZMAP_NUM_COLS] = {"", "", ""} ;
   int row ;
-  ZMapWinConn zmapconn ;
+  ZMap zmap ;
 
   machine = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->machine_widg)) ;
   port_str = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->port_widg)) ;
@@ -122,16 +122,15 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
   sequence = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->sequence_widg)) ;
 
 
-  zmapconn = zMapManagerAdd(app_context->zmap_manager, machine, port, sequence) ;
+  zmap = zMapManagerAdd(app_context->zmap_manager, machine, port, sequence) ;
   /* ERROR HANDLING ETC.... */
-
 
   row_text[0] = machine ;
   row_text[1] = port_str ;
   row_text[2] = sequence ;
 
   row = gtk_clist_append(GTK_CLIST(app_context->clist_widg), row_text) ;
-  gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, (gpointer)zmapconn) ;
+  gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, (gpointer)zmap) ;
 
 
   ZMAP_DEBUG(("GUI: create thread number %d to access: %s on port %d\n",
