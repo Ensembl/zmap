@@ -1,0 +1,69 @@
+<HTML>
+
+<HEAD>
+<TITLE>Coding Notes</TITLE>
+</HEAD>
+
+<BODY>
+<H1>Coding Notes</H1>
+
+<p>This is simply a collection of notes about coding stuff to maintain consistency.
+
+<P>A good way to maintain consistency is have the editor do the indenting/commenting
+etc. If you use the right profile code then there are some emacs functions
+to do this which include:
+
+<ul>
+  <li><b>Alt-X indent-region</b> will indent the code for the marked region.
+  <li><b>TAB</b> indents the current line (or moves the cursor to the correct
+      indentation on a blank line.
+</ul>
+
+
+<h2>Indenting</h2>
+
+<P>The standard for code has been to indent by two for each block, there seems
+no reason to change it. Line length should be kept to somewhere between 80 and
+90 chars, i.e. something that will fit comfortably on to a screen with a reasonable
+font size.
+
+
+<pre><code>int func(void)
+{
+  int some_var ;
+
+  if (blah)
+    {
+      call_something() ;
+    }
+
+  return ;
+}
+</code></pre>
+
+
+
+<h2>Commenting Style</h2>
+
+<P>Block comments and line comments should be in this style:
+
+
+<pre><code>
+  if (blah)
+    {
+      /* This is quite a long block
+       * comment that runs to more than one
+       * line. */
+      call_something() ;				    /* unknown function */
+    }
+</code></pre>
+
+
+
+<HR>
+<ADDRESS><a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a></ADDRESS>
+<!-- hhmts start -->
+Last modified: Fri Nov  7 09:30:36 GMT 2003
+<!-- hhmts end -->
+</BODY>
+</HTML>
