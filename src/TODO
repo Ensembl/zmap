@@ -4,6 +4,7 @@
 # 
 # 
 # [Categories]
+# Title = ZMap Priorities
 # Across = Important \
 # Not_Important
 # Down = Urgent \
@@ -34,6 +35,7 @@
 
 # DO NOT CHANGE THIS WILLY-NILLY.....
 [Categories]
+Title = ZMap Priorities
 Across = Important \
 Not_Important
 Down = Urgent \
@@ -68,6 +70,13 @@ Text = The scale is not good, the units seem utterly bizarre as you zoom in. \
 Also, it needs moving into a separate slidable window like the other locators \
 so that it is always visible. It will have to be linked to scrolling in the \
 focus canvas.
+
+
+[DNA display]
+Across = Important
+Down = Urgent
+Text = Need to add display of DNA, should include highlighting of exons etc. when \
+clicked on.
 
 
 [Focus change]
