@@ -38,7 +38,9 @@ clean :
 # the makedepend file is already there...so need to attend to that....
 depend :
 	@$(TEST) -w $(MAKEDEPEND_FILE) || chmod u+w $(MAKEDEPEND_FILE)
-	makedepend -p$(BINDIR)'/' -f$(MAKEDEPEND_FILE) -- $(CFLAGS) -- $(CURRENT_SRC) 
+	makedepend -f$(MAKEDEPEND_FILE) -- $(CFLAGS) -- $(CURRENT_SRC) 
+
+#
 
 include $(MAKEDEPEND_FILE)
 
