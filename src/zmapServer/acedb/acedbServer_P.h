@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Mar 18 09:44 2004 (edgrif)
+ * Last edited: Jul 29 12:24 2004 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.1 2004-03-18 10:40:58 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.2 2004-08-02 14:11:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -37,7 +37,9 @@ typedef struct _AcedbServerStruct
 {
   AceConnection connection ;
 
-  AceConnStatus last_err_status ;			    /* Needed so we can return err mesgs. */
+  AceConnStatus last_err_status ;			    /* Needed so we can return err mesgs
+							       for aceconn errors. */
+  char *last_err_msg ;
 } AcedbServerStruct, *AcedbServer ;
 
 
