@@ -7,6 +7,8 @@
 APP_DIR = zmapApp
 MAKE_DIRS = $(APP_DIR) zmapConfig zmapControl zmapManager zmapServer zmapThreads zmapUtils zmapWindow zmapNoThreads
 
+DOXY_CONFIG = Doxyfile
+
 
 all: makebindir libs zmap 
 	@echo 'made ZMap libraries and executables...'
@@ -29,6 +31,11 @@ zmap : makebindir
 zmapC : makebindir
 	@cd $(APP_DIR) ; echo ; echo 'make '$@ ; $(MAKE) $@ ; echo
 
+
+
+# Not sure how to frame the dependencies here...needs some thought....
+docs :  forcemake
+	$(HOME)/tools/doxygen $(DOXY_CONFIG)
 
 
 # bootstrap stuff, without these make can't find the files to include which define
