@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Nov  9 10:21 2004 (rnc)
+ * Last edited: Jan 10 14:23 2005 (edgrif)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.12 2004-11-11 14:21:17 rnc Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.13 2005-01-24 11:26:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -48,39 +48,6 @@ FooCanvasItem *zmapDrawBox(FooCanvasItem *group,
 			   double x1, double y1, double x2, double y2, 
 			   GdkColor *line_colour, GdkColor *fill_colour);
 void  zmapDisplayText(FooCanvasGroup *group, char *text, char *colour, double x, double y);
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* Rob, I don't know what all these do but they are commented out for the time being
- * as they are not called anywhere........They also break the layering as they have
- * ZMapPane references which is all wrong at this level. */
-
-void zmRegBox(ZMapPane pane, int box, ZMapColumn *col, void *seg);
-
-
-/* Column drawing code ************************************/
-void  zMapFeatureColumn (ZMapPane   pane, ZMapColumn *col,
-			 float     *offset, int frame);
-void  buildCols         (ZMapPane   pane);
-void  makezMapDefaultColumns(ZMapPane  pane);
-
-
-void  nbcInit           (ZMapPane  pane, ZMapColumn *col);
-void  nbcSelect         (ZMapPane  pane, ZMapColumn *col,
-			 void     *seg, int box, double x, double y, gboolean isSelect);
-void  zMapGeneDraw      (ZMapPane  pane, ZMapColumn *col, float *offset, int frame);
-void  geneSelect        (ZMapPane  pane, ZMapColumn *col,
-			 void     *arg, int box, double x, double y, gboolean isSelect);
-
-gboolean     zmIsOnScreen     (ZMapPane    pane,   Coord coord1, Coord coord2);
-VisibleCoord zmVisibleCoord   (ZMapWindow  window, Coord coord);
-ScreenCoord  zmScreenCoord    (ZMapPane    pane,   Coord coord);
-Coord        zmCoordFromScreen(ZMapPane    pane,   ScreenCoord coord);
-gboolean     Quit             (GtkWidget  *widget, gpointer data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
      
 #endif /* ZMAP_DRAW_H */
