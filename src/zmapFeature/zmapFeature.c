@@ -1,5 +1,5 @@
-/*  File: zmapFeature.c
- *  Author: Rob Clack (rnc@sanger.ac.uk)
+/*  File: zmapViewFeatures.c
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -22,103 +22,389 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: Manipulates features.
- *              1
- * Exported functions: See zmapFeature.h
+ * Description: Implements feature contexts, sets and features themselves.
+ *              Includes code to create/merge/destroy contexts and sets.
+ *              
+ * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov 22 16:30 2004 (rnc)
- * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeature.c,v 1.8 2004-11-22 16:31:46 rnc Exp $
+ * Last edited: Nov 22 10:12 2004 (edgrif)
+ * Created: Fri Jul 16 13:05:58 2004 (edgrif)
+ * CVS info:   $Id: zmapFeature.c,v 1.9 2004-11-22 17:47:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmapFeature.h>
+#include <strings.h>
+#include <glib.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapFeature.h>
+#include <zmapView_P.h>
 
 
-static void contextDump_TD(ZMapFeatureContext feature_context, GIOChannel *channel);
-static void setDump_TD(GQuark key_id, gpointer data, gpointer user_data);
-static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data);
-static gboolean printLine(GIOChannel *channel, gchar *line);
+/*! @defgroup zmapfeatures   zMapFeatures: feature handling for ZMap
+ * @{
+ * 
+ * \brief  Feature handling for ZMap.
+ * 
+ * zMapFeatures routines provide functions to create/modify/destroy individual
+ * features, sets of features and feature contexts (contexts are sets of sets
+ * of features with associated coordinate data for parent mapping etc.).
+ *
+ *  */
 
 
 
-char *zmapLookUpEnum(int id, int enumType)
+
+/* Could use just one struct...but one step at a time.... */
+typedef struct
 {
-  /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
-  static char *types  [] = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
-			    "VARIATION", "BOUNDARY", "SEQUENCE"} ;
-  static char *strands[] = {"ZMAPSTRAND_NONE", "ZMAPSTRAND_DOWN", "ZMAPSTRAND_UP" };
-  static char *phases [] = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" };
-  char *str = NULL;
+  GData **current_feature_sets ;
+  GData **diff_feature_sets ;
+  GData **new_feature_sets ;
+} FeatureContextsStruct, *FeatureContexts ;
 
-  switch (enumType)
-    {
-    case TYPE_ENUM:
-      str = types[id];
-      break;
 
-    case STRAND_ENUM:
-      str = strands[id];
-      break;
+typedef struct
+{
+  GData **current_features ;
+  GData **diff_features ;
+  GData **new_features ;
+} FeatureSetStruct, *FeatureSet ;
 
-    case PHASE_ENUM:
-      str = phases[id];
-      break;
 
-    default:
-      break;
-    }
+/* These are GData callbacks. */
+static void doNewFeatureSets(GQuark key_id, gpointer data, gpointer user_data) ;
+static void doNewFeatures(GQuark key_id, gpointer data, gpointer user_data) ;
 
-  zMapAssert(str);
+static void printFeatureContext(ZMapFeatureContext new_context) ;
+static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
+static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 
-  return str;
+
+/* !
+ * A set of functions for allocating, populating and destroying features.
+ * The feature create and add data are in two steps because currently the required
+ * use is to have a struct that may need to be filled in in several steps because
+ * in some data sources the data comes split up in the datastream (e.g. exons in
+ * GFF). If there is a requirement for the two bundled then it should be implemented
+ * via a simple new "create and add" function that merely calls both the create and
+ * add functions from below. */
+
+/*!
+ * Returns a single feature correctly intialised to be a "NULL" feature.
+ * 
+ * @param   void  None.
+ * @return  ZMapFeature  A pointer to the new ZMapFeature.
+ *  */
+ZMapFeature zmapFeatureCreate(void)
+{
+  ZMapFeature feature ;
+
+  feature = g_new0(ZMapFeatureStruct, 1) ;
+  feature->id = ZMAPFEATUREID_NULL ;
+  feature->type = ZMAPFEATURE_INVALID ;
+
+  return feature ;
 }
 
-char *zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
-			  int start, int end, int query_start, int query_end)
-{
-  char *feature_id = NULL ;
 
-  if (feature_type == ZMAPFEATURE_HOMOL)
-    feature_id = g_strdup_printf("%s.%d-%d-%d-%d", feature_name, start, end, query_start, query_end) ;
-  else
-    feature_id = g_strdup_printf("%s.%d-%d", feature_name, start, end) ;
-
-  return feature_id ;
-}
-
-
-/* In zmap we hold coords in the forward orientation always and get strand from the strand
- * member of the feature struct. This function looks at the supplied strand and sets the
- * coords accordingly. */
-/* ACTUALLY I REALISE I'M NOT QUITE SURE WHAT I WANT THIS FUNCTION TO DO.... */
-gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *query_start, int *query_end)
+/*!
+ * Adds data to a feature which may be "NULL" or may already have partial features,
+ * e.g. transcript that does not yet have all its exons.
+ * 
+ * NOTE that really we need this to be a polymorphic function so that the arguments
+ * are different for different features.
+ *  */
+gboolean zmapFeatureAugmentData(ZMapFeature feature, char *name,
+				char *sequence, char *source, ZMapFeatureType feature_type,
+				int start, int end, double score, ZMapStrand strand,
+				ZMapPhase phase,
+				ZMapHomolType homol_type, int query_start, int query_end)
 {
   gboolean result = FALSE ;
 
-  if (strand == ZMAPSTRAND_UP)
+  zMapAssert(feature) ;
+
+  /* Note we have hacked this up for now...in the end we should have a unique id for each feature
+   * but for now we will look at the type to determine if a feature is empty or not..... */
+  /* If its an empty feature then initialise... */
+  if (feature->type == ZMAPFEATURE_INVALID)
     {
-      if ((start && end) && start > end)
+      feature->name = g_strdup(name) ;
+      feature->type = feature_type ;
+      feature->x1 = start ;
+      feature->x2 = end ;
+
+      feature->method_name = g_strdup(source) ;
+
+      feature->strand = strand ;
+      feature->phase = phase ;
+      feature->score = score ;
+
+      result = TRUE ;
+    }
+
+
+  /* There is going to have to be some hacky code here to decide when something goes from being
+   * a single exon to being part of a transcript..... */
+
+  if (feature_type == ZMAPFEATURE_EXON)
+    {
+      ZMapSpanStruct exon ;
+
+      exon.x1 = start ;
+      exon.x2 = end ;
+
+      /* This is still not correct I think ??? we shouldn't be using the transcript field but
+       * instead the lone exon field. */
+
+      if (!feature->feature.transcript.exons)
+	feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
+							      sizeof(ZMapSpanStruct), 30) ;
+
+      g_array_append_val(feature->feature.transcript.exons, exon) ;
+
+      /* If this is _not_ single exon we make it into a transcript.
+       * This is a bit adhoc but so is GFF v2. */
+      if (feature->type != ZMAPFEATURE_EXON
+	  || feature->feature.transcript.exons->len > 1)
+	feature->type = ZMAPFEATURE_TRANSCRIPT ;
+
+      result = TRUE ;
+    }
+  else if (feature_type == ZMAPFEATURE_INTRON)
+    {
+      ZMapSpanStruct intron ;
+
+      intron.x1 = start ;
+      intron.x2 = end ;
+
+      if (!feature->feature.transcript.introns)
+	feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
+							      sizeof(ZMapSpanStruct), 30) ;
+
+      g_array_append_val(feature->feature.transcript.introns, intron) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* I DON'T THINK WE WANT TO DO THIS BECAUSE WE MAY JUST HAVE A SET OF CONFIRMED INTRONS
+       * THAT DO NOT ACTUALLY REPRESENT A TRANSCRIPT YET..... */
+
+
+      /* If we have more than one intron then we are going to force the type to be
+       * transcript. */
+      if (feature->type != ZMAPFEATURE_TRANSCRIPT
+	  && feature->feature.transcript.introns->len > 1)
+	feature->type = ZMAPFEATURE_TRANSCRIPT ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      result = TRUE ;
+    }
+  else if (feature_type == ZMAPFEATURE_HOMOL)
+    {
+      /* Note that we do not put the extra "align" information for gapped alignments into the
+       * GFF files from acedb so no need to worry about it just now...... */
+
+      feature->feature.homol.type = homol_type ;
+      feature->feature.homol.y1 = query_start ;
+      feature->feature.homol.y2 = query_end ;
+      feature->feature.homol.score = score ;
+      feature->feature.homol.align = NULL ;		    /* not supported currently.... */
+    }
+
+  return result ;
+}
+
+
+void zmapFeatureDestroy(ZMapFeature feature)
+{
+  zMapAssert(feature) ;
+
+  if (feature->name)
+    g_free(feature->name) ;
+
+  if (feature->method_name)
+    g_free(feature->method_name) ;
+
+  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+    {
+      if (feature->feature.transcript.exons)
+	g_array_free(feature->feature.transcript.exons, TRUE) ;
+
+      if (feature->feature.transcript.introns)
+	g_array_free(feature->feature.transcript.introns, TRUE) ;
+    }
+
+  g_free(feature) ;
+
+  return ;
+}
+
+
+ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features)
+{
+  ZMapFeatureSet feature_set ;
+
+  feature_set = g_new0(ZMapFeatureSetStruct, 1) ;
+  feature_set->source = g_strdup(source) ;
+  feature_set->features = features ;
+
+  return feature_set ;
+}
+
+/* We fudge issue of releasing features here...we need a flag to say "free the data" or
+ * not....... */
+void zMapFeatureSetDestroy(ZMapFeatureSet feature_set)
+{
+  g_free(feature_set->source) ;
+
+  g_free(feature_set) ;
+
+  return ;
+}
+
+
+ZMapFeatureContext zMapFeatureContextCreate(void)
+{
+  ZMapFeatureContext feature_context ;
+
+  feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
+
+  return feature_context ;
+}
+
+
+void zMapFeatureContextDestroy(ZMapFeatureContext feature_context)
+{
+  /* MOre needs adding here....we will need a "free data" flag to say if
+   * data should be added. */
+
+  g_free(feature_context) ;
+
+  return ;
+}
+
+/* Merge two feature contexts, the contexts must be for the same sequence.
+ * The merge works by:
+ *
+ * - Feature sets and/or features in new_context that already exist in current_context
+ *   are simply removed from new_context.
+ * 
+ * - Feature sets and/or features in new_context that do not exist in current_context
+ *   are transferred from new_context to current_context and pointers to these new
+ *   features/sets are returned in diff_context.
+ *
+ * Hence at the end of the merge we will have:
+ * 
+ * current_context  - contains the merge of all feature sets and features
+ *     new_context  - is empty
+ *    diff_context  - contains all the new features sets and features that
+ *                    were added to current_context by this merge.
+ * 
+ * We return diff_context so that the caller has the option to update its display
+ * by simply adding the features in diff_context rather than completely redrawing
+ * with current_context which may be very expensive.
+ * 
+ * If called with current_context_inout == NULL (i.e. there are no "current
+ * features"), current_context_inout just gets set to new_context and
+ * diff_context will be NULL as there are no differences.
+ * 
+ * NOTE that diff_context may also be NULL if there are no differences
+ * between the current and new contexts.
+ * 
+ * NOTE that diff_context does _not_ have its own copies of features, it points
+ * at the ones in current_context so anything you do to diff_context will be
+ * reflected in current_context. In particular you should free diff_context
+ * using the free context function provided in this interface.
+ * 
+ * 
+ * Returns TRUE if the merge was successful, FALSE otherwise. */
+gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
+				 ZMapFeatureContext new_context,
+				 ZMapFeatureContext *diff_context_out)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureContext current_context = *current_context_inout ;
+  ZMapFeatureContext diff_context ;
+
+  zMapAssert(new_context && diff_context_out) ;
+
+  diff_context = NULL ;					    /* default is no new features. */
+
+  /* If there are no current features we just return the new ones and the diff is
+   * set to NULL, otherwise we need to do a merge of the new and current feature sets. */
+  if (!current_context)
+    {
+      current_context = new_context ;
+
+      result = TRUE ;
+    }
+  else
+    {
+      /* Check that certain basic things about the sequences to be merged are true....
+       * this will probably have to be revised, for now we check that the name and length of the
+       * sequences are the same. */
+      if (g_ascii_strcasecmp(current_context->sequence, new_context->sequence) == 0
+	  && current_context->features_to_sequence.p1 == new_context->features_to_sequence.p1
+	  && current_context->features_to_sequence.p2 == new_context->features_to_sequence.p2)
 	{
-	  int tmp ;
+	  FeatureContextsStruct contexts ;
 
-	  tmp = *start ;
-	  *start = *end ;
-	  *end = tmp ;
+	  diff_context = zMapFeatureContextCreate() ;
 
-	  if (query_start && query_end)
+	  contexts.current_feature_sets = &(current_context->feature_sets) ;
+	  contexts.diff_feature_sets = &(diff_context->feature_sets) ;
+	  contexts.new_feature_sets = &(new_context->feature_sets) ;
+
+	  g_datalist_foreach(&(new_context->feature_sets),
+			     doNewFeatureSets, (void *)&contexts) ;
+
+	  if (diff_context->feature_sets)
 	    {
-	      tmp = *query_start ;
-	      *query_start = *query_end ;
-	      *query_end = tmp ;
+	      /* Fill in the sequence/mapping details. */
+	      diff_context->sequence = g_strdup(current_context->sequence) ;
+	      diff_context->parent = g_strdup(current_context->parent) ;
+	      diff_context->parent_span = current_context->parent_span ; /* n.b. struct copies. */
+	      diff_context->sequence_to_parent = current_context->sequence_to_parent ;
+	      diff_context->features_to_sequence = current_context->features_to_sequence ;
+	    }
+	  else
+	    {
+	      zMapFeatureContextDestroy(diff_context) ;
+	      diff_context = NULL ;
 	    }
 
 	  result = TRUE ;
 	}
     }
-  else
-    result = TRUE ;
+
+
+  if (result)
+    {
+      *current_context_inout = current_context ;
+      *diff_context_out = diff_context ;
+
+      /* delete the new_context.... */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* debugging.... */
+
+      printf("\ncurrent context\n") ;
+      printFeatureContext(*current_context_inout) ;
+
+
+      printf("\nnew context\n") ;
+      printFeatureContext(new_context) ;
+
+      if (*diff_context_out)
+	{
+	  printf("\ndiff context\n") ;
+	  printFeatureContext(*diff_context_out) ;
+	}
+
+      zMapAssert(fflush(stdout) == 0) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
 
 
   return result ;
@@ -126,209 +412,175 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
 
 
 
-void zmapFeatureDump(ZMapFeatureContext feature_context, char *file, int format)
-{
-  GIOChannel *channel;
-  GError     *channel_error = NULL;
-  char       *base_dir = (char *)g_get_home_dir();  /* do not free after use */
-  char       *filepath = g_strdup_printf("%s/%s", base_dir, file);
 
-  
-  /* open output file */
-  if (!(channel = g_io_channel_new_file(filepath, "w", &channel_error)))
+
+/* 
+ *            Internal routines. 
+ */
+
+
+
+
+/* Note that user_data is the _address_ of the pointer to a GData, we need this because
+ * we need to set the GData address in the original struct to be the new GData address
+ * after we have added elements to it. */
+static void doNewFeatureSets(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureSet new_set = (ZMapFeatureSet)data ;
+
+  FeatureContexts contexts = (FeatureContexts)user_data ;
+  GData **current_result = contexts->current_feature_sets ;
+  GData *current_feature_sets = *current_result ;
+  GData **diff_result = contexts->diff_feature_sets ;
+  GData *diff_feature_sets = *diff_result ;
+  GData **new_result = contexts->new_feature_sets ;
+  GData *new_feature_sets = *new_result ;
+
+  ZMapFeatureSet current_set, diff_set ;
+  char *feature_set_name = NULL ;
+
+
+  feature_set_name = (char *)g_quark_to_string(key_id) ;
+
+  zMapAssert(strcmp(feature_set_name, new_set->source) == 0) ;
+
+  /* If the feature set is not in the current feature sets then we can simply add it to
+   * them, otherwise we must do a merge of the individual features within
+   * the new and current sets. */
+  if (!(current_set = g_datalist_id_get_data(&(current_feature_sets), key_id)))
     {
-      zMapShowMsg(ZMAP_MSG_EXIT, "Can't open output file: %s :%s\n", filepath, channel_error->message);
-      g_error_free(channel_error);
+      gpointer unused ;
+
+      g_datalist_set_data(&(current_feature_sets), feature_set_name, new_set) ;
+      g_datalist_set_data(&(diff_feature_sets), feature_set_name, new_set) ;
+
+      /* Should remove from new set here but not sure if it will
+       * work as part of a foreach loop....which is where this routine is called from... */
+      unused = g_datalist_id_remove_no_notify(&(new_feature_sets), key_id) ;
+
+      printf("stop here\n") ;
     }
   else
     {
-      /* dump out the data */
-      if (format == TAB_DELIMITED)
-	{
-	  contextDump_TD(feature_context, channel);
-	}
+      FeatureSetStruct features ;
 
+      diff_set = zMapFeatureSetCreate(feature_set_name, NULL) ;
 
-      /* close output file */
-      if (channel)
-	{
-	  if (!g_io_channel_shutdown(channel, TRUE, &channel_error))
-	    {
-	      zMapShowMsg(ZMAP_MSG_EXIT, "Error closing output file: %s :%s\n", filepath, channel_error->message);
-	      g_error_free(channel_error);
-	    }
-	  else 
-	    zMapShowMsg(ZMAP_MSG_INFORMATION, "Sequence successfully dumped to file\n");
-	}
+      features.current_features = &(current_set->features);
+      features.diff_features = &(diff_set->features) ;
+      features.new_features = &(new_set->features) ;
+
+      g_datalist_foreach(&(new_set->features),
+			 doNewFeatures, (void *)&features) ;
+
+      /* after we have done this, if there are any features in the diff set then we must
+       * add it to the diff_feature_set as above.... */
+      if (diff_set->features)
+	g_datalist_set_data(&(diff_feature_sets), feature_set_name, diff_set) ;
+      else
+	zMapFeatureSetDestroy(diff_set) ;
+
     }
-  g_free(filepath);
 
-  return;
+  /* Poke the results back in to the original feature context, seems hokey but remember that
+   * the address of GData will change as new elements are added so we must poke back the new
+   * address. */
+  *current_result = current_feature_sets ;
+  *diff_result = diff_feature_sets ;
+  *new_result = new_feature_sets ;
+
+  return ;
 }
 
 
-static void contextDump_TD(ZMapFeatureContext feature_context, GIOChannel *channel)
+static void doNewFeatures(GQuark key_id, gpointer data, gpointer user_data)
 {
-  GString *line;
+  ZMapFeature new_feature = (ZMapFeature)data ;
 
-  if (feature_context)
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  GData **current_result = (GData **)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  FeatureSet sets = (FeatureSet)user_data ;
+  GData **current_result = sets->current_features ;
+  GData *current_features = *current_result ;
+  GData **diff_result = sets->diff_features ;
+  GData *diff_features = *diff_result ;
+  GData **new_result = sets->new_features ;
+  GData *new_features = *new_result ;
+
+  ZMapFeature current_feature, diff_feature ;
+  char *feature_name = NULL ;
+
+  feature_name = (char *)g_quark_to_string(key_id) ;
+
+  zMapAssert(strcmp(feature_name, new_feature->name) == 0) ;
+
+  /* If the feature is not in the current feature set then we can simply add it, if its
+   * already there then we don't do anything, i.e. we don't try and merge two features. */
+  if (!(current_feature = g_datalist_id_get_data(&(current_features), key_id)))
     {
-      line  = g_string_sized_new(150);
-      g_string_printf(line, "%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", 
-		      feature_context->sequence, 
-		      feature_context->parent,
-		      feature_context->parent_span.x1,
-		      feature_context->parent_span.x2,
-		      feature_context->sequence_to_parent.p1,
-		      feature_context->sequence_to_parent.p2,
-		      feature_context->sequence_to_parent.c1,
-		      feature_context->sequence_to_parent.c2,
-		      feature_context->features_to_sequence.p1,
-		      feature_context->features_to_sequence.p2,
-		      feature_context->features_to_sequence.c1,
-		      feature_context->features_to_sequence.c2
-		      );
+      gpointer unused ;
 
-      /* Only proceed if there's no problem printing the line */
-      if (printLine(channel, line->str) == TRUE)
-	g_datalist_foreach(&(feature_context->feature_sets), setDump_TD, channel);
+      g_datalist_set_data(&(current_features), feature_name, new_feature) ;
+      g_datalist_set_data(&(diff_features), feature_name, new_feature) ;
 
-      g_string_free(line, FALSE);
+
+      /* Should remove from new set here but not sure if it will
+       * work as part of a foreach loop....which is where this routine is called from... */
+      unused = g_datalist_id_remove_no_notify(&(new_features), key_id) ;
+
     }
 
-  return;
+  /* Poke the results back in to the original feature set, seems hokey but remember that
+   * the address of GData will change as new elements are added so we must poke back the new
+   * address. */
+  *current_result = current_features ;
+  *diff_result = diff_features ;
+  *new_result = new_features ;
+
+  return ;
 }
 
 
-static void setDump_TD(GQuark key_id, gpointer data, gpointer user_data)
+
+
+/* some debugging stuff........ */
+static void printFeatureContext(ZMapFeatureContext context)
 {
-  ZMapFeatureSet feature_set = (ZMapFeatureSet)data;
-  GIOChannel *channel = (GIOChannel*)user_data;
-  GString *line;
+  char *prefix = "Context" ;
 
-  if (feature_set)
-    {
-      line = g_string_sized_new(50);
-      g_string_printf(line, "%s\n", feature_set->source);
+  printf("%s :  %s\n", prefix, context->sequence) ;
 
-      /* Only proceed if there's no problem printing the line */
-      if (printLine(channel, line->str) == TRUE)
-	g_datalist_foreach(&(feature_set->features), featureDump_TD, channel);
-    
-      g_string_free(line, FALSE);
-    }
-  return;
+  g_datalist_foreach(&(context->feature_sets), printFeatureSet, NULL) ;
+
+
+  return ;
 }
 
-
-static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data)
+static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 {
-  ZMapFeature feature = (ZMapFeature)data;
-  GIOChannel *channel = (GIOChannel*)user_data;
-  char *type, *strand, *phase;
-  GString *line;
-  gboolean unused;
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
+  char *prefix = "\t\tFeature Set" ;
 
-  if (feature)
-    {
-      line = g_string_sized_new(150);
-      type   = zmapLookUpEnum(feature->type, TYPE_ENUM);
-      strand = zmapLookUpEnum(feature->strand, STRAND_ENUM);
-      phase  = zmapLookUpEnum(feature->phase, PHASE_ENUM);
+  printf("%s :  %s\n", prefix, feature_set->source) ;
 
-      g_string_printf(line, "%d\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%f", 
-		      feature->id,
-		      feature->name,
-		      type,
-		      feature->x1,
-		      feature->x2,
-		      feature->method,
-		      feature->method_name,
-		      strand,
-		      phase,
-		      feature->score
-		      );
-      if (feature->text)
-	{
-	  g_string_append_c(line, '\t');
-	  g_string_append  (line, feature->text);
-	}
+  g_datalist_foreach(&(feature_set->features), printFeature, NULL) ;
 
-      /* all these extra fields not required for now.
-      *if (feature->type == ZMAPFEATURE_HOMOL)
-      *{
-      * line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d\t%f\t", line,
-      *			 feature->feature.homol.type,
-      *			 feature->feature.homol.y1,
-      *			 feature->feature.homol.y2,
-      *			 feature->feature.homol.target_strand,
-      *			 feature->feature.homol.target_phase,
-      *			 feature->feature.homol.score
-      *			 );   
-      * for (i = 0; i < feature->feature.homol.align->len; i++)
-      *   {
-      *     align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
-      *     line = g_strdup_printf("%s\t%d\t%d\t%d\t%d", line,
-      *			     align->q1,
-      *			     align->q2,
-      *		     align->t1,
-      *			     align->t2
-      *			     );
-      *   }
-      *
-      *else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-      *{
-      *  line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d", line,
-      *			 feature->feature.transcript.cdsStart,
-      *			 feature->feature.transcript.cdsEnd,
-      *			 feature->feature.transcript.start_not_found,
-      *			 feature->feature.transcript.cds_phase,
-      *			 feature->feature.transcript.endNotFound
-      *			 );   
-      *  for (i = 0; i < feature->feature.transcript.exons->len; i++)
-      *    {
-      *      exon = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
-      *      line = g_strdup_printf("%s\t%d\t%d", line,
-      *			     exon->x1,
-      *			     exon->x2
-      *			     );
-      *    }
-      *}
-      */
-
-      g_string_append_c(line, '\n');
-      unused = printLine(channel, line->str);
-
-      g_string_free(line, FALSE);
-    }
-
-
-  return;
+  return ;
 }
 
 
-
-static gboolean printLine(GIOChannel *channel, gchar *line)
+static void printFeature(GQuark key_id, gpointer data, gpointer user_data)
 {
-  gboolean status = TRUE;
-  gsize bytes_written;
-  GError *channel_error = NULL;
+  ZMapFeature feature = (ZMapFeature)data ;
+  char *prefix = "\t\t\t\tFeature" ;
 
+  printf("%s :  %s\n", prefix, feature->name) ;
 
-  if (channel)
-    {
-      if (!g_io_channel_write_chars(channel, line, -1, &bytes_written, &channel_error))
-	{
-	  zMapShowMsg(ZMAP_MSG_EXIT, "Error writing to output file: %30s :%s\n", line, channel_error->message);
-	  g_error_free(channel_error);
-	  status = FALSE;
-	}
-    }
-
-  return status;
+  return ;
 }
 
-/****************************** end of file *******************************/
 
-
+/*! @} end of zmapfeatures docs. */
 
