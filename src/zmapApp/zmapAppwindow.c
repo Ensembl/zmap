@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 17:20 2003 (edgrif)
+ * Last edited: Nov 17 17:18 2003 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.2 2003-11-14 17:47:11 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.3 2003-11-18 10:44:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,9 +39,7 @@
 
 static void initGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
-
 static void quitCB(GtkWidget *widget, gpointer data) ;
-static gint idleCB(gpointer cb_data) ;
 static void removeZmapRow(void *app_data, void *zmap) ;
 
 
@@ -85,8 +83,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_box_pack_start(GTK_BOX(vbox), quit_button, FALSE, FALSE, 0) ;
 
   gtk_widget_show_all(toplevel) ;
-
-  gtk_idle_add(idleCB, (gpointer)app_context) ;
 
   gtk_main() ;
 
@@ -155,26 +151,11 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
-/* This is really the guts of the code to check what our connection threads are up
- * to. Every time the GUI thread has stopped doing things this routine gets called
- * so then we check all connections for action..... */
-static gint idleCB(gpointer cb_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)cb_data ;
-
-  zMapManagerCheckConnections(app_context->zmap_manager) ;
-
-  return 1 ;						    /* > 0 tells gtk to keep calling idleCB */
-}
-
-
-
 static void removeZmapRow(void *app_data, void *zmap_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_data ;
-  ZMapWinConn zmap = (ZMapWinConn)zmap_data ;
+  ZMap zmap = (ZMap)zmap_data ;
   int row ;
-
 
   row = gtk_clist_find_row_from_data(GTK_CLIST(app_context->clist_widg), zmap) ;
 
@@ -186,7 +167,6 @@ static void removeZmapRow(void *app_data, void *zmap_data)
    * messed with. */
   gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, NULL) ;
   gtk_clist_remove(GTK_CLIST(app_context->clist_widg), row) ;
-
 
   return ;
 }
