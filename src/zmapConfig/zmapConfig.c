@@ -25,15 +25,16 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Feb  3 16:34 2005 (edgrif)
+ * Last edited: Feb 10 16:01 2005 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.13 2005-02-03 16:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.14 2005-02-10 16:36:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <strings.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapConfigDir.h>
 #include <zmapConfig_P.h>
 
 
@@ -307,9 +308,11 @@ ZMapConfigStanzaElement zMapConfigFindElement(ZMapConfigStanza stanza, char *ele
  *  */
 ZMapConfig zMapConfigCreate(void)
 {
-  ZMapConfig config ;
+  ZMapConfig config = NULL ;
+  char *filepath = NULL ;
 
-  config = zMapConfigCreateFromFile(NULL, NULL) ;
+  if ((filepath = zMapConfigDirGetFile()))
+    config = zMapConfigCreateFromFile(filepath) ;
 
   return config ;
 }
@@ -317,75 +320,38 @@ ZMapConfig zMapConfigCreate(void)
 
 /*!
  * Create a configuration which can then be searched for configuration stanzas
- * from a named file in a named directory. Either can be NULL in which case
- * defaults will be used.
+ * from a named file, the file must exist.
  *
- * @param config_dir          Name of a directory containing configuration file or NULL.
- * @param config_file         Name of a configuration file to be read or NULL.
+ * @param config_file         Path of configuration file to be read.
  * @return                    The configuration if all the configuration files etc. were
  *                            successfully read, NULL otherwise.
  *  */
-ZMapConfig zMapConfigCreateFromFile(char *config_dir, char *config_file)
+ZMapConfig zMapConfigCreateFromFile(char *config_file)
 {
-  ZMapConfig config ;
+  ZMapConfig config = NULL ;
   gboolean status = TRUE ;
-  const char *directory ;
-  char *file = ZMAP_CONFIG_FILE ;
 
+  zMapAssert(config_file && *config_file) ;
 
-  /* shouldn't do this for this function, ok for one above....for this function, caller
-   * should provide just a path...... */
-  if (config_dir)
-    directory = config_dir ;
-  else
-    directory = zMapGetControlDirName() ;
-  if (config_file)
-    file = config_file ;
-
-  config = createConfig() ;
-
-  /* Should be logging here..... */
-
-  /* Get the config directory (may have to create one). */
-  if (status)
+  if (zMapFileAccess(config_file) && !zMapFileEmpty(config_file))
     {
-      if (!(config->config_dir = zMapGetControlFileDir((char *)directory)))
-	{
-	  status = FALSE ;
-	}
-    }
+      config = createConfig() ;
 
-  /* Get the config file (may have to create one). */
-  if (status)
-    {
-      if (!(config->config_file = zMapGetFile(config->config_dir, file)))
-	{
-	  status = FALSE ;
-	}
-    }
+      config->config_file = g_strdup(config_file) ;
 
-
-  /* Get the configuration (may have to create a default one). */
-  if (status)
-    {
+      /* Get the configuration (may have to create a default one). */
       if (zMapFileEmpty(config->config_file))
-	{
-	  status = zmapMakeUserConfig(config) ;
-	}
+	status = zmapMakeUserConfig(config) ;
       else
+	status = zmapGetUserConfig(config) ;
+
+      /* Clean up if we have failed. */
+      if (!status)
 	{
-	  status = zmapGetUserConfig(config) ;
+	  destroyConfig(config) ;
+	  config = NULL ;
 	}
     }
-
-
-  /* Clean up if we have failed. */
-  if (!status)
-    {
-      destroyConfig(config) ;
-      config = NULL ;
-    }
-
 
   return config ;
 }
@@ -446,7 +412,7 @@ static ZMapConfig createConfig(void)
 
   config = g_new0(ZMapConfigStruct, 1) ;
 
-  config->config_dir = config->config_file = NULL ;
+  config->config_file = NULL ;
 
   config->stanzas = NULL ;
 
@@ -456,14 +422,8 @@ static ZMapConfig createConfig(void)
 
 static void destroyConfig(ZMapConfig config)
 {
-
-  if (config->config_dir)
-    g_free(config->config_dir) ;
-
   if (config->config_file)
     g_free(config->config_file) ;
-
-
 
   g_free(config) ;
 
