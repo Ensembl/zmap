@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Oct 15 16:52 2004 (rnc)
+ * Last edited: Oct 18 12:42 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.15 2004-10-15 16:09:21 rnc Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.16 2004-10-18 13:03:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,10 +77,15 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
   gtk_container_add(GTK_CONTAINER(frame), hbox);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Disabled for now, need to do work on view... */
+
   load_button = gtk_button_new_with_label("Load") ;
   gtk_signal_connect(GTK_OBJECT(load_button), "clicked",
 		     GTK_SIGNAL_FUNC(loadCB), (gpointer)zmap) ;
   gtk_box_pack_start(GTK_BOX(hbox), load_button, FALSE, FALSE, 0) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   stop_button = gtk_button_new_with_label("Stop") ;
   gtk_signal_connect(GTK_OBJECT(stop_button), "clicked",
@@ -122,9 +127,9 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)zmap) ;
   gtk_box_pack_start(GTK_BOX(hbox), quit_button, FALSE, FALSE, 0) ;
 
-  /* Make Load button the default, its probably what user wants to do mostly. */
-  GTK_WIDGET_SET_FLAGS(load_button, GTK_CAN_DEFAULT) ;
-  gtk_window_set_default(GTK_WINDOW(zmap->toplevel), load_button) ;
+  /* Make Quit button the default, its probably what user wants to do mostly. */
+  GTK_WIDGET_SET_FLAGS(quit_button, GTK_CAN_DEFAULT) ;
+  gtk_window_set_default(GTK_WINDOW(zmap->toplevel), quit_button) ;
 
 
   return frame ;
@@ -136,7 +141,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 /*
  *  ------------------- Internal functions -------------------
  */
-static void testfunc(GQuark key_id, gpointer data, gpointer user_data);
+
 
 /* These callbacks simply make calls to routines in zmapControl.c, this is because I want all
  * the state handling etc. to be in one file so that its easier to work on. */
