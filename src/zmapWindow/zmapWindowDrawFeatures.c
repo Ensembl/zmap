@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 12 14:41 2004 (edgrif)
+ * Last edited: Nov 12 15:50 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.35 2004-11-12 14:45:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.36 2004-11-12 16:03:26 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,10 +37,9 @@
 #include <ZMap/zmapUtils.h>
 
 
-
-#define SCROLLBAR_OFFSET 170.0
-#define SCROLLBAR_WIDTH   40.0
-#define COLUMN_SPACING     5.0
+#define SCALEBAR_OFFSET 170.0
+#define SCALEBAR_WIDTH   40.0
+#define COLUMN_SPACING    5.0
 
 /******************** function prototypes *************************************************/
 
@@ -50,6 +49,8 @@ static void     columnClickCB     (ZMapCanvasDataStruct *canvasData, ZMapFeature
 static gboolean handleCanvasEvent (FooCanvasItem *item, GdkEventButton *event, gpointer data);
 static gboolean freeObjectKeys    (GtkWidget *widget, gpointer data);
 static void     freeFeatureItem   (gpointer data);
+FooCanvasItem *createColumn(ZMapCanvasDataStruct *canvasData, FeatureKeys featureKeys,
+			    gboolean forward, double position, gchar *type_name);
 
 static void getTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out) ;
 
@@ -62,8 +63,6 @@ static void getTextDimensions(FooCanvasGroup *group, double *width_out, double *
 static ZMapFeatureCallbacks feature_cbs_G = NULL ;
 
 
-
-/******************** start of function code **********************************************/
 
 /************************ public functions ************************************************/
 
@@ -88,14 +87,14 @@ void zmapFeatureInit(ZMapFeatureCallbacks callbacks)
 }
 
 
-
+/** Callback to display feature details on the window.
+ *  
+ * Control passes up the hierarchy to zmapControl 
+ * where a few details of the selected feature are 
+ * displayed on the info_panel of the window. 
+ */
 gboolean zMapFeatureClickCB(ZMapCanvasDataStruct *canvasData, ZMapFeature feature)
 {
-
-  /* call the function pointed to. This will cascade up the hierarchy
-  ** to zmapControl.c where details of the object clicked on will be
-  ** displayed in zmap->info_panel. */
-
   (*(feature_cbs_G->click))(canvasData->window, canvasData->window->app_data, feature);
 
   return FALSE;  /* FALSE allows any other connected function to be run. */
@@ -142,15 +141,14 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
       double text_height, border_world ;
 
       canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
-      canvasData->scaleBarOffset = SCROLLBAR_OFFSET;
-      canvasData->types = types;
+
+      canvasData->scaleBarOffset  = SCALEBAR_OFFSET;
+      canvasData->types           = types;
       canvasData->feature_context = feature_context;
-      canvasData->reduced = FALSE;
-      canvasData->atLimit = FALSE;
       canvasData->seqLength
 	= feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1 + 1;
       canvasData->seq_start = feature_context->sequence_to_parent.c1 ;
-      canvasData->seq_end = feature_context->sequence_to_parent.c2 ;
+      canvasData->seq_end   = feature_context->sequence_to_parent.c2 ;
 
       if (!(canvasData->channel = g_io_channel_new_file(file, "w", &channel_error)))
 	{
@@ -226,7 +224,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 						feature_context->sequence_to_parent.c1, 
 						feature_context->sequence_to_parent.c2);
 
-      canvasData->column_position = canvasData->scaleBarOffset + SCROLLBAR_WIDTH + (2 * COLUMN_SPACING);
+      canvasData->column_position = canvasData->scaleBarOffset + SCALEBAR_WIDTH + (2 * COLUMN_SPACING);
       canvasData->revColPos = canvasData->scaleBarOffset - 40;                
       /* NB there's a flaw here: too many visible upstrand groups and we'll go left of the edge of
       ** the window. Should really be keeping track and adjusting scroll region if necessary. */
@@ -260,7 +258,11 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 
   if (canvasData->channel)
     {
-      g_io_channel_shutdown(canvasData->channel, TRUE, &channel_error);
+      if (!g_io_channel_shutdown(canvasData->channel, TRUE, &channel_error))
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "Error closing output file: %s  %s\n", file, channel_error->message);
+	  g_error_free(channel_error);
+	}
     }
 
   g_free(file);
@@ -278,39 +280,22 @@ void zmapWindowHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *can
   /* if any other feature is currently in focus, revert it to its std colours */
   if (canvasData->focusFeature)
     foo_canvas_item_set(FOO_CANVAS_ITEM(canvasData->focusFeature),
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-			"outline_color_gdk", &canvasData->focusType->outline,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
- 			"fill_color_gdk"   , &canvasData->focusType->foreground,
+ 			"fill_color_gdk", &canvasData->focusType->foreground,
 			NULL);
 
-  /* set outline and foreground GdkColors to be the inverse of current settings */
+  /* set foreground GdkColor to be the inverse of current settings */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  outline.red      = (65535 - canvasData->thisType->outline.red  );
-  outline.green    = (65535 - canvasData->thisType->outline.green);
-  outline.blue     = (65535 - canvasData->thisType->outline.blue );
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  
   foreground.red   = (65535 - canvasData->thisType->foreground.red  );
   foreground.green = (65535 - canvasData->thisType->foreground.green);
   foreground.blue  = (65535 - canvasData->thisType->foreground.blue );
 
   foo_canvas_item_set(feature,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      "outline_color_gdk", &outline,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		      "fill_color_gdk"   , &foreground,
+		      "fill_color_gdk", &foreground,
 		      NULL);
  
   /* store these settings and reshow the feature */
   canvasData->focusFeature = feature;
-  canvasData->focusType = canvasData->thisType;
+  canvasData->focusType    = canvasData->thisType;
   gtk_widget_show_all(GTK_WIDGET(canvasData->canvas)); 
 
   return;
@@ -325,19 +310,12 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
   ZMapCanvasDataStruct *canvasData = (ZMapCanvasDataStruct*)user_data;
 
-  const gchar   *itemDataKey;
   FeatureKeys    featureKeys;
-  FooCanvasItem *boundingBox;
-  GdkColor       white;
-  ZMapColStruct  column;
-  double         min_mag;
-  GString       *source = g_string_new(feature_set->source), *source_lower;
+  GString       *source = g_string_new(feature_set->source);
 
-  source_lower = g_string_ascii_down(source);
+  source = g_string_ascii_down(source); /* does it in place */
 
-  gdk_color_parse("white", &white);
-
-  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), source_lower->str);
+  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), source->str);
   zMapAssert(canvasData->thisType);
 
   /* context_key is used when a user clicks a canvas item.  The callback function needs to know
@@ -349,131 +327,85 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   featureKeys->feature_set = feature_set;
   featureKeys->feature_key = 0;
 
-  column.type = canvasData->thisType;
-  column.type_name = g_strdup_printf(source_lower->str);
+  canvasData->columnGroup = createColumn(canvasData, featureKeys, TRUE, 
+					 canvasData->column_position, source->str);
+  canvasData->column_position += (canvasData->thisType->width + COLUMN_SPACING);
 
-  if (!canvasData->thisType) /* ie no method for this source */
-      zMapLogWarning("No ZMapType (aka method) found for source: %s", feature_set->source);
-  else
+  if (canvasData->thisType->showUpStrand)
     {
-      /* There should be a function here to replace all this duplicated code..... */
-
-      /* It is _vital_ that the column group starts at 0.0 so that the feature drawing
-       * code can just directly draw the features in their natural coords. */
-      canvasData->columnGroup = foo_canvas_item_new(foo_canvas_root(canvasData->canvas),
-						    foo_canvas_group_get_type(),
-						    "x", canvasData->column_position,
-						    "y", 0.0,
-						    NULL);
-
-      canvasData->column_position += (canvasData->thisType->width + COLUMN_SPACING);
-
-      /* Each column is entirely covered by a bounding box over the range of the sequence,
-       * this means we can get events (e.g. button clicks) from anywhere within the column. */
-      boundingBox = foo_canvas_item_new(FOO_CANVAS_GROUP(canvasData->columnGroup),
-					foo_canvas_rect_get_type(),
-					"x1", 0.0,
-					"y1", canvasData->seq_start,
-					"x2", (double)canvasData->thisType->width,
-					"y2", canvasData->seq_end,
-					"fill_color_gdk", &white,
-					NULL);
-
-      g_signal_connect(G_OBJECT(boundingBox), "event",
-		       G_CALLBACK(handleCanvasEvent), canvasData) ;
-
-      itemDataKey = "feature";
-      g_object_set_data(G_OBJECT(boundingBox), itemDataKey, featureKeys);
-      itemDataKey = "canvasData";
-      g_object_set_data(G_OBJECT(boundingBox), itemDataKey, canvasData);
-	  
-
-      if (boundingBox)
-	g_signal_connect(G_OBJECT(boundingBox), "destroy",
-			 G_CALLBACK(freeObjectKeys), featureKeys);
-
-
-
-      /* store a pointer to the column to enable hide/unhide while zooming */
-      column.item = canvasData->columnGroup;
-      column.forward = TRUE;
-      canvasData->columns = g_array_append_val(canvasData->columns, column);
-
-      /* Decide whether or not this column should be visible */
-      /* thisType->min_mag is in bases per line, but window->zoom_factor is pixels per base */
-      min_mag = (canvasData->thisType->min_mag 
-		 ? canvasData->max_zoom/canvasData->thisType->min_mag : 0.0);
-
-      if (canvasData->window->zoom_factor < min_mag)
-      	foo_canvas_item_hide(FOO_CANVAS_ITEM(canvasData->columnGroup));
-        
-
-      /* if (showUpStrand) then create a reverse strand group as well */
-      if (canvasData->thisType->showUpStrand)
-	{
-	  canvasData->revColGroup = foo_canvas_item_new(foo_canvas_root(canvasData->canvas),
-							foo_canvas_group_get_type(),
-							"x", canvasData->revColPos,
-							/* not right, I think. Group should start
-							** at the top edge of the display in
-							** pixels (canvas coords) */
-							/* "y", canvasData->seq_start, */
-							"y", 0.0,
-							NULL);
-	  canvasData->revColPos -= (canvasData->thisType->width + COLUMN_SPACING);
-
-	  boundingBox = foo_canvas_item_new(FOO_CANVAS_GROUP(canvasData->revColGroup),
-					    foo_canvas_rect_get_type(),
-					    "x1", 0.0,
-					    "y1", canvasData->seq_start,
-					    "x2", canvasData->thisType->width,
-					    "y2", canvasData->seq_end,
-					    "fill_color_gdk", &white,
-					    NULL);
-
-	  g_signal_connect(G_OBJECT(boundingBox), "event",
-			   G_CALLBACK(handleCanvasEvent), canvasData) ;
-
-	  itemDataKey = "feature";
-	  g_object_set_data(G_OBJECT(boundingBox), itemDataKey, featureKeys);
-	  itemDataKey = "canvasData";
-	  g_object_set_data(G_OBJECT(boundingBox), itemDataKey, canvasData);
-	  
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* THIS IS NOT CORRECT AS IT ENDS UP FREEING featureKeys _twice_ */
-
-	  if (boundingBox)
-	    g_signal_connect(G_OBJECT(boundingBox), "destroy",
-			     G_CALLBACK(freeObjectKeys), featureKeys);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-	  /* store a pointer to the column to enable hide/unhide while zooming 
-	  ** and also to permit scrolling directly to a desired feature. */
-	  column.item = canvasData->revColGroup;
-	  column.forward = FALSE;
-	  canvasData->columns = g_array_append_val(canvasData->columns, column);
-
-	  /* Decide whether or not this column should be visible */
-	  /* thisType->min_mag is in bases per line, but window->zoom_factor is pixels per base */
-	  min_mag = (canvasData->thisType->min_mag
-		     ? canvasData->max_zoom/canvasData->thisType->min_mag : 0.0);
-
-	  if (canvasData->window->zoom_factor < min_mag)
-	    foo_canvas_item_hide(FOO_CANVAS_ITEM(canvasData->revColGroup));
-	  
-	}
-
-      /* Expand the scroll region _horizontally_ to include the latest column. */
-      foo_canvas_set_scroll_region(canvasData->window->canvas, 1.0, canvasData->seq_start, 
-				   canvasData->column_position + 20, 
-				   canvasData->seq_end) ;
-
-      g_datalist_foreach(&(feature_set->features), ProcessFeature, canvasData) ;
+      canvasData->revColGroup = createColumn(canvasData, featureKeys, FALSE, 
+					     canvasData->revColPos, source->str);
+      canvasData->revColPos -= (canvasData->thisType->width + COLUMN_SPACING);
     }
+  
+
+  /* Expand the scroll region _horizontally_ to include the latest column. */
+  foo_canvas_set_scroll_region(canvasData->window->canvas, 1.0, canvasData->seq_start, 
+			       canvasData->column_position + 20, 
+			       canvasData->seq_end) ;
+  
+  g_datalist_foreach(&(feature_set->features), ProcessFeature, canvasData) ;
 
   return ;
+}
+
+
+
+/* createColumn
+ */
+FooCanvasItem *createColumn(ZMapCanvasDataStruct *canvasData,
+			    FeatureKeys featureKeys,
+			    gboolean forward,
+			    double position,
+			    gchar *type_name)
+{
+  GdkColor       white;
+  FooCanvasItem *group, *boundingBox;
+  ZMapColStruct  column;
+  double         min_mag;
+
+  gdk_color_parse("white", &white);
+
+  group = foo_canvas_item_new(foo_canvas_root(canvasData->canvas),
+			      foo_canvas_group_get_type(),
+			      "x", position,
+			      "y", 0.0,
+			      NULL);
+  
+  boundingBox = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
+				    foo_canvas_rect_get_type(),
+				    "x1", 0.0,
+				    "y1", canvasData->seq_start,
+				    "x2", (double)canvasData->thisType->width,
+				    "y2", canvasData->seq_end,
+				    "fill_color_gdk", &white,
+				    NULL);
+
+  g_signal_connect(G_OBJECT(boundingBox), "event",
+		   G_CALLBACK(handleCanvasEvent), canvasData) ;
+
+  g_object_set_data(G_OBJECT(boundingBox), "feature", featureKeys);
+  g_object_set_data(G_OBJECT(boundingBox), "canvasData", canvasData);
+  
+  g_signal_connect(G_OBJECT(group), "destroy",
+		   G_CALLBACK(freeObjectKeys), featureKeys);
+
+  /* store a pointer to the column to enable hide/unhide while zooming */
+  column.type = canvasData->thisType;
+  column.type_name = type_name;
+
+  column.item = group;
+  column.forward = forward;
+  canvasData->columns = g_array_append_val(canvasData->columns, column);
+  
+  /* Decide whether or not this column should be visible */
+  /* thisType->min_mag is in bases per line, but window->zoom_factor is pixels per base */
+  min_mag = (canvasData->thisType->min_mag ? canvasData->max_zoom/canvasData->thisType->min_mag : 0.0);
+  
+  if (canvasData->window->zoom_factor < min_mag)
+    foo_canvas_item_hide(FOO_CANVAS_ITEM(group));
+  
+  return group;
 }
 
 
