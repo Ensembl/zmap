@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Oct 18 10:30 2004 (edgrif)
+ * Last edited: Nov  2 16:00 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.34 2004-10-18 10:15:45 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.35 2004-11-04 12:41:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -742,6 +742,15 @@ static void updateControl(ZMap zmap, ZMapView view)
 			      features ? "" : " <no sequence loaded>") ;
       gtk_window_set_title(GTK_WINDOW(zmap->toplevel), title) ;
       g_free(title) ;
+
+
+      /* Set up zoom buttons. */
+      {
+	ZMapWindow window = zMapViewGetWindow(zmap->focuspane->curr_view_window) ;
+	ZMapWindowZoomStatus zoom_status = zMapWindowGetZoomStatus(window) ;
+
+	zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
+      }
     }
 
 
