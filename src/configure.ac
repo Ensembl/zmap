@@ -108,7 +108,7 @@ if $aceconn ; then
    elif test "x$aceconn_location" = "xno"; then
       AC_MSG_ERROR(... We currently need -lAceConn.  You cannot specify --without-ace-conn)
    else
-      ACECONN_LIBS="$aceconn_location $ACECONN_LIBS"
+      ACECONN_LIBS="-L$aceconn_location $ACECONN_LIBS"
    fi
 else
    FOUND_LIBS=
@@ -162,7 +162,7 @@ AC_TYPE_SIZE_T
 AC_FUNC_STAT
 AC_CHECK_FUNCS([gethostname memmove memset mkdir strcasecmp strstr strtol])
 
-LDFLAGS=$FOOCANVAS_LIBS
+LDFLAGS="$FOOCANVAS_LIBS $ACECONN_LIBS"
 AC_CHECK_LIB(foocanvas, foo_canvas_zmap,:, AC_MSG_ERROR(no patched libfoocanvas!))
 # HAVE_LIBFOOCANVAS is now defined
 
@@ -177,8 +177,6 @@ zmapFeature \
 zmapGFF \
 zmapMake \
 zmapManager \
-zmapNavigator \
-zmapNoThreads \
 zmapServer \
 zmapThreads \
 zmapUtils \
@@ -197,8 +195,6 @@ zmapFeature/Makefile
 zmapGFF/Makefile
 zmapMake/Makefile
 zmapManager/Makefile
-zmapNavigator/Makefile
-zmapNoThreads/Makefile
 zmapServer/Makefile
 zmapServer/acedb/Makefile
 zmapServer/das/Makefile
