@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Jan 20 16:42 2005 (edgrif)
+ * Last edited: Mar 18 10:25 2005 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.16 2005-01-24 11:27:50 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.17 2005-03-23 07:59:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -137,7 +137,7 @@ ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
 
-void     zmapViewFeatureDump(ZMapViewWindow view_window, char *file, int format);
+void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
 
 gboolean zMapViewDestroy(ZMapView zmap_view) ;
 

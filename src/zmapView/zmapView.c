@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar 15 14:23 2005 (rds)
+ * Last edited: Mar 18 10:26 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.49 2005-03-15 14:31:22 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.50 2005-03-23 07:59:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -599,9 +599,9 @@ ZMapView zMapViewGetView(ZMapViewWindow view_window)
 }
 
 
-void zmapViewFeatureDump(ZMapViewWindow view_window, char *file, int format)
+void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
 {
-  zMapFeatureDump(view_window->parent_view->features, file, format);
+  zMapFeatureDump(view_window->parent_view->features, file) ;
 
   return;
 }
