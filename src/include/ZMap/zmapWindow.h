@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Feb 10 15:58 2005 (edgrif)
+ * Last edited: Mar 16 15:31 2005 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.31 2005-02-10 16:34:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.32 2005-03-16 15:52:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -41,6 +41,10 @@
 #include <ZMap/zmapSys.h>		       /* For callback funcs... */
 #include <ZMap/zmapFeature.h>
 
+
+/*! @addtogroup zmapwindow
+ * @{
+ *  */
 
 
 /* Opaque type, represents an individual ZMap window. */
@@ -83,16 +87,25 @@ typedef struct _ZMapWindowCallbacksStruct
 
 
 
+/*! Callback function for menu items. The id indicates which menu_item was selected
+ *  resulting in the call to this callback. */
+typedef void (*ZMapWindowMenuItemCallbackFunc)(int menu_item_id, gpointer callback_data) ;
+
+/*!
+ * Defines a menu item. */
+typedef struct
+{
+  char *name ;						    /*!< Title string of menu item. */
+  int id ;						    /*!< Number uniquely identifying this
+							      menu item within a menu. */
+  ZMapWindowMenuItemCallbackFunc callback_func ;	    /*!< Function to call when this item
+							      is selected.  */
+  gpointer callback_data ;				    /*!< Data to pass to callback function. */
+} ZMapWindowMenuItemStruct, *ZMapWindowMenuItem ;
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* I AM UNCERTAIN ABOUT HOW MUCH THIS IS NEEDED....NEEDS LOOKING AT.... */
-/* Window stuff, callbacks, will need changing.... */
-typedef enum {ZMAP_WINDOW_INIT, ZMAP_WINDOW_LOAD,
-	      ZMAP_WINDOW_STOP, ZMAP_WINDOW_QUIT} ZmapWindowCmd ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+/*! @} end of zmapwindow docs. */
 
 
 
@@ -124,6 +137,13 @@ gboolean     zMapWindowScrollToItem    (ZMapWindow window, gchar *type, GQuark f
 void         zMapWindowDestroyLists    (ZMapWindow window);
 GQuark       zMapWindowGetFocusQuark   (ZMapWindow window);
 gchar       *zMapWindowGetTypeName     (ZMapWindow window);
+
+
+
+
+/* this may be better in a utils directory...not sure.... */
+void zMapWindowMakeMenu(char *menu_title, ZMapWindowMenuItemStruct menu_items[],
+			GdkEventButton *button_event) ;
 
 
 
