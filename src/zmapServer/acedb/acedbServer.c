@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov  5 13:55 2004 (edgrif)
+ * Last edited: Nov  9 14:07 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.15 2004-11-05 14:22:07 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.16 2004-11-09 14:43:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -300,18 +300,21 @@ static char *getMethodString(GData *types)
   GString *str ;
   gboolean free_string = TRUE ;
 
-  str = g_string_new("") ;
+  if (types)
+    {
+      str = g_string_new("") ;
 
-  str = g_string_append(str, "+method ") ;
+      str = g_string_append(str, "+method ") ;
 
-  types_data.first_method = TRUE ;
-  types_data.str = str ;
-  g_datalist_foreach(&types, addTypeName, (void *)&types_data) ;
+      types_data.first_method = TRUE ;
+      types_data.str = str ;
+      g_datalist_foreach(&types, addTypeName, (void *)&types_data) ;
 
-  if (*(str->str))
-    free_string = FALSE ;
+      if (*(str->str))
+	free_string = FALSE ;
 
-  type_names = g_string_free(str, free_string) ;
+      type_names = g_string_free(str, free_string) ;
+    }
 
   return type_names ;
 }
@@ -366,42 +369,17 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
   int reply_len = 0 ;
   gboolean found_gff_start ;
 
-  /* THIS IS A HACK FOR TESTING...WE SHOULD BE PASSED THIS AS PART OF THE SEQUENCE REQUEST... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  char *methods = "+method "
-    "RepeatMasker|RepeatMasker_LINE|RepeatMasker_Recon|RepeatMasker_simple"
-    "|RepeatMasker_SINE|RepeatMasker_Waterman"
-    "|GD_mRNA|GD_supported_mRNA|RNA|Saturated_vertebrate_mRNA"
-    "|supported_mRNA|supported_tRNA|vertebrate_mRNA"
-    "|EnsEMBL" ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  char *methods = "+method RepeatMasker|supported_mRNA|readpairs" ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  char *methods = "" ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
   /* Here we can convert the GFF that comes back, in the end we should be doing a number of
    * calls to AceConnRequest() as the server slices...but that will need a change to my
    * AceConn package.....
    * We make the big assumption that what comes back is a C string for now, this is true
    * for most acedb requests, only images/postscript are not and we aren't asking for them. */
-
-  acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s ; seqfeatures",
+  /* -rawmethods makes sure that the server does _not_ use the GFF_source field in the method obj
+   * to output the source field in the gff, we need to see the raw methods. */
+  acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s ; seqfeatures -rawmethods",
 				   server->sequence, server->start, server->end,
-				   server->method_str) ;
+				   server->method_str ? server->method_str : "") ;
 
   server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len) ;
     
@@ -470,7 +448,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
 	  gboolean free_on_destroy ;
       
 
-	  parser = zMapGFFCreateParser(FALSE) ;
+	  parser = zMapGFFCreateParser(server->types, FALSE) ;
 
 
 	  /* We probably won't have to deal with part lines here acedb should only return whole lines
