@@ -21,6 +21,7 @@ MAKE = make
 TEST = /usr/bin/test
 
 PACKAGE_CONFIG = pkg-config
+PACKAGE_PATH = PKG_CONFIG_PATH=/nfs/disk100/acedb/foocanvas-ins/linux/lib/pkgconfig
 
-GNOME_CONFIG = pkg-config
+GNOME_CONFIG = $(PACKAGE_CONFIG)
 

@@ -70,17 +70,17 @@ ZMAPNOTHR_LIB = $(BINDIR)/$(ZMAPNOTHR_LIBNAME)
 #
 ZMAP_INCLUDE = $(ROOT_DIRECTORY)/include
 
-GTK_INC = `$(PACKAGE_CONFIG) --cflags gtk+-2.0 glib-2.0`
-GNOME_INC = `$(GNOME_CONFIG) --cflags libgnomecanvas-2.0`
-FOO_INC = `$(GNOME_CONFIG) --cflags libfoocanvas`
-#GNOME_INC =
+GTK_INC = `$(PACKAGE_PATH) $(PACKAGE_CONFIG) --cflags gtk+-2.0 glib-2.0`
+#CANVAS_INC = `$(PACKAGE_CONFIG) --cflags libgnomecanvas-2.0`
+CANVAS_INC = `$(PACKAGE_PATH) $(PACKAGE_CONFIG) --cflags libfoocanvas`
 
-INCLUDE_DIRS = $(FOO_INC) $(GNOME_INC) $(GTK_INC) -I$(ZMAP_INCLUDE) -I. $(CURRENT_INC)
 
-GTK_LIBS = `$(PACKAGE_CONFIG) --libs gtk+-2.0 gthread-2.0 glib-2.0`
-GNOME_LIBS = `$(GNOME_CONFIG) --libs libgnomecanvas-2.0`
-FOO_LIBS = `$(GNOME_CONFIG) --libs libfoocanvas`
-#GNOME_LIBS =
+INCLUDE_DIRS = $(CANVAS_INC) $(GTK_INC) -I$(ZMAP_INCLUDE) -I. $(CURRENT_INC)
+
+GTK_LIBS = `$(PACKAGE_PATH) $(PACKAGE_CONFIG) --libs gtk+-2.0 gthread-2.0 glib-2.0`
+#CANVAS_LIBS = `$(PACKAGE_CONFIG) --libs libgnomecanvas-2.0`
+CANVAS_LIBS = `$(PACKAGE_PATH) $(PACKAGE_CONFIG) --libs libfoocanvas`
+
 
 
 CURL_LIBS = `curl-config --libs`
