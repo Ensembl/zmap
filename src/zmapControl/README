@@ -1,0 +1,12 @@
+================================================================================   
+ZMapControl
+
+
+This directory contains the code that controls an instance of a "ZMap". A
+ZMap is created when a sequence is to be displayed and it includes not only
+the ZMap window but also the code to monitor that window and to create and
+control threads to retrieve and convert data from servers.
+
+This code is the interface by which a ZMap is controlled, it is not an executable
+in its own right but must be linked in with other code that makes calls to
+this code.
