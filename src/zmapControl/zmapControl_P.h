@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Sep 13 13:52 2004 (edgrif)
+ * Last edited: Nov  4 11:59 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.20 2004-09-13 12:57:31 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.21 2004-11-04 12:44:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -78,6 +78,10 @@ typedef struct _ZMapStruct
 
   GtkWidget       *hpane ;				    /* Holds the navigator and the view(s). */
 
+
+  /* buttons etc. */
+  GtkWidget *zoomin_but, *zoomout_but ;
+
   /* The navigator. */
   ZMapNavigator    navigator ;
 
@@ -127,6 +131,8 @@ typedef struct _ZMapPaneStruct
 } ZMapPaneStruct ;
 
 
+
+
 /* Functions internal to zmapControl. */
 gboolean   zmapControlWindowCreate     (ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap) ;
@@ -134,6 +140,8 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeFrame  (ZMap zmap) ;
 void       zmapControlWindowDestroy    (ZMap zmap) ;
 
+void zmapControlWindowDoTheZoom(ZMap zmap, double zoom) ;
+void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status) ;
 
 void zmapControlNavigatorCreate (ZMap zmap, GtkWidget *frame) ;
 void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext features) ;
@@ -144,8 +152,13 @@ void zmapControlResetCB       (ZMap zmap) ;
 void zmapControlNewCB         (ZMap zmap, char *testing_text) ;
 void zmapControlNewViewCB(ZMap zmap, char *new_sequence) ;
 
+void zmapControlInstallRemoteAtoms(GdkWindow *top_zmap_window) ;
+gint zmapControlPropertyEvent(GtkWidget *top_zmap_window, GdkEventProperty *ev, gpointer data) ;
+
+
 void zmapRecordFocus(ZMapPane pane) ; 
 ZMapPane zmapAddPane(ZMap zmap, char orientation) ;
+
 
 
 
