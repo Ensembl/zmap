@@ -10,26 +10,18 @@ MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
 
 
 # local macros
-WIND_PRIV_HDRS = zmapWindow_P.h
+#WIND_PRIV_HDRS = zmapWindow_P.h
 
-PUB_HDRS = seqregion.h stringbucket.h zmapDraw.h zmapWindow.h 
+PUB_HDRS =  zmapDraw.h
 #PUB_HDRS = zmapWindow.h 
 
-WIND_SRC = seqregion.c stringbucket.c \
-	zmapbccol.c zmapcols.c zmapDraw.c \
-	zmapWindow.c zmapWindowFrame.c GFF_scaffold.c \
-	zmapWindowDrawFeatures.c
-#WIND_SRC = zmapWindow.c zmapWindowFrame.c
+WIND_SRC = zmapDraw.c
 
-WIND_OBJ = seqregion.o stringbucket.o \
-	zmapbccol.o zmapcols.o zmapDraw.o \
-	zmapWindow.o zmapWindowFrame.o GFF_scaffold.o \
-	zmapWindowDrawFeatures.o		
-#WIND_OBJ = zmapWindow.o zmapWindowFrame.o
+WIND_OBJ = zmapDraw.o
 
 ZMAP_LIB = libzmap.a
 
-FUNCS = zmapfuncs.c zmapfuncs.h
+#FUNCS = zmapfuncs.c zmapfuncs.h
 
 #
 # These must all be set for the common includes to work.

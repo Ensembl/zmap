@@ -1,4 +1,4 @@
-/*  Last edited: Jul  5 14:37 2004 (rnc) */
+/*  Last edited: Jul 14 13:47 2004 (edgrif) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -26,8 +26,8 @@
  */
 
 #include <glib.h>
-#include <zmapDraw.h>
-#include <seqregion.h>
+#include <ZMap/zmapDraw.h>
+#include <../zmapWindow/seqregion.h>			    /* Hack to compile for now... */
 
 
 
@@ -55,8 +55,14 @@ void displayText(FooCanvasGroup *group, char *text, double x, double y)
 
 void zmRegBox(ZMapPane pane, int box, ZMapColumn *col, void *arg)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* hack to get everything to compile......... */
+
   zMapPaneSetBox2Col(pane, col, box);
   zMapPaneSetBox2Seg(pane, arg, box);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return;
 }

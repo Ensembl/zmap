@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 13 16:24 2004 (edgrif)
+ * Last edited: Jul 14 13:47 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.16 2004-07-14 09:12:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.17 2004-07-14 12:52:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -537,6 +537,8 @@ void zMapRegionFreeDNA(ZMapRegion *region)
 
 
 
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 // ZMapPane functions
 
@@ -551,6 +553,7 @@ void zMapPaneNewBox2Col(ZMapPane pane, int elements)
 
 
 /* MOVED FROM zmapWindow.c, THEY BE IN THE WRONG PLACE OR NOT EVEN NEEDED...... */
+
 
 
 
@@ -596,6 +599,8 @@ void zMapPaneFreeBox2Seg(ZMapPane pane)
     g_array_free(pane->box2seg, TRUE);
   return;
 }
+
+
 
 
 FooCanvasItem *zMapPaneGetGroup(ZMapPane pane)
