@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  1 19:52 2004 (edgrif)
+ * Last edited: Mar 11 15:56 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.2 2004-03-03 12:07:35 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.3 2004-03-12 15:59:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -115,12 +115,16 @@ void *zmapNewThread(void *thread_args)
 
   while (1)
     {
+      gchar *sequence ;
+
       ZMAP_THR_DEBUG(("%x: about to do timed wait\n", connection->thread_id)) ;
 
       /* this will crap over performance...asking the time all the time !! */
       timeout.tv_sec = 5 ;				    /* n.b. interface seems to absolute time. */
       timeout.tv_nsec = 0 ;
-      signalled_state = zmapCondVarWaitTimed(thread_state, ZMAP_REQUEST_WAIT, &timeout, TRUE) ;
+      sequence = NULL ;
+      signalled_state = zmapCondVarWaitTimed(thread_state, ZMAP_REQUEST_WAIT, &timeout, TRUE,
+					     &sequence) ;
 
       ZMAP_THR_DEBUG(("%x: finished condvar wait, state = %s\n", connection->thread_id,
 		      zMapVarGetRequestString(signalled_state))) ;
@@ -134,15 +138,22 @@ void *zmapNewThread(void *thread_args)
 	  static int failure = 0 ;
 	  char *server_command ;
 
-	  ZMAP_THR_DEBUG(("%x: getting data....\n", connection->thread_id)) ;
+	  /* Is it an error to not have a sequence ????? */
+	  if (!sequence)
+	    sequence = "" ;
+
+	  ZMAP_THR_DEBUG(("%x: getting sequence %s....\n", connection->thread_id, sequence)) ;
 
 	  g_string_sprintf(thread_cb->server_request,
-			   "gif seqget %s ; seqfeatures", connection->sequence) ;
+			   "gif seqget %s ; seqfeatures", sequence) ;
 
 	  if (!zMapServerRequest(thread_cb->server, thread_cb->server_request->str,
 				 &(thread_cb->server_reply)))
 	    {
 	      thread_cb->thread_died = TRUE ;
+
+	      thread_cb->initial_error = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNREQUEST,
+							 zMapServerLastErrorMsg(thread_cb->server)) ;
 
 	      /* NOTE IMPLICIT TERMINATION OF THREAD BY JUMPING OUT OF THIS LOOP
 	       * WHICH LEADS TO EXITTING FROM THIS ROUTINE. FOR OTHER ERRORS WE WIL
@@ -159,6 +170,18 @@ void *zmapNewThread(void *thread_args)
 
 	  thread_cb->server_reply = NULL ;		    /* Reset, we don't free this string. */
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      else
+	{
+	  /* unknown state......... */
+	  thread_cb->thread_died = TRUE ;
+	  thread_cb->initial_error = g_strdup_printf("Thread received unknown state from GUI: %s",
+						     zMapVarGetRequestString(signalled_state)) ;
+	  goto clean_up ;
+	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
 
@@ -230,10 +253,18 @@ static void cleanUpThread(void *thread_args)
   g_free(thread_cb) ;
 
 
+  printf("%x: error msg before condvar set: %s\n", connection->thread_id, error_msg) ;
+  fflush(stdout) ;
+
   if (!error_msg)
     zmapVarSetValue(&(connection->reply), reply) ;
   else
     zmapVarSetValueWithError(&(connection->reply), reply, error_msg) ;
+
+  printf("%x: error msg after condvar set: %s\n", connection->thread_id, error_msg) ;
+  fflush(stdout) ;
+
+
 
 
   ZMAP_THR_DEBUG(("%x: thread clean-up routine exitting because %s....\n",
