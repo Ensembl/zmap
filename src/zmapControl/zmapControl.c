@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Nov  2 16:00 2004 (edgrif)
+ * Last edited: Nov  4 14:32 2004 (rnc)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.35 2004-11-04 12:41:11 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.36 2004-11-08 10:21:14 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -603,7 +603,7 @@ static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feat
 		      feature->name,
 		      feature->x1,
 		      feature->x2,
-		      types[feature->type],
+		      zmapLookUpEnum(feature->type, TYPE_ENUM), 
 		      feature->method_name);
       gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), str->str);
     }
