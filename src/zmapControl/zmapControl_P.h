@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul 15 17:16 2004 (rnc)
+ * Last edited: Jul 19 11:29 2004 (rnc)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.7 2004-07-15 16:31:50 rnc Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.8 2004-07-20 08:13:51 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -62,29 +62,25 @@ typedef struct _ZMapStruct
 
   ZmapState        state ;
 
-  gboolean firstTime;
+  gboolean         firstTime;
 
-  GdkAtom zmap_atom ;					    /* Used for communicating with zmap */
+  GdkAtom          zmap_atom ;			            /* Used for communicating with zmap */
 
-  void *app_data ;					    /* Data passed back to all callbacks
+  void            *app_data ;				    /* Data passed back to all callbacks
 							       registered for this ZMap. */
 
   /* Widget stuff for the Zmap. */
-  GtkWidget *toplevel ;					    /* top level widget of zmap window. */
+  GtkWidget       *toplevel ;				    /* top level widget of zmap window. */
 
-  GtkWidget *navview_frame ;				    /* Holds all the navigator/view stuff. */
+  GtkWidget       *navview_frame ;			    /* Holds all the navigator/view stuff. */
 
-  GtkWidget *hpane ;					    /* Holds the navigator and the view(s). */
+  GtkWidget       *hpane ;				    /* Holds the navigator and the view(s). */
 
   /* The navigator. */
-  GtkWidget *navigator ;
-  FooCanvas *navcanvas ;
-  GtkWidget *navHBox, *navVBox;
+  ZMapNavigator    navigator ;
 
   /* The panes and views. */
 
-  //  GtkWidget       *displayvbox;
-  //  GtkWidget       *hbox;
   /* I'm not completely sure this is necessary....revisit this later.... */
   GtkWidget      *pane_vbox ;
 
@@ -92,18 +88,27 @@ typedef struct _ZMapStruct
   ZMapPane        focuspane ;
   GNode          *panesTree ;
 
-  //  ZMapView         curr_view ;
-
   /* List of views in this zmap. */
-  GList *view_list ;
-
+  GList          *view_list ;
 
   /* In DAS2 terminology methods are types...easy to change if we don't like the name.
    * These are the stylesheets in effect for the feature sets. */
-  GData *types ;
+  GData          *types ;
 
 
 } ZMapStruct ;
+
+
+
+/* Data associated with a single navigator */
+typedef struct _ZMapNavStruct 
+{
+  ZMapMapBlockStruct sequence_to_parent ;		    // how this sequence maps to parent
+  GtkWidget         *navHBox;
+  GtkWidget         *navVBox;
+  GtkWidget         *navVScale; 
+  GtkWidget         *navLabel;                           
+} ZMapNavStruct;
 
 
 
@@ -129,8 +134,8 @@ GtkWidget *zmapControlWindowMakeFrame  (ZMap zmap) ;
 void       zmapControlWindowDestroy    (ZMap zmap) ;
 
 
-GtkWidget *zmapControlNavigatorCreate(FooCanvas **canvas_out) ;
-void zmapControlNavigatorNewView(ZMapMapBlock sequence_to_parent) ;
+void zmapControlNavigatorCreate (ZMap zmap, GtkWidget *frame) ;
+void zmapControlNavigatorNewView(ZMapNavigator navigator) ;
 
 void zmapControlTopLevelKillCB(ZMap zmap) ;
 void zmapControlLoadCB        (ZMap zmap) ;

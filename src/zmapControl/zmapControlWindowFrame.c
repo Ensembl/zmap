@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 15 15:57 2004 (edgrif)
+ * Last edited: Jul 19 10:43 2004 (rnc)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.7 2004-07-15 15:10:39 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.8 2004-07-20 08:13:28 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,11 +72,10 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
   zmap->hpane = gtk_hpaned_new() ;
   gtk_container_add(GTK_CONTAINER(parent), zmap->hpane) ;
 
-
   /* Make the navigator which shows user where they are on the sequence. */
-  zmap->navigator = zmapControlNavigatorCreate(&(zmap->navcanvas)) ;
+  zmapControlNavigatorCreate(zmap, parent) ;
   gtk_paned_pack1(GTK_PANED(zmap->hpane), 
-		  zmap->navigator,
+		  zmap->navigator->navVBox,
                   TRUE, TRUE);
 
 
@@ -88,6 +87,8 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 
   gtk_paned_pack2(GTK_PANED(zmap->hpane), 
 		  zmap->pane_vbox, TRUE, TRUE);
+
+  gtk_widget_show_all(zmap->hpane);
 
   return ;
 }

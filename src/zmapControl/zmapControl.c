@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 19 16:06 2004 (edgrif)
+ * Last edited: Jul 19 16:41 2004 (rnc)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.20 2004-07-19 15:19:01 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.21 2004-07-20 08:12:08 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -523,7 +523,8 @@ static void dataLoadCB(ZMapView view, void *app_data)
   features = zMapViewGetFeatures(view) ;
 
   /* Update navigator. */
-  zmapControlNavigatorNewView(&(features->sequence_to_parent)) ;
+  zmap->navigator->sequence_to_parent = features->sequence_to_parent;
+  zmapControlNavigatorNewView(zmap->navigator) ;
 
 
   /* Update title bar of zmap window. */

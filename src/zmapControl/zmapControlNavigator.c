@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 15 17:12 2004 (rnc)
+ * Last edited: Jul 19 11:47 2004 (rnc)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.3 2004-07-15 16:30:14 rnc Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.4 2004-07-20 08:12:46 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,42 +38,42 @@
 
 /* AGH, we need a navigator struct to hold navigator stuff.......... */
 
-/* Create the navigator window which is a scrolled window without scroll bars (?),
- * I am unsure why we use a scrolled window here....  with a canvas beneath it. */
-GtkWidget *zmapControlNavigatorCreate(FooCanvas **canvas_out)
+void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
 {
-  GtkWidget *navigator, *canvas ;
- 
-  navigator = gtk_scrolled_window_new(NULL, NULL) ;
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(navigator), 
-				 GTK_POLICY_NEVER, GTK_POLICY_NEVER) ;
-  gtk_widget_set_size_request(navigator, 100, -1) ;
+  GtkRequisition req;
+  int increment = 200;
+  GtkWidget *vscale;
+  char str[10];
 
-  canvas = foo_canvas_new() ;
-  foo_canvas_set_scroll_region(FOO_CANVAS(canvas), 0.0, 0.0, 200.0, 500.0) ;
-  foo_canvas_item_new(foo_canvas_root(FOO_CANVAS(canvas)),
-			foo_canvas_rect_get_type(),
-			"x1",(double)0.0,
-			"y1",(double)0.0,
-			"x2",(double)200.0,
-			"y2",(double)500.0,
-			"fill_color", "white",
-			NULL);
+  zmap->navigator = g_new0(ZMapNavStruct, 1);
+  gtk_widget_size_request(frame, &req);
+  // Need a vbox so we can add a label with sequence size at the bottom later
+  zmap->navigator->navVBox = gtk_vbox_new(FALSE, 0);
+  // if we want to change the max, we'll have to destroy and recreate the vscale
+  zmap->navigator->navVScale = gtk_vscale_new_with_range(0, req.height, increment);
+  gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navVScale, TRUE, TRUE, 0);
+  zmap->navigator->navHBox = gtk_hbox_new(TRUE, 0);
 
-  gtk_container_add(GTK_CONTAINER(navigator), canvas);
-  *canvas_out = FOO_CANVAS(canvas) ;
+  sprintf(str, "%s", "     ");
+  zmap->navigator->navLabel = gtk_label_new(str);
+  gtk_container_add(GTK_CONTAINER(zmap->navigator->navHBox), zmap->navigator->navLabel);
 
-  return navigator ;
+  gtk_box_pack_end(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navHBox, FALSE, FALSE, 0);
+
+  return;
 }
 
 
 
 /* This functions does nothing because the code to update the navigator is not there yet. */
-void zmapControlNavigatorNewView(ZMapMapBlock sequence_to_parent)
+void zmapControlNavigatorNewView(ZMapNavigator navigator)
 {
+  GtkWidget *label;
+  char str[10];
+
   /* Need to use sequence_to_parent to set scroll bar size, scale etc..... */
-
-
+  sprintf(str, "%d", navigator->sequence_to_parent.p2);
+  gtk_label_set_text(GTK_LABEL(navigator->navLabel), str);
 
   return ;
 }
