@@ -26,9 +26,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Feb  3 14:39 2005 (edgrif)
+ * Last edited: Mar 10 11:01 2005 (rds)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.12 2005-02-03 14:54:32 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.13 2005-03-10 12:06:20 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -36,6 +36,7 @@
 
 #include <glib.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapUrl.h>
 
 
 /* Opaque type, represents a connection to a database server. */
@@ -49,11 +50,10 @@ typedef enum {ZMAP_SERVERRESPONSE_OK,
 /* This routine must be called before any other server routines and must only be called once.
  * It is the callers responsibility to make sure this happens.
  * Provide matching Termination routine ???? */
-gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out) ;
+gboolean zMapServerGlobalInit(struct url *url, void **server_global_data_out) ;
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
-				    char *host, int port, char *protocol,  char *format,
-				    int timeout, char *version_str,
-				    char *userid, char *passwd) ;
+				    struct url *url,  char *format,
+				    int timeout, char *version_str);
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence,
 					    int start, int end, GData *types) ;
