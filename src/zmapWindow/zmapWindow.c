@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 12 14:38 2004 (edgrif)
+ * Last edited: Apr  8 16:18 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.5 2004-03-12 16:04:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.6 2004-04-08 16:53:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,7 +130,7 @@ void zMapWindowDisplayData(ZMapWindow window, void *data)
 
 void zMapWindowReset(ZMapWindow window)
 {
-  ZMAP_DEBUG("GUI: in window reset...\n") ;
+  zMapDebug("%s", "GUI: in window reset...\n") ;
 
   gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(window->text)),
 			   "", -1) ;			    /* -1 => null terminated string. */
@@ -141,7 +141,7 @@ void zMapWindowReset(ZMapWindow window)
 
 void zMapWindowDestroy(ZMapWindow window)
 {
-  ZMAP_DEBUG("GUI: in window destroy...\n") ;
+  zMapDebug("%s", "GUI: in window destroy...\n") ;
 
   /* We must disconnect the "destroy" callback otherwise we will enter quitCB()
    * below and that will try to call our callers destroy routine which has already
@@ -184,7 +184,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
   ZMapWindow window = (ZMapWindow)cb_data ;
 
   if (event->type != GDK_CLIENT_EVENT)
-    ZMAPFATALERR("%s", "dataEventCB() received non-GdkEventClient event") ;
+    zMapLogFatal("%s", "dataEventCB() received non-GdkEventClient event") ;
   
   if (event->send_event == TRUE && event->message_type == gdk_atom_intern(ZMAP_ATOM, TRUE))
     {
@@ -200,7 +200,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      ZMAP_DEBUG("GUI: got dataEvent, contents: \"%s\"\n", string) ;
+      zmapDebug("%s", "GUI: got dataEvent, contents: \"%s\"\n", string) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -217,7 +217,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
     }
   else
     {
-      ZMAP_DEBUG("unknown client event in zmapevent handler\n") ;
+      zMapDebug("%s", "unknown client event in zmapevent handler\n") ;
     }
 
 
