@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jul 15 14:26 2004 (edgrif)
+ * Last edited: Jul 29 09:13 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.4 2004-07-15 15:12:21 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.5 2004-07-29 08:48:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -140,6 +140,7 @@ static gboolean request(void *server_in, ZMapServerRequestType request,
       gboolean inplace = TRUE ;
       ZMapGFFParser parser ;
       ZMapFeatureContext feature_context = NULL ;
+      gboolean free_on_destroy ;
 
       /* Here we can convert the GFF that comes back, in the end we should be doing a number of
        * calls to AceConnRequest() as the server slices...but that will need a change to my
@@ -153,40 +154,64 @@ static gboolean request(void *server_in, ZMapServerRequestType request,
 
       /* We probably won't have to deal with part lines here acedb should only return whole lines
        * ....but should check for sure...bomb out for now.... */
+      result = TRUE ;
       do
 	{
-	  if (!zMapReadLineNext(line_reader, &next_line) && *next_line)
+	  if (!(result = zMapReadLineNext(line_reader, &next_line)))
 	    {
-	      zMapLogFatal("Request from server contained incomplete line: %s", next_line) ;
+	      /* If the readline fails it may be because of an error or because its reached the
+	       * end, if next_line is empty then its reached the end. */
+	      if (*next_line)
+		zMapLogFatal("Request from server contained incomplete line: %s", next_line) ;
+	      else
+		result = TRUE ;
 	    }
 	  else
 	    {
 	      if (!zMapGFFParseLine(parser, next_line))
 		{
-		  GError *error = zMapGFFGetError(parser) ;
-
-		  if (!error)
+		  /* This is a hack, I would like to make the acedb code have a quiet mode but
+		   * as usual this is not straight forward and will take a bit of fixing...
+		   * The problem for us is that the gff output is terminated with with a couple
+		   * of acedb comment lines which then screw up our parsing....so we ignore
+		   * lines starting with "//" hoping this doesn't conflict with gff.... */
+		  if (!g_str_has_prefix(next_line, "//"))
 		    {
-		      zMapLogCritical("zMapGFFParseLine() failed with no GError for line %d: %s\n",
-				      zMapGFFGetLineNumber(parser), next_line) ;
+		      GError *error = zMapGFFGetError(parser) ;
+
+		      result = FALSE ;
+		      
+		      if (!error)
+			{
+			  zMapLogCritical("zMapGFFParseLine() failed with no GError for line %d: %s\n",
+					  zMapGFFGetLineNumber(parser), next_line) ;
+			}
+		      else
+			zMapLogWarning("%s\n", (zMapGFFGetError(parser))->message) ;
 		    }
-		  else
-		    zMapLogWarning("%s\n", (zMapGFFGetError(parser))->message) ;
 		}
 	    }
 	}
-      while (*next_line) ;
+      while (result && *next_line) ;
 
-      if ((feature_context = zmapGFFGetFeatures(parser)))
+      free_on_destroy = TRUE ;
+      if (result)
 	{
-	  *feature_context_out = feature_context ;
-	  result = TRUE ;
+	  if ((feature_context = zmapGFFGetFeatures(parser)))
+	    {
+	      *feature_context_out = feature_context ;
+	      free_on_destroy = FALSE ;			    /* Make sure parser does _not_ free our
+							       data. ! */
+	    }
+	  else
+	    result = FALSE ;
 	}
 
       zMapReadLineDestroy(line_reader, TRUE) ;
-      zMapGFFSetFreeOnDestroy(parser, FALSE) ;
+      zMapGFFSetFreeOnDestroy(parser, free_on_destroy) ;
       zMapGFFDestroyParser(parser) ;
     }
+
 
   g_free(acedb_request) ;
 
