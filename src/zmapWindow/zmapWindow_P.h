@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 10 09:39 2004 (rnc)
+ * Last edited: Sep 16 16:29 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.16 2004-09-13 13:32:34 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.17 2004-09-16 15:29:49 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -80,6 +80,8 @@ typedef struct _ZMapWindowStruct
 
   /* Is this even used ??????? */
   InvarCoord      origin; /* that base which is VisibleCoord 1 */
+
+  GtkWidget *featureListWindow;
 
 
 } ZMapWindowStruct ;

@@ -26,9 +26,9 @@
  *              on the canvas, calling drawing functions in zmapDraw
  *              to do so.
  * HISTORY:
- * Last edited: Sep 10 10:20 2004 (rnc)
+ * Last edited: Sep 16 15:39 2004 (rnc)
  * Created: Fri Aug 13 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.3 2004-09-13 13:37:39 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.4 2004-09-16 15:30:44 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_DRAWFEATURES_H
@@ -39,12 +39,38 @@
 
 
 
+// parameters passed between the various functions processing the features to be drawn on the canvas
+typedef struct _ParamStruct
+{
+  ZMapWindow           window;
+  FooCanvas           *thisCanvas;
+  FooCanvasItem       *columnGroup;
+  FooCanvasItem       *revColGroup;         // a group for reverse strand features
+  double               height;
+  double               length;
+  double               column_position;
+  double               revColPos;           // column position on reverse strand
+  GData               *types;
+  ZMapFeatureTypeStyle thisType;
+  ZMapFeature          feature;
+  ZMapFeatureContext   feature_context;
+  ZMapFeatureSet       feature_set;
+  GQuark               context_key;
+  GIOChannel          *channel;
+  double               magFactor;
+} ParamStruct;
+
+
+// the function to be ultimately called when the user clicks on a canvas item.
+typedef gboolean (*ZMapFeatureCallbackFunc)(ParamStruct *params, ZMapFeatureSet feature_set);
+
 
 /* Set of callback routines that allow the caller to be notified when events happen
  * to a feature. */
 typedef struct _ZMapFeatureCallbacksStruct
 {
   ZMapWindowFeatureCallbackFunc click ;
+  ZMapFeatureCallbackFunc       rightClick;
 } ZMapFeatureCallbacksStruct, *ZMapFeatureCallbacks ;
 
 #endif

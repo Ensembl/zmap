@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 10 11:42 2004 (rnc)
+ * Last edited: Sep 16 11:43 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.28 2004-09-13 13:33:12 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.29 2004-09-16 15:30:07 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,9 +42,12 @@
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapWindowDrawFeatures.h>
 
-static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
-static void canvasClickCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
-static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature);
+static void dataEventCB        (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static void canvasClickCB      (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static void clickCB            (ZMapWindow window, void *caller_data, ZMapFeature feature);
+static gboolean rightClickCB   (ParamStruct *params, ZMapFeatureSet feature_set);
+static void addItemToList      (GQuark key_id, gpointer data, gpointer user_data);
+static void quitListCB         (GtkWidget *window, gpointer data);
 
 
 /* These callback routines are static because they are set just once for the lifetime of the
@@ -54,7 +57,7 @@ static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature);
 static ZMapWindowCallbacks window_cbs_G = NULL ;
 
 /* Callbacks to us from the level below, ie zmapWindowDrawFeatures */
-ZMapFeatureCallbacksStruct feature_cbs_G = { clickCB };
+ZMapFeatureCallbacksStruct feature_cbs_G = { clickCB, rightClickCB };
 
 /* This routine must be called just once before any other windows routine, it is undefined
  * if the caller calls this routine more than once. The caller must supply all of the callback
@@ -257,6 +260,9 @@ void zMapWindowDestroy(ZMapWindow window)
   if (window->sequence)
     g_free(window->sequence) ;
 
+  if (window->featureListWindow)
+    gtk_widget_destroy(window->featureListWindow);
+
   g_free(window) ;
 
   return ;
@@ -367,6 +373,16 @@ static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature)
   (*(window_cbs_G->click))(window, caller_data, feature);
   return;
 }
+
+
+static gboolean rightClickCB(ParamStruct *params, ZMapFeatureSet feature_set)
+{
+  // user selects new feature in this column
+  zMapWindowCreateListWindow(params, feature_set);
+
+  return TRUE;
+}
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
