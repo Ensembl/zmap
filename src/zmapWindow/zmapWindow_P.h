@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Dec  6 13:19 2004 (rnc)
+ * Last edited: Dec 16 15:27 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.36 2004-12-06 14:18:38 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.37 2004-12-20 10:59:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -182,7 +182,7 @@ typedef gboolean (*ZMapFeatureCallbackFunc)(ZMapWindow window, ZMapFeatureItem f
  * to a feature. */
 typedef struct _ZMapFeatureCallbacksStruct
 {
-  ZMapWindowFeatureCallbackFunc click ;
+  ZMapWindowCallbackFunc click ;
   ZMapFeatureCallbackFunc       rightClick;
 } ZMapFeatureCallbacksStruct, *ZMapFeatureCallbacks ;
 
