@@ -25,33 +25,53 @@
  * Description: Contains macros, functions etc. for logging.
  *              
  * HISTORY:
- * Last edited: Apr  8 17:08 2004 (edgrif)
+ * Last edited: May  7 09:40 2004 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsLog.h,v 1.1 2004-04-08 16:14:53 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsLog.h,v 1.2 2004-05-07 09:17:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_LOG_H
 #define ZMAP_UTILS_LOG_H
 
 #include <stdlib.h>
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* We would need this for the glog convenience macros to work.... but would have to fiddle
+ * with headers to get all this to work..... */
+
+#define ZMAPLOG_DOMAIN "ZMap"
+#define G_LOG_DOMAIN   ZMAPLOG_DOMAIN
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <glib.h>
 
 
-#ifdef HOME
+
+#ifdef EDG_HOME
 
 #define zMapLogFatal(FORMAT, ...)
 
 #define zMapLogFatalSysErr(ERRNO, FORMAT, ...)
 
+
 #else
 
 
-/* Add in informational, warning, log level messages.... */
+/* Use these macros like this:
+ * 
+ *    zMapLogXXXX("%s is about to %s", str, str) ;
+ * 
+ * Don't use the macros defined in glib.h such as g_message(), these rely
+ * on G_LOG_DOMAIN having been defined as something we want, e.g. "ZMap"
+ * otherwise our logging callback routines will not work.
+ * 
+ * */
+#define ZMAPLOG_DOMAIN "ZMap"
 
-
-/* Use this one like this:             ZMAPERR("%s blah, blah, %d", str, int) ; */
 #define zMapLogMessage(FORMAT, ...)                       \
-	 g_log(G_LOG_DOMAIN,				  \	
+	 g_log(ZMAPLOG_DOMAIN,				  \
 	       G_LOG_LEVEL_MESSAGE,			  \
 	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
 		__FILE__,				  \
@@ -59,10 +79,8 @@
 		__LINE__,				  \
 		__VA_ARGS__)
 
-
-/* Use this one like this:             ZMAPERR("%s blah, blah, %d", str, int) ; */
 #define zMapLogWarning(FORMAT, ...)                       \
-	 g_log(G_LOG_DOMAIN,				  \
+	 g_log(ZMAPLOG_DOMAIN,				  \
 	       G_LOG_LEVEL_WARNING,			  \
 	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
 		__FILE__,				  \
@@ -70,20 +88,17 @@
 		__LINE__,				  \
 		__VA_ARGS__)
 
-
-/* Use this one like this:             ZMAPERR("%s blah, blah, %d", str, int) ; */
 #define zMapLogCritical(FORMAT, ...)                      \
-	 g_log(G_LOG_DOMAIN,				  \
+	 g_log(ZMAPLOG_DOMAIN,				  \
 	       G_LOG_LEVEL_CRITICAL,			  \
 	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
 		__FILE__,				  \
                   ZMAP_MSG_FUNCTION_MACRO                 \
 		__LINE__,				  \
 		__VA_ARGS__)
-
-/* Note that G_LOG_LEVEL_ERROR messages cause g_log() to abort always. */
+     
 #define zMapLogFatal(FORMAT, ...)                         \
-	 g_log(G_LOG_DOMAIN,				  \
+	 g_log(ZMAPLOG_DOMAIN,				  \
 	       G_LOG_LEVEL_ERROR,			  \
 	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
 		__FILE__,				  \
@@ -93,10 +108,12 @@
 
 
 /* Use this macro like this:
+ * 
  *      zMapLogFatalSysErr(errno, "System call %s failed !", [args]) ;
+ * 
  */
 #define zMapLogFatalSysErr(ERRNO, FORMAT, ...)            \
-	 g_log(G_LOG_DOMAIN,				  \
+	 g_log(ZMAPLOG_DOMAIN,				  \
 	       G_LOG_LEVEL_ERROR,			  \
 	       ZMAP_MSG_FORMAT_STRING FORMAT " (errno = \"%s\")",  \
 		__FILE__,				  \
