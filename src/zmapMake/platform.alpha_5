@@ -24,14 +24,17 @@ MAKE = gmake
 
 TEST = /bin/test
 
-PACKAGE_CONFIG = /nfs/disk100/acedb/gtk2ins-canvas/bin/pkg-config
-PACKAGE_PATH = PKG_CONFIG_PATH=$(FOO_CANVAS_PATH)/lib/pkgconfig:/nfs/disk100/acedb/gtk2ins-canvas/lib/pkgconfig
+#PACKAGE_CONFIG = /nfs/disk100/acedb/gtk2ins-canvas/bin/pkg-config
+#PACKAGE_PATH = PKG_CONFIG_PATH=$(FOO_CANVAS_PATH)/lib/pkgconfig:/nfs/disk100/acedb/gtk2ins-canvas/lib/pkgconfig
+
+PACKAGE_CONFIG = /usr/local/gtk2/bin/pkg-config
+PACKAGE_PATH = PKG_CONFIG_PATH=/usr/local/gtk2/lib/pkgconfig
 
 POPT_LIB = /nfs/team71/acedb/edgrif/ZMap/popt/popt-ins/lib
 POPT_LIB_DIR = -L$(POPT_LIB)
 
 # Alpha loader needs this so it can find libraries that are not in the standard places.
-LDFLAGS = -rpath '$(FOO_CANVAS_PATH)/lib:/nfs/disk100/acedb/gtk2ins-canvas/lib:$(POPT_LIB)'
+LDFLAGS = -rpath '/usr/local/gtk2/lib:$(POPT_LIB)'
 
 
 # Need to make sure we get a threaded build version of the socket server interface library....
