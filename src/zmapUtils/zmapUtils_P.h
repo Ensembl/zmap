@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  6 15:46 2004 (edgrif)
+ * Last edited: Jun 23 15:22 2004 (edgrif)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
- * CVS info:   $Id: zmapUtils_P.h,v 1.2 2004-05-07 09:24:20 edgrif Exp $
+ * CVS info:   $Id: zmapUtils_P.h,v 1.3 2004-06-25 13:41:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_P_H
@@ -36,9 +36,56 @@
 #include <ZMap/zmapUtils.h>
 
 
+/* ZMap version stuff.... */
+#define ZMAP_TITLE "ZMap"
+#define ZMAP_DESCRIPTION "A multi-threaded genome browser and annotation tool."
+#define ZMAP_VERSION  0
+#define ZMAP_RELEASE  0
+#define ZMAP_UPDATE   1
+
+
+/* Make a single version number out of the version, release and update numbers. */
+#define ZMAP_MAKE_VERSION_NUMBER(VERSION, RELEASE, UPDATE) \
+((VERSION * 10000) + (RELEASE * 100) + UPDATE)
+
+/* Make a single version string out of the version, release and update numbers. */
+#define ZMAP_MAKE_VERSION_STRING(VERSION, RELEASE, UPDATE) \
+ZMAP_MAKESTRING(VERSION) "." ZMAP_MAKESTRING(RELEASE) "." ZMAP_MAKESTRING(UPDATE)
+
+/* Make a title string containing the title of the application/library and
+ *    and the version, release and update numbers. */
+#define ZMAP_MAKE_TITLE_STRING(TITLE, VERSION, RELEASE, UPDATE) \
+TITLE " - " ZMAP_MAKE_VERSION_STRING(VERSION, RELEASE, UPDATE)
+
+
+/* Create a copyright string to insert in the compiled application, this will show
+ * up if someone looks through the executable or does a "what" on the executable. */
+#define ZMAP_COPYRIGHT_STRING(TITLE, VERSION, RELEASE, UPDATE, DESCRIPTION_STRING)              \
+"@(#) \n"                                                                                       \
+"@(#) ------------------------------------------------------------------------------------------ \n"             \
+"@(#) Title/Version:  "ZMAP_MAKE_TITLE_STRING(TITLE, VERSION, RELEASE, UPDATE)"\n"              \
+"@(#)      Compiled:  "__DATE__" "__TIME__"\n"                                                  \
+"@(#)   Description:  " DESCRIPTION_STRING"\n"                                                  \
+"@(#) Copyright (c):   Sanger Institute, 2004\n"                                                   \
+"@(#) \n"                                                                                       \
+"@(#) This application is part of the ZMap genome database package originally written by \n"    \
+"@(#) 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk, \n"                            \
+"@(#)   and Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk \n"                                   \
+"@(#) \n"                                                                                       \
+"@(#) ZMap is distributed under the GNU  Public License, see http://www.gnu.org/copyleft/gpl.txt \n" \
+"@(#) ------------------------------------------------------------------------------------------ \n"             \
+"@(#) \n"
+
+
+
+
+
 
 #define ZMAP_SEPARATOR "/"				    /* WE SHOULD BE ABLE TO CALL A FUNC
 							       FOR THIS..... */
+
+
+
 
 
 
