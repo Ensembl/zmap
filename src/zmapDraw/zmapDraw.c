@@ -1,4 +1,4 @@
-/*  Last edited: Sep  1 16:35 2004 (rnc) */
+/*  Last edited: Sep 13 14:39 2004 (rnc) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -119,18 +119,18 @@ float zmapDrawScale(FooCanvas *canvas, float offset, int start, int end)
   int seqPos = 1;       // where we are, in bases, in the sequence
   int width = 0;
   int scalePos;         // where we are on the scalebar
+  int scaleEnd;         // highest tick on scalebar
   int type;             // the nomial (ie whether we're working in K, M, etc)
   int unitType;         // index into unitName array
   char cp[20], unitName[] = { 0, 'k', 'M', 'G', 'T', 'P' }, buf[2] ;
   int scaleUnit = 100;  // arbitrary spacing of ticks on the scalebar
   int ticks;            // number of ticks on the scalebar
   double x1, x2, y1, y2, height;  // canvas attributes
-  GdkColor black;
+  GdkColor black, yellow;
   
   gdk_color_parse("black", &black);
+  gdk_color_parse("yellow", &yellow);
 
-  //  parent = gtk_widget_get_parent(GTK_WIDGET(canvas));         // get the scrolled window
-  //  gtk_widget_size_request(parent, &req);     
   foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
   height = y2 - y1;
 
@@ -159,22 +159,14 @@ float zmapDrawScale(FooCanvas *canvas, float offset, int start, int end)
 			"x",(double)offset,
 			"y",(double)5.0,
 			NULL);
-  /*
-  for (x = start, count = 1 ; x < end ; x += 10, count++)
-    {
-      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-5, x, offset, x, "black", 1.0);
-      char text[25];
-      sprintf(text,"%d", x*10);
-      if (count == 1)
-	zmapDisplayText(FOO_CANVAS_GROUP(group), text, offset - 25, x); 
-      if (count > 9) count = 0;
-    }
-  */
 
-  for (scalePos = 0; scalePos < height; scalePos += scaleUnit, seqPos += seqUnit)
+  for (scaleEnd = start; scaleEnd < end; scaleEnd += scaleUnit); // so at the end we're at the highest below the end
+  scaleEnd += seqUnit;                                           // marks the last tick on the scalebar
+
+  for (seqPos = start, scalePos = 0; seqPos < scaleEnd; seqPos += seqUnit, scalePos += scaleUnit)
     {
       y = (float)(seqPos - start)*mag;
-      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-5, scalePos, offset, scalePos, &black, 1.0);
+      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-8, scalePos, offset, scalePos, &black, 1.0);
       buf[0] = unitName[unitType] ; buf[1] = 0 ;
       sprintf (cp, "%d%s", seqPos/type, buf) ;
       if (width < strlen (cp))
@@ -182,15 +174,17 @@ float zmapDrawScale(FooCanvas *canvas, float offset, int start, int end)
       zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", offset-20, scalePos-0.5); 
 
     }		     
-  /*  for (x = ((start/unit)-1)*unit ; x < end ; x += subunit)
-    {
-      y = (float)(x-start)*mag;
-      zmapDrawLine(FOO_CANVAS_GROUP(group), offset+0.5, y, offset+1.0, y, "black", 1.0);
-    }
-  */			     
-  zmapDrawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, height, &black, 1.0); // long vertical line
-  return offset + width + 4 ;
 
+  // this is a separate block because sometimes I'm going to want not to run it 
+  for (scalePos = 0; scalePos < height; scalePos += scaleUnit/10)
+      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-4, scalePos, offset, scalePos, &black, 1.0);
+
+ 
+  zmapDrawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, height, &black, 1.0); // long vertical line
+
+  zmapDrawBox(FOO_CANVAS_ITEM(group), offset-38, 0, offset-33, height, &black, &yellow);
+
+  return offset + width + 4 ;
 }
 
 
