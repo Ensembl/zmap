@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  9 14:53 2005 (edgrif)
+ * Last edited: Mar 10 10:40 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.64 2005-03-09 14:54:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.65 2005-03-16 15:56:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -183,10 +183,11 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
    * otherwise keyboard input (i.e. short cuts) will be delivered to some other widget. */
   GTK_WIDGET_SET_FLAGS(canvas, GTK_CAN_FOCUS) ;
 
-  /* I've tried to attach this after the default signal handler but it still seems to intercept
-   * any calls to canvas items... */
-  g_signal_connect_after(GTK_OBJECT(window->canvas), "event",
-			 GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
+
+  /* This is a general handler that does stuff like handle "click to focus", it gets run
+   * _before_ any canvas item handlers. */
+  g_signal_connect(GTK_OBJECT(window->canvas), "event",
+		   GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
 
 
   /* Wierdly this doesn't get run _unless_ the click/event happens on a child of the
@@ -677,28 +678,6 @@ void zmapWindowPrintGroup(FooCanvasGroup *group)
   return ;
 }
 
-static void printGroup(FooCanvasGroup *group, int indent)
-{
-  int i ;
-  GList *list ;
-
-  for (i = 0 ; i < indent ; i++)
-    printf("\t") ;
-
-  zmapWindowPrintGroup(group) ;
-
-  list = g_list_first(group->item_list) ;
-  do
-    {
-      if (FOO_IS_CANVAS_GROUP(list->data))
-	printGroup(FOO_CANVAS_GROUP(list->data), indent + 1) ;
-    }
-  while ((list = g_list_next(list))) ;
-
-  return ;
-}
-
-
 GQuark zMapWindowGetFocusQuark(ZMapWindow window)
 {
   return window->focusQuark;
@@ -749,6 +728,31 @@ void zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data)
 /*
  *  ------------------- Internal functions -------------------
  */
+
+
+
+/* Recursive function to print out all the groups below the supplied group. */
+static void printGroup(FooCanvasGroup *group, int indent)
+{
+  int i ;
+  GList *list ;
+
+  for (i = 0 ; i < indent ; i++)
+    printf("\t") ;
+
+  zmapWindowPrintGroup(group) ;
+
+  list = g_list_first(group->item_list) ;
+  do
+    {
+      if (FOO_IS_CANVAS_GROUP(list->data))
+	printGroup(FOO_CANVAS_GROUP(list->data), indent + 1) ;
+    }
+  while ((list = g_list_next(list))) ;
+
+  return ;
+}
+
 
 
 /* Moves can either be of the scroll bar within the scrolled window or of where the whole
@@ -1149,10 +1153,12 @@ static gboolean getConfiguration(ZMapWindow window)
  * handle more general events such as "click to focus" etc. */
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
 {
-
-  /* check whether this really needs to be FALSE for other canvas events to be run.... */
-  gboolean event_handled = FALSE ;
+  gboolean event_handled ;
   ZMapWindow window = (ZMapWindow)data ;
+
+
+  /* MUST be false if the other per-item event handlers are to run.  */
+  event_handled = FALSE ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1161,7 +1167,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
   switch (event->type)
     {
-
     case GDK_BUTTON_PRESS:
       {
 	printf("GENERAL event handler - CLICK\n") ;
@@ -1174,21 +1179,23 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	 * because that is what this if for.... */
 	(*(window_cbs_G->click))(window, window->app_data, NULL) ;
 
-	event_handled = FALSE ;
+
+	/* Oh dear, we would like to do a general back ground menu here but can't as we need
+	 * to pass the event along in case it goes to a canvas item....aggghhhh */
 
 	break ;
       }
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_BUTTON_RELEASE:
       {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	/* Call the callers routine for button clicks. */
 	window_cbs_G->click(window, window->app_data, NULL) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	
 	event_handled = FALSE ;
 	break ;
       }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     case GDK_KEY_PRESS:
       {
@@ -1225,7 +1232,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Disabled because we now do "click to focus" */
-
     case GDK_ENTER_NOTIFY:
       {
 	event_handled = TRUE ;
@@ -1242,6 +1248,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
     default:
       {
+	/* By default we _don't_handle events. */
 	event_handled = FALSE ;
 
 	break ;
@@ -1282,19 +1289,22 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 	event_handled = FALSE ;
 	break ;
       }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_BUTTON_RELEASE:
       {
 	printf("GENERAL canvas event handler: button release\n") ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	/* Call the callers routine for button clicks. */
 	window_cbs_G->click(window, window->app_data, NULL) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	
 	event_handled = FALSE ;
 	break ;
       }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     default:
       {
 	event_handled = FALSE ;
