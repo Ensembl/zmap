@@ -25,6 +25,10 @@ esac
 if test "$zmap_os_type" = "Linux" ; then
    AC_MSG_RESULT([Got OS type of LINUX])
    AC_DEFINE(LINUX, [], [Operating System is LINUX.  See zmapThreads/zmapThreads_P.h])
+else
+   # this is pretty evil NEED to find a better method
+   ALPHA_POPT=-I/nfs/disk100/acedb/prefix/ALPHA/include
+   AC_SUBST(ALPHA_POPT)
 fi
 
 ################################################################################
@@ -53,7 +57,6 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 VERSION="0.1"
 AC_SUBST(VERSION)
-
 ################################################################################
 ################################################################################
 # Checks for programs.
@@ -124,7 +127,7 @@ else
    ACECONN_LIBS="$FOUND_LIBS $ACECONN_LIBS"
 fi
 
-CPPFLAGS="$CPPFLGAS $ACECONN_CFLAGS"
+CPPFLAGS="$CPPFLAGS $ACECONN_CFLAGS"
 LDFLAGS="$LDFLAGS $ACECONN_LIBS"
 
 AC_CHECK_LIB(AceConn, [main], [],AC_MSG_ERROR(where is AceConn), -lmd5)
@@ -145,8 +148,9 @@ AC_SUBST(GTK_LIBS)
 ################################################################################
 
 AC_HEADER_STDC
-AC_CHECK_HEADERS([fcntl.h locale.h stdlib.h string.h strings.h sys/param.h unistd.h AceConn.h popt.h])
-
+AC_CHECK_HEADERS([fcntl.h locale.h stdlib.h string.h strings.h sys/param.h unistd.h])
+AC_CHECK_HEADER([AceConn.h], [], [], [])
+AC_CHECK_HEADER([popt.h], [], [], [])
 ################################################################################
 ################################################################################
 # Checks for typedefs, structures, and compiler characteristics.
