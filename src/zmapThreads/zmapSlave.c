@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 12 16:36 2003 (edgrif)
+ * Last edited: Mar  1 19:52 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.1 2003-11-13 15:02:13 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.2 2004-03-03 12:07:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,6 +68,9 @@ void *zmapNewThread(void *thread_args)
   ZMapThreadRequest signalled_state ;
 
 
+  ZMAP_THR_DEBUG(("%x: main thread routine starting....\n", connection->thread_id)) ;
+
+
   thread_cb = g_new(zmapThreadCBstruct, sizeof(zmapThreadCBstruct)) ;
   thread_cb->connection = connection ;
   thread_cb->thread_died = FALSE ;
@@ -98,6 +101,17 @@ void *zmapNewThread(void *thread_args)
       goto clean_up ;
     }
 
+  
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* somehow doing this screws up the whole gui-slave communication bit...not sure how....
+   * the slaves just die, almost all the time.... */
+
+  /* Signal that we are ready and waiting... */
+  zMapConnSetReply(connection, ZMAP_REPLY_WAIT) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   while (1)
     {
@@ -109,7 +123,7 @@ void *zmapNewThread(void *thread_args)
       signalled_state = zmapCondVarWaitTimed(thread_state, ZMAP_REQUEST_WAIT, &timeout, TRUE) ;
 
       ZMAP_THR_DEBUG(("%x: finished condvar wait, state = %s\n", connection->thread_id,
-		      zmapVarGetRequestString(signalled_state))) ;
+		      zMapVarGetRequestString(signalled_state))) ;
 
       if (signalled_state == ZMAP_REQUEST_TIMED_OUT)
 	{
@@ -157,7 +171,7 @@ void *zmapNewThread(void *thread_args)
   pthread_cleanup_pop(1) ;				    /* 1 => always call clean up routine */
 
 
-  ZMAP_THR_DEBUG(("%x: thread exitting from main thread routine....\n", connection->thread_id)) ;
+  ZMAP_THR_DEBUG(("%x: main thread routine exitting....\n", connection->thread_id)) ;
 
 
   return thread_args ;
@@ -181,15 +195,13 @@ static void cleanUpThread(void *thread_args)
   ZMapThreadReply reply ;
   gchar *error_msg = NULL ;
 
-  printf("in cleanup routine\n") ;
-
-  ZMAP_THR_DEBUG(("%x: in overall thread clean up routine....\n", connection->thread_id)) ;
+  ZMAP_THR_DEBUG(("%x: thread clean-up routine starting....\n", connection->thread_id)) ;
 
   if (thread_cb->thread_died)
     {
       reply = ZMAP_REPLY_DIED ;
       if (thread_cb->initial_error)
-	error_msg =  g_strdup(thread_cb->initial_error) ;
+	error_msg = g_strdup(thread_cb->initial_error) ;
     }
   else
     reply = ZMAP_REPLY_CANCELLED ;
@@ -224,9 +236,9 @@ static void cleanUpThread(void *thread_args)
     zmapVarSetValueWithError(&(connection->reply), reply, error_msg) ;
 
 
-  ZMAP_THR_DEBUG(("%x: Leaving overall thread clean up routine because %s....\n",
+  ZMAP_THR_DEBUG(("%x: thread clean-up routine exitting because %s....\n",
 		  connection->thread_id,
-		  zmapVarGetReplyString(reply))) ;
+		  zMapVarGetReplyString(reply))) ;
 
   return ;
 }
