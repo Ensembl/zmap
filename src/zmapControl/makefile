@@ -11,10 +11,11 @@
 ROOT_DIRECTORY = ..
 
 # local macros
-CONT_PRIV_HDRS = ZMap_P.h
+#ONT_PRIV_HDRS = ZMap_P.h zmapTopWindow_P.h
+ONT_PRIV_HDRS = ZMap_P.h
 PUB_HDRS = ZMap.h
-CONT_SRC = zmapControl.c
-CONT_OBJ = zmapControl.o
+CONT_SRC = zmapControl.c zmapTopWindow.c zmapTopWindowButtons.c zmapTopWindowFrame.c zmapTopWindowMenubar.c
+CONT_OBJ = zmapControl.o zmapTopWindow.o zmapTopWindowButtons.o zmapTopWindowFrame.o zmapTopWindowMenubar.o
 
 
 
