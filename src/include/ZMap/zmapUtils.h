@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: May  7 08:11 2004 (edgrif)
+ * Last edited: Jun 15 15:53 2004 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.4 2004-05-07 09:16:46 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.5 2004-06-18 11:04:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -80,6 +80,21 @@ char *zMapGetControlFileDir(char *directory_in) ;
 char *zMapGetDir(char *directory_in, gboolean home_relative) ;
 char *zMapGetFile(char *directory, char *filename) ;
 gboolean zMapFileEmpty(char *filepath) ;
+
+
+/* You can use ZMAP_MAKESTRING() to create a string version of a number:
+ * 
+ *         ZMAP_MAKESTRING(6)  produces "6" 
+ * 
+ * n.b. the indirection of ZMAP_PUTSTRING() is required because of the
+ * way the ANSI preprocessor handles strings */
+#define ZMAP_PUTSTRING(x) #x
+#define ZMAP_MAKESTRING(x) ZMAP_PUTSTRING(x)
+
+
+
+
+
 
 
 #endif /* ZMAP_UTILS_H */
