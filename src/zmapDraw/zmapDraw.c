@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  4 17:12 2004 (rnc)
+ * Last edited: Dec  6 13:40 2004 (rnc)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.17 2004-11-08 10:22:17 rnc Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.18 2004-12-06 14:17:22 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -124,7 +124,8 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   int seqPos = 1;       /* where we are, in bases, in the sequence */
   double scalePos;
   GdkColor black, white, yellow;
-
+  int top, bottom;
+  double x1, y1, x2, y2;
 
   gdk_color_parse("black", &black);
   gdk_color_parse("white", &white);
@@ -171,7 +172,14 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 			      "x",(double)offset,
 			      "y",(double)0.0,
 			      NULL);
- 
+
+  /* If the scrolled_region has been cropped, we need to crop the scalebar too */
+  foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
+  if (start < y1)
+    start = y1;
+  if (end > y2)
+    end = y2;
+
   /* yellow bar separates forward from reverse strands. Draw first so scalebar text
   ** overlies it. */
   zmapDrawBox(FOO_CANVAS_ITEM(group), 0.0, start, 3.0, end, &white, &yellow); 
