@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 27 08:16 2004 (edgrif)
+ * Last edited: Jul 27 08:59 2004 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.9 2004-07-27 07:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.10 2004-07-27 08:35:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,6 +94,8 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext fea
     }
   else
     {
+      navigator->parent_span.x1 = navigator->parent_span.x2 = 0 ;
+
       navigator->sequence_to_parent.p1 = navigator->sequence_to_parent.p2
 	= navigator->sequence_to_parent.c1 = navigator->sequence_to_parent.c2 = 0 ;
 
