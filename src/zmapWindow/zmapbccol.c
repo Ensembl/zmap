@@ -1,4 +1,4 @@
-/*  Last edited: Jul  6 10:20 2004 (rnc) */
+/*  Last edited: Jul 16 09:51 2004 (edgrif) */
 /*  file: zmapbccol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -154,7 +154,7 @@ void nbcInit(ZMapPane pane, ZMapColumn *col)
 {
   /* this whole bit needs to be rewritten, so it's OK to comment it out, I think
   srMeth *meth = srMethodFromID(zMapPaneGetZMapRegion(pane), col->meth);
-  nbcPrivate *bc = (nbcPrivate*)malloc(sizeof(nbcPrivate));
+  nbcPrivate *bc = (nbcPrivate*)g_malloc0(sizeof(nbcPrivate));
   //  nbcPrivate *bc = handleAlloc(nbcFinalise, zMapWindowGetHandle(pane->window),
   // sizeof(nbcPrivate));
  

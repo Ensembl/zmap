@@ -1,4 +1,4 @@
-/*  Last edited: Jul  5 14:37 2004 (rnc) */
+/*  Last edited: Jul 16 09:50 2004 (edgrif) */
 /*  file: stringbucket.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -42,7 +42,7 @@ struct sbucketchain {
 
 StringBucket *sbCreate(void)
 {
-  StringBucket *b = g_malloc(sizeof(struct sbucket)) ;
+  StringBucket *b = g_malloc0(sizeof(struct sbucket)) ;
 
   b->chain = NULL;
 
@@ -74,7 +74,7 @@ char *str2p(char *string, StringBucket *b)
   
   if (!c)
     {
-      c = g_malloc(sizeof(struct sbucketchain) + strlen(string) + 1) ;
+      c = g_malloc0(sizeof(struct sbucketchain) + strlen(string) + 1) ;
 
       c->next = b->chain;
       b->chain = c;

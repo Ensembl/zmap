@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 30 13:58 2004 (edgrif)
+ * Last edited: Jul 16 09:50 2004 (edgrif)
  * Created: Wed Jun 30 13:38:10 2004 (edgrif)
- * CVS info:   $Id: seqregion.c,v 1.5 2004-07-01 09:26:24 edgrif Exp $
+ * CVS info:   $Id: seqregion.c,v 1.6 2004-07-16 08:51:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,7 +63,7 @@ Coord srCoord(ZMapRegion *zMapRegion, InvarCoord coord)
 /* Creates a new, empty ZMapRegion structure. */
 ZMapRegion *srCreate(void)
 {
-  ZMapRegion *zMapRegion = (ZMapRegion*)g_malloc(sizeof(ZMapRegion)) ;
+  ZMapRegion *zMapRegion = (ZMapRegion*)g_malloc0(sizeof(ZMapRegion)) ;
 
   zMapRegion->area1 = zMapRegion->area2 = 0 ;
   zMapRegion->methods = NULL ;
