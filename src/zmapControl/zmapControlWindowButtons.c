@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Aug 18 16:47 2004 (rnc)
+ * Last edited: Sep  9 15:43 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.13 2004-09-02 08:53:15 rnc Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.14 2004-09-13 13:38:30 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -203,9 +203,9 @@ void zoomInCB(GtkWindow *widget, gpointer cb_data)
 void zoomOutCB(GtkWindow *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
-  ZMapPane pane = zmap->focuspane ;
+  ZMapWindow window = zMapViewGetWindow(zmap->focuspane->curr_view_window);
 
-  zMapWindowZoom(zMapViewGetWindow(pane->curr_view_window), 0.5) ;
+  zMapViewZoomOut(window); 
 
   return;
 }

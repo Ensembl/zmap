@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Aug 16 10:01 2004 (rnc)
+ * Last edited: Sep  9 15:43 2004 (rnc)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.7 2004-08-18 14:52:00 rnc Exp $
+ * CVS info:   $Id: zmapView.h,v 1.8 2004-09-13 13:36:05 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -81,11 +81,11 @@ typedef enum {
 
 
 
-void zMapViewInit(ZMapViewCallbacks callbacks) ;
-ZMapView zMapViewCreate(char *sequence,	void *app_data) ;
-ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
-gboolean zMapViewConnect(ZMapView zmap_view) ;
-gboolean zMapViewLoad(ZMapView zmap_view, char *sequence) ; /* sequence == NULL => reload existing
+void               zMapViewInit        (ZMapViewCallbacks callbacks) ;
+ZMapView           zMapViewCreate      (char *sequence,	void *app_data) ;
+ZMapViewWindow     zMapViewAddWindow   (ZMapView zmap_view, GtkWidget *parent_widget) ;
+gboolean           zMapViewConnect     (ZMapView zmap_view) ;
+gboolean           zMapViewLoad        (ZMapView zmap_view, char *sequence) ; /* sequence == NULL => reload existing
 							       sequence. */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -93,16 +93,18 @@ gboolean zMapViewLoad(ZMapView zmap_view, char *sequence) ; /* sequence == NULL 
 gboolean zMapViewDeleteWindow(ZMapViewWindow view_window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-gboolean zMapViewReset(ZMapView zmap_view) ;
+gboolean           zMapViewReset       (ZMapView zmap_view) ;
 
-char *zMapViewGetSequence(ZMapView zmap_view) ;
-ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
-ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
-char *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
-ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
-ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
+char              *zMapViewGetSequence (ZMapView zmap_view) ;
+ZMapFeatureContext zMapViewGetFeatures (ZMapView zmap_view) ;
+ZMapViewState      zMapViewGetStatus   (ZMapView zmap_view) ;
+char              *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
+ZMapWindow         zMapViewGetWindow   (ZMapViewWindow view_window) ;
+ZMapView           zMapViewGetView     (ZMapViewWindow view_window) ;
 
-gboolean zMapViewDestroy(ZMapView zmap_view) ;
+void               zMapViewZoomOut     (ZMapWindow view_window);
+
+gboolean           zMapViewDestroy     (ZMapView zmap_view) ;
 
 
 #endif /* !ZMAPVIEW_H */

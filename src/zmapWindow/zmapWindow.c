@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep  1 15:42 2004 (rnc)
+ * Last edited: Sep 10 11:42 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.27 2004-09-02 09:01:57 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.28 2004-09-13 13:33:12 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -107,6 +107,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   window->zmap_atom = gdk_atom_intern(ZMAP_ATOM, FALSE) ;
 
   window->zoom_factor = 1 ;
+  window->step_increment = 10;
 
 
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
@@ -261,6 +262,44 @@ void zMapWindowDestroy(ZMapWindow window)
   return ;
 }
 
+
+/* The vadjustment changes when the user stretches or shrinks the window and  
+** the scroll_region y2 * zoom_factor equates to that when the whole scroll 
+** region is visible.  If we're within spitting distance of all being on view,
+** we recalculate the zoomfactor to achieve that directly.  Note that if all
+** is already on view it still recalculates.  A disadvantage of this is that
+** the display flashes as it redraws. The difficulty is, all these values are
+** doubles, so determining the point at which to actually stop doing anything
+** is a bit cumbersome.
+*/
+void zMapWindowZoomOut(ZMapWindow window)
+{
+  double window_y, x1, y1, x2, y2;
+  GtkAdjustment *adjust;
+
+  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
+  window_y = adjust->page_size;
+
+  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+
+  if (y2 * window->zoom_factor > window_y)
+    {
+      if (y2 * window->zoom_factor * 0.5 > window_y)
+	zMapWindowZoom(window, 0.5) ;
+      else
+	{
+	  window->zoom_factor = window_y / y2;
+	  zMapWindowZoom(window, 1.0);
+	}
+    }
+  else
+    {
+      window->zoom_factor = window_y / y2;
+      zMapWindowZoom(window, 1.0);
+    }
+
+  return;
+}
 
 
 /*

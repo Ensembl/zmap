@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep 13 10:26 2004 (edgrif)
+ * Last edited: Sep 13 14:35 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.18 2004-09-13 13:00:58 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.19 2004-09-13 13:35:27 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -488,6 +488,14 @@ static gint zmapIdleCB(gpointer cb_data)
   return call_again ;
 }
 
+
+
+void zMapViewZoomOut(ZMapWindow view_window)
+{
+  zMapWindowZoomOut(view_window); 
+
+  return;
+}
 
 
 static void scrollCB(ZMapWindow window, void *caller_data)
