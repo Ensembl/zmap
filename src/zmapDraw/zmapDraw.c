@@ -1,4 +1,4 @@
-/*  Last edited: Jul 15 17:16 2004 (rnc) */
+/*  Last edited: Jul 22 15:03 2004 (rnc) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -43,12 +43,13 @@ static void navResize(void);
 
 /* functions ********************************************************/
 
-void zmapDisplayText(FooCanvasGroup *group, char *text, double x, double y)
+void zmapDisplayText(FooCanvasGroup *group, char *text, char *colour, double x, double y)
 {
   FooCanvasItem *item = foo_canvas_item_new(group,
-						FOO_TYPE_CANVAS_TEXT,
-						"x", x, "y", y, "text", text,
-						NULL);
+					    FOO_TYPE_CANVAS_TEXT,
+					    "x", x, "y", y, "text", text,
+					    "fill_color", colour,
+					    NULL);
   return;
 }
 
@@ -68,7 +69,7 @@ void zmRegBox(ZMapPane pane, int box, ZMapColumn *col, void *arg)
 }
 
 
-/* This is just a noddy function I used to draw a small box on the canvas */
+
 void zmapDrawBox (FooCanvasItem *group, double x1, double y1, 
 	      double x2, double y2, 
 	      char *line_colour, char *fill_colour)
@@ -88,7 +89,7 @@ void zmapDrawBox (FooCanvasItem *group, double x1, double y1,
   return;                                                                       
 }
 
-/* This is just a noddy function I used to draw a line  on the canvas */
+
 void zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 		     char *colour, double thickness)
 {
@@ -185,7 +186,7 @@ float zmapDrawScale(FooCanvas *canvas, float offset, int start, int end)
       sprintf (cp, "%d%s", seqPos/type, buf) ;
       if (width < strlen (cp))
         width = strlen (cp) ;
-      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, offset-20, scalePos-0.5); 
+      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", offset-20, scalePos-0.5); 
 
     }		     
   /*  for (x = ((start/unit)-1)*unit ; x < end ; x += subunit)
