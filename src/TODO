@@ -43,6 +43,13 @@ Broken version of gtk on this machine? broken use of gtk?  seems fine on alpha.
 Do we need to register/unregister zmapIdleCB? Don't want this I guess, 
 threads might never return...
 
+cmdline
+-------
+
+need to allow user to specify a .ZMap/ZMap file on commandline....would be best to
+code a new "object" that contained the paths to configuration files and could be
+queried by anyone (the same pattern should be used for commandline options as well.).
+
 
 
 
@@ -89,6 +96,17 @@ COORDINATES
 By the time we get into the drawing code all features should be as  start,end where
 start <= end ALWAYS !  Any conversions should be done by the thread code on the basis
 of information from the servers...
+
+
+
+
+STYLES/METHODS
+--------------
+
+Currently the user has to have a styles file, this is because otherwise we have to query
+the server and get all the types, this code is not impossible but is not written yet.
+It needs doing, BUT, the user should still be able to override this with a list of
+features that they want to see, gives the user control.
 
 
 
