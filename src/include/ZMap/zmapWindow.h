@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jan 24 10:56 2005 (edgrif)
+ * Last edited: Feb 10 15:58 2005 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.30 2005-01-24 11:28:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.31 2005-02-10 16:34:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -85,10 +85,14 @@ typedef struct _ZMapWindowCallbacksStruct
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* I AM UNCERTAIN ABOUT HOW MUCH THIS IS NEEDED....NEEDS LOOKING AT.... */
 /* Window stuff, callbacks, will need changing.... */
 typedef enum {ZMAP_WINDOW_INIT, ZMAP_WINDOW_LOAD,
 	      ZMAP_WINDOW_STOP, ZMAP_WINDOW_QUIT} ZmapWindowCmd ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -116,64 +120,6 @@ void zMapWindowDestroy(ZMapWindow window) ;
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zMapWindowSetHandle(ZMapWindow window);
-void zMapWindowCreateRegion(ZMapWindow window);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* I don't know whether we're even going to use these datatypes, so for
-** expediency I'm commenting these out until it becomes clearer. */
-
-//ScreenCoord  zMapWindowGetScaleOffset  (ZMapWindow window);
-//void         zMapWindowSetScaleOffset  (ZMapWindow window, ScreenCoord offset);
-//Coord        zMapWindowGetCoord        (ZMapWindow window, char *field);
-//void         zMapWindowSetCoord        (ZMapWindow window, char *field, int size);
-//ScreenCoord  zMapWindowGetScreenCoord  (ZMapWindow window, Coord coord, int height);
-//ScreenCoord  zMapWindowGetScreenCoord1 (ZMapWindow window, int height);
-//ScreenCoord  zMapWindowGetScreenCoord2 (ZMapWindow window, int height);
-//InvarCoord   zMapWindowGetOrigin       (ZMapWindow window);
-
-int          zMapWindowGetRegionSize   (ZMapWindow window);
-
-GtkWidget   *zMapWindowGetFrame        (ZMapWindow window);
-void         zMapWindowSetFrame        (ZMapWindow window, GtkWidget *frame);
-GtkWidget   *zMapWindowGetVbox         (ZMapWindow window);
-void         zMapWindowSetVbox         (ZMapWindow window, GtkWidget *vbox);
-void         zMapWindowSetBorderWidth  (GtkWidget *container, int width);
-GtkWidget   *zMapWindowGetHbox         (ZMapWindow window);
-void         zMapWindowSetHbox         (ZMapWindow window, GtkWidget *hbox);
-GtkWidget   *zMapWindowGetNavigator    (ZMapWindow window);
-void         zMapWindowSetNavigator    (ZMapWindow window, GtkWidget *navigator);
-FooCanvas   *zMapWindowGetNavCanvas    (ZMapWindow window);
-void         zMapWindowSetNavCanvas    (ZMapWindow window, FooCanvas *navcanvas);
-GtkWidget   *zMapWindowGetDisplayVbox  (ZMapWindow window);
-void         zMapWindowSetDisplayVbox  (ZMapWindow window, GtkWidget *vbox);
-
-float        zmMainScale               (FooCanvas *canvas, float offset, int start, int end);
-
-GPtrArray   *zMapRegionNewMethods      (ZMapRegion *region);
-GPtrArray   *zMapRegionGetMethods      (ZMapRegion *region);
-GPtrArray   *zMapRegionGetOldMethods   (ZMapRegion *region);
-void         zMapRegionFreeMethods     (ZMapRegion *region);
-void         zMapRegionFreeOldMethods  (ZMapRegion *region);
-GArray      *zMapRegionNewSegs         (ZMapRegion *region);
-GArray      *zMapRegionGetSegs         (ZMapRegion *region);
-void         zMapRegionFreeSegs        (ZMapRegion *region);
-GArray      *zMapRegionGetDNA          (ZMapRegion *region);
-void         zMapRegionFreeDNA         (ZMapRegion *region);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-void         zmapWindowDrawFeatures    (ZMapWindow window, 
-					ZMapFeatureContext feature_context,
-					GData *types);
-
 gboolean     zMapWindowScrollToItem    (ZMapWindow window, gchar *type, GQuark feature_id);
 void         zMapWindowDestroyLists    (ZMapWindow window);
 GQuark       zMapWindowGetFocusQuark   (ZMapWindow window);
@@ -184,22 +130,7 @@ gchar       *zMapWindowGetTypeName     (ZMapWindow window);
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* TEST SCAFFOLDING............... */
 ZMapFeatureContext testGetGFF(void) ;
-
-
-
-//typedef struct {
-//  ZMapWindow window;             /* the window pane  */
-//  Calc_cb    calc_cb;            /* callback routine */
-//  void      *seqRegion;          /* AceDB region     */
-//} ZMapCallbackData;
-
-
-
-/******************* end of public stuff that might end up private */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
 
 #endif /* !ZMAP_WINDOW_H */
