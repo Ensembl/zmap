@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Feb  2 14:09 2005 (edgrif)
+ * Last edited: Feb  3 10:34 2005 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.23 2005-02-02 14:39:39 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.24 2005-02-03 15:02:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -250,6 +250,7 @@ static void cleanUpThread(void *thread_args)
 
   ZMAPTHREAD_DEBUG(("%lu: thread clean-up routine starting....\n", thread->thread_id)) ;
 
+
   if (thread_cb->thread_died)
     {
       reply = ZMAPTHREAD_REPLY_DIED ;
@@ -259,28 +260,19 @@ static void cleanUpThread(void *thread_args)
   else
     reply = ZMAPTHREAD_REPLY_CANCELLED ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (thread_cb->server)
+
+  if (thread_cb->slave_data)
     {
-      /* this suggests we may need a "kill" function registered for a slave.... */
-      /* It also suggests that perhaps we need something like an acedb handle...to just
-       * chuck away all allocated resoures... */
+      ZMapThreadReturnCode slave_response ;
 
-      if (zMapServerCloseConnection(thread_cb->server)
-	  && zMapServerFreeConnection(thread_cb->server))
+      /* Call the registered slave handler function. */
+      if ((slave_response = (*(thread->terminate_func))(&(thread_cb->slave_data), &error_msg))
+	  != ZMAPTHREAD_RETURNCODE_OK)
 	{
-	  thread_cb->server = NULL ;
+	  ZMAPTHREAD_DEBUG(("%lu: Unable to close connection to server cleanly\n",
+			    thread->thread_id)) ;
 	}
-      else
-	ZMAPTHREAD_DEBUG(("%lu: Unable to close connection to server cleanly\n",
-			connection->thread_id)) ;
-
-
-
-      /* this should be an error message now as well as a debug message..... */
     }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   g_free(thread_cb) ;
 
