@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Apr  8 16:17 2004 (edgrif)
+ * Last edited: Jun 25 12:04 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.3 2004-04-08 16:48:05 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.4 2004-06-25 13:38:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -138,11 +138,17 @@ gboolean zMapServerOpenConnection(ZMapServer server)
 
 
 /* NEED TO SORT OUT WHETHER WE RETURN C STRINGS OR NOT.... */ 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean zMapServerRequest(ZMapServer server, char *request, char **reply, int *reply_len)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+gboolean zMapServerRequest(ZMapServer server, ZMapServerRequestType request,
+			   char *sequence, ZMapFeatureContext *feature_context)
 {
   gboolean result = FALSE ;
 
-  if ((server->funcs->request)(server->server_conn, request, (void **)reply, reply_len))
+  if ((server->funcs->request)(server->server_conn, request, sequence, feature_context))
     result = TRUE ;
   else
     server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
