@@ -26,14 +26,15 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 26 11:04 2004 (edgrif)
+ * Last edited: Aug 11 11:46 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.9 2004-07-27 07:37:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.10 2004-08-11 11:05:40 rnc Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindow_P.h>
 #include <ZMap/zmapDraw.h>
+#include <ZMap/zmapUtils.h>
 
 typedef struct _ParamStruct
 {
@@ -107,16 +108,20 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
   // params->height performed in zmapWindowDrawFeatures.  Change them together or not at all.
   params->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(params->types), feature_set->source) ;
 
-  params->column_position += column_spacing;
+  if (!params->thisType) // ie no method for this source
+      zMapLogWarning("No ZMapType (aka method) found for source: %s", feature_set->source);
+  else
+    {
+      params->column_position += column_spacing;
+  
+      params->columnGroup = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
+						foo_canvas_group_get_type(),
+						"x", (double)params->column_position,
+						"y", (double)10.0,
+						NULL);
 
-  params->columnGroup = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
-					    foo_canvas_group_get_type(),
-					    "x", (double)params->column_position,
-					    "y", (double)10.0,
-					    NULL);
-
-  g_datalist_foreach(&(feature_set->features), zmapWindowProcessFeature, user_data) ;
-
+      g_datalist_foreach(&(feature_set->features), zmapWindowProcessFeature, user_data) ;
+    }
   return ;
 }
 
@@ -140,15 +145,6 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
   double magFactor = params->height/params->length;
 
   //  printf("type %d name %s\n", zMapFeature->type, zMapFeature->name);
-
-  if (!params->thisType)       // this needs to be handled properly
-    {
-      params->thisType = g_new0(ZMapFeatureTypeStyleStruct, 1);
-
-      params->thisType->width = 10.0;
-      params->thisType->foreground = "dark blue";
-      params->thisType->background = "white";
-    }
 
   switch (zMapFeature->type)
     {
