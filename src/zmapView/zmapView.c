@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep 17 11:09 2004 (edgrif)
+ * Last edited: Sep 20 10:55 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.22 2004-09-17 12:41:04 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.23 2004-09-20 09:55:16 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1175,7 +1175,7 @@ static GData *getTypesFromFile(void)
 							{NULL, -1, {NULL}}} ;
 
 
-      types_elements[4].data.f = 10.0 ;			    /* Must init separately as compiler
+      types_elements[4].data.f = DEFAULT_WIDTH ;	    /* Must init separately as compiler
 							       cannot statically init different
 							       union types....sigh.... */
 
@@ -1209,7 +1209,7 @@ static GData *getTypesFromFile(void)
 	    {
 	      ZMapFeatureTypeStyle new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
 
-	      // NB Elements here must match those pre-initialised above or you might segfault.
+	      /* NB Elements here must match those pre-initialised above or you might segfault. */
 
 	      gdk_color_parse(zMapConfigGetElementString(next_types, "outline"   ), &new_type->outline   ) ;
 	      gdk_color_parse(zMapConfigGetElementString(next_types, "foreground"), &new_type->foreground) ;

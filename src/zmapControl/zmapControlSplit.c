@@ -1,4 +1,4 @@
-/*  Last edited: Sep  1 15:41 2004 (rnc) */
+/*  Last edited: Sep 20 10:52 2004 (rnc) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -460,7 +460,7 @@ static void shrinkPane(ZMap zmap)
   exciseNode(node);
 
   /* do we really need this? */
-  //  gtk_widget_hide(zMapWindowGetFocuspane(window)->frame);
+  /*  gtk_widget_hide(zMapWindowGetFocuspane(window)->frame); */
   zmap->focuspane = pane ;
 
   return;

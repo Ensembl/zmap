@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep 15 14:42 2004 (edgrif)
+ * Last edited: Sep 20 10:34 2004 (rnc)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.9 2004-09-17 08:36:43 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.10 2004-09-20 09:55:42 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -35,6 +35,8 @@
 #include <glib.h>
 #include <ZMap/zmapView.h>
 
+
+#define DEFAULT_WIDTH 10.0              /* of features being displayed */
 
 /* A "View" is a set of one or more windows that display data retrieved from one or
  * more servers. Note that the "View" windows are _not_ top level windows, they are panes

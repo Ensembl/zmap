@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Sep 16 15:26 2004 (rnc)
+ * Last edited: Sep 20 10:51 2004 (rnc)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.14 2004-09-16 15:34:48 rnc Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.15 2004-09-20 09:51:34 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -164,20 +164,20 @@ void navUpdate(GtkAdjustment *adj, gpointer p)
   if (GTK_WIDGET_REALIZED(zmap->navview_frame))
     {
 
-      //  graphActivate(zMapWindowGetNavigator(window));
-      //  graphFitBounds(NULL, &height);
-      //  graphBoxDim(pane->scrollBox, &x1, &y1, &x2, &y2);
+      /*  graphActivate(zMapWindowGetNavigator(window));
+      **  graphFitBounds(NULL, &height);
+      **  graphBoxDim(pane->scrollBox, &x1, &y1, &x2, &y2);
       
-      //  startWind =  zmCoordFromScreen(pane, 0);
-      //  endWind =  zmCoordFromScreen(pane, zMapPaneGetHeight(pane));
+      **  startWind =  zmCoordFromScreen(pane, 0);
+      **  endWind =  zmCoordFromScreen(pane, zMapPaneGetHeight(pane));
       
-      //  startWindf = zMapWindowGetScreenCoord(window, startWind, height);
-      //  endWindf = zMapWindowGetScreenCoord(window, endWind, height);
-      //  lenWindf = endWindf - startWindf;
+      **  startWindf = zMapWindowGetScreenCoord(window, startWind, height);
+      **  endWindf = zMapWindowGetScreenCoord(window, endWind, height);
+      **  lenWindf = endWindf - startWindf;
       
-      //  startScreenf = startWindf + lenWindf * (adj->value - adj->lower)/(adj->upper - adj->lower) ;
+      **  startScreenf = startWindf + lenWindf * (adj->value - adj->lower)/(adj->upper - adj->lower) ;
       
-      //  graphBoxShift(pane->scrollBox, x1, startScreenf);
+      **  graphBoxShift(pane->scrollBox, x1, startScreenf); */
     }
 
   return ;

@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Sep 17 09:22 2004 (edgrif)
+ * Last edited: Sep 20 10:49 2004 (rnc)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.30 2004-09-17 08:40:02 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.31 2004-09-20 09:50:05 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -572,8 +572,8 @@ static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feat
   ZMapPaneViewSearchStruct view_search ;
   GString *str = g_string_new("");
 
-  // array of types must corresponed 1:1 with ZMapFeatureType enum in zmapFeature.h
-  // (apart from INVALID) as feature->type is used to index this array.
+  /* array of types must corresponed 1:1 with ZMapFeatureType enum in zmapFeature.h */
+  /* (apart from INVALID) as feature->type is used to index this array. */
   static char types[8][20+1] = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
 			  "VARIATION", "BOUNDARY", "SEQUENCE"} ;
 
@@ -589,7 +589,7 @@ static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feat
   /* If view has features then change the window title. */
   updateControl(zmap, view) ;
 
-  if (feature) // if user clicked on a specific object
+  if (feature) /* if user clicked on a specific object */
     {
       g_string_printf(str, "%s   %d   %d   %s   %s", 
 		      feature->name,
