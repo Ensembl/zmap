@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Nov 19 13:45 2004 (edgrif)
+ * Last edited: Nov 22 18:27 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.18 2004-11-19 14:32:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.19 2004-11-23 11:58:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -37,12 +37,20 @@
 #include <libfoocanvas/libfoocanvas.h>
 
 
+/* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
+ * can surmise from the code that zero is not a valid quark. */
+enum {ZMAPFEATURE_NULLQUARK = 0} ;
+
 
 /* A unique ID for each feature created, can be used to unabiguously query for that feature
  * in a database. The feature id ZMAPFEATUREID_NULL is guaranteed not to equate to any feature
  * and also means you can test using !(feature_id). */
 typedef unsigned int ZMapFeatureID ;
 enum {ZMAPFEATUREID_NULL = 0} ;
+
+
+
+
 
 
 /* Output format for dumping data to a file */
@@ -77,7 +85,7 @@ struct zMapRegionStruct {
 
 typedef struct zMapRegionStruct ZMapRegion;
 
-/* used by zmapLookUpEnums() to translate enums into strings */
+/* used by zmapFeatureLookUpEnums() to translate enums into strings */
 typedef enum { TYPE_ENUM, STRAND_ENUM, PHASE_ENUM } ZMapEnumType;  
 
 
@@ -88,7 +96,7 @@ typedef int methodID ;
 
 
 /* NB if you add to these enums, make sure any corresponding arrays in
-** zmapLookUpEnums() are kept in synch. */
+** zmapFeatureLookUpEnums() are kept in synch. */
 
 /* What about "sequence", atg, and allele as basic feature types ?           */
 typedef enum {ZMAPFEATURE_INVALID = -1,
@@ -184,7 +192,10 @@ typedef struct
  *  */
 typedef struct ZMapFeatureStruct_ 
 {
-  ZMapFeatureID id ;					    /* unique DB identifier. */
+  GQuark feature_id ;					    /* Unique id for just this feature for
+							       use by ZMap. */
+  ZMapFeatureID db_id ;					    /* unique DB identifier, currently
+							       unused but will be..... */
   char *name ;						    /* e.g. "bA404F10.4.mRNA" */
   ZMapFeatureType type ;				    /* e.g. intron, homol etc. */
 
@@ -244,12 +255,12 @@ typedef struct ZMapFeatureContextStruct_
 } ZMapFeatureContextStruct, *ZMapFeatureContext ;
 
 
-ZMapFeature zmapFeatureCreate(void) ;
+ZMapFeature zmapFeatureCreateEmpty(void) ;
 char *zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
 			  int start, int end, int query_start, int query_end) ;
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
-gboolean zmapFeatureAugmentData(ZMapFeature feature, char *name,
+gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
 				char *sequence, char *source, ZMapFeatureType feature_type,
 				int start, int end, double score, ZMapStrand strand,
 				ZMapPhase phase,
@@ -450,7 +461,7 @@ typedef void (*Calc_cb)    (void *seqRegion,
 
      
 
-char *zmapLookUpEnum (int id, int enumType);
+char *zmapFeatureLookUpEnum (int id, int enumType);
 void  zmapFeatureDump(ZMapFeatureContext feature_context, char *file, int format);
 
 

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov 22 10:12 2004 (edgrif)
+ * Last edited: Nov 22 18:08 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.17 2004-11-22 11:50:35 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.18 2004-11-23 11:58:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -619,8 +619,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
   if (parser->parse_only || !feature)
     {
-      new_feature = zmapFeatureCreate() ;
+      new_feature = zmapFeatureCreateEmpty() ;
     }
+
 
   /* FOR PARSE ONLY WE WOULD LIKE TO CONTINUE TO USE THE LOCAL VARIABLE new_feature....SORT THIS
    * OUT............. */
@@ -674,7 +675,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
 
   /* Phew, now fill in the feature.... */
-  result = zmapFeatureAugmentData(feature, feature_name, sequence, source,
+  result = zmapFeatureAugmentData(feature, feature_name_id, feature_name, sequence, source,
 				  feature_type, start, end, score, strand,
 				  phase, homol_type, query_start, query_end) ;
 
