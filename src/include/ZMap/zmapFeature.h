@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Jul  1 14:57 2004 (rnc)
+ * Last edited: Jul 14 10:53 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.4 2004-07-02 13:29:10 rnc Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.5 2004-07-14 12:54:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -121,7 +121,16 @@ typedef struct
 {
   int q1, q2 ;						    /* coords in query sequence */
   int t1, t2 ;						    /* coords in target sequence */
-} ZMapAlignBlock ;
+} ZMapAlignBlockStruct, *ZMapAlignBlock ;
+
+
+/* the following is used to store mapping information of one span on to another, if we have
+ * SMap in ZMap we can use SMap structs instead.... */
+typedef struct
+{
+  int p1, p2 ;						    /* coords in parent. */
+  int c1, c2 ;						    /* coords in child. */
+} ZMapMapBlockStruct, *ZMapMapBlock ;
 
 
 
@@ -212,7 +221,11 @@ typedef struct ZMapFeatureSetStruct_
 typedef struct ZMapFeatureContextStruct_
 {
   char *sequence ;					    /* The sequence to be displayed. */
-  int start, end ;					    /* start, end coords in the sequence. */
+  ZMapMapBlockStruct sequence_to_parent ;		    /* Shows how this sequence maps to its
+							       ultimate parent. */
+  ZMapMapBlockStruct features_to_sequence ;		    /* Shows how these features map to the
+							       sequence, n.b. this feature set may only
+							       span part of the sequence. */
 
   GData *features ;					    /* A set of ZMapFeatureSet. */
 
