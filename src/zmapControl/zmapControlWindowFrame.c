@@ -25,16 +25,17 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  1 09:53 2004 (edgrif)
+ * Last edited: Jul  8 13:00 2004 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.5 2004-07-01 09:26:45 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.6 2004-07-14 09:08:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <stdlib.h>
-#include <stdio.h>
+
 #include <zmapControl_P.h>
 
+
+static void createNavViewWindow(ZMap zmap, GtkWidget *parent) ;
 
 
 GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
@@ -46,12 +47,50 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
   gtk_widget_set_usize(frame, 500, 500) ;
 
-  //  vbox = gtk_vbox_new(FALSE, 0) ;
-  //  gtk_container_border_width(GTK_CONTAINER(vbox), 2) ;
-  //  gtk_container_add(GTK_CONTAINER(frame), vbox) ;
-
+  createNavViewWindow(zmap, frame) ;
 
   return frame ;
 }
+
+
+
+/* createNavViewWindow ***************************************************************
+ * Creates the root node in the panesTree (which helps keep track of all the
+ * display panels).  The root node has no data, only children.
+ * 
+ * Puts an hbox into vbox1, then packs 2 toolbars into the hbox.  We may not want
+ * to keep it like that.  Then puts an hpane below that and stuffs the navigator
+ * in as child1.  Calls zMapZoomToolbar to build the rest and puts what it does
+ * in as child2.
+ */
+static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
+{
+  zmap->panesTree = g_node_new(NULL) ;
+
+  /* Navigator and views are in an hpane, so the user can adjust the width
+   * of the navigator and views. */
+  zmap->hpane = gtk_hpaned_new() ;
+  gtk_container_add(GTK_CONTAINER(parent), zmap->hpane) ;
+
+
+  /* Make the navigator which shows user where they are on the sequence. */
+  zmap->navigator = zmapControlCreateNavigator(&(zmap->navcanvas)) ;
+  gtk_paned_pack1(GTK_PANED(zmap->hpane), 
+		  zmap->navigator,
+                  TRUE, TRUE);
+
+
+  /* I'm not sure we actually need this intervening box, we could probably just set the size of
+   * the hpane.... */
+  zmap->pane_vbox = gtk_vbox_new(FALSE,0) ;
+  gtk_widget_set_size_request(zmap->pane_vbox, 750, -1) ;
+
+
+  gtk_paned_pack2(GTK_PANED(zmap->hpane), 
+		  zmap->pane_vbox, TRUE, TRUE);
+
+  return ;
+}
+
 
 
