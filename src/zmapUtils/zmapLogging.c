@@ -25,18 +25,18 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Feb  1 09:57 2005 (edgrif)
+ * Last edited: Feb 10 14:18 2005 (edgrif)
  * Created: Thu Apr 29 14:59:37 2004 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.7 2005-02-02 11:04:43 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.8 2005-02-10 16:40:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <sys/param.h>					    /* MAXHOSTNAMLEN */
 #include <unistd.h>					    /* for pid stuff. */
-
 #include <glib.h>
 #include <ZMap/zmapConfig.h>
+#include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtils.h>
 
 
@@ -406,18 +406,19 @@ static gboolean getLogConf(ZMapLog log)
       zMapConfigDestroy(config) ;
 
 
-      if (!log_dir)
-	{
-	  log_dir = g_strdup(zMapGetControlDirName()) ;
-	}
       if (!log_name)
 	log_name = g_strdup(ZMAPLOG_FILENAME) ;
 
-      full_dir = zMapGetControlFileDir(log_dir) ;
+      if (!log_dir)
+	full_dir = g_strdup(zMapConfigDirGetDir()) ;
+      else
+	{
+	  full_dir = zMapGetDir(log_dir, TRUE, TRUE) ;
+	  g_free(log_dir) ;
+	}
 
-      log->active_handler.log_path = zMapGetFile(full_dir, log_name) ;
+      log->active_handler.log_path = zMapGetFile(full_dir, log_name, TRUE) ;
 
-      g_free(log_dir) ;
       g_free(log_name) ;
       g_free(full_dir) ;
 
