@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 13 13:21 2004 (rnc)
+ * Last edited: Oct 14 09:31 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.5 2004-10-13 12:32:20 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.6 2004-10-14 15:22:56 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -200,19 +200,13 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 	  foo_canvas_scroll_to(canvasData->canvas, 0.0, 
 			       start);
 
-	  if (!FOO_IS_CANVAS_GROUP(foo_canvas_root(canvasData->canvas)))
-	    {
-	      printf("nope: broken\n");
-	      return TRUE;
-	    }
-	  else
-	    printf("root is good\n");
-
+	  wx = start;
+	  gdk_color_parse("black", &outline);
 	  zmapDrawLine(foo_canvas_root(canvasData->canvas), 0.0, 
-		       start,
+		       wx,
 		       500.0,
-		       start,
-		       "black",
+		       wx,
+		       &outline,
 		       1.0);
 
 	  foo_canvas_c2w(canvasData->canvas, 0.0, 
