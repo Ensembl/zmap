@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 27 10:12 2004 (rnc)
+ * Last edited: Sep 27 12:05 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.3 2004-09-27 09:23:13 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.4 2004-09-27 11:06:42 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,7 @@
 #include <ZMap/zmapWindowDrawFeatures.h>
 #include <ZMap/zmapFeature.h>
 
-enum { NAME, START, TYPE, N_COLUMNS };
+enum { NAME, START, END, TYPE, FEATURE_TYPE, N_COLUMNS };
 
 
 
@@ -58,7 +58,9 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
   GtkTreeStore *list = gtk_tree_store_new(N_COLUMNS,
 					  G_TYPE_STRING,
 					  G_TYPE_INT,
-					  G_TYPE_STRING);
+					  G_TYPE_INT,
+					  G_TYPE_STRING,
+					  G_TYPE_INT);
   GtkTreeModel *sort_model;
   GtkCellRenderer *renderer;
   GtkTreeViewColumn *column;
@@ -100,7 +102,7 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
 						     "text", START,
 						     NULL);
   gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
-  /*
+  
   column = gtk_tree_view_column_new_with_attributes ("End",
 						     renderer,
 						     "text", END,
@@ -108,10 +110,18 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
   gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
 
   gtk_tree_view_column_set_visible(column, FALSE);
-  */ 
+   
   column = gtk_tree_view_column_new_with_attributes ("Type",
 						     renderer,
 						     "text", TYPE,
+						     NULL);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
+
+  gtk_tree_view_column_set_visible(column, FALSE);
+  
+  column = gtk_tree_view_column_new_with_attributes ("Feature Type",
+						     renderer,
+						     "text", FEATURE_TYPE,
 						     NULL);
   gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
 
@@ -147,7 +157,9 @@ static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
   gtk_tree_store_set   (GTK_TREE_STORE(list), &iter1, 
 			NAME , feature->name,
 			START, feature->x1,
+			END  , feature->x2,
 			TYPE , feature->method_name,
+			FEATURE_TYPE, feature->type,
 			-1 );
 
   return;
@@ -158,7 +170,7 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
   ZMapCanvasDataStruct *canvasData = (ZMapCanvasDataStruct*)data;
   GtkTreeIter iter;
   GtkTreeModel *model;
-  int x, y, start = 0;
+  int x, y, start = 0, end = 0, feature_type = 0;
   double wx, wy;
   gchar *name, *type;
   FooCanvasItem *item;
@@ -173,7 +185,8 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
       // retrieve user's selection
       if (gtk_tree_selection_get_selected (selection, &model, &iter))
 	{
-	  gtk_tree_model_get (model, &iter, NAME, &name, START, &start, TYPE, &type, -1);
+	  gtk_tree_model_get (model, &iter, NAME, &name, START, &start, 
+			      END, &end, TYPE, &type, FEATURE_TYPE, &feature_type, -1);
 	}
       
       if (start)
@@ -190,6 +203,13 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 	  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), type) ;
 
 	  zmapHighlightObject(item, canvasData);
+
+	  canvasData->feature->name        = name;
+	  canvasData->feature->x1          = start;
+	  canvasData->feature->x2          = end;
+	  canvasData->feature->type        = feature_type;
+	  canvasData->feature->method_name = type;
+
 	  zMapFeatureClickCB(canvasData, canvasData->feature); /* show feature details on info_panel  */
 
 	  gtk_widget_show_all(GTK_WIDGET(canvasData->window->parent_widget));
