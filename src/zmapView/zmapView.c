@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep  2 09:25 2004 (rnc)
+ * Last edited: Sep 13 10:26 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.17 2004-09-02 08:56:20 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.18 2004-09-13 13:00:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1124,9 +1124,10 @@ static GData *getTypesFromFile(void)
     {
       ZMapConfigStanza types_stanza ;
 
-      // Set up default values for variables in the stanza.  Elements here must match
-      // those being loaded below or you might segfault.
-
+      /* Set up default values for variables in the stanza.  Elements here must match
+       * those being loaded below or you might segfault.
+       * IF YOU ADD ANY ELEMENTS TO THIS ARRAY THEN MAKE SURE YOU UPDATE THE INIT STATEMENTS
+       * FOLLOWING THIS ARRAY SO THEY POINT AT THE RIGHT ELEMENTS....!!!!!!!! */
       ZMapConfigStanzaElementStruct types_elements[] = {{"name", ZMAPCONFIG_STRING, {NULL}},
 							{"outline", ZMAPCONFIG_STRING, {"black"}},
 							{"foreground", ZMAPCONFIG_STRING, {"white"}},
@@ -1134,7 +1135,8 @@ static GData *getTypesFromFile(void)
 							{"width", ZMAPCONFIG_FLOAT, {NULL}},
 							{NULL, -1, {NULL}}} ;
 
-      types_elements[3].data.f = 10.0 ;			    /* Must init separately as compiler
+
+      types_elements[4].data.f = 10.0 ;			    /* Must init separately as compiler
 							       cannot statically init different
 							       union types....sigh.... */
 
