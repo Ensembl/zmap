@@ -26,16 +26,16 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  8 15:06 2004 (edgrif)
+ * Last edited: Nov 11 17:40 2004 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.32 2004-11-09 14:46:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.33 2004-11-12 12:01:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindow_P.h>
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapWindowDrawFeatures.h>
+
 
 
 #define PIXELS_PER_BASE 20.0   /* arbitrary text size to limit zooming in.  Must be tied
@@ -395,9 +395,12 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
       itemDataKey = "canvasData";
       g_object_set_data(G_OBJECT(boundingBox), itemDataKey, canvasData);
 	  
+
       if (boundingBox)
 	g_signal_connect(G_OBJECT(boundingBox), "destroy",
 			 G_CALLBACK(freeObjectKeys), featureKeys);
+
+
 
       /* store a pointer to the column to enable hide/unhide while zooming */
       column.item = canvasData->columnGroup;
@@ -444,9 +447,15 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 	  itemDataKey = "canvasData";
 	  g_object_set_data(G_OBJECT(boundingBox), itemDataKey, canvasData);
 	  
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* THIS IS NOT CORRECT AS IT ENDS UP FREEING featureKeys _twice_ */
+
 	  if (boundingBox)
 	    g_signal_connect(G_OBJECT(boundingBox), "destroy",
 			     G_CALLBACK(freeObjectKeys), featureKeys);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  /* store a pointer to the column to enable hide/unhide while zooming */
 	  column.item = canvasData->revColGroup;
