@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Mar 16 15:31 2005 (edgrif)
+ * Last edited: Mar 24 07:59 2005 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.32 2005-03-16 15:52:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.33 2005-03-24 08:19:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -109,8 +109,8 @@ typedef struct
 
 
 
-void       zMapWindowInit       (ZMapWindowCallbacks callbacks) ;
-ZMapWindow zMapWindowCreate     (GtkWidget *parent_widget, char *sequence, void *app_data) ;
+void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
+ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
 			  void *app_data, ZMapWindow old, ZMapFeatureContext features, GData *types) ;
 void zMapWindowDisplayData(ZMapWindow window,
@@ -125,18 +125,17 @@ void zMapWindowSetZoomStatus(ZMapWindow window) ;
 double zMapWindowGetZoomFactor(ZMapWindow window);
 void zMapWindowSetZoomFactor(ZMapWindow window, double zoom_factor);
 void zMapWindowSetMinZoom   (ZMapWindow window);
-
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
-
+void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
+gboolean zMapWindowScrollToItem    (ZMapWindow window, gchar *type, GQuark feature_id);
+void zMapWindowDestroyLists    (ZMapWindow window);
+GQuark zMapWindowGetFocusQuark   (ZMapWindow window);
+gchar *zMapWindowGetTypeName(ZMapWindow window);
 
 void zMapWindowDestroy(ZMapWindow window) ;
 
 
 
-gboolean     zMapWindowScrollToItem    (ZMapWindow window, gchar *type, GQuark feature_id);
-void         zMapWindowDestroyLists    (ZMapWindow window);
-GQuark       zMapWindowGetFocusQuark   (ZMapWindow window);
-gchar       *zMapWindowGetTypeName     (ZMapWindow window);
 
 
 

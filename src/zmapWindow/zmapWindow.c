@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 23 17:24 2005 (edgrif)
+ * Last edited: Mar 24 08:17 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.67 2005-03-23 17:25:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.68 2005-03-24 08:19:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,18 +76,28 @@ static void sendClientEvent     (ZMapWindow window, FeatureSets) ;
 static void moveWindow(ZMapWindow window, guint state, guint keyval) ;
 static void scrollWindow(ZMapWindow window, guint state, guint keyval) ;
 static void changeRegion(ZMapWindow window, guint keyval) ;
-
 void hideAlignmentCols(GQuark key_id, gpointer data, gpointer user_data) ;
-
-
 static void printGroup(FooCanvasGroup *group, int indent) ;
 
-/* These structure is static because the callback routines are set just once for the lifetime of the
- * process. */
 
-/* Callbacks we make back to the level above us. */
+
+/* Callbacks we make back to the level above us. This structure is static
+ * because the callback routines are set just once for the lifetime of the
+ * process. */
 static ZMapWindowCallbacks window_cbs_G = NULL ;
 
+
+
+
+/*! @defgroup zmapwindow   zMapWindow: The feature display window.
+ * @{
+ * 
+ * \brief  Feature Display Window
+ * 
+ * zMapWindow routines create, modify, manipulate and destroy feature display windows.
+ * 
+ *
+ *  */
 
 
 
@@ -717,7 +727,45 @@ void zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data)
 			    "y2", end,
 			    NULL);
     }
-  return;
+
+  return ;
+}
+
+
+
+/*!
+ * Scrolls canvas window vertically to window_y_pos. The window will not scroll beyond
+ * its current top/bottom.
+ *
+ * @param window       The ZMapWindow to be scrolled.
+ * @param window_y_pos The vertical position in pixels to move to in the ZMapWindow.
+ * @return             nothing
+ *  */
+void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos)
+{
+  GtkAdjustment *v_adjuster ;
+  double new_value ;
+  double half_way ;
+
+  /* The basic idea is to find out from the canvas windows parent scrolled window adjuster
+   * how much we need to move the canvas window to get to window_y_pos and then use the
+   * adjuster to move the canvas window. */
+  v_adjuster = 
+    gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow)) ;
+
+  half_way = (v_adjuster->page_size / 2.0) ;
+
+  new_value = v_adjuster->value + ((double)window_y_pos - (v_adjuster->value + half_way)) ;
+
+  /* The gtk adjuster docs say that the adjuster is clamped to move only between its upper
+   * and lower values. It successfully clamps to the upper value but _not_ the lower where
+   * it seems to take no notice of its own page_size so we have to do the work here. */
+  if (new_value + v_adjuster->page_size > v_adjuster->upper)
+    new_value = new_value - ((new_value + v_adjuster->page_size) - v_adjuster->upper) ;
+
+  gtk_adjustment_set_value(v_adjuster, new_value) ;
+
+  return ;
 }
 
 
@@ -751,12 +799,13 @@ void zMapWindowDestroy(ZMapWindow window)
   return ;
 }
 
-
+/*! @} end of zmapwindow docs. */
 
 
 /*
  *  ------------------- Internal functions -------------------
  */
+
 
 
 
@@ -1220,6 +1269,10 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	    }
 	  case 2:
 	    {
+	      zMapWindowScrollToWindowPos(window, but_event->y) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      GtkAdjustment *v_adjuster ;
 	      double new_value ;
 	      double half_way ;
@@ -1236,6 +1289,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 		new_value = new_value - ((new_value + v_adjuster->page_size) - v_adjuster->upper) ;
 
 	      gtk_adjustment_set_value(v_adjuster, new_value) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      event_handled = TRUE ;
 	      break ;
