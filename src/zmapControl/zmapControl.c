@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Feb  1 09:30 2005 (edgrif)
+ * Last edited: Mar  9 11:02 2005 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.46 2005-02-02 11:03:49 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.47 2005-03-09 14:54:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -476,6 +476,10 @@ static void clickCB(ZMapViewWindow view_window, void *app_data, void *view_data)
   ZMapFeature feature = (ZMapFeature)view_data ;
   ZMapView view = zMapViewGetView(view_window) ;
 
+
+  /* Make this view window the focus view window. */
+  zmapControlSetWindowFocus(zmap, view_window) ;
+
   /* If view has features then change the window title. */
   updateControl(zmap, view) ;
 
@@ -516,7 +520,11 @@ static void enterCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapControlSetWindowFocus(zmap, view_window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -525,7 +533,11 @@ static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapControlUnSetWindowFocus(zmap, view_window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }

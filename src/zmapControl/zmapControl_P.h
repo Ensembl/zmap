@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jan 25 17:36 2005 (edgrif)
+ * Last edited: Mar  9 12:07 2005 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.27 2005-01-25 17:50:25 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.28 2005-03-09 14:54:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -59,7 +59,7 @@ typedef enum {
  * this top level window there will be one or more zmap "Views". */
 typedef struct _ZMapStruct
 {
-  gchar           *zmap_id ;	    /* unique for each zmap.... */
+  gchar           *zmap_id ;				    /* unique for each zmap.... */
 
   ZmapState        state ;
 
@@ -88,16 +88,7 @@ typedef struct _ZMapStruct
   GtkWidget      *pane_vbox ;				    /* Is the parent of all the panes. */
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* This all needs to be surplanted..... */
-
-  ZMapPane       focuspane ;				    /* current focus pane. */
-  GList          *panes_list ;				    /* all panes. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   ZMapViewWindow focus_viewwindow ;
-  ZMapViewWindow unfocus_viewwindow ;
   GHashTable* viewwindow_2_parent ;			    /* holds hash to go from a view window
 							       to that windows parent widget
 							       (currently a frame). */
@@ -108,26 +99,6 @@ typedef struct _ZMapStruct
 
 
 } ZMapStruct ;
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Data associated with one scrolling pane. */
-typedef struct _ZMapPaneStruct
-{
-  /* DO WE REALLY NEED THIS ? */
-  ZMap zmap ;						    /* Back ptr to containing zmap. */
-
-
-
-  GtkWidget   *frame ;					    /* Direct parent of view window. */
-
-  ZMapViewWindow curr_view_window ;
-} ZMapPaneStruct ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 
@@ -145,7 +116,6 @@ void zmapControlRemoveWindow(ZMap zmap) ;
 
 /* these may not need to be exposed.... */
 GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame, GtkOrientation orientation) ;
-void zmapControlCloseWindow(ZMap zmap, GtkWidget *close_container) ;
 
 
 void zmapControlWindowDoTheZoom(ZMap zmap, double zoom) ;

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  8 15:29 2005 (edgrif)
+ * Last edited: Mar  9 14:53 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.63 2005-03-08 15:33:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.64 2005-03-09 14:54:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -204,6 +204,13 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
   gtk_widget_show_all(window->parent_widget) ;
 
+
+  /* We want the canvas to be the focus widget of its "window" otherwise keyboard input
+   * (i.e. short cuts) will be delivered to some other widget. We do this here because
+   * I think we may need a widget window to exist for this call to work. */
+  gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
+
+
   return window ; 
 }
 
@@ -288,7 +295,10 @@ void zMapWindowSetMinZoom(ZMapWindow window)
  * We'd have used the realise signal if we could, but somehow the canvas manages to
  * achieve realised status (ie GTK_WIDGET_REALIZED yields TRUE) without having a 
  * valid vertical dimension. 
- */
+ *
+ * No, that's not the problem, it is realised, it just hasn't got sized properly yet.
+ * 
+ *  */
 void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_features,
 			   ZMapFeatureContext new_features, GData *types)
 {
@@ -1135,10 +1145,12 @@ static gboolean getConfiguration(ZMapWindow window)
 }
 
 
-/* Handle any events that are not intercepted by items on the canvas, items could be columns
- * or the features within columns. */
+/* This gets run _BEFORE_ any of the canvas item handlers which is good because we can use it
+ * handle more general events such as "click to focus" etc. */
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
 {
+
+  /* check whether this really needs to be FALSE for other canvas events to be run.... */
   gboolean event_handled = FALSE ;
   ZMapWindow window = (ZMapWindow)data ;
 
@@ -1154,15 +1166,16 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
       {
 	printf("GENERAL event handler - CLICK\n") ;
 
+	/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
+	 * (i.e. short cuts) will be delivered to some other widget. */
+	gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	/* Not sure if we need this currently..... */
-
-	/* Call the callers routine for button clicks. */
-	window_cbs_G->click(window, window->app_data, NULL) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	/* Report to our parent that we have been clicked in, we change "click" to "focus"
+	 * because that is what this if for.... */
+	(*(window_cbs_G->click))(window, window->app_data, NULL) ;
 
 	event_handled = FALSE ;
+
 	break ;
       }
 
@@ -1209,26 +1222,24 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	
 	break ;
       }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Disabled because we now do "click to focus" */
+
     case GDK_ENTER_NOTIFY:
       {
-	/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
-	 * (i.e. short cuts) will be delivered to some other widget. */
-	gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
-
-	(*(window_cbs_G->enter))(window, window->app_data, NULL) ;
-
 	event_handled = TRUE ;
 
 	break ;
       }
     case GDK_LEAVE_NOTIFY:
       {
-	(*(window_cbs_G->leave))(window, window->app_data, NULL) ;
-
 	event_handled = TRUE ;
 
 	break ;
       }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     default:
       {
 	event_handled = FALSE ;
@@ -1236,6 +1247,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	break ;
       }
     }
+
 
   return event_handled ;
 }

@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Feb  1 09:30 2005 (edgrif)
+ * Last edited: Mar  9 12:11 2005 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.3 2005-02-02 11:03:49 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.4 2005-03-09 14:54:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -69,7 +69,7 @@ static GtkWidget *closePane(GtkWidget *close_frame) ;
 
 static ZMapViewWindow widget2ViewWindow(GHashTable* hash_table, GtkWidget *widget) ;
 static void findViewWindow(gpointer key, gpointer value, gpointer user_data) ;
-
+static ZMapViewWindow closeWindow(ZMap zmap, GtkWidget *close_container) ;
 
 
 
@@ -143,7 +143,7 @@ void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation o
 void zmapControlRemoveWindow(ZMap zmap)
 {
   GtkWidget *close_container ;
-  ZMapViewWindow view_window ;
+  ZMapViewWindow view_window, remaining_view ;
   gboolean remove ;
 
   /* We shouldn't get called if there are no windows. */
@@ -152,25 +152,20 @@ void zmapControlRemoveWindow(ZMap zmap)
   view_window = zmap->focus_viewwindow ;		    /* focus_viewwindow gets reset so hang
 							       on view_window.*/
 
-  /* It may be that the window to be removed was also due to be unfocussed so it needs to be
-   * removed from the unfocus slot. */
-  if (view_window == zmap->unfocus_viewwindow)
-    zmap->unfocus_viewwindow = NULL ;
-
   close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
 
   zMapViewRemoveWindow(view_window) ;
 
   /* this needs to remove the pane.....AND  set a new focuspane.... */
-  zmapControlCloseWindow(zmap, close_container) ;
+  remaining_view = closeWindow(zmap, close_container) ;
 
   /* Remove from hash of viewwindows to frames */
   remove = g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
   zMapAssert(remove) ;
 
   /* Having removed one window we need to refocus on another, if there is one....... */
-  if (zmap->focus_viewwindow)
-    zmapControlSetWindowFocus(zmap, zmap->focus_viewwindow) ;
+  if (remaining_view)
+    zmapControlSetWindowFocus(zmap, remaining_view) ;
 
   /* We'll need to update the display..... */
   gtk_widget_show_all(zmap->toplevel) ;
@@ -215,9 +210,11 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame, GtkOrientation
 }
 
 
-
-void zmapControlCloseWindow(ZMap zmap, GtkWidget *close_container)
+/* Returns the viewWindow left in the other half of the pane, but note when its
+ * last window, there is no viewWindow left over. */
+static ZMapViewWindow closeWindow(ZMap zmap, GtkWidget *close_container)
 {
+  ZMapViewWindow remaining_view ;
   GtkWidget *pane_parent ;
 
   /* If parent is a pane then we need to remove that pane, otherwise we simply destroy the
@@ -230,15 +227,15 @@ void zmapControlCloseWindow(ZMap zmap, GtkWidget *close_container)
       keep_container = closePane(close_container) ;
 
       /* Set the focus to the window left over. */
-      zmap->focus_viewwindow = widget2ViewWindow(zmap->viewwindow_2_parent, keep_container) ;
+      remaining_view = widget2ViewWindow(zmap->viewwindow_2_parent, keep_container) ;
     }
   else
     {
       gtk_widget_destroy(close_container) ;
-      zmap->focus_viewwindow = NULL ;
+      remaining_view = NULL ;
     }
 
-  return ;
+  return remaining_view ;
 }
 
 static ZMapViewWindow widget2ViewWindow(GHashTable* hash_table, GtkWidget *widget)
@@ -398,10 +395,17 @@ static GtkWidget *closePane(GtkWidget *close_frame)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* replaced by "click to focus" */
+
 /* The enter and leave stuff is slightly convoluted in that we don't want to unfocus
  * a window just because the pointer leaves it. We only want to unfocus a previous
  * window when we enter a different view window. Hence in the leave callback we just
  * record a window to be unfocussed if we subsequently enter a different view window. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 {
   GtkWidget *viewwindow_frame ;
@@ -411,47 +415,50 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
   GdkColor color ;
   double top, bottom ;
 
-  view = zMapViewGetView(new_viewwindow) ;
-  window = zMapViewGetWindow(new_viewwindow) ;
+  zMapAssert(new_viewwindow) ;
 
-  if (zmap->unfocus_viewwindow)
+  if (new_viewwindow != zmap->focus_viewwindow)
     {
-      GtkWidget *unfocus_frame ;
+      /* Unfocus the old window. */
+      if (zmap->focus_viewwindow)
+	{
+	  GtkWidget *unfocus_frame ;
 
-      unfocus_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->unfocus_viewwindow) ;
+	  unfocus_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
+	  gtk_frame_set_shadow_type(GTK_FRAME(unfocus_frame), GTK_SHADOW_OUT) ;
+	  gtk_widget_modify_bg(GTK_WIDGET(unfocus_frame), GTK_STATE_NORMAL, NULL) ;
+	  gtk_widget_modify_fg(GTK_WIDGET(unfocus_frame), GTK_STATE_NORMAL, NULL) ;
+	}
 
-      gtk_frame_set_shadow_type(GTK_FRAME(unfocus_frame), GTK_SHADOW_OUT) ;
+      /* focus the new one. */
+      zmap->focus_viewwindow = new_viewwindow ;
+      view = zMapViewGetView(new_viewwindow) ;
+      window = zMapViewGetWindow(new_viewwindow) ;
 
-      gtk_widget_modify_bg(GTK_WIDGET(unfocus_frame), GTK_STATE_NORMAL, NULL) ;
-      gtk_widget_modify_fg(GTK_WIDGET(unfocus_frame), GTK_STATE_NORMAL, NULL) ;
+      viewwindow_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
 
-      zmap->unfocus_viewwindow = NULL ;
+      gtk_frame_set_shadow_type(GTK_FRAME(viewwindow_frame), GTK_SHADOW_IN);
+
+      gdk_color_parse("red", &color);
+      gtk_widget_modify_bg(GTK_WIDGET(viewwindow_frame), GTK_STATE_NORMAL, &color);
+      gtk_widget_modify_fg(GTK_WIDGET(viewwindow_frame), GTK_STATE_NORMAL, &color);
+
+      /* make sure the zoom buttons are appropriately sensitised for this window. */
+      zoom_status = zMapWindowGetZoomStatus(window) ;
+      zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
+
+      /* NOTE HOW NONE OF THE NAVIGATOR STUFF IS SET HERE....BUT NEEDS TO BE.... */
+      zMapWindowGetVisible(window, &top, &bottom) ;
+      zMapNavigatorSetView(zmap->navigator, zMapViewGetFeatures(view), top, bottom) ;
     }
-
-  zmap->focus_viewwindow = new_viewwindow ;
-
-  viewwindow_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
-
-  gtk_frame_set_shadow_type(GTK_FRAME(viewwindow_frame), GTK_SHADOW_IN);
-
-  gdk_color_parse("red", &color);
-  gtk_widget_modify_bg(GTK_WIDGET(viewwindow_frame), GTK_STATE_NORMAL, &color);
-  gtk_widget_modify_fg(GTK_WIDGET(viewwindow_frame), GTK_STATE_NORMAL, &color);
-
-
-  /* make sure the zoom buttons are appropriately sensitised for this window. */
-  zoom_status = zMapWindowGetZoomStatus(window) ;
-  zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
-      
-
-
-  /* NOTE HOW NONE OF THE NAVIGATOR STUFF IS SET HERE....BUT NEEDS TO BE.... */
-  zMapWindowGetVisible(window, &top, &bottom) ;
-  zMapNavigatorSetView(zmap->navigator, zMapViewGetFeatures(view), top, bottom) ;
 
   return ;
 }
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* now we've changed to "click to focus" this is redundant. */
 
 /* When we get notified that the pointer has left a window, mark that window to
  * be unfocussed if we subsequently enter another view window. */
@@ -461,6 +468,8 @@ void zmapControlUnSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 

@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar  8 15:26 2005 (edgrif)
+ * Last edited: Mar  9 14:45 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.46 2005-03-08 15:33:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.47 2005-03-09 14:54:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -158,11 +158,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   zMapAssert(window && full_context && diff_context && types) ;
 
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapWindowPrintGroup(foo_canvas_root(window->canvas)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   column_start = window->scaleBarOffset + (SCALEBAR_WIDTH + (2 * COLUMN_SPACING)) ;
 
@@ -302,10 +300,14 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* We want the canvas to be the focus widget of its "window" otherwise keyboard input
    * (i.e. short cuts) will be delivered to some other widget. We do this here because
    * I think we may need a widget window to exist for this call to work. */
   gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* Expand the scroll region to include everything, note the hard-coded zero start, this is
@@ -580,7 +582,11 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	      }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    zmapWindowPrintGroup(FOO_CANVAS_GROUP(feature_group)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  }
 	  break;

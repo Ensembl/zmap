@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb 10 17:02 2005 (rds)
+ * Last edited: Mar  9 12:44 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.46 2005-02-10 17:06:47 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.47 2005-03-09 14:54:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -676,12 +676,12 @@ static void enterCB(ZMapWindow window, void *caller_data, void *window_data)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("In View, in enter callback\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  /* Not currently used because we are doing "click to focus" at the moment. */
 
   /* Pass back a ZMapViewWindow as it has both the View and the window. */
   (*(view_cbs_G->enter))(view_window, view_window->parent_view->app_data, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -691,14 +691,12 @@ static void leaveCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("In View, in leave callback\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  /* Not currently used because we are doing "click to focus" at the moment. */
 
   /* Pass back a ZMapViewWindow as it has both the View and the window. */
   (*(view_cbs_G->leave))(view_window, view_window->parent_view->app_data, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return ;
 }
