@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 14 15:31 2004 (edgrif)
+ * Last edited: Oct 19 15:51 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.21 2004-10-18 10:12:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.22 2004-10-19 14:52:02 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -135,6 +135,8 @@ typedef struct _ZMapCanvasDataStruct
   double               seqLength;
   double               scaleBarOffset;
   double               x;                   /* x coord of a column the user clicked */
+  gboolean             reduced;             /* keep track of scroll region reduction */	
+  gboolean             atLimit;			     
 } ZMapCanvasDataStruct;
 
 
