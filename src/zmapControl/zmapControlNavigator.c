@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Sep 22 14:03 2004 (rnc)
+ * Last edited: Nov  3 11:47 2004 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.16 2004-09-27 09:18:02 rnc Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.17 2004-11-04 12:41:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -183,36 +183,6 @@ void navUpdate(GtkAdjustment *adj, gpointer p)
   return ;
 }
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Currently not called........... */
-void navScale(FooCanvas *canvas, float offset, int start, int end)
-{
-  int x, width = 5, count;
-  FooCanvasItem *group;
-
-  group = foo_canvas_item_new(foo_canvas_root(canvas),
-			foo_canvas_group_get_type(),
-			"x",(double)offset,
-			"y",(double)0.0,
-			NULL);
- 
-  for (x = start, count = 1 ; x < end ; x += 10, count++)
-    {
-      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-5, x, offset, x, "black", 1.0);
-      char text[25];
-      sprintf(text,"%dk", x);
-      if (count == 1)
-	zmapDisplayText(FOO_CANVAS_GROUP(group), text, offset + 20, x); 
-      if (count > 9) count = 0;
-    }
-			     
-  zmapDrawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, end, "black", 1.0);
-
-  return;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
