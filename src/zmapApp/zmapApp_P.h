@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 26 08:34 2004 (edgrif)
+ * Last edited: May  6 15:13 2004 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.5 2004-03-03 12:09:04 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.6 2004-05-07 09:18:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -35,14 +35,7 @@
 
 #include <gtk/gtk.h>
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <libgnome/libgnome.h>
-#include <libgnomeui/libgnomeui.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
+#include <ZMap/zmapUtils.h>
 #include <ZMap/zmapManager.h>
 
 
@@ -62,6 +55,8 @@ typedef struct
   ZMapManager zmap_manager ;
   ZMap selected_zmap ;
 
+  ZMapLog logger ;
+
 } ZMapAppContextStruct, *ZMapAppContext ;
 
 
@@ -76,8 +71,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[]) ;
 GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
-
-
 void zmapAppExit(ZMapAppContext app_context) ;
 
 
