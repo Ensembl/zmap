@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Mar 18 10:25 2005 (edgrif)
+ * Last edited: Mar 31 13:23 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.23 2005-03-23 07:57:37 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.24 2005-04-05 14:28:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -49,41 +49,13 @@ typedef unsigned int ZMapFeatureID ;
 enum {ZMAPFEATUREID_NULL = 0} ;
 
 
-
-
-
 typedef int Coord ;					    /* we do need this here.... */
 
 
 
-/* I'm not sure we want all of these defined here.....the coord stuff feels like it is different
- * from feature stuff........... */
-typedef float ScreenCoord;
-typedef int   InvarCoord;
-typedef int   VisibleCoord;
-
-
-/* AGAIN THIS FEELS LIKE ITS IN THE WRONG PLACE, ITS TO DO WITH DISPLAY, NOT FEATURES PER SE... */
-/* structures *********************************************/
-/* zMapRegionStruct is the structure zmap expects to hold
- * all the data required for the display, so whatever is
- * providing the data must populate this structure. */
-
-struct zMapRegionStruct {
-  Coord      area1, area2;
-  GArray     *dna;
-  GArray     *segs;
-  GPtrArray  *methods, *oldMethods;
-  int        length;
-  gboolean   rootIsReverse;
-};
-
-typedef struct zMapRegionStruct ZMapRegion;
 
 /* used by zmapFeatureLookUpEnums() to translate enums into strings */
-typedef enum { TYPE_ENUM, STRAND_ENUM, PHASE_ENUM } ZMapEnumType;  
-
-
+typedef enum { TYPE_ENUM, STRAND_ENUM, PHASE_ENUM } ZMapEnumType ;
 
 
 /* Unsure about this....probably should be some sort of key...... */
@@ -101,7 +73,7 @@ typedef enum {ZMAPFEATURE_INVALID = -1,
 	      ZMAPFEATURE_BOUNDARY, ZMAPFEATURE_SEQUENCE} ZMapFeatureType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0,
-	      ZMAPSTRAND_DOWN, ZMAPSTRAND_UP} ZMapStrand ;
+	      ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
 
 typedef enum {ZMAPPHASE_NONE = 0,
 	      ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPhase ;
@@ -201,17 +173,23 @@ typedef struct
  *  */
 typedef struct ZMapFeatureStruct_ 
 {
-  GQuark feature_id ;					    /* Unique id for just this feature for
-							       use by ZMap. */
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */
-  char *name ;						    /* e.g. "bA404F10.4.mRNA" */
+
+  GQuark unique_id ;					    /* Unique id for just this feature for
+							       use by ZMap. */
+  GQuark original_id ;					    /* Original name, e.g. "bA404F10.4.mRNA" */
+
   ZMapFeatureType type ;				    /* e.g. intron, homol etc. */
 
   Coord x1, x2 ;					    /* start, end of feature in absolute coords. */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   methodID method ;					    /* i.e. the "column" type */
   char *method_name ;					    /* temp...replace with quark ? */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  GQuark style ;					    /* Style for this feature. */
 
   ZMapStrand strand ;
   ZMapPhase phase ;
@@ -229,11 +207,16 @@ typedef struct ZMapFeatureStruct_
 
 
 
+/* DO THESE STRUCTS NEED TO BE EXPOSED ? PROBABLY NOT.... */
 
-/* Holds a set of ZMapFeature's. */
+/* Holds a set of ZMapFeature's, note that the id for the set is the same as the style name for
+ * the set of features. There is duplication here and probably we should hold a pointer to the
+ * the style here.... */
 typedef struct ZMapFeatureSetStruct_
 {
-  char *source ;					    /* e.g. "Genewise predictions" */
+  GQuark unique_id ;					    /* Unique id for feature set used by
+							     * ZMap. */
+  GQuark original_id ;					    /* Original name, e.g. "Genewise predictions" */
 
   GData *features ;					    /* A set of ZMapFeatureStruct. */
 
@@ -246,9 +229,9 @@ typedef struct ZMapFeatureSetStruct_
  * of a sequence. */
 typedef struct ZMapFeatureContextStruct_
 {
-  char *sequence_name ;					    /* The sequence to be displayed. */
+  GQuark sequence_name ;				    /* The sequence to be displayed. */
 
-  char *parent_name ;					    /* Name of parent, not needed ? */
+  GQuark parent_name ;					    /* Name of parent, not needed ? */
 
   int length ;						    /* total length of sequence. */
 
@@ -270,15 +253,24 @@ typedef struct ZMapFeatureContextStruct_
 
 
 
-char *zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
-			  int start, int end, int query_start, int query_end) ;
+char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature_name,
+			    ZMapStrand strand, int start, int end, int query_start, int query_end) ;
+GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
+			   ZMapStrand strand, int start, int end,
+			   int query_start, int query_end) ;
+
+ZMapFeature zMapFeatureFindFeatureInContext(ZMapFeatureContext feature_context,
+					    GQuark type_id, GQuark feature_id) ;
+ZMapFeature zMapFeatureFindFeatureInSet(ZMapFeatureSet feature_set, GQuark feature_id) ;
+
+GData *zMapFeatureFindSetInContext(ZMapFeatureContext feature_context, GQuark set_id) ;
+
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
 char *zmapFeatureLookUpEnum (int id, int enumType) ;
-
 ZMapFeature zmapFeatureCreateEmpty(void) ;
 gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
-				char *sequence, char *source, ZMapFeatureType feature_type,
+				char *sequence, GQuark style_id, ZMapFeatureType feature_type,
 				int start, int end, double score, ZMapStrand strand,
 				ZMapPhase phase,
 				ZMapHomolType homol_type_out, int start_out, int end_out) ;
@@ -286,6 +278,7 @@ void zmapFeatureDestroy(ZMapFeature feature) ;
 
 
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
+ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GData *features) ;
 gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 
@@ -369,9 +362,14 @@ typedef enum {ZMAPCALCWIDTH_WIDTH, ZMAPCALCWIDTH_OFFSET, ZMAPCALCWIDTH_HISTOGRAM
 typedef enum {ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_BUMP, ZMAPOVERLAP_CLUSTER } ZMapFeatureOverlapStyle ;
 
 
+/* Lets change all these names to just be zmapFeatureStyle, i.e. lose the type bit.....
+ * could even lose the feature bit and just go straight to style, would be better. */
+
 typedef struct ZMapFeatureTypeStyleStruct_
 {
-  char *name ;						    /* name of type, normalised to lowercase. */
+  GQuark original_id ;					    /* Original name. */
+  GQuark unique_id ;					    /* Name normalised to be unique. */
+
   GdkColor  outline ;					    /* Surround/line colour. */
   GdkColor  foreground ;				    /* Overlaid on background. */
   GdkColor  background ;				    /* Fill colour. */
@@ -388,115 +386,17 @@ typedef struct ZMapFeatureTypeStyleStruct_
 } ZMapFeatureTypeStyleStruct, *ZMapFeatureTypeStyle ;
 
 
+
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 					   char *outline, char *foreground, char *background,
 					   float width, gboolean show_up_strand, int min_mag) ;
+char *zMapStyleCreateName(char *style_name) ;
+GQuark zMapStyleCreateID(char *style_name) ;
 ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type) ;
 void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
-
-
 GData *zMapFeatureTypeGetFromFile(char *types_file) ;
-
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
-
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* CURRENTLY NOT NEEDED I THINK...... */
-
-
-typedef struct segStruct SEG;
-
-/* Coord structure */
-
-typedef struct {
-  Coord x1, x2;
-} srExon;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-/* ALL OF THIS NEEDS SOME ATTENTION.......... */
-
-// the following structs all lifted from zmapcommon.h and may be unnecessary
-
-/* zmap-flavour seg structure that holds the data to be displayed */
-
-struct segStruct {
-  char *id; /* stringBucket */
-  methodID method;
-  /* NOTE: srType BOTH discriminates the union below, _and_ controls
-     the sort of column made.  Two segs with the same method but
-     different types will end up in different columns. */
-  //  srType type;
-  //  srStrand strand;
-  //  srPhase phase;
-  float score;
-  Coord x1, x2;
-  union {
-    struct {
-      int y1, y2;
-      //      srStrand strand;
-      float score;
-      GPtrArray align;
-    } homol;
-    struct {
-      Coord cdsStart, cdsEnd;
-      gboolean endNotFound;
-      GPtrArray exons;
-    } transcript;
-    struct {
-      char *id; /* backpointer */
-    } exon;
-  } u;
-};
-
-typedef struct segStruct SEG;
-
-
-typedef struct methodStruct
-{
-  methodID id;
-  char *name, *remark;
-  unsigned int flags;
-  int colour, CDS_colour, upStrandColour;
-  float minScore, maxScore;
-  float minMag, maxMag;
-  float width ;
-  char symbol ;
-  float priority;
-  float histBase;
-  gboolean showText, no_display;
-} srMeth;
-
-
-/* callback routines **************************************/
-/* This routine returns the initial set of zmap-flavour segs
- * when zmap is first called. */
-
-typedef void (*Activate_cb)(void *seqRegion,
-			    char *seqspec, 
-			    ZMapRegion *zMapRegion, 
-			    Coord *r1, 
-			    Coord *r2) ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* snipped this off the end.... */
-			    STORE_HANDLE *handle);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-/* This routine is called by the reverse-complement and
- * recalculate routines. */
-
-typedef void (*Calc_cb)    (void *seqRegion, 
-			    Coord x1, Coord x2,
-			    gboolean isReverse);
-
-     
 
 
 #endif /* ZMAP_FEATURE_H */
