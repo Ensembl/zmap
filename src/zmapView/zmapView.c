@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 20 12:25 2004 (edgrif)
+ * Last edited: Jul 21 12:10 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.11 2004-07-20 12:06:53 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.12 2004-07-21 11:14:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,6 +75,11 @@ static void killWindows(ZMapView zmap_view) ;
 
 
 static void freeContext(ZMapFeatureContext feature_context) ;
+
+
+
+/* debugging... */
+static void methodPrintFunc(GQuark key_id, gpointer data, gpointer user_data) ;
 
 
 /* Hack to read files in users $HOME/.ZMap */
@@ -1109,10 +1114,7 @@ static GData *getTypesFromFile(void)
       if (!zMapConfigFindStanzas(config, types_stanza, &types_list))
 	result = FALSE ;
       else
-	{
-	  result = TRUE ;
-	  g_datalist_init(&types) ;
-	}
+	result = TRUE ;
     }
 
   /* Set up connections to the named typess. */
@@ -1120,6 +1122,8 @@ static GData *getTypesFromFile(void)
     {
       int num_types = 0 ;
       ZMapConfigStanza next_types ;
+
+      g_datalist_init(&types) ;
 
       /* Current error handling policy is to connect to servers that we can and
        * report errors for those where we fail but to carry on and set up the ZMap
@@ -1158,6 +1162,38 @@ static GData *getTypesFromFile(void)
   if (types_list)
     zMapConfigDeleteStanzaSet(types_list) ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* debug.... */
+  printAllTypes(types, "getTypesFromFile()") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
   return types ;
 }
+
+
+void printAllTypes(GData *method_set, char *user_string)
+{
+  printf("\nMethods at %s\n", user_string) ;
+
+  g_datalist_foreach(&method_set, methodPrintFunc, NULL) ;
+
+  return ;
+}
+
+static void methodPrintFunc(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
+  char *style_name = (char *)g_quark_to_string(key_id) ;
+  
+
+  printf("\t%s: \t%s \t%s \t%f\n", style_name, style->foreground, style->background, style->width) ;
+
+
+  return ;
+}
+
 
