@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 12 15:08 2003 (edgrif)
+ * Last edited: Nov 14 14:11 2003 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapAppmenubar.c,v 1.1 2003-11-13 14:58:39 edgrif Exp $
+ * CVS info:   $Id: zmapAppmenubar.c,v 1.2 2003-11-14 17:46:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,72 +43,51 @@ static void handle_option( gpointer data, guint callback_action, GtkWidget *w ) 
 void DestroyNotifyFunc( gpointer data ) ;
 
 
-GtkItemFactory *item_factory;
-
-/* When we go to GTK 2 this global can disappear as the below table will allow us to
- * specify callback data. */
-static ZMapAppContext app_context_G ;
-
-
 static GtkItemFactoryEntry menu_items[] = {
- { "/_File",         NULL,         NULL, 0, "<Branch>" },
- { "/File/_New",     "<control>N", print_hello, 2, NULL },
- { "/File/_Open",    "<control>O", print_hello, 0, NULL },
- { "/File/_Save",    "<control>S", print_hello, 0, NULL },
- { "/File/Save _As", NULL,         NULL, 0, NULL },
- { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
- { "/File/Quit",     "<control>Q", quitCB, 0, NULL },
- { "/_Edit",         NULL,         NULL, 0, "<Branch>" },
- { "/Edit/Cu_t",     "<control>X", print_hello, 0, NULL },
- { "/Edit/_Copy",    "<control>C", print_hello, 0, NULL },
- { "/Edit/_Paste",    "<control>V", print_hello, 0, NULL },
- { "/_Options",      NULL,         NULL, 0, "<Branch>" },
- { "/Options/Option1",  NULL,      handle_option, 1, "<CheckItem>" },
- { "/Options/Option2",  NULL,      handle_option, 2, "<ToggleItem>" },
- { "/Options/Option3",  NULL,      handle_option, 3, "<CheckItem>" },
- { "/Options/Option4",  NULL,      handle_option, 4, "<ToggleItem>" },
- { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
- { "/Help/One",   NULL,            NULL, 0, NULL },
- { "/Help/Two",   NULL,            NULL, 0, "<Branch>" },
- { "/Help/Two/A",   NULL,          NULL, 0, "<RadioItem>" },
- { "/Help/Two/B",   NULL,          NULL, 0, "/Help/Two/A" },
- { "/Help/Two/C",   NULL,          NULL, 0, "/Help/Two/A" },
- { "/Help/Two/D",   NULL,          NULL, 0, "/Help/Two/A" },
- { "/Help/Two/E",   NULL,          NULL, 0, "/Help/Two/A" },
- { "/Help/Three",   NULL,          NULL, 0, NULL },
+ { "/_File",           NULL,          NULL,          0, "<Branch>",  NULL},
+ { "/File/_New",       "<control>N",  print_hello,   2, NULL,   NULL},
+ { "/File/_Open",      "<control>O",  print_hello,   0, NULL,   NULL},
+ { "/File/_Save",      "<control>S",  print_hello,   0, NULL,   NULL},
+ { "/File/Save _As",   NULL,          NULL,          0, NULL,  NULL},
+ { "/File/sep1",       NULL,          NULL,          0, "<Separator>",  NULL},
+ { "/File/Quit",       "<control>Q",  quitCB,        0, NULL,  NULL},
+ { "/_Edit",           NULL,          NULL,          0, "<Branch>",  NULL},
+ { "/Edit/Cu_t",       "<control>X",  print_hello,   0, NULL,  NULL},
+ { "/Edit/_Copy",      "<control>C",  print_hello,   0, NULL,  NULL},
+ { "/Edit/_Paste",      "<control>V", print_hello,   0, NULL,  NULL},
+ { "/_Options",        NULL,          NULL,          0, "<Branch>",  NULL},
+ { "/Options/Option1", NULL,          handle_option, 1, "<CheckItem>",  NULL},
+ { "/Options/Option2", NULL,          handle_option, 2, "<ToggleItem>",  NULL},
+ { "/Options/Option3", NULL,          handle_option, 3, "<CheckItem>",  NULL},
+ { "/Options/Option4", NULL,          handle_option, 4, "<ToggleItem>",  NULL},
+ { "/_Help",           NULL,          NULL,          0, "<LastBranch>",  NULL},
+ { "/Help/One",        NULL,          NULL,          0, NULL,  NULL},
+ { "/Help/Two",        NULL,          NULL,          0, "<Branch>",  NULL},
+ { "/Help/Two/A",      NULL,          NULL,          0, "<RadioItem>",  NULL},
+ { "/Help/Two/B",      NULL,          NULL,          0, "/Help/Two/A",  NULL},
+ { "/Help/Two/C",      NULL,          NULL,          0, "/Help/Two/A",  NULL},
+ { "/Help/Two/D",      NULL,          NULL,          0, "/Help/Two/A",  NULL},
+ { "/Help/Two/E",      NULL,          NULL,          0, "/Help/Two/A",  NULL},
+ { "/Help/Three",      NULL,          NULL,          0, NULL,  NULL}
 };
 
 
 GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context)
 {
-  GtkWidget *menubar ;
   GtkAccelGroup *accel_group;
+  GtkItemFactory *item_factory;
+  GtkWidget *menubar ;
   gint nmenu_items = sizeof (menu_items) / sizeof (menu_items[0]);
-  GtkWidget *widget;
-
-
-  /* global will go away with gtk 2 */
-  app_context_G = app_context ;
-
 
   accel_group = gtk_accel_group_new ();
+
   item_factory = gtk_item_factory_new (GTK_TYPE_MENU_BAR, "<main>", accel_group );
 
   gtk_item_factory_create_items(item_factory, nmenu_items, menu_items, (gpointer)app_context);
 
-  gtk_accel_group_attach(accel_group, GTK_OBJECT (app_context->app_widg));
+  gtk_window_add_accel_group(GTK_WINDOW(app_context->app_widg), accel_group) ;
 
   menubar = gtk_item_factory_get_widget (item_factory, "<main>");
-
-  widget = (GtkWidget *) gtk_item_factory_from_widget(menubar);
-
-  /* What is this about ????????????????????? */
-  if ( widget == (GtkWidget *) item_factory )
-	  printf( "widget and item_factory are the same\n" );
-  else
-	  printf( "widget and item_factory are not the same\n" );
-
-
 
   return menubar ;
 }
