@@ -5,7 +5,8 @@
 #
 
 APP_DIR = zmapApp
-MAKE_DIRS = $(APP_DIR) zmapConfig zmapControl zmapManager zmapServer zmapThreads zmapUtils zmapWindow zmapNoThreads
+MAKE_DIRS = $(APP_DIR) zmapManager zmapControl zmapView zmapWindow zmapConfig zmapServer zmapThreads zmapUtils zmapNoThreads
+#MAKE_DIRS = $(APP_DIR) zmapManager zmapControl zmapView zmapConfig zmapUtils
 
 DOXY_CONFIG = Doxyfile
 
