@@ -1,4 +1,33 @@
-logging...
+
+==================================================================================
+STUFF THAT NEEDS DOING
+
+Please add new stuff as required _and_ remove obsolete or completed items !
+
+Everything should be under some kind of more general heading.
+
+
+
+CANVAS
+------
+
+The scale is not good, the units seem utterly bizarre as you zoom in.
+
+
+The navigator needs to change as the focus changes and the buttons needs
+to change their sensitivity.
+
+
+when you click on a feature in the window that shows the list of features,
+  the position scroll bar is not updated properly...needs the visibility
+  change callback to be called.
+
+
+
+
+
+LOGGING
+-------
 
 if you let glib log routines output the message you get something like:
 
@@ -16,9 +45,37 @@ sometimes.....
 
 
 
-COORDINATES...
-
+COORDINATES
+-----------
 By the time we get into the drawing code all features should be as  start,end where
 start <= end ALWAYS !  Any conversions should be done by the thread code on the basis
 of information from the servers...
+
+
+
+
+
+
+
+
+SERVER
+------
+
+MY HEADER FILES ARE A BIT MIXED UP....I NEED THIS STRUCTURE:
+
+
+
+      zmapView  <---> new server cmds header          <---> cleaned up zmapConn.h
+                      with structs from zmapServer.h        that deals only with thread interface
+
+
+      (contd) <--->  zmapSlave code  <--->  new server cmds header       <---> zmapServer.h minus
+                                          with structs from zmapServer.h       the cmds header stuff
+
+
+The slave should not know about what is in the server command, the server code should
+disentangle that and call the serverprototype stuff....
+
+
+
 
