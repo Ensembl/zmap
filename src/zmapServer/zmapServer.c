@@ -26,43 +26,99 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep  5 16:20 2003 (edgrif)
+ * Last edited: Mar 22 10:42 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.1 2003-11-13 15:01:09 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.2 2004-03-22 13:22:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <AceConn.h>
+#include <strings.h>
+#include <ZMap/zmapUtils.h>
 #include <zmapServer_P.h>
 
 
+/* We need matching serverInit and serverCleanup functions that are only called once
+ * for each server type, libcurl needs this to avoid memory leaks but maybe this is not
+ * such an issue for us as its once per program run...... */
 
-gboolean zMapServerCreateConnection(ZMapServer *server_out, char *host, int port,
+
+/* This routine must be called before any other server routine and must only be called once,
+ * it is the callers responsibility to make sure this is true....
+ * NOTE the result is always TRUE at the moment because if we fail on any of these we crash... */
+gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out)
+{
+  gboolean result = TRUE ;
+  ZMapServerFuncs serverfuncs ;
+
+  serverfuncs = g_new(ZMapServerFuncsStruct, sizeof(ZMapServerFuncsStruct)) ; /* n.b. crashes on failure. */
+
+  /* Set up the server according to the protocol, this is all a bit hard coded but it
+   * will do for now.... */
+  /* Probably I should do this with a table of protocol and function stuff...perhaps
+   * even using dynamically constructed function names....  */
+  if (strcasecmp(protocol, "acedb") == 0)
+    {
+      acedbGetServerFuncs(serverfuncs) ;		    /* Must not fail..check with assert ? */
+    }
+  else if (strcasecmp(protocol, "das") == 0)
+    {
+      dasGetServerFuncs(serverfuncs) ;			    /* Must not fail..check with assert ? */
+    }
+  else
+    {
+      /* Fatal error..... */
+      /* THIS "Internal Error" SHOULD BE IN A MACRO SO WE GET CONSISTENT MESSAGES..... */
+      ZMAPFATALERR("Internal Error: unsupported server protocol: %s", protocol) ;
+
+    }
+
+
+  /* Call the global init function. */
+  if (result)
+    {
+      result = (serverfuncs->global_init)() ;
+    }
+
+  if (result)
+    *server_global_data_out = (void *)serverfuncs ;
+
+  return result ;
+}
+
+
+
+gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
+				    char *host, int port, char *protocol,
 				    char *userid, char *passwd)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
   ZMapServer server ;
-  AceConnection connection = NULL ;
-  AceConnStatus status ;
+  ZMapServerFuncs serverfuncs = (ZMapServerFuncs)global_data ;
 
-  /* slightly odd, always return a struct to provide error information. */
+
   server = g_new(ZMapServerStruct, sizeof(ZMapServerStruct)) ; /* n.b. crashes on failure. */
   *server_out = server ;
 
-  if ((status = AceConnCreate(&connection, host, port, userid, passwd, 20)) == ACECONN_OK)
+  /* set function table. */
+  server->funcs = serverfuncs ;
+
+  if (result)
     {
-      /* Don't know if we really need to keep hold of these... */
-      server->host = g_strdup(host) ;
-      server->port = port ;
+      if ((server->funcs->create)(&(server->server_conn), host, port, userid, passwd, 20))
+	{
+	  server->host = g_strdup(host) ;
+	  server->port = port ;
+	  server->protocol = g_strdup(protocol) ;
+	  server->last_error_msg = NULL ;
 
-      server->connection = connection ;
-
-      server->last_error_msg = NULL ;
-
-      result = TRUE ;
+	  result = TRUE ;
+	}
+      else
+	{
+	  server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
+	  result = FALSE ;
+	}
     }
-  else
-    server->last_error_msg = AceConnGetErrorMsg(connection, status) ;
 
   return result ;
 }
@@ -71,45 +127,39 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, char *host, int port
 gboolean zMapServerOpenConnection(ZMapServer server)
 {
   gboolean result = FALSE ;
-  AceConnStatus status ;
 
-  if ((status = AceConnConnect(server->connection)) == ACECONN_OK)
+  if ((server->funcs->open)(server->server_conn))
     result = TRUE ;
   else
-    server->last_error_msg = AceConnGetErrorMsg(server->connection, status) ;
+    server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
 
   return result ;
 }
 
 
-gboolean zMapServerRequest(ZMapServer server, char *request, char **reply)
+/* NEED TO SORT OUT WHETHER WE RETURN C STRINGS OR NOT.... */ 
+gboolean zMapServerRequest(ZMapServer server, char *request, char **reply, int *reply_len)
 {
   gboolean result = FALSE ;
-  int reply_len = 0 ;
-  AceConnStatus status ;
 
-  if ((status = AceConnRequest(server->connection, request, (void **)reply, &reply_len)) == ACECONN_OK)
+  if ((server->funcs->request)(server->server_conn, request, (void **)reply, reply_len))
     result = TRUE ;
   else
-    server->last_error_msg = AceConnGetErrorMsg(server->connection, status) ;
+    server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
 
   return result ;
 }
 
 gboolean zMapServerCloseConnection(ZMapServer server)
 {
-  gboolean result = TRUE ;
-  AceConnStatus status ;
+  gboolean result = FALSE ;
 
-  if ((status = AceConnConnectionOpen(server->connection)) == ACECONN_OK)
+  if ((server->funcs->close)(server->server_conn))
     {
-      if ((status = AceConnDisconnect(server->connection)) != ACECONN_OK)
-	result = FALSE ;
-      else
-	server->last_error_msg = AceConnGetErrorMsg(server->connection, status) ;
+      result = TRUE ;
     }
   else
-    server->last_error_msg = AceConnGetErrorMsg(server->connection, status) ;
+    server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
 
   return result ;
 }
@@ -118,8 +168,9 @@ gboolean zMapServerFreeConnection(ZMapServer server)
 {
   gboolean result = TRUE ;
 
-  AceConnDestroy(server->connection) ;			    /* Does not fail. */
+  (server->funcs->destroy)(server->server_conn) ;
   g_free(server->host) ;
+  g_free(server->protocol) ;
   g_free(server) ;
 
   return result ;
