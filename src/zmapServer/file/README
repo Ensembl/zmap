@@ -1,0 +1,39 @@
+
+
+there are a few wobbly bits here...the code that reads the server stanzas is in View,
+perhaps this is not so good....think about this....we will need to make it read something
+like:
+
+
+{
+filename="/my/file/some/where"
+}
+
+as though it were a server stanza, we could just specify the protocol as "file"
+
+or perhaps we should make the stanzas be either:
+
+server
+{
+protocol="acedb" etc.
+host="griffin"
+port=210000
+}
+
+or for a file:
+
+server
+{
+protocol="file"
+filename="/some/where/over/the/rainbow"
+}
+
+that is actually on too bad....except that View would have to know all that....better perhaps
+to overload "host" or we could change "host" to be "source" and make it a blank delimited string
+that contains the host and optionally the port or if the protocol if "file" it can contain the
+filename...
+
+a number of options...think about it...
+
+
+

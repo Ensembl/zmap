@@ -1,0 +1,12 @@
+
+the code in this directory is crude currently, here are some things that need doing:
+
+- should be able to read files other than GFF.......this will require some restructuring
+  to provide a general file reading interface with specific parsers (preferably the same
+  ones as are used for GFF, XML etc. etc.
+
+- error handling is probably less than complete.
+
+- there is no way to ask for just some features currently but this also applies to the server
+interfaces as well....
+
