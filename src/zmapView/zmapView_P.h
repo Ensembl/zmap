@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: May 17 16:54 2004 (edgrif)
+ * Last edited: May 20 10:33 2004 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.2 2004-05-17 16:39:29 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.3 2004-05-20 14:30:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -34,19 +34,6 @@
 
 #include <glib.h>
 #include <ZMap/zmapView.h>
-
-
-
-/* The overall state of the zmapView, we need this because both the zmap window and the its threads
- * will die asynchronously so we need to block further operations while they are in this state. */
-typedef enum {
-  ZMAPVIEW_INIT,					    /* Display with no threads. */
-  ZMAPVIEW_RUNNING,					    /* Display with threads in normal state. */
-  ZMAPVIEW_RESETTING,					    /* Display that is closing its threads
-							       and returning to INIT state. */
-  ZMAPVIEW_DYING					    /* ZMap is dying for some reason,
-							       cannot do anything in this state. */
-} ZmapViewState ;
 
 
 /* A "View" is a set of one or more windows that display data retrieved from one or
@@ -58,7 +45,7 @@ typedef enum {
  * */
 typedef struct _ZMapViewStruct
 {
-  ZmapViewState state ;
+  ZMapViewState state ;
 
   gchar *sequence ;
 
