@@ -26,14 +26,14 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  9 15:15 2003 (edgrif)
+ * Last edited: Mar 31 14:01 2004 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.1 2003-11-13 15:03:08 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.2 2004-04-08 16:52:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <gtk/gtk.h>
-
+#include <zmapUtils_P.h>
 
 typedef struct
 {
@@ -46,20 +46,19 @@ typedef struct
 
 static void clickButton(GtkWidget *widget, zmapDialogCB cb_data) ;
 
-
-void zmapGUIShowMsg(char *msg)
+/* LIFT MY CODE FROM ACEDB THAT ALLOWED YOU TO CLICK TO CUT/PASTE MESSAGE CONTENTS....
+ * ALSO ADD CODE FOR BLOCKING/NON-BLOCKING MESSAGES..... */
+/* Message type is unused currently......... */
+void zmapGUIShowMsg(ZMapMsgType msg_type, char *msg)
 {
   GtkWidget *dialog, *label, *button;
   zmapDialogCBStruct cb_data ;
 
-
   dialog = gtk_dialog_new();
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   gtk_window_set_policy( GTK_WINDOW( dialog ), FALSE, FALSE, FALSE );
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   gtk_window_set_title( GTK_WINDOW( dialog ), "ZMAP - Error !" );
 
