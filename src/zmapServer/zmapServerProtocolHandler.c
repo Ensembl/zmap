@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  4 08:58 2005 (edgrif)
+ * Last edited: Mar 10 12:09 2005 (rds)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.3 2005-02-10 16:38:45 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.4 2005-03-10 12:11:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,14 +46,14 @@
 #include <ZMap/zmapThreads.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <zmapServer_P.h>
-
+#include <ZMap/zmapUrl.h>
 
 
 /* Some protocols have global init/cleanup functions that must only be called once, this type/list
  * allows us to do this. */
 typedef struct
 {
-  char *protocol ;
+  int protocol;
   gboolean init_called ;
   void *global_init_data ;
   gboolean cleanup_called ;
@@ -68,7 +68,7 @@ typedef struct
 
 
 
-static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, char *protocol,
+static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, struct url *url,
 				   void **global_init_data) ;
 static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
 
@@ -90,8 +90,8 @@ static ZMapProtocolInitListStruct protocol_init_G = {PTHREAD_MUTEX_INITIALIZER, 
  * service a request from the master thread which includes decoding it, calling the appropriate server
  * routines and returning the answer to the master thread. */
 ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
-					      void *request_in, void **reply_out,
-					      char **err_msg_out)
+                                              void *request_in, void **reply_out,
+                                              char **err_msg_out)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
   ZMapServerReqAny request = (ZMapServerReqAny)request_in ;
@@ -99,8 +99,8 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
   void *global_init_data ;
 
 
-  zMapAssert(request_in && reply_out && err_msg_out) ;	    /* slave_data is NULL first time we
-							       are called. */
+  zMapAssert(request_in && reply_out && err_msg_out) ;     /* slave_data is NULL first time we
+                                                              are called. */
 
   if (slave_data)
     server = (ZMapServer)*slave_data ;
@@ -111,38 +111,21 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
    * so the request should be to start a connection and we should have been passed in
    * a load of connection stuff.... */
   zMapAssert(!server && (request->type == ZMAP_SERVERREQ_OPEN
-			 || request->type == ZMAP_SERVERREQ_OPENLOAD)) ;
+                         || request->type == ZMAP_SERVERREQ_OPENLOAD)) ;
 
 
   switch(request->type)
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* sort this out later...... */
-
-    case  ZMAP_SERVERREQ_OPEN:
-      {
-	ZMapServerReqOpen open = (ZMapServerReqOpen)request_in ;
-	
-	/* Check if we need to call the global init function of the protocol, this is a
-	 * function that should only be called once, only need to do this when setting up a server. */
-	protocolGlobalInitFunc(&protocol_init_G, open->protocol, &global_init_data) ;
-
-	thread_rc = openServer(open, &server, err_msg_out, global_init_data) ;
-	break ;
-      }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     case ZMAP_SERVERREQ_OPENLOAD:
       {
-	ZMapServerReqOpenLoad open_load = (ZMapServerReqOpenLoad)request_in ;
-	
-	/* Check if we need to call the global init function of the protocol, this is a
-	 * function that should only be called once, only need to do this when setting up a server. */
-	protocolGlobalInitFunc(&protocol_init_G, open_load->open.protocol, &global_init_data) ;
+        ZMapServerReqOpenLoad open_load = (ZMapServerReqOpenLoad)request_in ;
+        
+        /* Check if we need to call the global init function of the protocol, this is a
+         * function that should only be called once, only need to do this when setting up a server. */
+        protocolGlobalInitFunc(&protocol_init_G, open_load->open.url, &global_init_data) ;
 
-	thread_rc = openServerAndLoad(open_load, &server, err_msg_out, global_init_data) ;
-	break ;
+        thread_rc = openServerAndLoad(open_load, &server, err_msg_out, global_init_data) ;
+        break ;
       }
     case ZMAP_SERVERREQ_TERMINATE:
       thread_rc = terminateServer(&server, err_msg_out) ;
@@ -182,12 +165,13 @@ ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_ms
 
 /* Static/global list of protocols and whether their global init/cleanup functions have been
  * called. These are functions that must only be called once. */
-static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, char *protocol,
-				   void **global_init_data_out)
+static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, struct url *url,
+                                   void **global_init_data_out)
 {
-  int status ;
+  int status = 0;
   GList *curr_ptr ;
   ZMapProtocolInit init ;
+  int protocol = (int)(url->scheme);
 
   if ((status = pthread_mutex_lock(&(protocols->mutex))) != 0)
     {
@@ -195,10 +179,10 @@ static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, char *protoco
     }
 
   /* If we don't find the protocol in the list then add it, initialised to FALSE. */
-  if (!(curr_ptr = g_list_find_custom(protocols->protocol_list, protocol, findProtocol)))
+  if (!(curr_ptr = g_list_find_custom(protocols->protocol_list, &protocol, findProtocol)))
     {
       init = (ZMapProtocolInit)g_new0(ZMapProtocolInitStruct, 1) ;
-      init->protocol = g_strdup(protocol) ;
+      init->protocol = protocol ;
       init->init_called = init->cleanup_called = FALSE ;
       init->global_init_data = NULL ;
 
@@ -210,7 +194,7 @@ static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, char *protoco
   /* Call the init routine if its not been called yet and either way return the global_init_data. */
   if (!init->init_called)
     {
-      if (!zMapServerGlobalInit(protocol, &(init->global_init_data)))
+      if (!zMapServerGlobalInit(url, &(init->global_init_data)))
  	zMapLogFatal("Initialisation call for %s protocol failed.", protocol) ;
 
       init->init_called = TRUE ;
@@ -230,11 +214,23 @@ static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, char *protoco
  * comparison currently. */
 static int findProtocol(gconstpointer list_data, gconstpointer custom_data)
 {
-  int result ;
-  char *list_protocol = ((ZMapProtocolInit)list_data)->protocol, *protocol = (char *)custom_data ;
+  int result   = 0;
+  int protocol = *((int *)(custom_data));
 
-  result = strcasecmp(list_protocol, protocol) ;
-
+  /* Set result dependent on comparison */
+  if(((ZMapProtocolInit)list_data)->protocol == protocol)
+    {
+      result = 0;
+    }
+  else if (((ZMapProtocolInit)list_data)->protocol > protocol)
+    {
+      result = -1;
+    }
+  else
+    {
+      result = 1;
+    }
+  
   return result ;
 }
   
@@ -251,9 +247,9 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
   /* Create the thread block for this specific server thread. */
   if (!zMapServerCreateConnection(&server, global_init_data,
-				  open->machine, open->port,
-				  open->protocol, open->format, open->timeout, open->version,
-				  "any", "any"))
+				  open->url,
+                                  open->format, open->timeout, 
+                                  open->version))
     {
       *err_msg_out = zMapServerLastErrorMsg(server) ;
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;

@@ -26,16 +26,16 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Feb  3 14:37 2005 (edgrif)
+ * Last edited: Mar 10 11:03 2005 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.20 2005-02-03 14:59:02 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.21 2005-03-10 12:11:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <strings.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapServer_P.h>
-
+#include <ZMap/zmapUrl.h>
 
 /* We need matching serverInit and serverCleanup functions that are only called once
  * for each server type, libcurl needs this to avoid memory leaks but maybe this is not
@@ -45,32 +45,39 @@
 /* This routine must be called before any other server routine and must only be called once,
  * it is the callers responsibility to make sure this is true....
  * NOTE the result is always TRUE at the moment because if we fail on any of these we crash... */
-gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out)
+gboolean zMapServerGlobalInit(struct url *url, void **server_global_data_out)
 {
   gboolean result = TRUE ;
   ZMapServerFuncs serverfuncs ;
-
+  int protocol = url->scheme ;
   serverfuncs = g_new0(ZMapServerFuncsStruct, 1) ;	    /* n.b. crashes on failure. */
 
   /* Set up the server according to the protocol, this is all a bit hard coded but it
    * will do for now.... */
   /* Probably I should do this with a table of protocol and function stuff...perhaps
    * even using dynamically constructed function names....  */
-  if (strcasecmp(protocol, "acedb") == 0)
+
+  if (protocol == SCHEME_ACEDB)
     {
       acedbGetServerFuncs(serverfuncs) ;
     }
-  else if (strcasecmp(protocol, "das") == 0)
-    {
-      dasGetServerFuncs(serverfuncs) ;
+  else if (protocol == SCHEME_HTTP) /* Force http to BE das at the moment, but later I think we should have FORMAT too */
+    {                               /* Not that Format gets passed in here though!!! we'd need to pass the url struct */
+      //      if(strcasecmp(format, 'das') == 0)
+      // {
+          dasGetServerFuncs(serverfuncs) ;
+          //  }
     }
-  else if (strcasecmp(protocol, "file") == 0)
+  else if (protocol == SCHEME_FILE)
     {
       fileGetServerFuncs(serverfuncs) ;
     }
   else
     {
-      /* Fatal coding error, we exit here..... */
+      /* Fatal coding error, we exit here..... Nothing more can happen
+         without setting up serverfuncs! */
+      /* Getting here means somethings been added to ZMap/zmapUrl.h
+         and not to the above protocol decision above. */
       zMapLogFatal("Unsupported server protocol: %s", protocol) ;
     }
 
@@ -97,14 +104,18 @@ gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out)
 
 
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
-				    char *host, int port, char *protocol, char *format,
-				    int timeout, char *version_str,
-				    char *userid, char *passwd)
+				    struct url *url, char *format,
+				    int timeout, char *version_str
+                                    )
 {
   gboolean result = TRUE ;
   ZMapServer server ;
   ZMapServerFuncs serverfuncs = (ZMapServerFuncs)global_data ;
-
+  char *host = url->host;
+  int port = url->port;
+  int protocol = url->scheme;
+  char *userid = url->user;
+  char *passwd = url->passwd;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* we must have as a minumum the host name and a protocol, everything else is optional. */
@@ -124,7 +135,7 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
 				  userid, passwd, timeout))
 	{
 	  server->host = g_strdup(host) ;
-	  server->protocol = g_strdup(protocol) ;
+	  server->protocol = protocol ;
 	  server->last_response = ZMAP_SERVERRESPONSE_OK ;
 	  server->last_error_msg = NULL ;
 
@@ -257,7 +268,6 @@ gboolean zMapServerFreeConnection(ZMapServer server)
 
   (server->funcs->destroy)(server->server_conn) ;
   g_free(server->host) ;
-  g_free(server->protocol) ;
   g_free(server) ;
 
   return result ;

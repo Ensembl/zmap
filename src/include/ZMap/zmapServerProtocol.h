@@ -28,18 +28,18 @@
  *              give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Feb  3 14:33 2005 (edgrif)
+ * Last edited: Mar 10 12:07 2005 (rds)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.2 2005-02-03 14:54:32 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.3 2005-03-10 12:08:08 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
 #define ZMAP_PROTOCOL_H
 
 #include <glib.h>
+#include <ZMap/zmapUrl.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapThreads.h>
-
 
 /* Requests can be of different types with different input parameters and returning
  * different types of results. */
@@ -88,9 +88,7 @@ typedef struct
 {
   ZMapServerReqType type ;
 
-  char *protocol ;
-  char *machine ;
-  int port ;
+  struct url *url ;             /* replaces host, port, protocol and allows more info */
   char *format ;
   int timeout ;
   char *version ;
