@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 20 14:10 2004 (edgrif)
+ * Last edited: Oct 20 14:28 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.23 2004-10-20 13:13:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.24 2004-10-20 14:45:35 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -65,6 +65,7 @@ typedef struct _ZMapWindowStruct
 
   double       zoom_factor ;
   int          step_increment;
+  int          page_increment;
 
   GtkWidget *text ;
 
@@ -138,6 +139,7 @@ typedef struct _ZMapCanvasDataStruct
   double               seq_start ;
   double               seq_end ;
 
+  FooCanvasItem       *scaleBarGroup;
   double               scaleBarOffset;
   double               x;                   /* x coord of a column the user clicked */
   gboolean             reduced;             /* keep track of scroll region reduction */	
