@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 16 12:56 2004 (edgrif)
+ * Last edited: Jul 19 13:36 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.20 2004-07-16 12:01:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.21 2004-07-20 08:14:49 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -219,10 +219,16 @@ void zMapWindowDisplayData(ZMapWindow window, void *data)
  * the width the same. */
 void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 {
+  int x, y;
+
   window->zoom_factor *= zoom_factor ;
+
+  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
 
   /* do we need to do anything else like redraw ?? */
   foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
+
+  foo_canvas_scroll_to(window->canvas, x, y);
 
   return ;
 }
