@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  1 09:30 2005 (edgrif)
+ * Last edited: Feb 23 11:07 2005 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.22 2005-02-02 11:04:45 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.23 2005-02-25 16:47:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -122,19 +122,19 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   char cp[20], unitName[] = { 0, 'k', 'M', 'G', 'T', 'P' }, buf[2] ;
   float cutoff;
   int pos;
-  GdkColor black, white, yellow;
+  GdkColor black, white, yellow ;
   double x1, y1, x2, y2;
 
-  gdk_color_parse("black", &black);
-  gdk_color_parse("white", &white);
-  gdk_color_parse("yellow", &yellow);
+  gdk_color_parse("black", &black) ;
+  gdk_color_parse("white", &white) ;
+  gdk_color_parse("yellow", &yellow) ;
 
-  /* work out units and subunits for the scale bar */
-  /* cutoff defines, via the while loop, the units for our major and minor ticks. This code was
-  ** all copied directly from acedb - w7/mapcontrol.c - which seems to assume that a screen line
-  ** is about 13 pixels high and that a major scalebar tick every 5 lines is about right. We work
-  ** in pixels, which is why we use 65 as our seed.  It's 5 times the number of bases/pixel. When
-  ** I work out how to get the line height from the canvas directly, I'll change this bit. */
+  /* work out units and subunits for the scale bar
+   * cutoff defines, via the while loop, the units for our major and minor ticks. This code was
+   * all copied directly from acedb - w7/mapcontrol.c - which seems to assume that a screen line
+   * is about 13 pixels high and that a major scalebar tick every 5 lines is about right. We work
+   * in pixels, which is why we use 65 as our seed.  It's 5 times the number of bases/pixel. When
+   * I work out how to get the line height from the canvas directly, I'll change this bit. */
 
   cutoff = 65.0 / zoom_factor;    
   unit = subunit = 1.0 ;
@@ -143,7 +143,7 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
     cutoff = -cutoff ;
 
   /* each time through this loop unit and subunit increase by 10 times until unit exceeds cutoff,
-  ** so we end up with a nice round number for our major ticks, and 10 minor ticks per major one. */
+   * so we end up with a nice round number for our major ticks, and 10 minor ticks per major one. */
   while (unit < cutoff)
     {
       unit *= 2 ;
@@ -166,12 +166,6 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
        iUnit > 0 && 1000 * type < iUnit && unitType < 5 ;
        unitType++, type *= 1000) ;
 
-  group = foo_canvas_item_new(foo_canvas_root(canvas),
-			      foo_canvas_group_get_type(),
-			      "x",(double)offset,
-			      "y",(double)0.0,
-			      NULL) ;
-
   /* If the scrolled_region has been cropped, we need to crop the scalebar too */
   foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
   if (start < y1)
@@ -179,18 +173,26 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   if (end > y2)
     end = y2;
 
+
+  group = foo_canvas_item_new(foo_canvas_root(canvas),
+			      foo_canvas_group_get_type(),
+			      "x", offset,
+			      "y", 0.0,
+			      NULL) ;
+
   /* yellow bar separates forward from reverse strands. Draw first so scalebar text
-  ** overlies it. */
+   * overlies it. */
   zmapDrawBox(FOO_CANVAS_ITEM(group), 0.0, start, 3.0, end, &white, &yellow); 
 										    
   /* major ticks and text */
   for (pos = start; pos < end; pos += iUnit)
     {
       zmapDrawLine(FOO_CANVAS_GROUP(group), 30.0, pos, 40.0, pos, &black, 1.0);
-      buf[0] = unitName[unitType] ; buf[1] = 0 ;
-      sprintf (cp, "%d%s", pos/type, buf) ;
-      if (width < strlen (cp))
-        width = strlen (cp) ;
+      buf[0] = unitName[unitType] ;
+      buf[1] = 0 ;
+      sprintf(cp, "%d%s", pos/type, buf) ;
+      if (width < strlen(cp))
+        width = strlen(cp) ;
       zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", (29.0 - (5.0 * width)), pos); 
     }		     
   
