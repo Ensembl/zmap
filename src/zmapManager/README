@@ -1,0 +1,7 @@
+================================================================================   
+ZMapManager
+
+
+This directory contains the code that controls a list of ZMap's, it handles
+creation/destruction of ZMaps in this list. This code is part of the ZMap client
+application code.
