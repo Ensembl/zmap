@@ -26,15 +26,17 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 12 15:59 2003 (edgrif)
+ * Last edited: Mar 22 10:00 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer_P.h,v 1.1 2003-11-13 15:01:09 edgrif Exp $
+ * CVS info:   $Id: zmapServer_P.h,v 1.2 2004-03-22 13:31:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_P_H
 #define ZMAP_SERVER_P_H
 
+#include <ZMap/zmapServerPrototype.h>
 #include <ZMap/zmapServer.h>
+
 
 
 /* A connection to a database. */
@@ -42,16 +44,21 @@ typedef struct _ZMapServerStruct
 {
   char *host ;
   int port ;
+  char *protocol ;
 
-  AceConnection connection ;
+  ZMapServerFuncs funcs ;
+
+  void *server_conn ;					    /* opaque type used for server calls. */
 
   char *last_error_msg ;
+
 
 } ZMapServerStruct ;
 
 
 
-
-
+/* Hard coded for now...sigh....would like to be more dynamic really.... */
+void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs) ;
+void dasGetServerFuncs(ZMapServerFuncs das_funcs) ;
 
 #endif /* !ZMAP_SERVER_P_H */
