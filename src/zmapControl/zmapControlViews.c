@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Apr  5 16:59 2005 (edgrif)
+ * Last edited: Apr  6 17:04 2005 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.5 2005-04-05 16:00:21 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.6 2005-04-06 16:21:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -80,6 +80,7 @@ void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation o
   ZMapViewWindow view_window ;
   ZMapView zmap_view ;
   ZMapWindow zmap_window ;
+  char *view_title ;
 
   /* If there is a focus window then that will be the one we split and we need to find out
    * the container parent of that canvas. */
@@ -111,8 +112,11 @@ void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation o
 	}
     }
 
+  view_title = zMapViewGetSequence(zmap_view) ;
+
+
   /* Add a new container that will hold the new view window. */
-  view_container = zmapControlAddWindow(zmap, curr_container, orientation) ;
+  view_container = zmapControlAddWindow(zmap, curr_container, orientation, view_title) ;
 
   /* Either add a completely new view window to the container or copy an existing view
    * window into it. */
@@ -184,16 +188,56 @@ void zmapControlRemoveWindow(ZMap zmap)
  * orientation is GTK_ORIENTATION_HORIZONTAL or GTK_ORIENTATION_VERTICAL
  * 
  *  */
-GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame, GtkOrientation orientation)
+GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame, GtkOrientation orientation,
+				char *view_title)
 {
   GtkWidget *new_frame ;
 
-  /* We could put the sequence name as the label ??? Maybe good to do...think about it.... */
-  new_frame = gtk_frame_new(NULL) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* for trying to make the frame wider...sigh.... */
+  GtkRcStyle *mod_style ;
+  GtkStyle *style ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  /* Supplying NULL will remove the title if its too big. */
+  new_frame = gtk_frame_new(view_title) ;
+
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I've been trying to discover:
+   *     a) a way to make the frame shadow wider
+   * or  b) a way to use a different widget to get a wider border around the canvas
+   * 
+   * this is so I can do highlighting better, so far it all eludes me...sigh....
+   * certainly the styles stuff is not doing the job...
+   *  */
+  mod_style = gtk_widget_get_modifier_style(new_frame) ;
+
+  mod_style->xthickness = 10 ;
+  mod_style->ythickness = 10 ;
+
+  gtk_widget_modify_style(new_frame, mod_style) ;
+
+  mod_style = gtk_widget_get_modifier_style(new_frame) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Nope, this doesn't work either........... */
+  style = gtk_widget_get_style(new_frame) ;
+
+  style->xthickness = 10 ;
+  style->ythickness = 10 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Nor does this........... */
   /* Making the border huge does _not_ make the red bit huge when we highlight so that's not
-   * much good..... */
+   * much good.....this call DOES NOT set an internal border to the container as you might
+   * expect...it sets an external one in the containing window...agggghhhhh */
 
   gtk_container_set_border_width(GTK_CONTAINER(new_frame), 30) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
