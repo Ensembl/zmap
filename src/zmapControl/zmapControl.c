@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Sep 15 11:07 2004 (rnc)
+ * Last edited: Sep 17 09:22 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.29 2004-09-16 15:34:06 rnc Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.30 2004-09-17 08:40:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,10 +39,6 @@
 #include <ZMap/zmapConfig.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapControl_P.h>
-
-
-/* ZMap debugging output. */
-gboolean zmap_debug_G = TRUE ; 
 
 
 
@@ -317,7 +313,7 @@ void zmapControlLoadCB(ZMap zmap)
 	status = zMapViewConnect(curr_view) ;
 
       if (status && zMapViewGetStatus(curr_view) == ZMAPVIEW_RUNNING)
-	zMapViewLoad(curr_view, "") ;
+	zMapViewLoad(curr_view) ;
     }
 
   return ;
