@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 20 14:28 2004 (rnc)
+ * Last edited: Nov  3 14:52 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.24 2004-10-20 14:45:35 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.25 2004-11-04 12:47:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -40,6 +40,16 @@
 
 /* Test scaffoling */
 #include <ZMap/zmapFeature.h>
+
+
+
+enum
+  {
+    ZMAP_WINDOW_TEXT_BORDER = 2				    /* border above/below dna text. */
+  } ;
+
+
+
 
 typedef struct _ZMapWindowStruct
 {
@@ -64,6 +74,8 @@ typedef struct _ZMapWindowStruct
   int          DNAwidth;
 
   double       zoom_factor ;
+  ZMapWindowZoomStatus zoom_status ;			    /* For short sequences that are
+							       displayed at max. zoom initially. */
   int          step_increment;
   int          page_increment;
 
@@ -119,6 +131,10 @@ typedef struct _ZMapCanvasDataStruct
   double               column_position;
   double               revColPos;           /* column position on reverse strand */
 
+  double min_zoom ;					    /* min/max allowable zoom. */
+  double max_zoom ;
+
+
   GData               *types;
   ZMapFeatureTypeStyle thisType;
 
@@ -138,6 +154,8 @@ typedef struct _ZMapCanvasDataStruct
   double               seqLength;
   double               seq_start ;
   double               seq_end ;
+
+  int border_pixels ;					    /* top/bottom border to sequence. */
 
   FooCanvasItem       *scaleBarGroup;
   double               scaleBarOffset;
@@ -168,6 +186,8 @@ GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 
 
 void zmapFeatureInit(ZMapFeatureCallbacks callbacks) ;
+
+void zmapWindowPrintCanvas(FooCanvas *canvas) ;
 
 
 #endif /* !ZMAP_WINDOW_P_H */
