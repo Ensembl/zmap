@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: May 19 14:11 2004 (edgrif)
+ * Last edited: May 27 12:19 2004 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.2 2004-05-20 14:10:07 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.3 2004-05-27 13:40:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,12 +56,6 @@ gboolean zmapControlWindowCreate(ZMap zmap, char *zmap_id)
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)zmap) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_signal_connect(GTK_OBJECT(toplevel), "client_event", 
-		     GTK_SIGNAL_FUNC(dataEventCB), (gpointer)zmap) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
@@ -119,60 +113,4 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 
   return ;
 }
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Called when gtk detects the event sent by signalDataToGUI(), in the end this
- * routine will call zmap routines to display data etc. */
-static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_data)
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapTopWindow window = (ZMapTopWindow)cb_data ;
-
-  if (event->type != GDK_CLIENT_EVENT)
-    zMapLogFatal("%s", "dataEventCB() received non-GdkEventClient event") ;
-  
-  if (event->send_event == TRUE && event->message_type == gdk_atom_intern(ZMAP_ATOM, TRUE))
-    {
-      zmapWindowData window_data = NULL ;
-      ZMapTopWindow window = NULL ;
-      char *string = NULL ;
-
-      /* Retrieve the data pointer from the event struct */
-      memmove(&window_data, &(event->data.b[0]), sizeof(void *)) ;
-
-      window = window_data->window ;
-      string = (char *)(window_data->data) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmapDebug("%s", "GUI: got dataEvent, contents: \"%s\"\n", string) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      gtk_text_buffer_insert(gtk_text_view_get_buffer(GTK_TEXT_VIEW(zmap->text)),
-			     NULL, string, -1) ;	    /* -1 => null terminated string. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(zmap->text)),
-			       string, -1) ;		    /* -1 => null terminated string. */
-
-      g_free(string) ;
-      g_free(window_data) ;
-    }
-  else
-    {
-      zMapDebug("%s", "unknown client event in zmapevent handler\n") ;
-    }
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
