@@ -1,37 +1,28 @@
 #
-# makes the application part of the zmap.
+# Makes the manager part of the ZMap application.
 #
 
-CC = cc
-CFLAGS = -g -pthread -std -msg_enable level3
 
+# local macros
+WIND_PRIV_HDRS = zmapWindow_P.h
+PUB_HDRS = zmapWindow.h
+WIND_SRC = zmapWindow.c zmapWindowButtons.c zmapWindowFrame.c zmapWindowmenubar.c
+WIND_OBJ = zmapWindow.o zmapWindowButtons.o zmapWindowFrame.o zmapWindowmenubar.o
 
-# ZMAP code
+# the main routines will need some different treatment maybe...???? try putting
+# them all together, don't know if it will work.....
 
-APP_NAME = zmap
+#
+# These must all be set for the common includes to work.
+#
+CURRENT_LIB = $(ZMAP_LIB)
+CURRENT_OBJ = $(WIND_OBJ)
+CURRENT_DEP = $(PUB_HDRS) $(WIND_PRIV_HDRS)
+CURRENT_SRC = $(WIND_PRIV_HDRS) $(WIND_SRC)
 
-APP_LIB = libzmap.a
-
-APP_HDRS = seqregion.h stringbucket.h zmapcontrol.h zmap.h
-
-APP_OBJS = seqregion.o seqregionconvert.o stringbucket.o  \
-	zmapbccol.o zmapcols.o zmapcontrol.o zmapsequence.o
-
-# Need gtk and our own include files so specify a rule for  .c -> .o
-.c.o :
-	$(CC) -g `gtk-config --cflags` -I. -c $<  
-
-all: $(APP_NAME)
-
-clean:
-	rm -f $(APP_NAME) $(APP_OBJ)
-
-$(APP_OBJS): $(APP_HDRS)
-
-$(APP_LIB): $(APP_OBJS)
-	ar ru $@ $?
-
-$(APP_NAME): $(APP_OBJS)
-	$(CC) $(CFLAGS) -o $@ `gtk-config --libs` $(APP_OBJS) 
-
-########################## end of makefile ##################################
+#
+# point to common make include file which contains all the rules etc.
+#
+ROOT_DIRECTORY = ..
+MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
+include $(MAKE_DIR)/build.make
