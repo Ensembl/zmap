@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 21 14:09 2004 (edgrif)
+ * Last edited: Oct 21 14:27 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.43 2004-10-21 13:09:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.44 2004-10-21 13:56:25 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -152,7 +152,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
   GTK_LAYOUT(canvas)->vadjustment->step_increment = window->step_increment;
   GTK_LAYOUT(canvas)->hadjustment->step_increment = window->step_increment;
-g  GTK_LAYOUT(canvas)->vadjustment->page_increment = window->page_increment;
+  GTK_LAYOUT(canvas)->vadjustment->page_increment = window->page_increment;
 
 
 
