@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Feb  3 14:35 2005 (edgrif)
+ * Last edited: Mar  8 18:21 2005 (rds)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.8 2005-02-03 15:01:55 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.9 2005-03-10 12:12:53 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -96,7 +96,7 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs) ;
 
 
 /* Try to give consistent messages/logging.... */
-#define ZMAP_SERVER_MSGPREFIX "Server %s:%s - "
+#define ZMAP_SERVER_MSGPREFIX "Server %d:%s - "
 
 /* LOGTYPE just be one of the zMapLogXXXX types, i.e. Message, Warning, Critical or Fatal */
 #define ZMAPSERVER_LOG(LOGTYPE, PROTOCOL, HOST, FORMAT, ...) \
