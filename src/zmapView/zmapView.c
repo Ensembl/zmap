@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul  1 15:19 2004 (rnc)
+ * Last edited: Jul 13 18:01 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.4 2004-07-02 13:49:19 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.5 2004-07-14 09:15:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,12 +46,17 @@ gboolean zmap_debug_G = TRUE ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-static ZMapView createZMapView(GtkWidget *parent_widget, char *sequence,
-			       void *app_data, ZMapViewCallbackFunc destroy_cb) ;
+static ZMapView createZMapView(char *sequence, void *app_data) ;
 static void destroyZMapView(ZMapView zmap) ;
 
 static gint zmapIdleCB(gpointer cb_data) ;
+
+/* I'm not sure if we need this anymore, I think we will just do it with multiple callbacks... */
 static void zmapWindowCB(void *cb_data, int reason) ;
+
+void scrollCB(ZMapWindow window, void *caller_data) ;
+void buttonClickCB(ZMapWindow window, void *caller_data) ;
+void destroyCB(ZMapWindow window, void *caller_data) ;
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
 static void stopStateConnectionChecking(ZMapView zmap_view) ;
@@ -69,42 +74,105 @@ static void displayDataWindows(ZMapView zmap_view, void *data) ;
 static void killWindows(ZMapView zmap_view) ;
 
 
+
+/* These callback routines are static because they are set just once for the lifetime of the
+ * process. */
+
+/* Callbacks we make back to the level above us. */
+static ZMapViewCallbacks view_cbs_G = NULL ;
+
+/* Callbacks back to us from the level below, i.e. zMapWindow. */
+ZMapWindowCallbacksStruct window_cbs_G = {scrollCB, buttonClickCB, destroyCB} ;
+
+
+
 /*
  *  ------------------- External functions -------------------
  *                     (includes callbacks)
  */
 
 
-/* Create a new/blank zmap with its window, has no thread connections to databases.
+/* This routine must be called just once before any other views routine, it is undefined
+ * if the caller calls this routine more than once. The caller must supply all of the callback
+ * routines.
+ * 
+ * Note that since this routine is called once per application we do not bother freeing it
+ * via some kind of views terminate routine. */
+void zMapViewInit(ZMapViewCallbacks callbacks)
+{
+  zMapAssert(!view_cbs_G) ;
+
+  zMapAssert(callbacks && callbacks->button_click && callbacks->destroy) ;
+
+  view_cbs_G = g_new0(ZMapViewCallbacksStruct, 1) ;
+
+  view_cbs_G->button_click = callbacks->button_click ;
+  view_cbs_G->destroy = callbacks->destroy ;
+
+
+  /* Init windows.... */
+  zMapWindowInit(&window_cbs_G) ;
+
+
+  return ;
+}
+
+
+
+
+
+/* Create a new/blank zmap has no windows, has no thread connections to databases.
  * Returns NULL on failure. */
-ZMapView zMapViewCreate(GtkWidget *parent_widget, char *sequence,
-			void *app_data, ZMapViewCallbackFunc destroy_cb)
+ZMapView zMapViewCreate(char *sequence,	void *app_data)
 {
   ZMapView zmap_view = NULL ;
-  ZMapWindow window ;
 
-  zmap_view = createZMapView(parent_widget, sequence, app_data, destroy_cb) ;
+  /* No callbacks, then no view creation. */
+  zMapAssert(view_cbs_G) ;
 
-  /* Create the zmap window itself. */
-  if ((window = zMapWindowCreate(zmap_view->parent_widget, zmap_view->sequence,
-				 zmapWindowCB, zmap_view)))
-    {
-      /* add to list of windows.... */
-      zmap_view->window_list = g_list_append(zmap_view->window_list, window) ;
+  zmap_view = createZMapView(sequence, app_data) ;
 
-      zmap_view->state = ZMAPVIEW_INIT ;
-
-      /* Start polling function that checks state of this view and its connections. */
-      startStateConnectionChecking(zmap_view) ;
-    }
-  else
-    {
-      destroyZMapView(zmap_view) ;
-      zmap_view = NULL ;
-    }
+  zmap_view->state = ZMAPVIEW_INIT ;
 
   return zmap_view ;
 }
+
+
+/* Adds a window to a view, the view may not have a window yet.
+ * Returns the window on success, NULL on failure. */
+ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget)
+{
+  ZMapViewWindow view_window ;
+
+  view_window = g_new0(ZMapViewWindowStruct, 1) ;
+  view_window->parent_view = zmap_view ;		    /* back pointer. */
+
+  if ((view_window->window = zMapWindowCreate(parent_widget, zmap_view->sequence, view_window)))
+    {
+      zmap_view->parent_widget = parent_widget ;
+
+      /* add to list of windows.... */
+      zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
+
+      /* We may be adding a a window to something that is already connected or this may be
+       * the first window to be added. */
+      if (zmap_view->state == ZMAPVIEW_INIT)
+	{
+	  zmap_view->state = ZMAPVIEW_NOT_CONNECTED ;
+
+	  /* Start polling function that checks state of this view and its connections. */
+	  startStateConnectionChecking(zmap_view) ;
+	}
+    }
+  else
+    {
+      g_free(view_window) ;
+      view_window = NULL ;
+    }
+
+  return view_window ;
+}
+
 
 
 /* Connect a View to its databases via threads, at this point the View is blank and waiting
@@ -114,7 +182,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
   gboolean result = TRUE ;
   ZMapConfigStanzaSet server_list = NULL ;
 
-  if (zmap_view->state != ZMAPVIEW_INIT)
+  if (zmap_view->state != ZMAPVIEW_NOT_CONNECTED)
     {
       /* Probably we should indicate to caller what the problem was here....
        * e.g. if we are resetting then say we are resetting etc..... */
@@ -193,7 +261,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	}
       else
 	{
-	  zmap_view->state = ZMAPVIEW_INIT ;
+	  zmap_view->state = ZMAPVIEW_NOT_CONNECTED ;
 	}
     }
 
@@ -206,11 +274,12 @@ gboolean zMapViewLoad(ZMapView zmap_view, char *sequence)
 {
   gboolean result = TRUE ;
 
-  if (zmap_view->state == ZMAPVIEW_RESETTING || zmap_view->state == ZMAPVIEW_DYING)
+  if (zmap_view->state == ZMAPVIEW_INIT
+      || zmap_view->state == ZMAPVIEW_RESETTING || zmap_view->state == ZMAPVIEW_DYING)
     result = FALSE ;
   else
     {
-      if (zmap_view->state == ZMAPVIEW_INIT)
+      if (zmap_view->state == ZMAPVIEW_NOT_CONNECTED)
 	result = zMapViewConnect(zmap_view) ;
 
       if (result)
@@ -286,8 +355,8 @@ ZMapViewState zMapViewGetStatus(ZMapView zmap_view)
 char *zMapViewGetStatusStr(ZMapViewState state)
 {
   /* Array must be kept in synch with ZmapState enum in ZMap.h */
-  static char *zmapStates[] = {"ZMAPVIEW_INIT", "ZMAPVIEW_RUNNING", "ZMAPVIEW_RESETTING",
-			       "ZMAPVIEW_DYING"} ;
+  static char *zmapStates[] = {"ZMAPVIEW_INIT", "ZMAPVIEW_NOT_CONNECTED", "ZMAPVIEW_RUNNING",
+			       "ZMAPVIEW_RESETTING", "ZMAPVIEW_DYING"} ;
   char *state_str ;
 
   zMapAssert(state >= ZMAPVIEW_INIT && state <= ZMAPVIEW_DYING) ;
@@ -297,6 +366,21 @@ char *zMapViewGetStatusStr(ZMapViewState state)
   return state_str ;
 }
 
+
+ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
+{
+  zMapAssert(view_window) ;
+
+  return view_window->window ;
+}
+
+
+ZMapView zMapViewGetView(ZMapViewWindow view_window)
+{
+  zMapAssert(view_window) ;
+
+  return view_window->parent_view ;
+}
 
 
 /* Called to kill a zmap window and get the associated threads killed, note that
@@ -309,10 +393,13 @@ gboolean zMapViewDestroy(ZMapView zmap_view)
 
   if (zmap_view->state != ZMAPVIEW_DYING)
     {
-      killGUI(zmap_view) ;
+      /* init state has no GUI components, otherwise chop the GUI. */
+      if (zmap_view->state != ZMAPVIEW_INIT)
+	killGUI(zmap_view) ;
 
       /* If we are in init state or resetting then the connections have already being killed. */
-      if (zmap_view->state != ZMAPVIEW_INIT && zmap_view->state != ZMAPVIEW_RESETTING)
+      if (zmap_view->state != ZMAPVIEW_INIT && zmap_view->state != ZMAPVIEW_NOT_CONNECTED
+	  && zmap_view->state != ZMAPVIEW_RESETTING)
 	killConnections(zmap_view) ;
 
       /* Must set this as this will prevent any further interaction with the ZMap as
@@ -350,6 +437,44 @@ static gint zmapIdleCB(gpointer cb_data)
 
 
 
+void scrollCB(ZMapWindow window, void *caller_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+
+  printf("In View, in window scroll callback\n") ;
+
+
+  return ;
+}
+
+
+void buttonClickCB(ZMapWindow window, void *caller_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+
+  printf("In View, in window button click callback\n") ;
+
+  /* Is there any focus stuff we want to do here ??? */
+
+  /* Pass back a ZMapViewWindow as it has both the View and the window. */
+  (*(view_cbs_G->button_click))(view_window, view_window->parent_view->app_data) ;
+
+  return ;
+}
+
+
+/* DOES THIS EVER ACTUALLY HAPPEN........... */
+/* Called when an underlying window is destroyed. */
+void destroyCB(ZMapWindow window, void *caller_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+
+  printf("In View, in window destroyed callback\n") ;
+
+  return ;
+}
+
+
 
 /* This routine needs some work, with the reorganisation of the code it is no longer correct,
  * it depends on what the zmapWindow can return to us. */
@@ -370,7 +495,8 @@ static void zmapWindowCB(void *cb_data, int reason)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      (*(zmap_view->app_destroy_cb))(zmap_view, zmap_view->app_data) ;
+      /* Must come later now that destruction is deferred ??? */
+      (*(view_cbs_G->destroy_cb))(zmap_view, zmap_view->app_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     }
@@ -441,23 +567,21 @@ ZMapRegion *zMapViewGetZMapRegion(ZMapView view)
  */
 
 
-static ZMapView createZMapView(GtkWidget *parent_widget, char *sequence,
-			       void *app_data, ZMapViewCallbackFunc destroy_cb)
+static ZMapView createZMapView(char *sequence, void *app_data)
 {
   ZMapView zmap_view = NULL ;
 
-  zmap_view = g_new(ZMapViewStruct, sizeof(ZMapViewStruct)) ;
+  zmap_view = g_new(ZMapViewStruct, 1) ;
 
   zmap_view->state = ZMAPVIEW_INIT ;
 
   zmap_view->sequence = g_strdup(sequence) ;
 
-  zmap_view->parent_widget = parent_widget ;
+  zmap_view->parent_widget = NULL ;
 
   zmap_view->window_list = zmap_view->connection_list = NULL ;
 
   zmap_view->app_data = app_data ;
-  zmap_view->app_destroy_cb = destroy_cb ;
 
   return zmap_view ;
 }
@@ -628,7 +752,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
    * depending on whether we are dying or threads have died or whatever.... */
   if (!zmap_view->connection_list)
     {
-      if (zmap_view->state == ZMAPVIEW_INIT)
+      if (zmap_view->state == ZMAPVIEW_INIT || zmap_view->state == ZMAPVIEW_NOT_CONNECTED)
 	{
 	  /* Nothing to do here I think.... */
 
@@ -669,9 +793,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	}
       else if (zmap_view->state == ZMAPVIEW_DYING)
 	{
-	  /* this is probably the place to callback to zmapcontrol.... */
-	  (*(zmap_view->app_destroy_cb))(zmap_view, zmap_view->app_data) ;
 
+	  /* this is probably the place to callback to zmapcontrol.... */
+	  (*(view_cbs_G->destroy))(zmap_view, zmap_view->app_data) ;
 
 	  /* zmap was waiting for threads to die, now they have we can free everything and stop. */
 	  destroyZMapView(zmap_view) ;
@@ -796,11 +920,11 @@ static void resetWindows(ZMapView zmap_view)
 
   do
     {
-      ZMapWindow window ;
+      ZMapViewWindow view_window ;
 
-      window = list_item->data ;
+      view_window = list_item->data ;
 
-      zMapWindowReset(window) ;
+      zMapWindowReset(view_window->window) ;
     }
   while ((list_item = g_list_next(list_item))) ;
 
@@ -818,11 +942,11 @@ static void displayDataWindows(ZMapView zmap_view, void *data)
 
   do
     {
-      ZMapWindow window ;
+      ZMapViewWindow view_window ;
 
-      window = list_item->data ;
+      view_window = list_item->data ;
 
-      zMapWindowDisplayData(window, data) ;
+      zMapWindowDisplayData(view_window->window, data) ;
     }
   while ((list_item = g_list_next(list_item))) ;
 
@@ -836,13 +960,13 @@ static void killWindows(ZMapView zmap_view)
 
   while (zmap_view->window_list)
     {
-      ZMapWindow window ;
+      ZMapViewWindow view_window ;
 
-      window = zmap_view->window_list->data ;
+      view_window = zmap_view->window_list->data ;
 
-      zMapWindowDestroy(window) ;
+      zMapWindowDestroy(view_window->window) ;
 
-      zmap_view->window_list = g_list_remove(zmap_view->window_list, window) ;
+      zmap_view->window_list = g_list_remove(zmap_view->window_list, view_window) ;
     }
 
 
