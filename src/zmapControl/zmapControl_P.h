@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jan  7 14:44 2005 (edgrif)
+ * Last edited: Jan 14 12:58 2005 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.25 2005-01-10 09:53:28 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.26 2005-01-24 11:38:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -63,8 +63,6 @@ typedef struct _ZMapStruct
 
   ZmapState        state ;
 
-  gboolean         firstTime;
-
   GdkAtom          zmap_atom ;			            /* Used for communicating with zmap */
 
   void            *app_data ;				    /* Data passed back to all callbacks
@@ -87,13 +85,22 @@ typedef struct _ZMapStruct
   ZMapNavigator    navigator ;
 
   /* The panes and views. */
+  GtkWidget      *pane_vbox ;				    /* Is the parent of all the panes. */
 
-  /* I'm not completely sure this is necessary....revisit this later.... */
-  GtkWidget      *pane_vbox ;
 
-  /* Panes are windows where views get displayed. */
-  ZMapPane        focuspane ;
-  GNode          *panesTree ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* This all needs to be surplanted..... */
+
+  ZMapPane       focuspane ;				    /* current focus pane. */
+  GList          *panes_list ;				    /* all panes. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  ZMapViewWindow focus_viewwindow ;
+  ZMapViewWindow unfocus_viewwindow ;
+  GHashTable* viewwindow_2_parent ;			    /* holds hash to go from a view window
+							       to that windows parent widget
+							       (currently a frame). */
 
   /* List of views in this zmap. */
   GList          *view_list ;
@@ -105,20 +112,21 @@ typedef struct _ZMapStruct
 
 
 
-
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Data associated with one scrolling pane. */
 typedef struct _ZMapPaneStruct
 {
+  /* DO WE REALLY NEED THIS ? */
   ZMap zmap ;						    /* Back ptr to containing zmap. */
 
+
+
+  GtkWidget   *frame ;					    /* Direct parent of view window. */
+
   ZMapViewWindow curr_view_window ;
-
-  GtkWidget   *pane ;
-  GtkWidget   *frame ;
-  GtkWidget   *view_parent_box ;
-
 } ZMapPaneStruct ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -131,10 +139,19 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeFrame  (ZMap zmap) ;
 void       zmapControlWindowDestroy    (ZMap zmap) ;
 
+
+void zmapControlSplitInsertWindow(ZMap zmap, GtkOrientation orientation) ;
+void zmapControlRemoveWindow(ZMap zmap) ;
+
+/* these may not need to be exposed.... */
+GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame, GtkOrientation orientation) ;
+void zmapControlCloseWindow(ZMap zmap, GtkWidget *close_container) ;
+
+
 void zmapControlWindowDoTheZoom(ZMap zmap, double zoom) ;
 void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status) ;
-
-
+void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow) ;
+void zmapControlUnSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow) ;
 
 void zmapControlTopLevelKillCB(ZMap zmap) ;
 void zmapControlLoadCB        (ZMap zmap) ;
@@ -145,15 +162,6 @@ void zmapControlNewViewCB(ZMap zmap, char *new_sequence) ;
 void zmapControlInstallRemoteAtoms(GdkWindow *top_zmap_window) ;
 gint zmapControlPropertyEvent(GtkWidget *top_zmap_window, GdkEventProperty *ev, gpointer data) ;
 
-
-void zmapRecordFocus(ZMapPane pane) ; 
-ZMapPane zmapAddPane(ZMap zmap, char orientation) ;
-
-
-GtkWidget *splitPane(ZMap zmap) ;
-GtkWidget *splitHPane(ZMap zmap) ;
-
-void  closePane       (GtkWidget *widget, gpointer data);
 
 
 #endif /* !ZMAP_CONTROL_P_H */
