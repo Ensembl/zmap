@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 21 16:13 2004 (edgrif)
+ * Last edited: Jul 22 16:25 2004 (rnc)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.7 2004-07-21 15:14:45 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.8 2004-07-22 15:48:18 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,14 +52,19 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
   zmap->navigator->navVBox = gtk_vbox_new(FALSE, 0);
   gtk_widget_set_usize(GTK_WIDGET(zmap->navigator->navVBox), 150, -2) ;
 
+  zmap->navigator->topLabel = gtk_label_new(NAV_NO_SCALE) ;
+  gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->topLabel, FALSE, TRUE, 0);
+
   /* if we want to change the max, we'll have to destroy and recreate the vscale. */
   zmap->navigator->navVScale = gtk_vscale_new_with_range(0, req.height, increment);
   gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navVScale, TRUE, TRUE, 0);
+  gtk_scale_set_value_pos(GTK_SCALE(zmap->navigator->navVScale), GTK_POS_LEFT);
+  gtk_scale_set_draw_value(GTK_SCALE(zmap->navigator->navVScale), TRUE);
 
   /* Note how we pack the label at the end of the vbox and set "expand" to FALSE so that it
    * remains small and the vscale expands to fill the rest of the box. */
-  zmap->navigator->navLabel = gtk_label_new(NAV_NO_SCALE) ;
-  gtk_box_pack_end(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navLabel, FALSE, TRUE, 0);
+  zmap->navigator->botLabel = gtk_label_new(NAV_NO_SCALE) ;
+  gtk_box_pack_end(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->botLabel, FALSE, TRUE, 0);
 
 
   return;
@@ -73,11 +78,17 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapMapBlock sequence_
   GtkWidget *label;
   gchar *str;
 
+  str = g_strdup_printf("%d", navigator->sequence_to_parent.c1) ;
+  gtk_label_set_text(GTK_LABEL(navigator->topLabel), str);
+
   /* May be called with no sequence to parent mapping so must set default navigator for this. */
   if (sequence_to_parent_mapping)
     {
       navigator->sequence_to_parent = *sequence_to_parent_mapping ; /* n.b. struct copy */
       str = g_strdup_printf("%d", navigator->sequence_to_parent.p2) ;
+      gtk_range_set_range(GTK_RANGE(navigator->navVScale), navigator->sequence_to_parent.c1,
+			  navigator->sequence_to_parent.p2);
+      gtk_range_set_value(GTK_RANGE(navigator->navVScale), navigator->sequence_to_parent.p1);
     }
   else
     {
@@ -86,7 +97,7 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapMapBlock sequence_
       str = g_strdup(NAV_NO_SCALE) ;
     }
 
-  gtk_label_set_text(GTK_LABEL(navigator->navLabel), str);
+  gtk_label_set_text(GTK_LABEL(navigator->botLabel), str);
   g_free(str);
 
   return ;
