@@ -1,0 +1,60 @@
+<HTML>
+
+<HEAD>
+<TITLE>The Foo Canvas Widget</TITLE>
+</HEAD>
+
+<BODY>
+<H1>The Foo Canvas Widget</H1>
+
+<H2>Overview</H2>
+
+
+<H2>Coordinate Systems</H2>
+
+
+<H2>Event Handling</H2>
+
+<P>Event handling is not completely straight forward because event handling is split between
+events that happen within the root item of the canvas and events that happen within the
+canvas window but <b>not</b> within the root item. These two areas will often be disjoint
+because the width and/or height of one will be larger than the other. By default the root item
+is set to be the size of the bounding rectangle of all the items on the canvas. I guess in theory
+we could resize the root item to be at least as big as the canvas window.
+
+<P>Within the root item, event handling is consistent with a cascade of:
+
+<pre><code>top item --> parent item --> ....... --> parent item --> root item
+</code></pre>
+
+<P>If any item event handler registered by the application returns <code>TRUE</code> the event is not
+passed on to the items parent, otherwise it is until the root item is reached. At this point
+however the event is <b>not</b> passed on to any other obvious handler. If you register an event
+handler generally for the canvas window it gets called <b>before</b> the handlers registered
+for the canvas items. This is even if you use the <code>g_signal_connect_after()</code> call
+to register the handler. This is a pain for several reasons:
+
+<ul>
+  <li>it means the general event handler for canvas events is not in the same system as the
+      other event handlers.
+  <li>interactions between this event handler and the others are complicated because this base
+      handler cannot act as the catch all for all events not handled by canvas items.
+</ul>
+
+<P>But perhaps is also good in that handling of canvas <b>window</b> events can be separated
+from handling of canvas <b>item</b> events.
+
+<P>Perhaps more thought required here.
+
+
+
+
+
+
+<HR>
+<ADDRESS><a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a></ADDRESS>
+<!-- hhmts start -->
+Last modified: Mon Jan 17 15:16:35 GMT 2005
+<!-- hhmts end -->
+</BODY>
+</HTML>
