@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 20 10:46 2004 (rnc)
+ * Last edited: Sep  1 15:43 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.14 2004-07-21 08:53:42 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.15 2004-09-02 09:07:34 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -52,7 +52,6 @@ typedef struct _ZMapWindowStruct
 
   GtkWidget   *scrolledWindow;
   FooCanvas   *canvas;					    /* where we paint the display */
-  FooCanvasItem *background;
   FooCanvasItem *group;
   GtkWidget   *combo;
   int          basesPerLine;
