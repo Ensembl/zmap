@@ -4,7 +4,7 @@
 # script to untar and patch libfoocanvas for us.
 #  Set the following:
 
-FOOCANVAS_VERSION=0.1
+FOOCANVAS_VERSION=20050211
 
 #
 #
