@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 29 11:56 2004 (edgrif)
+ * Last edited: Jul  2 10:56 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.9 2004-06-30 09:12:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.10 2004-07-02 13:53:33 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -66,7 +66,7 @@ typedef struct _ZMapWindowStruct
   GtkWidget      *navigator;
   FooCanvas      *navcanvas;
   InvarCoord      origin; /* that base which is VisibleCoord 1 */
-  GtkWidget      *zoomvbox;
+  GtkWidget      *displayvbox;
   GtkWidget      *toolbar;
   GtkWidget      *hbox;
   GtkWidget      *hpane;  /* allows the user to minimise the navigator pane */
@@ -77,41 +77,6 @@ typedef struct _ZMapWindowStruct
   Coord           navStart, navEnd; /* Start drawing the Nav bar from here */
   ScreenCoord     scaleOffset;
 } ZMapWindowStruct ;
-
-
-typedef struct _ZMapPaneStruct {
-  /* Data associated with one scrolling pane. */
-  ZMapWindow   window;     /* parent */
-  ZMapRegion  *zMapRegion; /* the region holding all the SEGS */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  Graph        graph;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  GtkWidget   *graphWidget;
-  GtkWidget   *vbox;
-  GtkWidget   *pane;
-  GtkWidget   *frame;
-  GtkWidget   *scrolledWindow;
-  FooCanvas   *canvas;     /* where we paint the display */
-  FooCanvasItem *background;
-  FooCanvasItem *group;
-  GtkWidget   *combo;
-  int          basesPerLine;
-  InvarCoord   centre;
-  int          graphHeight;
-  int          dragBox, scrollBox;
-  GPtrArray    cols;
-  GArray       *box2seg, *box2col;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  STORE_HANDLE drawHandle; /* gets freed on each redraw. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  int          DNAwidth;
-  double       zoomFactor;
-  int          step_increment;
-} ZMapPaneStruct;
 
 
 typedef struct
@@ -132,9 +97,6 @@ GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 
 
 
-
-/* TEST SCAFFOLDING............... */
-ZMapFeatureContext testGetGFF(void) ;
 
 
 
