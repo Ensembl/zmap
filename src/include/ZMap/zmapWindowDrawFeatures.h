@@ -26,9 +26,9 @@
  *              on the canvas, calling drawing functions in zmapDraw
  *              to do so.
  * HISTORY:
- * Last edited: Sep 17 10:14 2004 (rnc)
+ * Last edited: Sep 24 16:18 2004 (rnc)
  * Created: Fri Aug 13 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.5 2004-09-21 13:15:32 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.6 2004-09-27 09:16:26 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_DRAWFEATURES_H
@@ -36,34 +36,12 @@
 
 #include <ZMap/zmapSys.h>		       /* For callback funcs... */
 #include <ZMap/zmapFeature.h>
+#include <zmapWindow_P.h>
 
 
 
-// parameters passed between the various functions processing the features to be drawn on the canvas
-typedef struct _ParamStruct
-{
-  ZMapWindow           window;
-  FooCanvas           *thisCanvas;
-  FooCanvasItem       *columnGroup;
-  FooCanvasItem       *revColGroup;         // a group for reverse strand features
-  double               height;
-  double               length;
-  double               column_position;
-  double               revColPos;           // column position on reverse strand
-  GData               *types;
-  ZMapFeatureTypeStyle thisType;
-  FooCanvasItem       *feature_group;       // the group this feature was drawn in
-  ZMapFeature          feature;
-  ZMapFeatureContext   feature_context;
-  ZMapFeatureSet       feature_set;
-  GQuark               context_key;
-  GIOChannel          *channel;
-  double               magFactor;
-} ParamStruct;
-
-
-// the function to be ultimately called when the user clicks on a canvas item.
-typedef gboolean (*ZMapFeatureCallbackFunc)(ParamStruct *params, ZMapFeatureSet feature_set);
+/* the function to be ultimately called when the user clicks on a canvas item. */
+typedef gboolean (*ZMapFeatureCallbackFunc)(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
 
 
 /* Set of callback routines that allow the caller to be notified when events happen
@@ -73,6 +51,10 @@ typedef struct _ZMapFeatureCallbacksStruct
   ZMapWindowFeatureCallbackFunc click ;
   ZMapFeatureCallbackFunc       rightClick;
 } ZMapFeatureCallbacksStruct, *ZMapFeatureCallbacks ;
+
+
+gboolean zmapFeatureClickCB  (ZMapCanvasDataStruct *canvasData, ZMapFeature feature);
+void     zmapHighlightObject (FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData);
 
 #endif
 /******************** end of file ****************************************/
