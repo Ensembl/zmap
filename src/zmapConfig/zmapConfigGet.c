@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: Apr 13 12:34 2004 (edgrif)
+ * Last edited: May  7 10:39 2004 (edgrif)
  * Created: Mon Apr  5 11:09:52 2004 (edgrif)
- * CVS info:   $Id: zmapConfigGet.c,v 1.2 2004-04-27 09:45:31 edgrif Exp $
+ * CVS info:   $Id: zmapConfigGet.c,v 1.3 2004-05-07 09:43:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,7 +94,7 @@ gboolean zmapGetConfigStanzas(ZMapConfig config,
 		  if (strcasecmp(found_element->name, config_element->name) == 0
 		      && found_element->type == config_element->type)
 		    {
-		      printf("found: %s\n", found_element->name) ;
+		      zMapDebug("found: %s\n", found_element->name) ;
 
 		      zmapConfigCopyElementData(config_element, found_element) ;
 

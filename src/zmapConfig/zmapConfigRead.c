@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: May  6 15:37 2004 (edgrif)
+ * Last edited: May  7 10:41 2004 (edgrif)
  * Created: Thu Apr  1 14:33:04 2004 (edgrif)
- * CVS info:   $Id: zmapConfigRead.c,v 1.2 2004-05-07 09:21:47 edgrif Exp $
+ * CVS info:   $Id: zmapConfigRead.c,v 1.3 2004-05-07 09:43:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -158,7 +158,7 @@ static gboolean parsefile(ZMapConfig config, GScanner *scanner)
 	      {
 		current_value = g_scanner_cur_value(scanner) ;
 
-		printf("\nNew Stanza: \"%s\"\n", current_value.v_identifier) ;
+		zMapDebug("\nNew Stanza: \"%s\"\n", current_value.v_identifier) ;
 
 		/* Found a new stanza so allocate a struct.... */
 		current_stanza = zmapConfigCreateStanza(current_value.v_identifier) ;
@@ -195,7 +195,7 @@ static gboolean parsefile(ZMapConfig config, GScanner *scanner)
 		if (current_stanza->elements == NULL)
 		  {
 		    /* Should use our logging facilities here...could log into users .ZMap dir... */
-		    printf("Empty stanza around line: %d\n", g_scanner_cur_line(scanner)) ;
+		    zMapLogWarning("Empty stanza around line: %d\n", g_scanner_cur_line(scanner)) ;
 		    
 		    /* Stanza found but is empty so log an error and free it. */
 		    zmapConfigDestroyStanza(current_stanza) ;
@@ -214,7 +214,7 @@ static gboolean parsefile(ZMapConfig config, GScanner *scanner)
 	      {
 		current_value = g_scanner_cur_value(scanner) ;
 
-		printf("id: %s\n", current_value.v_identifier) ;
+		zMapDebug("id: %s\n", current_value.v_identifier) ;
 
 		/* Found an element so record it... */
 		current_element = zmapConfigCreateElement(current_value.v_identifier,
@@ -308,7 +308,7 @@ static gboolean parsefile(ZMapConfig config, GScanner *scanner)
 	    if (current_stanza->elements == NULL)
 	      {
 		/* Should use our logging facilities here...could log into users .ZMap dir... */
-		printf("Empty stanza around line: %d\n", g_scanner_cur_line(scanner)) ;
+		zMapLogWarning("Empty stanza around line: %d\n", g_scanner_cur_line(scanner)) ;
 		
 		/* Stanza found but is empty so log an error and free it. */
 		zmapConfigDestroyStanza(current_stanza) ;
@@ -333,7 +333,7 @@ static gboolean parsefile(ZMapConfig config, GScanner *scanner)
       if (token == G_TOKEN_ERROR)
 	{
 	  /* Should use our logging facilities here...could log into users .ZMap dir... */
-	  printf("Bad text at line: %d\n", g_scanner_cur_line(scanner)) ;
+	  zMapLogWarning("Bad text at line: %d\n", g_scanner_cur_line(scanner)) ;
 
 	  /* Free current element and its resources (has not yet been added to current stanza). */
 	  if (current_element)
