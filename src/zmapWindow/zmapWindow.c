@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 29 11:43 2004 (edgrif)
+ * Last edited: Oct 13 10:07 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.34 2004-09-29 16:38:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.35 2004-10-13 12:33:05 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,6 +48,7 @@ static void clickCB            (ZMapWindow window, void *caller_data, ZMapFeatur
 static gboolean rightClickCB   (ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
 static void addItemToList      (GQuark key_id, gpointer data, gpointer user_data);
 static void quitListCB         (GtkWidget *window, gpointer data);
+static void hideUnhideColumn   (GQuark key_id, gpointer data, gpointer user_data);
 
 
 /* These callback routines are static because they are set just once for the lifetime of the
@@ -110,7 +111,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
   window->zmap_atom = gdk_atom_intern(ZMAP_ATOM, FALSE) ;
 
-  window->zoom_factor = 1 ;
+  window->zoom_factor = 1 ; 
   window->step_increment = 10;
 
 
@@ -151,7 +152,6 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   gtk_widget_modify_bg(GTK_WIDGET(canvas), GTK_STATE_NORMAL, &color);
 
   window->canvas = FOO_CANVAS(canvas);
-  foo_canvas_set_scroll_region(window->canvas, 0.0, 0.0, 1000, 1000);
 
   g_signal_connect(GTK_OBJECT(window->canvas), "button_press_event",
 		   GTK_SIGNAL_FUNC(canvasClickCB), (gpointer)window) ;
@@ -176,7 +176,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   /* should this be done by caller ??..... */
   gtk_widget_show_all(window->parent_widget) ;
 
-  return(window) ;
+  return(window) ; 
 }
 
 
@@ -254,7 +254,7 @@ void zMapWindowDestroy(ZMapWindow window)
   canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
   g_free(canvasData);
   g_free(window) ;
-
+ 
   return ;
 }
 
@@ -264,32 +264,85 @@ void zMapWindowDestroy(ZMapWindow window)
  * the width the same. */
 void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 {
-  int x, y, wy, z;
+  int x, y, width, height;
   GtkAdjustment *adjust;
   int direction = +1;
   ZMapCanvasDataStruct *canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
+  double x1, y1, x2, y2, z, scroll_height, new_height;
+  GtkRequisition req;
 
-  if (zoom_factor < 1.0)
-      direction = -1;
+  if (canvasData->column_position && zoom_factor < 1.0)
+    direction = -1;
 
-  if (window->zoom_factor < 256) /* x256 is roughly 1 base per line */
+  /* long term I'm going to have to actually work out whether we're down to one base per line,
+  ** but for now this is somewhere in the right ballpark. */
+  if (window->zoom_factor < canvasData->seqLength * 0.064) 
     {
       foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
-
-      adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
-      wy = adjust->page_size;
-
+      foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+      scroll_height = y2 - y1;
+      
       window->zoom_factor *= zoom_factor ;
+      
+      printf("B4: scroll_height * zoom: %f\n", scroll_height * window->zoom_factor);
 
-      /* do we need to do anything else like redraw ?? */
+      /* There's an X-Windows limit of 32k on the dimensions, above which objects
+      ** are not drawn correctly, so we have to handle that here. */ 
+      if ((scroll_height * window->zoom_factor) > 30000)
+	{
+	  new_height = 30000.0/window->zoom_factor;
+	  printf("height will exceed 30000 - w->z %f, setting to %f\n", window->zoom_factor, new_height);
+	  foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, new_height);
+	}
+
+      gtk_layout_get_size(GTK_LAYOUT(window->canvas), &width, &height);
+      printf("B4 zoom: layout size: %d %d\n", width, height);
+      
       foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
 
-      z = (y * zoom_factor) + ((wy * zoom_factor / 4.0) * direction);
-      foo_canvas_scroll_to(window->canvas, x, z );
+      gtk_layout_get_size(GTK_LAYOUT(window->canvas), &width, &height);
+      printf("After: layout size: %d %d\n", width, height);
+      
+      /* scroll to the same point on the canvas as you were at before zooming */ 
+      adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
+      foo_canvas_scroll_to(window->canvas, x, adjust->value );
+      
+      /* The first time this function is called is before any of the columns have been drawn,
+      ** so hideUnhideColumn will fail if we call it then */
+      if (canvasData->column_position)
+	g_datalist_foreach(&(canvasData->feature_context->feature_sets), hideUnhideColumn, canvasData) ;
     }
 
-  return ;
+  return;
 }
+
+
+static void hideUnhideColumn(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureSetStruct *feature_set = (ZMapFeatureSetStruct*)data;
+  ZMapCanvasDataStruct *canvasData  = (ZMapCanvasDataStruct*)user_data;
+
+  ZMapFeatureTypeStyle thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), feature_set->source) ;
+
+  if (thisType)  /* if no method, the column won't have been drawn at all */
+    {
+      if (canvasData->window->zoom_factor > thisType->min_mag)
+	{
+	  foo_canvas_item_show(feature_set->forCol);
+	  if (feature_set->revCol)
+	    foo_canvas_item_show(feature_set->revCol);
+	}
+      else
+	{
+	  foo_canvas_item_hide(feature_set->forCol);
+	  if (feature_set->revCol)
+	    foo_canvas_item_hide(feature_set->revCol);
+	}
+    }
+
+  return;
+}
+
 
 
 /* The vadjustment changes when the user stretches or shrinks the window and  
@@ -364,9 +417,9 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
       /* Can either get data from my dummied up GFF routine or if you set up an acedb server
        * you can get data from there.... just undef the one you want... */
 
-      #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-            feature_context = testGetGFF() ;			    /* Data read from a file... */
-      #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      feature_context = testGetGFF() ;			    /* Data read from a file... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       feature_context = (ZMapFeatureContext)data ;	    /* Data from a server... */
 
