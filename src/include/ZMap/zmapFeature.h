@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Jul 14 14:01 2004 (edgrif)
+ * Last edited: Jul 14 15:44 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.6 2004-07-14 13:07:42 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.7 2004-07-15 15:02:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -235,6 +235,87 @@ typedef struct ZMapFeatureContextStruct_
 } ZMapFeatureContextStruct, *ZMapFeatureContext ;
 
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* SIMONS STUFF........ */
+
+typedef struct methodStruct
+{
+  methodID id;
+  char *name, *remark;
+  unsigned int flags;
+  int colour, CDS_colour, upStrandColour;
+  float minScore, maxScore;
+  float minMag, maxMag;
+  float width ;
+  char symbol ;
+  float priority;
+  float histBase;
+  gboolean showText, no_display;
+} srMeth;
+
+
+/* FEX STUFF.... */
+
+/*****************************************************************************/
+/**********************     drawing    ***************************************/
+
+/* We separated this out from FeatureSet, so can get information on how
+   to display the features from sources other than the database, perhaps
+   a user preference file.
+*/
+
+typedef enum { BY_WIDTH, BY_OFFSET, BY_HISTOGRAM } FexDrawStyle ;
+typedef enum { OVERLAP, BUMP, CLUSTER } FexOverlapStyle ;
+
+
+typedef struct
+{
+  Colour outline ;					    /* Surround/line colour. */
+  Colour foreground ;					    /* Overlaid on background. */
+  Colour background ;					    /* Fill colour. */
+  float right_priority ;
+  FexDrawStyle drawStyle ;
+  FexOverlapStyle overlapStyle ;
+  float width ;						    /* column width */
+  float min_mag, max_mag ;
+  float min_score, max_score ;
+  BOOL  showText ;
+  BOOL  showUpStrand ;
+} FexFeatureSetDrawInfo ;
+
+
+FexFeatureSetDrawInfo *fexFeatureSetDrawInfo(FexDB db, char *feature_set_name) ;
+							    /* Get a single sets drawing info. */
+Array fexFeatureSetsDrawInfo(FexDB db, Array feature_set_names) ;
+							    /* Get multiple sets of draw info. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* AND THIS IS OUR DERIVED STUFF.......... */
+
+
+typedef enum {ZMAPCALCWIDTH_WIDTH, ZMAPCALCWIDTH_OFFSET, ZMAPCALCWIDTH_HISTOGRAM } ZMapFeatureWidthStyle ;
+typedef enum {ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_BUMP, ZMAPOVERLAP_CLUSTER } ZMapFeatureOverlapStyle ;
+
+
+typedef struct ZMapFeatureTypeStyleStruct_
+{
+  char *outline ;					    /* Surround/line colour. */
+  char *foreground ;					    /* Overlaid on background. */
+  char *background ;					    /* Fill colour. */
+  float right_priority ;
+  ZMapFeatureWidthStyle width_style ;
+  ZMapFeatureOverlapStyle overlap_style ;
+  float width ;						    /* column width */
+  float min_mag, max_mag ;
+  float min_score, max_score ;
+  gboolean  showText ;
+  gboolean  showUpStrand ;
+} ZMapFeatureTypeStyleStruct, *ZMapFeatureTypeStyle ;
 
 
 
