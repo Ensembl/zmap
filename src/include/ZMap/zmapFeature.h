@@ -25,16 +25,17 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Sep  2 12:16 2004 (rnc)
+ * Last edited: Sep 10 17:29 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.12 2004-09-03 13:25:26 rnc Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.13 2004-09-10 17:09:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
 
-#include <glib.h>
-#include <gtk/gtk.h>
+#include <gdk/gdkcolor.h>
+
+
 
 /* A unique ID for each feature created, can be used to unabiguously query for that feature
  * in a database. The feature id ZMAPFEATUREID_NULL is guaranteed not to equate to any feature
@@ -313,6 +314,7 @@ typedef struct ZMapFeatureTypeStyleStruct_
   GdkColor outline ;					    /* Surround/line colour. */
   GdkColor foreground ;					    /* Overlaid on background. */
   GdkColor background ;					    /* Fill colour. */
+
   float right_priority ;
   ZMapFeatureWidthStyle width_style ;
   ZMapFeatureOverlapStyle overlap_style ;
