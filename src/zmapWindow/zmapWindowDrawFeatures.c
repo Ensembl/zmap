@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  8 10:30 2004 (rnc)
+ * Last edited: Nov  8 11:59 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.29 2004-11-08 10:31:43 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.30 2004-11-08 12:04:44 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -161,7 +161,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 
       if (!(canvasData->channel = g_io_channel_new_file(file, "w", &channel_error)))
 	{
-	  printf("Cannot open output file: %s  %s\n", file, channel_error->message);
+	  zMapShowMsg(ZMAP_MSG_WARNING, "Cannot open output file: %s  %s\n", file, channel_error->message);
 	  g_error_free(channel_error);
 	}
 
@@ -277,7 +277,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 
 
 
-void zmapHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData)
+void zMapHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData)
 {                                               
   GdkColor outline;
   GdkColor foreground;
@@ -544,7 +544,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	  itemDataKey = "canvasData";
 	  g_object_set_data(G_OBJECT(object), itemDataKey, canvasData);
 	  itemDataKey = "position";
-	  g_object_set_data(G_OBJECT(object), itemDataKey, position);
+	  /*	  g_object_set_data(G_OBJECT(object), itemDataKey, position); */
 	  
 	  break;
 
@@ -604,7 +604,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 		itemDataKey = "canvasData";
 		g_object_set_data(G_OBJECT(object), itemDataKey, canvasData);
 		itemDataKey = "position";
-		g_object_set_data(G_OBJECT(object), itemDataKey, position);
+		/*		g_object_set_data(G_OBJECT(object), itemDataKey, position); */
 
 		/* add transcript details for output */
 		g_string_append_printf(buf, " Transcript: %d %d\n", zMapSpan->x1, zMapSpan->x2);
@@ -623,7 +623,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	  
 	  if (channel_error)
 	    {
-	      printf("Error writing to output file: %30s :%s\n", buf, channel_error->message);
+	      zMapShowMsg(ZMAP_MSG_WARNING, "Error writing to output file: %30s :%s\n", buf->str, channel_error->message);
 	      g_error_free(channel_error);
 	    }
 	}
@@ -680,7 +680,7 @@ static gboolean handleCanvasEvent(FooCanvasItem *item, GdkEventButton *event, gp
 	canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types),source->str); 
 	zMapAssert(canvasData->thisType);
 									
-  	zmapHighlightObject(item, canvasData);
+  	zMapHighlightObject(item, canvasData);
 
 	result = TRUE;
       }
