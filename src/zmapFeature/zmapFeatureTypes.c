@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  9 11:40 2005 (edgrif)
+ * Last edited: Mar 31 11:24 2005 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.3 2005-02-10 16:44:05 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.4 2005-04-05 14:29:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,7 +53,6 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 					   float width, gboolean show_up_strand, int min_mag)
 {
   ZMapFeatureTypeStyle new_type = NULL ;
-  GString *name_canonical ;
 
   /* I am unsure if this is a good thing to do here, I'm attempting to make sure the type is
    * "sane" but no more than that. */
@@ -64,11 +63,8 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 
   new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
 
-  /* lowercase the name to make it canonical. */
-  name_canonical = g_string_new(name) ;
-  name_canonical = g_string_ascii_down(name_canonical) ;
-  new_type->name = g_strdup(name_canonical->str) ;
-  g_string_free(name_canonical, TRUE) ;
+  new_type->original_id = g_quark_from_string(name) ;
+  new_type->unique_id = zMapStyleCreateID(name) ;
 
   gdk_color_parse(outline, &new_type->outline) ;
   gdk_color_parse(foreground, &new_type->foreground) ;
@@ -82,6 +78,42 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 }
 
 
+/* Pretty brain dead but we need some way to deal with the situation where a style may differ in
+ * case only betweens servers...perhaps we should not be merging....???
+ * Caller must free returned string.
+ *  */
+char *zMapStyleCreateName(char *style)
+{
+  char *style_name ;
+  GString *unique_style_name ;
+
+  unique_style_name = g_string_new(style) ;
+  unique_style_name = g_string_ascii_down(unique_style_name) ; /* does it in place */
+
+  style_name = unique_style_name->str ;
+
+  g_string_free(unique_style_name, FALSE) ;		    /* Do not free returned string. */
+
+  return style_name ;
+}
+
+
+/* Like zMapStyleCreateName() but returns a quark representing the style name. */
+GQuark zMapStyleCreateID(char *style)
+{
+  GQuark style_id = 0 ;
+  char *style_name ;
+
+  style_name = zMapStyleCreateName(style) ;
+
+  style_id = g_quark_from_string(style_name) ;
+
+  g_free(style_name) ;
+
+  return style_id ;
+}
+
+
 /* Copy an existing type. */
 ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type)
 {
@@ -91,7 +123,6 @@ ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type)
 
   new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
   *new_type = *type ;					    /* n.b. struct copy. */
-  new_type->name = g_strdup(type->name) ;
 
   return new_type ;
 }
@@ -100,9 +131,7 @@ ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type)
 /* Destroy the type, freeing all resources. */
 void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type)
 {
-  zMapAssert(type && type->name) ;
-
-  g_free(type->name) ;
+  zMapAssert(type) ;
 
   g_free(type) ;
 
@@ -216,7 +245,7 @@ GData *zMapFeatureTypeGetFromFile(char *types_file_name)
 					       zMapConfigGetElementBool(next_types, "showUpStrand"),
 					       zMapConfigGetElementInt(next_types, "minmag")) ;
 
-	      g_datalist_set_data(&types, new_type->name, new_type) ;
+	      g_datalist_id_set_data(&types, new_type->unique_id, new_type) ;
 	      num_types++ ;
 	    }
 	  else
