@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Jul 16 09:40 2004 (edgrif)
+ * Last edited: Jul 20 09:41 2004 (edgrif)
  * Created: Thu Apr 29 14:59:37 2004 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.4 2004-07-16 08:46:27 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.5 2004-07-20 08:47:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,6 +57,7 @@ typedef struct
 
 typedef struct  _ZMapLogStruct
 {
+  GMutex*  log_lock ;
   gboolean logging ;					    /* logging on or off ? */
   gboolean log_to_file ;				    /* log to file or leave glib to log to
 							       stdout/err ? */
@@ -75,7 +76,7 @@ static gboolean configureLog(ZMapLog log) ;
 static gboolean getLogConf(ZMapLog log) ;
 
 static gboolean startLogging(ZMapLog log) ;
-static gboolean stopLogging(ZMapLog log) ;
+static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers) ;
 
 static gboolean openLogFile(ZMapLog log) ;
 static gboolean closeLogFile(ZMapLog log) ;
@@ -86,7 +87,11 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 		       gpointer user_data) ;
 
 
-
+/* This function is NOT thread safe, you should not call this from individual threads. The log
+ * package expects you to call this outside of threads then you should be safe to use the thread
+ * packages inside threads.
+ * Note that the package expects the caller to have called  g_thread_init() before calling this
+ * function. */
 ZMapLog zMapLogCreate(char *logname)
 {
   ZMapLog log = NULL ; 
@@ -109,7 +114,11 @@ gboolean zMapLogStart(ZMapLog log)
 {
   gboolean result = FALSE ;
 
+  g_mutex_lock(log->log_lock) ;
+
   result = startLogging(log) ;
+
+  g_mutex_unlock(log->log_lock) ;
 
   return result ;
 }
@@ -121,16 +130,27 @@ gboolean zMapLogStop(ZMapLog log)
 {
   gboolean result = FALSE ;
 
-  result = stopLogging(log) ;
+  g_mutex_lock(log->log_lock) ;
+
+  result = stopLogging(log, FALSE) ;
+
+  g_mutex_unlock(log->log_lock) ;
 
   return result ;
 }
 
 
-
+/* This routine should be thread safe, it locks the mutex and then removes our handler so none
+ * of our logging handlers can be called any more, it then unlocks the mutex and destroys it.
+ * This should be ok........
+ */
 void zMapLogDestroy(ZMapLog log)
 {
-  stopLogging(log) ;
+  g_mutex_lock(log->log_lock) ;
+
+  stopLogging(log, TRUE) ;
+
+  g_mutex_unlock(log->log_lock) ;
 
   destroyLog(log) ;
 
@@ -151,7 +171,10 @@ static ZMapLog createLog(void)
 {
   ZMapLog log ;
 
-  log = g_new0(ZMapLogStruct, sizeof(ZMapLogStruct)) ;
+  log = g_new0(ZMapLogStruct, 1) ;
+
+  /* Must lock access to log as may come from serveral different threads. */
+  log->log_lock = g_mutex_new() ;
 
   /* Default will be logging active. */
   log->logging = TRUE ;
@@ -180,6 +203,8 @@ static void destroyLog(ZMapLog log)
 {
   if (log->active_handler.log_path)
     g_free(log->active_handler.log_path) ;
+
+  g_mutex_free(log->log_lock) ;
 
   g_free(log) ;
 
@@ -228,7 +253,7 @@ static gboolean startLogging(ZMapLog log)
 }
 
 /* Error handling is crap here.... */
-static gboolean stopLogging(ZMapLog log)
+static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers)
 {
   gboolean result = FALSE ;
 
@@ -245,14 +270,27 @@ static gboolean stopLogging(ZMapLog log)
 	    result = FALSE ;
 	}
 
-      /* Always need to install a null handler to stop logging. */
-      log->inactive_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
-						      G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-						      | G_LOG_FLAG_RECURSION, 
-						      log->inactive_handler.log_cb,
-						      (gpointer)log) ;
+
+      /* If we just want to suspend logging then we install our own null handler which does
+       * nothing, hence logging stops. If we want to stop all our logging then we do not install
+       * our null handler. */
+      if (!remove_all_handlers)
+	log->inactive_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
+							G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
+							| G_LOG_FLAG_RECURSION, 
+							log->inactive_handler.log_cb,
+							(gpointer)log) ;
+
       if (result)
 	log->logging = FALSE ;
+    }
+  else
+    {
+      if (remove_all_handlers && log->inactive_handler.cb_id)
+	{
+	  g_log_remove_handler(ZMAPLOG_DOMAIN, log->inactive_handler.cb_id) ;
+	  log->inactive_handler.cb_id = 0 ;
+	}
     }
 
   return result ;
@@ -275,7 +313,7 @@ static gboolean configureLog(ZMapLog log)
       if (log->logging)
 	{
 
-	  result = stopLogging(log) ;
+	  result = stopLogging(log, FALSE) ;
 	}
       else
 	{
@@ -440,6 +478,9 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
   GError *g_error = NULL ;
   gsize bytes_written = 0 ;
 
+  g_mutex_lock(log->log_lock) ;
+
+
   zMapAssert(log->logging) ;				    /* logging must be on.... */
 
 
@@ -457,6 +498,8 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
     }
 
   g_free(msg) ;
+
+  g_mutex_unlock(log->log_lock) ;
 
   return ;
 }
