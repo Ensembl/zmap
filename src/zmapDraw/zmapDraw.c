@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan  6 15:27 2005 (edgrif)
+ * Last edited: Feb  1 09:30 2005 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.21 2005-01-07 12:31:34 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.22 2005-02-02 11:04:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,7 +123,6 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   float cutoff;
   int pos;
   GdkColor black, white, yellow;
-  int top, bottom;
   double x1, y1, x2, y2;
 
   gdk_color_parse("black", &black);

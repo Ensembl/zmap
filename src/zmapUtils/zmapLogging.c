@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Sep 29 17:15 2004 (edgrif)
+ * Last edited: Feb  1 09:57 2005 (edgrif)
  * Created: Thu Apr 29 14:59:37 2004 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.6 2004-09-29 16:37:36 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.7 2005-02-02 11:04:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -518,7 +518,6 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 {
   ZMapLog log = (ZMapLog)user_data ;
   char *msg ;
-  GIOStatus g_status ;
   GError *g_error = NULL ;
   gsize bytes_written = 0 ;
 

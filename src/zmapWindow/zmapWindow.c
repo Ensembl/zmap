@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 24 13:53 2005 (edgrif)
+ * Last edited: Feb  1 09:30 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.59 2005-01-24 13:57:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.60 2005-02-02 11:04:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,9 +60,6 @@ static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer use
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
-
-static void clickCB             (ZMapWindow window, void *caller_data, void *window_data) ;
-static gboolean rightClickCB    (ZMapWindow window, ZMapFeatureItem featureItem);
 
 static void hideUnhideColumns   (ZMapWindow window);
 static gboolean getConfiguration(ZMapWindow window) ;
@@ -492,8 +489,22 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   /* Set the new scroll_region and the new zoom. N.B. may need to do a "freeze" of the canvas here
    * to avoid a double redraw....but that might never happen actually, depends how much there is
    * in the Xlib buffer so not lets worry about it. */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* These don't work but I may not be using them correctly, more research needed, look
+   * at canvas interface..... */
+  gtk_widget_freeze_child_notify(GTK_WIDGET(window->canvas)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   foo_canvas_set_scroll_region(window->canvas, x1, top, x2, bot) ;
   foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  gtk_widget_thaw_child_notify(GTK_WIDGET(window->canvas)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* Scroll to the previous position. */
@@ -904,7 +915,6 @@ static void sendClientEvent(ZMapWindow window, ZMapFeatureContext current_featur
 			    ZMapFeatureContext new_features, GData *types)
 {
   GdkEventClient event ;
-  GdkAtom zmap_atom ;
   gint ret_val = 0 ;
   zmapWindowData window_data ;
 

@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jan 20 17:02 2005 (edgrif)
+ * Last edited: Feb  1 09:38 2005 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.22 2005-01-24 11:32:21 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.23 2005-02-02 11:03:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,7 +57,7 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out)
   ZMapNavigator navigator ;
   GtkWidget *pane ;
   GtkObject *adjustment ;
-  GtkWidget *vbox, *label, *scroll ;
+  GtkWidget *label ;
 
   navigator = g_new0(ZMapNavStruct, 1);
 
@@ -181,8 +181,8 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
       GTK_ADJUSTMENT(region_adjuster)->upper = (gdouble)navigator->parent_span.x2 ;
       GTK_ADJUSTMENT(region_adjuster)->step_increment = 10.0 ;	    /* step incr, wild guess... */
       GTK_ADJUSTMENT(region_adjuster)->page_increment = 1000 ;	    /* page incr, wild guess... */
-      GTK_ADJUSTMENT(region_adjuster)->page_size = (gdouble)(abs(navigator->sequence_to_parent.p2
-							  - navigator->sequence_to_parent.p1) + 1) ;
+      GTK_ADJUSTMENT(region_adjuster)->page_size = (gdouble)(fabs(navigator->sequence_to_parent.p2
+								  - navigator->sequence_to_parent.p1) + 1) ;
 
       window_top_str = g_strdup_printf("%d", navigator->sequence_to_parent.c1) ;
       window_bot_str = g_strdup_printf("%d", navigator->sequence_to_parent.c2) ;
@@ -193,8 +193,8 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
       GTK_ADJUSTMENT(window_adjuster)->upper = (gdouble)navigator->sequence_to_parent.c2 ;
       GTK_ADJUSTMENT(window_adjuster)->step_increment = 0.0 ;
       GTK_ADJUSTMENT(window_adjuster)->page_increment = 0.0 ;
-      GTK_ADJUSTMENT(window_adjuster)->page_size = (gdouble)(abs(navigator->sequence_to_parent.c2
-								 - navigator->sequence_to_parent.c1) + 1) ;
+      GTK_ADJUSTMENT(window_adjuster)->page_size = (gdouble)(fabs(navigator->sequence_to_parent.c2
+								  - navigator->sequence_to_parent.c1) + 1) ;
 
       zMapNavigatorSetWindowPos(navigator, top, bottom) ;
     }
@@ -267,7 +267,11 @@ static void valueCB(GtkAdjustment *adjustment, gpointer user_data)
 {
   ZMapNavigator navigator = (ZMapNavigator)user_data ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("top: %f, bottom: %f\n", adjustment->value, adjustment->value + adjustment->page_size) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   if (navigator->cb_func)
     (*(navigator->cb_func))(navigator->user_data,

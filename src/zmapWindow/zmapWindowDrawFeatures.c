@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 24 13:21 2005 (edgrif)
+ * Last edited: Feb  1 09:30 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.42 2005-01-24 13:23:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.43 2005-02-02 11:04:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -137,7 +137,7 @@ gboolean zMapWindowFeatureClickCB(ZMapWindow window, ZMapFeature feature)
 void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_context, GData *types)
 {
   GtkAdjustment *h_adj;
-  double text_height, zoom_factor ;
+  double zoom_factor ;
   ZMapCanvasDataStruct canvas_data = {NULL} ;		    /* Rest of struct gets set to zero. */
 
 
@@ -260,7 +260,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
   else
     {
       double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
-      int x, y ;
 
       foo_canvas_get_scroll_region(window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
       if (scroll_x1 == 0 && scroll_y1 == 0 && scroll_x2 == 0 && scroll_y2 == 0)

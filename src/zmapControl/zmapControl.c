@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jan 25 17:37 2005 (edgrif)
+ * Last edited: Feb  1 09:30 2005 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.45 2005-01-25 17:47:41 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.46 2005-02-02 11:03:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,7 +46,6 @@ static void killFinal(ZMap zmap) ;
 static void killViews(ZMap zmap) ;
 static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
 static ZMapView addView(ZMap zmap, char *sequence, int start, int end) ;
-static gboolean lookForViewWindow(GNode *node, gpointer data) ;
 static void updateControl(ZMap zmap, ZMapView view) ;
 
 static void dataLoadCB(ZMapView view, void *app_data, void *view_data) ;
@@ -342,15 +341,10 @@ void zmapControlResetCB(ZMap zmap)
 /* Put a new view into a zmap. */
 void zmapControlNewViewCB(ZMap zmap, char *new_sequence)
 {
-  GtkWidget *parent_widget = NULL ;
   ZMapView view ;
-  ZMapViewWindow view_window ;
 
   /* these should be passed in ...... */
   int start = 1, end = 0 ;
-
-  /* this is a bit clutzy, it is irrelevant for the first window.... */
-  GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;
 
   if ((view = addView(zmap, new_sequence, start, end)))
     zMapViewConnect(view) ;				    /* return code ???? */

@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Jan 25 17:41 2005 (edgrif)
+ * Last edited: Feb  1 09:30 2005 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.2 2005-01-25 17:48:50 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.3 2005-02-02 11:03:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -142,7 +142,7 @@ void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation o
 
 void zmapControlRemoveWindow(ZMap zmap)
 {
-  GtkWidget *close_container, *view_container ;
+  GtkWidget *close_container ;
   ZMapViewWindow view_window ;
   gboolean remove ;
 
