@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 17 09:51 2004 (rnc)
+ * Last edited: Sep 23 11:48 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.9 2004-09-17 08:56:23 rnc Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.10 2004-09-23 13:40:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,7 +57,8 @@ static gboolean getSequenceMapping(AcedbServer server,
 static gboolean getSMapping(AcedbServer server, char *class, char *sequence,
 			    char **parent_class_out, char **parent_name_out,
 			    ZMapMapBlock child_to_parent_out) ;
-
+static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_name,
+			      int *obj_length_out) ;
 
 
 /* 
@@ -167,71 +168,51 @@ static ZMapServerResponseType request(void *server_in, ZMapFeatureContext *featu
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
+  gboolean status ;
+  ZMapFeatureContext feature_context ;
 
 
   /* We should check that there is a feature context here and report an error if there isn't... */
-
 
   result = ZMAP_SERVERRESPONSE_OK ;
   server->last_err_status = ACECONN_OK ;
 
   /* We should be using the start/end info. in context for the below stuff... */
 
-  {
-    gboolean status ;
-    ZMapFeatureContext feature_context ;
-
-    feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
+  feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
 
-    *feature_context = *(server->current_context) ;	    /* n.b. struct copy. */
-    /* OK, NEED TO ADD START/END INFO HERE....... */
+  *feature_context = *(server->current_context) ;	    /* n.b. struct copy. */
 
+  if ((status = sequenceRequest(server, server->sequence, feature_context)))
+    {
+      *feature_context_out = feature_context ;
+    }
+  else
+    {
+      /* If the call failed it may be that the connection failed or that the data coming
+       * back had a problem. */
+      if (server->last_err_status == ACECONN_OK)
+	{
+	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	}
+      else if (server->last_err_status == ACECONN_TIMEDOUT)
+	{
+	  result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
+	}
+      else
+	{
+	  /* Probably we will want to analyse the response more than this ! */
+	  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+	}
 
+      zMapLogWarning("Could not map %s because: %s", server->sequence, server->last_err_msg) ;
+    }
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    /* Try and get the mapping of this sequence into its parent, if we fail then there is no point
-     * in continuing as this means we cannot smap the sequence and hence cannot get its features. */
-    if (!(status = getSequenceMapping(server, server->sequence, feature_context)))
-      {
-	result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	zMapLogWarning("Could not map %s because: %s", server->sequence, server->last_err_msg) ;
-      }
-    else
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      {
-	if ((status = sequenceRequest(server, server->sequence, feature_context)))
-	  {
-	    *feature_context_out = feature_context ;
-	  }
-	else
-	  {
-	    /* If the call failed it may be that the connection failed or that the data coming
-	     * back had a problem. */
-	    if (server->last_err_status == ACECONN_OK)
-	      {
-		result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	      }
-	    else if (server->last_err_status == ACECONN_TIMEDOUT)
-	      {
-		result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
-	      }
-	    else
-	      {
-		/* Probably we will want to analyse the response more than this ! */
-		result = ZMAP_SERVERRESPONSE_SERVERDIED ;
-	      }
-
-	    zMapLogWarning("Could not map %s because: %s", server->sequence, server->last_err_msg) ;
-	  }
-      }
-
-    /* We need a feature context call here which will free stuff correctly...this is not right
+  /* We need a feature context call here which will free stuff correctly...this is not right
      * as there are features etc to do....need a set of feature context calls...... */
-    if (!status)
-      g_free(feature_context) ;
-  }
+  if (!status)
+    g_free(feature_context) ;
 
   return result ;
 }
@@ -293,7 +274,26 @@ static gboolean destroyConnection(void *server_in)
 
 
 /* bit of an issue over returning error messages here.....sort this out as some errors many be
- * aceconn errors, others may be data processing errors, e.g. in GFF etc. */
+ * aceconn errors, others may be data processing errors, e.g. in GFF etc., e.g.
+ * 
+ * If we issue a command like this: "gif seqget obj ; seqfeatures" then we have a problem because
+ * the server treats this as one command and returns any errors from the seqget() munged on the
+ * front of the GFF output from the seqfeatures() like this:
+ * 
+ * // ERROR -  Sequence:"yk47h9.3" (5' match) and Sequence:"yk47h9.3" (3' match) are in wrong orientation.
+ * // ERROR -  Sequence:"AW057380" (5' match) and Sequence:"AW057380" (3' match) are in wrong orientation.
+ * // ERROR -  Sequence:"OSTR010G5_1" (5' match) and Sequence:"OSTR010G5_1" (3' match) are in wrong orientation.
+ * ##gff-version 2
+ * ##source-version sgifaceserver:ACEDB 4.9.27
+ * ##date 2004-09-21
+ * ##sequence-region F22D3 1 35712 
+ * F22D3	Genomic_canonical	region	1	200	.	+	.	Sequence "B0252"
+ * 
+ * so what to do...agh....
+ * 
+ * I guess the best thing is to shove the errors out to the log and look for the gff start...
+ * 
+ */
 static gboolean sequenceRequest(AcedbServer server,
 				char *sequence, ZMapFeatureContext feature_context)
 {
@@ -301,7 +301,13 @@ static gboolean sequenceRequest(AcedbServer server,
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
+  gboolean found_gff_start ;
 
+  /* Here we can convert the GFF that comes back, in the end we should be doing a number of
+   * calls to AceConnRequest() as the server slices...but that will need a change to my
+   * AceConn package.....
+   * We make the big assumption that what comes back is a C string for now, this is true
+   * for most acedb requests, only images/postscript are not and we aren't asking for them. */
 
   acedb_request =  g_strdup_printf("gif seqget %s ; seqfeatures", sequence) ;
 
@@ -309,38 +315,102 @@ static gboolean sequenceRequest(AcedbServer server,
     
   if (server->last_err_status == ACECONN_OK)
     {
-      /* this is a hack, none of the acedb commands return an error code so the only way you know
-       * if anything has gone wrong is to examine the contents of the text that is returned...
-       * in our case if the reply starts with acedb comment chars, this means trouble.. */
-      if (g_str_has_prefix((char *)reply, "//"))
+      char *next_line ;
+      ZMapReadLine line_reader ;
+      gboolean inplace = TRUE ;
+
+
+      line_reader = zMapReadLineCreate((char *)reply, inplace) ;
+
+
+      /* Look for "##gff-version" at start of line which signals start of GFF, as detailed above
+       * there may be errors before the GFF output. */
+      result = TRUE ;
+      do
 	{
-	  /* we are taking a risk here that reply is a small error message.... */
-	  result = FALSE ;
-	  server->last_err_msg = g_strdup_printf("%s", (char *)reply) ;
+	  if (!(result = zMapReadLineNext(line_reader, &next_line)))
+	    {
+	      /* If the readline fails it may be because of an error or because its reached the
+	       * end, if next_line is empty then its reached the end. */
+	      if (*next_line)
+		server->last_err_msg = g_strdup_printf("Request from server contained incomplete line: %s",
+						       next_line) ;
+	      else
+		server->last_err_msg = g_strdup_printf("%s", "No GFF found in server reply.") ;
+
+	      zMapLogCritical("%s", server->last_err_msg) ;
+	    }
+	  else
+	    {
+	      if (g_str_has_prefix((char *)next_line, "##gff-version"))
+		{
+		  break ;
+		}
+	      else
+		{
+		  server->last_err_msg = g_strdup_printf("Bad GFF line: %s",
+							 next_line) ;
+		  zMapLogCritical("%s", server->last_err_msg) ;
+		}
+	    }
 	}
-      else
+      while (result && *next_line) ;
+
+
+      if (result)
 	{
-	  char *next_line ;
-	  ZMapReadLine line_reader ;
-	  gboolean inplace = TRUE ;
 	  ZMapGFFParser parser ;
 	  gboolean free_on_destroy ;
       
-	  /* Here we can convert the GFF that comes back, in the end we should be doing a number of
-	   * calls to AceConnRequest() as the server slices...but that will need a change to my
-	   * AceConn package.....
-	   * We make the big assumption that what comes back is a C string for now, this is true
-	   * for most acedb requests, only images/postscript are not and we aren't asking for them. */
-      
-	  line_reader = zMapReadLineCreate((char *)reply, inplace) ;
 
 	  parser = zMapGFFCreateParser(FALSE) ;
+
 
 	  /* We probably won't have to deal with part lines here acedb should only return whole lines
 	   * ....but should check for sure...bomb out for now.... */
 	  result = TRUE ;
 	  do
 	    {
+	      /* Note that we already have the first line from the loop above. */
+	      if (!zMapGFFParseLine(parser, next_line))
+		{
+		  /* This is a hack, I would like to make the acedb code have a quiet mode but
+		   * as usual this is not straight forward and will take a bit of fixing...
+		   * The problem for us is that the gff output is terminated with with a couple
+		   * of acedb comment lines which then screw up our parsing....so we ignore
+		   * lines starting with "//" hoping this doesn't conflict with gff.... */
+		  if (!g_str_has_prefix(next_line, "//"))
+		    {
+		      GError *error = zMapGFFGetError(parser) ;
+
+		      if (!error)
+			{
+			  server->last_err_msg =
+			    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
+					    zMapGFFGetLineNumber(parser), next_line) ;
+			  zMapLogCritical("%s", server->last_err_msg) ;
+
+			  result = FALSE ;
+			}
+		      else
+			{
+			  /* If the error was serious we stop processing and return the error,
+			   * otherwise we just log the error. */
+			  if (zMapGFFTerminated(parser))
+			    {
+			      result = FALSE ;
+			      server->last_err_msg =
+				g_strdup_printf("%s", error->message) ;
+			    }
+			  else
+			    {
+			      zMapLogWarning("%s", error->message) ;
+			    }
+			}
+		    }
+		}
+
+
 	      if (!(result = zMapReadLineNext(line_reader, &next_line)))
 		{
 		  /* If the readline fails it may be because of an error or because its reached the
@@ -354,46 +424,7 @@ static gboolean sequenceRequest(AcedbServer server,
 		  else
 		    result = TRUE ;
 		}
-	      else
-		{
-		  if (!zMapGFFParseLine(parser, next_line))
-		    {
-		      /* This is a hack, I would like to make the acedb code have a quiet mode but
-		       * as usual this is not straight forward and will take a bit of fixing...
-		       * The problem for us is that the gff output is terminated with with a couple
-		       * of acedb comment lines which then screw up our parsing....so we ignore
-		       * lines starting with "//" hoping this doesn't conflict with gff.... */
-		      if (!g_str_has_prefix(next_line, "//"))
-			{
-			  GError *error = zMapGFFGetError(parser) ;
 
-			  if (!error)
-			    {
-			      server->last_err_msg =
-				g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
-						zMapGFFGetLineNumber(parser), next_line) ;
-			      zMapLogCritical("%s", server->last_err_msg) ;
-
-			      result = FALSE ;
-			    }
-			  else
-			    {
-			      /* If the error was serious we stop processing and return the error,
-			       * otherwise we just log the error. */
-			      if (zMapGFFTerminated(parser))
-				{
-				  result = FALSE ;
-				  server->last_err_msg =
-				    g_strdup_printf("%s", error->message) ;
-				}
-			      else
-				{
-				  zMapLogWarning("%s", error->message) ;
-				}
-			    }
-			}
-		    }
-		}
 	    }
 	  while (result && *next_line) ;
 
@@ -409,10 +440,11 @@ static gboolean sequenceRequest(AcedbServer server,
 		result = FALSE ;
 	    }
 
-	  zMapReadLineDestroy(line_reader, TRUE) ;
 	  zMapGFFSetFreeOnDestroy(parser, free_on_destroy) ;
 	  zMapGFFDestroyParser(parser) ;
 	}
+
+      zMapReadLineDestroy(line_reader, TRUE) ;
     }
 
 
@@ -426,20 +458,6 @@ static gboolean sequenceRequest(AcedbServer server,
 /* Tries to smap sequence into whatever its parent is, if the call fails then we set all the
  * mappings in feature_context to be something sensible...we hope....
  * 
- * To do this we issue the smap request to the server:
- * 
- *        gif smap -from sequence:b0250
- * 
- * and receive a reply in the form:
- * 
- *        SMAP Sequence:SUPERLINK_CB_V 10995378 11034593 1 39216 PERFECT_MAP
- *        // 0 Active Objects
- * 
- * on error we get something like:
- * 
- *        // gif smap error: invalid from object
- *        // 0 Active Objects
- * 
  *  */
 static gboolean getSequenceMapping(AcedbServer server,
 				   char *sequence, ZMapFeatureContext feature_context)
@@ -447,11 +465,14 @@ static gboolean getSequenceMapping(AcedbServer server,
   gboolean result = FALSE ;
   char *parent_name = NULL, *parent_class = NULL ;
   ZMapMapBlockStruct sequence_to_parent = {0, 0, 0, 0}, parent_to_self = {0, 0, 0, 0} ;
-
+  int parent_length = 0 ;
 
   if (getSMapping(server, NULL, sequence, &parent_class, &parent_name, &sequence_to_parent)
-      && getSMapping(server, parent_class, parent_name, NULL, NULL, &parent_to_self))
+      && getSMapLength(server, parent_class, parent_name, &parent_length))
     {
+      parent_to_self.p1 = parent_to_self.c1 = 1 ;
+      parent_to_self.p2 = parent_to_self.c2 = parent_length ;
+
       feature_context->parent = parent_name ;		    /* No need to copy, has been allocated. */
 
       if (feature_context->sequence_to_parent.p1 < feature_context->sequence_to_parent.p2)
@@ -478,9 +499,10 @@ static gboolean getSequenceMapping(AcedbServer server,
 
 
 
-/* Makes smap request to server for a given sequence, assumes sequence is of the acedb
- * ?Sequence class. If the smap call succeeds then returns TRUE, FALSE otherwise
- * (server->last_err_msg is set to show the problem).
+/* Gets the mapping of a sequence object into its ultimate SMap parent, uses the
+ * smap and smaplength commands to do this. Note that we currently assume that the
+ * object is of the sequence class. If the smap call succeeds then returns TRUE,
+ * FALSE otherwise (server->last_err_msg is set to show the problem).
  * 
  * To do this we issue the smap request to the server:
  * 
@@ -496,7 +518,7 @@ static gboolean getSequenceMapping(AcedbServer server,
  *        // gif smap error: invalid from object
  *        // 0 Active Objects
  * 
- *  */
+ */
 static gboolean getSMapping(AcedbServer server, char *class, char *sequence,
 			    char **parent_class_out, char **parent_name_out,
 			    ZMapMapBlock child_to_parent_out)
@@ -565,4 +587,85 @@ static gboolean getSMapping(AcedbServer server, char *class, char *sequence,
 
   return result ;
 }
+
+
+
+
+/* Makes smaplength request to server for a given object. If the smap call succeeds
+ * then returns TRUE, FALSE otherwise (server->last_err_msg is set to show the problem).
+ * 
+ * To do this we issue the smap request to the server:
+ * 
+ *        smaplength Sequence:CHROMOSOME_V
+ * 
+ * and receive a reply in the form:
+ * 
+ *        SMAPLENGTH Sequence:"CHROMOSOME_V" 20922231
+ *        // 0 Active Objects
+ * 
+ * on error we get something like:
+ * 
+ *        // smaplength error: object "Sequence:CHROMOSOME_V" does not exist.
+ *        // 0 Active Objects
+ * 
+ *  */
+static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_name,
+			      int *obj_length_out)
+{
+  gboolean result = FALSE ;
+  char *command = "smaplength" ;
+  char *acedb_request = NULL ;
+  void *reply = NULL ;
+  int reply_len = 0 ;
+
+  acedb_request =  g_strdup_printf("%s %s:%s", command, obj_class, obj_name) ;
+
+  if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
+      == ACECONN_OK)
+    {
+      char *reply_text = (char *)reply ;
+
+      /* this is a hack, none of the acedb commands return an error code so the only way you know
+       * if anything has gone wrong is to examine the contents of the text that is returned...
+       * in our case if the reply starts with acedb comment chars, this means trouble.. */
+      if (g_str_has_prefix(reply_text, "//"))
+	{
+	  server->last_err_msg = g_strdup_printf("%s request failed, "
+						 "request: \"%s\",  "
+						 "reply: \"%s\"", command, acedb_request, reply_text) ;
+	  result = FALSE ;
+	}
+      else
+	{
+	  enum {FIELD_BUFFER_LEN = 257} ;
+	  char obj_class_name[FIELD_BUFFER_LEN] = {'\0'} ;
+	  int length = 0 ;
+	  enum {FIELD_NUM = 2} ;
+	  char *format_str = "SMAPLENGTH %256s%d" ;
+	  int fields ;
+	  
+	  if ((fields = sscanf(reply_text, format_str, &obj_class_name[0], &length)) != FIELD_NUM)
+	    {
+	      server->last_err_msg = g_strdup_printf("Could not parse smap data, "
+						     "request: \"%s\",  "
+						     "reply: \"%s\"", acedb_request, reply_text) ;
+	      result = FALSE ;
+	    }
+	  else
+	    {
+	      if (obj_length_out)
+		*obj_length_out = length ;
+
+	      result = TRUE ;
+	    }
+	}
+
+      g_free(reply) ;
+    }
+
+  return result ;
+}
+
+
+
 
