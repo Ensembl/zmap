@@ -1,0 +1,11 @@
+
+Some things pending for make....
+
+- Now I'm using makedepend can get rid of some of my standard defines as they were to try
+  to do dependencies anyway.
+
+- Get rid of the makedepend back up files, they just waste space.
+
+- we could filter the output of makedepend to get rid of system headers and stuff like
+  gtk if we wanted to.
+
