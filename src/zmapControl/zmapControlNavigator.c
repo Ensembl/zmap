@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jan 10 09:40 2005 (edgrif)
+ * Last edited: Jan 20 17:02 2005 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.21 2005-01-10 09:51:00 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.22 2005-01-24 11:32:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,6 +72,8 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out)
   navigator->navVBox = gtk_vbox_new(FALSE, 0);
   gtk_paned_add1(GTK_PANED(pane), navigator->navVBox) ;
 
+  label = gtk_label_new("Region") ;
+  gtk_box_pack_start(GTK_BOX(navigator->navVBox), label, FALSE, TRUE, 0);
 
   navigator->topLabel = gtk_label_new(TOPTEXT_NO_SCALE) ;
   gtk_box_pack_start(GTK_BOX(navigator->navVBox), navigator->topLabel, FALSE, TRUE, 0);
@@ -94,6 +96,9 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out)
    * necessary because the underlying canvas window cannot be remapped rapidly. */
   navigator->wind_vbox = gtk_vbox_new(FALSE, 0);
   gtk_paned_add2(GTK_PANED(pane), navigator->wind_vbox) ;
+
+  label = gtk_label_new("Scroll") ;
+  gtk_box_pack_start(GTK_BOX(navigator->wind_vbox), label, FALSE, TRUE, 0);
 
   navigator->wind_top_label = gtk_label_new(TOPTEXT_NO_SCALE) ;
   gtk_box_pack_start(GTK_BOX(navigator->wind_vbox), navigator->wind_top_label, FALSE, TRUE, 0);
@@ -152,7 +157,8 @@ void zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double b
 
 
 /* updates size/range to coords of the new view. */
-void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features)
+void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
+			  double top, double bottom)
 {
   GtkObject *region_adjuster, *window_adjuster ;
   gchar *region_top_str, *region_bot_str, *window_top_str, *window_bot_str ;
@@ -189,6 +195,8 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features)
       GTK_ADJUSTMENT(window_adjuster)->page_increment = 0.0 ;
       GTK_ADJUSTMENT(window_adjuster)->page_size = (gdouble)(abs(navigator->sequence_to_parent.c2
 								 - navigator->sequence_to_parent.c1) + 1) ;
+
+      zMapNavigatorSetWindowPos(navigator, top, bottom) ;
     }
   else
     {
