@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  6 16:57 2004 (edgrif)
+ * Last edited: Apr 23 19:52 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapConfig_P.h,v 1.2 2004-04-08 16:46:33 edgrif Exp $
+ * CVS info:   $Id: zmapConfig_P.h,v 1.3 2004-04-27 09:46:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_P_H
@@ -40,31 +40,35 @@
 
 #define ZMAP_SEPARATOR "/"				    /* WE SHOULD BE ABLE TO CALL A FUNC
 							       FOR THIS..... */
-
 #define ZMAP_USER_CONFIG_DIR    ".ZMap"
 #define ZMAP_CONFIG_FILE        "ZMap"
 
 
-/* Holds a stanza copied from callers stanza in a form easier to process. */
-typedef struct
+/* A stanza consisting of a name and a set of elements. */
+typedef struct _ZMapConfigStanzaStruct
 {
   char *name ;
-  GList *elements ;					    /* Array of stanza elements. */
-} MyZMapConfigStanzaStruct, *MyZMapConfigStanza ;
+  GList *elements ;
+} ZMapConfigStanzaStruct, *ZMapConfigStanza ;
 
+/* A set of stanzas held as a list. Note duplication of stanza name, its actually in all the
+ * the stanzas as a set of stanzas must be of the same name under the current scheme.
+ * This may need to change of course.... */
+typedef struct _ZMapConfigStanzaSetStruct
+{
+  char *name ;
+  GList *stanzas ;
+} ZMapConfigStanzaSetStruct, *ZMapConfigStanzaSet ;
 
-
-
-
+/* A configuration, including the configuration file and the list of stanzas derived from
+ * that file. */
 typedef struct _ZMapConfigStruct
 {
   char *config_dir ;
   char *config_file ;
 
-  GList *stanzas ;					    /* List of all config stanzas. */
-
+  GList *stanzas ;
 } ZMapConfigStruct ;
-
 
 
 /* These functions are internal to zmapConfig and should not be used outside of this package. */
@@ -73,7 +77,7 @@ gboolean zmapMakeUserConfig(ZMapConfig config) ;
 
 gboolean zmapGetConfigStanzas(ZMapConfig config,
 			      ZMapConfigStanza spec_stanza, ZMapConfigStanzaSet *stanzas_out) ;
-
+void zmapConfigDeleteStanzaSet(ZMapConfigStanzaSet stanzas) ;
 ZMapConfigStanza zmapConfigCreateStanza(char *stanza_name) ;
 ZMapConfigStanza zmapConfigCopyStanza(ZMapConfigStanza stanza_in) ;
 void zmapConfigDestroyStanza(ZMapConfigStanza stanza) ;
