@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 22 16:00 2005 (edgrif)
+ * Last edited: Mar 23 17:24 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.66 2005-03-23 07:55:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.67 2005-03-23 17:25:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -164,6 +164,8 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   g_signal_connect(GTK_OBJECT(window->scrolledWindow), "size-allocate",
 		   GTK_SIGNAL_FUNC(sizeAllocateCB), (gpointer)window) ;
 
+  /* ACTUALLY I'M NOT SURE WHY THE SCROLLED WINDOW IS GETTING THESE...WHY NOT JUST SEND
+   * DIRECT TO CANVAS.... */
   /* This handler receives the feature data from the threads. */
   gtk_signal_connect(GTK_OBJECT(window->toplevel), "client_event", 
 		     GTK_SIGNAL_FUNC(dataEventCB), (gpointer)window) ;
@@ -186,15 +188,23 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
 
   /* This is a general handler that does stuff like handle "click to focus", it gets run
-   * _before_ any canvas item handlers. */
+   * _BEFORE_ any canvas item handlers (there seems to be no way with the current
+   * foocanvas/gtk to get an event run _after_ the canvas handlers, you cannot for instance
+   * just use  g_signal_connect_after(). */
   g_signal_connect(GTK_OBJECT(window->canvas), "event",
 		   GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I need to think about whether this is any use, it doesn't get called unless an item
+   * has already received the click, currently we have no use for this.... */
 
   /* Wierdly this doesn't get run _unless_ the click/event happens on a child of the
    * root first...sigh..... */
   g_signal_connect(GTK_OBJECT(foo_canvas_root(window->canvas)), "event",
 		   GTK_SIGNAL_FUNC(canvasRootEventCB), (gpointer)window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Attach callback to monitor size changes in canvas, this works but bizarrely
    * "configure-event" callbacks which are the pucker size change event are never called. */
@@ -202,7 +212,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 		   GTK_SIGNAL_FUNC(canvasSizeAllocateCB), (gpointer)window) ;
 
  
-  /* NONE OF THIS SHOULD BE HARD CODED................. */
+  /* NONE OF THIS SHOULD BE HARD CODED constants it should be based on window size etc... */
   /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
   GTK_LAYOUT(canvas)->vadjustment->step_increment = ZMAP_WINDOW_STEP_INCREMENT;
   GTK_LAYOUT(canvas)->hadjustment->step_increment = ZMAP_WINDOW_STEP_INCREMENT;
@@ -311,7 +321,8 @@ void zMapWindowSetMinZoom(ZMapWindow window)
  * achieve realised status (ie GTK_WIDGET_REALIZED yields TRUE) without having a 
  * valid vertical dimension. 
  *
- * No, that's not the problem, it is realised, it just hasn't got sized properly yet.
+ * Rob,
+ *    No, that's not the problem, it is realised, it just hasn't got sized properly yet. Ed
  * 
  *  */
 void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_features,
@@ -1174,20 +1185,18 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
   gboolean event_handled ;
   ZMapWindow window = (ZMapWindow)data ;
 
-
   /* MUST be false if the other per-item event handlers are to run.  */
   event_handled = FALSE ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("GENERAL canvas event handler\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   switch (event->type)
     {
     case GDK_BUTTON_PRESS:
       {
+	GdkEventButton *but_event = (GdkEventButton *)event ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	printf("GENERAL event handler - CLICK\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
 	 * (i.e. short cuts) will be delivered to some other widget. */
@@ -1197,24 +1206,52 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	 * because that is what this if for.... */
 	(*(window_cbs_G->click))(window, window->app_data, NULL) ;
 
-
-	/* Oh dear, we would like to do a general back ground menu here but can't as we need
-	 * to pass the event along in case it goes to a canvas item....aggghhhh */
-
-	break ;
-      }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    case GDK_BUTTON_RELEASE:
-      {
-	/* Call the callers routine for button clicks. */
-	window_cbs_G->click(window, window->app_data, NULL) ;
 	
-	event_handled = FALSE ;
+	/* Button 2 is handled, we centre on that position, 1 and 3 are passed on as they may
+	 * be clicks on canvas items/columns. */
+	switch (but_event->button)
+	  {
+	    /* We don't do anything for button 1 or any buttons > 3. */
+	  default:
+	  case 1:
+	    {
+	      event_handled = FALSE ;
+	      break ;
+	    }
+	  case 2:
+	    {
+	      GtkAdjustment *v_adjuster ;
+	      double new_value ;
+	      double half_way ;
+
+	      v_adjuster = 
+		gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow)) ;
+
+	      half_way = (v_adjuster->page_size / 2) ;
+
+	      new_value = v_adjuster->value +
+		((double)but_event->y - (v_adjuster->value + half_way)) ;
+
+	      if (new_value + v_adjuster->page_size > v_adjuster->upper)
+		new_value = new_value - ((new_value + v_adjuster->page_size) - v_adjuster->upper) ;
+
+	      gtk_adjustment_set_value(v_adjuster, new_value) ;
+
+	      event_handled = TRUE ;
+	      break ;
+	    }
+	  case 3:
+	    {
+	      /* Oh dear, we would like to do a general back ground menu here but can't as we need
+	       * to pass the event along in case it goes to a canvas item....aggghhhh */
+
+	      event_handled = FALSE ;
+	      break ;
+	    }
+	  }
+
 	break ;
       }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     case GDK_KEY_PRESS:
       {
 	GdkEventKey *key_event = (GdkEventKey *)event ;
@@ -1227,10 +1264,11 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	  case GDK_Down:
 	  case GDK_Left:
 	  case GDK_Right:
-	    moveWindow(window, key_event->state, key_event->keyval) ;
-	    event_handled = TRUE ;
-	    break ;
-
+	    {
+	      moveWindow(window, key_event->state, key_event->keyval) ;
+	      event_handled = TRUE ;
+	      break ;
+	    }
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      case GDK_Home:
 		kval = HOME_KEY ; break ;
@@ -1242,31 +1280,11 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	    event_handled = FALSE ;
 	    break ;
 	  }
-
-
 	
 	break ;
       }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Disabled because we now do "click to focus" */
-    case GDK_ENTER_NOTIFY:
-      {
-	event_handled = TRUE ;
-
-	break ;
-      }
-    case GDK_LEAVE_NOTIFY:
-      {
-	event_handled = TRUE ;
-
-	break ;
-      }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     default:
       {
-	/* By default we _don't_handle events. */
 	event_handled = FALSE ;
 
 	break ;
@@ -1278,6 +1296,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 }
 
 
+/* THIS FUNCTION IS NOT CURRENTLY USED BUT I'VE KEPT IT IN CASE WE NEED A
+ * HANDLER THAT WILL RESPOND TO EVENTS ON ALL ITEMS.... */
 
 /* Handle any events that are not intercepted by items or columns on the canvas,
  * I'm not sure how often this will be called as probably it will be covered mostly
@@ -1296,7 +1316,10 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
     {
     case GDK_BUTTON_PRESS:
       {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	printf("ROOT group event handler - CLICK\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
