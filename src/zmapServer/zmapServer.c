@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Jul 29 14:59 2004 (edgrif)
+ * Last edited: Sep 13 09:57 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.8 2004-08-02 14:09:30 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.9 2004-09-13 12:58:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,21 +58,27 @@ gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out)
    * even using dynamically constructed function names....  */
   if (strcasecmp(protocol, "acedb") == 0)
     {
-      acedbGetServerFuncs(serverfuncs) ;		    /* Must not fail..check with assert ? */
+      acedbGetServerFuncs(serverfuncs) ;
     }
   else if (strcasecmp(protocol, "das") == 0)
     {
-      dasGetServerFuncs(serverfuncs) ;			    /* Must not fail..check with assert ? */
+      dasGetServerFuncs(serverfuncs) ;
+    }
+  else if (strcasecmp(protocol, "file") == 0)
+    {
+      fileGetServerFuncs(serverfuncs) ;
     }
   else
     {
-      /* Fatal error..... */
-      /* THIS "Internal Error" SHOULD BE IN A MACRO SO WE GET CONSISTENT MESSAGES..... */
-      zMapLogFatal("Internal Error: unsupported server protocol: %s", protocol) ;
-
+      /* Fatal coding error, we exit here..... */
+      zMapLogFatal("Unsupported server protocol: %s", protocol) ;
     }
 
-
+  /* All functions MUST be specified. */
+  zMapAssert(serverfuncs->global_init && serverfuncs->create && serverfuncs->open
+	     && serverfuncs->request && serverfuncs->errmsg
+	     && serverfuncs->close && serverfuncs->destroy) ;
+  
   /* Call the global init function. */
   if (result)
     {
