@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 20 10:48 2004 (edgrif)
+ * Last edited: Jul 21 09:41 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.22 2004-07-20 09:51:03 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.23 2004-07-21 08:42:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,6 +67,9 @@ static void dataLoadCB(ZMapView view, void *app_data) ;
 static void focusCB(ZMapViewWindow view_window, void *app_data) ;
 static void viewKilledCB(ZMapView view, void *app_data) ;
 static gboolean lookForViewWindow(GNode *node, gpointer data) ;
+
+static void updateControl(ZMap zmap, ZMapView view) ;
+
 
 
 /* These callback routines are static because they are set just once for the lifetime of the
@@ -364,7 +367,10 @@ void zmapControlNewCB(ZMap zmap, char *testing_text)
     {
       ZMapView view ;
 
-      view = addView(zmap, testing_text) ;
+      if ((view = addView(zmap, testing_text)))
+	status = zMapViewConnect(view) ;
+
+
     }
 
   return ;
@@ -507,20 +513,9 @@ static ZMapView addView(ZMap zmap, char *sequence)
 static void dataLoadCB(ZMapView view, void *app_data)
 {
   ZMap zmap = (ZMap)app_data ;
-  ZMapFeatureContext features ;
-  char *title ;
 
-  features = zMapViewGetFeatures(view) ;
-
-  /* Update navigator. */
-  zmap->navigator->sequence_to_parent = features->sequence_to_parent;
-  zmapControlNavigatorNewView(zmap->navigator) ;
-
-
-  /* Update title bar of zmap window. */
-  title = g_strdup_printf("%s - %s", zmap->zmap_id, features->sequence) ;
-  gtk_window_set_title(GTK_WINDOW(zmap->toplevel), title) ;
-  g_free(title) ;
+  /* Update title etc. */
+  updateControl(zmap, view) ;
 
   return ;
 }
@@ -542,6 +537,9 @@ static void focusCB(ZMapViewWindow view_window, void *app_data)
 
   /* Change focus.... */
   zmapRecordFocus(view_search.parent_pane) ;
+
+  /* If view has features then change the window title. */
+  updateControl(zmap, view) ;
 
   return ;
 }
@@ -656,5 +654,38 @@ static gboolean findViewInZMap(ZMap zmap, ZMapView view)
 }
 
 
+static void updateControl(ZMap zmap, ZMapView view)
+{
+
+  /* We only do this if the view is the current one. */
+  if ((view = zMapViewGetView(zmap->focuspane->curr_view_window)))
+    {
+      ZMapFeatureContext features ;
+      ZMapMapBlock sequence_to_parent_mapping = NULL ;
+      char *title, *seq_name ;
+
+      features = zMapViewGetFeatures(view) ;
+
+      /* this is not correct, should be able to cope with something that is not yet loaded yet.....
+       * so navigator and title bar need to be able to display a default "blank" view.... */
+      /* Update navigator. */
+      if (features)
+	sequence_to_parent_mapping = &(features->sequence_to_parent) ;
+
+      zmapControlNavigatorNewView(zmap->navigator, sequence_to_parent_mapping) ;
+
+
+      /* Update title bar of zmap window. */
+      seq_name = zMapViewGetSequence(view) ;
+      title = g_strdup_printf("%s - %s%s", zmap->zmap_id,
+			      seq_name ? seq_name : "<no sequence>",
+			      features ? "" : " <no sequence loaded>") ;
+      gtk_window_set_title(GTK_WINDOW(zmap->toplevel), title) ;
+      g_free(title) ;
+    }
+
+
+  return ;
+}
 
 
