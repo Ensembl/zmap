@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Jul 21 16:58 2004 (edgrif)
+ * Last edited: Nov 11 15:25 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.11 2004-07-21 16:07:12 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.12 2004-11-12 11:53:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -249,7 +249,7 @@ ZMapConfigStanzaElement zMapConfigFindElement(ZMapConfigStanza stanza, char *ele
 	      break ;
 	    }
 	}
-      while (element_list = g_list_next(element_list)) ;
+      while ((element_list = g_list_next(element_list))) ;
     }
 
   return result ;
