@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan  7 13:36 2005 (edgrif)
+ * Last edited: Jan 24 10:35 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.57 2005-01-10 09:56:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.58 2005-01-24 11:44:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,20 +44,22 @@
 
 /* This struct is used to pass data to realizeHandlerCB
  * via the g_signal_connect on the canvas's expose_event. */
-typedef struct _RealizeDataStruct {
+typedef struct _RealiseDataStruct
+{
   ZMapWindow          window;
-  void               *view;
-  ZMapFeatureContext  current_features;
-  ZMapFeatureContext  new_features;
-  GData              *types;
-} RealizeDataStruct, *RealizeData;
+  int x, y ;						    /* Initial position of window. */
+  ZMapFeatureContext  current_features ;
+  ZMapFeatureContext  new_features ;
+  GData              *types ;
+} RealiseDataStruct, *RealiseData ;
 
 
 
 static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
-static gboolean canvasEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 
 static void clickCB             (ZMapWindow window, void *caller_data, void *window_data) ;
 static gboolean rightClickCB    (ZMapWindow window, ZMapFeatureItem featureItem);
@@ -80,8 +82,13 @@ static void changeRegion(ZMapWindow window, guint keyval) ;
 /* Callbacks we make back to the level above us. */
 static ZMapWindowCallbacks window_cbs_G = NULL ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Callbacks to us from the level below, ie zmapWindowDrawFeatures */
-ZMapFeatureCallbacksStruct feature_cbs_G = { clickCB, rightClickCB };
+static ZMapFeatureCallbacksStruct feature_cbs_G = { clickCB, rightClickCB } ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -95,12 +102,15 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
 {
   zMapAssert(!window_cbs_G) ;
 
-  zMapAssert(callbacks && callbacks->scroll && callbacks->click && callbacks->visibilityChange
-	     && callbacks->destroy) ;
-
+  zMapAssert(callbacks
+	     && callbacks->enter && callbacks->leave
+	     && callbacks->scroll && callbacks->click
+	     && callbacks->visibilityChange && callbacks->destroy) ;
 
   window_cbs_G = g_new0(ZMapWindowCallbacksStruct, 1) ;
 
+  window_cbs_G->enter  = callbacks->enter ;
+  window_cbs_G->leave   = callbacks->leave ;
   window_cbs_G->scroll  = callbacks->scroll ;
   window_cbs_G->click   = callbacks->click ;
   window_cbs_G->setZoomStatus = callbacks->setZoomStatus;
@@ -109,7 +119,11 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
 
   window_cbs_G->destroy = callbacks->destroy ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapFeatureInit(&feature_cbs_G);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -131,6 +145,9 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   zMapAssert(parent_widget && sequence && *sequence && app_data) ;
 
   window = g_new0(ZMapWindowStruct, 1) ;
+
+  window->caller_cbs = window_cbs_G ;
+
   window->sequence = g_strdup(sequence) ;
   window->app_data = app_data ;
   window->parent_widget = parent_widget ;
@@ -179,50 +196,81 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   /* I've tried to attach this after the default signal handler but it still seems to intercept
    * any calls to canvas items... */
   g_signal_connect_after(GTK_OBJECT(window->canvas), "event",
-			 GTK_SIGNAL_FUNC(canvasEventCB), (gpointer)window) ;
+			 GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
 
 
+  /* I'm going to try attaching this to the root group instead..... */
+  g_signal_connect_after(GTK_OBJECT(foo_canvas_root(window->canvas)), "event",
+			 GTK_SIGNAL_FUNC(canvasRootEventCB), (gpointer)window) ;
+  
   /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
   GTK_LAYOUT(canvas)->vadjustment->step_increment = ZMAP_WINDOW_STEP_INCREMENT;
   GTK_LAYOUT(canvas)->hadjustment->step_increment = ZMAP_WINDOW_STEP_INCREMENT;
   GTK_LAYOUT(canvas)->vadjustment->page_increment = ZMAP_WINDOW_PAGE_INCREMENT;
 
-  /* Get everything sized up....I don't know if this is really needed here or not. */
   gtk_widget_show_all(window->parent_widget) ;
 
-  return(window) ; 
+  return window ; 
 }
 
 
+/* Makes a new window that is a copy of the existing one, zoom factor and all.
+ * Actually this is rubbish....if its a copy why are we putting in the features ? */
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
-			  void *app_data, ZMapWindow old)
+			  void *app_data, ZMapWindow copy_window,
+			  ZMapFeatureContext feature_context, GData *types)
 {
-  ZMapWindow new = zMapWindowCreate(parent_widget, sequence, app_data);
-  int x, y;
+  ZMapWindow new = NULL ;
 
-  if (new)
+  if ((new = zMapWindowCreate(parent_widget, sequence, app_data)))
     {
-      new->zoom_factor        = old->zoom_factor;
-      new->zoom_status        = old->zoom_status = ZMAP_ZOOM_MID;
-      new->max_zoom           = old->max_zoom;
-      new->canvas_maxwin_size = old->canvas_maxwin_size;
-      new->border_pixels      = old->border_pixels;
-      new->DNAwidth           = old->DNAwidth;
-      new->text_height        = old->text_height;
-      new->seqLength          = old->seqLength;
-      new->seq_start          = old->seq_start;
-      new->focusFeature       = old->focusFeature;
-      new->focusType          = old->focusType;
-      new->typeName           = old->typeName;
-      new->focusQuark         = old->focusQuark;
+      double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
+      int x, y ;
 
-      foo_canvas_get_scroll_offsets(old->canvas, &x, &y);
-      foo_canvas_c2w(old->canvas, x, y, &new->current_x, &new->current_y);
-      foo_canvas_get_scroll_region(old->canvas, &new->scroll_x1, &new->scroll_y1,
-				   &new->scroll_x2, &new->scroll_y2);
+      new->zoom_factor        = copy_window->zoom_factor;
+      new->zoom_status        = copy_window->zoom_status = ZMAP_ZOOM_MID;
+      new->max_zoom           = copy_window->max_zoom;
+      new->canvas_maxwin_size = copy_window->canvas_maxwin_size;
+      new->border_pixels      = copy_window->border_pixels;
+      new->DNAwidth           = copy_window->DNAwidth;
+      new->text_height        = copy_window->text_height;
+      new->seqLength          = copy_window->seqLength;
+      new->seq_start          = copy_window->seq_start;
+      new->focusFeature       = copy_window->focusFeature;
+      new->focusType          = copy_window->focusType;
+      new->typeName           = copy_window->typeName;
+      new->focusQuark         = copy_window->focusQuark;
+
+
+      /* Draw the features on the canvas, note that we already have features so we don't
+       * need to do the stuff with event handlers etc. */
+      zmapWindowDrawFeatures(new, feature_context, types) ;
+
+
+      /* Set the zoom factor, there is no call to get hold of pixels_per_unit so we dive.
+       * into the struct. */
+      foo_canvas_set_pixels_per_unit_xy(new->canvas,
+					copy_window->canvas->pixels_per_unit_x, copy_window->canvas->pixels_per_unit_y) ;
+
+
+      foo_canvas_get_scroll_region(copy_window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
+      foo_canvas_set_scroll_region(new->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
+
+      foo_canvas_get_scroll_offsets(copy_window->canvas, &x, &y) ;
+
+      foo_canvas_scroll_to(new->canvas, x, y) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      foo_canvas_get_scroll_offsets(new->canvas, &x, &y) ;
+
+      printf("here\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
     }
 			      
-  return new;
+  return new ;
 }
 
 
@@ -250,32 +298,34 @@ void zMapWindowSetMinZoom(ZMapWindow window)
  * that data exists and work needs to be done.  If not, it attaches a callback
  * routine, exposeHandlerCB to the expose_event for the canvas so that when that
  * occurs, exposeHandlerCB can issue the call to sendClientEvent.
- * We'd have used the realize signal if we could, but somehow the canvas manages to
- * achieve realized status (ie GTK_WIDGET_REALIZED yields TRUE) without having a 
+ * We'd have used the realise signal if we could, but somehow the canvas manages to
+ * achieve realised status (ie GTK_WIDGET_REALIZED yields TRUE) without having a 
  * valid vertical dimension. 
  */
 void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_features,
-			   ZMapFeatureContext new_features, GData *types,
-			   void *zmap_view)
+			   ZMapFeatureContext new_features, GData *types)
 {
-  RealizeData realizeData = g_new0(RealizeDataStruct, 1);  /* freed in exposeHandlerCB() */
+  RealiseData realiseData ;
+
+  realiseData = g_new0(RealiseDataStruct, 1) ;		    /* freed in exposeHandlerCB() */
 
   if (GTK_WIDGET(window->canvas)->allocation.height > 1
       && GTK_WIDGET(window->canvas)->window)
     {
-      sendClientEvent(window, current_features, new_features, types);
+      sendClientEvent(window, current_features, new_features, types) ;
     }
   else
     {
-      realizeData->window           = window;
-      realizeData->view             = zmap_view;
-      realizeData->current_features = current_features;
-      realizeData->new_features     = new_features;
-      realizeData->types            = types;
+      realiseData->window = window ;
+      realiseData->current_features = current_features;
+      realiseData->new_features = new_features;
+      realiseData->types = types;
       window->exposeHandlerCB = g_signal_connect(GTK_OBJECT(window->canvas), "expose_event",
-						  GTK_SIGNAL_FUNC(exposeHandlerCB), (gpointer)realizeData);
+						 GTK_SIGNAL_FUNC(exposeHandlerCB),
+						 (gpointer)realiseData) ;
     }
-  return;
+
+  return ;
 }
 
 
@@ -305,7 +355,11 @@ ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window)
 
 void zmapWindowSetPageIncr(ZMapWindow window)
 {
-  GTK_LAYOUT(window->canvas)->vadjustment->page_increment = GTK_WIDGET(window->canvas)->allocation.height - 50;
+  /* WHY IS THIS  - 50, you should have documented this Rob........ */
+
+  GTK_LAYOUT(window->canvas)->vadjustment->page_increment
+    = GTK_WIDGET(window->canvas)->allocation.height - 50 ;
+
   return;
 }
 
@@ -367,7 +421,6 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 {
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
   GtkAdjustment *adjust;
-  ZMapCanvasData canvasData ;
   int x, y ;
   double width, curr_pos = 0.0 ;
   double new_zoom, canvas_zoom ;
@@ -378,9 +431,6 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
 
   adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow)) ;
-
-  canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
-
 
   /* We don't zoom in further than is necessary to show individual bases or further out than
    * is necessary to show the whole sequence, or if the sequence is so short that it can be
@@ -486,12 +536,9 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 					top, bot,
 					&(window->major_scale_units), &(window->minor_scale_units));
 
-  window->scroll_x1 = x1;
-  window->scroll_y1 = top;
-  window->scroll_x2 = x2;
-  window->scroll_y2 = bot;
 
-
+  /* Presumeably this only needs to be done if the extent of the features is longer than the
+   * scrolled region ? Really this call to g_datalist should be within a function.... */
   /* There is a hard limit on the absolute size of an xwindow of 32k pixels, some objects which
    * span the whole of a sequence may exceed this as we zoom in and therefore we need to crop
    * them. */
@@ -531,6 +578,19 @@ void zMapWindowMove(ZMapWindow window, double start, double end)
     {
       foo_canvas_set_scroll_region(window->canvas, x1, start, x2, end) ;
     }
+
+
+  /* Redraw the scale bar. */
+  zMapAssert(FOO_IS_CANVAS_ITEM (window->scaleBarGroup)) ;
+
+  gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup)) ;
+
+  window->scaleBarGroup = zmapDrawScale(window->canvas,
+					window->scaleBarOffset, 
+					window->zoom_factor,
+					start, end,
+					&(window->major_scale_units), &(window->minor_scale_units)) ;
+
 
   /* Call the visibility change callback to notify our caller that our zoom/position has
    * changed, note there is some redundancy here if the call to this routine came as a.
@@ -576,23 +636,27 @@ gchar *zMapWindowGetTypeName(ZMapWindow window)
 }
 
 
+
 void zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data)
 {
-  ZMapWindowLongItem longItem = (ZMapWindowLongItem)data;
-  ZMapWindow window = (ZMapWindow)user_data;
-  double start, end;
+  ZMapWindowLongItem longItem = (ZMapWindowLongItem)data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+  double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
+  double start, end ;
+
+  foo_canvas_get_scroll_region(window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
 
   start = longItem->start;
   end  = longItem->end;
 
-  if ((longItem->start <= window->scroll_y1    && longItem->end >= window->scroll_y2)
-      || (longItem->start <= window->scroll_y1 && longItem->end >= window->scroll_y1)
-      || (longItem->start <= window->scroll_y2 && longItem->end >= window->scroll_y2))
+  if ((longItem->start <= scroll_y1 && longItem->end >= scroll_y2)
+      || (longItem->start <= scroll_y1 && longItem->end >= scroll_y1)
+      || (longItem->start <= scroll_y2 && longItem->end >= scroll_y2))
     {
-      if (longItem->start < window->scroll_y1)
-	start = window->scroll_y1 - 10;
-      if (longItem->end > window->scroll_y2)
-	end = window->scroll_y2 + 10;
+      if (longItem->start < scroll_y1)
+	start = scroll_y1 - 10;
+      if (longItem->end > scroll_y2)
+	end = scroll_y2 + 10;
 
       if (longItem->end > longItem->start)
 	foo_canvas_item_set(longItem->canvasItem,
@@ -775,7 +839,7 @@ static void changeRegion(ZMapWindow window, guint keyval)
       foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2) ;
 
       /* Call the visibility change callback to notify our caller that our zoom/position has
-       * changed, note there is some redundancy here if the call to this routine came as a.
+       * changed, note there is some redundancy here if the call to this routine came as a
        * result of the user interaction then there may be no need to do this....think about this. */
       vis_change.zoom_status = window->zoom_status ;
       vis_change.scrollable_top = y1 ;
@@ -787,16 +851,15 @@ static void changeRegion(ZMapWindow window, guint keyval)
 }
 
 
-
+/* widget is the scrolled_window, user_data is the zmapWindow */
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data)
 {
-  /* widget is the scrolled_window, user_data is the zmapWindow */
-
   ZMapWindow window = (ZMapWindow)user_data;
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
 	 alloc->x, alloc->y, alloc->height, alloc->width); 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   if (window->seqLength) /* when window first drawn, seqLength = 0 */
     {
@@ -808,7 +871,7 @@ static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer use
       zmapWindowSetPageIncr(window); 
 
       /* call the function given us by zmapView.c to set zoom buttons for this window */
-      /*      (*(window_cbs_G->setZoomButtons))(realizeData->window, realizeData->view);*/
+      /*      (*(window_cbs_G->setZoomButtons))(realiseData->window, realiseData->view);*/
 
     }
 
@@ -825,27 +888,32 @@ static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer use
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
 {
   /* widget is the canvas, user_data is the realizeData structure */
-  RealizeData realizeData = (RealizeDataStruct*)user_data;
+  RealiseData realiseData = (RealiseDataStruct*)user_data;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("exposeHandlerCB\n");
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   /* call the function given us by zmapView.c to set zoom_status
    * for all windows in this view. */
-  (*(window_cbs_G->setZoomStatus))(realizeData->window, realizeData->view, NULL);
+  (*(window_cbs_G->setZoomStatus))(realiseData->window, realiseData->window->app_data, NULL);
 
   zMapAssert(GTK_WIDGET_REALIZED(widget));
 
   /* disconnect signal handler before calling sendClientEvent otherwise when splitting
    * windows, the scroll-to which positions the new window in the same place on the
    * sequence as the previous one, will trigger another call to this function.  */
-  g_signal_handler_disconnect(G_OBJECT(widget), realizeData->window->exposeHandlerCB);
+  g_signal_handler_disconnect(G_OBJECT(widget), realiseData->window->exposeHandlerCB);
 
-  sendClientEvent(realizeData->window, 
-		  realizeData->current_features, 
-		  realizeData->new_features, 
-		  realizeData->types);
+  sendClientEvent(realiseData->window, 
+		  realiseData->current_features, 
+		  realiseData->new_features, 
+		  realiseData->types);
 
-  realizeData->window->exposeHandlerCB = 0 ;
-  g_free(realizeData);
+  realiseData->window->exposeHandlerCB = 0 ;
+
+  g_free(realiseData);
 
   return FALSE;  /* ie allow any other callbacks to run as well */
 }
@@ -961,6 +1029,10 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       /* ****Remember that someone needs to free the data passed over....****  */
 
 
+      /* We need to validate the feature_context at this point, we should be sure it contains
+       * some features before continuing. */
+
+
       /* Draw the features on the canvas */
       zmapWindowDrawFeatures(window, feature_context, window_data->types) ;
 
@@ -979,28 +1051,6 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 
   return event_handled ;
 }
-
-
-
-static void clickCB(ZMapWindow window, void *caller_data, void *window_data)
-{
-  ZMapFeature feature = (ZMapFeature)window_data ;
-
-  (*(window_cbs_G->click))(window, caller_data, feature);
-
-  return;
-}
-
-
-static gboolean rightClickCB(ZMapWindow window, ZMapFeatureItem featureItem)
-{
-  /* user selects new feature in this column */
-  zMapWindowCreateListWindow(window, featureItem);
-
-  return TRUE;
-}
-
-
 
 
 /* Read logging information from the configuration, note that we read _only_ the first
@@ -1047,35 +1097,46 @@ static gboolean getConfiguration(ZMapWindow window)
 
 /* Handle any events that are not intercepted by items on the canvas, items could be columns
  * or the features within columns. */
-static gboolean canvasEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
+static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
   ZMapWindow window = (ZMapWindow)data ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("GENERAL canvas event handler\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   switch (event->type)
     {
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* SOMETIME WE WILL WANT TO DO A MENU HERE FOR THE BACKGROUND.... */
     case GDK_BUTTON_PRESS:
       {
-	printf("basic canvas event handler: button release\n") ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	/* Not sure if we need this currently..... */
 
 	/* Call the callers routine for button clicks. */
 	window_cbs_G->click(window, window->app_data, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	event_handled = FALSE ;
+	break ;
+      }
+
+    case GDK_BUTTON_RELEASE:
+      {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	/* Call the callers routine for button clicks. */
+	window_cbs_G->click(window, window->app_data, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	
 	event_handled = FALSE ;
 	break ;
       }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     case GDK_KEY_PRESS:
       {
 	GdkEventKey *key_event = (GdkEventKey *)event ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	printf("basic canvas event handler: key press\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	switch (key_event->keyval)
 	  {
@@ -1086,6 +1147,7 @@ static gboolean canvasEventCB(GtkWidget *widget, GdkEventClient *event, gpointer
 	  case GDK_Left:
 	  case GDK_Right:
 	    moveWindow(window, key_event->state, key_event->keyval) ;
+	    event_handled = TRUE ;
 	    break ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1100,7 +1162,7 @@ static gboolean canvasEventCB(GtkWidget *widget, GdkEventClient *event, gpointer
 	    break ;
 	  }
 
-	event_handled = TRUE ;
+
 	
 	break ;
       }
@@ -1109,6 +1171,16 @@ static gboolean canvasEventCB(GtkWidget *widget, GdkEventClient *event, gpointer
 	/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
 	 * (i.e. short cuts) will be delivered to some other widget. */
 	gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
+
+	(*(window_cbs_G->enter))(window, window->app_data, NULL) ;
+
+	event_handled = TRUE ;
+
+	break ;
+      }
+    case GDK_LEAVE_NOTIFY:
+      {
+	(*(window_cbs_G->leave))(window, window->app_data, NULL) ;
 
 	event_handled = TRUE ;
 
@@ -1124,6 +1196,59 @@ static gboolean canvasEventCB(GtkWidget *widget, GdkEventClient *event, gpointer
 
   return event_handled ;
 }
+
+
+
+/* Handle any events that are not intercepted by items or columns on the canvas,
+ * I'm not sure how often this will be called as probably it will be covered mostly
+ * by the column or item things...or the features within columns. */
+static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
+{
+  gboolean event_handled = FALSE ;
+  ZMapWindow window = (ZMapWindow)data ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("ROOT canvas event handler\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  switch (event->type)
+    {
+    case GDK_BUTTON_PRESS:
+      {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	/* Call the callers routine for button clicks. */
+	window_cbs_G->click(window, window->app_data, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	
+	event_handled = TRUE ;
+	break ;
+      }
+    case GDK_BUTTON_RELEASE:
+      {
+	printf("GENERAL canvas event handler: button release\n") ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	/* Call the callers routine for button clicks. */
+	window_cbs_G->click(window, window->app_data, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	
+	event_handled = FALSE ;
+	break ;
+      }
+    default:
+      {
+	event_handled = FALSE ;
+
+	break ;
+      }
+    }
+
+  return event_handled ;
+}
+
+
 
 
 
@@ -1144,6 +1269,8 @@ void zMapWindowSetHandle(ZMapWindow window)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zMapWindowSetBorderWidth(GtkWidget *container, int width)
 {
   gtk_container_border_width(GTK_CONTAINER(container), width);
@@ -1172,6 +1299,8 @@ Coord zMapWindowGetCoord(ZMapWindow window, char *field)
   */
   return 0;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1210,6 +1339,8 @@ ScreenCoord zMapWindowGetScreenCoord(ZMapWindow window, Coord coord, int height)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* ZMapRegion functions */
 
 GPtrArray *zMapRegionNewMethods(ZMapRegion *region)
@@ -1267,6 +1398,8 @@ void zMapRegionFreeDNA(ZMapRegion *region)
   return; 
 
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
