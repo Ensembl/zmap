@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: May 20 15:03 2004 (edgrif)
+ * Last edited: May 27 10:06 2004 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.2 2004-05-20 14:03:48 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.3 2004-05-27 13:38:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -69,7 +69,7 @@ gboolean zMapViewLoad(ZMapView zmap_view, char *sequence) ; /* sequence == NULL 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Don't exist but will be needed. */
 
-gboolean zMapViewAddViewWindow(ZMapView zmap_view) ;
+gboolean zMapViewAddViewWindow(GtkWidget *parent_widget, ZMapView zmap_view) ;
 gboolean zMapViewDeleteViewWindow(ZMapView zmap_view) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
