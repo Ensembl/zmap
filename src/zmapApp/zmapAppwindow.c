@@ -26,14 +26,19 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 26 14:40 2004 (edgrif)
+ * Last edited: Mar 11 09:28 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.5 2004-03-03 12:11:44 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.6 2004-03-12 15:15:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#include <glib/gthread.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <zmapApp_P.h>
 
 
@@ -58,8 +63,24 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
   GtkWidget *kill_button, *quit_button ;
 
-  initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
+#ifdef G_THREADS_ENABLED
+  printf("threads are enabled\n") ;
+#endif
 
+#ifdef G_THREADS_IMPL_NONE
+  printf("but there is no thread implementation\n") ;
+#endif
+
+#ifdef G_THREADS_IMPL_POSIX
+  printf("and posix threads are being used\n") ;
+#endif
+
+
+  /* For threaded stuff we apparently need this..... */
+  g_thread_init(NULL) ;
+
+
+  initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
