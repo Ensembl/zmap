@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 21 14:27 2004 (rnc)
+ * Last edited: Nov  3 16:46 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.44 2004-10-21 13:56:25 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.45 2004-11-04 12:45:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,8 +42,7 @@
 #include <ZMap/zmapWindowDrawFeatures.h>
 
 #define XWIN_MAXSIZE 30000.0   /* XWindows height limit is about 32k */
-#define PIXELS_PER_BASE 20.0   /* arbitrary text size to limit zooming in.  Must be tied
-			       ** in to actual text size dynamically some time soon. */
+
 
 static void dataEventCB        (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void canvasClickCB      (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
@@ -114,7 +113,8 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
   window->zmap_atom = gdk_atom_intern(ZMAP_ATOM, FALSE) ;
 
-  window->zoom_factor = 1 ; 
+  window->zoom_factor = 1 ;
+  window->zoom_status = ZMAP_ZOOM_INIT ;
   window->step_increment = 10;
   window->page_increment = 600;
 
@@ -234,6 +234,11 @@ GtkWidget *zMapWindowGetWidget(ZMapWindow window)
   return GTK_WIDGET(window->canvas) ;
 }
 
+ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window)
+{
+  return window->zoom_status ;
+}
+
 void zMapWindowDestroy(ZMapWindow window)
 {
   ZMapCanvasDataStruct *canvasData;
@@ -264,8 +269,9 @@ void zMapWindowDestroy(ZMapWindow window)
  * zoom_factor   > 1.0 means zoom in, < 1.0 means zoom out.
  * 
  *  */
-void zMapWindowZoom(ZMapWindow window, double zoom_factor)
+ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
 {
+  ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
   GtkAdjustment *adjust;
   ZMapCanvasDataStruct *canvasData ;
   int x, y ;
@@ -281,17 +287,15 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
 
   /* We don't zoom in further than is necessary to show individual bases or further out than
-   * is necessary to show the whole sequence. */
-  /* long term I'm going to have to actually work out whether we're down to one base per line,
-  ** but for now this is somewhere in the right ballpark. Assuming 20 pixels per base for now. */
-  if ((zoom_factor > 1.0 && window->zoom_factor == PIXELS_PER_BASE)
-      || (zoom_factor < 1.0 && window->zoom_factor == adjust->page_size / canvasData->seqLength))
+   * is necessary to show the whole sequence, or if the sequence is so short that it can be
+   * shown at max. zoom in its entirety. */
+  if (window->zoom_status == ZMAP_ZOOM_FIXED
+      || (zoom_factor > 1.0 && window->zoom_status == ZMAP_ZOOM_MAX)
+      || (zoom_factor < 1.0 && window->zoom_status == ZMAP_ZOOM_MIN))
     {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("At min or max zoom, no action taken\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      zoom_status = window->zoom_status ;
 
-      return ;
+      return zoom_status ;
     }
 
 
@@ -309,13 +313,21 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
   /* Calculate the zoom. */
   new_zoom = window->zoom_factor * zoom_factor ;
-  if (new_zoom > PIXELS_PER_BASE)
-    window->zoom_factor = PIXELS_PER_BASE ;
-  else if (new_zoom < adjust->page_size / canvasData->seqLength)
-    window->zoom_factor = adjust->page_size / canvasData->seqLength ;
+  if (new_zoom < canvasData->min_zoom)
+    {
+      window->zoom_factor = canvasData->min_zoom ;
+      window->zoom_status = zoom_status = ZMAP_ZOOM_MIN ;
+    }
+  else if (new_zoom > canvasData->max_zoom)
+    {
+      window->zoom_factor = canvasData->max_zoom ;
+      window->zoom_status = zoom_status = ZMAP_ZOOM_MAX ;
+    }
   else
-    window->zoom_factor = new_zoom ;
-
+    {
+      window->zoom_factor = new_zoom ;
+      window->zoom_status = zoom_status = ZMAP_ZOOM_MID ;
+    }
   canvas_zoom = 1 / window->zoom_factor ;
 
 
@@ -335,7 +347,9 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 		     : seq_span)) ;
 
 
-  /* Calculate the position of the new span clamping it within the extent of the sequence. */
+  /* Calculate the position of the new span clamping it within the extent of the sequence,
+   * note that if we end up going off the top or bottom we must slide the whole span down
+   * or up to ensure we expand the sequence view as we zoom out. */
   new_canvas_span = new_win_span * canvas_zoom ;
 
   top = curr_pos - (new_canvas_span / 2) ;
@@ -343,12 +357,14 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
   if (top < canvasData->seq_start)
     {
-      bot = bot + (canvasData->seq_start - top) ;
+      if ((bot = bot + (canvasData->seq_start - top)) > canvasData->seq_end)
+	bot = canvasData->seq_end ;
       top = canvasData->seq_start ;
     }
   else if (bot > canvasData->seq_end)
     {
-      top = top - (bot - canvasData->seq_end) ;
+      if ((top = top - (bot - canvasData->seq_end)) < canvasData->seq_start)
+	top = canvasData->seq_start ;
       bot = canvasData->seq_end ;
     }
 
@@ -359,10 +375,8 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("zmapWindowZoom() -\tzoom: %f\tscroll_region: %f, %f, %f, %f\n",
 	 window->zoom_factor, x1, top, x2, bot) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* Scroll to the previous position. */
@@ -380,8 +394,33 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 					    canvasData->feature_context->sequence_to_parent.c1, 
 					    canvasData->feature_context->sequence_to_parent.c2);
   
-  return;
+  return zoom_status ;
 }
+
+
+/* We just dip into the foocanvas struct for some data, we use the interface calls where they
+ * exist. */
+void zmapWindowPrintCanvas(FooCanvas *canvas)
+{
+  double x1, y1, x2, y2 ;
+
+
+  foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
+
+  printf("Canvas -\tzoom_x: %f\tzoom_y: %f\t"
+	 "scroll_x1: %f\tscroll_x2: %f\tscroll_y1: %f\tscroll_y2: %f\t"
+	 "\n", canvas->pixels_per_unit_x, canvas->pixels_per_unit_y,
+	 x1, x2, y1, y2) ;
+
+  return ;
+}
+
+
+
+/*
+ *  ------------------- Internal functions -------------------
+ */
+
 
 
 
@@ -413,11 +452,6 @@ static void hideUnhideColumn(GQuark key_id, gpointer data, gpointer user_data)
 }
 
 
-
-
-/*
- *  ------------------- Internal functions -------------------
- */
 
 
 

@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 20 14:28 2004 (rnc)
+ * Last edited: Nov  4 12:27 2004 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.26 2004-10-20 14:44:34 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.27 2004-11-04 12:45:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,6 +36,11 @@
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapWindowDrawFeatures.h>
+
+
+#define PIXELS_PER_BASE 20.0   /* arbitrary text size to limit zooming in.  Must be tied
+			       ** in to actual text size dynamically some time soon. */
+
 
 
 #define SCROLLBAR_OFFSET 170.0
@@ -49,6 +54,10 @@ static void     zmapWindowProcessFeature   (GQuark key_id, gpointer data, gpoint
 static void     columnClickCB              (ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
 static gboolean handleCanvasEvent          (GtkWidget *widget, GdkEventButton *event, gpointer data);
 static gboolean freeObjectKeys             (GtkWidget *widget, gpointer data);
+
+static void getTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out) ;
+
+
 
 /* These callback routines are static because they are set just once for the lifetime of the
  * process. */
@@ -131,8 +140,6 @@ static void columnClickCB(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet featu
  * 
  * 
  *  */
-
-
 void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_context, GData *types)
 {
   double         result;
@@ -145,6 +152,8 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
  
   if (feature_context)  /* Split an empty pane and you get here with no feature_context */
     {
+      double text_height, border_world ;
+
       canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
       canvasData->scaleBarOffset = SCROLLBAR_OFFSET;
       canvasData->types = types;
@@ -156,35 +165,69 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
       canvasData->seq_start = feature_context->sequence_to_parent.c1 ;
       canvasData->seq_end = feature_context->sequence_to_parent.c2 ;
 
+
+
       if (!(canvasData->channel = g_io_channel_new_file("features.out", "w", &channel_error)))
 	{
 	  printf("Unable to open output channel.  %d %s\n", channel_error->code, channel_error->message);
 	  g_error_free(channel_error);
 	}
 
-      /* make the sequence fit the default window */
+
+      /* Set the zoom factor by default we start at min zoom, BUT note that if user has a
+       * very short sequence it may be displayed at maximum zoom already. */
+      /* page size seems to be one bigger than we think...to get the bottom of the sequence
+       * shown properly we have to do the "- 1"...sigh... */
       v_adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
       h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
 
-      /* page size seems to be one bigger than we think...to get the bottom of the sequence
-       * shown properly we have to do the "- 1"...sigh... */
+
+      getTextDimensions(foo_canvas_root(window->canvas),
+			NULL, &text_height) ;
+
+      canvasData->border_pixels = text_height * 2 ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* THIS "- 1" FIDDLE WILL NOT BE NECESSARY WHEN THE BOUNDARY STUFF IS DONE. */
+
       window->zoom_factor = (v_adj->page_size - 1) / canvasData->seqLength;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      window->zoom_factor = v_adj->page_size / canvasData->seqLength ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+      /* I NEED TO FINISH THIS OFF BUT NEED TO DO A CHECK IN OF MY CODE.... */
+
+      /* adjust zoom to allow for top/bottom borders... */
+      border_world = canvasData->border_pixels / window->zoom_factor ;
+
+      window->zoom_factor = v_adj->page_size / (canvasData->seqLength + (2.0 * border_world))  ;
+							    /* Can't use c2w call because we
+							       haven't set the canvas zoom yet. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      window->zoom_status = ZMAP_ZOOM_MIN ;
+
+      if (window->zoom_factor > PIXELS_PER_BASE)
+	{
+	  window->zoom_factor = PIXELS_PER_BASE ;
+	  window->zoom_status = ZMAP_ZOOM_FIXED ;
+	}
 
       foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
 
-      window->page_increment = v_adj->page_size - 50;
-      GTK_LAYOUT(window->canvas)->vadjustment->page_increment = window->page_increment;
-  
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      foo_canvas_c2w(window->canvas, v_adj->page_size, h_adj->page_size, &x, &y);
-      printf("page_size (world) is %f\n", x);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      /* Record min/max zooms, the max zoom we want is large enough to hold the text required
+       * to display a DNA base or other text + a bit. */
+      canvasData->min_zoom = window->zoom_factor ;
+      canvasData->max_zoom = text_height + (double)(ZMAP_WINDOW_TEXT_BORDER * 2) ;
 
-      /* Set length of scroll region to the extent of the sequence data, width is set by default
-       * to that of the scrolled window. */
-      foo_canvas_set_scroll_region(window->canvas,
-				   0.0, canvasData->seq_start,
-				   h_adj->page_size, canvasData->seq_end) ;
+      window->page_increment = v_adj->page_size - 50 ;
+      GTK_LAYOUT(window->canvas)->vadjustment->page_increment = window->page_increment ;
+  
 
       /* Set root group to begin at 0, _vital_ for later feature placement. */
       window->group = foo_canvas_item_new(foo_canvas_root(window->canvas),
@@ -204,6 +247,31 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 
       if (feature_context)
 	g_datalist_foreach(&(feature_context->feature_sets), zmapWindowProcessFeatureSet, canvasData);
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Try here to get stuff set up....HAS TO GO AFTER ALL THE FEATURE DRAWING OTHERWISE
+       * SCROLL REGION GETS RESET TO LIE AROUND FEATURES ONLY. */
+      foo_canvas_set_scroll_region(window->canvas,
+				   0.0,
+				   (canvasData->seq_start - border_world),
+				   h_adj->page_size,
+				   (canvasData->seq_end + border_world)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      /* Try here to get stuff set up.... */
+      foo_canvas_set_scroll_region(window->canvas,
+				   0.0,
+				   canvasData->seq_start,
+				   h_adj->page_size,
+				   canvasData->seq_end) ;
+
+
+
+
+      zmapWindowPrintCanvas(window->canvas) ; 
+
     }
 
 
@@ -609,5 +677,36 @@ void zmapHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *canvasDat
 
   return;
 }
+
+
+/* Find out the text size for a group. */
+static void getTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out)
+{
+  double width = -1.0, height = -1.0 ;
+  FooCanvasItem *item ;
+
+  /* THIS IS A HACK, THE TEXT IS OFF THE SCREEN TO THE LEFT BECAUSE I DON'T KNOW HOW TO DELETE A
+   * CANVAS ITEM.....FIX THIS WHEN I FIND OUT.... */
+  item = foo_canvas_item_new(group,
+			     FOO_TYPE_CANVAS_TEXT,
+			     "x", -400.0, "y", 0.0, "text", "dummy",
+			     NULL);
+
+  g_object_get(GTK_OBJECT(item),
+	       "FooCanvasText::text_width", &width,
+	       "FooCanvasText::text_height", &height,
+	       NULL) ;
+
+  if (width_out)
+    *width_out = width ;
+  if (height_out)
+    *height_out = height ;
+
+  return ;
+}
+
+
+
+
 
 /****************** end of file ************************************/
