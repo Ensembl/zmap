@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Sep 17 09:55 2004 (rnc)
+ * Last edited: Sep 17 14:28 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.11 2004-09-17 08:56:55 rnc Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.12 2004-09-23 13:39:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -164,7 +164,7 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence, i
 
 
 
-ZMapServerResponseType zMapServerRequest(ZMapServer server, void *request)
+ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapProtocolAny request)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
