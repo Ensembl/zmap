@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Nov 22 21:39 2004 (edgrif)
+ * Last edited: Nov 23 08:42 2004 (rnc)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.2 2004-11-22 22:46:21 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.3 2004-11-29 13:58:43 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,10 +46,10 @@ static gboolean printLine(GIOChannel *channel, gchar *line);
 char *zmapFeatureLookUpEnum(int id, int enumType)
 {
   /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
-  static char *types[8]   = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
-			     "VARIATION", "BOUNDARY", "SEQUENCE"} ;
-  static char *strands[3] = {"ZMAPSTRAND_NONE", "ZMAPSTRAND_DOWN", "ZMAPSTRAND_UP" };
-  static char *phases[4]  = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" };
+  static char *types  [] = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
+			    "VARIATION", "BOUNDARY", "SEQUENCE"} ;
+  static char *strands[] = {"ZMAPSTRAND_NONE", "ZMAPSTRAND_DOWN", "ZMAPSTRAND_UP" };
+  static char *phases [] = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" };
   char *enum_str = NULL ;
 
   zMapAssert(enumType == TYPE_ENUM || enumType == STRAND_ENUM || enumType == PHASE_ENUM) ;
@@ -59,16 +59,16 @@ char *zmapFeatureLookUpEnum(int id, int enumType)
     case TYPE_ENUM:
       enum_str = types[id];
       break;
-
+      
     case STRAND_ENUM:
       enum_str = strands[id];
       break;
-
+      
     case PHASE_ENUM:
       enum_str = phases[id];
       break;
-   }
-
+    }
+  
   return enum_str ;
 }
 
