@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 12 14:55 2004 (edgrif)
+ * Last edited: Apr  2 11:50 2004 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.6 2004-03-12 15:13:36 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.7 2004-04-08 16:27:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,7 +94,7 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
 
   if (!zMapManagerAdd(app_context->zmap_manager, sequence, &zmap))
     {
-      zmapGUIShowMsg("Failed to create ZMap") ;
+      zMapWarning("%s", "Failed to create ZMap") ;
     }
   else
     {
@@ -107,8 +107,8 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
       gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, (gpointer)zmap) ;
       
 
-      ZMAP_DEBUG("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
-		 (row + 1), row_text[0], row_text[1]) ;
+      zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
+		(row + 1), row_text[0], row_text[1]) ;
     }
 
   return ;

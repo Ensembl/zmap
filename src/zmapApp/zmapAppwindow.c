@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 11 09:28 2004 (edgrif)
+ * Last edited: Apr  8 15:48 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.6 2004-03-12 15:15:01 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.7 2004-04-08 16:28:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,10 +39,9 @@
 #include <glib/gthread.h>
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+#include <ZMap/zmapUtils.h>
+
 #include <zmapApp_P.h>
-
-
-extern int TEST_GLOBAL = 0 ;
 
 
 
@@ -63,17 +62,21 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
   GtkWidget *kill_button, *quit_button ;
 
+
+  zmap_debug_G = TRUE ;
 #ifdef G_THREADS_ENABLED
-  printf("threads are enabled\n") ;
+  zMapDebug("%s", "threads are enabled\n") ;
 #endif
 
 #ifdef G_THREADS_IMPL_NONE
-  printf("but there is no thread implementation\n") ;
+  zMapDebug("%s", "but there is no thread implementation\n") ;
 #endif
 
 #ifdef G_THREADS_IMPL_POSIX
-  printf("and posix threads are being used\n") ;
+  zMapDebug("%s", "and posix threads are being used\n") ;
 #endif
+  zmap_debug_G = FALSE ;
+
 
 
   /* For threaded stuff we apparently need this..... */
@@ -81,14 +84,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
   initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  TEST_GLOBAL = atoi(argv[1]) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
   app_context = createAppContext() ;
 
