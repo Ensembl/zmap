@@ -26,12 +26,13 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov  9 14:07 2004 (edgrif)
+ * Last edited: Nov 12 11:40 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.16 2004-11-09 14:43:06 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.17 2004-11-12 11:57:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <AceConn.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGFF.h>
@@ -47,15 +48,10 @@ typedef struct
 
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 char *host, int port,
+				 char *host, int port, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapServerResponseType setContext(void *server, char *sequence, int start, int end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static ZMapServerResponseType setContext(void *server, ZMapServerSetContext context) ;
-
 static ZMapServerResponseType request(void *server_conn, ZMapFeatureContext *feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
@@ -73,6 +69,8 @@ static gboolean getSMapping(AcedbServer server, char *class,
 			    ZMapMapBlock child_to_parent_out) ;
 static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_name,
 			      int *obj_length_out) ;
+
+static gboolean checkServerVersion(AcedbServer server) ;
 
 
 /* 
@@ -114,7 +112,7 @@ static gboolean globalInit(void)
 
 
 static gboolean createConnection(void **server_out,
-				 char *host, int port,
+				 char *host, int port, char *version_str,
 				 char *userid, char *passwd, int timeout)
 {
   gboolean result = FALSE ;
@@ -123,6 +121,25 @@ static gboolean createConnection(void **server_out,
   /* Always return a server struct as it contains error message stuff. */
   server = (AcedbServer)g_new0(AcedbServerStruct, 1) ;
   server->last_err_status = ACECONN_OK ;
+
+  server->host = g_strdup(host) ;
+
+  /* We need a minimum server version but user can specify a higher one in the config file. */
+  if (version_str)
+    {
+      if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, version_str))
+	server->version_str = g_strdup(version_str) ;
+      else
+	{
+	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+			 "Requested server version is was %s but minimum supported is %s.",
+			 version_str, ACEDB_SERVER_MIN_VERSION) ;
+	  server->version_str = g_strdup(ACEDB_SERVER_MIN_VERSION) ;
+	}
+    }
+  else
+    server->version_str = g_strdup(ACEDB_SERVER_MIN_VERSION) ;
+
   *server_out = (void *)server ;
 
   if ((server->last_err_status =
@@ -139,7 +156,16 @@ static ZMapServerResponseType openConnection(void *server_in)
   AcedbServer server = (AcedbServer)server_in ;
 
   if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
-    result = ZMAP_SERVERRESPONSE_OK ;
+    {
+      if (checkServerVersion(server))
+	result = ZMAP_SERVERRESPONSE_OK ;
+      else
+	{
+	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+			 "Could open connection because: %s", server->last_err_msg) ;
+	}
+    }
 
   return result ;
 }
@@ -168,7 +194,9 @@ static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext c
   if (!(status = getSequenceMapping(server, feature_context)))
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
-      zMapLogWarning("Could not map %s because: %s", server->sequence, server->last_err_msg) ;
+      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+		     "Could not map %s because: %s",
+		     server->sequence, server->last_err_msg) ;
       g_free(feature_context) ;
     }
   else
@@ -224,7 +252,9 @@ static ZMapServerResponseType request(void *server_in, ZMapFeatureContext *featu
 	  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
 	}
 
-      zMapLogWarning("Could not map %s because: %s", server->sequence, server->last_err_msg) ;
+      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+		     "Could not map %s because: %s",
+		     server->sequence, server->last_err_msg) ;
     }
 
   /* We need a feature context call here which will free stuff correctly...this is not right
@@ -247,7 +277,8 @@ char *lastErrorMsg(void *server_in)
   if (server->last_err_msg)
     err_msg = server->last_err_msg ;
   else if (server->last_err_status != ACECONN_OK)
-    err_msg = g_strdup(AceConnGetErrorMsg(server->connection, server->last_err_status)) ;
+    server->last_err_msg = err_msg = 
+      g_strdup(AceConnGetErrorMsg(server->connection, server->last_err_status)) ;
 
   return err_msg ;
 }
@@ -275,8 +306,13 @@ static gboolean destroyConnection(void *server_in)
   AceConnDestroy(server->connection) ;			    /* Does not fail. */
   server->connection = NULL ;				    /* Prevents accidental reuse. */
 
+  g_free(server->host) ;
+
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
+
+  if (server->version_str)
+    g_free(server->version_str) ;
 
   g_free(server) ;
 
@@ -419,7 +455,8 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
 		    server->last_err_msg = g_strdup_printf("%s", "No GFF found in server reply.") ;
 		}
 
-	      zMapLogCritical("%s", server->last_err_msg) ;
+	      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+			     "%s", server->last_err_msg) ;
 	    }
 	  else
 	    {
@@ -431,7 +468,8 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
 		{
 		  server->last_err_msg = g_strdup_printf("Bad GFF line: %s",
 							 next_line) ;
-		  zMapLogCritical("%s", server->last_err_msg) ;
+		  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+				 "%s", server->last_err_msg) ;
 
 		  if (!first_error)
 		    first_error = next_line ;		    /* Remember first line for later error
@@ -473,7 +511,8 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
 			  server->last_err_msg =
 			    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 					    zMapGFFGetLineNumber(parser), next_line) ;
-			  zMapLogCritical("%s", server->last_err_msg) ;
+			  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+					 "%s", server->last_err_msg) ;
 
 			  result = FALSE ;
 			}
@@ -484,12 +523,12 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
 			  if (zMapGFFTerminated(parser))
 			    {
 			      result = FALSE ;
-			      server->last_err_msg =
-				g_strdup_printf("%s", error->message) ;
+			      server->last_err_msg = g_strdup_printf("%s", error->message) ;
 			    }
 			  else
 			    {
-			      zMapLogWarning("%s", error->message) ;
+			      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+					     "%s", error->message) ;
 			    }
 			}
 		    }
@@ -504,7 +543,8 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
 		    {
 		      server->last_err_msg = g_strdup_printf("Request from server contained incomplete line: %s",
 							     next_line) ;
-		      zMapLogCritical("%s", server->last_err_msg) ;
+		      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+				     "%s", server->last_err_msg) ;
 		    }
 		  else
 		    result = TRUE ;
@@ -760,6 +800,75 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
 	}
 
       g_free(reply) ;
+    }
+
+  return result ;
+}
+
+
+/* Makes status request to get acedb server code version. Returns TRUE if server version is
+ * same or more recent than ours, returns FALSE if version is older or it call fails
+ * failure implies a serious error.
+ *
+ * Command and output to do this are like this:
+ * 
+ * acedb> status -code
+ *  // ************************************************
+ *  // AceDB status at 2004-11-09_15:17:03
+ *  // 
+ *  // - Code
+ *  //             Program: giface
+ *  //             Version: ACEDB 4.9.28
+ *  //               Build: Nov  9 2004 13:34:42
+ *  // 
+ *  // ************************************************
+ * 
+ */
+static gboolean checkServerVersion(AcedbServer server)
+{
+  gboolean result = FALSE ;
+  char *command = "status -code" ;
+  char *acedb_request = NULL ;
+  void *reply = NULL ;
+  int reply_len = 0 ;
+
+  if (server->version_str == NULL)
+    result = TRUE ;
+  else
+    {
+      acedb_request =  g_strdup_printf("%s", command) ;
+
+      if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
+						    &reply, &reply_len)) == ACECONN_OK)
+	{
+	  char *reply_text = (char *)reply ;
+	  char *scan_text = reply_text ;
+	  char *next_line = NULL ;
+
+	  /* Scan lines for "Version:" and then extract the version, release and update numbers. */
+	  while ((next_line = strtok(scan_text, "\n")))
+	    {
+	      scan_text = NULL ;
+	      
+	      if (strstr(next_line, "Version:"))
+		{
+		  /* Parse this string: "//             Version: ACEDB 4.9.28" */
+		  char *next ;
+		  
+		  next = strtok(next_line, ":") ;
+		  next = strtok(NULL, " ") ;
+		  next = strtok(NULL, " ") ;
+		  
+		  if (!(result = zMapCompareVersionStings(server->version_str, next)))
+		    server->last_err_msg = g_strdup_printf("Server version must be at least %s "
+							   "but this server is %s.",
+							   server->version_str, next) ;
+		  break ;
+		}
+	    }
+
+	  g_free(reply) ;
+	}
     }
 
   return result ;
