@@ -8,10 +8,9 @@
 # Add directories to this list as they are sorted out.
 MAKE_DIRS = zmapmanager
 
-
-all: forcemake platform
+all: platform
 	@for d in $(MAKE_DIRS); do \
-	(cd $$d ; echo ; echo 'make '$@' in '$$d ; /usr/bin/posix/make $@ ; echo) ; \
+	(cd $$d ; echo ; echo 'make '$@' in '$$d ; $(MAKE) $@ ; echo) ; \
 	done
 
 clean: forcemake platform
@@ -29,3 +28,4 @@ clean: forcemake platform
 ROOT_DIRECTORY = .
 MAKEDEFS_DIR = $(ROOT_DIRECTORY)/zmapMake
 include $(MAKEDEFS_DIR)/common.make
+include $(MAKEDEFS_FILE)
