@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 25 10:55 2004 (edgrif)
+ * Last edited: Jul  8 10:28 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.5 2004-06-25 13:31:32 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.6 2004-07-08 09:35:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -304,11 +304,8 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
   if (parser->sequence_name)
     g_free(parser->sequence_name) ;
 
-  /* Actually this may need more.....if we have allocated arrays they will need to be freed
-   * maybe....need to think this through.... we should set a destroy function when allocating
-   * new datalist members....think about our interface here.....we may want to pass our feature
-   * arrays on to someone....perhaps we need to supply a flag to this routine to decide whether
-   * to destroy this lot or not.... */
+  /* The datalist uses a destroy routine that only destroys the feature arrays if the caller wants
+   * us to, see destroyFeatureArray() */
   if (!parser->parse_only && parser->feature_sets)
     g_datalist_clear(&(parser->feature_sets)) ;
 
@@ -1253,8 +1250,14 @@ void destroyFeatureArray(gpointer data)
 
   g_free(feature_set->source) ;
 
+
+  /* When I try to get rid of the array but _not_ the data it seems to free the data as well ! */
+
   /* Only free actual array data if caller wants it freed. */
-  g_array_free(feature_set->features, feature_set->parser->free_on_destroy) ;
+  if (feature_set->parser->free_on_destroy)
+    g_array_free(feature_set->features, TRUE) ;
+
+
 
   /* No data to free in this list, just clear it. */
   g_datalist_clear(&(feature_set->multiline_features)) ;
