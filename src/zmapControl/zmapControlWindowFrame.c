@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 19 14:12 2004 (edgrif)
+ * Last edited: May 20 16:52 2004 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.2 2004-05-20 14:11:16 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.3 2004-05-27 13:42:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,24 +40,18 @@
 GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 {
   GtkWidget *frame ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   GtkWidget *vbox ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  frame = gtk_frame_new(NULL);
-  gtk_container_border_width(GTK_CONTAINER(frame), 5);
+  frame = gtk_frame_new(NULL) ;
+  gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
   gtk_widget_set_usize(frame, 500, 500) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_container_border_width(GTK_CONTAINER(vbox), 5);
-  gtk_container_add (GTK_CONTAINER (frame), vbox);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  gtk_container_border_width(GTK_CONTAINER(vbox), 2) ;
+  gtk_container_add(GTK_CONTAINER(frame), vbox) ;
 
 
-
-  return frame ;
+  return vbox ;
 }
 
 
