@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Sep  9 15:43 2004 (rnc)
+ * Last edited: Sep 15 14:46 2004 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.8 2004-09-13 13:36:05 rnc Exp $
+ * CVS info:   $Id: zmapView.h,v 1.9 2004-09-17 08:35:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -81,30 +81,29 @@ typedef enum {
 
 
 
-void               zMapViewInit        (ZMapViewCallbacks callbacks) ;
-ZMapView           zMapViewCreate      (char *sequence,	void *app_data) ;
-ZMapViewWindow     zMapViewAddWindow   (ZMapView zmap_view, GtkWidget *parent_widget) ;
-gboolean           zMapViewConnect     (ZMapView zmap_view) ;
-gboolean           zMapViewLoad        (ZMapView zmap_view, char *sequence) ; /* sequence == NULL => reload existing
-							       sequence. */
+void zMapViewInit(ZMapViewCallbacks callbacks) ;
+ZMapView zMapViewCreate(char *sequence,	void *app_data) ;
+ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
+gboolean zMapViewConnect(ZMapView zmap_view) ;
+gboolean zMapViewLoad (ZMapView zmap_view) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Don't exist but will be needed. */
 gboolean zMapViewDeleteWindow(ZMapViewWindow view_window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-gboolean           zMapViewReset       (ZMapView zmap_view) ;
+gboolean zMapViewReset(ZMapView zmap_view) ;
 
-char              *zMapViewGetSequence (ZMapView zmap_view) ;
-ZMapFeatureContext zMapViewGetFeatures (ZMapView zmap_view) ;
-ZMapViewState      zMapViewGetStatus   (ZMapView zmap_view) ;
-char              *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
-ZMapWindow         zMapViewGetWindow   (ZMapViewWindow view_window) ;
-ZMapView           zMapViewGetView     (ZMapViewWindow view_window) ;
+char *zMapViewGetSequence(ZMapView zmap_view) ;
+ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
+ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
+char *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
+ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
+ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
 
-void               zMapViewZoomOut     (ZMapWindow view_window);
+void zMapViewZoomOut(ZMapWindow view_window);
 
-gboolean           zMapViewDestroy     (ZMapView zmap_view) ;
+gboolean zMapViewDestroy(ZMapView zmap_view) ;
 
 
 #endif /* !ZMAPVIEW_H */
