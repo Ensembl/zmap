@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: Apr  2 13:18 2004 (edgrif)
+ * Last edited: Jun 23 15:17 2004 (edgrif)
  * Created: Thu Apr  1 14:37:42 2004 (edgrif)
- * CVS info:   $Id: zmapConfigWrite.c,v 1.1 2004-04-08 16:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapConfigWrite.c,v 1.2 2004-06-25 13:37:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -35,7 +35,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <glib.h>
+#include <ZMap/zmapUtils.h>
 #include <zmapConfig_P.h>
+
+
+
 
 
 /* When we do this we need to write version information in the header of the stanza file
@@ -45,11 +49,32 @@
  * I used for acedb, including put the version string in the executable. */
 gboolean zmapMakeUserConfig(ZMapConfig config)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
+  GIOChannel *config_file ;
+  GError *gerror = NULL ;
+  char *format_str = "##       %s Configuration File\n"
+    "## date - %s\n"
+    "## version - %s\n" ;
 
 
 
+  if ((config_file = g_io_channel_new_file(config->config_file, "r+", &gerror)))
+    {
+      gsize bytes_written = 0 ;
+      gchar *config_header ;
 
+      config_header = g_strdup_printf(format_str, zMapGetAppName(), __DATE__ " " __TIME__,
+				      zMapGetVersionString()) ;
+
+      if (g_io_channel_write_chars(config_file, config_header, -1,
+				   &bytes_written, &gerror) == G_IO_STATUS_NORMAL
+	  && g_io_channel_shutdown(config_file, TRUE, &gerror) == G_IO_STATUS_NORMAL)
+	result = TRUE ;
+      else
+	result = FALSE ;
+
+      g_free(config_header) ;
+    }
 
   return result ;
 }
