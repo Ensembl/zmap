@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Mar 14 13:24 2005 (edgrif)
+ * Last edited: Apr  4 11:10 2005 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.25 2005-03-16 15:55:01 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.26 2005-04-05 14:19:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,7 +72,7 @@ FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
  * centred on the edge of the rectangle. */
 FooCanvasItem *zMapDrawBox(FooCanvasItem *group, 
 			   double x1, double y1, double x2, double y2, 
-			   GdkColor *line_colour, GdkColor *fill_colour)
+			   GdkColor *border_colour, GdkColor *fill_colour)
 {
   FooCanvasItem *item = NULL ;
   int line_width = 1 ;
@@ -81,7 +81,7 @@ FooCanvasItem *zMapDrawBox(FooCanvasItem *group,
 			     foo_canvas_rect_get_type(),
 			     "x1", x1, "y1", y1,
 			     "x2", x2, "y2", y2,
-			     "outline_color_gdk", line_colour,
+			     "outline_color_gdk", border_colour,
 			     "fill_color_gdk", fill_colour,
 			     NULL) ;
 
@@ -95,16 +95,16 @@ FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double 
 			    GdkColor *colour, double thickness)
 {
   FooCanvasItem *item = NULL ;
-  FooCanvasPoints *points;
+  FooCanvasPoints *points ;
 
   /* allocate a new points array */
-  points = foo_canvas_points_new (2);
+  points = foo_canvas_points_new(2) ;
 				                                            
   /* fill out the points */
-  points->coords[0] = x1;
-  points->coords[1] = y1;
-  points->coords[2] = x2;
-  points->coords[3] = y2;
+  points->coords[0] = x1 ;
+  points->coords[1] = y1 ;
+  points->coords[2] = x2 ;
+  points->coords[3] = y2 ;
 
   /* draw the line */
   item = foo_canvas_item_new(group,
@@ -117,6 +117,25 @@ FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double 
   /* free the points array */
   foo_canvas_points_free(points) ;
 
+  return item ;
+}
+
+
+/* It may be good not to specify a width here as well (see zMapDrawBox) but I haven't
+ * experimented yet. */
+FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
+				GdkColor *colour, double thickness)
+{
+  FooCanvasItem *item = NULL ;
+
+  /* draw the line */
+  item = foo_canvas_item_new(group,
+			     foo_canvas_line_get_type(),
+			     "points", points,
+			     "fill_color_gdk", colour,
+			     "width_units", thickness,
+			     NULL);
+		    
   return item ;
 }
 

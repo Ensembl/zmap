@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Mar  8 09:44 2005 (edgrif)
+ * Last edited: Apr  4 11:20 2005 (edgrif)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.14 2005-03-08 15:31:43 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.15 2005-04-05 14:19:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -39,6 +39,8 @@
 
 FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 			    GdkColor *colour, double thickness) ;
+FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
+				GdkColor *colour, double thickness) ;
 FooCanvasItem *zMapDrawBox(FooCanvasItem *group, 
 			   double x1, double y1, double x2, double y2, 
 			   GdkColor *line_colour, GdkColor *fill_colour) ;
