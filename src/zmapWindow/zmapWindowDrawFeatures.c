@@ -26,14 +26,18 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec  6 14:05 2004 (rnc)
+ * Last edited: Jan 24 13:17 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.40 2004-12-06 14:20:51 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.41 2005-01-24 13:17:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindow_P.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapDraw.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <ZMap/zmapUtils.h>
 
 
@@ -41,67 +45,47 @@
 #define SCALEBAR_WIDTH   40.0
 #define COLUMN_SPACING    5.0
 
-/******************** function prototypes *************************************************/
 
-static void     ProcessFeatureSet (GQuark key_id, gpointer data, gpointer user_data);
-static void     ProcessFeature    (GQuark key_id, gpointer data, gpointer user_data);
-static void     columnClickCB     (ZMapWindow window, ZMapFeatureItem featureItem);
-static gboolean handleCanvasEvent (FooCanvasItem *item, GdkEventButton *event, gpointer data);
+
+/* parameters passed between the various functions drawing the features on the canvas */
+typedef struct _ZMapCanvasDataStruct
+{
+  ZMapWindow           window;
+  FooCanvas           *canvas;
+  FooCanvasItem       *forward_column_group;
+  FooCanvasItem       *reverse_column_group; 
+  double               forward_column_pos;
+  double               reverse_column_pos;  
+  ZMapFeatureContext   feature_context;
+  ZMapFeatureSet       feature_set;
+  GQuark               context_key;
+  ZMapFeatureTypeStyle thisType;
+
+} ZMapCanvasDataStruct, *ZMapCanvasData;
+
+
+
+
+
+static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+
+static void     showFeatureList     (ZMapWindow window, ZMapFeatureItem featureItem) ;
+static void     ProcessFeatureSet (GQuark key_id, gpointer data, gpointer user_data) ;
+static void     ProcessFeature    (GQuark key_id, gpointer data, gpointer user_data) ;
 static FooCanvasItem *createColumn(ZMapCanvasDataStruct *canvasData, gboolean forward, 
 				   double position, gchar *type_name);
-
 static void getTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out) ;
 static void freeFeatureItem  (gpointer data);
 static void freeLongItem     (gpointer data);
-
-
-/* These callback routines are static because they are set just once for the lifetime of the
- * process. */
-
-/* Callbacks we make back to the level above us. */
-static ZMapFeatureCallbacks feature_cbs_G = NULL ;
-static void storeLongItem(ZMapWindow window, FooCanvasItem *item, int start, int end, GQuark key_id, char *name);
+static void storeLongItem(ZMapWindow window, FooCanvasItem *item, int start, int end,
+			  GQuark key_id, char *name);
 
 
 
-/************************ public functions ************************************************/
-
-/* This routine must be called just once before any other windows routine, it is undefined
- * if the caller calls this routine more than once. The caller must supply all of the callback
- * routines.
- * 
- * Note that since this routine is called once per application we do not bother freeing it
- * via some kind of windows terminate routine. */
-void zmapFeatureInit(ZMapFeatureCallbacks callbacks)
-{
-  zMapAssert(!feature_cbs_G) ;
-
-  zMapAssert(callbacks && callbacks->click && callbacks->rightClick) ;
-
-  feature_cbs_G = g_new0(ZMapFeatureCallbacksStruct, 1) ;
-
-  feature_cbs_G->click      = callbacks->click;
-  feature_cbs_G->rightClick = callbacks->rightClick;
-
-  return ;
-}
 
 
-/** Callback to display feature details on the window.
- *  
- * Control passes up the hierarchy to zmapControl 
- * where a few details of the selected feature are 
- * displayed on the info_panel of the window. 
- */
-gboolean zMapWindowFeatureClickCB(ZMapWindow window, ZMapFeature feature)
-{
-  (*(feature_cbs_G->click))(window, window->app_data, feature);
-
-  return FALSE;  /* FALSE allows any other connected function to be run. */
-}
-
-
-/* Drawing coordinates: PLEASE read this before you start messing about with anything...
+/* Drawing coordinates: PLEASE READ THIS BEFORE YOU START MESSING ABOUT WITH ANYTHING...
  * 
  * It seems that item coordinates are _not_ specified in absolute world coordinates but
  * in fact in the coordinates of their parent group. This has a lot of knock on effects as
@@ -128,161 +112,199 @@ gboolean zMapWindowFeatureClickCB(ZMapWindow window, ZMapFeature feature)
  * 
  * 
  *  */
+
+
+/************************ external functions ************************************************/
+
+
+
+/* This stuff with featureClick is all messed up, it gets called from the list code when
+ * really it should be just part of the callback system. */
+
+/** Callback to display feature details on the window.
+ *  
+ * Control passes up the hierarchy to zmapControl 
+ * where a few details of the selected feature are 
+ * displayed on the info_panel of the window. 
+ */
+gboolean zMapWindowFeatureClickCB(ZMapWindow window, ZMapFeature feature)
+{
+  (*(window->caller_cbs->click))(window, window->app_data, feature);
+
+  return FALSE;  /* FALSE allows any other connected function to be run. */
+}
+
+
+
+/* Draw features on the canvas, I think that this routine should _not_ get called unless 
+ * there is actually data to draw....... */
 void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_context, GData *types)
 {
   GtkAdjustment *h_adj;
-  ZMapCanvasData canvasData;
+  double text_height, zoom_factor ;
+  ZMapCanvasDataStruct canvas_data = {NULL} ;		    /* Rest of struct gets set to zero. */
 
- 
-  if (feature_context)  /* Split an empty pane and you get here with no feature_context */
-    {
-      double border_world, zoom_factor ;
 
-      canvasData = g_new0(ZMapCanvasDataStruct, 1) ;
-      canvasData->window = window;
-      canvasData->canvas = window->canvas;
+  zMapAssert(window && feature_context && types) ;
 
-      g_object_set_data(G_OBJECT(window->canvas), "canvasData", canvasData);
+  canvas_data.window = window;
+  canvas_data.canvas = window->canvas;
 
-      window->scaleBarOffset  = SCALEBAR_OFFSET;
-      window->types           = types;
-      canvasData->feature_context = feature_context;
-      window->seqLength
-	= feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1 + 1;
-      window->seq_start = feature_context->sequence_to_parent.c1 ;
-      window->seq_end   = feature_context->sequence_to_parent.c2 ;
+  window->scaleBarOffset  = SCALEBAR_OFFSET;
+  window->types           = types;
+  canvas_data.feature_context = feature_context;
+  window->seqLength
+    = feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1 + 1;
+  window->seq_start = feature_context->sequence_to_parent.c1 ;
+  window->seq_end   = feature_context->sequence_to_parent.c2 ;
 
       
-      gtk_widget_show_all (window->parent_widget);
+  gtk_widget_show_all (window->parent_widget);
 
-      /* Set the zoom factor. By default we start at min zoom, BUT note that if user has a
-       * very short sequence it may be displayed at maximum zoom already. */
-      h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
+  /* Set the zoom factor. By default we start at min zoom, BUT note that if user has a
+   * very short sequence it may be displayed at maximum zoom already. */
+  h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
 
-      getTextDimensions(foo_canvas_root(window->canvas),
-			NULL, &window->text_height) ;
+  getTextDimensions(foo_canvas_root(window->canvas),
+		    NULL, &window->text_height) ;
 
-      /* Set border space for top/bottom of sequence. */
-      window->border_pixels = window->text_height * 2 ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* THIS "- 1" FIDDLE WILL NOT BE NECESSARY WHEN THE BOUNDARY STUFF IS DONE. */
-      window->zoom_factor = (v_adj->page_size - 1) / window->seqLength;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      /* Zoom_factor: calculate it locally so we can set zoom_status
-       * properly if the whole of the sequence is visible and we're
-       * already at max zoom.  Then check to see if there's already
-       * a value in the ZMapWindow and only if not, use the new one. 
-       * So far, if window->zoom_factor and min_zoom are zero we 
-       * assume this is the first window, not a splitting one. */
-      zoom_factor = zmapWindowCalcZoomFactor(window);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* I NEED TO FINISH THIS OFF BUT NEED TO DO A CHECK IN OF MY CODE.... */
-
-      /* adjust zoom to allow for top/bottom borders... */
-      border_world = window->border_pixels / window->zoom_factor ;
-
-      window->zoom_factor = v_adj->page_size / (window->seqLength + (2.0 * border_world))  ;
-							    /* Can't use c2w call because we
-							       haven't set the canvas zoom yet. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      /* Record min/max zooms, the max zoom we want is large enough to hold the text required
-       * to display a DNA base or other text + a bit. */
-      if (window->max_zoom == 0.0)
-	window->max_zoom = window->text_height + (double)(ZMAP_WINDOW_TEXT_BORDER * 2) ;
-
-      if (window->zoom_status == ZMAP_ZOOM_INIT)  /* ie 0.0 */
-	window->zoom_status = ZMAP_ZOOM_MIN ;
-
-      if (zoom_factor > window->max_zoom)
-	{
-	  zoom_factor = window->max_zoom ;
-	  window->zoom_status = ZMAP_ZOOM_FIXED ;
-	}
-
-      /* if the screen is being split, use the previous zoom_factor
-       * so the data is displayed the same size */
-      if (window->zoom_factor == 0.0)
-	window->zoom_factor = zoom_factor;
-
-      zMapAssert(window->zoom_factor);
-
-      if (window->min_zoom == 0.0)
-	window->min_zoom = window->zoom_factor ;
-
-      foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
-
-      zmapWindowSetPageIncr(window);
-  
-
-      /* Set root group to begin at 0, _vital_ for later feature placement. */
-      /*      window->group = foo_canvas_item_new(foo_canvas_root(window->canvas),
-					  foo_canvas_group_get_type(),
-					  "x", 0.0, "y", 0.0,
-					  NULL) ;
-      never used */
-
-      canvasData->forward_column_pos = window->scaleBarOffset + SCALEBAR_WIDTH + (2 * COLUMN_SPACING);
-      canvasData->reverse_column_pos = window->scaleBarOffset - 40;                
-
-      if (feature_context)
-	g_datalist_foreach(&(feature_context->feature_sets), ProcessFeatureSet, canvasData);
+  /* Set border space for top/bottom of sequence. */
+  window->border_pixels = window->text_height * 2 ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Try here to get stuff set up....HAS TO GO AFTER ALL THE FEATURE DRAWING OTHERWISE
-       * SCROLL REGION GETS RESET TO LIE AROUND FEATURES ONLY. */
-      foo_canvas_set_scroll_region(window->canvas,
-				   0.0,
-				   (window->seq_start - border_world),
-				   h_adj->page_size,
-				   (window->seq_end + border_world)) ;
+  /* THIS "- 1" FIDDLE WILL NOT BE NECESSARY WHEN THE BOUNDARY STUFF IS DONE. */
+  window->zoom_factor = (v_adj->page_size - 1) / window->seqLength;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      /* If we're splitting a window, scroll to the same point as we were
-       * at in the previous window. */
-      if (window->focusQuark)
-	zMapWindowScrollToItem(window, window->typeName, window->focusQuark);
-      else if (window->current_x || window->current_y)
-	{
-	  int x, y;
-	  foo_canvas_set_scroll_region(window->canvas, 
-				       window->scroll_x1, window->scroll_y1,
-				       window->scroll_x2, window->scroll_y2);
-	  foo_canvas_w2c(window->canvas, window->current_x, window->current_y, &x, &y);
-	  foo_canvas_scroll_to(window->canvas, x, y); /* canvas pixels */
-	}
-      else
-	foo_canvas_set_scroll_region(window->canvas,
-				     0.0,
-				     window->seq_start,
-				     h_adj->page_size,
-				     window->seq_end) ;
-
-
-      window->scaleBarGroup = zmapDrawScale(window->canvas, 
-					    window->scaleBarOffset, window->zoom_factor,
-					    feature_context->sequence_to_parent.c1, 
-					    feature_context->sequence_to_parent.c2);
-
-      /* NB there's a flaw here: too many visible upstrand groups and we'll go left of the edge of
-      ** the window. Should really be keeping track and adjusting scroll region if necessary. */
-
-      if (window->longItems)
-	g_datalist_foreach(&(window->longItems), zmapWindowCropLongFeature, window);
+  /* Zoom_factor: calculate it locally so we can set zoom_status
+   * properly if the whole of the sequence is visible and we're
+   * already at max zoom.  Then check to see if there's already
+   * a value in the ZMapWindow and only if not, use the new one. 
+   * So far, if window->zoom_factor and min_zoom are zero we 
+   * assume this is the first window, not a splitting one. */
+  zoom_factor = zmapWindowCalcZoomFactor(window);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmapWindowPrintCanvas(window->canvas) ; 
+  /* I NEED TO FINISH THIS OFF BUT NEED TO DO A CHECK IN OF MY CODE.... */
+
+  /* adjust zoom to allow for top/bottom borders... */
+  border_world = window->border_pixels / window->zoom_factor ;
+
+  window->zoom_factor = v_adj->page_size / (window->seqLength + (2.0 * border_world))  ;
+  /* Can't use c2w call because we
+     haven't set the canvas zoom yet. */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  /* Record min/max zooms, the max zoom we want is large enough to hold the text required
+   * to display a DNA base or other text + a bit. */
+  if (window->max_zoom == 0.0)
+    window->max_zoom = window->text_height + (double)(ZMAP_WINDOW_TEXT_BORDER * 2) ;
+
+  if (window->zoom_status == ZMAP_ZOOM_INIT)
+    window->zoom_status = ZMAP_ZOOM_MIN ;
+
+  if (zoom_factor > window->max_zoom)
+    {
+      zoom_factor = window->max_zoom ;
+      window->zoom_status = ZMAP_ZOOM_FIXED ;
     }
 
-  g_free(canvasData);
+  /* if the screen is being split, use the previous zoom_factor
+   * so the data is displayed the same size */
+  if (window->zoom_factor == 0.0)
+    window->zoom_factor = zoom_factor;
+
+  zMapAssert(window->zoom_factor);			    /* WHAT IS THIS !!!!!!!!!! */
+
+
+  if (window->min_zoom == 0.0)
+    window->min_zoom = window->zoom_factor ;
+
+  foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
+
+
+  /* OH DEAR, THIS IS HORRIBLE.......... */
+  zmapWindowSetPageIncr(window);
   
+
+  /* WHY DID YOU COMMENT THIS OUT ROB ? */
+  /* Set root group to begin at 0, _vital_ for later feature placement. */
+  /*      window->group = foo_canvas_item_new(foo_canvas_root(window->canvas),
+	  foo_canvas_group_get_type(),
+	  "x", 0.0, "y", 0.0,
+	  NULL) ;
+	  never used */
+
+
+  canvas_data.forward_column_pos = window->scaleBarOffset + SCALEBAR_WIDTH + (2 * COLUMN_SPACING);
+  canvas_data.reverse_column_pos = window->scaleBarOffset - 40;                
+
+  if (feature_context)
+    g_datalist_foreach(&(feature_context->feature_sets), ProcessFeatureSet, &canvas_data) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Try here to get stuff set up....HAS TO GO AFTER ALL THE FEATURE DRAWING OTHERWISE
+   * SCROLL REGION GETS RESET TO LIE AROUND FEATURES ONLY. */
+  foo_canvas_set_scroll_region(window->canvas,
+			       0.0,
+			       (window->seq_start - border_world),
+			       h_adj->page_size,
+			       (window->seq_end + border_world)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* If we're splitting a window, scroll to the same point as we were
+   * at in the previous window. */
+  if (window->focusQuark)
+    zMapWindowScrollToItem(window, window->typeName, window->focusQuark);
+  else
+    {
+      double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
+      int x, y ;
+
+      foo_canvas_get_scroll_region(window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
+      if (scroll_x1 == 0 && scroll_y1 == 0 && scroll_x2 == 0 && scroll_y2 == 0)
+	foo_canvas_set_scroll_region(window->canvas,
+				     0.0, window->seq_start,
+				     h_adj->page_size, window->seq_end) ;
+    }
+
+  window->scaleBarGroup = zmapDrawScale(window->canvas, 
+					window->scaleBarOffset, window->zoom_factor,
+					feature_context->sequence_to_parent.c1, 
+					feature_context->sequence_to_parent.c2,
+					&(window->major_scale_units),
+					&(window->minor_scale_units)) ;
+
+
+  /* NB there's a flaw here: too many visible upstrand groups and we'll go left of the edge of
+   * the window. Should really be keeping track and adjusting scroll region if necessary. */
+  /* SO WHY AREN'T WE ???????????????????????????? */
+
+
+
+  /* I'm not sure why this is here....can this routine be called when the features might
+   * be too long........check this out....... */
+  if (window->longItems)
+    g_datalist_foreach(&(window->longItems), zmapWindowCropLongFeature, window);
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zmapWindowPrintCanvas(window->canvas) ; 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      
+  /* We want the canvas to be the focus widget of its "window" otherwise keyboard input
+   * (i.e. short cuts) will be delivered to some other widget. We do this here because
+   * I think we may need a widget window to exist for this call to work. */
+  gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
+
 
   return;
 }
@@ -329,24 +351,27 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   ZMapCanvasData  canvasData  = (ZMapCanvasDataStruct*)user_data;
   GString        *source      = g_string_new(feature_set->source);
 
-  source = g_string_ascii_down(source); /* does it in place */
-  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->window->types), source->str);
-  g_string_free(source, FALSE);
+
+  source = g_string_ascii_down(source);			    /* does it in place */
+  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->window->types),
+								   source->str);
   zMapAssert(canvasData->thisType);
+  g_string_free(source, FALSE);
+
 
   /* context_key is used when a user clicks a canvas item.  The callback function needs to know
-  ** which feature is associated with the clicked object, so we use the GQuarks to look it up.*/
+   * which feature is associated with the clicked object, so we use the GQuarks to look it up.*/
   canvasData->feature_set = feature_set; 
   canvasData->context_key = key_id;
 
   canvasData->forward_column_group = createColumn(canvasData, TRUE, 
-					 canvasData->forward_column_pos, source->str);
+						  canvasData->forward_column_pos, source->str);
   canvasData->forward_column_pos += (canvasData->thisType->width + COLUMN_SPACING);
 
   if (canvasData->thisType->showUpStrand)
     {
       canvasData->reverse_column_group = createColumn(canvasData, FALSE, 
-					     canvasData->reverse_column_pos, source->str);
+						      canvasData->reverse_column_pos, source->str);
       canvasData->reverse_column_pos -= (canvasData->thisType->width + COLUMN_SPACING);
     }
   
@@ -358,30 +383,31 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   
   g_datalist_foreach(&(feature_set->features), ProcessFeature, canvasData) ;
 
+
   return ;
 }
 
 
 
-/* createColumn
- */
+/* createColumn */
 static FooCanvasItem *createColumn(ZMapCanvasData canvasData,
-				   gboolean forward,
-				   double position,
-				   gchar *type_name)
+				   gboolean forward, double position, gchar *type_name)
 {
-  GdkColor       white;
-  FooCanvasItem *group, *boundingBox;
-  ZMapCol        column = g_new0(ZMapColStruct, 1); /* destroyed with ZMapWindow */
-  double         min_mag;
+  GdkColor       white ;
+  FooCanvasItem *group, *boundingBox ;
+  ZMapCol        column = g_new0(ZMapColStruct, 1) ;	    /* destroyed with ZMapWindow */
+  double         min_mag ;
+
 
   gdk_color_parse("white", &white);
+
+  /* NOTE that these column items are _not_ registered to handle events....is this correct ? */
 
   group = foo_canvas_item_new(foo_canvas_root(canvasData->canvas),
 			      foo_canvas_group_get_type(),
 			      "x", position,
 			      "y", 0.0,
-			      NULL);
+			      NULL) ;
   
   boundingBox = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
 				    foo_canvas_rect_get_type(),
@@ -390,7 +416,12 @@ static FooCanvasItem *createColumn(ZMapCanvasData canvasData,
 				    "x2", (double)canvasData->thisType->width,
 				    "y2", canvasData->window->seq_end,
 				    "fill_color_gdk", &white,
-				    NULL);
+				    NULL) ;
+
+
+  g_signal_connect(GTK_OBJECT(boundingBox), "event",
+		   GTK_SIGNAL_FUNC(canvasColumnEventCB), canvasData->window) ;
+
 
   /* store a pointer to the column to enable hide/unhide while zooming */
   column->type = canvasData->thisType;
@@ -399,6 +430,7 @@ static FooCanvasItem *createColumn(ZMapCanvasData canvasData,
   column->forward = forward;
 
   g_ptr_array_add(canvasData->window->columns, column);
+
   
   /* Decide whether or not this column should be visible */
   /* thisType->min_mag is in bases per line, but window->zoom_factor is pixels per base */
@@ -406,9 +438,9 @@ static FooCanvasItem *createColumn(ZMapCanvasData canvasData,
 	                 canvasData->window->max_zoom/canvasData->thisType->min_mag : 0.0);
   
   if (canvasData->window->zoom_factor < min_mag)
-    foo_canvas_item_hide(FOO_CANVAS_ITEM(group));
+    foo_canvas_item_hide(FOO_CANVAS_ITEM(group)) ;
   
-  return group;
+  return group ;
 }
 
 
@@ -466,12 +498,14 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 			       &canvasData->thisType->foreground);
 
 	  g_object_set_data(G_OBJECT(object), "feature", featureItem);
-	  
-	  g_signal_connect(G_OBJECT(object), "event",
-			   G_CALLBACK(handleCanvasEvent), canvasData->window) ;
+
+	  g_signal_connect(GTK_OBJECT(object), "event",
+			   GTK_SIGNAL_FUNC(canvasItemEventCB), canvasData->window) ;
+
 	  /* any object longer than about 1.5k will need to be cropped as we zoom in to avoid
 	   * going over the 30k XWindows limit, so we store them in ZMapWindow->longItem struct. */
-	  if ((zMapFeature->x2 - zMapFeature->x1) > (ZMAP_WINDOW_MAX_WINDOW / canvasData->window->text_height))
+	  if ((zMapFeature->x2 - zMapFeature->x1)
+	      > (ZMAP_WINDOW_MAX_WINDOW / canvasData->window->text_height))
 	    storeLongItem(canvasData->window, object, zMapFeature->x1, zMapFeature->x2, key_id,
 			  zMapFeature->name);
 
@@ -507,7 +541,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 		    g_object_set_data(G_OBJECT(box), "feature", featureItem);
 
 		    g_signal_connect(G_OBJECT(box), "event",
-				     G_CALLBACK(handleCanvasEvent), canvasData->window) ;
+				     G_CALLBACK(canvasItemEventCB), canvasData->window) ;
 		    */
 		    zmapDrawLine(FOO_CANVAS_GROUP(feature_group), 
 				 canvasData->thisType->width/2, 
@@ -538,11 +572,14 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 				  &canvasData->thisType->foreground);
 
 		g_object_set_data(G_OBJECT(box), "feature", featureItem);
-		g_signal_connect(G_OBJECT(box), "event",
-				 G_CALLBACK(handleCanvasEvent), canvasData->window) ;
+
+		g_signal_connect(GTK_OBJECT(box), "event",
+				 GTK_SIGNAL_FUNC(canvasItemEventCB), canvasData->window) ;
+
 		/* any object longer than about 1.5k will need to be cropped as we zoom in to avoid
 		 * going over the 30k XWindows limit, so we store them in ZMapWindow->longItem struct. */
-		if ((zMapSpan->x2 - zMapSpan->x1) > (ZMAP_WINDOW_MAX_WINDOW / canvasData->window->text_height))
+		if ((zMapSpan->x2 - zMapSpan->x1)
+		    > (ZMAP_WINDOW_MAX_WINDOW / canvasData->window->text_height))
 		  storeLongItem(canvasData->window, box, 
 				(zMapSpan->x2 - zMapFeature->x1), 
 				(zMapSpan->x2 - zMapFeature->x1),
@@ -596,6 +633,7 @@ static void freeFeatureItem(gpointer data)
   ZMapFeatureItem featureItem = (ZMapFeatureItemStruct*)data;
                                                                                                                                                   
   g_free(featureItem);
+
   return;
 }
                                                                                                                                                   
@@ -610,76 +648,142 @@ static void freeLongItem(gpointer data)
   ZMapWindowLongItem longItem = (ZMapWindowLongItemStruct*)data;
                                                                                                                                                   
   g_free(longItem);
+
   return;
 }
                                                                                                                                                   
                                                                                                                                                   
 
-static gboolean handleCanvasEvent(FooCanvasItem *item, GdkEventButton *event, gpointer data)
+static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
+  gboolean event_handled = FALSE ;
   ZMapWindow  window = (ZMapWindowStruct*)data;
   ZMapFeature feature;
   ZMapFeatureItem featureItem;
-  gboolean result = FALSE;  /* if not a BUTTON_PRESS, leave for any other event handlers. */
   GString     *source;
   ZMapFeatureTypeStyle thisType;
 
-  /* For now, we go on BUTTON_RELEASE since, after zooming, the canvas never emits
-  ** a BUTTON_PRESS event.  Maybe when we find out why, we'll change this.  Or maybe not. */
-  if (event->type == GDK_BUTTON_RELEASE)  /* GDK_BUTTON_PRESS is 4, RELEASE 7 */
-  {
-    /* retrieve the FeatureItemStruct from the clicked object, obtain the feature_set from that and the
-    ** feature from that, using the GQuark feature_key. Then call the 
-    ** click callback function, passing the ZMapWindow and feature so the details of the clicked object
-    ** can be displayed in the info_panel. */
 
-    featureItem = g_object_get_data(G_OBJECT(item), "feature");  
-    zMapAssert(featureItem);
 
-    if (featureItem->feature_key)
-      {
-	feature = g_datalist_id_get_data(&(featureItem->feature_set->features), featureItem->feature_key); 
-	zMapWindowFeatureClickCB(window, feature);   
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("ITEM canvas event handler\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	/* lowercase the source as all stored types are lowercase */                         
-	source = g_string_new(featureItem->feature_set->source);
-	source = g_string_ascii_down(source);
-	thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(window->types),source->str);
-	zMapAssert(thisType);
+
+  if (event->type == GDK_BUTTON_PRESS)
+    {
+      GdkEventButton *but_event = (GdkEventButton *)event ;
+
+      /* retrieve the FeatureItemStruct from the clicked object, obtain the feature_set from that and the
+       * feature from that, using the GQuark feature_key. Then call the 
+       * click callback function, passing the ZMapWindow and feature so the details of the clicked object
+       * can be displayed in the info_panel. */
+      featureItem = g_object_get_data(G_OBJECT(item), "feature");  
+      zMapAssert(featureItem);
+
+      zMapAssert(featureItem->feature_key) ;
+
+      /* SURELY WE CAN NEVER NOT HAVE A KEY !  SHOULD CHECK THE LOGIC HERE !  EG */
+      if (featureItem->feature_key)
+	{
+	  feature = g_datalist_id_get_data(&(featureItem->feature_set->features), featureItem->feature_key); 
+	  zMapWindowFeatureClickCB(window, feature);   
+
+	  /* lowercase the source as all stored types are lowercase */                         
+	  source = g_string_new(featureItem->feature_set->source);
+	  source = g_string_ascii_down(source);
+	  thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(window->types),source->str);
+	  zMapAssert(thisType);
 									
-	foo_canvas_item_raise_to_top(item);
+	  foo_canvas_item_raise_to_top(item);
 
-  	zmapWindowHighlightObject(item, window, thisType);
-	window->focusQuark = featureItem->feature_key;
-	window->typeName   = source->str;
+	  zmapWindowHighlightObject(item, window, thisType);
+	  window->focusQuark = featureItem->feature_key;
+	  window->typeName   = source->str;
 
-	g_string_free(source, FALSE); 
+	  g_string_free(source, FALSE); 
 
-	result = TRUE;
-      }
+	  event_handled = FALSE ;
+	}
 
-    /* if this was a right-click, display a list of the features in this column so the user
-    ** can select one and have the display scroll to it. */
-    if (event->button == 3)
-      {
-	if (featureItem)
-	  {
-	    /* display selectable list of features */
-	    columnClickCB(window, featureItem);
-	    result = TRUE;
-	  }
-      }
-  }
+      /* if this was a right-click, display a list of the features in this column so the user
+       * can select one and have the display scroll to it. */
+      if (but_event->button == 3)
+	{
+	  if (featureItem)
+	    {
+	      /* display selectable list of features */
+	      showFeatureList(window, featureItem);
+	      event_handled = FALSE ;
+	    }
+	}
+
+      event_handled = TRUE ;
+    } 
+  else if (event->type == GDK_BUTTON_RELEASE)
+    {
+      event_handled = TRUE ;
+    }
+  else if (event->type == GDK_KEY_PRESS)
+    {
+      event_handled = FALSE ;
+    }
+
+  return event_handled ;
+}
 
 
-  return result;
+static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
+{
+  gboolean event_handled = FALSE ;
+  ZMapWindow  window = (ZMapWindowStruct*)data;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("in COLUMN canvas event handler\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  if (event->type == GDK_BUTTON_PRESS)
+    {
+      GdkEventButton *but_event = (GdkEventButton *)event ;
+
+      /* retrieve the FeatureItemStruct from the clicked object, obtain the feature_set from that and the
+       * feature from that, using the GQuark feature_key. Then call the 
+       * click callback function, passing the ZMapWindow and feature so the details of the clicked object
+       * can be displayed in the info_panel. */
+
+      /* THERE APPEARS TO BE NO CODE HERE.... */
+
+      event_handled = TRUE ;
+    } 
+  else if (event->type == GDK_BUTTON_RELEASE)
+    {
+      GdkEventButton *but_event = (GdkEventButton *)event ;
+
+      /* retrieve the FeatureItemStruct from the clicked object, obtain the feature_set from that and the
+       * feature from that, using the GQuark feature_key. Then call the 
+       * click callback function, passing the ZMapWindow and feature so the details of the clicked object
+       * can be displayed in the info_panel. */
+
+      event_handled = TRUE ;
+    } 
+  else if (event->type == GDK_KEY_PRESS)
+    {
+      event_handled = FALSE ;
+    }
+
+  return event_handled ;
 }
 
 
 
-static void columnClickCB(ZMapWindow window, ZMapFeatureItem featureItem)
+static void showFeatureList(ZMapWindow window, ZMapFeatureItem featureItem)
 {
-  (*(feature_cbs_G->rightClick))(window, featureItem);
+  /* Actually this is not really correct, in the end it will go back to our caller who may
+   * then call this zmapwindow call.... */
+
+  /* user selects new feature in this column */
+  zMapWindowCreateListWindow(window, featureItem);
 
   return;
 }
