@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  5 11:29 2004 (rnc)
+ * Last edited: Nov  8 10:51 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.46 2004-11-08 10:14:29 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.47 2004-11-09 14:45:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -377,8 +377,12 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
   foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("zmapWindowZoom() -\tzoom: %f\tscroll_region: %f, %f, %f, %f\n",
 	 window->zoom_factor, x1, top, x2, bot) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* Scroll to the previous position. */
