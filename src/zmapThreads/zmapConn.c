@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 29 09:26 2004 (edgrif)
+ * Last edited: Sep 15 14:54 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConn.c,v 1.8 2004-07-29 08:45:32 edgrif Exp $
+ * CVS info:   $Id: zmapConn.c,v 1.9 2004-09-17 08:30:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,18 +40,20 @@
 gboolean zmap_thr_debug_G = TRUE ;
 
 
-static ZMapConnection createConnection(char *machine, int port, char *protocol, char *sequence) ;
+static ZMapConnection createConnection(char *machine, int port, char *protocol,
+				       char *sequence, int start, int end) ;
 static void destroyConnection(ZMapConnection connection) ;
 
 
-ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, char *sequence)
+ZMapConnection zMapConnCreate(char *machine, int port, char *protocol,
+			      char *sequence, int start, int end)
 {
   ZMapConnection connection ;
   pthread_t thread_id ;
   pthread_attr_t thread_attr ;
   int status = 0 ;
 
-  connection = createConnection(machine, port, protocol, sequence) ;
+  connection = createConnection(machine, port, protocol, sequence, start, end) ;
 
   /* ok to just set state here because we have not started the thread yet.... */
   zmapCondVarCreate(&(connection->request)) ;
@@ -103,9 +105,9 @@ ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, char *seq
 
 
 
-void zMapConnLoadData(ZMapConnection connection, gchar *data)
+void zMapConnRequest(ZMapConnection connection, void *request)
 {
-  zmapCondVarSignal(&connection->request, ZMAP_REQUEST_GETDATA, data) ;
+  zmapCondVarSignal(&connection->request, ZMAP_REQUEST_GETDATA, request) ;
 
   return ;
 }
@@ -217,7 +219,8 @@ void zMapConnDestroy(ZMapConnection connection)
 
 
 
-static ZMapConnection createConnection(char *machine, int port, char *protocol, char *sequence)
+static ZMapConnection createConnection(char *machine, int port, char *protocol,
+				       char *sequence, int start, int end)
 {
   ZMapConnection connection ;
 
@@ -226,6 +229,10 @@ static ZMapConnection createConnection(char *machine, int port, char *protocol, 
   connection->machine = g_strdup(machine) ;
   connection->port = port ;
   connection->protocol = g_strdup(protocol) ;
+
+  connection->sequence =  g_strdup(sequence) ;
+  connection->start = start ;
+  connection->end = end ;
 
   return connection ;
 }
@@ -237,6 +244,8 @@ static void destroyConnection(ZMapConnection connection)
 {
   g_free(connection->machine) ;
   g_free(connection->protocol) ;
+
+  g_free(connection->sequence) ;
 
   /* Setting this to zero prevents subtle bugs where calling code continues
    * to try to reuse a defunct control block. */

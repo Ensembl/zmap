@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  8 16:24 2004 (edgrif)
+ * Last edited: Sep 15 14:06 2004 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapConnutils.c,v 1.5 2004-04-08 16:50:04 edgrif Exp $
+ * CVS info:   $Id: zmapConnutils.c,v 1.6 2004-09-17 08:30:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,7 +62,7 @@ void zmapCondVarCreate(ZMapRequest thread_state)
   return ;
 }
 
-void zmapCondVarSignal(ZMapRequest thread_state, ZMapThreadRequest new_state, gchar *data)
+void zmapCondVarSignal(ZMapRequest thread_state, ZMapThreadRequest new_state, void *request)
 {
   int status ;
   
@@ -76,8 +76,8 @@ void zmapCondVarSignal(ZMapRequest thread_state, ZMapThreadRequest new_state, gc
   thread_state->state = new_state ;
 
   /* For some requests there will be no data. */
-  if (data)
-    thread_state->data = data ;
+  if (request)
+    thread_state->data = request ;
 
   if ((status = pthread_cond_signal(&(thread_state->cond))) != 0)
     {
@@ -134,7 +134,7 @@ void zmapCondVarWait(ZMapRequest thread_state, ZMapThreadRequest waiting_state)
  * waiting state before looping again. */
 ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest waiting_state,
 				       TIMESPEC *relative_timeout, gboolean reset_to_waiting,
-				       char **data_out)
+				       void **data_out)
 {
   ZMapThreadRequest signalled_state = ZMAP_REQUEST_INIT ;
   int status ;

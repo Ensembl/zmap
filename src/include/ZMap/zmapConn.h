@@ -19,16 +19,14 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 29 09:27 2004 (edgrif)
+ * Last edited: Sep 15 14:37 2004 (edgrif)
  * Created: Thu Jul 24 14:35:58 2003 (edgrif)
- * CVS info:   $Id: zmapConn.h,v 1.4 2004-07-29 08:45:32 edgrif Exp $
+ * CVS info:   $Id: zmapConn.h,v 1.5 2004-09-17 08:30:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONN_H
@@ -55,9 +53,10 @@ typedef enum {ZMAP_REPLY_INIT, ZMAP_REPLY_WAIT, ZMAP_REPLY_GOTDATA, ZMAP_REPLY_R
 typedef struct _ZMapConnectionStruct *ZMapConnection ;
 
 
-ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, char *sequence) ;
+ZMapConnection zMapConnCreate(char *machine, int port, char *protocol,
+			      char *sequence, int start, int end) ;
 
-void zMapConnLoadData(ZMapConnection connection, gchar *data) ;
+void zMapConnRequest(ZMapConnection connection, void *request) ;
 gboolean zMapConnGetReply(ZMapConnection connection, ZMapThreadReply *state) ;
 void zMapConnSetReply(ZMapConnection connection, ZMapThreadReply state) ;
 gboolean zMapConnGetReplyWithData(ZMapConnection connection, ZMapThreadReply *state,

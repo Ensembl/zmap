@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 11 15:43 2004 (edgrif)
+ * Last edited: Sep 15 15:13 2004 (edgrif)
  * Created: Thu Jul 24 14:36:08 2003 (edgrif)
- * CVS info:   $Id: zmapConn_P.h,v 1.4 2004-03-12 16:00:38 edgrif Exp $
+ * CVS info:   $Id: zmapConn_P.h,v 1.5 2004-09-17 08:30:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONN_PRIV_H
@@ -62,7 +62,7 @@ typedef struct
   pthread_mutex_t mutex ;				    /* controls access to this struct. */
   pthread_cond_t cond ;					    /* Slave waits on this. */
   ZMapThreadRequest state ;				    /* Contains request to slave. */
-  gchar *data ;						    /* Contains data for request. */
+  void *data ;						    /* Contains data for request. */
 } ZMapRequestStruct, *ZMapRequest ;
 
 /* Replies via a simpler mutex. */
@@ -70,7 +70,7 @@ typedef struct
 {
   pthread_mutex_t mutex ;				    /* controls access to this struct. */
   ZMapThreadReply state ;				    /* Contains reply from slave. */
-  gchar *data ;						    /* May also contain data for some replies. */
+  void *data ;						    /* May also contain data for some replies. */
   gchar *error_msg ;					    /* May contain error message for when
 							       thread fails. */
 } ZMapReplyStruct, *ZMapReply ;
@@ -85,6 +85,10 @@ typedef struct _ZMapConnectionStruct
   gchar *machine ;
   int port ;
   gchar *protocol ;
+
+  gchar *sequence ;
+  int start, end ;
+
   pthread_t thread_id ;
 
 
@@ -103,10 +107,10 @@ void *zmapNewThread(void *thread_args) ;
 
 /* Request routines. */
 void zmapCondVarCreate(ZMapRequest thread_state) ;
-void zmapCondVarSignal(ZMapRequest thread_state, ZMapThreadRequest new_state, gchar *data) ;
+void zmapCondVarSignal(ZMapRequest thread_state, ZMapThreadRequest new_state, void *request) ;
 void zmapCondVarWait(ZMapRequest thread_state, ZMapThreadRequest waiting_state) ;
 ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest waiting_state,
-				       TIMESPEC *timeout, gboolean reset_to_waiting, gchar **data) ;
+				       TIMESPEC *timeout, gboolean reset_to_waiting, void **data) ;
 void zmapCondVarDestroy(ZMapRequest thread_state) ;
 
 
