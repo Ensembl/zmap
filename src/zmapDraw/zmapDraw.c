@@ -1,4 +1,4 @@
-/*  Last edited: Jul 14 13:47 2004 (edgrif) */
+/*  Last edited: Jul 15 12:01 2004 (edgrif) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -229,6 +229,8 @@ static gboolean zmRecalculate(ZMapWindow window, ZMapCallbackData *zMapCBData)
 }
 */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void zMapPick(int box, double x, double y)
 {
   ZMapColumn *col;
@@ -258,7 +260,7 @@ static void zMapPick(int box, double x, double y)
     }
 
 }
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 static void drawGene(FooCanvas *canvas)
