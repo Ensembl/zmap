@@ -25,15 +25,16 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Apr  7 11:23 2004 (edgrif)
+ * Last edited: Apr 23 23:10 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.4 2004-04-08 16:45:08 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.5 2004-04-27 09:44:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <strings.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapConfig_P.h>
@@ -46,36 +47,97 @@ static char *configGetFile(char *zmap_dir_path, char *zmap_config_file) ;
 static gboolean configFileEmpty(char *zmap_config_file) ;
 
 
+/*! @defgroup zmapconfig   zMapConfig: configuration reading/writing
+ * @{
+ * 
+ * \brief  Configuration File Handling.
+ * 
+ * zMapConfig routines read and write data from configuration files for ZMap.
+ * 
+ * zMapConfigCreate() reads all the configuration files and merges them
+ * into a unified array of resources. Specific stanzas can then be found
+ * and returned using zMapConfigFindStanzas(). When the configuration is
+ * finished with it should be destroyed using zMapConfigDestroy().
+ * 
+ * The intention of the code is to make it easy for the programmer to specify
+ * via static initialisation of a simple stanza array what stanza/elements
+ * they are looking for and then extract the data from them.
+ *
+ * Usage:
+ * <PRE>
+ *      /* Make the "server" stanza so we can search for it in the configuration data. */
+ *      ZMapConfigStanza server_stanza ;
+ *      ZMapConfigStanzaElementStruct server_elements[] = {{"host", ZMAPCONFIG_STRING, {NULL}},
+ *                                                         {"port", ZMAPCONFIG_INT, {NULL}},
+ *	 	    		  	                   {"protocol", ZMAPCONFIG_STRING, {NULL}},
+ *						           {NULL, -1, {NULL}}} ;
+ *      server_elements[1].data.i = -1 ;
+ *	server_stanza = zMapConfigMakeStanza("server", server_elements) ;
+ *
+ *      /* Find all the "server" stanzas and process them. */
+ *  	if (zMapConfigFindStanzas(zmap->config, server_stanza, &server_list))
+ *  	  {
+ *	    ZMapConfigStanza next_server = NULL ;
+ *
+ *	    while ((next_server = zMapConfigGetNextStanza(server_list, next_server)) != NULL)
+ *	      {
+ *		ZMapConfigStanzaElement element ;
+ *		char *machine ;
+ *
+ *		machine = zMapConfigGetElementString(next_server, "host") ;
+ *	      }
+ *
+ *	    /* clean up. */
+ *	    if (server_list)
+ *	      zMapConfigDeleteStanzaSet(server_list) ;
+ *	  }
+ * </PRE>
+ *
+ *
+ *  */
 
-/* Construct a stanza from a name and an array of elements, helps a lot because both
+
+/*!
+ * Construct a stanza from a name and an array of elements. The array of elements
  * can just be statically declared in the code and then passed to this routine which
- * then makes the corresponding stanza. */
-ZMapConfigStanza zMapConfigMakeStanza(char *stanza_name, ZMapConfigStanzaElement elements)
+ * then makes the corresponding stanza. NOTE that the last stanza element in the 
+ * elements array must be a dummy entry with a NULL name.
+ *
+ * The only tedious bit is that it is not possible
+ * with ANSI-C to set the default parameters via a static array, they must be set
+ * explicitly.
+ *
+ * @param stanza_name The name of the Stanza.
+ * @param elements    An array of stanza elements, each initialised with the name of the
+ *                    element, its type and a default value.
+ * @return A stanza which can be used as input to the stanza search/manipulation routines.
+ *  */
+ZMapConfigStanza zMapConfigMakeStanza(char *stanza_name, ZMapConfigStanzaElementStruct elements[])
 {
   ZMapConfigStanza stanza ;
   int i ;
 
   stanza = zmapConfigCreateStanza(stanza_name) ;
 
-  while (elements->name != NULL)
+  for (i = 0 ; elements[i].name != NULL ; i++)
     {
       ZMapConfigStanzaElement new_element ;
 
-      new_element = zmapConfigCreateElement(elements->name, elements->type) ;
+      new_element = zmapConfigCreateElement(elements[i].name, elements[i].type) ;
 
-      switch(elements->type)
+      switch(elements[i].type)
 	{
 	case ZMAPCONFIG_BOOL:
-	  new_element->data.b = elements->data.b ;
+	  new_element->data.b = elements[i].data.b ;
 	  break ;
 	case ZMAPCONFIG_INT:
-	  new_element->data.i = elements->data.i ;
+	  new_element->data.i = elements[i].data.i ;
 	  break ;
 	case ZMAPCONFIG_FLOAT:
-	  new_element->data.f = elements->data.f ;
+	  new_element->data.f = elements[i].data.f ;
 	  break ;
 	case ZMAPCONFIG_STRING:
-	  new_element->data.s = g_strdup(elements->data.s) ;
+	  new_element->data.s = g_strdup(elements[i].data.s) ;
 	  break ;
 	default:
 	  zMapCrash("%s", "Code Error: unrecognised data type for stanza element union") ;
@@ -90,8 +152,32 @@ ZMapConfigStanza zMapConfigMakeStanza(char *stanza_name, ZMapConfigStanzaElement
   return stanza ;
 }
 
-/* Can use this to iterate through a list of stanzas, if current_stanza is NULL then the first
- * stanza is returned. */
+
+/*!
+ * Destroy a stanza, frees all the elements and associated data.
+ *
+ * @param stanza      The stanza to be destroyed.
+ * @return            nothing.
+ *  */
+void zMapConfigDestroyStanza(ZMapConfigStanza stanza)
+{
+  zmapConfigDestroyStanza(stanza) ;
+
+  return ;
+}
+
+
+/*!
+ * Call in a while loop to iterate through a list of stanzas, the function returns the stanza
+ * following the current_stanza. It returns the the first stanza if current_stanza is NULL and
+ * returns NULL if current_stanza is the last stanza. Hence by feeding back into the function
+ * the stanza returned by the previous call to the function it is possible to iterate through
+ * the stanzas.
+ *
+ * @param stanzas         A set of stanzas to iterate through.
+ * @param current_stanza  NULL or a stanza returned by a previous call to this function.
+ * @return The stanza following current_stanza or NULL if no more stanzas.
+ *  */
 ZMapConfigStanza zMapConfigGetNextStanza(ZMapConfigStanzaSet stanzas, ZMapConfigStanza current_stanza)
 {
   ZMapConfigStanza next_stanza = NULL ;
@@ -113,7 +199,28 @@ ZMapConfigStanza zMapConfigGetNextStanza(ZMapConfigStanzaSet stanzas, ZMapConfig
 }
 
 
+/*!
+ * Delete a stanza set (usually created by a call to zMapConfigFindStanzas().
+ *
+ * @param stanzas     The stanza set to be deleted.
+ * @return            nothing
+ *  */
+void zMapConfigDeleteStanzaSet(ZMapConfigStanzaSet stanzas)
+{
+  zmapConfigDeleteStanzaSet(stanzas) ;
+  
+  return ;
+}
 
+
+/*!
+ * Return the element corresponding to the given element name in a stanza, note if an element
+ * is duplicated in a stanza, only the first one found is returned.
+ *
+ * @param stanza          The stanza to search for the specified element.
+ * @param element_name    The name of the element to be searched for.
+ * @return                The element or NULL if the element is not found.
+ *  */
 ZMapConfigStanzaElement zMapConfigFindElement(ZMapConfigStanza stanza, char *element_name)
 {
   ZMapConfigStanzaElement result = NULL ;
@@ -139,11 +246,16 @@ ZMapConfigStanzaElement zMapConfigFindElement(ZMapConfigStanza stanza, char *ele
 
 
 
-
-
-/* Initialise the configuration manager.
+/*!
+ * Create a configuration which can then be searched for configuration stanzas.
+ * Currently it takes an unused argument of a configuration filename,
  * I'M NOT SURE WE WANT TO PASS IN THE CONFIGURATION FILE NAME, THAT MIGHT BE TOO MUCH
- * FLEXIBILITY.......... */
+ * FLEXIBILITY..........THINK ABOUT THIS....
+ *
+ * @param config_file_unused  Name of a configuration file to be read, currently UNUSED.
+ * @return                    The configuration if all the configuration files etc. were
+ *                            successfully read, NULL otherwise.
+ *  */
 ZMapConfig zMapConfigCreate(char *config_file_unused)
 {
   ZMapConfig config ;
@@ -196,48 +308,37 @@ ZMapConfig zMapConfigCreate(char *config_file_unused)
 }
 
 
-/* We should return an array of ptrs that it is the caller responsibility to free, the actual
- * array elements will remain always there, we just provide pointers into the array.... */
-gboolean zMapConfigGetStanzas(ZMapConfig config,
-			      ZMapConfigStanza stanza, ZMapConfigStanzaSet *stanzas_out)
+/*!
+ * Return all instances of the spec_stanza found in the config, returned as a set of
+ * stanzas in stanzas_out. Returns FALSE if none are found.
+ *
+ * Note that only those elements specified in the spec_stanza will be returned from
+ * the configuration, elements not recognised will not be returned for any one stanza.
+ * Note also that multiple stanzas may be returned.
+ *
+ * @param config       The configuration to be searched for the specified stanza.
+ * @param spec_stanza  The stanza to look for in the configuration.
+ * @param stanzas_out  The set of stanzas found that match spec_stanza, this is unaltered
+ *                     if no matching stanzas were found.
+ * @return             TRUE if any matching stanza found, FALSE otherwise.
+ *  */
+gboolean zMapConfigFindStanzas(ZMapConfig config,
+			       ZMapConfigStanza spec_stanza, ZMapConfigStanzaSet *stanzas_out)
 {
   gboolean result = TRUE ;
 
-  result = zmapGetConfigStanzas(config, stanza, stanzas_out) ;
-
-  return result ;
-}
-
-/* Hacked up currently, these values would in reality be extracted from a configuration file
- * and loaded into memory which would then become a dynamic list of servers that could be
- * added into interactively. */
-gboolean zMapConfigGetServers(ZMapConfig config, char ***servers)
-{
-  gboolean result = TRUE ;
-  static char *my_servers[] = {"griffin2 20000 acedb",
-			       "griffin2 20001 acedb",
-			       "http://dev.acedb.org/das/ 0 das",
-			       NULL} ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* for debugging it is often good to have only one thread running. */
-
-  static char *my_servers[] = {"griffin2 20000 acedb",
-			       NULL} ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-  *servers = my_servers ;
+  result = zmapGetConfigStanzas(config, spec_stanza, stanzas_out) ;
 
   return result ;
 }
 
 
-
-/* Delete of a config, will require freeing some members of the structure. */
+/*!
+ * Destroy a config, should be called when the config is finished with.
+ *
+ * @param config       The config to be destroyed.
+ * @return             nothing.
+ *  */
 void zMapConfigDestroy(ZMapConfig config)
 {
   destroyConfig(config) ;
@@ -246,6 +347,9 @@ void zMapConfigDestroy(ZMapConfig config)
 
   return ;
 }
+
+
+/*! @} end of zmapconfig docs. */
 
 
 /*
