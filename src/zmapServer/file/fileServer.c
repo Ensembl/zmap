@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Nov 22 09:19 2004 (edgrif)
+ * Last edited: Dec 13 15:09 2004 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.7 2004-11-22 11:50:38 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.8 2004-12-13 15:14:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,7 +53,7 @@ static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType setContext(void *server, char *sequence, int start, int end) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static ZMapServerResponseType setContext(void *server, ZMapServerSetContext context) ;
-static ZMapServerResponseType request(void *server_conn, ZMapFeatureContext *feature_context_out) ;
+static ZMapServerResponseType request(void *server_conn, ZMapProtocoltGetFeatures get_seqfeatures) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
@@ -131,7 +131,7 @@ static ZMapServerResponseType openConnection(void *server_in)
 
   if (server->gff_file)
     {
-      zMapLogWarning("Feature file \"%s\" already open.", server->gff_file) ;
+      zMapLogWarning("Feature file \"%s\" already open.", server->file_path) ;
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
   if ((server->gff_file = g_io_channel_new_file(server->file_path, "r", &(server->gff_file_err))))
@@ -159,11 +159,10 @@ static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext c
 
 
 
-static ZMapServerResponseType request(void *server_in, ZMapFeatureContext *feature_context_out)
+static ZMapServerResponseType request(void *server_in, ZMapProtocoltGetFeatures get_seqfeatures)
 {
   ZMapServerResponseType result ;
   FileServer server = (FileServer)server_in ;
-  char *file_request = NULL ;
   ZMapFeatureContext feature_context = NULL ;
   ZMapGFFParser parser ;
   GString* gff_line ;
@@ -217,12 +216,12 @@ static ZMapServerResponseType request(void *server_in, ZMapFeatureContext *featu
 
       addMapping(feature_context) ;
 
-      *feature_context_out = feature_context ;
+      get_seqfeatures->feature_context_out = feature_context ;
       result = ZMAP_SERVERRESPONSE_OK ;
     }
   else
     {
-      zMapLogWarning("Could not read GFF features from file \"%s\"", server->gff_file) ;
+      zMapLogWarning("Could not read GFF features from file \"%s\"", server->file_path) ;
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
       

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Nov 11 11:42 2004 (edgrif)
+ * Last edited: Dec 13 15:05 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.6 2004-11-12 11:56:24 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.7 2004-12-13 15:14:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,7 +44,7 @@ static gboolean createConnection(void **server_out,
 				 char *host, int port, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
 static gboolean openConnection(void *server) ;
-static gboolean request(void *server, ZMapFeatureContext *feature_context) ;
+static gboolean request(void *server, ZMapProtocoltGetFeatures get_seqfeatures) ;
 static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data) ;
 static char *lastErrorMsg(void *server) ;
 static gboolean closeConnection(void *server) ;
@@ -181,7 +181,7 @@ static gboolean openConnection(void *server_in)
 
 
 /* OH, OK, THE HTTP BIT SHOULD BE THE REQUEST IN HERE PROBABLY.... */
-static gboolean request(void *server_in, ZMapFeatureContext *feature_context)
+static gboolean request(void *server_in, ZMapProtocoltGetFeatures get_seqfeatures)
 {
   gboolean result = TRUE ;
   DasServer server = (DasServer)server_in ;
@@ -221,7 +221,7 @@ static gboolean request(void *server_in, ZMapFeatureContext *feature_context)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   /* DUMMY FOR NOW......... */
-  *feature_context = NULL ;
+  get_seqfeatures->feature_context_out = NULL ;
 
 
   return result ;
