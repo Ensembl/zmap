@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb  3 09:53 2005 (edgrif)
+ * Last edited: Apr  5 15:16 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.20 2005-02-03 10:03:10 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.21 2005-04-05 14:18:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 			       int start, int end, double score, ZMapStrand strand,
 			       ZMapPhase phase, char *attributes) ;
 static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
-			       int start, int end, int query_start, int query_end,
+			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
@@ -195,7 +195,7 @@ gboolean zmapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureContext feature_con
        * for parse_only.... */
       if (!parser->parse_only && parser->feature_sets)
 	{
-	  feature_context->sequence_name = g_strdup(parser->sequence_name) ;
+	  feature_context->sequence_name = g_quark_from_string(parser->sequence_name) ;
 
 	  feature_context->features_to_sequence.p1 = parser->features_start ;
 	  feature_context->features_to_sequence.p2 = parser->features_end ;
@@ -589,6 +589,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   ZMapFeature feature = NULL ;
   ZMapGFFParserFeatureSet feature_set = NULL ; 
   gboolean feature_has_name ;
+  GQuark style_id ;
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0 ;
@@ -604,7 +605,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
   /* Get the feature name which may not be unique and a feature "id" which _must_
    * be unique. */
-  feature_has_name = getFeatureName(sequence, attributes, feature_type,
+  feature_has_name = getFeatureName(sequence, attributes, feature_type, strand,
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
 
@@ -644,8 +645,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
 	  g_datalist_set_data_full(&(parser->feature_sets), source, feature_set, destroyFeatureArray) ;
 	  
-	  feature_set->source = g_strdup(source) ;
-
+	  feature_set->original_id = g_quark_from_string(source) ;
+	  feature_set->unique_id = zMapStyleCreateID(source) ;
 	  feature_set->multiline_features = NULL ;
 	  g_datalist_init(&(feature_set->multiline_features)) ;
 
@@ -675,8 +676,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
     }
 
 
-  /* Phew, now fill in the feature.... */
-  result = zmapFeatureAugmentData(feature, feature_name_id, feature_name, sequence, source,
+  /* Phew, now fill in the feature....we need to give it proper unique style name... */
+  style_id = zMapStyleCreateID(source) ;
+
+  result = zmapFeatureAugmentData(feature, feature_name_id, feature_name, sequence, style_id,
 				  feature_type, start, end, score, strand,
 				  phase, homol_type, query_start, query_end) ;
 
@@ -749,6 +752,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
 	  g_datalist_set_data_full(&(parser->feature_sets), source, feature_set, destroyFeatureArray) ;
 	  
+	  feature_set->source_id = zMapStyleCreateID(source) ;
 	  feature_set->source = g_strdup(source) ;
 
 	  feature_set->multiline_features = NULL ;
@@ -817,7 +821,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
  * 
  *  */
 static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
-			       int start, int end, int query_start, int query_end,
+			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id)
 {
   gboolean has_name = FALSE ;
@@ -854,8 +858,8 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 	{
 	  has_name = FALSE ;
 	  *feature_name = g_strdup(name) ;
-	  *feature_name_id = zMapFeatureCreateID(feature_type, *feature_name, 
-						 start, end, query_start, query_end) ;
+	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						   start, end, query_start, query_end) ;
 	}
     }
   else
@@ -869,8 +873,8 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
       else
 	*feature_name = g_strdup(sequence) ;
 
-      *feature_name_id = zMapFeatureCreateID(feature_type, *feature_name,
-					     start, end, query_start, query_end) ;
+      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+					       start, end, query_start, query_end) ;
     }
 
 
@@ -1156,10 +1160,10 @@ gboolean formatStrand(char *strand_str, ZMapStrand *strand_out)
       switch (*strand_str)
 	{
 	case '+':
-	  *strand_out = ZMAPSTRAND_DOWN ;
+	  *strand_out = ZMAPSTRAND_FORWARD ;
 	  break ;
 	case '-':
-	  *strand_out = ZMAPSTRAND_UP ;
+	  *strand_out = ZMAPSTRAND_REVERSE ;
 	  break ;
 	default:
 	  *strand_out = ZMAPSTRAND_NONE ;
@@ -1212,9 +1216,10 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
   GData **features = (GData **)user_data ;
   ZMapFeatureSet new_features ;
 
-  new_features = zMapFeatureSetCreate(feature_set->source, feature_set->features) ;
+  new_features = zMapFeatureSetIDCreate(feature_set->original_id, feature_set->unique_id,
+					feature_set->features) ;
 
-  g_datalist_set_data(features, new_features->source, new_features) ;
+  g_datalist_id_set_data(features, new_features->unique_id, new_features) ;
 
   return ;
 }
@@ -1226,8 +1231,6 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 static void destroyFeatureArray(gpointer data)
 {
   ZMapGFFParserFeatureSet feature_set = (ZMapGFFParserFeatureSet)data ;
-
-  g_free(feature_set->source) ;
 
   /* No data to free in this list, just clear it. */
   g_datalist_clear(&(feature_set->multiline_features)) ;

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 14:31 2004 (edgrif)
+ * Last edited: Mar 28 12:37 2005 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.7 2004-11-09 14:40:15 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.8 2005-04-05 14:18:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -64,12 +64,13 @@ typedef enum
  * of these features in arrays. The arrays are indexed via sources. These arrays are only used
  * while building up the final arrays of features. */
 
-
+/* REALLY THIS STRUCT COULD EMBED THE FEATURE STRUCT AND JUST ADD A COUPLE OF FIELDS.... */
 /* For each set of features that come from a single source, we keep an array of those features
  * but also a list of features that need to be built up from several GFF lines. */
 typedef struct ZMapGFFParserFeatureSetStruct_
 {
-  char *source ;					    /* Name of feature set source. */
+  GQuark original_id ;					    /* Name of feature set source. */
+  GQuark unique_id ;
 
   GData *features ;					    /* All features in this feature set. */
 
