@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Dec 13 15:41 2004 (edgrif)
+ * Last edited: Jan  7 12:32 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.11 2004-12-13 15:48:07 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.12 2005-01-07 12:32:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,10 +38,6 @@
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapFeature_P.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <zmapView_P.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -452,6 +448,8 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
       *current_context_inout = current_context ;
       *diff_context_out = diff_context ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* debugging.... */
       printf("\ncurrent context\n") ;
       zmapPrintFeatureContext(*current_context_inout) ;
@@ -467,7 +465,7 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 	}
 
       zMapAssert(fflush(stdout) == 0) ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
