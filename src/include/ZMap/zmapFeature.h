@@ -25,15 +25,16 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Sep 27 10:45 2004 (rnc)
+ * Last edited: Sep 28 13:40 2004 (rnc)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.14 2004-09-27 11:07:38 rnc Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.15 2004-10-13 12:39:18 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
 
 #include <gdk/gdkcolor.h>
+#include <libfoocanvas/libfoocanvas.h>
 
 
 
@@ -216,6 +217,9 @@ typedef struct ZMapFeatureSetStruct_
 {
   char *source ;					    /* e.g. "Genewise predictions" */
 
+  FooCanvasItem *forCol;                                    /* column ids for hide/unhide while */
+  FooCanvasItem *revCol;				    /* zooming */
+
   GData *features ;					    /* A set of ZMapFeatureStruct. */
 
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
@@ -314,18 +318,19 @@ typedef enum {ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_BUMP, ZMAPOVERLAP_CLUSTER } ZMap
 
 typedef struct ZMapFeatureTypeStyleStruct_
 {
-  GdkColor outline ;					    /* Surround/line colour. */
-  GdkColor foreground ;					    /* Overlaid on background. */
-  GdkColor background ;					    /* Fill colour. */
+  GdkColor  outline ;					    /* Surround/line colour. */
+  GdkColor  foreground ;				    /* Overlaid on background. */
+  GdkColor  background ;				    /* Fill colour. */
 
-  float right_priority ;
+  float     right_priority ;
   ZMapFeatureWidthStyle width_style ;
   ZMapFeatureOverlapStyle overlap_style ;
-  double width ;					    /* column width */
-  float min_mag, max_mag ;
-  float min_score, max_score ;
+  double    width ;					    /* column width */
+  float     min_mag, max_mag ;
+  float     min_score, max_score ;
   gboolean  showText ;
   gboolean  showUpStrand ;
+
 } ZMapFeatureTypeStyleStruct, *ZMapFeatureTypeStyle ;
 
 
