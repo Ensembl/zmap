@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar 22 10:42 2004 (edgrif)
+ * Last edited: Apr  8 16:17 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.2 2004-03-22 13:22:25 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.3 2004-04-08 16:48:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,7 +68,7 @@ gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out)
     {
       /* Fatal error..... */
       /* THIS "Internal Error" SHOULD BE IN A MACRO SO WE GET CONSISTENT MESSAGES..... */
-      ZMAPFATALERR("Internal Error: unsupported server protocol: %s", protocol) ;
+      zMapLogFatal("Internal Error: unsupported server protocol: %s", protocol) ;
 
     }
 
