@@ -1,146 +1,221 @@
+#
+# This TODO list file is parsed by the script makeQuad which expects this file
+# to be in the format:
+# 
+# 
+# [Categories]
+# Across = Important \
+# Not_Important
+# Down = Urgent \
+# Not_Urgent
+# 
+# 
+# [Some item of your choice]
+# Across = Important
+# Down = Not_Urgent
+# Text = Text describing the item, possibly \
+# running to several lines.
+# 
+# There should be only one "Categories" section and you should not alter it without
+# altering all the Across/Down entries in all subsequent sections.
+#
+# Each general section should have a unique header and follow there rules:
+#
+# Across = < Important | Not_Important >
+# Down = < Urgent | Not_Urgent >
+# Text = as many lines as you like but you must use the continuation character "\"
+#
+# NOTE that the section title is the only thing that will be displayed in the
+# frames window so make the title meaningful !!!!
+#
+# Please add new stuff as required _and_ remove obsolete or completed items !
+#
+#
 
-==================================================================================
-STUFF THAT NEEDS DOING
-
-Please add new stuff as required _and_ remove obsolete or completed items !
-
-Everything should be under some kind of more general heading.
-
-
-
-BUILD
------
-
-We should move to an autoconf/make etc. system for builds, would be MUCH better.
-
-
-
-
-BUGS
-----
-
-- red border around windows
-
-When doing lots of window splitting we sometimes end up with two highlighted windows
-which seems not good. One window gets highlighted but not then unhighlighted, the
-actual focus window still seems good though and the highlighting of the "stuck" window
-can be undone by moving the pointer in and out of the window.
-
-
-- high cpu usage on deskpro203
-
- output from gprof
-Each sample counts as 0.01 seconds.
-  %   cumulative   self              self     total           
- time   seconds   seconds    calls  ps/call  ps/call  name    
- 57.14      0.04     0.04   800492 49969.27 62461.59  checkStateConnections
- 28.57      0.06     0.02                             zmapIdleCB
- 14.29      0.07     0.01   800492 12492.32 12492.32  zmapVarGetValueWithData
-  0.00      0.07     0.00   800492     0.00 12492.32  zMapThreadGetReplyWithData
-
-Broken version of gtk on this machine? broken use of gtk?  seems fine on alpha.
-
-Do we need to register/unregister zmapIdleCB? Don't want this I guess, 
-threads might never return...
-
-cmdline
--------
-
-need to allow user to specify a .ZMap/ZMap file on commandline....would be best to
-code a new "object" that contained the paths to configuration files and could be
-queried by anyone (the same pattern should be used for commandline options as well.).
+# DO NOT CHANGE THIS WILLY-NILLY.....
+[Categories]
+Across = Important \
+Not_Important
+Down = Urgent \
+Not_Urgent
 
 
 
+[Introduce Autoconf]
+Across = Important
+Down = Urgent
+Text = We should move to an autoconf/make etc. system for builds, would be MUCH better.
 
 
-CANVAS
-------
+[focus window red border]
+Across = Important
+Down = Not_Urgent
+Text = Currently canvas windows are surrounded by a frame, while this can be \
+coloured red it cannot be made wider and so is almost invisible.
 
-The scale is not good, the units seem utterly bizarre as you zoom in.
+[document rationalisation]
+Across = Not_Important
+Down = Not_Urgent
+Text = The docs directories need sorting out. We should have a script which ensures \
+that the doxygen generated docs end up in the "docs" directory below src. The \
+makeQuad files should also end up there so we just have the one docs directory. \
 
 
-The navigator needs to change as the focus changes and the buttons needs
-to change their sensitivity.
+[scale display]
+Across = Important
+Down = Not_Urgent
+Text = The scale is not good, the units seem utterly bizarre as you zoom in. \
+Also, it needs moving into a separate slidable window like the other locators \
+so that it is always visible. It will have to be linked to scrolling in the \
+focus canvas.
 
 
-when you click on a feature in the window that shows the list of features,
-  the position scroll bar is not updated properly...needs the visibility
-  change callback to be called.
+[Focus change]
+Across = Important
+Down = Not_Urgent
+Text = The navigator needs to change as the focus changes and the buttons needs \
+to change their sensitivity, this is only partially done.
 
 
-The Region/Scroll scrollbars should be sorted to be the correct width by magic.
+[interaction with features]
+Across = Important
+Down = Not_Urgent
+Text = when you click on a feature in the window that shows the list of features, \
+the position scroll bar is not updated properly...needs the visibility \
+change callback to be called.
+
+
+[Region/Scroll scrollbars]
+Across = Important
+Down = Not_Urgent
+Text = The Region/Scroll scrollbars should be sorted to be the correct width by magic. \
 Can we add a double click to hide/show to the vertical line of dots??
 
-Resize of window DOES NOT redraw canvas, this should happen.  Also needs to 
+[Resize of zmap window that requires canvas size to increase does not work.]
+Across = Important
+Down = Not_Urgent
+Text = Resize of window DOES NOT redraw canvas, this should happen.  Also needs to  \
 re-enable/disable Zoom In/Out buttons (does redraw already have a hook? to do this?)
 
 
-LOGGING
--------
-
-if you let glib log routines output the message you get something like:
-
-process:554514): ZMap-WARNING **: (zmapAppwindow.c, line 103) - try this for size...
-==================================
-
-the underlined bit if supplied by glib, BUT it does not do this if you use your
-own logging routine which is a bit irritating....
-
-There also seems to be bug in that glib seems to be messing about with fileptrs and hanging
-on to them so that printf statements either don't appear at all or appear in the logfile
+[glib logging glitches]
+Across = Important
+Down = Not_Urgent
+Text = if you let glib log routines output the message you get something like: \
+\
+process:554514): ZMap-WARNING **: (zmapAppwindow.c, line 103) - try this for size...\
+\
+\
+the bit upto and including the "**" is supplied by glib, BUT it does not do this if you use your \
+own logging routine which is a bit irritating.... \
+\
+There also seems to be bug in that glib seems to be messing about with fileptrs and hanging \
+on to them so that printf statements either don't appear at all or appear in the logfile\
 sometimes.....
 
+[multiple alignment support]
+Across = Important
+Down = Urgent
+Text = In order to support multiple alignments there will have to be changes to all of \
+zmapControl, zmapView and zmapWindow, it influences all of them. The changes need \
+not be too great if we can substitute a set of alignments for the single alignment \
+that View currently represents....But it will make view more complicated probably. \
+ \
+Currently there is fudged code in zmapWindowDrawFeatures() in zmapWindowDrawFeatures.c \
+to allow us to start inserting more than one set of alignment data into a window.
 
 
-
-
-COORDINATES
------------
-By the time we get into the drawing code all features should be as  start,end where
-start <= end ALWAYS !  Any conversions should be done by the thread code on the basis
-of information from the servers...
-
-
-
-
-STYLES/METHODS
---------------
-
-Currently the user has to have a styles file, this is because otherwise we have to query
-the server and get all the types, this code is not impossible but is not written yet.
-It needs doing, BUT, the user should still be able to override this with a list of
+[Getting style information from servers]
+Across = Important
+Down = Not_Urgent
+Text = Currently the user has to have a styles file, this is because otherwise we have to query \
+the server and get all the types, this code is not impossible but is not written yet. \
+It needs doing, BUT, the user should still be able to override this with a list of \
 features that they want to see, gives the user control.
 
 
-
-PANGO and FONTS
----------------
-
-Check requirement of -DPANGO_ENABLE_{BACKEND,ENGINE} also fontconfig, see if we can fix/remove
-"Fontconfig error: Cannot load default config file"
-FONTCONFIG_PATH
-FONTCONFIG_FILE
-
-
-SERVER
-------
-
-MY HEADER FILES ARE A BIT MIXED UP....I NEED THIS STRUCTURE:
-
-
-
-      zmapView  <---> new server cmds header          <---> cleaned up zmapConn.h
-                      with structs from zmapServer.h        that deals only with thread interface
-
-
-      (contd) <--->  zmapSlave code  <--->  new server cmds header       <---> zmapServer.h minus
-                                          with structs from zmapServer.h       the cmds header stuff
-
-
-The slave should not know about what is in the server command, the server code should
-disentangle that and call the serverprototype stuff....
+[PANGO and FONTS]
+Across = Important
+Down = Not_Urgent
+Text = Check requirement of -DPANGO_ENABLE_{BACKEND,ENGINE} also fontconfig, see if we can fix/remove \
+"Fontconfig error: Cannot load default config file" \
+FONTCONFIG_PATH \
+FONTCONFIG_FILE 
 
 
 
 
+
+[ACedb tools: xremote and blixem]
+Across = Important
+Down = Urgent
+Text = code should be moved out of acedb tree into a new directory and it should \
+have a separate header that defines the atoms used. Apps can then use this to include \
+and respond to commands etc. The same should be done for a small library to launch blixem \
+given a sequence name/sequences.
+
+
+[GFF stuff]
+Across = Important
+Down = Not_Urgent
+Text = Add ability of caller to specify a start/end so this code will filter out anything not in the \
+start/end coords. May not be so easy though....what about clipped features...ugh...actually \
+its not so simple....bother.....we really want to filter as we process but we won't be able \
+to filter some features until we've seen all of them...sigh....yes, its actually quite tricky \
+and tedious... \
+ \
+Need to scope how long it will take to do GFF3.....as this is what we really want....
+
+
+
+[file server interface code]
+Across = Important
+Down = Not_Urgent
+Text = the code in this directory is crude currently, here are some things that need doing: \
+ \
+- should be able to read files other than GFF.......this will require some restructuring \
+  to provide a general file reading interface with specific parsers (preferably the same \
+  ones as are used for GFF, XML etc. etc. \
+ \
+- error handling is probably less than complete. \
+ \
+- there is no way to ask for just some features currently but this also applies to the server \
+interfaces as well....
+
+
+[cancel points in THREADs code]
+Across = Not_Important
+Down = Not_Urgent
+Text =  need to introduce pthreads_cancel_points into the code so that a cancel \
+will interrupt at good places....some thought needed here though to ensure \
+that we don't just litter the code with cancel points making it hard to \
+maintain...\
+\
+I think to some extent the main network reading calls get interrupted by \
+a cancel so that makes it all work better.
+
+
+[file utilities in Zmap utils]
+Across = Not_Important
+Down = Not_Urgent
+Text = The fileUtils all need sorting out, they should be rationalised into calls that get \
+files from the .ZMap directory and more general calls that construct path names etc.
+
+
+
+[zmapfeatures merge]
+Across = Important
+Down = Urgent
+Text = The merge needs work, currently it leads memory and is probably not as efficient as it \
+it should be. We should not copy across data but instead move pointers. \
+\
+Main thing is to protect whole GDatas that we move into our new sets and null out ones we \
+don't want. But also, what happens to datastructs of features that we have allocated but \
+no longer need...they should be freed.... \
+
+
+[zmapwindow resize method]
+Across = Important
+Down = Urgent
+Text = We _must_ have a resize method so that if the window size gets changes in a way \
+that resizes the canvas window then we alter the zoom etc.....
