@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Apr  7 12:25 2004 (edgrif)
+ * Last edited: May  7 08:11 2004 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.3 2004-04-08 16:15:35 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.4 2004-05-07 09:16:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -35,16 +35,26 @@
 #include <glib.h>
 
 
+/* Currently hard coded name of zmap directory for defaults, logs in users home directory. */
+#define ZMAP_USER_CONTROL_DIR    ".ZMap"
+
+
+
 /* Some compilers give more information than others so set up compiler dependant defines. */
 
 #ifdef __GNUC__	
-#define ZMAP_MSG_FORMAT_STRING  "(%s, %s(), line %d) - "
-#define ZMAP_MSG_FUNCTION_MACRO __PRETTY_FUNCTION__,
-#else
-#define ZMAP_MSG_FORMAT_STRING  "(%s, line %d) - "
-#define ZMAP_MSG_FUNCTION_MACRO        
-#endif
 
+#define ZMAP_MSG_FORMAT_STRING  "(%s, %s(), line %d) - "
+
+#define ZMAP_MSG_FUNCTION_MACRO __PRETTY_FUNCTION__,
+
+#else /* __GNUC__ */
+
+#define ZMAP_MSG_FORMAT_STRING  "(%s, line %d) - "
+
+#define ZMAP_MSG_FUNCTION_MACRO        
+
+#endif /* __GNUC__ */
 
 #include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapUtilsCheck.h>
@@ -53,6 +63,23 @@
 
 
 
+/* Logging functions. */
+typedef struct  _ZMapLogStruct *ZMapLog ;
+
+#define ZMAPLOG_STANZA  "logging"
+
+
+
+ZMapLog zMapLogCreate(char *logname) ;
+gboolean zMapLogStart(ZMapLog log) ;
+gboolean zMapLogStop(ZMapLog log) ;
+void zMapLogDestroy(ZMapLog log) ;
+
+const char *zMapGetControlDirName(void) ;
+char *zMapGetControlFileDir(char *directory_in) ;
+char *zMapGetDir(char *directory_in, gboolean home_relative) ;
+char *zMapGetFile(char *directory, char *filename) ;
+gboolean zMapFileEmpty(char *filepath) ;
 
 
 #endif /* ZMAP_UTILS_H */
