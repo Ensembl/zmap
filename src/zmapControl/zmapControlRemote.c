@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  4 12:23 2004 (edgrif)
+ * Last edited: Nov 19 14:29 2004 (edgrif)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.1 2004-11-04 14:58:13 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.2 2004-11-19 14:34:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,16 @@
 #include <zmapControl_P.h>
 
 
+/* OK THERE IS A GENERAL PROBLEM HERE....WE NEED TO BE ABLE TO SEND COMMANDS TO A SPECIFIC WINDOW
+   WITHIN THE ZMAP.......TRICKY....WE NEED THE WINDOW ID REALLY....
+
+   THINK ABOUT THIS........we will need the current window and all that stuff.....
+*/
+
+
 /* THIS IS HACKED FROM acedb/w2/xremotemain.c it should all be in a separate header.... */
+
+/* NOTE THAT WE NEED SOME MORE RETURN CODES LIKE "BAD_DATA" */
 
 /* strings written to the XREMOTE_RESPONSE_PROP atom by the server */
 #define XREMOTE_S_200_COMMAND_EXECUTED "200 command executed %s"
@@ -52,7 +61,7 @@
 
 
 static char *executeCommand(ZMap zmap, char *command_text) ;
-
+static char *findFeature(ZMap zmap, char *command_text) ;
 
 
 /* Needs top ZMap window.... */
@@ -186,15 +195,20 @@ static char *executeCommand(ZMap zmap, char *command_text)
   char *response_text = NULL ;
   char *cmd_rc = NULL ;
 
-  if (g_ascii_strcasecmp(command_text, "zoom_in") == 0)
+  /* We assume command is first word in text with no preceding blanks. */
+  if (g_str_has_prefix(command_text, "zoom_in"))
     {
       zmapControlWindowDoTheZoom(zmap, 2.0) ;
       cmd_rc = XREMOTE_S_200_COMMAND_EXECUTED ;
     }
-  else if (g_ascii_strcasecmp(command_text, "zoom_out") == 0)
+  else if (g_str_has_prefix(command_text, "zoom_out"))
     {
       zmapControlWindowDoTheZoom(zmap, 0.5) ;
       cmd_rc = XREMOTE_S_200_COMMAND_EXECUTED ;
+    }
+  else if (g_str_has_prefix(command_text, "feature_find"))
+    {
+      cmd_rc = findFeature(zmap, command_text) ;
     }
   else
     cmd_rc = XREMOTE_S_501_COMMAND_UNRECOGNIZED ;
@@ -209,3 +223,119 @@ static char *executeCommand(ZMap zmap, char *command_text)
 }
 
 
+/* The feature_find command has the following format: 
+ * 
+ * "feature_find method = <method_id> ; type = <exon | homol | etc.> ; feature = <feature_name> ;
+ *  strand = < C|F|+|-|. > ; q_start = 40 ; q_end = 387 ; t_start = 2613255 ; t_end = 2613598"
+ * 
+ *  "feature_find method = readpairs ; type = homol ; sequence = 20SNP45079-1505c12.p1c ;
+ *   strand = C ; q_start = 40 ; q_end = 387 ; t_start = 2613255 ; t_end = 2613598"
+ * 
+ * um, actually not sure how generalistic we want this....should we cases for homols or exons or....
+ * 
+ *  */
+static char *findFeature(ZMap zmap, char *command_text)
+{
+  char *result = NULL ;
+  gboolean parse_error ;
+  char *next ;
+  char *keyword, *value ;
+  gchar *type = NULL ;
+  ZMapFeatureType feature_type = ZMAPFEATURE_INVALID ;
+  char *feature_name = NULL ;
+  ZMapStrand strand = ZMAPSTRAND_NONE ;
+  int start = 0, end = 0, query_start = 0, query_end = 0 ;
+  ZMapPane pane = zmap->focuspane ;
+
+
+  next = strtok(command_text, " ") ;			    /* Skip feature_find. */
+
+  parse_error = FALSE ;
+  while (!parse_error && (next = strtok(NULL, " ")))
+    {
+      keyword = g_strdup(next) ;			    /* Get keyword. */
+
+      next = strtok(NULL, " ") ;			    /* skip "=" */
+
+      next = strtok(NULL, " ") ;			    /* Get value. */
+      value = g_strdup(next) ;
+
+      next = strtok(NULL, " ") ;			    /* skip ";" */
+
+
+      if (g_ascii_strcasecmp(keyword, "method") == 0)
+	type = g_strdup(value) ;
+      else if (g_ascii_strcasecmp(keyword, "type") == 0)
+	{
+	  /* we need a convertor from string -> SO compliant feature type here....needed in
+	   * zmapGFF.c as well... */
+
+	  if (g_ascii_strcasecmp(value, "homol") == 0)
+	    feature_type = ZMAPFEATURE_HOMOL ;
+	}
+      else if (g_ascii_strcasecmp(keyword, "feature") == 0)
+	feature_name = g_strdup(value) ;
+      else if (g_ascii_strcasecmp(keyword, "strand") == 0)
+	{
+	  if (g_ascii_strcasecmp(value, "F") == 0
+	      || g_ascii_strcasecmp(value, "+") == 0)
+	    strand = ZMAPSTRAND_DOWN ;
+	  else if (g_ascii_strcasecmp(value, "C") == 0
+		   || g_ascii_strcasecmp(value, "-") == 0)
+	    strand = ZMAPSTRAND_UP ;
+	}
+      else if (g_ascii_strcasecmp(keyword, "q_start") == 0)
+	query_start = atoi(value) ;
+      else if (g_ascii_strcasecmp(keyword, "q_end") == 0)
+	query_end = atoi(value) ;
+      else if (g_ascii_strcasecmp(keyword, "t_start") == 0)
+	start = atoi(value) ;
+      else if (g_ascii_strcasecmp(keyword, "t_end") == 0)
+	end = atoi(value) ;
+      else
+	{
+	  parse_error = TRUE ;
+	  result = XREMOTE_S_500_COMMAND_UNPARSABLE ;
+	}
+
+      g_free(keyword) ;
+      g_free(value) ;
+    }
+
+
+  if (!result)
+    {
+      if (type && *type && feature_type != ZMAPFEATURE_INVALID && feature_name && *feature_name
+	  && strand
+	  && start != 0 && end != 0
+	  && (feature_type == ZMAPFEATURE_HOMOL && query_start != 0 && query_end != 0))
+	{
+	  char *feature_id ;
+	  GQuark feature_quark ;
+
+	  /* The xremote return codes don't really cover everything we would like them to... */
+	  if (zMapFeatureSetCoords(strand, &start, &end, &query_start, &query_end)
+	      && (feature_id = zMapFeatureCreateID(feature_type, feature_name, start, end,
+						   query_start, query_end))
+	      && (feature_quark = g_quark_try_string(feature_id))
+	      && (zMapWindowScrollToItem(zMapViewGetWindow(pane->curr_view_window),
+					 type, feature_quark)))
+	    result = XREMOTE_S_200_COMMAND_EXECUTED ;
+	  else
+	    result = XREMOTE_S_500_COMMAND_UNPARSABLE ;
+	}
+      else
+	{
+	  result = XREMOTE_S_500_COMMAND_UNPARSABLE ;
+	}
+    }
+
+  /* Clean up. */
+  if (type)
+    g_free(type) ;
+  if (feature_name)
+    g_free(feature_name) ;
+
+
+  return result ;
+}
