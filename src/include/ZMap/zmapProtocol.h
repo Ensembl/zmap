@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep 16 10:32 2004 (edgrif)
+ * Last edited: Sep 17 14:25 2004 (edgrif)
  * Created: Wed Sep 15 11:46:18 2004 (edgrif)
- * CVS info:   $Id: zmapProtocol.h,v 1.1 2004-09-17 08:47:20 edgrif Exp $
+ * CVS info:   $Id: zmapProtocol.h,v 1.2 2004-09-23 13:38:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -36,35 +36,25 @@
 #include <ZMap/zmapFeature.h>
 
 
-/* Server requests can be of different types with different input parameters and returning
+
+/* Requests can be of different types with different input parameters and returning
  * different types of results. */
 
-typedef enum {
-  ZMAP_PROTOCOLREQUEST_INVALID = 0,
+typedef enum
+  {
+    ZMAP_PROTOCOLREQUEST_INVALID = 0,
+
+    ZMAP_PROTOCOLREQUEST_SEQUENCE				    /* Get the features. */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Not sure I want to allow this at the moment.... */
-  ZMAP_PROTOCOLREQUEST_SETCONTEXT,			    /* Set the sequence name/start/end. */
+  /* these are things I would like to do but have not implemented yet.... */
+
+    ZMAP_PROTOCOLREQUEST_NEWCONTEXT,			    /* Set a new sequence name/start/end. */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  ZMAP_PROTOCOLREQUEST_SEQUENCE				    /* Get the features. */
-} ZMapProtocolRequestType ;
+  } ZMapProtocolRequestType ;
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* Not sure if we need this as we have a reply code from the server anyway.... */
-
-/* Possible responses to a protocol request. */
-typedef enum {
-  ZMAP_PROTOCOLRESPONSE_OK,
-  ZMAP_PROTOCOLRESPONSE_BADREQ,
-  ZMAP_PROTOCOLRESPONSE_REQFAIL,
-  ZMAP_PROTOCOLRESPONSE_TIMEDOUT,
-  ZMAP_PROTOCOLRESPONSE_SERVERDIED
-} ZMapProtocolResponseType ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -74,11 +64,6 @@ typedef enum {
 typedef struct
 {
   ZMapProtocolRequestType request ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapProtocolResponseType response ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 } ZMapProtocolAnyStruct, *ZMapProtocolAny ;
 
 
@@ -87,22 +72,14 @@ typedef struct
 {
   ZMapProtocolRequestType request ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapProtocolResponseType response ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   char *sequence ;
   int start, end ;
-} ZMapProtocolSetContextStruct, *ZMapProtocolSetContext ;
+} ZMapProtocolNewContextStruct, *ZMapProtocolNewContext ;
 
 
 typedef struct
 {
   ZMapProtocolRequestType request ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapProtocolResponseType response ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   ZMapFeatureContext feature_context_out ;
 } ZMapProtocolGetFeaturesStruct, *ZMapProtocoltGetFeatures ;
@@ -111,14 +88,9 @@ typedef struct
 typedef union
 {
   ZMapProtocolAny any ;
-  ZMapProtocolSetContext set_context ;
+  ZMapProtocolNewContext new_context ;
   ZMapProtocoltGetFeatures get_features ;
 } ZMapProtocol ;
-
-
-
-
-
 
 
 
