@@ -24,16 +24,16 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Dec 15 12:23 2004 (edgrif)
+ * Last edited: Feb  2 11:31 2005 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.13 2004-12-15 14:13:13 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.14 2005-02-02 14:59:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
 #define ZMAP_VIEW_P_H
 
 #include <glib.h>
-#include <ZMap/zmapConn.h>
+#include <ZMap/zmapThreads.h>
 #include <ZMap/zmapView.h>
 
 
@@ -61,7 +61,12 @@ typedef struct _ZMapViewConnectionStruct
 
   ZMapThreadRequest curr_request ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapConnection connection ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapThread thread ;
+
 
 } ZMapViewConnectionStruct, *ZMapViewConnection ;
 

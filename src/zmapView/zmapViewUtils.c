@@ -27,15 +27,14 @@
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
  * HISTORY:
- * Last edited: Jan 20 16:49 2005 (edgrif)
+ * Last edited: Feb  1 12:51 2005 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.3 2005-01-24 11:50:20 edgrif Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.4 2005-02-02 15:00:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapConn.h>
 #include <zmapView_P.h>
 
 
@@ -111,7 +110,7 @@ gboolean zmapAnyConnBusy(GList *connection_list)
 	{
 	  view_con = list_item->data ;
 	  
-	  if (view_con->curr_request == ZMAP_REQUEST_GETDATA)
+	  if (view_con->curr_request == ZMAPTHREAD_REQUEST_EXECUTE)
 	    {
 	      result = TRUE ;
 	      break ;
