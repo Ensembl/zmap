@@ -27,9 +27,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Oct 13 14:27 2004 (edgrif)
+ * Last edited: Nov  9 15:24 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.9 2004-10-14 10:18:49 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.10 2004-11-12 11:50:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -77,20 +77,12 @@ gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out) ;
 
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
 				    char *host, int port, char *protocol, int timeout,
+				    char *version_str,
 				    char *userid, char *passwd) ;
 
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
 
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence, int start, int end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapServerSetContext context) ;
-
-
 
 ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapProtocolAny request) ;
 
