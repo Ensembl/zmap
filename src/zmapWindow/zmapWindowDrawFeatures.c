@@ -26,20 +26,15 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 12 13:29 2004 (rnc)
+ * Last edited: Nov 12 14:41 2004 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.34 2004-11-12 13:29:08 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.35 2004-11-12 14:45:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindow_P.h>
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapUtils.h>
-
-
-
-#define PIXELS_PER_BASE 20.0   /* arbitrary text size to limit zooming in.  Must be tied
-			       ** in to actual text size dynamically some time soon. */
 
 
 
@@ -175,20 +170,18 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
       getTextDimensions(foo_canvas_root(window->canvas),
 			NULL, &text_height) ;
 
+      /* Set border space for top/bottom of sequence. */
       canvasData->border_pixels = text_height * 2 ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* THIS "- 1" FIDDLE WILL NOT BE NECESSARY WHEN THE BOUNDARY STUFF IS DONE. */
-
       window->zoom_factor = (v_adj->page_size - 1) / canvasData->seqLength;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       window->zoom_factor = v_adj->page_size / canvasData->seqLength ;
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
       /* I NEED TO FINISH THIS OFF BUT NEED TO DO A CHECK IN OF MY CODE.... */
 
       /* adjust zoom to allow for top/bottom borders... */
@@ -200,20 +193,23 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+      /* Record min/max zooms, the max zoom we want is large enough to hold the text required
+       * to display a DNA base or other text + a bit. */
+      canvasData->max_zoom = text_height + (double)(ZMAP_WINDOW_TEXT_BORDER * 2) ;
+
       window->zoom_status = ZMAP_ZOOM_MIN ;
 
-      if (window->zoom_factor > PIXELS_PER_BASE)
+      if (window->zoom_factor > canvasData->max_zoom)
 	{
-	  window->zoom_factor = PIXELS_PER_BASE ;
+	  window->zoom_factor = canvasData->max_zoom ;
 	  window->zoom_status = ZMAP_ZOOM_FIXED ;
 	}
 
+      canvasData->min_zoom = window->zoom_factor ;
+
+
       foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
 
-      /* Record min/max zooms, the max zoom we want is large enough to hold the text required
-       * to display a DNA base or other text + a bit. */
-      canvasData->min_zoom = window->zoom_factor ;
-      canvasData->max_zoom = text_height + (double)(ZMAP_WINDOW_TEXT_BORDER * 2) ;
 
       window->page_increment = v_adj->page_size - 50 ;
       GTK_LAYOUT(window->canvas)->vadjustment->page_increment = window->page_increment ;
@@ -405,7 +401,8 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
       /* Decide whether or not this column should be visible */
       /* thisType->min_mag is in bases per line, but window->zoom_factor is pixels per base */
-      min_mag = (canvasData->thisType->min_mag ? PIXELS_PER_BASE/canvasData->thisType->min_mag : 0.0);
+      min_mag = (canvasData->thisType->min_mag 
+		 ? canvasData->max_zoom/canvasData->thisType->min_mag : 0.0);
 
       if (canvasData->window->zoom_factor < min_mag)
       	foo_canvas_item_hide(FOO_CANVAS_ITEM(canvasData->columnGroup));
@@ -460,7 +457,8 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
 	  /* Decide whether or not this column should be visible */
 	  /* thisType->min_mag is in bases per line, but window->zoom_factor is pixels per base */
-	  min_mag = (canvasData->thisType->min_mag ? PIXELS_PER_BASE/canvasData->thisType->min_mag : 0.0);
+	  min_mag = (canvasData->thisType->min_mag
+		     ? canvasData->max_zoom/canvasData->thisType->min_mag : 0.0);
 
 	  if (canvasData->window->zoom_factor < min_mag)
 	    foo_canvas_item_hide(FOO_CANVAS_ITEM(canvasData->revColGroup));

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 12 13:21 2004 (rnc)
+ * Last edited: Nov 12 14:41 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.49 2004-11-12 13:23:24 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.50 2004-11-12 14:45:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,11 +37,10 @@
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapConfig.h>
 #include <zmapWindow_P.h>
 #include <ZMap/zmapDraw.h>
 
-
-#define XWIN_MAXSIZE 30000.0   /* XWindows height limit is about 32k */
 
 
 static void dataEventCB        (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
@@ -49,6 +48,7 @@ static void canvasClickCB      (GtkWidget *widget, GdkEventClient *event, gpoint
 static void clickCB            (ZMapWindow window, void *caller_data, ZMapFeature feature);
 static gboolean rightClickCB   (ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
 static void hideUnhideColumns  (ZMapCanvasDataStruct *canvasData);
+static gboolean getConfiguration(ZMapWindow window) ;
 
 
 /* These callback routines are static because they are set just once for the lifetime of the
@@ -113,6 +113,10 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   window->zoom_status = ZMAP_ZOOM_INIT ;
   window->step_increment = 10;
   window->page_increment = 600;
+  window->canvas_maxwin_size = ZMAP_WINDOW_MAX_WINDOW ;
+
+  /* Some things for window can be specified in the configuration file. */
+  getConfiguration(window) ;
 
   window->featureListWindows = g_ptr_array_new();
   g_datalist_init(&(window->featureItems));
@@ -343,7 +347,7 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
 
   /* Calculate limits to what we can show. */
-  max_win_span = XWIN_MAXSIZE ;
+  max_win_span = (double)(window->canvas_maxwin_size) ;
   seq_span = canvasData->seqLength * window->zoom_factor ;
 
   /* Calculate the extent of the new span, new span must not exceed maximum X window size
@@ -451,7 +455,7 @@ static void hideUnhideColumns(ZMapCanvasDataStruct *canvasData)
       column = &g_array_index(canvasData->columns, ZMapColStruct, i);
 
       /* type->min_mag is in bases per line, but window->zoom_factor is pixels per base */
-      min_mag = (column->type->min_mag ? PIXELS_PER_BASE/column->type->min_mag : 0.0);
+      min_mag = (column->type->min_mag ? canvasData->max_zoom/column->type->min_mag : 0.0);
 
       if (canvasData->window->zoom_factor > min_mag)
 	{
@@ -539,6 +543,56 @@ static gboolean rightClickCB(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet fe
 
   return TRUE;
 }
+
+
+
+
+/* Read logging information from the configuration, note that we read _only_ the first
+ * logging stanza found in the configuration, subsequent ones are not read. */
+static gboolean getConfiguration(ZMapWindow window)
+{
+  gboolean result = FALSE ;
+  ZMapConfig config ;
+  ZMapConfigStanzaSet window_list = NULL ;
+  ZMapConfigStanza window_stanza ;
+  char *window_stanza_name = ZMAP_WINDOW_CONFIG ;
+  ZMapConfigStanzaElementStruct window_elements[] = {{"canvas_maxsize", ZMAPCONFIG_INT, {NULL}},
+						     {NULL, -1, {NULL}}} ;
+
+  /* Set default values in stanza, keep this in synch with initialisation of window_elements array. */
+  window_elements[0].data.i = ZMAP_WINDOW_MAX_WINDOW ;
+
+  if ((config = zMapConfigCreate()))
+    {
+      char *log_dir = NULL, *log_name = NULL, *full_dir = NULL ;
+
+      window_stanza = zMapConfigMakeStanza(window_stanza_name, window_elements) ;
+
+      if (zMapConfigFindStanzas(config, window_stanza, &window_list))
+	{
+	  ZMapConfigStanza next_window ;
+	  
+	  /* Get the first window stanza found, we will ignore any others. */
+	  next_window = zMapConfigGetNextStanza(window_list, NULL) ;
+	  
+	  window->canvas_maxwin_size = zMapConfigGetElementInt(next_window, "canvas_maxsize") ;
+	  
+	  zMapConfigDeleteStanzaSet(window_list) ;		    /* Not needed anymore. */
+	}
+      
+      zMapConfigDestroyStanza(window_stanza) ;
+      
+      zMapConfigDestroy(config) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+
 
 
 

@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 12 11:09 2004 (rnc)
+ * Last edited: Nov 12 14:42 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.30 2004-11-12 13:30:43 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.31 2004-11-12 14:45:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -41,11 +41,19 @@
 /* Test scaffoling */
 #include <ZMap/zmapFeature.h>
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define PIXELS_PER_BASE 20.0   /* arbitrary text size to limit zooming in.  Must be tied
 			       ** in to actual text size dynamically some time soon. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* This is the name of the window config stanza. */
+#define ZMAP_WINDOW_CONFIG "ZMapWindow"
 
 enum
   {
+    ZMAP_WINDOW_MAX_WINDOW = 30000,			    /* Largest canvas window. */
     ZMAP_WINDOW_TEXT_BORDER = 2				    /* border above/below dna text. */
   } ;
 
@@ -75,6 +83,9 @@ typedef struct _ZMapWindowStruct
   double       zoom_factor ;
   ZMapWindowZoomStatus zoom_status ;			    /* For short sequences that are
 							       displayed at max. zoom initially. */
+
+  int          canvas_maxwin_size ;			    /* 30,000 is the maximum (default). */
+
   int          step_increment;
   int          page_increment;
 
