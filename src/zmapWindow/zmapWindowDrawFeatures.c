@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 21 09:43 2004 (rnc)
+ * Last edited: Jul 21 12:12 2004 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.6 2004-07-21 08:51:10 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.7 2004-07-21 11:15:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,7 +68,7 @@ void zmapWindowDrawFeatures(FooCanvas *canvas, ZMapFeatureContext feature_contex
   params.column_position = 20.0;
   params.types = types;
 
-  result = zmapDrawScale(canvas   , offset, 
+  result = zmapDrawScale(canvas, offset, 
 			 feature_context->sequence_to_parent.c1, 
 			 feature_context->sequence_to_parent.c2);
 
@@ -90,11 +90,13 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
   FooCanvasItem *col_group;  // each feature_set represents a column
   double column_spacing = 20.0;
 
+
   // NB for each column we create a new canvas group, with the initial y coordinate set to
   // 10.0 to just drop it a teeny bit from the top of the window.  All items live in the group.
   // Note that this y coord adjustment is directly linked to the the manipulation of 
   // params->height performed in zmapWindowDrawFeatures.  Change them together or not at all.
-  params->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(params->types), feature_set->source);
+  params->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(params->types), feature_set->source) ;
+
   params->column_position += column_spacing;
 
   params->columnGroup = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
@@ -129,11 +131,11 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 
   if (!params->thisType)       // this needs to be handled properly
     {
-      params->thisType = (ZMapFeatureTypeStyle)g_new0(ZMapFeatureTypeStyle, 1);
+      params->thisType = g_new0(ZMapFeatureTypeStyleStruct, 1);
+
       params->thisType->width = 10.0;
       params->thisType->foreground = "dark blue";
       params->thisType->background = "white";
-      printf("%s\n", g_quark_to_string(key_id));
     }
 
   switch (zMapFeature->type)
