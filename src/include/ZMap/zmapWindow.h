@@ -27,9 +27,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jul 22 11:40 2004 (rnc)
+ * Last edited: Aug 16 14:06 2004 (rnc)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.14 2004-07-22 15:39:49 rnc Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.15 2004-08-18 14:57:16 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -49,6 +49,7 @@ typedef struct _ZMapWindowStruct *ZMapWindow ;
 
 
 /* General callback function for all window callbacks... */
+typedef void (*ZMapWindowFeatureCallbackFunc)(ZMapWindow window, void *caller_data, ZMapFeature feature) ;
 typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data) ;
 
 
@@ -57,7 +58,7 @@ typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data) ;
 typedef struct _ZMapWindowCallbacksStruct
 {
   ZMapWindowCallbackFunc scroll ;
-  ZMapWindowCallbackFunc focus ;
+  ZMapWindowFeatureCallbackFunc click ;
   ZMapWindowCallbackFunc destroy ;
 
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
