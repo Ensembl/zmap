@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  8 16:18 2004 (edgrif)
+ * Last edited: Jun 25 12:17 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.5 2004-04-08 16:50:04 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.6 2004-06-25 13:39:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,6 @@
 #include <pthread.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapConn_P.h>
-#include <ZMap/zmapServer.h>
 #include <zmapSlave_P.h>
 
 
@@ -107,8 +106,12 @@ void *zmapNewThread(void *thread_args)
   thread_cb->thread_died = FALSE ;
   thread_cb->initial_error = NULL ;
   thread_cb->server = NULL ;
-  thread_cb->server_request = g_string_sized_new(ZMAP_SLAVE_REQ_BUFSIZE) ;
+  thread_cb->server_request = ZMAP_SERVERREQ_INVALID ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   thread_cb->server_reply = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* Only do the minimum before setting this up as this is the call that makes sure our
@@ -178,17 +181,26 @@ void *zmapNewThread(void *thread_args)
 	  char *server_command ;
 	  int reply_len = 0 ;
 
-	  /* Is it an error to not have a sequence ????? */
+	  /* Is it an error to not have a sequence ????? YES, we need to do something about this. */
 	  if (!sequence)
 	    sequence = "" ;
 
+
 	  ZMAP_THR_DEBUG(("%x: getting sequence %s....\n", connection->thread_id, sequence)) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* this is certainly now wrong..... */
 	  g_string_sprintf(thread_cb->server_request,
 			   "gif seqget %s ; seqfeatures", sequence) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  if (!zMapServerRequest(thread_cb->server, thread_cb->server_request->str,
-				 &(thread_cb->server_reply), &reply_len))
+	  thread_cb->server_request = ZMAP_SERVERREQ_SEQUENCE ;
+	  
+
+
+	  if (!zMapServerRequest(thread_cb->server, thread_cb->server_request,
+				 sequence, &(thread_cb->feature_context)))
 	    {
 	      thread_cb->thread_died = TRUE ;
 
@@ -206,9 +218,9 @@ void *zmapNewThread(void *thread_args)
 
 	  /* Signal that we got some data. */
 	  zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA,
-				  (void *)(thread_cb->server_reply)) ;
+				  (void *)(thread_cb->feature_context)) ;
 
-	  thread_cb->server_reply = NULL ;		    /* Reset, we don't free this string. */
+	  thread_cb->feature_context = NULL ;		    /* Reset, we don't free this string. */
 	}
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -284,10 +296,16 @@ static void cleanUpThread(void *thread_args)
     }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Not needed any more.... */
+
   if (thread_cb->server_request)
     g_string_free(thread_cb->server_request, TRUE) ;
   if (thread_cb->server_reply)
     g_free(thread_cb->server_reply) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   g_free(thread_cb) ;
