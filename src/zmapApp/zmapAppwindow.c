@@ -26,25 +26,29 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 22 09:22 2004 (edgrif)
+ * Last edited: Feb 10 14:58 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.17 2004-11-22 11:50:36 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.18 2005-02-10 16:35:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <popt.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapCmdLineArgs.h>
+#include <ZMap/zmapConfigDir.h>
 #include <zmapApp_P.h>
+
 
 
 static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
 static void quitCB(GtkWidget *widget, gpointer data) ;
 static void removeZmapRow(void *app_data, void *zmap) ;
-gboolean checkForCmdLineSequenceArgs(int argc, char *argv[],
-				     char **sequence_out, int *start_out, int *end_out) ;
+static void checkForCmdLineSequenceArgs(int argc, char *argv[],
+					char **sequence_out, int *start_out, int *end_out) ;
+static void checkConfigDir(void) ;
+
 
 
 int test_global = 10 ;
@@ -67,6 +71,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     test_overlap = 1 ;
 
 
+  /* 
+   *       Application initialisation. 
+   */
+
+
   /* Since thread support is crucial we do compile and run time checks that its all intialised.
    * the function calls look obscure but its what's recommended in the glib docs. */
 #if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
@@ -78,10 +87,27 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     g_thread_init(NULL);
 
 
+  /* Set up command line parsing object, globally available anywhere, this function exits if
+   * there are bad command line args. */
+  zMapCmdLineArgsCreate(argc, argv) ;
+
+  /* Set up configuration directory/files, this function exits if the directory/files can't be
+   * accessed. */
+  checkConfigDir() ;
+
+
   app_context = createAppContext() ;
+
 
   /* Set up logging for application. */
   app_context->logger = zMapLogCreate(NULL) ;
+
+
+
+
+  /* 
+   *             GTK initialisation 
+   */
 
   initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
 
@@ -116,16 +142,19 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   sequence = NULL ;
   start = 1 ;
   end = 0 ;
-  if (!checkForCmdLineSequenceArgs(argc, argv, &sequence, &start, &end))
-    {
-      zMapExit(EXIT_FAILURE) ;
-    }
-  else if (sequence)
+  checkForCmdLineSequenceArgs(argc, argv, &sequence, &start, &end) ; /* May exit if bad cmdline args. */
+  if (sequence)
     {
       zmapAppCreateZMap(app_context, sequence, start, end) ;
     }
 
+
+  /* 
+   *       Start the GUI. 
+   */
+
   gtk_main() ;
+
 
 
   zMapExit(EXIT_SUCCESS) ;				    /* exits.... */
@@ -228,64 +257,57 @@ static void removeZmapRow(void *app_data, void *zmap_data)
 }
 
 
-
-/* Code below is for cmdline args style parsing, may wish to extract some of this at sometime
- * into more generalised routines to go into utils....but for now this will do.... */
-
-/* 
- * Note that long args must be specified as:   --opt=arg  -opt1=arg  etc.
- * 
- */
-
-
-gboolean checkForCmdLineSequenceArgs(int argc, char *argv[],
-				     char **sequence_out, int *start_out, int *end_out)
+/* Did user specify seqence/start/end on command line. */
+static void checkForCmdLineSequenceArgs(int argc, char *argv[],
+					char **sequence_out, int *start_out, int *end_out)
 {
-  gboolean result = FALSE ;
-  char *sequence = NULL ;
-  int start = -1, end = -1 ;
-  poptContext optCon ;
-  struct poptOption userOptionsTable[] =
+  ZMapCmdLineArgsType value ;
+  char *sequence ;
+  int start = 1, end = 0 ;
+
+  if ((sequence = zMapCmdLineFinalArg()))
     {
-      {"start", '\0', POPT_ARG_INT, &start, 0,
-       "start coord in sequence", "start >= 1"},
-      {"end", '\0', POPT_ARG_INT, &end, 0,
-       "end coord in sequence", "end > start or end == 0 means show to end of sequence"},
-      {NULL, 0, 0, NULL, 0, NULL, NULL}
-  };
-  struct poptOption optionsTable[] = {
-    { NULL, '\0', POPT_ARG_INCLUDE_TABLE,  NULL, 0,
-      "Sequence Args", NULL },
-    POPT_AUTOHELP
-    { NULL, 0, 0, NULL, 0, NULL, NULL }
-  };
-  int popt_rc = 0 ;
+    
+      if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_START, &value))
+	start = value.i ;
+      if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_END, &value))
+	end = value.i ;
 
-  optionsTable[0].arg = userOptionsTable ;
-
-  optCon = poptGetContext(NULL, argc, (const char **)argv, optionsTable, 0) ;
-
-  /* Parse command line for coords and a sequence name, note coords are meaningless
-   * without a sequence. */
-  popt_rc = poptGetNextOpt(optCon) ;
-  if (popt_rc == -1)
-    {
-      result = TRUE ;
-
-      if ((sequence = (char *)poptGetArg(optCon)))
+      if (start != 1 || end != 0)
 	{
-	  *sequence_out = sequence ;
-
-	  if (start != -1)
-	    *start_out = start ;
-	  if (end != -1)
-	    *end_out = end ;
+	  if (start < 1 || (end != 0 && end < start))
+	    {
+	      fprintf(stderr, "Bad start/end values: start = %d, end = %d\n", start, end) ;
+	      zMapExit(EXIT_FAILURE) ;
+	    }
 	}
+
+      *sequence_out = sequence ;
+      *start_out = start ;
+      *end_out = end ;
     }
 
-  optCon = poptFreeContext(optCon);
 
-  return result ;
+ 
+  return ;
 }
 
 
+/* Did user specify a config directory and/or config file within that directory on the command line. */
+static void checkConfigDir(void)
+{
+  ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE} ;
+
+  zMapCmdLineArgsValue(ZMAPARG_CONFIG_DIR, &dir) ;
+  zMapCmdLineArgsValue(ZMAPARG_CONFIG_FILE, &file) ;
+
+  if (!zMapConfigDirCreate(dir.s, file.s))
+    {
+      fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
+	      "or file \"%s\" within that directory.\n",
+	      zMapConfigDirGetDir(), zMapConfigDirGetFile()) ;
+      zMapExit(EXIT_FAILURE) ;
+    }
+
+  return ;
+}
