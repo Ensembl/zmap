@@ -29,27 +29,40 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: May 19 12:00 2004 (edgrif)
+ * Last edited: May 20 15:03 2004 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.1 2004-05-19 11:59:48 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.2 2004-05-20 14:03:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
 #define ZMAPVIEW_H
 
+#include <gtk/gtk.h>
 
 /* Opaque type, represents an instance of a ZMapView. */
 typedef struct _ZMapViewStruct *ZMapView ;
 
-
+/* Callers can specify callback functions which get called with ZMapView which made the call
+ * and the applications own data pointer. */
 typedef void (*ZMapViewCallbackFunc)(ZMapView zmap_view, void *app_data) ;
+
+
+/* The overall state of the zmapView, we need this because both the zmap window and the its threads
+ * will die asynchronously so we need to block further operations while they are in this state. */
+typedef enum {
+  ZMAPVIEW_INIT,					    /* Display with no threads. */
+  ZMAPVIEW_RUNNING,					    /* Display with threads in normal state. */
+  ZMAPVIEW_RESETTING,					    /* Display that is closing its threads
+							       and returning to INIT state. */
+  ZMAPVIEW_DYING					    /* ZMap is dying for some reason,
+							       cannot do anything in this state. */
+} ZMapViewState ;
+
 
 
 ZMapView zMapViewCreate(GtkWidget *parent_widget, char *sequence,
 			void *app_data, ZMapViewCallbackFunc destroy_cb) ;
-
 gboolean zMapViewConnect(ZMapView zmap_view) ;
-
 gboolean zMapViewLoad(ZMapView zmap_view, char *sequence) ; /* sequence == NULL => reload existing
 							       sequence. */
 
@@ -62,10 +75,9 @@ gboolean zMapViewDeleteViewWindow(ZMapView zmap_view) ;
 
 
 gboolean zMapViewReset(ZMapView zmap_view) ;
-
 char *zMapViewGetSequence(ZMapView zmap_view) ;
-char *zMapViewGetStatus(ZMapView zmap_view) ;
-
+ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
+char *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
 gboolean zMapViewDestroy(ZMapView zmap_view) ;
 
 
