@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jan 25 17:38 2005 (edgrif)
+ * Last edited: Apr  6 17:39 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.23 2005-01-25 17:49:33 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.24 2005-04-06 16:46:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,7 +146,13 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
  * that zoom can only go from min to max _via_ the mid state. */
 void zmapControlWindowDoTheZoom(ZMap zmap, double zoom)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapWindowZoom(zMapViewGetWindow(zmap->focus_viewwindow), zoom) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* need code to say "if locked then do all windows else do the focus window */
+  zMapViewZoom(zMapViewGetView(zmap->focus_viewwindow), NULL, zoom) ;
 
   return ;
 }

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Apr  5 15:23 2005 (edgrif)
+ * Last edited: Apr  6 17:34 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.51 2005-04-05 14:25:42 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.52 2005-04-06 16:46:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -505,6 +505,37 @@ gboolean zMapViewReset(ZMapView zmap_view)
     }
 
   return TRUE ;
+}
+
+
+/* 
+ * If view_window is NULL all windows are zoomed.
+ * 
+ * 
+ *  */
+void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom)
+{
+
+  if (view_window)
+    zMapWindowZoom(zMapViewGetWindow(view_window), zoom) ;
+  else
+    {
+      GList* list_item ;
+
+      list_item = g_list_first(zmap_view->window_list) ;
+
+      do
+	{
+	  ZMapViewWindow view_window ;
+
+	  view_window = list_item->data ;
+
+	  zMapWindowZoom(view_window->window, zoom) ;
+	}
+      while ((list_item = g_list_next(list_item))) ;
+    }
+
+  return ;
 }
 
 
