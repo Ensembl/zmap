@@ -1,4 +1,4 @@
-/*  File: zmapthrslave.c
+/*  File: zmapSlave.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
  *-------------------------------------------------------------------
@@ -20,15 +20,14 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
  *
  * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Jul 21 17:01 2004 (edgrif)
+ * Last edited: Jul 28 14:14 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.8 2004-07-21 16:07:13 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.9 2004-07-29 08:47:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -168,6 +167,8 @@ void *zmapNewThread(void *thread_args)
       signalled_state = zmapCondVarWaitTimed(thread_state, ZMAP_REQUEST_WAIT, &timeout, TRUE,
 					     &sequence) ;
 
+      /* The whole request bit needs sorting out...into types and data... */
+
       ZMAP_THR_DEBUG(("%x: finished condvar wait, state = %s\n", connection->thread_id,
 		      zMapVarGetRequestString(signalled_state))) ;
 
@@ -181,27 +182,31 @@ void *zmapNewThread(void *thread_args)
 	  char *server_command ;
 	  int reply_len = 0 ;
 
-	  /* Is it an error to not have a sequence ????? YES, we need to do something about this. */
-	  if (!sequence)
-	    sequence = "" ;
+	  /* Must have a sequence at this stage.... */
+	  zMapAssert(*sequence) ;
 
-
+	  /* this needs changing according to request.... */
 	  ZMAP_THR_DEBUG(("%x: getting sequence %s....\n", connection->thread_id, sequence)) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* this is certainly now wrong..... */
-	  g_string_sprintf(thread_cb->server_request,
-			   "gif seqget %s ; seqfeatures", sequence) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	  thread_cb->server_request = ZMAP_SERVERREQ_SEQUENCE ;
-	  
 
-
+	  /* OK A BOOL IS NOT ENOUGH HERE, WE NEED TO KNOW IF THE ERROR WAS JUST A REQUEST ERROR
+	   * OR THE SERVER DIED, OR WHAT.... */
 	  if (!zMapServerRequest(thread_cb->server, thread_cb->server_request,
 				 sequence, &(thread_cb->feature_context)))
 	    {
+	      char *error_msg ;
+
+	      ZMAP_THR_DEBUG(("%x: request for %s failed....\n", connection->thread_id, sequence)) ;
+
+	      error_msg = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNREQUEST,
+					  zMapServerLastErrorMsg(thread_cb->server)) ;
+
+	      /* Signal that we failed. */
+	      zmapVarSetValueWithError(&(connection->reply), ZMAP_REPLY_REQERROR, error_msg) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      thread_cb->thread_died = TRUE ;
 
 	      thread_cb->initial_error = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNREQUEST,
@@ -211,16 +216,20 @@ void *zmapNewThread(void *thread_args)
 	       * WHICH LEADS TO EXITTING FROM THIS ROUTINE. FOR OTHER ERRORS WE WIL
 	       * HAVE TO HAVE A MORE FORMAL MECHANISM.... */
 	      break ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	    }
+	  else
+	    {
+	      ZMAP_THR_DEBUG(("%x: got all data....\n", connection->thread_id)) ;
 
-	  ZMAP_THR_DEBUG(("%x: got all data....\n", connection->thread_id)) ;
-
-
-	  /* Signal that we got some data. */
-	  zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA,
-				  (void *)(thread_cb->feature_context)) ;
-
-	  thread_cb->feature_context = NULL ;		    /* Reset, we don't free this string. */
+	      /* Signal that we got some data. */
+	      zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA,
+				      (void *)(thread_cb->feature_context)) ;
+	      
+	      thread_cb->feature_context = NULL ;		    /* Reset, we don't free this string. */
+	    }
 	}
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
