@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar 16 15:22 2005 (edgrif)
+ * Last edited: Mar 23 17:30 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.48 2005-03-16 15:53:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.49 2005-03-23 17:31:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,15 +47,9 @@ typedef struct
 } ItemMenuCBDataStruct, *ItemMenuCBData ;
 
 
-
-
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
 			 ZMapFeatureItem feature_item) ;
 static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
-
-
-
-
 
 
 /* these will go when scale is in separate window. */
@@ -86,10 +80,6 @@ typedef struct _ZMapCanvasDataStruct
 
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void showFeatureList(ZMapWindow window, ZMapFeatureItem featureItem) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data) ;
@@ -179,12 +169,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   zMapAssert(window && full_context && diff_context && types) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowPrintGroup(foo_canvas_root(window->canvas)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
   window->types = types ;
 
   window->seqLength
@@ -263,11 +247,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   canvas_data.canvas = window->canvas;
 
 
-
-
-
-
-
   /* this routine requires that the scrolled region is set as well.... */
   foo_canvas_set_scroll_region(window->canvas,
 			       0.0, window->seq_start, 
@@ -281,18 +260,8 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 					&(window->minor_scale_units)) ;
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  window->scaleBarOffset = SCALEBAR_OFFSET ;
-
-  column_start = window->scaleBarOffset + (SCALEBAR_WIDTH + (2 * COLUMN_SPACING)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
   column_start = x2 + COLUMN_SPACING ;
-
-
 
 
   /* FUDGED CODE FOR NOW.....we want to deal with multiple alignments but zmapview etc. don't
@@ -318,8 +287,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
       g_datalist_set_data(&alignment->blocks, "dummy", block) ;
 
     }
-
-
 
 
   /* Draw all the features, so much in so few lines...sigh... */
@@ -378,19 +345,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
    * be too long........check this out....... */
   if (window->longItems)
     g_datalist_foreach(&(window->longItems), zmapWindowCropLongFeature, window);
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* this routine requires that the scrolled region is set as well.... */
-  window->scaleBarGroup = zmapDrawScale(window->canvas,
-					0.0, window->zoom_factor,
-					full_context->sequence_to_parent.c1,
-					full_context->sequence_to_parent.c2,
-					&(window->major_scale_units),
-					&(window->minor_scale_units)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
   /* Expand the scroll region to include everything again as we need to include the scale bar. */  
@@ -621,7 +575,14 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 			      &canvas_data->type->outline, 
 			      &canvas_data->type->foreground);
 
+
 	    g_object_set_data(G_OBJECT(box), "feature", feature_item);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    /* this doesn't work, it doesn't actually get called..... */
+	    g_object_set_data_full(G_OBJECT(box), "feature", feature_item, myDestroy) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	    g_signal_connect(GTK_OBJECT(box), "event",
 			     GTK_SIGNAL_FUNC(canvasItemEventCB), canvas_data->window) ;
@@ -721,16 +682,11 @@ static void freeLongItem(gpointer data)
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
-  ZMapWindow  window = (ZMapWindowStruct*)data;
-  ZMapFeature feature;
-  ZMapFeatureItem feature_item;
-  GString     *source;
-  ZMapFeatureTypeStyle type;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("ITEM canvas event handler\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapWindow  window = (ZMapWindowStruct*)data ;
+  ZMapFeature feature ;
+  ZMapFeatureItem feature_item ;
+  GString     *source ;
+  ZMapFeatureTypeStyle type ;
 
   switch (event->type)
     {
@@ -738,8 +694,9 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	printf("ITEM event handler - CLICK\n") ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	/* Currently whichever mouse button is clicked, the highlighted feature will change,
 	 * we may wish to change that. */
@@ -753,13 +710,22 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 	if (feature_item->feature_key)
 	  {
+	    char *feature_text ;
+
 	    feature = g_datalist_id_get_data(&(feature_item->feature_set->features),
 					     feature_item->feature_key) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    zMapWindowFeatureClickCB(window, feature) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	    (*(window->caller_cbs->click))(window, window->app_data, feature) ;
+	    feature_text = g_strdup_printf("%s   %d   %d   %s   %s", 
+					   feature->name,
+					   feature->x1,
+					   feature->x2,
+					   zmapFeatureLookUpEnum(feature->type, TYPE_ENUM), 
+					   feature->method_name);
+	    
+	    (*(window->caller_cbs->click))(window, window->app_data, feature_text) ;
+
+	    g_free(feature_text) ;
+
 
 	    /* THIS SHOULD BE ENCAPSULATED IN A LITTLE ROUTINE..... */
 	    /* lowercase the source as all stored types are lowercase */                         
@@ -816,23 +782,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
   return event_handled ;
 }
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void showFeatureList(ZMapWindow window, ZMapFeatureItem feature_item)
-{
-  /* Actually this is not really correct, in the end it will go back to our caller who may
-   * then call this zmapwindow call.... */
-
-  /* user selects new feature in this column */
-  zMapWindowCreateListWindow(window, feature_item) ;
-
-  return;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
