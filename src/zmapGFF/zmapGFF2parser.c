@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul 14 11:45 2004 (edgrif)
+ * Last edited: Jul 14 14:04 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.7 2004-07-14 12:53:44 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.8 2004-07-14 13:07:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -228,12 +228,12 @@ ZMapFeatureContext zmapGFFGetFeatures(ZMapGFFParser parser)
        * We assume that we only ask for complete clones....
        *  */
       {
-	int tmp_start = 100000 ;
+	int tmp_pad = 100000 ;
 	int clone_length = parser->features_end - parser->features_start + 1 ;
 
 	feature_context->sequence_to_parent.c1 = parser->features_start ;
 	feature_context->sequence_to_parent.c2 = parser->features_end ;
-	feature_context->sequence_to_parent.p1 = tmp_start ;
+	feature_context->sequence_to_parent.p1 = tmp_pad ;
 	feature_context->sequence_to_parent.p2
 	  = feature_context->sequence_to_parent.p1 + clone_length ;
 
@@ -241,6 +241,9 @@ ZMapFeatureContext zmapGFFGetFeatures(ZMapGFFParser parser)
 	feature_context->features_to_sequence.p2 = parser->features_end ;
 	feature_context->features_to_sequence.c1 = parser->features_start ;
 	feature_context->features_to_sequence.c2 = parser->features_end ;
+
+	feature_context->parent_length = feature_context->sequence_to_parent.p2 + tmp_pad ;
+	feature_context->parent = "chromsome_99" ;
       }
 
       g_datalist_init(&(feature_context->features)) ;

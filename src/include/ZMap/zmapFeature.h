@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Jul 14 10:53 2004 (edgrif)
+ * Last edited: Jul 14 14:01 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.5 2004-07-14 12:54:31 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.6 2004-07-14 13:07:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -221,6 +221,9 @@ typedef struct ZMapFeatureSetStruct_
 typedef struct ZMapFeatureContextStruct_
 {
   char *sequence ;					    /* The sequence to be displayed. */
+  char *parent ;					    /* Name of parent, not be needed ? */
+  int parent_length ;					    /* Length in bases of parent. */
+
   ZMapMapBlockStruct sequence_to_parent ;		    /* Shows how this sequence maps to its
 							       ultimate parent. */
   ZMapMapBlockStruct features_to_sequence ;		    /* Shows how these features map to the
