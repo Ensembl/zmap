@@ -20,6 +20,9 @@
 # Make stuff...
 #
 
+SHELL = /bin/sh
+
+
 # We use makedepend to do our dependency tracking and it puts its output into a file
 # with this name in each directory, note that this is platform specific because of
 # library headers of all sorts, system, GTK etc.
