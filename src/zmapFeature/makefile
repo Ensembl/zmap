@@ -17,8 +17,8 @@ MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
 # local macros
 PRIV_HDRS = 
 PUB_HDRS = zmapFeature.h
-PRIV_SRC = zmapFeature.c zmapFeatureUtils.c
-PRIV_OBJ = zmapFeature.o zmapFeatureUtils.o
+PRIV_SRC = zmapFeature.c zmapFeatureUtils.c zmapFeatureTypes.c
+PRIV_OBJ = zmapFeature.o zmapFeatureUtils.o zmapFeatureTypes.o
 PRIV_LIB = 
 #PRIV_INC = -Iany_hdrs_I_need                                                              
 

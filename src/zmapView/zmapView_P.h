@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Oct  4 17:05 2004 (edgrif)
+ * Last edited: Dec 15 12:23 2004 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.12 2004-10-14 10:25:28 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.13 2004-12-15 14:13:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -37,7 +37,35 @@
 #include <ZMap/zmapView.h>
 
 
-#define DEFAULT_WIDTH 10.0              /* of features being displayed */
+/* We have this because it enables callers to call on a window but us to get the corresponding view. */
+typedef struct _ZMapViewWindowStruct
+{
+  ZMapView parent_view ;
+  
+  ZMapWindow window ;
+} ZMapViewWindowStruct ;
+
+
+/* We need to maintain state for our connections otherwise we will try to issue requests that
+ * they may not see. curr_request flip-flops between ZMAP_REQUEST_GETDATA and ZMAP_REQUEST_WAIT */
+typedef struct _ZMapViewConnectionStruct
+{
+  /* Record whether this connection will serve up raw sequence or deal with feature edits. */
+  gboolean sequence_server ;
+  gboolean writeback_server ;
+
+  GData          *types ;				    /* The "methods", "types" call them
+							       what you will. */
+
+  ZMapView parent_view ;
+
+  ZMapThreadRequest curr_request ;
+
+  ZMapConnection connection ;
+
+} ZMapViewConnectionStruct, *ZMapViewConnection ;
+
+
 
 /* A "View" is a set of one or more windows that display data retrieved from one or
  * more servers. Note that the "View" windows are _not_ top level windows, they are panes
@@ -63,53 +91,28 @@ typedef struct _ZMapViewStruct
 
   guint idle_handle ;
 
+  GList *window_list ;					    /* Of ZMapViewWindow. */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GtkWidget *parent_widget ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  GList *window_list ;					    /* Of ZMapViewWindowStruct. */
-
-  GList *connection_list ;
-
+  GList *connection_list ;				    /* Of ZMapViewConnection. */
+  ZMapViewConnection sequence_server ;			    /* Which connection to get raw
+							       sequence from. */
+  ZMapViewConnection writeback_server ;			    /* Which connection to send edits to. */
 
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;
 
   /* In DAS2 terminology methods are types...easy to change if we don't like the name.
-   * These are the stylesheets in effect for the feature sets. */
+   * These are the stylesheets in effect for the feature sets, this set is a merge of all the
+   * sets from the various servers. */
   GData          *types ;
+
 
   ZMapRegion  *zMapRegion; /* the region holding all the SEGS - may be redundant*/
 
 } ZMapViewStruct ;
 
 
-/* We have this because it enables callers to call on a window but us to get the corresponding view. */
-typedef struct _ZMapViewWindowStruct
-{
-  ZMapView parent_view ;
-  
-  ZMapWindow window ;
-} ZMapViewWindowStruct ;
 
-
-
-
-
-/* We need to maintain state for our connections otherwise we will try to issue requests that
- * they may not see. curr_request flip-flops between ZMAP_REQUEST_GETDATA and ZMAP_REQUEST_WAIT */
-typedef struct _ZMapViewConnectionStruct
-{
-  ZMapView parent_view ;
-
-  ZMapThreadRequest curr_request ;
-
-  ZMapConnection connection ;
-
-
-} ZMapViewConnectionStruct, *ZMapViewConnection ;
 
 
 void zmapViewBusy(ZMapView zmap_view, gboolean busy) ;

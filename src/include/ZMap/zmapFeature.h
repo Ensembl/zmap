@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Dec 13 15:28 2004 (edgrif)
+ * Last edited: Dec 15 13:46 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.21 2004-12-13 15:48:06 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.22 2004-12-15 14:13:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -374,6 +374,7 @@ typedef enum {ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_BUMP, ZMAPOVERLAP_CLUSTER } ZMap
 
 typedef struct ZMapFeatureTypeStyleStruct_
 {
+  char *name ;						    /* name of type, normalised to lowercase. */
   GdkColor  outline ;					    /* Surround/line colour. */
   GdkColor  foreground ;				    /* Overlaid on background. */
   GdkColor  background ;				    /* Fill colour. */
@@ -390,6 +391,18 @@ typedef struct ZMapFeatureTypeStyleStruct_
 } ZMapFeatureTypeStyleStruct, *ZMapFeatureTypeStyle ;
 
 
+ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
+					   char *outline, char *foreground, char *background,
+					   float width, gboolean show_up_strand, int min_mag) ;
+ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type) ;
+void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
+
+
+GData *zMapFeatureTypeGetFromFile(char *types_file) ;
+
+gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
+
+void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
 
 
 

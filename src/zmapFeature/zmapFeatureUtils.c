@@ -26,12 +26,13 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Dec 13 15:41 2004 (edgrif)
+ * Last edited: Dec 15 12:15 2004 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.4 2004-12-13 15:48:07 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.5 2004-12-15 14:13:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <stdio.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
 

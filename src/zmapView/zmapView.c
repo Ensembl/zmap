@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec 13 15:31 2004 (edgrif)
+ * Last edited: Dec 15 12:15 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.38 2004-12-13 15:48:06 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.39 2004-12-15 14:13:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -35,7 +35,6 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfig.h>
 #include <ZMap/zmapConn.h>
-#include <ZMap/zmapProtocol.h>
 #include <ZMap/zmapWindow.h>
 #include <zmapView_P.h>
 
@@ -68,7 +67,8 @@ static void killConnections(ZMapView zmap_view) ;
 
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   char *machine, int port, char *protocol,
-					   int timeout, char *version,
+					   int timeout, char *version, char *types_file,
+					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end, gboolean load_features) ;
 static void destroyConnection(ZMapViewConnection *view_conn) ;
 
@@ -81,14 +81,6 @@ static void killWindows(ZMapView zmap_view) ;
 static void freeContext(ZMapFeatureContext feature_context) ;
 
 static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any) ;
-
-/* debugging... */
-static void methodPrintFunc(GQuark key_id, gpointer data, gpointer user_data) ;
-
-
-/* Hack to read files in users $HOME/.ZMap */
-static GData *getTypesFromFile(void) ;
-
 
 
 
@@ -269,18 +261,24 @@ gboolean zMapViewConnect(ZMapView zmap_view)
       if (result && (config = zMapConfigCreate()))
 	{
 	  ZMapConfigStanza server_stanza ;
-	  /* If you change this resource array be sure to check that the subesequent
+	  /* If you change this resource array be sure to check that the subsequent
 	   * initialisation is still correct. */
 	  ZMapConfigStanzaElementStruct server_elements[] = {{"host", ZMAPCONFIG_STRING, {NULL}},
 							     {"port", ZMAPCONFIG_INT, {NULL}},
 							     {"protocol", ZMAPCONFIG_STRING, {NULL}},
 							     {"timeout", ZMAPCONFIG_INT, {NULL}},
 							     {"version", ZMAPCONFIG_STRING, {"4.9.28"}},
+							     {"sequence", ZMAPCONFIG_BOOL, {NULL}},
+							     {"writeback", ZMAPCONFIG_BOOL, {NULL}},
+							     {"typesfile", ZMAPCONFIG_STRING, {NULL}},
 							     {NULL, -1, {NULL}}} ;
 
 	  /* Set defaults for any element that is not a string. */
 	  server_elements[1].data.i = -1 ;
 	  server_elements[3].data.i = 120 ;		    /* timeout in seconds. */
+	  server_elements[5].data.b = FALSE ;
+	  server_elements[6].data.b = FALSE ;
+
 
 	  server_stanza = zMapConfigMakeStanza("server", server_elements) ;
 
@@ -306,7 +304,8 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	    {
 	      char *machine, *protocol ;
 	      int port, timeout ;
-	      char *version ;
+	      char *version, *types_file ;
+	      gboolean sequence_server, writeback_server ;
 	      ZMapViewConnection view_con ;
 
 	      /* There MUST be a host and a protocol, port is not needed for some protocols,
@@ -316,21 +315,43 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      protocol = zMapConfigGetElementString(next_server, "protocol") ;
 	      timeout = zMapConfigGetElementInt(next_server, "timeout") ;
 	      version = zMapConfigGetElementString(next_server, "version") ;
+	      types_file = zMapConfigGetElementString(next_server, "typesfile") ;
 
-	      if (!machine || !protocol)
+	      /* We only record the first sequence and writeback servers found, this means you
+	       * can only have one each of these which seems sensible. */
+	      if (!zmap_view->sequence_server)
+		sequence_server = zMapConfigGetElementBool(next_server, "sequence") ;
+	      if (!zmap_view->writeback_server)
+		writeback_server = zMapConfigGetElementBool(next_server, "writeback") ;
+
+	      if (!machine || !protocol || !types_file)
 		{
+		  /* Types is temporary, in the end no types file will mean we read the types
+		   * dynamically from the server. */
 		  zMapLogWarning("%s",
-				 "Found \"server\" stanza without valid \"host\" or \"protocol\", "
-				 "stanza was ignored.") ;
+				 "Found \"server\" stanza without valid \"host\", \"protocol\" "
+				 "or \"typesfile\", so stanza was ignored.") ;
 		}
 	      else if ((view_con = createConnection(zmap_view, machine, port, protocol,
-						    timeout, version,
+						    timeout, version, types_file,
+						    sequence_server, writeback_server,
 						    zmap_view->sequence,
 						    zmap_view->start, zmap_view->end,
 						    load_features)))
 		{
+		  /* Update now we have successfully created a connection. */
 		  zmap_view->connection_list = g_list_append(zmap_view->connection_list, view_con) ;
 		  connections++ ;
+
+		  if (sequence_server)
+		    zmap_view->sequence_server = view_con ;
+		  if (writeback_server)
+		    zmap_view->writeback_server = view_con ;
+
+		  if (!zMapFeatureTypeSetAugment(&(zmap_view->types), &(view_con->types)))
+		    zMapLogCritical("Could not merge types for server %s into existing types.",
+				    machine) ;
+
 		}
 	      else
 		{
@@ -733,8 +754,12 @@ static ZMapView createZMapView(char *sequence, int start, int end, void *app_dat
 
   /* Hack to read methods from a file in $HOME/.ZMap for now.....really we should be getting
    * this from a server and updating it for information from different servers. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmap_view->types = getTypesFromFile() ;
   zMapAssert(zmap_view->types) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   return zmap_view ;
@@ -1033,19 +1058,18 @@ static void loadDataConnections(ZMapView zmap_view)
 	{
 	  ZMapViewConnection view_con ;
 	  ZMapConnection connection ;
-	  ZMapProtocoltGetFeatures req_features ;
+	  ZMapProtocolGetFeatures req_features ;
 
 	  view_con = list_item->data ;
 	  connection = view_con->connection ;
 
-	  /* Need to construct a request to do the load of data... */
+	  /* Construct the request to get the features, if its the sequence server then
+	   * get the sequence as well. */
 	  req_features = g_new0(ZMapProtocolGetFeaturesStruct, 1) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  req_features->request = ZMAP_PROTOCOLREQUEST_FEATURES ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	  req_features->request = ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE ;
-
+	  if (view_con->sequence_server)
+	    req_features->request = ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE ;
+	  else
+	    req_features->request = ZMAP_PROTOCOLREQUEST_FEATURES ;
 
 	  zMapConnRequest(connection, req_features) ;
 
@@ -1128,16 +1152,42 @@ static void killConnections(ZMapView zmap_view)
 /* Allocate and destroy ZMapViews record of a connection. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   char *machine, int port, char *protocol,
-					   int timeout, char *version,
+					   int timeout, char *version, char *types_file,
+					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end, gboolean load_features)
 {
   ZMapViewConnection view_con = NULL ;
   ZMapConnection connection ;
+  ZMapProtocolGetFeatures initial_request = NULL ;
+  GData *types ;
+
+
+  /* If we need to autoload features then construct an initial request that will be given
+   * to the thread to get the features and maybe the sequence. */
+  if (load_features)
+    {
+      initial_request = g_new0(ZMapProtocolGetFeaturesStruct, 1) ;
+      if (sequence_server)
+	initial_request->request = ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE ;
+      else
+	initial_request->request = ZMAP_PROTOCOLREQUEST_FEATURES ;
+    }
+
+  /* in the end the types files will be optional..... */
+  types = zMapFeatureTypeGetFromFile(types_file) ;
+
 
   if ((connection = zMapConnCreate(machine, port, protocol, timeout, version,
-				   sequence, start, end, zmap_view->types, load_features)))
+				   sequence, start, end, types,
+				   (ZMapProtocolAny)initial_request)))
     {
       view_con = g_new0(ZMapViewConnectionStruct, 1) ;
+
+      view_con->sequence_server = sequence_server ;
+      view_con->writeback_server = writeback_server ;
+
+      view_con->types = types ;
+
       view_con->parent_view = zmap_view ;
 
       /* If we are asking the thread to get the features when it starts up then we must record
@@ -1158,6 +1208,8 @@ static void destroyConnection(ZMapViewConnection *view_conn_ptr)
   ZMapViewConnection view_conn = *view_conn_ptr ;
 
   zMapConnDestroy(view_conn->connection) ;
+
+  /* Need to destroy the types array here....... */
 
   g_free(view_conn) ;
 
@@ -1264,7 +1316,7 @@ static void freeContext(ZMapFeatureContext feature_context)
  *  */
 static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any)
 {
-  ZMapProtocoltGetFeatures feature_req = (ZMapProtocoltGetFeatures)req_any ;
+  ZMapProtocolGetFeatures feature_req = (ZMapProtocolGetFeatures)req_any ;
   ZMapFeatureContext new_features = NULL, diff_context = NULL ;
 
   /* Merge new data with existing data (if any). */
@@ -1294,141 +1346,6 @@ static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any)
 
 
 
-
-
-
-
-
-
-
-
-/* This is a temporary routine to read type/method/source (call it what you will)
- * information from a file in the users $HOME/.ZMap directory. */
-static GData *getTypesFromFile(void)
-{
-  GData *types = NULL ;
-  gboolean result = FALSE ;
-  ZMapConfigStanzaSet types_list = NULL ;
-  ZMapConfig config ;
-  char *types_file_name = "ZMapTypes" ;
-
-
-  if ((config = zMapConfigCreateFromFile(NULL, types_file_name)))
-    {
-      ZMapConfigStanza types_stanza ;
-
-      /* Set up default values for variables in the stanza.  Elements here must match
-       * those being loaded below or you might segfault.
-       * IF YOU ADD ANY ELEMENTS TO THIS ARRAY THEN MAKE SURE YOU UPDATE THE INIT STATEMENTS
-       * FOLLOWING THIS ARRAY SO THEY POINT AT THE RIGHT ELEMENTS....!!!!!!!! */
-      ZMapConfigStanzaElementStruct types_elements[] = {{"name"        , ZMAPCONFIG_STRING, {NULL}},
-							{"outline"     , ZMAPCONFIG_STRING, {"black"}},
-							{"foreground"  , ZMAPCONFIG_STRING, {"white"}},
-							{"background"  , ZMAPCONFIG_STRING, {"black"}},
-							{"width"       , ZMAPCONFIG_FLOAT , {NULL}},
-							{"showUpStrand", ZMAPCONFIG_BOOL  , {NULL}},
-							{"minmag"      , ZMAPCONFIG_INT   , {NULL}},
-							{NULL, -1, {NULL}}} ;
-
-
-      types_elements[4].data.f = DEFAULT_WIDTH ;	    /* Must init separately as compiler
-							       cannot statically init different
-							       union types....sigh.... */
-
-      types_stanza = zMapConfigMakeStanza("Type", types_elements) ;
-
-      if (!zMapConfigFindStanzas(config, types_stanza, &types_list))
-	result = FALSE ;
-      else
-	result = TRUE ;
-    }
-
-  /* Set up connections to the named types. */
-  if (result)
-    {
-      int num_types = 0 ;
-      ZMapConfigStanza next_types ;
-
-      g_datalist_init(&types) ;
-
-      /* Current error handling policy is to connect to servers that we can and
-       * report errors for those where we fail but to carry on and set up the ZMap
-       * as long as at least one connection succeeds. */
-      next_types = NULL ;
-      while (result
-	     && ((next_types = zMapConfigGetNextStanza(types_list, next_types)) != NULL))
-	{
-	  char *name;
-	  GString *name_mixed, *name_lower;
-
-	  /* Name must be set so if its not found then don't make a struct.... */
-	  if ((name = zMapConfigGetElementString(next_types, "name")))
-	    {
-	      ZMapFeatureTypeStyle new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
-
-	      /* NB Elements here must match those pre-initialised above or you might segfault. */
-
-	      gdk_color_parse(zMapConfigGetElementString(next_types, "outline"   ), &new_type->outline   ) ;
-	      gdk_color_parse(zMapConfigGetElementString(next_types, "foreground"), &new_type->foreground) ;
-	      gdk_color_parse(zMapConfigGetElementString(next_types, "background"), &new_type->background) ;
-	      new_type->width = zMapConfigGetElementFloat(next_types, "width") ;
-	      new_type->showUpStrand = zMapConfigGetElementBool(next_types, "showUpStrand");
-	      new_type->min_mag = zMapConfigGetElementInt(next_types, "minmag");
-
-	      /* lowercase the name (aka type) */
-	      name_mixed = g_string_new(name);
-	      name_lower = g_string_ascii_down(name_mixed);
-		
-	      g_datalist_set_data(&types, name_lower->str, new_type) ;
-	      num_types++ ;
-	    }
-	  else
-	    {
-	      zMapLogWarning("config file \"%s\" has a \"Type\" stanza which has no \"name\" element, "
-			     "the stanza has been ignored.", types_file_name) ;
-	    }
-	}
-
-      /* Found no valid types.... */
-      if (!num_types)
-	result = FALSE ;
-    }
-
-  /* clean up. */
-  if (types_list)
-    zMapConfigDeleteStanzaSet(types_list) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* debug.... */
-  printAllTypes(types, "getTypesFromFile()") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-  return types ;
-}
-
-
-void printAllTypes(GData *method_set, char *user_string)
-{
-  printf("\nMethods at %s\n", user_string) ;
-
-  g_datalist_foreach(&method_set, methodPrintFunc, NULL) ;
-
-  return ;
-}
-
-static void methodPrintFunc(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
-  char *style_name = (char *)g_quark_to_string(key_id) ;
-  
-  printf("\t%s: \t%f \t%d\n", style_name, style->width, style->showUpStrand) ;
-
-  return ;
-}
 
 /* When a window is split, we set the zoom status of all windows
  */
