@@ -24,9 +24,9 @@
  *
  * Description:
  * HISTORY:
- * Last edited: Apr 23 23:10 2004 (edgrif)
+ * Last edited: May  6 14:46 2004 (edgrif)
  * Created: Fri Jan 23 13:10:06 2004 (edgrif)
- * CVS info:   $Id: zmapConfig.h,v 1.4 2004-04-27 09:40:09 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.h,v 1.5 2004-05-07 09:13:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_H
@@ -121,7 +121,8 @@ typedef struct _ZMapConfigStanzaStruct *ZMapConfigStanza ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-ZMapConfig zMapConfigCreate(char *config_file) ;
+ZMapConfig zMapConfigCreate(void) ;
+ZMapConfig zMapConfigCreateFromFile(char *config_dir, char *config_file) ;
 
 gboolean zMapConfigFindStanzas(ZMapConfig config,
 			       ZMapConfigStanza stanza, ZMapConfigStanzaSet *stanzas_out) ;
