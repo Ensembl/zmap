@@ -2,6 +2,10 @@
 ZMapControl
 
 
+The title bar should be updated when we first connect now as the sequence name
+is known then....
+
+
 
 The pane stuff needs some attention, particularly in the area of setting focus
 because focus setting includes lots of different operations like setting the
