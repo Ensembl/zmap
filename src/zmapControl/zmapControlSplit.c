@@ -1,4 +1,4 @@
-/*  Last edited: Nov 29 16:22 2004 (rnc) */
+/*  Last edited: Nov 30 10:10 2004 (rnc) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -355,14 +355,17 @@ void closePane(GtkWidget *widget, gpointer data)
       if (children)
 	g_list_free(children);
 
-      /* remove entry from the list of windows */
+      /* Remove entry from the list of windows. */
+      /* Destroy any featureListWindows for this window at the same time. */
       {
 	ZMapViewWindow view_window = zmap->focuspane->curr_view_window;
-	GList *list = g_list_find(zMapViewGetWindowList(view_window),
-				    zmap->focuspane->curr_view_window); 
+	GList *list;
+
+	zMapWindowDestroyLists(zMapViewGetWindow(view_window));
 
 	list = g_list_remove(zMapViewGetWindowList(view_window),
 			     zmap->focuspane->curr_view_window); 
+	/* Update the ZMapWindow->window_list with the new list address. */
 	zMapViewSetWindowList(view_window, list);
       }
        

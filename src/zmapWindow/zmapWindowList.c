@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 30 09:04 2004 (rnc)
+ * Last edited: Nov 30 10:10 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.20 2004-11-30 09:06:43 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.21 2004-11-30 10:24:47 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -206,6 +206,25 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureItem featureIt
   gtk_container_add(GTK_CONTAINER(scrolledWindow), featureList);
 
   gtk_widget_show_all(window);
+
+  return;
+}
+
+
+
+/* Called by zmapControlSplit.c when a split window is closed */
+void zMapWindowDestroyLists(ZMapWindow window)
+{
+  int i;
+  gint ret_val = 0;
+  gpointer data;
+
+  for (i = 0; i < window->featureListWindows->len; i++)
+    {
+      data = g_ptr_array_index(window->featureListWindows, i);
+      gtk_signal_emit_by_name(GTK_OBJECT(data), "destroy", NULL, &ret_val);
+    }
+  g_ptr_array_free(window->featureListWindows, TRUE);
 
   return;
 }
@@ -413,4 +432,4 @@ static void quitListCB(GtkWidget *window, gpointer data)
 }
 
 
-
+/*************************** end of file *********************************/
