@@ -4,8 +4,11 @@ AUTOMAKE_OPTIONS = gnu
 NULL = 
 
 ARFLAGS = rv
+
+# including ALPHA_POPT here is really bad FIND BETTER method
 AM_CPPFLAGS = -I$(top_srcdir)/include \
 	-I$(top_builddir) \
+        @ALPHA_POPT@ \
 	@GTK_CFLAGS@ \
 	@FOOCANVAS_CFLAGS@ \
 	@ACECONN_CFLAGS@ \
