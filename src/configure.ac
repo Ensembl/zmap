@@ -75,14 +75,14 @@ AC_PROG_LN_S
 ################################################################################
 
 # gtk first
+
 GTK2_MODULES="pango >= 0.1 gtk+-2.0 glib-2.0 gthread-2.0"
-#PKG_CHECK_MODULES(GTK, $GTK2_MODULES,,)
-PKG_CHECK_MODULES(GTK, $GTK2_MODULES,,)
+PKG_CHECK_MODULES([GTK], [${GTK2_MODULES}])
 
 # now foocanvas
 # really we want to allow foocanvas and foocanvas-patched(our version)
 # to live side by side but for now lets leave it like this
-PKG_CHECK_MODULES(FOOCANVAS, libfoocanvas = 0.1,,AC_MSG_ERROR(foocanvas is required))
+PKG_CHECK_MODULES([FOOCANVAS], [libfoocanvas = 0.1],,AC_MSG_ERROR(foocanvas is required))
 
 # needs curl, we'll be looking using curl-config
 # LIBCURL_CHECK_CONFIG ([DEFAULT-ACTION], [MINIMUM-VERSION],
