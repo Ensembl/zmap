@@ -25,9 +25,9 @@
  * Description: Interface for creating, controlling and destroying ZMaps.
  *              
  * HISTORY:
- * Last edited: Jul 16 10:07 2004 (rnc)
+ * Last edited: Oct  1 14:43 2004 (edgrif)
  * Created: Mon Nov 17 08:04:32 2003 (edgrif)
- * CVS info:   $Id: zmapControl.h,v 1.6 2004-07-20 08:10:00 rnc Exp $
+ * CVS info:   $Id: zmapControl.h,v 1.7 2004-10-04 12:53:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_H
@@ -113,7 +113,7 @@ void zMapInit(ZMapCallbacks callbacks) ;
 ZMap zMapCreate(void *app_data) ;
 
 /* NOW THIS IS WHERE WE NEED GERROR........ */
-ZMapView zMapAddView(ZMap zmap, char *sequence) ;
+ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end) ;
 gboolean zMapConnectView(ZMap zmap, ZMapView view) ;
 gboolean zMapLoadView(ZMap zmap, ZMapView view) ;
 gboolean zMapStopView(ZMap zmap, ZMapView view) ;

@@ -24,15 +24,16 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep 20 10:34 2004 (rnc)
+ * Last edited: Oct  4 13:58 2004 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.10 2004-09-20 09:55:42 rnc Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.11 2004-10-04 12:58:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
 #define ZMAP_VIEW_P_H
 
 #include <glib.h>
+#include <ZMap/zmapConn.h>
 #include <ZMap/zmapView.h>
 
 
@@ -47,7 +48,10 @@
  * */
 typedef struct _ZMapViewStruct
 {
-  ZMapViewState state ;
+  ZMapViewState state ;					    /* Overall state of the ZMapView. */
+
+  gboolean busy ;					    /* Records when we are busy so can
+							       block user interaction. */
 
   void *app_data ;					    /* Passed back to caller from view
 							       callbacks. */
@@ -59,7 +63,11 @@ typedef struct _ZMapViewStruct
 
   guint idle_handle ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   GtkWidget *parent_widget ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   GList *window_list ;					    /* Of ZMapViewWindowStruct. */
 
@@ -87,9 +95,31 @@ typedef struct _ZMapViewWindowStruct
 } ZMapViewWindowStruct ;
 
 
+
+
+
+/* We need to maintain state for our connections otherwise we will try to issue requests that
+ * they may not see. curr_request flip-flops between ZMAP_REQUEST_GETDATA and ZMAP_REQUEST_WAIT */
+typedef struct _ZMapViewConnectionStruct
+{
+  ZMapView parent_view ;
+
+  ZMapThreadRequest curr_request ;
+
+  ZMapConnection connection ;
+
+
+} ZMapViewConnectionStruct, *ZMapViewConnection ;
+
+
+
+
 gboolean zmapViewMergeFeatures(ZMapFeatureContext *current_context_inout,
 			       ZMapFeatureContext new_context) ;
 
+
+void zmapViewBusy(ZMapView zmap_view, gboolean busy) ;
+gboolean zmapAnyConnBusy(GList *connection_list) ;
 
 
 int          zMapWindowGetRegionLength (ZMapWindow window);

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 29 13:13 2004 (edgrif)
+ * Last edited: Oct  4 10:52 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.11 2004-09-29 12:37:24 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.12 2004-10-04 12:55:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,11 +50,10 @@ static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static gboolean destroyConnection(void *server) ;
 
-static gboolean sequenceRequest(AcedbServer server,
-				char *sequence, ZMapFeatureContext feature_context) ;
-static gboolean getSequenceMapping(AcedbServer server,
-				   char *sequence, ZMapFeatureContext feature_context) ;
-static gboolean getSMapping(AcedbServer server, char *class, char *sequence,
+static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
+static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
+static gboolean getSMapping(AcedbServer server, char *class,
+			    char *sequence, int start, int end,
 			    char **parent_class_out, char **parent_name_out,
 			    ZMapMapBlock child_to_parent_out) ;
 static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_name,
@@ -147,7 +146,7 @@ static ZMapServerResponseType setContext(void *server_in, char *sequence, int st
 
   feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
-  if (!(status = getSequenceMapping(server, server->sequence, feature_context)))
+  if (!(status = getSequenceMapping(server, feature_context)))
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
       zMapLogWarning("Could not map %s because: %s", server->sequence, server->last_err_msg) ;
@@ -184,7 +183,7 @@ static ZMapServerResponseType request(void *server_in, ZMapFeatureContext *featu
 
   *feature_context = *(server->current_context) ;	    /* n.b. struct copy. */
 
-  if ((status = sequenceRequest(server, server->sequence, feature_context)))
+  if ((status = sequenceRequest(server, feature_context)))
     {
       *feature_context_out = feature_context ;
     }
@@ -294,8 +293,7 @@ static gboolean destroyConnection(void *server_in)
  * I guess the best thing is to shove the errors out to the log and look for the gff start...
  * 
  */
-static gboolean sequenceRequest(AcedbServer server,
-				char *sequence, ZMapFeatureContext feature_context)
+static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_context)
 {
   gboolean result = FALSE ;
   char *acedb_request = NULL ;
@@ -309,7 +307,8 @@ static gboolean sequenceRequest(AcedbServer server,
    * We make the big assumption that what comes back is a C string for now, this is true
    * for most acedb requests, only images/postscript are not and we aren't asking for them. */
 
-  acedb_request =  g_strdup_printf("gif seqget %s ; seqfeatures", sequence) ;
+  acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d ; seqfeatures",
+				   server->sequence, server->start, server->end) ;
 
   server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len) ;
     
@@ -444,7 +443,8 @@ static gboolean sequenceRequest(AcedbServer server,
 	  zMapGFFDestroyParser(parser) ;
 	}
 
-      zMapReadLineDestroy(line_reader, TRUE) ;
+      zMapReadLineDestroy(line_reader, FALSE) ;		    /* n.b. don't free string as it is the
+							       same as reply which is freed later.*/
     }
 
 
@@ -457,17 +457,16 @@ static gboolean sequenceRequest(AcedbServer server,
 
 /* Tries to smap sequence into whatever its parent is, if the call fails then we set all the
  * mappings in feature_context to be something sensible...we hope....
- * 
- *  */
-static gboolean getSequenceMapping(AcedbServer server,
-				   char *sequence, ZMapFeatureContext feature_context)
+ */
+static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context)
 {
   gboolean result = FALSE ;
   char *parent_name = NULL, *parent_class = NULL ;
   ZMapMapBlockStruct sequence_to_parent = {0, 0, 0, 0}, parent_to_self = {0, 0, 0, 0} ;
   int parent_length = 0 ;
 
-  if (getSMapping(server, NULL, sequence, &parent_class, &parent_name, &sequence_to_parent)
+  if (getSMapping(server, NULL, server->sequence, server->start, server->end,
+		  &parent_class, &parent_name, &sequence_to_parent)
       && getSMapLength(server, parent_class, parent_name, &parent_length))
     {
       parent_to_self.p1 = parent_to_self.c1 = 1 ;
@@ -519,7 +518,8 @@ static gboolean getSequenceMapping(AcedbServer server,
  *        // 0 Active Objects
  * 
  */
-static gboolean getSMapping(AcedbServer server, char *class, char *sequence,
+static gboolean getSMapping(AcedbServer server, char *class,
+			    char *sequence, int start, int end,
 			    char **parent_class_out, char **parent_name_out,
 			    ZMapMapBlock child_to_parent_out)
 {
@@ -528,7 +528,8 @@ static gboolean getSMapping(AcedbServer server, char *class, char *sequence,
   void *reply = NULL ;
   int reply_len = 0 ;
 
-  acedb_request =  g_strdup_printf("gif smap -from sequence:%s", sequence) ;
+  acedb_request = g_strdup_printf("gif smap -coords %d %d -from sequence:%s",
+				  start, end, sequence) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
       == ACECONN_OK)

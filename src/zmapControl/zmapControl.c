@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Sep 27 10:45 2004 (rnc)
+ * Last edited: Oct  1 16:52 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.32 2004-09-27 11:08:17 rnc Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.33 2004-10-04 12:54:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,7 @@ static void killZMap(ZMap zmap) ;
 static void killFinal(ZMap zmap) ;
 static void killViews(ZMap zmap) ;
 static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
-static ZMapView addView(ZMap zmap, char *sequence) ;
+static ZMapView addView(ZMap zmap, char *sequence, int start, int end) ;
 
 static void dataLoadCB(ZMapView view, void *app_data) ;
 static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feature) ;
@@ -136,13 +136,14 @@ ZMap zMapCreate(void *app_data)
 
 
 /* Might rename this to be more meaningful maybe.... */
-ZMapView zMapAddView(ZMap zmap, char *sequence)
+ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end)
 {
   ZMapView view ;
 
-  zMapAssert(zmap && sequence && *sequence) ;
+  zMapAssert(zmap && sequence && *sequence
+	     && (start > 0 && (end == 0 || end > start))) ;
 
-  view = addView(zmap, sequence) ;
+  view = addView(zmap, sequence, start, end) ;
 
   return view ;
 }
@@ -358,6 +359,9 @@ void zmapControlNewCB(ZMap zmap, char *testing_text)
 {
   gboolean status = FALSE ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (zmap->state == ZMAP_INIT || zmap->state == ZMAP_VIEWS)
     {
       ZMapView view ;
@@ -367,6 +371,8 @@ void zmapControlNewCB(ZMap zmap, char *testing_text)
 
 
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -379,6 +385,11 @@ void zmapControlNewViewCB(ZMap zmap, char *new_sequence)
   GtkWidget *parent_widget = NULL ;
   ZMapView view ;
   ZMapViewWindow view_window ;
+
+  /* these should be passed in ...... */
+  int start = 1, end = 0 ;
+
+
 
   /* THIS ROUTINE AND THE WHOLE PANE/VIEW INTERFACE NEEDS SOME MAJOR TIDYING UP..... */
 
@@ -399,7 +410,7 @@ void zmapControlNewViewCB(ZMap zmap, char *new_sequence)
 
   /* this code cut/pasted from addView()...needs clearing up.... */
 
-  if ((view = zMapViewCreate(new_sequence, (void *)zmap))
+  if ((view = zMapViewCreate(new_sequence, start, end, (void *)zmap))
       && (view_window = zMapViewAddWindow(view, pane->view_parent_box))
       && zMapViewConnect(view))
     {
@@ -506,7 +517,7 @@ static void killZMap(ZMap zmap)
 
 
 
-static ZMapView addView(ZMap zmap, char *sequence)
+static ZMapView addView(ZMap zmap, char *sequence, int start, int end)
 {
   ZMapView view = NULL ;
   ZMapViewWindow view_window = NULL ;
@@ -522,7 +533,7 @@ static ZMapView addView(ZMap zmap, char *sequence)
   /* focus on the new pane */
   zmapRecordFocus(new_pane) ;
 
-  if ((view = zMapViewCreate(sequence, (void *)zmap))
+  if ((view = zMapViewCreate(sequence, start, end, (void *)zmap))
       && (view_window = zMapViewAddWindow(view, new_pane->view_parent_box)))
     {
       /* add to list of views.... */

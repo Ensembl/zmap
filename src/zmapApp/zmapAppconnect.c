@@ -19,16 +19,15 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: May 17 15:12 2004 (edgrif)
+ * Last edited: Oct  4 10:31 2004 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.8 2004-05-17 16:24:16 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.9 2004-10-04 12:53:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,32 +45,64 @@ static void createThreadCB(GtkWidget *widget, gpointer data) ;
 GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
 {
   GtkWidget *frame ;
-  GtkWidget *topbox, *hbox, *entry, *label, *create_button ;
+  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label, *create_button ;
 
   frame = gtk_frame_new( "New ZMap" );
   gtk_frame_set_label_align( GTK_FRAME( frame ), 0.0, 0.0 );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
 
-  topbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_border_width(GTK_CONTAINER(topbox), 5);
-  gtk_container_add (GTK_CONTAINER (frame), topbox);
+
+  topbox = gtk_vbox_new(FALSE, 5) ;
+  gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
+  gtk_container_add (GTK_CONTAINER (frame), topbox) ;
+
 
   hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_border_width(GTK_CONTAINER(hbox), 5);
-  gtk_box_pack_start(GTK_BOX(topbox), hbox, FALSE, FALSE, 0) ;
+  gtk_container_border_width(GTK_CONTAINER(hbox), 0);
+  gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
 
-  label = gtk_label_new( "Sequence:" ) ;
-  gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0) ;
+
+  labelbox = gtk_vbox_new(TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
+
+  label = gtk_label_new( "Sequence :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+  label = gtk_label_new( "Start :" ) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+
+  label = gtk_label_new( "End :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+
+
+  entrybox = gtk_vbox_new(TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
 
   app_context->sequence_widg = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(hbox), entry, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+
+  app_context->start_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
+  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
+  app_context->end_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
+  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
 
   create_button = gtk_button_new_with_label("Create ZMap") ;
   gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
 		     GTK_SIGNAL_FUNC(createThreadCB), (gpointer)app_context) ;
-  gtk_box_pack_start(GTK_BOX(topbox), create_button, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(topbox), create_button, FALSE, TRUE, 0) ;
+
 
   /* set create button as default. */
   GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
@@ -86,7 +117,8 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
 static void createThreadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
-  char *sequence ;
+  char *sequence = "", *start_txt, *end_txt ;
+  int start = 0, end = 0 ;
   char *row_text[ZMAP_NUM_COLS] = {"", "", ""} ;
   int row ;
   ZMap zmap ;
@@ -95,8 +127,29 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
   if (sequence && strlen(sequence) == 0)		    /* gtk_entry returns "" for "no text". */
     sequence = NULL ;
 
+  start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->start_widg)) ;
+  if ((start_txt && strlen(start_txt) > 0))		    /* gtk_entry returns "" for "no text". */
+    {
+      if (!zMapStr2Int(start_txt, &start))
+	start = 1 ;
+    }
+  else
+    start = 1 ;
 
-  if (!zMapManagerAdd(app_context->zmap_manager, sequence, &zmap))
+
+  end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->end_widg)) ;
+  if ((end_txt && strlen(end_txt) > 0))			    /* gtk_entry returns "" for "no text". */
+    {
+      if (!zMapStr2Int(end_txt, &end))
+	end = 0 ;
+    }
+  else
+    end = 0 ;
+
+
+  /* Need error handling for no sequence or no start/end...??? */
+
+  if (!zMapManagerAdd(app_context->zmap_manager, sequence, start, end, &zmap))
     {
       zMapWarning("%s", "Failed to create ZMap") ;
     }

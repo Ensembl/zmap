@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: Jul 21 17:00 2004 (edgrif)
+ * Last edited: Oct  1 14:42 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.12 2004-07-21 16:07:12 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.13 2004-10-04 12:54:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,7 +64,7 @@ ZMapManager zMapManagerCreate(zmapAppCallbackFunc zmap_deleted_func, void *gui_d
 
 /* Add a new zmap window with associated thread and all the gubbins.
  * Returns FALSE on failure. */
-gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, ZMap *zmap_out)
+gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, ZMap *zmap_out)
 {
   gboolean result = FALSE ;
   ZMap zmap = NULL ;
@@ -79,7 +79,7 @@ gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, ZMap *zmap_out)
        * a view. */
       if (!sequence
 	  || (sequence
-	      && ((view = zMapAddView(zmap, sequence)))
+	      && ((view = zMapAddView(zmap, sequence, start, end)))
 	      && ((zMapConnectView(zmap, view)))))
 	result = TRUE ;
     }

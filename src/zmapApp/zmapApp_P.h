@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  6 15:13 2004 (edgrif)
+ * Last edited: Oct  1 14:01 2004 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.6 2004-05-07 09:18:23 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.7 2004-10-04 12:53:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -49,6 +49,8 @@ typedef struct
   GtkWidget *app_widg ;
 
   GtkWidget *sequence_widg ;
+  GtkWidget *start_widg ;
+  GtkWidget *end_widg ;
 
   GtkWidget *clist_widg ;
 
