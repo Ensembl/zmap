@@ -12,9 +12,9 @@ MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
 
 # local macros
 SERV_PRIV_HDRS = zmapServerPrototype.h zmapServer_P.h
-PUB_HDRS = zmapServer.h
-SERV_SRC = zmapServer.c
-SERV_OBJ = zmapServer.o
+PUB_HDRS = zmapServer.h zmapServerPrototype.h
+SERV_SRC = zmapServer.c zmapServerProtocolHandler.c
+SERV_OBJ = zmapServer.o zmapServerProtocolHandler.o
 
 
 #
