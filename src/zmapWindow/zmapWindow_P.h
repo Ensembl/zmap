@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  2 17:34 2004 (edgrif)
+ * Last edited: Jul 13 16:14 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.11 2004-07-02 18:24:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.12 2004-07-14 09:13:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -45,29 +45,39 @@ typedef struct _ZMapWindowStruct
 {
   gchar *sequence ;
 
+  /* Widgets for displaying the data. */
   GtkWidget *parent_widget ;
   GtkWidget *toplevel ;
+
+
+  GtkWidget   *scrolledWindow;
+  FooCanvas   *canvas;					    /* where we paint the display */
+  FooCanvasItem *background;
+  FooCanvasItem *group;
+  GtkWidget   *combo;
+  int          basesPerLine;
+  InvarCoord   centre;
+  int          graphHeight;
+  int          dragBox, scrollBox;
+  GPtrArray    cols;
+  GArray       *box2seg, *box2col;
+
+  int          DNAwidth;
+
+  double       zoom_factor ;
+  int          step_increment;
+
+
   GtkWidget *text ;
 
   GdkAtom zmap_atom ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapVoidIntCallbackFunc app_routine ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   void *app_data ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  STORE_HANDLE    handle;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* code that references this is currently commented out..... */
-  GtkWidget      *infoSpace;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
   /* Is this even used ??????? */
@@ -75,10 +85,11 @@ typedef struct _ZMapWindowStruct
 
 
 
-
+  /* ugh, this should not be here......... */
   /* navigator stuff */
   Coord           navStart, navEnd; /* Start drawing the Nav bar from here */
   ScreenCoord     scaleOffset;
+
 } ZMapWindowStruct ;
 
 
