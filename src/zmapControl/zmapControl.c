@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 21 09:41 2004 (edgrif)
+ * Last edited: Jul 21 16:59 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.23 2004-07-21 08:42:33 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.24 2004-07-21 16:07:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -394,7 +394,7 @@ static ZMap createZMap(void *app_data)
   /* GROSS HACK FOR NOW, NEED SOMETHING BETTER LATER, JUST A TACKY ID...... */
   static int zmap_num = 0 ;
 
-  zmap = g_new0(ZMapStruct, sizeof(ZMapStruct)) ;
+  zmap = g_new0(ZMapStruct, 1) ;
 
   zmap_num++ ;
   zmap->zmap_id = g_strdup_printf("ZMap.%d", zmap_num) ;

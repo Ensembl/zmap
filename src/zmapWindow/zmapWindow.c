@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 20 10:52 2004 (rnc)
+ * Last edited: Jul 21 17:01 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.23 2004-07-21 08:49:43 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.24 2004-07-21 16:07:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -189,7 +189,7 @@ void zMapWindowDisplayData(ZMapWindow window, void *data, GData *types)
   zmapWindowData window_data ;
 
   /* Set up struct to be passed to our callback. */
-  window_data = g_new0(zmapWindowDataStruct, sizeof(zmapWindowDataStruct)) ;
+  window_data = g_new0(zmapWindowDataStruct, 1) ;
   window_data->window = window ;
   window_data->data = data ;
   window_data->types = types;

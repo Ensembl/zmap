@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 16 09:39 2004 (edgrif)
+ * Last edited: Jul 21 17:00 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConn.c,v 1.6 2004-07-16 08:46:24 edgrif Exp $
+ * CVS info:   $Id: zmapConn.c,v 1.7 2004-07-21 16:07:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -220,7 +220,7 @@ static ZMapConnection createConnection(char *machine, int port, char *protocol, 
 {
   ZMapConnection connection ;
 
-  connection = g_new0(ZMapConnectionStruct, sizeof(ZMapConnectionStruct)) ;
+  connection = g_new0(ZMapConnectionStruct, 1) ;
 
   connection->machine = g_strdup(machine) ;
   connection->port = port ;

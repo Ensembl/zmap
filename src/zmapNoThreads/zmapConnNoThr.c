@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn.h
  * HISTORY:
- * Last edited: Jul 16 09:37 2004 (edgrif)
+ * Last edited: Jul 21 16:59 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConnNoThr.c,v 1.4 2004-07-16 08:46:19 edgrif Exp $
+ * CVS info:   $Id: zmapConnNoThr.c,v 1.5 2004-07-21 16:07:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,7 +47,7 @@ ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, char *seq
   ZMapConnection connection ;
   int status ;
 
-  connection = g_new0(ZMapConnectionStruct, sizeof(ZMapConnectionStruct)) ;
+  connection = g_new0(ZMapConnectionStruct, 1) ;
 
   connection->machine = g_strdup(machine) ;
   connection->port = port ;

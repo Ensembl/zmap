@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jul 16 09:38 2004 (edgrif)
+ * Last edited: Jul 21 17:00 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.6 2004-07-16 08:46:21 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.7 2004-07-21 16:07:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,7 @@ gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out)
   gboolean result = TRUE ;
   ZMapServerFuncs serverfuncs ;
 
-  serverfuncs = g_new0(ZMapServerFuncsStruct, sizeof(ZMapServerFuncsStruct)) ; /* n.b. crashes on failure. */
+  serverfuncs = g_new0(ZMapServerFuncsStruct, 1) ;	    /* n.b. crashes on failure. */
 
   /* Set up the server according to the protocol, this is all a bit hard coded but it
    * will do for now.... */
@@ -96,7 +96,7 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
   ZMapServerFuncs serverfuncs = (ZMapServerFuncs)global_data ;
 
 
-  server = g_new0(ZMapServerStruct, sizeof(ZMapServerStruct)) ; /* n.b. crashes on failure. */
+  server = g_new0(ZMapServerStruct, 1) ;		    /* n.b. crashes on failure. */
   *server_out = server ;
 
   /* set function table. */
