@@ -4,19 +4,27 @@
 # Can be used to build both the ZMap library and the ZMap application.
 #
 
+APP_DIR = zmapApp
+MAKE_DIRS = $(APP_DIR) zmapmanager zmapserver zmapthreads zmaputils zmapwindow
 
-# Add directories to this list as they are sorted out.
-MAKE_DIRS = zmapmanager
 
-all: makebindir
+all: makebindir 
 	@for d in $(MAKE_DIRS); do \
 	(cd $$d ; echo ; echo 'make '$@' in '$$d ; $(MAKE) $@ ; echo) ; \
 	done
 
-clean: 
+clean: makebindir
 	@for d in $(MAKE_DIRS); do \
 	(cd $$d ; echo ; echo 'make '$@' in '$$d ; $(MAKE) $@ ; echo) ; \
 	done
+	@rm -f $(ZMAPAPP_LIB) $(ZMAP_LIB)
+
+zmap : makebindir
+	@cd $(APP_DIR) ; echo ; echo 'make '$@ ; $(MAKE) $@ ; echo
+
+zmapC : makebindir
+	@cd $(APP_DIR) ; echo ; echo 'make '$@ ; $(MAKE) $@ ; echo
+
 
 
 # bootstrap stuff, without these make can't find the files to include which define
