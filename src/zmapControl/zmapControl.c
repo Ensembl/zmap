@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Mar  9 11:02 2005 (edgrif)
+ * Last edited: Mar 23 14:50 2005 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.47 2005-03-09 14:54:44 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.48 2005-03-23 17:22:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -468,14 +468,19 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
 
 
-/* Gets called when someone clicks in one of the zmap windows.... 
-* Note that although we get pane data,  */
+/* This routine gets called when someone clicks in one of the zmap windows....it will
+ * be called more than once per click, once for the general canvas window handler,
+ * and once for any item/column clicked on. This is a bit yucky but forced on us
+ * because I can't find a way to get the general handler to be run after the other
+ * handlers.
+ * 
+ * NOTE that there will be no text in view_data for the general handler callback. 
+ *  */
 static void clickCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
-  ZMapFeature feature = (ZMapFeature)view_data ;
+  char *text = (char *)view_data ;
   ZMapView view = zMapViewGetView(view_window) ;
-
 
   /* Make this view window the focus view window. */
   zmapControlSetWindowFocus(zmap, view_window) ;
@@ -483,21 +488,9 @@ static void clickCB(ZMapViewWindow view_window, void *app_data, void *view_data)
   /* If view has features then change the window title. */
   updateControl(zmap, view) ;
 
- /* if user clicked on a specific object */
-  if (feature)
-    {
-      GString *str = g_string_new("") ;
-
-      g_string_printf(str, "%s   %d   %d   %s   %s", 
-		      feature->name,
-		      feature->x1,
-		      feature->x2,
-		      zmapFeatureLookUpEnum(feature->type, TYPE_ENUM), 
-		      feature->method_name);
-      gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), str->str) ;
-
-      g_string_free(str, TRUE) ;
-    }
+  /* If there is text then display it in info. box of zmap. */
+  if (text)
+    gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), text) ;
 
   return ;
 }
