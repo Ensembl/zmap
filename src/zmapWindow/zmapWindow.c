@@ -23,12 +23,14 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  *
- * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Provides interface functions for controlling a data
+ *              display window.
+ *              
+ * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr  8 16:18 2004 (edgrif)
+ * Last edited: May 17 16:59 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.6 2004-04-08 16:53:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.7 2004-05-17 16:35:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,17 +39,15 @@
 #include <zmapWindow_P.h>
 
 
-static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 
 
 
-ZMapWindow zMapWindowCreate(char *sequence, char *zmap_id,
+ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence,
 			    zmapVoidIntCallbackFunc app_routine, void *app_data)
 {
   ZMapWindow window ;
   GtkWidget *toplevel, *vbox, *menubar, *button_frame, *connect_frame ;
-  char *title ;
 
   window = g_new(ZMapWindowStruct, sizeof(ZMapWindowStruct)) ;
 
@@ -56,35 +56,20 @@ ZMapWindow zMapWindowCreate(char *sequence, char *zmap_id,
   window->app_routine = app_routine ;
   window->app_data = app_data ;
   window->zmap_atom = gdk_atom_intern(ZMAP_ATOM, FALSE) ;
+  window->parent_widget = parent_widget ;
 
-  title = g_strdup_printf("ZMap - %s : %s", zmap_id, sequence ? sequence : "") ;
-
-  window->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
-  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
-  gtk_window_set_title(GTK_WINDOW(toplevel), title) ;
-  gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
-  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
-		     GTK_SIGNAL_FUNC(quitCB), (gpointer)window) ;
-  gtk_signal_connect(GTK_OBJECT(toplevel), "client_event", 
+  /* Make the vbox the toplevel for now, it gets sent the client event, 
+   * we may also want to register a "destroy" callback at some time as this
+   * may be useful. */
+  window->toplevel = toplevel = vbox = gtk_vbox_new(FALSE, 0) ;
+  gtk_container_add(GTK_CONTAINER(window->parent_widget), vbox) ;
+  gtk_signal_connect(GTK_OBJECT(vbox), "client_event", 
 		     GTK_SIGNAL_FUNC(dataEventCB), (gpointer)window) ;
-
-  vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
-
-  menubar = zmapWindowMakeMenuBar(window) ;
-  gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
-
-  button_frame = zmapWindowMakeButtons(window) ;
-  gtk_box_pack_start(GTK_BOX(vbox), button_frame, FALSE, TRUE, 0);
 
   connect_frame = zmapWindowMakeFrame(window) ;
   gtk_box_pack_start(GTK_BOX(vbox), connect_frame, TRUE, TRUE, 0);
 
   gtk_widget_show_all(toplevel) ;
-
-
-  g_free(title) ;
-
 
   return(window) ;
 }
@@ -93,8 +78,8 @@ ZMapWindow zMapWindowCreate(char *sequence, char *zmap_id,
 
 /* This routine is called by the code that manages the slave threads, it makes
  * the call to tell the GUI code that there is something to do. This routine
- * then sends this event to alert the GUI that it needs to do some work and
- * will supply the data via the event struct. */
+ * does this by sending a synthesized event to alert the GUI that it needs to
+ * do some work and supplies the data for the GUI to process via the event struct. */
 void zMapWindowDisplayData(ZMapWindow window, void *data)
 {
   GdkEventClient event ;
@@ -130,6 +115,9 @@ void zMapWindowDisplayData(ZMapWindow window, void *data)
 
 void zMapWindowReset(ZMapWindow window)
 {
+
+  /* Dummy code, need code to blank the window..... */
+
   zMapDebug("%s", "GUI: in window reset...\n") ;
 
   gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(window->text)),
@@ -142,12 +130,6 @@ void zMapWindowReset(ZMapWindow window)
 void zMapWindowDestroy(ZMapWindow window)
 {
   zMapDebug("%s", "GUI: in window destroy...\n") ;
-
-  /* We must disconnect the "destroy" callback otherwise we will enter quitCB()
-   * below and that will try to call our callers destroy routine which has already
-   * called this routine...i.e. a circularity which results in attempts to
-   * destroy already destroyed windows etc. */
-  gtk_signal_disconnect_by_data(GTK_OBJECT(window->toplevel), (gpointer)window) ;
 
   gtk_widget_destroy(window->toplevel) ;
 
@@ -164,17 +146,6 @@ void zMapWindowDestroy(ZMapWindow window)
 /*
  *  ------------------- Internal functions -------------------
  */
-
-
-static void quitCB(GtkWidget *widget, gpointer cb_data)
-{
-  ZMapWindow window = (ZMapWindow)cb_data ;
-
-  (*(window->app_routine))(window->app_data, ZMAP_WINDOW_QUIT) ;
-
-  return ;
-}
-
 
 
 /* Called when gtk detects the event sent by signalDataToGUI(), in the end this
@@ -205,6 +176,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Dummy test code.... */
       gtk_text_buffer_insert(gtk_text_view_get_buffer(GTK_TEXT_VIEW(window->text)),
 			     NULL, string, -1) ;	    /* -1 => null terminated string. */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
