@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov 11 15:26 2004 (edgrif)
+ * Last edited: Nov 12 13:20 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.31 2004-11-12 12:02:08 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.32 2004-11-12 13:20:51 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1323,7 +1323,7 @@ static GData *getTypesFromFile(void)
       while (result
 	     && ((next_types = zMapConfigGetNextStanza(types_list, next_types)) != NULL))
 	{
-	  char *name, *foreground, *background ;
+	  char *name;
 	  GString *name_mixed, *name_lower;
 
 	  /* Name must be set so if its not found then don't make a struct.... */
