@@ -128,3 +128,14 @@ Swapping
 
 3) Support Blixem/Dotter spawning.  Otterlace can already spawn dotter.
    
+
+
+ACTUAL CHANGES
+----------------
+
+To zmap:
+xremote as above
+-fmapcutcoords equivalent (think this sets clipboard to be coords of clicked feature)
+
+To otterlace:
+add [zmap] stanza to control sgifaceserver behaviour.
