@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 17 13:57 2004 (edgrif)
+ * Last edited: May 19 15:07 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.1 2004-05-19 10:25:59 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.2 2004-05-20 14:10:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,7 @@ static void stopCB(GtkWidget *widget, gpointer cb_data) ;
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 
 
-GtkWidget *zmapTopWindowMakeButtons(ZMap zmap)
+GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 {
   GtkWidget *frame ;
   GtkWidget *hbox,  *load_button, *stop_button, *quit_button ;
@@ -97,8 +97,6 @@ static void stopCB(GtkWidget *widget, gpointer cb_data)
   ZMap zmap = (ZMap)cb_data ;
 
   zmapControlResetCB(zmap) ;
-
-  zmap->state = ZMAP_RESETTING ;
 
   return ;
 }
