@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 20 13:35 2004 (rnc)
+ * Last edited: Sep 24 16:10 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.18 2004-09-21 13:11:48 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.19 2004-09-27 09:23:37 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -36,7 +36,6 @@
 
 #include <gtk/gtk.h>
 #include <ZMap/zmapWindow.h>
-#include <ZMap/zmapWindowDrawFeatures.h>
 
 
 /* Test scaffoling */
@@ -83,7 +82,7 @@ typedef struct _ZMapWindowStruct
   InvarCoord      origin; /* that base which is VisibleCoord 1 */
 
   GtkWidget *featureListWindow;
-  ParamStruct *params;    /* just so I can free the struct when the window is destroyed */
+
 
 } ZMapWindowStruct ;
 
@@ -106,6 +105,38 @@ typedef struct _FeatureKeys {
 
 /* Used in our event communication.... */
 #define ZMAP_ATOM  "ZMap_Atom"
+
+
+/* parameters passed between the various functions processing the features on the canvas */
+/* I wanta to group the members logically, but I don't think I'm there yet. */
+typedef struct _ZMapCanvasDataStruct
+{
+  ZMapWindow           window;
+  FooCanvas           *canvas;
+  FooCanvasItem       *columnGroup;
+  FooCanvasItem       *revColGroup;         /* a group for reverse strand features */
+  double               column_position;
+  double               revColPos;           /* column position on reverse strand */
+
+  GData               *types;
+  ZMapFeatureTypeStyle thisType;
+
+  ZMapFeatureContext   feature_context;
+  ZMapFeatureSet       feature_set;
+  GQuark               context_key;
+  FooCanvasItem       *feature_group;       /* the group this feature was drawn in */
+  ZMapFeature          feature;
+
+  ZMapFeatureTypeStyle focusType;
+  FooCanvasItem       *focusFeature;
+
+  GIOChannel          *channel;
+  double               height;
+  double               length;
+  double               magFactor;
+  double               scaleBarOffset;
+  double               x;                   /* x coord of a column the user clicked */
+} ZMapCanvasDataStruct;
 
 
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
