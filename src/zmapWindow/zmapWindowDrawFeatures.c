@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 21 12:12 2004 (edgrif)
+ * Last edited: Jul 22 16:08 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.7 2004-07-21 11:15:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.8 2004-07-22 15:42:12 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,21 +52,30 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
 static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user_data);
 
 
-void zmapWindowDrawFeatures(FooCanvas *canvas, ZMapFeatureContext feature_context, GData *types)
+void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_context, GData *types)
 {
   double offset = 20.0;
   float result;
   double x1, x2, y1, y2;
   GtkWidget *parent, *label, *vbox, *vscale, *frame;
   ParamStruct params;
+  FooCanvas *canvas = window->canvas;
 
   foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);  // for display panel
 
   params.thisCanvas = canvas;
-  params.height = (y2 - y1)*2; // arbitrarily double the size for now
+  params.height = (y2 - y1)*1.5; // arbitrarily increase the size for now
   params.length = feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1;
   params.column_position = 20.0;
   params.types = types;
+
+  if ((feature_context->sequence_to_parent.c2 * params.height/params.length) > y2)
+    y2 = (feature_context->sequence_to_parent.c2 * params.height/params.length) + 100;
+
+  // adjust the canvas to suit the sequence we're displaying
+  foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2);
+  foo_canvas_item_set(window->background, 
+		      "y2", (double)(feature_context->sequence_to_parent.c2 * params.height/params.length) + 100);
 
   result = zmapDrawScale(canvas, offset, 
 			 feature_context->sequence_to_parent.c1, 
@@ -74,7 +83,6 @@ void zmapWindowDrawFeatures(FooCanvas *canvas, ZMapFeatureContext feature_contex
 
   if (feature_context)
     g_datalist_foreach(&(feature_context->feature_sets), zmapWindowProcessFeatureSet, &params);
-
 
   return;
 }
@@ -88,7 +96,7 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
   ParamStruct *params = (ParamStruct*)user_data;
 
   FooCanvasItem *col_group;  // each feature_set represents a column
-  double column_spacing = 20.0;
+  double column_spacing = 40.0;
 
 
   // NB for each column we create a new canvas group, with the initial y coordinate set to
@@ -129,6 +137,8 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
   float middle, line_width = 1.0;
   double magFactor = params->height/params->length;
 
+  //  printf("type %d name %s\n", zMapFeature->type, zMapFeature->name);
+
   if (!params->thisType)       // this needs to be handled properly
     {
       params->thisType = g_new0(ZMapFeatureTypeStyleStruct, 1);
@@ -148,11 +158,16 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 					  "y", (double)zMapFeature->x1 * magFactor,
 					  NULL);
 	      
-      if (zMapFeature->x2 > zMapFeature->x2)
+      if (zMapFeature->x2 > zMapFeature->x1)
 	{
-	  zmapDrawBox(feature_group, params->column_position,
+	  /*	  zmapDisplayText(FOO_CANVAS_GROUP(feature_group), zMapFeature->name, "red", 
+			  0.0, zMapFeature->x1 * magFactor); 
+	  zmapDrawLine(FOO_CANVAS_GROUP(feature_group), 12.0, 0.0, 
+		       0.0, zMapFeature->x1 * magFactor, "red", line_width);
+	  */
+	  zmapDrawBox(feature_group, 0.0,
 		      (zMapFeature->x1 * magFactor), 
-		      params->column_position + params->thisType->width, 
+		      params->thisType->width, 
 		      (zMapFeature->x2 * magFactor),
 		      "black", params->thisType->foreground);
 	}
@@ -167,9 +182,11 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 
       if (zMapFeature->feature.homol.y2 > zMapFeature->feature.homol.y1)
 	{	      
-	  zmapDrawBox(feature_group, params->column_position,
+	  //	  zmapDisplayText(FOO_CANVAS_GROUP(feature_group), zMapFeature->name, "blue",
+	  //			  70.0, zMapFeature->feature.homol.y1 * magFactor); 
+	  zmapDrawBox(feature_group, 0.0,
 		      (zMapFeature->feature.homol.y1 * magFactor), 
-		      params->column_position + params->thisType->width, 
+		      params->thisType->width, 
 		      (zMapFeature->feature.homol.y2 * magFactor),
 		      "black", params->thisType->foreground);
 	}
@@ -199,23 +216,27 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 
 	  if (y2 > y1 && y0+2 <= y1)
 	    {
-	      zmapDrawLine(FOO_CANVAS_GROUP(feature_group), params->column_position + params->thisType->width/2, y1,
-			   params->column_position + params->thisType->width, middle, 
+	      zmapDrawLine(FOO_CANVAS_GROUP(feature_group), params->thisType->width/2, y1,
+			   params->thisType->width, middle, 
 			   params->thisType->foreground, line_width);
-	      zmapDrawLine(FOO_CANVAS_GROUP(feature_group), params->column_position + params->thisType->width, middle, 
-			   params->column_position + params->thisType->width/2, y2, 
+	      zmapDrawLine(FOO_CANVAS_GROUP(feature_group), params->thisType->width, middle, 
+			   params->thisType->width/2, y2, 
 			   params->thisType->foreground, line_width);
 	    }
 	}	  
       for (j = 0; j < zMapFeature->feature.transcript.exons->len; j++)
 	{
+
 	  zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
 	      
 	  if (zMapSpan->x2 > zMapSpan->x1)
 	    {
-	      zmapDrawBox(feature_group, params->column_position,
+	      if (j == 0)
+		zmapDisplayText(FOO_CANVAS_GROUP(feature_group), zMapFeature->name, 
+				"brown",40.0, zMapSpan->x1 * magFactor); 
+	      zmapDrawBox(feature_group, 0.0,
 			  (zMapSpan->x1 * magFactor), 
-			  params->column_position + params->thisType->width,
+			  params->thisType->width,
 			  (zMapSpan->x2 * magFactor),
 			  "black", params->thisType->foreground);
 	    }
