@@ -1,4 +1,0 @@
-
-The fileUtils all need sorting out, they should be rationalised into calls that get
-files from the .ZMap directory and more general calls that construct path names etc.
-
