@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 14 16:28 2004 (rnc)
+ * Last edited: Oct 14 17:24 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.21 2004-10-14 15:28:26 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.22 2004-10-15 16:12:41 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -346,9 +346,9 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 	  canvasData->feature_group = columnGroup;
 	  
 	  object = zmapDrawBox(FOO_CANVAS_ITEM(columnGroup), 0.0,
-			       zMapFeature->x1,
+			       zMapFeature->x1 - canvasData->feature_context->sequence_to_parent.c1,
 			       canvasData->thisType->width, 
-			       zMapFeature->x2,
+			       zMapFeature->x2 - canvasData->feature_context->sequence_to_parent.c1,
 			       &canvasData->thisType->outline,
 			       &canvasData->thisType->foreground);
 	
@@ -381,16 +381,16 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 		{
 		  zmapDrawLine(FOO_CANVAS_GROUP(feature_group), 
 			       canvasData->thisType->width/2, 
-			       prevSpan->x2 - zMapFeature->x1,
+			       (prevSpan->x2 - zMapFeature->x1) - canvasData->feature_context->sequence_to_parent.c1,
 			       canvasData->thisType->width  ,
-			       ((prevSpan->x2 + zMapSpan->x1)/2) - zMapFeature->x1,
+			       (((prevSpan->x2 + zMapSpan->x1)/2) - zMapFeature->x1) - canvasData->feature_context->sequence_to_parent.c1,
 			       &canvasData->thisType->foreground, line_width);
 
 		  zmapDrawLine(FOO_CANVAS_GROUP(feature_group), 
 			       canvasData->thisType->width  , 
-			       ((prevSpan->x2 + zMapSpan->x1)/2) - zMapFeature->x1,
+			       (((prevSpan->x2 + zMapSpan->x1)/2) - zMapFeature->x1) - canvasData->feature_context->sequence_to_parent.c1,
 			       canvasData->thisType->width/2, 
-			       zMapSpan->x1 - zMapFeature->x1, 
+			       (zMapSpan->x1 - zMapFeature->x1) - canvasData->feature_context->sequence_to_parent.c1, 
 			       &canvasData->thisType->foreground, line_width);
 		}
 	    }
@@ -400,9 +400,9 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 
 	      object = zmapDrawBox(feature_group, 
 				   0.0,
-				   zMapSpan->x1 - zMapFeature->x1, 
+				   (zMapSpan->x1 - zMapFeature->x1) - canvasData->feature_context->sequence_to_parent.c1, 
 				   canvasData->thisType->width,
-				   zMapSpan->x2 - zMapFeature->x1, 
+				   (zMapSpan->x2 - zMapFeature->x1) - canvasData->feature_context->sequence_to_parent.c1, 
 				   &canvasData->thisType->outline, 
 				   &canvasData->thisType->foreground);
 
