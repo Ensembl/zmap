@@ -25,15 +25,12 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Apr 23 23:10 2004 (edgrif)
+ * Last edited: May  7 10:15 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.5 2004-04-27 09:44:30 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.6 2004-05-07 09:21:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <strings.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
@@ -42,9 +39,6 @@
 
 static ZMapConfig createConfig(void) ;
 static void destroyConfig(ZMapConfig config) ;
-static char *configGetDir(char *zmap_config_dir) ;
-static char *configGetFile(char *zmap_dir_path, char *zmap_config_file) ;
-static gboolean configFileEmpty(char *zmap_config_file) ;
 
 
 /*! @defgroup zmapconfig   zMapConfig: configuration reading/writing
@@ -65,7 +59,7 @@ static gboolean configFileEmpty(char *zmap_config_file) ;
  *
  * Usage:
  * <PRE>
- *      /* Make the "server" stanza so we can search for it in the configuration data. */
+ *      // Make the "server" stanza so we can search for it in the configuration data.
  *      ZMapConfigStanza server_stanza ;
  *      ZMapConfigStanzaElementStruct server_elements[] = {{"host", ZMAPCONFIG_STRING, {NULL}},
  *                                                         {"port", ZMAPCONFIG_INT, {NULL}},
@@ -74,7 +68,7 @@ static gboolean configFileEmpty(char *zmap_config_file) ;
  *      server_elements[1].data.i = -1 ;
  *	server_stanza = zMapConfigMakeStanza("server", server_elements) ;
  *
- *      /* Find all the "server" stanzas and process them. */
+ *      // Find all the "server" stanzas and process them.
  *  	if (zMapConfigFindStanzas(zmap->config, server_stanza, &server_list))
  *  	  {
  *	    ZMapConfigStanza next_server = NULL ;
@@ -87,7 +81,7 @@ static gboolean configFileEmpty(char *zmap_config_file) ;
  *		machine = zMapConfigGetElementString(next_server, "host") ;
  *	      }
  *
- *	    /* clean up. */
+ *	    // clean up.
  *	    if (server_list)
  *	      zMapConfigDeleteStanzaSet(server_list) ;
  *	  }
@@ -137,7 +131,9 @@ ZMapConfigStanza zMapConfigMakeStanza(char *stanza_name, ZMapConfigStanzaElement
 	  new_element->data.f = elements[i].data.f ;
 	  break ;
 	case ZMAPCONFIG_STRING:
-	  new_element->data.s = g_strdup(elements[i].data.s) ;
+	  new_element->data.s = NULL ;
+	  if (elements[i].data.s)
+	    new_element->data.s = g_strdup(elements[i].data.s) ;
 	  break ;
 	default:
 	  zMapCrash("%s", "Code Error: unrecognised data type for stanza element union") ;
@@ -145,8 +141,6 @@ ZMapConfigStanza zMapConfigMakeStanza(char *stanza_name, ZMapConfigStanzaElement
 	}
 
       stanza->elements = g_list_append(stanza->elements, new_element) ;
-
-      elements++ ;
     }
 
   return stanza ;
@@ -245,28 +239,60 @@ ZMapConfigStanzaElement zMapConfigFindElement(ZMapConfigStanza stanza, char *ele
 }
 
 
-
 /*!
  * Create a configuration which can then be searched for configuration stanzas.
- * Currently it takes an unused argument of a configuration filename,
- * I'M NOT SURE WE WANT TO PASS IN THE CONFIGURATION FILE NAME, THAT MIGHT BE TOO MUCH
- * FLEXIBILITY..........THINK ABOUT THIS....
+ * The configuration is read partly from internal hard-coded data and partly
+ * from the default (hard-coded) user configuration file.
  *
- * @param config_file_unused  Name of a configuration file to be read, currently UNUSED.
+ * @param   none
  * @return                    The configuration if all the configuration files etc. were
  *                            successfully read, NULL otherwise.
  *  */
-ZMapConfig zMapConfigCreate(char *config_file_unused)
+ZMapConfig zMapConfigCreate(void)
+{
+  ZMapConfig config ;
+
+  config = zMapConfigCreateFromFile(NULL, NULL) ;
+
+  return config ;
+}
+
+
+/*!
+ * Create a configuration which can then be searched for configuration stanzas
+ * from a named file in a named directory. Either can be NULL in which case
+ * defaults will be used.
+ *
+ * @param config_dir          Name of a directory containing configuration file or NULL.
+ * @param config_file         Name of a configuration file to be read or NULL.
+ * @return                    The configuration if all the configuration files etc. were
+ *                            successfully read, NULL otherwise.
+ *  */
+ZMapConfig zMapConfigCreateFromFile(char *config_dir, char *config_file)
 {
   ZMapConfig config ;
   gboolean status = TRUE ;
+  const char *directory ;
+  char *file = ZMAP_CONFIG_FILE ;
+
+
+  /* shouldn't do this for this function, ok for one above....for this function, caller
+   * should provide just a path...... */
+  if (config_dir)
+    directory = config_dir ;
+  else
+    directory = zMapGetControlDirName() ;
+  if (config_file)
+    file = config_file ;
 
   config = createConfig() ;
+
+  /* Should be logging here..... */
 
   /* Get the config directory (may have to create one). */
   if (status)
     {
-      if (!(config->config_dir = configGetDir(ZMAP_USER_CONFIG_DIR)))
+      if (!(config->config_dir = zMapGetControlFileDir(directory)))
 	{
 	  status = FALSE ;
 	}
@@ -275,16 +301,19 @@ ZMapConfig zMapConfigCreate(char *config_file_unused)
   /* Get the config file (may have to create one). */
   if (status)
     {
-      if (!(config->config_file = configGetFile(config->config_dir, ZMAP_CONFIG_FILE)))
+      if (!(config->config_file = zMapGetFile(config->config_dir, file)))
 	{
 	  status = FALSE ;
 	}
     }
 
+
   /* Get the configuration (may have to create a default one). */
   if (status)
     {
-      if (configFileEmpty(config->config_file))
+
+
+      if (zMapFileEmpty(config->config_file))
 	{
 	  status = zmapMakeUserConfig(config) ;
 	}
@@ -299,7 +328,6 @@ ZMapConfig zMapConfigCreate(char *config_file_unused)
   if (!status)
     {
       destroyConfig(config) ;
-      g_free(config) ;
       config = NULL ;
     }
 
@@ -343,8 +371,6 @@ void zMapConfigDestroy(ZMapConfig config)
 {
   destroyConfig(config) ;
 
-  g_free(config) ;
-
   return ;
 }
 
@@ -380,100 +406,8 @@ static void destroyConfig(ZMapConfig config)
   if (config->config_file)
     g_free(config->config_file) ;
 
+  g_free(config) ;
+
   return ;
 }
-
-
-/* Does the user have a configuration directory for ZMap. */
-static char *configGetDir(char *zmap_config_dir)
-{
-  char *config_dir = NULL ;
-  gboolean status = FALSE ;
-  const char *home_dir ;
-  struct stat stat_buf ;
-
-  home_dir = g_get_home_dir() ;
-  config_dir = g_build_path(ZMAP_SEPARATOR, home_dir, zmap_config_dir, NULL) ;
-
-  /* Is there a config dir in the users home directory which is readable/writeable/executable ? */
-  if (stat(config_dir, &stat_buf) == 0)
-    {
-      if (S_ISDIR(stat_buf.st_mode) && (stat_buf.st_mode & S_IRWXU))
-	{
-	  status = TRUE ;
-	}
-    }
-  else
-    {
-      if (mkdir(config_dir, S_IRWXU) == 0)
-	{
-	  status = TRUE ;
-	}
-    }
-
-  if (!status)
-    {
-      g_free(config_dir) ;
-      config_dir = NULL ;
-    }
-
-  return config_dir ;
-}
-
-
-
-/* Does the user have a configuration file for ZMap. */
-static char *configGetFile(char *zmap_dir_path, char *zmap_config_file)
-{
-  gboolean status = FALSE ;
-  char *config_file ;
-  struct stat stat_buf ;
-
-  config_file = g_build_path(ZMAP_SEPARATOR, zmap_dir_path, zmap_config_file, NULL) ;
-
-  /* Is there a configuration file in the config dir that is readable/writeable ? */
-  if (stat(config_file, &stat_buf) == 0)
-    {
-      if (S_ISREG(stat_buf.st_mode) && (stat_buf.st_mode & S_IRWXU))
-	{
-	  status = TRUE ;
-	}
-    }
-  else
-    {
-      int file ;
-
-      if ((file = open(config_file, (O_RDWR | O_CREAT | O_EXCL), (S_IRUSR | S_IWUSR)) != -1)
-	  && (close(file) != -1))
-	status = TRUE ;
-    }
-
-  if (!status)
-    {
-      g_free(config_file) ;
-      config_file = NULL ;
-    }
-
-  return config_file ;
-}
-
-
-/* Is the config file empty ? */
-static gboolean configFileEmpty(char *zmap_config_file)
-{
-  gboolean result = FALSE ;
-  struct stat stat_buf ;
-
-  if (stat(zmap_config_file, &stat_buf) == 0)
-    {
-      if (stat_buf.st_size == 0)
-	{
-	  result = TRUE ;
-	}
-    }
-
-  return result ;
-}
-
-
 
