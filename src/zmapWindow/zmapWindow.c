@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 18 10:03 2004 (rnc)
+ * Last edited: Nov 18 16:47 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.51 2004-11-18 10:48:58 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.52 2004-11-19 10:09:21 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,9 +46,10 @@
 static void dataEventCB         (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void canvasClickCB       (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void clickCB             (ZMapWindow window, void *caller_data, ZMapFeature feature);
-static gboolean rightClickCB    (ZMapWindow window, ZMapFeatureSet feature_set, int x_coord);
+static gboolean rightClickCB    (ZMapWindow window, ZMapFeatureItem featureItem);
 static void hideUnhideColumns   (ZMapWindow window);
 static gboolean getConfiguration(ZMapWindow window) ;
+static gboolean resize          (GtkWidget *widget, GtkAllocation *alloc, gpointer user_data);
 
 
 /* These callback routines are static because they are set just once for the lifetime of the
@@ -146,8 +147,11 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
   window->canvas = FOO_CANVAS(canvas);
 
-  g_signal_connect(GTK_OBJECT(window->canvas), "button_press_event",
+  g_signal_connect(GTK_OBJECT(window->canvas), "button-press-event",
 		   GTK_SIGNAL_FUNC(canvasClickCB), (gpointer)window) ;
+
+  g_signal_connect(GTK_OBJECT(window->scrolledWindow), "size-allocate",
+		   GTK_SIGNAL_FUNC(resize), (gpointer)window) ;
 
 
   /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
@@ -256,9 +260,10 @@ void zMapWindowDestroy(ZMapWindow window)
   
   if (window->columns)
     g_ptr_array_free(window->columns, TRUE);                
-
+  
+  g_datalist_clear(&(window->featureItems));
   g_free(window) ;
- 
+  
   return ;
 }
 
@@ -432,6 +437,14 @@ void zmapWindowPrintCanvas(FooCanvas *canvas)
 
 
 
+static gboolean resize(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data)
+{
+  /* widget is the scrolled_window, user_data is the zmapWindow */
+  /*  printf("resized: x: %d, y: %d, height: %d, width: %d\n", alloc->x, alloc->y, alloc->height, alloc->width);*/
+  return FALSE;  /* ie allow any other callbacks to run as well */
+}
+
+
 
 static void hideUnhideColumns(ZMapWindow window)
 {
@@ -525,10 +538,10 @@ static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature)
 }
 
 
-static gboolean rightClickCB(ZMapWindow window, ZMapFeatureSet feature_set, int x_coord)
+static gboolean rightClickCB(ZMapWindow window, ZMapFeatureItem featureItem)
 {
   /* user selects new feature in this column */
-  zMapWindowCreateListWindow(window, feature_set, x_coord);
+  zMapWindowCreateListWindow(window, featureItem);
 
   return TRUE;
 }
