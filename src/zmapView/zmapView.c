@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 20 10:49 2004 (edgrif)
+ * Last edited: Jul 20 12:25 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.10 2004-07-20 09:51:04 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.11 2004-07-20 12:06:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -172,6 +172,12 @@ ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 
 	  /* Start polling function that checks state of this view and its connections. */
 	  startStateConnectionChecking(zmap_view) ;
+	}
+      else if (zmap_view->state == ZMAPVIEW_RUNNING)
+	{
+	  /* If we are running then we should display the current data. */
+	  zMapWindowDisplayData(view_window->window, (void *)(zmap_view->features), zmap_view->types) ;
+
 	}
     }
   else
@@ -769,7 +775,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 
 		      /* Signal the ZMap that there is work to be done. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		      displayDataWindows(zmap_view, data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		      displayDataWindows(zmap_view, (void *)(zmap_view->features)) ;
 
 		      /* signal our caller that we have data. */
 		      (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data) ;
