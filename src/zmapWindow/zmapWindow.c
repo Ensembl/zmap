@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 11 15:22 2004 (edgrif)
+ * Last edited: Nov 12 13:21 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.48 2004-11-12 12:00:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.49 2004-11-12 13:23:24 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,8 +48,6 @@ static void dataEventCB        (GtkWidget *widget, GdkEventClient *event, gpoint
 static void canvasClickCB      (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void clickCB            (ZMapWindow window, void *caller_data, ZMapFeature feature);
 static gboolean rightClickCB   (ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
-static void addItemToList      (GQuark key_id, gpointer data, gpointer user_data);
-static void quitListCB         (GtkWidget *window, gpointer data);
 static void hideUnhideColumns  (ZMapCanvasDataStruct *canvasData);
 
 
@@ -95,9 +93,7 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data)
 {
   ZMapWindow window ;
-  GtkWidget *vbox, *menubar, *button_frame, *connect_frame ;
   GtkWidget *canvas ;
-  GtkAdjustment *v_adj,*h_adj ; 
   GdkColor color;
   ZMapCanvasDataStruct *canvasData = NULL ;
 
@@ -118,6 +114,8 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   window->step_increment = 10;
   window->page_increment = 600;
 
+  window->featureListWindows = g_ptr_array_new();
+  g_datalist_init(&(window->featureItems));
 
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
   window->toplevel = window->scrolledWindow = gtk_scrolled_window_new(NULL, NULL) ;
@@ -244,14 +242,24 @@ ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window)
 void zMapWindowDestroy(ZMapWindow window)
 {
   ZMapCanvasDataStruct *canvasData;
+  int i;
+  GtkWidget *widget;
 
   zMapDebug("%s", "GUI: in window destroy...\n") ;
 
   if (window->sequence)
     g_free(window->sequence) ;
 
-  if (window->featureListWindow)
-    gtk_widget_destroy(window->featureListWindow);
+  if (window->featureListWindows)
+    for (i = 0; i < window->featureListWindows->len; i++)
+      {
+	widget = g_ptr_array_index(window->featureListWindows, i);
+	gtk_widget_destroy(widget);
+      }
+
+  /* free the array of featureListWindows and the windows themselves */
+  g_ptr_array_free(window->featureListWindows, TRUE);
+  g_datalist_clear(&(window->featureItems));
 
  /* ah, but has the window been destroyed? Then the canvas will, too */
   canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
