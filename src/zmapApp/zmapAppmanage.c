@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 14:13 2004 (edgrif)
+ * Last edited: Feb 26 17:57 2004 (edgrif)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.4 2004-01-23 13:28:00 edgrif Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.5 2004-03-03 12:10:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -115,7 +115,7 @@ static void loadThreadCB(GtkWidget *widget, gpointer cb_data)
 
   if (app_context->selected_zmap)
     {
-      zMapManagerLoadData(app_context->selected_zmap) ;
+      zMapManagerLoadData(app_context->zmap_manager, app_context->selected_zmap) ;
     }
 
 
@@ -153,7 +153,7 @@ static void killThreadCB(GtkWidget *widget, gpointer cb_data)
 					 app_context->selected_zmap) ;
 
       ZMAP_DEBUG(("GUI: kill thread for row %d with connection pointer: %x\n",
-		      row, app_context->selected_zmap)) ;
+		  row, app_context->selected_zmap)) ;
 
       zMapManagerKill(app_context->zmap_manager, app_context->selected_zmap) ;
 
