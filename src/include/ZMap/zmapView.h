@@ -29,28 +29,48 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: May 27 10:06 2004 (edgrif)
+ * Last edited: Jul 13 17:54 2004 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.3 2004-05-27 13:38:08 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.4 2004-07-14 09:01:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
 #define ZMAPVIEW_H
 
 #include <gtk/gtk.h>
+#include <ZMap/zmapWindow.h>
+
 
 /* Opaque type, represents an instance of a ZMapView. */
 typedef struct _ZMapViewStruct *ZMapView ;
 
+
+/* Opaque type, represents an instance of a ZMapView window. */
+typedef struct _ZMapViewWindowStruct *ZMapViewWindow ;
+
+
 /* Callers can specify callback functions which get called with ZMapView which made the call
- * and the applications own data pointer. */
+ * and the applications own data pointer. If the callback is to made for a window event
+ * then the ZMapViewWindow where the event took place will be returned as the first
+ * parameter. If the callback is for an event that involves the whole view (e.g. destroy)
+ * then the ZMapView where the event took place is returned. */
+typedef void (*ZMapViewWindowCallbackFunc)(ZMapViewWindow view_window, void *app_data) ;
 typedef void (*ZMapViewCallbackFunc)(ZMapView zmap_view, void *app_data) ;
+
+/* Set of callback routines that allow the caller to be notified when events happen
+ * to a window. */
+typedef struct _ZMapViewCallbacksStruct
+{
+  ZMapViewWindowCallbackFunc button_click ;
+  ZMapViewCallbackFunc destroy ;
+} ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 
 
 /* The overall state of the zmapView, we need this because both the zmap window and the its threads
  * will die asynchronously so we need to block further operations while they are in this state. */
 typedef enum {
-  ZMAPVIEW_INIT,					    /* Display with no threads. */
+  ZMAPVIEW_INIT,					    /* No display and no threads. */
+  ZMAPVIEW_NOT_CONNECTED,				    /* Display with no threads. */
   ZMAPVIEW_RUNNING,					    /* Display with threads in normal state. */
   ZMAPVIEW_RESETTING,					    /* Display that is closing its threads
 							       and returning to INIT state. */
@@ -60,8 +80,9 @@ typedef enum {
 
 
 
-ZMapView zMapViewCreate(GtkWidget *parent_widget, char *sequence,
-			void *app_data, ZMapViewCallbackFunc destroy_cb) ;
+void zMapViewInit(ZMapViewCallbacks callbacks) ;
+ZMapView zMapViewCreate(char *sequence,	void *app_data) ;
+ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 gboolean zMapViewConnect(ZMapView zmap_view) ;
 gboolean zMapViewLoad(ZMapView zmap_view, char *sequence) ; /* sequence == NULL => reload existing
 							       sequence. */
@@ -78,6 +99,9 @@ gboolean zMapViewReset(ZMapView zmap_view) ;
 char *zMapViewGetSequence(ZMapView zmap_view) ;
 ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
 char *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
+ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
+ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
+
 gboolean zMapViewDestroy(ZMapView zmap_view) ;
 
 
