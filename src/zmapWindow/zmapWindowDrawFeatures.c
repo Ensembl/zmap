@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 20 14:11 2004 (edgrif)
+ * Last edited: Oct 20 14:28 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.25 2004-10-20 13:13:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.26 2004-10-20 14:44:34 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,9 @@
 #include <ZMap/zmapWindowDrawFeatures.h>
 
 
-#define MULT 0.875
+#define SCROLLBAR_OFFSET 170.0
+#define SCROLLBAR_WIDTH   40.0
+#define COLUMN_SPACING     5.0
 
 /******************** function prototypes *************************************************/
 
@@ -96,7 +98,7 @@ gboolean zMapFeatureClickCB(ZMapCanvasDataStruct *canvasData, ZMapFeature featur
 
 static void columnClickCB(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set)
 {
-  (*(feature_cbs_G->rightClick))(canvasData, feature_set);
+ (*(feature_cbs_G->rightClick))(canvasData, feature_set);
 
   return;
 }
@@ -133,7 +135,7 @@ static void columnClickCB(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet featu
 
 void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_context, GData *types)
 {
-  float          result;
+  double         result;
   GtkWidget     *parent, *label, *vbox, *vscale, *frame;
   GError        *channel_error = NULL;
   double         wx;
@@ -144,7 +146,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
   if (feature_context)  /* Split an empty pane and you get here with no feature_context */
     {
       canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
-      canvasData->scaleBarOffset = 100.0;
+      canvasData->scaleBarOffset = SCROLLBAR_OFFSET;
       canvasData->types = types;
       canvasData->feature_context = feature_context;
       canvasData->reduced = FALSE;
@@ -170,6 +172,9 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 
       foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
 
+      window->page_increment = v_adj->page_size - 50;
+      GTK_LAYOUT(window->canvas)->vadjustment->page_increment = window->page_increment;
+  
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       foo_canvas_c2w(window->canvas, v_adj->page_size, h_adj->page_size, &x, &y);
       printf("page_size (world) is %f\n", x);
@@ -187,13 +192,13 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 					  "x", 0.0, "y", 0.0,
 					  NULL) ;
 
-      result = zmapDrawScale(canvasData->canvas, window->scrolledWindow, 
-			     canvasData->scaleBarOffset, 1.0,
-			     feature_context->sequence_to_parent.c1, 
-			     feature_context->sequence_to_parent.c2);
+      canvasData->scaleBarGroup = zmapDrawScale(canvasData->canvas, 
+						canvasData->scaleBarOffset, window->zoom_factor,
+						feature_context->sequence_to_parent.c1, 
+						feature_context->sequence_to_parent.c2);
 
-      canvasData->column_position = canvasData->scaleBarOffset + 110.0;
-      canvasData->revColPos = result;                
+      canvasData->column_position = canvasData->scaleBarOffset + SCROLLBAR_WIDTH + (2 * COLUMN_SPACING);
+      canvasData->revColPos = canvasData->scaleBarOffset;                
       /* NB there's a flaw here: too many visible upstrand groups and we'll go left of the edge of
       ** the window. Should really be keeping track and adjusting scroll region if necessary. */
 
@@ -219,7 +224,6 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
   ZMapCanvasDataStruct *canvasData = (ZMapCanvasDataStruct*)user_data;
 
   FooCanvasItem *col_group;  /* each feature_set represents a column */
-  double         column_spacing = 5.0;
   const gchar   *itemDataKey = "feature_set";
   FeatureKeys    featureKeys;
   FooCanvasItem *boundingBox;
@@ -258,7 +262,7 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
 						    "y", 0.0,
 						    NULL);
 
-      canvasData->column_position += (canvasData->thisType->width + column_spacing);
+      canvasData->column_position += (canvasData->thisType->width + COLUMN_SPACING);
 
       /* Each column is entirely covered by a bounding box over the range of the sequence,
        * this means we can get events (e.g. button clicks) from anywhere within the column. */
@@ -296,7 +300,7 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
 						    "x", canvasData->revColPos,
 						    "y", canvasData->seq_start,
 						    NULL);
-	  canvasData->revColPos -= (canvasData->thisType->width + column_spacing);
+	  canvasData->revColPos -= (canvasData->thisType->width + COLUMN_SPACING);
 
 	  boundingBox = foo_canvas_item_new(FOO_CANVAS_GROUP(canvasData->revColGroup),
 					    foo_canvas_rect_get_type(),
