@@ -26,9 +26,9 @@
  *              in production code.
  *              
  * HISTORY:
- * Last edited: Apr  8 17:11 2004 (edgrif)
+ * Last edited: Nov 15 14:09 2004 (edgrif)
  * Created: Mon Mar 29 18:23:48 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsMesg.h,v 1.1 2004-04-08 16:14:53 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsMesg.h,v 1.2 2004-11-19 13:47:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_MESG_H
@@ -72,7 +72,7 @@ G_STMT_START{                                              \
 
 
 /* Unrecoverable errors not caused by code, e.g. wrong command line args etc. */
-#define zMapExit(FORMAT, ...)                     \
+#define zMapExitMsg(FORMAT, ...)                     \
 G_STMT_START{                                     \
   zMapShowMsg(ZMAP_MSG_EXIT,                      \
 	      ZMAP_MSG_FORMAT_STRING FORMAT,      \
