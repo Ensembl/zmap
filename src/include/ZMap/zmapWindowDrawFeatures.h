@@ -26,9 +26,9 @@
  *              on the canvas, calling drawing functions in zmapDraw
  *              to do so.
  * HISTORY:
- * Last edited: Oct 14 15:33 2004 (edgrif)
+ * Last edited: Nov  8 11:50 2004 (rnc)
  * Created: Fri Aug 13 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.7 2004-10-18 10:12:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.8 2004-11-08 12:02:24 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_DRAWFEATURES_H
@@ -39,9 +39,6 @@
 #include <zmapWindow_P.h>
 
 
-
-gboolean zmapFeatureClickCB  (ZMapCanvasDataStruct *canvasData, ZMapFeature feature);
-void     zmapHighlightObject (FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData);
 
 #endif
 /******************** end of file ****************************************/
