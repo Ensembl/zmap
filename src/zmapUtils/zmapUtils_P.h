@@ -25,16 +25,22 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 31 14:10 2004 (edgrif)
+ * Last edited: May  6 15:46 2004 (edgrif)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
- * CVS info:   $Id: zmapUtils_P.h,v 1.1 2004-04-08 16:52:32 edgrif Exp $
+ * CVS info:   $Id: zmapUtils_P.h,v 1.2 2004-05-07 09:24:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_P_H
 #define ZMAP_UTILS_P_H
 
-
 #include <ZMap/zmapUtils.h>
+
+
+
+#define ZMAP_SEPARATOR "/"				    /* WE SHOULD BE ABLE TO CALL A FUNC
+							       FOR THIS..... */
+
+
 
 
 void zmapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
