@@ -1,4 +1,4 @@
-/*  Last edited: Sep 20 10:52 2004 (rnc) */
+/*  Last edited: Nov 11 14:25 2004 (rnc) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -34,9 +34,7 @@ static void  shrinkPane      (ZMap zmap) ;
 static void  resizePanes     (ZMap zmap) ;
 static void  resizeOnePane   (GNode     *node, gpointer user_data);
 static void  shrinkHPane     (ZMap zmap);
-static void  resizeHPanes    (ZMap zmap);
 static int   unfocus         (GNode     *node, gpointer data);
-static int   resizeOneHPane  (GNode     *node, gpointer data);
 static void  exciseNode      (GNode     *node);
 
 /* end of prototypes ***************************************************/
@@ -68,8 +66,6 @@ static void  exciseNode      (GNode     *node);
 ZMapPane zmapAddPane(ZMap zmap, char orientation)
 {
   ZMapPane pane ;
-  GtkAdjustment *adj; 
-  GtkWidget *w;
   GNode *node = NULL;
 
   /* set up ZMapPane for this window */
@@ -561,44 +557,6 @@ static void shrinkHPane(ZMap zmap)
   return;
 }
 
-
-/* This wrapper for resizeOnePane is needed because
- * the callback function for g_node_traverse() is
- * required to return a BOOL, while that for
- * g_node_children_foreach() is not. */
-static int resizeOneHPane(GNode *node, gpointer data)
-{
-  resizeOnePane(node, data);
-
-  return 1;
-}  
-
-
-static void resizeHPanes(ZMap zmap)
-{
-  GtkRequisition req;
-  guint panes = 0;
-
-  /* count how many columns there are */
-  panes = g_node_n_nodes(zmap->panesTree, 
-			G_TRAVERSE_NON_LEAFS);
-  if (panes == 0)
-    panes = 1;
-
-  /* get size of the window & divide it by the number of panes.
-   * Note there's a small kludge here to adjust for a better fit.
-   * Don't know why it needs the -8. */
-  gtk_widget_size_request(GTK_WIDGET(zmap->pane_vbox), &req);
-  req.width = (req.width/panes) - 8;
-
-  g_node_traverse(g_node_get_root(zmap->panesTree), 
-		  G_IN_ORDER,
-		  G_TRAVERSE_NON_LEAFS, 
-		  -1,
-		  resizeOneHPane, 
-		  &req);
-  return;
-}
 
 
 static void exciseNode(GNode *node)

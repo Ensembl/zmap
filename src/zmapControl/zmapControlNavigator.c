@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  3 11:47 2004 (edgrif)
+ * Last edited: Nov 11 13:51 2004 (rnc)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.17 2004-11-04 12:41:42 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.18 2004-11-12 13:32:29 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,14 +43,9 @@
 
 void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
 {
-  /*  GtkRequisition req; */
-  int increment = 200;
-  GtkWidget *vscale;
   GtkObject *adjustment ;
 
   zmap->navigator = g_new0(ZMapNavStruct, 1);
-
-  /*  gtk_widget_size_request(frame, &req); seems to be unused */
 
   /* Need a vbox so we can add a label with sequence size at the bottom later,
    * we set it to a fixed width so that the text is always visible. */
@@ -81,7 +76,6 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
 /* updates size/range to coords of the new view. */
 void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext features)
 {
-  GtkWidget *label;
   gchar *top_str, *bot_str ;
   GtkObject *adjuster ;
 
@@ -156,10 +150,6 @@ void navUpdate(GtkAdjustment *adj, gpointer p)
 {
   ZMapPane pane = (ZMapPane)p ;
   ZMap zmap = pane->zmap ;
-  int height;
-  Coord startWind, endWind;
-  ScreenCoord startWindf, startScreenf, endWindf, lenWindf;
-  float x1, y1, x2, y2;
 
   if (GTK_WIDGET_REALIZED(zmap->navview_frame))
     {
