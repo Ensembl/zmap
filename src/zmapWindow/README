@@ -1,4 +1,11 @@
 ================================================================================   
 The ZMap window
 
-The code that creates a ZMap window and associated gubbins (threads etc.).
+The code that creates a single scrolled window with the sequence/feature view
+inside it. There may be a multiple number of these windows within a single
+"zMapView".
+
+This code encapsulates the canvas handling code, scrolling, zooming, events on
+the canvas etc.
+
+
