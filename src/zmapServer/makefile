@@ -51,5 +51,13 @@ ALL_SERVER_DIRS = acedb das
 
 build_servers: forcemake
 	@for d in $(ALL_SERVER_DIRS); do \
-	(cd $$d ; echo ; echo 'make all in '$$d ; $(MAKE) 'all' ; echo) ; \
+	echo ; \
+	RC=0 ; \
+	(cd $$d ; echo 'make all in '$$d ; $(MAKE) 'all') || RC=1 ; \
+	if  [ $$RC -eq 1 ] ; \
+	then \
+	  echo "*** make in $$d failed ***" ; \
+	  exit 1 ; \
+	fi ; \
+	echo ; \
 	done
