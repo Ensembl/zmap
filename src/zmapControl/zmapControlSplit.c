@@ -1,4 +1,4 @@
-/*  Last edited: Nov 11 14:25 2004 (rnc) */
+/*  Last edited: Nov 29 14:16 2004 (rnc) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -26,7 +26,7 @@
  */
  
 #include <zmapControl_P.h>
-
+#include <ZMap/zmapView.h>
 
 /* function prototypes **************************************************/
 
@@ -75,6 +75,7 @@ ZMapPane zmapAddPane(ZMap zmap, char orientation)
   pane->view_parent_box = gtk_vbox_new(FALSE, 0) ;
 
 
+
   /* This is glitchy, there may not be a focuspane yet....this kind of thing implies
    * that the panes stuff is not really sorted out..... */
   if (zmap->focuspane)
@@ -114,7 +115,6 @@ ZMapPane zmapAddPane(ZMap zmap, char orientation)
     gtk_box_pack_start(GTK_BOX(zmap->pane_vbox), pane->frame, TRUE, TRUE, 0);
   else
     gtk_paned_pack2(GTK_PANED(zmap->focuspane->pane), pane->frame, TRUE, TRUE);
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -224,6 +224,8 @@ void addPane(ZMap zmap, char orientation)
 GtkWidget *splitPane(ZMap zmap)
 {
   ZMapPane new_pane ;
+  ZMapWindow window;
+  ZMapWindowZoomStatus zoom_status;
 
   /* shrink the old pane */
   shrinkPane(zmap) ;
@@ -234,6 +236,7 @@ GtkWidget *splitPane(ZMap zmap)
   /* focus on the new pane */
   zmapRecordFocus(new_pane) ;
 
+  zmapControlWindowSetZoomButtons(zmap, ZMAP_ZOOM_MID);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* resize all the panes to fit the height */
@@ -352,6 +355,13 @@ void closePane(GtkWidget *widget, gpointer data)
 	g_list_free(children);
 
 
+      /* remove entry from the list of windows UNFINISHED */
+      {
+	ZMapViewWindow view_window = zmap->focuspane->curr_view_window;
+	/*	GList *list = g_list_find(view_window->parent_view->window_list,
+	  zmap->focuspane->curr_view_window); */
+      }
+       
       /* In theory, by this point all redundant panes and frames have been destroyed.
        * In reality, I have seen 'hanging' panes (grey squares of window lacking
        * a canvas and scroll bars) after closing multiply-split windows, but life 
@@ -373,6 +383,8 @@ void zmapRecordFocus(ZMapPane pane)
 {
   ZMap zmap = pane->zmap ;
   GNode *node;
+  ZMapWindow window;
+  ZMapWindowZoomStatus zoom_status;
  
   /* point the parent window's focuspane pointer at this pane */
   if (pane)
@@ -391,6 +403,13 @@ void zmapRecordFocus(ZMapPane pane)
 		  NULL);
   gtk_frame_set_shadow_type(GTK_FRAME(pane->frame), GTK_SHADOW_IN);
 
+  /* make sure the zoom buttons are appropriately sensitised for this window. */
+  if (pane->curr_view_window)
+    {
+      window = zMapViewGetWindow(pane->curr_view_window);
+      zoom_status = zMapWindowGetZoomStatus(window);
+      zmapControlWindowSetZoomButtons(zmap, zoom_status);
+    }
 
   return ;
 }
