@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 12 14:42 2004 (edgrif)
+ * Last edited: Nov 12 15:44 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.31 2004-11-12 14:45:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.32 2004-11-12 15:44:17 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -186,8 +186,7 @@ typedef struct _ZMapCanvasDataStruct
   FooCanvasItem       *scaleBarGroup;
   double               scaleBarOffset;
   double               x;                   /* x coord of a column the user clicked */
-  gboolean             reduced;             /* keep track of scroll region reduction */	
-  gboolean             atLimit;			     
+
 } ZMapCanvasDataStruct;
 
 
