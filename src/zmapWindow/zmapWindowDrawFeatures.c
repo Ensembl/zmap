@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 13 11:18 2004 (rnc)
+ * Last edited: Oct 13 21:47 2004 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.19 2004-10-13 12:33:45 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.20 2004-10-14 08:43:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -124,7 +124,8 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 
 
       /* make the sequence fit the default window */
-      canvasData->seqLength = feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1;
+      canvasData->seqLength =
+	feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1 + 1 ;
 
       adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
 
@@ -135,7 +136,8 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
       /* convert page_size to world coordinates.  Ignore x dimension */
       foo_canvas_c2w(canvasData->canvas, 0, adj->page_size, &wx, &canvasData->height);
 
-      if (canvasData->seqLength < 0) canvasData->seqLength *= -1.0;
+      if (canvasData->seqLength < 0)
+	canvasData->seqLength *= -1.0;
 
       result = zmapDrawScale(window->canvas, window->scrolledWindow, 
 			     canvasData->scaleBarOffset, 1.0,
