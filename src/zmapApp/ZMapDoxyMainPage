@@ -1,0 +1,59 @@
+/*  File: ZMapDoxyMainPage
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Copyright (c) Sanger Institute, 2004
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originated by
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *
+ * Description: Dummy file, contains main page documentation
+ *              used by doxygen tool to document ZMap.
+ *              
+ * Exported functions: none, dummy file.
+ * HISTORY:
+ * Last edited: Apr 21 09:00 2004 (edgrif)
+ * Created: Tue Apr 20 09:54:38 2004 (edgrif)
+ * CVS info:   $Id: ZMapDoxyMainPage,v 1.1 2004-04-21 08:01:13 edgrif Exp $
+ *-------------------------------------------------------------------
+ */
+
+/*! \mainpage ZMap Code and Interface documentation. 
+ * 
+ * \section overview Overview
+ * 
+ * ZMap is a stand alone client successor to FMap, the main virtual
+ * sequence viewer/annotation tool of Acedb.
+ * 
+ * \section authors Authors
+ *
+ * ZMap was originally written by 
+ * <A href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</A>
+ * and <A href="mailto:rnc@sanger.ac.uk">Rob Clack</A>
+ * of the Sanger Institute and is currently maintained by them.
+ * 
+ * \section copyright Copyright
+ * 
+ * ZMap is Copyright (c) <A href="http://www.sanger.ac.uk/">Sanger Institute</A>, 2004
+ * 
+ * and is distributed under the
+ * <A href="http://www.gnu.org/copyleft/gpl.txt">GNU General Public License</A>
+ * 
+ * 
+ * 
+ *  */
