@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Sep 20 11:25 2004 (edgrif)
+ * Last edited: Sep 22 11:42 2004 (rnc)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.10 2004-09-20 10:31:31 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.11 2004-09-27 09:18:33 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,9 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_window_set_title(GTK_WINDOW(toplevel), zmap->zmap_id) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
+
+  gtk_window_set_default_size(GTK_WINDOW(zmap->toplevel), 800, 800);
+
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)zmap) ;
 

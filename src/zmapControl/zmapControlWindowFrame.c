@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 16 15:24 2004 (rnc)
+ * Last edited: Sep 22 14:08 2004 (rnc)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.9 2004-09-16 15:36:38 rnc Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.10 2004-09-27 09:18:57 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,6 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 
   frame = gtk_frame_new(NULL) ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
-  gtk_widget_set_usize(frame, 1200, 800) ;
 
   createNavViewWindow(zmap, frame) ;
 
@@ -76,14 +75,12 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
   zmapControlNavigatorCreate(zmap, parent) ;
   gtk_paned_pack1(GTK_PANED(zmap->hpane), 
 		  zmap->navigator->navVBox,
-                  TRUE, TRUE);
+                  FALSE, TRUE);
 
 
   /* I'm not sure we actually need this intervening box, we could probably just set the size of
    * the hpane.... */
   zmap->pane_vbox = gtk_vbox_new(FALSE,0) ;
-  gtk_widget_set_size_request(zmap->pane_vbox, 1200, -1) ;
-
 
   gtk_paned_pack2(GTK_PANED(zmap->hpane), 
 		  zmap->pane_vbox, TRUE, TRUE);

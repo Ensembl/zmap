@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Sep 20 10:51 2004 (rnc)
+ * Last edited: Sep 22 14:03 2004 (rnc)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.15 2004-09-20 09:51:34 rnc Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.16 2004-09-27 09:18:02 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,19 +43,19 @@
 
 void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
 {
-  GtkRequisition req;
+  /*  GtkRequisition req; */
   int increment = 200;
   GtkWidget *vscale;
   GtkObject *adjustment ;
 
   zmap->navigator = g_new0(ZMapNavStruct, 1);
 
-  gtk_widget_size_request(frame, &req);
+  /*  gtk_widget_size_request(frame, &req); seems to be unused */
 
   /* Need a vbox so we can add a label with sequence size at the bottom later,
    * we set it to a fixed width so that the text is always visible. */
   zmap->navigator->navVBox = gtk_vbox_new(FALSE, 0);
-  gtk_widget_set_usize(GTK_WIDGET(zmap->navigator->navVBox), 100, -2) ;
+  gtk_widget_set_size_request(zmap->navigator->navVBox, 100, -1); 
 
   zmap->navigator->topLabel = gtk_label_new(TOPTEXT_NO_SCALE) ;
   gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->topLabel, FALSE, TRUE, 0);
