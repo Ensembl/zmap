@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 16:29 2004 (edgrif)
+ * Last edited: Jun 23 14:29 2004 (rnc)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapWindowFrame.c,v 1.1 2004-05-27 11:15:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFrame.c,v 1.2 2004-06-28 14:29:59 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,18 +70,18 @@ GtkWidget *zmapWindowMakeFrame(ZMapWindow window)
 
   g_free(frame_title) ;
 
-  vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_container_border_width(GTK_CONTAINER(vbox), 5);
-  gtk_container_add (GTK_CONTAINER (frame), vbox);
+  zMapWindowSetVbox(window, gtk_vbox_new(FALSE, 0)) ;
+  zMapWindowSetBorderWidth(zMapWindowGetVbox(window), 5);
+  gtk_container_add (GTK_CONTAINER (frame), zMapWindowGetVbox(window));
 
 
-  scrwin = gtk_scrolled_window_new(NULL, NULL) ;
-  gtk_container_add(GTK_CONTAINER(vbox), scrwin) ;
+    scrwin = gtk_scrolled_window_new(NULL, NULL) ;
+    gtk_container_add(GTK_CONTAINER(vbox), scrwin) ;
 
 
   /* CODE TO CREATE THE ACTUAL ZMAP SHOULD GO HERE INSTEAD OF THIS DUMMY DATA.......... */
-  window->text = makeCanvas() ;
-  gtk_container_add(GTK_CONTAINER(scrwin), window->text) ;
+    window->text = makeCanvas() ;
+    gtk_container_add(GTK_CONTAINER(scrwin), window->text) ;
 
 
   return frame ;
