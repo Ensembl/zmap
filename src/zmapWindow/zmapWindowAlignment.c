@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 16 15:39 2005 (edgrif)
+ * Last edited: Mar 23 17:26 2005 (edgrif)
  * Created: Thu Feb 24 11:19:23 2005 (edgrif)
- * CVS info:   $Id: zmapWindowAlignment.c,v 1.3 2005-03-16 15:53:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAlignment.c,v 1.4 2005-03-23 17:27:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,10 +61,7 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
 static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, ZMapWindowColumn column,
 				   double start, double top, double bot, double width,
 				   GdkColor *colour) ;
-static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean canvasBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
-
-
 static void makeColumnMenu(GdkEventButton *button_event, ZMapWindowColumn column) ;
 static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
@@ -247,22 +244,10 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
   double x1, y1, x2, y2 ;
   double position ;
 
-
-  /* remember to col. colour to "white" once debugging is done... */
-
-
   /* We find out how big the block is as this encloses all current columns, then we draw the next
    * column group to the right of the last current column. */
   foo_canvas_item_get_bounds(block->block_group, &x1, &y1, &x2, &y2) ;
   position = x2 + block->parent->col_gap ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("Col: %s  is at:  %f\n", type_name, position) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   /* Make sure this gets freed...... */
   column = g_new0(ZMapWindowColumnStruct, 1) ;
@@ -277,18 +262,7 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
 					     "y", 0.0,
 					     NULL) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Not sure if we need this for the column group....maybe..... */
-  g_signal_connect(GTK_OBJECT(column->column_group), "event",
-		   GTK_SIGNAL_FUNC(canvasColumnEventCB), alignment->window) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   gdk_color_parse("white", &column_colour) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gdk_color_parse("red", &column_colour) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   column->forward_group = createColumn(FOO_CANVAS_GROUP(column->column_group),
 				       column,
@@ -298,11 +272,6 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
 
   if (type->showUpStrand)
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      gdk_color_parse("green", &column_colour) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       foo_canvas_item_get_bounds(column->forward_group, &x1, &y1, &x2, &y2) ;
       column->reverse_group = createColumn(FOO_CANVAS_GROUP(column->column_group),
 					   column,
@@ -325,13 +294,6 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
     foo_canvas_item_hide(FOO_CANVAS_ITEM(group)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowPrintGroup(column->column_group) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  
   return column ;
 }
 
@@ -350,12 +312,10 @@ static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, ZMapWindowColum
 			      "y", 0.0,
 			      NULL) ;
 
-  g_signal_connect(GTK_OBJECT(group), "event",
-		   GTK_SIGNAL_FUNC(canvasColumnEventCB), (gpointer)column) ;
-
-  /* You can't explicitly set the size of a group, it automatically adjusts to the bounding
-   * limits of its children, so we create an "invisible" box that covers the whole column
-   * so that we can get events (mouse clicks etc.) on a per column basis. */
+  /* To trap events anywhere on a column we need an item that covers the whole column (note
+   * that you can't do this by setting an event handler on the column group, the group handler
+   * will only be called if someone has clicked on an item in the group. The item is drawn
+   * first and in white to match the canvas background to make an 'invisible' box. */
   boundingBox = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
 				    foo_canvas_rect_get_type(),
 				    "x1", 0.0,
@@ -368,26 +328,15 @@ static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, ZMapWindowColum
   g_signal_connect(GTK_OBJECT(boundingBox), "event",
 		   GTK_SIGNAL_FUNC(canvasBoundingBoxEventCB), (gpointer)column) ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowPrintGroup(group) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   return group ;
 }
 
 
 
-static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
+static gboolean canvasBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
   ZMapWindowColumn column = (ZMapWindowColumn)data ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("in COLUMN canvas event handler\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   switch (event->type)
     {
@@ -395,8 +344,9 @@ static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpoint
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	printf("in COLUMN group event handler - CLICK\n") ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	/* Button 1 and 3 are handled, 2 is passed on to a general handler which could be
 	 * the root handler. */
@@ -404,11 +354,18 @@ static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpoint
 	  {
 	  case 1:
 	    {
-	      /* Not sure if anything is needed here......... */
+	      char *column_text ;
+	      ZMapWindow window = column->parent_block->parent->window ;
+
+	      column_text = column->type_name ;
+
+	      (*(window->caller_cbs->click))(window, window->app_data, column_text) ;
+
 	      event_handled = TRUE ;
 	      break ;
 	    }
-	  default:					    /* Is there a > 3 button mouse ? */
+	  /* There are > 3 button mouse,  e.g. scroll wheels, which we don't want to handle. */
+	  default:					    
 	  case 2:
 	    {
 	      event_handled = FALSE ;
@@ -431,50 +388,6 @@ static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpoint
 
 	break ;
       }
-    }
-
-  return event_handled ;
-}
-
-static gboolean canvasBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
-{
-  gboolean event_handled = FALSE ;
-  ZMapWindowColumn column = (ZMapWindowColumn)data ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("in COLUMN canvas event handler\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  if (event->type == GDK_BUTTON_PRESS)
-    {
-      GdkEventButton *but_event = (GdkEventButton *)event ;
-
-      printf("in COLUMN BOUNDING BOX canvas event handler - CLICK\n") ;
-
-
-      /* retrieve the FeatureItemStruct from the clicked object, obtain the feature_set from that and the
-       * feature from that, using the GQuark feature_key. Then call the 
-       * click callback function, passing the ZMapWindow and feature so the details of the clicked object
-       * can be displayed in the info_panel. */
-
-      /* THERE APPEARS TO BE NO CODE HERE.... */
-
-      event_handled = FALSE ;
-    } 
-  else if (event->type == GDK_BUTTON_RELEASE)
-    {
-      GdkEventButton *but_event = (GdkEventButton *)event ;
-
-      /* retrieve the FeatureItemStruct from the clicked object, obtain the feature_set from that and the
-       * feature from that, using the GQuark feature_key. Then call the 
-       * click callback function, passing the ZMapWindow and feature so the details of the clicked object
-       * can be displayed in the info_panel. */
-
-      event_handled = FALSE ;
-    } 
-  else if (event->type == GDK_KEY_PRESS)
-    {
-      event_handled = FALSE ;
     }
 
   return event_handled ;
@@ -519,7 +432,9 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
     {
     case 1:
       {
+	printf("sorry, you didn't click on an actual feature so hard luck...\n") ;
 
+	/* Actually we should still do this.... */
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	/* display a list of the features in this column so the user
 	 * can select one and have the display scroll to it. */
