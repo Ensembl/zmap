@@ -25,7 +25,7 @@ MAKE_DIRS = $(APP_DIR) zmapManager zmapControl zmapView zmapWindow zmapConfig zm
 
 DOXY_CONFIG = Doxyfile
 
-
+# This target should always be first, it is the default make target.
 all: makebindir libs zmap 
 	@echo 'made ZMap libraries and executables...'
 
@@ -35,11 +35,21 @@ clean: makebindir
 	done
 	@rm -f $(ZMAPAPP_LIB) $(ZMAP_LIB) $(ZMAPTHR_LIB) $(ZMAPNOTHR_LIB)
 
+
 # note that we issue a "make all" in the subdirectories, not a "make libs"
 libs: makebindir 
 	@for d in $(MAKE_DIRS); do \
-	(cd $$d ; echo ; echo 'make all in '$$d ; $(MAKE) 'all' ; echo) ; \
+	echo ; \
+	RC=0 ; \
+	(cd $$d ; echo 'make all in '$$d ; $(MAKE) 'all') || RC=1 ; \
+	if  [ $$RC -eq 1 ] ; \
+	then \
+	  echo "*** make in $$d failed ***" ; \
+	  exit 1 ; \
+	fi ; \
+	echo ; \
 	done
+
 
 zmap : makebindir
 	@cd $(APP_DIR) ; echo ; echo 'make '$@ ; $(MAKE) $@ ; echo
