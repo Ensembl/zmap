@@ -27,9 +27,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jul 16 12:55 2004 (edgrif)
+ * Last edited: Jul 20 10:46 2004 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.11 2004-07-16 12:01:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.12 2004-07-20 09:51:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -73,7 +73,7 @@ typedef enum {ZMAP_WINDOW_INIT, ZMAP_WINDOW_LOAD,
 
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data) ;
-void zMapWindowDisplayData(ZMapWindow window, void *data) ;
+void zMapWindowDisplayData(ZMapWindow window, void *data, GData *types) ;
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 void zMapWindowReset(ZMapWindow window) ;
 void zMapWindowDestroy(ZMapWindow window) ;

@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 19 16:41 2004 (rnc)
+ * Last edited: Jul 20 10:48 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.21 2004-07-20 08:12:08 rnc Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.22 2004-07-20 09:51:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,11 +67,6 @@ static void dataLoadCB(ZMapView view, void *app_data) ;
 static void focusCB(ZMapViewWindow view_window, void *app_data) ;
 static void viewKilledCB(ZMapView view, void *app_data) ;
 static gboolean lookForViewWindow(GNode *node, gpointer data) ;
-
-
-/* Hack to read files in users $HOME/.ZMap */
-static GData *getTypesFromFile(void) ;
-
 
 
 /* These callback routines are static because they are set just once for the lifetime of the
@@ -130,11 +125,6 @@ ZMap zMapCreate(void *app_data)
   zMapAssert(zmap_cbs_G) ;
 
   zmap = createZMap(app_data) ;
-
-
-  /* Hack to read methods from a file in $HOME/.ZMap for now..... */
-  zmap->types = getTypesFromFile() ;
-  zMapAssert(zmap->types) ;
 
 
   /* Make the main/toplevel window for the ZMap. */
@@ -667,85 +657,4 @@ static gboolean findViewInZMap(ZMap zmap, ZMapView view)
 
 
 
-
-/* This is a temporary routine to read type/method/source (call it what you will)
- * information from a file in the users $HOME/.ZMap directory. */
-static GData *getTypesFromFile(void)
-{
-  GData *types = NULL ;
-  gboolean result = FALSE ;
-  ZMapConfigStanzaSet types_list = NULL ;
-  ZMapConfig config ;
-  char *types_file_name = "ZMapTypes" ;
-
-
-  if ((config = zMapConfigCreateFromFile(NULL, types_file_name)))
-    {
-      ZMapConfigStanza types_stanza ;
-      ZMapConfigStanzaElementStruct types_elements[] = {{"name", ZMAPCONFIG_STRING, {NULL}},
-							{"foreground", ZMAPCONFIG_STRING, {"white"}},
-							{"background", ZMAPCONFIG_STRING, {"black"}},
-							{"width", ZMAPCONFIG_FLOAT, {NULL}},
-							{NULL, -1, {NULL}}} ;
-
-      types_elements[3].data.f = 10.0 ;			    /* Must init separately as compiler
-							       cannot statically init different
-							       union types....sigh.... */
-
-      types_stanza = zMapConfigMakeStanza("Type", types_elements) ;
-
-      if (!zMapConfigFindStanzas(config, types_stanza, &types_list))
-	result = FALSE ;
-      else
-	{
-	  result = TRUE ;
-	  g_datalist_init(&types) ;
-	}
-    }
-
-  /* Set up connections to the named typess. */
-  if (result)
-    {
-      int num_types = 0 ;
-      ZMapConfigStanza next_types ;
-
-      /* Current error handling policy is to connect to servers that we can and
-       * report errors for those where we fail but to carry on and set up the ZMap
-       * as long as at least one connection succeeds. */
-      next_types = NULL ;
-      while (result
-	     && ((next_types = zMapConfigGetNextStanza(types_list, next_types)) != NULL))
-	{
-	  char *name, *foreground, *background ;
-
-	  /* Name must be set so if its not found then don't make a struct.... */
-	  if ((name = zMapConfigGetElementString(next_types, "name")))
-	    {
-	      ZMapFeatureTypeStyle new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
-
-	      new_type->foreground = g_strdup(zMapConfigGetElementString(next_types, "foreground")) ;
-	      new_type->background = g_strdup(zMapConfigGetElementString(next_types, "background")) ;
-	      new_type->width = zMapConfigGetElementFloat(next_types, "width") ;
-
-	      g_datalist_set_data(&types, name, new_type) ;
-	      num_types++ ;
-	    }
-	  else
-	    {
-	      zMapLogWarning("config file \"%s\" has a \"Type\" stanza which has no \"name\" element, "
-			     "the stanza has been ignored.", types_file_name) ;
-	    }
-	}
-
-      /* Found no valid types.... */
-      if (!num_types)
-	result = FALSE ;
-    }
-
-  /* clean up. */
-  if (types_list)
-    zMapConfigDeleteStanzaSet(types_list) ;
-
-  return types ;
-}
 

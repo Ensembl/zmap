@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 19 13:36 2004 (rnc)
+ * Last edited: Jul 20 10:46 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.21 2004-07-20 08:14:49 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.22 2004-07-20 09:51:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -181,7 +181,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
  * the call to tell the GUI code that there is something to do. This routine
  * does this by sending a synthesized event to alert the GUI that it needs to
  * do some work and supplies the data for the GUI to process via the event struct. */
-void zMapWindowDisplayData(ZMapWindow window, void *data)
+void zMapWindowDisplayData(ZMapWindow window, void *data, GData *types)
 {
   GdkEventClient event ;
   GdkAtom zmap_atom ;

@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul 19 11:29 2004 (rnc)
+ * Last edited: Jul 20 10:42 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.8 2004-07-20 08:13:51 rnc Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.9 2004-07-20 09:51:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -91,9 +91,6 @@ typedef struct _ZMapStruct
   /* List of views in this zmap. */
   GList          *view_list ;
 
-  /* In DAS2 terminology methods are types...easy to change if we don't like the name.
-   * These are the stylesheets in effect for the feature sets. */
-  GData          *types ;
 
 
 } ZMapStruct ;

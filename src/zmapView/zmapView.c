@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 16 14:48 2004 (edgrif)
+ * Last edited: Jul 20 10:49 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.9 2004-07-19 09:29:03 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.10 2004-07-20 09:51:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,6 +72,15 @@ static void destroyConnection(ZMapConnection *connection) ;
 static void resetWindows(ZMapView zmap_view) ;
 static void displayDataWindows(ZMapView zmap_view, void *data) ;
 static void killWindows(ZMapView zmap_view) ;
+
+
+static void freeContext(ZMapFeatureContext feature_context) ;
+
+
+/* Hack to read files in users $HOME/.ZMap */
+static GData *getTypesFromFile(void) ;
+
+
 
 
 
@@ -604,6 +613,13 @@ static ZMapView createZMapView(char *sequence, void *app_data)
 
   zmap_view->app_data = app_data ;
 
+
+  /* Hack to read methods from a file in $HOME/.ZMap for now.....really we should be getting
+   * this from a server and updating it for information from different servers. */
+  zmap_view->types = getTypesFromFile() ;
+  zMapAssert(zmap_view->types) ;
+
+
   return zmap_view ;
 }
 
@@ -714,7 +730,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		{
 		  if (zmap_view->state == ZMAPVIEW_RUNNING)
 		    {
-		      ZMapFeatureContext new_features ;
+		      ZMapFeatureContext new_features = NULL ;
 
 		      zMapDebug("GUI: thread %x, got data\n",
 				zMapConnGetThreadid(connection)) ;
@@ -741,6 +757,16 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      /* Merge new data with existing data (if any). */
 		      if (!zmapViewMergeFeatures(&(zmap_view->features), new_features))
 			zMapLogCritical("%s", "Cannot merge feature data from....") ;
+		      else
+			{
+			  /* We should free the new_features context here.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+			  freeContext(new_features) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+			}
+
 
 		      /* Signal the ZMap that there is work to be done. */
 		      displayDataWindows(zmap_view, data) ;
@@ -993,7 +1019,7 @@ static void displayDataWindows(ZMapView zmap_view, void *data)
 
       view_window = list_item->data ;
 
-      zMapWindowDisplayData(view_window->window, data) ;
+      zMapWindowDisplayData(view_window->window, data, zmap_view->types) ;
     }
   while ((list_item = g_list_next(list_item))) ;
 
@@ -1018,5 +1044,110 @@ static void killWindows(ZMapView zmap_view)
 
 
   return ;
+}
+
+
+
+
+/* Temporary....needs to go in some feature handling package.... */
+static void freeContext(ZMapFeatureContext feature_context)
+{
+  zMapAssert(feature_context) ;
+
+  if (feature_context->sequence)
+    g_free(feature_context->sequence) ;
+
+  if (feature_context->parent)
+    g_free(feature_context->parent) ;
+
+  if (feature_context->feature_sets)
+    g_datalist_clear(&(feature_context->feature_sets)) ;
+
+
+  return ;
+}
+
+
+
+
+/* This is a temporary routine to read type/method/source (call it what you will)
+ * information from a file in the users $HOME/.ZMap directory. */
+static GData *getTypesFromFile(void)
+{
+  GData *types = NULL ;
+  gboolean result = FALSE ;
+  ZMapConfigStanzaSet types_list = NULL ;
+  ZMapConfig config ;
+  char *types_file_name = "ZMapTypes" ;
+
+
+  if ((config = zMapConfigCreateFromFile(NULL, types_file_name)))
+    {
+      ZMapConfigStanza types_stanza ;
+      ZMapConfigStanzaElementStruct types_elements[] = {{"name", ZMAPCONFIG_STRING, {NULL}},
+							{"foreground", ZMAPCONFIG_STRING, {"white"}},
+							{"background", ZMAPCONFIG_STRING, {"black"}},
+							{"width", ZMAPCONFIG_FLOAT, {NULL}},
+							{NULL, -1, {NULL}}} ;
+
+      types_elements[3].data.f = 10.0 ;			    /* Must init separately as compiler
+							       cannot statically init different
+							       union types....sigh.... */
+
+      types_stanza = zMapConfigMakeStanza("Type", types_elements) ;
+
+      if (!zMapConfigFindStanzas(config, types_stanza, &types_list))
+	result = FALSE ;
+      else
+	{
+	  result = TRUE ;
+	  g_datalist_init(&types) ;
+	}
+    }
+
+  /* Set up connections to the named typess. */
+  if (result)
+    {
+      int num_types = 0 ;
+      ZMapConfigStanza next_types ;
+
+      /* Current error handling policy is to connect to servers that we can and
+       * report errors for those where we fail but to carry on and set up the ZMap
+       * as long as at least one connection succeeds. */
+      next_types = NULL ;
+      while (result
+	     && ((next_types = zMapConfigGetNextStanza(types_list, next_types)) != NULL))
+	{
+	  char *name, *foreground, *background ;
+
+	  /* Name must be set so if its not found then don't make a struct.... */
+	  if ((name = zMapConfigGetElementString(next_types, "name")))
+	    {
+	      ZMapFeatureTypeStyle new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
+
+	      new_type->foreground = g_strdup(zMapConfigGetElementString(next_types, "foreground")) ;
+	      new_type->background = g_strdup(zMapConfigGetElementString(next_types, "background")) ;
+	      new_type->width = zMapConfigGetElementFloat(next_types, "width") ;
+
+	      g_datalist_set_data(&types, name, new_type) ;
+	      num_types++ ;
+	    }
+	  else
+	    {
+	      zMapLogWarning("config file \"%s\" has a \"Type\" stanza which has no \"name\" element, "
+			     "the stanza has been ignored.", types_file_name) ;
+	    }
+	}
+
+      /* Found no valid types.... */
+      if (!num_types)
+	result = FALSE ;
+    }
+
+  /* clean up. */
+  if (types_list)
+    zMapConfigDeleteStanzaSet(types_list) ;
+
+  return types ;
 }
 

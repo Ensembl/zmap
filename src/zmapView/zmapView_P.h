@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul 16 23:55 2004 (edgrif)
+ * Last edited: Jul 20 10:42 2004 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.7 2004-07-19 09:29:03 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.8 2004-07-20 09:51:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -64,6 +64,9 @@ typedef struct _ZMapViewStruct
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;
 
+  /* In DAS2 terminology methods are types...easy to change if we don't like the name.
+   * These are the stylesheets in effect for the feature sets. */
+  GData          *types ;
 
   ZMapRegion  *zMapRegion; /* the region holding all the SEGS - may be redundant*/
 
