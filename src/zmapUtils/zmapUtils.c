@@ -26,16 +26,16 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Nov 12 09:18 2004 (edgrif)
+ * Last edited: Nov 15 16:03 2004 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.7 2004-11-12 11:51:27 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.8 2004-11-19 14:30:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <time.h>
 #include <string.h>
 #include <errno.h>
-
+#include <gtk/gtk.h>
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <stdio.h>
@@ -66,6 +66,31 @@ static gboolean getVersionNumbers(char *version_str,
 
 /*! Can be set on/off to turn on/off debugging output via the zMapDebug() macro. */
 gboolean zmap_debug_G = FALSE ; 
+
+
+
+/*!
+ * Use this routine to exit the application with a portable (as in POSIX) return
+ * code. If exit_code == 0 then application exits with EXIT_SUCCESS, otherwise
+ * exits with EXIT_FAILURE. This routine actually calls gtk_exit() because ZMap
+ * is a gtk routine and should use this call to exit.
+ *
+ * @param exit_code              0 for success, anything else for failure.
+ * @return                       nothing
+ *  */
+void zMapExit(int exit_code)
+{
+  int true_exit_code ;
+
+  if (exit_code)
+    true_exit_code = EXIT_FAILURE ;
+  else
+    true_exit_code = EXIT_SUCCESS ;
+
+  gtk_exit(true_exit_code) ;
+
+  return ;						    /* we never get here. */
+}
 
 
 
