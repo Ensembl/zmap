@@ -1,11 +1,11 @@
 #
-# for the alpha
+# for linux
 #
 
 #
 # compile/include/link macros
 #
-CC_COMMON = -DLINUX -g -pthread  $(INCLUDE_DIRS)
+CC_COMMON = -DLINUX -g -pthread  -Wall $(INCLUDE_DIRS)
 
 CC = gcc
 CFLAGS =  $(CC_COMMON)
