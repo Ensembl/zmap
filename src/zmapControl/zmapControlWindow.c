@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Jul  9 13:41 2004 (edgrif)
+ * Last edited: Jul 15 15:53 2004 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.7 2004-07-14 09:06:37 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.8 2004-07-15 15:08:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,17 +40,14 @@
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 
 
-gboolean zmapControlWindowCreate(ZMap zmap, char *zmap_id)
+gboolean zmapControlWindowCreate(ZMap zmap)
 {
   gboolean result = TRUE ;
   GtkWidget *toplevel, *vbox, *menubar, *button_frame ;
-  char *title ;
 
   zmap->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
-  title = g_strdup_printf("ZMap - %s", zmap_id) ;
-  gtk_window_set_title(GTK_WINDOW(toplevel), title) ;
-  g_free(title) ;
+  gtk_window_set_title(GTK_WINDOW(toplevel), zmap->zmap_id) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)zmap) ;
