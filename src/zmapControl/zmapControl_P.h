@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Nov 29 15:17 2004 (rnc)
+ * Last edited: Dec 16 15:59 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.22 2004-11-29 16:29:56 rnc Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.23 2004-12-20 10:59:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -103,17 +103,29 @@ typedef struct _ZMapStruct
 
 
 
-/* Data associated with a single navigator */
+/* Data associated with the navigator. */
 typedef struct _ZMapNavStruct 
 {
   ZMapSpanStruct parent_span ;				    /* Start/end of parent of sequence. */
   ZMapMapBlockStruct sequence_to_parent ;		    /* how this sequence maps to parent. */
 
-  GtkWidget         *navVBox;
-  GtkWidget         *navVScroll ; 
-  GtkWidget         *topLabel;                           
-  GtkWidget         *botLabel;                           
-} ZMapNavStruct;
+  /* The region locator showing the position/extent of this sequence region
+   * within the total sequence. */
+  GtkWidget *navVBox ;
+  GtkWidget *navVScroll ;
+  GtkWidget *topLabel ;
+  GtkWidget *botLabel ;
+
+  /* The window locator showing the position/extent of the window within the region, this changes
+   * as the user zooms and when they move the scrolling window via the special keys. */
+  GtkWidget *wind_vbox ;
+  GtkWidget *wind_scroll ;
+  GtkWidget *wind_top_label ;
+  GtkWidget *wind_bot_label ;
+  double wind_top, wind_bot ;
+
+
+} ZMapNavStruct ;
 
 
 
@@ -143,8 +155,13 @@ void       zmapControlWindowDestroy    (ZMap zmap) ;
 void zmapControlWindowDoTheZoom(ZMap zmap, double zoom) ;
 void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status) ;
 
-void zmapControlNavigatorCreate (ZMap zmap, GtkWidget *frame) ;
+
+/* NOTE THIS CANNOT BE COMPLETE...WHERE IS THE DESTRUCTOR..... */
+ZMapNavigator zmapControlNavigatorCreate(GtkWidget **top_widg_out) ;
+void zmapControlNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos) ;
 void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapFeatureContext features) ;
+
+
 
 void zmapControlTopLevelKillCB(ZMap zmap) ;
 void zmapControlLoadCB        (ZMap zmap) ;
