@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: May 17 15:21 2004 (edgrif)
+ * Last edited: May 19 14:27 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.8 2004-05-17 16:33:41 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.9 2004-05-20 14:12:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,12 +59,20 @@ gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, ZMap *zmap_out)
 {
   gboolean result = FALSE ;
   ZMap zmap = NULL ;
+  ZMapView view = NULL ;
 
-  if ((zmap = zMapCreate(sequence, (void *)zmaps, zmapDestroyedCB)))
+  if ((zmap = zMapCreate((void *)zmaps, zmapDestroyedCB)))
     {
       zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
       *zmap_out = zmap ;
-      result = TRUE ;
+
+      /* If there is no sequence return an empty ZMap, if there is a sequence then create/connect
+       * a view. */
+      if (!sequence
+	  || (sequence
+	      && ((view = zMapAddView(zmap, sequence)))
+	      && ((zMapConnectView(zmap, view)))))
+	result = TRUE ;
     }
 
   return result ;
@@ -104,6 +112,8 @@ gboolean zMapManagerKill(ZMapManager zmaps, ZMap zmap)
 
   return result ;
 }
+
+
 
 /* Frees all resources held by a zmapmanager and then frees the manager itself. */
 gboolean zMapManagerDestroy(ZMapManager zmaps)
