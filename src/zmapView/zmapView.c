@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov 19 16:55 2004 (edgrif)
+ * Last edited: Nov 29 12:01 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.33 2004-11-22 11:50:39 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.34 2004-11-29 14:24:05 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,10 @@ static void zmapWindowCB(void *cb_data, int reason) ;
 
 static void scrollCB(ZMapWindow window, void *caller_data) ;
 static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature) ;
+static void setZoomStatusCB(ZMapWindow window, void *caller_data);
 static void destroyCB(ZMapWindow window, void *caller_data) ;
+
+static void setZoomStatus(gpointer data, gpointer user_data);
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
 static void stopStateConnectionChecking(ZMapView zmap_view) ;
@@ -97,7 +100,7 @@ static GData *getTypesFromFile(void) ;
 static ZMapViewCallbacks view_cbs_G = NULL ;
 
 /* Callbacks back to us from the level below, i.e. zMapWindow. */
-ZMapWindowCallbacksStruct window_cbs_G = {scrollCB, clickCB, destroyCB} ;
+ZMapWindowCallbacksStruct window_cbs_G = {scrollCB, clickCB, setZoomStatusCB, destroyCB} ;
 
 
 
@@ -169,10 +172,11 @@ ZMapView zMapViewCreate(char *sequence,	int start, int end, void *app_data)
 
 /* Adds a window to a view, the view may not have a window yet.
  * Returns the window on success, NULL on failure. */
-ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget)
+ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget,
+				 ZMapWindow zMapWindow)
 {
   ZMapViewWindow view_window ;
-
+  double zoom_factor;
 
 
   if (zmap_view->state != ZMAPVIEW_DYING)
@@ -180,8 +184,16 @@ ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget)
       view_window = g_new0(ZMapViewWindowStruct, 1) ;
       view_window->parent_view = zmap_view ;		    /* back pointer. */
 
-      if ((view_window->window = zMapWindowCreate(parent_widget, zmap_view->sequence, view_window)))
+      if (zMapWindow)
+	view_window->window = zMapWindowCopy(parent_widget, zmap_view->sequence, 
+					     view_window, zMapWindow);
+      else
+	view_window->window = zMapWindowCreate(parent_widget, zmap_view->sequence, 
+					       view_window);
+      
+      if (view_window->window)
 	{
+	  /* set the zoom_factor of the new window the same as the previous one */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  /* this is wrong, it will change all the time, question is...what is the parent, it can
@@ -211,9 +223,8 @@ ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 	    {
 	      /* If we are running then we should display the current data in the new window we
 	       * have just created. */
-	      zMapWindowDisplayData(view_window->window,
-				    zmap_view->features, NULL, zmap_view->types) ;
-
+	      zMapWindowDisplayData(view_window->window, zmap_view->features, NULL, 
+				    zmap_view->types, zmap_view) ;
 	    }
 
 
@@ -531,6 +542,7 @@ static gint zmapIdleCB(gpointer cb_data)
   gint call_again = 0 ;
   ZMapView zmap_view = (ZMapView)cb_data ;
 
+ 
   /* Returning a value > 0 tells gtk to call zmapIdleCB again, so if checkConnections() returns
    * TRUE we ask to be called again. */
   if (checkStateConnections(zmap_view))
@@ -768,7 +780,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 
   /* should assert the zmapview_state here to save checking later..... */
-
 
   if (zmap_view->connection_list)
     {
@@ -1169,7 +1180,7 @@ static void displayDataWindows(ZMapView zmap_view,
       view_window = list_item->data ;
 
       zMapWindowDisplayData(view_window->window,
-			    all_features, new_features, zmap_view->types) ;
+			    all_features, new_features, zmap_view->types, NULL) ;
     }
   while ((list_item = g_list_next(list_item))) ;
 
@@ -1243,8 +1254,6 @@ static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any)
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       freeContext(new_features) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
       /* Signal the ZMap that there is work to be done. */
       displayDataWindows(zmap_view, zmap_view->features, diff_context) ;
@@ -1395,4 +1404,24 @@ static void methodPrintFunc(GQuark key_id, gpointer data, gpointer user_data)
   return ;
 }
 
+/* When a window is split, we set the zoom status of all windows
+ */
+static void setZoomStatusCB(ZMapWindow window, void *caller_data)
+{
+  ZMapView view = (ZMapView)caller_data;
+
+  g_list_foreach(view->window_list, setZoomStatus, NULL) ;
+
+  return;
+}
+
+static void setZoomStatus(gpointer data, gpointer user_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)data;
+
+  zMapWindowSetMinZoom(view_window->window);
+  zMapWindowSetZoomStatus(view_window->window);
+  
+  return;
+}
 
