@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Oct  4 16:55 2004 (edgrif)
+ * Last edited: Nov  9 14:37 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.14 2004-10-14 10:23:46 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.15 2004-11-09 14:40:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,27 +51,27 @@ static gboolean addDataToFeature(ZMapFeature feature, char *name,
 				 char *sequence, char *source, ZMapFeatureType feature_type,
 				 int start, int end, double score, ZMapStrand strand,
 				 ZMapPhase phase, char *attributes) ;
-
-static char *getFeatureName(char *attributes) ;
+static gboolean getFeatureName(char *sequence, ZMapFeatureType feature_type, int start, int end, char *attributes,
+			       char **feature_name, char **feature_name_id) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
-
 static gboolean formatType(gboolean SO_compliant, gboolean default_to_basic,
 			   char *feature_type, ZMapFeatureType *type_out) ;
 static gboolean formatScore(char *score_str, gdouble *score_out) ;
 static gboolean formatStrand(char *strand_str, ZMapStrand *strand_out) ;
 static gboolean formatPhase(char *phase_str, ZMapPhase *phase_out) ;
-
-
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
-void destroyFeatureArray(gpointer data) ;
+static void destroyFeatureArray(gpointer data) ;
 
 
-/* If parse_only is TRUE the parser will parse the GFF and report errors but will
+/* types is the list of methods/types, call it what you will that we want to see
+ * in the output, we may need to filter the incoming data stream to get this.
+ * 
+ * If parse_only is TRUE the parser will parse the GFF and report errors but will
  * _not_ create any features. This means the parser can be tested/used on huge datasets
  * without having to have huge amounts of memory to hold the feature structs.
  * You can only set parse_only when you create the parser, it cannot be set later. */
-ZMapGFFParser zMapGFFCreateParser(gboolean parse_only)
+ZMapGFFParser zMapGFFCreateParser(GData *sources, gboolean parse_only)
 {
   ZMapGFFParser parser ;
 
@@ -95,6 +95,8 @@ ZMapGFFParser zMapGFFCreateParser(gboolean parse_only)
   parser->done_sequence_region = FALSE ;
   parser->sequence_name = NULL ;
   parser->features_start = parser->features_end = 0 ;
+
+  parser->sources = sources ;
 
   if (!parser->parse_only)
     {
@@ -516,6 +518,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
       ZMapStrand strand ;
       ZMapPhase phase ;
       char *err_text = NULL ;
+      char *source_lower = NULL ;
 
       /* I'm afraid I'm not doing assembly stuff at the moment, its not worth it....if I need
        * to change this decision I can just this section.....
@@ -526,7 +529,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	  return TRUE ;
 	}
 
-      /* Verbose but worth it for debugging.... */
+      /* Check we could get the basic GFF fields.... */
       if (strlen(sequence) == GFF_MAX_FREETEXT_CHARS)
 	err_text = g_strdup_printf("sequence name too long: %s", sequence) ;
       else if (strlen(source) == GFF_MAX_FREETEXT_CHARS)
@@ -541,6 +544,16 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	err_text = g_strdup_printf("strand format not recognised: %s", strand_str) ;
       else if (!formatPhase(phase_str, &phase))
 	err_text = g_strdup_printf("phase format not recognised: %s", phase_str) ;
+      else
+	{
+	  /* Check further constraints, including that the source in the GFF record must be
+	   * one we have requested, note also that we require the source to have been translated into
+	   * lower case. */
+	  source_lower = g_ascii_strdown(source, -1) ;
+
+	  if (parser->sources && !(g_datalist_get_data(&(parser->sources), source_lower)))
+	    err_text = g_strdup_printf("source not request: %s", source_lower) ;
+	}
 
       if (err_text)
 	{
@@ -556,6 +569,9 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 				  start, end, score, strand, phase,
 				  attributes) ;
 	}
+
+      if (source_lower)
+	g_free(source_lower) ;
     }
 
 
@@ -564,8 +580,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 
 
-/* SOME WORK STILL TO DO ON THE PARSE_ONLY VERSION AND MY NEW VERSION THAT USES GDATA NOT AN
- * ARRAY.............. */
 
 static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *source,
 			       ZMapFeatureType feature_type,
@@ -573,57 +587,38 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 			       ZMapPhase phase, char *attributes)
 {
   gboolean result = FALSE ;
-  char *feature_name = NULL ;
+  char *feature_name_id = NULL, *feature_name = NULL ;
   ZMapFeature feature = NULL ;
   char *first_attr = NULL ;
   ZMapGFFParserFeatureSet feature_set = NULL ; ;
-  gboolean has_name = TRUE ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapFeatureStruct new_feature ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  gboolean feature_has_name ;
   ZMapFeature new_feature ;
 
   
-  /* Look for an explicit feature name for the GFF record, if none exists use the sequence
-   * name itself. */
-  if (!(feature_name = getFeatureName(attributes)))
-    {
-      feature_name = sequence ;
-      has_name = FALSE ;
-    }
+  /* Get the feature name which may not be unique and a feature "id" which _must_
+   * be unique. */
+  feature_has_name = getFeatureName(sequence, feature_type, start, end, attributes,
+				    &feature_name, &feature_name_id) ;
 
   /* Check if the "source" for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
   if (!parser->parse_only &&
       (feature_set = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(parser->feature_sets), source)))
     {
-      feature = (ZMapFeature)g_datalist_get_data(&(feature_set->multiline_features), feature_name) ;
+      feature = (ZMapFeature)g_datalist_get_data(&(feature_set->multiline_features), feature_name_id) ;
     }
 
 
   if (parser->parse_only || !feature)
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      new_feature = g_new0(ZMapFeatureStruct, 1) ;
-      new_feature->id = ZMAPFEATUREID_NULL ;
-      new_feature->type = ZMAPFEATURE_INVALID ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       new_feature = zmapFeatureCreate() ;
     }
 
   /* FOR PARSE ONLY WE WOULD LIKE TO COTINUE TO USE THE LOCAL VARIABLE new_feature....SORT THIS
    * OUT............. */
 
-
   if (parser->parse_only)
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      feature = &new_feature ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       feature = new_feature ;
     }
   else if (!feature)
@@ -644,10 +639,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 	  feature_set->multiline_features = NULL ;
 	  g_datalist_init(&(feature_set->multiline_features)) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  feature_set->features = g_array_sized_new(FALSE, FALSE, sizeof(ZMapFeatureStruct), 30) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	  g_datalist_init(&(feature_set->features)) ;
 
 	  feature_set->parser = parser ;		    /* We need parser flags in the destroy
@@ -655,21 +646,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 	}
 
 
-      /* Always add every new feature to the final array.... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      feature_set->features = g_array_append_val(feature_set->features, new_feature) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      g_datalist_set_data(&(feature_set->features), feature_name, new_feature) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Now set feature pointer to be the feature in the array...tacky.... */
-      feature = &g_array_index(feature_set->features, ZMapFeatureStruct,
-			       (feature_set->features->len - 1)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      /* Always add every new feature to the final set.... */
+      g_datalist_set_data(&(feature_set->features), feature_name_id, new_feature) ;
+
+
       feature = new_feature ;
-
 
       /* THIS PIECE OF CODE WILL NEED TO BE CHANGED AS I DO MORE TYPES..... */
       /* If the feature is one that must be built up from several GFF lines then add it to
@@ -677,12 +660,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
        * that do not have their own feature_name  _cannot_  be multiline features as such features
        * can _only_ be identified if they do have their own name. */
 
-      if (has_name
+      if (feature_has_name
 	  && (feature_type == ZMAPFEATURE_SEQUENCE || feature_type == ZMAPFEATURE_TRANSCRIPT
 	      || feature_type == ZMAPFEATURE_EXON || feature_type == ZMAPFEATURE_INTRON))
 	{
-	  g_datalist_set_data(&(feature_set->multiline_features), feature_name, feature) ;
+	  g_datalist_set_data(&(feature_set->multiline_features), feature_name_id, feature) ;
 	}
+
 
     }
 
@@ -691,6 +675,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   result = addDataToFeature(feature, feature_name, sequence, source, feature_type,
 			    start, end, score, strand,
 			    phase, attributes) ;
+
+  g_free(feature_name) ;
+  g_free(feature_name_id) ;
 
 
   /* If we are only parsing then free any stuff allocated by addDataToFeature() */
@@ -949,29 +936,59 @@ static gboolean addDataToFeature(ZMapGFFParser parser, ZMapFeature feature,
  * 
  *          class "object_name"    e.g.   Sequence "B0250.1"
  * 
- * So this routine looks for and extracts the object_name, if it can't find one it returns
- * NULL.
+ * For some features this is not true or the feature name is shared amongst many
+ * GFF lines and so we must construct a name from the feature name and the coords.
  * 
- * For other dumpers this may be different, for GFF v2 this is all ad hoc for GFF v3 its
- * formalised and so easier.
+ * For other dumpers this may be different (e.g. GFFv3 is more formatlised), but for GFF v2
+ * we must exclude the following types of attributes that are _not_ object names:
+ *
+ *        Note "Left: B0250"
+ *        Note "7 copies of 31mer"
  * 
+ * and so on....
  * 
  *  */
-static char *getFeatureName(char *attributes)
+static gboolean getFeatureName(char *sequence, ZMapFeatureType feature_type, int start, int end, char *attributes,
+			       char **feature_name, char **feature_name_id)
 {
-  char *feature_name = NULL ;
+  gboolean has_name = FALSE ;
   int attr_fields ;
   char *attr_format_str = "%50s %*[\"]%50[^\"]%*[\"]%*s" ;
   char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
+  attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0]) ;
 
-  if ((attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0])) == 2)
+  if (attr_fields == 2 && (feature_type == ZMAPFEATURE_SEQUENCE || feature_type == ZMAPFEATURE_TRANSCRIPT
+			   || feature_type == ZMAPFEATURE_EXON || feature_type == ZMAPFEATURE_INTRON))
     {
-      feature_name = g_strdup(name) ;
+      /* Named feature such as a gene. */
+      has_name = TRUE ;
+      *feature_name = g_strdup(name) ;
+      *feature_name_id = g_strdup(*feature_name) ;
+    }
+  else
+    {
+      /* Some features do not have a name in their attributes, some have a name but it is shared
+       * between an arbitrary number of GFF lines.
+       * Sadly we have to have a whole load of heuristics to trap text that is not actually
+       * an object name. */
+      has_name = FALSE ;
+
+      if (g_ascii_strcasecmp(class, "Note") == 0)
+	*feature_name = g_strdup(sequence) ;
+      else if (attr_fields == 2 && feature_type == ZMAPFEATURE_HOMOL)
+	*feature_name = g_strdup(name) ;
+      else
+	*feature_name = g_strdup(sequence) ;		    /* Catch all...yuch, watch out for
+							       spurious stuff... */
+
+      *feature_name_id = g_strdup_printf("%s.%d-%d", *feature_name, start, end) ;
     }
 
-  return feature_name ;
+
+  return has_name ;
 }
+
 
 /* 
  * 
@@ -1350,27 +1367,11 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 /* This is a GDestroyNotify() and is called for each element in a GData list when
  * the list is cleared with g_datalist_clear (), the function must free the GArray
  * and GData lists. */
-void destroyFeatureArray(gpointer data)
+static void destroyFeatureArray(gpointer data)
 {
   ZMapGFFParserFeatureSet feature_set = (ZMapGFFParserFeatureSet)data ;
 
   g_free(feature_set->source) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* THIS IS NOT AN ARRAY IN FACT..... */
-
-  /* When I try to get rid of the array but _not_ the data it seems to free the data as well ! */
-
-  /* Only free actual array data if caller wants it freed. */
-  if (feature_set->parser->free_on_destroy)
-    g_array_free(feature_set->features, TRUE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
   /* No data to free in this list, just clear it. */
   g_datalist_clear(&(feature_set->multiline_features)) ;
