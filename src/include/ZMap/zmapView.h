@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Nov 29 16:20 2004 (rnc)
+ * Last edited: Dec 16 16:42 2004 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.14 2004-11-29 16:28:38 rnc Exp $
+ * CVS info:   $Id: zmapView.h,v 1.15 2004-12-20 10:52:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -54,8 +54,8 @@ typedef struct _ZMapViewWindowStruct *ZMapViewWindow ;
  * then the ZMapViewWindow where the event took place will be returned as the first
  * parameter. If the callback is for an event that involves the whole view (e.g. destroy)
  * then the ZMapView where the event took place is returned. */
-typedef void (*ZMapViewWindowCallbackFunc)(ZMapViewWindow view_window, void *app_data, ZMapFeature feature) ;
-typedef void (*ZMapViewCallbackFunc)(ZMapView zmap_view, void *app_data) ;
+typedef void (*ZMapViewWindowCallbackFunc)(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+typedef void (*ZMapViewCallbackFunc)(ZMapView zmap_view, void *app_data, void *view_data) ;
 
 /* Set of callback routines that allow the caller to be notified when events happen
  * to a window. */
@@ -63,6 +63,7 @@ typedef struct _ZMapViewCallbacksStruct
 {
   ZMapViewCallbackFunc load_data ;
   ZMapViewWindowCallbackFunc click ;
+  ZMapViewWindowCallbackFunc visibility_change ;
   ZMapViewCallbackFunc destroy ;
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 

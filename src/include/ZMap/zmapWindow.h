@@ -27,9 +27,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Dec  2 11:50 2004 (rnc)
+ * Last edited: Dec 20 10:23 2004 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.27 2004-12-06 14:12:01 rnc Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.28 2004-12-20 10:52:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -48,21 +48,41 @@
 typedef struct _ZMapWindowStruct *ZMapWindow ;
 
 
-/* General callback function for all window callbacks... */
-typedef void (*ZMapWindowFeatureCallbackFunc)(ZMapWindow window, void *caller_data, ZMapFeature feature) ;
-typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data) ;
+
+/* indicates how far the zmap is zoomed, n.b. ZMAP_ZOOM_FIXED implies that the whole sequence
+ * is displayed at the maximum zoom. */
+typedef enum {ZMAP_ZOOM_INIT, ZMAP_ZOOM_MIN, ZMAP_ZOOM_MID, ZMAP_ZOOM_MAX,
+	      ZMAP_ZOOM_FIXED} ZMapWindowZoomStatus ;
 
 
-/* Set of callback routines that allow the caller to be notified when events happen
- * to a window. */
+/* Data returned to the visibilityChange callback routine. */
+typedef struct _ZMapWindowVisibilityChangeStruct
+{
+  ZMapWindowZoomStatus zoom_status ;
+
+  /* Top/bottom coords for section of sequence that can be scrolled currently in window. */
+  double scrollable_top ;
+  double scrollable_bot ;
+
+} ZMapWindowVisibilityChangeStruct, *ZMapWindowVisibilityChange ;
+
+
+/* Callback functions that can be registered with ZMapWindow, functions are registered all in one.
+ * go via the ZMapWindowCallbacksStruct. */
+typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data, void *window_data) ;
+
 typedef struct _ZMapWindowCallbacksStruct
 {
   ZMapWindowCallbackFunc scroll ;
-  ZMapWindowFeatureCallbackFunc click ;
+  ZMapWindowCallbackFunc click ;
   ZMapWindowCallbackFunc setZoomStatus;
-  ZMapWindowCallbackFunc destroy ;
 
+  ZMapWindowCallbackFunc visibilityChange ;
+
+  ZMapWindowCallbackFunc destroy ;
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
+
+
 
 
 
@@ -71,10 +91,6 @@ typedef struct _ZMapWindowCallbacksStruct
 typedef enum {ZMAP_WINDOW_INIT, ZMAP_WINDOW_LOAD,
 	      ZMAP_WINDOW_STOP, ZMAP_WINDOW_QUIT} ZmapWindowCmd ;
 
-/* indicates how far the zmap is zoomed, n.b. ZMAP_ZOOM_FIXED implies that the whole sequence
- * is displayed at the maximum zoom. */
-typedef enum {ZMAP_ZOOM_INIT, ZMAP_ZOOM_MIN, ZMAP_ZOOM_MID, ZMAP_ZOOM_MAX,
-	      ZMAP_ZOOM_FIXED} ZMapWindowZoomStatus ;
 
 
 void       zMapWindowInit       (ZMapWindowCallbacks callbacks) ;
@@ -84,9 +100,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 void       zMapWindowDisplayData(ZMapWindow window,
 				 ZMapFeatureContext current_features, ZMapFeatureContext new_features,
 				 GData *types, void *zmap_view) ;
-ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
+void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 void       zMapWindowReset      (ZMapWindow window) ;
-
 GtkWidget   *zMapWindowGetWidget(ZMapWindow window);
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
 void                 zMapWindowSetZoomStatus(ZMapWindow window) ;

@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Nov 25 10:08 2004 (rnc)
+ * Last edited: Dec 20 10:24 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.40 2004-11-29 14:11:14 rnc Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.41 2004-12-20 10:53:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,11 +57,12 @@ static void killViews(ZMap zmap) ;
 static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
 static ZMapView addView(ZMap zmap, char *sequence, int start, int end) ;
 
-static void dataLoadCB(ZMapView view, void *app_data) ;
-static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feature) ;
-static void viewKilledCB(ZMapView view, void *app_data) ;
-static gboolean lookForViewWindow(GNode *node, gpointer data) ;
+static void dataLoadCB(ZMapView view, void *app_data, void *view_data) ;
+static void clickCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+static void visibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
 
+static gboolean lookForViewWindow(GNode *node, gpointer data) ;
 static void updateControl(ZMap zmap, ZMapView view) ;
 
 
@@ -75,7 +76,7 @@ static ZMapCallbacks zmap_cbs_G = NULL ;
 
 
 /* Callbacks back to us from the level below, i.e. zMapView. */
-ZMapViewCallbacksStruct view_cbs_G = {dataLoadCB, clickCB, viewKilledCB} ;
+ZMapViewCallbacksStruct view_cbs_G = {dataLoadCB, clickCB, visibilityChangeCB, viewKilledCB} ;
 
 
 
@@ -561,7 +562,7 @@ static ZMapView addView(ZMap zmap, char *sequence, int start, int end)
 
 
 /* Called when a view has loaded data. */
-static void dataLoadCB(ZMapView view, void *app_data)
+static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
@@ -575,9 +576,10 @@ static void dataLoadCB(ZMapView view, void *app_data)
 
 /* Gets called when someone clicks in one of the zmap windows.... 
 * Note that although we get pane data,  */
-static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feature)
+static void clickCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
+  ZMapFeature feature = (ZMapFeature)view_data ;
   ZMapView view = zMapViewGetView(view_window) ;
   ZMapPaneViewSearchStruct view_search ;
   GString *str = g_string_new("");
@@ -604,9 +606,23 @@ static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feat
 		      feature->method_name);
       gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), str->str);
     }
+
   return ;
 }
 
+
+static void visibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data)
+{
+  ZMap zmap = (ZMap)app_data ;
+  ZMapWindowVisibilityChange vis_change = (ZMapWindowVisibilityChange)view_data ;
+
+  zmapControlWindowSetZoomButtons(zmap, vis_change->zoom_status) ;
+
+  zmapControlNavigatorSetWindowPos(zmap->navigator,
+				   vis_change->scrollable_top, vis_change->scrollable_bot) ;
+
+  return ;
+}
 
 
 static gboolean lookForViewWindow(GNode *node, gpointer data)
@@ -635,7 +651,7 @@ static gboolean lookForViewWindow(GNode *node, gpointer data)
  * and wait for them to die and also because the ZMapView my die of its own accord.
  * BUT NOTE that when this routine is called by the last ZMapView within the fmap to say that
  * it has died then we either reset the ZMap to its INIT state or if its dying we kill it. */
-static void viewKilledCB(ZMapView view, void *app_data)
+static void viewKilledCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
