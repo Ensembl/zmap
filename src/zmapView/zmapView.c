@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct 15 16:55 2004 (rnc)
+ * Last edited: Oct 18 11:14 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.27 2004-10-15 16:10:13 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.28 2004-10-18 10:15:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -140,9 +140,15 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
 ZMapView zMapViewCreate(char *sequence,	int start, int end, void *app_data)
 {
   ZMapView zmap_view = NULL ;
+  gboolean debug ;
 
   /* No callbacks, then no view creation. */
   zMapAssert(view_cbs_G) ;
+
+  /* Set up debugging for threads, we do it here so that user can change setting in config file
+   * and next time they create a view the debugging will go on/off. */
+  if (zMapUtilsConfigDebug(ZMAPTHR_CONFIG_DEBUG_STR, &debug))
+    zmap_thr_debug_G = debug ;
 
   zmap_view = createZMapView(sequence, start, end, app_data) ;
 
@@ -259,6 +265,8 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 
 	  if (!zMapConfigFindStanzas(config, server_stanza, &server_list))
 	    result = FALSE ;
+
+	  zMapConfigDestroyStanza(server_stanza) ;
 	}
 
       /* Set up connections to the named servers. */
@@ -315,6 +323,9 @@ gboolean zMapViewConnect(ZMapView zmap_view)
       /* clean up. */
       if (server_list)
 	zMapConfigDeleteStanzaSet(server_list) ;
+
+      zMapConfigDestroy(config) ;
+
 
 
       /* If at least one connection succeeded then we are up and running, if not then the zmap

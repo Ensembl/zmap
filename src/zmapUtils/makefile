@@ -13,8 +13,8 @@ MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
 # local macros
 UTILS_PRIV_HDRS = zmapReadLine_P.h zmapUtils_P.h 
 PUB_HDRS = zmapReadLine.h zmapSys.h zmapUtils.h zmapUtilsCheck.h zmapUtilsDebug.h zmapUtilsLog.h zmapUtilsMesg.h
-UTILS_SRC = zmapUtils.c zmapGUIutils.c zmapLogging.c zmapFileUtils.c zmapReadLine.c
-UTILS_OBJ = zmapUtils.o zmapGUIutils.o zmapLogging.o zmapFileUtils.o zmapReadLine.o
+UTILS_SRC = zmapUtils.c zmapGUIutils.c zmapLogging.c zmapFileUtils.c zmapReadLine.c zmapUtilsConfig.c
+UTILS_OBJ = zmapUtils.o zmapGUIutils.o zmapLogging.o zmapFileUtils.o zmapReadLine.o zmapUtilsConfig.o
 
 
 #

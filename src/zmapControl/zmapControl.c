@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Oct  1 16:52 2004 (edgrif)
+ * Last edited: Oct 18 10:30 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.33 2004-10-04 12:54:52 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.34 2004-10-18 10:15:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -120,6 +120,7 @@ void zMapInit(ZMapCallbacks callbacks)
 ZMap zMapCreate(void *app_data)
 {
   ZMap zmap = NULL ;
+  gboolean debug ;
 
   /* No callbacks, then no zmap creation. */
   zMapAssert(zmap_cbs_G) ;

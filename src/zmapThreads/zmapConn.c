@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 13 14:48 2004 (edgrif)
+ * Last edited: Oct 18 10:20 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConn.c,v 1.12 2004-10-14 10:18:52 edgrif Exp $
+ * CVS info:   $Id: zmapConn.c,v 1.13 2004-10-18 10:15:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,7 @@
 #include <zmapConn_P.h>
 
 /* Turn on/off all debugging messages for threads. */
-gboolean zmap_thr_debug_G = TRUE ;
+gboolean zmap_thr_debug_G = FALSE ;
 
 
 static ZMapConnection createConnection(char *machine, int port, char *protocol, int timeout,

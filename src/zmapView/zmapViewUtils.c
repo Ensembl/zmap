@@ -27,9 +27,9 @@
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
  * HISTORY:
- * Last edited: Sep 21 10:46 2004 (edgrif)
+ * Last edited: Oct 18 10:34 2004 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.1 2004-09-23 13:49:43 edgrif Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.2 2004-10-18 10:15:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,11 @@ void zmapViewBusy(ZMapView zmap_view, gboolean busy)
 
   zmap_view->busy = busy ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("zmapViewBusy state is: %s\n", busy ? "on" : "off") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   if ((list_item = g_list_first(zmap_view->window_list)))

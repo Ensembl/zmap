@@ -24,17 +24,19 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Oct 13 14:46 2004 (edgrif)
+ * Last edited: Oct 18 09:47 2004 (edgrif)
  * Created: Thu Jul 24 14:35:58 2003 (edgrif)
- * CVS info:   $Id: zmapConn.h,v 1.8 2004-10-14 10:18:48 edgrif Exp $
+ * CVS info:   $Id: zmapConn.h,v 1.9 2004-10-18 10:15:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONN_H
 #define ZMAP_CONN_H
 
+/* We should have a function to access this global.... */
 /* debugging messages, TRUE for on... */
 extern gboolean zmap_thr_debug_G ;
-
+#define ZMAPTHR_CONFIG_DEBUG_STR "threads"		    /* string to specify on .ZMap for
+							       turning debug on/off. */
 
 /* If you change these two enumerated types you must update zMapVarGetRequestString() or
  * zMapVarGetReplyString() accordingly. */

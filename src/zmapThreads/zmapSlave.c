@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Oct 13 14:42 2004 (edgrif)
+ * Last edited: Oct 18 10:28 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.16 2004-10-14 10:18:53 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.17 2004-10-18 10:15:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -372,18 +372,10 @@ static void cleanUpThread(void *thread_args)
 
   g_free(thread_cb) ;
 
-  printf("%x: error msg before condvar set: %s\n", connection->thread_id, error_msg) ;
-  fflush(stdout) ;
-
   if (!error_msg)
     zmapVarSetValue(&(connection->reply), reply) ;
   else
     zmapVarSetValueWithError(&(connection->reply), reply, error_msg) ;
-
-  printf("%x: error msg after condvar set: %s\n", connection->thread_id, error_msg) ;
-  fflush(stdout) ;
-
-
 
 
   ZMAP_THR_DEBUG(("%x: thread clean-up routine exitting because %s....\n",
