@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 14 09:55 2004 (edgrif)
+ * Last edited: Jul 15 15:53 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.15 2004-07-14 09:04:31 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.16 2004-07-15 15:06:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,26 +36,13 @@
 
 #include <gtk/gtk.h>
 #include <ZMap/zmapView.h>
+#include <ZMap/zmapConfig.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapControl_P.h>
 
 
 /* ZMap debugging output. */
 gboolean zmap_debug_G = TRUE ; 
-
-
-static ZMap createZMap(void *app_data) ;
-static void destroyZMap(ZMap zmap) ;
-static void createZMapWindow(ZMap zmap) ;
-static void killZMap(ZMap zmap) ;
-static void killFinal(ZMap zmap) ;
-static void killViews(ZMap zmap) ;
-static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
-static ZMapView addView(ZMap zmap, char *sequence) ;
-
-static void butClickCB(ZMapViewWindow view_window, void *app_data) ;
-static void viewKilledCB(ZMapView view, void *app_data) ;
-static gboolean lookForViewWindow(GNode *node, gpointer data) ;
 
 
 
@@ -67,6 +54,26 @@ typedef struct
 } ZMapPaneViewSearchStruct, *ZMapPaneViewSearch ;
 
 
+static ZMap createZMap(void *app_data) ;
+static void destroyZMap(ZMap zmap) ;
+static void createZMapWindow(ZMap zmap) ;
+static void killZMap(ZMap zmap) ;
+static void killFinal(ZMap zmap) ;
+static void killViews(ZMap zmap) ;
+static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
+static ZMapView addView(ZMap zmap, char *sequence) ;
+
+static void dataLoadCB(ZMapView view, void *app_data) ;
+static void butClickCB(ZMapViewWindow view_window, void *app_data) ;
+static void viewKilledCB(ZMapView view, void *app_data) ;
+static gboolean lookForViewWindow(GNode *node, gpointer data) ;
+
+
+/* Hack to read files in users $HOME/.ZMap */
+static GData *getTypesFromFile(void) ;
+
+
+
 /* These callback routines are static because they are set just once for the lifetime of the
  * process. */
 
@@ -76,7 +83,7 @@ static ZMapCallbacks zmap_cbs_G = NULL ;
 
 
 /* Callbacks back to us from the level below, i.e. zMapView. */
-ZMapViewCallbacksStruct view_cbs_G = {butClickCB, viewKilledCB} ;
+ZMapViewCallbacksStruct view_cbs_G = {dataLoadCB, butClickCB, viewKilledCB} ;
 
 
 
@@ -88,7 +95,7 @@ ZMapViewCallbacksStruct view_cbs_G = {butClickCB, viewKilledCB} ;
 
 
 
-/* This routine must be called just once before any other zmaps routine, it is undefined
+/* This routine must be called just once before any other zmaps routine, it is a fatal error
  * if the caller calls this routine more than once. The caller must supply all of the callback
  * routines.
  * 
@@ -124,8 +131,13 @@ ZMap zMapCreate(void *app_data)
 
   zmap = createZMap(app_data) ;
 
+
+  /* Hack to read methods from a file in $HOME/.ZMap for now..... */
+  zMapAssert(zmap->types = getTypesFromFile()) ;
+
+
   /* Make the main/toplevel window for the ZMap. */
-  zmapControlWindowCreate(zmap, zmap->zmap_id) ;
+  zmapControlWindowCreate(zmap) ;
 
   zmap->state = ZMAP_INIT ;
 
@@ -388,7 +400,7 @@ static ZMap createZMap(void *app_data)
   zmap = g_new0(ZMapStruct, sizeof(ZMapStruct)) ;
 
   zmap_num++ ;
-  zmap->zmap_id = g_strdup_printf("%d", zmap_num) ;
+  zmap->zmap_id = g_strdup_printf("ZMap.%d", zmap_num) ;
 
   zmap->firstTime = TRUE ;				    /* used in addPane() */
 
@@ -463,8 +475,10 @@ static ZMapView addView(ZMap zmap, char *sequence)
    * the implicit focuspane setting.....we need to set the focus_pane back here.... */
   new_pane = zmapAddPane(zmap, 'v') ;
 
+  /* focus on the new pane */
+  zmapRecordFocus(new_pane) ;
 
-  if ((view = zMapViewCreate(sequence, new_pane))
+  if ((view = zMapViewCreate(sequence, (void *)zmap))
       && (view_window = zMapViewAddWindow(view, new_pane->view_parent_box)))
     {
       /* add to list of views.... */
@@ -476,40 +490,64 @@ static ZMapView addView(ZMap zmap, char *sequence)
 
       zmap->state = ZMAP_VIEWS ;
 
+
+      /* Look in focus pane and set title bar/navigator etc......really this should all be
+       * in one focus routine......which we need to remove from zmapAddPane..... */
+
+
+
+
+
+
       /* We've added a view so better update everything... */
       gtk_widget_show_all(zmap->toplevel) ;
     }
+  /* bug, should remove the pane if the addview fails..... */
+
+
+
 
   return view ;
 }
 
 
+/* Called when a view has loaded data. */
+static void dataLoadCB(ZMapView view, void *app_data)
+{
+  ZMap zmap = (ZMap)app_data ;
+  ZMapFeatureContext features ;
+  char *title ;
 
-/* Gets called when someone clicks in one of the zmap windows.... */
+  features = zMapViewGetFeatures(view) ;
+
+  /* Update navigator. */
+  zmapControlNavigatorNewView(&(features->sequence_to_parent)) ;
+
+
+  /* Update title bar of zmap window. */
+  title = g_strdup_printf("%s - %s", zmap->zmap_id, features->sequence) ;
+  gtk_window_set_title(GTK_WINDOW(zmap->toplevel), title) ;
+  g_free(title) ;
+
+  return ;
+}
+
+
+/* Gets called when someone clicks in one of the zmap windows....
+ * Note that although we get pane data,  */
 static void butClickCB(ZMapViewWindow view_window, void *app_data)
 {
-
-  /* this is useless really because a new pane may have been added so the old pane is now
-   * redundant....better to look for the view window in our list of panes.... */
-  ZMapPane pane = (ZMapPane)app_data ;
-  ZMap zmap = pane->zmap ;
-
+  ZMap zmap = (ZMap)app_data ;
   ZMapView view = zMapViewGetView(view_window) ;
-
   ZMapPaneViewSearchStruct view_search ;
-
 
   view_search.view_window = view_window ;
   view_search.parent_pane = NULL ;
-
   g_node_traverse(zmap->panesTree, G_IN_ORDER, G_TRAVERSE_ALL, -1, lookForViewWindow, &view_search) ;
-
-
   zMapAssert(view_search.parent_pane) ;
 
   /* Change focus.... */
   zmapRecordFocus(view_search.parent_pane) ;
-
 
   return ;
 }
@@ -544,8 +582,7 @@ static gboolean lookForViewWindow(GNode *node, gpointer data)
  * it has died then we either reset the ZMap to its INIT state or if its dying we kill it. */
 static void viewKilledCB(ZMapView view, void *app_data)
 {
-  ZMapPane pane = (ZMapPane)app_data ;
-  ZMap zmap = pane->zmap ;
+  ZMap zmap = (ZMap)app_data ;
 
   /* N.B. the pane needs to go away here....ugh...not well tested code...we must call closePane() */
   /* NOTE THAT THIS MUST END UP SETTING A NEW FOCUSPANE OR SETTING IT TO NULL IF THERE ARE NO
@@ -625,3 +662,80 @@ static gboolean findViewInZMap(ZMap zmap, ZMapView view)
 }
 
 
+
+
+
+/* This is a temporary routine to read type/method/source (call it what you will)
+ * information from a file in the users $HOME/.ZMap directory. */
+static GData *getTypesFromFile(void)
+{
+  GData *types = NULL ;
+  gboolean result = FALSE ;
+  ZMapConfigStanzaSet types_list = NULL ;
+  ZMapConfig config ;
+  char *types_file_name = "ZMapTypes" ;
+
+
+  if ((config = zMapConfigCreateFromFile(NULL, types_file_name)))
+    {
+      ZMapConfigStanza types_stanza ;
+      ZMapConfigStanzaElementStruct types_elements[] = {{"name", ZMAPCONFIG_STRING, {NULL}},
+							{"foreground", ZMAPCONFIG_STRING, {"white"}},
+							{"background", ZMAPCONFIG_STRING, {"black"}},
+							{NULL, -1, {NULL}}} ;
+
+      types_stanza = zMapConfigMakeStanza("Type", types_elements) ;
+
+      if (!zMapConfigFindStanzas(config, types_stanza, &types_list))
+	result = FALSE ;
+      else
+	{
+	  result = TRUE ;
+	  g_datalist_init(&types) ;
+	}
+    }
+
+  /* Set up connections to the named typess. */
+  if (result)
+    {
+      int num_types = 0 ;
+      ZMapConfigStanza next_types ;
+
+      /* Current error handling policy is to connect to servers that we can and
+       * report errors for those where we fail but to carry on and set up the ZMap
+       * as long as at least one connection succeeds. */
+      next_types = NULL ;
+      while (result
+	     && ((next_types = zMapConfigGetNextStanza(types_list, next_types)) != NULL))
+	{
+	  char *name, *foreground, *background ;
+
+	  /* Name must be set so if its not found then don't make a struct.... */
+	  if ((name = zMapConfigGetElementString(next_types, "name")))
+	    {
+	      ZMapFeatureTypeStyle new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
+
+	      new_type->foreground = g_strdup(zMapConfigGetElementString(next_types, "foreground")) ;
+	      new_type->background = g_strdup(zMapConfigGetElementString(next_types, "background")) ;
+
+	      g_datalist_set_data(&types, name, new_type) ;
+	      num_types++ ;
+	    }
+	  else
+	    {
+	      zMapLogWarning("config file \"%s\" has a \"Type\" stanza which has no \"name\" element, "
+			     "the stanza has been ignored.", types_file_name) ;
+	    }
+	}
+
+      /* Found no valid types.... */
+      if (!num_types)
+	result = FALSE ;
+    }
+
+  /* clean up. */
+  if (types_list)
+    zMapConfigDeleteStanzaSet(types_list) ;
+
+  return types ;
+}
