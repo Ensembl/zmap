@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Sep 28 13:40 2004 (rnc)
+ * Last edited: Oct 13 13:41 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.15 2004-10-13 12:39:18 rnc Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.16 2004-10-14 10:19:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -132,6 +132,9 @@ typedef struct
 } ZMapAlignBlockStruct, *ZMapAlignBlock ;
 
 
+
+/* Probably better to use  "input" and "output" coords as terms, parent/child implies
+ * a particular relationship... */
 /* the following is used to store mapping information of one span on to another, if we have
  * SMap in ZMap we can use SMap structs instead.... */
 typedef struct
@@ -189,12 +192,6 @@ typedef struct ZMapFeatureStruct_
   methodID method ;					    /* i.e. the "column" type */
   char *method_name ;					    /* temp...replace with quark ? */
 
-  /* um, I'm not sure this is correct, surely a column is a column and the only thing that matters
-   * is the method..... */
-  /* NOTE: srType BOTH discriminates the union below, _and_ controls
-     the sort of column made.  Two segs with the same method but
-     different types will end up in different columns. */
-
   ZMapStrand strand ;
   ZMapPhase phase ;
   float score ;
@@ -247,6 +244,25 @@ typedef struct ZMapFeatureContextStruct_
   GData *feature_sets ;					    /* A set of ZMapFeatureSetStruct. */
 
 } ZMapFeatureContextStruct, *ZMapFeatureContext ;
+
+
+ZMapFeature zmapFeatureCreate(void) ;
+gboolean zmapFeatureAugmentData(ZMapFeature feature, char *name,
+				char *sequence, char *source, ZMapFeatureType feature_type,
+				int start, int end, double score, ZMapStrand strand,
+				ZMapPhase phase,
+				ZMapHomolType homol_type_out, int start_out, int end_out) ;
+void zmapFeatureDestroy(ZMapFeature feature) ;
+
+ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
+
+
+ZMapFeatureContext zMapFeatureContextCreate(void) ;
+
+
+gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
+				 ZMapFeatureContext new_context,
+				 ZMapFeatureContext *diff_context_out) ;
 
 
 
