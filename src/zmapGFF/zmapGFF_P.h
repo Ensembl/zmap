@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 17 13:52 2004 (edgrif)
+ * Last edited: Jun 21 11:47 2004 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.2 2004-06-18 11:03:21 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.3 2004-06-22 12:24:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -92,6 +92,11 @@ typedef struct ZMapGFFParserStruct_
   GError *error ;					    /* Holds last parser error. */
   GQuark error_domain ;
   gboolean stop_on_error ;				    /* Stop parsing if there is an error. */
+  gboolean parse_only ;					    /* TRUE => just parse the GFF for
+							       correctness, don't create feature arrays. */
+  gboolean default_to_basic ;				    /* TRUE => Unrecognised feature types will
+							       be created as basic features. */
+
 
   int line_count ;					    /* Contains number of lines processed. */
 
