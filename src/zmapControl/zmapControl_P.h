@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul 27 08:15 2004 (edgrif)
+ * Last edited: Jul 27 16:56 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.13 2004-07-27 07:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.14 2004-07-27 15:59:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -180,20 +180,6 @@ void  navScale       (FooCanvas *canvas, float offset, int start, int end);
 
 void         navUpdate                 (GtkAdjustment *adj, gpointer p);
 void         navChange                 (GtkAdjustment *adj, gpointer p);
-
-
-
-
-/* Moved from ZMap/zmapWindow.h, these may be in the wrong place or not even needed. */
-ZMapPane     zMapWindowGetFocuspane    (ZMapWindow window);
-void         zMapWindowSetFocuspane    (ZMapWindow window, ZMapPane pane);
-GNode       *zMapWindowGetPanesTree    (ZMapWindow window);
-void         zMapWindowSetPanesTree    (ZMapWindow window, GNode *node);
-void         zMapWindowSetFirstTime    (ZMapWindow window, gboolean value);
-GtkWidget   *zMapWindowGetHpane        (ZMapWindow window);
-void         zMapWindowSetHpane        (ZMapWindow window, GtkWidget *hpane);
-
-
 
 
 #endif /* !ZMAP_CONTROL_P_H */
