@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 14 16:06 2004 (rnc)
+ * Last edited: Jul 20 10:46 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.13 2004-07-15 16:35:43 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.14 2004-07-21 08:53:42 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -90,6 +90,7 @@ typedef struct
 {
   ZMapWindow window ;
   void *data ;						    /* void for now, union later ?? */
+  GData *types;                         
 } zmapWindowDataStruct, *zmapWindowData ;
 
 
