@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 24 16:54 2005 (edgrif)
+ * Last edited: Mar  8 15:29 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.62 2005-02-25 16:45:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.63 2005-03-08 15:33:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,6 +79,7 @@ static void changeRegion(ZMapWindow window, guint keyval) ;
 void hideAlignmentCols(GQuark key_id, gpointer data, gpointer user_data) ;
 
 
+static void printGroup(FooCanvasGroup *group, int indent) ;
 
 /* These structure is static because the callback routines are set just once for the lifetime of the
  * process. */
@@ -235,23 +236,25 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
       new->focusQuark         = copy_window->focusQuark;
 
 
-      /* Draw the features on the canvas, note that we already have features so we don't
-       * need to do the stuff with event handlers etc. and current and new features are the same. */
-      zmapWindowDrawFeatures(new, feature_context, feature_context, types) ;
-
-
+      /* I'm a little uncertain how much of the below is really necessary as we are
+       * going to call the draw features code anyway. */
       /* Set the zoom factor, there is no call to get hold of pixels_per_unit so we dive.
        * into the struct. */
       foo_canvas_set_pixels_per_unit_xy(new->canvas,
-					copy_window->canvas->pixels_per_unit_x, copy_window->canvas->pixels_per_unit_y) ;
-
+					copy_window->canvas->pixels_per_unit_x,
+					copy_window->canvas->pixels_per_unit_y) ;
 
       foo_canvas_get_scroll_region(copy_window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
       foo_canvas_set_scroll_region(new->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
 
       foo_canvas_get_scroll_offsets(copy_window->canvas, &x, &y) ;
-
       foo_canvas_scroll_to(new->canvas, x, y) ;
+
+
+      /* You cannot just draw the features here as the canvas needs to be realised so we send
+       * an event to get the data drawn which means that the canvas is guaranteed to be
+       * realised by the time we draw into it. */
+      zMapWindowDisplayData(new, feature_context, feature_context, types) ;
     }
 			      
   return new ;
@@ -625,14 +628,65 @@ void zmapWindowPrintCanvas(FooCanvas *canvas)
 
   foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
 
-  printf("Canvas -\tzoom_x: %f\tzoom_y: %f\t"
-	 "scroll_x1: %f\tscroll_x2: %f\tscroll_y1: %f\tscroll_y2: %f\t"
-	 "\n", canvas->pixels_per_unit_x, canvas->pixels_per_unit_y,
-	 x1, x2, y1, y2) ;
+  printf("Canvas stats:\n") ;
+
+  printf("Zoom x,y:\n\t %f, %f\n", canvas->pixels_per_unit_x, canvas->pixels_per_unit_y) ;
+
+  printf("Scroll region bounds:\n\t%f -> %f,  %f -> %f\n", x1, x2, y1, y2) ;
+
+  zmapWindowPrintGroups(canvas) ;
 
   return ;
 }
 
+
+void zmapWindowPrintGroups(FooCanvas *canvas)
+{
+  FooCanvasGroup *root ;
+  int indent ;
+  
+  printf("Groups:\n") ;
+
+  root = foo_canvas_root(canvas) ;
+
+  indent = 1 ;
+  printGroup(root, indent) ;
+
+  return ;
+}
+
+
+void zmapWindowPrintGroup(FooCanvasGroup *group)
+{
+  double x1, y1, x2, y2 ;
+
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(group), &x1, &y1, &x2, &y2) ;
+  printf("Pos: %f, %f  Bounds: %f -> %f,  %f -> %f\n",
+	 group->xpos, group->ypos, x1, x2, y1, y2) ;
+
+  return ;
+}
+
+static void printGroup(FooCanvasGroup *group, int indent)
+{
+  int i ;
+  GList *list ;
+
+  for (i = 0 ; i < indent ; i++)
+    printf("\t") ;
+
+  zmapWindowPrintGroup(group) ;
+
+  list = g_list_first(group->item_list) ;
+  do
+    {
+      if (FOO_IS_CANVAS_GROUP(list->data))
+	printGroup(FOO_CANVAS_GROUP(list->data), indent + 1) ;
+    }
+  while ((list = g_list_next(list))) ;
+
+  return ;
+}
 
 
 GQuark zMapWindowGetFocusQuark(ZMapWindow window)
@@ -1245,8 +1299,14 @@ void hideAlignmentCols(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data ;
   ZMapWindowAlignment alignment = (ZMapWindowAlignment)data ;
+  ZMapWindowAlignmentBlock block ;
 
-  zmapWindowAlignmentHideUnhideColumns(alignment) ;
+  /* Hack this for now to simply get a block..... */
+  block = (ZMapWindowAlignmentBlock)g_datalist_get_data(&(alignment->blocks),
+							"dummy") ;
+
+
+  zmapWindowAlignmentHideUnhideColumns(block) ;
 
   return ;
 }

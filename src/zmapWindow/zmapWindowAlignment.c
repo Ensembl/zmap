@@ -23,13 +23,15 @@
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: 
+ * Description: Deals with construction of foocanvas groups to hold
+ *              alignments, blocks within those alignments and columns
+ *              within those blocks.
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 25 16:30 2005 (edgrif)
+ * Last edited: Mar  8 13:37 2005 (edgrif)
  * Created: Thu Feb 24 11:19:23 2005 (edgrif)
- * CVS info:   $Id: zmapWindowAlignment.c,v 1.1 2005-02-25 16:46:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAlignment.c,v 1.2 2005-03-08 15:33:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,19 +39,28 @@
 #include <zmapWindow_P.h>
 
 
-static ZMapWindowColumn findColumn(GPtrArray *col_array, char *col_name, gboolean forward_strand) ;
-static ZMapWindowColumn createColumn(ZMapWindowAlignment alignment, gboolean forward, 
-				     double position, gchar *type_name, ZMapFeatureTypeStyle type) ;
+/* These should be user defineable...... */
+#define COLUMN_GAP 20.0
+#define STRAND_GAP COLUMN_GAP / 2
 
+
+static ZMapWindowColumn findColumn(GPtrArray *col_array, char *col_name, gboolean forward_strand) ;
+static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
+					  gchar *type_name, ZMapFeatureTypeStyle type) ;
+static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, gpointer event_cb_data,
+				   double start, double top, double bot, double width,
+				   GdkColor *colour) ;
 static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean canvasBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 
 
 
-
-/* In the end we will need position information here.... */
+/* An alignment is all the features for a particular sequence alignment, there may be
+ * several alignments within one window. Alignments may be discontinuous, here each
+ * section of the alignment is held within and alignment "block",
+ * see zmapWindowAlignmentAddBlock() */
 ZMapWindowAlignment zmapWindowAlignmentCreate(char *align_name, ZMapWindow window,
-					      FooCanvasGroup *parent_group)
+					      FooCanvasGroup *parent_group, double position)
 {
   ZMapWindowAlignment alignment ;
 
@@ -61,75 +72,84 @@ ZMapWindowAlignment zmapWindowAlignmentCreate(char *align_name, ZMapWindow windo
 
   alignment->alignment_group = foo_canvas_item_new(parent_group,
 						   foo_canvas_group_get_type(),
-						   "x", 0.0,
+						   "x", position,
 						   "y", 0.0,
 						   NULL) ;
 
-  alignment->col_gap = 5.0 ;				    /* should be user settable... */
-
-  alignment->columns = g_ptr_array_new() ;
+  alignment->col_gap = COLUMN_GAP ;			    /* should be user settable... */
 
   return alignment ;
 }
 
 
-FooCanvasItem *zmapWindowAlignmentAddColumn(ZMapWindowAlignment alignment, char *source_name,
-					    double position, ZMapFeatureTypeStyle type)
+
+
+ZMapWindowAlignmentBlock zmapWindowAlignmentAddBlock(ZMapWindowAlignment alignment,
+						     char *block_name, double position)
 {
-  FooCanvasItem *col_group ;
-  ZMapWindowColumn column ;
-
-  /* when we come to add a column we should be able to assume that we can just position it
-   * past the last column.... */
-
-  /* If the column doesn't already exist we need to find a new one. */
-  if (!(column = findColumn(alignment->columns, source_name, TRUE)))
-    {
-      column = createColumn(alignment, TRUE, position, source_name, type) ;
-
-      g_ptr_array_add(alignment->columns, column) ;
-    }
+  ZMapWindowAlignmentBlock block = NULL ;
 
 
-  col_group = column->column_group ;
+  block = g_new0(ZMapWindowAlignmentBlockStruct, 1) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  canvas_data->forward_column_group = column->group ;
+  block->block_id = g_quark_from_string(block_name) ;
 
-  if (canvas_data->thisType->showUpStrand)
-    {
-      if (!(column = findColumn(canvas_data->window->columns, source_name, FALSE)))
-	{
-	  canvas_data->reverse_column_pos -= canvas_data->thisType->width ;
+  block->parent = alignment ;
 
-	  column = createColumn(alignment, TRUE, 
-				canvas_data->reverse_column_pos, source_name) ;
+  block->block_group = foo_canvas_item_new(FOO_CANVAS_GROUP(alignment->alignment_group),
+					   foo_canvas_group_get_type(),
+					   "x", 0.0,
+					   "y", position,
+					   NULL) ;
 
-	  canvas_data->reverse_column_pos -= COLUMN_SPACING ;
+  block->columns = g_ptr_array_new() ;
 
-	  g_ptr_array_add(canvas_data->window->columns, column) ;
-	}
-
-      canvas_data->reverse_column_group = column->group ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-  return col_group ;
+  return block ;
 }
 
 
-
-void zmapWindowAlignmentHideUnhideColumns(ZMapWindowAlignment alignment)
+ZMapWindowColumn zmapWindowAlignmentAddColumn(ZMapWindowAlignmentBlock block, char *source_name,
+					      ZMapFeatureTypeStyle type)
 {
+  ZMapWindowColumn column ;
+
+  /* If the column doesn't already exist we need to find a new one. */
+  if (!(column = findColumn(block->columns, source_name, TRUE)))
+    {
+      column = createColumnGroup(block, source_name, type) ;
+
+      g_ptr_array_add(block->columns, column) ;
+    }
+
+
+  return column ;
+}
+
+
+/* Return the appropriate column group for the forward or reverse strand. */
+FooCanvasItem *zmapWindowAlignmentGetColumn(ZMapWindowColumn column_group, ZMapStrand strand)
+{
+  FooCanvasItem *column ;
+
+  if (strand == ZMAPSTRAND_DOWN || strand == ZMAPSTRAND_NONE)
+    column = column_group->forward_group ;
+  else
+    column = column_group->reverse_group ;
+
+  return column ;
+}
+
+
+void zmapWindowAlignmentHideUnhideColumns(ZMapWindowAlignmentBlock block)
+{
+  ZMapWindowAlignment alignment = block->parent ;
   int i ;
   ZMapWindowColumn column ;
   double min_mag ;
 
-  for ( i = 0 ; i < alignment->columns->len ; i++ )
+  for (i = 0 ; i < block->columns->len ; i++)
     {
-      column = g_ptr_array_index(alignment->columns, i) ;
+      column = g_ptr_array_index(block->columns, i) ;
 
       /* type->min_mag is in bases per line, but window->zoom_factor is pixels per base */
       min_mag = (column->type->min_mag ? alignment->window->max_zoom/column->type->min_mag : 0.0) ;
@@ -156,12 +176,18 @@ ZMapWindowAlignment zmapWindowAlignmentDestroy(ZMapWindowAlignment alignment)
 {
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* NEEDS REWRITING FOR BLOCKS....... */
+
   if (alignment->columns)
     {
       /* Should we first call a foreach routine to free off the canvas obj. etc. ?? */
       
       g_ptr_array_free(alignment->columns, TRUE) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   g_free(alignment) ;
@@ -194,61 +220,73 @@ static ZMapWindowColumn findColumn(GPtrArray *col_array, char *col_name, gboolea
 
 
 /* create Column */
-static ZMapWindowColumn createColumn(ZMapWindowAlignment alignment,
-				     gboolean forward, double position,
-				     gchar *type_name, ZMapFeatureTypeStyle type)
+static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
+					  gchar *type_name, ZMapFeatureTypeStyle type)
 {
   ZMapWindowColumn column ;
-  GdkColor white ;
+  ZMapWindowAlignment alignment = block->parent ;
   FooCanvasItem *group, *boundingBox ;
   double min_mag ;
+  GdkColor column_colour ;
+  double x1, y1, x2, y2 ;
+  double position ;
+
+
+  /* remember to col. colour to "white" once debugging is done... */
+
+
+  /* We find out how big the block is as this encloses all current columns, then we draw the next
+   * column group to the right of the last current column. */
+  foo_canvas_item_get_bounds(block->block_group, &x1, &y1, &x2, &y2) ;
+  position = x2 + block->parent->col_gap ;
+
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gdk_color_parse("white", &white) ;
+  printf("Col: %s  is at:  %f\n", type_name, position) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  gdk_color_parse("red", &white) ;
 
 
-  printf("Col: %s  is at:  %f\n", type_name, position) ;
-
-  /* We seem to need the bounding box to get a container that spans the whole column
-   * to enable us to get events on a per column basis. */
-
-  group = foo_canvas_item_new(FOO_CANVAS_GROUP(alignment->alignment_group),
-			      foo_canvas_group_get_type(),
-			      "x", position,
-			      "y", 0.0,
-			      NULL) ;
-
-  g_signal_connect(GTK_OBJECT(group), "event",
-		   GTK_SIGNAL_FUNC(canvasColumnEventCB), alignment->window) ;
-
-
-  position = 0.0 ;
-
-  boundingBox = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
-				    foo_canvas_rect_get_type(),
-				    "x1", position,
-				    "y1", alignment->window->seq_start,
-				    "x2", type->width,
-				    "y2", alignment->window->seq_end,
-				    "fill_color_gdk", &white,
-				    NULL) ;
-
-  g_signal_connect(GTK_OBJECT(boundingBox), "event",
-		   GTK_SIGNAL_FUNC(canvasBoundingBoxEventCB), alignment->window) ;
-
-
-  /* store a pointer to the column to enable hide/unhide while zooming */
-  column = g_new0(ZMapWindowColumnStruct, 1) ;		    /* destroyed with ZMapWindow */
+  /* Make sure this gets freed...... */
+  column = g_new0(ZMapWindowColumnStruct, 1) ;
   column->type = type ;
   column->type_name = type_name ;
+  column->strand_gap = STRAND_GAP ;			    /* Should be user defineable */
 
-  column->column_group = group ;
+  column->column_group = foo_canvas_item_new(FOO_CANVAS_GROUP(block->block_group),
+					     foo_canvas_group_get_type(),
+					     "x", position,
+					     "y", 0.0,
+					     NULL) ;
 
-  column->forward = forward ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Not sure if we need this for the column group....maybe..... */
+  g_signal_connect(GTK_OBJECT(column->column_group), "event",
+		   GTK_SIGNAL_FUNC(canvasColumnEventCB), alignment->window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+  gdk_color_parse("red", &column_colour) ;
+
+  column->forward_group = createColumn(FOO_CANVAS_GROUP(column->column_group),
+				       (gpointer)(alignment->window),
+				       0.0,
+				       alignment->window->seq_start, alignment->window->seq_end,
+				       type->width, &column_colour) ;
+
+  if (type->showUpStrand)
+    {
+      gdk_color_parse("green", &column_colour) ;
+
+      foo_canvas_item_get_bounds(column->forward_group, &x1, &y1, &x2, &y2) ;
+      column->reverse_group = createColumn(FOO_CANVAS_GROUP(column->column_group),
+					   (gpointer)(alignment->window),
+					   x2 + column->strand_gap,
+					   alignment->window->seq_start, alignment->window->seq_end,
+					   type->width,
+					   &column_colour) ;
+    }
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* can be done later.... */
@@ -264,9 +302,57 @@ static ZMapWindowColumn createColumn(ZMapWindowAlignment alignment,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zmapWindowPrintGroup(column->column_group) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   
   return column ;
 }
+
+
+/* Create an individual column group, this will have the feature items added to it. */
+static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, gpointer event_cb_data,
+				   double start, double top, double bot, double width,
+				   GdkColor *colour)
+{
+  FooCanvasItem *group ;
+  FooCanvasItem *boundingBox ;
+
+  group = foo_canvas_item_new(parent_group,
+			      foo_canvas_group_get_type(),
+			      "x", start,
+			      "y", 0.0,
+			      NULL) ;
+
+  g_signal_connect(GTK_OBJECT(group), "event",
+		   GTK_SIGNAL_FUNC(canvasColumnEventCB), event_cb_data) ;
+
+  /* You can't explicitly set the size of a group, it automatically adjusts to the bounding
+   * limits of its children, so we create an "invisible" box that covers the whole column
+   * so that we can get events (mouse clicks etc.) on a per column basis. */
+  boundingBox = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
+				    foo_canvas_rect_get_type(),
+				    "x1", 0.0,
+				    "y1", top,
+				    "x2", width,
+				    "y2", bot,
+				    "fill_color_gdk", colour,
+				    NULL) ;
+
+  g_signal_connect(GTK_OBJECT(boundingBox), "event",
+		   GTK_SIGNAL_FUNC(canvasBoundingBoxEventCB), event_cb_data) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zmapWindowPrintGroup(group) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  return group ;
+}
+
 
 
 static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)

@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb 25 16:23 2005 (edgrif)
+ * Last edited: Mar  8 10:40 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.42 2005-02-25 16:45:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.43 2005-03-08 15:33:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -74,7 +74,9 @@ enum
 
 
 
-/* Represents a column, which is a set of features of one type. */
+/* Represents a column on the display. A column contains features that all have the
+ * same type/style, e.g. "confirmed" transcripts. The column contains both the forward
+ * and reverse strand features. */
 typedef struct
 {
   /* which one to use here ?? */
@@ -87,12 +89,31 @@ typedef struct
   gboolean forward ;
   ZMapFeatureTypeStyle type ;
 
+  double strand_gap ;					    /* space between strands. */
+
 } ZMapWindowColumnStruct, *ZMapWindowColumn ;
 
 
 
-/* Represents all the columns of features for one of possibly multiple sets of data being viewed
- * in a window. */
+/* Represents all the columns of features for one contiguous alignment block.
+ * There may be multiple discontinuous blocks displayed for a single alignment. */
+typedef struct ZMapWindowAlignmentBlockStructName
+{
+  GQuark block_id ;					    /* Needed ???? */
+
+  ZMapWindowAlignment parent ;				    /* Our parent alignment. */
+
+  FooCanvasItem *block_group ;				    /* Group containing all columns for
+							       this alignment. */
+
+  GPtrArray *columns ;					    /* All ZMapWindowColumn's in the alignment. */
+
+} ZMapWindowAlignmentBlockStruct, *ZMapWindowAlignmentBlock ;
+
+
+
+/* Represents all blocks for a single alignment, if the alignment is ungapped it
+ * will contain just one block. */
 typedef struct ZMapWindowAlignmentStructName
 {
   GQuark alignment_id ;
@@ -102,26 +123,16 @@ typedef struct ZMapWindowAlignmentStructName
   FooCanvasItem *alignment_group ;			    /* Group containing all columns for
 							       this alignment. */
 
-  GPtrArray *columns ;					    /* All ZMapWindowColumn's in the alignment. */
+  GData *blocks ;					    /* All blocks in the alignment. */
 
   double col_gap ;					    /* space between columns. */
-
-  /* we should keep pointers to the columns for the forward/reverse that are the last ones in each
-     direction then we can ask them dynamically for the position of their groups on the screen. */
-
-  double               forward_column_pos ;
-  double               reverse_column_pos ;
-
-
-
 
 } ZMapWindowAlignmentStruct, *ZMapWindowAlignment ;
 
 
 
-
-
-
+/* Represents a single sequence display window with its scrollbars, canvas and feature
+ * display. */
 typedef struct _ZMapWindowStruct
 {
   gchar *sequence ;
@@ -159,8 +170,6 @@ typedef struct _ZMapWindowStruct
   GData         *featureItems ;            /*!< enables unambiguous link between features and canvas items. */
 
   GData         *longItems ;               /*!< features >30k long need to be cropped as we zoom in. */
-
-
 
 
   /* This all needs to move and for scale to be in a separate window..... */
@@ -231,7 +240,11 @@ GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 
 void zmapWindowHighlightObject(FooCanvasItem *feature,
 			       ZMapWindow window, ZMapFeatureTypeStyle thisType);
+
 void zmapWindowPrintCanvas(FooCanvas *canvas) ;
+void zmapWindowPrintGroups(FooCanvas *canvas) ;
+void zmapWindowPrintItem(FooCanvasGroup *item) ;
+
 
 void     zMapWindowCreateListWindow(ZMapWindow window, ZMapFeatureItem featureItem);
 gboolean zMapWindowFeatureClickCB(ZMapWindow window, ZMapFeature feature);
@@ -251,10 +264,15 @@ void zmapHideUnhideColumns(ZMapWindow window) ;
 
 
 ZMapWindowAlignment zmapWindowAlignmentCreate(char *align_name, ZMapWindow window,
-					      FooCanvasGroup *parent_group) ;
-FooCanvasItem *zmapWindowAlignmentAddColumn(ZMapWindowAlignment alignment, char *source_name,
-					    double position, ZMapFeatureTypeStyle type) ;
-void zmapWindowAlignmentHideUnhideColumns(ZMapWindowAlignment alignment) ;
+					      FooCanvasGroup *parent_group, double position) ;
+
+ZMapWindowAlignmentBlock zmapWindowAlignmentAddBlock(ZMapWindowAlignment alignment,
+						     char *block_id, double position) ;
+
+ZMapWindowColumn zmapWindowAlignmentAddColumn(ZMapWindowAlignmentBlock block, char *source_name,
+					      ZMapFeatureTypeStyle type) ;
+FooCanvasItem *zmapWindowAlignmentGetColumn(ZMapWindowColumn column_group, ZMapStrand strand) ;
+void zmapWindowAlignmentHideUnhideColumns(ZMapWindowAlignmentBlock block) ;
 
 ZMapWindowAlignment zmapWindowAlignmentDestroy(ZMapWindowAlignment alignment) ;
 
