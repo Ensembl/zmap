@@ -3,5 +3,11 @@ ZMapConfig
 
 
 This directory contains the code that deals with reading/writing configuration
-information into ZMaps configuration file(s). Currently much of this is just
-skeleton stuff.
+information into ZMaps configuration file(s).
+
+Status:
+
+ Currently much of this is just skeleton stuff. We need to add code, probably
+using gnome_config() calls to read the configuration files.
+
+Lots of work to do here.

@@ -25,27 +25,29 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: Nov 18 10:50 2003 (edgrif)
+ * Last edited: Jan 22 13:26 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.2 2003-11-18 11:27:07 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.3 2004-01-23 13:28:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapManager_P.h>
+#include <ZMap/zmapConfig.h>
+
+static void managerCB(ZMap zmap, void *cb_data) ;
+static void removeZmapEntry(ZMapManager zmaps, ZMap zmap) ;
 
 
-static void zmapWindowCB(void *cb_data, int reason) ;
 
-
-
-ZMapManager zMapManagerInit(zmapAppCallbackFunc zmap_deleted_func,
-			    void *gui_data)
+ZMapManager zMapManagerInit(zmapAppCallbackFunc zmap_deleted_func, void *gui_data)
 {
   ZMapManager manager ;
 
   manager = g_new(ZMapManagerStruct, sizeof(ZMapManagerStruct)) ;
 
   manager->zmap_list = NULL ;
+
+  manager->config = zMapConfigInit("any_old_file") ;
 
   manager->gui_zmap_deleted_func = zmap_deleted_func ;
   manager->gui_data = gui_data ;
@@ -55,26 +57,17 @@ ZMapManager zMapManagerInit(zmapAppCallbackFunc zmap_deleted_func,
 
 
 /* Add a new zmap window with associated thread and all the gubbins. */
-ZMap zMapManagerAdd(ZMapManager zmaps, char *machine, int port, char *sequence)
+ZMap zMapManagerAdd(ZMapManager zmaps, char *sequence)
 {
   ZMap zmap ;
-  ZMapManagerCB zmap_cb ;
 
-  zmap_cb = g_new(ZMapManagerCBStruct, sizeof(ZMapManagerCBStruct)) ;
-
-  if ((zmap = zMapCreate((void *)zmap_cb, zmapWindowCB))
-      && zMapConnect(zmap, machine, port, sequence))
+  if ((zmap = zMapCreate((void *)zmaps, managerCB, zmaps->config))
+      && zMapConnect(zmap, sequence))
     {
-      zmap_cb->zmap_list = zmaps ;
-      zmap_cb->zmap = zmap ;
-
       zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
     }
   else
     {
-      if (zmap_cb)
-	g_free(zmap_cb) ;
-
       printf("Aggghhhh, not able to create a zmap....\n") ;
     }
 
@@ -117,30 +110,27 @@ void zMapManagerReset(ZMap zmap)
 
 
 
-/* Called to kill a zmap window and get the associated thread killed, this latter will be
- * asynchronous. */
-/* Calls the control window callback to remove any reference to the zmap and then destroys
- * the actual zmap itself.
- * 
- * The window pointer must be null'd because this prevents us trying to doubly destroy
- * the window when a thread is killed but only signals its own destruction some time
- * later.
- *  */
 void zMapManagerKill(ZMapManager zmaps, ZMap zmap)
 {
-
-  /* THIS IS ALMOST CERTAINLY MESSED UP NOW..... */
-
   zMapDestroy(zmap) ;
 
-  zmaps->zmap_list = g_list_remove(zmaps->zmap_list, zmap) ;
-
-  (*(zmaps->gui_zmap_deleted_func))(zmaps->gui_data, zmap) ;
+  removeZmapEntry(zmaps, zmap) ;
 
   return ;
 }
 
 
+
+/* Gets called when ZMap quits from "under our feet" as a result of user interaction,
+ * we then make sure we clean up. */
+static void managerCB(ZMap zmap, void *cb_data)
+{
+  ZMapManager zmaps = (ZMapManager)cb_data ;
+
+  removeZmapEntry(zmaps, zmap) ;
+
+  return ;
+}
 
 
 
@@ -149,44 +139,11 @@ void zMapManagerKill(ZMapManager zmaps, ZMap zmap)
  */
 
 
-
-
-/* Gets called when zmap Window needs Manager to do something. */
-static void zmapWindowCB(void *cb_data, int reason)
+static void removeZmapEntry(ZMapManager zmaps, ZMap zmap)
 {
-  ZMapManagerCB zmap_cb = (ZMapManagerCB)cb_data ;
-  ZmapWindowCmd window_cmd = (ZmapWindowCmd)reason ;
-  char *debug ;
+  zmaps->zmap_list = g_list_remove(zmaps->zmap_list, zmap) ;
 
-
-  if (window_cmd == ZMAP_WINDOW_QUIT)
-    {
-      debug = "ZMAP_WINDOW_QUIT" ;
-
-      zMapManagerKill(zmap_cb->zmap_list, zmap_cb->zmap) ;
-
-      g_free(zmap_cb) ;					    /* Only free on destroy. */
-    }
-  else if (window_cmd == ZMAP_WINDOW_LOAD)
-    {
-      debug = "ZMAP_WINDOW_LOAD" ;
-
-      zMapManagerLoadData(zmap_cb->zmap) ;
-    }
-  else if (window_cmd == ZMAP_WINDOW_STOP)
-    {
-      debug = "ZMAP_WINDOW_STOP" ;
-    }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* We need to pass back the info here....or something..... */
-
-  ZMAP_DEBUG(("GUI: received %s from thread %x\n", debug,
-	      zMapConnGetThreadid(zmap_cb->zmap->connection))) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  (*(zmaps->gui_zmap_deleted_func))(zmaps->gui_data, zmap) ;
 
   return ;
 }

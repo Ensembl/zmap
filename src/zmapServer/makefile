@@ -15,7 +15,7 @@ SERV_OBJ = zmapServer.o
 # These must all be set for the common includes to work.
 # Need to include AceConn header.
 #
-CURRENT_LIB = $(ZMAP_LIB)
+CURRENT_LIB = $(ZMAPTHR_LIB)
 CURRENT_OBJ = $(SERV_OBJ)
 CURRENT_DEP = $(PUB_HDRS) $(SERV_PRIV_HDRS)
 CURRENT_SRC = $(SERV_PRIV_HDRS) $(SERV_SRC)

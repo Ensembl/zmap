@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 12 16:42 2003 (edgrif)
+ * Last edited: Jan  8 16:27 2004 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapConnutils.c,v 1.1 2003-11-13 15:02:13 edgrif Exp $
+ * CVS info:   $Id: zmapConnutils.c,v 1.2 2004-01-23 13:27:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,7 @@
 
 
 static void releaseCondvarMutex(void *thread_data) ;
-
+static int getAbsTime(const TIMESPEC *relative_timeout, TIMESPEC *abs_timeout) ;
 
 
 
@@ -131,7 +131,7 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest wa
 {
   ZMapThreadRequest signalled_state = ZMAP_REQUEST_INIT ;
   int status ;
-  TIMESPEC systimeout ;
+  TIMESPEC abs_timeout ;
 
 
   pthread_cleanup_push(releaseCondvarMutex, (void *)condvar) ;
@@ -143,13 +143,19 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest wa
     }
   
   /* Get the relative timeout converted to absolute for the call. */
-  if ((status = pthread_get_expiration_np(relative_timeout, &systimeout)) != 0)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if ((status = pthread_get_expiration_np(relative_timeout, &abs_timeout)) != 0)
+    ZMAPSYSERR(status, "zmapCondVarWaitTimed invalid time") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  if ((status = getAbsTime(relative_timeout, &abs_timeout)) != 0)
     ZMAPSYSERR(status, "zmapCondVarWaitTimed invalid time") ;
 
   while (condvar->state == waiting_state)
     {
       if ((status = pthread_cond_timedwait(&(condvar->cond), &(condvar->mutex),
-					   &systimeout)) != 0)
+					   &abs_timeout)) != 0)
 	{
 	  if (status == ETIMEDOUT)			    /* Timed out so return. */
 	    {
@@ -402,4 +408,39 @@ static void releaseCondvarMutex(void *thread_data)
     }
 
   return ;
+}
+
+
+/* This function is a cheat really. You can only portably get the time in seconds
+ * as far as I can see so specifying small relative timeouts will not work....
+ * to this end I have inserted code to check that the relative timeout is not
+ * less than a single clock tick, hardly perfect but better than nothing.
+ * 
+ * On the alpha you can do this:
+ * 
+ *       pthread_get_expiration_np(relative_timeout, &abs_timeout)
+ * 
+ * to get a timeout in seconds and nanoseconds but this call is unavailable on
+ * Linux at least....
+ * 
+ *  */
+static int getAbsTime(const TIMESPEC *relative_timeout, TIMESPEC *abs_timeout)
+{
+  int status = 1 ;					    /* Fail by default. */
+  static int clock_tick_nano ;
+
+  
+  clock_tick_nano = 1000000000 / CLK_TCK ;		    /* CLK_TCK can be a function. */
+
+  if ((relative_timeout->tv_sec > 0 && relative_timeout->tv_nsec >= 0)
+      || (relative_timeout->tv_sec == 0 && relative_timeout->tv_nsec > clock_tick_nano))
+    {
+      *abs_timeout = *relative_timeout ;		    /* struct copy */
+      abs_timeout->tv_sec += time(NULL) ;
+
+      status = 0 ;
+    }
+
+
+  return status ;
 }

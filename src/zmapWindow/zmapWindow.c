@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 17 18:12 2003 (edgrif)
+ * Last edited: Jan 22 14:36 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.3 2003-11-18 11:30:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.4 2004-01-23 13:27:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
 
 
 
-ZMapWindow zMapWindowCreate(char *machine, int port, char *sequence, 
+ZMapWindow zMapWindowCreate(char *sequence, char *zmap_id,
 			    zmapVoidIntCallbackFunc app_routine, void *app_data)
 {
   ZMapWindow window ;
@@ -50,15 +50,13 @@ ZMapWindow zMapWindowCreate(char *machine, int port, char *sequence,
 
   window = g_new(ZMapWindowStruct, sizeof(ZMapWindowStruct)) ;
 
-  window->machine = g_strdup(machine) ;
-  window->port = port ;
-  window->sequence = g_strdup(sequence) ;
+  if (sequence)
+    window->sequence = g_strdup(sequence) ;
   window->app_routine = app_routine ;
   window->app_data = app_data ;
   window->zmap_atom = gdk_atom_intern(ZMAP_ATOM, FALSE) ;
 
-  title = g_strdup_printf("ZMap (%s, port %d): %s", machine, port,
-			  sequence ? sequence : "") ;
+  title = g_strdup_printf("ZMap - %s : %s", zmap_id, sequence ? sequence : "") ;
 
   window->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
@@ -142,8 +140,8 @@ void zMapWindowDestroy(ZMapWindow window)
 
   gtk_widget_destroy(window->toplevel) ;
 
-  g_free(window->machine) ;
-  g_free(window->sequence) ;
+  if (window->sequence)
+    g_free(window->sequence) ;
 
   g_free(window) ;
 

@@ -25,42 +25,31 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 18 10:51 2003 (edgrif)
+ * Last edited: Jan 22 13:22 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapManager_P.h,v 1.2 2003-11-18 11:27:07 edgrif Exp $
+ * CVS info:   $Id: zmapManager_P.h,v 1.3 2004-01-23 13:28:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_MANAGER_P_H
 #define ZMAP_MANAGER_P_H
 
 #include <glib.h>
-
-/* THERE IS STUFF IN HERE WHICH SHOULD BE IN ZMAP.H */
-#include <ZMap/zmapWindow.h>
-
 #include <ZMap/ZMap.h>
 #include <ZMap/zmapManager.h>
+#include <ZMap/zmapConfig.h>
 
-
-/* A list of connections of type ZMapConnection. */
+/* Contains the list of ZMaps maintained by manager, plus a record of the callback stuff
+ * registered by the application. */
 typedef struct _ZMapManagerStruct
 {
   GList *zmap_list ;
+
+  ZMapConfig config ;
 
   zmapAppCallbackFunc gui_zmap_deleted_func ;
   void *gui_data ;
 
 } ZMapManagerStruct ;
-
-
-
-typedef struct _ZMapManagerCBStruct
-{
-  ZMapManager zmap_list ;
-
-  ZMap zmap ;
-} ZMapManagerCBStruct, *ZMapManagerCB ;
-
 
 
 #endif /* !ZMAP_MANAGER_P_H */

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 17 16:11 2003 (edgrif)
+ * Last edited: Jan 22 14:13 2004 (edgrif)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.3 2003-11-18 10:44:16 edgrif Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.4 2004-01-23 13:28:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,7 @@
 #include <zmapApp_P.h>
 
 static void loadThreadCB(GtkWidget *widget, gpointer cb_data) ;
+static void stopThreadCB(GtkWidget *widget, gpointer cb_data) ;
 static void killThreadCB(GtkWidget *widget, gpointer data) ;
 static void checkThreadCB(GtkWidget *widget, gpointer cb_data) ;
 static void selectRow(GtkCList *clist, gint row, gint column, GdkEventButton *event,
@@ -45,16 +46,17 @@ static void unselectRow(GtkCList *clist, gint row, gint column, GdkEventButton *
 			gpointer cb_data) ;
 
 
-static char *column_titles[ZMAP_NUM_COLS] = {"Window", "Status", "Last Request"} ;
+static char *column_titles[ZMAP_NUM_COLS] = {"ZMap", "Sequence", "Status", "Last Request"} ;
 
 
 
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
 {
   GtkWidget *frame ;
-  GtkWidget *vbox, *scrwin, *clist, *hbox, *load_button, *kill_button, *check_button ;
+  GtkWidget *vbox, *scrwin, *clist, *hbox,
+    *load_button, *stop_button, *kill_button, *check_button ;
 
-  frame = gtk_frame_new("Manage Connections") ;
+  frame = gtk_frame_new("Manage ZMaps") ;
   gtk_frame_set_label_align( GTK_FRAME( frame ), 0.0, 0.0 ) ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
   
@@ -68,7 +70,7 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
   gtk_widget_set_usize(scrwin, -2, 150) ;		    /* -2  =>  leave value unchanged. */
   gtk_box_pack_start(GTK_BOX(vbox), scrwin, FALSE, FALSE, 0) ;
 
-  app_context->clist_widg = clist = gtk_clist_new_with_titles(3, column_titles) ;
+  app_context->clist_widg = clist = gtk_clist_new_with_titles(4, column_titles) ;
   gtk_signal_connect(GTK_OBJECT(clist), "select_row",
 		     GTK_SIGNAL_FUNC(selectRow), (gpointer)app_context) ;
   gtk_signal_connect(GTK_OBJECT(clist), "unselect_row",
@@ -80,17 +82,22 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
   gtk_container_add(GTK_CONTAINER(vbox), hbox);
 
-  load_button = gtk_button_new_with_label("Load Thread Data") ;
+  load_button = gtk_button_new_with_label("Reload") ;
   gtk_signal_connect(GTK_OBJECT(load_button), "clicked",
 		     GTK_SIGNAL_FUNC(loadThreadCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(hbox), load_button, FALSE, FALSE, 0) ;
 
-  kill_button = gtk_button_new_with_label("Kill Thread") ;
+  stop_button = gtk_button_new_with_label("Stop") ;
+  gtk_signal_connect(GTK_OBJECT(stop_button), "clicked",
+		     GTK_SIGNAL_FUNC(stopThreadCB), (gpointer)app_context) ;
+  gtk_box_pack_start(GTK_BOX(hbox), stop_button, FALSE, FALSE, 0) ;
+
+  kill_button = gtk_button_new_with_label("Kill") ;
   gtk_signal_connect(GTK_OBJECT(kill_button), "clicked",
 		     GTK_SIGNAL_FUNC(killThreadCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(hbox), kill_button, FALSE, FALSE, 0) ;
 
-  check_button = gtk_button_new_with_label("Check Connections") ;
+  check_button = gtk_button_new_with_label("Status") ;
   gtk_signal_connect(GTK_OBJECT(check_button), "clicked",
 		     GTK_SIGNAL_FUNC(checkThreadCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(hbox), check_button, FALSE, FALSE, 0) ;
@@ -109,6 +116,26 @@ static void loadThreadCB(GtkWidget *widget, gpointer cb_data)
   if (app_context->selected_zmap)
     {
       zMapManagerLoadData(app_context->selected_zmap) ;
+    }
+
+
+  return ;
+}
+
+static void stopThreadCB(GtkWidget *widget, gpointer cb_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)cb_data ;
+  int row ;
+
+  if (app_context->selected_zmap)
+    {
+      printf("not implemented\n") ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* We need a call like this.....but it doesn't exist yet... */
+      zMapManagerStop(app_context->selected_zmap) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
 

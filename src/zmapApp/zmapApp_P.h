@@ -25,20 +25,29 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 17 16:11 2003 (edgrif)
+ * Last edited: Jan 22 15:15 2004 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.3 2003-11-18 10:44:16 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.4 2004-01-23 13:27:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
 #define ZMAP_APP_PRIV_H
 
 #include <gtk/gtk.h>
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#include <libgnome/libgnome.h>
+#include <libgnomeui/libgnomeui.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 #include <ZMap/zmapManager.h>
 
 
 /* Minimum GTK version supported. */
-enum {ZMAP_GTK_MAJOR = 2, ZMAP_GTK_MINOR = 2, ZMAP_GTK_MICRO = 4} ;
+enum {ZMAP_GTK_MAJOR = 2, ZMAP_GTK_MINOR = 2, ZMAP_GTK_MICRO = 1} ;
 
 
 /* Overall application control struct. */
@@ -46,8 +55,6 @@ typedef struct
 {
   GtkWidget *app_widg ;
 
-  GtkWidget *machine_widg ;
-  GtkWidget *port_widg ;
   GtkWidget *sequence_widg ;
 
   GtkWidget *clist_widg ;
@@ -59,7 +66,7 @@ typedef struct
 
 
 /* cols in connection list. */
-enum {ZMAP_NUM_COLS = 3} ;
+enum {ZMAP_NUM_COLS = 4} ;
 
 
 

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  3 16:25 2003 (edgrif)
+ * Last edited: Jan 22 13:52 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConn.c,v 1.1 2003-11-13 15:02:12 edgrif Exp $
+ * CVS info:   $Id: zmapConn.c,v 1.2 2004-01-23 13:27:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,7 @@ gboolean zmap_thr_debug_G = TRUE ;
 
 
 
-ZMapConnection zMapConnCreate(char *machine, int port, char *sequence)
+ZMapConnection zMapConnCreate(char *machine, char *port, char *protocol, char *sequence)
 {
   ZMapConnection connection ;
   pthread_t thread_id ;
@@ -51,7 +51,8 @@ ZMapConnection zMapConnCreate(char *machine, int port, char *sequence)
   connection = g_new(ZMapConnectionStruct, sizeof(ZMapConnectionStruct)) ;
 
   connection->machine = g_strdup(machine) ;
-  connection->port = port ;
+  connection->port = atoi(port) ;
+  connection->protocol = g_strdup(protocol) ;
   connection->sequence = g_strdup(sequence) ;
 
   /* ok to just set state here because we have not started the thread yet.... */
@@ -130,9 +131,9 @@ gboolean zMapConnGetReplyWithData(ZMapConnection connection, ZMapThreadReply *st
 
 
 
-pthread_t zMapConnGetThreadid(ZMapConnection connection)
+void *zMapConnGetThreadid(ZMapConnection connection)
 {
-  return connection->thread_id ;
+  return (void *)(connection->thread_id) ;
 }
 
 /* Kill the thread by cancelling it, as this will asynchronously we cannot release the connections

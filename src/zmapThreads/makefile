@@ -15,7 +15,7 @@ APP_OBJ = zmapConn.o zmapSlave.o zmapConnutils.o
 #
 # These must all be set for the common includes to work.
 #
-CURRENT_LIB = $(ZMAP_LIB)
+CURRENT_LIB = $(ZMAPTHR_LIB)
 CURRENT_OBJ = $(APP_OBJ)
 CURRENT_DEP = $(PUB_HDRS) $(APP_PRIV_HDRS)
 CURRENT_SRC = $(APP_PRIV_HDRS) $(APP_SRC)

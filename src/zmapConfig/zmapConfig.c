@@ -25,17 +25,16 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Jan 21 18:13 2004 (edgrif)
+ * Last edited: Jan 23 10:43 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.1 2004-01-21 18:15:31 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.2 2004-01-23 13:28:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapConfig_P.h>
 
 
-
-
+/* Initialise the configuration manager. */
 ZMapConfig zMapConfigInit(char *config_file)
 {
   ZMapConfig config ;
@@ -50,21 +49,33 @@ ZMapConfig zMapConfigInit(char *config_file)
 }
 
 
-
-gboolean zMapConfigGetPorts(ZMapConfig config, char **ports)
+/* Hacked up currently, these values would in reality be extracted from a configuration file
+ * and loaded into memory which would then become a dynamic list of servers that could be
+ * added into interactively. */
+gboolean zMapConfigGetServers(ZMapConfig config, char ***servers)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
+  static char *my_servers[] = {"griffin2 20000 acedb",
+			       "griffin2 20001 acedb",
+			       "griffin2 20002 acedb",
+			       NULL} ;
 
-  /* This is just hacked for now.... */
-  static char *my_ports[] = {"griffin2 20000 acedb",
-			     "griffin2 20001 acedb",
-			     "griffin2 20002 acedb"} ;
-
-  *ports = &my_ports[0] ;
+  *servers = my_servers ;
 
   return result ;
 }
 
+
+
+/* Delete of a config, will require freeing some members of the structure. */
+void zMapConfigDelete(ZMapConfig config)
+{
+  g_free(config->config_file) ;
+
+  g_free(config) ;
+
+  return ;
+}
 
 
 /*

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 17 17:18 2003 (edgrif)
+ * Last edited: Jan 22 15:16 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.3 2003-11-18 10:44:50 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.4 2004-01-23 13:28:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,14 +37,18 @@
 #include <zmapApp_P.h>
 
 
-static void initGTK(int argc, char *argv[]) ;
+extern int TEST_GLOBAL = 0 ;
+
+
+
+static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
 static void quitCB(GtkWidget *widget, gpointer data) ;
 static void removeZmapRow(void *app_data, void *zmap) ;
 
 
-/* Overall app. debugging output. */
-gboolean zmap_debug_G = TRUE ; 
+/* Overall app. debugging output...not used currently. */
+gboolean zmapApp_debug_G = TRUE ; 
 
 
 
@@ -54,7 +58,12 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
   GtkWidget *kill_button, *quit_button ;
 
-  initGTK(argc, argv) ;					    /* May exit if checks fail. */
+  initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
+
+
+  TEST_GLOBAL = atoi(argv[1]) ;
+
+
 
   app_context = createAppContext() ;
 
@@ -105,9 +114,14 @@ void zmapExit(ZMapAppContext app_context)
  */
 
 
-static void initGTK(int argc, char *argv[])
+static void initGnomeGTK(int argc, char *argv[])
 {
   gchar *err_msg ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  GnomeProgram *prog ; 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   gtk_set_locale() ;
 
@@ -120,6 +134,22 @@ static void initGTK(int argc, char *argv[])
 
   gtk_init(&argc, &argv) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Initialize GNOME, we should have the version recorded somewhere.... plus need to look at
+   * whether we want to specify properties after argv. */
+
+  prog = gnome_program_init("ZMap", "0.0", LIBGNOMEUI_MODULE, argc, argv, GNOME_PARAM_NONE) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* This crashes, apparently because gtk is not init'd.... */
+
+  prog = gnome_program_init("ZMap", "0.0", LIBGNOME_MODULE, argc, argv, GNOME_PARAM_NONE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   return ;
 }
 
@@ -130,9 +160,7 @@ static ZMapAppContext createAppContext(void)
 
   app_context = g_new(ZMapAppContextStruct, sizeof(ZMapAppContextStruct)) ;
 
-  app_context->app_widg
-    = app_context->machine_widg = app_context->port_widg = app_context->sequence_widg
-    = app_context->clist_widg = NULL ;
+  app_context->app_widg = app_context->sequence_widg = app_context->clist_widg = NULL ;
 
   app_context->zmap_manager = zMapManagerInit(removeZmapRow, (void *)app_context) ;
   app_context->selected_zmap = NULL ;

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 17 17:33 2003 (edgrif)
+ * Last edited: Jan 22 13:57 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.2 2003-11-18 11:30:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.3 2004-01-23 13:27:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -39,8 +39,6 @@
 
 typedef struct _ZMapWindowStruct
 {
-  gchar *machine ;
-  int port ;
   gchar *sequence ;
 
   GtkWidget *toplevel ;

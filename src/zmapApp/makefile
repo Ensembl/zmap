@@ -32,23 +32,24 @@ include $(MAKE_DIR)/build.make
 # Make the application programs themselves.
 
 # ZMAP library...
-ZMAP_LIB_FLAGS = -L$(BINDIR) -lZMapApp -lZMap
+ZMAP_LIB_FLAGS = -L$(BINDIR) -lZMapApp -lZMap -lZMapThr
 
-# Ace-Conn library...
+# Ace-Conn library...This is a bit of hack really...the ACEDB_MACHINE stuff should be
+# in a separate subdir as we don't yet know what server we will be contacting....
 ACECONN_DIR = $(HOME)/acedb/CODE/Ace-Conn
 ACECONN_INCL_DIR = $(ACECONN_DIR)
-ACECONN_LIB_DIR = $(ACECONN_DIR)/bin.ALPHA_5
+ACECONN_LIB_DIR = $(ACECONN_DIR)/bin.$(ACEDB_MACHINE)
 ACECONN_LIB_FLAGS = -L$(ACECONN_LIB_DIR) -lAceConn -lmd5
 
 
 
-zmap: $(APP_CC_MAIN_OBJ) $(ZMAPAPP_LIB) $(ZMAP_LIB)
-	$(CC)  -g -pthread  -o $(BINDIR)/$@ `$(PACKAGE_CONFIG) --libs glib-2.0 gtk+-2.0` $(BINDIR)/zmapAppmain_c.o $(ZMAP_LIB_FLAGS)  $(ACECONN_LIB_FLAGS)
+zmap: $(APP_CC_MAIN_OBJ) $(ZMAPAPP_LIB) $(ZMAP_LIB) $(ZMAPTHR_LIB)
+	$(CC)  -g -pthread  -o $(BINDIR)/$@ $(BINDIR)/zmapAppmain_c.o $(LDFLAGS) $(ZMAP_LIB_FLAGS)  $(ACECONN_LIB_FLAGS) $(GNOME_LIBS) $(GTK_LIBS)
 	@echo 'zmap (C version) make...'
 
-#	$(CC)  -g -pthread  -o $(BINDIR)/$@ `gtk-config --libs` $(BINDIR)/zmapAppmain_c.o $(ZMAP_LIB_FLAGS)  $(ACECONN_LIB_FLAGS)
+#	$(CC)  -g -pthread  -o $(BINDIR)/$@ `gtk-config --libs` $(BINDIR)/zmapAppmain_c.o $(ZMAP_LIB_FLAGS) $(ACECONN_LIB_FLAGS) $(GNOME_LIBS) $(GTK_LIBS)
 #	@echo 'zmap (C version) make...'
 
-zmapC: $(APP_CCC_MAIN_OBJ) $(ZMAPAPP_LIB) $(ZMAP_LIB)
-	$(CCC)  -g -pthread  -o $(BINDIR)/$@ `gtk-config --libs` $(BINDIR)/zmapAppmain_c.o $(ZMAP_LIB_FLAGS)  $(ACECONN_LIB_FLAGS)
+zmapC: $(APP_CCC_MAIN_OBJ) $(ZMAPAPP_LIB) $(ZMAP_LIB) $(ZMAPTHR_LIB)
+	$(CCC)  -g -pthread  -o $(BINDIR)/$@ $(BINDIR)/zmapAppmain_c.o $(LDFLAGS) $(ZMAP_LIB_FLAGS) $(ACECONN_LIB_FLAGS) $(GNOME_LIBS) $(GTK_LIBS)
 	@echo 'zmap (C++ version) make...'

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 17 14:58 2003 (edgrif)
+ * Last edited: Jan 22 15:20 2004 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.3 2003-11-18 10:44:16 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.4 2004-01-23 13:27:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,37 +46,13 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *entry, *label, *create_button ;
 
-  frame = gtk_frame_new( "New Connection" );
+  frame = gtk_frame_new( "New ZMap" );
   gtk_frame_set_label_align( GTK_FRAME( frame ), 0.0, 0.0 );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
 
   topbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(topbox), 5);
   gtk_container_add (GTK_CONTAINER (frame), topbox);
-
-  hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_border_width(GTK_CONTAINER(hbox), 5);
-  gtk_box_pack_start(GTK_BOX(topbox), hbox, FALSE, FALSE, 0) ;
-
-  label = gtk_label_new( "Machine:" ) ;
-  gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0) ;
-
-  app_context->machine_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(hbox), entry, FALSE, FALSE, 0) ;
-
-  hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_border_width(GTK_CONTAINER(hbox), 5);
-  gtk_box_pack_start(GTK_BOX(topbox), hbox, FALSE, FALSE, 0) ;
-
-  label = gtk_label_new( "Port:" ) ;
-  gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0) ;
-
-  app_context->port_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(hbox), entry, FALSE, FALSE, 0) ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -90,7 +66,7 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(hbox), entry, FALSE, FALSE, 0) ;
 
-  create_button = gtk_button_new_with_label("Create Thread") ;
+  create_button = gtk_button_new_with_label("Create ZMap") ;
   gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
 		     GTK_SIGNAL_FUNC(createThreadCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(topbox), create_button, FALSE, FALSE, 0) ;
@@ -108,33 +84,27 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
 static void createThreadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
-  char *machine ;
-  char *port_str ;
-  int port ;
   char *sequence ;
   char *row_text[ZMAP_NUM_COLS] = {"", "", ""} ;
   int row ;
   ZMap zmap ;
 
-  machine = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->machine_widg)) ;
-  port_str = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->port_widg)) ;
-  port = atoi(port_str) ;
   sequence = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->sequence_widg)) ;
 
-
-  zmap = zMapManagerAdd(app_context->zmap_manager, machine, port, sequence) ;
+  zmap = zMapManagerAdd(app_context->zmap_manager, sequence) ;
   /* ERROR HANDLING ETC.... */
 
-  row_text[0] = machine ;
-  row_text[1] = port_str ;
-  row_text[2] = sequence ;
+  row_text[0] = zMapGetZMapID(zmap) ;
+  row_text[1] = zMapGetSequence(zmap) ;
+  row_text[2] = zMapGetZMapStatus(zmap) ;
+  row_text[3] = "rubbish" ;
 
   row = gtk_clist_append(GTK_CLIST(app_context->clist_widg), row_text) ;
   gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, (gpointer)zmap) ;
 
 
-  ZMAP_DEBUG(("GUI: create thread number %d to access: %s on port %d\n",
-		  (row + 1), machine ? machine : "localhost", port)) ;
+  ZMAP_DEBUG(("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
+		  (row + 1), row_text[0], row_text[1])) ;
 
   return ;
 }
