@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Mar 18 13:44 2005 (edgrif)
+ * Last edited: Mar 31 13:35 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.6 2005-03-23 07:57:37 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.7 2005-04-05 14:33:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,19 +55,42 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 
 
-
 /* This function creates a unique id for a feature. This is essential if we are to use the
- * g_datalist package to hold and reference features. Code should _ONLY_ use this function
- * to produce these IDs. */
-char *zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
-			  int start, int end, int query_start, int query_end)
+ * g_datalist package to hold and reference features. Code should _ALWAYS_ use this function
+ * to produce these IDs.
+ * Caller must g_free() returned string when finished with. */
+char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature,
+			    ZMapStrand strand, int start, int end, int query_start, int query_end)
 {
-  char *feature_id = NULL ;
+  char *feature_name = NULL ;
 
-  if (feature_type == ZMAPFEATURE_HOMOL)
-    feature_id = g_strdup_printf("%s.%d-%d-%d-%d", feature_name, start, end, query_start, query_end) ;
-  else
-    feature_id = g_strdup_printf("%s.%d-%d", feature_name, start, end) ;
+  if (zMapFeatureSetCoords(strand, &start, &end, &query_start, &query_end))
+    {
+      if (feature_type == ZMAPFEATURE_HOMOL)
+	feature_name = g_strdup_printf("%s.%d-%d-%d-%d", feature,
+				       start, end, query_start, query_end) ;
+      else
+	feature_name = g_strdup_printf("%s.%d-%d", feature, start, end) ;
+    }
+
+  return feature_name ;
+}
+
+
+/* Like zMapFeatureCreateName() but returns a quark representing the feature name. */
+GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature,
+			   ZMapStrand strand, int start, int end,
+			   int query_start, int query_end)
+{
+  GQuark feature_id = 0 ;
+  char *feature_name ;
+
+  if ((feature_name = zMapFeatureCreateName(feature_type, feature, strand, start, end,
+					    query_start, query_end)))
+    {
+      feature_id = g_quark_from_string(feature_name) ;
+      g_free(feature_name) ;
+    }
 
   return feature_id ;
 }
@@ -81,7 +104,7 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
 {
   gboolean result = FALSE ;
 
-  if (strand == ZMAPSTRAND_UP)
+  if (strand == ZMAPSTRAND_REVERSE)
     {
       if ((start && end) && start > end)
 	{
@@ -107,6 +130,49 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
 
   return result ;
 }
+
+
+
+ZMapFeature zMapFeatureFindFeatureInContext(ZMapFeatureContext feature_context,
+					    GQuark type_id, GQuark feature_id)
+{
+  ZMapFeature feature = NULL ;
+  ZMapFeatureSet feature_set ;
+
+  if ((feature_set = (ZMapFeatureSet)g_datalist_id_get_data(&(feature_context->feature_sets), type_id)))
+    {
+      feature = (ZMapFeature)g_datalist_id_get_data(&(feature_set->features), feature_id) ;
+    }
+
+  return feature ;
+}
+
+
+
+ZMapFeature zMapFeatureFindFeatureInSet(ZMapFeatureSet feature_set, GQuark feature_id)
+{
+  ZMapFeature feature ;
+
+  feature = (ZMapFeature)g_datalist_id_get_data(&(feature_set->features), feature_id) ;
+
+  return feature ;
+}
+
+
+GData *zMapFeatureFindSetInContext(ZMapFeatureContext feature_context, GQuark set_id)
+{
+  GData *features = NULL ;
+  ZMapFeatureSet feature_set ;
+
+  if ((feature_set = g_datalist_id_get_data(&(feature_context->feature_sets), set_id)))
+    features = feature_set->features ;
+
+  return features ;
+}
+
+
+
+
 
 
 /* Dump out a feature context, if file is NULL then goes to stdout. */
@@ -253,7 +319,7 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   if (!dump_features->status)
     return ;
 
-  line = g_strdup_printf("\tFeature Set:\t%s\n", feature_set->source) ;
+  line = g_strdup_printf("\tFeature Set:\t%s\n", g_quark_to_string(feature_set->unique_id)) ;
 
   /* Only proceed if there's no problem printing the line */
   if ((dump_features->status = printLine(dump_features->channel, line)))
@@ -285,15 +351,14 @@ static void printFeature(GQuark key_id, gpointer data, gpointer user_data)
   strand = zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM);
   phase  = zmapFeatureLookUpEnum(feature->phase, PHASE_ENUM);
   
-  g_string_printf(line, "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%f", 
+  g_string_printf(line, "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%f", 
 		  (char *)g_quark_to_string(key_id),
 		  feature->db_id,
-		  feature->name,
+		  (char *)g_quark_to_string(feature->original_id),
 		  type,
 		  feature->x1,
 		  feature->x2,
-		  feature->method,
-		  feature->method_name,
+		  (char *)g_quark_to_string(feature->style),
 		  strand,
 		  phase,
 		  feature->score) ;
