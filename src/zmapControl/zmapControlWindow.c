@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Nov  4 10:59 2004 (edgrif)
+ * Last edited: Dec 15 15:08 2004 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.12 2004-11-04 12:42:16 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.13 2004-12-20 10:55:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,7 @@ static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 gboolean zmapControlWindowCreate(ZMap zmap)
 {
   gboolean result = TRUE ;
-  GtkWidget *toplevel, *vbox, *menubar, *button_frame;
+  GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box ;
 
   zmap->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
@@ -65,11 +65,18 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   menubar = zmapControlWindowMakeMenuBar(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
 
-  button_frame = zmapControlWindowMakeButtons(zmap) ;
-  gtk_box_pack_start(GTK_BOX(vbox), button_frame, FALSE, TRUE, 0);
+  frame = gtk_frame_new(NULL);
+  gtk_container_border_width(GTK_CONTAINER(frame), 5);
+  gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, TRUE, 0);
+
+  controls_box = gtk_vbox_new(FALSE, 0) ;
+  gtk_container_add(GTK_CONTAINER(frame), controls_box) ;
+
+  button_box = zmapControlWindowMakeButtons(zmap) ;
+  gtk_box_pack_start(GTK_BOX(controls_box), button_box, FALSE, TRUE, 0);
 
   zmap->info_panel = gtk_entry_new();
-  gtk_box_pack_start(GTK_BOX(vbox), zmap->info_panel, FALSE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(controls_box), zmap->info_panel, FALSE, TRUE, 0);
 
   zmap->navview_frame = zmapControlWindowMakeFrame(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), zmap->navview_frame, TRUE, TRUE, 0);
