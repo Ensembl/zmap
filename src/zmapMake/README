@@ -1,0 +1,57 @@
+================================================================================   
+ZMapMake
+
+Contains the make include file that has all the common macros, rules, etc.
+
+Also contains some platform dependent make include files which define stuff
+like the compiler/options etc.
+
+
+Adding a new platform definition file
+-------------------------------------
+
+Copy the file platform.TEMPLATE to a new file in this directory using the following
+naming convention:
+
+		platform.PPPPPP_NN
+
+		"platform" = compulsory prefix
+		    PPPPPP = platform name
+		        NN = platform operating system release
+
+e.g.    platform.alpha_5
+
+Set up any make MACRO values you may need to, e.g. CC = gcc and then make sure
+you set the environment variable ZMAP_PLATFORM to be "PPPPPP" from above.
+
+
+Adding a new directory to the make system
+-----------------------------------------
+
+Add the new directory to ZMap/src and then copy the file makefile.TEMPLATE
+to the new directory.
+
+Fill in all your macros but then make sure to fill in the CURRENT_xxx macros
+with values for your directory.
+
+The value of CURRENT_LIB should be either:
+
+	ZMAPAPP_LIB for code that is part of the client application but _not_
+		part of the ZMap code.
+
+	ZMAP_LIB for code that is part of the ZMap code.
+
+If you don't understand what this means then you need to ask !
+
+CURRENT_OBJ is a list of the all the .o files you want compiled
+
+CURRENT_DEP is a list of all the files the .o depend on.
+
+CURRENT_SRC is a list of all the source files (.c and .h) you want linked
+into the bin directory.
+
+
+Note that you should not need to alter the code that sets ROOT_DIRECTORY and
+includes the build make defines unless you create subdirectories within the
+directory which you have just created. See zmapServer for an example of how
+to set up the make in this case.

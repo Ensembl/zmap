@@ -1,0 +1,37 @@
+#
+# for the alpha
+#
+
+
+#
+# compile/include/link macros
+#
+CC_COMMON = -DALPHA -g -pthread  $(INCLUDE_DIRS)
+
+CC = cc
+CFLAGS = -std $(CC_COMMON)   -msg_enable level3
+
+# C++ stuff.... -x makes sure DEC C++ compiler will use nnn.H files as C++ headers.
+CCC = cxx
+CCFLAGS = -x cxx $(CC_COMMON)
+
+
+# Set the posix alpha make, the normal one does _not_ support .c.a rules correctly.
+#MAKE = /usr/bin/posix/make
+MAKE = gmake
+
+TEST = /bin/test
+
+#PACKAGE_CONFIG = /nfs/disk100/acedb/gtk2/bin/pkg-config
+PACKAGE_CONFIG = /nfs/disk100/acedb/gtk2ins-canvas/bin/pkg-config
+
+GNOME_CONFIG = $(PACKAGE_CONFIG)
+#GNOME_CONFIG = 
+
+
+#LDFLAGS = -rpath '/nfs/disk100/acedb/gtk2/lib'
+LDFLAGS = -rpath '/nfs/disk100/acedb/gtk2ins-canvas/lib'
+
+
+# Need to make sure we get a threaded build version of the socket server stuff....
+ACEDB_MACHINE = ALPHA_5_THR

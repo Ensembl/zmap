@@ -1,0 +1,26 @@
+#
+# for the alpha
+#
+
+#
+# compile/include/link macros
+#
+CC_COMMON = -DLINUX -g -pthread  $(INCLUDE_DIRS)
+
+CC = gcc
+CFLAGS =  $(CC_COMMON)
+
+
+CCC = g++
+CCFLAGS = $(CC_COMMON)
+
+
+# Set make, test explicitly.
+MAKE = make
+
+TEST = /usr/bin/test
+
+PACKAGE_CONFIG = pkg-config
+
+GNOME_CONFIG = pkg-config
+
