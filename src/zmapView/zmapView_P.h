@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul 13 16:14 2004 (edgrif)
+ * Last edited: Jul 15 11:19 2004 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.5 2004-07-14 09:16:47 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.6 2004-07-15 15:13:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -47,6 +47,9 @@ typedef struct _ZMapViewStruct
 {
   ZMapViewState state ;
 
+  void *app_data ;					    /* Passed back to caller from view
+							       callbacks. */
+
   gchar *sequence ;
 
   guint idle_handle ;
@@ -57,11 +60,9 @@ typedef struct _ZMapViewStruct
 
   GList *connection_list ;
 
-  void *app_data ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapViewCallbackFunc app_destroy_cb ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  /* The features....needs thought as to how this updated/constructed..... */
+  ZMapFeatureContext features ;
 
 
   ZMapRegion  *zMapRegion; /* the region holding all the SEGS - may be redundant*/
