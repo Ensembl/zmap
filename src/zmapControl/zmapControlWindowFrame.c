@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 15 15:32 2004 (edgrif)
+ * Last edited: Jan  7 12:17 2005 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.13 2004-12-20 10:58:08 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.14 2005-01-07 12:17:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,6 +36,8 @@
 
 
 static void createNavViewWindow(ZMap zmap, GtkWidget *parent) ;
+
+static void valueCB(void *user_data, double start, double end) ;
 
 
 GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
@@ -46,6 +48,8 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
 
   createNavViewWindow(zmap, frame) ;
+
+  zmapControlNavigatorSetWindowCallback(zmap->navigator, valueCB, (void *)zmap) ;
 
   return frame ;
 }
@@ -86,4 +90,17 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 }
 
 
+/* Gets called by navigator when user has moved window locator scroll bar. */
+static void valueCB(void *user_data, double start, double end)
+{
+  ZMap zmap = (ZMap)user_data ;
 
+  if (zmap->state == ZMAP_VIEWS)
+    {
+      ZMapWindow window = zMapViewGetWindow(zmap->focuspane->curr_view_window) ;
+
+      zMapWindowMove(window, start, end) ;
+    }  
+
+  return ;
+}
