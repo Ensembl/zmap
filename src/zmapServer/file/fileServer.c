@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb  2 13:48 2005 (edgrif)
+ * Last edited: Feb  3 10:24 2005 (rds)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.11 2005-02-02 14:35:58 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.12 2005-02-03 10:28:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -147,7 +147,7 @@ static ZMapServerResponseType openConnection(void *server_in)
 static ZMapServerResponseType setContext(void *server_in, char *sequence,
 					 int start, int end, GData *types)
 {
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ; ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_in ;
 
   server->sequence = g_strdup(sequence) ;
