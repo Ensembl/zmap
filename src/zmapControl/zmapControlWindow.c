@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Aug 18 09:38 2004 (rnc)
+ * Last edited: Sep 20 11:25 2004 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.9 2004-08-18 14:59:57 rnc Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.10 2004-09-20 10:31:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -101,7 +101,12 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
 
+  /* this is hacky, I don't like this, if we don't do this then end up trying to kill a
+   * non-existent top level window because gtk already seems to have done this...  */
+  zmap->toplevel = NULL ;
+
   zmapControlTopLevelKillCB(zmap) ;
+
 
   return ;
 }
@@ -154,23 +159,5 @@ gboolean zMapDisplay(ZMap        zmap,
 
 	      
  
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* THIS PROBABLY NEEDS TO BE REWRITTEN AND PUT IN ZMAPDRAW.C, THE WHOLE CONCEPT OF GRAPHHEIGHT IS
- * ALMOST CERTAINLY DEFUNCT NOW....... */
-
-/* Not entirely convinced this is the right place for these
-** public functions accessing private structure members
-*/
-int zMapWindowGetHeight(ZMapWindow window)
-{
-  return zmap->focuspane->graphHeight;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
