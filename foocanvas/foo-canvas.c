@@ -1,4 +1,4 @@
-/*  Last edited: Feb 11 16:31 2005 (rds) */
+/*  Last edited: Feb 14 15:23 2005 (rds) */
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: 8; c-basic-offset: 8 -*- */
 /*
  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
@@ -4017,3 +4017,11 @@ foo_canvas_item_class_init (FooCanvasItemClass *class)
                                        FOO_TYPE_CANVAS_ITEM,
                                        foo_canvas_item_accessible_factory_get_type ());
 }
+
+void 
+foo_canvas_zmap()
+{
+  // do nothing
+}
+
+/*  Last edited: Feb 14 15:21 2005 (rds) */

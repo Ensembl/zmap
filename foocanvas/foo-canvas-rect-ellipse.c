@@ -1,4 +1,4 @@
-/*  Last edited: Feb 11 16:27 2005 (rds) */
+/*  Last edited: Feb 25 11:09 2005 (rds) */
 /*
  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
  * All rights reserved.
@@ -1167,9 +1167,6 @@ foo_canvas_rect_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, gint 
 
 	foo_canvas_w2c (item->canvas, x1, y1, &cx1, &cy1);
 	foo_canvas_w2c (item->canvas, x2, y2, &cx2, &cy2);
-
-	if (cy1 >= cy2) foo_canvas_item_hide(item); 
-	else foo_canvas_item_show(item);
 
 	update_rect = make_rect (cx1, cy1, cx2+1, cy2+1);
 #if 0
