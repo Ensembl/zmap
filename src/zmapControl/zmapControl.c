@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Nov  4 14:32 2004 (rnc)
+ * Last edited: Nov 11 15:26 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.36 2004-11-08 10:21:14 rnc Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.37 2004-11-12 11:52:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,10 +36,8 @@
 
 #include <gtk/gtk.h>
 #include <ZMap/zmapView.h>
-#include <ZMap/zmapConfig.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapControl_P.h>
-#include <ZMap/zmapFeature.h>
 
 
 

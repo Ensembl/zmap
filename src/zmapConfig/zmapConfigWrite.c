@@ -25,14 +25,13 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: Jun 23 15:17 2004 (edgrif)
+ * Last edited: Nov 11 15:26 2004 (edgrif)
  * Created: Thu Apr  1 14:37:42 2004 (edgrif)
- * CVS info:   $Id: zmapConfigWrite.c,v 1.2 2004-06-25 13:37:50 edgrif Exp $
+ * CVS info:   $Id: zmapConfigWrite.c,v 1.3 2004-11-12 11:53:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
