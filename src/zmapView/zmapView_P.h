@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul 20 10:42 2004 (edgrif)
+ * Last edited: Sep 15 14:42 2004 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.8 2004-07-20 09:51:04 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.9 2004-09-17 08:36:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -50,7 +50,10 @@ typedef struct _ZMapViewStruct
   void *app_data ;					    /* Passed back to caller from view
 							       callbacks. */
 
+  /* This specifies the "context" of the view, i.e. which section of virtual sequence we are
+   * interested in. */
   gchar *sequence ;
+  int start, end ;
 
   guint idle_handle ;
 

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep 13 17:19 2004 (rnc)
+ * Last edited: Sep 16 16:18 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.20 2004-09-14 09:32:01 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.21 2004-09-17 08:36:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -35,15 +35,10 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfig.h>
 #include <ZMap/zmapConn.h>
+#include <ZMap/zmapProtocol.h>
 #include <ZMap/zmapWindow.h>
 #include <zmapView_P.h>
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* ZMap debugging output. */
-gboolean zmap_debug_G = TRUE ; 
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 static ZMapView createZMapView(char *sequence, void *app_data) ;
@@ -62,7 +57,7 @@ static void startStateConnectionChecking(ZMapView zmap_view) ;
 static void stopStateConnectionChecking(ZMapView zmap_view) ;
 static gboolean checkStateConnections(ZMapView zmap_view) ;
 
-static void loadDataConnections(ZMapView zmap_view, char *sequence) ;
+static void loadDataConnections(ZMapView zmap_view) ;
 
 static void killZMapView(ZMapView zmap_view) ;
 static void killGUI(ZMapView zmap_view) ;
@@ -76,7 +71,7 @@ static void killWindows(ZMapView zmap_view) ;
 
 static void freeContext(ZMapFeatureContext feature_context) ;
 
-
+static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any) ;
 
 /* debugging... */
 static void methodPrintFunc(GQuark key_id, gpointer data, gpointer user_data) ;
@@ -120,8 +115,8 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
   view_cbs_G = g_new0(ZMapViewCallbacksStruct, 1) ;
 
   view_cbs_G->load_data = callbacks->load_data ;
-  view_cbs_G->click     = callbacks->click ;
-  view_cbs_G->destroy   = callbacks->destroy ;
+  view_cbs_G->click = callbacks->click ;
+  view_cbs_G->destroy = callbacks->destroy ;
 
 
   /* Init windows.... */
@@ -267,7 +262,8 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 				 "Found \"server\" stanza without valid \"host\" or \"protocol\", "
 				 "stanza was ignored.") ;
 		}
-	      if ((connection = zMapConnCreate(machine, port, protocol, zmap_view->sequence)))
+	      if ((connection = zMapConnCreate(machine, port, protocol,
+					       zmap_view->sequence, zmap_view->start, zmap_view->end)))
 		{
 		  zmap_view->connection_list = g_list_append(zmap_view->connection_list, connection) ;
 		  connections++ ;
@@ -306,23 +302,14 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 
 
 /* Signal threads that we want data to stick into the ZMap */
-gboolean zMapViewLoad(ZMapView zmap_view, char *sequence)
+gboolean zMapViewLoad(ZMapView zmap_view)
 {
   gboolean result = FALSE ;
 
   /* Perhaps we should return a "wrong state" warning here.... */
   if (zmap_view->state == ZMAPVIEW_RUNNING)
     {
-      /* THIS IS NOT NEARLY ENOUGH...NEED TO FREE ANY PREVIOUS SEQUENCE.... */
-
-      if (sequence && *sequence)
-	{
-	  if (zmap_view->sequence)
-	    g_free(zmap_view->sequence) ;
-	  zmap_view->sequence = g_strdup(sequence) ;
-	}
-
-      loadDataConnections(zmap_view, zmap_view->sequence) ;
+      loadDataConnections(zmap_view) ;
 
       result = TRUE ;
     }
@@ -564,7 +551,7 @@ static void zmapWindowCB(void *cb_data, int reason)
     {
       debug = "ZMAP_WINDOW_LOAD" ;
 
-      zMapViewLoad(zmap_view, "") ;
+      zMapViewLoad(zmap_view) ;
     }
   else if (window_cmd == ZMAP_WINDOW_STOP)
     {
@@ -638,6 +625,11 @@ static ZMapView createZMapView(char *sequence, void *app_data)
   zmap_view->state = ZMAPVIEW_INIT ;
 
   zmap_view->sequence = g_strdup(sequence) ;
+
+  /* Ok, we just default to whole sequence for now, in the end user must be able to specify
+   * this...... */
+  zmap_view->start = 1 ;
+  zmap_view->end = 0 ;
 
   zmap_view->parent_widget = NULL ;
 
@@ -737,6 +729,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+	  /* NOTE HOW THE FACT THAT WE KNOW NOTHING ABOUT WHERE THIS DATA CAME FROM
+	   * MEANS THAT WE SHOULD BE PASSING A HEADER WITH THE DATA SO WE CAN SAY WHERE
+	   * THE INFORMATION CAME FROM AND WHAT SORT OF REQUEST IT WAS.....ACTUALLY WE
+	   * GET A LOT OF INFO FROM THE CONNECTION ITSELF, E.G. SERVER NAME ETC. */
+
 	  data = NULL ;
 	  err_msg = NULL ;
 	  if (!(zMapConnGetReplyWithData(connection, &reply, &data, &err_msg)))
@@ -762,54 +759,33 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		{
 		  if (zmap_view->state == ZMAPVIEW_RUNNING)
 		    {
-		      ZMapFeatureContext new_features = NULL ;
+		      ZMapProtocolAny req_any = (ZMapProtocolAny)data ;
 
 		      zMapDebug("GUI: thread %x, got data\n",
 				zMapConnGetThreadid(connection)) ;
 
-		      /* Is this right....????? check my logic here....  */
+		      /* Reset the reply from the slave. */
 		      zMapConnSetReply(connection, ZMAP_REPLY_WAIT) ;
 		  
 
-		      /* Note gross assumption here that data is features, in the end we may
-		       * be getting different sorts of data back..... */
-
-
-		      /* What we really need to do is to merge the data here.......
-		       * for now we just set the pointer...
-		       * 
-		       * This should be a call to a merge function which merges new data
-		       * with existing data.....
-		       *  */
-		      new_features = (ZMapFeatureContext)data ;
-
-		      /* NOTE HOW THE FACT THAT WE KNOW NOTHING ABOUT WHERE THIS DATA CAME FROM
-		       * MEANS THAT WE NEED TO PASS A HEADER WITH THE DATA SO WE CAN SAY WHERE
-		       * THE INFORMATION CAME FROM AND WHAT SORT OF REQUEST IT WAS..... */
-		      /* Merge new data with existing data (if any). */
-		      if (!zmapViewMergeFeatures(&(zmap_view->features), new_features))
-			zMapLogCritical("%s", "Cannot merge feature data from....") ;
-		      else
+		      /* Process the different types of data coming back. */
+		      switch (req_any->request)
 			{
-			  /* We should free the new_features context here.... */
+			case ZMAP_PROTOCOLREQUEST_SEQUENCE:
+			  {
+			    getFeatures(zmap_view, req_any) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-			  freeContext(new_features) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+			    break ;
+			  }
+			default:
+			  {	  
+			    zMapLogFatal("Unknown request type: %d", req_any->request) ; /* Exit appl. */
+			    break ;
+			  }
 			}
 
-
-		      /* Signal the ZMap that there is work to be done. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      displayDataWindows(zmap_view, data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-		      displayDataWindows(zmap_view, (void *)(zmap_view->features)) ;
-
-		      /* signal our caller that we have data. */
-		      (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data) ;
-
+		      /* Free the request block. */
+		      g_free(data) ;
 		    }
 		  else
 		    zMapDebug("GUI: thread %x, got data but ZMap state is - %s\n",
@@ -820,6 +796,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		{
 		  if (err_msg)
 		    zMapWarning("%s", err_msg) ;
+
+		  /* Reset the reply from the slave. */
+		  zMapConnSetReply(connection, ZMAP_REPLY_WAIT) ;
 
 		  /* This means the request failed for some reason. */
 		  zMapDebug("GUI: thread %x, request to server failed....\n",
@@ -885,6 +864,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	       * reset state to init and we should return an error here....(but how ?), we 
 	       * should not be outputting messages....I think..... */
 	      zMapWarning("%s", "Cannot show ZMap because server connections have all died") ;
+
+	      /* THIS IMPLIES WE NEED A "RESET" BUTTON WHICH IS NOT IMPLEMENTED AT THE MOMENT...
+	       * PUT SOME THOUGHT INTO THIS.... */
+
 	      
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      killGUI(zmap_view) ;
@@ -894,9 +877,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	      /* need to reset here..... */
 
 	    }
-
 	  /* I don't think the "else" should be possible......so perhaps we should fail if that
 	   * happens..... */
+
 	  zmap_view->state = ZMAPVIEW_INIT ;
 	}
       else if (zmap_view->state == ZMAPVIEW_RESETTING)
@@ -929,7 +912,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 }
 
 
-static void loadDataConnections(ZMapView zmap_view, char *sequence)
+static void loadDataConnections(ZMapView zmap_view)
 {
 
   if (zmap_view->connection_list)
@@ -941,11 +924,15 @@ static void loadDataConnections(ZMapView zmap_view, char *sequence)
       do
 	{
 	  ZMapConnection connection ;
+	  ZMapProtocoltGetFeatures req_features ;
 
- 	  connection = list_item->data ;
+	  connection = list_item->data ;
 
-	  /* ERROR HANDLING..... */
-	  zMapConnLoadData(connection, sequence) ;
+	  /* Need to construct a request to do the load of data, no longer need sequence here... */
+	  req_features = g_new0(ZMapProtocolGetFeaturesStruct, 1) ;
+	  req_features->request = ZMAP_PROTOCOLREQUEST_SEQUENCE ;
+
+	  zMapConnRequest(connection, req_features) ;
 
 	} while ((list_item = g_list_next(list_item))) ;
     }
@@ -1113,6 +1100,45 @@ static void freeContext(ZMapFeatureContext feature_context)
 
   return ;
 }
+
+
+
+static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any)
+{
+  ZMapProtocoltGetFeatures feature_req = (ZMapProtocoltGetFeatures)req_any ;
+  ZMapFeatureContext new_features = NULL ;
+
+  /* Merge new data with existing data (if any). */
+  new_features = feature_req->feature_context_out ;
+
+  if (!zmapViewMergeFeatures(&(zmap_view->features), new_features))
+    zMapLogCritical("%s", "Cannot merge feature data from....") ;
+  else
+    {
+      /* We should free the new_features context here....actually better
+       * would to have a "free" flag on the above merge call. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      freeContext(new_features) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
+  /* Signal the ZMap that there is work to be done. */
+  displayDataWindows(zmap_view, (void *)(zmap_view->features)) ;
+
+  /* signal our caller that we have data. */
+  (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data) ;
+
+  return ;
+}
+
+
+
+
+
+
+
 
 
 
