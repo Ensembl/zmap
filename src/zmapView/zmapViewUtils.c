@@ -27,9 +27,9 @@
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
  * HISTORY:
- * Last edited: Oct 18 10:34 2004 (edgrif)
+ * Last edited: Jan 20 16:49 2005 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.2 2004-10-18 10:15:46 edgrif Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.3 2005-01-24 11:50:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,18 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConn.h>
 #include <zmapView_P.h>
+
+
+void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom)
+{
+  zMapAssert(view_window && top && bottom) ;
+
+  zMapWindowGetVisible(view_window->window, top, bottom) ;
+
+  return ;
+}
+
+
 
 void zmapViewBusy(ZMapView zmap_view, gboolean busy)
 {
