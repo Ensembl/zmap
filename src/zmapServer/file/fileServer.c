@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Oct 13 14:39 2004 (edgrif)
+ * Last edited: Nov  8 16:29 2004 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.4 2004-10-14 10:18:51 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.5 2004-11-09 14:41:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -156,6 +156,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext c
   server->sequence = g_strdup(context->sequence) ;
   server->start = context->start ;
   server->end = context->end ;
+  server->types = context->types ;
 
   return result ;
 }
@@ -184,7 +185,7 @@ static ZMapServerResponseType request(void *server_in, ZMapFeatureContext *featu
   gff_line = g_string_sized_new(2000) ;		    /* Probably not many lines will be >
 						       2k chars. */
 
-  parser = zMapGFFCreateParser(parse_only) ;
+  parser = zMapGFFCreateParser(server->types, parse_only) ;
 
   while ((status = g_io_channel_read_line_string(server->gff_file, gff_line, &terminator_pos,
 						 &server->gff_file_err)) == G_IO_STATUS_NORMAL)
