@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct 14 09:46 2004 (edgrif)
+ * Last edited: Oct 18 12:50 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.13 2004-10-14 10:18:54 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.14 2004-10-18 13:03:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -418,7 +418,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
       char *next_line ;
       ZMapReadLine line_reader ;
       gboolean inplace = TRUE ;
-
+      char *first_error = NULL ;
 
       line_reader = zMapReadLineCreate((char *)reply, inplace) ;
 
@@ -433,10 +433,21 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
 	      /* If the readline fails it may be because of an error or because its reached the
 	       * end, if next_line is empty then its reached the end. */
 	      if (*next_line)
-		server->last_err_msg = g_strdup_printf("Request from server contained incomplete line: %s",
-						       next_line) ;
+		{
+		  server->last_err_msg = g_strdup_printf("Request from server contained incomplete line: %s",
+							 next_line) ;
+		  if (!first_error)
+		    first_error = next_line ;		    /* Remember first line for later error
+							       message.*/
+		}
 	      else
-		server->last_err_msg = g_strdup_printf("%s", "No GFF found in server reply.") ;
+		{
+		  if (first_error)
+		    server->last_err_msg = g_strdup_printf("No GFF found in server reply,"
+							   "but did find: \"%s\"", first_error) ;
+		  else
+		    server->last_err_msg = g_strdup_printf("%s", "No GFF found in server reply.") ;
+		}
 
 	      zMapLogCritical("%s", server->last_err_msg) ;
 	    }
@@ -451,6 +462,10 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
 		  server->last_err_msg = g_strdup_printf("Bad GFF line: %s",
 							 next_line) ;
 		  zMapLogCritical("%s", server->last_err_msg) ;
+
+		  if (!first_error)
+		    first_error = next_line ;		    /* Remember first line for later error
+							       message.*/
 		}
 	    }
 	}
