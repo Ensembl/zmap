@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: May  7 10:15 2004 (edgrif)
+ * Last edited: May  7 10:42 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.6 2004-05-07 09:21:02 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.7 2004-05-07 09:43:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -292,7 +292,7 @@ ZMapConfig zMapConfigCreateFromFile(char *config_dir, char *config_file)
   /* Get the config directory (may have to create one). */
   if (status)
     {
-      if (!(config->config_dir = zMapGetControlFileDir(directory)))
+      if (!(config->config_dir = zMapGetControlFileDir((char *)directory)))
 	{
 	  status = FALSE ;
 	}
