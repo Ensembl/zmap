@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Sep 13 09:13 2004 (edgrif)
+ * Last edited: Sep 29 15:29 2004 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.8 2004-09-13 12:50:13 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.9 2004-09-29 16:37:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -107,7 +107,7 @@ char *zMapGetAppTitle(void) ;
 int zMapGetVersion(void) ;
 char *zMapGetVersionString(void) ;
 char *zMapGetCopyrightString(void) ;
-
+char *zMapGetTimeString(void) ;
 
 
 

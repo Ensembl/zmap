@@ -26,11 +26,14 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Sep 17 09:26 2004 (edgrif)
+ * Last edited: Sep 29 15:27 2004 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.4 2004-09-17 08:33:34 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.5 2004-09-29 16:37:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
+
+#include <time.h>
+#include <string.h>
 
 #include <zmapUtils_P.h>
 
@@ -139,6 +142,34 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
 
   return ;
 }
+
+
+/* Just gets the time now but could be altered to more generally get any time and the time now
+ * by default....for now just gets the current time.
+ * Returns NULL if fails, time string if not, caller should free string with g_free() when not
+ * needed any more. */
+char *zMapGetTimeString(void)
+{
+  char *time_str = NULL ;
+  time_t now ;
+  char *chartime = NULL ;
+
+  now = time((time_t *)NULL) ;
+  chartime = ctime(&now) ;
+
+  /* ctime() returns time with a newline on the end..sigh, we remove the newline. */
+  if (chartime)
+    {
+      time_str = g_strdup(chartime) ;
+
+      *(time_str + strlen(time_str) - 1) = '\0' ;
+    }
+
+  return time_str ;
+}
+
+
+
 
 /*! @} end of zmaputils docs. */
 

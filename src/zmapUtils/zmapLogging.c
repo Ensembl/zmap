@@ -25,13 +25,15 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Jul 20 09:41 2004 (edgrif)
+ * Last edited: Sep 29 17:15 2004 (edgrif)
  * Created: Thu Apr 29 14:59:37 2004 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.5 2004-07-20 08:47:43 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.6 2004-09-29 16:37:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
+#include <sys/param.h>					    /* MAXHOSTNAMLEN */
+#include <unistd.h>					    /* for pid stuff. */
 
 #include <glib.h>
 #include <ZMap/zmapConfig.h>
@@ -57,12 +59,18 @@ typedef struct
 
 typedef struct  _ZMapLogStruct
 {
-  GMutex*  log_lock ;
+  GMutex*  log_lock ;					    /* Ensure only single threading in log
+							       handler routine. */
+
   gboolean logging ;					    /* logging on or off ? */
-  gboolean log_to_file ;				    /* log to file or leave glib to log to
-							       stdout/err ? */
   zmapLogHandlerStruct active_handler ;			    /* Used when logging is on. */
   zmapLogHandlerStruct inactive_handler ;		    /* Used when logging is off. */
+
+  gboolean log_to_file ;				    /* log to file or leave glib to log to
+							       stdout/err ? */
+
+  gchar *nodeid ;
+  int pid ;
 
 } ZMapLogStruct ;
 
@@ -80,6 +88,8 @@ static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers) ;
 
 static gboolean openLogFile(ZMapLog log) ;
 static gboolean closeLogFile(ZMapLog log) ;
+
+static void writeStartOrStopMessage(gboolean start) ;
 
 static void nullLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
 		       gpointer user_data) ;
@@ -103,13 +113,17 @@ ZMapLog zMapLogCreate(char *logname)
       destroyLog(log) ;
       log = NULL ;
     }
+  else
+    writeStartOrStopMessage(TRUE) ;
 
   return log ;
 }
 
 
 
-
+/* The log and Start and Stop routines write out a record to the log to show start and stop
+ * of the log but there is a window where a thread could get in and write to the log 
+ * before/after they do. We'll just have to live with this... */
 gboolean zMapLogStart(ZMapLog log)
 {
   gboolean result = FALSE ;
@@ -142,10 +156,13 @@ gboolean zMapLogStop(ZMapLog log)
 
 /* This routine should be thread safe, it locks the mutex and then removes our handler so none
  * of our logging handlers can be called any more, it then unlocks the mutex and destroys it.
- * This should be ok........
+ * This should be ok because logging calls in the code go via g_log and know nothing about
+ * the ZMapLog log struct.
  */
 void zMapLogDestroy(ZMapLog log)
 {
+  writeStartOrStopMessage(FALSE) ;
+
   g_mutex_lock(log->log_lock) ;
 
   stopLogging(log, TRUE) ;
@@ -195,6 +212,14 @@ static ZMapLog createLog(void)
   log->inactive_handler.logfile = NULL ;
 
 
+  log->nodeid = g_malloc0(MAXHOSTNAMELEN + 2) ;		    /* + 2 for safety, interface not clear. */
+  if (gethostname(log->nodeid, (MAXHOSTNAMELEN + 1)) == -1)
+    {
+      zMapLogCritical("%s", "Cannot retrieve hostname for this computer.") ;
+      sprintf(log->nodeid, "%s", "**NO-NODEID**") ;
+    }
+  log->pid = getpid() ;
+
   return log ;
 }
 
@@ -205,6 +230,8 @@ static void destroyLog(ZMapLog log)
     g_free(log->active_handler.log_path) ;
 
   g_mutex_free(log->log_lock) ;
+
+  g_free(log->nodeid) ;
 
   g_free(log) ;
 
@@ -246,7 +273,6 @@ static gboolean startLogging(ZMapLog log)
 
       if (result)
 	log->logging = TRUE ;
-
     }
 
   return result ;
@@ -450,6 +476,20 @@ static gboolean closeLogFile(ZMapLog log)
 }
 
 
+/* Write out a start or stop record. */
+static void writeStartOrStopMessage(gboolean start)
+{
+  char *time_str ;
+
+  time_str = zMapGetTimeString() ;
+
+  zMapLogMessage("****  Logging %s at: %s  ****", (start ? "started" : "stopped"), time_str) ;
+  
+  g_free(time_str) ;
+
+  return ;
+}
+
 
 
 
@@ -469,6 +509,10 @@ static void nullLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 }
 
 
+/* This routine is called by the g_log package as a callback to do the actual logging. Note that
+ * we have to lock and unlock a mutex here because g_log, although it mutex locks its own stuff
+ * does not lock this routine...STUPID...they should have an option to do this if they don't
+ * like having it on all the time. */
 static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
 		       gpointer user_data)
 {
@@ -483,8 +527,9 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 
   zMapAssert(log->logging) ;				    /* logging must be on.... */
 
-
-  msg = g_strdup_printf("%s\n", message) ;
+  /* All messages have the nodeid and pid as qualifiers to help with logfile analysis, we
+   * may need to add userid as well. */
+  msg = g_strdup_printf("(%s:%d)  %s\n", log->nodeid, log->pid, message) ;
 
   if ((g_io_channel_write_chars(log->active_handler.logfile, msg, -1, &bytes_written, &g_error)
        != G_IO_STATUS_NORMAL)
