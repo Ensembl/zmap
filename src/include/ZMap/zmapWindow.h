@@ -19,17 +19,16 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: Defines interface to code that creates/handles a
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Dec 20 10:23 2004 (edgrif)
+ * Last edited: Jan  5 15:41 2005 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.28 2004-12-20 10:52:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.29 2005-01-07 12:12:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -101,6 +100,7 @@ void       zMapWindowDisplayData(ZMapWindow window,
 				 ZMapFeatureContext current_features, ZMapFeatureContext new_features,
 				 GData *types, void *zmap_view) ;
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
+void zMapWindowMove(ZMapWindow window, double start, double end) ;
 void       zMapWindowReset      (ZMapWindow window) ;
 GtkWidget   *zMapWindowGetWidget(ZMapWindow window);
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
