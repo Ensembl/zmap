@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul 16 09:36 2004 (edgrif)
+ * Last edited: Jul 19 10:23 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.9 2004-07-16 08:46:13 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.10 2004-07-19 09:24:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -217,11 +217,6 @@ ZMapFeatureContext zmapGFFGetFeatures(ZMapGFFParser parser)
 
       feature_context->sequence = g_strdup(parser->sequence_name) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      feature_context->start = parser->features_start ;
-      feature_context->end = parser->features_end ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       /* This is a COMPLETE HACK......we just set all the mapping stuff to have fictitious
        * coords for now....in the future it must all be filled in with calls to get the mapping from
        * the requested sequence to the parent etc. etc....
@@ -246,9 +241,9 @@ ZMapFeatureContext zmapGFFGetFeatures(ZMapGFFParser parser)
 	feature_context->parent = "chromsome_99" ;
       }
 
-      g_datalist_init(&(feature_context->features)) ;
+      g_datalist_init(&(feature_context->feature_sets)) ;
 
-      g_datalist_foreach(&(parser->feature_sets), getFeatureArray, &(feature_context->features)) ;
+      g_datalist_foreach(&(parser->feature_sets), getFeatureArray, &(feature_context->feature_sets)) ;
     }
 
   return feature_context ;
@@ -565,6 +560,9 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 
 
+/* SOME WORK STILL TO DO ON THE PARSE_ONLY VERSION AND MY NEW VERSION THAT USES GDATA NOT AN
+ * ARRAY.............. */
+
 static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *source,
 			       ZMapFeatureType feature_type,
 			       int start, int end, double score, ZMapStrand strand,
@@ -576,7 +574,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   char *first_attr = NULL ;
   ZMapGFFParserFeatureSet feature_set = NULL ; ;
   gboolean has_name = TRUE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapFeatureStruct new_feature ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapFeature new_feature ;
 
   
   /* Look for an explicit feature name for the GFF record, if none exists use the sequence
@@ -598,15 +600,29 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
   if (parser->parse_only || !feature)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       memset(&new_feature, 0, sizeof(ZMapFeatureStruct)) ;
       new_feature.id = ZMAPFEATUREID_NULL ;
       new_feature.type = ZMAPFEATURE_INVALID ;		    /* hack to detect empty feature.... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      new_feature = g_new0(ZMapFeatureStruct, 1) ;
+      new_feature->id = ZMAPFEATUREID_NULL ;
+      new_feature->type = ZMAPFEATURE_INVALID ;
     }
+
+  /* FOR PARSE ONLY WE WOULD LIKE TO COTINUE TO USE THE LOCAL VARIABLE new_feature....SORT THIS
+   * OUT............. */
 
 
   if (parser->parse_only)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       feature = &new_feature ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      feature = new_feature ;
     }
   else if (!feature)
     {
@@ -626,7 +642,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 	  feature_set->multiline_features = NULL ;
 	  g_datalist_init(&(feature_set->multiline_features)) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  feature_set->features = g_array_sized_new(FALSE, FALSE, sizeof(ZMapFeatureStruct), 30) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  g_datalist_init(&(feature_set->features)) ;
 
 	  feature_set->parser = parser ;		    /* We need parser flags in the destroy
 							       function for the feature_set list. */
@@ -634,12 +654,19 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
 
       /* Always add every new feature to the final array.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       feature_set->features = g_array_append_val(feature_set->features, new_feature) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      g_datalist_set_data(&(feature_set->features), feature_name, new_feature) ;
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Now set feature pointer to be the feature in the array...tacky.... */
       feature = &g_array_index(feature_set->features, ZMapFeatureStruct,
 			       (feature_set->features->len - 1)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      feature = new_feature ;
 
 
       /* THIS PIECE OF CODE WILL NEED TO BE CHANGED AS I DO MORE TYPES..... */
@@ -677,6 +704,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 	  if (feature->feature.transcript.introns)
 	    g_array_free(feature->feature.transcript.introns, TRUE) ;
 	}
+
+      g_free(feature) ;
     }
 
   return result ;
@@ -1248,6 +1277,8 @@ gboolean formatPhase(char *phase_str, ZMapPhase *phase_out)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* This is a GDataForeachFunc() and is called for each element of a GData list as a result
  * of a call to zmapGFFGetFeatures(). The function adds the feature array returned 
  * in the GData element to the GArray in user_data. */
@@ -1255,7 +1286,28 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapGFFParserFeatureSet feature_set = (ZMapGFFParserFeatureSet)data ;
   GData **features = (GData **)user_data ;
-  ZMapFeatureSetStruct *new_features ;
+  ZMapFeatureSet new_features ;
+
+  new_features = g_new0(ZMapFeatureSetStruct, 1) ;
+
+  new_features->source = g_strdup(feature_set->source) ;
+  new_features->features = feature_set->features ;
+
+  g_datalist_set_data(features, new_features->source, new_features) ;
+
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* This is a GDataForeachFunc() and is called for each element of a GData list as a result
+ * of a call to zmapGFFGetFeatures(). The function adds the feature array returned 
+ * in the GData element to the GArray in user_data. */
+static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapGFFParserFeatureSet feature_set = (ZMapGFFParserFeatureSet)data ;
+  GData **features = (GData **)user_data ;
+  ZMapFeatureSet new_features ;
 
   new_features = g_new0(ZMapFeatureSetStruct, 1) ;
 
@@ -1268,6 +1320,8 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 }
 
 
+
+
 /* This is a GDestroyNotify() and is called for each element in a GData list when
  * the list is cleared with g_datalist_clear (), the function must free the GArray
  * and GData lists. */
@@ -1278,11 +1332,18 @@ void destroyFeatureArray(gpointer data)
   g_free(feature_set->source) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* THIS IS NOT AN ARRAY IN FACT..... */
+
   /* When I try to get rid of the array but _not_ the data it seems to free the data as well ! */
 
   /* Only free actual array data if caller wants it freed. */
   if (feature_set->parser->free_on_destroy)
     g_array_free(feature_set->features, TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 

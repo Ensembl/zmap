@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 14 10:57 2004 (edgrif)
+ * Last edited: Jul 16 16:10 2004 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.4 2004-07-14 12:54:02 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.5 2004-07-19 09:25:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -70,7 +70,7 @@ typedef struct ZMapGFFParserFeatureSetStruct_
 {
   char *source ;					    /* Name of feature set source. */
 
-  GArray *features ;					    /* All features in this feature set. */
+  GData *features ;					    /* All features in this feature set. */
 
   GData *multiline_features ;				    /* Features in this feature set that
 							       must be built up from multiple
