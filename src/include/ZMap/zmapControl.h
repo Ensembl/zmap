@@ -25,9 +25,9 @@
  * Description: Interface for creating, controlling and destroying ZMaps.
  *              
  * HISTORY:
- * Last edited: Jan  7 14:45 2005 (edgrif)
+ * Last edited: Jan 10 14:24 2005 (edgrif)
  * Created: Mon Nov 17 08:04:32 2003 (edgrif)
- * CVS info:   $Id: zmapControl.h,v 1.8 2005-01-10 09:54:27 edgrif Exp $
+ * CVS info:   $Id: zmapControl.h,v 1.9 2005-01-24 11:25:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_H
@@ -121,20 +121,6 @@ char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
 gboolean zMapDestroy(ZMap zmap) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-GPtrArray   *zMapPaneGetCols           (ZMapPane pane);
-void         zMapPaneNewBox2Col        (ZMapPane pane, int elements);
-ZMapColumn  *zMapPaneGetBox2Col        (ZMapPane pane, int index);
-GArray      *zMapPaneSetBox2Col        (ZMapPane pane, ZMapColumn *col, int index);
-void         zMapPaneFreeBox2Col       (ZMapPane pane);
-void         zMapPaneNewBox2Seg        (ZMapPane pane, int elements);
-ZMapFeature zMapPaneGetBox2Seg        (ZMapPane pane, int index);
-GArray      *zMapPaneSetBox2Seg        (ZMapPane pane, ZMapColumn *seg, int index);
-void         zMapPaneFreeBox2Seg       (ZMapPane pane);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 ZMapRegion  *zMapPaneGetZMapRegion     (ZMapPane pane);
