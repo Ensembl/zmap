@@ -1,4 +1,4 @@
-/*  Last edited: Jul  9 09:28 2004 (rnc) */
+/*  Last edited: Jul 22 14:46 2004 (rnc) */
 /*  file: zmapcontrol.h
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -47,9 +47,9 @@ void zmRegBox(ZMapPane pane, int box, ZMapColumn *col, void *seg);
 
 /* Column drawing code ************************************/
 
-void  zMapFeatureColumn(ZMapPane   pane, ZMapColumn *col,
-			float     *offset, int frame);
-void  buildCols        (ZMapPane   pane);
+void  zMapFeatureColumn (ZMapPane   pane, ZMapColumn *col,
+			 float     *offset, int frame);
+void  buildCols         (ZMapPane   pane);
 void  makezMapDefaultColumns(ZMapPane  pane);
 float zmapDrawScale     (FooCanvas *canvas, float offset, int start, int end);
 void  nbcInit           (ZMapPane  pane, ZMapColumn *col);
@@ -58,19 +58,19 @@ void  nbcSelect         (ZMapPane  pane, ZMapColumn *col,
 void  zMapGeneDraw      (ZMapPane  pane, ZMapColumn *col, float *offset, int frame);
 void  geneSelect        (ZMapPane  pane, ZMapColumn *col,
 			 void     *arg, int box, double x, double y, gboolean isSelect);
-void  zmapDrawLine          (FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
+void  zmapDrawLine      (FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 			 char *colour, double thickness);
-void  zmapDrawBox           (FooCanvasItem *group, double x1, double y1, 
+void  zmapDrawBox       (FooCanvasItem *group, double x1, double y1, 
 			 double x2, double y2, char *line_colour, char *fill_colour);
-void  zmapDisplayText       (FooCanvasGroup *group, char *text, double x, double y);
+void  zmapDisplayText   (FooCanvasGroup *group, char *text, char *colour, double x, double y);
 
 /* other routines *****************************************/
 
-gboolean         zmIsOnScreen     (ZMapPane    pane,   Coord coord1, Coord coord2);
+gboolean     zmIsOnScreen     (ZMapPane    pane,   Coord coord1, Coord coord2);
 VisibleCoord zmVisibleCoord   (ZMapWindow  window, Coord coord);
 ScreenCoord  zmScreenCoord    (ZMapPane    pane,   Coord coord);
 Coord        zmCoordFromScreen(ZMapPane    pane,   ScreenCoord coord);
-gboolean         Quit             (GtkWidget  *widget, gpointer data);
+gboolean     Quit             (GtkWidget  *widget, gpointer data);
 
      
 #endif
