@@ -27,9 +27,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Nov  2 15:57 2004 (edgrif)
+ * Last edited: Nov 15 16:47 2004 (rnc)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.20 2004-11-04 12:39:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.21 2004-11-15 16:50:42 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -139,6 +139,9 @@ void         zMapRegionFreeDNA         (ZMapRegion *region);
 void         zmapWindowDrawFeatures    (ZMapWindow window, 
 					ZMapFeatureContext feature_context,
 					GData *types);
+
+void         zMapWindowScrollToItem    (FooCanvas *canvas, guint id, 
+					double start, double end, gchar *type);
 
 
 /* TEST SCAFFOLDING............... */
