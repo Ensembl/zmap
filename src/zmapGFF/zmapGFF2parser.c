@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul 28 15:07 2004 (edgrif)
+ * Last edited: Aug  2 14:54 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.12 2004-07-29 08:49:28 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.13 2004-08-02 14:04:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -187,9 +187,9 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 }
 
 
-ZMapFeatureContext zmapGFFGetFeatures(ZMapGFFParser parser)
+gboolean zmapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureContext feature_context)
 {
-  ZMapFeatureContext feature_context = NULL ;
+  gboolean result = FALSE ;
 
   if (parser->state != ZMAPGFF_PARSE_ERROR)
     {
@@ -197,42 +197,22 @@ ZMapFeatureContext zmapGFFGetFeatures(ZMapGFFParser parser)
        * for parse_only.... */
       if (!parser->parse_only && parser->feature_sets)
 	{
-	  feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
-
 	  feature_context->sequence = g_strdup(parser->sequence_name) ;
 
-	  /* This is a COMPLETE HACK......we just set all the mapping stuff to have fictitious
-	   * coords for now....in the future it must all be filled in with calls to get the mapping from
-	   * the requested sequence to the parent etc. etc....
-	   * We assume that we only ask for complete clones....
-	   *  */
-	  {
-	    int tmp_pad = 100000 ;
-	    int clone_length = parser->features_end - parser->features_start + 1 ;
-
-	    feature_context->sequence_to_parent.c1 = parser->features_start ;
-	    feature_context->sequence_to_parent.c2 = parser->features_end ;
-	    feature_context->sequence_to_parent.p1 = tmp_pad ;
-	    feature_context->sequence_to_parent.p2
-	      = feature_context->sequence_to_parent.p1 + clone_length ;
-
-	    feature_context->features_to_sequence.p1 = parser->features_start ;
-	    feature_context->features_to_sequence.p2 = parser->features_end ;
-	    feature_context->features_to_sequence.c1 = parser->features_start ;
-	    feature_context->features_to_sequence.c2 = parser->features_end ;
-
-	    feature_context->parent_span.x1 = 1 ;
-	    feature_context->parent_span.x2 = feature_context->sequence_to_parent.p2 + tmp_pad ;
-	    feature_context->parent = "chromsome_99" ;
-	  }
+	  feature_context->features_to_sequence.p1 = parser->features_start ;
+	  feature_context->features_to_sequence.p2 = parser->features_end ;
+	  feature_context->features_to_sequence.c1 = parser->features_start ;
+	  feature_context->features_to_sequence.c2 = parser->features_end ;
 
 	  g_datalist_init(&(feature_context->feature_sets)) ;
 
 	  g_datalist_foreach(&(parser->feature_sets), getFeatureArray, &(feature_context->feature_sets)) ;
 	}
+
+      result = TRUE ;
     }
 
-  return feature_context ;
+  return result ;
 }
 
 
@@ -297,6 +277,17 @@ GError *zMapGFFGetError(ZMapGFFParser parser)
   return parser->error ;
 }
 
+/* Returns TRUE if the parser has encountered an error from which it cannot recover and hence will
+ * not process any more lines, FALSE otherwise. */
+gboolean zMapGFFTerminated(ZMapGFFParser parser)
+{
+  gboolean result = TRUE ;
+
+  if (parser->state != ZMAPGFF_PARSE_ERROR)
+    result = FALSE ;
+
+  return result ;
+}
 
 /* If free_on_destroy == TRUE then all the feature arrays will be freed when
  * the GFF parser is destroyed, otherwise they are left intact. Important
@@ -507,11 +498,13 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   int fields ;
 
 
-  if ((fields = sscanf(line, format_str,
+  if (((fields = sscanf(line, format_str,
 		       &sequence[0], &source[0], &feature_type[0],
 		       &start, &end, &score_str[0], &strand_str[0], &phase_str[0],
 		       &attributes[0], &comments[0]))
-      < GFF_MANDATORY_FIELDS)
+       < GFF_MANDATORY_FIELDS)
+      || (g_ascii_strcasecmp(source, ".") == 0)
+      || (g_ascii_strcasecmp(feature_type, ".") == 0))
     {
       parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
 				  "GFF line %d - Mandatory fields missing in: \"%s\"",
