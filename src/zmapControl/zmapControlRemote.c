@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov 19 14:29 2004 (edgrif)
+ * Last edited: Jan 12 16:21 2005 (edgrif)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.2 2004-11-19 14:34:30 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.3 2005-01-24 11:33:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -245,8 +245,6 @@ static char *findFeature(ZMap zmap, char *command_text)
   char *feature_name = NULL ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
   int start = 0, end = 0, query_start = 0, query_end = 0 ;
-  ZMapPane pane = zmap->focuspane ;
-
 
   next = strtok(command_text, " ") ;			    /* Skip feature_find. */
 
@@ -318,7 +316,7 @@ static char *findFeature(ZMap zmap, char *command_text)
 	      && (feature_id = zMapFeatureCreateID(feature_type, feature_name, start, end,
 						   query_start, query_end))
 	      && (feature_quark = g_quark_try_string(feature_id))
-	      && (zMapWindowScrollToItem(zMapViewGetWindow(pane->curr_view_window),
+	      && (zMapWindowScrollToItem(zMapViewGetWindow(zmap->focus_viewwindow),
 					 type, feature_quark)))
 	    result = XREMOTE_S_200_COMMAND_EXECUTED ;
 	  else
