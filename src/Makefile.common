@@ -1,0 +1,12 @@
+
+AUTOMAKE_OPTIONS = gnu
+
+NULL = 
+
+ARFLAGS = rv
+AM_CPPFLAGS = -I$(top_srcdir)/include \
+	-I$(top_builddir) \
+	@GTK_CFLAGS@ \
+	@FOOCANVAS_CFLAGS@ \
+	@ACECONN_CFLAGS@
+
