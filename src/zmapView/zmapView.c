@@ -25,15 +25,17 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  3 16:33 2005 (edgrif)
+ * Last edited: Feb 10 16:12 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.44 2005-02-03 16:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.45 2005-02-10 16:43:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <gtk/gtk.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfig.h>
+#include <ZMap/zmapCmdLineArgs.h>
+#include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <ZMap/zmapWindow.h>
 #include <zmapView_P.h>
@@ -44,12 +46,6 @@ static ZMapView createZMapView(char *sequence, int start, int end, void *app_dat
 static void destroyZMapView(ZMapView zmap) ;
 
 static gint zmapIdleCB(gpointer cb_data) ;
-
-/* I'm not sure if we need this anymore, I think we will just do it with multiple callbacks... */
-static void zmapWindowCB(void *cb_data, int reason) ;
-
-
-
 static void enterCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void leaveCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void scrollCB(ZMapWindow window, void *caller_data, void *window_data) ;
@@ -70,12 +66,16 @@ static void killZMapView(ZMapView zmap_view) ;
 static void killGUI(ZMapView zmap_view) ;
 static void killConnections(ZMapView zmap_view) ;
 
+
+/* These are candidates to moved into zmapServer in fact, would be a more logical place for them. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   char *machine, int port, char *protocol, char *format,
 					   int timeout, char *version, char *types_file,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end) ;
 static void destroyConnection(ZMapViewConnection *view_conn) ;
+
+
 
 static void resetWindows(ZMapView zmap_view) ;
 static void displayDataWindows(ZMapView zmap_view,
@@ -307,18 +307,13 @@ gboolean zMapViewConnect(ZMapView zmap_view)
   else
     {
       ZMapConfig config ;
+      ZMapCmdLineArgsType value ;
+      char *config_file = NULL ;
 
       zmapViewBusy(zmap_view, TRUE) ;
 
-
-
-
-      /* IT WOULD PROBABLY BE BETTER IF THIS CONFIG READING CODE WAS PART OF THE ZMAPSERVER
-       * CODE AS IT IS MORECLOSELY TIED TO THAT THAN TO ZMAPVIEW..... */
-
-
-      /* We need to retrieve the connect data here from the config stuff.... */
-      if (result && (config = zMapConfigCreate()))
+      config_file = zMapConfigDirGetFile() ;
+      if ((config = zMapConfigCreateFromFile(config_file)))
 	{
 	  ZMapConfigStanza server_stanza ;
 	  /* NOTE: If you change this resource array be sure to check that the subsequent
@@ -346,10 +341,12 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	    result = FALSE ;
 
 	  zMapConfigDestroyStanza(server_stanza) ;
+	  server_stanza = NULL ;
 	}
 
+
       /* Set up connections to the named servers. */
-      if (result)
+      if (config && server_list)
 	{
 	  int connections = 0 ;
 	  ZMapConfigStanza next_server ;
@@ -434,13 +431,15 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	  /* Ought to return a gerror here........ */
 	  if (!connections)
 	    result = FALSE ;
+
 	}
+
 
       /* clean up. */
       if (server_list)
 	zMapConfigDeleteStanzaSet(server_list) ;
-
-      zMapConfigDestroy(config) ;
+      if (config)
+	zMapConfigDestroy(config) ;
 
 
 
@@ -743,48 +742,6 @@ static void destroyCB(ZMapWindow window, void *caller_data, void *window_data)
 
 
 
-/* This routine needs some work, with the reorganisation of the code it is no longer correct,
- * it depends on what the zmapWindow can return to us. */
-/* Gets called when zmap Window code needs to signal us that the user has done something
- * such as click "quit" BUT THIS MAY NO LONGER BE POSSIBLE FOR A VIEW WINDOW...UNLESS WE HAVE.
- * A MENU THAT ALLOWS THINGS TO BE KILLED. */
-static void zmapWindowCB(void *cb_data, int reason)
-{
-  ZMapView zmap_view = (ZMapView)cb_data ;
-  ZmapWindowCmd window_cmd = (ZmapWindowCmd)reason ;
-  char *debug ;
-
-  if (window_cmd == ZMAP_WINDOW_QUIT)
-    {
-      debug = "ZMAP_WINDOW_QUIT" ;
-
-      zMapViewDestroy(zmap_view) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Must come later now that destruction is deferred ??? */
-      (*(view_cbs_G->destroy_cb))(zmap_view, zmap_view->app_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    }
-  else if (window_cmd == ZMAP_WINDOW_LOAD)
-    {
-      debug = "ZMAP_WINDOW_LOAD" ;
-
-      zMapViewLoad(zmap_view) ;
-    }
-  else if (window_cmd == ZMAP_WINDOW_STOP)
-    {
-      debug = "ZMAP_WINDOW_STOP" ;
-
-      zMapViewReset(zmap_view) ;
-    }
-
-
-  zMapDebug("GUI: received %s from zmap window\n", debug) ;
-
-  return ;
-}
 
 
 
@@ -943,12 +900,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
       do
 	{
 	  ZMapViewConnection view_con ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  ZMapConnection connection ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	  ZMapThread thread ;
-
 	  ZMapThreadReply reply ;
 	  void *data = NULL ;
 	  char *err_msg = NULL ;
@@ -1283,19 +1235,45 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   char *sequence, int start, int end)
 {
   ZMapViewConnection view_con = NULL ;
+  GData *types ;
   ZMapThread thread ;
-
+  gboolean status = FALSE ;
 
   /* Create the thread to service the connection requests, we give it a function that it will call
    * to decode the requests we send it and a terminate function. */
-  if ((thread = zMapThreadCreate(zMapServerRequestHandler, zMapServerTerminateHandler)))
+  if (styles_file)
+    {
+      char *directory ;
+      char *filepath ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if ((directory = zMapGetControlFileDir((char *)zMapGetControlDirName()))
+	  && (filepath = zMapGetFile(directory, styles_file))
+	  && !(types = zMapFeatureTypeGetFromFile(filepath)))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	if (!(filepath = zMapConfigDirFindFile(styles_file))
+	    || !(types = zMapFeatureTypeGetFromFile(filepath)))
+	{
+	  zMapLogWarning("Could not read types from \"stylesfile\" %s", filepath) ;
+	  status = FALSE ;
+	}
+      else
+	status = TRUE ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if (directory)
+	g_free(directory) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      if (filepath)
+	g_free(filepath) ;
+    }
+
+  if (status && (thread = zMapThreadCreate(zMapServerRequestHandler, zMapServerTerminateHandler)))
     {
       ZMapServerReqOpenLoad open_load = NULL ;
-      GData *types ;
-
-      /* in the end the types files will be optional..... */
-      types = zMapFeatureTypeGetFromFile(styles_file) ;
-
 
       /* Build the intial request. */
       open_load = g_new0(ZMapServerReqOpenLoadStruct, 1) ;
@@ -1337,6 +1315,8 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 
   return view_con ;
 }
+
+
 
 static void destroyConnection(ZMapViewConnection *view_conn_ptr)
 {

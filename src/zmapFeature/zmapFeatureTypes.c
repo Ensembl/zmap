@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  3 16:45 2005 (edgrif)
+ * Last edited: Feb  9 11:40 2005 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.2 2005-02-03 16:47:02 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.3 2005-02-10 16:44:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -142,7 +142,8 @@ GData *zMapFeatureTypeGetFromFile(char *types_file_name)
   ZMapConfigStanzaSet types_list = NULL ;
   ZMapConfig config ;
 
-  if ((config = zMapConfigCreateFromFile(NULL, types_file_name)))
+
+  if ((config = zMapConfigCreateFromFile(types_file_name)))
     {
       ZMapConfigStanza types_stanza ;
       ZMapConfigStanzaElementStruct types_elements[]
