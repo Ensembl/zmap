@@ -19,16 +19,15 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 12 15:38 2005 (edgrif)
+ * Last edited: Jan 25 17:41 2005 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.5 2005-01-24 11:35:03 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.6 2005-01-25 17:49:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,14 +46,6 @@ static void DestroyNotifyFunc( gpointer data ) ;
 
 
 GtkItemFactory *item_factory;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* When we go to GTK 2 this global can disappear as the below table will allow us to
- * specify callback data. */
-static ZMapAppContext app_context_G ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 static GtkItemFactoryEntry menu_items[] = {
