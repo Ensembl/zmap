@@ -26,21 +26,15 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  8 15:48 2004 (edgrif)
+ * Last edited: May  7 10:08 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.7 2004-04-08 16:28:46 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.8 2004-05-07 09:19:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <glib/gthread.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <ZMap/zmapUtils.h>
-
 #include <zmapApp_P.h>
 
 
@@ -56,12 +50,22 @@ gboolean zmapApp_debug_G = TRUE ;
 
 
 
+int test_global = 10 ;
+int test_overlap = 0 ;
+
+
 int zmapMainMakeAppWindow(int argc, char *argv[])
 {
   ZMapAppContext app_context ;
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
   GtkWidget *kill_button, *quit_button ;
 
+
+  if (argc > 1)
+    test_global = atoi(argv[1]) ;
+
+  if (argc > 2)
+    test_overlap = 1 ;
 
   zmap_debug_G = TRUE ;
 #ifdef G_THREADS_ENABLED
@@ -78,14 +82,15 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   zmap_debug_G = FALSE ;
 
 
-
   /* For threaded stuff we apparently need this..... */
   g_thread_init(NULL) ;
 
+  app_context = createAppContext() ;
+
+  /* Set up logging for application. */
+  app_context->logger = zMapLogCreate(NULL) ;
 
   initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
-
-  app_context = createAppContext() ;
 
   app_context->app_widg = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
@@ -122,7 +127,15 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 void zmapAppExit(ZMapAppContext app_context)
 {
-  printf("\nGoodbye cruel world !\n" ) ;
+
+
+  /* This should probably be the last thing before exitting... */
+  if (app_context->logger)
+    {
+      zMapLogMessage("%s", "Goodbye cruel world !") ;
+
+      zMapLogDestroy(app_context->logger) ;
+    }
 
   gtk_exit(EXIT_SUCCESS) ;
 }
@@ -138,37 +151,17 @@ static void initGnomeGTK(int argc, char *argv[])
 {
   gchar *err_msg ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GnomeProgram *prog ; 
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   gtk_set_locale() ;
 
   if ((err_msg = gtk_check_version(ZMAP_GTK_MAJOR, ZMAP_GTK_MINOR, ZMAP_GTK_MICRO)))
     {
-      fprintf(stderr, "%s\n", err_msg) ;
+      zMapLogCritical("%s\n", err_msg) ;
+      zMapExit("%s\n", err_msg) ;
 
       gtk_exit(EXIT_FAILURE) ;
     }
 
   gtk_init(&argc, &argv) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Initialize GNOME, we should have the version recorded somewhere.... plus need to look at
-   * whether we want to specify properties after argv. */
-
-  prog = gnome_program_init("ZMap", "0.0", LIBGNOMEUI_MODULE, argc, argv, GNOME_PARAM_NONE) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* This crashes, apparently because gtk is not init'd.... */
-
-  prog = gnome_program_init("ZMap", "0.0", LIBGNOME_MODULE, argc, argv, GNOME_PARAM_NONE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
@@ -184,6 +177,8 @@ static ZMapAppContext createAppContext(void)
 
   app_context->zmap_manager = zMapManagerCreate(removeZmapRow, (void *)app_context) ;
   app_context->selected_zmap = NULL ;
+
+  app_context->logger = NULL ;
 
   return app_context ;
 }
