@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 18 07:48 2004 (edgrif)
+ * Last edited: Oct 19 15:50 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.23 2004-10-18 10:12:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.24 2004-10-19 14:50:39 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,23 +118,19 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
       canvasData->scaleBarOffset = 100.0;
       canvasData->types = types;
       canvasData->feature_context = feature_context;
+      canvasData->reduced = FALSE;
+      canvasData->atLimit = FALSE;
       canvasData->channel = g_io_channel_new_file("features.out", "w", &channel_error);
 
       if (!canvasData->channel)
 	printf("Unable to open output channel.  %d %s\n", channel_error->code, channel_error->message);
 
-
       /* make the sequence fit the default window */
       canvasData->seqLength = feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1 + 1;
-
       adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
-
       window->zoom_factor = (adj->page_size) / canvasData->seqLength;
-      foo_canvas_c2w(window->canvas, adj->page_size, 0.0, &x, &y);
-      //      printf("page_size (world) is %f\n", x);
-
-      zMapWindowZoom(window, 1.0);  /* already adjusted the zoom_factor, so 1.0 is right here. */
-
+      foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
+  
       /* convert page_size to world coordinates.  Ignore x dimension */
       foo_canvas_c2w(canvasData->canvas, 0, adj->page_size, &wx, &canvasData->height);
 
@@ -146,10 +142,10 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 			     feature_context->sequence_to_parent.c1, 
 			     feature_context->sequence_to_parent.c2);
 
-      canvasData->column_position = result + 100.0;  /* a bit right of where we drew the scale bar */
-      canvasData->revColPos = result;                /* and left of it for reverse strand stuff */
+      canvasData->column_position = canvasData->scaleBarOffset + 110.0;
+      canvasData->revColPos = result;                
       /* NB there's a flaw here: too many visible upstrand groups and we'll go left of the edge of
-      ** the window. */
+      ** the window. Should really be keeping track and adjusting scroll region if necessary. */
 
       if (feature_context)
 	g_datalist_foreach(&(feature_context->feature_sets), zmapWindowProcessFeatureSet, canvasData);
@@ -172,7 +168,7 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
   ZMapCanvasDataStruct *canvasData = (ZMapCanvasDataStruct*)user_data;
 
   FooCanvasItem *col_group;  /* each feature_set represents a column */
-  double         column_spacing = 20.0;
+  double         column_spacing = 5.0;
   const gchar   *itemDataKey = "feature_set";
   FeatureKeys    featureKeys;
   FooCanvasItem *boundingBox;
@@ -184,11 +180,6 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
   gdk_color_parse("white", &white);
   gdk_color_parse("pink", &pink);
 
-  /* NB for each column we create a new canvas group, with the initial y coordinate set to
-  ** 5.0 (#define BORDER 5.0 in zmapDraw.h) to just drop it a teeny bit from the top of the
-  ** window.  All items live in the group.  
-  ** Note that this y coord adjustment is directly linked to the the manipulation of 
-  ** canvasData->height performed in zmapWindowDrawFeatures.  Change them together or not at all. */
   canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), feature_set->source) ;
 
   /* context_key is used when a user clicks a canvas item.  The callback function needs to know
@@ -205,13 +196,13 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
       zMapLogWarning("No ZMapType (aka method) found for source: %s", feature_set->source);
   else
     {
-      canvasData->column_position += column_spacing;
-
       canvasData->columnGroup = foo_canvas_item_new(foo_canvas_root(canvasData->canvas),
 						foo_canvas_group_get_type(),
 						"x", (double)canvasData->column_position,
 						"y", (double)0.0,
 						NULL);
+
+      canvasData->column_position += (canvasData->thisType->width + column_spacing);
 
       foo_canvas_get_scroll_region(canvasData->window->canvas, &x1, &y1, &x2, &y2);
 
@@ -249,6 +240,8 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
 						    "x", (double)canvasData->revColPos,
 						    "y", (double)0.0,
 						    NULL);
+	  canvasData->revColPos -= (canvasData->thisType->width + column_spacing);
+
 	  boundingBox = foo_canvas_item_new(FOO_CANVAS_GROUP(canvasData->revColGroup),
 					    foo_canvas_rect_get_type(),
 					    "x1", (double)0.0,
@@ -269,8 +262,6 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
 	  if (boundingBox)
 	    g_signal_connect(G_OBJECT(boundingBox), "destroy",
 			     G_CALLBACK(freeObjectKeys), featureKeys);
-
-	  canvasData->revColPos -= column_spacing;
 
 	  /* store a pointer to the group in the feature_set to enable hide/unhide zooming */
 	  feature_set->revCol = canvasData->revColGroup;
@@ -360,6 +351,8 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 	  g_object_set_data(G_OBJECT(object), itemDataKey, featureKeys);
 	  itemDataKey = "canvasData";
 	  g_object_set_data(G_OBJECT(object), itemDataKey, canvasData);
+	  itemDataKey = "feature_set";
+	  g_object_set_data(G_OBJECT(object), itemDataKey, featureKeys);
 	  
 	  break;
 
@@ -471,14 +464,13 @@ static gboolean handleCanvasEvent(GtkWidget *widget, GdkEventButton *event, gpoi
 	result = TRUE;
       }
 
+    /* if this was a right-click, display a list of the features in this column so the user
+    ** can select one and have the display scroll to it. */
     if (event->button == 3)
       {
 	double wy;
 
 	foo_canvas_item_i2w(FOO_CANVAS_ITEM(widget), &canvasData->x, &wy);
-
-	itemDataKey = "feature_set";
-	featureKeys = g_object_get_data(G_OBJECT(widget), itemDataKey);  
 
 	if (featureKeys)
 	  {
