@@ -25,15 +25,19 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul 29 15:02 2004 (edgrif)
+ * Last edited: Sep 10 17:01 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapSlave_P.h,v 1.4 2004-08-02 14:06:11 edgrif Exp $
+ * CVS info:   $Id: zmapSlave_P.h,v 1.5 2004-09-10 17:13:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SLAVE_P_H
 #define ZMAP_SLAVE_P_H
 
+#include <glib.h>
+#include <ZMap/zmapConn.h>
+#include <ZMap/zmapFeature.h>
 #include <ZMap/zmapServer.h>
+
 
 
 typedef struct
