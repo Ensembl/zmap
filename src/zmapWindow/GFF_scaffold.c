@@ -1,4 +1,4 @@
-/*  Last edited: Jun 22 12:05 2004 (edgrif) */
+/*  Last edited: Jun 25 12:13 2004 (edgrif) */
 /* This is a temporary file only to help with testing....it will go once GFF code is combined
  * into the threads etc. code proper.... */
 
@@ -8,12 +8,12 @@
 #include <ZMap/zmapConfig.h>
 
 
-static GData *parseGFF(char *filename) ;
+static ZMapFeatureContext parseGFF(char *filename) ;
 
 
-GData *testGetGFF(void)
+ZMapFeatureContext testGetGFF(void)
 {
-  GData *features = NULL ;
+  ZMapFeatureContext features = NULL ;
   ZMapConfig config ;
   char *GFF_file = NULL ;
 
@@ -57,9 +57,9 @@ GData *testGetGFF(void)
 
 
 
-static GData *parseGFF(char *filename)
+static ZMapFeatureContext parseGFF(char *filename)
 {
-  GData *features = NULL ;
+  ZMapFeatureContext feature_context = NULL ;
   GIOChannel* gff_file ;
   GError *gff_file_err = NULL ;
 
@@ -105,7 +105,7 @@ static GData *parseGFF(char *filename)
 
 
       /* Try getting the features. */
-      features = zmapGFFGetFeatures(parser) ;
+      feature_context = zmapGFFGetFeatures(parser) ;
 
 
       zMapGFFSetFreeOnDestroy(parser, free_arrays) ;
@@ -129,7 +129,7 @@ static GData *parseGFF(char *filename)
     }
 
 
-  return features ;
+  return feature_context ;
 }
 
 
