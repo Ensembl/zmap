@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 13 14:22 2004 (edgrif)
+ * Last edited: Sep 17 09:34 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.11 2004-09-13 13:29:11 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.12 2004-09-17 08:34:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,11 +43,6 @@ static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
 static void quitCB(GtkWidget *widget, gpointer data) ;
 static void removeZmapRow(void *app_data, void *zmap) ;
-
-
-/* Overall app. debugging output...not used currently. */
-gboolean zmapApp_debug_G = TRUE ; 
-
 
 
 int test_global = 10 ;

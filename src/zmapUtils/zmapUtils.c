@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Jul  1 16:50 2004 (edgrif)
+ * Last edited: Sep 17 09:26 2004 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.3 2004-07-02 18:24:11 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.4 2004-09-17 08:33:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,9 @@
  *
  *  */
 
+
+/*! Can be set on/off to turn on/off debugging output via the zMapDebug() macro. */
+gboolean zmap_debug_G = FALSE ; 
 
 
 
