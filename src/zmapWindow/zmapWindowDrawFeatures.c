@@ -26,18 +26,14 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 24 13:17 2005 (edgrif)
+ * Last edited: Jan 24 13:21 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.41 2005-01-24 13:17:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.42 2005-01-24 13:23:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindow_P.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapDraw.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <ZMap/zmapUtils.h>
 
 
