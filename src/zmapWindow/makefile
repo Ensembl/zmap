@@ -19,13 +19,13 @@ PUB_HDRS = stringbucket.h zmapDraw.h zmapWindow.h zmapWindowDrawFeatures.h
 #	zmapbccol.c zmapcols.c \
 #	zmapWindow.c zmapWindowFrame.c GFF_scaffold.c \
 #	zmapWindowDrawFeatures.c
-WIND_SRC = zmapWindow.c zmapWindowFrame.c GFF_scaffold.c zmapWindowDrawFeatures.c
+WIND_SRC = zmapWindow.c zmapWindowFrame.c GFF_scaffold.c zmapWindowDrawFeatures.c zmapWindowList.c
 
 #WIND_OBJ = seqregion.o stringbucket.o \
 #	zmapbccol.o zmapcols.o \
 #	zmapWindow.o zmapWindowFrame.o GFF_scaffold.o \
 #	zmapWindowDrawFeatures.o		
-WIND_OBJ = zmapWindow.o zmapWindowFrame.o GFF_scaffold.o zmapWindowDrawFeatures.o
+WIND_OBJ = zmapWindow.o zmapWindowFrame.o GFF_scaffold.o zmapWindowDrawFeatures.o zmapWindowList.o
 
 #
 # These must all be set for the common includes to work.
