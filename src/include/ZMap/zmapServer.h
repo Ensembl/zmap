@@ -27,9 +27,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Sep 17 10:53 2004 (edgrif)
+ * Last edited: Sep 17 14:23 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.6 2004-09-17 12:40:03 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.7 2004-09-23 13:39:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -39,48 +39,16 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapProtocol.h>
 
+
+
+/* The server interface has basic calls to create/open close/destroy a connection but all other
+ * requests are via a generalised request call which accepts args in the protocol defined in
+ * ZMap/zmapProtocol.h. This means that the client can just include ZMap/zmapProtocol.h and pass
+ * args in that format.  */
+
+
 /* Opaque type, represents a connection to a database server. */
 typedef struct _ZMapServerStruct *ZMapServer ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* ALL THIS IN zmapProtocol.h now........... */
-
-
-/* Server requests can be of different types with different input parameters and returning
- * different types of results. */
-
-typedef enum {ZMAP_SERVERREQ_INVALID = 0,
-	      ZMAP_SERVERREQ_SETCONTEXT,		    /* Set the sequence name/start/end. */
-	      ZMAP_SERVERREQ_SEQUENCE			    /* Get the features. */
-} ZMapServerRequestType ;
-
-
-/* Structs for request parameters and return values. */
-
-typedef struct
-{
-  char *sequence ;
-  int start, end ;
-} ZMapServerRequestContextStruct, *ZMapServerRequestContext ;
-
-
-typedef struct
-{
-  ZMapFeatureContext feature_context_out ;
-} ZMapServerRequestFeaturesStruct, *ZMapServertFeaturesContext ;
-
-
-typedef union
-{
-  ZMapServerRequestContext set_context ;
-  ZMapServertFeaturesContext get_features ;
-} ZMapServerRequest ;
-
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 /* Possible responses to a server request. */
@@ -91,10 +59,9 @@ typedef enum {ZMAP_SERVERRESPONSE_OK,
 
 
 /* This routine must be called before any other server routines and must only be called once.
- * It is the callers responsibility to make sure this happens. */
+ * It is the callers responsibility to make sure this happens.
+ * Provide matching Termination routine ???? */
 gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out) ;
-/* Provide matching Termination routine ???? */
-
 
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
 				    char *host, int port, char *protocol,
@@ -104,16 +71,11 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
 
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence, int start, int end) ;
 
-
-/* The caller doesn't need to see the request...this seems not completely right, revisit later... */
-ZMapServerResponseType zMapServerRequest(ZMapServer server, void *request) ;
-
+ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapProtocolAny request) ;
 
 char *zMapServerLastErrorMsg(ZMapServer server) ;
 
-
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) ;
-
 
 gboolean zMapServerFreeConnection(ZMapServer server) ;
 
