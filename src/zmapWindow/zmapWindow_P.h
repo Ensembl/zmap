@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov  8 15:08 2004 (edgrif)
+ * Last edited: Nov 12 11:09 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.29 2004-11-09 14:46:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.30 2004-11-12 13:30:43 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -93,10 +93,17 @@ typedef struct _ZMapWindowStruct
   /* Is this even used ??????? */
   InvarCoord      origin; /* that base which is VisibleCoord 1 */
 
-  GtkWidget *featureListWindow;
+  GPtrArray *featureListWindows;
 
+  GData     *featureItems;            /*!< enables unambiguous link between features and canvas items. */
 
 } ZMapWindowStruct ;
+
+
+typedef struct _ZMapFeatureItemStruct {   /*!< keyed on feature->id, gives access to canvas item */
+  ZMapFeatureSet feature_set;
+  FooCanvasItem *canvasItem;
+} ZMapFeatureItemStruct, *ZMapFeatureItem;
 
 
 typedef struct
@@ -122,6 +129,7 @@ typedef struct _ZMapColStruct
   FooCanvasItem       *item;
   gboolean             forward;
   ZMapFeatureTypeStyle type;
+  gchar               *type_name;
 } ZMapColStruct, *ZMapCol;
 
 
@@ -194,13 +202,15 @@ GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 
 void zmapWindowHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData) ;
 
-
 void zmapFeatureInit(ZMapFeatureCallbacks callbacks) ;
 
 void zmapWindowPrintCanvas(FooCanvas *canvas) ;
 
+void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
 gboolean zMapFeatureClickCB  (ZMapCanvasDataStruct *canvasData, ZMapFeature feature);
-void     zMapHighlightObject (FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData);
+FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
+			     double offset, double zoom_factor, 
+			     int start, int end);
 
 
 #endif /* !ZMAP_WINDOW_P_H */
