@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 18 09:39 2004 (rnc)
+ * Last edited: Nov 18 17:38 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.16 2004-11-18 10:49:27 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.17 2004-11-19 10:11:47 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,7 +73,7 @@ static void quitListCB                (GtkWidget *window, gpointer data);
  * and the selected item hightlighted.
  */
 
-void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureSet feature_set, int x_coord)
+void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureItem featureItem)
 {
   GtkWidget *window, *featureList, *scrolledWindow;
   GtkTreeModel *sort_model;
@@ -82,6 +82,9 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureSet feature_se
   GtkTreeSelection *select;
   ListCol listCol = g_new0(ListColStruct, 1);
   ZMapFeatureTypeStyle thisType;
+  double x1, y1, x2, y2;
+
+  foo_canvas_item_get_bounds(featureItem->canvasItem, &x1, &y1, &x2, &y2); /* world coords */
 
   listCol->list = gtk_tree_store_new(N_COLUMNS,
 				     G_TYPE_STRING,
@@ -92,8 +95,8 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureSet feature_se
 				     G_TYPE_INT,
 				     G_TYPE_DOUBLE);
 
-  listCol->x_coord = x_coord;
-  listCol->source = g_string_new(feature_set->source);
+  listCol->x_coord = x1;
+  listCol->source = g_string_new(featureItem->feature_set->source);
   listCol->source = g_string_ascii_down(listCol->source); /* does this in place */
 
   thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(zmapWindow->types), 
@@ -102,10 +105,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureSet feature_se
 
   /* need to know whether the column is up or down strand, 
    * so we load the right set of features */
-  if (listCol->x_coord < zmapWindow->scaleBarOffset)
-    listCol->strand = ZMAPSTRAND_UP;
-  else
-    listCol->strand = ZMAPSTRAND_DOWN;
+  listCol->strand = featureItem->strand;
 
   /* set up the top level window */
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -113,7 +113,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureSet feature_se
   g_ptr_array_add(zmapWindow->featureListWindows, (gpointer)window);
 
   gtk_container_border_width(GTK_CONTAINER(window), 5) ;
-  gtk_window_set_title(GTK_WINDOW(window), feature_set->source) ;
+  gtk_window_set_title(GTK_WINDOW(window), featureItem->feature_set->source) ;
   gtk_window_set_default_size(GTK_WINDOW(window), -1, 600); 
 
   scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
@@ -122,7 +122,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureSet feature_se
 				 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
   
   /* Build and populate the list of features */
-  g_datalist_foreach(&(feature_set->features),addItemToList , listCol) ;
+  g_datalist_foreach(&(featureItem->feature_set->features),addItemToList , listCol) ;
 
   sort_model = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL(listCol->list));
 
@@ -216,48 +216,65 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureSet feature_se
  * If necessary, recalculate the scroll region, then scroll to the item
  * and highlight it.
  */
-void zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_id) 
+gboolean zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_id) 
 {
   int cx, cy;
   double x1, y1, x2, y2;
-  ZMapFeatureItem featureItem;
+  ZMapFeatureItem featureItem = NULL;
   ZMapFeature feature;
   ZMapFeatureTypeStyle thisType;
 
   featureItem = (ZMapFeatureItem)g_datalist_id_get_data(&(window->featureItems), feature_id);
-  zMapAssert(featureItem);
-
-  feature = (ZMapFeature)g_datalist_id_get_data(&(featureItem->feature_set->features), featureItem->feature_key);
-  zMapAssert(feature);
-
-  thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(window->types), type);
-  zMapAssert(thisType);
-
-  /* The selected object might be outside the current scroll region. */
-  recalcScrollRegion(window, feature->x1, feature->x2);
-
-  /* featureItem holds canvasItem and ptr to the feature_set containing the feature. */
-  featureItem =  g_datalist_id_get_data(&(window->featureItems), feature_id);
-  feature =  g_datalist_id_get_data(&(featureItem->feature_set->features), feature_id);
-
-  /* scroll up or down to user's selection.  
-  ** Note that because we zoom asymmetrically, we only convert the y coord 
-  ** to canvas coordinates, leaving the x as is.  */
-  foo_canvas_item_get_bounds(featureItem->canvasItem, &x1, &y1, &x2, &y2); /* world coords */
-  foo_canvas_w2c(window->canvas, 0.0, y1, &cx, &cy); 
-  foo_canvas_scroll_to(window->canvas, (int)x1, cy);                       /* canvas pixels */
-
-  foo_canvas_item_raise_to_top(featureItem->canvasItem);
+  if (featureItem)
+    {
+      feature = (ZMapFeature)g_datalist_id_get_data(&(featureItem->feature_set->features), featureItem->feature_key);
+      zMapAssert(feature);
       
-  /* highlight the item */
-  zmapWindowHighlightObject(featureItem->canvasItem, window, thisType);
-  
-  zMapFeatureClickCB(window, feature); /* show feature details on info_panel  */
+      thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(window->types), type);
+      zMapAssert(thisType);
+      
+      /* The selected object might be outside the current scroll region. */
+      recalcScrollRegion(window, feature->x1, feature->x2);
+      
+      /* featureItem holds canvasItem and ptr to the feature_set containing the feature. */
+      featureItem =  g_datalist_id_get_data(&(window->featureItems), feature_id);
+      feature =  g_datalist_id_get_data(&(featureItem->feature_set->features), feature_id);
+      
+      /* scroll up or down to user's selection.  
+      ** Note that because we zoom asymmetrically, we only convert the y coord 
+      ** to canvas coordinates, leaving the x as is.  */
+      foo_canvas_item_get_bounds(featureItem->canvasItem, &x1, &y1, &x2, &y2); /* world coords */
 
-  window->focusFeature = featureItem->canvasItem;
-  window->focusType = thisType;
+      if (y1 <= 0.0)    /* we might be dealing with a multi-box item, eg transcript */
+	{
+	  double px1, py1, px2, py2;
 
-  return;
+	  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(featureItem->canvasItem->parent),
+				     &px1, &py1, &px2, &py2); 
+	  if (py1 > 0.0)
+	      y1 = py1;
+	}
+
+      foo_canvas_w2c(window->canvas, 0.0, y1, &cx, &cy); 
+      foo_canvas_scroll_to(window->canvas, (int)x1, cy);                       /* canvas pixels */
+      
+      foo_canvas_item_raise_to_top(featureItem->canvasItem);
+      
+      /* highlight the item */
+      zmapWindowHighlightObject(featureItem->canvasItem, window, thisType);
+      
+      zMapFeatureClickCB(window, feature); /* show feature details on info_panel  */
+      
+      window->focusFeature = featureItem->canvasItem;
+      window->focusType = thisType;
+
+      return TRUE;
+    }
+  else
+    {
+      zMapLogWarning("Quark %d not found in list of known features\n", feature_id) ;
+      return FALSE;
+    }
 }
 
 
@@ -274,9 +291,7 @@ static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
   ListCol     listCol = (ListColStruct*)user_data;
   GtkTreeIter iter1;
 
-  if ((listCol->strand == ZMAPSTRAND_DOWN 
-      && (feature->strand == ZMAPSTRAND_DOWN || feature->strand == ZMAPSTRAND_NONE))
-      || (listCol->strand == ZMAPSTRAND_UP  && feature->strand == ZMAPSTRAND_UP))
+  if (listCol->strand == feature->strand)
     {
       gtk_tree_store_append(GTK_TREE_STORE(listCol->list), &iter1, NULL);
       gtk_tree_store_set   (GTK_TREE_STORE(listCol->list), &iter1, 
@@ -307,7 +322,8 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
   int start = 0, end = 0, feature_type = 0;
   double x_coord;
   gchar *name, *type;
-  guint id;
+  GQuark id;
+  gboolean ITEM_FOUND;  
 
   /* At present, when we display the list, it will scroll the main display
   ** to the first feature on the list.  This is not good but it's not my
@@ -323,8 +339,10 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 
   if (start)
     {
-      zMapWindowScrollToItem(window, type, id);
-      gtk_widget_show_all(GTK_WIDGET(window->parent_widget));
+      if (ITEM_FOUND = zMapWindowScrollToItem(window, type, id))
+	gtk_widget_show_all(GTK_WIDGET(window->parent_widget));
+      else
+	zMapShowMsg(ZMAP_MSG_CRASH, "Quark %d of type %s not found in list of known features\n", id, type);
     }
   
   if (name) g_free(name); 
