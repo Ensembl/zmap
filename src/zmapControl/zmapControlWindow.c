@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Jul  2 19:08 2004 (edgrif)
+ * Last edited: Jul  9 13:41 2004 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.6 2004-07-02 18:23:41 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.7 2004-07-14 09:06:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,21 +38,19 @@
 
 
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
-static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
-
 
 
 gboolean zmapControlWindowCreate(ZMap zmap, char *zmap_id)
 {
   gboolean result = TRUE ;
-  GtkWidget *toplevel, *vbox, *menubar, *button_frame, *connect_frame ;
+  GtkWidget *toplevel, *vbox, *menubar, *button_frame ;
   char *title ;
-
-  title = g_strdup_printf("ZMap - %s", zmap_id) ;
 
   zmap->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
+  title = g_strdup_printf("ZMap - %s", zmap_id) ;
   gtk_window_set_title(GTK_WINDOW(toplevel), title) ;
+  g_free(title) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)zmap) ;
@@ -66,23 +64,13 @@ gboolean zmapControlWindowCreate(ZMap zmap, char *zmap_id)
   button_frame = zmapControlWindowMakeButtons(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), button_frame, FALSE, TRUE, 0);
 
-  /* zmapWindow/zmapWindowFrame.c */
-  zmap->view_parent = connect_frame = zmapControlWindowMakeFrame(zmap) ;
-  gtk_box_pack_start(GTK_BOX(vbox), connect_frame, TRUE, TRUE, 0);
-
-  /* zmapWindow/zmapcontrol.c */
-  zMapDisplay(zmap, NULL,NULL,NULL,NULL,NULL,FALSE);
+  zmap->navview_frame = zmapControlWindowMakeFrame(zmap) ;
+  gtk_box_pack_start(GTK_BOX(vbox), zmap->navview_frame, TRUE, TRUE, 0);
 
   gtk_widget_show_all(toplevel) ;
 
-
-  g_free(title) ;
-
-
   return result ;
 }
-
-
 
 
 
@@ -117,4 +105,72 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 
   return ;
 }
+
+
+/* For now, just moving functions from zmapWindow/zmapcontrol.c */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* zMapDisplay
+ * Main entry point for the zmap code.  Called by zMapWindowCreate.
+ * The first param is the display window, then two callback routines to 
+ * allow zmap to interrogate a data-source. Then a void pointer to a
+ * structure used in the process.  Although zmap doesn't need to know
+ * directly about this structure, it needs to pass the pointer back
+ * during callbacks, so AceDB can use it. 
+ *
+ * This will all have to change, now we're acedb-independent.
+ *
+ * We create the display window, then call the Activate 
+ * callback routine to get the data, passing it a ZMapRegion in
+ * which to create fmap-flavour segs for us to display, then
+ * build the columns in the display.
+ */
+
+gboolean zMapDisplay(ZMap        zmap,
+		     Activate_cb act_cb,
+		     Calc_cb     calc_cb,
+		     void       *region,
+		     char       *seqspec, 
+		     char       *fromspec, 
+		     gboolean        isOldGraph)
+{
+  zmap->firstTime = TRUE ;				    /* used in addPane() */
+
+  /* make the window in which to display the data */
+  createNavViewWindow(zmap);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  drawWindow(zmap->focuspane) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return TRUE;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+	      
+ 
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* THIS PROBABLY NEEDS TO BE REWRITTEN AND PUT IN ZMAPDRAW.C, THE WHOLE CONCEPT OF GRAPHHEIGHT IS
+ * ALMOST CERTAINLY DEFUNCT NOW....... */
+
+/* Not entirely convinced this is the right place for these
+** public functions accessing private structure members
+*/
+int zMapWindowGetHeight(ZMapWindow window)
+{
+  return zmap->focuspane->graphHeight;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
