@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Sep  3 14:22 2004 (rnc)
+ * Last edited: Sep 15 11:07 2004 (rnc)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.28 2004-09-03 13:25:04 rnc Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.29 2004-09-16 15:34:06 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -595,11 +595,12 @@ static void clickCB(ZMapViewWindow view_window, void *app_data, ZMapFeature feat
 
   if (feature) // if user clicked on a specific object
     {
-      g_string_printf(str, "%s   %d   %d   %s", 
+      g_string_printf(str, "%s   %d   %d   %s   %s", 
 		      feature->name,
 		      feature->x1,
 		      feature->x2,
-		      types[feature->type]);
+		      types[feature->type],
+		      feature->method_name);
       gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), str->str);
     }
   return ;
