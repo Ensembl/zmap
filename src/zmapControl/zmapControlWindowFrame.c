@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 19 16:55 2004 (edgrif)
+ * Last edited: Dec 15 15:32 2004 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.12 2004-11-22 11:50:37 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.13 2004-12-20 10:58:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,8 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
  */
 static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 {
+  GtkWidget *nav_top ;
+
   zmap->panesTree = g_node_new(NULL) ;
 
   /* Navigator and views are in an hpane, so the user can adjust the width
@@ -65,11 +67,10 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
   zmap->hpane = gtk_hpaned_new() ;
   gtk_container_add(GTK_CONTAINER(parent), zmap->hpane) ;
 
+
   /* Make the navigator which shows user where they are on the sequence. */
-  zmapControlNavigatorCreate(zmap, parent) ;
-  gtk_paned_pack1(GTK_PANED(zmap->hpane), 
-		  zmap->navigator->navVBox,
-                  FALSE, TRUE);
+  zmap->navigator = zmapControlNavigatorCreate(&nav_top) ;
+  gtk_paned_pack1(GTK_PANED(zmap->hpane), nav_top, FALSE, TRUE) ;
 
 
   /* I'm not sure we actually need this intervening box, we could probably just set the size of
