@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 22 09:43 2004 (edgrif)
+ * Last edited: Jun 22 13:36 2004 (rnc)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.3 2004-06-22 12:23:45 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.4 2004-06-22 12:38:25 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -380,7 +380,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
       else if (g_str_has_prefix(line, "##source-version")
 	       && !parser->done_source)
 	{
-	  char program[FIELD_BUFFER_LEN] = {''}, version[FIELD_BUFFER_LEN] = {''} ;
+	  char program[FIELD_BUFFER_LEN] = {'\0'}, version[FIELD_BUFFER_LEN] = {'\0'} ;
 
 	  fields = 3 ;
 	  format_str = "%*s%1000s%1000s" ;
@@ -402,7 +402,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
       else if (g_str_has_prefix(line, "##sequence-region")
 	       && !parser->done_sequence_region)
 	{
-	  char sequence_name[FIELD_BUFFER_LEN] = {''} ;
+	  char sequence_name[FIELD_BUFFER_LEN] = {'\0'} ;
 	  int start = 0, end = 0 ;
 
 	  fields = 4 ;
@@ -459,11 +459,11 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 {
   gboolean result = FALSE ;
-  char sequence[GFF_MAX_FIELD_CHARS + 1] = {''},
-    source[GFF_MAX_FIELD_CHARS + 1] = {''}, feature_type[GFF_MAX_FIELD_CHARS + 1] = {''},
-    score_str[GFF_MAX_FIELD_CHARS + 1] = {''}, strand_str[GFF_MAX_FIELD_CHARS + 1] = {''},
-    phase_str[GFF_MAX_FIELD_CHARS + 1] = {''},
-    attributes[GFF_MAX_FREETEXT_CHARS + 1] = {''}, comments[GFF_MAX_FREETEXT_CHARS + 1] = {''} ;
+  char sequence[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
+    source[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, feature_type[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
+    score_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, strand_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
+    phase_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
+    attributes[GFF_MAX_FREETEXT_CHARS + 1] = {'\0'}, comments[GFF_MAX_FREETEXT_CHARS + 1] = {'\0'} ;
   int start = 0, end = 0 ;
   double score = 0 ;
   char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %1000[^#] %1000c" ; 
@@ -881,7 +881,7 @@ static char *getFeatureName(char *attributes)
   char *feature_name = NULL ;
   int attr_fields ;
   char *attr_format_str = "%50s %*[\"]%50[^\"]%*[\"]%*s" ;
-  char class[GFF_MAX_FIELD_CHARS + 1] = {''}, name[GFF_MAX_FIELD_CHARS + 1] = {''} ;
+  char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
 
   if ((attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0])) == 2)
@@ -907,7 +907,7 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
   gboolean result = FALSE ;
   int attr_fields ;
   char *attr_format_str = "%*s %*[\"]%50[^\"]%*s%d%d" ;
-  char homol_type[GFF_MAX_FIELD_CHARS + 1] = {''} ;
+  char homol_type[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
   int start = 0, end = 0 ;
 
   if ((attr_fields = sscanf(attributes, attr_format_str, &homol_type[0], &start, &end)) == 3)
