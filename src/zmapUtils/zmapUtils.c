@@ -26,14 +26,25 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Sep 29 15:27 2004 (edgrif)
+ * Last edited: Oct  1 14:29 2004 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.5 2004-09-29 16:37:36 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.6 2004-10-04 12:52:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <time.h>
 #include <string.h>
+#include <errno.h>
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#include <stdio.h>
+#include <stdlib.h>
+#include <locale.h>
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 #include <zmapUtils_P.h>
 
@@ -144,10 +155,17 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
 }
 
 
-/* Just gets the time now but could be altered to more generally get any time and the time now
- * by default....for now just gets the current time.
- * Returns NULL if fails, time string if not, caller should free string with g_free() when not
- * needed any more. */
+/*!
+ * Returns a string representing the current time in the format "Thu Sep 30 10:05:27 2004",
+ * returns NULL if the call fails. The caller should free the string with g_free() when not
+ * needed any more.
+ *
+ * (N.B. just gets the current time, but could be altered to more generally get any time
+ * and the time now by default.)
+ *
+ * @param       None.
+ * @return      The current time as a string.
+ *  */
 char *zMapGetTimeString(void)
 {
   char *time_str = NULL ;
@@ -167,6 +185,62 @@ char *zMapGetTimeString(void)
 
   return time_str ;
 }
+
+
+
+gboolean zMapStr2Int(char *str, int *int_out)
+{
+  gboolean result = FALSE ;
+  char *endptr ;
+  long int retval ;
+
+  zMapAssert(str && *str) ;
+
+
+  if (zMapStr2LongInt(str, &retval))
+    {
+      if (retval <= INT_MAX || retval >= INT_MIN)
+	{
+	  *int_out = (int)retval ;
+	  result = TRUE ;
+	}
+    }
+
+  return result ;
+}
+
+
+gboolean zMapStr2LongInt(char *str, long int *long_int_out)
+{
+  gboolean result = FALSE ;
+  char *endptr ;
+  long int retval ;
+
+  zMapAssert(str && *str) ;
+
+  errno = 0 ;
+  retval = strtol(str, &endptr, 10) ;
+
+  if (retval == 0 && (errno != 0 || str == endptr))
+    {
+      /* Invalid string in some way. */
+      result = FALSE ;
+    }
+  else if (errno !=0 && (retval == LONG_MAX || retval == LONG_MIN))
+    {
+      /* Number exceeds long int size. */
+      result = FALSE ;
+    }
+  else
+    {
+      result = TRUE ;
+      *long_int_out = retval ;
+    }
+
+
+  return result ;
+}
+
 
 
 
