@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov 22 10:12 2004 (edgrif)
+ * Last edited: Nov 22 18:17 2004 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.9 2004-11-22 17:47:09 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.10 2004-11-22 22:46:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,11 @@
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <zmapView_P.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /*! @defgroup zmapfeatures   zMapFeatures: feature handling for ZMap
@@ -95,12 +99,13 @@ static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
  * @param   void  None.
  * @return  ZMapFeature  A pointer to the new ZMapFeature.
  *  */
-ZMapFeature zmapFeatureCreate(void)
+ZMapFeature zmapFeatureCreateEmpty(void)
 {
   ZMapFeature feature ;
 
   feature = g_new0(ZMapFeatureStruct, 1) ;
-  feature->id = ZMAPFEATUREID_NULL ;
+  feature->feature_id = ZMAPFEATURE_NULLQUARK ;
+  feature->db_id = ZMAPFEATUREID_NULL ;
   feature->type = ZMAPFEATURE_INVALID ;
 
   return feature ;
@@ -114,7 +119,7 @@ ZMapFeature zmapFeatureCreate(void)
  * NOTE that really we need this to be a polymorphic function so that the arguments
  * are different for different features.
  *  */
-gboolean zmapFeatureAugmentData(ZMapFeature feature, char *name,
+gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
 				char *sequence, char *source, ZMapFeatureType feature_type,
 				int start, int end, double score, ZMapStrand strand,
 				ZMapPhase phase,
@@ -124,11 +129,10 @@ gboolean zmapFeatureAugmentData(ZMapFeature feature, char *name,
 
   zMapAssert(feature) ;
 
-  /* Note we have hacked this up for now...in the end we should have a unique id for each feature
-   * but for now we will look at the type to determine if a feature is empty or not..... */
   /* If its an empty feature then initialise... */
-  if (feature->type == ZMAPFEATURE_INVALID)
+  if (feature->feature_id == ZMAPFEATURE_NULLQUARK)
     {
+      feature->feature_id = g_quark_from_string(feature_name_id) ;
       feature->name = g_strdup(name) ;
       feature->type = feature_type ;
       feature->x1 = start ;
@@ -458,7 +462,11 @@ static void doNewFeatureSets(GQuark key_id, gpointer data, gpointer user_data)
        * work as part of a foreach loop....which is where this routine is called from... */
       unused = g_datalist_id_remove_no_notify(&(new_feature_sets), key_id) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       printf("stop here\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
   else
     {

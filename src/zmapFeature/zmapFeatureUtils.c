@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Nov 22 14:46 2004 (edgrif)
+ * Last edited: Nov 22 21:39 2004 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.1 2004-11-22 14:48:22 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.2 2004-11-22 22:46:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,32 +43,33 @@ static gboolean printLine(GIOChannel *channel, gchar *line);
 
 
 
-char *zmapLookUpEnum(int id, int enumType)
+char *zmapFeatureLookUpEnum(int id, int enumType)
 {
   /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
   static char *types[8]   = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
 			     "VARIATION", "BOUNDARY", "SEQUENCE"} ;
   static char *strands[3] = {"ZMAPSTRAND_NONE", "ZMAPSTRAND_DOWN", "ZMAPSTRAND_UP" };
   static char *phases[4]  = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" };
+  char *enum_str = NULL ;
+
+  zMapAssert(enumType == TYPE_ENUM || enumType == STRAND_ENUM || enumType == PHASE_ENUM) ;
 
   switch (enumType)
     {
     case TYPE_ENUM:
-      return types[id];
+      enum_str = types[id];
       break;
 
     case STRAND_ENUM:
-      return strands[id];
+      enum_str = strands[id];
       break;
 
     case PHASE_ENUM:
-      return phases[id];
+      enum_str = phases[id];
       break;
+   }
 
-    default:
-      break;
-    }
-  return NULL;
+  return enum_str ;
 }
 
 char *zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
@@ -228,12 +229,12 @@ static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data)
   if (feature)
     {
       line = g_string_sized_new(150);
-      type   = zmapLookUpEnum(feature->type, TYPE_ENUM);
-      strand = zmapLookUpEnum(feature->strand, STRAND_ENUM);
-      phase  = zmapLookUpEnum(feature->phase, PHASE_ENUM);
+      type   = zmapFeatureLookUpEnum(feature->type, TYPE_ENUM);
+      strand = zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM);
+      phase  = zmapFeatureLookUpEnum(feature->phase, PHASE_ENUM);
 
       g_string_printf(line, "%d\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%f", 
-		      feature->id,
+		      feature->db_id,
 		      feature->name,
 		      type,
 		      feature->x1,
