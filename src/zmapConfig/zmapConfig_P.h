@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  6 15:45 2004 (edgrif)
+ * Last edited: May 27 11:12 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapConfig_P.h,v 1.4 2004-05-07 09:22:37 edgrif Exp $
+ * CVS info:   $Id: zmapConfig_P.h,v 1.5 2004-05-27 13:42:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_P_H
@@ -46,7 +46,7 @@ typedef struct _ZMapConfigStanzaStruct
 {
   char *name ;
   GList *elements ;
-} ZMapConfigStanzaStruct, *ZMapConfigStanza ;
+} ZMapConfigStanzaStruct ;
 
 /* A set of stanzas held as a list. Note duplication of stanza name, its actually in all the
  * the stanzas as a set of stanzas must be of the same name under the current scheme.
@@ -55,7 +55,7 @@ typedef struct _ZMapConfigStanzaSetStruct
 {
   char *name ;
   GList *stanzas ;
-} ZMapConfigStanzaSetStruct, *ZMapConfigStanzaSet ;
+} ZMapConfigStanzaSetStruct ;
 
 /* A configuration, including the configuration file and the list of stanzas derived from
  * that file. */
