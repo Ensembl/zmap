@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Sep 16 11:27 2004 (edgrif)
+ * Last edited: Sep 17 09:52 2004 (rnc)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.2 2004-09-17 08:38:56 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.3 2004-09-17 08:56:34 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -250,7 +250,8 @@ char *lastErrorMsg(void *server_in)
 }
 
 
-static gboolean closeConnection(void *server_in)
+
+static ZMapServerResponseType closeConnection(void *server_in) 
 {
   gboolean result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_in ;

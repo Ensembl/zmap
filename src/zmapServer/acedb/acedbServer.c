@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 16 15:49 2004 (edgrif)
+ * Last edited: Sep 17 09:51 2004 (rnc)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.8 2004-09-17 08:38:58 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.9 2004-09-17 08:56:23 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,7 +47,7 @@ static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType setContext(void *server, char *sequence, int start, int end) ;
 static ZMapServerResponseType request(void *server_conn, ZMapFeatureContext *feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
-static ZMapServerResponseType closeConnection(void *server) ;
+static ZMapServerResponseType closeConnection(void *server_in) ;
 static gboolean destroyConnection(void *server) ;
 
 static gboolean sequenceRequest(AcedbServer server,
@@ -254,7 +254,7 @@ char *lastErrorMsg(void *server_in)
 }
 
 
-static gboolean closeConnection(void *server_in)
+static ZMapServerResponseType closeConnection(void *server_in)
 {
   gboolean result = TRUE ;
   AcedbServer server = (AcedbServer)server_in ;

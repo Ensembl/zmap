@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Sep 16 10:30 2004 (edgrif)
+ * Last edited: Sep 17 09:55 2004 (rnc)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.10 2004-09-17 08:38:57 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.11 2004-09-17 08:56:55 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -204,7 +204,8 @@ ZMapServerResponseType zMapServerRequest(ZMapServer server, void *request)
 
 
 
-gboolean zMapServerCloseConnection(ZMapServer server)
+
+ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) 
 {
   gboolean result = FALSE ;
 
