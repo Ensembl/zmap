@@ -1,4 +1,4 @@
-/*  Last edited: Nov 29 14:16 2004 (rnc) */
+/*  Last edited: Nov 29 16:22 2004 (rnc) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -27,6 +27,7 @@
  
 #include <zmapControl_P.h>
 #include <ZMap/zmapView.h>
+#include <ZMap/zmapUtilsDebug.h>
 
 /* function prototypes **************************************************/
 
@@ -238,6 +239,8 @@ GtkWidget *splitPane(ZMap zmap)
 
   zmapControlWindowSetZoomButtons(zmap, ZMAP_ZOOM_MID);
 
+  gtk_widget_set_sensitive(zmap->close_but, TRUE);
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* resize all the panes to fit the height */
   resizePanes(zmap) ;
@@ -261,6 +264,9 @@ GtkWidget *splitHPane(ZMap zmap)
   /* focus on the new pane */
   zmapRecordFocus(new_pane) ;
 
+  zmapControlWindowSetZoomButtons(zmap, ZMAP_ZOOM_MID);
+
+  gtk_widget_set_sensitive(zmap->close_but, TRUE);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* resize all the panes to fit the width */
@@ -332,11 +338,6 @@ void closePane(GtkWidget *widget, gpointer data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-      /* UM, WE DON'T SEEM TO DESTROY THE PANE HERE ???????????? */
-      gtk_widget_destroy(zmap->focuspane->view_parent_box);
-      gtk_widget_destroy(zmap->focuspane->frame);
-      free(zmap->focuspane) ;
-            
       children = gtk_container_get_children(GTK_CONTAINER(pane_up1));
       if (children == NULL)
 	  gtk_widget_destroy(pane_up1);
@@ -354,14 +355,22 @@ void closePane(GtkWidget *widget, gpointer data)
       if (children)
 	g_list_free(children);
 
-
-      /* remove entry from the list of windows UNFINISHED */
+      /* remove entry from the list of windows */
       {
 	ZMapViewWindow view_window = zmap->focuspane->curr_view_window;
-	/*	GList *list = g_list_find(view_window->parent_view->window_list,
-	  zmap->focuspane->curr_view_window); */
+	GList *list = g_list_find(zMapViewGetWindowList(view_window),
+				    zmap->focuspane->curr_view_window); 
+
+	list = g_list_remove(zMapViewGetWindowList(view_window),
+			     zmap->focuspane->curr_view_window); 
+	zMapViewSetWindowList(view_window, list);
       }
        
+      /* UM, WE DON'T SEEM TO DESTROY THE PANE HERE ???????????? */
+      gtk_widget_destroy(zmap->focuspane->view_parent_box);
+      gtk_widget_destroy(zmap->focuspane->frame);
+      free(zmap->focuspane) ;
+            
       /* In theory, by this point all redundant panes and frames have been destroyed.
        * In reality, I have seen 'hanging' panes (grey squares of window lacking
        * a canvas and scroll bars) after closing multiply-split windows, but life 
@@ -372,6 +381,9 @@ void closePane(GtkWidget *widget, gpointer data)
       
       resizePanes(zmap);                                                                                
     }
+
+  if (panes == 2)  /* that is, there were 2 panes until we just closed one */
+    gtk_widget_set_sensitive(zmap->close_but, FALSE);
 
   return ;
 }
