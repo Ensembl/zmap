@@ -20,16 +20,15 @@
  * This file is part of the ZMap genome database package
  * and was written by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk and
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: Generalised server interface, hides acedb/das/file
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Nov  9 15:24 2004 (edgrif)
+ * Last edited: Feb  2 14:12 2005 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.10 2004-11-12 11:50:16 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.11 2005-02-02 14:34:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -37,59 +36,32 @@
 
 #include <glib.h>
 #include <ZMap/zmapFeature.h>
-#include <ZMap/zmapProtocol.h>
-
-
-
-/* The server interface has basic calls to create/open close/destroy a connection but all other
- * requests are via a generalised request call which accepts args in the protocol defined in
- * ZMap/zmapProtocol.h. This means that the client can just include ZMap/zmapProtocol.h and pass
- * args in that format.  */
 
 
 /* Opaque type, represents a connection to a database server. */
 typedef struct _ZMapServerStruct *ZMapServer ;
-
 
 /* Possible responses to a server request. */
 typedef enum {ZMAP_SERVERRESPONSE_OK,
 	      ZMAP_SERVERRESPONSE_BADREQ, ZMAP_SERVERRESPONSE_REQFAIL,
 	      ZMAP_SERVERRESPONSE_TIMEDOUT, ZMAP_SERVERRESPONSE_SERVERDIED} ZMapServerResponseType ;
 
-
-/* Server context, includes the sequence to be fetched, start/end coords and other stuff needed
- * to fetch server data. */
-typedef struct
-{
-  char *sequence ;
-  int start ;
-  int end ;
-  GData *types ;
-} ZMapServerSetContextStruct, *ZMapServerSetContext ;
-
-
-
-
 /* This routine must be called before any other server routines and must only be called once.
  * It is the callers responsibility to make sure this happens.
  * Provide matching Termination routine ???? */
 gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out) ;
-
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
 				    char *host, int port, char *protocol, int timeout,
 				    char *version_str,
 				    char *userid, char *passwd) ;
-
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
-
-ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapServerSetContext context) ;
-
-ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapProtocolAny request) ;
-
+ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence,
+					    int start, int end, GData *types) ;
+ZMapFeatureContext zMapServerCopyContext(ZMapServer server) ;
+ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureContext feature_context) ;
+ZMapServerResponseType zMapServerGetSequence(ZMapServer server, ZMapFeatureContext feature_context) ;
 char *zMapServerLastErrorMsg(ZMapServer server) ;
-
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) ;
-
 gboolean zMapServerFreeConnection(ZMapServer server) ;
 
 
