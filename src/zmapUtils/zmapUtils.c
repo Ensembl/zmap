@@ -26,13 +26,43 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Apr  2 12:43 2004 (edgrif)
+ * Last edited: Jun 23 15:17 2004 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.1 2004-04-08 16:52:32 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.2 2004-06-25 13:40:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapUtils_P.h>
+
+
+
+int zMapGetVersion(void)
+{
+  return ZMAP_MAKE_VERSION_NUMBER(ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
+}
+
+
+char *zMapGetVersionString(void)
+{
+  return ZMAP_MAKE_VERSION_STRING(ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
+}
+
+char *zMapGetAppName(void)
+{
+  return ZMAP_TITLE ;
+}
+
+char *zMapGetAppTitle(void)
+{
+  return ZMAP_MAKE_TITLE_STRING(ZMAP_TITLE, ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
+}
+
+
+char *zMapGetCopyrightString(void)
+{
+  return ZMAP_COPYRIGHT_STRING(ZMAP_TITLE, ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE, ZMAP_DESCRIPTION) ;
+}
+
 
 
 void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
