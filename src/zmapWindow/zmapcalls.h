@@ -1,4 +1,4 @@
-/*  Last edited: Jan 19 09:50 2004 (rnc) */
+/*  Last edited: Jun 25 11:20 2004 (rnc) */
 /*  file: zmapcalls.h
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -28,16 +28,17 @@
 #ifndef ZMAPCALLS_H
 #define ZMAPCALLS_H
 
-#include <wh/acedb.h>
-#include <wh/regular.h>
-#include <wh/lex.h>
-#include <wh/smap.h>
-#include <wh/method.h>
-#include <wh/smap.h>
-#include <whooks/systags.h>  /* _Float, _Text, _bsRight, etc */
-#include <whooks/classes.h>  /* _VMethod */
-#include <wzmap/zmapcommon.h>
-#include <wzmap/stringbucket.h>
+#include <../acedb/acedb.h>
+#include <../acedb/regular.h>
+#include <../acedb/lex.h>
+#include <../acedb/smap.h>
+#include <../acedb/method.h>
+#include <../acedb/smap.h>
+#include <../acedb/systags.h>  /* _Float, _Text, _bsRight, etc */
+#include <../acedb/classes.h>  /* _VMethod */
+#include <ZMap/zmapcommon.h>
+#include <ZMap/zmapWindow.h>
+#include <../zmapWindow/stringbucket.h>
 /*
 This file defines the seqRegion interface.
 
