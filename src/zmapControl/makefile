@@ -15,10 +15,10 @@ CONT_PRIV_HDRS = zmapControl_P.h
 PUB_HDRS = zmapControl.h
 CONT_SRC = zmapControl.c zmapControlWindow.c zmapControlWindowButtons.c \
            zmapControlWindowFrame.c zmapControlWindowMenubar.c \
-           zmapControlSplit.c zmapControlNavigator.c zmapControlRemote.c
+           zmapControlViews.c zmapControlNavigator.c zmapControlRemote.c
 CONT_OBJ = zmapControl.o zmapControlWindow.o zmapControlWindowButtons.o \
            zmapControlWindowFrame.o zmapControlWindowMenubar.o \
-           zmapControlSplit.o zmapControlNavigator.o zmapControlRemote.o
+           zmapControlViews.o zmapControlNavigator.o zmapControlRemote.o
 
 
 
