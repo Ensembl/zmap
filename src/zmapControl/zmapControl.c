@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jan 20 16:56 2005 (edgrif)
+ * Last edited: Jan 25 17:37 2005 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.44 2005-01-24 11:31:39 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.45 2005-01-25 17:47:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -339,29 +339,6 @@ void zmapControlResetCB(ZMap zmap)
 }
 
 
-/* THIS FUNCTION NO LONGER WORKS AND NEEDS TO BE REDONE..... */
-/* Put new data into an existing View. */
-void zmapControlNewCB(ZMap zmap, char *testing_text)
-{
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (zmap->state == ZMAP_INIT || zmap->state == ZMAP_VIEWS)
-    {
-      ZMapView view ;
-
-      if ((view = addView(zmap, testing_text)))
-	status = zMapViewConnect(view) ;
-
-
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return ;
-}
-
-
 /* Put a new view into a zmap. */
 void zmapControlNewViewCB(ZMap zmap, char *new_sequence)
 {
@@ -372,54 +349,11 @@ void zmapControlNewViewCB(ZMap zmap, char *new_sequence)
   /* these should be passed in ...... */
   int start = 1, end = 0 ;
 
+  /* this is a bit clutzy, it is irrelevant for the first window.... */
+  GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;
 
-  /* THIS ROUTINE AND THE WHOLE PANE/VIEW INTERFACE NEEDS SOME MAJOR TIDYING UP..... */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* this all needs to do view stuff here and return a parent widget............ */
-  parent_widget = splitPane(zmap) ;
-
-
-
-  /* At this point split func does the add call to add a window to an existing view, we want
-   * to add a new view and add a window to that..... */
-  view_window = zMapViewAddWindow(zMapViewGetView(pane->curr_view_window), parent_widget) ;
-
-  pane->curr_view_window = view_window ;		    /* new focus window ?? */
-
-
-
-  /* this code cut/pasted from addView()...needs clearing up.... */
-
-  if ((view = zMapViewCreate(new_sequence, start, end, (void *)zmap))
-      && (view_window = zMapViewAddWindow(view, pane->frame, NULL))
-      && zMapViewConnect(view))
-    {
-      /* add to list of views.... */
-      zmap->view_list = g_list_append(zmap->view_list, view) ;
-      
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmap->focuspane->curr_view_window = view_window ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      zmap->firstTime = FALSE ;
-
-      zmap->state = ZMAP_VIEWS ;
-
-
-      /* Look in focus pane and set title bar/navigator etc......really this should all be
-       * in one focus routine......which we need to remove from zmapAddPane..... */
-
-
-      /* We've added a view so better update everything... */
-      gtk_widget_show_all(zmap->toplevel) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  if ((view = addView(zmap, new_sequence, start, end)))
+    zMapViewConnect(view) ;				    /* return code ???? */
 
   return ;
 }
@@ -508,8 +442,6 @@ static void killZMap(ZMap zmap)
 static ZMapView addView(ZMap zmap, char *sequence, int start, int end)
 {
   ZMapView view = NULL ;
-  ZMapViewWindow view_window = NULL ;
-  GtkWidget *curr_view, *new_parent, *view_parent ;
 
   /* this is a bit clutzy, it is irrelevant for the first window.... */
   GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;
@@ -520,7 +452,7 @@ static ZMapView addView(ZMap zmap, char *sequence, int start, int end)
       /* add to list of views.... */
       zmap->view_list = g_list_append(zmap->view_list, view) ;
 
-      zmapControlSplitInsertWindow(zmap, orientation) ;
+      zmapControlSplitInsertWindow(zmap, view, orientation) ;
 
       zmap->state = ZMAP_VIEWS ;
     }
@@ -603,31 +535,6 @@ static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 
   return ;
 }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean lookForViewWindow(GNode *node, gpointer data)
-{
-  gboolean found_view_window = FALSE ;
-  ZMapPaneViewSearch view_search = (ZMapPaneViewSearch)data ;
-  ZMapPane pane = NULL ;
-  
-  if (node->data)
-    {
-      pane = node->data ;
-
-      if (pane->curr_view_window == view_search->view_window)
-	{
-	  view_search->parent_pane = pane ;
-	  found_view_window = TRUE ;
-	}
-    }
-
-  return found_view_window ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
