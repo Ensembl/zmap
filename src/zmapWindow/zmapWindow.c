@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 24 08:17 2005 (edgrif)
+ * Last edited: Apr  5 14:38 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.68 2005-03-24 08:19:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.69 2005-04-05 14:48:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -136,11 +136,12 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
  * scrolls.....needed to update the navigator...... */
 /* and we will need a callback for focus events as well..... */
 /* I think probably we should insist on being supplied with a sequence.... */
+/* NOTE that not all fields are initialised here as some need to be done when we draw
+ * the actual features. */
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data)
 {
   ZMapWindow window ;
   GtkWidget *canvas ;
-  GdkColor color;
 
   /* No callbacks, then no window creation. */
   zMapAssert(window_cbs_G) ;
@@ -164,8 +165,16 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   /* Some things for window can be specified in the configuration file. */
   getConfiguration(window) ;
 
+  /* Add a hash table to map features to their canvas items. */
+  window->feature_to_item = zmapWindowFToICreate() ;
+  
+
   window->featureListWindows = g_ptr_array_new();
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_datalist_init(&(window->featureItems));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   g_datalist_init(&(window->longItems));
 
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
@@ -187,10 +196,12 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   /* Create the canvas, add it to the scrolled window so all the scrollbar stuff gets linked up
    * and set the background to be white. */
   canvas = foo_canvas_new() ;
-  gtk_container_add(GTK_CONTAINER(window->scrolledWindow), canvas) ;
-  gdk_color_parse("white", &color);
-  gtk_widget_modify_bg(GTK_WIDGET(canvas), GTK_STATE_NORMAL, &color);
   window->canvas = FOO_CANVAS(canvas);
+  gtk_container_add(GTK_CONTAINER(window->scrolledWindow), canvas) ;
+
+  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(window->canvas_background)) ;
+  gtk_widget_modify_bg(GTK_WIDGET(canvas), GTK_STATE_NORMAL, &(window->canvas_background)) ;
+
 
   /* Make the canvas focussable, we want the canvas to be the focus widget of its "window"
    * otherwise keyboard input (i.e. short cuts) will be delivered to some other widget. */
@@ -243,7 +254,9 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
 
 /* Makes a new window that is a copy of the existing one, zoom factor and all.
- * Actually this is rubbish....if its a copy why are we putting in the features ? */
+ * Actually this is rubbish....if its a copy why are we putting in the features ? 
+/* NOTE that not all fields are copid here as some need to be done when we draw
+ * the actual features (e.g. anything that refers to canvas items). */
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
 			  void *app_data, ZMapWindow copy_window,
 			  ZMapFeatureContext feature_context, GData *types)
@@ -254,6 +267,11 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
     {
       double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
       int x, y ;
+
+
+      /* A new window will have new canvas items so we need a new hash. */
+      new->feature_to_item = zmapWindowFToICreate() ;
+
 
       /* this is a little hokey, it assumes we have split the parent window and therefore
        * zoom will now be mid as there will be two scrolled windows... */
@@ -270,11 +288,14 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
       new->text_height        = copy_window->text_height;
       new->seqLength          = copy_window->seqLength;
       new->seq_start          = copy_window->seq_start;
+
+      new->focus_item = copy_window->focus_item ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       new->focusFeature       = copy_window->focusFeature;
-      new->focusType          = copy_window->focusType;
+      new->focus_style = copy_window->focus_style ;
       new->typeName           = copy_window->typeName;
       new->focusQuark         = copy_window->focusQuark;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       /* I'm a little uncertain how much of the below is really necessary as we are
        * going to call the draw features code anyway. */
@@ -687,6 +708,8 @@ void zmapWindowPrintGroup(FooCanvasGroup *group)
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 GQuark zMapWindowGetFocusQuark(ZMapWindow window)
 {
   return window->focusQuark;
@@ -697,6 +720,8 @@ gchar *zMapWindowGetTypeName(ZMapWindow window)
 {
   return window->typeName;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -791,9 +816,16 @@ void zMapWindowDestroy(ZMapWindow window)
       g_ptr_array_free(window->featureListWindows, FALSE);
     }
   
+  
+  zmapWindowFToIDestroy(window->feature_to_item) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_datalist_clear(&(window->featureItems));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   g_datalist_clear(&(window->longItems));
+
   g_free(window) ;
   
   return ;
@@ -809,7 +841,7 @@ void zMapWindowDestroy(ZMapWindow window)
 
 
 
-/* Recursive function to print out all the groups below the supplied group. */
+/* Recursive function to print out all the child groups of the supplied group. */
 static void printGroup(FooCanvasGroup *group, int indent)
 {
   int i ;
@@ -818,8 +850,10 @@ static void printGroup(FooCanvasGroup *group, int indent)
   for (i = 0 ; i < indent ; i++)
     printf("\t") ;
 
+  /* Print this group. */
   zmapWindowPrintGroup(group) ;
 
+  /* Print all the child groups of this group. */
   list = g_list_first(group->item_list) ;
   do
     {
@@ -1252,7 +1286,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
 
 	/* Report to our parent that we have been clicked in, we change "click" to "focus"
-	 * because that is what this if for.... */
+	 * because that is what this is for.... */
 	(*(window_cbs_G->click))(window, window->app_data, NULL) ;
 
 	
