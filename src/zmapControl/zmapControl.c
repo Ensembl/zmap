@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: May 20 10:22 2004 (edgrif)
+ * Last edited: May 27 12:18 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.9 2004-05-20 14:09:32 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.10 2004-05-27 13:39:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,57 +53,13 @@ static void killFinal(ZMap zmap) ;
 static void killViews(ZMap zmap) ;
 
 static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
-
+static ZMapView addView(ZMap zmap, char *sequence) ;
 
 
 /*
  *  ------------------- External functions -------------------
  *   (includes callbacks)
  */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Create a new zmap, will be blank if sequence is NULL, otherwise it will create a view
- * within the zmap displaying the sequence. Returns NULL on failure. */
-ZMap zMapCreate(char *sequence, void *app_data, ZMapCallbackFunc app_zmap_destroyed_cb)
-{
-  ZMap zmap = NULL ;
-
-
-  zmap = createZMap(app_data, app_zmap_destroyed_cb) ;
-
-  /* Make the main/toplevel window for the ZMap. */
-  zmapControlWindowCreate(zmap, zmap->zmap_id) ;
-
-  zmap->state = ZMAP_INIT ;
-
-  /* Create a zmapView if a sequence is specified. */
-  if (sequence)
-    {
-      ZMapView view ;
-
-      if ((view = zMapViewCreate(zmap->view_parent, sequence, zmap, viewKilledCB))
-	  && (zMapViewConnect(view)))
-	{
-	  /* add to list of views.... */
-	  zmap->curr_view = view ;
-	  zmap->view_list = g_list_append(zmap->view_list, view) ;
-
-	  zmap->state = ZMAP_VIEWS ;
-	}
-      else
-	{
-	  destroyZMap(zmap) ;
-	  zmap = NULL ;
-	}
-
-    }
-
-
-  return zmap ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -126,22 +82,12 @@ ZMap zMapCreate(void *app_data, ZMapCallbackFunc app_zmap_destroyed_cb)
 
 ZMapView zMapAddView(ZMap zmap, char *sequence)
 {
-  ZMapView view = NULL ;
+  ZMapView view ;
 
   zMapAssert(zmap && sequence && *sequence) ;
 
-  if ((view = zMapViewCreate(zmap->view_parent, sequence, zmap, viewKilledCB)))
-    {
+  view = addView(zmap, sequence) ;
 
-      /* HACK FOR NOW, WE WON'T ALWAYS WANT TO MAKE THE LATEST VIEW TO BE ADDED THE "CURRENT" ONE. */
-      zmap->curr_view = view ;
-
-      /* add to list of views.... */
-      zmap->view_list = g_list_append(zmap->view_list, view) ;
-      
-      zmap->state = ZMAP_VIEWS ;
-    }
-  
   return view ;
 }
 
@@ -341,6 +287,22 @@ void zmapControlResetCB(ZMap zmap)
 }
 
 
+/* Put new data into a View. */
+void zmapControlNewCB(ZMap zmap, char *testing_text)
+{
+  gboolean status = FALSE ;
+
+  if (zmap->state == ZMAP_INIT || zmap->state == ZMAP_VIEWS)
+    {
+      ZMapView view ;
+
+      view = addView(zmap, testing_text) ;
+    }
+
+  return ;
+}
+
+
 
 /*
  *  ------------------- Internal functions -------------------
@@ -423,6 +385,26 @@ static void killZMap(ZMap zmap)
     }
 
   return ;
+}
+
+
+static ZMapView addView(ZMap zmap, char *sequence)
+{
+  ZMapView view = NULL ;
+
+  if ((view = zMapViewCreate(zmap->view_parent, sequence, zmap, viewKilledCB)))
+    {
+
+      /* HACK FOR NOW, WE WON'T ALWAYS WANT TO MAKE THE LATEST VIEW TO BE ADDED THE "CURRENT" ONE. */
+      zmap->curr_view = view ;
+
+      /* add to list of views.... */
+      zmap->view_list = g_list_append(zmap->view_list, view) ;
+      
+      zmap->state = ZMAP_VIEWS ;
+    }
+  
+  return view ;
 }
 
 
