@@ -25,9 +25,9 @@
  * Description: Internals for the thread control code.
  *              
  * HISTORY:
- * Last edited: Jan 27 14:17 2005 (edgrif)
+ * Last edited: Feb  3 10:42 2005 (edgrif)
  * Created: Thu Jan 27 11:18:44 2005 (edgrif)
- * CVS info:   $Id: zmapThreads_P.h,v 1.1 2005-02-02 15:15:52 edgrif Exp $
+ * CVS info:   $Id: zmapThreads_P.h,v 1.2 2005-02-03 15:03:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_PRIV_H
@@ -89,6 +89,9 @@ typedef struct _ZMapThreadStruct
 
   /* User registered routine to which the thread calls to handle requests and replies. */
   ZMapThreadRequestHandlerFunc handler_func ;
+
+  /* User registered routine to be called when a thread has to exit abnormally. */
+  ZMapThreadTerminateHandler terminate_func ;
 
 } ZMapThreadStruct ;
 

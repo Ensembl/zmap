@@ -29,9 +29,9 @@
  *              
  * Exported functions: See ZMap/zmapThread.h
  * HISTORY:
- * Last edited: Feb  1 16:28 2005 (edgrif)
+ * Last edited: Feb  3 10:36 2005 (edgrif)
  * Created: Thu Jan 27 11:25:37 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.c,v 1.1 2005-02-02 14:41:09 edgrif Exp $
+ * CVS info:   $Id: zmapThreads.c,v 1.2 2005-02-03 15:03:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,11 +44,36 @@
 gboolean zmap_thread_debug_G = FALSE ;
 
 
-static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func) ;
+static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
+			       ZMapThreadTerminateHandler terminate_func) ;
 static void destroyThread(ZMapThread thread) ;
 
 
-ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func)
+/*! @defgroup zmapthreads   zMapThreads: creating, controlling and destroying slave threads
+ * @{
+ * 
+ * \brief  Slave Threads
+ * 
+ * zMapThreads routines create, issue requests to, and destroy slave threads.
+ * On creation slave threads are given a routine that they will call whenever
+ * they receive a request. This routine handles the request and returns the
+ * result to the slave thread code which forwards it to the master thread.
+ *
+ *
+ *  */
+
+
+
+/*!
+ * Creates a new thread. On creation the thread will wait indefinitely until given a request,
+ * on receiving the request the slave thread will forward it to the handler_func
+ * supplied by the caller when the thread was created.
+ *
+ * @param handler_func   A function that the slave thread can call to handle all requests.
+ * @return  A thread object, all subsequent requests must be sent to this thread object.
+ *  */
+ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
+			    ZMapThreadTerminateHandler terminate_func)
 {
   ZMapThread thread ;
   pthread_t thread_id ;
@@ -57,7 +82,7 @@ ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func)
 
   zMapAssert(handler_func) ;
 
-  thread = createThread(handler_func) ;
+  thread = createThread(handler_func, terminate_func) ;
 
   /* ok to just set state here because we have not started the thread yet.... */
   zmapCondVarCreate(&(thread->request)) ;
@@ -211,6 +236,8 @@ void zMapThreadDestroy(ZMapThread thread)
 }
 
 
+/*! @} end of zmapthreads docs. */
+
 
 
 /* 
@@ -219,13 +246,15 @@ void zMapThreadDestroy(ZMapThread thread)
 
 
 
-static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func)
+static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
+			       ZMapThreadTerminateHandler terminate_func)
 {
   ZMapThread thread ;
 
   thread = g_new0(ZMapThreadStruct, 1) ;
 
   thread->handler_func = handler_func ;
+  thread->terminate_func = terminate_func ;
 
   return thread ;
 }
