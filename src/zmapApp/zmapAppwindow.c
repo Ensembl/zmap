@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 14:47 2004 (edgrif)
+ * Last edited: Nov 15 15:26 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.15 2004-11-09 14:48:48 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.16 2004-11-19 14:05:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -120,7 +120,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   end = 0 ;
   if (!checkForCmdLineSequenceArgs(argc, argv, &sequence, &start, &end))
     {
-      exit(EXIT_FAILURE) ;
+      zMapExit(EXIT_FAILURE) ;
     }
   else if (sequence)
     {
@@ -129,7 +129,12 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   gtk_main() ;
 
-  return(EXIT_SUCCESS) ;
+
+  zMapExit(EXIT_SUCCESS) ;				    /* exits.... */
+
+
+  /* We should never get here, hence the failure return code. */
+  return(EXIT_FAILURE) ;
 }
 
 
@@ -145,7 +150,7 @@ void zmapAppExit(ZMapAppContext app_context)
       zMapLogDestroy(app_context->logger) ;
     }
 
-  gtk_exit(EXIT_SUCCESS) ;
+  zMapExit(EXIT_SUCCESS) ;
 }
 
 
@@ -164,7 +169,7 @@ static void initGnomeGTK(int argc, char *argv[])
   if ((err_msg = gtk_check_version(ZMAP_GTK_MAJOR, ZMAP_GTK_MINOR, ZMAP_GTK_MICRO)))
     {
       zMapLogCritical("%s\n", err_msg) ;
-      zMapExit("%s\n", err_msg) ;
+      zMapExitMsg("%s\n", err_msg) ;
 
       gtk_exit(EXIT_FAILURE) ;
     }
