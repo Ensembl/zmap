@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct  1 20:36 2004 (edgrif)
+ * Last edited: Oct  5 12:38 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.24 2004-10-04 12:58:39 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.25 2004-10-13 12:37:35 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1258,12 +1258,13 @@ static GData *getTypesFromFile(void)
        * those being loaded below or you might segfault.
        * IF YOU ADD ANY ELEMENTS TO THIS ARRAY THEN MAKE SURE YOU UPDATE THE INIT STATEMENTS
        * FOLLOWING THIS ARRAY SO THEY POINT AT THE RIGHT ELEMENTS....!!!!!!!! */
-      ZMapConfigStanzaElementStruct types_elements[] = {{"name", ZMAPCONFIG_STRING, {NULL}},
-							{"outline", ZMAPCONFIG_STRING, {"black"}},
-							{"foreground", ZMAPCONFIG_STRING, {"white"}},
-							{"background", ZMAPCONFIG_STRING, {"black"}},
-							{"width", ZMAPCONFIG_FLOAT, {NULL}},
-							{"showUpStrand", ZMAPCONFIG_BOOL, {NULL}},
+      ZMapConfigStanzaElementStruct types_elements[] = {{"name"        , ZMAPCONFIG_STRING, {NULL}},
+							{"outline"     , ZMAPCONFIG_STRING, {"black"}},
+							{"foreground"  , ZMAPCONFIG_STRING, {"white"}},
+							{"background"  , ZMAPCONFIG_STRING, {"black"}},
+							{"width"       , ZMAPCONFIG_FLOAT , {NULL}},
+							{"showUpStrand", ZMAPCONFIG_BOOL  , {NULL}},
+							{"minmag"      , ZMAPCONFIG_FLOAT , {NULL}},
 							{NULL, -1, {NULL}}} ;
 
 
@@ -1308,6 +1309,7 @@ static GData *getTypesFromFile(void)
 	      gdk_color_parse(zMapConfigGetElementString(next_types, "background"), &new_type->background) ;
 	      new_type->width = zMapConfigGetElementFloat(next_types, "width") ;
 	      new_type->showUpStrand = zMapConfigGetElementBool(next_types, "showUpStrand");
+	      new_type->min_mag = zMapConfigGetElementFloat(next_types, "minmag");
 
 	      g_datalist_set_data(&types, name, new_type) ;
 	      num_types++ ;
