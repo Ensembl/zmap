@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 27 12:05 2004 (rnc)
+ * Last edited: Oct 13 13:21 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.4 2004-09-27 11:06:42 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.5 2004-10-13 12:32:20 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,7 +54,8 @@ static void quitListCB   (GtkWidget *window, gpointer data);
 void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set)
 {
   GtkWidget *treeView = gtk_tree_view_new();
-  GtkWidget *featureList;
+  GtkWidget *featureList, *scrolledWindow;
+
   GtkTreeStore *list = gtk_tree_store_new(N_COLUMNS,
 					  G_TYPE_STRING,
 					  G_TYPE_INT,
@@ -71,8 +72,12 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
   canvasData->window->featureListWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_container_border_width(GTK_CONTAINER(canvasData->window->featureListWindow), 5) ;
   gtk_window_set_title(GTK_WINDOW(canvasData->window->featureListWindow), feature_set->source) ;
-  gtk_window_set_default_size(GTK_WINDOW(canvasData->window->featureListWindow), -1, 200);
+  gtk_widget_set_size_request(canvasData->window->featureListWindow, -1, 800);
 
+  scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
+  gtk_container_add(GTK_CONTAINER(canvasData->window->featureListWindow), scrolledWindow);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow),
+				 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
   
   /* Build and populate the list */
   g_datalist_foreach(&(feature_set->features),addItemToList , list) ;
@@ -137,7 +142,7 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
   g_signal_connect(GTK_OBJECT(canvasData->window->featureListWindow), "destroy",
 		   GTK_SIGNAL_FUNC(quitListCB), featureList);
 
-  gtk_container_add(GTK_CONTAINER(canvasData->window->featureListWindow), featureList);
+  gtk_container_add(GTK_CONTAINER(scrolledWindow), featureList);
 
   gtk_widget_show_all(canvasData->window->featureListWindow);
 
@@ -193,12 +198,27 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 	{
 	  /* scroll up or down to user's selection */
 	  foo_canvas_scroll_to(canvasData->canvas, 0.0, 
-			       start * canvasData->magFactor * canvasData->window->zoom_factor);
+			       start);
+
+	  if (!FOO_IS_CANVAS_GROUP(foo_canvas_root(canvasData->canvas)))
+	    {
+	      printf("nope: broken\n");
+	      return TRUE;
+	    }
+	  else
+	    printf("root is good\n");
+
+	  zmapDrawLine(foo_canvas_root(canvasData->canvas), 0.0, 
+		       start,
+		       500.0,
+		       start,
+		       "black",
+		       1.0);
 
 	  foo_canvas_c2w(canvasData->canvas, 0.0, 
-			 start * canvasData->magFactor * canvasData->window->zoom_factor, &wx, &wy);
+			 start * canvasData->window->zoom_factor * canvasData->window->zoom_factor, &wx, &wy);
 
-	  item = foo_canvas_get_item_at(canvasData->canvas, canvasData->x+1.0, wy+7.0);
+	  item = foo_canvas_get_item_at(canvasData->canvas, canvasData->x+1.0, start);
 
 	  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), type) ;
 
