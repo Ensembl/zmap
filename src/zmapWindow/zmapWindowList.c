@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 14 09:31 2004 (rnc)
+ * Last edited: Oct 19 09:29 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.6 2004-10-14 15:22:56 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.7 2004-10-19 14:53:08 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -170,6 +170,8 @@ static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
   return;
 }
 
+
+
 static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
 {
   ZMapCanvasDataStruct *canvasData = (ZMapCanvasDataStruct*)data;
@@ -183,55 +185,56 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
   GdkColor foreground;
   static gboolean FIRSTTIME = TRUE;
 
-  if (FIRSTTIME)  /* when we first display the list, don't scroll to selected feature. */
-    FIRSTTIME = FALSE;
-  else
+
+  /* At present, when we display the list, it will scroll the main display
+  ** to the first feature on the list.  This is not good but it's not my
+  ** top priority right now. */
+
+  /* retrieve user's selection */
+  if (gtk_tree_selection_get_selected (selection, &model, &iter))
     {
-      // retrieve user's selection
-      if (gtk_tree_selection_get_selected (selection, &model, &iter))
-	{
-	  gtk_tree_model_get (model, &iter, NAME, &name, START, &start, 
-			      END, &end, TYPE, &type, FEATURE_TYPE, &feature_type, -1);
-	}
-      
-      if (start)
-	{
-	  /* scroll up or down to user's selection */
-	  foo_canvas_scroll_to(canvasData->canvas, 0.0, 
-			       start);
-
-	  wx = start;
-	  gdk_color_parse("black", &outline);
-	  zmapDrawLine(foo_canvas_root(canvasData->canvas), 0.0, 
-		       wx,
-		       500.0,
-		       wx,
-		       &outline,
-		       1.0);
-
-	  foo_canvas_c2w(canvasData->canvas, 0.0, 
-			 start * canvasData->window->zoom_factor * canvasData->window->zoom_factor, &wx, &wy);
-
-	  item = foo_canvas_get_item_at(canvasData->canvas, canvasData->x+1.0, start);
-
-	  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), type) ;
-
-	  zmapHighlightObject(item, canvasData);
-
-	  canvasData->feature->name        = name;
-	  canvasData->feature->x1          = start;
-	  canvasData->feature->x2          = end;
-	  canvasData->feature->type        = feature_type;
-	  canvasData->feature->method_name = type;
-
-	  zMapFeatureClickCB(canvasData, canvasData->feature); /* show feature details on info_panel  */
-
-	  gtk_widget_show_all(GTK_WIDGET(canvasData->window->parent_widget));
-	}
-
-      if (name)      
-	g_free(name); 
+      gtk_tree_model_get (model, &iter, NAME, &name, START, &start, 
+			  END, &end, TYPE, &type, FEATURE_TYPE, &feature_type, -1);
     }
+  
+  if (start)
+    {
+      /* scroll up or down to user's selection */
+      foo_canvas_scroll_to(canvasData->canvas, 0.0, 
+			   start);
+      
+      wx = start;
+      gdk_color_parse("black", &outline);
+      /*	  zmapDrawLine(foo_canvas_root(canvasData->canvas), 0.0, 
+	wx,
+	500.0,
+	wx,
+	&outline,
+	1.0);
+      */
+      foo_canvas_c2w(canvasData->canvas, 0.0, 
+		     start * canvasData->window->zoom_factor * canvasData->window->zoom_factor, &wx, &wy);
+      
+      item = foo_canvas_get_item_at(canvasData->canvas, canvasData->x+1.0, start);
+      
+      canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), type) ;
+      
+      zmapHighlightObject(item, canvasData);
+      
+      canvasData->feature->name        = name;
+      canvasData->feature->x1          = start;
+      canvasData->feature->x2          = end;
+      canvasData->feature->type        = feature_type;
+      canvasData->feature->method_name = type;
+      
+      zMapFeatureClickCB(canvasData, canvasData->feature); /* show feature details on info_panel  */
+      
+      gtk_widget_show_all(GTK_WIDGET(canvasData->window->parent_widget));
+    }
+  
+  if (name)      
+    g_free(name); 
+    
   return TRUE;
 }
 
