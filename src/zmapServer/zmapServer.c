@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 25 12:04 2004 (edgrif)
+ * Last edited: Jul 15 12:36 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.4 2004-06-25 13:38:29 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.5 2004-07-15 15:11:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,7 +96,7 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
   ZMapServerFuncs serverfuncs = (ZMapServerFuncs)global_data ;
 
 
-  server = g_new(ZMapServerStruct, sizeof(ZMapServerStruct)) ; /* n.b. crashes on failure. */
+  server = g_new0(ZMapServerStruct, sizeof(ZMapServerStruct)) ; /* n.b. crashes on failure. */
   *server_out = server ;
 
   /* set function table. */
