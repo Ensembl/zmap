@@ -5,19 +5,23 @@
 #
 
 APP_DIR = zmapApp
-MAKE_DIRS = $(APP_DIR) zmapmanager zmapserver zmapthreads zmaputils zmapwindow
+MAKE_DIRS = $(APP_DIR) zmapAppmanager zmapserver zmapthreads zmaputils zmapwindow
 
 
-all: makebindir 
-	@for d in $(MAKE_DIRS); do \
-	(cd $$d ; echo ; echo 'make '$@' in '$$d ; $(MAKE) $@ ; echo) ; \
-	done
+all: makebindir libs zmap 
+	@echo 'made ZMap libraries and executables...'
 
 clean: makebindir
 	@for d in $(MAKE_DIRS); do \
 	(cd $$d ; echo ; echo 'make '$@' in '$$d ; $(MAKE) $@ ; echo) ; \
 	done
 	@rm -f $(ZMAPAPP_LIB) $(ZMAP_LIB)
+
+# note that we issue a "make all" in the subdirectories, not a "make libs"
+libs: makebindir 
+	@for d in $(MAKE_DIRS); do \
+	(cd $$d ; echo ; echo 'make all in '$$d ; $(MAKE) 'all' ; echo) ; \
+	done
 
 zmap : makebindir
 	@cd $(APP_DIR) ; echo ; echo 'make '$@ ; $(MAKE) $@ ; echo
