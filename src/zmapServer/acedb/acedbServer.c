@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 25 11:52 2004 (edgrif)
+ * Last edited: Jul 15 14:26 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.3 2004-06-25 13:39:11 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.4 2004-07-15 15:12:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,16 +93,14 @@ static gboolean createConnection(void **server_out,
   gboolean result = FALSE ;
   AcedbServer server ;
 
-  server = (AcedbServer)g_new(AcedbServerStruct, 1) ;
+  /* Always return a server struct as it contains error message stuff. */
+  server = (AcedbServer)g_new0(AcedbServerStruct, 1) ;
   server->last_err_status = ACECONN_OK ;
+  *server_out = (void *)server ;
 
   if ((server->last_err_status =
        AceConnCreate(&(server->connection), host, port, userid, passwd, 20)) == ACECONN_OK)
-    {
-      *server_out = (void *)server ;
-
-      result = TRUE ;
-    }
+    result = TRUE ;
 
   return result ;
 }
@@ -196,14 +194,17 @@ static gboolean request(void *server_in, ZMapServerRequestType request,
 }
 
 
-/* ummm, this doesn't seem to work for aceconn...where does the status come from...???? */
+
 char *lastErrorMsg(void *server_in)
 {
+  char *err_msg ;
   AcedbServer server = (AcedbServer)server_in ;
 
-  AceConnGetErrorMsg(server->connection, server->last_err_status) ;
+  zMapAssert(server_in) ;
 
-  return NULL ;
+  err_msg = AceConnGetErrorMsg(server->connection, server->last_err_status) ;
+
+  return err_msg ;
 }
 
 
