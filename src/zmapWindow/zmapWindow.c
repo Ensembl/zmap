@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 18 07:48 2004 (edgrif)
+ * Last edited: Oct 19 15:46 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.39 2004-10-18 10:12:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.40 2004-10-19 14:46:35 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -274,22 +274,28 @@ void zMapWindowDestroy(ZMapWindow window)
  * the width the same. */
 void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 {
-  int x, y, width, height;
+  int x, y;
   GtkAdjustment *adjust;
   int direction = +1;
   ZMapCanvasDataStruct *canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
-  double x1, y1, x2, y2, z, scroll_height, new_height, adj_value = 0.0;
+  double x1, y1, x2, y2, scroll_height, new_height, adj_value = 0.0, width, height, dummy;
   GtkRequisition req;
-  static gboolean reduced = FALSE; /* once you've reduced the scrolled_region, keep recalculating
-				    **   it */
 
-  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
+  
+
   foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
   scroll_height = y2 - y1;
 
-  /* Get vertical adjustment. Since it's just a pointer, we see the real value whenever we
-  ** refer to it in this function, even as it changes. */  
+  /* In order to stay centred on wherever we are in the canvas while zooming, we get the 
+  ** current position (offset), add half the page-size to get the centre of the screen,
+  ** then convert to world coords and store those.    
+  ** After the zoom, we convert those values back to canvas pixels (changed by the call to
+  ** pixels_per_unit) and scroll to them. */
+ 
+  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
   adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
+  y += adjust->page_size/2;
+  foo_canvas_c2w(window->canvas, x, y, &width, &height);
 
   /* long term I'm going to have to actually work out whether we're down to one base per line,
   ** but for now this is somewhere in the right ballpark. Assuming 20 pixels per base for now. */
@@ -306,68 +312,73 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 	}
       else
 	if (canvasData->column_position) 
-	  printf("Reached zoom-in limit of < 1 base per line. %f\n", window->zoom_factor);
+	  {
+	    canvasData->atLimit = TRUE;
+	    printf("Reached zoom-in limit of < 1 base per line. %f\n", window->zoom_factor);
+	  }
     }
       
-  if (canvasData->column_position)  /* don't zoom if no columns have been drawn yet */
+  if (zoom_factor > 1.0)        /* ie we're zooming in  */
     {
-      if (zoom_factor > 1.0)        /* ie we're zooming in  */
+      if (!canvasData->atLimit)             /* stop at 1 base per line */
 	{
 	  /* There's an X-Windows limit of 32k on the dimensions, above which objects
 	  ** are not drawn correctly, so we have to handle that here. */ 
 	  if ((scroll_height * window->zoom_factor) > WINDOW_LIMIT)
 	    {
-	      reduced = TRUE;
+	      canvasData->reduced = TRUE;
+	      foo_canvas_c2w(window->canvas, x, y, &dummy, &y1);
 	      new_height = WINDOW_LIMIT/window->zoom_factor;
-	      y1 = (scroll_height - new_height);
-	      y2 = y1 + new_height/2.0;
+	      y1 -= new_height/2.0;
+	      y2 = y1 + new_height;
 	      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
-	      
-	      /* To centre the scroll in the new region, divide by 4; the zoom will then double it. */
-	      adj_value = new_height / 4.0;
 	    }
 	  else
-	      if (!reduced)
-		foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, canvasData->seqLength);
+	    if (!canvasData->reduced)
+	      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, canvasData->seqLength);
 	}
-      else                                 /* zooming out */
+    }
+  else                                 /* zooming out */
+    {
+      canvasData->atLimit = FALSE;
+      if ((scroll_height * window->zoom_factor) < WINDOW_LIMIT)
 	{
-	  if ((scroll_height * window->zoom_factor) < WINDOW_LIMIT)
+	  new_height = WINDOW_LIMIT/(window->zoom_factor * 2.0);
+	  if (new_height < canvasData->seqLength)
 	    {
-	      new_height = WINDOW_LIMIT/(window->zoom_factor * 2.0);
-	      if (new_height < canvasData->seqLength)
-		foo_canvas_set_scroll_region(window->canvas, x1, y1/2.0, x2, new_height);
-	      else
-		{
-		  reduced = FALSE;
-		  foo_canvas_set_scroll_region(window->canvas, x1, 1.0, x2, canvasData->seqLength);
-		}
+	      foo_canvas_c2w(window->canvas, x, y, &dummy, &y1);
+	      y1 -= new_height/2.0;
+	      y2 = y1 + new_height;
+	      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
+	    }
+	  else
+	    {
+	      canvasData->reduced = FALSE;
+	      foo_canvas_set_scroll_region(window->canvas, x1, 1.0, x2, canvasData->seqLength);
 	    }
 	}
     }
-
+    
   foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
   
   /* scroll to the same point on the canvas as you were at before zooming */ 
   if (canvasData->focusFeature)
     {
-      double x1, y1, x2, y2;
+      int cx, cy;
+      double wx1, wy1, wx2, wy2;
       
-      foo_canvas_item_get_bounds(canvasData->focusFeature, &x1, &y1, &x2, &y2);
-      gtk_adjustment_set_value(adjust, y1 * window->zoom_factor);
+      foo_canvas_item_get_bounds(canvasData->focusFeature, &wx1, &wy1, &wx2, &wy2);
+      foo_canvas_w2c(window->canvas, wx1, wy1, &cx, &cy);
+      foo_canvas_scroll_to(window->canvas, cx, cy - (adjust->page_size/2));
     }
   else
-    if (adj_value)
-      gtk_adjustment_set_value(adjust, adj_value);
-  
-  foo_canvas_scroll_to(window->canvas, x, adjust->value );
-  
-  /* The first time this function is called is before any of the columns have been drawn,
-  ** so hideUnhideColumn will fail if we call it then */
-  if (canvasData->column_position)
-    g_datalist_foreach(&(canvasData->feature_context->feature_sets), hideUnhideColumn, canvasData) ;
-  
+    {
+      foo_canvas_w2c(window->canvas, width, height, &x, &y);
+      foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
+    }
 
+  g_datalist_foreach(&(canvasData->feature_context->feature_sets), hideUnhideColumn, canvasData) ;
+  
   return;
 }
 
