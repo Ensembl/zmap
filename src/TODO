@@ -27,6 +27,21 @@ actual focus window still seems good though and the highlighting of the "stuck" 
 can be undone by moving the pointer in and out of the window.
 
 
+- high cpu usage on deskpro203
+
+ output from gprof
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ps/call  ps/call  name    
+ 57.14      0.04     0.04   800492 49969.27 62461.59  checkStateConnections
+ 28.57      0.06     0.02                             zmapIdleCB
+ 14.29      0.07     0.01   800492 12492.32 12492.32  zmapVarGetValueWithData
+  0.00      0.07     0.00   800492     0.00 12492.32  zMapThreadGetReplyWithData
+
+Broken version of gtk on this machine? broken use of gtk?  seems fine on alpha.
+
+Do we need to register/unregister zmapIdleCB? Don't want this I guess, 
+threads might never return...
 
 
 
