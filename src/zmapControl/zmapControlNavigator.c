@@ -26,17 +26,16 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 21 09:45 2004 (rnc)
+ * Last edited: Jul 21 16:13 2004 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.6 2004-07-21 08:46:35 rnc Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.7 2004-07-21 15:14:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 
 #include <zmapControl_P.h>
 
-
-/* AGH, we need a navigator struct to hold navigator stuff.......... */
+#define NAV_NO_SCALE "<no data>"
 
 void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
 {
@@ -45,18 +44,23 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
   GtkWidget *vscale;
 
   zmap->navigator = g_new0(ZMapNavStruct, 1);
+
   gtk_widget_size_request(frame, &req);
-  // Need a vbox so we can add a label with sequence size at the bottom later
+
+  /* Need a vbox so we can add a label with sequence size at the bottom later,
+   * we set it to a fixed width so that the text is always visible. */
   zmap->navigator->navVBox = gtk_vbox_new(FALSE, 0);
-  // if we want to change the max, we'll have to destroy and recreate the vscale
+  gtk_widget_set_usize(GTK_WIDGET(zmap->navigator->navVBox), 150, -2) ;
+
+  /* if we want to change the max, we'll have to destroy and recreate the vscale. */
   zmap->navigator->navVScale = gtk_vscale_new_with_range(0, req.height, increment);
   gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navVScale, TRUE, TRUE, 0);
-  zmap->navigator->navHBox = gtk_hbox_new(TRUE, 0);
 
-  zmap->navigator->navLabel = gtk_label_new("     ");
-  gtk_container_add(GTK_CONTAINER(zmap->navigator->navHBox), zmap->navigator->navLabel);
+  /* Note how we pack the label at the end of the vbox and set "expand" to FALSE so that it
+   * remains small and the vscale expands to fill the rest of the box. */
+  zmap->navigator->navLabel = gtk_label_new(NAV_NO_SCALE) ;
+  gtk_box_pack_end(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navLabel, FALSE, TRUE, 0);
 
-  gtk_box_pack_end(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navHBox, FALSE, FALSE, 0);
 
   return;
 }
@@ -71,13 +75,17 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapMapBlock sequence_
 
   /* May be called with no sequence to parent mapping so must set default navigator for this. */
   if (sequence_to_parent_mapping)
-    navigator->sequence_to_parent = *sequence_to_parent_mapping ; /* n.b. struct copy */
+    {
+      navigator->sequence_to_parent = *sequence_to_parent_mapping ; /* n.b. struct copy */
+      str = g_strdup_printf("%d", navigator->sequence_to_parent.p2) ;
+    }
   else
-    navigator->sequence_to_parent.p1 = navigator->sequence_to_parent.p2
-      = navigator->sequence_to_parent.c1 = navigator->sequence_to_parent.c2 = 0 ;
+    {
+      navigator->sequence_to_parent.p1 = navigator->sequence_to_parent.p2
+	= navigator->sequence_to_parent.c1 = navigator->sequence_to_parent.c2 = 0 ;
+      str = g_strdup(NAV_NO_SCALE) ;
+    }
 
-  /* Need to use sequence_to_parent to set scroll bar size, scale etc..... */
-  str = g_strdup_printf("%d", navigator->sequence_to_parent.p2);
   gtk_label_set_text(GTK_LABEL(navigator->navLabel), str);
   g_free(str);
 
