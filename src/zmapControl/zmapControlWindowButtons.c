@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Oct 18 12:42 2004 (edgrif)
+ * Last edited: Nov  4 11:48 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.16 2004-10-18 13:03:45 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.17 2004-11-04 12:43:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -107,12 +107,12 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(splitHPaneCB), (gpointer)zmap) ;
   gtk_box_pack_start(GTK_BOX(hbox), vsplit_button, FALSE, FALSE, 0) ;
                                                                                            
-  zoomin_button = gtk_button_new_with_label("Zoom In");
+  zmap->zoomin_but = zoomin_button = gtk_button_new_with_label("Zoom In");
   gtk_signal_connect(GTK_OBJECT(zoomin_button), "clicked",
 		     GTK_SIGNAL_FUNC(zoomInCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomin_button, FALSE, FALSE, 0) ;
                                                                                            
-  zoomout_button = gtk_button_new_with_label("Zoom Out");
+  zmap->zoomout_but = zoomout_button = gtk_button_new_with_label("Zoom Out");
   gtk_signal_connect(GTK_OBJECT(zoomout_button), "clicked",
 		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
@@ -136,6 +136,49 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 }
 
 
+/* We make an assumption in this routine that zoom will only be one of fixed, min, mid or max and
+ * that zoom can only go from min to max _via_ the mid state. */
+void zmapControlWindowDoTheZoom(ZMap zmap, double zoom)
+{
+  ZMapPane pane = zmap->focuspane ;
+  ZMapWindowZoomStatus zoom_status ;
+
+  zoom_status = zMapWindowZoom(zMapViewGetWindow(pane->curr_view_window), zoom) ;
+
+  zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
+
+  return ;
+}
+
+
+void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status)
+{
+
+
+  if (zoom_status == ZMAP_ZOOM_FIXED)
+    {
+      if (GTK_WIDGET_IS_SENSITIVE(zmap->zoomin_but))
+	gtk_widget_set_sensitive(zmap->zoomin_but, FALSE) ;
+      
+      if (GTK_WIDGET_IS_SENSITIVE(zmap->zoomout_but))
+	gtk_widget_set_sensitive(zmap->zoomout_but, FALSE) ;
+    }
+  else if (zoom_status == ZMAP_ZOOM_MIN && GTK_WIDGET_IS_SENSITIVE(zmap->zoomout_but))
+    gtk_widget_set_sensitive(zmap->zoomout_but, FALSE) ;
+  else if (zoom_status == ZMAP_ZOOM_MID)
+    {
+      if (!GTK_WIDGET_IS_SENSITIVE(zmap->zoomin_but))
+	gtk_widget_set_sensitive(zmap->zoomin_but, TRUE) ;
+
+      if (!GTK_WIDGET_IS_SENSITIVE(zmap->zoomout_but))
+	gtk_widget_set_sensitive(zmap->zoomout_but, TRUE) ;
+    }
+  else if (zoom_status == ZMAP_ZOOM_MAX && GTK_WIDGET_IS_SENSITIVE(zmap->zoomin_but))
+    gtk_widget_set_sensitive(zmap->zoomin_but, FALSE) ;
+
+
+  return ;
+}
 
 
 /*
@@ -194,26 +237,26 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
   return ;
 }
 
-void zoomInCB(GtkWindow *widget, gpointer cb_data)
+
+static void zoomInCB(GtkWindow *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
-  ZMapPane pane = zmap->focuspane ;
 
-  zMapWindowZoom(zMapViewGetWindow(pane->curr_view_window), 2.0) ;
+  zmapControlWindowDoTheZoom(zmap, 2.0) ;
 
-  return;
+  return ;
 }
 
 
-void zoomOutCB(GtkWindow *widget, gpointer cb_data)
+static void zoomOutCB(GtkWindow *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
-  ZMapPane pane = zmap->focuspane ;
 
-  zMapWindowZoom(zMapViewGetWindow(pane->curr_view_window), 0.5) ;
+  zmapControlWindowDoTheZoom(zmap, 0.5) ;
 
-  return;
+  return ;
 }
+
 
 
 static void splitPaneCB(GtkWidget *widget, gpointer data)
