@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: Apr  6 16:57 2004 (edgrif)
+ * Last edited: Apr 13 12:34 2004 (edgrif)
  * Created: Mon Apr  5 11:09:52 2004 (edgrif)
- * CVS info:   $Id: zmapConfigGet.c,v 1.1 2004-04-08 16:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapConfigGet.c,v 1.2 2004-04-27 09:45:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,27 +37,24 @@
 #include <zmapConfig_P.h>
 
 
-typedef struct
-{
-  gboolean result ;
-  ZMapConfig config ;
-} mytempstruct ;
-
-
-static void glistFreeElement(gpointer data, gpointer user_data) ;
+static void glistFreeStanza(gpointer data, gpointer user_data_unused) ;
 
 
 
 
+
+/* Look through the supplied config for the specified stanza and return all the instances
+ * of that stanza as a "ZMapConfigStanzaSet" in stanzas_out.
+ * Returns FALSE if the specified stanza could not be found and stanzas_out is untouched. */
 gboolean zmapGetConfigStanzas(ZMapConfig config,
 			      ZMapConfigStanza spec_stanza, ZMapConfigStanzaSet *stanzas_out)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
   GList *config_stanza_list ;
   ZMapConfigStanzaSet stanzas ;
 
   stanzas = g_new(ZMapConfigStanzaSetStruct, 1) ;
-  stanzas->name = NULL ;				    /* do we really need this ? */
+  stanzas->name = NULL ;
   stanzas->stanzas = NULL ;
 
   /* For every stanza from the config file... */
@@ -71,8 +68,10 @@ gboolean zmapGetConfigStanzas(ZMapConfig config,
 	{
 	  ZMapConfigStanza found_stanza ;
 	  GList *found_element_list ;
+	  gboolean found = FALSE ;
 
-	  /* Copy the spec stanza, we'll overwrite stuff in it. */
+	  /* Copy the spec stanza, this way we will copy the default settings but they will be
+	   * overwritten if we find the element in the resource file. */
 	  found_stanza = zmapConfigCopyStanza(spec_stanza) ;
 
 	  found_element_list = found_stanza->elements ;
@@ -98,6 +97,8 @@ gboolean zmapGetConfigStanzas(ZMapConfig config,
 		      printf("found: %s\n", found_element->name) ;
 
 		      zmapConfigCopyElementData(config_element, found_element) ;
+
+		      found = TRUE ;			    /* Record that we've found something. */
 		    }
 		}
 	      while ((config_element_list = g_list_next(config_element_list))) ;
@@ -106,26 +107,63 @@ gboolean zmapGetConfigStanzas(ZMapConfig config,
 	  while ((found_element_list = g_list_next(found_element_list))) ;
 
 
-	  /* If all ok add new stanza to the list of "found" stanzas. */
-	  if (found_stanza->elements == NULL)
-	    zmapConfigDestroyStanza(found_stanza) ;
-	  else
+	  /* If the stanza contained some/all of the elements we were looking for then
+	   * add it to the list of "found" stanzas, otherwise junk it. */
+	  if (found)
 	    {
 	      stanzas->stanzas = g_list_append(stanzas->stanzas, found_stanza) ;
+	    }
+	  else
+	    {
+	      zmapConfigDestroyStanza(found_stanza) ;
 	    }
 	}
     }
   while ((config_stanza_list = g_list_next(config_stanza_list))) ;
 
 
-  /* Need to check here if we actually allocated any stanzas.... */
-  if (result)
+  if (stanzas->stanzas)
     {
+      stanzas->name = g_strdup(spec_stanza->name) ;
       *stanzas_out = stanzas ;
+
+      result = TRUE ;
     }
-  /* NEED TO FREE STUFF HERE PROBABLY.... */
+  else
+    {
+      g_free(stanzas) ;
+
+      result = FALSE ;
+    }
 
 
   return result ;
+}
+
+
+/* Free a stanza set. */
+void zmapConfigDeleteStanzaSet(ZMapConfigStanzaSet stanzas)
+{
+  /* Free all the stanzas. */
+  if (stanzas->stanzas)
+    g_list_foreach(stanzas->stanzas, glistFreeStanza, NULL ) ;
+
+  /* Free the stanza set stuff. */
+  g_free(stanzas->name) ;
+  g_free(stanzas) ;
+
+  return ;
+}
+
+
+/* This is a Glib GFunc function and is called for every Stanza of the stanza set GList of stanzas,
+ * it in turn calls the routine to actually free the stanza. */
+static void glistFreeStanza(gpointer data, gpointer user_data_unused)
+{
+  ZMapConfigStanza stanza = (ZMapConfigStanza)data ;
+
+  zmapConfigDestroyStanza(stanza) ;
+
+  return ;
 }
 
