@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul 27 08:18 2004 (edgrif)
+ * Last edited: Jul 28 15:07 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.11 2004-07-27 07:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.12 2004-07-29 08:49:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -88,13 +88,11 @@ ZMapGFFParser zMapGFFCreateParser(gboolean parse_only)
   parser->SO_compliant = FALSE ;
   parser->default_to_basic = FALSE ;
 
-
+  parser->done_header = FALSE ;
   parser->done_version = FALSE ;
   parser->gff_version = -1 ;
-
   parser->done_source = FALSE ;
   parser->source_name = parser->source_version = NULL ;
-
   parser->done_sequence_region = FALSE ;
   parser->sequence_name = NULL ;
   parser->features_start = parser->features_end = 0 ;
@@ -119,6 +117,13 @@ ZMapGFFParser zMapGFFCreateParser(gboolean parse_only)
 /* This function expects a null-terminated C string that contains a complete GFF line
  * (comment or non-comment line), the function expects the caller to already have removed the
  * newline char from the end of the GFF line.
+ * 
+ * Returns FALSE if there is any error in the GFF header.
+ * Returns FALSE if there is an error in the GFF body and  stop_on_error == TRUE.
+ *
+ * Once an error has been returned the parser object cannot be used anymore and
+ * zMapGFFDestroyParser() should be called to free it.
+ *
  */
 
 /* ISSUE: need to decide on rules for comments, can they be embedded within other gff lines, are
@@ -127,12 +132,7 @@ ZMapGFFParser zMapGFFCreateParser(gboolean parse_only)
  * Current code assumes that the header block will be a contiguous set of header lines
  * at the top of the file and that the first non-header line marks the beginning
  * of the GFF data. If this is not true then its an error.
- * 
- * Currently once there has been an error then no more parsing will take place, could change
- * this behaviour so that this is not true for body lines and perhaps for some header lines
- * but note that we do need to know the GFF version....
- *  */
-
+ */ 
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 {
   gboolean result = FALSE ;
@@ -144,9 +144,10 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
     {
       if (!(result = parseHeaderLine(parser, line)))
 	{
-	  /* returns FALSE for two reasons: there was a parse error, or the header section has
-	   * finished, for the latter we need to cancel the error. */
-	  if (parser->error && parser->stop_on_error)
+	  /* returns FALSE for two reasons: there was a parse error (note that we ignore
+	   * stop_on_error, the header _must_ be correct), or the header section has
+	   * finished - in this case we need to cancel the error and reparse the line. */
+	  if (parser->error)
 	    {
 	      result = FALSE ;
 	      parser->state = ZMAPGFF_PARSE_ERROR ;
@@ -156,7 +157,7 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 	      result = TRUE ;
 
 	      /* If we found all the header parts move on to the body. */
-	      if (parser->done_version && parser->done_source && parser->done_sequence_region)
+	      if (parser->done_header)
 		parser->state = ZMAPGFF_PARSE_BODY ;
 	    }
 	}
@@ -186,76 +187,62 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 }
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* this is a version that returns a GArray of features arrays, it may be useful in the
- * future but having thought about it I think its better to return the GData of
- * feature arrays. */
-GArray *zmapGFFGetFeatures(ZMapGFFParser parser)
-{
-  GArray *features = NULL ;
-
-  if (!parser->parse_only)
-    {
-      features = g_array_sized_new(FALSE, FALSE, sizeof(ZMapFeatureSetStruct), 30) ;
-
-      g_datalist_foreach(&(parser->feature_sets), getFeatureArray, features) ;
-    }
-
-  return features ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 ZMapFeatureContext zmapGFFGetFeatures(ZMapGFFParser parser)
 {
   ZMapFeatureContext feature_context = NULL ;
 
-  if (!parser->parse_only)
+  if (parser->state != ZMAPGFF_PARSE_ERROR)
     {
-      feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
+      /* Actually we should only need to test feature_sets here really as there shouldn't be any
+       * for parse_only.... */
+      if (!parser->parse_only && parser->feature_sets)
+	{
+	  feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
-      feature_context->sequence = g_strdup(parser->sequence_name) ;
+	  feature_context->sequence = g_strdup(parser->sequence_name) ;
 
-      /* This is a COMPLETE HACK......we just set all the mapping stuff to have fictitious
-       * coords for now....in the future it must all be filled in with calls to get the mapping from
-       * the requested sequence to the parent etc. etc....
-       * We assume that we only ask for complete clones....
-       *  */
-      {
-	int tmp_pad = 100000 ;
-	int clone_length = parser->features_end - parser->features_start + 1 ;
+	  /* This is a COMPLETE HACK......we just set all the mapping stuff to have fictitious
+	   * coords for now....in the future it must all be filled in with calls to get the mapping from
+	   * the requested sequence to the parent etc. etc....
+	   * We assume that we only ask for complete clones....
+	   *  */
+	  {
+	    int tmp_pad = 100000 ;
+	    int clone_length = parser->features_end - parser->features_start + 1 ;
 
-	feature_context->sequence_to_parent.c1 = parser->features_start ;
-	feature_context->sequence_to_parent.c2 = parser->features_end ;
-	feature_context->sequence_to_parent.p1 = tmp_pad ;
-	feature_context->sequence_to_parent.p2
-	  = feature_context->sequence_to_parent.p1 + clone_length ;
+	    feature_context->sequence_to_parent.c1 = parser->features_start ;
+	    feature_context->sequence_to_parent.c2 = parser->features_end ;
+	    feature_context->sequence_to_parent.p1 = tmp_pad ;
+	    feature_context->sequence_to_parent.p2
+	      = feature_context->sequence_to_parent.p1 + clone_length ;
 
-	feature_context->features_to_sequence.p1 = parser->features_start ;
-	feature_context->features_to_sequence.p2 = parser->features_end ;
-	feature_context->features_to_sequence.c1 = parser->features_start ;
-	feature_context->features_to_sequence.c2 = parser->features_end ;
+	    feature_context->features_to_sequence.p1 = parser->features_start ;
+	    feature_context->features_to_sequence.p2 = parser->features_end ;
+	    feature_context->features_to_sequence.c1 = parser->features_start ;
+	    feature_context->features_to_sequence.c2 = parser->features_end ;
 
-	feature_context->parent_span.x1 = 1 ;
-	feature_context->parent_span.x2 = feature_context->sequence_to_parent.p2 + tmp_pad ;
-	feature_context->parent = "chromsome_99" ;
-      }
+	    feature_context->parent_span.x1 = 1 ;
+	    feature_context->parent_span.x2 = feature_context->sequence_to_parent.p2 + tmp_pad ;
+	    feature_context->parent = "chromsome_99" ;
+	  }
 
-      g_datalist_init(&(feature_context->feature_sets)) ;
+	  g_datalist_init(&(feature_context->feature_sets)) ;
 
-      g_datalist_foreach(&(parser->feature_sets), getFeatureArray, &(feature_context->feature_sets)) ;
+	  g_datalist_foreach(&(parser->feature_sets), getFeatureArray, &(feature_context->feature_sets)) ;
+	}
     }
 
   return feature_context ;
 }
 
 
+
 /* If stop_on_error is TRUE the parser will not parse any further lines after it encounters
  * the first error in the GFF file. */
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error)
 {
-  parser->stop_on_error = stop_on_error ;
+  if (parser->state != ZMAPGFF_PARSE_ERROR)
+    parser->stop_on_error = stop_on_error ;
 
   return ;
 }
@@ -264,7 +251,8 @@ void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error)
 /* If SO_compliant is TRUE the parser will only accept SO terms for feature types. */
 void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
 {
-  parser->SO_compliant = SO_compliant ;
+  if (parser->state != ZMAPGFF_PARSE_ERROR)
+    parser->SO_compliant = SO_compliant ;
 
   return ;
 }
@@ -274,7 +262,8 @@ void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
  * feature type. */
 void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic)
 {
-  parser->default_to_basic = default_to_basic ;
+  if (parser->state != ZMAPGFF_PARSE_ERROR)
+    parser->default_to_basic = default_to_basic ;
 
   return ;
 }
@@ -284,11 +273,17 @@ void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic)
  * input stream from the header comments. */
 int zMapGFFGetVersion(ZMapGFFParser parser)
 {
-  return parser->gff_version ;
+  int version = -1 ;
+
+  if (parser->state != ZMAPGFF_PARSE_ERROR)
+    version = parser->gff_version ;
+
+  return version ;
 }
 
 
-/* Return line number of last line processed (this is the same as the number of lines processed. */
+/* Return line number of last line processed (this is the same as the number of lines processed.
+ * N.B. we always return this as it may be required for error diagnostics. */
 int zMapGFFGetLineNumber(ZMapGFFParser parser)
 {
   return parser->line_count ;
@@ -308,7 +303,8 @@ GError *zMapGFFGetError(ZMapGFFParser parser)
  * because caller may still want access to them after the destroy. */
 void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy)
 {
-  parser->free_on_destroy = free_on_destroy ;
+  if (parser->state != ZMAPGFF_PARSE_ERROR)
+    parser->free_on_destroy = free_on_destroy ;
 
   return ;
 }
@@ -371,7 +367,19 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 							       scanf's below... */
 
 
-  if (g_str_has_prefix(line, "##"))
+  if (!g_str_has_prefix(line, "##"))
+    {
+      /* If we encounter a non-header comment line and we haven't yet finished the header
+       * then its an error, otherwise we just return FALSE as the line is probably the first.
+       * line of the GFF body. */
+      if (!parser->done_header)
+	parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
+				    "Bad ## line %d: \"%s\"",
+				    parser->line_count, line) ;
+
+      result = FALSE ;
+    }
+  else
     {
       int fields = 0 ;
       char *format_str = NULL ;
@@ -425,8 +433,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 	      parser->done_source = TRUE ;
 	    }
      	}
-      else if (g_str_has_prefix(line, "##sequence-region")
-	       && !parser->done_sequence_region)
+      else if (g_str_has_prefix(line, "##sequence-region") && !parser->done_sequence_region)
 	{
 	  char sequence_name[FIELD_BUFFER_LEN] = {'\0'} ;
 	  int start = 0, end = 0 ;
@@ -450,7 +457,11 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 	    }
      
 	}
+
+      if (parser->done_version && parser->done_source && parser->done_sequence_region)
+	parser->done_header = TRUE ;
     }
+
 
   return result ;
 }

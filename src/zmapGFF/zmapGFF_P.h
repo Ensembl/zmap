@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 16 16:10 2004 (edgrif)
+ * Last edited: Jul 28 11:28 2004 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.5 2004-07-19 09:25:01 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.6 2004-07-29 08:49:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -60,9 +60,10 @@ typedef enum
 
 
 
-  /* Some features need to be built up from multiple GFF lines so we keep associations
-   * of these features in arrays. The arrays are indexed via sources. These arrays are only used
-   * while building up the final arrays of features. */
+/* Some features need to be built up from multiple GFF lines so we keep associations
+ * of these features in arrays. The arrays are indexed via sources. These arrays are only used
+ * while building up the final arrays of features. */
+
 
 /* For each set of features that come from a single source, we keep an array of those features
  * but also a list of features that need to be built up from several GFF lines. */
@@ -91,20 +92,23 @@ typedef struct ZMapGFFParserStruct_
   ZMapGFFParseState state ;
   GError *error ;					    /* Holds last parser error. */
   GQuark error_domain ;
+  int line_count ;					    /* Contains number of lines
+							       processed. */
+
   gboolean stop_on_error ;				    /* Stop parsing if there is an error. */
   gboolean parse_only ;					    /* TRUE => just parse the GFF for
 							       correctness, don't create feature arrays. */
   gboolean default_to_basic ;				    /* TRUE => Unrecognised feature types will
 							       be created as basic features. */
-
-
-  int line_count ;					    /* Contains number of lines processed. */
-
   gboolean SO_compliant ;				    /* TRUE => use only SO terms for
 							       feature types. */
+  gboolean free_on_destroy ;				    /* TRUE => free all feature arrays
+							       when parser is destroyed. */
 
 
   /* Header data, need to find all this for parsing to be valid. */
+  gboolean done_header ;
+
   gboolean done_version ;
   int gff_version ;
 
@@ -121,9 +125,6 @@ typedef struct ZMapGFFParserStruct_
 							       "source". The struct contains among
 							       other things an array of all
 							       features for that source. */
-
-  gboolean free_on_destroy ;				    /* TRUE => free all feature arrays
-							       when parser is destroyed. */
 
 } ZMapGFFParserStruct ;
 
