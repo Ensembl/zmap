@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: May 19 14:27 2004 (edgrif)
+ * Last edited: Jul 13 16:02 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.9 2004-05-20 14:12:25 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.10 2004-07-14 09:09:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -35,6 +35,13 @@
 
 static void zmapDestroyedCB(ZMap zmap, void *cb_data) ;
 static void removeZmapEntry(ZMapManager zmaps, ZMap zmap) ;
+
+
+
+/* Do we want a full callback struct for callbacks here ? Might be overkill.... */
+
+/* ZMap callbacks passed to zMapInit() */
+ZMapCallbacksStruct zmap_cbs_G = {zmapDestroyedCB} ;
 
 
 
@@ -49,6 +56,8 @@ ZMapManager zMapManagerCreate(zmapAppCallbackFunc zmap_deleted_func, void *gui_d
   manager->gui_zmap_deleted_func = zmap_deleted_func ;
   manager->gui_data = gui_data ;
 
+  zMapInit(&zmap_cbs_G) ;
+
   return manager ;
 }
 
@@ -61,7 +70,7 @@ gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, ZMap *zmap_out)
   ZMap zmap = NULL ;
   ZMapView view = NULL ;
 
-  if ((zmap = zMapCreate((void *)zmaps, zmapDestroyedCB)))
+  if ((zmap = zMapCreate((void *)zmaps)))
     {
       zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
       *zmap_out = zmap ;
