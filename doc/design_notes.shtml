@@ -95,11 +95,24 @@ to no longer be under active development.
 
 <ul>
   <li>doxygen looks for C comment blocks that start with " <b>/*!</b> ".
-  <li>For C language files it is imperative to have a " <b>/*! \file */</b> " special
-      comment in each file to be documented otherwise doxygen will <b>not</b> process the file.
+  <li>For C language files it is imperative that you include either a " <b>/*! \file */</b> "
+      or " <b>/*! @defgroup</b> " special
+      comment in each file to be documented otherwise doxygen will <b>not</b> process the other
+      comments in the file.
 </ul>
 
-<P>See <b>zmapCongif/zmapConfig.c</b> for an example of how to document code.
+<P>A suggested standard is that for each package within ZMap (e.g. zmapConfig) the external interface
+functions are documented in the source files where they occur and the external typedefs etc. are
+documented in the public header for the package. This has the advantage that all the comments are
+next to the code that would be editted if the interface has to be changed, i.e. function comments are
+next to the functions, typedef comments are next to the typedefs and so on.
+
+
+<P>For an example of this see the documentation of the zmapConfig code in
+<b>include/ZMap/zmapConfig.h</b> and <b>zmapConfig/zmapConfig.c</b>. Note the use
+of the " <b>/*! @addtogroup</b> " directive to add the <b>include/ZMap/zmapConfig.h</b>
+documentation to that in <b>zmapConfig/zmapConfig.c</b>.
+
 
 
 <H2>Configuration Files</H2>
