@@ -1,9 +1,0 @@
-
-- need to introduce pthreads_cancel_points into the code so that a cancel
-will interrupt at good places....some thought needed here though to ensure
-that we don't just litter the code with cancel points making it hard to
-maintain...
-
-I think to some extent the main network reading calls get interrupted by
-a cancel so that makes it all work better.
-
