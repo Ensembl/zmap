@@ -25,9 +25,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jun 25 11:52 2004 (edgrif)
+ * Last edited: Jul 29 15:02 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapSlave_P.h,v 1.3 2004-06-25 13:40:09 edgrif Exp $
+ * CVS info:   $Id: zmapSlave_P.h,v 1.4 2004-08-02 14:06:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SLAVE_P_H
@@ -45,12 +45,6 @@ typedef struct
 							       termination. */
 
   ZMapServer server ;					    /* The server for this thread..... */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GString *server_request ;
-  gchar *server_reply ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* this whole section is a lash up for now, we will need a more flexible mechanism in the future. */

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Jul 28 14:14 2004 (edgrif)
+ * Last edited: Jul 29 15:02 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.9 2004-07-29 08:47:38 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.10 2004-08-02 14:06:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -181,6 +181,7 @@ void *zmapNewThread(void *thread_args)
 	  static int failure = 0 ;
 	  char *server_command ;
 	  int reply_len = 0 ;
+	  ZMapServerResponseType server_response ;
 
 	  /* Must have a sequence at this stage.... */
 	  zMapAssert(*sequence) ;
@@ -190,45 +191,58 @@ void *zmapNewThread(void *thread_args)
 
 	  thread_cb->server_request = ZMAP_SERVERREQ_SEQUENCE ;
 
-	  /* OK A BOOL IS NOT ENOUGH HERE, WE NEED TO KNOW IF THE ERROR WAS JUST A REQUEST ERROR
-	   * OR THE SERVER DIED, OR WHAT.... */
-	  if (!zMapServerRequest(thread_cb->server, thread_cb->server_request,
-				 sequence, &(thread_cb->feature_context)))
+
+	  server_response = zMapServerRequest(thread_cb->server, thread_cb->server_request,
+					      sequence, &(thread_cb->feature_context)) ;
+
+	  switch (server_response)
 	    {
-	      char *error_msg ;
+	    case ZMAP_SERVERRESPONSE_OK:
+	      {
+		ZMAP_THR_DEBUG(("%x: got all data....\n", connection->thread_id)) ;
 
-	      ZMAP_THR_DEBUG(("%x: request for %s failed....\n", connection->thread_id, sequence)) ;
+		/* Signal that we got some data. */
+		zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA,
+					(void *)(thread_cb->feature_context)) ;
+		
+		thread_cb->feature_context = NULL ;	    /* Reset, we don't free this data. */
+		break ;
+	      }
+	    case ZMAP_SERVERRESPONSE_TIMEDOUT:
+	    case ZMAP_SERVERRESPONSE_REQFAIL:
+	    case ZMAP_SERVERRESPONSE_BADREQ:
+	      {
+		char *error_msg ;
 
-	      error_msg = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNREQUEST,
-					  zMapServerLastErrorMsg(thread_cb->server)) ;
+		ZMAP_THR_DEBUG(("%x: request for %s failed....\n", connection->thread_id, sequence)) ;
 
-	      /* Signal that we failed. */
-	      zmapVarSetValueWithError(&(connection->reply), ZMAP_REPLY_REQERROR, error_msg) ;
+		error_msg = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNREQUEST,
+					    zMapServerLastErrorMsg(thread_cb->server)) ;
 
+		/* Signal that we failed. */
+		zmapVarSetValueWithError(&(connection->reply), ZMAP_REPLY_REQERROR, error_msg) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      thread_cb->thread_died = TRUE ;
+		break ;
+	      }
+	    case ZMAP_SERVERRESPONSE_SERVERDIED:
+	      {
+		char *error_msg ;
 
-	      thread_cb->initial_error = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNREQUEST,
-							 zMapServerLastErrorMsg(thread_cb->server)) ;
+		ZMAP_THR_DEBUG(("%x: server died....\n", connection->thread_id)) ;
 
-	      /* NOTE IMPLICIT TERMINATION OF THREAD BY JUMPING OUT OF THIS LOOP
-	       * WHICH LEADS TO EXITTING FROM THIS ROUTINE. FOR OTHER ERRORS WE WIL
-	       * HAVE TO HAVE A MORE FORMAL MECHANISM.... */
-	      break ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		error_msg = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNREQUEST,
+					    zMapServerLastErrorMsg(thread_cb->server)) ;
 
+		/* Signal that we failed. */
+		zmapVarSetValueWithError(&(connection->reply), ZMAP_REPLY_DIED, error_msg) ;
 
-	    }
-	  else
-	    {
-	      ZMAP_THR_DEBUG(("%x: got all data....\n", connection->thread_id)) ;
+		thread_cb->thread_died = TRUE ;
 
-	      /* Signal that we got some data. */
-	      zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA,
-				      (void *)(thread_cb->feature_context)) ;
-	      
-	      thread_cb->feature_context = NULL ;		    /* Reset, we don't free this string. */
+		thread_cb->initial_error = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNREQUEST,
+							   zMapServerLastErrorMsg(thread_cb->server)) ;
+
+		goto clean_up ;
+	      }
 	    }
 	}
 
@@ -244,6 +258,7 @@ void *zmapNewThread(void *thread_args)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     }
+
 
 
   /* Note that once we reach here the thread will exit, the pthread_cleanup_pop(1) ensures
@@ -305,20 +320,7 @@ static void cleanUpThread(void *thread_args)
     }
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Not needed any more.... */
-
-  if (thread_cb->server_request)
-    g_string_free(thread_cb->server_request, TRUE) ;
-  if (thread_cb->server_reply)
-    g_free(thread_cb->server_reply) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
   g_free(thread_cb) ;
-
 
   printf("%x: error msg before condvar set: %s\n", connection->thread_id, error_msg) ;
   fflush(stdout) ;
