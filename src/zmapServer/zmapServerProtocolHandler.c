@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  2 14:02 2005 (edgrif)
+ * Last edited: Feb  3 14:40 2005 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.1 2005-02-02 15:13:34 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.2 2005-02-03 15:01:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,13 +153,30 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
     }
 
 
-  /* Return server state. */
-  zMapAssert(server) ;
+  /* Return server. */
   *slave_data = (void *)server ;
+
 
   return thread_rc ;
 }
 
+
+
+/* This function is called if a thread terminates in some abnormal way (e.g. is cancelled),
+ * it enables the server to clean up.  */
+ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_msg_out)
+{
+  ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
+  ZMapServer server ;
+
+  zMapAssert(slave_data) ;
+
+  server = (ZMapServer)*slave_data ;
+
+  thread_rc = terminateServer(&server, err_msg_out) ;
+
+  return thread_rc ;
+}
 
 
 
@@ -235,7 +252,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
   /* Create the thread block for this specific server thread. */
   if (!zMapServerCreateConnection(&server, global_init_data,
 				  open->machine, open->port,
-				  open->protocol, open->timeout, open->version,
+				  open->protocol, open->format, open->timeout, open->version,
 				  "any", "any"))
     {
       *err_msg_out = zMapServerLastErrorMsg(server) ;
