@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  3 14:50 2005 (edgrif)
+ * Last edited: Feb  3 16:33 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.43 2005-02-03 15:00:22 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.44 2005-02-03 16:40:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -335,11 +335,10 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 							     {NULL, -1, {NULL}}} ;
 
 	  /* Set defaults for any element that is not a string. */
-	  server_elements[1].data.i = -1 ;
-	  server_elements[3].data.i = 120 ;		    /* timeout in seconds. */
-	  server_elements[5].data.b = FALSE ;
-	  server_elements[6].data.b = FALSE ;
-
+	  zMapConfigGetStructInt(server_elements, "port") = -1 ;
+	  zMapConfigGetStructInt(server_elements, "timeout") = 120 ; /* seconds. */
+	  zMapConfigGetStructBool(server_elements, "sequence") = FALSE ;
+	  zMapConfigGetStructBool(server_elements, "writeback") = FALSE ;
 
 	  server_stanza = zMapConfigMakeStanza("source", server_elements) ;
 

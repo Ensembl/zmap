@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Nov 11 15:25 2004 (edgrif)
+ * Last edited: Feb  3 16:34 2005 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.12 2004-11-12 11:53:15 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.13 2005-02-03 16:40:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,7 +82,10 @@ static void destroyConfig(ZMapConfig config) ;
  *                                                         {"port", ZMAPCONFIG_INT, {NULL}},
  *	 	    		  	                   {"protocol", ZMAPCONFIG_STRING, {NULL}},
  *						           {NULL, -1, {NULL}}} ;
- *      server_elements[1].data.i = -1 ;
+ *
+ *      // Set any defaults that are not equivalent to string NULL.
+ *      zMapConfigGetStructInt(server_elements, "port") = -1 ;
+ *
  *	server_stanza = zMapConfigMakeStanza("server", server_elements) ;
  *
  *      // Find all the "server" stanzas and process them.
@@ -106,6 +109,43 @@ static void destroyConfig(ZMapConfig config) ;
  *
  *
  *  */
+
+
+
+
+
+/*!
+ * Finds the named element in an array of ZMapConfigStanzaElementStruct's and returns
+ * a pointer to that element. The main use of this routine is via macros defined in
+ * ZMap/zmapConfig.h to intialise the data fields in the array.
+ * This is necessary because with ANSI-C its not possible to set the default values
+ * via static initialisation of the array.
+ *
+ * @param elements     An array of stanza elements, each initialised with the name of the
+ *                     element, its type and a default value.
+ * @param element_name The name of the element to be returned.
+ * @return Returns a pointer to the named element or NULL if not found.
+ *  */
+ZMapConfigStanzaElement zMapConfigFindStruct(ZMapConfigStanzaElementStruct elements[],
+					     char *element_name)
+{
+  ZMapConfigStanzaElement element = NULL ;
+  int i ;
+
+  i = 0 ;
+  while (elements[i].name != NULL)
+    {
+      if (strcasecmp(element_name, elements[i].name) == 0)
+	{
+	  element = &(elements[i]) ;
+	  break ;
+	}
+      i++ ;
+    }
+
+  return element ;
+}
+
 
 
 /*!

@@ -24,9 +24,9 @@
  *
  * Description:
  * HISTORY:
- * Last edited: Jul 19 15:56 2004 (edgrif)
+ * Last edited: Feb  3 16:20 2005 (edgrif)
  * Created: Fri Jan 23 13:10:06 2004 (edgrif)
- * CVS info:   $Id: zmapConfig.h,v 1.6 2004-07-19 15:19:01 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.h,v 1.7 2005-02-03 16:40:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_H
@@ -67,6 +67,29 @@ typedef struct
 } ZMapConfigStanzaElementStruct,
   *ZMapConfigStanzaElement ;				    /*!< pointer to element struct. */
 
+
+/*@{*/
+/*!
+ * A set of macros for accessing the data field of a particular element of an array
+ * of ZMapConfigStanzaElementStruct. Very useful for initialising the array with data values
+ * in preparation for creating a stanza.
+ *
+ * @param ARRAY        The array of ZMapConfigStanzaElementStruct.
+ * @param ELEMENT_NAME The name of the element whose data is to be accesssed.
+ * @return             data according to the the macro used.
+ * */
+#define zMapConfigGetStructBool(ARRAY, ELEMENT_NAME)             \
+(zMapConfigFindStruct((ARRAY), (ELEMENT_NAME)))->data.b
+#define zMapConfigGetStructInt(ARRAY, ELEMENT_NAME)              \
+(zMapConfigFindStruct((ARRAY), (ELEMENT_NAME)))->data.i
+#define zMapConfigGetStructFloat(ARRAY, ELEMENT_NAME)            \
+(zMapConfigFindStruct((ARRAY), (ELEMENT_NAME)))->data.f
+#define zMapConfigGetStructString(ARRAY, ELEMENT_NAME)           \
+(zMapConfigFindStruct((ARRAY), (ELEMENT_NAME)))->data.s
+/*@}*/
+
+
+
 /*@{*/
 /*!
  * A set of macros for retrieving the data for a named element from the given stanza.
@@ -84,6 +107,7 @@ typedef struct
 #define zMapConfigGetElementString(STANZA, ELEMENT_NAME)           \
 (zMapConfigFindElement((STANZA), (ELEMENT_NAME)))->data.s
 /*@}*/
+
 
 /*!
  * Config data available to application. */
@@ -123,6 +147,9 @@ typedef struct _ZMapConfigStanzaStruct *ZMapConfigStanza ;
 
 ZMapConfig zMapConfigCreate(void) ;
 ZMapConfig zMapConfigCreateFromFile(char *config_dir, char *config_file) ;
+
+ZMapConfigStanzaElement zMapConfigFindStruct(ZMapConfigStanzaElementStruct elements[],
+					     char *element_name) ;
 
 gboolean zMapConfigFindStanzas(ZMapConfig config,
 			       ZMapConfigStanza stanza, ZMapConfigStanzaSet *stanzas_out) ;
