@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Dec 16 15:27 2004 (edgrif)
+ * Last edited: Jan  6 15:21 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.37 2004-12-20 10:59:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.38 2005-01-07 12:30:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -89,7 +89,7 @@ typedef struct _ZMapWindowStruct
   GtkWidget     *text ;
   GdkAtom        zmap_atom ;
   void          *app_data ;
-  gulong         realizeHandlerCB;
+  gulong         exposeHandlerCB ;
 
   GData         *types;
   GPtrArray     *featureListWindows;
@@ -99,6 +99,8 @@ typedef struct _ZMapWindowStruct
 
   FooCanvasItem *scaleBarGroup;           /* canvas item in which we build the scalebar */
   double         scaleBarOffset;
+  int major_scale_units, minor_scale_units ;		    /* Major/minor tick marks on scale. */
+
 
   /* The length, start and end of the segment of sequence to be shown, there will be _no_
    * features outside of the start/end. */
@@ -202,7 +204,8 @@ void zmapWindowPrintCanvas(FooCanvas *canvas) ;
 
 void     zMapWindowCreateListWindow(ZMapWindow window, ZMapFeatureItem featureItem);
 gboolean zMapWindowFeatureClickCB(ZMapWindow window, ZMapFeature feature);
-FooCanvasItem *zmapDrawScale    (FooCanvas *canvas, double offset, double zoom_factor, int start, int end);
+FooCanvasItem *zmapDrawScale(FooCanvas *canvas, double offset, double zoom_factor, int start, int end,
+			     int *major_units_out, int *minor_units_out);
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
 void   zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data);
