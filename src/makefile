@@ -22,7 +22,7 @@ include $(MAKE_DIR)/common.defs
 #
 APP_DIR = zmapApp
 MAKE_DIRS = $(APP_DIR) zmapManager zmapControl zmapView zmapWindow zmapDraw zmapFeature \
-                       zmapConfig zmapGFF zmapServer zmapThreads zmapUtils zmapNoThreads
+                       zmapConfig zmapGFF zmapServer zmapThreads zmapUtils
 
 DOXY_CONFIG = Doxyfile
 
@@ -39,7 +39,7 @@ clean: makebindir
 #	@for d in $(MAKE_DIRS); do \
 #	(cd $$d ; echo ; echo 'make '$@' in '$$d ; $(MAKE) $@ ; echo) ; \
 #	done
-#	@rm -f $(ZMAPAPP_LIB) $(ZMAP_LIB) $(ZMAPTHR_LIB) $(ZMAPNOTHR_LIB)
+#	@rm -f $(ZMAPAPP_LIB) $(ZMAP_LIB) $(ZMAPTHR_LIB)
 
 
 # note that we issue a "make all" in the subdirectories, not a "make libs"

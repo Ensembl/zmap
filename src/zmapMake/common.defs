@@ -61,11 +61,8 @@ BINDIR = $(ROOT_DIRECTORY)/$(BINDIR_NAME)
 # libZMap.a       - contains code that is common to _all_ zmaps
 #
 # libZMapThr.a    - contains code that uses threads to get info. from databases.
-# libZMapNoThr.a  - contains code that uses function calls to get info. from databases.
 #
 # Stand alone client uses      libZMapApp.a libZMap.a libZMapThr.a
-#
-#   library for xace uses                   libZMap.a libZMapNoThr.a
 #
 #
 ZMAPAPP_LIBNAME = libZMapApp.a
@@ -76,9 +73,6 @@ ZMAP_LIB = $(BINDIR)/$(ZMAP_LIBNAME)
 
 ZMAPTHR_LIBNAME = libZMapThr.a
 ZMAPTHR_LIB = $(BINDIR)/$(ZMAPTHR_LIBNAME)
-
-ZMAPNOTHR_LIBNAME = libZMapNoThr.a
-ZMAPNOTHR_LIB = $(BINDIR)/$(ZMAPNOTHR_LIBNAME)
 
 
 #
@@ -145,9 +139,6 @@ ZMAP_LIB = $(BINDIR)/$(ZMAP_LIBNAME)
 #
 ZMAPTHR_LIBNAME = libZMapThr.a
 ZMAPTHR_LIB = $(BINDIR)/$(ZMAPTHR_LIBNAME)
-
-ZMAPNOTHR_LIBNAME = libZMapNoThr.a
-ZMAPNOTHR_LIB = $(BINDIR)/$(ZMAPNOTHR_LIBNAME)
 
 
 #
