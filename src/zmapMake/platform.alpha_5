@@ -16,22 +16,18 @@ CCC = cxx
 CCFLAGS = -x cxx $(CC_COMMON)
 
 
-# Set the posix alpha make, the normal one does _not_ support .c.a rules correctly.
-#MAKE = /usr/bin/posix/make
+# Use gmake, both the normal alpha make and the posix version (/usr/bin/posix/make) do not support
+# VPATH and other stuff properly.
 MAKE = gmake
 
 TEST = /bin/test
 
-#PACKAGE_CONFIG = /nfs/disk100/acedb/gtk2/bin/pkg-config
 PACKAGE_CONFIG = /nfs/disk100/acedb/gtk2ins-canvas/bin/pkg-config
+PACKAGE_PATH = PKG_CONFIG_PATH=$(FOO_CANVAS_PATH)/lib/pkgconfig:/nfs/disk100/acedb/gtk2ins-canvas/lib/pkgconfig
 
-GNOME_CONFIG = $(PACKAGE_CONFIG)
-#GNOME_CONFIG = 
-
-
-#LDFLAGS = -rpath '/nfs/disk100/acedb/gtk2/lib'
-LDFLAGS = -rpath '/nfs/disk100/acedb/gtk2ins-canvas/lib'
+# Alpha loader needs this so it can find libraries that are not in the standard places.
+LDFLAGS = -rpath '$(FOO_CANVAS_PATH)/lib:/nfs/disk100/acedb/gtk2ins-canvas/lib'
 
 
-# Need to make sure we get a threaded build version of the socket server stuff....
+# Need to make sure we get a threaded build version of the socket server interface library....
 ACEDB_MACHINE = ALPHA_5_THR

@@ -55,9 +55,8 @@ include $(MAKE_DIR)/common.targets
 # ZMAP library...
 ZMAP_LIB_FLAGS = -L$(BINDIR) -lZMapApp -lZMap -lZMapThr
 
-# Ace-Conn library...This is a bit of hack really...the ACEDB_MACHINE stuff should be
-# in a separate subdir as we don't yet know what server we will be contacting....
-ACECONN_DIR = $(HOME)/acedb/CODE/Ace-Conn
+# Ace-Conn library used for interfacing to the acedb socket server.
+ACECONN_DIR = /nfs/disk100/acedb/Ace-Conn
 ACECONN_INCL_DIR = $(ACECONN_DIR)
 ACECONN_LIB_DIR = $(ACECONN_DIR)/bin.$(ACEDB_MACHINE)
 ACECONN_LIB_FLAGS = -L$(ACECONN_LIB_DIR) -lAceConn -lmd5
