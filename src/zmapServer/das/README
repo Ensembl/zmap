@@ -1,0 +1,21 @@
+================================================================================   
+DAS v2 Server interface
+
+This directory implements for a DAS 2 server the routines required by the
+generalised server interface defined in src/include/ZMap/zmapServerPrototype.h.
+
+Currently there is a sample server contactable at:
+
+	http://dev.acedb.org/das/
+
+and also a wormbase sample server at:
+
+	http://dev.wormbase.org/das
+
+Requests can be sent to either of these via a browser or any other http handling
+program.
+
+For example to get a list of types of data you could issue this request:
+
+	http://dev.acedb.org/das/wormbase/1/type
+
