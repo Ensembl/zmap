@@ -47,7 +47,7 @@ include $(MAKE_DIR)/common.targets
 #
 # include your own targets here.
 #
-ALL_SERVER_DIRS = acedb das
+ALL_SERVER_DIRS = acedb das file
 
 build_servers: forcemake
 	@for d in $(ALL_SERVER_DIRS); do \
