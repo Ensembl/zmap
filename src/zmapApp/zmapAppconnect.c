@@ -26,14 +26,15 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  2 11:50 2004 (edgrif)
+ * Last edited: May 17 15:12 2004 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.7 2004-04-08 16:27:35 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.8 2004-05-17 16:24:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapApp_P.h>
 
@@ -91,6 +92,9 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
   ZMap zmap ;
 
   sequence = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->sequence_widg)) ;
+  if (sequence && strlen(sequence) == 0)		    /* gtk_entry returns "" for "no text". */
+    sequence = NULL ;
+
 
   if (!zMapManagerAdd(app_context->zmap_manager, sequence, &zmap))
     {
@@ -99,9 +103,17 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
   else
     {
       row_text[0] = zMapGetZMapID(zmap) ;
+
+      /* awaiting new call to report some other way of showing what could be multiple sequences
+       * per window..... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       row_text[1] = zMapGetSequence(zmap) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      row_text[1] = "<dummy>" ;
+
       row_text[2] = zMapGetZMapStatus(zmap) ;
       row_text[3] = "blah, blah, blah" ;
+
       
       row = gtk_clist_append(GTK_CLIST(app_context->clist_widg), row_text) ;
       gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, (gpointer)zmap) ;
