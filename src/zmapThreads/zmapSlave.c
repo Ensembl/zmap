@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Sep 17 11:15 2004 (edgrif)
+ * Last edited: Sep 17 14:31 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.13 2004-09-17 12:41:55 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.14 2004-09-23 13:41:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,7 +171,7 @@ void *zmapNewThread(void *thread_args)
       req_features = g_new0(ZMapProtocolGetFeaturesStruct, 1) ;
       req_features->request = ZMAP_PROTOCOLREQUEST_SEQUENCE ;
 
-      if (zMapServerRequest(thread_cb->server, (void *)req_features) == ZMAP_SERVERRESPONSE_OK)
+      if (zMapServerRequest(thread_cb->server, (ZMapProtocolAny)req_features) == ZMAP_SERVERRESPONSE_OK)
 	{
 	  /* Signal that we got some data. */
 	  zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA, req_features) ;
@@ -233,7 +233,7 @@ void *zmapNewThread(void *thread_args)
 	  /* this needs changing according to request.... */
 	  ZMAP_THR_DEBUG(("%x: servicing request....\n", connection->thread_id)) ;
 
-	  server_response = zMapServerRequest(thread_cb->server, request) ;
+	  server_response = zMapServerRequest(thread_cb->server, (ZMapProtocolAny)request) ;
 
 	  switch (server_response)
 	    {
