@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  5 16:28 2004 (rnc)
+ * Last edited: Nov  8 14:46 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.8 2004-11-08 10:16:03 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.9 2004-11-08 15:03:18 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,8 @@ enum { NAME, START, END, TYPE, FEATURE_TYPE, N_COLUMNS };
 /* function prototypes ***************************************************/
 static void addItemToList(GQuark key_id, gpointer data, gpointer user_data);
 static int  tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
-static void scrollToItem(ZMapCanvasDataStruct *canvasData);
+static void scrollToItem(FooCanvas *canvas, gchar *name, int start, gchar *type);
+static void locateFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
 static void quitListCB   (GtkWidget *window, gpointer data);
 
 
@@ -203,7 +204,7 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
       canvasData->feature->method_name = type;
       canvasData->feature->type        = feature_type;
   
-      scrollToItem(canvasData);
+      scrollToItem(canvasData->canvas, name, start, type);
 
       gtk_widget_show_all(GTK_WIDGET(canvasData->window->parent_widget));
     }
@@ -215,34 +216,55 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 }
 
 
-static void scrollToItem(ZMapCanvasDataStruct *canvasData)
+static void scrollToItem(FooCanvas *canvas, gchar *name, int start, gchar *type)
 {
+  ZMapCanvasDataStruct *canvasData;
   FooCanvasItem *item;
-  GString *string;
+  GString *string, *string_lower;
   double wx, wy;
   int cx, cy;
+  char *dataKey = "canvasData";
+
+
+  canvasData = g_object_get_data(G_OBJECT(canvas), dataKey);  
+  zMapAssert(canvasData->feature_context);
+  
+  canvasData->feature_set = g_datalist_get_data(&(canvasData->feature_context->feature_sets), type);
 
   /* scroll up or down to user's selection */
-  foo_canvas_w2c(canvasData->canvas, 0.0, canvasData->feature->x1, &cx, &cy); 
-  foo_canvas_scroll_to(canvasData->canvas, 0, cy);
+  foo_canvas_w2c(canvas, 0.0, start, &cx, &cy); 
+  foo_canvas_scroll_to(canvas, 0, cy);
       
-  item = foo_canvas_get_item_at(canvasData->canvas, canvasData->x, canvasData->feature->x1); 
+  item = foo_canvas_get_item_at(canvasData->canvas, canvasData->x, start); 
       
   /* lowercase the type to match what's in canvasData->types */
   string = g_string_new(canvasData->feature->method_name);
-  string = g_string_ascii_down(string);
+  string_lower = g_string_ascii_down(string);
 
   canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), string->str) ;
   zMapAssert(canvasData->thisType);
       
   /* highlight the item */
-  zmapHighlightObject(item, canvasData);
+  zMapHighlightObject(item, canvasData);
   
   zMapFeatureClickCB(canvasData, canvasData->feature); /* show feature details on info_panel  */
       
   return;
 }
 
+
+/*
+static void locateFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
+  ZMapCanvasDataStruct *canvasData = (ZMapCanvasDataStruct*)user_data;
+
+  if (g_datalist_get_data(&(feature_set), type))
+    canvasData->feature_set = feature_set; 
+
+  return;
+}
+*/
 
 
 static void quitListCB(GtkWidget *window, gpointer data)
