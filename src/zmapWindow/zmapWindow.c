@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug 17 12:38 2004 (rnc)
+ * Last edited: Sep  1 15:42 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.26 2004-08-18 15:05:42 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.27 2004-09-02 09:01:57 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,6 +92,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   GtkWidget *vbox, *menubar, *button_frame, *connect_frame ;
   GtkWidget *canvas ;
   GtkAdjustment *adj ; 
+  GdkColor color;
 
   /* No callbacks, then no window creation. */
   zMapAssert(window_cbs_G) ;
@@ -143,19 +144,12 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   /* add the canvas to the scrolled window */
   gtk_container_add(GTK_CONTAINER(window->scrolledWindow), canvas) ;
 
+  gdk_color_parse("white", &color);
+  gtk_widget_modify_bg(GTK_WIDGET(canvas), GTK_STATE_NORMAL, &color);
 
   window->canvas = FOO_CANVAS(canvas);
   foo_canvas_set_scroll_region(window->canvas, 0.0, 0.0, 1000, 1000);
-  window->background = foo_canvas_item_new(foo_canvas_root(window->canvas),
-	 		foo_canvas_rect_get_type(),
-			"x1",(double)0,
-			"y1",(double)0,
-			"x2",(double)1000,
-			"y2",(double)1000,
-		 	"fill_color", "white",
-			"outline_color", "dark gray",
-			NULL);
-  
+
   g_signal_connect(GTK_OBJECT(window->canvas), "button_press_event",
 		   GTK_SIGNAL_FUNC(canvasClickCB), (gpointer)window) ;
 
