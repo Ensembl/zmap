@@ -1,3 +1,4 @@
+/*  Last edited: Apr 13 15:01 2004 (rnc) */
 /*  file: stringbucket.h
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -24,12 +25,14 @@
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  */
 
-/* Stringucket:
+#include <../acedb/acedb.h>
+
+/* Stringbucket:
 
 Given a string returns a copy which is persistant until the
 bucket is destroyed.
 
-Has the property that calling str2p twice on the same string yeilds
+Has the property that calling str2p twice on the same string yields
 the same pointer.
 */
 

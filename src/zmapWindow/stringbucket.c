@@ -1,3 +1,4 @@
+/*  Last edited: Apr 13 15:00 2004 (rnc) */
 /*  file: stringbucket.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -24,8 +25,8 @@
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  */
 
-#include <wh/regular.h>
-#include <wzmap/stringbucket.h>
+#include <../acedb/regular.h>
+#include <stringbucket.h>
 
 struct sbucket {
   STORE_HANDLE handle;
@@ -74,3 +75,5 @@ char *str2p(char *string, StringBucket *b)
     }
   return (char *)(c+1);
 }
+
+/*********************** end of file ***********************************/
