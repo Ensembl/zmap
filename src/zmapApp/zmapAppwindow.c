@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 12 15:06 2003 (edgrif)
+ * Last edited: Nov 14 17:20 2003 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.1 2003-11-13 14:58:39 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.2 2003-11-14 17:47:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,8 +83,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_signal_connect(GTK_OBJECT(quit_button), "clicked",
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(vbox), quit_button, FALSE, FALSE, 0) ;
-  GTK_WIDGET_SET_FLAGS(quit_button, GTK_CAN_DEFAULT) ;
-  gtk_widget_grab_default(quit_button) ;
 
   gtk_widget_show_all(toplevel) ;
 

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 13 12:29 2003 (edgrif)
+ * Last edited: Nov 14 17:12 2003 (edgrif)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.1 2003-11-13 14:58:39 edgrif Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.2 2003-11-14 17:45:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,22 +84,16 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
   gtk_signal_connect(GTK_OBJECT(load_button), "clicked",
 		     GTK_SIGNAL_FUNC(loadThreadCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(hbox), load_button, FALSE, FALSE, 0) ;
-  GTK_WIDGET_SET_FLAGS(load_button, GTK_CAN_DEFAULT) ;
-  gtk_widget_grab_default(load_button) ;
 
   kill_button = gtk_button_new_with_label("Kill Thread") ;
   gtk_signal_connect(GTK_OBJECT(kill_button), "clicked",
 		     GTK_SIGNAL_FUNC(killThreadCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(hbox), kill_button, FALSE, FALSE, 0) ;
-  GTK_WIDGET_SET_FLAGS(kill_button, GTK_CAN_DEFAULT) ;
-  gtk_widget_grab_default(kill_button) ;
 
   check_button = gtk_button_new_with_label("Check Connections") ;
   gtk_signal_connect(GTK_OBJECT(check_button), "clicked",
 		     GTK_SIGNAL_FUNC(checkThreadCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(hbox), check_button, FALSE, FALSE, 0) ;
-  GTK_WIDGET_SET_FLAGS(check_button, GTK_CAN_DEFAULT) ;
-  gtk_widget_grab_default(check_button) ;
 
   return frame ;
 }
