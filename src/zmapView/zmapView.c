@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct 18 11:14 2004 (edgrif)
+ * Last edited: Nov  4 13:09 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.28 2004-10-18 10:15:46 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.29 2004-11-08 10:24:11 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,7 @@
 #include <ZMap/zmapProtocol.h>
 #include <ZMap/zmapWindow.h>
 #include <zmapView_P.h>
+#include <ZMap/zmapFeature.h>
 
 
 
@@ -131,6 +132,14 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
   return ;
 }
 
+
+
+void zmapViewFeatureDump(ZMapViewWindow view_window, char *file, int format)
+{
+  zmapFeatureDump(view_window->parent_view->features, file, format);
+
+  return;
+}
 
 
 
@@ -1278,7 +1287,7 @@ static GData *getTypesFromFile(void)
 							{"background"  , ZMAPCONFIG_STRING, {"black"}},
 							{"width"       , ZMAPCONFIG_FLOAT , {NULL}},
 							{"showUpStrand", ZMAPCONFIG_BOOL  , {NULL}},
-							{"minmag"      , ZMAPCONFIG_FLOAT , {NULL}},
+							{"minmag"      , ZMAPCONFIG_INT   , {NULL}},
 							{NULL, -1, {NULL}}} ;
 
 
@@ -1294,7 +1303,7 @@ static GData *getTypesFromFile(void)
 	result = TRUE ;
     }
 
-  /* Set up connections to the named typess. */
+  /* Set up connections to the named types. */
   if (result)
     {
       int num_types = 0 ;
@@ -1310,6 +1319,7 @@ static GData *getTypesFromFile(void)
 	     && ((next_types = zMapConfigGetNextStanza(types_list, next_types)) != NULL))
 	{
 	  char *name, *foreground, *background ;
+	  GString *name_lower;
 
 	  /* Name must be set so if its not found then don't make a struct.... */
 	  if ((name = zMapConfigGetElementString(next_types, "name")))
@@ -1323,9 +1333,13 @@ static GData *getTypesFromFile(void)
 	      gdk_color_parse(zMapConfigGetElementString(next_types, "background"), &new_type->background) ;
 	      new_type->width = zMapConfigGetElementFloat(next_types, "width") ;
 	      new_type->showUpStrand = zMapConfigGetElementBool(next_types, "showUpStrand");
-	      new_type->min_mag = zMapConfigGetElementFloat(next_types, "minmag");
+	      new_type->min_mag = zMapConfigGetElementInt(next_types, "minmag");
 
-	      g_datalist_set_data(&types, name, new_type) ;
+	      /* lowercase the name (aka type) */
+	      name_lower = g_string_new(name);
+	      name_lower = g_string_ascii_down(name_lower);
+		
+	      g_datalist_set_data(&types, name_lower->str, new_type) ;
 	      num_types++ ;
 	    }
 	  else
