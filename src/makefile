@@ -5,7 +5,7 @@
 #
 
 APP_DIR = zmapApp
-MAKE_DIRS = $(APP_DIR) zmapAppmanager zmapserver zmapthreads zmaputils zmapwindow
+MAKE_DIRS = $(APP_DIR) zmapAppmanager zmapControl zmapserver zmapthreads zmaputils zmapwindow
 
 
 all: makebindir libs zmap 
