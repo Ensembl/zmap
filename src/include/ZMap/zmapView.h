@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Dec 16 16:42 2004 (edgrif)
+ * Last edited: Jan 20 16:42 2005 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.15 2004-12-20 10:52:17 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.16 2005-01-24 11:27:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -61,6 +61,8 @@ typedef void (*ZMapViewCallbackFunc)(ZMapView zmap_view, void *app_data, void *v
  * to a window. */
 typedef struct _ZMapViewCallbacksStruct
 {
+  ZMapViewWindowCallbackFunc enter ;
+  ZMapViewWindowCallbackFunc leave ;
   ZMapViewCallbackFunc load_data ;
   ZMapViewWindowCallbackFunc click ;
   ZMapViewWindowCallbackFunc visibility_change ;
@@ -110,25 +112,24 @@ typedef enum {
 
 
 
-
-
-
 void zMapViewInit(ZMapViewCallbacks callbacks) ;
 ZMapView zMapViewCreate(char *sequence,	int start, int end, void *app_data) ;
-ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget,
-				 ZMapWindow curr_view_window) ;
+
+ZMapViewWindow zMapViewMakeWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
+ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
+				  ZMapWindow copy_window) ;
+void zMapViewRemoveWindow(ZMapViewWindow view_window) ;
+
 gboolean zMapViewConnect(ZMapView zmap_view) ;
 gboolean zMapViewLoad (ZMapView zmap_view) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Don't exist but will be needed. */
-gboolean zMapViewDeleteWindow(ZMapViewWindow view_window) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 gboolean zMapViewReset(ZMapView zmap_view) ;
 
 char *zMapViewGetSequence(ZMapView zmap_view) ;
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
+
+void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom) ;
+
 ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
 char *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
@@ -136,9 +137,11 @@ ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
 
+void     zmapViewFeatureDump(ZMapViewWindow view_window, char *file, int format);
+
 gboolean zMapViewDestroy(ZMapView zmap_view) ;
 
-void     zmapViewFeatureDump(ZMapViewWindow view_window, char *file, int format);
+
 
 
 #endif /* !ZMAPVIEW_H */
