@@ -55,6 +55,9 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapUtils/zmapReadLine.c \
 	$(top_srcdir)/zmapUtils/zmapReadLine_P.h \
 	$(top_srcdir)/zmapUtils/zmapUtils.c \
+	$(top_srcdir)/zmapUtils/zmapUrl.c \
+	$(top_srcdir)/zmapUtils/zmapUrlUtils.c \
+	$(top_srcdir)/zmapUtils/safe-ctype.c \
 	$(top_srcdir)/zmapUtils/zmapUtilsConfig.c \
 	$(top_srcdir)/zmapUtils/zmapUtils_P.h \
 	$(top_srcdir)/zmapView/zmapView.c \
@@ -112,8 +115,6 @@ libZMapApp_a_DEPENDENCIES = src-link
 libZMap_a_DEPENDENCIES = src-link
 libZMapThr_a_DEPENDENCIES = src-link
 
-#libZMap.a:
-#	echo " ---------- INTENTIONALLY BLANK $@"
 
 src-link: 
 	echo " ---------- INTENTIONALLY BLANK $@"
