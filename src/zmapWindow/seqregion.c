@@ -1,4 +1,4 @@
-/*  Last edited: Jun 17 13:53 2004 (rnc) */
+/*  Last edited: Jun 29 13:26 2004 (edgrif) */
 /*  file: seqregion.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -55,7 +55,11 @@ Coord srCoord(ZMapRegion *zMapRegion, InvarCoord coord)
 /* srCreate ******************************************************/
 /* Creates a new, empty ZMapRegion structure.Does nothing with the handle. */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapRegion *srCreate(STORE_HANDLE handle)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+ZMapRegion *srCreate(void)
 {
   ZMapRegion *zMapRegion = (ZMapRegion*)malloc(sizeof(ZMapRegion));
 

@@ -1,4 +1,4 @@
-/*  Last edited: Apr 13 15:00 2004 (rnc) */
+/*  Last edited: Jun 29 13:36 2004 (edgrif) */
 /*  file: stringbucket.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -25,11 +25,21 @@
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  */
 
+
+#include <glib.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <../acedb/regular.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <stringbucket.h>
 
 struct sbucket {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   STORE_HANDLE handle;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   struct sbucketchain *chain;
 };
 
@@ -37,11 +47,26 @@ struct sbucketchain {
    struct sbucketchain *next;
 };
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 StringBucket *sbCreate(STORE_HANDLE handle)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+StringBucket *sbCreate(void)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   StringBucket *b = halloc(sizeof(struct sbucket), handle);
-  
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  StringBucket *b = g_malloc(sizeof(struct sbucket)) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   b->handle = handle;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   b->chain = NULL;
 
   return b;
@@ -51,13 +76,17 @@ StringBucket *sbCreate(STORE_HANDLE handle)
 void sbDestroy(StringBucket *b)
 {
   struct sbucketchain *c = b->chain;
-  messfree(b);
+
+  g_free(b);
+
   while (c) 
     {
        struct sbucketchain *tmp = c->next;
-       messfree(c);
+
+       g_free(c);
        c = tmp;
     }
+
 }
 
 char *str2p(char *string, StringBucket *b)
@@ -68,7 +97,13 @@ char *str2p(char *string, StringBucket *b)
   
   if (!c)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       c = halloc(sizeof(struct sbucketchain) + strlen(string) + 1, b->handle);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      c = g_malloc(sizeof(struct sbucketchain) + strlen(string) + 1) ;
+
       c->next = b->chain;
       b->chain = c;
       strcpy((char *)(c+1), string);

@@ -1,4 +1,4 @@
-/*  Last edited: Jun 28 15:13 2004 (rnc) */
+/*  Last edited: Jun 29 10:31 2004 (edgrif) */
 /*  file: zmapcommon.h
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -30,8 +30,12 @@
 #ifndef ZMAPCOMMON_H
 #define ZMAPCOMMON_H
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <../acedb/graph.h>
 #include <../acedb/gex.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <ZMap/zmapFeature.h>
 /* 
 

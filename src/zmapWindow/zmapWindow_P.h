@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 28 15:09 2004 (rnc)
+ * Last edited: Jun 29 11:56 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.8 2004-06-28 14:28:26 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.9 2004-06-30 09:12:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -54,7 +54,11 @@ typedef struct _ZMapWindowStruct
   zmapVoidIntCallbackFunc app_routine ;
   void *app_data ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   STORE_HANDLE    handle;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   GtkWidget      *frame;
   GtkWidget      *vbox;
   GtkItemFactory *itemFactory;
@@ -68,7 +72,7 @@ typedef struct _ZMapWindowStruct
   GtkWidget      *hpane;  /* allows the user to minimise the navigator pane */
   GNode          *panesTree;
   ZMapPane        focuspane;
-  BOOL            firstTime;
+  gboolean        firstTime;
   /* navigator stuff */
   Coord           navStart, navEnd; /* Start drawing the Nav bar from here */
   ScreenCoord     scaleOffset;
@@ -79,7 +83,11 @@ typedef struct _ZMapPaneStruct {
   /* Data associated with one scrolling pane. */
   ZMapWindow   window;     /* parent */
   ZMapRegion  *zMapRegion; /* the region holding all the SEGS */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   Graph        graph;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   GtkWidget   *graphWidget;
   GtkWidget   *vbox;
   GtkWidget   *pane;
@@ -95,7 +103,11 @@ typedef struct _ZMapPaneStruct {
   int          dragBox, scrollBox;
   GPtrArray    cols;
   GArray       *box2seg, *box2col;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   STORE_HANDLE drawHandle; /* gets freed on each redraw. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   int          DNAwidth;
   double       zoomFactor;
   int          step_increment;

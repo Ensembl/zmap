@@ -1,4 +1,4 @@
-/*  Last edited: Jun 25 11:20 2004 (rnc) */
+/*  Last edited: Jun 29 12:10 2004 (edgrif) */
 /*  file: seqregion.h
  *  Copyright (c) Sanger Institute, 2003
  *-------------------------------------------------------------------
@@ -27,7 +27,12 @@
 #ifndef SEQREGION_H
 #define SEQREGION_H
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <../acedb/acedb.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+/* this is all wrong....this header or some parts of it should be in include/ZMap */
 #include <../zmapWindow/zmapcalls.h>
 
 
@@ -52,7 +57,11 @@ No KEYS, classes or sMapInfos allowed.
 /* Routines */
 
 /* Create a new one - must call srActivate next */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapRegion *srCreate(STORE_HANDLE handle);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+ZMapRegion *srCreate();
 
 /* Coordinate conversion. */
 InvarCoord srInvarCoord(ZMapRegion *zMapRegion, Coord coord);

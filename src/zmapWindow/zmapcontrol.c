@@ -1,4 +1,4 @@
-/*  Last edited: Jun 28 13:59 2004 (rnc) */
+/*  Last edited: Jun 29 15:49 2004 (edgrif) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -25,6 +25,7 @@
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  */
 
+#include <glib.h>
 #include <zmapcontrol.h>
 #include <zmapsplit.h>
 static void *navAssoc, *winAssoc;
@@ -42,7 +43,7 @@ static void        navScale         (FooCanvas *canvas, float offset, int start,
 
 /* functions ********************************************************/
 
-BOOL Quit(GtkWidget *widget, gpointer data)
+gboolean Quit(GtkWidget *widget, gpointer data)
 {
   ZMapWindow window = (ZMapWindow)data;
 
@@ -70,13 +71,13 @@ BOOL Quit(GtkWidget *widget, gpointer data)
  * build the columns in the display.
  */
 
-BOOL zMapDisplay(ZMap        zmap,
+gboolean zMapDisplay(ZMap        zmap,
 		 Activate_cb act_cb,
 		 Calc_cb     calc_cb,
 		 void       *region,
 		 char       *seqspec, 
 		 char       *fromspec, 
-		 BOOL        isOldGraph)
+		 gboolean        isOldGraph)
 {
   ZMapWindow window = zmap->zMapWindow;
 
@@ -105,7 +106,7 @@ BOOL zMapDisplay(ZMap        zmap,
 
 /* zmRecalculate *******************************************************/
 
-static BOOL zmRecalculate(ZMapWindow window, ZMapCallbackData *zMapCBData)
+static gboolean zmRecalculate(ZMapWindow window, ZMapCallbackData *zMapCBData)
 {
   /* derive the region for which we need data. */
   int min, max;
@@ -575,9 +576,9 @@ static int dragBox;
 /* I believe navDrag is only called by navPick.  Since I don't 
 ** know what navPick is doing, and don't now know what
 ** navDrag is doing, I'm going to comment most of it out. */
-static void navDrag(float *x, float *y, BOOL isDone)
+static void navDrag(float *x, float *y, gboolean isDone)
 {
-  static BOOL isDragging = FALSE;
+  static gboolean isDragging = FALSE;
   static float oldY;
   ZMapWindow window;
   ZMapPane pane;
@@ -793,7 +794,7 @@ Coord zmCoordFromScreen(ZMapPane pane, ScreenCoord coord)
 }
 
 
-BOOL zmIsOnScreen(ZMapPane pane, Coord coord1, Coord coord2)
+gboolean zmIsOnScreen(ZMapPane pane, Coord coord1, Coord coord2)
 {
   if (zmScreenCoord(pane, coord2) < 0)
     return FALSE;

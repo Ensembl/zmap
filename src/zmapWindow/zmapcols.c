@@ -1,4 +1,4 @@
-/*  Last edited: Jun 22 15:59 2004 (rnc) */
+/*  Last edited: Jun 29 15:48 2004 (edgrif) */
 /*  file: zmapcols.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -27,7 +27,12 @@
 
 #include <seqregion.h>
 #include <zmapcontrol.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapcommon.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#include <ZMap/zmapFeature.h>
+
 #include <ZMap/zmapWindow.h>
 
 /*************** function prototypes *****************************************/
@@ -119,7 +124,8 @@ static void pruneCols(ZMapPane pane)
     {
       ZMapColumn *c = g_ptr_array_index(zMapPaneGetCols(pane), i);
 
-      if (c->type != SR_DEFAULT && c->meth && !srMethodFromID(zMapPaneGetZMapRegion(pane), c->meth))
+      if (c->type != ZMAPFEATURE_INVALID && c->meth
+	  && !srMethodFromID(zMapPaneGetZMapRegion(pane), c->meth))
 	{
 	  for (j = i+1; j < (zMapPaneGetCols(pane))->len; j++)
 	    g_ptr_array_remove_index(zMapPaneGetCols(pane), j-1); // = arr(pane->cols, j, ZMapColumn);
@@ -127,9 +133,9 @@ static void pruneCols(ZMapPane pane)
     }
 }
 
-static void insertCol(ZMapPane pane, methodID meth, srType type)
+static void insertCol(ZMapPane pane, methodID meth, ZMapFeatureType type)
 {
-  /* NB call this one with type == SR_DEFAULT to put in default columns. */
+  /* NB call this one with type == SR_INVALID to put in default columns. */
 
   /* Where column code links in.
      Fields are :
@@ -137,17 +143,17 @@ static void insertCol(ZMapPane pane, methodID meth, srType type)
      2) Draw routine.
      3) Config routine.
      4) Flag set for phase sensistive column - gets repeated three times.
-     5) Name - only valid for SR_DEFAULT columns.
-     6) Right priority - only valid for SR_DEFAULT columns.
-     7) Type - SR_DEFAULT for default columns which are always present
+     5) Name - only valid for SR_INVALID columns.
+     6) Right priority - only valid for SR_INVALID columns.
+     7) Type - SR_INVALID for default columns which are always present
                otherwise matches values in segs from convert routines.
   */
   static struct ZMapColDefs defs[] = {
-    { NULL,    zMapScaleColumn  , NULL, NULL      , FALSE, 1.0, "Scale"   , SR_DEFAULT    },
-    { nbcInit, zMapFeatureColumn, NULL, nbcSelect , FALSE, 2.0, "Features", SR_SEQUENCE   },
-    { nbcInit, zMapFeatureColumn, NULL, nbcSelect , FALSE, 2.0, "Features", SR_FEATURE    },
-    { nbcInit, zMapGeneDraw     , NULL, geneSelect, FALSE, 2.0, "Features", SR_TRANSCRIPT },
-    { NULL,    zMapDNAColumn    , NULL, NULL      , FALSE, 11.0, "DNA"    , SR_DEFAULT    },
+    { NULL,    zMapScaleColumn  , NULL, NULL      , FALSE, 1.0, "Scale"   , ZMAPFEATURE_INVALID},
+    { nbcInit, zMapFeatureColumn, NULL, nbcSelect , FALSE, 2.0, "Features", ZMAPFEATURE_SEQUENCE   },
+    { nbcInit, zMapFeatureColumn, NULL, nbcSelect , FALSE, 2.0, "Features", ZMAPFEATURE_BASIC    },
+    { nbcInit, zMapGeneDraw     , NULL, geneSelect, FALSE, 2.0, "Features", ZMAPFEATURE_TRANSCRIPT },
+    { NULL,    zMapDNAColumn    , NULL, NULL      , FALSE, 11.0, "DNA"    , ZMAPFEATURE_INVALID    },
   };/* init,   draw,            config, select,    isframe, prio, name,     type */
 
   int i, j, k;
@@ -158,7 +164,7 @@ static void insertCol(ZMapPane pane, methodID meth, srType type)
 
   for( i=0; i < sizeof(defs)/sizeof(struct ZMapColDefs); i++)
     {
-      if (defs[i].type == SR_DEFAULT && type == SR_DEFAULT)
+      if (defs[i].type == ZMAPFEATURE_INVALID && type == ZMAPFEATURE_INVALID)
 	{ /* insert default column */
 	  name = defs[i].name;
 	  priority = defs[i].priority;
@@ -239,7 +245,7 @@ void buildCols(ZMapPane pane)
   int i;
   for (i=0; i < zMapRegionGetSegs(zMapRegion)->len; i++)
       {
-	SEG *seg = &g_array_index(zMapRegionGetSegs(zMapRegion), SEG, i);
+	ZMapFeature seg = &g_array_index(zMapRegionGetSegs(zMapRegion), ZMapFeatureStruct, i);
 	methodID id = seg->method;
 	if (id)
 	  insertCol(pane, id, seg->type);
@@ -248,7 +254,7 @@ void buildCols(ZMapPane pane)
 	
 void makezMapDefaultColumns(ZMapPane pane)
 {
-    insertCol(pane, 0, SR_DEFAULT);
+    insertCol(pane, 0, ZMAPFEATURE_INVALID);
 }
 
 /********************** end of file ****************************/

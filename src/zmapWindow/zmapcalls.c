@@ -1,4 +1,4 @@
-/*  Last edited: Jun 23 13:38 2004 (rnc) */
+/*  Last edited: Jun 29 15:40 2004 (edgrif) */
 /*  file: zmapcalls.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -52,6 +52,9 @@ BOOL zMapDisplay(Activate_cb srActivate,
 		 char *fromspec, 
 		 BOOL isOldGraph);
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* functions ******************************************************/
 /* zMapCall is called from w6/display.c where it is registered in
  * display functions at line 1176.  It calls zMapDisplay, passing
@@ -78,6 +81,8 @@ BOOL zMapCall(KEY key, KEY from, BOOL isOldGraph, void *app_data)
   messfree(fromspec);
   return ret;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* srMethodMake ****************************************************/

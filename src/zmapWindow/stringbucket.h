@@ -1,4 +1,4 @@
-/*  Last edited: Apr 13 15:01 2004 (rnc) */
+/*  Last edited: Jun 29 12:06 2004 (edgrif) */
 /*  file: stringbucket.h
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -25,7 +25,11 @@
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <../acedb/acedb.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* Stringbucket:
 
@@ -43,7 +47,12 @@ struct sbucket;
 
 typedef struct sbucket StringBucket; 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 StringBucket *sbCreate(STORE_HANDLE handle);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+StringBucket *sbCreate(void) ;
+
 void sbDestroy(StringBucket *b);
 char *str2p(char *string, StringBucket *b);
 

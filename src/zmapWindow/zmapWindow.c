@@ -28,16 +28,26 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 28 15:08 2004 (rnc)
+ * Last edited: Jun 29 15:52 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.11 2004-06-28 14:28:19 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.12 2004-06-30 09:12:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
+#include <glib.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <../acedb/regular.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <ZMap/zmapUtils.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapcommon.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#include <ZMap/zmapFeature.h>
+
 #include <zmapWindow_P.h>
 
 
@@ -270,6 +280,8 @@ ZMapWindow zMapWindowCreateZMapWindow(void)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 STORE_HANDLE zMapWindowGetHandle(ZMapWindow window)
 {
   return window->handle;
@@ -282,6 +294,8 @@ void zMapWindowSetHandle(ZMapWindow window)
   window->handle = NULL;
   return;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 void zMapWindowCreateRegion(ZMapWindow window)
@@ -302,12 +316,12 @@ void zMapWindowSetPanesTree(ZMapWindow window, GNode *node)
   return;
 }
 
-BOOL zMapWindowGetFirstTime(ZMapWindow window)
+gboolean zMapWindowGetFirstTime(ZMapWindow window)
 {
   return window->firstTime;
 }
 
-void zMapWindowSetFirstTime(ZMapWindow window, BOOL value)
+void zMapWindowSetFirstTime(ZMapWindow window, gboolean value)
 {
   window->firstTime = value;
   return;
@@ -352,7 +366,7 @@ void zMapWindowSetRegionArea(ZMapWindow window, Coord area, int num)
 return;
 }
 
-BOOL zMapWindowGetRegionReverse(ZMapWindow window)
+gboolean zMapWindowGetRegionReverse(ZMapWindow window)
 {
   return window->focuspane->zMapRegion->rootIsReverse;
 }
@@ -545,7 +559,7 @@ void zMapRegionFreeOldMethods(ZMapRegion *region)
 
 GArray *zMapRegionNewSegs(ZMapRegion *region)
 {
-  return region->segs = g_array_new(FALSE, FALSE, sizeof(SEG));
+  return region->segs = g_array_new(FALSE, FALSE, sizeof(ZMapFeatureStruct)) ;
 }
 
 GArray *zMapRegionGetSegs(ZMapRegion *region)
@@ -602,7 +616,7 @@ void zMapPaneFreeBox2Col(ZMapPane pane)
 
 GArray *zMapPaneNewBox2Seg(ZMapPane pane, int elements)
 {
-  pane->box2seg = g_array_sized_new(FALSE, TRUE, sizeof(SEG), elements);
+  pane->box2seg = g_array_sized_new(FALSE, TRUE, sizeof(ZMapFeatureStruct), elements);
 }
 
 GArray *zMapPaneSetBox2Seg(ZMapPane pane, ZMapColumn *seg, int index)
@@ -610,9 +624,9 @@ GArray *zMapPaneSetBox2Seg(ZMapPane pane, ZMapColumn *seg, int index)
   return g_array_insert_val(pane->box2seg, index, seg);
 }
 
-SEG *zMapPaneGetBox2Seg(ZMapPane pane, int index)
+ZMapFeature zMapPaneGetBox2Seg(ZMapPane pane, int index)
 {
-  return &g_array_index(pane->box2seg, SEG, index);
+  return &g_array_index(pane->box2seg, ZMapFeatureStruct, index);
 }
 
 void zMapPaneFreeBox2Seg(ZMapPane pane)

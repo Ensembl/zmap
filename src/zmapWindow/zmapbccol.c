@@ -1,4 +1,4 @@
-/*  Last edited: Jun 22 10:04 2004 (rnc) */
+/*  Last edited: Jun 29 15:21 2004 (edgrif) */
 /*  file: zmapbccol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -31,24 +31,123 @@
    started the Second Oil War. 
    I think the module name "nbc" is somehow appropriate - srk */
 
+
+#include <glib.h>
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <../acedb/method.h>
 #include <../acedb/bump.h>
-#include <zmapcontrol.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapcommon.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#include <ZMap/zmapFeature.h>
+
+#include <zmapcontrol.h>
+
+
+/* A lot of this comes direct from acedb.......... */
+
+
+enum Colour    {WHITE, BLACK, LIGHTGRAY, DARKGRAY,
+                RED, GREEN, BLUE,
+                YELLOW, CYAN, MAGENTA,
+		LIGHTRED, LIGHTGREEN, LIGHTBLUE,
+		DARKRED, DARKGREEN, DARKBLUE,
+		PALERED, PALEGREEN, PALEBLUE,
+		PALEYELLOW, PALECYAN, PALEMAGENTA,
+		BROWN, ORANGE, PALEORANGE,
+		PURPLE, VIOLET, PALEVIOLET,
+		GRAY, PALEGRAY,
+		CERISE, MIDBLUE,
+		NUM_TRUECOLORS,
+                TRANSPARENT,	/* pseudocolour only for background */
+		FORECOLOR,	/* pseudocolor to force box->fcol after graphColor() */
+		BACKCOLOR	/* pseudocolor to force box->bcol after graphColor() */
+               } ;
+
+
+
+/* Defines the way columns are displayed when there are lots of features overlapping within
+ * a column. */
+typedef enum {METHOD_OVERLAP_COMPLETE, METHOD_OVERLAP_BUMPED, METHOD_OVERLAP_CLUSTER} MethodOverlapModeType ;
+
+
+/* AGH......THIS ALL NEEDS SORTING OUT......... */
+/* forward declaration of opaque type */
+typedef struct BumpStruct *BUMP;
+
+
+
+#define METHOD_FRAME_SENSITIVE	0x00000004U /* if tag "Frame_sensitive" */
+#define METHOD_STRAND_SENSITIVE	0x00000008U /* if tag "Stand_sensitive" */
+#define METHOD_SHOW_UP_STRAND	0x00010000U /* if tag "Show_up_strand" */
+#define METHOD_SCORE_BY_OFFSET  0x00000010U /* if tag "Score_by_offset" */
+#define METHOD_SCORE_BY_WIDTH   0x00000020U /* if tag "score_by_width" */
+#define METHOD_SCORE_BY_HIST	0x00002000U /* if tag "Score_by_histogram"*/
+#define METHOD_PERCENT          0x00000400U /* if tag "Percent"
+					      defaults Score_bounds
+					      min/max to 25/100 
+					      (can be overridden) */
+
+#define METHOD_BUMPABLE		0x00000200U /* if tag "Bumpable" */
+#define METHOD_CLUSTER          0x00020000U /* if tag "Cluster" */
+
+#define METHOD_BLASTN		0x00000001U /* if tag "BlastN" -
+					      can calculate percent 
+					      from score */
+#define METHOD_BELVU    	0x00004000U /* if tag "Belvu"
+					       esr, for PEPMAP */
+#define METHOD_BLIXEM_X		0x00000040U /* if tag "Blixem_X" */
+#define METHOD_BLIXEM_N		0x00000080U /* if tag "Blixem_N" */
+#define METHOD_BLIXEM_P		0x00008000U /* if tag "Blixem_P" */
+#define METHOD_EMBL_DUMP	0x00001000U /* if tag "EMBL_dump" */
+
+
+
+#define METHOD_DONE		0x00000002U /* if method already cached */
+#define METHOD_CALCULATED	0x00000800U /* used in addOldSegs */
+#define METHOD_GAPS             0x00040000U /* Show gapped sequences and homols */
+#define METHOD_JOIN_BLOCKS      0x00080000U /* Join all blocks of a single match with lines. */
+/*#define METHOD_CACHED		0x00000100U * set if Method exists
+					    * in cache and has a
+					    * real obj in the DB */
+
+
+
+
+/* convenience flag */
+#define METHOD_SCORE		(METHOD_SCORE_BY_OFFSET | \
+				 METHOD_SCORE_BY_WIDTH | \
+				 METHOD_SCORE_BY_HIST)
+
+
+
+
+
 
 
 typedef enum { DEFAULT=0, WIDTH, OFFSET, HIST } BoxColModeType;
 
+
 typedef struct {
+
    MethodOverlapModeType overlap_mode ;	 /* See wh/method.h */
 
   /* following not under user control */
   float offset ;
-  BOOL isDown ;
+  gboolean isDown ;
   BoxColModeType mode ;
   float fmax ;
   BUMP bump ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   Associator cluster ;		/* only non-zero if METHOD_CLUSTER */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  GHashTable* cluster ;
+
   int clusterCount ;
   int width;
   float histBase;
@@ -258,9 +357,9 @@ static void nbcCalcBox (srMeth *methp, nbcPrivate *bc, float *x1p, float *x2p,
 
 
 struct geneSelectData{
-  SEG *seg;
-  BOOL isIntron;
-  int exonNumber;
+  ZMapFeature seg ;
+  gboolean isIntron ;
+  int exonNumber ;
 };
 
 void zMapGeneDraw(ZMapPane pane, ZMapColumn *col, float *offset, int frame)
@@ -288,19 +387,20 @@ void zMapGeneDraw(ZMapPane pane, ZMapColumn *col, float *offset, int frame)
 
     for (i=0; i < zMapRegionGetSegs(zMapRegion)->len; i++)
       {
-	SEG *seg = &g_array_index(zMapRegionGetSegs(zMapRegion), SEG, i);
+	ZMapFeature seg = &g_array_index(zMapRegionGetSegs(zMapRegion), ZMapFeatureStruct, i) ;
+
 	if (seg->method == col->meth &&
 	    seg->type == col->type &&
 	    zmIsOnScreen(pane, seg->x1, seg->x2))
 	  {
-	    GArray *exons = g_array_new(FALSE, FALSE, sizeof(srExon));
+	    GArray *exons = g_array_new(FALSE, FALSE, sizeof(ZMapExon));
 	    float e1, e2, x, y = 0;  /* y needs better default */ 
 	    int xoff = 1;
 	    struct geneSelectData *sd;
 
 	    exons = g_array_append_vals(exons,
-					&seg->u.transcript.exons, 
-					seg->u.transcript.exons.len);
+					&seg->feature.transcript.exons, 
+					seg->feature.transcript.exons->len);
  
 	    //	    if (bc->bump)
 	    //	      bumpItem(bc->bump, 1, seg->x2 - seg->x1, &xoff, &y);
@@ -328,8 +428,8 @@ void zMapGeneDraw(ZMapPane pane, ZMapColumn *col, float *offset, int frame)
 	      { /* Intron */
 		float middle;
 
-		e1 = zmScreenCoord(col->pane, g_array_index(exons, srExon, j-1).x2);
-		e2 = zmScreenCoord(col->pane, g_array_index(exons, srExon, j  ).x1);
+		e1 = zmScreenCoord(col->pane, g_array_index(exons, ZMapExon, j-1)->x2);
+		e2 = zmScreenCoord(col->pane, g_array_index(exons, ZMapExon, j  )->x1);
 		middle = (e1 + e2)/2.0;
 
 		/* TODO: if e1 < e2 then it's on the reverse strand so needs different handling */
@@ -341,8 +441,8 @@ void zMapGeneDraw(ZMapPane pane, ZMapColumn *col, float *offset, int frame)
 	    
 	    for (j = 0; j <exons->len; j++)
 	      { /* exon */
-		e1 = zmScreenCoord(col->pane, g_array_index(exons, srExon, j).x1);
-		e2 = zmScreenCoord(col->pane, g_array_index(exons, srExon, j).x2);
+		e1 = zmScreenCoord(col->pane, g_array_index(exons, ZMapExon, j)->x1);
+		e2 = zmScreenCoord(col->pane, g_array_index(exons, ZMapExon, j)->x2);
 
 		/* if e1 < e2 then it's on the reverse strand so needs different handling */
 		if (e1 < e2)
@@ -361,19 +461,19 @@ void zMapGeneDraw(ZMapPane pane, ZMapColumn *col, float *offset, int frame)
 }
 
 void geneSelect(ZMapPane pane, ZMapColumn *col,
-		void *arg, int box, double x, double y, BOOL isSelect)
+		void *arg, int box, double x, double y, gboolean isSelect)
 {
   struct geneSelectData *sd = (struct geneSelectData *)arg;
-  SEG *seg = sd->seg;
-  GArray *exons = g_array_new(FALSE, FALSE, sizeof(srExon));
+  ZMapFeature seg = sd->seg;
+  GArray *exons = g_array_new(FALSE, FALSE, sizeof(ZMapExon));
   Coord x1, x2;
   char *string;
   srMeth *meth = srMethodFromID(zMapPaneGetZMapRegion(pane), col->meth);
   int colour = WHITE;
 
   exons = g_array_append_vals(exons, 
-			      &seg->u.transcript.exons,
-			      seg->u.transcript.exons.len);
+			      &seg->feature.transcript.exons,
+			      seg->feature.transcript.exons->len);
   if (isSelect)
     {
     
@@ -381,13 +481,13 @@ void geneSelect(ZMapPane pane, ZMapColumn *col,
       
       if (sd->isIntron)
 	{
-	  x1 = g_array_index(exons, srExon, sd->exonNumber-1).x2 + 1 ;
-	  x2 = g_array_index(exons, srExon, sd->exonNumber).x1 - 1 ;
+	  x1 = g_array_index(exons, ZMapExon, sd->exonNumber-1)->x2 + 1 ;
+	  x2 = g_array_index(exons, ZMapExon, sd->exonNumber)->x1 - 1 ;
 	}
       else
 	{
-	  x1 = g_array_index(exons, srExon, sd->exonNumber).x1;
-	  x2 = g_array_index(exons, srExon, sd->exonNumber).x2;
+	  x1 = g_array_index(exons, ZMapExon, sd->exonNumber)->x1;
+	  x2 = g_array_index(exons, ZMapExon, sd->exonNumber)->x2;
 	}
       
       string = g_strdup_printf("%s [%f] %d %d", 
@@ -418,7 +518,7 @@ void zMapFeatureColumn(ZMapPane  pane, ZMapColumn *col, float *offset, int frame
 
     for (i=0; i < zMapRegionGetSegs(zMapRegion)->len; i++)
       {
-	SEG *seg = &g_array_index(zMapRegionGetSegs(zMapRegion), SEG, i);
+	ZMapFeature seg = &g_array_index(zMapRegionGetSegs(zMapRegion), ZMapFeatureStruct, i);
 	if (seg->method == col->meth &&
 	    seg->type == col->type &&
 	    zmIsOnScreen(pane, seg->x1, seg->x2))
@@ -448,9 +548,9 @@ void zMapFeatureColumn(ZMapPane  pane, ZMapColumn *col, float *offset, int frame
 
 
 void nbcSelect(ZMapPane pane, ZMapColumn *col,
-	     void *arg, int box, double x, double y, BOOL isSelect)
+	     void *arg, int box, double x, double y, gboolean isSelect)
 {
-  SEG *seg = (SEG *)arg;
+  ZMapFeature seg = (ZMapFeature)arg ;
   char *string = g_strdup_printf("%s [%f] %d %d", 
 				 seg->id, seg->score, 
 				 zmVisibleCoord(zMapPaneGetZMapWindow(pane), seg->x1),

@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Jun 25 10:44 2004 (edgrif)
+ * Last edited: Jun 29 13:11 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.2 2004-06-25 13:32:27 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.3 2004-06-30 09:11:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -42,7 +42,40 @@ typedef unsigned int ZMapFeatureID ;
 enum {ZMAPFEATUREID_NULL = 0} ;
 
 
-typedef int Coord ;
+
+typedef int Coord ;					    /* we do need this here.... */
+
+
+
+/* I'm not sure we want all of these defined here.....the coord stuff feels like it is different
+ * from feature stuff........... */
+typedef float ScreenCoord;
+typedef int   InvarCoord;
+typedef int   VisibleCoord;
+
+
+/* AGAIN THIS FEELS LIKE ITS IN THE WRONG PLACE, ITS TO DO WITH DISPLAY, NOT FEATURES PER SE... */
+/* structures *********************************************/
+/* zMapRegionStruct is the structure zmap expects to hold
+ * all the data required for the display, so whatever is
+ * providing the data must populate this structure. */
+
+struct zMapRegionStruct {
+  Coord      area1, area2;
+  GArray     *dna;
+  GArray     *segs;
+  GPtrArray  *methods, *oldMethods;
+  int        length;
+  gboolean   rootIsReverse;
+};
+
+typedef struct zMapRegionStruct ZMapRegion;
+
+
+
+
+
+
 
 /* Unsure about this....probably should be some sort of key...... */
 typedef int methodID ;
@@ -203,6 +236,11 @@ typedef struct segStruct SEG;
 typedef struct {
   Coord x1, x2;
 } srExon;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+/* ALL OF THIS NEEDS SOME ATTENTION.......... */
 
 typedef struct methodStruct
 {
@@ -216,7 +254,7 @@ typedef struct methodStruct
   char symbol ;
   float priority;
   float histBase;
-  BOOL showText, no_display;
+  gboolean showText, no_display;
 } srMeth;
 
 
@@ -228,16 +266,21 @@ typedef void (*Activate_cb)(void *seqRegion,
 			    char *seqspec, 
 			    ZMapRegion *zMapRegion, 
 			    Coord *r1, 
-			    Coord *r2, 
+			    Coord *r2) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* snipped this off the end.... */
 			    STORE_HANDLE *handle);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 /* This routine is called by the reverse-complement and
  * recalculate routines. */
 
 typedef void (*Calc_cb)    (void *seqRegion, 
 			    Coord x1, Coord x2,
-			    BOOL isReverse);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+			    gboolean isReverse);
+
      
 
 #endif /* ZMAP_FEATURE_H */

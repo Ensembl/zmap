@@ -1,4 +1,4 @@
-/*  Last edited: Jun 25 11:20 2004 (rnc) */
+/*  Last edited: Jun 29 12:09 2004 (edgrif) */
 /*  file: zmapcalls.h
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -28,6 +28,8 @@
 #ifndef ZMAPCALLS_H
 #define ZMAPCALLS_H
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <../acedb/acedb.h>
 #include <../acedb/regular.h>
 #include <../acedb/lex.h>
@@ -36,8 +38,17 @@
 #include <../acedb/smap.h>
 #include <../acedb/systags.h>  /* _Float, _Text, _bsRight, etc */
 #include <../acedb/classes.h>  /* _VMethod */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapcommon.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#include <ZMap/zmapFeature.h>
+
 #include <ZMap/zmapWindow.h>
+
 #include <../zmapWindow/stringbucket.h>
 /*
 This file defines the seqRegion interface.
@@ -58,9 +69,21 @@ struct seqRegionStruct {
 
   /* Private elements - acedb version. */
   StringBucket *bucket;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   KEY rootKey;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   STORE_HANDLE handle;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   SMap *smap;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   methodID idc; /* increment to make unique ids. */
 };
 
@@ -75,8 +98,12 @@ void srActivate(void *seqRegion,
 		char* seqspec, 
 		ZMapRegion *zMapRegion, 
 		Coord *r1, 
-		Coord *r2, 
+		Coord *r2) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		STORE_HANDLE *handle);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* Populate region between x1 and x2 */
 /* This may be called repeatedly as required with changing x1, x2 */
