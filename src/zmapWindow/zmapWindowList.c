@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 19 09:29 2004 (rnc)
+ * Last edited: Nov  5 16:28 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.7 2004-10-19 14:53:08 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.8 2004-11-08 10:16:03 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,7 @@
 #include <zmapWindow_P.h>
 #include <ZMap/zmapWindowDrawFeatures.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapUtils.h>
 
 enum { NAME, START, END, TYPE, FEATURE_TYPE, N_COLUMNS };
 
@@ -47,6 +48,7 @@ enum { NAME, START, END, TYPE, FEATURE_TYPE, N_COLUMNS };
 /* function prototypes ***************************************************/
 static void addItemToList(GQuark key_id, gpointer data, gpointer user_data);
 static int  tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
+static void scrollToItem(ZMapCanvasDataStruct *canvasData);
 static void quitListCB   (GtkWidget *window, gpointer data);
 
 
@@ -66,7 +68,6 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
   GtkCellRenderer *renderer;
   GtkTreeViewColumn *column;
   GtkTreeSelection *select;
-
 
   /* set up the top level window */
   canvasData->window->featureListWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -178,13 +179,10 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
   GtkTreeIter iter;
   GtkTreeModel *model;
   int x, y, start = 0, end = 0, feature_type = 0;
-  double wx, wy;
   gchar *name, *type;
-  FooCanvasItem *item;
   GdkColor outline;
   GdkColor foreground;
   static gboolean FIRSTTIME = TRUE;
-
 
   /* At present, when we display the list, it will scroll the main display
   ** to the first feature on the list.  This is not good but it's not my
@@ -199,36 +197,14 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
   
   if (start)
     {
-      /* scroll up or down to user's selection */
-      foo_canvas_scroll_to(canvasData->canvas, 0.0, 
-			   start);
-      
-      wx = start;
-      gdk_color_parse("black", &outline);
-      /*	  zmapDrawLine(foo_canvas_root(canvasData->canvas), 0.0, 
-	wx,
-	500.0,
-	wx,
-	&outline,
-	1.0);
-      */
-      foo_canvas_c2w(canvasData->canvas, 0.0, 
-		     start * canvasData->window->zoom_factor * canvasData->window->zoom_factor, &wx, &wy);
-      
-      item = foo_canvas_get_item_at(canvasData->canvas, canvasData->x+1.0, start);
-      
-      canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), type) ;
-      
-      zmapHighlightObject(item, canvasData);
-      
       canvasData->feature->name        = name;
       canvasData->feature->x1          = start;
       canvasData->feature->x2          = end;
-      canvasData->feature->type        = feature_type;
       canvasData->feature->method_name = type;
-      
-      zMapFeatureClickCB(canvasData, canvasData->feature); /* show feature details on info_panel  */
-      
+      canvasData->feature->type        = feature_type;
+  
+      scrollToItem(canvasData);
+
       gtk_widget_show_all(GTK_WIDGET(canvasData->window->parent_widget));
     }
   
@@ -237,6 +213,36 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
     
   return TRUE;
 }
+
+
+static void scrollToItem(ZMapCanvasDataStruct *canvasData)
+{
+  FooCanvasItem *item;
+  GString *string;
+  double wx, wy;
+  int cx, cy;
+
+  /* scroll up or down to user's selection */
+  foo_canvas_w2c(canvasData->canvas, 0.0, canvasData->feature->x1, &cx, &cy); 
+  foo_canvas_scroll_to(canvasData->canvas, 0, cy);
+      
+  item = foo_canvas_get_item_at(canvasData->canvas, canvasData->x, canvasData->feature->x1); 
+      
+  /* lowercase the type to match what's in canvasData->types */
+  string = g_string_new(canvasData->feature->method_name);
+  string = g_string_ascii_down(string);
+
+  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), string->str) ;
+  zMapAssert(canvasData->thisType);
+      
+  /* highlight the item */
+  zmapHighlightObject(item, canvasData);
+  
+  zMapFeatureClickCB(canvasData, canvasData->feature); /* show feature details on info_panel  */
+      
+  return;
+}
+
 
 
 static void quitListCB(GtkWidget *window, gpointer data)
