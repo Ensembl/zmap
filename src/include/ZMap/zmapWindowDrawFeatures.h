@@ -26,9 +26,9 @@
  *              on the canvas, calling drawing functions in zmapDraw
  *              to do so.
  * HISTORY:
- * Last edited: Sep 16 15:39 2004 (rnc)
+ * Last edited: Sep 17 10:14 2004 (rnc)
  * Created: Fri Aug 13 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.4 2004-09-16 15:30:44 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.5 2004-09-21 13:15:32 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_DRAWFEATURES_H
@@ -52,6 +52,7 @@ typedef struct _ParamStruct
   double               revColPos;           // column position on reverse strand
   GData               *types;
   ZMapFeatureTypeStyle thisType;
+  FooCanvasItem       *feature_group;       // the group this feature was drawn in
   ZMapFeature          feature;
   ZMapFeatureContext   feature_context;
   ZMapFeatureSet       feature_set;
