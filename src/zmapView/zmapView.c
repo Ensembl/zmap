@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: May 17 16:50 2004 (edgrif)
+ * Last edited: May 20 15:24 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.2 2004-05-17 16:38:40 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.3 2004-05-20 14:29:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,9 +53,9 @@ static void destroyZMapView(ZMapView zmap) ;
 static gint zmapIdleCB(gpointer cb_data) ;
 static void zmapWindowCB(void *cb_data, int reason) ;
 
-static void startConnectionChecking(ZMapView zmap_view) ;
-static void stopConnectionChecking(ZMapView zmap_view) ;
-static gboolean checkConnections(ZMapView zmap_view) ;
+static void startStateConnectionChecking(ZMapView zmap_view) ;
+static void stopStateConnectionChecking(ZMapView zmap_view) ;
+static gboolean checkStateConnections(ZMapView zmap_view) ;
 
 static void loadDataConnections(ZMapView zmap_view, char *sequence) ;
 
@@ -93,6 +93,9 @@ ZMapView zMapViewCreate(GtkWidget *parent_widget, char *sequence,
       zmap_view->window_list = g_list_append(zmap_view->window_list, window) ;
 
       zmap_view->state = ZMAPVIEW_INIT ;
+
+      /* Start polling function that checks state of this view and its connections. */
+      startStateConnectionChecking(zmap_view) ;
     }
   else
     {
@@ -104,8 +107,8 @@ ZMapView zMapViewCreate(GtkWidget *parent_widget, char *sequence,
 }
 
 
-/* Connect a blank ZMap to its databases via threads,
- * at this point the ZMap is blank and waiting to be told to load some data. */
+/* Connect a View to its databases via threads, at this point the View is blank and waiting
+ * to be called to load some data. */
 gboolean zMapViewConnect(ZMapView zmap_view)
 {
   gboolean result = TRUE ;
@@ -182,17 +185,15 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	zMapConfigDeleteStanzaSet(server_list) ;
 
 
-      /* If everything is ok then set up idle routine to check the connections,
-       * otherwise signal failure and clean up. */
+      /* If at least one connection succeeded then we are up and running, if not then the zmap
+       * returns to the init state. */
       if (result)
 	{
 	  zmap_view->state = ZMAPVIEW_RUNNING ;
-	  startConnectionChecking(zmap_view) ;
 	}
       else
 	{
-	  zmap_view->state = ZMAPVIEW_DYING ;
-	  killZMapView(zmap_view) ;
+	  zmap_view->state = ZMAPVIEW_INIT ;
 	}
     }
 
@@ -229,9 +230,9 @@ gboolean zMapViewLoad(ZMapView zmap_view, char *sequence)
 }
 
 
-/* Reset an existing ZMap, this call will:
+/* Reset an existing view, this call will:
  * 
- *    - leave the ZMap window(s) displayed and hold onto user information such as machine/port
+ *    - leave the View window(s) displayed and hold onto user information such as machine/port
  *      sequence etc so user does not have to add the data again.
  *    - Free all ZMap window data that was specific to the view being loaded.
  *    - Kill the existing server thread(s).
@@ -266,7 +267,6 @@ gboolean zMapViewReset(ZMapView zmap_view)
 /*
  *    A set of accessor functions.
  */
-
 char *zMapViewGetSequence(ZMapView zmap_view)
 {
   char *sequence = NULL ;
@@ -277,25 +277,32 @@ char *zMapViewGetSequence(ZMapView zmap_view)
   return sequence ;
 }
 
-char *zMapViewGetZMapStatus(ZMapView zmap_view)
+
+ZMapViewState zMapViewGetStatus(ZMapView zmap_view)
 {
-  /* Array must be kept in synch with ZmapState enum in ZMap_P.h */
+  return zmap_view->state ;
+}
+
+char *zMapViewGetStatusStr(ZMapViewState state)
+{
+  /* Array must be kept in synch with ZmapState enum in ZMap.h */
   static char *zmapStates[] = {"ZMAPVIEW_INIT", "ZMAPVIEW_RUNNING", "ZMAPVIEW_RESETTING",
 			       "ZMAPVIEW_DYING"} ;
-  char *state ;
+  char *state_str ;
 
-  zMapAssert(zmap_view->state >= ZMAPVIEW_INIT && zmap_view->state <= ZMAPVIEW_DYING) ;
+  zMapAssert(state >= ZMAPVIEW_INIT && state <= ZMAPVIEW_DYING) ;
 
-  state = zmapStates[zmap_view->state] ;
+  state_str = zmapStates[state] ;
 
-  return state ;
+  return state_str ;
 }
 
 
 
 /* Called to kill a zmap window and get the associated threads killed, note that
  * this call just signals everything to die, its the checkConnections() routine
- * that really clears up.
+ * that really clears up and when everything has died signals the caller via the
+ * callback routine that they supplied when the view was created.
  */
 gboolean zMapViewDestroy(ZMapView zmap_view)
 {
@@ -320,8 +327,7 @@ gboolean zMapViewDestroy(ZMapView zmap_view)
 
 /* We could provide an "executive" kill call which just left the threads dangling, a kind
  * of "kill -9" style thing, it would actually kill/delete stuff without waiting for threads
- * to die....  */
-
+ * to die....or we could allow a "force" flag to zmapViewKill/Destroy  */
 
 
 /* This is really the guts of the code to check what a connection thread is up
@@ -334,7 +340,7 @@ static gint zmapIdleCB(gpointer cb_data)
 
   /* Returning a value > 0 tells gtk to call zmapIdleCB again, so if checkConnections() returns
    * TRUE we ask to be called again. */
-  if (checkConnections(zmap_view))
+  if (checkStateConnections(zmap_view))
     call_again = 1 ;
   else
     call_again = 0 ;
@@ -348,7 +354,8 @@ static gint zmapIdleCB(gpointer cb_data)
 /* This routine needs some work, with the reorganisation of the code it is no longer correct,
  * it depends on what the zmapWindow can return to us. */
 /* Gets called when zmap Window code needs to signal us that the user has done something
- * such as click "quit". */
+ * such as click "quit" BUT THIS MAY NO LONGER BE POSSIBLE FOR A VIEW WINDOW...UNLESS WE HAVE.
+ * A MENU THAT ALLOWS THINGS TO BE KILLED. */
 static void zmapWindowCB(void *cb_data, int reason)
 {
   ZMapView zmap_view = (ZMapView)cb_data ;
@@ -431,7 +438,7 @@ static void destroyZMapView(ZMapView zmap_view)
 
 /* Start the ZMapView GTK idle function (gets run when the GUI is doing nothing).
  */
-static void startConnectionChecking(ZMapView zmap_view)
+static void startStateConnectionChecking(ZMapView zmap_view)
 {
   zmap_view->idle_handle = gtk_idle_add(zmapIdleCB, (gpointer)zmap_view) ;
 
@@ -442,7 +449,7 @@ static void startConnectionChecking(ZMapView zmap_view)
 /* I think that probably I won't need this most of the time, it could be used to remove the idle
  * function in a kind of unilateral way as a last resort, otherwise the idle function needs
  * to cancel itself.... */
-static void stopConnectionChecking(ZMapView zmap_view)
+static void stopStateConnectionChecking(ZMapView zmap_view)
 {
   gtk_idle_remove(zmap_view->idle_handle) ;
 
@@ -456,118 +463,170 @@ static void stopConnectionChecking(ZMapView zmap_view)
  * then acts on it, it gets called from the ZMap idle function.
  * If all threads are ok and zmap has not been killed then routine returns TRUE
  * meaning it wants to be called again, otherwise FALSE.
- *
+ * 
+ * The function monitors the View state so that when the last connection has disappeared
+ * and the View is dying then the View is cleaned up and the caller gets called to say
+ * the View is now dead.
+ * 
  * NOTE that you cannot use a condvar here, if the connection thread signals us using a
  * condvar we will probably miss it, that just doesn't work, we have to pole for changes
  * and this is possible because this routine is called from the idle function of the GUI.
  *  */
-static gboolean checkConnections(ZMapView zmap_view)
+static gboolean checkStateConnections(ZMapView zmap_view)
 {
   gboolean call_again = TRUE ;				    /* Normally we want to called continuously. */
   GList* list_item ;
+  gboolean threads_have_died = FALSE ;			    /* Records if any threads have died. */
 
-  list_item = g_list_first(zmap_view->connection_list) ;
-  /* should assert this as never null.... */
 
-  do
+  /* should assert the zmapview_state here to save checking later..... */
+
+
+  if (zmap_view->connection_list)
     {
-      ZMapConnection connection ;
-      ZMapThreadReply reply ;
-      void *data = NULL ;
-      char *err_msg = NULL ;
+      list_item = g_list_first(zmap_view->connection_list) ;
+      /* should assert this as never null.... */
+
+      do
+	{
+	  ZMapConnection connection ;
+	  ZMapThreadReply reply ;
+	  void *data = NULL ;
+	  char *err_msg = NULL ;
       
-      connection = list_item->data ;
+	  connection = list_item->data ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      ZMAP_DEBUG("GUI: checking connection for thread %x\n",
-		  zMapConnGetThreadid(connection)) ;
+	  ZMAP_DEBUG("GUI: checking connection for thread %x\n",
+		     zMapConnGetThreadid(connection)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-      data = NULL ;
-      err_msg = NULL ;
-      if (!(zMapConnGetReplyWithData(connection, &reply, &data, &err_msg)))
-	{
-	  zMapDebug("GUI: thread %x, cannot access reply from thread - %s\n",
-		     zMapConnGetThreadid(connection), err_msg) ;
-	}
-      else
-	{
+	  data = NULL ;
+	  err_msg = NULL ;
+	  if (!(zMapConnGetReplyWithData(connection, &reply, &data, &err_msg)))
+	    {
+	      zMapDebug("GUI: thread %x, cannot access reply from thread - %s\n",
+			zMapConnGetThreadid(connection), err_msg) ;
+	    }
+	  else
+	    {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMapDebug("GUI: thread %x, thread reply = %s\n",
-		     zMapConnGetThreadid(connection),
-		     zMapVarGetReplyString(reply)) ;
+	      zMapDebug("GUI: thread %x, thread reply = %s\n",
+			zMapConnGetThreadid(connection),
+			zMapVarGetReplyString(reply)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	      
-	  if (reply == ZMAP_REPLY_WAIT)
-	    {
-	      ;					    /* nothing to do. */
-	    }
-	  else if (reply == ZMAP_REPLY_GOTDATA)
-	    {
-	      if (zmap_view->state == ZMAPVIEW_RUNNING)
+	      if (reply == ZMAP_REPLY_WAIT)
 		{
-		  zMapDebug("GUI: thread %x, got data\n",
-			     zMapConnGetThreadid(connection)) ;
-
-		  /* Is this right....????? check my logic here....  */
-		  zMapConnSetReply(connection, ZMAP_REPLY_WAIT) ;
-		  
-		  /* Signal the ZMap that there is work to be done. */
-		  displayDataWindows(zmap_view, data) ;
+		  ;					    /* nothing to do. */
 		}
-	      else
-		zMapDebug("GUI: thread %x, got data but ZMap state is - %s\n",
-			   zMapConnGetThreadid(connection), zMapViewGetZMapStatus(zmap_view)) ;
+	      else if (reply == ZMAP_REPLY_GOTDATA)
+		{
+		  if (zmap_view->state == ZMAPVIEW_RUNNING)
+		    {
+		      zMapDebug("GUI: thread %x, got data\n",
+				zMapConnGetThreadid(connection)) ;
 
-	    }
-	  else if (reply == ZMAP_REPLY_DIED)
-	    {
-	      if (err_msg)
-		zMapWarning("%s", err_msg) ;
-
-
-	      /* This means the thread has failed for some reason and we should clean up. */
-	      zMapDebug("GUI: thread %x has died so cleaning up....\n",
-			 zMapConnGetThreadid(connection)) ;
+		      /* Is this right....????? check my logic here....  */
+		      zMapConnSetReply(connection, ZMAP_REPLY_WAIT) ;
 		  
-	      /* We are going to remove an item from the list so better move on from
-	       * this item. */
-	      list_item = g_list_next(list_item) ;
-	      zmap_view->connection_list = g_list_remove(zmap_view->connection_list, connection) ;
+		      /* Signal the ZMap that there is work to be done. */
+		      displayDataWindows(zmap_view, data) ;
+		    }
+		  else
+		    zMapDebug("GUI: thread %x, got data but ZMap state is - %s\n",
+			      zMapConnGetThreadid(connection), zMapViewGetStatus(zmap_view)) ;
 
-	      destroyConnection(&connection) ;
-	    }
-	  else if (reply == ZMAP_REPLY_CANCELLED)
-	    {
-	      /* I'm not sure we need to do anything here as now this loop is "inside" a
-	       * zmap, we should already chopping the zmap threads outside of this routine,
-	       * so I think logically this cannot happen...???? */
+		}
+	      else if (reply == ZMAP_REPLY_DIED)
+		{
+		  if (err_msg)
+		    zMapWarning("%s", err_msg) ;
 
-	      /* This means the thread was cancelled so we should clean up..... */
-	      zMapDebug("GUI: thread %x has been cancelled so cleaning up....\n",
-			 zMapConnGetThreadid(connection)) ;
+		  threads_have_died = TRUE ;
 
-	      /* We are going to remove an item from the list so better move on from
-	       * this item. */
-	      list_item = g_list_next(list_item) ;
-	      zmap_view->connection_list = g_list_remove(zmap_view->connection_list, connection) ;
+		  /* This means the thread has failed for some reason and we should clean up. */
+		  zMapDebug("GUI: thread %x has died so cleaning up....\n",
+			    zMapConnGetThreadid(connection)) ;
+		  
+		  /* We are going to remove an item from the list so better move on from
+		   * this item. */
+		  list_item = g_list_next(list_item) ;
+		  zmap_view->connection_list = g_list_remove(zmap_view->connection_list, connection) ;
 
-	      destroyConnection(&connection) ;
+		  destroyConnection(&connection) ;
+		}
+	      else if (reply == ZMAP_REPLY_CANCELLED)
+		{
+		  /* I'm not sure we need to do anything here as now this loop is "inside" a
+		   * zmap, we should already chopping the zmap threads outside of this routine,
+		   * so I think logically this cannot happen...???? */
+
+		  /* This means the thread was cancelled so we should clean up..... */
+		  zMapDebug("GUI: thread %x has been cancelled so cleaning up....\n",
+			    zMapConnGetThreadid(connection)) ;
+
+		  /* We are going to remove an item from the list so better move on from
+		   * this item. */
+		  list_item = g_list_next(list_item) ;
+		  zmap_view->connection_list = g_list_remove(zmap_view->connection_list, connection) ;
+
+		  destroyConnection(&connection) ;
+		}
 	    }
 	}
+      while ((list_item = g_list_next(list_item))) ;
     }
-  while ((list_item = g_list_next(list_item))) ;
 
 
   /* At this point if there are no threads left we need to examine our state and take action
    * depending on whether we are dying or threads have died or whatever.... */
   if (!zmap_view->connection_list)
     {
-      if (zmap_view->state == ZMAPVIEW_DYING)
+      if (zmap_view->state == ZMAPVIEW_INIT)
+	{
+	  /* Nothing to do here I think.... */
+
+	}
+      else if (zmap_view->state == ZMAPVIEW_RUNNING)
+	{
+	  if (threads_have_died)
+	    {
+	      /* Threads have died because of their own errors....but the ZMap is not dying so
+	       * reset state to init and we should return an error here....(but how ?), we 
+	       * should not be outputting messages....I think..... */
+	      zMapWarning("%s", "Cannot show ZMap because server connections have all died") ;
+	      
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      killGUI(zmap_view) ;
+	      destroyZMapView(zmap_view) ;
+	      call_again = FALSE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	      /* need to reset here..... */
+
+	    }
+
+	  /* I don't think the "else" should be possible......so perhaps we should fail if that
+	   * happens..... */
+	  zmap_view->state = ZMAPVIEW_INIT ;
+	}
+      else if (zmap_view->state == ZMAPVIEW_RESETTING)
+	{
+	  /* zmap is ok but user has reset it and all threads have died so we need to stop
+	   * checking.... */
+	  zmap_view->state = ZMAPVIEW_INIT ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      call_again = FALSE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	}
+      else if (zmap_view->state == ZMAPVIEW_DYING)
 	{
 	  /* this is probably the place to callback to zmapcontrol.... */
 	  (*(zmap_view->app_destroy_cb))(zmap_view, zmap_view->app_data) ;
@@ -578,26 +637,8 @@ static gboolean checkConnections(ZMapView zmap_view)
 
 	  call_again = FALSE ;
 	}
-      else if (zmap_view->state == ZMAPVIEW_RESETTING)
-	{
-	  /* zmap is ok but user has reset it and all threads have died so we need to stop
-	   * checking.... */
-	  zmap_view->state = ZMAPVIEW_INIT ;
-
-	  call_again = FALSE ;
-	}
-      else
-	{
-	  /* Threads have died because of their own errors....so what should we do ?
-	   * for now we kill the window and then the rest of ZMap..... */
-	  zMapWarning("%s", "Cannot show ZMap because server connections have all died") ;
-
-	  killGUI(zmap_view) ;
-	  destroyZMapView(zmap_view) ;
-
-	  call_again = FALSE ;
-	}
     }
+
 
   return call_again ;
 }
