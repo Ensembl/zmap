@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 19 11:47 2004 (rnc)
+ * Last edited: Jul 21 09:36 2004 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.4 2004-07-20 08:12:46 rnc Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.5 2004-07-21 08:40:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,11 +65,18 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
 
 
 
-/* This functions does nothing because the code to update the navigator is not there yet. */
-void zmapControlNavigatorNewView(ZMapNavigator navigator)
+/* updates size/range to coords of the new view. */
+void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapMapBlock sequence_to_parent_mapping)
 {
   GtkWidget *label;
   char str[10];
+
+  /* May be called with no sequence to parent mapping so must set default navigator for this. */
+  if (sequence_to_parent_mapping)
+    navigator->sequence_to_parent = *sequence_to_parent_mapping ; /* n.b. struct copy */
+  else
+    navigator->sequence_to_parent.p1 = navigator->sequence_to_parent.p2
+      = navigator->sequence_to_parent.c1 = navigator->sequence_to_parent.c2 = 0 ;
 
   /* Need to use sequence_to_parent to set scroll bar size, scale etc..... */
   sprintf(str, "%d", navigator->sequence_to_parent.p2);
@@ -127,6 +134,8 @@ void navUpdate(GtkAdjustment *adj, gpointer p)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Currently not called........... */
 void navScale(FooCanvas *canvas, float offset, int start, int end)
 {
@@ -153,6 +162,8 @@ void navScale(FooCanvas *canvas, float offset, int start, int end)
 
   return;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
