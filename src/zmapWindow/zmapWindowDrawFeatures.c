@@ -26,31 +26,65 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Aug 11 11:46 2004 (rnc)
+ * Last edited: Aug 18 15:47 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.10 2004-08-11 11:05:40 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.11 2004-08-18 14:48:47 rnc Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindow_P.h>
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapUtils.h>
-
-typedef struct _ParamStruct
-{
-  FooCanvas *thisCanvas;
-  FooCanvasItem *columnGroup;
-  double height;
-  double length;
-  double column_position;
-  GData *types;
-  ZMapFeatureTypeStyle thisType;
-} ParamStruct;
-
+#include <ZMap/zmapWindowDrawFeatures.h>
 
 
 static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
 static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user_data);
+static gboolean featureClickCB(ParamStruct *params);
+static gboolean handleCanvasEvent(GtkWidget *widget, GdkEventClient *event, gpointer data);
+
+/* These callback routines are static because they are set just once for the lifetime of the
+ * process. */
+
+/* Callbacks we make back to the level above us. */
+static ZMapFeatureCallbacks feature_cbs_G = NULL ;
+
+static ParamStruct params;
+
+
+/* This routine must be called just once before any other windows routine, it is undefined
+ * if the caller calls this routine more than once. The caller must supply all of the callback
+ * routines.
+ * 
+ * Note that since this routine is called once per application we do not bother freeing it
+ * via some kind of windows terminate routine. */
+void zMapFeatureInit(ZMapFeatureCallbacks callbacks)
+{
+  zMapAssert(!feature_cbs_G) ;
+
+  zMapAssert(callbacks && callbacks->click) ;
+
+  feature_cbs_G = g_new0(ZMapFeatureCallbacksStruct, 1) ;
+
+  feature_cbs_G->click = callbacks->click;
+
+  return ;
+}
+
+
+
+static gboolean featureClickCB(ParamStruct *params)
+{
+
+  /* call the function pointed to. This will cascade up the hierarchy
+  ** to zmapControl.c where details of the object clicked on will be
+  ** displayed in zmap->info_panel. */
+
+  (*(feature_cbs_G->click))(params->window, params->window->app_data, params->feature);
+
+  return FALSE;  // FALSE allows any other connected function to be run.
+}
+
 
 
 void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_context, GData *types)
@@ -59,19 +93,32 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
   float result;
   double x1, x2, y1, y2;
   GtkWidget *parent, *label, *vbox, *vscale, *frame;
-  ParamStruct params;
   FooCanvas *canvas = window->canvas;
 
   foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);  // for display panel
 
+  params.window = window;
   params.thisCanvas = canvas;
-  params.height = (y2 - y1)*1.5; // arbitrarily increase the size for now
+  params.height = (y2 - y1)*2.0; // arbitrarily increase the size for now
   params.length = feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1;
   params.column_position = 20.0;
   params.types = types;
 
-  if ((feature_context->sequence_to_parent.c2 * params.height/params.length) > y2)
-    y2 = (feature_context->sequence_to_parent.c2 * params.height/params.length) + 100;
+  printf("parent c2: %d, child p2 %d\n", feature_context->sequence_to_parent.c2,
+	 feature_context->sequence_to_parent.p2);
+
+  if (params.length < 0) params.length *= -1.0;
+
+  if (y2 >= y1)
+    {
+      if ((feature_context->sequence_to_parent.c2 * params.height/params.length) > y2)
+	y2 = (feature_context->sequence_to_parent.c2 * params.height/params.length) + 100;
+    }
+else
+    {
+      if ((feature_context->sequence_to_parent.c1 * params.height/params.length) > y2)
+	y2 = (feature_context->sequence_to_parent.c1 * params.height/params.length) + 100;
+    }
 
   // adjust the canvas to suit the sequence we're displaying
   foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2);
@@ -120,7 +167,7 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
 						"y", (double)10.0,
 						NULL);
 
-      g_datalist_foreach(&(feature_set->features), zmapWindowProcessFeature, user_data) ;
+      g_datalist_foreach(&(feature_set->features), zmapWindowProcessFeature, params) ;
     }
   return ;
 }
@@ -139,56 +186,56 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
   ZMapSpan zMapSpan, prevSpan;
   ZMapAlignBlock *zMapAlign, *prevAlign;
   int i, j;
-  FooCanvasItem *feature_group;
+  FooCanvasItem *feature_group, *object;
   int x1, x2, y0, y1, y2;
   float middle, line_width = 1.0;
   double magFactor = params->height/params->length;
 
   //  printf("type %d name %s\n", zMapFeature->type, zMapFeature->name);
 
+  params->feature = zMapFeature;
+
   switch (zMapFeature->type)
     {
     case ZMAPFEATURE_BASIC: case ZMAPFEATURE_VARIATION:     /* type 0 is a basic, 5 is allele */
     case ZMAPFEATURE_BOUNDARY: case ZMAPFEATURE_SEQUENCE:   /* boundary is 6, sequence is 7 */
-      feature_group = foo_canvas_item_new(FOO_CANVAS_GROUP(params->columnGroup),
+      /*      feature_group = foo_canvas_item_new(FOO_CANVAS_GROUP(params->columnGroup),
 					  foo_canvas_group_get_type(),
 					  "x", (double)params->column_position,
 					  "y", (double)zMapFeature->x1 * magFactor,
 					  NULL);
-	      
+      */      
       if (zMapFeature->x2 > zMapFeature->x1)
 	{
-	  /*	  zmapDisplayText(FOO_CANVAS_GROUP(feature_group), zMapFeature->name, "red", 
-			  0.0, zMapFeature->x1 * magFactor); 
-	  zmapDrawLine(FOO_CANVAS_GROUP(feature_group), 12.0, 0.0, 
-		       0.0, zMapFeature->x1 * magFactor, "red", line_width);
-	  */
-	  zmapDrawBox(feature_group, 0.0,
-		      (zMapFeature->x1 * magFactor), 
-		      params->thisType->width, 
-		      (zMapFeature->x2 * magFactor),
-		      "black", params->thisType->foreground);
+	  object = zmapDrawBox(FOO_CANVAS_ITEM(params->columnGroup), 0.0,
+			       (zMapFeature->x1 * magFactor), 
+			       params->thisType->width, 
+			       (zMapFeature->x2 * magFactor),
+			       "black", params->thisType->foreground);
+	  g_signal_connect(GTK_OBJECT(object), "event",
+			   GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
 	}
       break;
 
     case ZMAPFEATURE_HOMOL:     /* type 1 is a homol */
-      feature_group = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
+      /*      feature_group = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
 				  foo_canvas_group_get_type(),
 				  "x", (double)params->column_position,
 				  "y", (double)zMapFeature->x1 * magFactor,
 				  NULL);
-
+      */
       if (zMapFeature->feature.homol.y2 > zMapFeature->feature.homol.y1)
 	{	      
-	  //	  zmapDisplayText(FOO_CANVAS_GROUP(feature_group), zMapFeature->name, "blue",
-	  //			  70.0, zMapFeature->feature.homol.y1 * magFactor); 
-	  zmapDrawBox(feature_group, 0.0,
-		      (zMapFeature->feature.homol.y1 * magFactor), 
-		      params->thisType->width, 
-		      (zMapFeature->feature.homol.y2 * magFactor),
-		      "black", params->thisType->foreground);
+	  object = zmapDrawBox(FOO_CANVAS_ITEM(params->columnGroup), 0.0,
+			       (zMapFeature->feature.homol.y1 * magFactor), 
+			       params->thisType->width, 
+			       (zMapFeature->feature.homol.y2 * magFactor),
+			       "black", params->thisType->foreground);
+	  g_signal_connect(GTK_OBJECT(object), "event",
+			   GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
 	}
       break;
+
 
     case ZMAPFEATURE_TRANSCRIPT:     /* type 4 is a transcript */
       feature_group = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
@@ -201,13 +248,12 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 	{
 	  zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
 	  prevSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j-1);
-	  middle = ((prevSpan->x2 + zMapSpan->x1)/2) * magFactor;
-	  y0 = prevSpan->x1 * magFactor; // y coord of preceding exon
-	  y1 = prevSpan->x2 * magFactor;
-	  y2 = zMapSpan->x1 * magFactor;
+	  middle = (((prevSpan->x2 + zMapSpan->x1)/2) - zMapFeature->x1) * magFactor;
+	  y0 = (prevSpan->x1 - zMapFeature->x1) * magFactor; // y coord of preceding exon
+	  y1 = (prevSpan->x2 - zMapFeature->x1) * magFactor;
+	  y2 = (zMapSpan->x1 - zMapFeature->x1) * magFactor;
 
-	  // skip this intron if its preceding exon is too small to draw.  We use
-	  // y0 and y1 since they are screen coordinates independent of magnification.
+	  // skip this intron if its preceding exon is too small to draw. 
 	  // Note this is a kludge which will meet its come-uppance during zooming
 	  // because zooming doesn't revisit this block of code, so tiny exons will
 	  // appear when zoomed, but the intervening introns will be lost forever.
@@ -231,12 +277,16 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
 	    {
 	      if (j == 0)
 		zmapDisplayText(FOO_CANVAS_GROUP(feature_group), zMapFeature->name, 
-				"brown",40.0, zMapSpan->x1 * magFactor); 
-	      zmapDrawBox(feature_group, 0.0,
-			  (zMapSpan->x1 * magFactor), 
-			  params->thisType->width,
-			  (zMapSpan->x2 * magFactor),
-			  "black", params->thisType->foreground);
+				"brown",40.0, (zMapSpan->x1 - zMapFeature->x1) * magFactor); 
+	      object = zmapDrawBox(feature_group, 0.0,
+				   ((zMapSpan->x1 - zMapFeature->x1) * magFactor), 
+				   params->thisType->width,
+				   ((zMapSpan->x2 - zMapFeature->x1) * magFactor),
+				   "black", params->thisType->foreground);
+
+	      g_signal_connect(GTK_OBJECT(object), "event",
+			       GTK_SIGNAL_FUNC(handleCanvasEvent), params) ;
+
 	    }
 	}
       break;
@@ -246,6 +296,24 @@ static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user
     }
   
   return;
+}
+
+
+static gboolean handleCanvasEvent(GtkWidget *widget, GdkEventClient *event, gpointer data)
+{
+  ParamStruct *params = (ParamStruct*)data;
+
+  switch (event->type)
+  {
+  case GDK_BUTTON_PRESS:
+    featureClickCB(params);
+    return TRUE;
+
+  default: return FALSE;
+  }
+  /* Event not handled; try parent item */
+  return FALSE;
+
 }
 
 
