@@ -3,9 +3,16 @@
 #
 
 
-CURL_INC = `curl-config --cflags`
+#
+# point to common make include file which contains all the rules etc.
+#
+ROOT_DIRECTORY = ../../
+MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
+
 
 # local macros
+CURL_INC = `curl-config --cflags`
+
 SERV_PRIV_HDRS = dasServer_P.h saxparse.h saxparse_P.h
 PUB_HDRS = 
 SERV_SRC = dasServer.c saxparse.c
@@ -21,10 +28,26 @@ CURRENT_DEP = $(PUB_HDRS) $(SERV_PRIV_HDRS)
 CURRENT_SRC = $(SERV_PRIV_HDRS) $(SERV_SRC)
 CURRENT_INC = -I$(HOME)/acedb/CODE/Ace-Conn $(CURL_INC)
 
+
+
 #
-# point to common make include file which contains all the rules etc.
+# include all common defines
 #
-ROOT_DIRECTORY = ../../
-MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
-include $(MAKE_DIR)/build.make
+include $(MAKE_DIR)/common.defs
+
+
+#
+# override any of the common defines that you need to here...
+#
+
+
+#
+# include all common targets
+#
+include $(MAKE_DIR)/common.targets
+
+
+#
+# include your own targets here.
+#
 

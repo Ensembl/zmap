@@ -3,6 +3,13 @@
 #
 
 
+#
+# point to common make include file which contains all the rules etc.
+#
+ROOT_DIRECTORY = ../../
+MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
+
+
 # local macros
 SERV_PRIV_HDRS = acedbServer_P.h
 PUB_HDRS = 
@@ -20,9 +27,23 @@ CURRENT_SRC = $(SERV_PRIV_HDRS) $(SERV_SRC)
 CURRENT_INC = -I$(HOME)/acedb/CODE/Ace-Conn
 
 #
-# point to common make include file which contains all the rules etc.
+# include all common defines
 #
-ROOT_DIRECTORY = ../../
-MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
-include $(MAKE_DIR)/build.make
+include $(MAKE_DIR)/common.defs
+
+
+#
+# override any of the common defines that you need to here...
+#
+
+
+#
+# include all common targets
+#
+include $(MAKE_DIR)/common.targets
+
+
+#
+# include your own targets here.
+#
 

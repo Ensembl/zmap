@@ -3,18 +3,18 @@
 #
 
 
+#
+# point to common make include file which contains all the rules etc.
+#
+ROOT_DIRECTORY = ..
+MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
+
+
 # local macros
 SERV_PRIV_HDRS = zmapServer_P.h
 PUB_HDRS = zmapServer.h
 SERV_SRC = zmapServer.c
 SERV_OBJ = zmapServer.o
-
-ALL_SERVER_DIRS = acedb das
-
-# These need to go ....
-#ACEDB_PRIV_HDRS = acedbServer_P.h
-#ACEDB_SRC = acedbServer.c
-#ACEDB_OBJ = acedbServer.o
 
 
 #
@@ -28,12 +28,26 @@ CURRENT_SRC = $(SERV_PRIV_HDRS) $(SERV_SRC)
 #CURRENT_INC =
 
 #
-# point to common make include file which contains all the rules etc.
+# include all common defines
 #
-ROOT_DIRECTORY = ..
-MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
-include $(MAKE_DIR)/build.make
+include $(MAKE_DIR)/common.defs
 
+
+#
+# override any of the common defines that you need to here...
+#
+
+
+#
+# include all common targets
+#
+include $(MAKE_DIR)/common.targets
+
+
+#
+# include your own targets here.
+#
+ALL_SERVER_DIRS = acedb das
 
 build_servers: forcemake
 	@for d in $(ALL_SERVER_DIRS); do \

@@ -3,6 +3,13 @@
 #
 
 
+#
+# point to common make include file which contains all the rules etc.
+#
+ROOT_DIRECTORY = ..
+MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
+
+
 # local macros
 APP_PRIV_HDRS = zmapApp_P.h
 APP_SRC = zmapAppwindow.c zmapAppmenubar.c zmapAppmanage.c zmapAppconnect.c
@@ -22,11 +29,25 @@ CURRENT_SRC = $(APP_PRIV_HDRS) $(APP_SRC) $(APP_CC_MAIN_SRC)
 CURRENT_REMOVE = cd $(BINDIR) ; rm -f $(APP_EXE) $(APP_CC_MAIN_OBJ) $(APP_CCC_MAIN_OBJ)
 
 #
-# point to common make include file which contains all the rules etc.
+# include all common defines
 #
-ROOT_DIRECTORY = ..
-MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
-include $(MAKE_DIR)/build.make
+include $(MAKE_DIR)/common.defs
+
+
+#
+# override any of the common defines that you need to here...
+#
+
+
+#
+# include all common targets
+#
+include $(MAKE_DIR)/common.targets
+
+
+#
+# include your own targets here.
+#
 
 
 # Make the application programs themselves.

@@ -3,6 +3,13 @@
 #
 
 
+#
+# point to common make include file which contains all the rules etc.
+#
+ROOT_DIRECTORY = ..
+MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
+
+
 # local macros
 PUB_HDRS = zmapSys.h zmapConn.h
 APP_PRIV_HDRS = zmapConnNoThr_P.h
@@ -21,8 +28,22 @@ CURRENT_DEP = $(PUB_HDRS) $(APP_PRIV_HDRS)
 CURRENT_SRC = $(APP_PRIV_HDRS) $(APP_SRC)
 
 #
-# point to common make include file which contains all the rules etc.
+# include all common defines
 #
-ROOT_DIRECTORY = ..
-MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
-include $(MAKE_DIR)/build.make
+include $(MAKE_DIR)/common.defs
+
+
+#
+# override any of the common defines that you need to here...
+#
+
+
+#
+# include all common targets
+#
+include $(MAKE_DIR)/common.targets
+
+
+#
+# include your own targets here.
+#

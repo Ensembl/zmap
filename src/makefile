@@ -4,9 +4,24 @@
 # Can be used to build both the ZMap library and the ZMap application.
 #
 
+#
+# point to common make include file which contains all the rules etc.
+#
+ROOT_DIRECTORY = .
+MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
+
+
+#
+# include all common defines
+#
+include $(MAKE_DIR)/common.defs
+
+
+#
+# override any of the common defines that you need to here...
+#
 APP_DIR = zmapApp
 MAKE_DIRS = $(APP_DIR) zmapManager zmapControl zmapView zmapWindow zmapConfig zmapServer zmapThreads zmapUtils zmapNoThreads
-#MAKE_DIRS = $(APP_DIR) zmapManager zmapControl zmapView zmapConfig zmapUtils
 
 DOXY_CONFIG = Doxyfile
 
@@ -39,17 +54,9 @@ docs :  forcemake
 	$(HOME)/tools/doxygen $(DOXY_CONFIG)
 
 
-# bootstrap stuff, without these make can't find the files to include which define
-# all the macros/rules and dependencies.
-#
-# Must come after any default rule specified in this file as it includes
-# some of its own commonly used rules.
-#
-ROOT_DIRECTORY = .
-MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
-include $(MAKE_DIR)/common.make
-
-
+# Note that we only include the base targets here as we need special versions of the other
+# targets such as "all" for this root makefile.
+include $(MAKE_DIR)/common.base_targets
 
 
 # actually this is all more trouble than its worth really...it would be better

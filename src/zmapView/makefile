@@ -3,10 +3,13 @@
 #
 
 
-# bootstrap stuff, without these make can't find the files to include which define
-# all the macros/rules and dependencies.
+
+#
+# point to common make include file which contains all the rules etc.
 #
 ROOT_DIRECTORY = ..
+MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
+
 
 # local macros
 CONT_PRIV_HDRS = zmapView_P.h
@@ -27,9 +30,23 @@ CURRENT_SRC = $(CONT_PRIV_HDRS) $(CONT_SRC)
 CURRENT_INC = 
 
 #
-# point to common make include file which contains all the rules etc.
+# include all common defines
 #
-ROOT_DIRECTORY = ..
-MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
-include $(MAKE_DIR)/build.make
+include $(MAKE_DIR)/common.defs
+
+
+#
+# override any of the common defines that you need to here...
+#
+
+
+#
+# include all common targets
+#
+include $(MAKE_DIR)/common.targets
+
+
+#
+# include your own targets here.
+#
 
