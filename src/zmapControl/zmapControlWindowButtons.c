@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 20 15:13 2004 (edgrif)
+ * Last edited: Jul 27 18:35 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.11 2004-07-21 08:43:45 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.12 2004-07-27 17:41:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -162,80 +162,15 @@ static void stopCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Load a new sequence into a zmap. */
 static void newCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
-
-  /* The string is for testing only, in the full code there should be a dialog box that enables
-   * the user to provide a whole load of info. */
-  zmapControlNewCB(zmap, "Y38H6C") ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-static void newCB(GtkWidget *widget, gpointer cb_data)
-{
-  ZMap zmap = (ZMap)cb_data ;
-  ZMapPane pane ;
-  GtkWidget *parent_widget = NULL ;
-  ZMapView view ;
-  ZMapViewWindow view_window ;
   char *new_sequence ;
-
-  /* THIS ROUTINE AND THE WHOLE PANE/VIEW INTERFACE NEEDS SOME MAJOR TIDYING UP..... */
 
   /* Get a new sequence to show.... */
   if ((new_sequence = getSequenceName()))
-    {
-
-      /* this all needs to do view stuff here and return a parent widget............ */
-      parent_widget = splitPane(zmap) ;
-
-      pane = zmap->focuspane ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* At this point split func does the add call to add a window to an existing view, we want
-       * to add a new view and add a window to that..... */
-      view_window = zMapViewAddWindow(zMapViewGetView(pane->curr_view_window), parent_widget) ;
-
-      pane->curr_view_window = view_window ;		    /* new focus window ?? */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-      /* THIS USED TO BE HERE AND WE SHOULD GO BACK TO USING IT BUT ALL THIS NEEDS TIDYING
-       * UP FIRST.....ESPECIALLY THE PANE STUFF.... */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmapControlNewCB(zmap, "Y38H6C") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      /* this code cut/pasted from addView() in zmapcontrol...needs clearing up.... */
-
-      if ((view = zMapViewCreate(new_sequence, (void *)zmap))
-	  && (view_window = zMapViewAddWindow(view, pane->view_parent_box))
-	  && zMapViewConnect(view))
-	{
-	  /* add to list of views.... */
-	  zmap->view_list = g_list_append(zmap->view_list, view) ;
-      
-	  zmap->focuspane->curr_view_window = view_window ;
-
-	  zmap->firstTime = FALSE ;
-
-	  zmap->state = ZMAP_VIEWS ;
-
-
-	  /* Look in focus pane and set title bar/navigator etc......really this should all be
-	   * in one focus routine......which we need to remove from zmapAddPane..... */
-
-
-	  /* We've added a view so better update everything... */
-	  gtk_widget_show_all(zmap->toplevel) ;
-	}
-    }
-
+    zmapControlNewViewCB(zmap, new_sequence) ;
 
   return ;
 }

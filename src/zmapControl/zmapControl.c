@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 26 13:40 2004 (edgrif)
+ * Last edited: Jul 27 18:34 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.25 2004-07-27 07:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.26 2004-07-27 17:41:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -128,7 +128,6 @@ ZMap zMapCreate(void *app_data)
   zMapAssert(zmap_cbs_G) ;
 
   zmap = createZMap(app_data) ;
-
 
   /* Make the main/toplevel window for the ZMap. */
   zmapControlWindowCreate(zmap) ;
@@ -274,8 +273,11 @@ gboolean zMapDestroy(ZMap zmap)
 
 
 
-/* These functions are internal to zmapControl and get called as a result of user interaction
- * with the gui. */
+/*
+ * These functions are internal to zmapControl and get called as a result of user interaction
+ * with the gui.
+ * 
+ */
 
 
 /* Called when the user kills the toplevel window of the ZMap either by clicking the "quit"
@@ -290,12 +292,6 @@ void zmapControlTopLevelKillCB(ZMap zmap)
 
   return ;
 }
-
-
-
-/* We need a callback for adding a new view here....scaffold the interface for now, just send some
- * text from a "new" button. */
-
 
 
 
@@ -358,7 +354,8 @@ void zmapControlResetCB(ZMap zmap)
 }
 
 
-/* Put new data into a View. */
+/* THIS FUNCTION NO LONGER WORKS AND NEEDS TO BE REDONE..... */
+/* Put new data into an existing View. */
 void zmapControlNewCB(ZMap zmap, char *testing_text)
 {
   gboolean status = FALSE ;
@@ -377,6 +374,57 @@ void zmapControlNewCB(ZMap zmap, char *testing_text)
 }
 
 
+/* Put a new view into a zmap. */
+void zmapControlNewViewCB(ZMap zmap, char *new_sequence)
+{
+  ZMapPane pane ;
+  GtkWidget *parent_widget = NULL ;
+  ZMapView view ;
+  ZMapViewWindow view_window ;
+
+  /* THIS ROUTINE AND THE WHOLE PANE/VIEW INTERFACE NEEDS SOME MAJOR TIDYING UP..... */
+
+  /* this all needs to do view stuff here and return a parent widget............ */
+  parent_widget = splitPane(zmap) ;
+
+  pane = zmap->focuspane ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* At this point split func does the add call to add a window to an existing view, we want
+   * to add a new view and add a window to that..... */
+  view_window = zMapViewAddWindow(zMapViewGetView(pane->curr_view_window), parent_widget) ;
+
+  pane->curr_view_window = view_window ;		    /* new focus window ?? */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* this code cut/pasted from addView()...needs clearing up.... */
+
+  if ((view = zMapViewCreate(new_sequence, (void *)zmap))
+      && (view_window = zMapViewAddWindow(view, pane->view_parent_box))
+      && zMapViewConnect(view))
+    {
+      /* add to list of views.... */
+      zmap->view_list = g_list_append(zmap->view_list, view) ;
+      
+      zmap->focuspane->curr_view_window = view_window ;
+
+      zmap->firstTime = FALSE ;
+
+      zmap->state = ZMAP_VIEWS ;
+
+
+      /* Look in focus pane and set title bar/navigator etc......really this should all be
+       * in one focus routine......which we need to remove from zmapAddPane..... */
+
+
+      /* We've added a view so better update everything... */
+      gtk_widget_show_all(zmap->toplevel) ;
+    }
+
+  return ;
+}
 
 
 
@@ -491,10 +539,6 @@ static ZMapView addView(ZMap zmap, char *sequence)
 
       /* Look in focus pane and set title bar/navigator etc......really this should all be
        * in one focus routine......which we need to remove from zmapAddPane..... */
-
-
-
-
 
 
       /* We've added a view so better update everything... */
