@@ -13,7 +13,7 @@ CONF_OBJ = zmapConfig.o zmapConfigRead.o zmapConfigGet.o zmapConfigWrite.o zmapC
 #
 # These must all be set for the common includes to work.
 #
-CURRENT_LIB = $(ZMAPAPP_LIB)
+CURRENT_LIB = $(ZMAP_LIB)
 CURRENT_OBJ = $(CONF_OBJ)
 CURRENT_DEP = $(PUB_HDRS) $(CONF_PRIV_HDRS)
 CURRENT_SRC = $(CONF_PRIV_HDRS) $(CONF_SRC)
