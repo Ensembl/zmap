@@ -26,19 +26,21 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  1 09:53 2004 (edgrif)
+ * Last edited: Nov  4 11:46 2004 (rnc)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.3 2004-07-01 09:25:28 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.4 2004-11-08 10:23:00 rnc Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
+
 #include <zmapControl_P.h>
 
 
 
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
+static void featureDumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
 static void handle_option( gpointer data, guint callback_action, GtkWidget *w ) ;
 static void DestroyNotifyFunc( gpointer data ) ;
@@ -61,6 +63,8 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/File/_Open",    "<control>O", print_hello, 0, NULL },
  { "/File/_Save",    "<control>S", print_hello, 0, NULL },
  { "/File/Save _As", NULL,         NULL, 0, NULL },
+ { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
+ { "/File/_Dump",    "<control>D", featureDumpCB, 0, NULL },
  { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
  { "/File/Quit",     "<control>Q", quitCB, 0, NULL },
  { "/_Edit",         NULL,         NULL, 0, "<Branch>" },
@@ -102,6 +106,21 @@ GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
 
   return menubar ;
 }
+
+
+
+static void featureDumpCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  ZMap zmap = (ZMap)cb_data;
+  gchar *file = g_strdup_printf(".ZMap/ZMapDump.td");
+
+  zmapViewFeatureDump(zmap->focuspane->curr_view_window, file, TAB_DELIMITED);
+  g_free (file);
+  file = NULL;
+
+  return;
+}
+
 
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
