@@ -1,8 +1,9 @@
-/*  Last edited: Aug  2 11:04 2004 (edgrif) */
+/*  Last edited: Oct 14 15:32 2004 (edgrif) */
 /* This is a temporary file only to help with testing....it will go once GFF code is combined
  * into the threads etc. code proper.... */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <glib.h>
 #include <ZMap/zmapGFF.h>
 #include <ZMap/zmapConfig.h>
