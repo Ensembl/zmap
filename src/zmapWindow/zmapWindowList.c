@@ -19,18 +19,17 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack    (Sanger Institute, UK) rnc@sanger.ac.uk,
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *      Rob Clack    (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: Displays a list of features from which the user may select
  *
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec  6 13:19 2004 (rnc)
+ * Last edited: Jan  6 15:15 2005 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.22 2004-12-06 14:20:25 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.23 2005-01-07 12:30:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +41,7 @@
 enum { NAME, START, END, ID, TYPE, FEATURE_TYPE, X_COORD, N_COLUMNS };
 
 
-/** ListColStruct structure declaration
+/* ListColStruct structure declaration
  *
  * Used to pass a couple of variables and a GtkTreeStore list
  * of feature details through the g_datalist_foreach() call 
@@ -211,6 +210,12 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureItem featureIt
 }
 
 
+
+
+
+/* THE TROUBLE WITH THIS ROUTINE IS THAT WHEN INDIVIDUAL LIST WINDOWS ARE CLOSED BY THE USER
+ * THEY ARE _NOT_ REMOVED FROM THE ARRAY OF SUCH WINDOWS.....SIGH.........SO THIS ROUTINE
+ * TRIES TO CLOSE THEM AGAIN........... */
 
 /* Called by zmapControlSplit.c when a split window is closed */
 void zMapWindowDestroyLists(ZMapWindow window)
@@ -386,6 +391,11 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 }
 
 
+
+
+/* NO, NO, NO, THIS NEEDS TO USE SOME CENTRALISED FUNCTION TO MOVE THE REGION...SIGH, THIS IS
+ * JUST REPEATING EXISTING CODE.......AAAAAAAAAAAGGGGGGGGGGGHHHHHHHHHHHHHHHH */
+
 /** \Brief Recalculate the scroll region.
  *
  * If the selected feature is outside the current scroll region, recalculate
@@ -424,13 +434,14 @@ static void recalcScrollRegion(ZMapWindow window, double start, double end)
       bot = (int)y2;
       gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
       window->scaleBarGroup = zmapDrawScale(window->canvas, 
-						window->scaleBarOffset, 
-						window->zoom_factor,
-						top,
-						bot);
+					    window->scaleBarOffset, 
+					    window->zoom_factor,
+					    top, bot,
+					    &(window->major_scale_units),
+					    &(window->minor_scale_units)) ;
     }
 
-  return;
+  return ;
 }
 
 
