@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec 15 12:15 2004 (edgrif)
+ * Last edited: Dec 20 11:00 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.39 2004-12-15 14:13:13 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.40 2004-12-20 11:01:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,10 +48,11 @@ static gint zmapIdleCB(gpointer cb_data) ;
 /* I'm not sure if we need this anymore, I think we will just do it with multiple callbacks... */
 static void zmapWindowCB(void *cb_data, int reason) ;
 
-static void scrollCB(ZMapWindow window, void *caller_data) ;
-static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature) ;
-static void setZoomStatusCB(ZMapWindow window, void *caller_data);
-static void destroyCB(ZMapWindow window, void *caller_data) ;
+static void scrollCB(ZMapWindow window, void *caller_data, void *window_data) ;
+static void clickCB(ZMapWindow window, void *caller_data, void *window_data) ;
+static void visibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data);
+static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data);
+static void destroyCB(ZMapWindow window, void *caller_data, void *window_data) ;
 
 static void setZoomStatus(gpointer data, gpointer user_data);
 
@@ -91,8 +92,9 @@ static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any) ;
 /* Callbacks we make back to the level above us. */
 static ZMapViewCallbacks view_cbs_G = NULL ;
 
-/* Callbacks back to us from the level below, i.e. zMapWindow. */
-ZMapWindowCallbacksStruct window_cbs_G = {scrollCB, clickCB, setZoomStatusCB, destroyCB} ;
+/* Callbacks back we set in the level below us, i.e. zMapWindow. */
+ZMapWindowCallbacksStruct window_cbs_G = {scrollCB, clickCB,
+					  setZoomStatusCB, visibilityChangeCB, destroyCB} ;
 
 
 
@@ -111,12 +113,14 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
 {
   zMapAssert(!view_cbs_G) ;
 
-  zMapAssert(callbacks && callbacks->load_data && callbacks->click && callbacks->destroy) ;
+  zMapAssert(callbacks && callbacks->load_data && callbacks->click
+	     && callbacks->visibility_change && callbacks->destroy) ;
 
   view_cbs_G = g_new0(ZMapViewCallbacksStruct, 1) ;
 
   view_cbs_G->load_data = callbacks->load_data ;
   view_cbs_G->click = callbacks->click ;
+  view_cbs_G->visibility_change = callbacks->visibility_change ;
   view_cbs_G->destroy = callbacks->destroy ;
 
 
@@ -595,7 +599,7 @@ static gint zmapIdleCB(gpointer cb_data)
 
 
 
-static void scrollCB(ZMapWindow window, void *caller_data)
+static void scrollCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
 
@@ -606,10 +610,10 @@ static void scrollCB(ZMapWindow window, void *caller_data)
 }
 
 
-static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature)
+static void clickCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
-
+  ZMapFeature feature = (ZMapFeature)window_data ;
 
   /* Is there any focus stuff we want to do here ??? */
 
@@ -622,7 +626,7 @@ static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature)
 
 /* DOES THIS EVER ACTUALLY HAPPEN........... */
 /* Called when an underlying window is destroyed. */
-static void destroyCB(ZMapWindow window, void *caller_data)
+static void destroyCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
 
@@ -1031,7 +1035,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	{
 
 	  /* this is probably the place to callback to zmapcontrol.... */
-	  (*(view_cbs_G->destroy))(zmap_view, zmap_view->app_data) ;
+	  (*(view_cbs_G->destroy))(zmap_view, zmap_view->app_data, NULL) ;
 
 	  /* zmap was waiting for threads to die, now they have we can free everything and stop. */
 	  destroyZMapView(zmap_view) ;
@@ -1337,7 +1341,7 @@ static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any)
       displayDataWindows(zmap_view, zmap_view->features, diff_context) ;
 
       /* signal our caller that we have data. */
-      (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data) ;
+      (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
 
     }
 
@@ -1346,10 +1350,21 @@ static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any)
 
 
 
+static void visibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+
+  /* signal our caller that something has changed. */
+  (*(view_cbs_G->visibility_change))(view_window, view_window->parent_view->app_data, window_data) ;
+
+  return;
+}
+
+
 
 /* When a window is split, we set the zoom status of all windows
  */
-static void setZoomStatusCB(ZMapWindow window, void *caller_data)
+static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapView view = (ZMapView)caller_data;
 
