@@ -25,16 +25,16 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jan 20 11:53 2005 (edgrif)
+ * Last edited: Feb  1 16:24 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.41 2005-01-24 11:49:45 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.42 2005-02-02 14:52:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <gtk/gtk.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfig.h>
-#include <ZMap/zmapConn.h>
+#include <ZMap/zmapServerProtocol.h>
 #include <ZMap/zmapWindow.h>
 #include <zmapView_P.h>
 
@@ -74,7 +74,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   char *machine, int port, char *protocol,
 					   int timeout, char *version, char *types_file,
 					   gboolean sequence_server, gboolean writeback_server,
-					   char *sequence, int start, int end, gboolean load_features) ;
+					   char *sequence, int start, int end) ;
 static void destroyConnection(ZMapViewConnection *view_conn) ;
 
 static void resetWindows(ZMapView zmap_view) ;
@@ -87,7 +87,7 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 
 static void freeContext(ZMapFeatureContext feature_context) ;
 
-static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any) ;
+static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req) ;
 
 
 
@@ -156,8 +156,8 @@ ZMapView zMapViewCreate(char *sequence,	int start, int end, void *app_data)
 
   /* Set up debugging for threads, we do it here so that user can change setting in config file
    * and next time they create a view the debugging will go on/off. */
-  if (zMapUtilsConfigDebug(ZMAPTHR_CONFIG_DEBUG_STR, &debug))
-    zmap_thr_debug_G = debug ;
+  if (zMapUtilsConfigDebug(ZMAPTHREAD_CONFIG_DEBUG_STR, &debug))
+    zmap_thread_debug_G = debug ;
 
   zmap_view = createZMapView(sequence, start, end, app_data) ;
 
@@ -222,7 +222,6 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window)
 {
   ZMapViewWindow view_window = NULL ;
-  double zoom_factor;
 
   /* the view _must_ already have a window. */
   zMapAssert(zmap_view && parent_widget
@@ -309,9 +308,6 @@ gboolean zMapViewConnect(ZMapView zmap_view)
     {
       ZMapConfig config ;
 
-      /* this should be user settable.... */
-      gboolean load_features = TRUE ;
-
       zmapViewBusy(zmap_view, TRUE) ;
 
       /* We need to retrieve the connect data here from the config stuff.... */
@@ -393,8 +389,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 						    timeout, version, types_file,
 						    sequence_server, writeback_server,
 						    zmap_view->sequence,
-						    zmap_view->start, zmap_view->end,
-						    load_features)))
+						    zmap_view->start, zmap_view->end)))
 		{
 		  /* Update now we have successfully created a connection. */
 		  zmap_view->connection_list = g_list_append(zmap_view->connection_list, view_con) ;
@@ -441,9 +436,6 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	  zmap_view->state = ZMAPVIEW_NOT_CONNECTED ;
 	}
 
-      /* If we are loading features then we need to visually tell the user we are doing this. */
-      if (!load_features)
-	zmapViewBusy(zmap_view, FALSE) ;
     }
 
   return result ;
@@ -932,16 +924,21 @@ static gboolean checkStateConnections(ZMapView zmap_view)
       do
 	{
 	  ZMapViewConnection view_con ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  ZMapConnection connection ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  ZMapThread thread ;
+
 	  ZMapThreadReply reply ;
 	  void *data = NULL ;
 	  char *err_msg = NULL ;
       
 	  view_con = list_item->data ;
-	  connection = view_con->connection ;
+	  thread = view_con->thread ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  ZMAP_DEBUG("GUI: checking connection for thread %x\n",
+	  ZMAP_DEBUG("GUI: checking connection for thread %lu\n",
 		     zMapConnGetThreadid(connection)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -953,10 +950,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  data = NULL ;
 	  err_msg = NULL ;
-	  if (!(zMapConnGetReplyWithData(connection, &reply, &data, &err_msg)))
+	  if (!(zMapThreadGetReplyWithData(thread, &reply, &data, &err_msg)))
 	    {
-	      zMapDebug("GUI: thread %x, cannot access reply from thread - %s\n",
-			zMapConnGetThreadid(connection), err_msg) ;
+	      zMapDebug("GUI: thread %lu, cannot access reply from thread - %s\n",
+			zMapThreadGetThreadid(thread), err_msg) ;
 
 	      /* should abort or dump here....or at least kill this connection. */
 
@@ -965,45 +962,54 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      zMapDebug("GUI: thread %x, thread reply = %s\n",
-			zMapConnGetThreadid(connection),
+	      zMapDebug("GUI: thread %lu, thread reply = %s\n",
+			zMapThreadGetThreadid(thread),
 			zMapVarGetReplyString(reply)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	      
-	      if (reply == ZMAP_REPLY_WAIT)
+	      if (reply == ZMAPTHREAD_REPLY_WAIT)
 		{
 		  ;					    /* nothing to do. */
 		}
-	      else if (reply == ZMAP_REPLY_GOTDATA)
+	      else if (reply == ZMAPTHREAD_REPLY_GOTDATA)
 		{
-		  view_con->curr_request = ZMAP_REQUEST_WAIT ;
+		  view_con->curr_request = ZMAPTHREAD_REQUEST_WAIT ;
 
 		  if (zmap_view->state == ZMAPVIEW_RUNNING)
 		    {
-		      ZMapProtocolAny req_any = (ZMapProtocolAny)data ;
+		      ZMapServerReqAny req_any = (ZMapServerReqAny)data ;
 
-		      zMapDebug("GUI: thread %x, got data\n",
-				zMapConnGetThreadid(connection)) ;
+		      zMapDebug("GUI: thread %lu, got data\n",
+				zMapThreadGetThreadid(thread)) ;
 
 		      /* Reset the reply from the slave. */
-		      zMapConnSetReply(connection, ZMAP_REPLY_WAIT) ;
+		      zMapThreadSetReply(thread, ZMAPTHREAD_REPLY_WAIT) ;
 		  
 
 		      /* Process the different types of data coming back. */
-		      switch (req_any->request)
+		      switch (req_any->type)
 			{
-			case ZMAP_PROTOCOLREQUEST_FEATURES:
-			case ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE:
-			case ZMAP_PROTOCOLREQUEST_SEQUENCE:
+			case ZMAP_SERVERREQ_OPENLOAD:
 			  {
-			    getFeatures(zmap_view, req_any) ;
+			    ZMapServerReqGetFeatures features
+			      = (ZMapServerReqGetFeatures)&(((ZMapServerReqOpenLoad)req_any)->features) ;
+
+			    getFeatures(zmap_view, features) ;
+
+			    break ;
+			  }
+			case ZMAP_SERVERREQ_FEATURES:
+			case ZMAP_SERVERREQ_FEATURE_SEQUENCE:
+			case ZMAP_SERVERREQ_SEQUENCE:
+			  {
+			    getFeatures(zmap_view, (ZMapServerReqGetFeatures)req_any) ;
 
 			    break ;
 			  }
 			default:
 			  {	  
-			    zMapLogFatal("Unknown request type: %d", req_any->request) ; /* Exit appl. */
+			    zMapLogFatal("Unknown request type: %d", req_any->type) ; /* Exit appl. */
 			    break ;
 			  }
 			}
@@ -1012,27 +1018,28 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      g_free(data) ;
 		    }
 		  else
-		    zMapDebug("GUI: thread %x, got data but ZMap state is - %s\n",
-			      zMapConnGetThreadid(connection), zMapViewGetStatus(zmap_view)) ;
+		    zMapDebug("GUI: thread %lu, got data but ZMap state is - %s\n",
+			      zMapThreadGetThreadid(thread),
+			      zMapViewGetStatusStr(zMapViewGetStatus(zmap_view))) ;
 
 		}
-	      else if (reply == ZMAP_REPLY_REQERROR)
+	      else if (reply == ZMAPTHREAD_REPLY_REQERROR)
 		{
 		  if (err_msg)
 		    zMapWarning("%s", err_msg) ;
 
-		  view_con->curr_request = ZMAP_REQUEST_WAIT ;
+		  view_con->curr_request = ZMAPTHREAD_REQUEST_WAIT ;
 
 		  /* Reset the reply from the slave. */
-		  zMapConnSetReply(connection, ZMAP_REPLY_WAIT) ;
+		  zMapThreadSetReply(thread, ZMAPTHREAD_REPLY_WAIT) ;
 
 		  /* This means the request failed for some reason. */
-		  zMapDebug("GUI: thread %x, request to server failed....\n",
-			    zMapConnGetThreadid(connection)) ;
+		  zMapDebug("GUI: thread %lu, request to server failed....\n",
+			    zMapThreadGetThreadid(thread)) ;
 
 		  g_free(err_msg) ;
 		}
-	      else if (reply == ZMAP_REPLY_DIED)
+	      else if (reply == ZMAPTHREAD_REPLY_DIED)
 		{
 		  if (err_msg)
 		    zMapWarning("%s", err_msg) ;
@@ -1040,8 +1047,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  threads_have_died = TRUE ;
 
 		  /* This means the thread has failed for some reason and we should clean up. */
-		  zMapDebug("GUI: thread %x has died so cleaning up....\n",
-			    zMapConnGetThreadid(connection)) ;
+		  zMapDebug("GUI: thread %lu has died so cleaning up....\n",
+			    zMapThreadGetThreadid(thread)) ;
 		  
 		  /* We are going to remove an item from the list so better move on from
 		   * this item. */
@@ -1050,15 +1057,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		  destroyConnection(&view_con) ;
 		}
-	      else if (reply == ZMAP_REPLY_CANCELLED)
+	      else if (reply == ZMAPTHREAD_REPLY_CANCELLED)
 		{
 		  /* I'm not sure we need to do anything here as now this loop is "inside" a
 		   * zmap, we should already chopping the zmap threads outside of this routine,
 		   * so I think logically this cannot happen...???? */
 
 		  /* This means the thread was cancelled so we should clean up..... */
-		  zMapDebug("GUI: thread %x has been cancelled so cleaning up....\n",
-			    zMapConnGetThreadid(connection)) ;
+		  zMapDebug("GUI: thread %lu has been cancelled so cleaning up....\n",
+			    zMapThreadGetThreadid(thread)) ;
 
 		  /* We are going to remove an item from the list so better move on from
 		   * this item. */
@@ -1156,21 +1163,26 @@ static void loadDataConnections(ZMapView zmap_view)
       do
 	{
 	  ZMapViewConnection view_con ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  ZMapConnection connection ;
-	  ZMapProtocolGetFeatures req_features ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  ZMapThread thread ;
+
+	  ZMapServerReqGetFeatures req_features ;
 
 	  view_con = list_item->data ;
-	  connection = view_con->connection ;
+	  thread = view_con->thread ;
 
 	  /* Construct the request to get the features, if its the sequence server then
 	   * get the sequence as well. */
-	  req_features = g_new0(ZMapProtocolGetFeaturesStruct, 1) ;
+	  req_features = g_new0(ZMapServerReqGetFeaturesStruct, 1) ;
 	  if (view_con->sequence_server)
-	    req_features->request = ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE ;
+	    req_features->type = ZMAP_SERVERREQ_FEATURE_SEQUENCE ;
 	  else
-	    req_features->request = ZMAP_PROTOCOLREQUEST_FEATURES ;
+	    req_features->type = ZMAP_SERVERREQ_FEATURES ;
 
-	  zMapConnRequest(connection, req_features) ;
+	  zMapThreadRequest(thread, req_features) ;
 
 	} while ((list_item = g_list_next(list_item))) ;
     }
@@ -1233,14 +1245,18 @@ static void killConnections(ZMapView zmap_view)
   do
     {
       ZMapViewConnection view_con ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       ZMapConnection connection ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      ZMapThread thread ;
 
       view_con = list_item->data ;
-      connection = view_con->connection ;
+      thread = view_con->thread ;
 
       /* NOTE, we do a _kill_ here, not a destroy. This just signals the thread to die, it
        * will actually die sometime later. */
-      zMapConnKill(connection) ;
+      zMapThreadKill(thread) ;
     }
   while ((list_item = g_list_next(list_item))) ;
 
@@ -1248,38 +1264,64 @@ static void killConnections(ZMapView zmap_view)
 }
 
 
-/* Allocate and destroy ZMapViews record of a connection. */
+/* Allocate a connection and send over the request to get the sequence displayed. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   char *machine, int port, char *protocol,
 					   int timeout, char *version, char *types_file,
 					   gboolean sequence_server, gboolean writeback_server,
-					   char *sequence, int start, int end, gboolean load_features)
+					   char *sequence, int start, int end)
 {
   ZMapViewConnection view_con = NULL ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapConnection connection ;
-  ZMapProtocolGetFeatures initial_request = NULL ;
-  GData *types ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapThread thread ;
 
 
-  /* If we need to autoload features then construct an initial request that will be given
-   * to the thread to get the features and maybe the sequence. */
-  if (load_features)
+  /* Create the thread to service the connection requests, we give it a function that it will call
+   * to decode the requests we send it. */
+  if ((thread = zMapThreadCreate(zMapServerRequestHandler)))
     {
-      initial_request = g_new0(ZMapProtocolGetFeaturesStruct, 1) ;
+      ZMapServerReqOpenLoad open_load = NULL ;
+      GData *types ;
+
+      /* in the end the types files will be optional..... */
+      types = zMapFeatureTypeGetFromFile(types_file) ;
+
+
+      /* Build the intial request. */
+      open_load = g_new0(ZMapServerReqOpenLoadStruct, 1) ;
+      open_load->type = ZMAP_SERVERREQ_OPENLOAD ;
+
+      open_load->open.machine = g_strdup(machine) ;
+      open_load->open.port = port ;
+      open_load->open.protocol = g_strdup(protocol) ;
+      open_load->open.timeout = timeout ;
+      open_load->open.version = g_strdup(version) ;
+
+      open_load->context.sequence = g_strdup(sequence) ;
+      open_load->context.start = start ;
+      open_load->context.end = end ;
+      open_load->context.types = types ;
+
       if (sequence_server)
-	initial_request->request = ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE ;
+	open_load->features.type = ZMAP_SERVERREQ_FEATURE_SEQUENCE ;
       else
-	initial_request->request = ZMAP_PROTOCOLREQUEST_FEATURES ;
-    }
-
-  /* in the end the types files will be optional..... */
-  types = zMapFeatureTypeGetFromFile(types_file) ;
+	open_load->features.type = ZMAP_SERVERREQ_FEATURES ;
 
 
-  if ((connection = zMapConnCreate(machine, port, protocol, timeout, version,
-				   sequence, start, end, types,
-				   (ZMapProtocolAny)initial_request)))
-    {
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if ((thread = zMapThreadCreate(machine, port, protocol, timeout, version,
+				     sequence, start, end, types,
+				     (void *)open_load))) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      zMapThreadRequest(thread, (void *)open_load) ;
+
       view_con = g_new0(ZMapViewConnectionStruct, 1) ;
 
       view_con->sequence_server = sequence_server ;
@@ -1289,14 +1331,9 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 
       view_con->parent_view = zmap_view ;
 
-      /* If we are asking the thread to get the features when it starts up then we must record
-       * that we have made a request. */
-      if (load_features)
-	view_con->curr_request = ZMAP_REQUEST_GETDATA ;
-      else
-	view_con->curr_request = ZMAP_REQUEST_WAIT ;
+      view_con->curr_request = ZMAPTHREAD_REQUEST_EXECUTE ;
 
-      view_con->connection = connection ;
+      view_con->thread = thread ;
     }
 
   return view_con ;
@@ -1306,7 +1343,7 @@ static void destroyConnection(ZMapViewConnection *view_conn_ptr)
 {
   ZMapViewConnection view_conn = *view_conn_ptr ;
 
-  zMapConnDestroy(view_conn->connection) ;
+  zMapThreadDestroy(view_conn->thread) ;
 
   /* Need to destroy the types array here....... */
 
@@ -1433,9 +1470,8 @@ static void freeContext(ZMapFeatureContext feature_context)
  * the diff we should not free the data but should free all our structs...
  * 
  *  */
-static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any)
+static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req)
 {
-  ZMapProtocolGetFeatures feature_req = (ZMapProtocolGetFeatures)req_any ;
   ZMapFeatureContext new_features = NULL, diff_context = NULL ;
 
   /* Merge new data with existing data (if any). */
