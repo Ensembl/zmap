@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Aug  2 14:54 2004 (edgrif)
+ * Last edited: Oct  4 16:55 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.13 2004-08-02 14:04:14 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.14 2004-10-14 10:23:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,8 +47,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 			       ZMapFeatureType feature_type,
 			       int start, int end, double score, ZMapStrand strand,
 			       ZMapPhase phase, char *attributes) ;
-static gboolean addDataToFeature(ZMapGFFParser parser, ZMapFeature feature,
-				 char *name,
+static gboolean addDataToFeature(ZMapFeature feature, char *name,
 				 char *sequence, char *source, ZMapFeatureType feature_type,
 				 int start, int end, double score, ZMapStrand strand,
 				 ZMapPhase phase, char *attributes) ;
@@ -607,14 +606,12 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
     {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      memset(&new_feature, 0, sizeof(ZMapFeatureStruct)) ;
-      new_feature.id = ZMAPFEATUREID_NULL ;
-      new_feature.type = ZMAPFEATURE_INVALID ;		    /* hack to detect empty feature.... */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       new_feature = g_new0(ZMapFeatureStruct, 1) ;
       new_feature->id = ZMAPFEATUREID_NULL ;
       new_feature->type = ZMAPFEATURE_INVALID ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      new_feature = zmapFeatureCreate() ;
     }
 
   /* FOR PARSE ONLY WE WOULD LIKE TO COTINUE TO USE THE LOCAL VARIABLE new_feature....SORT THIS
@@ -691,7 +688,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
 
   /* Phew, now fill in the feature.... */
-  result = addDataToFeature(parser, feature, feature_name, sequence, source, feature_type,
+  result = addDataToFeature(feature, feature_name, sequence, source, feature_type,
 			    start, end, score, strand,
 			    phase, attributes) ;
 
@@ -699,18 +696,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   /* If we are only parsing then free any stuff allocated by addDataToFeature() */
   if (parser->parse_only)
     {
-      g_free(feature->name) ;
-      g_free(feature->method_name) ;
-
-      if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-	{
-	  if (feature->feature.transcript.exons)
-	    g_array_free(feature->feature.transcript.exons, TRUE) ;
-	  if (feature->feature.transcript.introns)
-	    g_array_free(feature->feature.transcript.introns, TRUE) ;
-	}
-
-      g_free(feature) ;
+      zmapFeatureDestroy(feature) ;
     }
 
   return result ;
@@ -809,7 +795,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
     }
 
   /* Phew, now fill in the feature.... */
-  result = addDataToFeature(parser, feature, feature_name, sequence, source, feature_type,
+  result = addDataToFeature(feature, feature_name, sequence, source, feature_type,
 			    start, end, score, strand,
 			    phase, attributes) ;
 
@@ -819,7 +805,36 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
 
 
+/* WE DON'T SEEM TO USE parser HERE SO WE SHOULD REMOVE IT, THIS ROUTINE SHOULD BE
+ * REPLACED BY A CALL TO zmapFeature FUNCTION.... */
 
+static gboolean addDataToFeature(ZMapFeature feature,
+				 char *name,
+				 char *sequence, char *source, ZMapFeatureType feature_type,
+				 int start, int end, double score, ZMapStrand strand,
+				 ZMapPhase phase, char *attributes)
+{
+  gboolean result = FALSE ;
+  ZMapHomolType homol_type ;
+  int query_start = 0, query_end = 0 ;
+
+  if (feature_type == ZMAPFEATURE_HOMOL)
+    {
+      /* if this fails, what do we do...should just log the error I think..... */
+      result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end) ;
+    }
+
+  result = zmapFeatureAugmentData(feature, name, sequence, source,
+				  feature_type, start, end, score, strand,
+				  phase, homol_type, start, end) ;
+
+  return result ;
+}
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean addDataToFeature(ZMapGFFParser parser, ZMapFeature feature,
 				 char *name,
 				 char *sequence, char *source, ZMapFeatureType feature_type,
@@ -924,6 +939,8 @@ static gboolean addDataToFeature(ZMapGFFParser parser, ZMapFeature feature,
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1314,10 +1331,13 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
   GData **features = (GData **)user_data ;
   ZMapFeatureSet new_features ;
 
-  new_features = g_new0(ZMapFeatureSetStruct, 1) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  new_features = g_new0(ZMapFeatureSetStruct, 1) ;
   new_features->source = g_strdup(feature_set->source) ;
   new_features->features = feature_set->features ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  new_features = zMapFeatureSetCreate(feature_set->source, feature_set->features) ;
 
   g_datalist_set_data(features, new_features->source, new_features) ;
 
