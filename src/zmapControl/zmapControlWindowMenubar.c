@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 17 13:58 2004 (edgrif)
+ * Last edited: May 19 14:12 2004 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.1 2004-05-19 10:25:59 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.2 2004-05-20 14:11:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,7 +84,7 @@ static GtkItemFactoryEntry menu_items[] = {
 };
 
 
-GtkWidget *zmapTopWindowMakeMenuBar(ZMap zmap)
+GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
 {
   GtkWidget *menubar ;
   GtkAccelGroup *accel_group;
