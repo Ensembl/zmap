@@ -15,7 +15,7 @@ clean: makebindir
 	@for d in $(MAKE_DIRS); do \
 	(cd $$d ; echo ; echo 'make '$@' in '$$d ; $(MAKE) $@ ; echo) ; \
 	done
-	@rm -f $(ZMAPAPP_LIB) $(ZMAP_LIB)
+	@rm -f $(ZMAPAPP_LIB) $(ZMAP_LIB) $(ZMAPTHR_LIB) $(ZMAPNOTHR_LIB)
 
 # note that we issue a "make all" in the subdirectories, not a "make libs"
 libs: makebindir 
