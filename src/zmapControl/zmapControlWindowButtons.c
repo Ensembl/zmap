@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 27 18:35 2004 (edgrif)
+ * Last edited: Aug 18 16:47 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.12 2004-07-27 17:41:57 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.13 2004-09-02 08:53:15 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -111,12 +111,12 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_signal_connect(GTK_OBJECT(zoomout_button), "clicked",
 		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
-  /*
-  close_button = gtk_button_new_with_label("Close\nPane") ;
+
+  close_button = gtk_button_new_with_label("Close") ;
   gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
 		     GTK_SIGNAL_FUNC(closePane), (gpointer)zmap) ;
   gtk_box_pack_start(GTK_BOX(hbox), close_button, FALSE, FALSE, 0) ;
-  */
+
   quit_button = gtk_button_new_with_label("Quit") ;
   gtk_signal_connect(GTK_OBJECT(quit_button), "clicked",
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)zmap) ;
