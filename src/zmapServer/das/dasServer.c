@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Sep 15 10:06 2004 (edgrif)
+ * Last edited: Nov 11 11:42 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.5 2004-09-17 08:38:58 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.6 2004-11-12 11:56:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,7 @@
 
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 char *host, int port,
+				 char *host, int port, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
 static gboolean openConnection(void *server) ;
 static gboolean request(void *server, ZMapFeatureContext *feature_context) ;
@@ -102,7 +102,7 @@ static gboolean globalInit(void)
  * are usually on a well known port, perhaps we should only set the port if we get passed
  * a port of zero........ */
 static gboolean createConnection(void **server_out,
-				 char *host, int port,
+				 char *host, int port, char *version_str,
 				 char *userid, char *passwd, int timeout)
 {
   gboolean result = TRUE ;

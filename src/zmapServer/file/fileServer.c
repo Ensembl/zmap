@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Nov  8 16:29 2004 (edgrif)
+ * Last edited: Nov 12 11:03 2004 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.5 2004-11-09 14:41:01 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.6 2004-11-12 11:54:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@
 
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 char *host, int port,
+				 char *host, int port, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
 
@@ -106,7 +106,7 @@ static gboolean globalInit(void)
  * 
  *  */
 static gboolean createConnection(void **server_out,
-				 char *host, int port,
+				 char *host, int port, char *version_str,
 				 char *userid, char *passwd, int timeout)
 {
   gboolean result = TRUE ;
@@ -144,10 +144,6 @@ static ZMapServerResponseType openConnection(void *server_in)
 
 
 /* I'm not sure if I want to create any context here yet.... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapServerResponseType setContext(void *server_in, char *sequence, int start, int end)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ; ;

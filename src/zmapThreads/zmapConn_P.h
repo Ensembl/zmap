@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 13 14:44 2004 (edgrif)
+ * Last edited: Nov 11 14:38 2004 (edgrif)
  * Created: Thu Jul 24 14:36:08 2003 (edgrif)
- * CVS info:   $Id: zmapConn_P.h,v 1.8 2004-10-14 10:18:53 edgrif Exp $
+ * CVS info:   $Id: zmapConn_P.h,v 1.9 2004-11-12 11:58:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONN_PRIV_H
@@ -86,6 +86,7 @@ typedef struct _ZMapConnectionStruct
   int port ;
   gchar *protocol ;
   int timeout ;
+  gchar *version ;
 
   gchar *sequence ;
   int start, end ;
