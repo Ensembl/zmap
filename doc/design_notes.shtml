@@ -78,10 +78,38 @@ other such stuff, e.g. how about indicating start/end_not_found etc.
 
 <P>
 
+
+<H2>Documentation</H2>
+
+<P>
+
+<h3>Source Code docs</h3>
+
+<p>We are using the
+<A href="www.doxygen.org/index.html">doxygen package</A>
+for documenting our source code. This seems to work well
+and does just about everything we need, it builds and improves on the DOC++ package which seems
+to no longer be under active development.
+
+<P>Some notes about using doxygen:
+
+<ul>
+  <li>doxygen looks for C comment blocks that start with " <b>/*!</b> ".
+  <li>For C language files it is imperative to have a " <b>/*! \file */</b> " special
+      comment in each file to be documented otherwise doxygen will <b>not</b> process the file.
+</ul>
+
+<P>See <b>zmapCongif/zmapConfig.c</b> for an example of how to document code.
+
+
 <H2>Configuration Files</H2>
 
-<P>If looks like the libgnome gnome-config calls will do this for us, see:
-http://developer.gnome.org/doc/API/2.0/libgnome/libgnome-gnome-config.html
+<P>The Lexical Scanner package within GLib is used to read and write configuration files.
+The package requires a fair bit of work from the applications side to process stanzas
+and so on but using it has the advantage that we do not need to link in any further libraries.
+We could for instance have used the libgnome gnome-config calls, (see:
+http://developer.gnome.org/doc/API/2.0/libgnome/libgnome-gnome-config.html) but this would have
+required linking in the whole of the gnome application stuff).
 
 
 
