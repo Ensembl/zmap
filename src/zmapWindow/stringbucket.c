@@ -1,4 +1,4 @@
-/*  Last edited: Jun 30 14:32 2004 (edgrif) */
+/*  Last edited: Jul  5 14:37 2004 (rnc) */
 /*  file: stringbucket.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -27,19 +27,9 @@
 
 #include <strings.h>
 #include <glib.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <../acedb/regular.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <stringbucket.h>
 
 struct sbucket {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  STORE_HANDLE handle;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   struct sbucketchain *chain;
 };
 
@@ -50,22 +40,9 @@ struct sbucketchain {
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-StringBucket *sbCreate(STORE_HANDLE handle)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 StringBucket *sbCreate(void)
 {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  StringBucket *b = halloc(sizeof(struct sbucket), handle);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   StringBucket *b = g_malloc(sizeof(struct sbucket)) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  b->handle = handle;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   b->chain = NULL;
 
@@ -97,11 +74,6 @@ char *str2p(char *string, StringBucket *b)
   
   if (!c)
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      c = halloc(sizeof(struct sbucketchain) + strlen(string) + 1, b->handle);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       c = g_malloc(sizeof(struct sbucketchain) + strlen(string) + 1) ;
 
       c->next = b->chain;

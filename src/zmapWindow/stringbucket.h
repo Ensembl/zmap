@@ -1,4 +1,4 @@
-/*  Last edited: Jun 29 12:06 2004 (edgrif) */
+/*  Last edited: Jul  5 14:37 2004 (rnc) */
 /*  file: stringbucket.h
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -26,11 +26,6 @@
  */
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <../acedb/acedb.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 /* Stringbucket:
 
 Given a string returns a copy which is persistant until the
@@ -48,9 +43,6 @@ struct sbucket;
 typedef struct sbucket StringBucket; 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-StringBucket *sbCreate(STORE_HANDLE handle);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 StringBucket *sbCreate(void) ;
 
 void sbDestroy(StringBucket *b);
