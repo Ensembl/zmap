@@ -30,11 +30,16 @@ DOXY_CONFIG = Doxyfile
 all: makebindir libs zmap 
 	@echo 'made ZMap libraries and executables...'
 
+# I've changed this target to something rather quick and dirty because the more
+# convoluted recursive target does not clean up properly....
 clean: makebindir
-	@for d in $(MAKE_DIRS); do \
-	(cd $$d ; echo ; echo 'make '$@' in '$$d ; $(MAKE) $@ ; echo) ; \
-	done
-	@rm -f $(ZMAPAPP_LIB) $(ZMAP_LIB) $(ZMAPTHR_LIB) $(ZMAPNOTHR_LIB)
+	@rm -f $(BINDIR)/*
+	@echo 'cleaned up ZMap libraries and executables...'
+
+#	@for d in $(MAKE_DIRS); do \
+#	(cd $$d ; echo ; echo 'make '$@' in '$$d ; $(MAKE) $@ ; echo) ; \
+#	done
+#	@rm -f $(ZMAPAPP_LIB) $(ZMAP_LIB) $(ZMAPTHR_LIB) $(ZMAPNOTHR_LIB)
 
 
 # note that we issue a "make all" in the subdirectories, not a "make libs"
