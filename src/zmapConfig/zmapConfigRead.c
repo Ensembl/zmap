@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: May  7 10:41 2004 (edgrif)
+ * Last edited: Jul 19 15:58 2004 (edgrif)
  * Created: Thu Apr  1 14:33:04 2004 (edgrif)
- * CVS info:   $Id: zmapConfigRead.c,v 1.3 2004-05-07 09:43:29 edgrif Exp $
+ * CVS info:   $Id: zmapConfigRead.c,v 1.4 2004-07-19 15:19:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -277,7 +277,7 @@ static gboolean parsefile(ZMapConfig config, GScanner *scanner)
 	      case G_TOKEN_FLOAT:
 		{
 		  current_element->type = ZMAPCONFIG_FLOAT ;
-		  current_element->data.f = current_value.v_float ;
+		  current_element->data.f = (double)current_value.v_float ;
 		  break ;
 		}
 	      case G_TOKEN_STRING:

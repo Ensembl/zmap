@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 16 12:57 2004 (edgrif)
+ * Last edited: Jul 19 16:06 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.19 2004-07-16 12:01:08 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.20 2004-07-19 15:19:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -684,7 +684,12 @@ static GData *getTypesFromFile(void)
       ZMapConfigStanzaElementStruct types_elements[] = {{"name", ZMAPCONFIG_STRING, {NULL}},
 							{"foreground", ZMAPCONFIG_STRING, {"white"}},
 							{"background", ZMAPCONFIG_STRING, {"black"}},
+							{"width", ZMAPCONFIG_FLOAT, {NULL}},
 							{NULL, -1, {NULL}}} ;
+
+      types_elements[3].data.f = 10.0 ;			    /* Must init separately as compiler
+							       cannot statically init different
+							       union types....sigh.... */
 
       types_stanza = zMapConfigMakeStanza("Type", types_elements) ;
 
@@ -719,6 +724,7 @@ static GData *getTypesFromFile(void)
 
 	      new_type->foreground = g_strdup(zMapConfigGetElementString(next_types, "foreground")) ;
 	      new_type->background = g_strdup(zMapConfigGetElementString(next_types, "background")) ;
+	      new_type->width = zMapConfigGetElementFloat(next_types, "width") ;
 
 	      g_datalist_set_data(&types, name, new_type) ;
 	      num_types++ ;

@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Jul 19 09:57 2004 (edgrif)
+ * Last edited: Jul 19 16:03 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.8 2004-07-19 09:25:48 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.9 2004-07-19 15:19:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -310,7 +310,7 @@ typedef struct ZMapFeatureTypeStyleStruct_
   float right_priority ;
   ZMapFeatureWidthStyle width_style ;
   ZMapFeatureOverlapStyle overlap_style ;
-  float width ;						    /* column width */
+  double width ;					    /* column width */
   float min_mag, max_mag ;
   float min_score, max_score ;
   gboolean  showText ;

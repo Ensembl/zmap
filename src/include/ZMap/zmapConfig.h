@@ -24,9 +24,9 @@
  *
  * Description:
  * HISTORY:
- * Last edited: May  6 14:46 2004 (edgrif)
+ * Last edited: Jul 19 15:56 2004 (edgrif)
  * Created: Fri Jan 23 13:10:06 2004 (edgrif)
- * CVS info:   $Id: zmapConfig.h,v 1.5 2004-05-07 09:13:53 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.h,v 1.6 2004-07-19 15:19:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_H
@@ -62,7 +62,7 @@ typedef struct
     char     *s ;					    /*!< Must be used for static initialisation. */
     gboolean b ;					    /*!< currently implemented as char 't' | 'f' */
     int      i ;
-    float    f ;
+    double   f ;
   } data ;						    /*!< element data.  */
 } ZMapConfigStanzaElementStruct,
   *ZMapConfigStanzaElement ;				    /*!< pointer to element struct. */
