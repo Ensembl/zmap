@@ -1,4 +1,4 @@
-/*  Last edited: May 13 13:51 2004 (rnc) */
+/*  Last edited: Feb 11 16:27 2005 (rds) */
 /*
  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
  * All rights reserved.
@@ -36,10 +36,10 @@
 #include <math.h>
 #include "foo-canvas-rect-ellipse.h"
 #include "foo-canvas-util.h"
-#include <gdk/gdkx.h>
 #include <string.h>
 
 #ifdef HAVE_RENDER
+#include <gdk/gdkx.h>
 #include <X11/extensions/Xrender.h>
 #endif
 
