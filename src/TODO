@@ -69,7 +69,11 @@ when you click on a feature in the window that shows the list of features,
   change callback to be called.
 
 
+The Region/Scroll scrollbars should be sorted to be the correct width by magic.
+Can we add a double click to hide/show to the vertical line of dots??
 
+Resize of window DOES NOT redraw canvas, this should happen.  Also needs to 
+re-enable/disable Zoom In/Out buttons (does redraw already have a hook? to do this?)
 
 
 LOGGING
@@ -110,9 +114,13 @@ features that they want to see, gives the user control.
 
 
 
+PANGO and FONTS
+---------------
 
-
-
+Check requirement of -DPANGO_ENABLE_{BACKEND,ENGINE} also fontconfig, see if we can fix/remove
+"Fontconfig error: Cannot load default config file"
+FONTCONFIG_PATH
+FONTCONFIG_FILE
 
 
 SERVER
