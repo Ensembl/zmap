@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Mar  8 10:34 2005 (edgrif)
+ * Last edited: Mar 14 13:24 2005 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.24 2005-03-08 15:31:44 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.25 2005-03-16 15:55:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,13 @@
 #include <glib.h>
 #include <ZMap/zmapDraw.h>
 
+
+/* OK, THIS IS ALL HATEFUL, ITS FOR THE SCALE WHICH WILL SOON NOT BE DRAWN IN THE WINDOW
+ * ANYWAY....SO ALL THIS WILL GO AWAY...... */
+
+#define SCALE_LEFT  60.0
+#define SCALE_RIGHT SCALE_LEFT + 10.0
+#define SCALE_MID   SCALE_LEFT + ((SCALE_RIGHT - SCALE_LEFT) / 2)
 
 
 
@@ -187,18 +194,30 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 			      "y", 0.0,
 			      NULL) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* yellow bar separates forward from reverse strands. Draw first so scalebar text
    * overlies it. */
   zMapDrawBox(FOO_CANVAS_ITEM(group), 0.0, start, 3.0, end, &white, &yellow); 
 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapWindowPrintGroup(group) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 										    
   /* major ticks and text */
   for (pos = start ; pos < end ; pos += iUnit)
     {
-      zMapDrawLine(FOO_CANVAS_GROUP(group), 30.0, pos, 40.0, pos, &black, 1.0);
+      zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_LEFT, pos, SCALE_RIGHT, pos, &black, 1.0);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmapWindowPrintGroup(group) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       buf[0] = unitName[unitType] ;
       buf[1] = 0 ;
@@ -206,25 +225,42 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
       if (width < strlen(cp))
         width = strlen(cp) ;
 
-      zMapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", (29.0 - (5.0 * width)), pos); 
+      zMapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", ((SCALE_LEFT - 1.0) - (5.0 * width)), pos); 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmapWindowPrintGroup(group) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapWindowPrintGroup(group) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   
   /* draw the vertical line of the scalebar, note we should be drawing. */
-  zMapDrawLine(FOO_CANVAS_GROUP(group), 40.0, start - 1, 40.0, end - 1, &black, 1.0);
+  zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_RIGHT, start - 1, SCALE_RIGHT, end - 1, &black, 1.0);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapWindowPrintGroup(group) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* minor ticks */
+
   for (pos = start; pos < end; pos += iSubunit)
     {
-      zMapDrawLine(FOO_CANVAS_GROUP(group), 35.0, pos, 40.0, pos, &black, 1.0) ;
+      zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_MID, pos, SCALE_RIGHT, pos, &black, 1.0) ;
     }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapWindowPrintGroup(group) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   if (major_units_out)
     *major_units_out = iUnit ;
