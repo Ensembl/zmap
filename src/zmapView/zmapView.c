@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov 29 16:23 2004 (rnc)
+ * Last edited: Dec  2 11:49 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.35 2004-11-29 16:29:04 rnc Exp $
+ * CVS info:   $Id: zmapView.c,v 1.36 2004-12-06 14:10:38 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1440,6 +1440,10 @@ static void setZoomStatus(gpointer data, gpointer user_data)
 
   zMapWindowSetMinZoom(view_window->window);
   zMapWindowSetZoomStatus(view_window->window);
+  if (zMapWindowGetFocusQuark(view_window->window))
+    zMapWindowScrollToItem(view_window->window, 
+			   zMapWindowGetTypeName(view_window->window), 
+			   zMapWindowGetFocusQuark(view_window->window));
   
   return;
 }
