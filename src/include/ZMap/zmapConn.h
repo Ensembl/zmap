@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  1 14:25 2004 (edgrif)
+ * Last edited: Mar 11 15:31 2004 (edgrif)
  * Created: Thu Jul 24 14:35:58 2003 (edgrif)
- * CVS info:   $Id: zmapConn.h,v 1.1 2004-03-03 12:51:51 edgrif Exp $
+ * CVS info:   $Id: zmapConn.h,v 1.2 2004-03-12 15:09:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONN_H
@@ -55,7 +55,7 @@ typedef struct _ZMapConnectionStruct *ZMapConnection ;
 
 ZMapConnection zMapConnCreate(char *machine, char *port, char *protocol, char *sequence) ;
 
-void zMapConnLoadData(ZMapConnection connection) ;
+void zMapConnLoadData(ZMapConnection connection, gchar *data) ;
 gboolean zMapConnGetReply(ZMapConnection connection, ZMapThreadReply *state) ;
 void zMapConnSetReply(ZMapConnection connection, ZMapThreadReply state) ;
 gboolean zMapConnGetReplyWithData(ZMapConnection connection, ZMapThreadReply *state,
