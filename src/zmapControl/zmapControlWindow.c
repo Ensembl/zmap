@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Dec 15 15:08 2004 (edgrif)
+ * Last edited: Jan  7 13:35 2005 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.13 2004-12-20 10:55:20 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.14 2005-01-10 09:51:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -128,48 +128,6 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
   return ;
 }
 
-
-/* For now, just moving functions from zmapWindow/zmapcontrol.c */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* zMapDisplay
- * Main entry point for the zmap code.  Called by zMapWindowCreate.
- * The first param is the display window, then two callback routines to 
- * allow zmap to interrogate a data-source. Then a void pointer to a
- * structure used in the process.  Although zmap doesn't need to know
- * directly about this structure, it needs to pass the pointer back
- * during callbacks, so AceDB can use it. 
- *
- * This will all have to change, now we're acedb-independent.
- *
- * We create the display window, then call the Activate 
- * callback routine to get the data, passing it a ZMapRegion in
- * which to create fmap-flavour segs for us to display, then
- * build the columns in the display.
- */
-
-gboolean zMapDisplay(ZMap        zmap,
-		     Activate_cb act_cb,
-		     Calc_cb     calc_cb,
-		     void       *region,
-		     char       *seqspec, 
-		     char       *fromspec, 
-		     gboolean        isOldGraph)
-{
-  zmap->firstTime = TRUE ;				    /* used in addPane() */
-
-  /* make the window in which to display the data */
-  createNavViewWindow(zmap);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  drawWindow(zmap->focuspane) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return TRUE;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
