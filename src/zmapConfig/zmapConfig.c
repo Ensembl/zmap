@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Jun 23 09:40 2004 (edgrif)
+ * Last edited: Jun 23 12:52 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.8 2004-06-23 08:42:36 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.9 2004-06-25 13:36:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -328,8 +328,6 @@ ZMapConfig zMapConfigCreateFromFile(char *config_dir, char *config_file)
   /* Get the configuration (may have to create a default one). */
   if (status)
     {
-
-
       if (zMapFileEmpty(config->config_file))
 	{
 	  status = zmapMakeUserConfig(config) ;
@@ -370,9 +368,11 @@ ZMapConfig zMapConfigCreateFromFile(char *config_dir, char *config_file)
 gboolean zMapConfigFindStanzas(ZMapConfig config,
 			       ZMapConfigStanza spec_stanza, ZMapConfigStanzaSet *stanzas_out)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  result = zmapGetConfigStanzas(config, spec_stanza, stanzas_out) ;
+  /* There may be no stanzas, i.e. config file is empty. */
+  if (config->stanzas)
+    result = zmapGetConfigStanzas(config, spec_stanza, stanzas_out) ;
 
   return result ;
 }
@@ -422,6 +422,8 @@ static void destroyConfig(ZMapConfig config)
 
   if (config->config_file)
     g_free(config->config_file) ;
+
+
 
   g_free(config) ;
 
