@@ -1,4 +1,4 @@
-/*  Last edited: Jul  7 14:11 2004 (edgrif) */
+/*  Last edited: Jul 14 16:22 2004 (rnc) */
 /*  file: zmapcols.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -26,7 +26,7 @@
  */
 
 #include <seqregion.h>
-#include <zmapDraw.h>
+#include <ZMap/zmapDraw.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapWindow.h>
 
