@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 21 09:36 2004 (edgrif)
+ * Last edited: Jul 21 09:45 2004 (rnc)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.5 2004-07-21 08:40:10 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.6 2004-07-21 08:46:35 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,6 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
   GtkRequisition req;
   int increment = 200;
   GtkWidget *vscale;
-  char str[10];
 
   zmap->navigator = g_new0(ZMapNavStruct, 1);
   gtk_widget_size_request(frame, &req);
@@ -54,8 +53,7 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
   gtk_box_pack_start(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navVScale, TRUE, TRUE, 0);
   zmap->navigator->navHBox = gtk_hbox_new(TRUE, 0);
 
-  sprintf(str, "%s", "     ");
-  zmap->navigator->navLabel = gtk_label_new(str);
+  zmap->navigator->navLabel = gtk_label_new("     ");
   gtk_container_add(GTK_CONTAINER(zmap->navigator->navHBox), zmap->navigator->navLabel);
 
   gtk_box_pack_end(GTK_BOX(zmap->navigator->navVBox), zmap->navigator->navHBox, FALSE, FALSE, 0);
@@ -69,7 +67,7 @@ void zmapControlNavigatorCreate(ZMap zmap, GtkWidget *frame)
 void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapMapBlock sequence_to_parent_mapping)
 {
   GtkWidget *label;
-  char str[10];
+  gchar *str;
 
   /* May be called with no sequence to parent mapping so must set default navigator for this. */
   if (sequence_to_parent_mapping)
@@ -79,8 +77,9 @@ void zmapControlNavigatorNewView(ZMapNavigator navigator, ZMapMapBlock sequence_
       = navigator->sequence_to_parent.c1 = navigator->sequence_to_parent.c2 = 0 ;
 
   /* Need to use sequence_to_parent to set scroll bar size, scale etc..... */
-  sprintf(str, "%d", navigator->sequence_to_parent.p2);
+  str = g_strdup_printf("%d", navigator->sequence_to_parent.p2);
   gtk_label_set_text(GTK_LABEL(navigator->navLabel), str);
+  g_free(str);
 
   return ;
 }
