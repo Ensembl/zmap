@@ -25,9 +25,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep  5 17:31 2003 (edgrif)
+ * Last edited: Mar 11 11:42 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapSlave_P.h,v 1.1 2003-11-13 15:02:13 edgrif Exp $
+ * CVS info:   $Id: zmapSlave_P.h,v 1.2 2004-03-12 16:01:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SLAVE_P_H
@@ -51,8 +51,9 @@ typedef struct
 
 
 /* Error messages, needs some refining. */
-#define ZMAPSLAVE_CONNCREATE "Connection creation failed"
-#define ZMAPSLAVE_CONNOPEN   "Connection open failed"
+#define ZMAPSLAVE_CONNCREATE  "Connection creation failed"
+#define ZMAPSLAVE_CONNOPEN    "Connection open failed"
+#define ZMAPSLAVE_CONNREQUEST "Connection request failed"
 
 
 
