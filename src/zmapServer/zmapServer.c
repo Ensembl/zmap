@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Dec 13 15:15 2004 (edgrif)
+ * Last edited: Dec 14 10:14 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.17 2004-12-13 15:16:22 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.18 2004-12-15 14:11:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -201,11 +201,8 @@ ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapProtocolAny requ
 	case ZMAP_PROTOCOLREQUEST_SEQUENCE:
 	case ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE:
 	  {
-	    ZMapProtocoltGetFeatures get_features = (ZMapProtocoltGetFeatures)req_any ;
-
-
 	    result = server->last_response
-	      = (server->funcs->request)(server->server_conn, get_features) ;
+	      = (server->funcs->request)(server->server_conn, req_any) ;
 
 	    break ;
 	  }

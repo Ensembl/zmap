@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Dec 13 13:31 2004 (edgrif)
+ * Last edited: Dec 14 09:53 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.21 2004-12-13 15:18:59 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.22 2004-12-15 14:11:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,31 +171,19 @@ void *zmapNewThread(void *thread_args)
   g_free(context) ;
 
 
-  if (connection->load_features)
+  if (connection->initial_request)
     {
       ZMapServerResponseType server_response ;
-      ZMapProtocolGetTypes req_types ;
-      ZMapProtocoltGetFeatures req_features ;
 
-
-
-
-      req_features = g_new0(ZMapProtocolGetFeaturesStruct, 1) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      req_features->request = ZMAP_PROTOCOLREQUEST_FEATURES ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      req_features->request = ZMAP_PROTOCOLREQUEST_FEATURE_SEQUENCE ;
-
-
-      if (zMapServerRequest(thread_cb->server, (ZMapProtocolAny)req_features) == ZMAP_SERVERRESPONSE_OK)
+      if (zMapServerRequest(thread_cb->server, connection->initial_request) == ZMAP_SERVERRESPONSE_OK)
 	{
 	  /* Signal that we got some data. */
-	  zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA, req_features) ;
+	  zmapVarSetValueWithData(&(connection->reply), ZMAP_REPLY_GOTDATA, connection->initial_request) ;
 	}
       else
 	{
-	  g_free(req_features) ;
+	  connection->initial_request = NULL ;		    /* make sure there is explicitly no
+							       data returned. */
 
 	  thread_cb->thread_died = TRUE ;
 	  thread_cb->initial_error = g_strdup_printf("%s - %s", ZMAPSLAVE_CONNREQUEST,

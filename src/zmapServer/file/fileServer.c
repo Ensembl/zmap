@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Dec 13 15:43 2004 (edgrif)
+ * Last edited: Dec 14 10:04 2004 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.9 2004-12-13 15:48:06 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.10 2004-12-15 14:11:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,12 +48,8 @@ static gboolean createConnection(void **server_out,
 				 char *host, int port, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapServerResponseType setContext(void *server, char *sequence, int start, int end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static ZMapServerResponseType setContext(void *server, ZMapServerSetContext context) ;
-static ZMapServerResponseType request(void *server_conn, ZMapProtocoltGetFeatures get_seqfeatures) ;
+static ZMapServerResponseType request(void *server_conn, ZMapProtocolAny request) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
@@ -159,7 +155,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext c
 
 
 
-static ZMapServerResponseType request(void *server_in, ZMapProtocoltGetFeatures get_seqfeatures)
+static ZMapServerResponseType request(void *server_in, ZMapProtocolAny request)
 {
   ZMapServerResponseType result ;
   FileServer server = (FileServer)server_in ;
@@ -169,6 +165,7 @@ static ZMapServerResponseType request(void *server_in, ZMapProtocoltGetFeatures 
   GIOStatus status ;
   gsize terminator_pos = 0 ;
   gboolean free_arrays = FALSE, parse_only = FALSE ;
+  ZMapProtocolGetFeatures get_seqfeatures = (ZMapProtocolGetFeatures)request ;
 
 
   result = ZMAP_SERVERRESPONSE_OK ;

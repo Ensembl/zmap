@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 19 16:55 2004 (edgrif)
+ * Last edited: Dec 14 09:36 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConn.c,v 1.15 2004-11-22 11:50:38 edgrif Exp $
+ * CVS info:   $Id: zmapConn.c,v 1.16 2004-12-15 14:11:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,13 +43,13 @@ gboolean zmap_thr_debug_G = FALSE ;
 static ZMapConnection createConnection(char *machine, int port, char *protocol,
 				       int timeout, char *version,
 				       char *sequence, int start, int end, GData *types,
-				       gboolean load_features) ;
+				       ZMapProtocolAny initial_request) ;
 static void destroyConnection(ZMapConnection connection) ;
 
 
 ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, int timeout, char *version,
 			      char *sequence, int start, int end, GData *types,
-			      gboolean load_features)
+			      ZMapProtocolAny initial_request)
 {
   ZMapConnection connection ;
   pthread_t thread_id ;
@@ -57,7 +57,7 @@ ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, int timeo
   int status = 0 ;
 
   connection = createConnection(machine, port, protocol, timeout, version,
-				sequence, start, end, types, load_features) ;
+				sequence, start, end, types, initial_request) ;
 
   /* ok to just set state here because we have not started the thread yet.... */
   zmapCondVarCreate(&(connection->request)) ;
@@ -224,7 +224,7 @@ void zMapConnDestroy(ZMapConnection connection)
 static ZMapConnection createConnection(char *machine, int port, char *protocol,
 				       int timeout, char *version,
 				       char *sequence, int start, int end,  GData *types,
-				       gboolean load_features)
+				       ZMapProtocolAny initial_request)
 {
   ZMapConnection connection ;
 
@@ -242,7 +242,7 @@ static ZMapConnection createConnection(char *machine, int port, char *protocol,
   connection->end = end ;
   connection->types = types ;
 
-  connection->load_features = load_features ;
+  connection->initial_request = initial_request ;
 
   return connection ;
 }

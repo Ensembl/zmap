@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Dec 13 15:43 2004 (edgrif)
+ * Last edited: Dec 14 10:05 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.20 2004-12-13 15:48:06 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.21 2004-12-15 14:11:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,8 +53,8 @@ static gboolean createConnection(void **server_out,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType setContext(void *server, ZMapServerSetContext context) ;
-static ZMapServerResponseType requestSeqFeatures(void *server_conn,
-						 ZMapProtocoltGetFeatures get_seqfeatures) ;
+static ZMapServerResponseType request(void *server_conn,
+				      ZMapProtocolAny request) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static gboolean destroyConnection(void *server) ;
@@ -89,7 +89,7 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->create = createConnection ;
   acedb_funcs->open = openConnection ;
   acedb_funcs->set_context = setContext ;
-  acedb_funcs->request = requestSeqFeatures ;
+  acedb_funcs->request = request ;
   acedb_funcs->errmsg = lastErrorMsg ;
   acedb_funcs->close = closeConnection;
   acedb_funcs->destroy = destroyConnection ;
@@ -212,14 +212,13 @@ static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext c
 
 
 /* Get features and/or sequence. */
-static ZMapServerResponseType requestSeqFeatures(void *server_in,
-						 ZMapProtocoltGetFeatures get_seqfeatures)
+static ZMapServerResponseType request(void *server_in, ZMapProtocolAny request)
 {
   ZMapServerResponseType result ;
   AcedbServer server = (AcedbServer)server_in ;
   gboolean status = TRUE ;
   ZMapFeatureContext feature_context ;
-
+  ZMapProtocolGetFeatures get_seqfeatures = (ZMapProtocolGetFeatures)request ;
 
   /* We should check that there is a sequence context here and report an error if there isn't... */
 

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn.h
  * HISTORY:
- * Last edited: Nov 11 14:34 2004 (edgrif)
+ * Last edited: Dec 14 09:42 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConnNoThr.c,v 1.10 2004-11-12 11:53:59 edgrif Exp $
+ * CVS info:   $Id: zmapConnNoThr.c,v 1.11 2004-12-15 14:10:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@ gboolean zmap_thr_debug_G = TRUE ;
 ZMapConnection zMapConnCreate(char *machine, int port, char *protocol,
 			      int timeout, char *version,
 			      char *sequence, int start, int end, GData *types,
-			      gboolean load_features)
+			      ZMapProtocolAny initial_request)
 {
   ZMapConnection connection ;
   int status ;

@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Dec 13 10:13 2004 (edgrif)
+ * Last edited: Dec 14 09:17 2004 (edgrif)
  * Created: Wed Sep 15 11:46:18 2004 (edgrif)
- * CVS info:   $Id: zmapProtocol.h,v 1.4 2004-12-13 15:12:27 edgrif Exp $
+ * CVS info:   $Id: zmapProtocol.h,v 1.5 2004-12-15 14:10:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -98,14 +98,14 @@ typedef struct
   GData *types ;					    /* lists types of features required,
 							       NULL means "all". */
   ZMapFeatureContext feature_context_out ;		    /* Returned feature sets. */
-} ZMapProtocolGetFeaturesStruct, *ZMapProtocoltGetFeatures ;
+} ZMapProtocolGetFeaturesStruct, *ZMapProtocolGetFeatures ;
 
 
 typedef union
 {
   ZMapProtocolAny any ;
   ZMapProtocolGetTypes get_types ;
-  ZMapProtocoltGetFeatures get_features ;
+  ZMapProtocolGetFeatures get_features ;
   ZMapProtocolNewContext new_context ;
 } ZMapProtocol ;
 

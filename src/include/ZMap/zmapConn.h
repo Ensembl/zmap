@@ -24,13 +24,17 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Nov 11 14:34 2004 (edgrif)
+ * Last edited: Dec 14 09:26 2004 (edgrif)
  * Created: Thu Jul 24 14:35:58 2003 (edgrif)
- * CVS info:   $Id: zmapConn.h,v 1.10 2004-11-12 11:49:43 edgrif Exp $
+ * CVS info:   $Id: zmapConn.h,v 1.11 2004-12-15 14:09:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONN_H
 #define ZMAP_CONN_H
+
+#include <ZMap/zmapProtocol.h>
+
+
 
 /* We should have a function to access this global.... */
 /* debugging messages, TRUE for on... */
@@ -57,7 +61,7 @@ typedef struct _ZMapConnectionStruct *ZMapConnection ;
 
 ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, int timeout, char *version,
 			      char *sequence, int start, int end, GData *types,
-			      gboolean load_features) ;
+			      ZMapProtocolAny initial_request) ;
 void zMapConnRequest(ZMapConnection connection, void *request) ;
 gboolean zMapConnGetReply(ZMapConnection connection, ZMapThreadReply *state) ;
 void zMapConnSetReply(ZMapConnection connection, ZMapThreadReply state) ;
