@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jan  5 15:41 2005 (edgrif)
+ * Last edited: Jan 24 10:56 2005 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.29 2005-01-07 12:12:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.30 2005-01-24 11:28:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -72,12 +72,12 @@ typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data, voi
 
 typedef struct _ZMapWindowCallbacksStruct
 {
+  ZMapWindowCallbackFunc enter ;
+  ZMapWindowCallbackFunc leave ;
   ZMapWindowCallbackFunc scroll ;
   ZMapWindowCallbackFunc click ;
   ZMapWindowCallbackFunc setZoomStatus;
-
   ZMapWindowCallbackFunc visibilityChange ;
-
   ZMapWindowCallbackFunc destroy ;
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 
@@ -95,26 +95,36 @@ typedef enum {ZMAP_WINDOW_INIT, ZMAP_WINDOW_LOAD,
 void       zMapWindowInit       (ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate     (GtkWidget *parent_widget, char *sequence, void *app_data) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
-			  void *app_data, ZMapWindow old);
-void       zMapWindowDisplayData(ZMapWindow window,
-				 ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-				 GData *types, void *zmap_view) ;
+			  void *app_data, ZMapWindow old, ZMapFeatureContext features, GData *types) ;
+void zMapWindowDisplayData(ZMapWindow window,
+			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
+			   GData *types) ;
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 void zMapWindowMove(ZMapWindow window, double start, double end) ;
-void       zMapWindowReset      (ZMapWindow window) ;
-GtkWidget   *zMapWindowGetWidget(ZMapWindow window);
+void zMapWindowReset(ZMapWindow window) ;
+GtkWidget *zMapWindowGetWidget(ZMapWindow window);
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
-void                 zMapWindowSetZoomStatus(ZMapWindow window) ;
-double     zMapWindowGetZoomFactor(ZMapWindow window);
-void       zMapWindowSetZoomFactor(ZMapWindow window, double zoom_factor);
-void       zMapWindowSetMinZoom   (ZMapWindow window);
+void zMapWindowSetZoomStatus(ZMapWindow window) ;
+double zMapWindowGetZoomFactor(ZMapWindow window);
+void zMapWindowSetZoomFactor(ZMapWindow window, double zoom_factor);
+void zMapWindowSetMinZoom   (ZMapWindow window);
 
-void       zMapWindowDestroy    (ZMapWindow window) ;
-
-void zMapWindowSetHandle       (ZMapWindow window);
-void zMapWindowCreateRegion    (ZMapWindow window);
+void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
 
 
+void zMapWindowDestroy(ZMapWindow window) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+void zMapWindowSetHandle(ZMapWindow window);
+void zMapWindowCreateRegion(ZMapWindow window);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* I don't know whether we're even going to use these datatypes, so for
 ** expediency I'm commenting these out until it becomes clearer. */
 
@@ -155,6 +165,8 @@ GArray      *zMapRegionGetSegs         (ZMapRegion *region);
 void         zMapRegionFreeSegs        (ZMapRegion *region);
 GArray      *zMapRegionGetDNA          (ZMapRegion *region);
 void         zMapRegionFreeDNA         (ZMapRegion *region);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -168,6 +180,8 @@ GQuark       zMapWindowGetFocusQuark   (ZMapWindow window);
 gchar       *zMapWindowGetTypeName     (ZMapWindow window);
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* TEST SCAFFOLDING............... */
 ZMapFeatureContext testGetGFF(void) ;
 
@@ -182,6 +196,8 @@ ZMapFeatureContext testGetGFF(void) ;
 
 
 /******************* end of public stuff that might end up private */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
