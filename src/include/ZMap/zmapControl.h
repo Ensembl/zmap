@@ -25,9 +25,9 @@
  * Description: Interface for creating, controlling and destroying ZMaps.
  *              
  * HISTORY:
- * Last edited: Jan 10 14:24 2005 (edgrif)
+ * Last edited: Jan 25 18:02 2005 (edgrif)
  * Created: Mon Nov 17 08:04:32 2003 (edgrif)
- * CVS info:   $Id: zmapControl.h,v 1.9 2005-01-24 11:25:50 edgrif Exp $
+ * CVS info:   $Id: zmapControl.h,v 1.10 2005-01-25 18:08:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_H
@@ -44,57 +44,10 @@
 /* Opaque type, represents an instance of a ZMap. */
 typedef struct _ZMapStruct *ZMap ;
 
-typedef struct zMapColumn ZMapColumn;
-
-typedef struct _ZMapPaneStruct *ZMapPane ;
-
-/* callback function prototypes********************************
- * These must be here as they're referred to in zMapColumn below
- */
-typedef void (*colDrawFunc)  (ZMapPane pane, ZMapColumn *col,
-			      float *offset, int frame);
-typedef void (*colConfFunc)  (void);
-typedef void (*colInitFunc)  (ZMapPane pane, ZMapColumn *col);
-typedef void (*colSelectFunc)(ZMapPane pane, ZMapColumn *col,
-			      void *seg, int box, 
-			      double x, double y,
-			      gboolean isSelect);
-
-/**************************************************************/
-
-struct zMapColumn {
-  ZMapPane      pane;
-  colInitFunc   initFunc;
-  colDrawFunc   drawFunc;
-  colConfFunc   configFunc;
-  colSelectFunc selectFunc;
-  gboolean          isFrame;
-  float         priority;
-  char         *name;
-  float         startx, endx; /* filled in by drawing code */
-  methodID      meth;         /* method */
-  ZMapFeatureType        type;
-  void         *private;
-};
-
-
-struct ZMapColDefs {
-  colInitFunc   initFunc;
-  colDrawFunc   drawFunc;
-  colConfFunc   configFunc;
-  colSelectFunc selectFunc;
-  gboolean          isFrame;
-  float         priority; /* only for default columns. */
-  char         *name;
-  ZMapFeatureType        type;
-}; 
-
-
 
 /* Applications can register functions that will be called back with their own
  * data and a reference to the zmap that made the callback. */
 typedef void (*ZMapCallbackFunc)(ZMap zmap, void *app_data) ;
-
 
 
 /* Set of callback routines that allow the caller to be notified when events happen
@@ -109,29 +62,15 @@ typedef struct _ZMapCallbacksStruct
 
 void zMapInit(ZMapCallbacks callbacks) ;
 ZMap zMapCreate(void *app_data) ;
-
-/* NOW THIS IS WHERE WE NEED GERROR........ */
 ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end) ;
 gboolean zMapConnectView(ZMap zmap, ZMapView view) ;
 gboolean zMapLoadView(ZMap zmap, ZMapView view) ;
 gboolean zMapStopView(ZMap zmap, ZMapView view) ;
 gboolean zMapDeleteView(ZMap zmap, ZMapView view) ;
-
 char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
 gboolean zMapDestroy(ZMap zmap) ;
-
-
-ZMapRegion  *zMapPaneGetZMapRegion     (ZMapPane pane);
-FooCanvasItem *zMapPaneGetGroup        (ZMapPane pane);
-FooCanvas   *zMapPaneGetCanvas         (ZMapPane pane);
-int          zMapPaneGetDNAwidth       (ZMapPane pane);
-void         zMapPaneSetDNAwidth       (ZMapPane pane, int width);
-void         zMapPaneSetStepInc        (ZMapPane pane, int incr);
-int          zMapPaneGetHeight         (ZMapPane pane);
-InvarCoord   zMapPaneGetCentre         (ZMapPane pane);
-float        zMapPaneGetBPL            (ZMapPane pane);
 
 
 #endif /* !ZMAP_CONTROL_H */
