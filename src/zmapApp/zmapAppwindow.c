@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 21 16:58 2004 (edgrif)
+ * Last edited: Sep 13 14:22 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.10 2004-07-21 16:07:11 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.11 2004-09-13 13:29:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #include <zmapApp_P.h>
 
 
-
+static void checkThreads(void) ;
 static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
 static void quitCB(GtkWidget *widget, gpointer data) ;
@@ -61,29 +61,24 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GtkWidget *kill_button, *quit_button ;
 
 
+  /* this all needs revving up sometime.... */
   if (argc > 1)
     test_global = atoi(argv[1]) ;
 
   if (argc > 2)
     test_overlap = 1 ;
 
-  zmap_debug_G = TRUE ;
-#ifdef G_THREADS_ENABLED
-  zMapDebug("%s", "threads are enabled\n") ;
+
+  /* Since thread support is crucial we do compile and run time checks that its all intialised.
+   * the function calls look obscure but its what's recommended in the glib docs. */
+#if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
+#error "Cannot compile, threads not properly enabled."
 #endif
 
-#ifdef G_THREADS_IMPL_NONE
-  zMapDebug("%s", "but there is no thread implementation\n") ;
-#endif
-
-#ifdef G_THREADS_IMPL_POSIX
-  zMapDebug("%s", "and posix threads are being used\n") ;
-#endif
-  zmap_debug_G = FALSE ;
-
-
-  /* For threaded stuff we apparently need this..... */
   g_thread_init(NULL) ;
+  if (!g_thread_supported())
+    g_thread_init(NULL);
+
 
   app_context = createAppContext() ;
 
