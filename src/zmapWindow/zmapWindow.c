@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 29 15:52 2004 (edgrif)
+ * Last edited: Jun 30 15:47 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.12 2004-06-30 09:12:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.13 2004-07-01 09:26:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,7 +49,7 @@
 #include <ZMap/zmapFeature.h>
 
 #include <zmapWindow_P.h>
-
+#include <zmapcontrol.c>
 
 
 static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
@@ -276,6 +276,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
 ZMapWindow zMapWindowCreateZMapWindow(void)
 {
   ZMapWindow window = (ZMapWindow)malloc(sizeof(ZMapWindowStruct));
+
   return window;
 }
 
@@ -588,9 +589,11 @@ void zMapRegionFreeDNA(ZMapRegion *region)
 
 // ZMapPane functions
 
-GArray *zMapPaneNewBox2Col(ZMapPane pane, int elements)
+void zMapPaneNewBox2Col(ZMapPane pane, int elements)
 {
   pane->box2col = g_array_sized_new(FALSE, TRUE, sizeof(ZMapColumn), elements);
+
+  return ;
 }
 
 
@@ -614,9 +617,11 @@ void zMapPaneFreeBox2Col(ZMapPane pane)
 }
 
 
-GArray *zMapPaneNewBox2Seg(ZMapPane pane, int elements)
+void zMapPaneNewBox2Seg(ZMapPane pane, int elements)
 {
   pane->box2seg = g_array_sized_new(FALSE, TRUE, sizeof(ZMapFeatureStruct), elements);
+
+  return ;
 }
 
 GArray *zMapPaneSetBox2Seg(ZMapPane pane, ZMapColumn *seg, int index)

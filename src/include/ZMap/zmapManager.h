@@ -24,16 +24,16 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: May 17 16:25 2004 (edgrif)
+ * Last edited: Jul  1 09:50 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapManager.h,v 1.2 2004-05-17 16:21:40 edgrif Exp $
+ * CVS info:   $Id: zmapManager.h,v 1.3 2004-07-01 09:24:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_MANAGER_H
 #define ZMAP_MANAGER_H
 
 #include <ZMap/zmapSys.h>
-#include <ZMap/ZMap.h>
+#include <ZMap/zmapControl.h>
 
 /* Opaque type, contains list of current ZMaps. */
 typedef struct _ZMapManagerStruct *ZMapManager ;

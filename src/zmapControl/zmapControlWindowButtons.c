@@ -26,14 +26,14 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 28 11:23 2004 (rnc)
+ * Last edited: Jul  1 09:53 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.4 2004-06-28 15:07:35 rnc Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.5 2004-07-01 09:25:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
-#include <ZMap_P.h>
+#include <zmapControl_P.h>
 #include <../zmapWindow/zmapsplit.h>
 
 static void newCB(GtkWidget *widget, gpointer cb_data) ;

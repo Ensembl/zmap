@@ -1,4 +1,4 @@
-/*  Last edited: Jun 29 15:49 2004 (edgrif) */
+/*  Last edited: Jul  1 10:10 2004 (edgrif) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -28,7 +28,17 @@
 #include <glib.h>
 #include <zmapcontrol.h>
 #include <zmapsplit.h>
+#include <seqregion.h>
+
+/* hack for now....... */
+#include <../zmapControl/zmapControl_P.h>
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void *navAssoc, *winAssoc;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* function prototypes ***********************************************/

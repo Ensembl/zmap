@@ -1,36 +1,40 @@
-/*  Last edited: Jun 29 13:26 2004 (edgrif) */
-/*  file: seqregion.c
+/*  File: seqregion.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2003
+ *  Copyright (c) Sanger Institute, 2004
  *-------------------------------------------------------------------
- * Zmap is free software; you can redistribute it and/or
+ * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- *
+ * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ * originated by
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *
+ * Description: 
+ * Exported functions: See XXXXXXXXXXXXX.h
+ * HISTORY:
+ * Last edited: Jun 30 13:58 2004 (edgrif)
+ * Created: Wed Jun 30 13:38:10 2004 (edgrif)
+ * CVS info:   $Id: seqregion.c,v 1.5 2004-07-01 09:26:24 edgrif Exp $
+ *-------------------------------------------------------------------
  */
 
 #include <seqregion.h>
 
 
-/* srInvarCoord ***************************************************/
 /* Returns a coordinate in the absolute direction. */
-
 InvarCoord srInvarCoord(ZMapRegion *zMapRegion, Coord coord)
 {
   if (zMapRegion->rootIsReverse)
@@ -39,9 +43,9 @@ InvarCoord srInvarCoord(ZMapRegion *zMapRegion, Coord coord)
     return coord;
 }
 
-/* srCoord ********************************************************/
-/* Returns a coordinate in the current direction. */
 
+
+/* Returns a coordinate in the current direction. */
 Coord srCoord(ZMapRegion *zMapRegion, InvarCoord coord)
 {
    if (zMapRegion->rootIsReverse)
@@ -52,41 +56,51 @@ Coord srCoord(ZMapRegion *zMapRegion, InvarCoord coord)
 
 
 
-/* srCreate ******************************************************/
-/* Creates a new, empty ZMapRegion structure.Does nothing with the handle. */
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-ZMapRegion *srCreate(STORE_HANDLE handle)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+/* this is not called from anywhere at the moment..... */
+
+/* Creates a new, empty ZMapRegion structure. */
 ZMapRegion *srCreate(void)
 {
-  ZMapRegion *zMapRegion = (ZMapRegion*)malloc(sizeof(ZMapRegion));
+  ZMapRegion *zMapRegion = (ZMapRegion*)g_malloc(sizeof(ZMapRegion)) ;
 
-  zMapRegion->area1 = zMapRegion->area2 = 0;
-  zMapRegion->methods = NULL;
-  zMapRegion->oldMethods = NULL;
-  zMapRegion->dna = NULL;
-  return zMapRegion;
+  zMapRegion->area1 = zMapRegion->area2 = 0 ;
+  zMapRegion->methods = NULL ;
+  zMapRegion->oldMethods = NULL ;
+  zMapRegion->dna = NULL ;
+
+  return zMapRegion ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-/* srMethodFromID ***********************************************/
+
+
+
 /* Retrieves a method structure from the methods array based on
  * the ID it receives.  Knows nothing of AceDB, which is why it's
  * here, but could as well be in zmapcalls.c with it's sisters. */
-
 srMeth *srMethodFromID(ZMapRegion *zMapRegion, methodID id)
 {
-  int i;
+  srMeth *result = NULL ;
 
   if (zMapRegion && zMapRegion->methods)
-    for (i = 0; i < zMapRegionGetMethods(zMapRegion)->len; i++)
-      {
-	srMeth *meth = g_ptr_array_index(zMapRegionGetMethods(zMapRegion), i);
-	if (meth->id == id)
-	  return meth;
-      }
-  return NULL;
+    {
+      int i ;
+
+      for (i = 0 ; i < zMapRegionGetMethods(zMapRegion)->len ; i++)
+	{
+	  srMeth *meth = g_ptr_array_index(zMapRegionGetMethods(zMapRegion), i) ;
+
+	  if (meth->id == id)
+	    {
+	      result = meth ;
+	      break ;
+	    }
+	}
+    }
+
+  return result ;
 }
 
  

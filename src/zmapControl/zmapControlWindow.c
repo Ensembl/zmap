@@ -26,15 +26,15 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Jun 25 13:50 2004 (rnc)
+ * Last edited: Jul  1 09:52 2004 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.4 2004-06-28 15:06:39 rnc Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.5 2004-07-01 09:25:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap_P.h>
+#include <zmapControl_P.h>
 
 
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;

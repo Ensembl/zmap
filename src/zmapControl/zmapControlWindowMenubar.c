@@ -26,15 +26,15 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 19 14:12 2004 (edgrif)
+ * Last edited: Jul  1 09:53 2004 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.2 2004-05-20 14:11:33 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.3 2004-07-01 09:25:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <ZMap_P.h>
+#include <zmapControl_P.h>
 
 
 

@@ -27,9 +27,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jun 29 11:56 2004 (edgrif)
+ * Last edited: Jun 30 15:41 2004 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.5 2004-06-30 09:11:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.6 2004-07-01 09:24:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -183,11 +183,11 @@ void         zMapRegionFreeSegs        (ZMapRegion *region);
 GArray      *zMapRegionGetDNA          (ZMapRegion *region);
 void         zMapRegionFreeDNA         (ZMapRegion *region);
 
-GArray      *zMapPaneNewBox2Col        (ZMapPane pane, int elements);
+void         zMapPaneNewBox2Col        (ZMapPane pane, int elements);
 ZMapColumn  *zMapPaneGetBox2Col        (ZMapPane pane, int index);
 GArray      *zMapPaneSetBox2Col        (ZMapPane pane, ZMapColumn *col, int index);
 void         zMapPaneFreeBox2Col       (ZMapPane pane);
-GArray      *zMapPaneNewBox2Seg        (ZMapPane pane, int elements);
+void         zMapPaneNewBox2Seg        (ZMapPane pane, int elements);
 ZMapFeature zMapPaneGetBox2Seg        (ZMapPane pane, int index);
 GArray      *zMapPaneSetBox2Seg        (ZMapPane pane, ZMapColumn *seg, int index);
 void         zMapPaneFreeBox2Seg       (ZMapPane pane);

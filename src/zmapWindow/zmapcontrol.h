@@ -1,4 +1,4 @@
-/*  Last edited: Jun 29 13:10 2004 (edgrif) */
+/*  Last edited: Jul  1 10:06 2004 (edgrif) */
 /*  file: zmapcontrol.h
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -31,27 +31,33 @@
 #include <gtk/gtk.h>
 #include <libfoocanvas/libfoocanvas.h>
 
+#include <ZMap/zmapControl.h>
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapcommon.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#include <ZMap/zmapWindow.h>
+
 #include <ZMap/zmapFeature.h>
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <../zmapWindow/seqregion.h>
-#include <../zmapControl/ZMap_P.h>
+
+#include <../zmapControl/zmapControl_P.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 
 
 /* function prototypes ************************************/
 
 gboolean zMapDisplay(ZMap        zmap,
-		 Activate_cb act_cb,
-		 Calc_cb     calc_cb,
-		 void       *region,
-		 char       *seqspec, 
-		 char       *fromspec, 
-		 gboolean        isOldGraph);
+		     Activate_cb act_cb,
+		     Calc_cb     calc_cb,
+		     void       *region,
+		     char       *seqspec, 
+		     char       *fromspec, 
+		     gboolean        isOldGraph);
 
 void zmRegBox(ZMapPane pane, int box, ZMapColumn *col, void *seg);
 

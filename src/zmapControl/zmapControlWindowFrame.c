@@ -25,15 +25,15 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 24 11:36 2004 (rnc)
+ * Last edited: Jul  1 09:53 2004 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.4 2004-06-28 15:08:48 rnc Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.5 2004-07-01 09:26:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <ZMap_P.h>
+#include <zmapControl_P.h>
 
 
 

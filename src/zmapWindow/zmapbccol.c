@@ -1,4 +1,4 @@
-/*  Last edited: Jun 29 15:21 2004 (edgrif) */
+/*  Last edited: Jun 30 14:36 2004 (edgrif) */
 /*  file: zmapbccol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -31,22 +31,13 @@
    started the Second Oil War. 
    I think the module name "nbc" is somehow appropriate - srk */
 
+#include <math.h>
 
 #include <glib.h>
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <../acedb/method.h>
-#include <../acedb/bump.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapcommon.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 #include <ZMap/zmapFeature.h>
-
 #include <zmapcontrol.h>
-
+#include <seqregion.h>
 
 /* A lot of this comes direct from acedb.......... */
 

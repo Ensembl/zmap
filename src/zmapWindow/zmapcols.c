@@ -1,4 +1,4 @@
-/*  Last edited: Jun 29 15:48 2004 (edgrif) */
+/*  Last edited: Jul  1 10:10 2004 (edgrif) */
 /*  file: zmapcols.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -221,6 +221,11 @@ static void insertCol(ZMapPane pane, methodID meth, ZMapFeatureType type)
       
       //    c = g_ptr_array_index(pane->cols, j);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+      /* Needs sorting out............... */
+
       c->drawFunc = defs[i].drawFunc;
       c->configFunc = defs[i].configFunc;
       c->selectFunc = defs[i].selectFunc;
@@ -232,6 +237,8 @@ static void insertCol(ZMapPane pane, methodID meth, ZMapFeatureType type)
       c->meth = meth; /* zero for default columns */
       if (defs[i].initFunc)
 	(*defs[i].initFunc)(pane, c);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
 }

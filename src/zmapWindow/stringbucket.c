@@ -1,4 +1,4 @@
-/*  Last edited: Jun 29 13:36 2004 (edgrif) */
+/*  Last edited: Jun 30 14:32 2004 (edgrif) */
 /*  file: stringbucket.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -25,7 +25,7 @@
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  */
 
-
+#include <strings.h>
 #include <glib.h>
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

@@ -25,13 +25,13 @@
  * Description: Interface for creating, controlling and destroying ZMaps.
  *              
  * HISTORY:
- * Last edited: Jul  1 09:42 2004 (edgrif)
+ * Last edited: Jul  1 10:07 2004 (edgrif)
  * Created: Mon Nov 17 08:04:32 2003 (edgrif)
- * CVS info:   $Id: zmapControl.h,v 1.1 2004-07-01 08:42:53 edgrif Exp $
+ * CVS info:   $Id: zmapControl.h,v 1.2 2004-07-01 09:24:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
-#ifndef ZMAPCONTROL_H
-#define ZMAPCONTROL_H
+#ifndef ZMAP_CONTROL_H
+#define ZMAP_CONTROL_H
 
 
 /* It turns out we need some way to refer to zmapviews at this level, while I don't really
@@ -65,4 +65,4 @@ gboolean zMapReset(ZMap zmap) ;
 gboolean zMapDestroy(ZMap zmap) ;
 
 
-#endif /* !ZMAPCONTROL_H */
+#endif /* !ZMAP_CONTROL_H */
