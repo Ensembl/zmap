@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  3 14:52 2004 (edgrif)
+ * Last edited: Nov  4 14:33 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.25 2004-11-04 12:47:42 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.26 2004-11-08 10:26:30 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -41,14 +41,13 @@
 /* Test scaffoling */
 #include <ZMap/zmapFeature.h>
 
-
+#define PIXELS_PER_BASE 20.0   /* arbitrary text size to limit zooming in.  Must be tied
+			       ** in to actual text size dynamically some time soon. */
 
 enum
   {
     ZMAP_WINDOW_TEXT_BORDER = 2				    /* border above/below dna text. */
   } ;
-
-
 
 
 typedef struct _ZMapWindowStruct
@@ -119,6 +118,13 @@ typedef struct _FeatureKeys {
 /* Used in our event communication.... */
 #define ZMAP_ATOM  "ZMap_Atom"
 
+typedef struct _ZMapColStruct
+{
+  FooCanvasItem       *item;
+  gboolean             forward;
+  ZMapFeatureTypeStyle type;
+} ZMapColStruct, *ZMapCol;
+
 
 /* parameters passed between the various functions processing the features on the canvas */
 /* I wanta to group the members logically, but I don't think I'm there yet. */
@@ -143,6 +149,8 @@ typedef struct _ZMapCanvasDataStruct
   GQuark               context_key;
   FooCanvasItem       *feature_group;       /* the group this feature was drawn in */
   ZMapFeature          feature;
+
+  GArray              *columns;             /* keep track of canvas columns */
 
   ZMapFeatureTypeStyle focusType;
   FooCanvasItem       *focusFeature;
