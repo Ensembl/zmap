@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Sep 13 09:23 2004 (edgrif)
+ * Last edited: Feb 10 14:56 2005 (edgrif)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.3 2004-09-13 13:00:18 edgrif Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.4 2005-02-10 16:40:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,33 +45,10 @@ static char *getRelOrAbsPath(char *path_in, gboolean home_relative) ;
 /* SORT OUT THIS FILE, THE FUNCTIONS ALL NEED RATIONALISING INTO SOMETHING MORE SENSIBLE... */
 
 
-/* Not sure if this is really necessary....maybe.... */
-/* DO NOT FREE THE RESULTING STRING...COPY IF NEED BE.... */
-const char *zMapGetControlDirName(void)
-{
-  char *dir_name = ZMAP_USER_CONTROL_DIR ;
-
-  return dir_name ;
-}
-
-
-/* If directory is absolute then returns a copy of that directory, if the directory is relative
- * then returns $HOME/directory. Useful because when people specify directories in resource
- * files then this makes life easier. */
-char *zMapGetControlFileDir(char *directory_in)
-{
-  char *control_dir ;
-
-  control_dir = zMapGetDir(directory_in, TRUE) ;
-
-  return control_dir ;
-}
-
-
 /* this function also only copes with one level of directory creating.... */
 /* this function is whacky at the moment and needs work.....e.g. on directory permissions... */
 /* Check directory. */
-char *zMapGetDir(char *directory_in, gboolean home_relative)
+char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir)
 {
   char *directory = NULL ;
   gboolean absolute ;
@@ -107,7 +84,7 @@ char *zMapGetDir(char *directory_in, gboolean home_relative)
 	}
       /* If this fails we should probably try to change the mode to be rwx for user only. */
     }
-  else
+  else if (make_dir)
     {
       if (mkdir(directory, S_IRWXU) == 0)
 	{
@@ -137,6 +114,72 @@ char *zMapGetPath(char *path_in)
 
   return path ;
 }
+
+
+/* Construct file path from directory and filename and check if it can be accessed, if it
+ * doesn't exist then create the file as read/writeable but empty.  */
+char *zMapGetFile(char *directory, char *filename, gboolean make_file)
+{
+  gboolean status = FALSE ;
+  char *filepath ;
+  struct stat stat_buf ;
+
+  filepath = g_build_path(ZMAP_SEPARATOR, directory, filename, NULL) ;
+
+  /* Is there a configuration file in the config dir that is readable/writeable ? */
+  if (!(status = zMapFileAccess(filepath)) && make_file)
+    {
+      int file ;
+
+      if ((file = open(filepath, (O_RDWR | O_CREAT | O_EXCL), (S_IRUSR | S_IWUSR)) != -1)
+	  && (close(file) != -1))
+	status = TRUE ;
+    }
+
+  if (!status)
+    {
+      g_free(filepath) ;
+      filepath = NULL ;
+    }
+
+  return filepath ;
+}
+
+
+/* Can the given file be accessed for read/write ? (We could expand this to take a string
+ * of the form "rwx" as in acedb routines and check that) */
+gboolean zMapFileAccess(char *filepath)
+{
+  gboolean access = FALSE ;
+  struct stat stat_buf ;
+
+  if (stat(filepath, &stat_buf) == 0
+      && (S_ISREG(stat_buf.st_mode) && (stat_buf.st_mode & S_IRWXU)))
+    access = TRUE ;
+
+  return access ;
+}
+
+
+/* Is the a file empty ? */
+gboolean zMapFileEmpty(char *filepath)
+{
+  gboolean result = FALSE ;
+  struct stat stat_buf ;
+
+  if (stat(filepath, &stat_buf) == 0
+      && stat_buf.st_size == 0)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+
+/* 
+ *             Internal functions.
+ * 
+ */
 
 
 /* If path is absolute then returns a copy of that path, if the path is relative
@@ -171,61 +214,6 @@ static char *getRelOrAbsPath(char *path_in, gboolean home_relative)
     }
 
   return path ;
-}
-
-
-
-/* Can we access given file in given directory. */
-char *zMapGetFile(char *directory, char *filename)
-{
-  gboolean status = FALSE ;
-  char *filepath ;
-  struct stat stat_buf ;
-
-  filepath = g_build_path(ZMAP_SEPARATOR, directory, filename, NULL) ;
-
-  /* Is there a configuration file in the config dir that is readable/writeable ? */
-  if (stat(filepath, &stat_buf) == 0)
-    {
-      if (S_ISREG(stat_buf.st_mode) && (stat_buf.st_mode & S_IRWXU))
-	{
-	  status = TRUE ;
-	}
-    }
-  else
-    {
-      int file ;
-
-      if ((file = open(filepath, (O_RDWR | O_CREAT | O_EXCL), (S_IRUSR | S_IWUSR)) != -1)
-	  && (close(file) != -1))
-	status = TRUE ;
-    }
-
-  if (!status)
-    {
-      g_free(filepath) ;
-      filepath = NULL ;
-    }
-
-  return filepath ;
-}
-
-
-/* Is the a file empty ? */
-gboolean zMapFileEmpty(char *filepath)
-{
-  gboolean result = FALSE ;
-  struct stat stat_buf ;
-
-  if (stat(filepath, &stat_buf) == 0)
-    {
-      if (stat_buf.st_size == 0)
-	{
-	  result = TRUE ;
-	}
-    }
-
-  return result ;
 }
 
 
