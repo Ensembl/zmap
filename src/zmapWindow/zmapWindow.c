@@ -26,13 +26,14 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 14:36 2004 (edgrif)
+ * Last edited: Mar 12 14:38 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.4 2004-01-23 13:27:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.5 2004-03-12 16:04:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
+#include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
 
@@ -94,7 +95,7 @@ ZMapWindow zMapWindowCreate(char *sequence, char *zmap_id,
  * the call to tell the GUI code that there is something to do. This routine
  * then sends this event to alert the GUI that it needs to do some work and
  * will supply the data via the event struct. */
-void zMapWindowSignalData(ZMapWindow window, void *data)
+void zMapWindowDisplayData(ZMapWindow window, void *data)
 {
   GdkEventClient event ;
   GdkAtom zmap_atom ;
@@ -127,10 +128,20 @@ void zMapWindowSignalData(ZMapWindow window, void *data)
 }
 
 
+void zMapWindowReset(ZMapWindow window)
+{
+  ZMAP_DEBUG("GUI: in window reset...\n") ;
+
+  gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(window->text)),
+			   "", -1) ;			    /* -1 => null terminated string. */
+
+  return ;
+}
+
 
 void zMapWindowDestroy(ZMapWindow window)
 {
-  ZMAP_DEBUG(("GUI: in window destroy...\n")) ;
+  ZMAP_DEBUG("GUI: in window destroy...\n") ;
 
   /* We must disconnect the "destroy" callback otherwise we will enter quitCB()
    * below and that will try to call our callers destroy routine which has already
@@ -173,7 +184,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
   ZMapWindow window = (ZMapWindow)cb_data ;
 
   if (event->type != GDK_CLIENT_EVENT)
-    ZMAPERR("dataEventCB() received non-GdkEventClient event") ;
+    ZMAPFATALERR("%s", "dataEventCB() received non-GdkEventClient event") ;
   
   if (event->send_event == TRUE && event->message_type == gdk_atom_intern(ZMAP_ATOM, TRUE))
     {
@@ -189,24 +200,24 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      ZMAP_DEBUG(("GUI: got dataEvent, contents: \"%s\"\n", string)) ;
+      ZMAP_DEBUG("GUI: got dataEvent, contents: \"%s\"\n", string) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       gtk_text_buffer_insert(gtk_text_view_get_buffer(GTK_TEXT_VIEW(window->text)),
-			     NULL, string, -1) ;	    /* -1 => insert whole string. */
+			     NULL, string, -1) ;	    /* -1 => null terminated string. */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(window->text)),
-			       string, -1) ;
+			       string, -1) ;		    /* -1 => null terminated string. */
 
       g_free(string) ;
       g_free(window_data) ;
     }
   else
     {
-      ZMAP_DEBUG(("unknown client event in zmapevent handler\n")) ;
+      ZMAP_DEBUG("unknown client event in zmapevent handler\n") ;
     }
 
 
