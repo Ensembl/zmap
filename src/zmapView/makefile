@@ -1,9 +1,7 @@
 #
-# Makes the code that creates/manages/destroys an individual ZMap
+# Makes the code that creates/manages/destroys an individual ZMapView
 #
 
-
-# use this as a template....
 
 # bootstrap stuff, without these make can't find the files to include which define
 # all the macros/rules and dependencies.
@@ -11,10 +9,10 @@
 ROOT_DIRECTORY = ..
 
 # local macros
-CONT_PRIV_HDRS = ZMap_P.h
-PUB_HDRS = ZMap.h
-CONT_SRC = zmapControl.c
-CONT_OBJ = zmapControl.o
+CONT_PRIV_HDRS = zmapView_P.h
+PUB_HDRS = zmapView.h
+CONT_SRC = zmapView.c
+CONT_OBJ = zmapView.o
 
 
 
