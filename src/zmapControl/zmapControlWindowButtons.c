@@ -27,9 +27,13 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
+<<<<<<< zmapControlWindowButtons.c
+ * Last edited: Nov 26 09:18 2004 (rnc)
+=======
  * Last edited: Nov 19 16:55 2004 (edgrif)
+>>>>>>> 1.18
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.18 2004-11-22 11:50:37 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.19 2004-11-29 14:19:15 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -95,12 +99,12 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_signal_connect(GTK_OBJECT(stop_button), "clicked",
 		     GTK_SIGNAL_FUNC(stopCB), (gpointer)zmap) ;
   gtk_box_pack_start(GTK_BOX(hbox), stop_button, FALSE, FALSE, 0) ;
-
-  new_button = gtk_button_new_with_label("New") ;
-  gtk_signal_connect(GTK_OBJECT(new_button), "clicked",
-		     GTK_SIGNAL_FUNC(newCB), (gpointer)zmap) ;
-  gtk_box_pack_start(GTK_BOX(hbox), new_button, FALSE, FALSE, 0) ;
-
+  /*  commented out until we make it work properly.
+   *  new_button = gtk_button_new_with_label("New") ;
+   *  gtk_signal_connect(GTK_OBJECT(new_button), "clicked",
+   *		     GTK_SIGNAL_FUNC(newCB), (gpointer)zmap) ;
+   *  gtk_box_pack_start(GTK_BOX(hbox), new_button, FALSE, FALSE, 0) ;
+  */
   hsplit_button = gtk_button_new_with_label("H-Split");
   gtk_signal_connect(GTK_OBJECT(hsplit_button), "clicked",
 		     GTK_SIGNAL_FUNC(splitPaneCB), (gpointer)zmap) ;
@@ -272,7 +276,8 @@ static void splitPaneCB(GtkWidget *widget, gpointer data)
 
   pane = zmap->focuspane ;
 
-  view_window = zMapViewAddWindow(zMapViewGetView(pane->curr_view_window), parent_widget) ;
+  view_window = zMapViewAddWindow(zMapViewGetView(pane->curr_view_window), parent_widget,
+				  zMapViewGetWindow(zmap->focuspane->curr_view_window)) ;
 
   pane->curr_view_window = view_window ;		    /* new focus window ?? */
 
@@ -295,7 +300,8 @@ static void splitHPaneCB(GtkWidget *widget, gpointer data)
 
   pane = zmap->focuspane ;
 
-  view_window = zMapViewAddWindow(zMapViewGetView(pane->curr_view_window), parent_widget) ;
+  view_window = zMapViewAddWindow(zMapViewGetView(pane->curr_view_window), parent_widget,
+				  zMapViewGetWindow(zmap->focuspane->curr_view_window)) ;
 
   pane->curr_view_window = view_window ;		    /* new focus window ?? */
 
