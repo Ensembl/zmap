@@ -155,16 +155,6 @@ FONTCONFIG_FILE
 
 
 
-[ACedb tools: xremote and blixem]
-Across = Important
-Down = Urgent
-Block = SwapPhase II
-Text = code should be moved out of acedb tree into a new directory and it should \
-have a separate header that defines the atoms used. Apps can then use this to include \
-and respond to commands etc. The same should be done for a small library to launch blixem \
-given a sequence name/sequences.
-
-
 [GFF stuff]
 Across = Important
 Down = Not_Urgent
@@ -232,6 +222,22 @@ that resizes the canvas window then we alter the zoom etc.....
 
 
 ## 20050304 meeting
+
+
+[ACedb tools: xremote and blixem]
+Across = Important
+Down = Urgent
+Block = SwapPhase II
+Text = code should be moved out of acedb tree into a new directory and it should \
+have a separate header that defines the atoms used. Apps can then use this to include \
+and respond to commands etc. The same should be done for a small library to launch blixem \
+given a sequence name/sequences.\
+\
+We will need a parameter/keyword in the config file to point zmap at the file to run\
+blixem, note this might be a cover script that itself runs blixem.
+
+
+
 [zmap dynamic methods]
 Across = Important
 Down = Urgent
