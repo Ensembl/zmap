@@ -1,3 +1,4 @@
+/*  Last edited: Nov 20 14:12 2003 (rnc) */
 /*  file: seqregionconvert.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -35,9 +36,9 @@
 #include <whooks/systags.h>
 #include <whooks/classes.h>
 
-static methodID srMethCreate(SeqRegion *region, KEY methodKey);
-static srMeth *methodFromKey(Array methods, KEY key);
-static methodID srMethodMake(SeqRegion *region, KEY key);
+static methodID srMethCreate  (SeqRegion *region, char *methodName);
+static srMeth  *methodFromName(Array methods    , char *methodName);
+static methodID srMethodMake  (SeqRegion *region, char *methodName);
 
 /* exported functi
 on */
@@ -55,54 +56,52 @@ srMeth *srMethodFromID(SeqRegion *region, methodID id)
   return NULL;
 }
 
-static srMeth *methodFromKey(Array methods, KEY key)
+static srMeth *methodFromName(Array methods, char *methodName)
 {
   int i;
-  
-  key = lexAliasOf(key); /* use canonical key */
   
   if (methods)
     for (i=0; i<arrayMax(methods); i++)
       {
 	srMeth *meth = arrp(methods, i, srMeth);
-	if (meth->key == key)
+	if (meth->name == methodName)
 	  return meth;
       }
   return NULL;
 }
  
-static methodID srMethodMake(SeqRegion *region, KEY key)
+static methodID srMethodMake(SeqRegion *region, char *methodName)
 {
   srMeth *meth;
 
-  if ((meth = methodFromKey(region->methods, key)))
+  if ((meth = methodFromName(region->methods, methodName)))
     return meth->id;
-  else if ((meth = methodFromKey(region->oldMethods, key)))
+  else if ((meth = methodFromName(region->oldMethods, methodName)))
     {
       srMeth *new = arrayp(region->methods, arrayMax(region->methods), srMeth);
       *new = *meth;
       return new->id;
     }
   else
-    return srMethCreate(region, key);
+    return srMethCreate(region, methodName);
 }
 
-static methodID srMethCreate(SeqRegion *region, KEY methodKey)
+static methodID srMethCreate(SeqRegion *region, char *methodName)
 {
   srMeth *meth;
   OBJ obj ;
   int k;
   char *text;
+  KEY methodKey;
 
-  if (class(methodKey) != _VMethod)
-    messcrash ("methodAdd() - methodKey not in class 'Method'");
+  if (!lexword2key(methodName, &methodKey, _VMethod))
+    messcrash ("srMethodCreate() - methodKey not found in lex.");
 
   if (!(obj = bsCreate (methodKey))) 
     return 0;
   
   meth = arrayp(region->methods, arrayMax(region->methods), srMeth);
   meth->id = region->idc++;
-  meth->key = methodKey;
   meth->name = str2p(name(methodKey), region->bucket);
   meth->flags &= ~METHOD_CALCULATED ;/* unset flag */
   meth->flags |= METHOD_DONE ;	/* set flag */
@@ -204,14 +203,15 @@ void seqRegionConvert(SeqRegion *region)
 
   for (i = 0 ; i < keySetMax(allKeys) ; i++)
     {
-      KEY method, key = keySet(allKeys, i);
+      KEY methodKey, key = keySet(allKeys, i);
       SMapKeyInfo *info = sMapKeyInfo(region->smap, key);
       int x1, x2;
       SMapStatus status ;
       SEG *seg;
       OBJ obj;
-      
-      if ((obj = bsCreate(key)) && bsGetKey(obj, str2tag("Method"), &method))
+      char *methodName;
+
+      if ((obj = bsCreate(key)) && bsGetKey(obj, str2tag("Method"), &methodKey))
 	{
 	  Coord cdsStart, cdsEnd;
 	  srType type = SR_SEQUENCE; /* default */
@@ -220,6 +220,9 @@ void seqRegionConvert(SeqRegion *region)
 	  BOOL isCDS = FALSE;
 	  Array exons = NULL;
 	  
+	  methodName = messalloc(strlen(name(methodKey))); /* need to remember to free this? */
+      	  methodName = str2p(name(methodKey), region->bucket);
+
 	  if (bsFindTag(obj, str2tag("Start_not_Found")))
 	    {
 	      isStartNotFound = TRUE;
@@ -274,9 +277,9 @@ void seqRegionConvert(SeqRegion *region)
 	  seg->x1 = x1;
 	  seg->x2 = x2;
 	  seg->phase = phase;
-	  seg->method = srMethodMake(region, method);if (type == SR_TRANSCRIPT);
+	  seg->method = srMethodMake(region, methodName);
 	  
-	  if (type = SR_TRANSCRIPT)
+	  if (type == SR_TRANSCRIPT)
 	    {  
 	      if (!isCDS)
 		sMapMap(info, 1, 0, &cdsStart, &cdsEnd, NULL, NULL);
@@ -313,7 +316,7 @@ void seqRegionConvert(SeqRegion *region)
 		  seg->x1 = x1;
 		  seg->x2 = x2;
 		  seg->score = u[3].f;
-		  seg->method = srMethodMake(region, u[0].k);
+		  seg->method = srMethodMake(region, str2p(name(u[0].k), region->bucket));
 		}
 	    }
 	  if (bsFindTag(obj, str2tag("Homol")))
@@ -323,6 +326,7 @@ void seqRegionConvert(SeqRegion *region)
 	    }
 
 	}
+
       
       bsDestroy(obj);
 	

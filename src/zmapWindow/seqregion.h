@@ -1,3 +1,4 @@
+/*  Last edited: Nov 20 13:47 2003 (rnc) */
 /*  file: seqregion.h
  *  Author: Richard Durbin (rd@mrc-lmb.cam.ac.uk)
  *  Copyright (C) J Thierry-Mieg and R Durbin, 1992
@@ -139,7 +140,6 @@ typedef struct segStruct SEG;
 typedef struct methodStruct
 {
   methodID id;
-  KEY key; /* private */
   char *name, *remark;
   unsigned int flags;
   int colour, CDS_colour, upStrandColour;
