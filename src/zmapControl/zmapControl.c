@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Nov 22 15:29 2004 (edgrif)
+ * Last edited: Nov 25 10:08 2004 (rnc)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.39 2004-11-23 11:58:50 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.40 2004-11-29 14:11:14 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -140,11 +140,14 @@ ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end)
   zMapAssert(zmap && sequence && *sequence
 	     && (start > 0 && (end == 0 || end > start))) ;
 
+  //  zmapViewPrintHeight("zMapAddView", zmap->focuspane->curr_view_window);
+  
   view = addView(zmap, sequence, start, end) ;
 
   return view ;
 }
 
+#include "../zmapView/zmapView_P.h"
 
 gboolean zMapConnectView(ZMap zmap, ZMapView view)
 {
@@ -406,7 +409,7 @@ void zmapControlNewViewCB(ZMap zmap, char *new_sequence)
   /* this code cut/pasted from addView()...needs clearing up.... */
 
   if ((view = zMapViewCreate(new_sequence, start, end, (void *)zmap))
-      && (view_window = zMapViewAddWindow(view, pane->view_parent_box))
+      && (view_window = zMapViewAddWindow(view, pane->view_parent_box, NULL))
       && zMapViewConnect(view))
     {
       /* add to list of views.... */
@@ -529,7 +532,7 @@ static ZMapView addView(ZMap zmap, char *sequence, int start, int end)
   zmapRecordFocus(new_pane) ;
 
   if ((view = zMapViewCreate(sequence, start, end, (void *)zmap))
-      && (view_window = zMapViewAddWindow(view, new_pane->view_parent_box)))
+      && (view_window = zMapViewAddWindow(view, new_pane->view_parent_box, NULL)))
     {
       /* add to list of views.... */
       zmap->view_list = g_list_append(zmap->view_list, view) ;
