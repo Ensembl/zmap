@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar  9 12:44 2005 (edgrif)
+ * Last edited: Mar 10 12:15 2005 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.47 2005-03-09 14:54:47 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.48 2005-03-10 12:18:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,8 +38,8 @@
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <ZMap/zmapWindow.h>
+#include <ZMap/zmapUrl.h>
 #include <zmapView_P.h>
-
 
 
 static ZMapView createZMapView(char *sequence, int start, int end, void *app_data) ;
@@ -69,7 +69,7 @@ static void killConnections(ZMapView zmap_view) ;
 
 /* These are candidates to moved into zmapServer in fact, would be a more logical place for them. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
-					   char *machine, int port, char *protocol, char *format,
+					   struct url *url, char *format,
 					   int timeout, char *version, char *types_file,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end) ;
@@ -318,9 +318,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	  ZMapConfigStanza server_stanza ;
 	  /* NOTE: If you change this resource array be sure to check that the subsequent
 	   * initialisation is still correct. */
-	  ZMapConfigStanzaElementStruct server_elements[] = {{"host", ZMAPCONFIG_STRING, {NULL}},
-							     {"port", ZMAPCONFIG_INT, {NULL}},
-							     {"protocol", ZMAPCONFIG_STRING, {NULL}},
+	  ZMapConfigStanzaElementStruct server_elements[] = {{"url", ZMAPCONFIG_STRING, {NULL}},
 							     {"timeout", ZMAPCONFIG_INT, {NULL}},
 							     {"version", ZMAPCONFIG_STRING, {NULL}},
 							     {"sequence", ZMAPCONFIG_BOOL, {NULL}},
@@ -330,7 +328,6 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 							     {NULL, -1, {NULL}}} ;
 
 	  /* Set defaults for any element that is not a string. */
-	  zMapConfigGetStructInt(server_elements, "port") = -1 ;
 	  zMapConfigGetStructInt(server_elements, "timeout") = 120 ; /* seconds. */
 	  zMapConfigGetStructBool(server_elements, "sequence") = FALSE ;
 	  zMapConfigGetStructBool(server_elements, "writeback") = FALSE ;
@@ -359,21 +356,29 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	  while (result
 		 && ((next_server = zMapConfigGetNextStanza(server_list, next_server)) != NULL))
 	    {
-	      char *machine, *protocol, *format ;
-	      int port, timeout ;
-	      char *version, *styles_file ;
+	      char *version, *styles_file, *format, *url ;
+	      int timeout, url_parse_error ;
+              struct url *url_struct;
 	      gboolean sequence_server, writeback_server ;
 	      ZMapViewConnection view_con ;
 
 	      /* There MUST be a host and a protocol, port is not needed for some protocols,
 	       * e.g. http, because it should be allowed to default. */
-	      machine = zMapConfigGetElementString(next_server, "host") ;
-	      port = zMapConfigGetElementInt(next_server, "port") ;
-	      protocol = zMapConfigGetElementString(next_server, "protocol") ;
+	      url = zMapConfigGetElementString(next_server, "url") ;
 	      format = zMapConfigGetElementString(next_server, "format") ;
 	      timeout = zMapConfigGetElementInt(next_server, "timeout") ;
 	      version = zMapConfigGetElementString(next_server, "version") ;
 	      styles_file = zMapConfigGetElementString(next_server, "stylesfile") ;
+
+              url_struct = url_parse(url, &url_parse_error);
+              if(!url_struct)
+                zMapLogWarning("GUI: url %s did not parse, error was %s....\n",
+                               url, url_error(url_parse_error)) ;
+              else
+                zMapLogWarning("GUI: url %s looks ok, host: %s\nport: %d....\n",
+                               url_struct->url, 
+                               url_struct->host, 
+                               url_struct->port) ; 
 
 	      /* We only record the first sequence and writeback servers found, this means you
 	       * can only have one each of these which seems sensible. */
@@ -382,25 +387,8 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      if (!zmap_view->writeback_server)
 		writeback_server = zMapConfigGetElementBool(next_server, "writeback") ;
 
-	      if (strcmp(protocol, "file") != 0 && (!machine || !protocol || !styles_file))
-		{
-		  /* Types is temporary, in the end no types file will mean we read the types
-		   * dynamically from the server. */
-		  zMapLogWarning("%s",
-				 "Found \"source\" stanza for a server "
-				 "without valid \"host\", \"protocol\" "
-				 "or \"typesfile\", so stanza was ignored.") ;
-		}
-	      else if (strcmp(protocol, "file") == 0  && (!format || !styles_file))
-		{
-		  /* Types is temporary, in the end no types file will mean we read the types
-		   * dynamically from the server. */
-		  zMapLogWarning("%s",
-				 "Found \"source\" stanza for a file "
-				 "without valid \"format\" "
-				 "or \"typesfile\", so stanza was ignored.") ;
-		}
-	      else if ((view_con = createConnection(zmap_view, machine, port, protocol,
+              
+              if (url_struct && (view_con = createConnection(zmap_view, url_struct,
 						    format,
 						    timeout, version, styles_file,
 						    sequence_server, writeback_server,
@@ -417,14 +405,15 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 		    zmap_view->writeback_server = view_con ;
 
 		  if (!zMapFeatureTypeSetAugment(&(zmap_view->types), &(view_con->types)))
-		    zMapLogCritical("Could not merge types for server %s into existing types.",
-				    machine) ;
+		    zMapLogCritical("Could not merge types for server %s into existing types.", 
+                                    url_struct->host) ;
 
 		}
 	      else
 		{
-		  zMapLogWarning("Could not connect to %s protocol server "
-				 "on %s, port %d", protocol, machine, port) ;
+		  zMapLogWarning("Could not connect to server on %s, port %d", 
+                                 url_struct->host, 
+                                 url_struct->port) ;
 		}
 	    }
 
@@ -1230,7 +1219,7 @@ static void killConnections(ZMapView zmap_view)
 
 /* Allocate a connection and send over the request to get the sequence displayed. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
-					   char *machine, int port, char *protocol, char *format,
+					   struct url *url, char *format,
 					   int timeout, char *version, char *styles_file,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end)
@@ -1280,10 +1269,8 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       open_load = g_new0(ZMapServerReqOpenLoadStruct, 1) ;
       open_load->type = ZMAP_SERVERREQ_OPENLOAD ;
 
-      open_load->open.protocol = g_strdup(protocol) ;
-      open_load->open.machine = g_strdup(machine) ;
-      open_load->open.port = port ;
-      open_load->open.format = g_strdup(format) ;
+      open_load->open.url     = url;
+      open_load->open.format  = g_strdup(format) ;
       open_load->open.timeout = timeout ;
       open_load->open.version = g_strdup(version) ;
 
