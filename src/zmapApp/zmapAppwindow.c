@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 15:16 2004 (edgrif)
+ * Last edited: Feb 26 14:40 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.4 2004-01-23 13:28:01 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.5 2004-03-03 12:11:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,7 +61,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   TEST_GLOBAL = atoi(argv[1]) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -100,7 +104,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 }
 
 
-void zmapExit(ZMapAppContext app_context)
+void zmapAppExit(ZMapAppContext app_context)
 {
   printf("\nGoodbye cruel world !\n" ) ;
 
@@ -162,7 +166,7 @@ static ZMapAppContext createAppContext(void)
 
   app_context->app_widg = app_context->sequence_widg = app_context->clist_widg = NULL ;
 
-  app_context->zmap_manager = zMapManagerInit(removeZmapRow, (void *)app_context) ;
+  app_context->zmap_manager = zMapManagerCreate(removeZmapRow, (void *)app_context) ;
   app_context->selected_zmap = NULL ;
 
   return app_context ;
@@ -173,7 +177,9 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  zmapExit(app_context) ;				    /* Does not return. */
+  zMapManagerDestroy(app_context->zmap_manager) ;
+
+  zmapAppExit(app_context) ;				    /* Does not return. */
 
   return ;
 }
