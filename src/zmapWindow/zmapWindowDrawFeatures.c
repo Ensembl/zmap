@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  4 12:27 2004 (edgrif)
+ * Last edited: Nov  5 14:42 2004 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.27 2004-11-04 12:45:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.28 2004-11-05 14:43:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -267,11 +267,9 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 				   h_adj->page_size,
 				   canvasData->seq_end) ;
 
-
-
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmapWindowPrintCanvas(window->canvas) ; 
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }
 
 
