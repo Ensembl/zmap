@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 18 11:03 2004 (edgrif)
+ * Last edited: Nov 11 15:26 2004 (edgrif)
  * Created: Mon Oct 18 09:05:27 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsConfig.c,v 1.1 2004-10-19 14:58:58 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsConfig.c,v 1.2 2004-11-12 11:59:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,8 +53,10 @@ gboolean zMapUtilsConfigDebug(char *debug_domain, gboolean *value)
       ZMapConfigStanza template_stanza ;
       /* If you change this resource array be sure to check that the subesequent
        * initialisation is still correct. */
-      ZMapConfigStanzaElementStruct debug_elements[] = {{debug_domain, ZMAPCONFIG_BOOL, {NULL}},
+      ZMapConfigStanzaElementStruct debug_elements[] = {{NULL, ZMAPCONFIG_BOOL, {NULL}},
 							{NULL, -1, {NULL}}} ;
+
+      debug_elements[0].name = debug_domain ;
 
       /* Set defaults for any element that is not a string. */
       debug_elements[0].data.b = FALSE ;
