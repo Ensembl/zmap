@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Oct  4 10:31 2004 (edgrif)
+ * Last edited: Nov  5 10:53 2004 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.9 2004-10-04 12:53:57 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.10 2004-11-05 14:22:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -114,6 +114,60 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
 
 
 
+void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, int end)
+{
+  char *row_text[ZMAP_NUM_COLS] = {"", "", ""} ;
+  int row ;
+  ZMap zmap ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Not sure about this, what if user wants a blank zmap ? */
+
+  zMapAssert(sequence && *sequence && start >= 1 && (end == 0 || end > start)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  if (!zMapManagerAdd(app_context->zmap_manager, sequence, start, end, &zmap))
+    {
+      zMapWarning("%s", "Failed to create ZMap") ;
+    }
+  else
+    {
+      row_text[0] = zMapGetZMapID(zmap) ;
+
+      /* awaiting new call to report some other way of showing what could be multiple sequences
+       * per window..... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      row_text[1] = zMapGetSequence(zmap) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      row_text[1] = "<dummy>" ;
+
+      row_text[2] = zMapGetZMapStatus(zmap) ;
+      row_text[3] = "blah, blah, blah" ;
+
+      
+      row = gtk_clist_append(GTK_CLIST(app_context->clist_widg), row_text) ;
+      gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, (gpointer)zmap) ;
+      
+
+      zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
+		(row + 1), row_text[0], row_text[1]) ;
+    }
+
+  return ;
+}
+
+
+
+
+
+/* 
+ *         Internal routines. 
+ */
+
 static void createThreadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
@@ -147,34 +201,10 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
     end = 0 ;
 
 
-  /* Need error handling for no sequence or no start/end...??? */
+  /* N.B. currently the user is allowed to create a blank zmap, may need to revisit this... */
+  zmapAppCreateZMap(app_context, sequence, start, end) ;
 
-  if (!zMapManagerAdd(app_context->zmap_manager, sequence, start, end, &zmap))
-    {
-      zMapWarning("%s", "Failed to create ZMap") ;
-    }
-  else
-    {
-      row_text[0] = zMapGetZMapID(zmap) ;
 
-      /* awaiting new call to report some other way of showing what could be multiple sequences
-       * per window..... */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      row_text[1] = zMapGetSequence(zmap) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      row_text[1] = "<dummy>" ;
-
-      row_text[2] = zMapGetZMapStatus(zmap) ;
-      row_text[3] = "blah, blah, blah" ;
-
-      
-      row = gtk_clist_append(GTK_CLIST(app_context->clist_widg), row_text) ;
-      gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, (gpointer)zmap) ;
-      
-
-      zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
-		(row + 1), row_text[0], row_text[1]) ;
-    }
 
   return ;
 }

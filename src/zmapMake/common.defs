@@ -85,34 +85,30 @@ ZMAPNOTHR_LIB = $(BINDIR)/$(ZMAPNOTHR_LIBNAME)
 # COMPILE MACROS
 #
 
-# each subdir could add any additional includes that it needs,
+
 #
-#  e.g. INCLUDE_DIRS = $(INCLUDE_DIRS) -I$(ACECONN_INCL_DIR)
-#                                                for socket stuff
+# Set up overall includes needed by just about everything.
+#
+# (note each subdir could add any additional includes that are specific to its requirements:
+#  e.g. INCLUDE_DIRS = $(INCLUDE_DIRS) -I$(ACECONN_INCL_DIR)  for socket stuff.)
 #
 ZMAP_INCLUDE = $(ROOT_DIRECTORY)/include
 
-
-
 GTK_INC = `$(PACKAGE_PATH) $(PACKAGE_CONFIG) --cflags libfoocanvas gtk+-2.0 glib-2.0`
-#CANVAS_INC = `$(PACKAGE_CONFIG) --cflags libgnomecanvas-2.0`
-#CANVAS_INC = `$(PACKAGE_PATH) $(PACKAGE_CONFIG) --cflags libfoocanvas`
-
 
 INCLUDE_DIRS = $(GTK_INC) -I$(ZMAP_INCLUDE) -I. $(CURRENT_INC)
 
+
+#
+# Set up overall lib path for final application build.
+#
 GTK_LIBS = `$(PACKAGE_PATH) $(PACKAGE_CONFIG) --libs libfoocanvas gtk+-2.0 gthread-2.0 glib-2.0`
-#CANVAS_LIBS = `$(PACKAGE_CONFIG) --libs libgnomecanvas-2.0`
-#CANVAS_LIBS = `$(PACKAGE_PATH) $(PACKAGE_CONFIG) --libs libfoocanvas`
-
-
 
 CURL_LIBS = `curl-config --libs`
 
 EXPAT_LIBS = -lexpat
 
-
-ALL_LIBS = $(ZMAP_LIB_FLAGS) $(ACECONN_LIB_FLAGS) $(GTK_LIBS) $(CURL_LIBS) $(EXPAT_LIBS) 
+ALL_LIBS = $(ZMAP_LIB_FLAGS) $(ACECONN_LIB_FLAGS) $(GTK_LIBS) $(CURL_LIBS) $(EXPAT_LIBS) $(POPT_LIB_FLAGS) 
 
 
 #

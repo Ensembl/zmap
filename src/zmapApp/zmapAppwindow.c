@@ -26,14 +26,15 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 17 09:34 2004 (edgrif)
+ * Last edited: Nov  5 12:10 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.12 2004-09-17 08:34:39 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.13 2004-11-05 14:22:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <popt.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapApp_P.h>
 
@@ -43,6 +44,8 @@ static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
 static void quitCB(GtkWidget *widget, gpointer data) ;
 static void removeZmapRow(void *app_data, void *zmap) ;
+gboolean checkForCmdLineSequenceArgs(int argc, char *argv[],
+				     char **sequence_out, int *start_out, int *end_out) ;
 
 
 int test_global = 10 ;
@@ -51,10 +54,12 @@ int test_overlap = 0 ;
 
 int zmapMainMakeAppWindow(int argc, char *argv[])
 {
+  int main_rc = EXIT_SUCCESS ;
   ZMapAppContext app_context ;
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
   GtkWidget *kill_button, *quit_button ;
-
+  char *sequence ;
+  int start, end ;
 
   /* this all needs revving up sometime.... */
   if (argc > 1)
@@ -108,8 +113,21 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   gtk_widget_show_all(toplevel) ;
 
-  gtk_main() ;
 
+  /* Did user specify a sequence on the command line. */
+  sequence = NULL ;
+  start = 1 ;
+  end = 0 ;
+  if (!checkForCmdLineSequenceArgs(argc, argv, &sequence, &start, &end))
+    {
+      exit(EXIT_FAILURE) ;
+    }
+  else if (sequence)
+    {
+      zmapAppCreateZMap(app_context, sequence, start, end) ;
+    }
+
+  gtk_main() ;
 
   return(EXIT_SUCCESS) ;
 }
@@ -204,6 +222,64 @@ static void removeZmapRow(void *app_data, void *zmap_data)
   gtk_clist_remove(GTK_CLIST(app_context->clist_widg), row) ;
 
   return ;
+}
+
+
+
+/* Code below is for cmdline args style parsing, may wish to extract some of this at sometime
+ * into more generalised routines to go into utils....but for now this will do.... */
+
+/* 
+ * Note that long args must be specified as:   --opt=arg  -opt1=arg  etc.
+ * 
+ */
+
+
+gboolean checkForCmdLineSequenceArgs(int argc, char *argv[],
+				     char **sequence_out, int *start_out, int *end_out)
+{
+  gboolean result = FALSE ;
+  char *sequence = NULL ;
+  int start = -1, end = -1 ;
+  poptContext optCon ;
+  struct poptOption userOptionsTable[] =
+    {
+      {"start", '\0', POPT_ARG_INT, &start, 0,
+       "start coord in sequence", "start >= 1"},
+      {"end", '\0', POPT_ARG_INT, &end, 0,
+       "end coord in sequence", "end > start or end == 0 means show to end of sequence"},
+      {NULL, 0, 0, NULL, 0, NULL, NULL}
+  };
+  struct poptOption optionsTable[] = {
+    { NULL, '\0', POPT_ARG_INCLUDE_TABLE,  NULL, 0,
+      "Sequence Args", NULL },
+    POPT_AUTOHELP
+    { NULL, 0, 0, NULL, 0, NULL, NULL }
+  };
+  int popt_rc = 0 ;
+
+  optionsTable[0].arg = userOptionsTable ;
+
+  optCon = poptGetContext(NULL, argc, argv, optionsTable, 0) ;
+
+  popt_rc = poptGetNextOpt(optCon) ;
+
+  /* If there are no command line parsing errors and we get a sequence then return the stuff. */
+  if (popt_rc == -1 && (sequence = poptGetArg(optCon)))
+    {
+      *sequence_out = sequence ;
+
+      if (start != -1)
+	*start_out = start ;
+      if (end != -1)
+	*end_out = end ;
+
+      result = TRUE ;
+    }
+
+  optCon = poptFreeContext(optCon);
+
+  return result ;
 }
 
 

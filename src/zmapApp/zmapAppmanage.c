@@ -26,9 +26,9 @@
  *              
  * Exported functions: None, all functions internal to zmapApp.
  * HISTORY:
- * Last edited: May 17 15:20 2004 (edgrif)
+ * Last edited: Oct 18 14:52 2004 (edgrif)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.8 2004-05-17 16:25:43 edgrif Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.9 2004-11-05 14:22:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -113,10 +113,16 @@ static void stopThreadCB(GtkWidget *widget, gpointer cb_data)
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
   int row ;
 
+  printf("not implemented yet\n") ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (app_context->selected_zmap)
     {
       zMapManagerReset(app_context->selected_zmap) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -125,6 +131,7 @@ static void killThreadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
   int row ;
+
 
   if (app_context->selected_zmap)
     {

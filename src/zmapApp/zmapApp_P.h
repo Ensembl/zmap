@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  1 14:01 2004 (edgrif)
+ * Last edited: Nov  5 10:53 2004 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.7 2004-10-04 12:53:57 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.8 2004-11-05 14:22:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -73,6 +73,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[]) ;
 GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
+void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, int end) ;
 void zmapAppExit(ZMapAppContext app_context) ;
 
 

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct 18 12:50 2004 (edgrif)
+ * Last edited: Nov  5 13:55 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.14 2004-10-18 13:03:04 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.15 2004-11-05 14:22:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -145,12 +145,8 @@ static ZMapServerResponseType openConnection(void *server_in)
 }
 
 
-/* I'm not sure if I need to create a context in the server for acedb, really it would be a keyset
+/* I'm not sure if I need to create a context actually in the acedb server, really it could be a keyset
  * or a virtual sequence...don't know if we can do this via gif interface.... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapServerResponseType setContext(void *server_in, char *sequence, int start, int end)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
@@ -167,10 +163,6 @@ static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext c
   /* May want this to be dynamic some time, i.e. redone every time there is a request ? */
   server->method_str = getMethodString(context->types) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   feature_context = zMapFeatureContextCreate() ;
 
   if (!(status = getSequenceMapping(server, feature_context)))
@@ -580,6 +572,18 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
   char *parent_name = NULL, *parent_class = NULL ;
   ZMapMapBlockStruct sequence_to_parent = {0, 0, 0, 0}, parent_to_self = {0, 0, 0, 0} ;
   int parent_length = 0 ;
+
+  /* We have a special case where the caller can specify  end == 0  meaning "get the sequence
+   * up to the end", in this case we explicitly find out what the end is. */
+  if (server->end == 0)
+    {
+      int child_length ;
+
+      /* NOTE that we hard code sequence in here...but what to do...gff does not give back the
+       * class of the sequence object..... */
+      if (getSMapLength(server, "sequence", server->sequence, &child_length))
+	server->end =  child_length ;
+    }
 
   if (getSMapping(server, NULL, server->sequence, server->start, server->end,
 		  &parent_class, &parent_name, &sequence_to_parent)

@@ -27,6 +27,7 @@ CURRENT_OBJ = $(APP_OBJ)
 CURRENT_DEP = $(PUB_HDRS) $(APP_PRIV_HDRS)
 CURRENT_SRC = $(APP_PRIV_HDRS) $(APP_SRC) $(APP_CC_MAIN_SRC)
 CURRENT_REMOVE = cd $(BINDIR) ; rm -f $(APP_EXE) $(APP_CC_MAIN_OBJ) $(APP_CCC_MAIN_OBJ)
+CURRENT_INC = -I/nfs/team71/acedb/edgrif/ZMap/popt/popt-ins/include
 
 #
 # include all common defines
@@ -62,6 +63,13 @@ ACECONN_DIR = /nfs/disk100/acedb/Ace-Conn
 ACECONN_INCL_DIR = $(ACECONN_DIR)
 ACECONN_LIB_DIR = $(ACECONN_DIR)/bin.$(ACEDB_MACHINE)
 ACECONN_LIB_FLAGS = -L$(ACECONN_LIB_DIR) -lAceConn -lmd5
+
+
+# popt library for parsing command line args, this may be superceded when we switch to a
+# later version of glib which seems to be introducing its own version of cmdline parsing.
+# Linux is up to date by Alphas are not, hence by default we don't need a "-L" flag.
+POPT_LIB_DIR = 
+POPT_LIB_FLAGS = $(POPT_LIB_DIR) -lpopt
 
 
 

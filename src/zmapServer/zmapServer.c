@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Oct 13 14:39 2004 (edgrif)
+ * Last edited: Nov  5 13:51 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.14 2004-10-14 10:18:52 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.15 2004-11-05 14:22:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,26 +146,28 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server)
 }
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence, int start, int end)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapServerSetContext context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
     {
+      if (!context->sequence || !*(context->sequence)
+	  || (context->end != 0 && context->start > context->end))
+	{
+	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	  zMapLogWarning("Cannot set server context:%s%s",
+			 ((!context->sequence || !*(context->sequence)) ? " no sequence name" : ""),
+			 ((context->end != 0 && context->start > context->end)
+			  ? "bad coords, start > end" : "")) ;
+	}
+      else
+	{
+	  result = server->last_response = (server->funcs->set_context)(server->server_conn, context) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      result = server->last_response = (server->funcs->set_context)(server->server_conn,
-								    sequence, start, end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      result = server->last_response = (server->funcs->set_context)(server->server_conn, context) ;
-
-      if (result != ZMAP_SERVERRESPONSE_OK)
-	server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
+	  if (result != ZMAP_SERVERRESPONSE_OK)
+	    server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
+	}
     }
 
   return result ;
