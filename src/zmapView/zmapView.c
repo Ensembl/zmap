@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 16 12:57 2004 (edgrif)
+ * Last edited: Jul 16 14:48 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.8 2004-07-16 12:01:10 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.9 2004-07-19 09:29:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -714,13 +714,17 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		{
 		  if (zmap_view->state == ZMAPVIEW_RUNNING)
 		    {
-		      
+		      ZMapFeatureContext new_features ;
+
 		      zMapDebug("GUI: thread %x, got data\n",
 				zMapConnGetThreadid(connection)) ;
 
 		      /* Is this right....????? check my logic here....  */
 		      zMapConnSetReply(connection, ZMAP_REPLY_WAIT) ;
 		  
+
+		      /* Note gross assumption here that data is features, in the end we may
+		       * be getting different sorts of data back..... */
 
 
 		      /* What we really need to do is to merge the data here.......
@@ -729,8 +733,14 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		       * This should be a call to a merge function which merges new data
 		       * with existing data.....
 		       *  */
-		      zmap_view->features = (ZMapFeatureContext)data ;
+		      new_features = (ZMapFeatureContext)data ;
 
+		      /* NOTE HOW THE FACT THAT WE KNOW NOTHING ABOUT WHERE THIS DATA CAME FROM
+		       * MEANS THAT WE NEED TO PASS A HEADER WITH THE DATA SO WE CAN SAY WHERE
+		       * THE INFORMATION CAME FROM AND WHAT SORT OF REQUEST IT WAS..... */
+		      /* Merge new data with existing data (if any). */
+		      if (!zmapViewMergeFeatures(&(zmap_view->features), new_features))
+			zMapLogCritical("%s", "Cannot merge feature data from....") ;
 
 		      /* Signal the ZMap that there is work to be done. */
 		      displayDataWindows(zmap_view, data) ;

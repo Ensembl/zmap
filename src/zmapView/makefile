@@ -14,8 +14,8 @@ MAKE_DIR = $(ROOT_DIRECTORY)/zmapMake
 # local macros
 CONT_PRIV_HDRS = zmapView_P.h
 PUB_HDRS = zmapView.h
-CONT_SRC = zmapView.c
-CONT_OBJ = zmapView.o
+CONT_SRC = zmapView.c zmapViewFeatures.c
+CONT_OBJ = zmapView.o zmapViewFeatures.o
 
 
 

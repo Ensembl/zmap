@@ -19,24 +19,24 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk and
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
  *
  * Description: Draws genomic features in the data display window.
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 15 16:02 2004 (rnc)
+ * Last edited: Jul 19 10:31 2004 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.3 2004-07-15 16:34:51 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.4 2004-07-19 09:32:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindow_P.h>
 #include <ZMap/zmapDraw.h>
 
-typedef struct _ParamStruct {
+typedef struct _ParamStruct
+{
   FooCanvas *thisCanvas;
   int height;
   int length;
@@ -45,6 +45,7 @@ typedef struct _ParamStruct {
 
 
 static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
+static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user_data);
 
 
 void zmapWindowDrawFeatures(FooCanvas *canvas, ZMapFeatureContext feature_context)
@@ -115,20 +116,40 @@ void zmapWindowDrawFeatures(FooCanvas *canvas, ZMapFeatureContext feature_contex
 			 feature_context->sequence_to_parent.c2);
 
   if (feature_context)
-      g_datalist_foreach(&(feature_context->features), zmapWindowProcessFeatureSet, &params);
+    g_datalist_foreach(&(feature_context->feature_sets), zmapWindowProcessFeatureSet, &params);
 
   //  gtk_widget_show_all(navHBox);
+
   return;
 }
 
 
+
+/* Called for each feature set, it then calls a routine to draw each of its features.  */
 static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 {
-  ZMapFeatureSet zMapFeatureSet = (ZMapFeatureSet)data;
-  ZMapFeature zMapFeature;
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
+
+
+  g_datalist_foreach(&(feature_set->features), zmapWindowProcessFeature, user_data) ;
+
+
+  return ;
+}
+
+
+
+
+/* ROB, what I have done may mess up your group structs...e.g. how does the group id get
+ * into this routine ? Needs to be added to your params struct maybe ? I didn't try and sort
+ * this out as I didn't want to mess stuff up */
+
+static void zmapWindowProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeature zMapFeature = (ZMapFeature)data ;
+  ParamStruct *params = (ParamStruct*)user_data;
   ZMapSpan zMapSpan, prevSpan;
   ZMapAlignBlock *zMapAlign, *prevAlign;
-  ParamStruct *params = (ParamStruct*)user_data;
   int i, j;
   double offset = 40.0, column_spacing = 40.0, column_position;
   double box_width = 10.0;
@@ -139,72 +160,74 @@ static void zmapWindowProcessFeatureSet(GQuark key_id, gpointer data, gpointer u
 
   // NB for each column we create a new canvas group, with the initial y coordinate set to
   // 5.0 to just drop it a teeny bit from the top of the window.  All items live in the group.
-  for (i = 0; i < zMapFeatureSet->features->len; i++)
+  column_position = offset + column_spacing;
+
+  switch (zMapFeature->type)
     {
-      column_position = offset + column_spacing;
-
-      zMapFeature = &g_array_index(zMapFeatureSet->features, ZMapFeatureStruct, i);
-
-      switch (zMapFeature->type)
-	{
-	case ZMAPFEATURE_HOMOL:     /* type 1 is a homol */
-	  group = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
-				      foo_canvas_group_get_type(),
-				      "x",(double)column_position,
-				      "y",(double)5.0,
-				      NULL);
+    case ZMAPFEATURE_HOMOL:     /* type 1 is a homol */
+      group = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
+				  foo_canvas_group_get_type(),
+				  "x", (double)column_position,
+				  "y", (double)5.0,
+				  NULL);
 	      
-	  zmapDrawBox(group, column_position, (zMapFeature->feature.homol.y1 * params->height / params->length), 
-		      column_position + box_width, (zMapFeature->feature.homol.y2 * params->height / params->length),
-		      "black", "green");
-	  break;
+      zmapDrawBox(group, column_position,
+		  (zMapFeature->feature.homol.y1 * params->height / params->length), 
+		  column_position + box_width, 
+		  (zMapFeature->feature.homol.y2 * params->height / params->length),
+		  "black", "green");
+      break;
 
-	case ZMAPFEATURE_TRANSCRIPT:     /* type 4 is a transcript */
-	  column_position = offset;
-	  group = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
-				      foo_canvas_group_get_type(),
-				      "x",(double)column_position,
-				      "y",(double)5.0,
-				      NULL);
+    case ZMAPFEATURE_TRANSCRIPT:     /* type 4 is a transcript */
+      column_position = offset;
+      group = foo_canvas_item_new(foo_canvas_root(params->thisCanvas),
+				  foo_canvas_group_get_type(),
+				  "x", (double)column_position,
+				  "y", (double)5.0,
+				  NULL);
 	  
-	  for (j = 1; j < zMapFeature->feature.transcript.exons->len; j++)
-	    {
-	      zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
-	      prevSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j-1);
-	      middle = ((prevSpan->x2 + zMapSpan->x1)/2) * params->height/params->length;
-	      y0 = prevSpan->x1 * params->height/params->length; // y coord of preceding exon
-	      y1 = prevSpan->x2 * params->height/params->length;
-	      y2 = zMapSpan->x1 * params->height/params->length;
+      for (j = 1; j < zMapFeature->feature.transcript.exons->len; j++)
+	{
+	  zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
+	  prevSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j-1);
+	  middle = ((prevSpan->x2 + zMapSpan->x1)/2) * params->height/params->length;
+	  y0 = prevSpan->x1 * params->height/params->length; // y coord of preceding exon
+	  y1 = prevSpan->x2 * params->height/params->length;
+	  y2 = zMapSpan->x1 * params->height/params->length;
 
-	      // skip this intron if its preceding exon is too small to draw.  We use
-	      // y0 and y1 since they are screen coordinates independent of magnification.
-	      // Note this is a kludge which will meet its come-uppance during zooming
-	      // because zooming doesn't revisit this block of code, so tiny exons will
-	      // appear when zoomed, but the intervening introns will be lost forever.
+	  // skip this intron if its preceding exon is too small to draw.  We use
+	  // y0 and y1 since they are screen coordinates independent of magnification.
+	  // Note this is a kludge which will meet its come-uppance during zooming
+	  // because zooming doesn't revisit this block of code, so tiny exons will
+	  // appear when zoomed, but the intervening introns will be lost forever.
 
-	      if (y2 > y1 && y0 +2 <= y1)
-		{
-		  zmapDrawLine(FOO_CANVAS_GROUP(group), column_position + box_width/2, y1,
-			       column_position + box_width, middle, "blue", line_width);
-		  zmapDrawLine(FOO_CANVAS_GROUP(group), column_position + box_width, middle, 
-			       column_position + box_width/2, y2, "blue", line_width);
-		}
-	    }	  
-	  for (j = 0; j < zMapFeature->feature.transcript.exons->len; j++)
+	  if (y2 > y1 && y0 +2 <= y1)
 	    {
-	      zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
-	      
-	      zmapDrawBox(group, column_position, (zMapSpan->x1 * params->height / params->length), 
-			  column_position + box_width, (zMapSpan->x2 * params->height / params->length),
-			  "black", "blue");
+	      zmapDrawLine(FOO_CANVAS_GROUP(group), column_position + box_width/2, y1,
+			   column_position + box_width, middle, "blue", line_width);
+	      zmapDrawLine(FOO_CANVAS_GROUP(group), column_position + box_width, middle, 
+			   column_position + box_width/2, y2, "blue", line_width);
 	    }
-	  break;
-
-	default:
-	  break;
+	}	  
+      for (j = 0; j < zMapFeature->feature.transcript.exons->len; j++)
+	{
+	  zMapSpan = &g_array_index(zMapFeature->feature.transcript.exons, ZMapSpanStruct, j);
+	      
+	  zmapDrawBox(group, column_position,
+		      (zMapSpan->x1 * params->height / params->length), 
+		      column_position + box_width,
+		      (zMapSpan->x2 * params->height / params->length),
+		      "black", "blue");
 	}
+      break;
+
+    default:
+      break;
     }
   
   return;
 }
+
+
+
 /****************** end of file ************************************/
