@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: Apr  6 12:52 2004 (edgrif)
+ * Last edited: May  6 15:37 2004 (edgrif)
  * Created: Thu Apr  1 14:33:04 2004 (edgrif)
- * CVS info:   $Id: zmapConfigRead.c,v 1.1 2004-04-08 16:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapConfigRead.c,v 1.2 2004-05-07 09:21:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,6 +61,25 @@ typedef enum {STANZA_OUTSIDE,
 	      STANZA_BEGIN, STANZA_INSIDE, STANZA_ID, STANZA_VALUE, STANZA_END} ZMapStanzaState ;
 
 
+/* define enumeration values to be returned for specific symbols */
+enum {SYMBOL_TRUE = G_TOKEN_LAST + 1, SYMBOL_FALSE} ;
+
+/* symbol array */
+typedef struct
+{
+  gchar *symbol_name;
+  guint  symbol_token;
+} symbolStruct ;
+
+static symbolStruct symbols[] =
+  {
+    { "true", SYMBOL_TRUE, },
+    { "false", SYMBOL_FALSE, },
+    { NULL, 0, },
+  } ;
+
+
+
 static gboolean parsefile(ZMapConfig config, GScanner *scanner) ;
 
 
@@ -68,12 +87,31 @@ static gboolean parsefile(ZMapConfig config, GScanner *scanner) ;
 gboolean zmapGetUserConfig(ZMapConfig config)
 {
   gboolean result = FALSE ;
-  GScanner *scanner ;
   int file_fd ;
+  GScanner *scanner ;
+  symbolStruct *symbol_p = symbols ;
+
 
   if ((file_fd = open(config->config_file, O_RDONLY, S_IRUSR)) != -1)
     {
       scanner = g_scanner_new(NULL) ;
+
+      /* Set up scanner in the way we want. */
+
+
+      /* I CAN'T SEEM TO GET THIS TO WORK SO I DO IT ALL A BIT LONG-WINDED IN THE PARSING. */
+      /* scanner->config->symbol_2_token = TRUE; */ /* don't return G_TOKEN_SYMBOL, but the symbol's value */
+
+
+
+      while (symbol_p->symbol_name)
+	{
+	  g_scanner_add_symbol(scanner,
+			       symbol_p->symbol_name,
+			       GINT_TO_POINTER (symbol_p->symbol_token)) ;
+	  symbol_p++ ;
+	}
+      
 
       g_scanner_input_file(scanner, file_fd) ;
 
@@ -208,17 +246,28 @@ static gboolean parsefile(ZMapConfig config, GScanner *scanner)
 
 	    switch (token)
 	      {
-	      case G_TOKEN_CHAR:
-		{
-		  current_element->type = ZMAPCONFIG_BOOL ;
-		  if (current_value.v_char == 't')
-		    current_element->data.b = TRUE ;
-		  else if (current_value.v_char == 'f')
-		    current_element->data.b = FALSE ;
-		  else
-		    token = G_TOKEN_ERROR ;
-		  break ;
-		}
+		case G_TOKEN_SYMBOL:
+		  {
+		    switch (current_value.v_int)
+		      {
+		      case SYMBOL_TRUE:
+			{
+			  current_element->type = ZMAPCONFIG_BOOL ;
+			  current_element->data.b = TRUE ;
+			  break ;
+			}
+		      case SYMBOL_FALSE:
+			{
+			  current_element->type = ZMAPCONFIG_BOOL ;
+			  current_element->data.b = FALSE ;
+			  break ;
+			}
+		      default:
+			token = G_TOKEN_ERROR ;
+			break ;
+		      }
+		    break ;
+		  }
 	      case G_TOKEN_INT:
 		{
 		  current_element->type = ZMAPCONFIG_INT ;
