@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov 29 15:24 2004 (rnc)
+ * Last edited: Dec 20 10:56 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.20 2004-11-29 16:30:22 rnc Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.21 2004-12-20 10:57:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,7 +65,6 @@ typedef struct
 
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 {
-  GtkWidget *frame ;
   GtkWidget *hbox, *new_button,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     *load_button,
@@ -74,13 +73,8 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *hsplit_button, *vsplit_button, *zoomin_button, *zoomout_button,
     *close_button ;
 
-  frame = gtk_frame_new(NULL);
-  gtk_container_border_width(GTK_CONTAINER(frame), 5);
-
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
-  gtk_container_add(GTK_CONTAINER(frame), hbox);
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Disabled for now, need to do work on view... */
@@ -136,8 +130,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   GTK_WIDGET_SET_FLAGS(quit_button, GTK_CAN_DEFAULT) ;
   gtk_window_set_default(GTK_WINDOW(zmap->toplevel), quit_button) ;
 
-
-  return frame ;
+  return hbox ;
 }
 
 
@@ -146,16 +139,15 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 void zmapControlWindowDoTheZoom(ZMap zmap, double zoom)
 {
   ZMapPane pane = zmap->focuspane ;
-  ZMapWindowZoomStatus zoom_status ;
 
-  zoom_status = zMapWindowZoom(zMapViewGetWindow(pane->curr_view_window), zoom) ;
-
-  zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
+  zMapWindowZoom(zMapViewGetWindow(pane->curr_view_window), zoom) ;
 
   return ;
 }
 
 
+/* Provide user with visual feedback about status of zooming via the sensitivity of
+ * the zoom buttons. */
 void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status)
 {
 
