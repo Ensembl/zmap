@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Dec 15 13:46 2004 (edgrif)
+ * Last edited: Mar 18 10:25 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.22 2004-12-15 14:13:13 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.23 2005-03-23 07:57:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -50,9 +50,6 @@ enum {ZMAPFEATUREID_NULL = 0} ;
 
 
 
-
-/* Output format for dumping data to a file */
-enum format { TAB_DELIMITED, GFF }; 
 
 
 typedef int Coord ;					    /* we do need this here.... */
@@ -297,7 +294,7 @@ ZMapFeatureContext zMapFeatureContextCreate(char *sequence) ;
 gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext new_context,
 				 ZMapFeatureContext *diff_context_out) ;
-void zMapFeatureDump(ZMapFeatureContext feature_context, char *file, int format) ;
+void zMapFeatureDump(ZMapFeatureContext feature_context, char *file) ;
 void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
 

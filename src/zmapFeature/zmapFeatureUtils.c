@@ -26,56 +26,39 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Dec 15 12:15 2004 (edgrif)
+ * Last edited: Mar 18 13:44 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.5 2004-12-15 14:13:14 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.6 2005-03-23 07:57:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
 
 
-static void contextDump_TD(ZMapFeatureContext feature_context, GIOChannel *channel);
-static void setDump_TD(GQuark key_id, gpointer data, gpointer user_data);
-static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data);
-static gboolean printLine(GIOChannel *channel, gchar *line);
+typedef struct
+{
+  gboolean status ;
+  GIOChannel *channel ;
+} DumpFeaturesStruct, *DumpFeatures ;
+
+
+static void printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures feature_dump) ;
+static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
+static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
+static gboolean printLine(GIOChannel *channel, gchar *line) ;
 
 
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 
 
-char *zmapFeatureLookUpEnum(int id, int enumType)
-{
-  /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
-  static char *types[]   = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
-			    "VARIATION", "BOUNDARY", "SEQUENCE"} ;
-  static char *strands[] = {"ZMAPSTRAND_NONE", "ZMAPSTRAND_DOWN", "ZMAPSTRAND_UP" } ;
-  static char *phases[]  = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" } ;
-  char *enum_str = NULL ;
 
-  zMapAssert(enumType == TYPE_ENUM || enumType == STRAND_ENUM || enumType == PHASE_ENUM) ;
-
-  switch (enumType)
-    {
-    case TYPE_ENUM:
-      enum_str = types[id];
-      break;
-      
-    case STRAND_ENUM:
-      enum_str = strands[id];
-      break;
-      
-    case PHASE_ENUM:
-      enum_str = phases[id];
-      break;
-    }
-  
-  return enum_str ;
-}
-
+/* This function creates a unique id for a feature. This is essential if we are to use the
+ * g_datalist package to hold and reference features. Code should _ONLY_ use this function
+ * to produce these IDs. */
 char *zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
 			  int start, int end, int query_start, int query_end)
 {
@@ -126,234 +109,157 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
 }
 
 
-
-void zMapFeatureDump(ZMapFeatureContext feature_context, char *file, int format)
+/* Dump out a feature context, if file is NULL then goes to stdout. */
+void zMapFeatureDump(ZMapFeatureContext feature_context, char *file)
 {
-  GIOChannel *channel;
-  GError     *channel_error = NULL;
-  char       *base_dir = (char *)g_get_home_dir();  /* do not free after use */
-  char       *filepath = g_strdup_printf("%s/%s", base_dir, file);
+  DumpFeaturesStruct dump_features ;
+  GIOChannel *channel ;
+  GError *channel_error = NULL ;
+  char *filepath = NULL ;
+
+
+  zMapAssert(feature_context) ;
 
   
   /* open output file */
-  if (!(channel = g_io_channel_new_file(filepath, "w", &channel_error)))
+  if (!file)
     {
-      zMapShowMsg(ZMAP_MSG_EXIT, "Can't open output file: %s :%s\n", filepath, channel_error->message);
-      g_error_free(channel_error);
+      filepath = g_strdup("stdout") ;
+
+      channel = g_io_channel_unix_new(STDOUT_FILENO) ;
     }
   else
     {
-      /* dump out the data */
-      if (format == TAB_DELIMITED)
+      if (g_path_is_absolute(file))
+	filepath = g_strdup(file) ;
+      else
 	{
-	  contextDump_TD(feature_context, channel);
+	  gchar *curr_dir = g_get_current_dir() ;
+
+	  filepath = g_build_path("/", curr_dir, file, NULL) ;
+
+	  g_free(curr_dir) ;
 	}
 
+      channel = g_io_channel_new_file(filepath, "w", &channel_error) ;
+    }
+
+  if (!channel)
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, "Can't open output file \"%s\": %s",
+		  filepath, channel_error->message) ;
+      g_error_free(channel_error) ;
+    }
+  else
+    {
+      dump_features.status = TRUE ;
+      dump_features.channel = channel ;
+
+      /* dump out the data */
+      printFeatureContext(feature_context, &dump_features) ;
 
       /* close output file */
-      if (channel)
+      if (g_io_channel_shutdown(channel, TRUE, &channel_error) != G_IO_STATUS_NORMAL)
 	{
-	  if (!g_io_channel_shutdown(channel, TRUE, &channel_error))
-	    {
-	      zMapShowMsg(ZMAP_MSG_EXIT, "Error closing output file: %s :%s\n", filepath, channel_error->message);
-	      g_error_free(channel_error);
-	    }
-	  else 
-	    zMapShowMsg(ZMAP_MSG_INFORMATION, "Sequence successfully dumped to file\n");
+	  zMapShowMsg(ZMAP_MSG_WARNING, "Error closing output file \"%s\": %s",
+		      filepath, channel_error->message) ;
+	  g_error_free(channel_error) ;
 	}
-    }
-  g_free(filepath);
-
-  return;
-}
-
-
-static void contextDump_TD(ZMapFeatureContext feature_context, GIOChannel *channel)
-{
-  GString *line;
-
-  if (feature_context)
-    {
-      line  = g_string_sized_new(150);
-      g_string_printf(line, "%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", 
-		      feature_context->sequence_name, 
-		      feature_context->parent_name,
-		      feature_context->parent_span.x1,
-		      feature_context->parent_span.x2,
-		      feature_context->sequence_to_parent.p1,
-		      feature_context->sequence_to_parent.p2,
-		      feature_context->sequence_to_parent.c1,
-		      feature_context->sequence_to_parent.c2,
-		      feature_context->features_to_sequence.p1,
-		      feature_context->features_to_sequence.p2,
-		      feature_context->features_to_sequence.c1,
-		      feature_context->features_to_sequence.c2
-		      );
-
-      /* Only proceed if there's no problem printing the line */
-      if (printLine(channel, line->str) == TRUE)
-	g_datalist_foreach(&(feature_context->feature_sets), setDump_TD, channel);
-
-      g_string_free(line, FALSE);
+      else 
+	zMapShowMsg(ZMAP_MSG_INFORMATION, "Feature Context dumped to \"%s\"", filepath) ;
     }
 
-  return;
-}
-
-
-static void setDump_TD(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeatureSet feature_set = (ZMapFeatureSet)data;
-  GIOChannel *channel = (GIOChannel*)user_data;
-  GString *line;
-
-  if (feature_set)
-    {
-      line = g_string_sized_new(50);
-      g_string_printf(line, "%s\n", feature_set->source);
-
-      /* Only proceed if there's no problem printing the line */
-      if (printLine(channel, line->str) == TRUE)
-	g_datalist_foreach(&(feature_set->features), featureDump_TD, channel);
-    
-      g_string_free(line, FALSE);
-    }
-  return;
-}
-
-
-static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeature feature = (ZMapFeature)data;
-  GIOChannel *channel = (GIOChannel*)user_data;
-  char *type, *strand, *phase;
-  GString *line;
-  gboolean unused;
-
-  if (feature)
-    {
-      line = g_string_sized_new(150);
-      type   = zmapFeatureLookUpEnum(feature->type, TYPE_ENUM);
-      strand = zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM);
-      phase  = zmapFeatureLookUpEnum(feature->phase, PHASE_ENUM);
-
-      g_string_printf(line, "%d\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%f", 
-		      feature->db_id,
-		      feature->name,
-		      type,
-		      feature->x1,
-		      feature->x2,
-		      feature->method,
-		      feature->method_name,
-		      strand,
-		      phase,
-		      feature->score
-		      );
-      if (feature->text)
-	{
-	  g_string_append_c(line, '\t');
-	  g_string_append  (line, feature->text);
-	}
-
-      /* all these extra fields not required for now.
-      *if (feature->type == ZMAPFEATURE_HOMOL)
-      *{
-      * line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d\t%f\t", line,
-      *			 feature->feature.homol.type,
-      *			 feature->feature.homol.y1,
-      *			 feature->feature.homol.y2,
-      *			 feature->feature.homol.target_strand,
-      *			 feature->feature.homol.target_phase,
-      *			 feature->feature.homol.score
-      *			 );   
-      * for (i = 0; i < feature->feature.homol.align->len; i++)
-      *   {
-      *     align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
-      *     line = g_strdup_printf("%s\t%d\t%d\t%d\t%d", line,
-      *			     align->q1,
-      *			     align->q2,
-      *		     align->t1,
-      *			     align->t2
-      *			     );
-      *   }
-      *
-      *else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-      *{
-      *  line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d", line,
-      *			 feature->feature.transcript.cdsStart,
-      *			 feature->feature.transcript.cdsEnd,
-      *			 feature->feature.transcript.start_not_found,
-      *			 feature->feature.transcript.cds_phase,
-      *			 feature->feature.transcript.endNotFound
-      *			 );   
-      *  for (i = 0; i < feature->feature.transcript.exons->len; i++)
-      *    {
-      *      exon = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
-      *      line = g_strdup_printf("%s\t%d\t%d", line,
-      *			     exon->x1,
-      *			     exon->x2
-      *			     );
-      *    }
-      *}
-      */
-
-      g_string_append_c(line, '\n');
-      unused = printLine(channel, line->str);
-
-      g_string_free(line, FALSE);
-    }
-
-
-  return;
-}
-
-
-
-static gboolean printLine(GIOChannel *channel, gchar *line)
-{
-  gboolean status = TRUE;
-  gsize bytes_written;
-  GError *channel_error = NULL;
-
-
-  if (channel)
-    {
-      if (!g_io_channel_write_chars(channel, line, -1, &bytes_written, &channel_error))
-	{
-	  zMapShowMsg(ZMAP_MSG_EXIT, "Error writing to output file: %30s :%s\n", line, channel_error->message);
-	  g_error_free(channel_error);
-	  status = FALSE;
-	}
-    }
-
-  return status;
-}
-
-
-
-/* THESE ROUTINES NEED TO BE MERGED WITH THE ABOVE TO PROVIDE JUST ONE SET OF DEBUG/PRINT FUNCS. */
-
-/* some debugging stuff........ */
-void zmapPrintFeatureContext(ZMapFeatureContext context)
-{
-  char *prefix = "Context" ;
-
-  printf("%s :  %s\n", prefix, context->sequence_name) ;
-
-  g_datalist_foreach(&(context->feature_sets), printFeatureSet, NULL) ;
-
+  g_free(filepath) ;
 
   return ;
 }
 
+
+
+char *zmapFeatureLookUpEnum(int id, int enumType)
+{
+  /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
+  static char *types[]   = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
+			    "VARIATION", "BOUNDARY", "SEQUENCE"} ;
+  static char *strands[] = {"ZMAPSTRAND_NONE", "ZMAPSTRAND_DOWN", "ZMAPSTRAND_UP" } ;
+  static char *phases[]  = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" } ;
+  char *enum_str = NULL ;
+
+  zMapAssert(enumType == TYPE_ENUM || enumType == STRAND_ENUM || enumType == PHASE_ENUM) ;
+
+  switch (enumType)
+    {
+    case TYPE_ENUM:
+      enum_str = types[id];
+      break;
+      
+    case STRAND_ENUM:
+      enum_str = strands[id];
+      break;
+      
+    case PHASE_ENUM:
+      enum_str = phases[id];
+      break;
+    }
+  
+  return enum_str ;
+}
+
+
+
+
+
+/* 
+ *              Internal routines.
+ */
+
+
+static void printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures dump_features)
+{
+  char *line ;
+
+  line = g_strdup_printf("Feature Context:\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", 
+			 feature_context->sequence_name, 
+			 feature_context->parent_name,
+			 feature_context->parent_span.x1,
+			 feature_context->parent_span.x2,
+			 feature_context->sequence_to_parent.p1,
+			 feature_context->sequence_to_parent.p2,
+			 feature_context->sequence_to_parent.c1,
+			 feature_context->sequence_to_parent.c2,
+			 feature_context->features_to_sequence.p1,
+			 feature_context->features_to_sequence.p2,
+			 feature_context->features_to_sequence.c1,
+			 feature_context->features_to_sequence.c2) ;
+
+  /* Only proceed if there's no problem printing the line */
+  if ((dump_features->status = printLine(dump_features->channel, line)))
+    g_datalist_foreach(&(feature_context->feature_sets), printFeatureSet, dump_features) ;
+
+  g_free(line) ;
+
+  return ;
+}
+
+
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
-  char *prefix = "\t\tFeature Set" ;
+  DumpFeatures dump_features = (DumpFeatures)user_data ;
+  char *line ;
 
-  printf("%s :  %s\n", prefix, feature_set->source) ;
+  /* Once we have failed then we stop printing, note that there is no way to stop this routine
+   * being called which is a shame.... */
+  if (!dump_features->status)
+    return ;
 
-  g_datalist_foreach(&(feature_set->features), printFeature, NULL) ;
+  line = g_strdup_printf("\tFeature Set:\t%s\n", feature_set->source) ;
+
+  /* Only proceed if there's no problem printing the line */
+  if ((dump_features->status = printLine(dump_features->channel, line)))
+    g_datalist_foreach(&(feature_set->features), printFeature, dump_features) ;
+    
+  g_free(line) ;
 
   return ;
 }
@@ -362,23 +268,109 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 static void printFeature(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
-  char *prefix = "\t\t\t\tFeature" ;
+  DumpFeatures dump_features = (DumpFeatures)user_data ;
+  char *type, *strand, *phase ;
+  GString *line ;
+  gboolean unused ;
 
-  printf("%s :  %s\t%s\n", prefix, (char *)g_quark_to_string(key_id), feature->name) ;
+
+  /* Once we have failed then we stop printing, note that there is no way to stop this routine
+   * being called which is a shame.... */
+  if (!dump_features->status)
+    return ;
+
+
+  line = g_string_sized_new(150);
+  type   = zmapFeatureLookUpEnum(feature->type, TYPE_ENUM);
+  strand = zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM);
+  phase  = zmapFeatureLookUpEnum(feature->phase, PHASE_ENUM);
+  
+  g_string_printf(line, "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%f", 
+		  (char *)g_quark_to_string(key_id),
+		  feature->db_id,
+		  feature->name,
+		  type,
+		  feature->x1,
+		  feature->x2,
+		  feature->method,
+		  feature->method_name,
+		  strand,
+		  phase,
+		  feature->score) ;
+  if (feature->text)
+    {
+      g_string_append_c(line, '\t');
+      g_string_append(line, feature->text);
+    }
+
+  /* all these extra fields not required for now.
+   *if (feature->type == ZMAPFEATURE_HOMOL)
+   *{
+   * line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d\t%f\t", line,
+   *			 feature->feature.homol.type,
+   *			 feature->feature.homol.y1,
+   *			 feature->feature.homol.y2,
+   *			 feature->feature.homol.target_strand,
+   *			 feature->feature.homol.target_phase,
+   *			 feature->feature.homol.score
+   *			 );   
+   * for (i = 0; i < feature->feature.homol.align->len; i++)
+   *   {
+   *     align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
+   *     line = g_strdup_printf("%s\t%d\t%d\t%d\t%d", line,
+   *			     align->q1,
+   *			     align->q2,
+   *		     align->t1,
+   *			     align->t2
+   *			     );
+   *   }
+   *
+   *else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+   *{
+   *  line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d", line,
+   *			 feature->feature.transcript.cdsStart,
+   *			 feature->feature.transcript.cdsEnd,
+   *			 feature->feature.transcript.start_not_found,
+   *			 feature->feature.transcript.cds_phase,
+   *			 feature->feature.transcript.endNotFound
+   *			 );   
+   *  for (i = 0; i < feature->feature.transcript.exons->len; i++)
+   *    {
+   *      exon = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
+   *      line = g_strdup_printf("%s\t%d\t%d", line,
+   *			     exon->x1,
+   *			     exon->x2
+   *			     );
+   *    }
+   *}
+   */
+
+  g_string_append_c(line, '\n');
+
+  dump_features->status = printLine(dump_features->channel, line->str) ;
+
+  g_string_free(line, TRUE) ;
 
   return ;
 }
 
 
+/* Should have a prefix level ?? */
+static gboolean printLine(GIOChannel *channel, gchar *line)
+{
+  gboolean status = TRUE ;
+  gsize bytes_written ;
+  GError *channel_error = NULL ;
 
+  if (g_io_channel_write_chars(channel, line, -1, &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, "Error writing to output file: %50s... : %s",
+		  line, channel_error->message) ;
+      g_error_free(channel_error) ;
+      status = FALSE ;
+    }
 
-
-
-
-
-
-
-/****************************** end of file *******************************/
-
+  return status ;
+}
 
 

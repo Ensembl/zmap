@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 25 17:41 2005 (edgrif)
+ * Last edited: Mar 18 13:23 2005 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.6 2005-01-25 17:49:56 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.7 2005-03-23 07:57:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -99,17 +99,15 @@ GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
 }
 
 
-
+/* Should pop up a dialog box to ask for a file name....e.g. the file chooser. */
 static void featureDumpCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = (ZMap)cb_data;
-  gchar *file = g_strdup_printf(".ZMap/ZMapDump.td");
+  ZMap zmap = (ZMap)cb_data ;
+  gchar *file = "ZMap.features" ;
 
-  zmapViewFeatureDump(zmap->focus_viewwindow, file, TAB_DELIMITED);
-  g_free (file);
-  file = NULL;
+  zmapViewFeatureDump(zmap->focus_viewwindow, file) ;
 
-  return;
+  return ;
 }
 
 
