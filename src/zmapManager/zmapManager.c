@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: Jan 22 13:26 2004 (edgrif)
+ * Last edited: Mar  1 17:58 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.3 2004-01-23 13:28:10 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.4 2004-03-03 12:18:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@ static void removeZmapEntry(ZMapManager zmaps, ZMap zmap) ;
 
 
 
-ZMapManager zMapManagerInit(zmapAppCallbackFunc zmap_deleted_func, void *gui_data)
+ZMapManager zMapManagerCreate(zmapAppCallbackFunc zmap_deleted_func, void *gui_data)
 {
   ZMapManager manager ;
 
@@ -56,33 +56,40 @@ ZMapManager zMapManagerInit(zmapAppCallbackFunc zmap_deleted_func, void *gui_dat
 }
 
 
-/* Add a new zmap window with associated thread and all the gubbins. */
-ZMap zMapManagerAdd(ZMapManager zmaps, char *sequence)
+/* Add a new zmap window with associated thread and all the gubbins.
+ * Returns FALSE on failure. */
+gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, ZMap *zmap_out)
 {
-  ZMap zmap ;
+  gboolean result = FALSE ;
+  ZMap zmap = NULL ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if ((zmap = zMapCreate((void *)zmaps, managerCB, zmaps->config))
       && zMapConnect(zmap, sequence))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if ((zmap = zMapCreate(sequence, (void *)zmaps, managerCB, zmaps->config))
+      && zMapConnect(zmap))
+
     {
       zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
-    }
-  else
-    {
-      printf("Aggghhhh, not able to create a zmap....\n") ;
+      *zmap_out = zmap ;
+      result = TRUE ;
     }
 
-  return zmap ;
+  return result ;
 }
 
 
-void zMapManagerLoadData(ZMap zmap)
+gboolean zMapManagerLoadData(ZMapManager zmaps_currently_unused, ZMap zmap)
 {
+  gboolean result = FALSE ;
 
   /* For now I've put in a blank sequence, in the end we would like the user to be able
    * to interactively set this.... */
-  zMapLoad(zmap, "") ;
+  result = zMapLoad(zmap, "") ;
 
-  return ;
+  return result ;
 }
 
 
@@ -97,27 +104,42 @@ void zMapManagerLoadData(ZMap zmap)
  * machine/port/sequence or to enter data for a new sequence etc.
  * 
  *  */
-void zMapManagerReset(ZMap zmap)
+gboolean zMapManagerReset(ZMap zmap)
 {
+  gboolean result = TRUE ;
 
   /* We need a new windows call to reset the window and blank it. */
 
   /* We need to destroy the existing thread connection and start a new one...watch out,
    * remember the destroy will be asynchronous..... */
 
-  return ;
+  return result ;
 }
 
 
 
-void zMapManagerKill(ZMapManager zmaps, ZMap zmap)
+gboolean zMapManagerKill(ZMapManager zmaps, ZMap zmap)
 {
-  zMapDestroy(zmap) ;
+  gboolean result = TRUE ;
+
+  result = zMapDestroy(zmap) ;
 
   removeZmapEntry(zmaps, zmap) ;
 
-  return ;
+  return result ;
 }
+
+
+/* A dummy entry at the moment.... */
+gboolean zMapManagerDestroy(ZMapManager zmaps)
+{
+  gboolean result = TRUE ;
+
+  printf("zMapManagerDestroy() not implemented at the moment....\n") ;
+  
+  return result ;
+}
+
 
 
 
