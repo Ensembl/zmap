@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 13 10:25 2004 (rnc)
+ * Last edited: Dec 13 10:32 2004 (rnc)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.19 2004-12-13 10:26:57 rnc Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.20 2004-12-13 10:34:47 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,8 +121,7 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   int width = 0 ;
   char cp[20], unitName[] = { 0, 'k', 'M', 'G', 'T', 'P' }, buf[2] ;
   float cutoff;
-  int seqPos = 1;       /* where we are, in bases, in the sequence */
-  double scalePos;
+  int pos;
   GdkColor black, white, yellow;
   int top, bottom;
   double x1, y1, x2, y2;
@@ -185,24 +184,22 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   zmapDrawBox(FOO_CANVAS_ITEM(group), 0.0, start, 3.0, end, &white, &yellow); 
 										    
   /* major ticks and text */
-  for (seqPos = start, scalePos = start; 
-       seqPos < end; 
-       seqPos += iUnit, scalePos += iUnit)
+  for (pos = start; pos < end; pos += iUnit)
     {
-      zmapDrawLine(FOO_CANVAS_GROUP(group), 30.0, scalePos, 40.0, scalePos, &black, 1.0);
+      zmapDrawLine(FOO_CANVAS_GROUP(group), 30.0, pos, 40.0, pos, &black, 1.0);
       buf[0] = unitName[unitType] ; buf[1] = 0 ;
-      sprintf (cp, "%d%s", seqPos/type, buf) ;
+      sprintf (cp, "%d%s", pos/type, buf) ;
       if (width < strlen (cp))
         width = strlen (cp) ;
-      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", (29.0 - (5.0 * width)), scalePos); 
+      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", (29.0 - (5.0 * width)), pos); 
     }		     
   
   /* draw the vertical line of the scalebar. */
   zmapDrawLine(FOO_CANVAS_GROUP(group), 40.0, start, 40.0, end, &black, 1.0);
 
   /* minor ticks */
-  for (seqPos = start, scalePos = start; seqPos < end; seqPos += iSubunit, scalePos += iSubunit)
-      zmapDrawLine(FOO_CANVAS_GROUP(group), 35.0, scalePos, 40.0, scalePos, &black, 1.0);
+  for (pos = start; pos < end; pos += iSubunit)
+      zmapDrawLine(FOO_CANVAS_GROUP(group), 35.0, pos, 40.0, pos, &black, 1.0);
 
   return group;
 }
