@@ -392,7 +392,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = zmapApp zmapApp/ZMapDoxyMainPage zmapConfig zmapControl zmapManager zmapServer zmapThreads zmapUtils zmapWindow include/ZMap
+INPUT                  = zmapApp zmapConfig zmapControl zmapDocs zmapDraw zmapFeature zmapGFF zmapManager zmapServer zmapThreads zmapUtils zmapView zmapWindow include/ZMap
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
