@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec 13 14:19 2004 (edgrif)
+ * Last edited: Dec 13 15:31 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.37 2004-12-13 15:20:11 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.38 2004-12-13 15:48:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1241,11 +1241,11 @@ static void freeContext(ZMapFeatureContext feature_context)
 {
   zMapAssert(feature_context) ;
 
-  if (feature_context->sequence)
-    g_free(feature_context->sequence) ;
+  if (feature_context->sequence_name)
+    g_free(feature_context->sequence_name) ;
 
-  if (feature_context->parent)
-    g_free(feature_context->parent) ;
+  if (feature_context->parent_name)
+    g_free(feature_context->parent_name) ;
 
   if (feature_context->feature_sets)
     g_datalist_clear(&(feature_context->feature_sets)) ;

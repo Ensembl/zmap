@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Nov 23 08:42 2004 (rnc)
+ * Last edited: Dec 13 15:41 2004 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.3 2004-11-29 13:58:43 rnc Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.4 2004-12-13 15:48:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,14 +42,17 @@ static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data);
 static gboolean printLine(GIOChannel *channel, gchar *line);
 
 
+static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
+static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
+
 
 char *zmapFeatureLookUpEnum(int id, int enumType)
 {
   /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
-  static char *types  [] = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
+  static char *types[]   = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
 			    "VARIATION", "BOUNDARY", "SEQUENCE"} ;
-  static char *strands[] = {"ZMAPSTRAND_NONE", "ZMAPSTRAND_DOWN", "ZMAPSTRAND_UP" };
-  static char *phases [] = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" };
+  static char *strands[] = {"ZMAPSTRAND_NONE", "ZMAPSTRAND_DOWN", "ZMAPSTRAND_UP" } ;
+  static char *phases[]  = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" } ;
   char *enum_str = NULL ;
 
   zMapAssert(enumType == TYPE_ENUM || enumType == STRAND_ENUM || enumType == PHASE_ENUM) ;
@@ -123,7 +126,7 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
 
 
 
-void zmapFeatureDump(ZMapFeatureContext feature_context, char *file, int format)
+void zMapFeatureDump(ZMapFeatureContext feature_context, char *file, int format)
 {
   GIOChannel *channel;
   GError     *channel_error = NULL;
@@ -172,8 +175,8 @@ static void contextDump_TD(ZMapFeatureContext feature_context, GIOChannel *chann
     {
       line  = g_string_sized_new(150);
       g_string_printf(line, "%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", 
-		      feature_context->sequence, 
-		      feature_context->parent,
+		      feature_context->sequence_name, 
+		      feature_context->parent_name,
 		      feature_context->parent_span.x1,
 		      feature_context->parent_span.x2,
 		      feature_context->sequence_to_parent.p1,
@@ -324,6 +327,55 @@ static gboolean printLine(GIOChannel *channel, gchar *line)
 
   return status;
 }
+
+
+
+/* THESE ROUTINES NEED TO BE MERGED WITH THE ABOVE TO PROVIDE JUST ONE SET OF DEBUG/PRINT FUNCS. */
+
+/* some debugging stuff........ */
+void zmapPrintFeatureContext(ZMapFeatureContext context)
+{
+  char *prefix = "Context" ;
+
+  printf("%s :  %s\n", prefix, context->sequence_name) ;
+
+  g_datalist_foreach(&(context->feature_sets), printFeatureSet, NULL) ;
+
+
+  return ;
+}
+
+static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
+  char *prefix = "\t\tFeature Set" ;
+
+  printf("%s :  %s\n", prefix, feature_set->source) ;
+
+  g_datalist_foreach(&(feature_set->features), printFeature, NULL) ;
+
+  return ;
+}
+
+
+static void printFeature(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeature feature = (ZMapFeature)data ;
+  char *prefix = "\t\t\t\tFeature" ;
+
+  printf("%s :  %s\t%s\n", prefix, (char *)g_quark_to_string(key_id), feature->name) ;
+
+  return ;
+}
+
+
+
+
+
+
+
+
+
 
 /****************************** end of file *******************************/
 

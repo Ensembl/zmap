@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Dec 13 14:11 2004 (edgrif)
+ * Last edited: Dec 13 15:43 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.19 2004-12-13 15:18:21 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.20 2004-12-13 15:48:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -632,9 +632,9 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
 	    }
 	  else
 	    {
-	      feature_context->seq.type = ZMAPSEQUENCE_DNA ;
-	      feature_context->seq.length = feature_context->length ;
-	      feature_context->seq.sequence = reply ;
+	      feature_context->sequence.type = ZMAPSEQUENCE_DNA ;
+	      feature_context->sequence.length = feature_context->length ;
+	      feature_context->sequence.sequence = reply ;
 	      result = TRUE ;
 	    }
 	}
@@ -680,7 +680,7 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       parent_to_self.p1 = parent_to_self.c1 = 1 ;
       parent_to_self.p2 = parent_to_self.c2 = parent_length ;
 
-      feature_context->parent = parent_name ;		    /* No need to copy, has been allocated. */
+      feature_context->parent_name = parent_name ;	    /* No need to copy, has been allocated. */
 
       if (feature_context->sequence_to_parent.p1 < feature_context->sequence_to_parent.p2)
 	{

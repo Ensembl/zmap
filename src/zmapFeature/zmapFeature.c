@@ -27,16 +27,17 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov 22 18:17 2004 (edgrif)
+ * Last edited: Dec 13 15:41 2004 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.10 2004-11-22 22:46:21 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.11 2004-12-13 15:48:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <stdio.h>
 #include <strings.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapFeature.h>
+#include <zmapFeature_P.h>
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <zmapView_P.h>
@@ -56,8 +57,6 @@
  *  */
 
 
-
-
 /* Could use just one struct...but one step at a time.... */
 typedef struct
 {
@@ -75,14 +74,16 @@ typedef struct
 } FeatureSetStruct, *FeatureSet ;
 
 
+
 /* These are GData callbacks. */
 static void doNewFeatureSets(GQuark key_id, gpointer data, gpointer user_data) ;
 static void doNewFeatures(GQuark key_id, gpointer data, gpointer user_data) ;
 
-static void printFeatureContext(ZMapFeatureContext new_context) ;
-static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
-static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
+static void destroyFeature(gpointer data) ;
+static void removeNotFreeFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 
+static void destroyFeatureSet(gpointer data) ;
+static void removeNotFreeFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 
 /* !
  * A set of functions for allocating, populating and destroying features.
@@ -92,6 +93,7 @@ static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
  * GFF). If there is a requirement for the two bundled then it should be implemented
  * via a simple new "create and add" function that merely calls both the create and
  * add functions from below. */
+
 
 /*!
  * Returns a single feature correctly intialised to be a "NULL" feature.
@@ -218,6 +220,12 @@ gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char
 }
 
 
+/*!
+ * Destroys a feature, freeing up all of its resources.
+ * 
+ * @param   feature      The feature to be destroyed.
+ * @return               nothing.
+ *  */
 void zmapFeatureDestroy(ZMapFeature feature)
 {
   zMapAssert(feature) ;
@@ -243,21 +251,54 @@ void zmapFeatureDestroy(ZMapFeature feature)
 }
 
 
+
+/* Features can be NULL if there are no features yet..... */
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features)
 {
   ZMapFeatureSet feature_set ;
 
   feature_set = g_new0(ZMapFeatureSetStruct, 1) ;
   feature_set->source = g_strdup(source) ;
-  feature_set->features = features ;
+
+  if (!features)
+    g_datalist_init(&(feature_set->features)) ;
+  else
+    feature_set->features = features ;
+
 
   return feature_set ;
 }
 
-/* We fudge issue of releasing features here...we need a flag to say "free the data" or
- * not....... */
-void zMapFeatureSetDestroy(ZMapFeatureSet feature_set)
+
+/* Features must not be null to be added we need at least the feature id and probably should.
+ * check for more. */
+gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
 {
+  gboolean result = FALSE ;
+
+  zMapAssert(feature_set && feature && feature->feature_id != ZMAPFEATURE_NULLQUARK) ;
+
+  g_datalist_id_set_data_full(&(feature_set->features), feature->feature_id, feature,
+			      destroyFeature) ;
+
+  return result ;
+}
+
+
+
+void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
+{
+
+  /* Delete the feature list, freeing the features if required. */
+  if (!free_data)
+    {
+      /* Unfortunately there is no "clear but don't free the data call" so have to do it
+       * the long way by removing each item but _not_ calling our destructor function. */
+      g_datalist_foreach(&(feature_set->features), removeNotFreeFeature, (gpointer)feature_set) ;
+    }
+  g_datalist_clear(&(feature_set->features)) ;
+
+
   g_free(feature_set->source) ;
 
   g_free(feature_set) ;
@@ -266,25 +307,35 @@ void zMapFeatureSetDestroy(ZMapFeatureSet feature_set)
 }
 
 
-ZMapFeatureContext zMapFeatureContextCreate(void)
+
+
+
+ZMapFeatureContext zMapFeatureContextCreate(char *sequence)
 {
   ZMapFeatureContext feature_context ;
 
   feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
+  if (sequence && *sequence)
+    feature_context->sequence_name = g_strdup(sequence) ;
+
   return feature_context ;
 }
 
 
-void zMapFeatureContextDestroy(ZMapFeatureContext feature_context)
+gboolean zMapFeatureContextAddFeatureSet(ZMapFeatureContext feature_context, ZMapFeatureSet feature_set)
 {
-  /* MOre needs adding here....we will need a "free data" flag to say if
-   * data should be added. */
+  gboolean result = TRUE ;
 
-  g_free(feature_context) ;
+  zMapAssert(feature_context && feature_set && feature_set->source && *(feature_set->source)) ;
 
-  return ;
+  g_datalist_set_data_full(&(feature_context->feature_sets), feature_set->source, feature_set,
+			   destroyFeatureSet) ;
+
+  return result ;
 }
+
+
 
 /* Merge two feature contexts, the contexts must be for the same sequence.
  * The merge works by:
@@ -296,11 +347,18 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context)
  *   are transferred from new_context to current_context and pointers to these new
  *   features/sets are returned in diff_context.
  *
- * Hence at the end of the merge we will have:
+ * Hence at the start of the merge we have:
+ * 
+ * current_context  - contains the current feature sets and features
+ *     new_context  - contains the new feature sets and features (some of which
+ *                    may already be in the current_context)
+ *    diff_context  - is empty
+ * 
+ * and at the end of the merge we will have:
  * 
  * current_context  - contains the merge of all feature sets and features
- *     new_context  - is empty
- *    diff_context  - contains all the new features sets and features that
+ *     new_context  - is now empty
+ *    diff_context  - contains just the new features sets and features that
  *                    were added to current_context by this merge.
  * 
  * We return diff_context so that the caller has the option to update its display
@@ -326,18 +384,19 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext *diff_context_out)
 {
   gboolean result = FALSE ;
-  ZMapFeatureContext current_context = *current_context_inout ;
+  ZMapFeatureContext current_context ;
   ZMapFeatureContext diff_context ;
 
-  zMapAssert(new_context && diff_context_out) ;
+  zMapAssert(current_context_inout && new_context && diff_context_out) ;
 
-  diff_context = NULL ;					    /* default is no new features. */
+  current_context = *current_context_inout ;
 
   /* If there are no current features we just return the new ones and the diff is
    * set to NULL, otherwise we need to do a merge of the new and current feature sets. */
   if (!current_context)
     {
       current_context = new_context ;
+      diff_context = NULL ;
 
       result = TRUE ;
     }
@@ -346,35 +405,42 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
       /* Check that certain basic things about the sequences to be merged are true....
        * this will probably have to be revised, for now we check that the name and length of the
        * sequences are the same. */
-      if (g_ascii_strcasecmp(current_context->sequence, new_context->sequence) == 0
+      if (g_ascii_strcasecmp(current_context->sequence_name, new_context->sequence_name) == 0
 	  && current_context->features_to_sequence.p1 == new_context->features_to_sequence.p1
 	  && current_context->features_to_sequence.p2 == new_context->features_to_sequence.p2)
 	{
 	  FeatureContextsStruct contexts ;
 
-	  diff_context = zMapFeatureContextCreate() ;
+	  diff_context = zMapFeatureContextCreate(NULL) ;
 
 	  contexts.current_feature_sets = &(current_context->feature_sets) ;
 	  contexts.diff_feature_sets = &(diff_context->feature_sets) ;
 	  contexts.new_feature_sets = &(new_context->feature_sets) ;
 
+	  /* OK, this is where we do the merge, the real work is in the functions that get called
+	   * from here. */
 	  g_datalist_foreach(&(new_context->feature_sets),
 			     doNewFeatureSets, (void *)&contexts) ;
 
 	  if (diff_context->feature_sets)
 	    {
 	      /* Fill in the sequence/mapping details. */
-	      diff_context->sequence = g_strdup(current_context->sequence) ;
-	      diff_context->parent = g_strdup(current_context->parent) ;
+	      diff_context->sequence_name = g_strdup(current_context->sequence_name) ;
+	      diff_context->parent_name = g_strdup(current_context->parent_name) ;
 	      diff_context->parent_span = current_context->parent_span ; /* n.b. struct copies. */
 	      diff_context->sequence_to_parent = current_context->sequence_to_parent ;
 	      diff_context->features_to_sequence = current_context->features_to_sequence ;
 	    }
 	  else
 	    {
-	      zMapFeatureContextDestroy(diff_context) ;
+	      zMapFeatureContextDestroy(diff_context, FALSE) ; /* No need to free data, there
+								  isn't any. */
 	      diff_context = NULL ;
 	    }
+
+
+	  /* Somewhere around here we should get rid of the new_context..... */
+
 
 	  result = TRUE ;
 	}
@@ -386,26 +452,27 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
       *current_context_inout = current_context ;
       *diff_context_out = diff_context ;
 
-      /* delete the new_context.... */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* debugging.... */
-
       printf("\ncurrent context\n") ;
-      printFeatureContext(*current_context_inout) ;
+      zmapPrintFeatureContext(*current_context_inout) ;
 
 
       printf("\nnew context\n") ;
-      printFeatureContext(new_context) ;
+      zmapPrintFeatureContext(new_context) ;
 
       if (*diff_context_out)
 	{
 	  printf("\ndiff context\n") ;
-	  printFeatureContext(*diff_context_out) ;
+	  zmapPrintFeatureContext(*diff_context_out) ;
 	}
 
       zMapAssert(fflush(stdout) == 0) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* delete the new_context.... */
+      zMapFeatureContextDestroy(new_context, TRUE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     }
@@ -416,12 +483,91 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 
 
 
+void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free_data)
+{
+
+  /* Delete the feature set list, freeing the feature sets if required. */
+  if (!free_data)
+    {
+      /* Unfortunately there is no "clear but don't free the data call" so have to do it
+       * the long way by removing each item but _not_ calling our destructor function. */
+      g_datalist_foreach(&(feature_context->feature_sets), removeNotFreeFeatureSet,
+			 (gpointer)feature_context) ;
+    }
+  g_datalist_clear(&(feature_context->feature_sets)) ;
+
+
+  if (feature_context->sequence_name)
+    g_free(feature_context->sequence_name) ;
+
+  g_free(feature_context) ;
+
+  return ;
+}
+
+
+
+
 
 
 /* 
  *            Internal routines. 
  */
 
+
+/* This is a GDestroyNotify() and is called for each element in a GData list when
+ * the list is cleared with g_datalist_clear () and also if g_datalist_id_remove_data()
+ * is called. */
+static void destroyFeature(gpointer data)
+{
+  ZMapFeature feature = (ZMapFeature)data ;
+
+  zmapFeatureDestroy(feature) ;
+
+  return ;
+}
+
+
+
+/* This is GDataForeachFunc(), it is called to remove all the elements of the datalist
+ * without removing the corresponding Feature data. */
+static void removeNotFreeFeature(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data ;
+
+  g_datalist_id_remove_no_notify(&(feature_set->features), key_id) ;
+
+  return ;
+}
+
+
+
+/* This is a GDestroyNotify() and is called for each element in a GData list when
+ * the list is cleared with g_datalist_clear () and also if g_datalist_id_remove_data()
+ * is called. */
+static void destroyFeatureSet(gpointer data)
+{
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
+
+  /* Note, if this routine is called it means that we have been called to free the data so
+   * make sure the feature set frees its data as well. */
+  zMapFeatureSetDestroy(feature_set, TRUE) ;
+
+  return ;
+}
+
+
+
+/* This is GDataForeachFunc(), it is called to remove all the elements of the datalist
+ * without removing the corresponding Feature data. */
+static void removeNotFreeFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureContext feature_context = (ZMapFeatureContext)user_data ;
+
+  g_datalist_id_remove_no_notify(&(feature_context->feature_sets), key_id) ;
+
+  return ;
+}
 
 
 
@@ -448,24 +594,24 @@ static void doNewFeatureSets(GQuark key_id, gpointer data, gpointer user_data)
 
   zMapAssert(strcmp(feature_set_name, new_set->source) == 0) ;
 
-  /* If the feature set is not in the current feature sets then we can simply add it to
-   * them, otherwise we must do a merge of the individual features within
-   * the new and current sets. */
+
+  /* If the feature set is not in current then we can simply add it 
+   * otherwise we must do a merge of the individual features of the new and current sets. */
   if (!(current_set = g_datalist_id_get_data(&(current_feature_sets), key_id)))
     {
-      gpointer unused ;
+      /* Entire feature set is not in current context so add it to current and to diff
+       * and remove it from new. */
+      ZMapFeatureSet unused ;
 
       g_datalist_set_data(&(current_feature_sets), feature_set_name, new_set) ;
       g_datalist_set_data(&(diff_feature_sets), feature_set_name, new_set) ;
 
       /* Should remove from new set here but not sure if it will
        * work as part of a foreach loop....which is where this routine is called from... */
-      unused = g_datalist_id_remove_no_notify(&(new_feature_sets), key_id) ;
+      unused = (ZMapFeatureSet)g_datalist_id_remove_no_notify(&(new_feature_sets), key_id) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("stop here\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      /* Need to dump here and see if the new feature set is still valid.... */
 
     }
   else
@@ -486,9 +632,9 @@ static void doNewFeatureSets(GQuark key_id, gpointer data, gpointer user_data)
       if (diff_set->features)
 	g_datalist_set_data(&(diff_feature_sets), feature_set_name, diff_set) ;
       else
-	zMapFeatureSetDestroy(diff_set) ;
-
+	zMapFeatureSetDestroy(diff_set, FALSE) ;
     }
+
 
   /* Poke the results back in to the original feature context, seems hokey but remember that
    * the address of GData will change as new elements are added so we must poke back the new
@@ -516,29 +662,29 @@ static void doNewFeatures(GQuark key_id, gpointer data, gpointer user_data)
   GData *diff_features = *diff_result ;
   GData **new_result = sets->new_features ;
   GData *new_features = *new_result ;
-
   ZMapFeature current_feature, diff_feature ;
-  char *feature_name = NULL ;
 
-  feature_name = (char *)g_quark_to_string(key_id) ;
 
-  zMapAssert(strcmp(feature_name, new_feature->name) == 0) ;
+  zMapAssert(key_id == new_feature->feature_id) ;
 
   /* If the feature is not in the current feature set then we can simply add it, if its
    * already there then we don't do anything, i.e. we don't try and merge two features. */
   if (!(current_feature = g_datalist_id_get_data(&(current_features), key_id)))
     {
-      gpointer unused ;
+      ZMapFeature unused ;
 
-      g_datalist_set_data(&(current_features), feature_name, new_feature) ;
-      g_datalist_set_data(&(diff_features), feature_name, new_feature) ;
+      /* Feature is not in current, so add it to current and to diff and remove it
+       * from new. */
+      g_datalist_id_set_data(&(current_features), key_id, new_feature) ;
+      g_datalist_id_set_data(&(diff_features), key_id, new_feature) ;
 
 
       /* Should remove from new set here but not sure if it will
        * work as part of a foreach loop....which is where this routine is called from... */
-      unused = g_datalist_id_remove_no_notify(&(new_features), key_id) ;
+      unused = (ZMapFeature)g_datalist_id_remove_no_notify(&(new_features), key_id) ;
 
     }
+
 
   /* Poke the results back in to the original feature set, seems hokey but remember that
    * the address of GData will change as new elements are added so we must poke back the new
@@ -553,41 +699,8 @@ static void doNewFeatures(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
-/* some debugging stuff........ */
-static void printFeatureContext(ZMapFeatureContext context)
-{
-  char *prefix = "Context" ;
-
-  printf("%s :  %s\n", prefix, context->sequence) ;
-
-  g_datalist_foreach(&(context->feature_sets), printFeatureSet, NULL) ;
 
 
-  return ;
-}
-
-static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
-  char *prefix = "\t\tFeature Set" ;
-
-  printf("%s :  %s\n", prefix, feature_set->source) ;
-
-  g_datalist_foreach(&(feature_set->features), printFeature, NULL) ;
-
-  return ;
-}
-
-
-static void printFeature(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeature feature = (ZMapFeature)data ;
-  char *prefix = "\t\t\t\tFeature" ;
-
-  printf("%s :  %s\n", prefix, feature->name) ;
-
-  return ;
-}
 
 
 /*! @} end of zmapfeatures docs. */

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov 22 18:08 2004 (edgrif)
+ * Last edited: Dec 13 15:25 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.18 2004-11-23 11:58:23 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.19 2004-12-13 15:49:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -195,7 +195,7 @@ gboolean zmapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureContext feature_con
        * for parse_only.... */
       if (!parser->parse_only && parser->feature_sets)
 	{
-	  feature_context->sequence = g_strdup(parser->sequence_name) ;
+	  feature_context->sequence_name = g_strdup(parser->sequence_name) ;
 
 	  feature_context->features_to_sequence.p1 = parser->features_start ;
 	  feature_context->features_to_sequence.p2 = parser->features_end ;
@@ -204,7 +204,8 @@ gboolean zmapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureContext feature_con
 
 	  g_datalist_init(&(feature_context->feature_sets)) ;
 
-	  g_datalist_foreach(&(parser->feature_sets), getFeatureArray, &(feature_context->feature_sets)) ;
+	  g_datalist_foreach(&(parser->feature_sets), getFeatureArray,
+			     &(feature_context->feature_sets)) ;
 	}
 
       result = TRUE ;
