@@ -1,0 +1,18 @@
+
+
+The merge is not as simple as I thought, need to either copy everything that is to be merged
+(seems wasteful) or we need to NULL out/remove the things we have transferred....perhaps not
+so hard....
+
+Main thing is to protect whole GDatas that we move into our new sets and null out ones we
+don't want. But also, what happens to datastructs of features that we have allocated but
+no longer need...they should be freed....
+
+Sounds like merge needs to be in some separate feature code package....
+
+It can be done but needs thought..........
+
+Currently we just don't free the stuff...and we should leave it like this for ISMB.
+
+This must be sorted out afterwards otherwise it will use up a lot of memory.
+
