@@ -19,24 +19,26 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  7 17:07 2003 (edgrif)
+ * Last edited: Nov 18 10:51 2003 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapManager_P.h,v 1.1 2003-11-10 17:04:28 edgrif Exp $
+ * CVS info:   $Id: zmapManager_P.h,v 1.2 2003-11-18 11:27:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_MANAGER_P_H
 #define ZMAP_MANAGER_P_H
 
 #include <glib.h>
-#include <ZMap/zmapConn.h>
+
+/* THERE IS STUFF IN HERE WHICH SHOULD BE IN ZMAP.H */
 #include <ZMap/zmapWindow.h>
+
+#include <ZMap/ZMap.h>
 #include <ZMap/zmapManager.h>
 
 
@@ -45,36 +47,19 @@ typedef struct _ZMapManagerStruct
 {
   GList *zmap_list ;
 
-  zmapAppCallbackFunc delete_zmap_guifunc ;
-  void *app_data ;
+  zmapAppCallbackFunc gui_zmap_deleted_func ;
+  void *gui_data ;
 
 } ZMapManagerStruct ;
-
-
-
-/* Each ZMap has window data and connection data, the intent is that the window code knows about
- * the window data and the connection data knows about the connection data.... */
-typedef struct _ZMapWinConnStruct
-{
-  
-  ZMapWindow window ;
-  
-  ZMapConnection connection ;
-  
-} ZMapWinConnStruct ;
 
 
 
 typedef struct _ZMapManagerCBStruct
 {
   ZMapManager zmap_list ;
-  ZMapWinConn zmap ;
+
+  ZMap zmap ;
 } ZMapManagerCBStruct, *ZMapManagerCB ;
-
-
-
-void zmapCleanUpConnection(ZMapConnection connection, void *cleanupdata) ;
-void zmapSignalData(ZMapConnection connection, void *cleanupdata) ;
 
 
 
