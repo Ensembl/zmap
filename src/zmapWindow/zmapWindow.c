@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  3 16:46 2004 (edgrif)
+ * Last edited: Nov  5 11:29 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.45 2004-11-04 12:45:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.46 2004-11-08 10:14:29 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,7 @@ static void clickCB            (ZMapWindow window, void *caller_data, ZMapFeatur
 static gboolean rightClickCB   (ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
 static void addItemToList      (GQuark key_id, gpointer data, gpointer user_data);
 static void quitListCB         (GtkWidget *window, gpointer data);
-static void hideUnhideColumn   (GQuark key_id, gpointer data, gpointer user_data);
+static void hideUnhideColumns  (ZMapCanvasDataStruct *canvasData);
 
 
 /* These callback routines are static because they are set just once for the lifetime of the
@@ -161,6 +161,8 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   canvasData = g_new0(ZMapCanvasDataStruct, 1) ;
   canvasData->window = window;
   canvasData->canvas = window->canvas;
+  canvasData->columns = g_array_new(TRUE, TRUE, sizeof(ZMapColStruct));
+
   g_object_set_data(G_OBJECT(window->canvas), "canvasData", canvasData);
 
   /* Get everything sized up....I don't know if this is really needed here or not. */
@@ -301,15 +303,16 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
   /* Record the current position. */
   /* In order to stay centred on wherever we are in the canvas while zooming, we get the 
-   * current position (offset), add half the page-size to get the centre of the screen,
-   * then convert to world coords and store those.    
+   * current position (offset, in canvas pixels), add half the page-size to get the centre
+   * of the screen,then convert to world coords and store those.    
    * After the zoom, we convert those values back to canvas pixels (changed by the call to
    * pixels_per_unit) and scroll to them. */
   foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
-  y += adjust->page_size / 2 ;
+  y += (adjust->page_size - 1) / 2 ;
   foo_canvas_c2w(window->canvas, x, y, &width, &curr_pos) ;
 
 
+ 
 
   /* Calculate the zoom. */
   new_zoom = window->zoom_factor * zoom_factor ;
@@ -334,7 +337,6 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
   /* Calculate limits to what we can show. */
   max_win_span = XWIN_MAXSIZE ;
   seq_span = canvasData->seqLength * window->zoom_factor ;
-
 
   /* Calculate the extent of the new span, new span must not exceed maximum X window size
    * but we must display as much of the sequence as we can for zooming out. */
@@ -384,16 +386,17 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
   foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
 
   /* Now hide/show any columns that have specific show/hide zoom factors set. */
-  g_datalist_foreach(&(canvasData->feature_context->feature_sets), hideUnhideColumn, canvasData) ;
+  if (canvasData->columns)
+    hideUnhideColumns(canvasData) ;
   
   /* redraw the scale bar */
   gtk_object_destroy(GTK_OBJECT(canvasData->scaleBarGroup));
   canvasData->scaleBarGroup = zmapDrawScale(canvasData->canvas, 
 					    canvasData->scaleBarOffset, 
 					    window->zoom_factor,
-					    canvasData->feature_context->sequence_to_parent.c1, 
-					    canvasData->feature_context->sequence_to_parent.c2);
-  
+					    top,
+					    bot);
+
   return zoom_status ;
 }
 
@@ -425,29 +428,30 @@ void zmapWindowPrintCanvas(FooCanvas *canvas)
 
 
 
-static void hideUnhideColumn(GQuark key_id, gpointer data, gpointer user_data)
+static void hideUnhideColumns(ZMapCanvasDataStruct *canvasData)
 {
-  ZMapFeatureSetStruct *feature_set = (ZMapFeatureSetStruct*)data;
-  ZMapCanvasDataStruct *canvasData  = (ZMapCanvasDataStruct*)user_data;
+  int i;
+  ZMapCol column;
+  double min_mag;
 
-  ZMapFeatureTypeStyle thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), feature_set->source) ;
-
-  if (thisType)  /* if no method, the column won't have been drawn at all */
+  for ( i = 0; i < canvasData->columns->len; i++ )
     {
-      if (canvasData->window->zoom_factor > thisType->min_mag)
+      column = &g_array_index(canvasData->columns, ZMapColStruct, i);
+
+      /* type->min_mag is in bases per line, but window->zoom_factor is pixels per base */
+      min_mag = (column->type->min_mag ? PIXELS_PER_BASE/column->type->min_mag : 0.0);
+
+      if (canvasData->window->zoom_factor > min_mag)
 	{
-	  foo_canvas_item_show(feature_set->forCol);
-	  if (feature_set->revCol)
-	    foo_canvas_item_show(feature_set->revCol);
+	  if (column->forward)
+	    foo_canvas_item_show(column->item);
+	  else
+	    if (column->type->showUpStrand)
+	      foo_canvas_item_show(column->item);
 	}
       else
-	{
-	  foo_canvas_item_hide(feature_set->forCol);
-	  if (feature_set->revCol)
-	    foo_canvas_item_hide(feature_set->revCol);
-	}
+	  foo_canvas_item_hide(column->item);
     }
-
   return;
 }
 
