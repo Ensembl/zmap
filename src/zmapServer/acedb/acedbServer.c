@@ -26,14 +26,16 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar 22 11:26 2004 (edgrif)
+ * Last edited: Jun 25 11:52 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.2 2004-03-22 13:32:05 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.3 2004-06-25 13:39:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <AceConn.h>
+#include <ZMap/zmapUtils.h>
 #include <ZMap/zmapServerPrototype.h>
+#include <ZMap/zmapGFF.h>
 #include <acedbServer_P.h>
 
 
@@ -42,7 +44,8 @@ static gboolean createConnection(void **server_out,
 				 char *host, int port,
 				 char *userid, char *passwd, int timeout) ;
 static gboolean openConnection(void *server) ;
-static gboolean request(void *server, char *request, void **reply, int *reply_len) ;
+static gboolean request(void *server, ZMapServerRequestType request,
+			char *sequence, ZMapFeatureContext *feature_context) ;
 char *lastErrorMsg(void *server) ;
 static gboolean closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
@@ -117,14 +120,77 @@ static gboolean openConnection(void *server_in)
 }
 
 
-static gboolean request(void *server_in, char *request, void **reply, int *reply_len)
+static gboolean request(void *server_in, ZMapServerRequestType request,
+			char *sequence, ZMapFeatureContext *feature_context_out)
 {
   gboolean result = FALSE ;
   AcedbServer server = (AcedbServer)server_in ;
+  char *acedb_request = NULL ;
+  void *reply = NULL ;
+  int reply_len = 0 ;
+
+
+  /* Lash up for now, we will later need a  "ZMap request" -> "acedb request" translator. */
+  acedb_request =  g_strdup_printf("gif seqget %s ; seqfeatures", sequence) ;
+
 
   if ((server->last_err_status =
-       AceConnRequest(server->connection, request, reply, reply_len)) == ACECONN_OK)
-    result = TRUE ;
+       AceConnRequest(server->connection, acedb_request, &reply, &reply_len)) == ACECONN_OK)
+    {
+      char *next_line ;
+      ZMapReadLine line_reader ;
+      gboolean inplace = TRUE ;
+      ZMapGFFParser parser ;
+      ZMapFeatureContext feature_context = NULL ;
+
+      /* Here we can convert the GFF that comes back, in the end we should be doing a number of
+       * calls to AceConnRequest() as the server slices...but that will need a change to my
+       * AceConn package.....
+       * We make the big assumption that what comes back is a C string for now, this is true
+       * for most acedb requests, only images/postscript are not and we aren't asking for them. */
+      
+      line_reader = zMapReadLineCreate((char *)reply, inplace) ;
+
+      parser = zMapGFFCreateParser(FALSE) ;
+
+      /* We probably won't have to deal with part lines here acedb should only return whole lines
+       * ....but should check for sure...bomb out for now.... */
+      do
+	{
+	  if (!zMapReadLineNext(line_reader, &next_line) && *next_line)
+	    {
+	      zMapLogFatal("Request from server contained incomplete line: %s", next_line) ;
+	    }
+	  else
+	    {
+	      if (!zMapGFFParseLine(parser, next_line))
+		{
+		  GError *error = zMapGFFGetError(parser) ;
+
+		  if (!error)
+		    {
+		      zMapLogCritical("zMapGFFParseLine() failed with no GError for line %d: %s\n",
+				      zMapGFFGetLineNumber(parser), next_line) ;
+		    }
+		  else
+		    zMapLogWarning("%s\n", (zMapGFFGetError(parser))->message) ;
+		}
+	    }
+	}
+      while (*next_line) ;
+
+      if ((feature_context = zmapGFFGetFeatures(parser)))
+	{
+	  *feature_context_out = feature_context ;
+	  result = TRUE ;
+	}
+
+      zMapReadLineDestroy(line_reader, TRUE) ;
+      zMapGFFSetFreeOnDestroy(parser, FALSE) ;
+      zMapGFFDestroyParser(parser) ;
+    }
+
+  g_free(acedb_request) ;
 
   return result ;
 }
