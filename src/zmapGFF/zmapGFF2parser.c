@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov  9 14:37 2004 (edgrif)
+ * Last edited: Nov 19 13:44 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.15 2004-11-09 14:40:15 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.16 2004-11-19 14:33:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,8 @@ static gboolean addDataToFeature(ZMapFeature feature, char *name,
 				 char *sequence, char *source, ZMapFeatureType feature_type,
 				 int start, int end, double score, ZMapStrand strand,
 				 ZMapPhase phase, char *attributes) ;
-static gboolean getFeatureName(char *sequence, ZMapFeatureType feature_type, int start, int end, char *attributes,
+static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
+			       int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
@@ -593,12 +594,24 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   ZMapGFFParserFeatureSet feature_set = NULL ; ;
   gboolean feature_has_name ;
   ZMapFeature new_feature ;
+  ZMapHomolType homol_type ;
+  int query_start = 0, query_end = 0 ;
 
-  
+
+  /* We require additional information from the attributes for some types. */
+  if (feature_type == ZMAPFEATURE_HOMOL)
+    {
+      /* if this fails, what do we do...should just log the error I think..... */
+      result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end) ;
+    }
+
+
   /* Get the feature name which may not be unique and a feature "id" which _must_
    * be unique. */
-  feature_has_name = getFeatureName(sequence, feature_type, start, end, attributes,
+  feature_has_name = getFeatureName(sequence, attributes, feature_type,
+				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
+
 
   /* Check if the "source" for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
@@ -614,7 +627,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
       new_feature = zmapFeatureCreate() ;
     }
 
-  /* FOR PARSE ONLY WE WOULD LIKE TO COTINUE TO USE THE LOCAL VARIABLE new_feature....SORT THIS
+  /* FOR PARSE ONLY WE WOULD LIKE TO CONTINUE TO USE THE LOCAL VARIABLE new_feature....SORT THIS
    * OUT............. */
 
   if (parser->parse_only)
@@ -646,11 +659,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 	}
 
 
-
-
       /* Always add every new feature to the final set.... */
       g_datalist_set_data(&(feature_set->features), feature_name_id, new_feature) ;
-
 
       feature = new_feature ;
 
@@ -659,22 +669,19 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
        * our set of such features. There are arcane/adhoc rules in action here, any features
        * that do not have their own feature_name  _cannot_  be multiline features as such features
        * can _only_ be identified if they do have their own name. */
-
       if (feature_has_name
 	  && (feature_type == ZMAPFEATURE_SEQUENCE || feature_type == ZMAPFEATURE_TRANSCRIPT
 	      || feature_type == ZMAPFEATURE_EXON || feature_type == ZMAPFEATURE_INTRON))
 	{
 	  g_datalist_set_data(&(feature_set->multiline_features), feature_name_id, feature) ;
 	}
-
-
     }
 
 
   /* Phew, now fill in the feature.... */
-  result = addDataToFeature(feature, feature_name, sequence, source, feature_type,
-			    start, end, score, strand,
-			    phase, attributes) ;
+  result = zmapFeatureAugmentData(feature, feature_name, sequence, source,
+				  feature_type, start, end, score, strand,
+				  phase, homol_type, query_start, query_end) ;
 
   g_free(feature_name) ;
   g_free(feature_name_id) ;
@@ -792,155 +799,19 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
 
 
-/* WE DON'T SEEM TO USE parser HERE SO WE SHOULD REMOVE IT, THIS ROUTINE SHOULD BE
- * REPLACED BY A CALL TO zmapFeature FUNCTION.... */
-
-static gboolean addDataToFeature(ZMapFeature feature,
-				 char *name,
-				 char *sequence, char *source, ZMapFeatureType feature_type,
-				 int start, int end, double score, ZMapStrand strand,
-				 ZMapPhase phase, char *attributes)
-{
-  gboolean result = FALSE ;
-  ZMapHomolType homol_type ;
-  int query_start = 0, query_end = 0 ;
-
-  if (feature_type == ZMAPFEATURE_HOMOL)
-    {
-      /* if this fails, what do we do...should just log the error I think..... */
-      result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end) ;
-    }
-
-  result = zmapFeatureAugmentData(feature, name, sequence, source,
-				  feature_type, start, end, score, strand,
-				  phase, homol_type, start, end) ;
-
-  return result ;
-}
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean addDataToFeature(ZMapGFFParser parser, ZMapFeature feature,
-				 char *name,
-				 char *sequence, char *source, ZMapFeatureType feature_type,
-				 int start, int end, double score, ZMapStrand strand,
-				 ZMapPhase phase, char *attributes)
-{
-  gboolean result = FALSE ;
-
-  /* Note we have hacked this up for now...in the end we should have a unique id for each feature
-   * but for now we will look at the type to determine if a feature is empty or not..... */
-  /* If its an empty feature then initialise... */
-  if (feature->type == ZMAPFEATURE_INVALID)
-    {
-      feature->name = g_strdup(name) ;
-      feature->type = feature_type ;
-      feature->x1 = start ;
-      feature->x2 = end ;
-
-      feature->method_name = g_strdup(source) ;
-
-      feature->strand = strand ;
-      feature->phase = phase ;
-      feature->score = score ;
-
-      result = TRUE ;
-    }
-
-
-  /* There is going to have to be some hacky code here to decide when something goes from being
-   * a single exon to being part of a transcript..... */
-
-  if (feature_type == ZMAPFEATURE_EXON)
-    {
-      ZMapSpanStruct exon ;
-
-      exon.x1 = start ;
-      exon.x2 = end ;
-
-      /* This is still not correct I think ??? we shouldn't be using the transcript field but
-       * instead the lone exon field. */
-
-      if (!feature->feature.transcript.exons)
-	feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
-							      sizeof(ZMapSpanStruct), 30) ;
-
-      g_array_append_val(feature->feature.transcript.exons, exon) ;
-
-      /* If this is _not_ single exon we make it into a transcript.
-       * This is a bit adhoc but so is GFF v2. */
-      if (feature->type != ZMAPFEATURE_EXON
-	  || feature->feature.transcript.exons->len > 1)
-	feature->type = ZMAPFEATURE_TRANSCRIPT ;
-
-      result = TRUE ;
-    }
-  else if (feature_type == ZMAPFEATURE_INTRON)
-    {
-      ZMapSpanStruct intron ;
-
-      intron.x1 = start ;
-      intron.x2 = end ;
-
-      if (!feature->feature.transcript.introns)
-	feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
-							      sizeof(ZMapSpanStruct), 30) ;
-
-      g_array_append_val(feature->feature.transcript.introns, intron) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* I DON'T THINK WE WANT TO DO THIS BECAUSE WE MAY JUST HAVE A SET OF CONFIRMED INTRONS
-       * THAT DO NOT ACTUALLY REPRESENT A TRANSCRIPT YET..... */
-
-
-      /* If we have more than one intron then we are going to force the type to be
-       * transcript. */
-      if (feature->type != ZMAPFEATURE_TRANSCRIPT
-	  && feature->feature.transcript.introns->len > 1)
-	feature->type = ZMAPFEATURE_TRANSCRIPT ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      result = TRUE ;
-    }
-  else if (feature_type == ZMAPFEATURE_HOMOL)
-    {
-      ZMapHomolType homol_type ;
-      int query_start = 0, query_end = 0 ;
-
-      /* Note that we do not put the extra "align" information for gapped alignments into the
-       * GFF files from acedb so no need to worry about it just now...... */
-
-
-      /* if this fails, what do we do...should just log the error I think..... */
-      if ((result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end)))
-	{
-	  feature->feature.homol.type = homol_type ;
-	  feature->feature.homol.y1 = query_start ;
-	  feature->feature.homol.y2 = query_end ;
-	  feature->feature.homol.score = score ;
-	  feature->feature.homol.align = NULL ;		    /* not supported currently.... */
-	}
-    }
-
-  return result ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 /* This routine attempts to find the features name from its attributes field, in output from
  * acedb the attributes start with:
  * 
  *          class "object_name"    e.g.   Sequence "B0250.1"
  * 
  * For some features this is not true or the feature name is shared amongst many
- * GFF lines and so we must construct a name from the feature name and the coords.
+ * features and so we must construct a name from the feature name and the coords.
  * 
- * For other dumpers this may be different (e.g. GFFv3 is more formatlised), but for GFF v2
- * we must exclude the following types of attributes that are _not_ object names:
+ * For homology features the name is in the attributes in the form:
+ * 
+ *        Target "Classname:objname" query_start query_end
+ * 
+ * For GFF v2 we must exclude the following types of attributes that are _not_ object names:
  *
  *        Note "Left: B0250"
  *        Note "7 copies of 31mer"
@@ -948,41 +819,61 @@ static gboolean addDataToFeature(ZMapGFFParser parser, ZMapFeature feature,
  * and so on....
  * 
  *  */
-static gboolean getFeatureName(char *sequence, ZMapFeatureType feature_type, int start, int end, char *attributes,
+static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
+			       int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id)
 {
   gboolean has_name = FALSE ;
-  int attr_fields ;
-  char *attr_format_str = "%50s %*[\"]%50[^\"]%*[\"]%*s" ;
-  char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
-  attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0]) ;
 
-  if (attr_fields == 2 && (feature_type == ZMAPFEATURE_SEQUENCE || feature_type == ZMAPFEATURE_TRANSCRIPT
-			   || feature_type == ZMAPFEATURE_EXON || feature_type == ZMAPFEATURE_INTRON))
+  if (feature_type == ZMAPFEATURE_SEQUENCE || feature_type == ZMAPFEATURE_TRANSCRIPT
+      || feature_type == ZMAPFEATURE_EXON || feature_type == ZMAPFEATURE_INTRON)
     {
       /* Named feature such as a gene. */
-      has_name = TRUE ;
-      *feature_name = g_strdup(name) ;
-      *feature_name_id = g_strdup(*feature_name) ;
+      int attr_fields ;
+      char *attr_format_str = "%50s %*[\"]%50[^\"]%*[\"]%*s" ;
+      char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+      attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0]) ;
+
+      if (attr_fields == 2)
+	{
+	  has_name = TRUE ;
+	  *feature_name = g_strdup(name) ;
+	  *feature_name_id = g_strdup(*feature_name) ;
+	}
+
+    }
+  else if (feature_type == ZMAPFEATURE_HOMOL)
+    {
+      /* In acedb output at least, homologies all have the same format. */
+      int attr_fields ;
+      char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
+      char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+      attr_fields = sscanf(attributes, attr_format_str, &name[0]) ;
+
+      if (attr_fields == 1)
+	{
+	  has_name = FALSE ;
+	  *feature_name = g_strdup(name) ;
+	  *feature_name_id = zMapFeatureCreateID(feature_type, *feature_name, 
+						 start, end, query_start, query_end) ;
+	}
     }
   else
     {
-      /* Some features do not have a name in their attributes, some have a name but it is shared
-       * between an arbitrary number of GFF lines.
-       * Sadly we have to have a whole load of heuristics to trap text that is not actually
-       * an object name. */
+      /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
+       * clarity in the GFFv2 spec. */
       has_name = FALSE ;
 
-      if (g_ascii_strcasecmp(class, "Note") == 0)
+      if (g_str_has_prefix(attributes, "Note"))
 	*feature_name = g_strdup(sequence) ;
-      else if (attr_fields == 2 && feature_type == ZMAPFEATURE_HOMOL)
-	*feature_name = g_strdup(name) ;
       else
-	*feature_name = g_strdup(sequence) ;		    /* Catch all...yuch, watch out for
-							       spurious stuff... */
+	*feature_name = g_strdup(sequence) ;
 
-      *feature_name_id = g_strdup_printf("%s.%d-%d", *feature_name, start, end) ;
+      *feature_name_id = zMapFeatureCreateID(feature_type, *feature_name,
+					     start, end, query_start, query_end) ;
     }
 
 
@@ -1315,9 +1206,6 @@ gboolean formatPhase(char *phase_str, ZMapPhase *phase_out)
 }
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* This is a GDataForeachFunc() and is called for each element of a GData list as a result
  * of a call to zmapGFFGetFeatures(). The function adds the feature array returned 
  * in the GData element to the GArray in user_data. */
@@ -1327,41 +1215,12 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
   GData **features = (GData **)user_data ;
   ZMapFeatureSet new_features ;
 
-  new_features = g_new0(ZMapFeatureSetStruct, 1) ;
-
-  new_features->source = g_strdup(feature_set->source) ;
-  new_features->features = feature_set->features ;
-
-  g_datalist_set_data(features, new_features->source, new_features) ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-/* This is a GDataForeachFunc() and is called for each element of a GData list as a result
- * of a call to zmapGFFGetFeatures(). The function adds the feature array returned 
- * in the GData element to the GArray in user_data. */
-static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapGFFParserFeatureSet feature_set = (ZMapGFFParserFeatureSet)data ;
-  GData **features = (GData **)user_data ;
-  ZMapFeatureSet new_features ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  new_features = g_new0(ZMapFeatureSetStruct, 1) ;
-  new_features->source = g_strdup(feature_set->source) ;
-  new_features->features = feature_set->features ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   new_features = zMapFeatureSetCreate(feature_set->source, feature_set->features) ;
 
   g_datalist_set_data(features, new_features->source, new_features) ;
 
   return ;
 }
-
-
 
 
 /* This is a GDestroyNotify() and is called for each element in a GData list when
