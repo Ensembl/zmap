@@ -25,11 +25,16 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  2 19:16 2004 (edgrif)
+ * Last edited: Jul  8 14:39 2004 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapWindowFrame.c,v 1.3 2004-07-02 18:24:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFrame.c,v 1.4 2004-07-14 09:12:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
+
+
+/* WARNING, WARNING, THIS FILE IS NOT USED NOW AND IS PROBABLY DEFUNCT NOW............. */
+
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -52,6 +57,11 @@ extern int test_global, test_overlap ;
 
 
 static GtkWidget *makeCanvas(void) ;
+
+
+
+
+
 
 
 GtkWidget *zmapWindowMakeFrame(ZMapWindow window)
