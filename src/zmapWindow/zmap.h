@@ -1,3 +1,4 @@
+/*  Last edited: Dec  3 13:46 2003 (rnc) */
 /*  file: zmap.h
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -24,4 +25,12 @@
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  */
 
-BOOL zMapDisplay(KEY key, KEY from, BOOL isOldGraph, void *app_data);
+#ifndef ZMAP_H
+#define ZMAP_H
+
+#include <wh/acedb.h>
+
+BOOL zMapCall(KEY key, KEY from, BOOL isOldGraph, void *app_data);
+
+#endif
+/*********************** end of file ********************************/
