@@ -1,4 +1,4 @@
-/*  Last edited: Apr 13 15:01 2004 (rnc) */
+/*  Last edited: May 14 10:33 2004 (rnc) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -41,6 +41,18 @@ static void  exciseNode      (GNode *node);
 
 /* end of prototypes ***************************************************/
 
+/*! @file zmapsplit.c
+ *  @brief Handles splitting the data display into multiple panes.
+ *
+ *  @author Rob Clack (rnc@sanger.ac.uk)
+ *  @detailed
+ *  zmapsplit looks after splitting the display into two or more panes.
+ *  It uses gtk panes and effectively allows the user to split the display
+ *  into as many horizontal and vertical panes as she wants.  In reality
+ *  there are still quite a few wrinkles and more than a few splits is not
+ *  really that practical.
+ */
+
 /* I can't make up my mind what to do about the mix of static/non-static
  * functions in this file.  Normally I'd have static in one file and non
  * in another, or at least group them within the file, but in this case
@@ -55,10 +67,7 @@ static void  exciseNode      (GNode *node);
  * the bases-per-line magnification, which I've not looked at yet. */
 static void scaleCanvas(ZMapWindow *window, double zoomFactor)
 {
-  double matrix[6];
-  
-  art_affine_scale(matrix, 1.0, zoomFactor);
-  gnome_canvas_item_affine_relative(window->focuspane->group, matrix);
+  foo_canvas_set_pixels_per_unit_xy(window->focuspane->canvas, 1.0, zoomFactor);
   return;
 }
 
@@ -68,7 +77,7 @@ void zoomIn(GtkWindow *widget, gpointer data)
   ZMapWindow *window = (ZMapWindow*)data;
 
   window->focuspane->zoomFactor *= 2;
-  scaleCanvas(window, 2.0);
+  scaleCanvas(window, window->focuspane->zoomFactor);
   return;
 }
 
@@ -77,8 +86,8 @@ void zoomOut(GtkWindow *widget, gpointer data)
 {
   ZMapWindow *window = (ZMapWindow*)data;
 
-  window->focuspane->zoomFactor *= 0.5;
-  scaleCanvas(window, 0.5);
+  window->focuspane->zoomFactor /= 2;
+  scaleCanvas(window, window->focuspane->zoomFactor);
   return;
 }
 
@@ -93,7 +102,7 @@ static int unfocus(GNode *node, gpointer data)
     {
       gtk_frame_set_shadow_type(GTK_FRAME(pane->frame), GTK_SHADOW_NONE);
 
-      gnome_canvas_item_set(pane->background,
+      foo_canvas_item_set(pane->background,
 			    "fill_color", "light grey",
 			    NULL);
     }
@@ -122,7 +131,7 @@ int recordFocus(GtkWidget *widget, GdkEvent *event, gpointer data)
 		  unfocus, 
 		  NULL);
   gtk_frame_set_shadow_type(GTK_FRAME(pane->frame), GTK_SHADOW_IN);
-  gnome_canvas_item_set(pane->background,
+  foo_canvas_item_set(pane->background,
 			"fill_color", "white",
 			NULL);
   return 0;

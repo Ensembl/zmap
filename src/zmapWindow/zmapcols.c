@@ -1,3 +1,4 @@
+/*  Last edited: May 14 10:34 2004 (rnc) */
 /*  file: zmapcols.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -24,38 +25,35 @@
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  */
 
-#include <wh/graph.h>
-#include <wh/gex.h>
-#include <wzmap/seqregion.h>
-#include <wzmap/zmapcontrol.h>
+#include <seqregion.h>
+#include <zmapcontrol.h>
+#include <zmapcommon.h>
 
-#ifdef ZMAP
-
-static void zMapScaleColumn(ZMapWindow *window, ZMapColumn *col, float *offset, int frame)
+static void zMapScaleColumn(ZMapPane *pane, ZMapColumn *col, float *offset, int frame)
 {
-  *offset = zmDrawScale(*offset,
-			zmVisibleCoord(window->root, zmCoordFromScreen(window, 0)),
-			zmVisibleCoord(window->root, zmCoordFromScreen(window, window->graphHeight)));
+  *offset = zmDrawScale( /*window->canvas,*/ *offset,
+			zmVisibleCoord(pane->window, zmCoordFromScreen(pane, 0)),
+			zmVisibleCoord(pane->window, zmCoordFromScreen(pane, pane->graphHeight)));
 }
 
-static void pruneCols(ZMapWindow *window)
+static void pruneCols(ZMapPane *pane)
      /* Remove Columns which have invalid methods */
 { 
   int i, j;
   
-  for (i = 0; i < arrayMax(window->cols); i++)
+  for (i = 0; i < arrayMax(pane->cols); i++)
     {
-      ZMapColumn *c = arrp(window->cols, i, ZMapColumn);
-      if (c->type != SR_DEFAULT && c->meth && !srMethodFromID(window->root->region, c->meth))
+      ZMapColumn *c = arrp(pane->cols, i, ZMapColumn);
+      if (c->type != SR_DEFAULT && c->meth && !srMethodFromID(pane->zMapRegion, c->meth))
 	{
-	  for (j = i+1; j < arrayMax(window->cols); j++)
-	    arr(window->cols, j-1, ZMapColumn) = arr(window->cols, j, ZMapColumn);
-	  arrayMax(window->cols)--;
+	  for (j = i+1; j < arrayMax(pane->cols); j++)
+	    arr(pane->cols, j-1, ZMapColumn) = arr(pane->cols, j, ZMapColumn);
+	  arrayMax(pane->cols)--;
 	}
     }
 }
 
-static void insertCol(ZMapWindow *window, methodID meth, srType type)
+static void insertCol(ZMapPane *pane, methodID meth, srType type)
 {
   /* NB call this one with type == SR_DEFAULT to put in default columns. */
 
@@ -71,12 +69,12 @@ static void insertCol(ZMapWindow *window, methodID meth, srType type)
                otherwise matches values in segs from convert routines.
   */
   static struct ZMapColDefs defs[] = {
-    { NULL, zMapScaleColumn, NULL, NULL, FALSE, 1.0, "Scale", SR_DEFAULT },
-    { nbcInit, zMapFeatureColumn, NULL, nbcSelect, FALSE, 2.0, "Features", SR_SEQUENCE },
-    { nbcInit, zMapFeatureColumn, NULL, nbcSelect, FALSE, 2.0, "Features", SR_FEATURE },
-    { nbcInit, zMapGeneDraw, NULL, geneSelect, FALSE, 2.0, "Features", SR_TRANSCRIPT },
-    { NULL, zMapDNAColumn, NULL, NULL, FALSE, 11.0, "DNA", SR_DEFAULT },
-  };
+    { NULL,    zMapScaleColumn  , NULL, NULL      , FALSE, 1.0, "Scale"   , SR_DEFAULT },
+    { nbcInit, zMapFeatureColumn, NULL, nbcSelect , FALSE, 2.0, "Features", SR_SEQUENCE },
+    { nbcInit, zMapFeatureColumn, NULL, nbcSelect , FALSE, 2.0, "Features", SR_FEATURE },
+    { nbcInit, zMapGeneDraw     , NULL, geneSelect, FALSE, 2.0, "Features", SR_TRANSCRIPT },
+    { NULL,    zMapDNAColumn    , NULL, NULL      , FALSE, 11.0, "DNA"    , SR_DEFAULT },
+  };/* init,   draw,            config, select,    isframe, prio, name,     type */
 
   int i, j, k;
   ZMapColumn *c;
@@ -94,75 +92,76 @@ static void insertCol(ZMapWindow *window, methodID meth, srType type)
 	}
       else if ((type == defs[i].type))
 	{
-	  if (!(methp = srMethodFromID(window->root->region, meth)))
+	  if (!(methp = srMethodFromID(pane->zMapRegion, meth)))
 	    messcrash("Failed to find method in insertCol");
-	  name = strnew(methp->name, window->root->look->handle);  
+	  name = strnew(methp->name, pane->window->handle);  
 	  priority = methp->priority;
 	}
       else
 	continue;
       
       for (j = 0; 
-	   j < arrayMax(window->cols) && 
-	     arr(window->cols, j, ZMapColumn).priority < priority;
+	   j < arrayMax(pane->cols) && 
+	     arr(pane->cols, j, ZMapColumn).priority < priority;
 	   j++);
       
       
-      if (j < arrayMax(window->cols))
+      if (j < arrayMax(pane->cols))
 	{
 	  /* default columns */
 	  if (!meth &&
-	      arr(window->cols, j, ZMapColumn).name == name)
+	      arr(pane->cols, j, ZMapColumn).name == name)
 	    continue; /* already there  */
 	    
 	  /* method columns */
 	  if (meth &&
-	      arr(window->cols, j, ZMapColumn).meth == meth &&
-	      arr(window->cols, j, ZMapColumn).type == type)
+	      arr(pane->cols, j, ZMapColumn).meth == meth &&
+	      arr(pane->cols, j, ZMapColumn).type == type)
 	    continue; /* already there  */
 	}
       
-      if ( j < arrayMax(window->cols))
+      if ( j < arrayMax(pane->cols))
 	/* make space */
-	for (k = arrayMax(window->cols); k >= j+1; k--)
+	for (k = arrayMax(pane->cols); k >= j+1; k--)
 	  {
-	    ZMapColumn tmp =  array(window->cols, k-1, ZMapColumn);
-	    *arrayp(window->cols, k, ZMapColumn) = tmp;
+	    ZMapColumn tmp =  array(pane->cols, k-1, ZMapColumn);
+	    *arrayp(pane->cols, k, ZMapColumn) = tmp;
 	  }
       
-      c = arrayp(window->cols, j, ZMapColumn);
+      c = arrayp(pane->cols, j, ZMapColumn);
       c->drawFunc = defs[i].drawFunc;
       c->configFunc = defs[i].configFunc;
       c->selectFunc = defs[i].selectFunc;
       c->isFrame = defs[i].isFrame;
       c->name = name;  
-      c->window = window;
+      c->pane = pane;
       c->priority = priority;
       c->type = type;
       c->meth = meth; /* zero for default columns */
       if (defs[i].initFunc)
-	(*defs[i].initFunc)(window, c);
+	(*defs[i].initFunc)(pane, c);
     }
 }
 
   
   
-void buildCols(ZMapWindow *window)
+void buildCols(ZMapPane *pane)
      /* Add a column for each method */
 {
-  SeqRegion *region = window->root->region;
+  ZMapRegion *zMapRegion = pane->zMapRegion;
   int i;
-  for (i=0; i < arrayMax(region->segs); i++)
+  for (i=0; i < arrayMax(zMapRegion->segs); i++)
       {
-	SEG *seg = arrp(region->segs, i, SEG);
+	SEG *seg = arrp(zMapRegion->segs, i, SEG);
 	methodID id = seg->method;
 	if (id)
-	  insertCol(window, id, seg->type);
+	  insertCol(pane, id, seg->type);
       }
 }
 	
-void makezMapDefaultColumns(ZMapWindow *window)
+void makezMapDefaultColumns(ZMapPane *pane)
 {
-    insertCol(window, 0, SR_DEFAULT);
+    insertCol(pane, 0, SR_DEFAULT);
 }
-#endif
+
+/********************** end of file ****************************/

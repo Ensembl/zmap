@@ -1,4 +1,4 @@
-/*  Last edited: Apr 15 11:50 2004 (rnc) */
+/*  Last edited: May 14 10:33 2004 (rnc) */
 /*  file: zmapsplit.h
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
-#include <libgnomecanvas/libgnomecanvas.h>
+#include <libfoocanvas/libfoocanvas.h>
 #include <zmapcontrol.h>
 
 /* function prototypes */
