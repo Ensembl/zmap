@@ -1,4 +1,4 @@
-/*  Last edited: May 14 10:33 2004 (rnc) */
+/*  Last edited: Jun 25 11:19 2004 (rnc) */
 /*  file: zmapsplit.h
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -32,13 +32,12 @@
 #include <stdlib.h>
 #include <gtk/gtk.h>
 #include <libfoocanvas/libfoocanvas.h>
-#include <zmapcontrol.h>
+#include <../zmapWindow/zmapcontrol.h>
 
 /* function prototypes */
 
 void  zoomIn          (GtkWindow *widget, gpointer data);
 void  zoomOut         (GtkWindow *widget, gpointer data);
-int   recordFocus     (GtkWidget *widget, GdkEvent *event, gpointer data); 
 void  splitPane       (GtkWidget *widget, gpointer data);
 void  splitHPane      (GtkWidget *widget, gpointer data);
 void  closePane       (GtkWidget *widget, gpointer data);

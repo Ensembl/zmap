@@ -1,4 +1,4 @@
-/*  Last edited: May 14 10:34 2004 (rnc) */
+/*  Last edited: Jun 22 15:59 2004 (rnc) */
 /*  file: zmapcols.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -27,33 +27,107 @@
 
 #include <seqregion.h>
 #include <zmapcontrol.h>
-#include <zmapcommon.h>
+#include <ZMap/zmapcommon.h>
+#include <ZMap/zmapWindow.h>
 
-static void zMapScaleColumn(ZMapPane *pane, ZMapColumn *col, float *offset, int frame)
+/*************** function prototypes *****************************************/
+
+static void zMapDNAColumn(ZMapPane pane, ZMapColumn *col, 
+		   float *offsetp, int frame);
+
+/*************** start function definitions **********************************/
+
+static void zMapScaleColumn(ZMapPane pane, ZMapColumn *col, float *offset, int frame)
 {
-  *offset = zmDrawScale( /*window->canvas,*/ *offset,
-			zmVisibleCoord(pane->window, zmCoordFromScreen(pane, 0)),
-			zmVisibleCoord(pane->window, zmCoordFromScreen(pane, pane->graphHeight)));
+  *offset = zmMainScale(zMapPaneGetCanvas(pane), *offset,
+			zmVisibleCoord(zMapPaneGetZMapWindow(pane), zmCoordFromScreen(pane, 0)),
+			zmVisibleCoord(zMapPaneGetZMapWindow(pane), 
+				       zmCoordFromScreen(pane, zMapPaneGetHeight(pane))));
 }
 
-static void pruneCols(ZMapPane *pane)
+
+/* cut this from zmapsequence.c and pasted here for now */
+void zMapDNAColumn(ZMapPane pane, ZMapColumn *col, 
+		   float *offsetp, int frame)
+{
+  float offset = *offsetp;
+  float max = offset;
+  float BPL = zMapPaneGetBPL(pane);
+  ZMapRegion *zMapRegion = zMapPaneGetZMapRegion(pane);
+  Coord seqstart = srCoord(zMapRegion, zMapPaneGetCentre(pane)) -
+    (zMapPaneGetHeight(pane) * BPL) / 2;
+  Coord seqend = srCoord(zMapRegion, zMapPaneGetCentre(pane)) +
+    (zMapPaneGetHeight(pane) * BPL) / 2;
+
+  Coord i;
+
+  if (seqstart < zMapRegion->area1)
+    seqstart = zMapRegion->area1;
+
+  if (seqend > zMapRegion->area2)
+    seqend = zMapRegion->area2;
+
+  if (zMapRegion->dna->len == 0)
+    return;
+
+  for (i = seqstart; i < seqend; i += BPL)
+    {
+      char *dnap, buff[10];
+      int j;
+      ScreenCoord y =  zmScreenCoord(pane, i);
+      sprintf(buff, "%7d", zmVisibleCoord(zMapPaneGetZMapWindow(pane), i));
+      //      graphText(buff, offset, y);
+
+      dnap = &g_array_index(zMapRegion->dna,
+			   char,
+			   i - (zMapRegion->area1-1));
+
+      for (j = 0; j < BPL; j++)
+	{
+	  float x = offset+8+j;
+	  //	  buff[0] = dnaDecodeChar[(int)*(dnap+j)];
+	  //	  buff[1] = 0;
+	  //	  graphText(buff, x, y);
+	  
+	  if (j+i > zMapRegion->area2)
+	    break;
+
+	  if (j+1 == zMapPaneGetDNAwidth(pane))
+	    {
+	      //	      graphText("...", x+1, y);
+	      j = BPL;
+	      x += 4;
+	    }
+	  
+	  if (x > max) 
+	    max = x;
+	}
+    }
+	
+  *offsetp = max+1;
+}
+
+
+static void pruneCols(ZMapPane pane)
      /* Remove Columns which have invalid methods */
 { 
   int i, j;
+  // NB all this farting about with &pane->cols must be wrong but I can't see why
+  printf("length is %d\n", zMapPaneGetCols(pane)->len);
   
-  for (i = 0; i < arrayMax(pane->cols); i++)
+  for (i = 0; i < zMapPaneGetCols(pane)->len; i++)
     {
-      ZMapColumn *c = arrp(pane->cols, i, ZMapColumn);
-      if (c->type != SR_DEFAULT && c->meth && !srMethodFromID(pane->zMapRegion, c->meth))
+      ZMapColumn *c = g_ptr_array_index(zMapPaneGetCols(pane), i);
+
+      if (c->type != SR_DEFAULT && c->meth && !srMethodFromID(zMapPaneGetZMapRegion(pane), c->meth))
 	{
-	  for (j = i+1; j < arrayMax(pane->cols); j++)
-	    arr(pane->cols, j-1, ZMapColumn) = arr(pane->cols, j, ZMapColumn);
-	  arrayMax(pane->cols)--;
+	  for (j = i+1; j < (zMapPaneGetCols(pane))->len; j++)
+	    g_ptr_array_remove_index(zMapPaneGetCols(pane), j-1); // = arr(pane->cols, j, ZMapColumn);
 	}
     }
 }
 
-static void insertCol(ZMapPane *pane, methodID meth, srType type)
+static void insertCol(ZMapPane pane, methodID meth, srType type)
 {
   /* NB call this one with type == SR_DEFAULT to put in default columns. */
 
@@ -69,11 +143,11 @@ static void insertCol(ZMapPane *pane, methodID meth, srType type)
                otherwise matches values in segs from convert routines.
   */
   static struct ZMapColDefs defs[] = {
-    { NULL,    zMapScaleColumn  , NULL, NULL      , FALSE, 1.0, "Scale"   , SR_DEFAULT },
-    { nbcInit, zMapFeatureColumn, NULL, nbcSelect , FALSE, 2.0, "Features", SR_SEQUENCE },
-    { nbcInit, zMapFeatureColumn, NULL, nbcSelect , FALSE, 2.0, "Features", SR_FEATURE },
+    { NULL,    zMapScaleColumn  , NULL, NULL      , FALSE, 1.0, "Scale"   , SR_DEFAULT    },
+    { nbcInit, zMapFeatureColumn, NULL, nbcSelect , FALSE, 2.0, "Features", SR_SEQUENCE   },
+    { nbcInit, zMapFeatureColumn, NULL, nbcSelect , FALSE, 2.0, "Features", SR_FEATURE    },
     { nbcInit, zMapGeneDraw     , NULL, geneSelect, FALSE, 2.0, "Features", SR_TRANSCRIPT },
-    { NULL,    zMapDNAColumn    , NULL, NULL      , FALSE, 11.0, "DNA"    , SR_DEFAULT },
+    { NULL,    zMapDNAColumn    , NULL, NULL      , FALSE, 11.0, "DNA"    , SR_DEFAULT    },
   };/* init,   draw,            config, select,    isframe, prio, name,     type */
 
   int i, j, k;
@@ -92,43 +166,55 @@ static void insertCol(ZMapPane *pane, methodID meth, srType type)
 	}
       else if ((type == defs[i].type))
 	{
-	  if (!(methp = srMethodFromID(pane->zMapRegion, meth)))
-	    messcrash("Failed to find method in insertCol");
-	  name = strnew(methp->name, pane->window->handle);  
+	  if (!(methp = srMethodFromID(zMapPaneGetZMapRegion(pane), meth)))
+	    {
+	      // TODO: sort out error handling here
+	      printf("Failed to find method in insertCol\n");
+	      exit;
+	    }
+	  name = (char*)g_string_new(methp->name); //previously hung on pane->window->handle);  
 	  priority = methp->priority;
 	}
       else
 	continue;
       
-      for (j = 0; 
-	   j < arrayMax(pane->cols) && 
-	     arr(pane->cols, j, ZMapColumn).priority < priority;
+
+      /* TODO: This bit is completely wrong.  I think the pane->cols array needs to be in
+      ** priority order, but GPtrArray doesn't have an insert function, just adds at the 
+      ** end.  Might have to write an insert function or use GArray instead, but for now
+      ** I'm not actually doing anything, as I've been in the pub at lunchtime and a couple
+      ** of beers is a sure way to break it. */
+      /*      for (j = 0; 
+	   j < (&pane->cols)->len && 
+	     g_ptr_array_index(pane->cols, j).priority < priority;
 	   j++);
+      */
       
+      //      if (j < (&pane->cols)->len)
+      //	{
+      //	  /* default columns */
+      //	  if (!meth &&
+      //	      g_ptr_array_index(pane->cols, j).name == name)
+      //	    continue; /* already there  */
+      //	    
+      //	  /* method columns */
+      //	  if (meth &&
+      //	      g_ptr_array_index(pane->cols, j).meth == meth &&
+      //	      g_ptr_array_index(pane->cols, j).type == type)
+      //	    continue; /* already there  */
+      //	}
       
-      if (j < arrayMax(pane->cols))
-	{
-	  /* default columns */
-	  if (!meth &&
-	      arr(pane->cols, j, ZMapColumn).name == name)
-	    continue; /* already there  */
-	    
-	  /* method columns */
-	  if (meth &&
-	      arr(pane->cols, j, ZMapColumn).meth == meth &&
-	      arr(pane->cols, j, ZMapColumn).type == type)
-	    continue; /* already there  */
-	}
+      //      if ( j < pane->cols->len)
+      /* make space */
+      //	for (k = arrayMax(pane->cols); k >= j+1; k--)
+      //	  {
+      //	ZMapColumn tmp =  array(pane->cols, k-1, ZMapColumn);
+      //	    *arrayp(pane->cols, k, ZMapColumn) = tmp;
+      //	  }
+
       
-      if ( j < arrayMax(pane->cols))
-	/* make space */
-	for (k = arrayMax(pane->cols); k >= j+1; k--)
-	  {
-	    ZMapColumn tmp =  array(pane->cols, k-1, ZMapColumn);
-	    *arrayp(pane->cols, k, ZMapColumn) = tmp;
-	  }
-      
-      c = arrayp(pane->cols, j, ZMapColumn);
+      //    c = g_ptr_array_index(pane->cols, j);
+
       c->drawFunc = defs[i].drawFunc;
       c->configFunc = defs[i].configFunc;
       c->selectFunc = defs[i].selectFunc;
@@ -141,25 +227,26 @@ static void insertCol(ZMapPane *pane, methodID meth, srType type)
       if (defs[i].initFunc)
 	(*defs[i].initFunc)(pane, c);
     }
+
 }
 
   
   
-void buildCols(ZMapPane *pane)
+void buildCols(ZMapPane pane)
      /* Add a column for each method */
 {
-  ZMapRegion *zMapRegion = pane->zMapRegion;
+  ZMapRegion *zMapRegion = zMapPaneGetZMapRegion(pane);
   int i;
-  for (i=0; i < arrayMax(zMapRegion->segs); i++)
+  for (i=0; i < zMapRegionGetSegs(zMapRegion)->len; i++)
       {
-	SEG *seg = arrp(zMapRegion->segs, i, SEG);
+	SEG *seg = &g_array_index(zMapRegionGetSegs(zMapRegion), SEG, i);
 	methodID id = seg->method;
 	if (id)
 	  insertCol(pane, id, seg->type);
       }
 }
 	
-void makezMapDefaultColumns(ZMapPane *pane)
+void makezMapDefaultColumns(ZMapPane pane)
 {
     insertCol(pane, 0, SR_DEFAULT);
 }

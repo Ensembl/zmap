@@ -1,4 +1,4 @@
-/*  Last edited: May 14 10:34 2004 (rnc) */
+/*  Last edited: Jun 28 13:59 2004 (rnc) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -32,30 +32,22 @@ static void *navAssoc, *winAssoc;
 
 /* function prototypes ***********************************************/
 
-static void        createZMap       (ZMapWindow *window, ZMapCallbackData *zMapCallbackData);
-static void        createZMapWindow (ZMapWindow *window, ZMapCallbackData *zMapCallbackData);
-static void        zMapZoomToolbar  (ZMapWindow *window, ZMapCallbackData *zMapCallbackData);
-static void        drawNavigator    (ZMapWindow *window);
-static void        drawWindow       (ZMapPane *pane);
-static void        navUpdate        (GtkAdjustment *adj, gpointer p);
-static void        navChange        (GtkAdjustment *adj, gpointer p);
-static void        drawNavigatorWind(ZMapPane *pane);
-static void        zMapScaleColumn  (ZMapPane *pane, float *offset, int frame);
-static void        drawBox          (FooCanvasItem *group, double x, double y, char *line_colour, char *fill_colour);
-static void        drawLine         (FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
-				     char *colour, double thickness);
-static void drawGene(ZMapWindow *window);
-static void columnOfBoxes(ZMapWindow *window);
-static float zmMainScale(FooCanvas *canvas, float offset, int start, int end);
+static void        createZMap       (ZMapWindow window);
+static void        zMapZoomToolbar  (ZMapWindow window);
+static void        drawNavigator    (ZMapWindow window);
+static void        drawWindow       (ZMapPane pane);
+static void        drawGene         (ZMapWindow window);
+static void        columnOfBoxes    (ZMapWindow window);
+static void        navScale         (FooCanvas *canvas, float offset, int start, int end);
 
 /* functions ********************************************************/
 
 BOOL Quit(GtkWidget *widget, gpointer data)
 {
-  ZMapWindow *window = (ZMapWindow*)data;
+  ZMapWindow window = (ZMapWindow)data;
 
-  if (window->panesTree)
-    g_node_destroy(window->panesTree);
+  if (zMapWindowGetPanesTree(window))
+    g_node_destroy(zMapWindowGetPanesTree(window));
 
   return TRUE;
 }
@@ -63,12 +55,14 @@ BOOL Quit(GtkWidget *widget, gpointer data)
 
 
 /* zMapDisplay
- * Main entry point for the zmap code.  Called by zMapCall() zmapcalls.c.
- * The first two params are callback routines to allow zmap to 
- * interrogate a data-source, the third being a void pointer to a
+ * Main entry point for the zmap code.  Called by zMapWindowCreate.
+ * The first param is the display window, then two callback routines to 
+ * allow zmap to interrogate a data-source. Then a void pointer to a
  * structure used in the process.  Although zmap doesn't need to know
  * directly about this structure, it needs to pass the pointer back
  * during callbacks, so AceDB can use it. 
+ *
+ * This will all have to change, now we're acedb-independent.
  *
  * We create the display window, then call the Activate 
  * callback routine to get the data, passing it a ZMapRegion in
@@ -76,46 +70,33 @@ BOOL Quit(GtkWidget *widget, gpointer data)
  * build the columns in the display.
  */
 
-BOOL zMapDisplay(Activate_cb act_cb,
-		 Calc_cb calc_cb,
-		 void *region,
-		 char *seqspec, 
-		 char *fromspec, 
-		 BOOL isOldGraph)
+BOOL zMapDisplay(ZMap        zmap,
+		 Activate_cb act_cb,
+		 Calc_cb     calc_cb,
+		 void       *region,
+		 char       *seqspec, 
+		 char       *fromspec, 
+		 BOOL        isOldGraph)
 {
+  ZMapWindow window = zmap->zMapWindow;
 
-  ZMapWindow *window = (ZMapWindow*)messalloc(sizeof(ZMapWindow));
-  Coord x1, x2;
-    
-  window->handle = handleCreate();
-  window->firstTime = TRUE;                 /* used in addPane() */
-  ZMapCallbackData *zMapCBData = halloc(sizeof(ZMapCallbackData), window->handle);
+  //  Coord x1, x2;    
+  //  zMapWindowSetHandle(window);
 
-  zMapCBData->calc_cb   = calc_cb;
-  zMapCBData->seqRegion = region;
+  zMapWindowSetFrame(window, zmap->view_parent);        
+  zMapWindowSetFirstTime(window, TRUE);                 /* used in addPane() */
 
   /* make the window in which to display the data */
-  createZMap(window, zMapCBData);
+  createZMapWindow(window);
 
-  /* Make zmapRegion  - just zmap stuff, no AceDB at all. */
-  window->focuspane->zMapRegion = srCreate(window->handle);
-  
-  /* Poke stuff in.  For xace this will be srActivate(). */
-  (*act_cb)(region, seqspec, window->focuspane->zMapRegion, &x1, &x2, &window->handle);
-  
-  /* stick the data into the display window */
-  makezMapDefaultColumns(window->focuspane);
-  buildCols(window->focuspane);
-
-  window->origin = srInvarCoord(window->focuspane->zMapRegion, x1);
-  window->focuspane->centre = srInvarCoord(window->focuspane->zMapRegion, x1);
-  window->focuspane->basesPerLine = 100;
-    
-  gtk_widget_show_all(window->window);
+  // for now, just default the areas to 0;
+  zMapWindowCreateRegion(window);
+  zMapWindowSetRegionArea(window, 0, 1);
+  zMapWindowSetRegionArea(window, 0, 2);
 
   drawNavigator(window);
 
-  drawWindow(window->focuspane);
+  drawWindow(zMapWindowGetFocuspane(window));
 
   return TRUE;
 
@@ -124,23 +105,24 @@ BOOL zMapDisplay(Activate_cb act_cb,
 
 /* zmRecalculate *******************************************************/
 
-static BOOL zmRecalculate(ZMapWindow *window, ZMapCallbackData *zMapCBData)
+static BOOL zmRecalculate(ZMapWindow window, ZMapCallbackData *zMapCBData)
 {
   /* derive the region for which we need data. */
   int min, max;
 
   Calc_cb calc_cb = zMapCBData->calc_cb;
 
-  min = zmCoordFromScreen(window->focuspane, 0);
-  max = zmCoordFromScreen(window->focuspane, window->focuspane->graphHeight);
+  min = zmCoordFromScreen(zMapWindowGetFocuspane(window), 0);
+  max = zmCoordFromScreen(zMapWindowGetFocuspane(window), 
+			  zMapWindowGetHeight(window));
 
   if (min < 0)
     min = 0;
-  if (max > window->focuspane->zMapRegion->length)
-    max = window->focuspane->zMapRegion->length;
+  if (max > zMapWindowGetRegionLength(window))
+    max = zMapWindowGetRegionLength(window);
 
-  if (min >= window->focuspane->zMapRegion->area1 &&
-      max <= window->focuspane->zMapRegion->area2)
+  if (min >= zMapWindowGetRegionArea(window, 1) &&
+      max <= zMapWindowGetRegionArea(window, 2))
     return FALSE; /* already covers area. */
   
   min -= 100000;
@@ -148,21 +130,24 @@ static BOOL zmRecalculate(ZMapWindow *window, ZMapCallbackData *zMapCBData)
 
   if (min < 0)
     min = 0;
-  if (max > window->focuspane->zMapRegion->length)
-    max = window->focuspane->zMapRegion->length;
+  if (max > zMapWindowGetRegionLength(window))
+    max = zMapWindowGetRegionLength(window);
 
-  (*calc_cb)(zMapCBData->seqRegion, min, max, window->focuspane->zMapRegion->rootIsReverse);  
+  (*calc_cb)(zMapCBData->seqRegion, min, max, 
+	     zMapWindowGetRegionReverse(window));  
 
-  buildCols(window->focuspane);
+  buildCols(zMapWindowGetFocuspane(window));
   
   return TRUE;
 }
 
 
-void zmRegBox(ZMapPane *pane, int box, ZMapColumn *col, void *arg)
+void zmRegBox(ZMapPane pane, int box, ZMapColumn *col, void *arg)
 {
-  array(pane->box2col, box, ZMapColumn *) = col;
-  array(pane->box2seg, box, void *) = arg;
+  zMapPaneSetBox2Col(pane, col, box);
+  zMapPaneSetBox2Seg(pane, arg, box);
+
+  return;
 }
 
 
@@ -175,50 +160,58 @@ static void zMapPick(int box, double x, double y)
   
   if (oldWindow && oldBox)
     {
-      col = arr(oldWindow->box2col, oldBox, ZMapColumn *);
-      seg = arr(oldWindow->box2seg, oldBox, void *);
+      col = zMapPaneGetBox2Col(*oldWindow, oldBox);
+      seg = zMapPaneGetBox2Seg(*oldWindow, oldBox);
       if (col && seg && col->selectFunc)
-	(*col->selectFunc)(oldWindow, col, seg, oldBox, x, y, FALSE);
+	(*col->selectFunc)(*oldWindow, col, seg, oldBox, x, y, FALSE);
       oldBox = 0;
       oldWindow = NULL;
     }
   
-  if (graphAssFind(&winAssoc, &oldWindow))
+  //  if (graphAssFind(&winAssoc, &oldWindow))
+  if (oldWindow)
     {
       oldBox = box;
-      col = arr(oldWindow->box2col, oldBox, ZMapColumn *);
-      seg = arr(oldWindow->box2seg, oldBox, void *);
+      col = zMapPaneGetBox2Col(*oldWindow, oldBox);
+      seg = zMapPaneGetBox2Seg(*oldWindow, oldBox);
 
       if (col && seg && col->selectFunc)
-	(*col->selectFunc)(oldWindow, col, seg, oldBox, x, y, TRUE);
+	(*col->selectFunc)(*oldWindow, col, seg, oldBox, x, y, TRUE);
     }
 
 }
 
 
 
-static void drawWindow(ZMapPane *pane)
+static void drawWindow(ZMapPane pane)
 {
   float offset = 5;
   float maxOffset = 0;
   int   frameCol, i, frame = -1;
   float oldPriority = -100000;
   
-  graphActivate(pane->graph); 
-  graphClear();
-  graphColor(BLACK);
-  graphRegister (PICK,(GraphFunc) zMapPick);
+  //  graphActivate(pane->graph); 
+  //  graphClear();
+  //  graphColor(BLACK);
+  //  graphRegister (PICK,(GraphFunc) zMapPick);
  
-  pane->box2col = arrayReCreate(pane->box2col, 500, ZMapColumn *);
-  pane->box2seg = arrayReCreate(pane->box2seg, 500, SEG *);
-  if (pane->drawHandle)
-    handleDestroy(pane->drawHandle);
-  pane->drawHandle = handleHandleCreate(pane->window->handle);
+  //  pane->box2col = arrayReCreate(pane->box2col, 500, ZMapColumn *);
+  //  pane->box2seg = arrayReCreate(pane->box2seg, 500, SEG *);
 
-  for (i = 0; i < arrayMax(pane->cols); i++)
+  zMapPaneFreeBox2Col(pane);
+  zMapPaneFreeBox2Seg(pane);
+  zMapPaneNewBox2Col(pane, 500);
+  zMapPaneNewBox2Seg(pane, 500);
+
+  //  if (pane->drawHandle)
+  //    handleDestroy(pane->drawHandle);
+  //  pane->drawHandle = handleHandleCreate(zMapWindowGetHandle(pane->window));
+  //  pane->drawHandle = NULL;
+
+  for (i = 0; i < zMapPaneGetCols(pane)->len; i++)
    
     { 
-      ZMapColumn *col = arrp(pane->cols, i, ZMapColumn);
+      ZMapColumn *col = g_ptr_array_index(zMapPaneGetCols(pane), i);
       float offsetSave = -1;
      
       /* frame : -1 -> No frame column.
@@ -236,7 +229,7 @@ static void drawWindow(ZMapPane *pane)
 	  /* in frame mode and reached end of framed columns: backtrack */
 	  frame++;
 	  i = frameCol;
-	  col = arrp(pane->cols, i, ZMapColumn);
+	  col = g_ptr_array_index(zMapPaneGetCols(pane), i);
 	}
       else if ((frame == 2) && !col->isFrame)
 	{
@@ -257,72 +250,13 @@ static void drawWindow(ZMapPane *pane)
       
     }
 
-  graphTextBounds(maxOffset, 0);
+  //  graphTextBounds(maxOffset, 0);
   
-  graphRedraw();
+  //  graphRedraw();
   
 }
   
 	      
-static void gtk_ifactory_cb (gpointer             callback_data,
-		 guint                callback_action,
-		 GtkWidget           *widget)
-{
-  g_message ("ItemFactory: activated \"%s\"", gtk_item_factory_path_from_widget (widget));
-}
-
-
-
-/* createZMap ***********************************************************
- * Draws the basics of the window - the trim around it, etc.  
- * Creates the main menu and a text entry box, then callse createZMapWindow.
- */
-static void createZMap(ZMapWindow *window, ZMapCallbackData *zMapCallbackData)
-{
-  GtkAccelGroup *accel_group = gtk_accel_group_new ();
-  static GtkItemFactoryEntry menu_items[] =
-  {
-    { "/_File",            NULL,         0,                     0, "<Branch>" },
-    { "/File/_Print",      "<control>P", gtk_ifactory_cb,       0 },
-    { "/File/Print _Whole","<control>W", gtk_ifactory_cb,       0 },
-    { "/File/P_reserve",   "<control>r", gtk_ifactory_cb,       0 },
-    { "/File/_Recalculate",NULL,         gtk_ifactory_cb,       0 },
-    { "/File/sep1",        NULL,         gtk_ifactory_cb,       0, "<Separator>" },
-    { "/File/_Quit",       "<control>Q", gtk_ifactory_cb,       0 },
-    { "/_Export",         	    	 NULL, 0,               0, "<Branch>" },
-    { "/Export/_Features", 		 NULL, gtk_ifactory_cb, 0 },
-    { "/Export/_Sequence",             	 NULL, gtk_ifactory_cb, 0 },
-    { "/Export/_Transalations",          NULL, gtk_ifactory_cb, 0 },
-    { "/Export/_EMBL dump",              NULL, gtk_ifactory_cb, 0 },
-    { "/_Help",            NULL,         0,                     0, "<LastBranch>" },
-    { "/Help/_About",      NULL,         gtk_ifactory_cb,       0 },
-  };
-
-  static int nmenu_items = sizeof (menu_items) / sizeof (menu_items[0]);
-
-  
-  /* create top level window */
-  window->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  g_signal_connect(GTK_OBJECT(window->window), "destroy", 
-      GTK_SIGNAL_FUNC(Quit), (gpointer) window);
-
-  gtk_widget_set_size_request(window->window, 1000, 750); 
-  window->vbox1 = gtk_vbox_new(FALSE, 4);
-  window->itemFactory = gtk_item_factory_new(GTK_TYPE_MENU_BAR, "<main>", accel_group);
-  window->infoSpace = gtk_entry_new();
-
-  gtk_window_add_accel_group (GTK_WINDOW(window->window), accel_group);
-  gtk_item_factory_create_items (window->itemFactory, nmenu_items, menu_items, NULL);
-  gtk_container_add(GTK_CONTAINER(window->window), window->vbox1);
-  gtk_box_pack_start(GTK_BOX(window->vbox1), 
-		     gtk_item_factory_get_widget(window->itemFactory, "<main>"),
-		     FALSE, FALSE, 0);
-  gtk_box_pack_start(GTK_BOX(window->vbox1), window->infoSpace, FALSE, FALSE, 0);
-
-  createZMapWindow(window, zMapCallbackData);
-}
-
-
  
 /* createZMapWindow ***************************************************************
  * Creates the root node in the panesTree (which helps keep track of all the
@@ -334,62 +268,37 @@ static void createZMap(ZMapWindow *window, ZMapCallbackData *zMapCallbackData)
  * in as child2.
  */
 
-static void createZMapWindow(ZMapWindow *window, ZMapCallbackData *zMapCallbackData)
+void createZMapWindow(ZMapWindow window)
 {
-  GtkWidget *toolbar = gtk_toolbar_new();
-  zMapCallbackData->window = window;
-  ZMapPane *pane = NULL;
-  GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
+  ZMapPane pane = NULL;
  
-  window->panesTree = g_node_new(pane);
-
-  window->hbox = gtk_hbox_new(FALSE, 0);
-  window->hpane = gtk_hpaned_new();
-                                                                                           
-  /* Next into the vbox we pack an hbox to hold two toolbars.  This is
-   * so the Close Pane button can be far away from the rest, which I like. */
-  gtk_box_pack_start(GTK_BOX(window->vbox1), hbox, FALSE, FALSE, 0);
-  gtk_box_pack_start(GTK_BOX(hbox), toolbar, FALSE, FALSE, 0);
-                                                                                           
-  gtk_toolbar_append_item(GTK_TOOLBAR(toolbar), "H-Split", "2 panes, one above the other" , NULL, NULL,
-                          GTK_SIGNAL_FUNC(splitPane),
-                          (gpointer)window);
-                                                                                           
-  gtk_toolbar_append_item(GTK_TOOLBAR(toolbar), "Clear", NULL, NULL, NULL,
-                          NULL, NULL);
-  gtk_toolbar_append_item(GTK_TOOLBAR(toolbar), "Rev-Comp", NULL, NULL, NULL,
-                          NULL, NULL);
-  gtk_toolbar_append_item(GTK_TOOLBAR(toolbar), "DNA", NULL, NULL, NULL,
-                          NULL, NULL);
-  gtk_toolbar_append_item(GTK_TOOLBAR(toolbar), "GeneFind", NULL, NULL, NULL,
-                          NULL, NULL);
-  gtk_toolbar_append_item(GTK_TOOLBAR(toolbar), "Origin", NULL, NULL, NULL,
-                          NULL, NULL);
-  gtk_toolbar_append_item(GTK_TOOLBAR(toolbar), "V-Split", "2 panes, side by side", NULL, NULL,
-                          GTK_SIGNAL_FUNC(splitHPane),
-                          (gpointer)window);
-                                                                                           
-  toolbar = gtk_toolbar_new();
-  gtk_box_pack_end(GTK_BOX(hbox), toolbar, FALSE, FALSE, 0);
-                                                                                           
-  gtk_toolbar_append_item(GTK_TOOLBAR(toolbar), "Close\nPane", NULL, NULL, NULL,
-                          GTK_SIGNAL_FUNC(closePane),
-                          (gpointer)window);
+  zMapWindowSetPanesTree(window, g_node_new(pane));
+  zMapWindowSetHpane(window, gtk_hpaned_new());
                                                                                            
   /* After the toolbars comes an hpane, so the user can adjust the width
    * of the navigator pane */
-  gtk_box_pack_start(GTK_BOX(window->vbox1), window->hpane, TRUE, TRUE, 0);
+  gtk_container_add(GTK_CONTAINER(zMapWindowGetFrame(window)), zMapWindowGetHpane(window));
                                                                                            
+  zMapWindowSetNavigator(window, gtk_scrolled_window_new(NULL, NULL));
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(zMapWindowGetNavigator(window)), 
+				 GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+  gtk_widget_set_size_request(zMapWindowGetNavigator(window), 100, -1);
+
   /* leave window->navigator in place until navcanvas works */
-  window->navigator = graphNakedCreate(TEXT_FIT, "", 20, 100, FALSE) ;
-  gtk_widget_set_size_request(gexGraph2Widget(window->navigator), 50, -1);
-  gtk_paned_pack1(GTK_PANED(window->hpane), gexGraph2Widget(window->navigator),
+  //  zMapWindowSetNavigator(window, graphNakedCreate(TEXT_FIT, "", 20, 100, FALSE)) ;
+  //  gtk_widget_set_size_request(gexGraph2Widget(zMapWindowGetNavigator(window)), 50, -1);
+
+  gtk_paned_pack1(GTK_PANED(zMapWindowGetHpane(window)), 
+		  zMapWindowGetNavigator(window),
                   TRUE, TRUE);
                                                                                            
   /* create the splittable pane and pack it into the hpane as child2. */
-  zMapZoomToolbar(window, zMapCallbackData);
-  gtk_widget_set_size_request(window->zoomvbox, 750, -1);
-  gtk_paned_pack2(GTK_PANED(window->hpane), window->zoomvbox, TRUE, TRUE);
+  zMapZoomToolbar(window);
+
+  gtk_widget_set_size_request(zMapWindowGetZoomVbox(window), 750, -1);
+  gtk_paned_pack2(GTK_PANED(zMapWindowGetHpane(window)), 
+		  zMapWindowGetZoomVbox(window)
+		  , TRUE, TRUE);
 
   return;
 }
@@ -400,167 +309,33 @@ static void createZMapWindow(ZMapWindow *window, ZMapCallbackData *zMapCallbackD
  * sets up a bare graph.  Calls addPane to add the actual data display panel.
  * I suspect we'll end up putting the zoom buttons on the top menu line.
  */
-static void zMapZoomToolbar(ZMapWindow *window, ZMapCallbackData *zMapCallbackData)
+static void zMapZoomToolbar(ZMapWindow window)
 {
   
   GtkWidget *toolbar = gtk_toolbar_new();
   
-  window->zoomvbox = gtk_vbox_new(FALSE,0);
+  zMapWindowSetZoomVbox(window, gtk_vbox_new(FALSE,0));
 
-  /* build the zoom toolbar */
-  gtk_toolbar_append_item(GTK_TOOLBAR(toolbar), "Zoom In", NULL, NULL, NULL, 
-			  GTK_SIGNAL_FUNC(zoomIn), (gpointer) window);
-
-  gtk_toolbar_append_item(GTK_TOOLBAR(toolbar), "Zoom Out", NULL, NULL, NULL, 
-			  GTK_SIGNAL_FUNC(zoomOut), (gpointer) window);
-  //			  GTK_SIGNAL_FUNC(zoomOut), (gpointer)zMapCallbackData);
-
-  /* add zoom toolbar and scrolling window to vbox */
-  gtk_box_pack_start(GTK_BOX(window->zoomvbox), toolbar, FALSE, FALSE, 0);
 
   addPane(window, 'v');
-
-  return;
-}
-
-
-/* addPane is called each time we add a new pane. Creates a new frame, scrolled
- * window and canvas.  First time through it sticks them in the window->zoomvbox, 
- * thereafter it packs them into the lower part of the focus pane.
- *
- * Splitting goes like this: we make a (h or v) pane, add a new frame to the child1 
- * position of that, then reparent the scrolled window containing the canvas into 
- * the new frame. That's the shrinkPane() function. 
- * Then in addPane we add a new frame in the child2 position, and into that we
- * load a new scrolled window and canvas. 
-*/
-void addPane(ZMapWindow *window, char orientation)
-{
-  ZMapPane *pane = (ZMapPane*)malloc(sizeof(ZMapPane));
-  GtkAdjustment *adj; 
-  GtkWidget *w;
-  GNode *node = NULL;
-
-  /* set up ZMapPane for this window */
-  pane->window = window;
-  pane->DNAwidth = 100;
-  pane->step_increment = 10;
-
-  /* create the bare graph & convert to a widget */
-  /*    pane->graph = graphNakedCreate(TEXT_FIT, "", 20, 100, TRUE);
-	pane->graphWidget = gexGraph2Widget(pane->graph);*/
-  
-  pane->cols = arrayHandleCreate(50, ZMapColumn, window->handle);
-  pane->box2col        = NULL;
-  pane->box2seg        = NULL;
-  pane->drawHandle     = NULL;
-  pane->frame          = gtk_frame_new(NULL);
-  pane->scrolledWindow = gtk_scrolled_window_new (NULL, NULL);
-
-  /* The idea of the GNode tree is that panes split horizontally, ie
-   * one above the other, end up as siblings in the tree, while panes
-   * split vertically (side by side) are parents/children.  In theory
-   * this enables us to get the sizing right. In practice it's not
-   * perfect yet.*/
-  if (window->firstTime) 
-    { 
-      pane->zoomFactor   = 1;
-      g_node_append_data(window->panesTree, pane);
-    }
-  else
-    {
-      pane->zoomFactor   = window->focuspane->zoomFactor;
-      node = g_node_find (window->panesTree,
-			  G_IN_ORDER,
-			  G_TRAVERSE_ALL,
-			  window->focuspane);
-      if (orientation == 'h')
-	  g_node_append_data(node->parent, pane);
-      else
-	  g_node_append_data(node, pane);
-    }
-
-  /* draw the canvas */
-  gdk_rgb_init();
-  w = foo_canvas_new();
-
-  pane->canvas = FOO_CANVAS(w);
-  foo_canvas_set_scroll_region(pane->canvas, 0.0, 0.0, 1000, 1000);
-  pane->background = foo_canvas_item_new(foo_canvas_root(pane->canvas),
-	 		foo_canvas_rect_get_type(),
-			"x1",(double)0,
-			"y1",(double)0,
-			"x2",(double)1000,
-			"y2",(double)1000,
-		 	"fill_color", "white",
-			"outline_color", "dark gray",
-			NULL);
-  
-  /* when the user clicks a button in the view, call recordFocus() */
-  g_signal_connect (GTK_OBJECT (pane->canvas), "button_press_event",
-		    GTK_SIGNAL_FUNC (recordFocus), pane);
-
-  pane->group = foo_canvas_item_new(foo_canvas_root(pane->canvas),
-                        foo_canvas_group_get_type(),
-                        "x", (double)100,
-                        "y", (double)100 ,
-                        NULL);
-
-  /* add the canvas to the scrolled window */
-  gtk_container_add(GTK_CONTAINER(pane->scrolledWindow),w);
-
-  /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
-  /* Using a member of ZMapPane means I can adjust it if necessary when we zoom. */
-  GTK_LAYOUT (w)->vadjustment->step_increment = pane->step_increment;
-  GTK_LAYOUT (w)->hadjustment->step_increment = pane->step_increment;
-
-  /* add the scrolled window to the frame */
-  gtk_container_add(GTK_CONTAINER(pane->frame),pane->scrolledWindow);
-
-  /* First time through, we add the frame to the main vbox. 
-   * Subsequently it goes in the lower half of the current pane. */
-  if (window->firstTime)
-    gtk_box_pack_start(GTK_BOX(window->zoomvbox), pane->frame, TRUE, TRUE, 0);
-  else
-    gtk_paned_pack2(GTK_PANED(window->focuspane->pane), pane->frame, TRUE, TRUE);
-
-
-  /* always show scrollbars, however big the display */
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(pane->scrolledWindow),
-       GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
-
-  adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(pane->scrolledWindow)); 
-
-  g_signal_connect(GTK_OBJECT(adj), "value_changed", GTK_SIGNAL_FUNC(navUpdate), (gpointer)(pane));
-  g_signal_connect(GTK_OBJECT(adj), "changed", GTK_SIGNAL_FUNC(navChange), (gpointer)(pane)); 
-
-  /* focus on the new pane */
-  recordFocus(NULL, NULL, pane);
-  gtk_widget_grab_focus(pane->frame);
-
-  /* if we do this first time, a little blank box appears before the main display */
-  if (!window->firstTime) 
-    gtk_widget_show_all (window->window);
-
-  window->firstTime = FALSE;
-
-  zmMainScale(pane->canvas, 30, 0, 1000);
   drawGene(window);
-  columnOfBoxes(window);
+  //  columnOfBoxes(window);
 
   return;
 }
 
 
 /* This is just a noddy function I used to draw a small box on the canvas */
-static void drawBox (FooCanvasItem *group, double x, double y, char *line_colour, char *fill_colour)
+void drawBox (FooCanvasItem *group, double x1, double y1, 
+	      double x2, double y2, 
+	      char *line_colour, char *fill_colour)
 {
   foo_canvas_item_new(FOO_CANVAS_GROUP(group),
                         foo_canvas_rect_get_type(),
-                        "x1"           , (double)x ,
-                        "y1"           , (double)y ,
-                        "x2"           , (double)x+14.0,
-                        "y2"           , (double)y+3.0,
+                        "x1"           , (double)x1 ,
+                        "y1"           , (double)y1 ,
+                        "x2"           , (double)x2,
+                        "y2"           , (double)y2,
                         "outline_color", line_colour          ,
                         "fill_color"   , fill_colour          ,
                         "width_units"  , (double)1,
@@ -571,7 +346,7 @@ static void drawBox (FooCanvasItem *group, double x, double y, char *line_colour
 }
 
 /* This is just a noddy function I used to draw a line  on the canvas */
-static void drawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
+void drawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 		     char *colour, double thickness)
 {
   FooCanvasPoints *points;
@@ -599,11 +374,13 @@ static void drawLine(FooCanvasGroup *group, double x1, double y1, double x2, dou
 }
                                                                                 
 
-static void drawGene(ZMapWindow *window)
+static void drawGene(ZMapWindow window)
 {
   FooCanvasItem *group;
+  ZMapPane pane = zMapWindowGetFocuspane(window);
+  FooCanvas *canvas = zMapPaneGetCanvas(pane);
 
-  group = foo_canvas_item_new(foo_canvas_root(window->focuspane->canvas),
+  group = foo_canvas_item_new(foo_canvas_root(canvas),
                         foo_canvas_group_get_type(),
                         "x", (double)100,
                         "y", (double)100 ,
@@ -611,7 +388,7 @@ static void drawGene(ZMapWindow *window)
 
   //group = window->focuspane->group;
 
-  drawBox(group, 0.0, 220.0 ,"light blue", "white");
+  /*  drawBox(group, 0.0, 220.0 ,"light blue", "white");
   drawBox(group, 0.0, 260.0 ,"light blue", "white");
   drawBox(group, 0.0, 300.0 ,"light blue", "white");
   drawBox(group, 0.0, 320.0 ,"light blue", "white");
@@ -655,27 +432,29 @@ static void drawGene(ZMapWindow *window)
   drawLine(FOO_CANVAS_GROUP(group), 34.0, 400.0, 27.0, 420.0, "red", 1.0);
   drawLine(FOO_CANVAS_GROUP(group), 27.0, 423.0, 34.0, 440.0, "red", 1.0);
   drawLine(FOO_CANVAS_GROUP(group), 34.0, 440.0, 27.0, 460.0, "red", 1.0);
- 
+  */
   return;
 }
 
                
 
-static void columnOfBoxes(ZMapWindow *window)
+static void columnOfBoxes(ZMapWindow window)
 {
-  int space[12] = {1,6,9,4,5,2,8,3,7,1,6};
+  /*  int space[12] = {1,6,9,4,5,2,8,3,7,1,6};
   int i, j;
   double y = 0;
   FooCanvasItem *group;
+  ZMapPane pane = zMapWindowGetFocuspane(window);
+  FooCanvas *canvas = zMapPaneGetCanvas(pane);
 
-  group = foo_canvas_item_new(foo_canvas_root(window->focuspane->canvas),
+  group = foo_canvas_item_new(foo_canvas_root(canvas),
                         foo_canvas_group_get_type(),
                         "x", (double)100,
                         "y", (double)100 ,
                         NULL);
-
+  */
   //group = window->focuspane->group;
-
+  /*
   for (i=0; i<20; i++)
     {
       for (j=0; j<10; j++)
@@ -685,14 +464,14 @@ static void columnOfBoxes(ZMapWindow *window)
 	}
     }
 
-  group = foo_canvas_item_new(foo_canvas_root(window->focuspane->canvas),
+  group = foo_canvas_item_new(foo_canvas_root(canvas),
                         foo_canvas_group_get_type(),
                         "x", (double)100,
                         "y", (double)100 ,
                         NULL);
-
+  */
   //group = window->focuspane->group;
-
+  /*
   for (i=0, y=0; i<20; i++)
     {
       for (j=1; j<11; j++)
@@ -702,14 +481,14 @@ static void columnOfBoxes(ZMapWindow *window)
 	}
     }
 
-  group = foo_canvas_item_new(foo_canvas_root(window->focuspane->canvas),
+  group = foo_canvas_item_new(foo_canvas_root(canvas),
                         foo_canvas_group_get_type(),
                         "x", (double)100,
                         "y", (double)100 ,
                         NULL);
-
+  */
   //group = window->focuspane->group;
-
+  /*
   for (i=0, y=0; i<20; i++)
     {
       for (j=2; j<12; j++)
@@ -718,6 +497,7 @@ static void columnOfBoxes(ZMapWindow *window)
 	  y += space[j];
 	}
     }
+  */
   return;
 }
 
@@ -732,11 +512,7 @@ static void displayText(FooCanvasGroup *group, char *text, double x, double y)
 }
 
 
-/* This is commented out because I started trying to draw a scalebar after
- * I first put in some of the gnomecanvas stuff, but never succeeded completely.
- * However, when I went away to work on splitting the window, I didn't want to
- * throw this away completely. */
-static float zmMainScale(FooCanvas *canvas, float offset, int start, int end)
+float zmMainScale(FooCanvas *canvas, float offset, int start, int end)
 {
   int x, width = 5, count;
   FooCanvasItem *group;
@@ -765,93 +541,57 @@ static float zmMainScale(FooCanvas *canvas, float offset, int start, int end)
 
 
 
-/* This is the original zmDrawScale I inherited which draws a neat scalebar
- * in the navigator.  It used to do so in the main display panel, until I 
- * started using the canvas. */
-float zmDrawScale(float offset, int start, int end)
+static void navScale(FooCanvas *canvas, float offset, int start, int end)
 {
-  int height;
-  int unit, subunit, type, unitType ;
-  int x, width = 0 ;
-  float mag, cutoff;
-  char *cp, unitName[] = { 0, 'k', 'M', 'G', 'T', 'P' }, buf[2] ;
+  int x, width = 5, count;
+  FooCanvasItem *group;
 
-  graphFitBounds(NULL, &height); 
-
-  mag = (float)height/((float)(end - start));
-  cutoff = 5/mag;
-  unit = subunit = 1.0 ;
-
-  if (cutoff < 0)
-    cutoff = -cutoff ;
-
-  while (unit < cutoff)
-    { unit *= 2 ;
-      subunit *= 5 ;
-      if (unit >= cutoff)
-	break ;
-      unit *= 2.5000001 ;	
-      if (unit >= cutoff)
-	break ;
-      unit *= 2 ;
-      subunit *= 2 ;
-    }
-  subunit /= 10 ;
-  if (subunit < 1.0)
-    subunit = 1.0 ;
-
-  for (type = 1, unitType = 0 ; unit > 0 && 1000 * type < unit && unitType < 5; 
-       unitType++, type *= 1000) ;
-  
-  if (x>0)
-    x = ((start/unit)+1)*unit;
-  else
-    x = ((start/unit)-1)*unit;  
-  
-  for (; x < end ; x += unit)
+  group = foo_canvas_item_new(foo_canvas_root(canvas),
+			foo_canvas_group_get_type(),
+			"x",(double)offset,
+			"y",(double)0.0,
+			NULL);
+ 
+  for (x = start, count = 1 ; x < end ; x += 10, count++)
     {
-      ScreenCoord y = (float)(x-start)*mag;
-      graphLine (offset, y, offset, y) ;
-      buf[0] = unitName[unitType] ; buf[1] = 0 ;
-      cp = messprintf ("%d%s", x/type, buf) ;
-      if (width < strlen (cp))
-        width = strlen (cp) ;
-      graphText (cp, offset+1.5, y-0.5) ;
-    }
-
-
-  for (x = ((start/unit)-1)*unit ; x < end ; x += subunit)
-    {
-      ScreenCoord y = (float)(x-start)*mag;
-      graphLine (offset+0.5, y, offset+1, y) ;
+      drawLine(FOO_CANVAS_GROUP(group), offset-5, x, offset, x, "black", 1.0);
+      char text[25];
+      sprintf(text,"%dk", x);
+      if (count == 1)
+	displayText(FOO_CANVAS_GROUP(group), text, offset + 20, x); 
+      if (count > 9) count = 0;
     }
 			     
-  graphLine (offset+1, 0, offset+1, height) ;
-  return offset + width + 4 ;
+  drawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, end, "black", 1.0);
+  return;
 
 }
 
 
+
+
 static int dragBox;
 
-/* I believe is only called by navPick */
+/* I believe navDrag is only called by navPick.  Since I don't 
+** know what navPick is doing, and don't now know what
+** navDrag is doing, I'm going to comment most of it out. */
 static void navDrag(float *x, float *y, BOOL isDone)
 {
   static BOOL isDragging = FALSE;
   static float oldY;
-  ZMapWindow *window;
-  ZMapPane *pane;
+  ZMapWindow window;
+  ZMapPane pane;
   Coord startWind, endWind;
   ScreenCoord startWindf, endWindf, lenWindf;
   int height;
   
-  graphFitBounds(NULL, &height);
-  graphAssFind(&navAssoc, &window);
+  //  graphFitBounds(NULL, &height);
+  //  graphAssFind(&navAssoc, &window);
 
-  if (dragBox == window->focuspane->dragBox)
+  /*  if (dragBox == zMapWindowGetFocuspane(window)->dragBox)
     {
-      pane = window->focuspane;
-      *x = window->scaleOffset - 0.3;
+      pane = zMapWindowGetFocuspane(window);
+      *x = zMapWindowGetScaleOffset(window) - 0.3;
     }
   else
     return;
@@ -859,8 +599,15 @@ static void navDrag(float *x, float *y, BOOL isDone)
   startWind =  zmCoordFromScreen(pane, 0);
   endWind =  zmCoordFromScreen(pane, pane->graphHeight);
   
-  startWindf = height * (startWind - window->navStart)/(window->navEnd - window->navStart);
-  endWindf = height * (endWind - window->navStart)/(window->navEnd - window->navStart);
+  startWindf = zMapWindowGetScreenCoord(window, startWind, height);
+  endWindf   = zMapWindowGetScreenCoord(window, endWind, height);
+  */
+  //  startWindf = height * (startWind - zMapWindowGetCoord(window, "s"))
+  //                      / (zMapWindowGetCoord(window, "e") - zMapWindowGetCoord(window, "s"));
+
+  //  endWindf = height * (endWind - zMapWindowGetCoord(window, "s"))
+  //    / (zMapWindowGetCoord(window, "e") - zMapWindowGetCoord(window, "s"));
+  /*
   lenWindf = endWindf - startWindf;
   
   
@@ -878,201 +625,180 @@ static void navDrag(float *x, float *y, BOOL isDone)
   if (isDone)
     {
       isDragging = FALSE;
-      pane->centre = srInvarCoord(window->focuspane->zMapRegion, 
-				  srCoord(window->focuspane->zMapRegion, pane->centre) -
-				  (oldY - *y) * (float)(window->navEnd - window->navStart)/(float)height);
-
+      pane->centre = srInvarCoord(zMapWindowGetFocuspane(window)->zMapRegion, 
+				  srCoord(zMapWindowGetFocuspane(window)->zMapRegion, pane->centre) -
+				  (oldY - *y) * (float)(zMapWindowGetCoord(window, "e") - zMapWindowGetCoord(window, "s"))/(float)height);
+  */
       /* TO DO: how do I get a zMapCBData into navDrag?
 	 ANS: when I convert the graphRegister to a g_signal_connect I can do that. 
       if (zmRecalculate(window, zMapCBData))
 	drawNavigator(window);
       */
       printf("Well, I'm in navDrag\n");
-
-      drawWindow(pane); 
-      graphActivate(window->navigator);
-    }
+      
+      // we don't have a pane or window, so can't do anything with them here.
+      //      drawWindow(pane); 
+      //      graphActivate(zMapWindowGetNavigator(window));
+      //    }
   
 }
 
+/* not sure what navPick is supposed to do, so not
+** going to give it a signal_connect for now. Params
+** are all wrong, anyway. */
 static void navPick(int box, double x, double y)
 {
-  ZMapWindow *window;
+  ZMapWindow window;
 
-  graphAssFind(&navAssoc, &window);
+  //  graphAssFind(&navAssoc, &window);
 
-  if (box == window->focuspane->dragBox)
+  //  if (box == zMapWindowGetFocuspane(window)->dragBox)
     {
       dragBox = box;
-      graphBoxDrag(box, navDrag);
+      //      graphBoxDrag(box, navDrag);
     }
 }
 
 static void navResize(void)
 {
-  ZMapWindow *window;
+  ZMapWindow window;
   
-  if (graphAssFind(&navAssoc, &window))
+  //  if (graphAssFind(&navAssoc, &window))
     drawNavigator(window);
 }
 
-static void navChange(GtkAdjustment *adj, gpointer p)
+void navChange(GtkAdjustment *adj, gpointer p)
 {
-  ZMapPane *pane = (ZMapPane *)p;
+  ZMapPane pane = (ZMapPane)p;
   
-  drawNavigator(pane->window);
+  drawNavigator(zMapPaneGetZMapWindow(pane));
 }
 
 
 
-static void drawNavigator(ZMapWindow *window)
+static void drawNavigator(ZMapWindow window)
 {
   int height;
   ScreenCoord startCalcf, endCalcf;
   int areaSize;
+  GtkWidget *w;
+  GtkRequisition req;
   
-  graphActivate(window->navigator);
-  graphAssociate(&navAssoc, window);
-  graphRegister (PICK,(GraphFunc) navPick) ;
-  graphRegister(RESIZE, (GraphFunc) navResize);
-  graphClear();
+  //  graphActivate(zMapWindowGetNavigator(window));
+  //  graphAssociate(&navAssoc, window);
+  //  graphRegister (PICK,(GraphFunc) navPick) ;
+  //  graphRegister(RESIZE, (GraphFunc) navResize);
+  //  graphClear();
 
-  graphFitBounds(NULL, &height);
+  //  graphFitBounds(NULL, &height);
   
-  areaSize = window->focuspane->zMapRegion->area2 - window->focuspane->zMapRegion->area1;
+  areaSize = zMapWindowGetRegionSize(window);
   if (areaSize < 1) areaSize = 1;
 
-  window->navStart = window->focuspane->zMapRegion->area1 - areaSize/2;
-  window->navEnd = window->focuspane->zMapRegion->area2 + areaSize/2;
-  if (window->navStart == window->navEnd) window->navEnd = window->navStart + 1;
+  zMapWindowSetCoord(window, "s", areaSize/2);
+  zMapWindowSetCoord(window, "e", areaSize/2);
+  startCalcf = zMapWindowGetScreenCoord1(window, height);
+  endCalcf   = zMapWindowGetScreenCoord2(window, height);
 
-  startCalcf = height * (window->focuspane->zMapRegion->area1 - window->navStart)/(window->navEnd - window->navStart);
-  endCalcf = height * (window->focuspane->zMapRegion->area2 - window->navStart)/(window->navEnd - window->navStart);
-  
-    graphColor(LIGHTGRAY);
-    graphFillRectangle(0, startCalcf, 100.0, endCalcf);
-      /*
-  foo_canvas_item_new(foo_canvas_window(window->navcanvas),
+  w = foo_canvas_new();
+
+  zMapWindowSetNavCanvas(window, FOO_CANVAS(w));
+  foo_canvas_set_scroll_region(zMapWindowGetNavCanvas(window), 0.0, 0.0, 200.0, 500.0);
+ 
+  foo_canvas_item_new(foo_canvas_root(zMapWindowGetNavCanvas(window)),
 			foo_canvas_rect_get_type(),
-			"x1",(double)0,
-			"y1",(double)startCalcf,
-			"x2",(double)100,
-			"y2",(double)endCalcf,
-			"fill_color", "lightgray",
+			"x1",(double)0.0,
+			"y1",(double)0.0,
+			"x2",(double)200.0,
+			"y2",(double)500.0,
+			"fill_color", "white",
 			NULL);
-      */
-  graphColor(BLACK);
 
-  window->scaleOffset = zmDrawScale(1.0, window->navStart, window->navEnd);
-  drawNavigatorWind(window->focuspane);
+  //  g_signal_connect(GTK_OBJECT(zMapWindowGetNavCanvas(window)), "event", 
+  //		   GTK_SIGNAL_FUNC(navPick), (gpointer) zMapWindowGetNavCanvas(window));
 
-  graphRedraw();
+  //  graphColor(BLACK);
+
+  zMapWindowSetScaleOffset(window, 
+			   zmMainScale(zMapWindowGetNavCanvas(window),
+				       1.0, zMapWindowGetCoord(window, "s"), 
+				       zMapWindowGetCoord(window, "e")));
+  drawNavigatorWind(zMapWindowGetFocuspane(window));
+
+  gtk_container_add(GTK_CONTAINER(zMapWindowGetNavigator(window)), w);
+
+  navScale(FOO_CANVAS(w), 10, 0, 1000);
+
+  //  graphRedraw();
 }
 
 
-static void navUpdate(GtkAdjustment *adj, gpointer p)
+void navUpdate(GtkAdjustment *adj, gpointer p)
 {
-  ZMapPane *pane = (ZMapPane *)p;
-  ZMapWindow *window = pane->window;
+  ZMapPane pane = (ZMapPane)p;
+  ZMapWindow window = zMapPaneGetZMapWindow(pane);
   int height;
   Coord startWind, endWind;
   ScreenCoord startWindf, startScreenf, endWindf, lenWindf;
   float x1, y1, x2, y2;
 
-  if (!GTK_WIDGET_REALIZED(window->window))
+  if (!GTK_WIDGET_REALIZED(zMapWindowGetFrame(window)))
     return;
 
-  graphActivate(window->navigator);
-  graphFitBounds(NULL, &height);
-  graphBoxDim(pane->scrollBox, &x1, &y1, &x2, &y2);
+  //  graphActivate(zMapWindowGetNavigator(window));
+  //  graphFitBounds(NULL, &height);
+  //  graphBoxDim(pane->scrollBox, &x1, &y1, &x2, &y2);
 
   startWind =  zmCoordFromScreen(pane, 0);
-  endWind =  zmCoordFromScreen(pane, pane->graphHeight);
+  endWind =  zmCoordFromScreen(pane, zMapPaneGetHeight(pane));
   
-  startWindf = height * (startWind - window->navStart)/(window->navEnd - window->navStart);
-  endWindf = height * (endWind - window->navStart)/(window->navEnd - window->navStart);
+  startWindf = zMapWindowGetScreenCoord(window, startWind, height);
+  endWindf = zMapWindowGetScreenCoord(window, endWind, height);
   lenWindf = endWindf - startWindf;
   
   startScreenf = startWindf + lenWindf * (adj->value - adj->lower)/(adj->upper - adj->lower) ;
 
-  graphBoxShift(pane->scrollBox, x1, startScreenf);
+  //  graphBoxShift(pane->scrollBox, x1, startScreenf);
 }
 
 
-
-static void drawNavigatorWind(ZMapPane *pane)
-{
-  ZMapWindow *window = pane->window;
-  int height;
-  Coord startWind, endWind;
-  ScreenCoord startWindf, endWindf, lenWindf;
-  ScreenCoord startScreenf, endScreenf;
-  ScreenCoord pos;
-  
-  GtkAdjustment *adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(pane->scrolledWindow));
-  graphFitBounds(NULL, &height);
-  
-  startWind =  zmCoordFromScreen(pane, 0);
-  endWind =  zmCoordFromScreen(pane, pane->graphHeight);
-  
-  startWindf = height * (startWind - window->navStart)/(window->navEnd - window->navStart);
-  endWindf = height * (endWind - window->navStart)/(window->navEnd - window->navStart);
-  lenWindf = endWindf - startWindf;
-  
-  startScreenf = startWindf + lenWindf * (adj->value - adj->lower)/(adj->upper - adj->lower) ;
-  endScreenf = startWindf + lenWindf * (adj->page_size + adj->value - adj->lower)/(adj->upper - adj->lower) ;
-  
-  graphColor(BLACK);
-  
-  if (pane == window->focuspane)
-    pos = window->scaleOffset;
-  else
-    pos = window->scaleOffset + 1.0;
-
-  pane->dragBox = graphBoxStart();
-  graphLine(pos, startWindf, pos, endWindf);
-  pane->scrollBox = graphBoxStart();
-  graphColor(GREEN);
-  graphFillRectangle(pos - 0.3, startScreenf, pos + 0.5, endScreenf);
-  graphBoxEnd();
-  graphBoxSetPick(pane->scrollBox, FALSE);
-  graphBoxEnd();
-  graphBoxDraw(pane->dragBox, -1, LIGHTGRAY);
-
-}
 
 /* Coordinate stuff ****************************************************/
 
-VisibleCoord zmVisibleCoord(ZMapWindow *window, Coord coord)
+VisibleCoord zmVisibleCoord(ZMapWindow window, Coord coord)
 {
-  return coord - srCoord(window->focuspane->zMapRegion, window->origin) + 1;
+  ZMapPane    pane   = zMapWindowGetFocuspane(window);
+  ZMapRegion *region = zMapPaneGetZMapRegion(pane);
+
+  return coord - srCoord(region, zMapWindowGetOrigin(window)) + 1;
 }
 
 
-ScreenCoord zmScreenCoord(ZMapPane *pane, Coord coord)
+ScreenCoord zmScreenCoord(ZMapPane pane, Coord coord)
 {
-  Coord basesFromCent = coord - srCoord(pane->window->focuspane->zMapRegion, pane->centre);
-  float linesFromCent = ((float)basesFromCent)/((float)pane->basesPerLine);
+  ZMapRegion *region  = zMapPaneGetZMapRegion(pane);
+  Coord basesFromCent = coord - srCoord(region, zMapPaneGetCentre(pane));
+  float linesFromCent = ((float)basesFromCent)/zMapPaneGetBPL(pane);
 
-  return linesFromCent + (float)(pane->graphHeight/2);
+  return linesFromCent + (float)(zMapPaneGetHeight(pane)/2);
 }
 
 
-Coord zmCoordFromScreen(ZMapPane *pane, ScreenCoord coord)
+Coord zmCoordFromScreen(ZMapPane pane, ScreenCoord coord)
 {
-  float linesFromCent = coord - (pane->graphHeight/2);
-  int basesFromCent = linesFromCent * pane->basesPerLine;
+  float linesFromCent = coord - (zMapPaneGetHeight(pane)/2);
+  int basesFromCent = linesFromCent * zMapPaneGetBPL(pane);
 
-  return srCoord(pane->zMapRegion, pane->centre) + basesFromCent;
+  return srCoord(zMapPaneGetZMapRegion(pane), zMapPaneGetCentre(pane)) + basesFromCent;
 }
 
 
-BOOL zmIsOnScreen(ZMapPane *pane, Coord coord1, Coord coord2)
+BOOL zmIsOnScreen(ZMapPane pane, Coord coord1, Coord coord2)
 {
   if (zmScreenCoord(pane, coord2) < 0)
     return FALSE;
 
-  if (zmScreenCoord(pane, coord1) > pane->graphHeight)
+  if (zmScreenCoord(pane, coord1) > zMapPaneGetHeight(pane))
     return FALSE;
 
   return TRUE;

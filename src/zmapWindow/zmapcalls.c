@@ -1,4 +1,4 @@
-/*  Last edited: Jan 30 11:34 2004 (rnc) */
+/*  Last edited: Jun 23 13:38 2004 (rnc) */
 /*  file: zmapcalls.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -25,13 +25,13 @@
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  */
 
-#include <wzmap/zmapcalls.h>
+#include <zmapcalls.h>
 
 
 /* function prototypes ********************************************/
 
 static methodID srMethCreate  (SeqRegion *region, char *methodName);
-static srMeth  *srMethFromName(Array methods    , char *methodName);
+static srMeth  *srMethFromName(GPtrArray *methods, char *methodName);
 static methodID srMethodMake  (SeqRegion *region, char *methodName);
 
 void srActivate(void *seqRegion, 
@@ -62,7 +62,8 @@ BOOL zMapDisplay(Activate_cb srActivate,
 BOOL zMapCall(KEY key, KEY from, BOOL isOldGraph, void *app_data)
  {
   BOOL ret;
-  STORE_HANDLE handle = handleCreate();
+  //  STORE_HANDLE handle = handleCreate();
+  STORE_HANDLE handle = NULL;
   SeqRegion *region = halloc(sizeof(SeqRegion), handle);
 
   char *keyspec = messalloc(strlen(className(key)) + strlen(name(key)) + 2);
@@ -88,11 +89,12 @@ static methodID srMethodMake(SeqRegion *region, char *methodName)
 {
   srMeth *meth;
 
-  if ((meth = srMethFromName(region->zMapRegion->methods, methodName)))
+  if ((meth = srMethFromName(zMapRegionGetMethods(region->zMapRegion), methodName)))
     return meth->id;
-  else if ((meth = srMethFromName(region->zMapRegion->oldMethods, methodName)))
+  else if ((meth = srMethFromName(zMapRegionGetOldMethods(region->zMapRegion), methodName)))
     {
-      srMeth *new = arrayp(region->zMapRegion->methods, arrayMax(region->zMapRegion->methods), srMeth);
+      srMeth *new = g_ptr_array_index(zMapRegionGetMethods(region->zMapRegion),  
+				  zMapRegionGetMethods(region->zMapRegion)->len);
       *new = *meth;
       return new->id;
     }
@@ -105,14 +107,14 @@ static methodID srMethodMake(SeqRegion *region, char *methodName)
 /* Retrieves the method structure from the methods array, based
  * on the methodName which it recieves. */
 
-static srMeth *srMethFromName(Array methods, char *methodName)
+static srMeth *srMethFromName(GPtrArray *methods, char *methodName)
 {
   int i;
   
   if (methods)
-    for (i=0; i<arrayMax(methods); i++)
+    for (i=0; i<methods->len; i++)
       {
-	srMeth *meth = arrp(methods, i, srMeth);
+	srMeth *meth = g_ptr_array_index(methods, i);
 	if (meth->name == methodName)
 	  return meth;
       }
@@ -137,7 +139,8 @@ static methodID srMethCreate(SeqRegion *region, char *methodName)
   if (!(obj = bsCreate (methodKey))) 
     return 0;
   
-  meth = arrayp(region->zMapRegion->methods, arrayMax(region->zMapRegion->methods), srMeth);
+  meth = g_ptr_array_index(zMapRegionGetMethods(region->zMapRegion),
+			   zMapRegionGetMethods(region->zMapRegion)->len);
   meth->id = region->idc++;
   meth->name = str2p(name(methodKey), region->bucket);
   meth->flags &= ~METHOD_CALCULATED ;/* unset flag */
@@ -235,13 +238,16 @@ static methodID srMethCreate(SeqRegion *region, char *methodName)
 
 void seqRegionConvert(SeqRegion *region)
 {
-  STORE_HANDLE localHandle = handleCreate();
+  //  STORE_HANDLE localHandle = handleCreate();
+  STORE_HANDLE localHandle = NULL;
   KEYSET allKeys = sMapKeys(region->smap, localHandle);
   int i;
-  Array units = arrayHandleCreate(256, BSunit, localHandle);
+  GArray *units = g_array_new(FALSE, TRUE, 256);
 
-  region->zMapRegion->segs = arrayReCreate(region->zMapRegion->segs, 1000, SEG);
-  region->zMapRegion->methods = arrayCreate(100, srMeth);
+  zMapRegionFreeSegs(region->zMapRegion);
+  zMapRegionNewSegs(region->zMapRegion);
+  zMapRegionNewMethods(region->zMapRegion);
+
 
   for (i = 0 ; i < keySetMax(allKeys) ; i++)
     {
@@ -259,7 +265,7 @@ void seqRegionConvert(SeqRegion *region)
 	  srPhase phase = 1;
 	  BOOL isStartNotFound = FALSE;
 	  BOOL isCDS = FALSE;
-	  Array exons = NULL;
+	  GArray *exons;
 	  
 	  methodName = messalloc(strlen(name(methodKey))); /* need to remember to free this? */
       	  methodName = str2p(name(methodKey), region->bucket);
@@ -270,22 +276,26 @@ void seqRegionConvert(SeqRegion *region)
 	      bsGetData(obj, _bsRight, _Int, &phase);
 	    }
 	  
-	  if (bsFindTag(obj, str2tag("Source_Exons")) &&
+	  /* Commenting this block out so I don't have to retrofit
+	  ** a bsFlatten-equivalent.  Don't think this code will make
+	  ** it into the end result anyway. 
+	    if (bsFindTag(obj, str2tag("Source_Exons")) &&
 	      (bsFlatten (obj, 2, units)))
 	    {
 	      int j;	      type = SR_TRANSCRIPT;
 	      sMapUnsplicedMap(info, 1, 0, &x1, &x2, NULL, NULL);
 	      dnaExonsSort (units) ;
 	      
-	      exons = arrayHandleCreate(20, srExon, region->handle); 
-	      for(j = 0; j < arrayMax(units); j += 2)
+	      exons = g_array_new(FALSE, TRUE, sizeof(srExon), 20); 
+	      for(j = 0; j < units->len; j += 2)
 		{
-		  srExon *e = arrayp(exons, arrayMax(exons), srExon);
+		  srExon *e = g_array_index(exons, srExon, exons->len);
 		  sMapUnsplicedMap(info, 
-				   arr(units, j, BSunit).i, arr(units, j+1, BSunit).i,
+				   g_ptr_array_index(units, BSunit, j).i, 
+				   g_ptr_array_index(units, BSunit, j+1).i,
 				   &e->x1, &e->x2, NULL, NULL);
 		}	      
-	    }
+		}  */
 	  else
 	    sMapMap(info, 1, 0, &x1, &x2, NULL, NULL);
 	  
@@ -306,13 +316,14 @@ void seqRegionConvert(SeqRegion *region)
 	      /* If no source exons, fake one up which covers the whole of the CDS. */
 	      if (!exons)
 		{ 
-		  exons = arrayHandleCreate(1, srExon, region->handle); 
-		  array(exons, 0, srExon).x1 = cdsStart;
-		  array(exons, 0, srExon).x2 = cdsEnd;
+		  exons = g_array_new(FALSE, TRUE, 1); 
+		  g_array_insert_val(exons, 0, cdsStart);
+		  g_array_insert_val(exons, 0, cdsEnd);
 		}
 	    }
 	  
-	  seg = arrayp(region->zMapRegion->segs, arrayMax(region->zMapRegion->segs), SEG);
+	  seg = &g_array_index(zMapRegionGetSegs(region->zMapRegion), SEG, 
+			      zMapRegionGetSegs(region->zMapRegion)->len);
 	  seg->id = str2p(name(key), region->bucket);
 	  seg->type = type;
 	  seg->x1 = x1;
@@ -333,17 +344,20 @@ void seqRegionConvert(SeqRegion *region)
 	      
 	      seg->u.transcript.cdsStart = cdsStart;
 	      seg->u.transcript.cdsEnd = cdsEnd;
-	      seg->u.transcript.exons = exons;
+	      //	      seg->u.transcript.exons = exons;
 	    }
-			  
+		
+	  /* commentint this block out so I don't have to write a
+	  ** bsFlatten-equivalent.  Don't think this code will make
+	  ** it to the final version.	  
 	  if (bsFindTag(obj, str2tag("Feature")) &&
 	      bsFlatten (obj, 5, units))
 	    {
 	      int j ;
 	      
-	      for (j = 0 ; j < arrayMax(units) ; j += 5)
+	      for (j = 0 ; j < units->len ; j += 5)
 		{ 
-		  BSunit *u = arrayp(units, j, BSunit);
+		  BSunit *u = g_ptr_array_index(units, BSunit, j);
 		  SEG *seg;
 		  SMapStatus status ;
 		  
@@ -351,7 +365,7 @@ void seqRegionConvert(SeqRegion *region)
 		  if (status & SMAP_STATUS_NO_OVERLAP)
 		    continue;
 		  
-		  seg = arrayp(region->zMapRegion->segs, arrayMax(region->zMapRegion->segs), SEG);
+		  seg = g_ptr_array_index(region->zMapRegion->segs, SEG, region->zMapRegion->segs->len);
 		  seg->id = str2p(name(u[0].k), region->bucket);
 		  seg->type = SR_FEATURE;
 		  seg->x1 = x1;
@@ -360,6 +374,7 @@ void seqRegionConvert(SeqRegion *region)
 		  seg->method = srMethodMake(region, str2p(name(u[0].k), region->bucket));
 		}
 	    }
+	  */
 	  if (bsFindTag(obj, str2tag("Homol")))
 	    {
 	      
@@ -372,7 +387,7 @@ void seqRegionConvert(SeqRegion *region)
       bsDestroy(obj);
 	
     }
-  handleDestroy(localHandle);
+  //  handleDestroy(localHandle);
 }
 
 
@@ -393,7 +408,8 @@ void srActivate(void *seqRegion,
 
   /* Get out own handle */
   
-  STORE_HANDLE newHandle = handleHandleCreate(*handle);
+  //  STORE_HANDLE newHandle = handleHandleCreate(*handle);
+  STORE_HANDLE newHandle = NULL;
   
   region->handle = newHandle;
   region->smap = NULL;
@@ -458,14 +474,14 @@ static void calcSeqRegion(void *seqRegion,
   if (region->smap)
     sMapDestroy(region->smap);
   
-  if (region->zMapRegion->dna)
-    arrayDestroy(region->zMapRegion->dna);
+  if (zMapRegionGetDNA(region->zMapRegion))
+    zMapRegionFreeDNA(region->zMapRegion);
  
   if (region->bucket)
     sbDestroy(region->bucket);
   
-  region->zMapRegion->oldMethods = region->zMapRegion->methods;
-  region->zMapRegion->methods = NULL;
+  zMapRegionSetOldMethods(region->zMapRegion, zMapRegionGetMethods(region->zMapRegion));
+  zMapRegionSetMethods(region->zMapRegion, NULL);
   /* currently just put in new area - might need these to see what we have 
      already got. */
 
@@ -494,10 +510,10 @@ static void calcSeqRegion(void *seqRegion,
   /* When recalculating, for whatever reason, we need to repopulate
    * the dna array. On initial display, srGetDNA is called by
    * srActivate, but recalculation doesn't tread that path. */
-  if (!region->zMapRegion->dna)
+  if (!zMapRegionGetDNA(region->zMapRegion))
     srGetDNA(region);
 
-  arrayDestroy(region->zMapRegion->oldMethods);
+  zMapRegionFreeOldMethods(region->zMapRegion);
   
 }
  
@@ -508,10 +524,9 @@ void srGetDNA(SeqRegion *region)
 {
   
   /* TODO handle callback stuff */
-  /* I find Simon's comment disturbing, as I've structured it not to 
-   * do a callback here... RNC */
-  if (!region->zMapRegion->dna)
-    region->zMapRegion->dna = sMapDNA(region->smap, region->handle, 0);
+  /* Commenting out until I know what is required here. */
+  //  if (!zMapRegionGetDNA(region->zMapRegion))
+  //    zMapRegionSetDNA(region->zMapRegion, sMapDNA(region->smap, region->handle, 0));
   
   return;
 }
@@ -542,7 +557,7 @@ void srRevComp(SeqRegion *region)
 
 void seqRegionDestroy(SeqRegion *region)
 {
-  handleDestroy(region->handle);
+  //  handleDestroy(region->handle);  yes, I know I have to deal with this.
 }
   
 /***************************** end of file ******************************/

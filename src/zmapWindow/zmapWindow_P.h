@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 25 12:11 2004 (edgrif)
+ * Last edited: Jun 28 15:09 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.7 2004-06-25 13:42:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.8 2004-06-28 14:28:26 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -40,7 +40,6 @@
 
 /* Test scaffoling */
 #include <ZMap/zmapFeature.h>
-
 
 typedef struct _ZMapWindowStruct
 {
@@ -55,7 +54,52 @@ typedef struct _ZMapWindowStruct
   zmapVoidIntCallbackFunc app_routine ;
   void *app_data ;
 
+  STORE_HANDLE    handle;
+  GtkWidget      *frame;
+  GtkWidget      *vbox;
+  GtkItemFactory *itemFactory;
+  GtkWidget      *infoSpace;
+  GtkWidget      *navigator;
+  FooCanvas      *navcanvas;
+  InvarCoord      origin; /* that base which is VisibleCoord 1 */
+  GtkWidget      *zoomvbox;
+  GtkWidget      *toolbar;
+  GtkWidget      *hbox;
+  GtkWidget      *hpane;  /* allows the user to minimise the navigator pane */
+  GNode          *panesTree;
+  ZMapPane        focuspane;
+  BOOL            firstTime;
+  /* navigator stuff */
+  Coord           navStart, navEnd; /* Start drawing the Nav bar from here */
+  ScreenCoord     scaleOffset;
 } ZMapWindowStruct ;
+
+
+typedef struct _ZMapPaneStruct {
+  /* Data associated with one scrolling pane. */
+  ZMapWindow   window;     /* parent */
+  ZMapRegion  *zMapRegion; /* the region holding all the SEGS */
+  Graph        graph;
+  GtkWidget   *graphWidget;
+  GtkWidget   *vbox;
+  GtkWidget   *pane;
+  GtkWidget   *frame;
+  GtkWidget   *scrolledWindow;
+  FooCanvas   *canvas;     /* where we paint the display */
+  FooCanvasItem *background;
+  FooCanvasItem *group;
+  GtkWidget   *combo;
+  int          basesPerLine;
+  InvarCoord   centre;
+  int          graphHeight;
+  int          dragBox, scrollBox;
+  GPtrArray    cols;
+  GArray       *box2seg, *box2col;
+  STORE_HANDLE drawHandle; /* gets freed on each redraw. */
+  int          DNAwidth;
+  double       zoomFactor;
+  int          step_increment;
+} ZMapPaneStruct;
 
 
 typedef struct
@@ -63,8 +107,6 @@ typedef struct
   ZMapWindow window ;
   void *data ;						    /* void for now, union later ?? */
 } zmapWindowDataStruct, *zmapWindowData ;
-
-
 
 
 

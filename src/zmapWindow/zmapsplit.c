@@ -1,4 +1,4 @@
-/*  Last edited: May 14 10:33 2004 (rnc) */
+/*  Last edited: Jun 28 15:15 2004 (rnc) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -26,18 +26,19 @@
  */
  
 #include <zmapsplit.h>
+#include <zmapWindow_P.h>
 
 /* function prototypes **************************************************/
 
-static void  shrinkPane      (ZMapWindow *window);
-static void  resizePanes     (ZMapWindow *window);
-static void  resizeOnePane   (GNode *node, gpointer user_data);
-static void  scaleCanvas     (ZMapWindow *window, double zoomFactor);
-static void  shrinkHPane     (ZMapWindow *window);
-static void  resizeHPanes    (ZMapWindow *window);
-static int   unfocus         (GNode *node, gpointer data);
-static int   resizeOneHPane  (GNode *node, gpointer data);
-static void  exciseNode      (GNode *node);
+static void  shrinkPane      (ZMapWindow window);
+static void  resizePanes     (ZMapWindow window);
+static void  resizeOnePane   (GNode     *node, gpointer user_data);
+static void  scaleCanvas     (ZMapWindow window, double zoomFactor);
+static void  shrinkHPane     (ZMapWindow window);
+static void  resizeHPanes    (ZMapWindow window);
+static int   unfocus         (GNode     *node, gpointer data);
+static int   resizeOneHPane  (GNode     *node, gpointer data);
+static void  exciseNode      (GNode     *node);
 
 /* end of prototypes ***************************************************/
 
@@ -65,29 +66,31 @@ static void  exciseNode      (GNode *node);
  * the width the same.  I'm leaving the zoomFactor in the ZMapPane
  * structure for now in case I need it for when the user specifies
  * the bases-per-line magnification, which I've not looked at yet. */
-static void scaleCanvas(ZMapWindow *window, double zoomFactor)
+static void scaleCanvas(ZMapWindow window, double zoomFactor)
 {
-  foo_canvas_set_pixels_per_unit_xy(window->focuspane->canvas, 1.0, zoomFactor);
+  foo_canvas_set_pixels_per_unit_xy(zMapWindowGetFocuspane(window)->canvas, 1.0, zoomFactor);
   return;
 }
 
 
 void zoomIn(GtkWindow *widget, gpointer data)
 {
-  ZMapWindow *window = (ZMapWindow*)data;
+  ZMapWindow window = (ZMapWindow)data;
+  ZMapPane pane = zMapWindowGetFocuspane(window);
 
-  window->focuspane->zoomFactor *= 2;
-  scaleCanvas(window, window->focuspane->zoomFactor);
+  pane->zoomFactor *= 2;
+
+  scaleCanvas(window, pane->zoomFactor);
   return;
 }
 
 
 void zoomOut(GtkWindow *widget, gpointer data)
 {
-  ZMapWindow *window = (ZMapWindow*)data;
+  ZMapWindow window = (ZMapWindow)data;
 
-  window->focuspane->zoomFactor /= 2;
-  scaleCanvas(window, window->focuspane->zoomFactor);
+  zMapWindowGetFocuspane(window)->zoomFactor /= 2;
+  scaleCanvas(window, zMapWindowGetFocuspane(window)->zoomFactor);
   return;
 }
 
@@ -96,7 +99,7 @@ void zoomOut(GtkWindow *widget, gpointer data)
  * of the prototype it's helpful to have unfocussed backgrounds grey */
 static int unfocus(GNode *node, gpointer data)
 {
-  ZMapPane *pane = (ZMapPane*)node->data;
+  ZMapPane pane = (ZMapPane)node->data;
 
   if (pane) /* skip the actual root node which is not a valid widget */
     {
@@ -111,20 +114,20 @@ static int unfocus(GNode *node, gpointer data)
 
 int recordFocus(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-  ZMapPane *pane = (ZMapPane*)data;
-  ZMapWindow *window = pane->window;
+  ZMapPane pane = (ZMapPane)data;
+  ZMapWindow window = pane->window;
   GNode *node;
  
   /* point the parent window's focuspane pointer at this pane */
   if (pane)
-    window->focuspane = pane;
+    zMapWindowSetFocuspane(window, pane);
   else /* if pane is null, arbitrarily focus on the first valid pane */
     {
-      node = g_node_first_child(window->panesTree);
-      window->focuspane = node->data;
+      node = g_node_first_child(zMapWindowGetPanesTree(window));
+      zMapWindowSetFocuspane(window, node->data);
     }
   
-  g_node_traverse(window->panesTree, 
+  g_node_traverse(zMapWindowGetPanesTree(window), 
 		  G_IN_ORDER,
 		  G_TRAVERSE_ALL, 
 		  -1,
@@ -141,39 +144,41 @@ int recordFocus(GtkWidget *widget, GdkEvent *event, gpointer data)
 /* shrinkPane is not quite the right name for this function.  We don't
  * actually shrink the pane, we add a new pane and frame and reposition
  * the scrolled window into that.  Later on we resize all panes. */
-static void shrinkPane(ZMapWindow *window)
+static void shrinkPane(ZMapWindow window)
 {
-  ZMapPane *pane = (ZMapPane*)malloc(sizeof(ZMapPane));
+  ZMapPane pane = (ZMapPane)malloc(sizeof(ZMapPaneStruct));
   GNode *node = NULL;
 
   /* create a new vpane and hook the old scrolled window up to it */
   pane->window = window;
   pane->pane         = gtk_vpaned_new();
   pane->frame        = gtk_frame_new(NULL);;
-  pane->scrolledWindow      = window->focuspane->scrolledWindow;
-  pane->canvas       = window->focuspane->canvas;
-  pane->background   = window->focuspane->background;
+  pane->scrolledWindow = zMapWindowGetFocuspane(window)->scrolledWindow;
+  pane->canvas       = zMapWindowGetFocuspane(window)->canvas;
+  pane->background   = zMapWindowGetFocuspane(window)->background;
+  pane->zoomFactor   = zMapWindowGetFocuspane(window)->zoomFactor;
   
   /* when the user clicks a button in the canvas, call recordFocus() */
   g_signal_connect (GTK_OBJECT (pane->canvas), "button_press_event",
 		    GTK_SIGNAL_FUNC (recordFocus), pane); 
-
-  gtk_widget_reparent(GTK_WIDGET(window->focuspane->scrolledWindow), pane->frame);
+  /* reparent the scrolled window into the new frame & pack1 the frame into the new vpane,
+  ** then add the new vpane to the frame of the pane which currently has focus, ie that being split.  */
+  gtk_widget_reparent(GTK_WIDGET(zMapWindowGetFocuspane(window)->scrolledWindow), pane->frame);
   gtk_paned_pack1(GTK_PANED(pane->pane), pane->frame, TRUE, TRUE);
-  gtk_container_add(GTK_CONTAINER(window->focuspane->frame), pane->pane);
+  gtk_container_add(GTK_CONTAINER(zMapWindowGetFocuspane(window)->frame), pane->pane);
 
-  /* remove the old ZMapPane from windowsTree, and add the new one */
-  node = g_node_find(window->panesTree,
+  /* remove the old ZMapPane from panesTree, and add the new one */
+  node = g_node_find(zMapWindowGetPanesTree(window),
 		     G_IN_ORDER,
 		     G_TRAVERSE_ALL,
-		     (gpointer)window->focuspane);
+		     (gpointer)zMapWindowGetFocuspane(window));
 
   g_node_append_data(node->parent, pane);
   exciseNode(node);
 
   /* do we really need this? */
-  gtk_widget_hide(window->focuspane->frame);
-  window->focuspane = pane;
+  //  gtk_widget_hide(zMapWindowGetFocuspane(window)->frame);
+  zMapWindowSetFocuspane(window, pane);
 
   return;
 }
@@ -181,7 +186,7 @@ static void shrinkPane(ZMapWindow *window)
 
 void splitPane(GtkWidget *widget, gpointer data)
 {
-  ZMapWindow *window = (ZMapWindow*)data;
+  ZMapWindow window = (ZMapWindow)data;
 
   /* shrink the old pane */
   shrinkPane(window);
@@ -195,7 +200,7 @@ void splitPane(GtkWidget *widget, gpointer data)
 
 /* resizing the panes doesn't really work too well, but it's not too
  * bad for a few panes and time is short. */
-static void resizePanes(ZMapWindow *window)
+static void resizePanes(ZMapWindow window)
 {
   GtkRequisition req;
   GNode *node = NULL;
@@ -203,10 +208,10 @@ static void resizePanes(ZMapWindow *window)
   guint panes = 0;
 
   /* count how many panes there are in this column */
-  node = g_node_find(window->panesTree,
+  node = g_node_find(zMapWindowGetPanesTree(window),
 		     G_IN_ORDER,
 		     G_TRAVERSE_ALL,
-		     window->focuspane);
+		     zMapWindowGetFocuspane(window));
 
   last =  g_node_last_child(node->parent);
   /* first child is number 0 */
@@ -218,10 +223,10 @@ static void resizePanes(ZMapWindow *window)
   /* get size of the window & divide it by the number of panes.
    * Note there's a small kludge here to adjust for a better fit.
    * Don't know why it needs the -8. */
-  gtk_widget_size_request(GTK_WIDGET(window->vbox1), &req);
+  gtk_widget_size_request(GTK_WIDGET(zMapWindowGetFrame(window)), &req);
   req.height = (req.height/panes) - 8;
 
-  g_node_children_foreach(window->panesTree, 
+  g_node_children_foreach(zMapWindowGetPanesTree(window), 
 		  G_TRAVERSE_LEAFS, 
 		  resizeOnePane, 
 		  &req);
@@ -231,7 +236,7 @@ static void resizePanes(ZMapWindow *window)
 
 static void resizeOnePane(GNode *node, gpointer data)
 {
-  ZMapPane *pane = (ZMapPane*)node->data;
+  ZMapPane pane = (ZMapPane)node->data;
   GtkRequisition *req = (GtkRequisition*)data;
 
   if (pane)  
@@ -244,38 +249,40 @@ static void resizeOnePane(GNode *node, gpointer data)
 /* shrinkHPane is not quite the right name for this function.  We don't
  * actually shrink the pane, we add a new, half-size one and reposition
  * the scrolled window into that */
-static void shrinkHPane(ZMapWindow *window)
+static void shrinkHPane(ZMapWindow window)
 {
-  ZMapPane *pane = (ZMapPane*)malloc(sizeof(ZMapPane));
+  ZMapPane pane = (ZMapPane)malloc(sizeof(ZMapPaneStruct));
   GNode *node = NULL;
 
   /* create a new hpane and hook the old scrolled window up to it */
   pane->window = window;
   pane->pane         = gtk_hpaned_new();
   pane->frame        = gtk_frame_new(NULL);
-  pane->scrolledWindow      = window->focuspane->scrolledWindow;
-  pane->canvas       = window->focuspane->canvas;
-  pane->background   = window->focuspane->background;
+  pane->scrolledWindow = zMapWindowGetFocuspane(window)->scrolledWindow;
+  pane->canvas       = zMapWindowGetFocuspane(window)->canvas;
+  pane->background   = zMapWindowGetFocuspane(window)->background;
+  pane->zoomFactor   = zMapWindowGetFocuspane(window)->zoomFactor;
+
   
   /* when the user clicks a button in the canvas, call recordFocus() */
   g_signal_connect (GTK_OBJECT (pane->canvas), "button_press_event",
 		    GTK_SIGNAL_FUNC (recordFocus), pane); 
 
-  gtk_widget_reparent(GTK_WIDGET(window->focuspane->scrolledWindow), pane->frame);
+  gtk_widget_reparent(GTK_WIDGET(zMapWindowGetFocuspane(window)->scrolledWindow), pane->frame);
   gtk_paned_pack1(GTK_PANED(pane->pane), pane->frame, TRUE, TRUE);
-  gtk_container_add(GTK_CONTAINER(window->focuspane->frame), pane->pane);
+  gtk_container_add(GTK_CONTAINER(zMapWindowGetFocuspane(window)->frame), pane->pane);
 
   /* add new pane to windowsTree. */
-  node = g_node_find(window->panesTree,
+  node = g_node_find(zMapWindowGetPanesTree(window),
 		     G_IN_ORDER,
 		     G_TRAVERSE_ALL,
-		     window->focuspane);
+		     zMapWindowGetFocuspane(window));
   g_node_append_data(node->parent, pane);
   exciseNode(node);
 
   /* do we really need this? */  
-  gtk_widget_hide(window->focuspane->frame);
-  window->focuspane = pane;
+  gtk_widget_hide(zMapWindowGetFocuspane(window)->frame);
+  zMapWindowSetFocuspane(window, pane);
 
   return;
 }
@@ -283,7 +290,7 @@ static void shrinkHPane(ZMapWindow *window)
 
 void splitHPane(GtkWidget *widget, gpointer data)
 {
-  ZMapWindow *window = (ZMapWindow*)data;
+  ZMapWindow window = (ZMapWindow)data;
 
   /* slim the old pane */
   shrinkHPane(window);
@@ -307,13 +314,13 @@ static int resizeOneHPane(GNode *node, gpointer data)
 }  
 
 
-static void resizeHPanes(ZMapWindow *window)
+static void resizeHPanes(ZMapWindow window)
 {
   GtkRequisition req;
   guint panes = 0;
 
   /* count how many columns there are */
-  panes = g_node_n_nodes(window->panesTree, 
+  panes = g_node_n_nodes(zMapWindowGetPanesTree(window), 
 			G_TRAVERSE_NON_LEAFS);
   if (panes == 0)
     panes = 1;
@@ -321,10 +328,10 @@ static void resizeHPanes(ZMapWindow *window)
   /* get size of the window & divide it by the number of panes.
    * Note there's a small kludge here to adjust for a better fit.
    * Don't know why it needs the -8. */
-  gtk_widget_size_request(GTK_WIDGET(window->zoomvbox), &req);
+  gtk_widget_size_request(GTK_WIDGET(zMapWindowGetZoomVbox(window)), &req);
   req.width = (req.width/panes) - 8;
 
-  g_node_traverse(g_node_get_root(window->panesTree), 
+  g_node_traverse(g_node_get_root(zMapWindowGetPanesTree(window)), 
 		  G_IN_ORDER,
 		  G_TRAVERSE_NON_LEAFS, 
 		  -1,
@@ -371,7 +378,7 @@ static void exciseNode(GNode *node)
 
 void closePane(GtkWidget *widget, gpointer data)
 {
-  ZMapWindow *window = (ZMapWindow*)data;
+  ZMapWindow window = (ZMapWindow)data;
   GNode *node = NULL;
   GNode *next = NULL;
   GNode *parent = NULL;
@@ -380,7 +387,7 @@ void closePane(GtkWidget *widget, gpointer data)
 
 
   /* count panes but forget the root node which isn't one */
-  guint panes = g_node_n_nodes(window->panesTree, G_TRAVERSE_ALL) - 1;
+  guint panes = g_node_n_nodes(zMapWindowGetPanesTree(window), G_TRAVERSE_ALL) - 1;
   int discard;  
 
   if (panes == 1)
@@ -388,10 +395,10 @@ void closePane(GtkWidget *widget, gpointer data)
   else
     {
       /* now decide where to focus after closing the pane */
-      node = g_node_find(window->panesTree, 
+      node = g_node_find(zMapWindowGetPanesTree(window), 
 			 G_IN_ORDER,
 			 G_TRAVERSE_ALL,
-			 window->focuspane);
+			 zMapWindowGetFocuspane(window));
       if (node->prev)
 	next = node->prev;
       else if (node->next)
@@ -403,7 +410,7 @@ void closePane(GtkWidget *widget, gpointer data)
       else
 	{
 	  printf("Don't know where to focus now!\n");
-	  parent = g_node_get_root(window->panesTree);
+	  parent = g_node_get_root(zMapWindowGetPanesTree(window));
 	  next = parent->children;
 	}
 
@@ -413,14 +420,14 @@ void closePane(GtkWidget *widget, gpointer data)
       * we add a pane to the current frame, then delete the corresponding node
       * from the panesTree.  When we delete panes from the display, we also need
       * to remove these extra frames as they become empty. */
-      pane_up1 = gtk_widget_get_ancestor(window->focuspane->frame, GTK_TYPE_PANED);
+      pane_up1 = gtk_widget_get_ancestor(zMapWindowGetFocuspane(window)->frame, GTK_TYPE_PANED);
       frame    = gtk_widget_get_ancestor(pane_up1, GTK_TYPE_FRAME);
       pane_up2 = gtk_widget_get_ancestor(frame, GTK_TYPE_PANED);
 
-      gtk_object_destroy(GTK_OBJECT(window->focuspane->canvas));
-      gtk_widget_destroy(window->focuspane->scrolledWindow);
-      gtk_widget_destroy(window->focuspane->frame);
-      free(window->focuspane);
+      gtk_object_destroy(GTK_OBJECT(zMapWindowGetFocuspane(window)->canvas));
+      gtk_widget_destroy(zMapWindowGetFocuspane(window)->scrolledWindow);
+      gtk_widget_destroy(zMapWindowGetFocuspane(window)->frame);
+      free(zMapWindowGetFocuspane(window));
             
       children = gtk_container_get_children(GTK_CONTAINER(pane_up1));
       if (children == NULL)
@@ -444,7 +451,7 @@ void closePane(GtkWidget *widget, gpointer data)
        * a canvas and scroll bars) after closing multiply-split windows, but life 
        * is short! */
       discard = recordFocus(NULL, NULL, next->data);
-      gtk_widget_grab_focus(((ZMapPane*)next->data)->frame);
+      gtk_widget_grab_focus(((ZMapPane)next->data)->frame);
       
       resizePanes(window);                                                                                
     }
