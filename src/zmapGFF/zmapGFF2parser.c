@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Dec 13 15:25 2004 (edgrif)
+ * Last edited: Feb  3 09:53 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.19 2004-12-13 15:49:01 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.20 2005-02-03 10:03:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -587,7 +587,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   gboolean result = FALSE ;
   char *feature_name_id = NULL, *feature_name = NULL ;
   ZMapFeature feature = NULL ;
-  ZMapGFFParserFeatureSet feature_set = NULL ; ;
+  ZMapGFFParserFeatureSet feature_set = NULL ; 
   gboolean feature_has_name ;
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
