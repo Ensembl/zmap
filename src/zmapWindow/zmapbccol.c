@@ -1,4 +1,4 @@
-/*  Last edited: Jun 30 14:36 2004 (edgrif) */
+/*  Last edited: Jul  2 10:14 2004 (rnc) */
 /*  file: zmapbccol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -36,7 +36,7 @@
 #include <glib.h>
 
 #include <ZMap/zmapFeature.h>
-#include <zmapcontrol.h>
+#include <zmapDraw.h>
 #include <seqregion.h>
 
 /* A lot of this comes direct from acedb.......... */
@@ -155,6 +155,7 @@ static void nbcFinalise(void *arg)
 }
 void nbcInit(ZMapPane pane, ZMapColumn *col)
 {
+  /* this whole bit needs to be rewritten, so it's OK to comment it out, I think
   srMeth *meth = srMethodFromID(zMapPaneGetZMapRegion(pane), col->meth);
   nbcPrivate *bc = (nbcPrivate*)malloc(sizeof(nbcPrivate));
   //  nbcPrivate *bc = handleAlloc(nbcFinalise, zMapWindowGetHandle(pane->window),
@@ -171,7 +172,7 @@ void nbcInit(ZMapPane pane, ZMapColumn *col)
       else if (meth->flags & METHOD_SCORE_BY_HIST)
 	bc->mode = HIST ;
 
-      /* checks to prevent arithmetic crash */
+      // checks to prevent arithmetic crash 
       if (bc->mode == OFFSET)
 	{
 	  if (!meth->minScore)
@@ -184,7 +185,7 @@ void nbcInit(ZMapPane pane, ZMapColumn *col)
 	}
     }
   else
-    /* none of the SCORE_BY_xxx flags set */
+    // none of the SCORE_BY_xxx flags set 
     bc->mode = DEFAULT ;
 
   if (meth->width)
@@ -197,7 +198,7 @@ void nbcInit(ZMapPane pane, ZMapColumn *col)
 	bc->width = meth->width ;
     }
   else
-    /* the method doesn't set the width */
+    // the method doesn't set the width 
     {
       if (bc->mode == OFFSET)
 	bc->width = 7 ;
@@ -207,7 +208,7 @@ void nbcInit(ZMapPane pane, ZMapColumn *col)
   
   if (bc->mode == HIST)
     { 
-      /* normalise the BoxCol's histBase */
+      // normalise the BoxCol's histBase 
       if (meth->minScore == meth->maxScore)
 	bc->histBase = meth->minScore ;
       else
@@ -221,7 +222,7 @@ void nbcInit(ZMapPane pane, ZMapColumn *col)
     }
   else
     bc->fmax = 0 ;
-
+  */
   return;
 }
 
@@ -355,7 +356,7 @@ struct geneSelectData{
 
 void zMapGeneDraw(ZMapPane pane, ZMapColumn *col, float *offset, int frame)
 {
-  ZMapRegion    *zMapRegion = zMapPaneGetZMapRegion(pane);
+  ZMapRegion    *zMapRegion; // = zMapPaneGetZMapRegion(pane);
   srMeth        *meth = srMethodFromID(zMapRegion, col->meth);
   int            i, j;
   int            box;
@@ -459,7 +460,7 @@ void geneSelect(ZMapPane pane, ZMapColumn *col,
   GArray *exons = g_array_new(FALSE, FALSE, sizeof(ZMapExon));
   Coord x1, x2;
   char *string;
-  srMeth *meth = srMethodFromID(zMapPaneGetZMapRegion(pane), col->meth);
+  srMeth *meth; // = srMethodFromID(zMapPaneGetZMapRegion(pane), col->meth);
   int colour = WHITE;
 
   exons = g_array_append_vals(exons, 
@@ -481,13 +482,13 @@ void geneSelect(ZMapPane pane, ZMapColumn *col,
 	  x2 = g_array_index(exons, ZMapExon, sd->exonNumber)->x2;
 	}
       
-      string = g_strdup_printf("%s [%f] %d %d", 
-			       seg->id, seg->score, 
-			       zmVisibleCoord(zMapPaneGetZMapWindow(pane), x1),
-			       zmVisibleCoord(zMapPaneGetZMapWindow(pane), x2));
+      //      string = g_strdup_printf("%s [%f] %d %d", 
+      //			       seg->id, seg->score, 
+      //			       zmVisibleCoord(zMapPaneGetZMapWindow(pane), x1),
+      //			       zmVisibleCoord(zMapPaneGetZMapWindow(pane), x2));
       
       //      gtk_entry_set_text(GTK_ENTRY(pane->window->infoSpace), string);
-      g_free(string);
+      //      g_free(string);
     }
   
   //  graphBoxDraw(box, meth->colour, colour);
@@ -497,8 +498,8 @@ void geneSelect(ZMapPane pane, ZMapColumn *col,
 
 void zMapFeatureColumn(ZMapPane  pane, ZMapColumn *col, float *offset, int frame)
 {
-  ZMapRegion *zMapRegion = zMapPaneGetZMapRegion(pane);
-  srMeth *meth = srMethodFromID(zMapRegion, col->meth);
+  ZMapRegion *zMapRegion; // = zMapPaneGetZMapRegion(pane);
+  srMeth *meth; // = srMethodFromID(zMapRegion, col->meth);
   int i;
   nbcPrivate *bc = (nbcPrivate *)col->private;
   float maxwidth = *offset;
@@ -542,13 +543,13 @@ void nbcSelect(ZMapPane pane, ZMapColumn *col,
 	     void *arg, int box, double x, double y, gboolean isSelect)
 {
   ZMapFeature seg = (ZMapFeature)arg ;
-  char *string = g_strdup_printf("%s [%f] %d %d", 
-				 seg->id, seg->score, 
-				 zmVisibleCoord(zMapPaneGetZMapWindow(pane), seg->x1),
-				 zmVisibleCoord(zMapPaneGetZMapWindow(pane), seg->x2));
+  //  char *string = g_strdup_printf("%s [%f] %d %d", 
+  //				 seg->id, seg->score, 
+  //				 zmVisibleCoord(zMapPaneGetZMapWindow(pane), seg->x1),
+  //				 zmVisibleCoord(zMapPaneGetZMapWindow(pane), seg->x2));
 
   //  gtk_entry_set_text(GTK_ENTRY(pane->window->infoSpace), string);
-  g_free(string);
+  //  g_free(string);
   return;
 }
 
