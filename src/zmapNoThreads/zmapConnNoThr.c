@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn.h
  * HISTORY:
- * Last edited: Jan 22 13:47 2004 (edgrif)
+ * Last edited: Mar 11 15:52 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConnNoThr.c,v 1.1 2004-03-03 12:28:43 edgrif Exp $
+ * CVS info:   $Id: zmapConnNoThr.c,v 1.2 2004-03-12 15:54:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,7 +62,7 @@ ZMapConnection zMapConnCreate(char *machine, char *port, char *protocol, char *s
 
 
 /* NEEDED */
-void zMapConnLoadData(ZMapConnection connection)
+void zMapConnLoadData(ZMapConnection connection, gchar *data)
 {
   connection->request.state = ZMAP_REQUEST_GETDATA ;
 
