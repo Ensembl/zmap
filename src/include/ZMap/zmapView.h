@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Sep 15 14:46 2004 (edgrif)
+ * Last edited: Oct  4 09:11 2004 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.9 2004-09-17 08:35:34 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.10 2004-10-05 11:42:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -67,13 +67,14 @@ typedef struct _ZMapViewCallbacksStruct
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 
 
+/* DOES THIS STATE NEED TO BE EXPOSED LIKE THIS...REVISIT.... */
 /* The overall state of the zmapView, we need this because both the zmap window and the its threads
  * will die asynchronously so we need to block further operations while they are in this state. */
 typedef enum {
-  ZMAPVIEW_INIT,					    /* No display and no threads. */
-  ZMAPVIEW_NOT_CONNECTED,				    /* Display with no threads. */
-  ZMAPVIEW_RUNNING,					    /* Display with threads in normal state. */
-  ZMAPVIEW_RESETTING,					    /* Display that is closing its threads
+  ZMAPVIEW_INIT,					    /* No window(s) and no threads. */
+  ZMAPVIEW_NOT_CONNECTED,				    /* Window(s) with no threads. */
+  ZMAPVIEW_RUNNING,					    /* Window(S) with threads in normal state. */
+  ZMAPVIEW_RESETTING,					    /* Window(S) that is closing its threads
 							       and returning to INIT state. */
   ZMAPVIEW_DYING					    /* ZMap is dying for some reason,
 							       cannot do anything in this state. */
@@ -81,8 +82,38 @@ typedef enum {
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* I THINK WE MAY NEED SOMETHING MORE LIKE THIS.... */
+typedef enum {
+  ZMAPVIEW_INIT,					    /* No window(s) and no threads. */
+
+  ZMAPVIEW_NOT_CONNECTED,				    /* Window(s) with no threads. */
+  ZMAPVIEW_CONNECTING,
+
+  ZMAPVIEW_WAITING,					    /* Window(s) + thread(s) in normal
+							       state. */
+  ZMAPVIEW_DOING_REQUEST,
+
+
+  ZMAPVIEW_RESETTING,					    /* Window(s) that is closing its threads
+							       and returning to INIT state. */
+
+
+
+  ZMAPVIEW_DYING,					    /* ZMap is dying for some reason,
+							       cannot do anything in this state. */
+  ZMAPVIEW_DEAD						    /* DON'T KNOW IF WE NEED THIS.... */
+} ZMapViewState ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+
 void zMapViewInit(ZMapViewCallbacks callbacks) ;
-ZMapView zMapViewCreate(char *sequence,	void *app_data) ;
+ZMapView zMapViewCreate(char *sequence,	int start, int end, void *app_data) ;
 ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 gboolean zMapViewConnect(ZMapView zmap_view) ;
 gboolean zMapViewLoad (ZMapView zmap_view) ;
