@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 23 13:21 2004 (edgrif)
+ * Last edited: Mar  3 16:23 2004 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.1 2004-03-03 12:51:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.2 2004-03-12 15:12:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -47,7 +47,8 @@ typedef struct _ZMapWindowStruct *ZMapWindow ;
 
 ZMapWindow zMapWindowCreate(char *sequence, char *zmap_id,
 			    zmapVoidIntCallbackFunc app_routine, void *app_data) ;
-void zMapWindowSignalData(ZMapWindow window, void *data) ;
+void zMapWindowDisplayData(ZMapWindow window, void *data) ;
+void zMapWindowReset(ZMapWindow window) ;
 void zMapWindowDestroy(ZMapWindow window) ;
 
 #endif /* !ZMAP_WINDOW_H */
