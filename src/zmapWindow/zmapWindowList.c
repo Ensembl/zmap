@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 19 13:30 2004 (rnc)
+ * Last edited: Nov 30 09:04 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.19 2004-11-19 13:33:48 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.20 2004-11-30 09:06:43 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -218,7 +218,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureItem featureIt
  */
 gboolean zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_id) 
 {
-  int cx, cy;
+  int cx, cy, height;
   double x1, y1, x2, y2;
   ZMapFeatureItem featureItem = NULL;
   ZMapFeature feature;
@@ -264,8 +264,9 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_i
 		y1 = py1;
 	    }
 	  
+	  height = GTK_WIDGET(window->canvas)->allocation.height;
 	  foo_canvas_w2c(window->canvas, 0.0, y1, &cx, &cy); 
-	  foo_canvas_scroll_to(window->canvas, (int)x1, cy);                       /* canvas pixels */
+	  foo_canvas_scroll_to(window->canvas, (int)x1, cy - height/3);             /* canvas pixels */
 	  
 	  foo_canvas_item_raise_to_top(featureItem->canvasItem);
 	  
