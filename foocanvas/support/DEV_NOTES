@@ -1,0 +1,55 @@
+
+
+Keeping up to date 
+------------------
+
+Run through the following for developing changes to foocanvas:
+
+check out the current foocanvas.
+
+$ alias gcvs='cvs -z3 -d:pserver:anonymous@anoncvs.gnome.org:2401/cvs/gnome'
+$ gcvs co foocanvas
+ 
+
+modify files in foocanvas/libfoocanvas
+ 
+
+create the patch which we'll store in cvs
+
+$ cd foocanvas/libfoocanvas
+$ gcvs diff -u > ZMap/foocanvas/support/libfoocanvas-VERSION.patch
+
+
+store in ZMap cvs. Make sure '-ko' is used to STOP keyword substitution ($Id: DEV_NOTES,v 1.1 2005-02-11 16:09:30 rds Exp $).
+
+$ cd ZMap/foocanvas/support/
+$ cvs add -ko -m'message' libfoocanvas-VERSION.patch
+
+
+Creating the tar.gz
+-------------------
+
+$ gcvs export foocanvas
+$ mv foocanvas libfoocanvas
+$ cd libfoocanvas-VERSION/libfoocanvas
+$ patch -p0 < ZMap/foocanvas/support/libfoocanvas-VERSION.patch
+
+assuming patch goes ok, all of the above worked.
+
+now make all the autoconf stuff.  I had to do this first.
+$ export AUTOMAKE=~/bin/automake
+autogen.sh also requires gnome-common 
+$ gcvs co gnome-common; ./configure; make; make install
+
+
+$ ./autogen.sh
+
+$ tar -cf libfoocanvas-VERSION.tar libfoocanvas-VERSION/
+$ gzip libfoocanvas-VERSION.tar
+$ mv libfoocanvas-VERSION.tar.gz ZMap/foocanvas/support/
+$ cvs commit -m'message' libfoocanvas-VERSION.tar.gz
+
+Should alter untar_patch.sh to set the version variable to VERSION and
+tag the files as libfoocanvas-VERSION.
+
+
