@@ -27,9 +27,9 @@
  *              
  * Exported functions: none, dummy file.
  * HISTORY:
- * Last edited: Apr 21 09:36 2004 (edgrif)
+ * Last edited: Apr 23 16:22 2004 (edgrif)
  * Created: Tue Apr 20 09:54:38 2004 (edgrif)
- * CVS info:   $Id: ZMapDoxyMainPage,v 1.2 2004-04-21 08:36:57 edgrif Exp $
+ * CVS info:   $Id: ZMapDoxyMainPage,v 1.3 2004-04-27 09:41:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,7 +52,17 @@
  * <A href="http://www.gnu.org/copyleft/gpl.txt">GNU General Public License</A>
  * for more details.
  * 
- * \section authors Authors
+ * \section version Version Information
+ *
+ * \version 0.0.0
+ *
+ * The current version of ZMap is a prototype in development.
+ *
+ *
+ * \section credits Credits
+ *
+ * \author Ed Griffiths
+ * \author Rob Clack
  *
  * ZMap was originally written by 
  * <A href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</A>
@@ -61,3 +71,6 @@
  * 
  * 
  *  */
+
+
+
