@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: May 20 15:24 2004 (edgrif)
+ * Last edited: Jul  1 15:19 2004 (rnc)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.3 2004-05-20 14:29:31 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.4 2004-07-02 13:49:19 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -393,6 +393,47 @@ static void zmapWindowCB(void *cb_data, int reason)
   return ;
 }
 
+
+
+int zMapViewGetRegionLength(ZMapView view)
+{
+  return view->zMapRegion->length;
+}
+
+Coord zMapViewGetRegionArea(ZMapView view, int num)
+{
+  if (num == 1)
+    return view->zMapRegion->area1;
+  else
+    return view->zMapRegion->area2;
+}
+
+void zMapViewSetRegionArea(ZMapView view, Coord area, int num)
+{
+  if (num == 1)
+    view->zMapRegion->area1 = area;
+  else
+    view->zMapRegion->area2 = area;
+
+return;
+}
+
+gboolean zMapViewGetRegionReverse(ZMapView view)
+{
+  return view->zMapRegion->rootIsReverse;
+}
+
+
+int zMapViewGetRegionSize (ZMapView view)
+{
+  return view->zMapRegion->area2 - view->zMapRegion->area1;
+}
+
+
+ZMapRegion *zMapViewGetZMapRegion(ZMapView view)
+{
+  return view->zMapRegion;
+}
 
 
 /*
