@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: May 27 12:18 2004 (edgrif)
+ * Last edited: Jun 25 13:14 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.10 2004-05-27 13:39:56 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.11 2004-06-25 13:36:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -250,9 +250,14 @@ void zmapControlLoadCB(ZMap zmap)
        * if no view is selected....perhaps there should always be a selected view. */
 
       /* Probably should also allow "load"...perhaps time to call this "Reload"... */
-      if (zmap->curr_view && zMapViewGetStatus(zmap->curr_view) == ZMAPVIEW_INIT)
+      if (zmap->curr_view)
 	{
-	  if (zMapViewConnect(zmap->curr_view))
+	  gboolean status = TRUE ;
+
+	  if (zmap->curr_view && zMapViewGetStatus(zmap->curr_view) == ZMAPVIEW_INIT)
+	    status = zMapViewConnect(zmap->curr_view) ;
+
+	  if (status && zMapViewGetStatus(zmap->curr_view) == ZMAPVIEW_RUNNING)
 	    zMapViewLoad(zmap->curr_view, "") ;
 	}
     }
