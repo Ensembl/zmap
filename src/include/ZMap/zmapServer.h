@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  5 16:15 2003 (edgrif)
+ * Last edited: Mar 22 10:42 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.1 2004-03-03 12:51:52 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.2 2004-03-22 13:15:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -36,18 +36,25 @@
 
 #include <glib.h>
 
-/* Opaque type, represents a connetion to a database server. */
+
+/* Opaque type, represents a connection to a database server. */
 typedef struct _ZMapServerStruct *ZMapServer ;
 
 
+/* This routine must be called before any other server routines and must only be called once.
+ * It is the callers responsibility to make sure this happens. */
+gboolean zMapServerGlobalInit(char *protocol, void **server_global_data_out) ;
+
+/* Provide matching Termination routine ???? */
 
 
-gboolean zMapServerCreateConnection(ZMapServer *server_out, char *host, int port,
+gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
+				    char *host, int port, char *protocol,
 				    char *userid, char *passwd) ;
 
 gboolean zMapServerOpenConnection(ZMapServer server) ;
 
-gboolean zMapServerRequest(ZMapServer server, char *request, char **reply) ;
+gboolean zMapServerRequest(ZMapServer server, char *request, char **reply, int *reply_len) ;
 
 gboolean zMapServerCloseConnection(ZMapServer server) ;
 
