@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 20 13:41 2004 (edgrif)
+ * Last edited: Oct 20 15:20 2004 (rnc)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.14 2004-10-20 13:13:04 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.15 2004-10-20 14:41:47 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -110,88 +110,84 @@ void zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double
 
                                                                                 
 
-float zmapDrawScale(FooCanvas *canvas, GtkWidget *scrolledWindow, 
-		    double offset, double zoom_factor, int start, int end)
+FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
+			     double offset, double zoom_factor, 
+			     int start, int end)
 {
   FooCanvasItem *group;
-  float mag = 1.0, cutoff; 
-  int seqUnit;          /* spacing, in bases, of tick on scalebar */
-  int subunit;
-  int seqPos = 1;       /* where we are, in bases, in the sequence */
-  int width = 0;
-  int scalePos;         /* where we are on the scalebar */
-  int scaleEnd;         /* highest tick on scalebar */
-  int type;             /* the nomial (ie whether we're working in K, M, etc) */
-  int unitType;         /* index into unitName array */
+  float unit, subunit ;
+  int iUnit, iSubunit, type, unitType ;
+  int width = 0 ;
   char cp[20], unitName[] = { 0, 'k', 'M', 'G', 'T', 'P' }, buf[2] ;
-  int scaleUnit = 100;  /* arbitrary spacing of ticks on the scalebar */
-  int ticks;            /* number of ticks on the scalebar */
-  double x1, x2, y1, y2, height;  /* canvas attributes */
-  GdkColor black, yellow;
-  GtkAdjustment *adj;
-  int cx,cy;
-  double wx, wy, wtop;
-  float u, sub;
-  
+  float cutoff;
+  int seqPos = 1;       /* where we are, in bases, in the sequence */
+  double scalePos;
+  GdkColor black, white, yellow;
+
+
   gdk_color_parse("black", &black);
+  gdk_color_parse("white", &white);
   gdk_color_parse("yellow", &yellow);
 
-  adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(scrolledWindow));
+  /* work out units and subunits for the scale bar */
+  cutoff = 50.0 / zoom_factor;    /* why 50.0? Arbitrary fudge factor modified from mapcontrol.c */
+  unit = subunit = 1.0 ;
 
-  ticks = adj->page_size/scaleUnit;
-  seqUnit = (end - start)/ticks;
+  if (cutoff < 0)
+    cutoff = -cutoff ;
 
-  mag = adj->page_size / (end - start);
-  if (mag == 0.0) mag = 1.0;
-  cutoff = 5/mag;
+  /* each time through this loop unit and subunit increase by 10 times until unit exceeds cutoff,
+  ** so we end up with a nice round number for our major ticks, and 10 minor ticks per major one. */
+  while (unit < cutoff)
+    { unit *= 2 ;
+      subunit *= 5 ;
+      if (unit >= cutoff)
+	break ;
+      unit *= 2.5000001 ;	/* safe rounding */
+      if (unit >= cutoff)
+	break ;
+      unit *= 2 ;
+      subunit *= 2 ;
+    }
+  subunit /= 10 ;
 
-  for (type = 1, unitType = 0 ; 
-       seqUnit > 0 && 1000 * type < seqUnit && unitType < 5; 
+  iUnit = unit + 0.5 ;
+  iSubunit = subunit + 0.5 ;
+
+  /* calculate nomial ie thousands, millions, etc */
+  for (type = 1, unitType = 0 ; iUnit > 0 && 1000 * type < iUnit && unitType < 5; 
        unitType++, type *= 1000) ;
 
-  seqPos = start;
-
-  seqUnit = ((seqUnit + type/2)/type) * type;  /* round the unit sensibly */
-
   group = foo_canvas_item_new(foo_canvas_root(canvas),
-			foo_canvas_group_get_type(),
-			"x",(double)offset,
-			"y",(double)0.0,
-			NULL);
+			      foo_canvas_group_get_type(),
+			      "x",(double)offset,
+			      "y",(double)0.0,
+			      NULL);
 
-  for (scaleEnd = start; scaleEnd < end; scaleEnd += scaleUnit); /* so at the end we're at the highest below the end */
-  scaleEnd += seqUnit;                                           /* marks the last tick on the scalebar */
-
-  for (seqPos = start, scalePos = 0; seqPos < scaleEnd; seqPos += seqUnit, scalePos += scaleUnit)
+  /* yellow bar separates forward from reverse strands. Draw first so scalebar text
+  ** overlies it. */
+  zmapDrawBox(FOO_CANVAS_ITEM(group), 0.0, start, 3.0, end, &white, &yellow); 
+										    
+  /* major ticks and text */
+  for (seqPos = start, scalePos = start; seqPos < end; seqPos += iUnit, scalePos += iUnit)
     {
-      foo_canvas_c2w(canvas, 0, scalePos + BORDER, &wx, &wy);
-      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-8, wy, offset, wy, &black, 1.0);
+      zmapDrawLine(FOO_CANVAS_GROUP(group), 32.0, scalePos, 40.0, scalePos, &black, 1.0);
       buf[0] = unitName[unitType] ; buf[1] = 0 ;
       sprintf (cp, "%d%s", seqPos/type, buf) ;
       if (width < strlen (cp))
         width = strlen (cp) ;
-      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", offset-20, wy); 
+      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", (31.0 - (5.0 * width)), scalePos); 
     }		     
+  
+  /* minor ticks */
+  for (seqPos = start, scalePos = start; seqPos < end; seqPos += iSubunit, scalePos += iSubunit)
+      zmapDrawLine(FOO_CANVAS_GROUP(group), 35.0, scalePos, 40.0, scalePos, &black, 1.0);
 
-  /* this is a separate block because sometimes I'm going to want not to run it  */
-  for (scalePos = 0; scalePos < adj->page_size - 20; scalePos += scaleUnit/10)
-    {
-      foo_canvas_c2w(canvas, 0, scalePos + BORDER, &wx, &wy);
-      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-4, wy, offset, wy, &black, 1.0);
-    }
- 
-  /* just use the wy left over from the last loop */
-  foo_canvas_c2w(canvas, 0, BORDER, &wx, &wtop);
-  zmapDrawLine(FOO_CANVAS_GROUP(group), offset+1, wtop, offset+1, wy, &black, 1.0);   /* long vertical line */
+  /* long vertical line */
+  zmapDrawLine(FOO_CANVAS_GROUP(group), 40.0, start, 40.0, end, &black, 1.0);
 
-  /* black bar separates forward from reverse strands */
-  zmapDrawBox(FOO_CANVAS_ITEM(group), offset-38, wtop, offset-35, wy, &black, &black); 
-										    
-
-  return offset;
+  return group;
 }
-
-
 
 
 
