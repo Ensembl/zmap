@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Mar 12 14:37 2004 (edgrif)
+ * Last edited: Mar 19 11:19 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.4 2004-03-12 15:53:23 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.5 2004-03-19 11:19:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,8 +118,8 @@ gboolean zMapConnect(ZMap zmap)
 	  char **next = server_list ;
 	  int connections = 0 ;
 
-	  /* Error handling is tricky here, if we manage to connect to some servers and not
-	   * others, what do we do ?  THINK ABOUT THIS..... */
+	  /* Current error handling policy is to connect to servers that we can and
+	   * report errors for those where we fail but to carry on and set up the ZMap. */
 	  while (result && *next != NULL)
 	    {
 	      char *machine, *port, *protocol ;
