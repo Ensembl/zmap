@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 23 17:26 2005 (edgrif)
+ * Last edited: Mar 28 09:27 2005 (edgrif)
  * Created: Thu Feb 24 11:19:23 2005 (edgrif)
- * CVS info:   $Id: zmapWindowAlignment.c,v 1.4 2005-03-23 17:27:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAlignment.c,v 1.5 2005-04-05 14:49:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,9 +55,9 @@ typedef struct
 #define STRAND_GAP COLUMN_GAP / 2
 
 
-static ZMapWindowColumn findColumn(GPtrArray *col_array, char *col_name, gboolean forward_strand) ;
+static ZMapWindowColumn findColumn(GPtrArray *col_array, GQuark type_name, gboolean forward_strand) ;
 static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
-					  gchar *type_name, ZMapFeatureTypeStyle type) ;
+					  GQuark type_name, ZMapFeatureTypeStyle type) ;
 static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, ZMapWindowColumn column,
 				   double start, double top, double bot, double width,
 				   GdkColor *colour) ;
@@ -121,15 +121,15 @@ ZMapWindowAlignmentBlock zmapWindowAlignmentAddBlock(ZMapWindowAlignment alignme
 }
 
 
-ZMapWindowColumn zmapWindowAlignmentAddColumn(ZMapWindowAlignmentBlock block, char *source_name,
+ZMapWindowColumn zmapWindowAlignmentAddColumn(ZMapWindowAlignmentBlock block, GQuark type_name,
 					      ZMapFeatureTypeStyle type)
 {
   ZMapWindowColumn column ;
 
   /* If the column doesn't already exist we need to find a new one. */
-  if (!(column = findColumn(block->columns, source_name, TRUE)))
+  if (!(column = findColumn(block->columns, type_name, TRUE)))
     {
-      column = createColumnGroup(block, source_name, type) ;
+      column = createColumnGroup(block, type_name, type) ;
 
       g_ptr_array_add(block->columns, column) ;
     }
@@ -144,7 +144,7 @@ FooCanvasItem *zmapWindowAlignmentGetColumn(ZMapWindowColumn column_group, ZMapS
 {
   FooCanvasItem *column ;
 
-  if (strand == ZMAPSTRAND_DOWN || strand == ZMAPSTRAND_NONE)
+  if (strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_NONE)
     column = column_group->forward_group ;
   else
     column = column_group->reverse_group ;
@@ -211,7 +211,7 @@ ZMapWindowAlignment zmapWindowAlignmentDestroy(ZMapWindowAlignment alignment)
 
 
 /* Find the column with the given name and strand, returns NULL if not found. */
-static ZMapWindowColumn findColumn(GPtrArray *col_array, char *col_name, gboolean forward_strand)
+static ZMapWindowColumn findColumn(GPtrArray *col_array, GQuark type_name, gboolean forward_strand)
 {
   ZMapWindowColumn column = NULL ;
   int i ;
@@ -220,7 +220,7 @@ static ZMapWindowColumn findColumn(GPtrArray *col_array, char *col_name, gboolea
     {
       ZMapWindowColumn next_column = g_ptr_array_index(col_array, i) ;
 
-      if (strcmp(next_column->type_name, col_name) == 0 && next_column->forward == forward_strand)
+      if (next_column->type_name == type_name && next_column->forward == forward_strand)
 	{
 	  column = next_column ;
 	  break ;
@@ -234,7 +234,7 @@ static ZMapWindowColumn findColumn(GPtrArray *col_array, char *col_name, gboolea
 
 /* create Column */
 static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
-					  gchar *type_name, ZMapFeatureTypeStyle type)
+					  GQuark type_name, ZMapFeatureTypeStyle type)
 {
   ZMapWindowColumn column ;
   ZMapWindowAlignment alignment = block->parent ;
@@ -354,12 +354,12 @@ static gboolean canvasBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  {
 	  case 1:
 	    {
-	      char *column_text ;
+	      const char *column_text ;
 	      ZMapWindow window = column->parent_block->parent->window ;
 
-	      column_text = column->type_name ;
+	      column_text = g_quark_to_string(column->type_name) ;
 
-	      (*(window->caller_cbs->click))(window, window->app_data, column_text) ;
+	      (*(window->caller_cbs->click))(window, window->app_data, (char *)column_text) ;
 
 	      event_handled = TRUE ;
 	      break ;
