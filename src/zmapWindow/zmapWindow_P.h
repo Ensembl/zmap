@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 12 15:44 2004 (rnc)
+ * Last edited: Nov 18 08:48 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.32 2004-11-12 15:44:17 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.33 2004-11-18 10:48:13 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -53,9 +53,13 @@
 
 enum
   {
-    ZMAP_WINDOW_MAX_WINDOW = 30000,			    /* Largest canvas window. */
-    ZMAP_WINDOW_TEXT_BORDER = 2				    /* border above/below dna text. */
+    ZMAP_WINDOW_TEXT_BORDER = 2,			    /* border above/below dna text. */
+    ZMAP_WINDOW_STEP_INCREMENT = 10,                        /* scrollbar stepping increment */
+    ZMAP_WINDOW_PAGE_INCREMENT = 600,                       /* scrollbar paging increment */
+    ZMAP_WINDOW_MAX_WINDOW = 30000			    /* Largest canvas window. */
   } ;
+
+
 
 
 typedef struct _ZMapWindowStruct
@@ -63,57 +67,55 @@ typedef struct _ZMapWindowStruct
   gchar *sequence ;
 
   /* Widgets for displaying the data. */
-  GtkWidget *parent_widget ;
-  GtkWidget *toplevel ;
+  GtkWidget     *parent_widget ;
+  GtkWidget     *toplevel ;
+  GtkWidget     *scrolledWindow;                            /* points to toplevel */
+  FooCanvas     *canvas;				    /* where we paint the display */
 
+  double         zoom_factor ;
+  ZMapWindowZoomStatus zoom_status ;   /* For short sequences that are displayed at max. zoom initially. */
+  double         min_zoom ;				    /* min/max allowable zoom. */
+  double         max_zoom ;
+  int            canvas_maxwin_size ;			    /* 30,000 is the maximum (default). */
+  int            border_pixels ;			    /* top/bottom border to sequence. */
 
-  GtkWidget   *scrolledWindow;
-  FooCanvas   *canvas;					    /* where we paint the display */
-  FooCanvasItem *group;
-  GtkWidget   *combo;
-  int          basesPerLine;
-  InvarCoord   centre;
-  int          graphHeight;
-  int          dragBox, scrollBox;
-  GPtrArray    cols;
-  GArray       *box2seg, *box2col;
+  GtkWidget     *text ;
+  GdkAtom        zmap_atom ;
+  void          *app_data ;
 
-  int          DNAwidth;
+  GData         *types;
+  GPtrArray     *featureListWindows;
+  GData         *featureItems;            /*!< enables unambiguous link between features and canvas items. */
+  GPtrArray     *columns;                 /* keep track of canvas columns */
 
-  double       zoom_factor ;
-  ZMapWindowZoomStatus zoom_status ;			    /* For short sequences that are
-							       displayed at max. zoom initially. */
+  FooCanvasItem *scaleBarGroup;           /* canvas item in which we build the scalebar */
+  double         scaleBarOffset;
 
-  int          canvas_maxwin_size ;			    /* 30,000 is the maximum (default). */
+  /* The length, start and end of the segment of sequence to be shown, there will be _no_
+   * features outside of the start/end. */
+  double         seqLength;
+  double         seq_start ;
+  double         seq_end ;
 
-  int          step_increment;
-  int          page_increment;
+  ZMapFeatureTypeStyle focusType;         /* type of the item which has focus */
+  FooCanvasItem       *focusFeature;      /* the item which has focus */
 
-  GtkWidget *text ;
-
-  GdkAtom zmap_atom ;
-
+  int            DNAwidth;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapVoidIntCallbackFunc app_routine ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  void *app_data ;
-
-
-  /* Is this even used ??????? */
-  InvarCoord      origin; /* that base which is VisibleCoord 1 */
-
-  GPtrArray *featureListWindows;
-
-  GData     *featureItems;            /*!< enables unambiguous link between features and canvas items. */
-
 } ZMapWindowStruct ;
+
+
 
 
 typedef struct _ZMapFeatureItemStruct {   /*!< keyed on feature->id, gives access to canvas item */
   ZMapFeatureSet feature_set;
+  GQuark         feature_key;
   FooCanvasItem *canvasItem;
+  int            x_coord;
 } ZMapFeatureItemStruct, *ZMapFeatureItem;
 
 
@@ -125,73 +127,38 @@ typedef struct
 } zmapWindowDataStruct, *zmapWindowData ;
 
 
-/* used in handleCanvasEvent to obtain the actual feature that's been clicked on */
-typedef struct _FeatureKeys {
-    ZMapFeatureSet feature_set;
-    GQuark feature_key;
-} FeatureKeyStruct, *FeatureKeys;
-
 
 /* Used in our event communication.... */
 #define ZMAP_ATOM  "ZMap_Atom"
 
 typedef struct _ZMapColStruct
 {
-  FooCanvasItem       *item;
+  FooCanvasItem       *column;
   gboolean             forward;
   ZMapFeatureTypeStyle type;
   gchar               *type_name;
 } ZMapColStruct, *ZMapCol;
 
 
-/* parameters passed between the various functions processing the features on the canvas */
-/* I wanta to group the members logically, but I don't think I'm there yet. */
+/* parameters passed between the various functions drawing the features on the canvas */
 typedef struct _ZMapCanvasDataStruct
 {
   ZMapWindow           window;
   FooCanvas           *canvas;
-  FooCanvasItem       *columnGroup;
-  FooCanvasItem       *revColGroup;         /* a group for reverse strand features */
-  double               column_position;
-  double               revColPos;           /* column position on reverse strand */
-
-  double min_zoom ;					    /* min/max allowable zoom. */
-  double max_zoom ;
-
-
-  GData               *types;
-  ZMapFeatureTypeStyle thisType;
-
+  FooCanvasItem       *forward_column_group;
+  FooCanvasItem       *reverse_column_group; 
+  double               forward_column_pos;
+  double               reverse_column_pos;  
   ZMapFeatureContext   feature_context;
   ZMapFeatureSet       feature_set;
   GQuark               context_key;
-  FooCanvasItem       *feature_group;       /* the group this feature was drawn in */
-  ZMapFeature          feature;
+  ZMapFeatureTypeStyle thisType;
 
-  GArray              *columns;             /* keep track of canvas columns */
-
-  ZMapFeatureTypeStyle focusType;
-  FooCanvasItem       *focusFeature;
-
-  GIOChannel          *channel;
-
-  /* The length, start and end of the segment of sequence to be shown, there will be _no_
-   * features outside of the start/end. */
-  double               seqLength;
-  double               seq_start ;
-  double               seq_end ;
-
-  int border_pixels ;					    /* top/bottom border to sequence. */
-
-  FooCanvasItem       *scaleBarGroup;
-  double               scaleBarOffset;
-  double               x;                   /* x coord of a column the user clicked */
-
-} ZMapCanvasDataStruct;
+} ZMapCanvasDataStruct, *ZMapCanvasData;
 
 
 /* the function to be ultimately called when the user clicks on a canvas item. */
-typedef gboolean (*ZMapFeatureCallbackFunc)(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
+typedef gboolean (*ZMapFeatureCallbackFunc)(ZMapWindow window, ZMapFeatureSet feature_set, int x_coord);
 
 
 /* Set of callback routines that allow the caller to be notified when events happen
@@ -210,14 +177,14 @@ GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 
 
 
-void zmapWindowHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData) ;
+void zmapWindowHighlightObject(FooCanvasItem *feature, ZMapWindow window, ZMapFeatureTypeStyle thisType);
 
 void zmapFeatureInit(ZMapFeatureCallbacks callbacks) ;
 
 void zmapWindowPrintCanvas(FooCanvas *canvas) ;
 
-void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
-gboolean zMapFeatureClickCB  (ZMapCanvasDataStruct *canvasData, ZMapFeature feature);
+void zMapWindowCreateListWindow(ZMapWindow window, ZMapFeatureSet feature_set, int x_coord);
+gboolean zMapFeatureClickCB(ZMapWindow window, ZMapFeature feature);
 FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 			     double offset, double zoom_factor, 
 			     int start, int end);

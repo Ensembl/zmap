@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 12 14:41 2004 (edgrif)
+ * Last edited: Nov 18 10:03 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.50 2004-11-12 14:45:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.51 2004-11-18 10:48:58 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,11 +43,11 @@
 
 
 
-static void dataEventCB        (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
-static void canvasClickCB      (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
-static void clickCB            (ZMapWindow window, void *caller_data, ZMapFeature feature);
-static gboolean rightClickCB   (ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
-static void hideUnhideColumns  (ZMapCanvasDataStruct *canvasData);
+static void dataEventCB         (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static void canvasClickCB       (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static void clickCB             (ZMapWindow window, void *caller_data, ZMapFeature feature);
+static gboolean rightClickCB    (ZMapWindow window, ZMapFeatureSet feature_set, int x_coord);
+static void hideUnhideColumns   (ZMapWindow window);
 static gboolean getConfiguration(ZMapWindow window) ;
 
 
@@ -95,7 +95,6 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   ZMapWindow window ;
   GtkWidget *canvas ;
   GdkColor color;
-  ZMapCanvasDataStruct *canvasData = NULL ;
 
   /* No callbacks, then no window creation. */
   zMapAssert(window_cbs_G) ;
@@ -111,9 +110,9 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
   window->zoom_factor = 1 ;
   window->zoom_status = ZMAP_ZOOM_INIT ;
-  window->step_increment = 10;
-  window->page_increment = 600;
   window->canvas_maxwin_size = ZMAP_WINDOW_MAX_WINDOW ;
+
+  window->columns = g_ptr_array_new();
 
   /* Some things for window can be specified in the configuration file. */
   getConfiguration(window) ;
@@ -152,20 +151,11 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
 
   /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
-  GTK_LAYOUT(canvas)->vadjustment->step_increment = window->step_increment;
-  GTK_LAYOUT(canvas)->hadjustment->step_increment = window->step_increment;
-  GTK_LAYOUT(canvas)->vadjustment->page_increment = window->page_increment;
+  GTK_LAYOUT(canvas)->vadjustment->step_increment = ZMAP_WINDOW_STEP_INCREMENT;
+  GTK_LAYOUT(canvas)->hadjustment->step_increment = ZMAP_WINDOW_STEP_INCREMENT;
+  GTK_LAYOUT(canvas)->vadjustment->page_increment = ZMAP_WINDOW_PAGE_INCREMENT;
 
 
-
-  /* This control block holds the state we need for controlling the canvas....should this be in
-   * the window struct in fact ?  Isn't there only one of these per window ? */
-  canvasData = g_new0(ZMapCanvasDataStruct, 1) ;
-  canvasData->window = window;
-  canvasData->canvas = window->canvas;
-  canvasData->columns = g_array_new(TRUE, TRUE, sizeof(ZMapColStruct));
-
-  g_object_set_data(G_OBJECT(window->canvas), "canvasData", canvasData);
 
   /* Get everything sized up....I don't know if this is really needed here or not. */
   gtk_widget_show_all(window->parent_widget) ;
@@ -245,7 +235,6 @@ ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window)
 
 void zMapWindowDestroy(ZMapWindow window)
 {
-  ZMapCanvasDataStruct *canvasData;
   int i;
   GtkWidget *widget;
 
@@ -254,20 +243,20 @@ void zMapWindowDestroy(ZMapWindow window)
   if (window->sequence)
     g_free(window->sequence) ;
 
-  if (window->featureListWindows)
-    for (i = 0; i < window->featureListWindows->len; i++)
-      {
-	widget = g_ptr_array_index(window->featureListWindows, i);
-	gtk_widget_destroy(widget);
-      }
-
   /* free the array of featureListWindows and the windows themselves */
-  g_ptr_array_free(window->featureListWindows, TRUE);
-  g_datalist_clear(&(window->featureItems));
+  if (window->featureListWindows)
+    {
+      for (i = 0; i < window->featureListWindows->len; i++)
+	{
+	  widget = g_ptr_array_index(window->featureListWindows, i);
+	  gtk_widget_destroy(widget);
+	}
+      g_ptr_array_free(window->featureListWindows, FALSE);
+    }
+  
+  if (window->columns)
+    g_ptr_array_free(window->columns, TRUE);                
 
- /* ah, but has the window been destroyed? Then the canvas will, too */
-  canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
-  g_free(canvasData);
   g_free(window) ;
  
   return ;
@@ -287,7 +276,7 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
 {
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
   GtkAdjustment *adjust;
-  ZMapCanvasDataStruct *canvasData ;
+  ZMapCanvasData canvasData ;
   int x, y ;
   double width, curr_pos = 0.0 ;
   double new_zoom, canvas_zoom ;
@@ -328,14 +317,14 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
   /* Calculate the zoom. */
   new_zoom = window->zoom_factor * zoom_factor ;
-  if (new_zoom < canvasData->min_zoom)
+  if (new_zoom < window->min_zoom)
     {
-      window->zoom_factor = canvasData->min_zoom ;
+      window->zoom_factor = window->min_zoom ;
       window->zoom_status = zoom_status = ZMAP_ZOOM_MIN ;
     }
-  else if (new_zoom > canvasData->max_zoom)
+  else if (new_zoom > window->max_zoom)
     {
-      window->zoom_factor = canvasData->max_zoom ;
+      window->zoom_factor = window->max_zoom ;
       window->zoom_status = zoom_status = ZMAP_ZOOM_MAX ;
     }
   else
@@ -348,7 +337,7 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
   /* Calculate limits to what we can show. */
   max_win_span = (double)(window->canvas_maxwin_size) ;
-  seq_span = canvasData->seqLength * window->zoom_factor ;
+  seq_span = window->seqLength * window->zoom_factor ;
 
   /* Calculate the extent of the new span, new span must not exceed maximum X window size
    * but we must display as much of the sequence as we can for zooming out. */
@@ -369,17 +358,17 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
   top = curr_pos - (new_canvas_span / 2) ;
   bot = curr_pos + (new_canvas_span / 2) ;
 
-  if (top < canvasData->seq_start)
+  if (top < window->seq_start)
     {
-      if ((bot = bot + (canvasData->seq_start - top)) > canvasData->seq_end)
-	bot = canvasData->seq_end ;
-      top = canvasData->seq_start ;
+      if ((bot = bot + (window->seq_start - top)) > window->seq_end)
+	bot = window->seq_end ;
+      top = window->seq_start ;
     }
-  else if (bot > canvasData->seq_end)
+  else if (bot > window->seq_end)
     {
-      if ((top = top - (bot - canvasData->seq_end)) < canvasData->seq_start)
-	top = canvasData->seq_start ;
-      bot = canvasData->seq_end ;
+      if ((top = top - (bot - window->seq_end)) < window->seq_start)
+	top = window->seq_start ;
+      bot = window->seq_end ;
     }
 
   /* Set the new scroll_region and the new zoom. N.B. may need to do a "freeze" of the canvas here
@@ -402,16 +391,16 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
   foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
 
   /* Now hide/show any columns that have specific show/hide zoom factors set. */
-  if (canvasData->columns)
-    hideUnhideColumns(canvasData) ;
+  if (window->columns)
+    hideUnhideColumns(window) ;
   
   /* redraw the scale bar */
-  gtk_object_destroy(GTK_OBJECT(canvasData->scaleBarGroup));
-  canvasData->scaleBarGroup = zmapDrawScale(canvasData->canvas, 
-					    canvasData->scaleBarOffset, 
-					    window->zoom_factor,
-					    top,
-					    bot);
+  gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
+  window->scaleBarGroup = zmapDrawScale(window->canvas, 
+					window->scaleBarOffset, 
+					window->zoom_factor,
+					top,
+					bot);
 
   return zoom_status ;
 }
@@ -444,29 +433,29 @@ void zmapWindowPrintCanvas(FooCanvas *canvas)
 
 
 
-static void hideUnhideColumns(ZMapCanvasDataStruct *canvasData)
+static void hideUnhideColumns(ZMapWindow window)
 {
   int i;
   ZMapCol column;
   double min_mag;
 
-  for ( i = 0; i < canvasData->columns->len; i++ )
+  for ( i = 0; i < window->columns->len; i++ )
     {
-      column = &g_array_index(canvasData->columns, ZMapColStruct, i);
+      column = g_ptr_array_index(window->columns, i);
 
       /* type->min_mag is in bases per line, but window->zoom_factor is pixels per base */
-      min_mag = (column->type->min_mag ? canvasData->max_zoom/column->type->min_mag : 0.0);
+      min_mag = (column->type->min_mag ? window->max_zoom/column->type->min_mag : 0.0);
 
-      if (canvasData->window->zoom_factor > min_mag)
+      if (window->zoom_factor > min_mag)
 	{
 	  if (column->forward)
-	    foo_canvas_item_show(column->item);
+	    foo_canvas_item_show(column->column);
 	  else
 	    if (column->type->showUpStrand)
-	      foo_canvas_item_show(column->item);
+	      foo_canvas_item_show(column->column);
 	}
       else
-	  foo_canvas_item_hide(column->item);
+	  foo_canvas_item_hide(column->column);
     }
   return;
 }
@@ -536,10 +525,10 @@ static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature)
 }
 
 
-static gboolean rightClickCB(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set)
+static gboolean rightClickCB(ZMapWindow window, ZMapFeatureSet feature_set, int x_coord)
 {
   /* user selects new feature in this column */
-  zMapWindowCreateListWindow(canvasData, feature_set);
+  zMapWindowCreateListWindow(window, feature_set, x_coord);
 
   return TRUE;
 }
@@ -746,10 +735,6 @@ ScreenCoord zMapWindowGetScreenCoord(ZMapWindow window, Coord coord, int height)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-InvarCoord zMapWindowGetOrigin(ZMapWindow window)
-{
-  return window->origin;
-}
 
 
 /* ZMapRegion functions */

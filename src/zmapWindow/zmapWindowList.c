@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 16 08:43 2004 (rnc)
+ * Last edited: Nov 18 09:39 2004 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.15 2004-11-16 08:46:12 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.16 2004-11-18 10:49:27 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,10 +59,10 @@ typedef struct _ListColStruct {
 
 
 /* function prototypes ***************************************************/
-static void addItemToList(GQuark key_id, gpointer data, gpointer user_data);
+static void addItemToList             (GQuark key_id, gpointer data, gpointer user_data);
 static int  tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
-static void recalcScrollRegion(ZMapCanvasDataStruct *canvasData, double start, double end);
-static void quitListCB   (GtkWidget *window, gpointer data);
+static void recalcScrollRegion        (ZMapWindow window, double start, double end);
+static void quitListCB                (GtkWidget *window, gpointer data);
 
 
 /* functions *************************************************************/
@@ -72,7 +72,8 @@ static void quitListCB   (GtkWidget *window, gpointer data);
  * sequence.  When the user selects one, the main display is scrolled to that feature
  * and the selected item hightlighted.
  */
-void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set)
+
+void zMapWindowCreateListWindow(ZMapWindow zmapWindow, ZMapFeatureSet feature_set, int x_coord)
 {
   GtkWidget *window, *featureList, *scrolledWindow;
   GtkTreeModel *sort_model;
@@ -80,6 +81,7 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
   GtkTreeViewColumn *column;
   GtkTreeSelection *select;
   ListCol listCol = g_new0(ListColStruct, 1);
+  ZMapFeatureTypeStyle thisType;
 
   listCol->list = gtk_tree_store_new(N_COLUMNS,
 				     G_TYPE_STRING,
@@ -89,17 +91,18 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
 				     G_TYPE_STRING,
 				     G_TYPE_INT,
 				     G_TYPE_DOUBLE);
-  listCol->x_coord = canvasData->x;
+
+  listCol->x_coord = x_coord;
   listCol->source = g_string_new(feature_set->source);
   listCol->source = g_string_ascii_down(listCol->source); /* does this in place */
 
-  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), 
-								   listCol->source->str);
-  zMapAssert(canvasData->thisType);
+  thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(zmapWindow->types), 
+						       listCol->source->str);
+  zMapAssert(thisType);
 
   /* need to know whether the column is up or down strand, 
    * so we load the right set of features */
-  if (canvasData->x < canvasData->scaleBarOffset)
+  if (listCol->x_coord < zmapWindow->scaleBarOffset)
     listCol->strand = ZMAPSTRAND_UP;
   else
     listCol->strand = ZMAPSTRAND_DOWN;
@@ -107,7 +110,7 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
   /* set up the top level window */
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
-  g_ptr_array_add(canvasData->window->featureListWindows, (gpointer)window);
+  g_ptr_array_add(zmapWindow->featureListWindows, (gpointer)window);
 
   gtk_container_border_width(GTK_CONTAINER(window), 5) ;
   gtk_window_set_title(GTK_WINDOW(window), feature_set->source) ;
@@ -195,7 +198,7 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
 
   g_signal_connect (G_OBJECT (select), "changed",
 		    G_CALLBACK (tree_selection_changed_cb),
-		    canvasData);
+		    zmapWindow);
 
   g_signal_connect(GTK_OBJECT(window), "destroy",
 		   GTK_SIGNAL_FUNC(quitListCB), featureList);
@@ -213,27 +216,29 @@ void zMapWindowCreateListWindow(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet
  * If necessary, recalculate the scroll region, then scroll to the item
  * and highlight it.
  */
-void zMapWindowScrollToItem(ZMapWindow window, gchar *type, guint id) 
+void zMapWindowScrollToItem(ZMapWindow window, gchar *type, GQuark feature_id) 
 {
-  ZMapCanvasDataStruct *canvasData;
   int cx, cy;
   double x1, y1, x2, y2;
-  char *dataKey = "canvasData";
   ZMapFeatureItem featureItem;
   ZMapFeature feature;
+  ZMapFeatureTypeStyle thisType;
 
-  canvasData = g_object_get_data(G_OBJECT(window->canvas), dataKey);  
-  zMapAssert(canvasData->feature_context);
+  featureItem = (ZMapFeatureItem)g_datalist_id_get_data(&(window->featureItems), feature_id);
+  zMapAssert(featureItem);
 
-  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), type);
-  zMapAssert(canvasData->thisType);
+  feature = (ZMapFeature)g_datalist_id_get_data(&(featureItem->feature_set->features), featureItem->feature_key);
+  zMapAssert(feature);
+
+  thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(window->types), type);
+  zMapAssert(thisType);
 
   /* The selected object might be outside the current scroll region. */
-  recalcScrollRegion(canvasData, feature->x1, feature->x2);
+  recalcScrollRegion(window, feature->x1, feature->x2);
 
   /* featureItem holds canvasItem and ptr to the feature_set containing the feature. */
-  featureItem =  g_datalist_id_get_data(&(canvasData->window->featureItems), id);
-  feature =  g_datalist_id_get_data(&(featureItem->feature_set->features), id);
+  featureItem =  g_datalist_id_get_data(&(window->featureItems), feature_id);
+  feature =  g_datalist_id_get_data(&(featureItem->feature_set->features), feature_id);
 
   /* scroll up or down to user's selection.  
   ** Note that because we zoom asymmetrically, we only convert the y coord 
@@ -245,12 +250,12 @@ void zMapWindowScrollToItem(ZMapWindow window, gchar *type, guint id)
   foo_canvas_item_raise_to_top(featureItem->canvasItem);
       
   /* highlight the item */
-  zmapWindowHighlightObject(featureItem->canvasItem, canvasData);
+  zmapWindowHighlightObject(featureItem->canvasItem, window, thisType);
   
-  zMapFeatureClickCB(canvasData, feature); /* show feature details on info_panel  */
+  zMapFeatureClickCB(window, feature); /* show feature details on info_panel  */
 
-  canvasData->focusFeature = featureItem->canvasItem;
-  canvasData->focusType = canvasData->thisType;
+  window->focusFeature = featureItem->canvasItem;
+  window->focusType = thisType;
 
   return;
 }
@@ -296,7 +301,7 @@ static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
  */
 static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
 {
-  ZMapCanvasDataStruct *canvasData = (ZMapCanvasDataStruct*)data;
+  ZMapWindow window = (ZMapWindowStruct*)data;
   GtkTreeIter iter;
   GtkTreeModel *model;
   int start = 0, end = 0, feature_type = 0;
@@ -318,8 +323,8 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 
   if (start)
     {
-      zMapWindowScrollToItem(canvasData->window, type, id);
-      gtk_widget_show_all(GTK_WIDGET(canvasData->window->parent_widget));
+      zMapWindowScrollToItem(window, type, id);
+      gtk_widget_show_all(GTK_WIDGET(window->parent_widget));
     }
   
   if (name) g_free(name); 
@@ -334,38 +339,36 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
  * If the selected feature is outside the current scroll region, recalculate
  * the region to be the same size but with the selecte feature in the middle.
  */
-static void recalcScrollRegion(ZMapCanvasDataStruct *canvasData, double start, double end)
+static void recalcScrollRegion(ZMapWindow window, double start, double end)
 {
   double x1, y1, x2, y2, height;
-  int seqStart, seqEnd, top, bot;
+  int top, bot;
 
-  seqStart = canvasData->feature_context->sequence_to_parent.c1;
-  seqEnd   = canvasData->feature_context->sequence_to_parent.c2;
 
- foo_canvas_get_scroll_region(canvasData->canvas, &x1, &y1, &x2, &y2);  /* world coords */
+ foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);  /* world coords */
 
   if ( start < y1 || end > y2)
     {
       height = y2 - y1;
       y1 = start - (height/2.0);
-      if (y1 < seqStart)
-	y1 = seqStart;
+      if (y1 < window->seq_start)
+	y1 = window->seq_start;
 
       y2 = y1 + height;
 
       /* this shouldn't happen */
-      if (y2 > seqEnd)
-	  y2 = seqEnd;
+      if (y2 > window->seq_end)
+	  y2 = window->seq_end;
 
-      foo_canvas_set_scroll_region(canvasData->canvas, x1, y1, x2, y2);
+      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
 
       /* redraw the scale bar */
       top = (int)y1;                   /* zmapDrawScale expects integer coordinates */
       bot = (int)y2;
-      gtk_object_destroy(GTK_OBJECT(canvasData->scaleBarGroup));
-      canvasData->scaleBarGroup = zmapDrawScale(canvasData->canvas, 
-						canvasData->scaleBarOffset, 
-						canvasData->window->zoom_factor,
+      gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
+      window->scaleBarGroup = zmapDrawScale(window->canvas, 
+						window->scaleBarOffset, 
+						window->zoom_factor,
 						top,
 						bot);
     }
