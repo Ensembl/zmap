@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 16 11:43 2004 (rnc)
+ * Last edited: Sep 21 10:21 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.29 2004-09-16 15:30:07 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.30 2004-09-21 13:10:27 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -217,26 +217,6 @@ void zMapWindowDisplayData(ZMapWindow window, void *data, GData *types)
 }
 
 
-/* Zooming: we don't zoom as such, we scale the group, doubling the
- * y axis but leaving x at 1.  This enlarges lengthways, while keeping
- * the width the same. */
-void zMapWindowZoom(ZMapWindow window, double zoom_factor)
-{
-  int x, y;
-
-  window->zoom_factor *= zoom_factor ;
-
-  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
-
-  /* do we need to do anything else like redraw ?? */
-  foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
-
-  foo_canvas_scroll_to(window->canvas, x, y);
-
-  return ;
-}
-
-
 void zMapWindowReset(ZMapWindow window)
 {
 
@@ -255,19 +235,67 @@ void zMapWindowDestroy(ZMapWindow window)
 {
   zMapDebug("%s", "GUI: in window destroy...\n") ;
 
-  //  gtk_widget_destroy(window->toplevel) ;
-
   if (window->sequence)
     g_free(window->sequence) ;
 
   if (window->featureListWindow)
     gtk_widget_destroy(window->featureListWindow);
 
+  g_free(window->params);
   g_free(window) ;
 
   return ;
 }
 
+
+/* Zooming: we don't zoom as such, we scale the group, doubling the
+ * y axis but leaving x at 1.  This enlarges lengthways, while keeping
+ * the width the same. */
+void zMapWindowZoom(ZMapWindow window, double zoom_factor)
+{
+  int x, y, wy, z;
+  GtkAdjustment *adjust;
+  int direction = +1;
+
+  if (zoom_factor < 1.0)
+      direction = -1;
+
+  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
+
+  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
+  wy = adjust->page_size;
+
+  window->zoom_factor *= zoom_factor ;
+
+  /* do we need to do anything else like redraw ?? */
+  foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
+
+  z = (y * zoom_factor) + ((wy * zoom_factor / 4.0) * direction);
+  foo_canvas_scroll_to(window->canvas, x, z );
+
+  return ;
+}
+
+/*
+void zMapWindowZoomIn(ZMapWindow window)
+{
+  int x, y, wy, z;
+  GtkAdjustment *adjust;
+
+  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
+
+  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
+  wy = adjust->page_size;
+
+  zMapWindowZoom(window, 2.0);
+*/  /* y and wy must be adjusted because we zoom by 2x.*/ /*
+  z = (y * 2) + (wy / 2) * direction;
+  foo_canvas_scroll_to(window->canvas, x, z );
+
+  return;
+}
+
+*/
 
 /* The vadjustment changes when the user stretches or shrinks the window and  
 ** the scroll_region y2 * zoom_factor equates to that when the whole scroll 
@@ -341,9 +369,9 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
       /* Can either get data from my dummied up GFF routine or if you set up an acedb server
        * you can get data from there.... just undef the one you want... */
 
-      //#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      //      feature_context = testGetGFF() ;			    /* Data read from a file... */
-      //#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+            feature_context = testGetGFF() ;			    /* Data read from a file... */
+      #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       feature_context = (ZMapFeatureContext)data ;	    /* Data from a server... */
 
@@ -377,7 +405,7 @@ static void clickCB(ZMapWindow window, void *caller_data, ZMapFeature feature)
 
 static gboolean rightClickCB(ParamStruct *params, ZMapFeatureSet feature_set)
 {
-  // user selects new feature in this column
+  /* user selects new feature in this column */
   zMapWindowCreateListWindow(params, feature_set);
 
   return TRUE;
@@ -464,7 +492,6 @@ STORE_HANDLE zMapWindowGetHandle(ZMapWindow window)
 
 void zMapWindowSetHandle(ZMapWindow window)
 {
-  //  window->handle = handleCreate();
   window->handle = NULL;
   return;
 }
@@ -481,14 +508,12 @@ void zMapWindowSetBorderWidth(GtkWidget *container, int width)
 
 ScreenCoord zMapWindowGetScaleOffset(ZMapWindow window)
 {
-  //  return window->scaleOffset;
   return 0;
 }
 
 
 void zMapWindowSetScaleOffset(ZMapWindow window, ScreenCoord offset)
 {
-  //  window->scaleOffset = offset;
   return;
 }
 
@@ -544,7 +569,7 @@ InvarCoord zMapWindowGetOrigin(ZMapWindow window)
 }
 
 
-// ZMapRegion functions
+/* ZMapRegion functions */
 
 GPtrArray *zMapRegionNewMethods(ZMapRegion *region)
 {
@@ -606,7 +631,7 @@ void zMapRegionFreeDNA(ZMapRegion *region)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-// ZMapPane functions
+/* ZMapPane functions */
 
 void zMapPaneNewBox2Col(ZMapPane pane, int elements)
 {
