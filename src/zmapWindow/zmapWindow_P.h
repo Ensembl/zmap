@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 16 16:29 2004 (rnc)
+ * Last edited: Sep 20 13:35 2004 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.17 2004-09-16 15:29:49 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.18 2004-09-21 13:11:48 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -36,6 +36,7 @@
 
 #include <gtk/gtk.h>
 #include <ZMap/zmapWindow.h>
+#include <ZMap/zmapWindowDrawFeatures.h>
 
 
 /* Test scaffoling */
@@ -82,7 +83,7 @@ typedef struct _ZMapWindowStruct
   InvarCoord      origin; /* that base which is VisibleCoord 1 */
 
   GtkWidget *featureListWindow;
-
+  ParamStruct *params;    /* just so I can free the struct when the window is destroyed */
 
 } ZMapWindowStruct ;
 
@@ -95,7 +96,7 @@ typedef struct
 } zmapWindowDataStruct, *zmapWindowData ;
 
 
-// used in handleCanvasEvent to obtain the actual feature that's been clicked on
+/* used in handleCanvasEvent to obtain the actual feature that's been clicked on */
 typedef struct _FeatureKeys {
     ZMapFeatureSet feature_set;
     GQuark context_key;
