@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Nov  4 10:30 2004 (rnc)
+ * Last edited: Nov 19 13:45 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.17 2004-11-08 10:19:52 rnc Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.18 2004-11-19 14:32:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -245,6 +245,10 @@ typedef struct ZMapFeatureContextStruct_
 
 
 ZMapFeature zmapFeatureCreate(void) ;
+char *zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
+			  int start, int end, int query_start, int query_end) ;
+gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
+			      int *query_start, int *query_end) ;
 gboolean zmapFeatureAugmentData(ZMapFeature feature, char *name,
 				char *sequence, char *source, ZMapFeatureType feature_type,
 				int start, int end, double score, ZMapStrand strand,
@@ -448,5 +452,6 @@ typedef void (*Calc_cb)    (void *seqRegion,
 
 char *zmapLookUpEnum (int id, int enumType);
 void  zmapFeatureDump(ZMapFeatureContext feature_context, char *file, int format);
+
 
 #endif /* ZMAP_FEATURE_H */

@@ -26,9 +26,13 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
+<<<<<<< zmapFeature.c
+ * Last edited: Nov 19 11:46 2004 (edgrif)
+=======
  * Last edited: Nov 15 10:35 2004 (rnc)
+>>>>>>> 1.6
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeature.c,v 1.6 2004-11-15 10:37:32 rnc Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.7 2004-11-19 14:32:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,6 +74,56 @@ char *zmapLookUpEnum(int id, int enumType)
     }
   return NULL;
 }
+
+char *zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
+			  int start, int end, int query_start, int query_end)
+{
+  char *feature_id = NULL ;
+
+  if (feature_type == ZMAPFEATURE_HOMOL)
+    feature_id = g_strdup_printf("%s.%d-%d-%d-%d", feature_name, start, end, query_start, query_end) ;
+  else
+    feature_id = g_strdup_printf("%s.%d-%d", feature_name, start, end) ;
+
+  return feature_id ;
+}
+
+
+/* In zmap we hold coords in the forward orientation always and get strand from the strand
+ * member of the feature struct. This function looks at the supplied strand and sets the
+ * coords accordingly. */
+/* ACTUALLY I REALISE I'M NOT QUITE SURE WHAT I WANT THIS FUNCTION TO DO.... */
+gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *query_start, int *query_end)
+{
+  gboolean result = FALSE ;
+
+  if (strand == ZMAPSTRAND_UP)
+    {
+      if ((start && end) && start > end)
+	{
+	  int tmp ;
+
+	  tmp = *start ;
+	  *start = *end ;
+	  *end = tmp ;
+
+	  if (query_start && query_end)
+	    {
+	      tmp = *query_start ;
+	      *query_start = *query_end ;
+	      *query_end = tmp ;
+	    }
+
+	  result = TRUE ;
+	}
+    }
+  else
+    result = TRUE ;
+
+
+  return result ;
+}
+
 
 
 void zmapFeatureDump(ZMapFeatureContext feature_context, char *file, int format)
