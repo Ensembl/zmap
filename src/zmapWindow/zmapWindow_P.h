@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar  8 10:40 2005 (edgrif)
+ * Last edited: Mar  8 15:43 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.43 2005-03-08 15:33:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.44 2005-03-08 15:46:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -73,6 +73,41 @@ enum
 
 
 
+/* Represents all blocks for a single alignment, if the alignment is ungapped it
+ * will contain just one block. */
+typedef struct ZMapWindowAlignmentStructName
+{
+  GQuark alignment_id ;
+
+  ZMapWindow window ;					    /* our parent window. */
+
+  FooCanvasItem *alignment_group ;			    /* Group containing all columns for
+							       this alignment. */
+
+  GData *blocks ;					    /* All blocks in the alignment. */
+
+  double col_gap ;					    /* space between columns. */
+
+} ZMapWindowAlignmentStruct, *ZMapWindowAlignment ;
+
+
+/* Represents all the columns of features for one contiguous alignment block.
+ * There may be multiple discontinuous blocks displayed for a single alignment. */
+typedef struct ZMapWindowAlignmentBlockStructName
+{
+  GQuark block_id ;					    /* Needed ???? */
+
+  ZMapWindowAlignment parent ;				    /* Our parent alignment. */
+
+  FooCanvasItem *block_group ;				    /* Group containing all columns for
+							       this alignment. */
+
+  GPtrArray *columns ;					    /* All ZMapWindowColumn's in the alignment. */
+
+} ZMapWindowAlignmentBlockStruct, *ZMapWindowAlignmentBlock ;
+
+
+
 
 /* Represents a column on the display. A column contains features that all have the
  * same type/style, e.g. "confirmed" transcripts. The column contains both the forward
@@ -95,39 +130,6 @@ typedef struct
 
 
 
-/* Represents all the columns of features for one contiguous alignment block.
- * There may be multiple discontinuous blocks displayed for a single alignment. */
-typedef struct ZMapWindowAlignmentBlockStructName
-{
-  GQuark block_id ;					    /* Needed ???? */
-
-  ZMapWindowAlignment parent ;				    /* Our parent alignment. */
-
-  FooCanvasItem *block_group ;				    /* Group containing all columns for
-							       this alignment. */
-
-  GPtrArray *columns ;					    /* All ZMapWindowColumn's in the alignment. */
-
-} ZMapWindowAlignmentBlockStruct, *ZMapWindowAlignmentBlock ;
-
-
-
-/* Represents all blocks for a single alignment, if the alignment is ungapped it
- * will contain just one block. */
-typedef struct ZMapWindowAlignmentStructName
-{
-  GQuark alignment_id ;
-
-  ZMapWindow window ;					    /* our parent window. */
-
-  FooCanvasItem *alignment_group ;			    /* Group containing all columns for
-							       this alignment. */
-
-  GData *blocks ;					    /* All blocks in the alignment. */
-
-  double col_gap ;					    /* space between columns. */
-
-} ZMapWindowAlignmentStruct, *ZMapWindowAlignment ;
 
 
 
