@@ -79,6 +79,62 @@ other such stuff, e.g. how about indicating start/end_not_found etc.
 <P>
 
 
+<H2>Layering</H2>
+
+<P>The code has been arranged in layers, explicit function calls (i.e. calls made by
+coding the name of the function rather than by using a pointer to a function) are allowed
+to layers below but <b>NOT</b> to layers above. This is paramount in maintaining the
+independence of layers from one another. Calls can only be made to layers above via the
+callback function mechanism.
+
+<P>Here is an attempt to capture the layering in ZMap, of course it will go out of date
+rapidly but it provides an overview at least:
+
+<pre><code>zmapApp                                   zmapManager                     zmapControl
+=======                                   ===========                     ===========
+
+createAppContext()        --------->   zMapManagerCreate()
+
+
+removeZmapRow()           <---cb----   removeZmapEntry()
+
+
+                                       zMapManagerAdd()     --------->    zMapCreate()
+                                       zMapManagerReset()   --------->    zMapReset()
+                                       zMapManagerKill()    --------->    zMapDestroy()
+
+                                       zmapDestroyedCB()    <---cb----    killZMap()
+
+
+
+
+                      contd from above..........
+
+
+zmapControl                 zmapView
+===========                 ========
+
+zMapCreate()   -------->  zMapViewCreate()
+                          zMapViewConnect()
+
+zmapControlLoadCB()
+               -------->  zMapViewConnect()
+                          zMapViewLoad()
+
+zmapControlResetCB()
+               -------->  zMapViewReset()
+
+
+killViews()    -------->  zMapViewDestroy()
+
+
+viewKilledCB() <---cb---  checkConnections()
+</code></pre>
+
+
+
+
+
 <H2>Documentation</H2>
 
 <P>
