@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 17 16:59 2004 (edgrif)
+ * Last edited: Jun 18 10:59 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.7 2004-05-17 16:35:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.8 2004-06-18 11:01:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -148,6 +148,61 @@ void zMapWindowDestroy(ZMapWindow window)
  */
 
 
+
+/* Called when gtk detects the event sent by signalDataToGUI(), this routine calls
+ * the data display routines of ZMap. */
+static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_data)
+{
+  ZMapWindow window = (ZMapWindow)cb_data ;
+
+  if (event->type != GDK_CLIENT_EVENT)
+    zMapLogFatal("%s", "dataEventCB() received non-GdkEventClient event") ;
+  
+  if (event->send_event == TRUE && event->message_type == gdk_atom_intern(ZMAP_ATOM, TRUE))
+    {
+      zmapWindowData window_data = NULL ;
+      ZMapWindow window = NULL ;
+      gpointer data = NULL ;
+
+
+      /* Retrieve the data pointer from the event struct */
+      memmove(&window_data, &(event->data.b[0]), sizeof(void *)) ;
+
+      window = window_data->window ;
+
+      data = (gpointer)(window_data->data) ;
+
+
+      /* OK, can ignore data here and just call my dummied up GFF routine to deliver some
+       * features for Rob to draw..... */
+      {
+	GArray *features ;
+
+
+	features = testGetGFF() ;
+      }      
+
+      /* Remember that someone needs to free the data passed over.... */
+
+
+      g_free(window_data) ;				    /* Free the WindowData struct. */
+    }
+  else
+    {
+      zMapLogCritical("%s", "unknown client event in dataEventCB() handler\n") ;
+    }
+
+
+  return ;
+}
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* Previous dummy routine...... */
+
 /* Called when gtk detects the event sent by signalDataToGUI(), in the end this
  * routine will call zmap routines to display data etc. */
 static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_data)
@@ -167,6 +222,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
       memmove(&window_data, &(event->data.b[0]), sizeof(void *)) ;
 
       window = window_data->window ;
+
       string = (char *)(window_data->data) ;
 
 
@@ -195,3 +251,5 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 14 17:55 2004 (edgrif)
+ * Last edited: Jun 18 10:48 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.4 2004-05-17 15:57:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.5 2004-06-18 11:01:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -70,6 +70,12 @@ typedef struct
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
+
+
+
+
+/* TEST SCAFFOLDING............... */
+GArray *testGetGFF(void) ;
 
 
 

@@ -18,12 +18,12 @@ PUB_HDRS = zmapWindow.h
 #WIND_SRC = seqregion.c stringbucket.c \
 #	zmapbccol.c zmapcalls.c zmapcols.c zmapcontrol.c \
 #	zmapsequence.c zmapsplit.c zmapWindow.c zmapWindowFrame.c
-WIND_SRC = zmapWindow.c zmapWindowFrame.c
+WIND_SRC = zmapWindow.c zmapWindowFrame.c GFF_scaffold.c
 
 #WIND_OBJ = seqregion.o stringbucket.o \
 #	zmapbccol.o zmapcalls.o zmapcols.o zmapcontrol.o \
 #	zmapsequence.o zmapsplit.o zmapWindow.o zmapWindowFrame.o
-WIND_OBJ = zmapWindow.o zmapWindowFrame.o
+WIND_OBJ = zmapWindow.o zmapWindowFrame.o GFF_scaffold.o
 
 ZMAP_LIB = libzmap.a
 
