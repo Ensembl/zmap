@@ -1,4 +1,4 @@
-/*  Last edited: Apr 13 14:21 2004 (rnc) */
+/*  Last edited: Jun 17 13:53 2004 (rnc) */
 /*  file: seqregion.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -53,11 +53,11 @@ Coord srCoord(ZMapRegion *zMapRegion, InvarCoord coord)
 
 
 /* srCreate ******************************************************/
-/* Creates a new, empty ZMapRegion structure. */
+/* Creates a new, empty ZMapRegion structure.Does nothing with the handle. */
 
 ZMapRegion *srCreate(STORE_HANDLE handle)
 {
-  ZMapRegion *zMapRegion = halloc(sizeof(ZMapRegion), handle);
+  ZMapRegion *zMapRegion = (ZMapRegion*)malloc(sizeof(ZMapRegion));
 
   zMapRegion->area1 = zMapRegion->area2 = 0;
   zMapRegion->methods = NULL;
@@ -76,9 +76,9 @@ srMeth *srMethodFromID(ZMapRegion *zMapRegion, methodID id)
   int i;
 
   if (zMapRegion && zMapRegion->methods)
-    for (i=0; i<arrayMax(zMapRegion->methods); i++)
+    for (i = 0; i < zMapRegionGetMethods(zMapRegion)->len; i++)
       {
-	srMeth *meth = arrp(zMapRegion->methods, i, srMeth);
+	srMeth *meth = g_ptr_array_index(zMapRegionGetMethods(zMapRegion), i);
 	if (meth->id == id)
 	  return meth;
       }
