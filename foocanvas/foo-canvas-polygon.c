@@ -1,4 +1,4 @@
-/*  Last edited: Feb 11 16:24 2005 (rds) */
+/*  Last edited: Feb 11 16:45 2005 (rds) */
 /*
  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
  * All rights reserved.
@@ -254,7 +254,7 @@ foo_canvas_polygon_destroy (GtkObject *object)
 /* Computes the bounding box of the polygon.  Assumes that the number of points in the polygon is
  * not zero.
  */
-static boolean
+static gboolean
 get_bounds (FooCanvasPolygon *poly, double *bx1, double *by1, double *bx2, double *by2)
 {
 	double *coords;
@@ -300,7 +300,7 @@ get_bounds (FooCanvasPolygon *poly, double *bx1, double *by1, double *bx2, doubl
 /* Computes the bounding box of the polygon, in canvas coordinates.  Assumes that the number of points in the polygon is
  * not zero.
  */
-static boolean
+static gboolean
 get_bounds_canvas (FooCanvasPolygon *poly,
 		   double *bx1, double *by1, double *bx2, double *by2,
 		   double i2w_dx, double i2w_dy)
