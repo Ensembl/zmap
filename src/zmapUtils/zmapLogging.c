@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May 12 16:14 2004 (edgrif)
+ * Last edited: May 27 11:14 2004 (edgrif)
  * Created: Thu Apr 29 14:59:37 2004 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.2 2004-05-17 14:24:33 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.3 2004-05-27 13:43:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -316,7 +316,7 @@ static gboolean getLogConf(ZMapLog log)
 
   if ((config = zMapConfigCreate()))
     {
-      char *log_dir, *log_name, *full_dir ;
+      char *log_dir = NULL, *log_name = NULL, *full_dir = NULL ;
 
       logging_stanza = zMapConfigMakeStanza(logging_stanza_name, logging_elements) ;
 
