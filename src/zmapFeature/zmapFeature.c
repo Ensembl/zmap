@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Nov 12 10:37 2004 (rnc)
+ * Last edited: Nov 12 12:03 2004 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeature.c,v 1.3 2004-11-12 10:42:45 rnc Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.4 2004-11-12 12:03:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -254,7 +254,7 @@ static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data)
 static gboolean printLine(GIOChannel *channel, gchar *line)
 {
   gboolean status = TRUE;
-  int     bytes_written;
+  unsigned long int bytes_written;
   GError *channel_error = NULL;
 
 
