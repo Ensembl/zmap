@@ -25,40 +25,38 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep 17 09:31 2004 (edgrif)
+ * Last edited: Feb  2 11:30 2005 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapSlave_P.h,v 1.6 2004-09-17 08:32:19 edgrif Exp $
+ * CVS info:   $Id: zmapSlave_P.h,v 1.7 2005-02-02 14:40:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SLAVE_P_H
 #define ZMAP_SLAVE_P_H
 
 #include <glib.h>
-#include <ZMap/zmapConn.h>
-#include <ZMap/zmapFeature.h>
-#include <ZMap/zmapServer.h>
+#include <ZMap/zmapThreads.h>
 
 
 
 typedef struct
 {
-  ZMapConnection connection ;
+  ZMapThread thread ;
   gboolean thread_died ;
   gchar *initial_error ;				    /* Holds string description of first
 							       serious error that caused thread
 							       termination. */
 
-  ZMapServer server ;					    /* The server for this thread..... */
+  void *slave_data ;					    /* Any state required by slave. */
 } zmapThreadCBstruct, *zmapThreadCB ;
 
 
 
 
-/* Error messages, needs some refining. */
-#define ZMAPSLAVE_CONNCREATE  "Connection creation failed"
-#define ZMAPSLAVE_CONNOPEN    "Connection open failed"
-#define ZMAPSLAVE_CONNCONTEXT "Connection create context failed"
-#define ZMAPSLAVE_CONNREQUEST "Connection request failed"
+/* Error messages, needs some refining and changing now thread bit is more generalised. */
+#define ZMAPTHREAD_SLAVECREATE  "Thread creation failed"
+#define ZMAPTHREAD_SLAVEOPEN    "Thread open failed"
+#define ZMAPTHREAD_SLAVECONTEXT "Thread create context failed"
+#define ZMAPTHREAD_SLAVEREQUEST "Thread request failed"
 
 
 
