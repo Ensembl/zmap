@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep 16 16:18 2004 (edgrif)
+ * Last edited: Sep 17 11:09 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.21 2004-09-17 08:36:43 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.22 2004-09-17 12:41:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -249,6 +249,9 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      int port ;
 	      ZMapConnection connection ;
 
+	      /* this should be user settable.... */
+	      gboolean load_features = TRUE ;
+
 	      /* There MUST be a host and a protocol, port is not needed for some protocols,
 	       * e.g. http, because it should be allowed to default. */
 	      machine = zMapConfigGetElementString(next_server, "host") ;
@@ -263,7 +266,8 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 				 "stanza was ignored.") ;
 		}
 	      if ((connection = zMapConnCreate(machine, port, protocol,
-					       zmap_view->sequence, zmap_view->start, zmap_view->end)))
+					       zmap_view->sequence, zmap_view->start, zmap_view->end,
+					       load_features)))
 		{
 		  zmap_view->connection_list = g_list_append(zmap_view->connection_list, connection) ;
 		  connections++ ;
