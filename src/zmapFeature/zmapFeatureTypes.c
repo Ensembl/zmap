@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  1 09:30 2005 (edgrif)
+ * Last edited: Feb  3 16:45 2005 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.1 2005-02-02 15:08:36 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.2 2005-02-03 16:47:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -142,34 +142,21 @@ GData *zMapFeatureTypeGetFromFile(char *types_file_name)
   ZMapConfigStanzaSet types_list = NULL ;
   ZMapConfig config ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  char *types_file_name = "ZMapTypes" ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   if ((config = zMapConfigCreateFromFile(NULL, types_file_name)))
     {
       ZMapConfigStanza types_stanza ;
+      ZMapConfigStanzaElementStruct types_elements[]
+	= {{"name"        , ZMAPCONFIG_STRING, {NULL}},
+	   {"outline"     , ZMAPCONFIG_STRING, {"black"}},
+	   {"foreground"  , ZMAPCONFIG_STRING, {"white"}},
+	   {"background"  , ZMAPCONFIG_STRING, {"black"}},
+	   {"width"       , ZMAPCONFIG_FLOAT , {NULL}},
+	   {"showUpStrand", ZMAPCONFIG_BOOL  , {NULL}},
+	   {"minmag"      , ZMAPCONFIG_INT   , {NULL}},
+	   {NULL, -1, {NULL}}} ;
 
-      /* Set up default values for variables in the stanza.  Elements here must match
-       * those being loaded below or you might segfault.
-       * IF YOU ADD ANY ELEMENTS TO THIS ARRAY THEN MAKE SURE YOU UPDATE THE INIT STATEMENTS
-       * FOLLOWING THIS ARRAY SO THEY POINT AT THE RIGHT ELEMENTS....!!!!!!!! */
-      ZMapConfigStanzaElementStruct types_elements[] = {{"name"        , ZMAPCONFIG_STRING, {NULL}},
-							{"outline"     , ZMAPCONFIG_STRING, {"black"}},
-							{"foreground"  , ZMAPCONFIG_STRING, {"white"}},
-							{"background"  , ZMAPCONFIG_STRING, {"black"}},
-							{"width"       , ZMAPCONFIG_FLOAT , {NULL}},
-							{"showUpStrand", ZMAPCONFIG_BOOL  , {NULL}},
-							{"minmag"      , ZMAPCONFIG_INT   , {NULL}},
-							{NULL, -1, {NULL}}} ;
-
-      /* minmag should be a float !!! */
-
-
-      /* Must init separately as compiler cannot statically init different union types....sigh.... */
-      types_elements[4].data.f = ZMAPFEATURE_DEFAULT_WIDTH ;
-
+      /* Init fields that cannot default to string NULL. */
+      zMapConfigGetStructFloat(types_elements, "width") = ZMAPFEATURE_DEFAULT_WIDTH ;
 
       types_stanza = zMapConfigMakeStanza("Type", types_elements) ;
 
