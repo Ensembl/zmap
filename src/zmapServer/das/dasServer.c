@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Mar 22 11:09 2004 (edgrif)
+ * Last edited: Jun 29 13:48 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.1 2004-03-22 13:45:19 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.2 2004-06-29 12:48:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,7 +46,8 @@ static gboolean createConnection(void **server_out,
 				 char *host, int port,
 				 char *userid, char *passwd, int timeout) ;
 static gboolean openConnection(void *server) ;
-static gboolean request(void *server, char *request, void **reply, int *reply_len) ;
+static gboolean request(void *server, ZMapServerRequestType request,
+			char *sequence, ZMapFeatureContext *feature_context) ;
 static char *lastErrorMsg(void *server) ;
 static gboolean closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
@@ -181,7 +182,8 @@ static gboolean openConnection(void *server_in)
 
 
 /* OH, OK, THE HTTP BIT SHOULD BE THE REQUEST IN HERE PROBABLY.... */
-static gboolean request(void *server_in, char *request, void **reply, int *reply_len)
+static gboolean request(void *server_in, ZMapServerRequestType request,
+			char *sequence, ZMapFeatureContext *feature_context)
 {
   gboolean result = TRUE ;
   DasServer server = (DasServer)server_in ;
@@ -200,15 +202,22 @@ static gboolean request(void *server_in, char *request, void **reply, int *reply
 
   /* OK, this call actually contacts the http server and gets the data. */
   if (result &&
-      ((server->curl_error = curl_easy_perform(server->curl_handle)) != CURLE_OK))
+l      ((server->curl_error = curl_easy_perform(server->curl_handle)) != CURLE_OK))
     result = FALSE ;
 
   /* Dummy data.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (result)
     {
       *reply = (void *)"das dummy data...." ;
       *reply_len = strlen("das dummy data....") + 1 ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* DUMMY FOR NOW......... */
+  *feature_context = NULL ;
+
 
   return result ;
 }
