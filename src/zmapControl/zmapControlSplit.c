@@ -1,4 +1,4 @@
-/*  Last edited: Dec  2 16:08 2004 (rnc) */
+/*  Last edited: Dec 13 14:55 2004 (edgrif) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -26,7 +26,6 @@
  */
  
 #include <zmapControl_P.h>
-#include <ZMap/zmapView.h>
 #include <ZMap/zmapUtilsDebug.h>
 
 /* function prototypes **************************************************/
