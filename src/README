@@ -1,19 +1,4 @@
+Welcome to ZMap.
 
-======================== ZMap source directory ==============================
+ZMap is a the son of FMap.
 
-This directory contains all the source code to build zmap, the subdirectories
-are:
-
-
-zmapmanager	This directory contains the "main" for the zmap client and
-		calls the rest of the code below via the interface in zmapcontrol.
-
-
-zmapcontrol	the interface and controlling code for the window/threads etc.
-
-zmapthreads	code to start/run/kill threads talking to servers.
-
-zmapwindow	code to produce the ZMap window.
-
-
-zmaputils	A bundle of utility code.
