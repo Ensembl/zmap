@@ -6,8 +6,8 @@
 # local macros
 PUB_HDRS = zmapConfig.h
 CONF_PRIV_HDRS = zmapConfig_P.h
-CONF_SRC = zmapConfig.c
-CONF_OBJ = zmapConfig.o
+CONF_SRC = zmapConfig.c zmapConfigRead.c zmapConfigGet.c zmapConfigWrite.c zmapConfigUtils.c
+CONF_OBJ = zmapConfig.o zmapConfigRead.o zmapConfigGet.o zmapConfigWrite.o zmapConfigUtils.o
 
 
 #
