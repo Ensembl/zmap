@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Dec 16 16:07 2004 (edgrif)
+ * Last edited: Jan  5 14:55 2005 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.19 2004-12-20 10:54:00 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.20 2005-01-07 12:13:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +40,11 @@
 
 #define TOPTEXT_NO_SCALE "<no data>"
 #define BOTTEXT_NO_SCALE ""
+
+
+static void valueCB(GtkAdjustment *adjustment, gpointer user_data) ;
+
+
 
 
 /* AGGGGHHHHH, THIS SHOULD BE AN "OBJECT" IN ITS OWN RIGHT.....LETS TRY AND MAKE IT BETTER */
@@ -82,19 +87,23 @@ ZMapNavigator zmapControlNavigatorCreate(GtkWidget **top_widg_out)
   gtk_box_pack_end(GTK_BOX(navigator->navVBox), navigator->botLabel, FALSE, TRUE, 0);
 
 
-  /* Construct the window locator. */
+  /* Construct the window locator. Note that we set the update policy to discontinuous so if
+   * user drags this scroll bar the position is only reported on button release. This is
+   * necessary because the underlying canvas window cannot be remapped rapidly. */
   navigator->wind_vbox = gtk_vbox_new(FALSE, 0);
   gtk_paned_add2(GTK_PANED(pane), navigator->wind_vbox) ;
 
   navigator->wind_top_label = gtk_label_new(TOPTEXT_NO_SCALE) ;
   gtk_box_pack_start(GTK_BOX(navigator->wind_vbox), navigator->wind_top_label, FALSE, TRUE, 0);
 
-
-  /* Make the navigator with a default, "blank" adjustment obj. */
-  adjustment = gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ;
+  adjustment = gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ; /* "blank" adjustment obj. */
+  gtk_signal_connect(GTK_OBJECT(adjustment), "value-changed",
+		     GTK_SIGNAL_FUNC(valueCB), (void *)navigator) ;
 
   navigator->wind_scroll = gtk_vscrollbar_new(GTK_ADJUSTMENT(adjustment)) ;
+  gtk_range_set_update_policy(GTK_RANGE(navigator->wind_scroll), GTK_UPDATE_DISCONTINUOUS) ;
   gtk_box_pack_start(GTK_BOX(navigator->wind_vbox), navigator->wind_scroll, TRUE, TRUE, 0) ;
+
 
   /* Note how we pack the label at the end of the vbox and set "expand" to FALSE so that it
    * remains small and the vscale expands to fill the rest of the box. */
@@ -110,6 +119,15 @@ ZMapNavigator zmapControlNavigatorCreate(GtkWidget **top_widg_out)
   *top_widg_out = pane ;
 
   return navigator ;
+}
+
+void zmapControlNavigatorSetWindowCallback(ZMapNavigator navigator,
+					   ZMapNavigatorScrollValue cb_func, void *user_data)
+{
+  navigator->cb_func = cb_func ;
+  navigator->user_data = user_data ;
+
+  return ;
 }
 
 
@@ -260,6 +278,20 @@ void navUpdate(GtkAdjustment *adj, gpointer p)
 
 
 
+
+
+static void valueCB(GtkAdjustment *adjustment, gpointer user_data)
+{
+  ZMapNavigator navigator = (ZMapNavigator)user_data ;
+
+  printf("top: %f, bottom: %f\n", adjustment->value, adjustment->value + adjustment->page_size) ;
+
+  if (navigator->cb_func)
+    (*(navigator->cb_func))(navigator->user_data,
+			    adjustment->value, adjustment->value + adjustment->page_size) ;
+
+  return ;
+}
 
 
 /* UNUSED CURRENTLY but needed for when user alters the hpane interactively....... */
