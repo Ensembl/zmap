@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: May 17 14:57 2004 (edgrif)
+ * Last edited: May 20 10:22 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.8 2004-05-17 16:31:48 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.9 2004-05-20 14:09:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,6 +52,7 @@ static void viewKilledCB(ZMapView view, void *app_data) ;
 static void killFinal(ZMap zmap) ;
 static void killViews(ZMap zmap) ;
 
+static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
 
 
 
@@ -61,6 +62,8 @@ static void killViews(ZMap zmap) ;
  */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Create a new zmap, will be blank if sequence is NULL, otherwise it will create a view
  * within the zmap displaying the sequence. Returns NULL on failure. */
 ZMap zMapCreate(char *sequence, void *app_data, ZMapCallbackFunc app_zmap_destroyed_cb)
@@ -71,7 +74,7 @@ ZMap zMapCreate(char *sequence, void *app_data, ZMapCallbackFunc app_zmap_destro
   zmap = createZMap(app_data, app_zmap_destroyed_cb) ;
 
   /* Make the main/toplevel window for the ZMap. */
-  zmapTopWindowCreate(zmap, zmap->zmap_id) ;
+  zmapControlWindowCreate(zmap, zmap->zmap_id) ;
 
   zmap->state = ZMAP_INIT ;
 
@@ -100,10 +103,90 @@ ZMap zMapCreate(char *sequence, void *app_data, ZMapCallbackFunc app_zmap_destro
 
   return zmap ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+/* Create a new zmap which is blank with no views. Returns NULL on failure.
+ * Note how I casually assume that none of this can fail. */
+ZMap zMapCreate(void *app_data, ZMapCallbackFunc app_zmap_destroyed_cb)
+{
+  ZMap zmap = NULL ;
+
+  zmap = createZMap(app_data, app_zmap_destroyed_cb) ;
+
+  /* Make the main/toplevel window for the ZMap. */
+  zmapControlWindowCreate(zmap, zmap->zmap_id) ;
+
+  zmap->state = ZMAP_INIT ;
+
+  return zmap ;
+}
+
+
+ZMapView zMapAddView(ZMap zmap, char *sequence)
+{
+  ZMapView view = NULL ;
+
+  zMapAssert(zmap && sequence && *sequence) ;
+
+  if ((view = zMapViewCreate(zmap->view_parent, sequence, zmap, viewKilledCB)))
+    {
+
+      /* HACK FOR NOW, WE WON'T ALWAYS WANT TO MAKE THE LATEST VIEW TO BE ADDED THE "CURRENT" ONE. */
+      zmap->curr_view = view ;
+
+      /* add to list of views.... */
+      zmap->view_list = g_list_append(zmap->view_list, view) ;
+      
+      zmap->state = ZMAP_VIEWS ;
+    }
+  
+  return view ;
+}
+
+
+gboolean zMapConnectView(ZMap zmap, ZMapView view)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
+
+  result = zMapViewConnect(view) ;
+  
+  return result ;
+}
 
 
 /* We need a load or connect call here..... */
+gboolean zMapLoadView(ZMap zmap, ZMapView view)
+{
+  printf("not implemented\n") ;
+
+  return FALSE ;
+}
+
+gboolean zMapStopView(ZMap zmap, ZMapView view)
+{
+  printf("not implemented\n") ;
+
+  return FALSE ;
+}
+
+
+
+gboolean zMapDeleteView(ZMap zmap, ZMapView view)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
+
+  zmap->view_list = g_list_remove(zmap->view_list, view) ;
+
+  zMapViewDestroy(view) ;
+  
+  return result ;
+}
 
 
 
@@ -131,9 +214,7 @@ gboolean zMapReset(ZMap zmap)
       result = TRUE ;
     }
 
-  printf("reset a zmap\n") ;
-
-  return TRUE ;
+  return result ;
 }
 
 
@@ -190,21 +271,40 @@ gboolean zMapDestroy(ZMap zmap)
 /* These functions are internal to zmapControl and get called as a result of user interaction
  * with the gui. */
 
+
 /* Called when the user kills the toplevel window of the ZMap either by clicking the "quit"
  * button or by using the window manager frame menu to kill the window. */
 void zmapControlTopLevelKillCB(ZMap zmap)
 {
+  /* this is not strictly correct, there may be complications if we are resetting, sort this
+   * out... */
+
   if (zmap->state != ZMAP_DYING)
     killZMap(zmap) ;
 
   return ;
 }
 
+
+
+/* We need a callback for adding a new view here....scaffold the interface for now, just send some
+ * text from a "new" button. */
+
+
+
+
 void zmapControlLoadCB(ZMap zmap)
 {
-  if (zmap->state != ZMAP_DYING)
+
+  /* We can only load something if there is at least one view. */
+  if (zmap->state == ZMAP_VIEWS)
     {
-      if (zmap->state == ZMAP_INIT)
+      /* for now we are just doing the current view but this will need to change to allow a kind
+       * of global load of all views if there is no current selected view, or perhaps be an error 
+       * if no view is selected....perhaps there should always be a selected view. */
+
+      /* Probably should also allow "load"...perhaps time to call this "Reload"... */
+      if (zmap->curr_view && zMapViewGetStatus(zmap->curr_view) == ZMAPVIEW_INIT)
 	{
 	  if (zMapViewConnect(zmap->curr_view))
 	    zMapViewLoad(zmap->curr_view, "") ;
@@ -214,10 +314,28 @@ void zmapControlLoadCB(ZMap zmap)
   return ;
 }
 
+
 void zmapControlResetCB(ZMap zmap)
 {
+
+  /* We can only reset something if there is at least one view. */
   if (zmap->state == ZMAP_VIEWS)
-    zMapViewReset(zmap->curr_view) ;
+    {
+      /* for now we are just doing the current view but this will need to change to allow a kind
+       * of global load of all views if there is no current selected view, or perhaps be an error 
+       * if no view is selected....perhaps there should always be a selected view. */
+      if (zmap->curr_view && zMapViewGetStatus(zmap->curr_view) == ZMAPVIEW_RUNNING)
+	{
+	  zMapViewReset(zmap->curr_view) ;
+	}
+    }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* this is not right, we may not need the resetting state at top level at all in fact..... */
+  zmap->state = ZMAP_RESETTING ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -350,7 +468,7 @@ static void killFinal(ZMap zmap)
   /* Free the top window */
   if (zmap->toplevel)
     {
-      zmapTopWindowDestroy(zmap) ;
+      zmapControlWindowDestroy(zmap) ;
       zmap->toplevel = NULL ;
     }
 
@@ -386,6 +504,16 @@ static void killViews(ZMap zmap)
 }
 
 
+/* Find a given view within a given zmap. */
+static gboolean findViewInZMap(ZMap zmap, ZMapView view)
+{
+  gboolean result = FALSE ;
+  GList* list_ptr ;
 
+  if ((list_ptr = g_list_find(zmap->view_list, view)))
+    result = TRUE ;
+
+  return result ;
+}
 
 
