@@ -1,0 +1,15 @@
+
+
+Install notes for ZMap.
+
+
+- zmap uses gmake on all platforms, it requires certain macros, e.g. VPATH
+that gmake supports. On linux "make" is gmake, on the Alpha you must
+explicitly say "gmake".
+
+- you must run "make depend" before you run the first make. We don't do this
+by default because it would be run nearly all the time and this would be
+irritating.
+
+
+
