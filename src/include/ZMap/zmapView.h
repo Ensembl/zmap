@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Jul 15 15:15 2004 (edgrif)
+ * Last edited: Jul 16 12:54 2004 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.5 2004-07-15 15:04:08 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.6 2004-07-16 12:01:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -62,7 +62,7 @@ typedef void (*ZMapViewCallbackFunc)(ZMapView zmap_view, void *app_data) ;
 typedef struct _ZMapViewCallbacksStruct
 {
   ZMapViewCallbackFunc load_data ;
-  ZMapViewWindowCallbackFunc button_click ;
+  ZMapViewWindowCallbackFunc focus ;
   ZMapViewCallbackFunc destroy ;
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 

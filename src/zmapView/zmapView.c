@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 16 09:42 2004 (edgrif)
+ * Last edited: Jul 16 12:57 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.7 2004-07-16 08:46:30 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.8 2004-07-16 12:01:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,7 +55,7 @@ static gint zmapIdleCB(gpointer cb_data) ;
 static void zmapWindowCB(void *cb_data, int reason) ;
 
 void scrollCB(ZMapWindow window, void *caller_data) ;
-void buttonClickCB(ZMapWindow window, void *caller_data) ;
+void focusCB(ZMapWindow window, void *caller_data) ;
 void destroyCB(ZMapWindow window, void *caller_data) ;
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
@@ -82,7 +82,7 @@ static void killWindows(ZMapView zmap_view) ;
 static ZMapViewCallbacks view_cbs_G = NULL ;
 
 /* Callbacks back to us from the level below, i.e. zMapWindow. */
-ZMapWindowCallbacksStruct window_cbs_G = {scrollCB, buttonClickCB, destroyCB} ;
+ZMapWindowCallbacksStruct window_cbs_G = {scrollCB, focusCB, destroyCB} ;
 
 
 
@@ -102,12 +102,12 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
 {
   zMapAssert(!view_cbs_G) ;
 
-  zMapAssert(callbacks && callbacks->load_data && callbacks->button_click && callbacks->destroy) ;
+  zMapAssert(callbacks && callbacks->load_data && callbacks->focus && callbacks->destroy) ;
 
   view_cbs_G = g_new0(ZMapViewCallbacksStruct, 1) ;
 
   view_cbs_G->load_data = callbacks->load_data ;
-  view_cbs_G->button_click = callbacks->button_click ;
+  view_cbs_G->focus = callbacks->focus ;
   view_cbs_G->destroy = callbacks->destroy ;
 
 
@@ -470,16 +470,15 @@ void scrollCB(ZMapWindow window, void *caller_data)
 }
 
 
-void buttonClickCB(ZMapWindow window, void *caller_data)
+void focusCB(ZMapWindow window, void *caller_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
 
-  printf("In View, in window button click callback\n") ;
 
   /* Is there any focus stuff we want to do here ??? */
 
   /* Pass back a ZMapViewWindow as it has both the View and the window. */
-  (*(view_cbs_G->button_click))(view_window, view_window->parent_view->app_data) ;
+  (*(view_cbs_G->focus))(view_window, view_window->parent_view->app_data) ;
 
   return ;
 }

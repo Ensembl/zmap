@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 16 09:24 2004 (edgrif)
+ * Last edited: Jul 16 12:57 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.18 2004-07-16 08:46:15 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.19 2004-07-16 12:01:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,7 +64,7 @@ static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
 static ZMapView addView(ZMap zmap, char *sequence) ;
 
 static void dataLoadCB(ZMapView view, void *app_data) ;
-static void butClickCB(ZMapViewWindow view_window, void *app_data) ;
+static void focusCB(ZMapViewWindow view_window, void *app_data) ;
 static void viewKilledCB(ZMapView view, void *app_data) ;
 static gboolean lookForViewWindow(GNode *node, gpointer data) ;
 
@@ -83,7 +83,7 @@ static ZMapCallbacks zmap_cbs_G = NULL ;
 
 
 /* Callbacks back to us from the level below, i.e. zMapView. */
-ZMapViewCallbacksStruct view_cbs_G = {dataLoadCB, butClickCB, viewKilledCB} ;
+ZMapViewCallbacksStruct view_cbs_G = {dataLoadCB, focusCB, viewKilledCB} ;
 
 
 
@@ -538,7 +538,7 @@ static void dataLoadCB(ZMapView view, void *app_data)
 
 /* Gets called when someone clicks in one of the zmap windows.... 
 * Note that although we get pane data,  */
-static void butClickCB(ZMapViewWindow view_window, void *app_data)
+static void focusCB(ZMapViewWindow view_window, void *app_data)
 {
   ZMap zmap = (ZMap)app_data ;
   ZMapView view = zMapViewGetView(view_window) ;

@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 16 09:41 2004 (edgrif)
+ * Last edited: Jul 16 12:56 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.19 2004-07-16 08:46:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.20 2004-07-16 12:01:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,12 +64,12 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
 {
   zMapAssert(!window_cbs_G) ;
 
-  zMapAssert(callbacks && callbacks->scroll && callbacks->button_click && callbacks->destroy) ;
+  zMapAssert(callbacks && callbacks->scroll && callbacks->focus && callbacks->destroy) ;
 
   window_cbs_G = g_new0(ZMapWindowCallbacksStruct, 1) ;
 
   window_cbs_G->scroll = callbacks->scroll ;
-  window_cbs_G->button_click = callbacks->button_click ;
+  window_cbs_G->focus = callbacks->focus ;
   window_cbs_G->destroy = callbacks->destroy ;
 
   return ;
@@ -383,7 +383,7 @@ static void canvasClickCB(GtkWidget *widget, GdkEventClient *event, gpointer dat
 
 
   /* Call the callers routine for button clicks. */
-  window_cbs_G->button_click(window, window->app_data) ;
+  window_cbs_G->focus(window, window->app_data) ;
 
 
   return ;
