@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec 20 11:00 2004 (edgrif)
+ * Last edited: Jan 20 11:53 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.40 2004-12-20 11:01:16 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.41 2005-01-24 11:49:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,6 +48,10 @@ static gint zmapIdleCB(gpointer cb_data) ;
 /* I'm not sure if we need this anymore, I think we will just do it with multiple callbacks... */
 static void zmapWindowCB(void *cb_data, int reason) ;
 
+
+
+static void enterCB(ZMapWindow window, void *caller_data, void *window_data) ;
+static void leaveCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void scrollCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void clickCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void visibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data);
@@ -76,8 +80,10 @@ static void destroyConnection(ZMapViewConnection *view_conn) ;
 static void resetWindows(ZMapView zmap_view) ;
 static void displayDataWindows(ZMapView zmap_view,
 			       ZMapFeatureContext all_features, ZMapFeatureContext new_features) ;
-static void killWindows(ZMapView zmap_view) ;
+static void killAllWindows(ZMapView zmap_view) ;
 
+static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window) ;
+static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 
 static void freeContext(ZMapFeatureContext feature_context) ;
 
@@ -93,7 +99,8 @@ static void getFeatures(ZMapView zmap_view, ZMapProtocolAny req_any) ;
 static ZMapViewCallbacks view_cbs_G = NULL ;
 
 /* Callbacks back we set in the level below us, i.e. zMapWindow. */
-ZMapWindowCallbacksStruct window_cbs_G = {scrollCB, clickCB,
+ZMapWindowCallbacksStruct window_cbs_G = {enterCB, leaveCB,
+					  scrollCB, clickCB,
 					  setZoomStatusCB, visibilityChangeCB, destroyCB} ;
 
 
@@ -113,11 +120,15 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
 {
   zMapAssert(!view_cbs_G) ;
 
-  zMapAssert(callbacks && callbacks->load_data && callbacks->click
+  zMapAssert(callbacks
+	     && callbacks->enter && callbacks->leave
+	     && callbacks->load_data && callbacks->click
 	     && callbacks->visibility_change && callbacks->destroy) ;
 
   view_cbs_G = g_new0(ZMapViewCallbacksStruct, 1) ;
 
+  view_cbs_G->enter = callbacks->enter ;
+  view_cbs_G->leave = callbacks->leave ;
   view_cbs_G->load_data = callbacks->load_data ;
   view_cbs_G->click = callbacks->click ;
   view_cbs_G->visibility_change = callbacks->visibility_change ;
@@ -130,16 +141,6 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
 
   return ;
 }
-
-
-
-void zmapViewFeatureDump(ZMapViewWindow view_window, char *file, int format)
-{
-  zMapFeatureDump(view_window->parent_view->features, file, format);
-
-  return;
-}
-
 
 
 
@@ -166,75 +167,127 @@ ZMapView zMapViewCreate(char *sequence,	int start, int end, void *app_data)
 }
 
 
-/* Adds a window to a view, the view may not have a window yet.
+/* NEED TO REVISIT THIS, IT MAY ACTUALLY BE BETTER TO AMALGAMATE THIS ROUTINE WITH
+ * ZMAPVIEWCREATE BUT THIS NEEDS SOME THOUGHT AS IT WILL INVOLVE CHANGES IN ZMAPCONTROL. */
+/* Adds the first window to a view.
  * Returns the window on success, NULL on failure. */
-ZMapViewWindow zMapViewAddWindow(ZMapView zmap_view, GtkWidget *parent_widget,
-				 ZMapWindow zMapWindow)
+ZMapViewWindow zMapViewMakeWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 {
-  ZMapViewWindow view_window ;
-  double zoom_factor;
+  ZMapViewWindow view_window = NULL ;
+  ZMapWindow window ;
 
+
+  /* the view should _not already have a window. */
+  zMapAssert(zmap_view && parent_widget
+	     && (zmap_view->state == ZMAPVIEW_INIT) && !(zmap_view->window_list)) ;
 
   if (zmap_view->state != ZMAPVIEW_DYING)
     {
-      view_window = g_new0(ZMapViewWindowStruct, 1) ;
-      view_window->parent_view = zmap_view ;		    /* back pointer. */
+      view_window = createWindow(zmap_view, NULL) ;
 
-      if (zMapWindow)
-	view_window->window = zMapWindowCopy(parent_widget, zmap_view->sequence, 
-					     view_window, zMapWindow);
-      else
-	view_window->window = zMapWindowCreate(parent_widget, zmap_view->sequence, 
-					       view_window);
-      
-      if (view_window->window)
+      if (!(window = zMapWindowCreate(parent_widget, zmap_view->sequence, view_window)))
 	{
-	  /* set the zoom_factor of the new window the same as the previous one */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* this is wrong, it will change all the time, question is...what is the parent, it can
-	   * change.....this is why we need an intermediate widget that does not change.... */
-	  zmap_view->parent_widget = parent_widget ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+	  /* should glog and/or gerror at this stage....really need g_errors.... */
+	  view_window = NULL ;
+	}
+      else
+	{
+	  view_window->window = window ;
 
 	  /* add to list of windows.... */
 	  zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
-
+	  
 	  /* There is a bit of a hole in the "busy" state here in that we do the windowcreate
 	   * but have not signalled that we are busy, I suppose we could do the busy stuff twice,
 	   * once before the windowCreate and once here to make sure we set cursors everywhere.. */
 	  zmapViewBusy(zmap_view, TRUE) ;
 
-	  /* We may be the first window to added, or there may already be others. */
-	  if (zmap_view->state == ZMAPVIEW_INIT)
-	    {
-	      zmap_view->state = ZMAPVIEW_NOT_CONNECTED ;
+	  zmap_view->state = ZMAPVIEW_NOT_CONNECTED ;
 
-	      /* Start polling function that checks state of this view and its connections, note
-	       * that at this stage there is no data to display. */
-	      startStateConnectionChecking(zmap_view) ;
-	    }
-	  else if (zmap_view->state == ZMAPVIEW_RUNNING)
-	    {
-	      /* If we are running then we should display the current data in the new window we
-	       * have just created. */
-	      zMapWindowDisplayData(view_window->window, zmap_view->features, NULL, 
-				    zmap_view->types, zmap_view) ;
-	    }
-
+	  /* Start polling function that checks state of this view and its connections, note
+	   * that at this stage there is no data to display. */
+	  startStateConnectionChecking(zmap_view) ;
 
 	  zmapViewBusy(zmap_view, FALSE) ;
-	}
-      else
-	{
-	  /* should glog and/or gerror at this stage....really need g_errors.... */
-	  g_free(view_window) ;
-	  view_window = NULL ;
 	}
     }
 
   return view_window ;
+}
+
+
+/* Copies an existing window in a view.
+ * Returns the window on success, NULL on failure. */
+ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
+				  ZMapWindow copy_window)
+{
+  ZMapViewWindow view_window = NULL ;
+  double zoom_factor;
+
+  /* the view _must_ already have a window. */
+  zMapAssert(zmap_view && parent_widget
+	     && (zmap_view->state != ZMAPVIEW_INIT) && zmap_view->window_list) ;
+
+
+  if (zmap_view->state != ZMAPVIEW_DYING)
+    {
+      view_window = createWindow(zmap_view, NULL) ;
+
+      zmapViewBusy(zmap_view, TRUE) ;
+
+      if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->sequence,
+						 view_window, copy_window,
+						 zmap_view->features, zmap_view->types)))
+	{
+	  /* should glog and/or gerror at this stage....really need g_errors.... */
+	  /* should free view_window.... */
+
+	  view_window = NULL ;
+	}
+      else
+	{
+	  /* add to list of windows.... */
+	  zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
+
+	}
+
+      zmapViewBusy(zmap_view, FALSE) ;
+    }
+
+  return view_window ;
+}
+
+
+
+
+
+/* Removes a view from a window, the window may be the last/only window in the view. */
+void zMapViewRemoveWindow(ZMapViewWindow view_window)
+{
+  ZMapView zmap_view = view_window->parent_view ;
+
+
+  if (zmap_view->state != ZMAPVIEW_DYING)
+    {
+      /* We should check the window is in the list of windows for that view and abort if
+       * its not........ */
+
+      destroyWindow(zmap_view, view_window) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* would like to set state here but can't, we should probably just terminate when there
+       * no windows left, we should make that a condition really of the zmap.... */
+
+      if (!zmap_view->window_list)
+	zmap_view->state = undefined ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
+
+
+  return ;
 }
 
 
@@ -542,6 +595,14 @@ ZMapView zMapViewGetView(ZMapViewWindow view_window)
 }
 
 
+void zmapViewFeatureDump(ZMapViewWindow view_window, char *file, int format)
+{
+  zMapFeatureDump(view_window->parent_view->features, file, format);
+
+  return;
+}
+
+
 /* Called to kill a zmap window and get the associated threads killed, note that
  * this call just signals everything to die, its the checkConnections() routine
  * that really clears up and when everything has died signals the caller via the
@@ -597,6 +658,40 @@ static gint zmapIdleCB(gpointer cb_data)
   return call_again ;
 }
 
+
+
+static void enterCB(ZMapWindow window, void *caller_data, void *window_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("In View, in enter callback\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* Pass back a ZMapViewWindow as it has both the View and the window. */
+  (*(view_cbs_G->enter))(view_window, view_window->parent_view->app_data, NULL) ;
+
+  return ;
+}
+
+
+static void leaveCB(ZMapWindow window, void *caller_data, void *window_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("In View, in leave callback\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* Pass back a ZMapViewWindow as it has both the View and the window. */
+  (*(view_cbs_G->leave))(view_window, view_window->parent_view->app_data, NULL) ;
+
+  return ;
+}
 
 
 static void scrollCB(ZMapWindow window, void *caller_data, void *window_data)
@@ -772,7 +867,7 @@ static ZMapView createZMapView(char *sequence, int start, int end, void *app_dat
 
 /* Should only do this after the window and all threads have gone as this is our only handle
  * to these resources. The lists of windows and thread connections are dealt with somewhat
- * asynchronously by killWindows() & checkConnections() */
+ * asynchronously by killAllWindows() & checkConnections() */
 static void destroyZMapView(ZMapView zmap_view)
 {
   g_free(zmap_view->sequence) ;
@@ -1123,7 +1218,7 @@ static void killZMapView(ZMapView zmap_view)
  *  */
 static void killGUI(ZMapView zmap_view)
 {
-  killWindows(zmap_view) ;
+  killAllWindows(zmap_view) ;
 
   return ;
 }
@@ -1261,8 +1356,7 @@ static void displayDataWindows(ZMapView zmap_view,
 
       view_window = list_item->data ;
 
-      zMapWindowDisplayData(view_window->window,
-			    all_features, new_features, zmap_view->types, NULL) ;
+      zMapWindowDisplayData(view_window->window, all_features, new_features, zmap_view->types) ;
     }
   while ((list_item = g_list_next(list_item))) ;
 
@@ -1271,7 +1365,7 @@ static void displayDataWindows(ZMapView zmap_view,
 
 
 /* Kill all the windows... */
-static void killWindows(ZMapView zmap_view)
+static void killAllWindows(ZMapView zmap_view)
 {
 
   while (zmap_view->window_list)
@@ -1280,15 +1374,36 @@ static void killWindows(ZMapView zmap_view)
 
       view_window = zmap_view->window_list->data ;
 
-      zMapWindowDestroy(view_window->window) ;
-
-      zmap_view->window_list = g_list_remove(zmap_view->window_list, view_window) ;
+      destroyWindow(zmap_view, view_window) ;
     }
 
 
   return ;
 }
 
+
+static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window)
+{
+  ZMapViewWindow view_window ;
+  
+  view_window = g_new0(ZMapViewWindowStruct, 1) ;
+  view_window->parent_view = zmap_view ;		    /* back pointer. */
+  view_window->window = window ;
+
+  return view_window ;
+}
+
+
+static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
+{
+  zmap_view->window_list = g_list_remove(zmap_view->window_list, view_window) ;
+
+  zMapWindowDestroy(view_window->window) ;
+
+  g_free(view_window) ;
+
+  return ;
+}
 
 
 
@@ -1366,9 +1481,9 @@ static void visibilityChangeCB(ZMapWindow window, void *caller_data, void *windo
  */
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data)
 {
-  ZMapView view = (ZMapView)caller_data;
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
 
-  g_list_foreach(view->window_list, setZoomStatus, NULL) ;
+  g_list_foreach(view_window->parent_view->window_list, setZoomStatus, NULL) ;
 
   return;
 }
