@@ -26,13 +26,14 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Nov  4 12:07 2004 (rnc)
+ * Last edited: Nov  8 11:59 2004 (rnc)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeature.c,v 1.1 2004-11-08 10:18:24 rnc Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.2 2004-11-08 12:03:31 rnc Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapUtils.h>
 
 
 static void contextDump_TD(ZMapFeatureContext feature_context, GIOChannel *channel);
@@ -45,15 +46,11 @@ static gboolean printLine(GIOChannel *channel, char *line);
 char *zmapLookUpEnum(int id, int enumType)
 {
   /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
-  static char types  [8][20+1] = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
-				  "VARIATION", "BOUNDARY", "SEQUENCE"} ;
-  static char strands[3][20+1] = {"ZMAPSTRAND_NONE",
-				  "ZMAPSTRAND_DOWN", 
-				  "ZMAPSTRAND_UP" };
-  static char phases [4][20+1] = {"ZMAPPHASE_NONE",
-				  "ZMAPPHASE_0", 
-				  "ZMAPPHASE_1", 
-				  "ZMAPPHASE_2" };
+  static char *types[8]   = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
+			     "VARIATION", "BOUNDARY", "SEQUENCE"} ;
+  static char *strands[3] = {"ZMAPSTRAND_NONE", "ZMAPSTRAND_DOWN", "ZMAPSTRAND_UP" };
+  static char *phases[4]  = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" };
+
   switch (enumType)
     {
     case TYPE_ENUM:
@@ -86,7 +83,7 @@ void zmapFeatureDump(ZMapFeatureContext feature_context, char *file, int format)
   /* open output file */
   if (!(channel = g_io_channel_new_file(filepath, "w", &channel_error)))
     {
-      printf("Can't open output file: %s :  %s\n", filepath, channel_error->message);
+      zMapShowMsg(ZMAP_MSG_EXIT, "Can't open output file: %s :%s\n", filepath, channel_error->message);
       g_error_free(channel_error);
     }
   else
@@ -266,7 +263,7 @@ static gboolean printLine(GIOChannel *channel, char *line)
       
       if (channel_error)
 	{
-	  printf("Error writing to output file: %30s :%s\n", line, channel_error->message);
+	  zMapShowMsg(ZMAP_MSG_EXIT, "Error writing to output file: %30s :%s\n", line, channel_error->message);
 	  g_error_free(channel_error);
 	  status = FALSE;
 	}
