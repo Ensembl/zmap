@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Nov 22 18:27 2004 (edgrif)
+ * Last edited: Dec 13 13:44 2004 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.19 2004-11-23 11:58:23 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.20 2004-12-13 14:54:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -44,11 +44,9 @@ enum {ZMAPFEATURE_NULLQUARK = 0} ;
 
 /* A unique ID for each feature created, can be used to unabiguously query for that feature
  * in a database. The feature id ZMAPFEATUREID_NULL is guaranteed not to equate to any feature
- * and also means you can test using !(feature_id). */
+ * and also means you can test using  (!feature_id). */
 typedef unsigned int ZMapFeatureID ;
 enum {ZMAPFEATUREID_NULL = 0} ;
-
-
 
 
 
@@ -115,6 +113,20 @@ typedef enum {ZMAPPHASE_NONE = 0,
 typedef enum {ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
 
 typedef enum {ZMAPBOUNDARY_CLONE_END, ZMAPBOUNDARY_5_SPLICE, ZMAPBOUNDARY_3_SPLICE } ZMapBoundaryType ;
+
+typedef enum {ZMAPSEQUENCE_NONE = 0, ZMAPSEQUENCE_DNA, ZMAPSEQUENCE_PEPTIDE} ZMapSequenceType ;
+
+
+
+/* Holds dna or peptide.
+ * Note that the sequence will be a valid string in that it will be null-terminated,
+ * "length" does _not_ include the null terminator. */
+typedef struct ZMapSequenceStruct_
+{
+  ZMapSequenceType type ;				    /* dna or peptide. */
+  int length ;						    /* length of sequence in bases or peptides. */
+  char *sequence ;					    /* Actual sequence." */
+} ZMapSequenceStruct, *ZMapSequence ;
 
 
 
@@ -239,7 +251,10 @@ typedef struct ZMapFeatureContextStruct_
 {
   char *sequence ;					    /* The sequence to be displayed. */
 
-  char *parent ;					    /* Name of parent, not be needed ? */
+  char *parent ;					    /* Name of parent, not needed ? */
+
+  int length ;						    /* total length of sequence. */
+
   ZMapSpanStruct parent_span ;				    /* Start/end of parent, usually we
 							       will have: x1 = 1, x2 = length in
 							       bases of parent. */
@@ -252,14 +267,19 @@ typedef struct ZMapFeatureContextStruct_
 
   GData *feature_sets ;					    /* A set of ZMapFeatureSetStruct. */
 
+  ZMapSequenceStruct seq ;				    /* The dna sequence. */
+
 } ZMapFeatureContextStruct, *ZMapFeatureContext ;
 
 
-ZMapFeature zmapFeatureCreateEmpty(void) ;
+
 char *zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
 			  int start, int end, int query_start, int query_end) ;
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
+char *zmapFeatureLookUpEnum (int id, int enumType) ;
+
+ZMapFeature zmapFeatureCreateEmpty(void) ;
 gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
 				char *sequence, char *source, ZMapFeatureType feature_type,
 				int start, int end, double score, ZMapStrand strand,
@@ -267,15 +287,22 @@ gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char
 				ZMapHomolType homol_type_out, int start_out, int end_out) ;
 void zmapFeatureDestroy(ZMapFeature feature) ;
 
+
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
+gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
+void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 
 
-ZMapFeatureContext zMapFeatureContextCreate(void) ;
-
-
+ZMapFeatureContext zMapFeatureContextCreate(char *sequence) ;
 gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext new_context,
 				 ZMapFeatureContext *diff_context_out) ;
+void zMapFeatureDump(ZMapFeatureContext feature_context, char *file, int format) ;
+void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
+
+
+
+
 
 
 
@@ -460,9 +487,6 @@ typedef void (*Calc_cb)    (void *seqRegion,
 			    gboolean isReverse);
 
      
-
-char *zmapFeatureLookUpEnum (int id, int enumType);
-void  zmapFeatureDump(ZMapFeatureContext feature_context, char *file, int format);
 
 
 #endif /* ZMAP_FEATURE_H */
