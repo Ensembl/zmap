@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: Jul 13 16:02 2004 (edgrif)
+ * Last edited: Jul 16 09:38 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.10 2004-07-14 09:09:13 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.11 2004-07-16 08:46:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,7 +49,7 @@ ZMapManager zMapManagerCreate(zmapAppCallbackFunc zmap_deleted_func, void *gui_d
 {
   ZMapManager manager ;
 
-  manager = g_new(ZMapManagerStruct, sizeof(ZMapManagerStruct)) ;
+  manager = g_new0(ZMapManagerStruct, sizeof(ZMapManagerStruct)) ;
 
   manager->zmap_list = NULL ;
 

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Jun 23 12:52 2004 (edgrif)
+ * Last edited: Jul 16 09:37 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.9 2004-06-25 13:36:49 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.10 2004-07-16 08:46:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -404,7 +404,7 @@ static ZMapConfig createConfig(void)
 {
   ZMapConfig config ;
 
-  config = g_new(ZMapConfigStruct, sizeof(ZMapConfigStruct)) ;
+  config = g_new0(ZMapConfigStruct, sizeof(ZMapConfigStruct)) ;
 
   config->config_dir = config->config_file = NULL ;
 

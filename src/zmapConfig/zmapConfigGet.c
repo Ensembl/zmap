@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: May  7 10:39 2004 (edgrif)
+ * Last edited: Jul 16 09:37 2004 (edgrif)
  * Created: Mon Apr  5 11:09:52 2004 (edgrif)
- * CVS info:   $Id: zmapConfigGet.c,v 1.3 2004-05-07 09:43:29 edgrif Exp $
+ * CVS info:   $Id: zmapConfigGet.c,v 1.4 2004-07-16 08:46:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,7 +53,7 @@ gboolean zmapGetConfigStanzas(ZMapConfig config,
   GList *config_stanza_list ;
   ZMapConfigStanzaSet stanzas ;
 
-  stanzas = g_new(ZMapConfigStanzaSetStruct, 1) ;
+  stanzas = g_new0(ZMapConfigStanzaSetStruct, 1) ;
   stanzas->name = NULL ;
   stanzas->stanzas = NULL ;
 

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  6 16:58 2004 (edgrif)
+ * Last edited: Jul 16 09:37 2004 (edgrif)
  * Created: Tue Apr  6 12:30:05 2004 (edgrif)
- * CVS info:   $Id: zmapConfigUtils.c,v 1.1 2004-04-08 16:40:36 edgrif Exp $
+ * CVS info:   $Id: zmapConfigUtils.c,v 1.2 2004-07-16 08:46:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,7 +44,7 @@ ZMapConfigStanza zmapConfigCreateStanza(char *stanza_name)
 {
   ZMapConfigStanza stanza ;
 
-  stanza = g_new(ZMapConfigStanzaStruct, 1) ;
+  stanza = g_new0(ZMapConfigStanzaStruct, 1) ;
   stanza->name = g_strdup(stanza_name) ;
   stanza->elements = NULL ;
 
@@ -112,7 +112,7 @@ ZMapConfigStanzaElement zmapConfigCreateElement(char *name, ZMapConfigElementTyp
 {
   ZMapConfigStanzaElement element ;
 
-  element = g_new(ZMapConfigStanzaElementStruct, 1) ;
+  element = g_new0(ZMapConfigStanzaElementStruct, 1) ;
   element->name = g_strdup(name) ;
   element->type = type ;
 

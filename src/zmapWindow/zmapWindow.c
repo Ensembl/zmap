@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 15 15:00 2004 (rnc)
+ * Last edited: Jul 16 09:41 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.18 2004-07-15 16:34:12 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.19 2004-07-16 08:46:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,7 +93,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
   zMapAssert(parent_widget && sequence && *sequence && app_data) ;
 
-  window = g_new(ZMapWindowStruct, 1) ;
+  window = g_new0(ZMapWindowStruct, 1) ;
   window->sequence = g_strdup(sequence) ;
   window->app_data = app_data ;
   window->parent_widget = parent_widget ;
@@ -189,7 +189,7 @@ void zMapWindowDisplayData(ZMapWindow window, void *data)
   zmapWindowData window_data ;
 
   /* Set up struct to be passed to our callback. */
-  window_data = g_new(zmapWindowDataStruct, sizeof(zmapWindowDataStruct)) ;
+  window_data = g_new0(zmapWindowDataStruct, sizeof(zmapWindowDataStruct)) ;
   window_data->window = window ;
   window_data->data = data ;
 

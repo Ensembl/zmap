@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 15 17:29 2004 (rnc)
+ * Last edited: Jul 16 09:24 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.17 2004-07-15 16:29:25 rnc Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.18 2004-07-16 08:46:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -133,8 +133,8 @@ ZMap zMapCreate(void *app_data)
 
 
   /* Hack to read methods from a file in $HOME/.ZMap for now..... */
-  // temporarily commented out during code merge
-  //  zMapAssert(zmap->types = getTypesFromFile()) ;
+  zmap->types = getTypesFromFile() ;
+  zMapAssert(zmap->types) ;
 
 
   /* Make the main/toplevel window for the ZMap. */

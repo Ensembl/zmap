@@ -27,15 +27,16 @@
  *              
  * Exported functions: See saxparse.h
  * HISTORY:
- * Last edited: Mar 18 16:16 2004 (edgrif)
+ * Last edited: Jul 16 09:39 2004 (edgrif)
  * Created: Thu Mar 18 15:45:59 2004 (edgrif)
- * CVS info:   $Id: saxparse.c,v 1.1 2004-03-22 13:45:19 edgrif Exp $
+ * CVS info:   $Id: saxparse.c,v 1.2 2004-07-16 08:46:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <expat.h>
 #include <glib.h>
+#include <ZMap/zmapUtils.h>
 #include <saxparse_P.h>
 
 
@@ -45,35 +46,31 @@ static void charhndl(void *userData, const XML_Char *s, int len) ;
 static void tagFree(gpointer data, gpointer user_data) ;
 
 
-SaxParser saxCreateParser(void)
+
+SaxParser saxCreateParser(void *user_data)
 {
   SaxParser parser ;
 
-  parser = (SaxParser)g_new(SaxParserStruct, 1) ;
+  parser = (SaxParser)g_new0(SaxParserStruct, 1) ;
 
-  parser->p = XML_ParserCreate(NULL) ;
-  if (!parser->p)
+  parser->debug = TRUE ;
+
+  if (!(parser->p = XML_ParserCreate(NULL)))
     {
-      fprintf(stderr, "Couldn't allocate memory for parser\n");
-      exit(-1);
+      zMapLogFatal("%s", "XML_ParserCreate() failed.") ;
     }
-
-  XML_SetElementHandler(parser->p, start_tag, end_tag);
-
-  XML_SetCharacterDataHandler(parser->p, charhndl) ;
-
-  XML_SetUserData(parser->p, (void *)parser) ;
 
   parser->Depth = 0 ;
 
   parser->tag_stack = g_queue_new() ;
 
-  parser->content = g_string_sized_new(1000) ;		    /* wild guess at size... */
+  parser->content = g_string_sized_new(20000) ;		    /* wild guess at size... */
 
   parser->last_errmsg = NULL ;
 
   return parser ;
 }
+
 
 
 gboolean saxParseData(SaxParser parser, void *data, int size)
@@ -86,13 +83,31 @@ gboolean saxParseData(SaxParser parser, void *data, int size)
   else
     final = 1 ;
 
-  if (!XML_Parse(parser->p, data, size, final))
+  /* try resetting parser..... */
+  if (XML_ParserReset(parser->p, NULL) != XML_TRUE)
     {
-      parser->last_errmsg = g_strdup_printf("saxparse - Parse error at line %d:\n%s\n",
-					    XML_GetCurrentLineNumber(parser->p),
-					    XML_ErrorString(XML_GetErrorCode(parser->p))) ;
-      result = FALSE ;
+      zMapLogFatal("%s", "XML_ParserReset() call failed.") ;
     }
+  else
+    {
+      /* When the parser is reset it loses just about everything so reset the lot. */
+      XML_SetElementHandler(parser->p, start_tag, end_tag);
+      XML_SetCharacterDataHandler(parser->p, charhndl) ;
+      XML_SetUserData(parser->p, (void *)parser) ;
+
+
+      if (!XML_Parse(parser->p, data, size, final))
+	{
+	  if (parser->last_errmsg)
+	    g_free(parser->last_errmsg) ;
+
+	  parser->last_errmsg = g_strdup_printf("saxparse - Parse error (line %d): %s\n",
+						XML_GetCurrentLineNumber(parser->p),
+						XML_ErrorString(XML_GetErrorCode(parser->p))) ;
+	  result = FALSE ;
+	}
+    }
+
 
   return result ;
 }
@@ -105,18 +120,25 @@ void saxDestroyParser(SaxParser parser)
   /* Deallocate tag data and then free the queue. */
   if (!g_queue_is_empty(parser->tag_stack))
     {
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Need newer version of glib...hopefully to be installed on Alphas etc.... */
+      /* alpha version of gtk does not have this....so do it by steam...sigh.... */
       g_queue_foreach(parser->tag_stack, tagFree, parser) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      gpointer dummy ;
+
+      while ((dummy = g_queue_pop_head(parser->tag_stack)))
+	{
+	  g_free(dummy) ;
+	}
 
     }
   g_queue_free(parser->tag_stack) ;
 
   g_string_free(parser->content, TRUE) ;		    /* TRUE => free string data as well. */
 
-  g_free(parser->last_errmsg) ;
+  if (parser->last_errmsg)
+    g_free(parser->last_errmsg) ;
 
   g_free(parser) ;
 
@@ -124,12 +146,9 @@ void saxDestroyParser(SaxParser parser)
 }
 
 
-
-
-
-static void tagFree(gpointer data, gpointer user_data)
+static void tagFree(gpointer data, gpointer user_data_unused)
 {
-  SaxParser parser = (SaxParser)user_data ;
+  SaxParser parser = (SaxParser)user_data_unused ;
 
   g_free(data) ;
 
@@ -146,24 +165,36 @@ static void tagFree(gpointer data, gpointer user_data)
 static void start_tag(void *userData, const char *el, const char **attr)
 {
   SaxParser parser = (SaxParser)userData ;
+  SaxTag current_tag ;
   int i;
+  
 
-  for (i = 0; i < parser->Depth; i++)
-    printf("  ");
-
-  printf("<%s>", el) ;
-
-  if (attr[i])
-    printf("  -  ") ;
-
-  for (i = 0; attr[i]; i += 2)
+  if (parser->debug)
     {
-      printf(" %s='%s'", attr[i], attr[i + 1]);
+      for (i = 0; i < parser->Depth; i++)
+	printf("  ");
+      
+      printf("<%s>", el) ;
+
+      if (attr[0])
+	{
+	  printf("  -  ") ;
+
+	  for (i = 0; attr[i]; i += 2)
+	    {
+	      printf(" %s='%s'", attr[i], attr[i + 1]);
+	    }
+	}
+
+      printf("\n");
     }
 
-  printf("\n");
 
-  g_queue_push_head(parser->tag_stack, g_strdup(el)) ;
+  /* Push the current tag on to our stack of tags. */
+  current_tag = g_new0(SaxTagStruct, 1) ;
+  current_tag->element_name = (char *)el ;
+  current_tag->attributes = (char **)attr ;
+  g_queue_push_head(parser->tag_stack, current_tag) ;
 
   parser->Depth++;
 
@@ -176,29 +207,58 @@ static void end_tag(void *userData, const char *el)
   SaxParser parser = (SaxParser)userData ;
   int i ;
   gpointer dummy ;
+  SaxTag current_tag ;
 
   parser->Depth-- ;
 
+  dummy = g_queue_pop_head(parser->tag_stack) ;		    /* Now get rid of head element. */
+
+  current_tag = (SaxTag)dummy ;
+
+  /* If there is content between the start/end tags process it. */
   if (parser->content->len)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       gchar *tag = (gchar *)g_queue_peek_head(parser->tag_stack) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      for (i = 0; i < parser->Depth; i++)
-	printf("  ");
 
-      printf("content(<%s>)  -  %s\n", tag, parser->content->str) ;
+      if (parser->debug)
+	{
+	  for (i = 0; i < parser->Depth; i++)
+	    printf("  ");
 
-      /* reset once printed..... */
+	  printf("%s content -  %s\n", current_tag->element_name, parser->content->str) ;
+	}
+
+
+      /* Here is where we need to do some of the (most of the ?) gff processing.... */
+
+
+      /* reset once processed..... */
       parser->content = g_string_set_size(parser->content, 0) ;
     }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   dummy = g_queue_pop_head(parser->tag_stack) ;		    /* Now get rid of head element. */
+
+  current_tag = (SaxTag)dummy ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
   g_free(dummy) ;
 
-  for (i = 0; i < parser->Depth; i++)
-    printf("  ");
 
-  printf("</%s>\n", el);
+  if (parser->debug)
+    {
+      for (i = 0; i < parser->Depth; i++)
+	printf("  ") ;
+
+      printf("</%s>\n", el) ;
+    }
 
   return ;
 }

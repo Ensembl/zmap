@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug  6 10:16 2003 (edgrif)
+ * Last edited: Jul 16 09:39 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.test.c,v 1.1 2003-11-13 15:02:13 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.test.c,v 1.2 2004-07-16 08:46:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,7 +67,7 @@ void *zmapNewThread(void *thread_args)
   ZMapThreadRequest signalled_state ;
 
 
-  thread_cb = g_new(zmapThreadCBstruct, sizeof(zmapThreadCBstruct)) ;
+  thread_cb = g_new0(zmapThreadCBstruct, sizeof(zmapThreadCBstruct)) ;
   thread_cb->connection = connection ;
   thread_cb->thread_died = FALSE ;
   

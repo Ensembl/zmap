@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May 27 11:14 2004 (edgrif)
+ * Last edited: Jul 16 09:40 2004 (edgrif)
  * Created: Thu Apr 29 14:59:37 2004 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.3 2004-05-27 13:43:04 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.4 2004-07-16 08:46:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -151,7 +151,7 @@ static ZMapLog createLog(void)
 {
   ZMapLog log ;
 
-  log = g_new(ZMapLogStruct, sizeof(ZMapLogStruct)) ;
+  log = g_new0(ZMapLogStruct, sizeof(ZMapLogStruct)) ;
 
   /* Default will be logging active. */
   log->logging = TRUE ;

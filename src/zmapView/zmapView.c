@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 15 15:56 2004 (edgrif)
+ * Last edited: Jul 16 09:42 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.6 2004-07-15 15:13:03 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.7 2004-07-16 08:46:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -593,7 +593,7 @@ static ZMapView createZMapView(char *sequence, void *app_data)
 {
   ZMapView zmap_view = NULL ;
 
-  zmap_view = g_new(ZMapViewStruct, 1) ;
+  zmap_view = g_new0(ZMapViewStruct, 1) ;
 
   zmap_view->state = ZMAPVIEW_INIT ;
 

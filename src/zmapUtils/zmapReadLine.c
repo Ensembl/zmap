@@ -29,9 +29,9 @@
  *              
  * Exported functions: See ZMap/zmapReadLine.h
  * HISTORY:
- * Last edited: Jun 25 09:52 2004 (edgrif)
+ * Last edited: Jul 16 09:40 2004 (edgrif)
  * Created: Thu Jun 24 19:03:50 2004 (edgrif)
- * CVS info:   $Id: zmapReadLine.c,v 1.1 2004-06-25 13:30:25 edgrif Exp $
+ * CVS info:   $Id: zmapReadLine.c,v 1.2 2004-07-16 08:46:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,7 +62,7 @@ ZMapReadLine zMapReadLineCreate(char *input_lines, gboolean in_place)
 {
   ZMapReadLine read_line ;
 
-  read_line = g_new(ZMapReadLineStruct, 1) ;
+  read_line = g_new0(ZMapReadLineStruct, 1) ;
 
   read_line->original = input_lines ;
   read_line->current = read_line->next = NULL ;

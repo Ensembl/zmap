@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul 14 14:04 2004 (edgrif)
+ * Last edited: Jul 16 09:36 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.8 2004-07-14 13:07:42 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.9 2004-07-16 08:46:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,7 +76,7 @@ ZMapGFFParser zMapGFFCreateParser(gboolean parse_only)
 {
   ZMapGFFParser parser ;
 
-  parser = g_new(ZMapGFFParserStruct, 1) ;
+  parser = g_new0(ZMapGFFParserStruct, 1) ;
 
   parser->state = ZMAPGFF_PARSE_HEADER ;
   parser->error = NULL ;
@@ -617,7 +617,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
       /* If we don't have this feature_set yet, then make one. */
       if (!feature_set)
 	{
-	  feature_set = g_new(ZMapGFFParserFeatureSetStruct, 1) ;
+	  feature_set = g_new0(ZMapGFFParserFeatureSetStruct, 1) ;
 
 	  g_datalist_set_data_full(&(parser->feature_sets), source, feature_set, destroyFeatureArray) ;
 	  
@@ -734,7 +734,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
       /* If we don't have this feature_set yet, then make one. */
       if (!feature_set)
 	{
-	  feature_set = g_new(ZMapGFFParserFeatureSetStruct, 1) ;
+	  feature_set = g_new0(ZMapGFFParserFeatureSetStruct, 1) ;
 
 	  g_datalist_set_data_full(&(parser->feature_sets), source, feature_set, destroyFeatureArray) ;
 	  
@@ -1257,7 +1257,7 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
   GData **features = (GData **)user_data ;
   ZMapFeatureSetStruct *new_features ;
 
-  new_features = g_new(ZMapFeatureSetStruct, 1) ;
+  new_features = g_new0(ZMapFeatureSetStruct, 1) ;
 
   new_features->source = g_strdup(feature_set->source) ;
   new_features->features = feature_set->features ;

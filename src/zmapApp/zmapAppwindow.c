@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  7 10:08 2004 (edgrif)
+ * Last edited: Jul 16 09:36 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.8 2004-05-07 09:19:33 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.9 2004-07-16 08:46:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,7 +171,7 @@ static ZMapAppContext createAppContext(void)
 {
   ZMapAppContext app_context ;
 
-  app_context = g_new(ZMapAppContextStruct, sizeof(ZMapAppContextStruct)) ;
+  app_context = g_new0(ZMapAppContextStruct, sizeof(ZMapAppContextStruct)) ;
 
   app_context->app_widg = app_context->sequence_widg = app_context->clist_widg = NULL ;
 

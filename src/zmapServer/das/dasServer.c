@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Jun 29 13:52 2004 (edgrif)
+ * Last edited: Jul 16 09:38 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.3 2004-06-29 12:52:48 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.4 2004-07-16 08:46:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,8 +37,6 @@
 
 #include <ZMap/zmapServerPrototype.h>
 #include <dasServer_P.h>
-
-static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data) ;
 
 
 static gboolean globalInit(void) ;
@@ -48,15 +46,20 @@ static gboolean createConnection(void **server_out,
 static gboolean openConnection(void *server) ;
 static gboolean request(void *server, ZMapServerRequestType request,
 			char *sequence, ZMapFeatureContext *feature_context) ;
+static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data) ;
 static char *lastErrorMsg(void *server) ;
 static gboolean closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
 
 
 
-/* Compulsory routine, without this we can't do anything....returns a list of functions
- * that can be used to contact a DAS server. The functions are only visible through
- * this struct. */
+/* Although most of these "external" routines are static they are properly part of our
+ * external interface and hence are in the external section of this file. */
+
+
+/* Compulsory routine, the caller must call this to get a list of our interface
+ * functions, without this they can't do anything. The functions are only
+ * visible through this struct. */
 void dasGetServerFuncs(ZMapServerFuncs das_funcs)
 {
   das_funcs->global_init = globalInit ;
@@ -75,13 +78,6 @@ void dasGetServerFuncs(ZMapServerFuncs das_funcs)
  * "host" and "request",
  * i.e.                   http://dev.acedb.org/das = host
  *                             the rest of the url = request  */
-
-
-
-
-/* 
- * ---------------------  Internal routines.  ---------------------
- */
 
 
 /* For stuff that just needs to be done once at the beginning..... */
@@ -113,7 +109,7 @@ static gboolean createConnection(void **server_out,
   gboolean result = TRUE ;
   DasServer server ;
 
-  server = (DasServer)g_new(DasServerStruct, 1) ;
+  server = (DasServer)g_new0(DasServerStruct, 1) ;
 
   server->host = g_strdup(host) ;
   server->port = port ;
@@ -124,11 +120,15 @@ static gboolean createConnection(void **server_out,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   server->chunks = 0 ;
-  server->parser = saxCreateParser() ;
+
+  /* hack for now, need to parse in a proper struct here that can be interpreted and filled in
+   * properly..... */
+  server->parser = saxCreateParser(&(server->data)) ;
+
   server->last_errmsg = NULL ;
   server->curl_error = CURLE_OK ;
   server->curl_errmsg = (char *)g_malloc0(CURL_ERROR_SIZE * 2) ;	/* Big margin for safety. */
-
+  server->data = NULL ;
 
   /* init the curl session */
   if (!(server->curl_handle = curl_easy_init()))
@@ -189,10 +189,17 @@ static gboolean request(void *server_in, ZMapServerRequestType request,
   DasServer server = (DasServer)server_in ;
 
   /* specify URL to get */
+  /* FAKED FOR NOW......... */
+  {
+    char *url = "http://dev.acedb.org/das/wormbase/1/type" ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  curl_easy_setopt(server->curl_handle, CURLOPT_URL, request) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    curl_easy_setopt(server->curl_handle, CURLOPT_URL, url) ;
+  }
+
+
+  /* WE COULD CREATE A FRESH PARSER AT WITH EACH CALL AT THIS POINT, WOULD BE SIMPLER
+   * PROBABLY..... */
+
 
   /* Hacked for now, normally we will use the request passed in..... */
   if (result &&
@@ -266,6 +273,12 @@ static gboolean destroyConnection(void *server_in)
 
   return result ;
 }
+
+
+
+/* 
+ * ---------------------  Internal routines.  ---------------------
+ */
 
 
 
