@@ -24,53 +24,41 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: May 13 15:41 2004 (edgrif)
+ * Last edited: May 17 16:54 2004 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.1 2004-05-13 14:44:45 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.2 2004-05-17 16:39:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
-#ifndef ZMAP_CONTROL_P_H
-#define ZMAP_CONTROL_P_H
+#ifndef ZMAP_VIEW_P_H
+#define ZMAP_VIEW_P_H
 
 #include <glib.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapConn.h>
-#include <ZMap/zmapWindow.h>
-#include <ZMap/zmapConfig.h>
-#include <ZMap/ZMap.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <ZMap/zmapView.h>
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* The overall state of the zmap, we need this because both the zmap window and the its threads
- * will die asynchronously so we need to block further operations while they are in this state.
- * We may also need a state for "reset", which would be when the window is reset. */
+
+/* The overall state of the zmapView, we need this because both the zmap window and the its threads
+ * will die asynchronously so we need to block further operations while they are in this state. */
 typedef enum {
-  ZMAP_INIT,						    /* Created, display but no threads. */
-  ZMAP_RUNNING,						    /* Display with threads in normal state. */
-  ZMAP_RESETTING,					    /* Display with no data/threads. */
-  ZMAP_DYING,						    /* ZMap is dying for some reason,
+  ZMAPVIEW_INIT,					    /* Display with no threads. */
+  ZMAPVIEW_RUNNING,					    /* Display with threads in normal state. */
+  ZMAPVIEW_RESETTING,					    /* Display that is closing its threads
+							       and returning to INIT state. */
+  ZMAPVIEW_DYING					    /* ZMap is dying for some reason,
 							       cannot do anything in this state. */
-  ZMAP_DEAD						    /* completely defunct...may not be needed. */
-} ZmapState ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+} ZmapViewState ;
 
 
-
-/* For now I won't expose this beyond this private header...may be necessary later... */
-
-/* A "View" is a set of one or move windows that display data retrieved from one or
- * more servers. Note that the "View" windows are not top level windows, they are panes
- * within a top level window.
- * Each View has window data and connection data, the intent is that the window
- * code knows about the window data and the connection data knows about the
- * connection data.... */
+/* A "View" is a set of one or more windows that display data retrieved from one or
+ * more servers. Note that the "View" windows are _not_ top level windows, they are panes
+ * within a container widget that is supplied as a parent of the View then the View
+ * is first created.
+ * Each View has lists of windows and lists of connections, the view handles these lists
+ * using zmapWindow and zmapConnection calls.
+ * */
 typedef struct _ZMapViewStruct
 {
-  ZmapState state ;
+  ZmapViewState state ;
 
   gchar *sequence ;
 
@@ -82,10 +70,10 @@ typedef struct _ZMapViewStruct
   GList *connection_list ;
 
   void *app_data ;
-  ZMapCallbackFunc destroy_cb ;
+  ZMapViewCallbackFunc app_destroy_cb ;
 
 } ZMapViewStruct ;
 
 
 
-#endif /* !ZMAP_CONTROL_P_H */
+#endif /* !ZMAP_VIEW_P_H */
