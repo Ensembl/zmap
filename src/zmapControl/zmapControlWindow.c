@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: May 17 16:19 2004 (edgrif)
+ * Last edited: May 19 14:11 2004 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.1 2004-05-19 10:25:58 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.2 2004-05-20 14:10:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
 
 
 
-gboolean zmapTopWindowCreate(ZMap zmap, char *zmap_id)
+gboolean zmapControlWindowCreate(ZMap zmap, char *zmap_id)
 {
   gboolean result = TRUE ;
   GtkWidget *toplevel, *vbox, *menubar, *button_frame, *connect_frame ;
@@ -66,13 +66,13 @@ gboolean zmapTopWindowCreate(ZMap zmap, char *zmap_id)
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
 
-  menubar = zmapTopWindowMakeMenuBar(zmap) ;
+  menubar = zmapControlWindowMakeMenuBar(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
 
-  button_frame = zmapTopWindowMakeButtons(zmap) ;
+  button_frame = zmapControlWindowMakeButtons(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), button_frame, FALSE, TRUE, 0);
 
-  zmap->view_parent = connect_frame = zmapTopWindowMakeFrame(zmap) ;
+  zmap->view_parent = connect_frame = zmapControlWindowMakeFrame(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), connect_frame, TRUE, TRUE, 0);
 
   gtk_widget_show_all(toplevel) ;
@@ -88,7 +88,7 @@ gboolean zmapTopWindowCreate(ZMap zmap, char *zmap_id)
 
 
 
-void zmapTopWindowDestroy(ZMap zmap)
+void zmapControlWindowDestroy(ZMap zmap)
 {
   /* We must disconnect the "destroy" callback otherwise we will enter quitCB()
    * below and that will try to call our callers destroy routine which has already
