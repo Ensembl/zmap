@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 13 10:32 2004 (rnc)
+ * Last edited: Jan  6 15:27 2005 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.20 2004-12-13 10:34:47 rnc Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.21 2005-01-07 12:31:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -113,7 +113,7 @@ void zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double
 
 FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 			     double offset, double zoom_factor, 
-			     int start, int end)
+			     int start, int end, int *major_units_out, int *minor_units_out)
 {
   FooCanvasItem *group;
   float unit, subunit ;
@@ -146,7 +146,8 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   /* each time through this loop unit and subunit increase by 10 times until unit exceeds cutoff,
   ** so we end up with a nice round number for our major ticks, and 10 minor ticks per major one. */
   while (unit < cutoff)
-    { unit *= 2 ;
+    {
+      unit *= 2 ;
       subunit *= 5 ;
       if (unit >= cutoff)
 	break ;
@@ -163,14 +164,14 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 
   /* calculate nomial ie thousands, millions, etc */
   for (type = 1, unitType = 0 ; 
-       iUnit > 0 && 1000 * type < iUnit && unitType < 5; 
+       iUnit > 0 && 1000 * type < iUnit && unitType < 5 ;
        unitType++, type *= 1000) ;
 
   group = foo_canvas_item_new(foo_canvas_root(canvas),
 			      foo_canvas_group_get_type(),
 			      "x",(double)offset,
 			      "y",(double)0.0,
-			      NULL);
+			      NULL) ;
 
   /* If the scrolled_region has been cropped, we need to crop the scalebar too */
   foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
@@ -199,9 +200,17 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 
   /* minor ticks */
   for (pos = start; pos < end; pos += iSubunit)
-      zmapDrawLine(FOO_CANVAS_GROUP(group), 35.0, pos, 40.0, pos, &black, 1.0);
+    {
+      zmapDrawLine(FOO_CANVAS_GROUP(group), 35.0, pos, 40.0, pos, &black, 1.0) ;
+    }
 
-  return group;
+  if (major_units_out)
+    *major_units_out = iUnit ;
+
+  if (minor_units_out)
+    *minor_units_out = iSubunit ;
+
+  return group ;
 }
 
 
