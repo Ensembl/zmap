@@ -24,7 +24,7 @@ $(CURRENT_LIB) : $(CURRENT_DEP) $(CURRENT_OBJ)
 $(CURRENT_AR) : $(CURRENT_DEP) $(CURRENT_SRC)
 
 $(CURRENT_SRC) : forcemake
-	$(TEST) -L $(BINDIR)/$@ || ln -s `pwd`/$@ $(BINDIR) 
+	@$(TEST) -L $(BINDIR)/$@ || ln -s `pwd`/$@ $(BINDIR) 
 
 clean :
 	cd $(BINDIR) ; rm -f $(CURRENT_SRC)
