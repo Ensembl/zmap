@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul  8 10:28 2004 (edgrif)
+ * Last edited: Jul 14 11:45 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.6 2004-07-08 09:35:34 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.7 2004-07-14 12:53:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -97,7 +97,7 @@ ZMapGFFParser zMapGFFCreateParser(gboolean parse_only)
 
   parser->done_sequence_region = FALSE ;
   parser->sequence_name = NULL ;
-  parser->sequence_start = parser->sequence_end = 0 ;
+  parser->features_start = parser->features_end = 0 ;
 
   if (!parser->parse_only)
     {
@@ -213,11 +213,35 @@ ZMapFeatureContext zmapGFFGetFeatures(ZMapGFFParser parser)
 
   if (!parser->parse_only)
     {
-      feature_context = g_new(ZMapFeatureContextStruct, 1) ;
+      feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
       feature_context->sequence = g_strdup(parser->sequence_name) ;
-      feature_context->start = parser->sequence_start ;
-      feature_context->end = parser->sequence_end ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      feature_context->start = parser->features_start ;
+      feature_context->end = parser->features_end ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      /* This is a COMPLETE HACK......we just set all the mapping stuff to have fictitious
+       * coords for now....in the future it must all be filled in with calls to get the mapping from
+       * the requested sequence to the parent etc. etc....
+       * We assume that we only ask for complete clones....
+       *  */
+      {
+	int tmp_start = 100000 ;
+	int clone_length = parser->features_end - parser->features_start + 1 ;
+
+	feature_context->sequence_to_parent.c1 = parser->features_start ;
+	feature_context->sequence_to_parent.c2 = parser->features_end ;
+	feature_context->sequence_to_parent.p1 = tmp_start ;
+	feature_context->sequence_to_parent.p2
+	  = feature_context->sequence_to_parent.p1 + clone_length ;
+
+	feature_context->features_to_sequence.p1 = parser->features_start ;
+	feature_context->features_to_sequence.p2 = parser->features_end ;
+	feature_context->features_to_sequence.c1 = parser->features_start ;
+	feature_context->features_to_sequence.c2 = parser->features_end ;
+      }
 
       g_datalist_init(&(feature_context->features)) ;
 
@@ -421,8 +445,8 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 	  else
 	    {
 	      parser->sequence_name = g_strdup(&sequence_name[0]) ;
-	      parser->sequence_start = start ;
-	      parser->sequence_end = end ;
+	      parser->features_start = start ;
+	      parser->features_end = end ;
 	      parser->done_sequence_region = TRUE ;
 	    }
      

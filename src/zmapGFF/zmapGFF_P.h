@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 21 11:47 2004 (edgrif)
+ * Last edited: Jul 14 10:57 2004 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.3 2004-06-22 12:24:36 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.4 2004-07-14 12:54:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -114,7 +114,7 @@ typedef struct ZMapGFFParserStruct_
 
   gboolean done_sequence_region ;
   char *sequence_name ;
-  int sequence_start, sequence_end ;
+  int features_start, features_end ;
 
   GData *feature_sets ;					    /* A list of ZMapGFFParserFeatureSetStruct.
 							       There is one of these structs per
