@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 22 09:57 2004 (edgrif)
+ * Last edited: Jun 25 12:11 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.6 2004-06-22 12:25:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.7 2004-06-25 13:42:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -36,6 +36,11 @@
 
 #include <gtk/gtk.h>
 #include <ZMap/zmapWindow.h>
+
+
+/* Test scaffoling */
+#include <ZMap/zmapFeature.h>
+
 
 typedef struct _ZMapWindowStruct
 {
@@ -75,7 +80,7 @@ GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 
 
 /* TEST SCAFFOLDING............... */
-GData *testGetGFF(void) ;
+ZMapFeatureContext testGetGFF(void) ;
 
 
 

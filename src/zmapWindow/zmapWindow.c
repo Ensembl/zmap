@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 22 09:57 2004 (edgrif)
+ * Last edited: Jun 25 14:28 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.9 2004-06-22 12:25:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.10 2004-06-25 13:42:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,7 +163,7 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
       zmapWindowData window_data = NULL ;
       ZMapWindow window = NULL ;
       gpointer data = NULL ;
-
+      ZMapFeatureContext feature_context ;
 
       /* Retrieve the data pointer from the event struct */
       memmove(&window_data, &(event->data.b[0]), sizeof(void *)) ;
@@ -173,16 +173,22 @@ static void dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_da
       data = (gpointer)(window_data->data) ;
 
 
-      /* OK, can ignore data here and just call my dummied up GFF routine to deliver some
-       * features for Rob to draw..... */
-      {
-	GData *features ;
+      /* Can either get data from my dummied up GFF routine or if you set up an acedb server
+       * you can get data from there.... just undef the one you want... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      feature_context = testGetGFF() ;			    /* Data read from a file... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      feature_context = (ZMapFeatureContext)data ;	    /* Data from a server... */
 
 
-	features = testGetGFF() ;
-      }      
+      /* ****Remember that someone needs to free the data passed over....****  */
 
-      /* Remember that someone needs to free the data passed over.... */
+
+      /* <<<<<<<<<<<<<  ROB, this is where calls to your drawing code need to go  >>>>>>>>>>>> */
+
+
 
 
       g_free(window_data) ;				    /* Free the WindowData struct. */
