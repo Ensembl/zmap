@@ -53,7 +53,9 @@ include $(MAKE_DIR)/common.targets
 # Make the application programs themselves.
 
 # ZMAP library...
-ZMAP_LIB_FLAGS = -L$(BINDIR) -lZMapApp -lZMap -lZMapThr
+#ZMAP_LIB_FLAGS = -L$(BINDIR) -lZMapApp -lZMap -lZMapThr
+# Hack because zmapThr references stuff in ZMap, should have a separate utilities lib that goes last.
+ZMAP_LIB_FLAGS = -L$(BINDIR) -lZMapApp -lZMap -lZMapThr -lZMap
 
 # Ace-Conn library used for interfacing to the acedb socket server.
 ACECONN_DIR = /nfs/disk100/acedb/Ace-Conn
