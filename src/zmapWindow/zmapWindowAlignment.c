@@ -29,29 +29,45 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  8 13:37 2005 (edgrif)
+ * Last edited: Mar 16 15:39 2005 (edgrif)
  * Created: Thu Feb 24 11:19:23 2005 (edgrif)
- * CVS info:   $Id: zmapWindowAlignment.c,v 1.2 2005-03-08 15:33:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAlignment.c,v 1.3 2005-03-16 15:53:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-
+#include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
 
+
+/* Used to pass data back to column menu callbacks. */
+typedef struct
+{
+  ZMapWindowColumn column ;
+} ColumnMenuCBDataStruct, *ColumnMenuCBData ;
+
+
+
+
+
 /* These should be user defineable...... */
-#define COLUMN_GAP 20.0
+#define COLUMN_GAP 10.0
 #define STRAND_GAP COLUMN_GAP / 2
 
 
 static ZMapWindowColumn findColumn(GPtrArray *col_array, char *col_name, gboolean forward_strand) ;
 static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
 					  gchar *type_name, ZMapFeatureTypeStyle type) ;
-static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, gpointer event_cb_data,
+static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, ZMapWindowColumn column,
 				   double start, double top, double bot, double width,
 				   GdkColor *colour) ;
 static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean canvasBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+
+
+static void makeColumnMenu(GdkEventButton *button_event, ZMapWindowColumn column) ;
+static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
+
 
 
 
@@ -250,6 +266,7 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
 
   /* Make sure this gets freed...... */
   column = g_new0(ZMapWindowColumnStruct, 1) ;
+  column->parent_block = block ;
   column->type = type ;
   column->type_name = type_name ;
   column->strand_gap = STRAND_GAP ;			    /* Should be user defineable */
@@ -267,21 +284,28 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+  gdk_color_parse("white", &column_colour) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   gdk_color_parse("red", &column_colour) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   column->forward_group = createColumn(FOO_CANVAS_GROUP(column->column_group),
-				       (gpointer)(alignment->window),
+				       column,
 				       0.0,
 				       alignment->window->seq_start, alignment->window->seq_end,
 				       type->width, &column_colour) ;
 
   if (type->showUpStrand)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       gdk_color_parse("green", &column_colour) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       foo_canvas_item_get_bounds(column->forward_group, &x1, &y1, &x2, &y2) ;
       column->reverse_group = createColumn(FOO_CANVAS_GROUP(column->column_group),
-					   (gpointer)(alignment->window),
+					   column,
 					   x2 + column->strand_gap,
 					   alignment->window->seq_start, alignment->window->seq_end,
 					   type->width,
@@ -313,7 +337,7 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
 
 
 /* Create an individual column group, this will have the feature items added to it. */
-static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, gpointer event_cb_data,
+static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, ZMapWindowColumn column,
 				   double start, double top, double bot, double width,
 				   GdkColor *colour)
 {
@@ -327,7 +351,7 @@ static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, gpointer event_
 			      NULL) ;
 
   g_signal_connect(GTK_OBJECT(group), "event",
-		   GTK_SIGNAL_FUNC(canvasColumnEventCB), event_cb_data) ;
+		   GTK_SIGNAL_FUNC(canvasColumnEventCB), (gpointer)column) ;
 
   /* You can't explicitly set the size of a group, it automatically adjusts to the bounding
    * limits of its children, so we create an "invisible" box that covers the whole column
@@ -342,7 +366,7 @@ static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, gpointer event_
 				    NULL) ;
 
   g_signal_connect(GTK_OBJECT(boundingBox), "event",
-		   GTK_SIGNAL_FUNC(canvasBoundingBoxEventCB), event_cb_data) ;
+		   GTK_SIGNAL_FUNC(canvasBoundingBoxEventCB), (gpointer)column) ;
 
 
 
@@ -358,43 +382,55 @@ static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, gpointer event_
 static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
-  ZMapWindow  window = (ZMapWindowStruct*)data;
+  ZMapWindowColumn column = (ZMapWindowColumn)data ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("in COLUMN canvas event handler\n") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  if (event->type == GDK_BUTTON_PRESS)
+  switch (event->type)
     {
-      GdkEventButton *but_event = (GdkEventButton *)event ;
+    case GDK_BUTTON_PRESS:
+      {
+	GdkEventButton *but_event = (GdkEventButton *)event ;
 
-      printf("in COLUMN group event handler - CLICK\n") ;
+	printf("in COLUMN group event handler - CLICK\n") ;
 
 
-      /* retrieve the FeatureItemStruct from the clicked object, obtain the feature_set from that and the
-       * feature from that, using the GQuark feature_key. Then call the 
-       * click callback function, passing the ZMapWindow and feature so the details of the clicked object
-       * can be displayed in the info_panel. */
+	/* Button 1 and 3 are handled, 2 is passed on to a general handler which could be
+	 * the root handler. */
+	switch (but_event->button)
+	  {
+	  case 1:
+	    {
+	      /* Not sure if anything is needed here......... */
+	      event_handled = TRUE ;
+	      break ;
+	    }
+	  default:					    /* Is there a > 3 button mouse ? */
+	  case 2:
+	    {
+	      event_handled = FALSE ;
+	      break ;
+	    }
+	  case 3:
+	    {
+	      makeColumnMenu(but_event, column) ;
 
-      /* THERE APPEARS TO BE NO CODE HERE.... */
+	      event_handled = TRUE ;
+	      break ;
+	    }
+	  }
+	break ;
+      } 
+    default:
+      {
+	/* By default we _don't_handle events. */
+	event_handled = FALSE ;
 
-      event_handled = FALSE ;
-    } 
-  else if (event->type == GDK_BUTTON_RELEASE)
-    {
-      GdkEventButton *but_event = (GdkEventButton *)event ;
-
-      /* retrieve the FeatureItemStruct from the clicked object, obtain the feature_set from that and the
-       * feature from that, using the GQuark feature_key. Then call the 
-       * click callback function, passing the ZMapWindow and feature so the details of the clicked object
-       * can be displayed in the info_panel. */
-
-      event_handled = FALSE ;
-    } 
-  else if (event->type == GDK_KEY_PRESS)
-    {
-      event_handled = FALSE ;
+	break ;
+      }
     }
 
   return event_handled ;
@@ -403,8 +439,7 @@ static gboolean canvasColumnEventCB(FooCanvasItem *item, GdkEvent *event, gpoint
 static gboolean canvasBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
-  ZMapWindow  window = (ZMapWindowStruct*)data;
-
+  ZMapWindowColumn column = (ZMapWindowColumn)data ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("in COLUMN canvas event handler\n") ;
@@ -443,6 +478,71 @@ static gboolean canvasBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
     }
 
   return event_handled ;
+}
+
+
+
+static void makeColumnMenu(GdkEventButton *button_event, ZMapWindowColumn column)
+{
+  char *menu_title = "Column menu" ;
+  ZMapWindowMenuItemStruct menu[] =
+    {
+      {"Show Feature List", 1, columnMenuCB},
+      {"Dummy",             2, columnMenuCB},
+      {NULL,                0, NULL}
+    } ;
+  ZMapWindowMenuItem menu_item ;
+  ColumnMenuCBData cbdata ;
+
+  cbdata = g_new0(ColumnMenuCBDataStruct, 1) ;
+  cbdata->column = column ;
+
+  menu_item = menu ;
+  while (menu_item->name != NULL)
+    {
+      menu_item->callback_data = cbdata ;
+      menu_item++ ;
+    }
+
+  zMapWindowMakeMenu(menu_title, menu, button_event) ;
+
+  return ;
+}
+
+
+
+static void columnMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ColumnMenuCBData menu_data = (ColumnMenuCBData)callback_data ;
+
+  switch (menu_item_id)
+    {
+    case 1:
+      {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	/* display a list of the features in this column so the user
+	 * can select one and have the display scroll to it. */
+	zMapWindowCreateListWindow(menu_data->window, menu_data->feature_item);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	break ;
+      }
+    case 2:
+      {
+	printf("pillock\n") ;
+	break ;
+      }
+    default:
+      {
+	zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
+	break ;
+      }
+    }
+
+  g_free(menu_data) ;
+
+  return ;
 }
 
 
