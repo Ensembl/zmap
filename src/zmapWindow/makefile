@@ -6,8 +6,8 @@
 # local macros
 WIND_PRIV_HDRS = zmapWindow_P.h
 PUB_HDRS = zmapWindow.h
-WIND_SRC = zmapWindow.c zmapWindowButtons.c zmapWindowFrame.c zmapWindowmenubar.c
-WIND_OBJ = zmapWindow.o zmapWindowButtons.o zmapWindowFrame.o zmapWindowmenubar.o
+WIND_SRC = zmapWindow.c zmapWindowFrame.c 
+WIND_OBJ = zmapWindow.o zmapWindowFrame.o 
 
 # the main routines will need some different treatment maybe...???? try putting
 # them all together, don't know if it will work.....
