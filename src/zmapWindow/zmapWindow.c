@@ -1,4 +1,4 @@
-/*  File: zmapWindow.c
+ /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
  *-------------------------------------------------------------------
@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 29 13:50 2004 (rnc)
+ * Last edited: Dec  6 14:05 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.54 2004-11-29 13:52:53 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.55 2004-12-06 14:21:46 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -133,6 +133,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
   window->featureListWindows = g_ptr_array_new();
   g_datalist_init(&(window->featureItems));
+  g_datalist_init(&(window->longItems));
 
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
   window->toplevel = window->scrolledWindow = gtk_scrolled_window_new(NULL, NULL) ;
@@ -182,11 +183,12 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 			  void *app_data, ZMapWindow old)
 {
   ZMapWindow new = zMapWindowCreate(parent_widget, sequence, app_data);
+  int x, y;
 
   if (new)
     {
       new->zoom_factor        = old->zoom_factor;
-      new->zoom_status        = old->zoom_status;
+      new->zoom_status        = old->zoom_status = ZMAP_ZOOM_MID;
       new->max_zoom           = old->max_zoom;
       new->canvas_maxwin_size = old->canvas_maxwin_size;
       new->border_pixels      = old->border_pixels;
@@ -194,6 +196,15 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
       new->text_height        = old->text_height;
       new->seqLength          = old->seqLength;
       new->seq_start          = old->seq_start;
+      new->focusFeature       = old->focusFeature;
+      new->focusType          = old->focusType;
+      new->typeName           = old->typeName;
+      new->focusQuark         = old->focusQuark;
+
+      foo_canvas_get_scroll_offsets(old->canvas, &x, &y);
+      foo_canvas_c2w(old->canvas, x, y, &new->current_x, &new->current_y);
+      foo_canvas_get_scroll_region(old->canvas, &new->scroll_x1, &new->scroll_y1,
+				   &new->scroll_x2, &new->scroll_y2);
     }
 			      
   return new;
@@ -208,12 +219,6 @@ double zmapWindowCalcZoomFactor(ZMapWindow window)
 }
 
 
-
-void zmapWindowCalcMaxZoom(ZMapWindow window)
-{
-  window->max_zoom = window->text_height + (double)(ZMAP_WINDOW_TEXT_BORDER * 2) ;
-  return;
-}
 
 void zMapWindowSetMinZoom(ZMapWindow window)
 {
@@ -245,11 +250,11 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_feature
     }
   else
     {
-      realizeData->window = window;
-      realizeData->view = zmap_view;
+      realizeData->window           = window;
+      realizeData->view             = zmap_view;
       realizeData->current_features = current_features;
-      realizeData->new_features = new_features;
-      realizeData->types = types;
+      realizeData->new_features     = new_features;
+      realizeData->types            = types;
       window->realizeHandlerCB = g_signal_connect(GTK_OBJECT(window->canvas), "expose_event",
 						  GTK_SIGNAL_FUNC(realizeHandlerCB), (gpointer)realizeData);
     }
@@ -280,6 +285,13 @@ GtkWidget *zMapWindowGetWidget(ZMapWindow window)
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window)
 {
   return window->zoom_status ;
+}
+
+
+void zmapWindowSetPageIncr(ZMapWindow window)
+{
+  GTK_LAYOUT(window->canvas)->vadjustment->page_increment = GTK_WIDGET(window->canvas)->allocation.height - 50;
+  return;
 }
 
 
@@ -320,6 +332,7 @@ void zMapWindowDestroy(ZMapWindow window)
     g_ptr_array_free(window->columns, TRUE);                
   
   g_datalist_clear(&(window->featureItems));
+  g_datalist_clear(&(window->longItems));
   g_free(window) ;
   
   return ;
@@ -380,12 +393,12 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
   /* Calculate the zoom. */
   new_zoom = window->zoom_factor * zoom_factor ;
-  if (new_zoom <= window->min_zoom)
+  if (new_zoom < window->min_zoom)
     {
       window->zoom_factor = window->min_zoom ;
       window->zoom_status = zoom_status = ZMAP_ZOOM_MIN ;
     }
-  else if (new_zoom >= window->max_zoom)
+  else if (new_zoom > window->max_zoom)
     {
       window->zoom_factor = window->max_zoom ;
       window->zoom_status = zoom_status = ZMAP_ZOOM_MAX ;
@@ -457,13 +470,21 @@ ZMapWindowZoomStatus zMapWindowZoom(ZMapWindow window, double zoom_factor)
   if (window->columns)
     hideUnhideColumns(window) ;
   
-  /* redraw the scale bar */
-  gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
-  window->scaleBarGroup = zmapDrawScale(window->canvas, 
+  /* Redraw the scale bar. NB On splitting a window, scaleBarGroup is null at this point. */
+  if (FOO_IS_CANVAS_ITEM (window->scaleBarGroup))
+    gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
+
+  window->scaleBarGroup = zmapDrawScale(window->canvas,
 					window->scaleBarOffset, 
 					window->zoom_factor,
-					top,
-					bot);
+					top, bot);
+
+  window->scroll_x1 = x1;
+  window->scroll_y1 = top;
+  window->scroll_x2 = x2;
+  window->scroll_y2 = bot;
+
+  g_datalist_foreach(&(window->longItems), zmapWindowCropLongFeature, window);
 
   return zoom_status ;
 }
@@ -488,17 +509,77 @@ void zmapWindowPrintCanvas(FooCanvas *canvas)
 
 
 
+GQuark zMapWindowGetFocusQuark(ZMapWindow window)
+{
+  return window->focusQuark;
+}
+
+
+gchar *zMapWindowGetTypeName(ZMapWindow window)
+{
+  return window->typeName;
+}
+
+
+void zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data)
+{
+  ZMapWindowLongItem longItem = (ZMapWindowLongItem)data;
+  ZMapWindow window = (ZMapWindow)user_data;
+  double start, end;
+
+  start = longItem->start;
+  end  = longItem->end;
+
+  if ((longItem->start <= window->scroll_y1    && longItem->end >= window->scroll_y2)
+      || (longItem->start <= window->scroll_y1 && longItem->end >= window->scroll_y1)
+      || (longItem->start <= window->scroll_y2 && longItem->end >= window->scroll_y2))
+    {
+      if (longItem->start < window->scroll_y1)
+	start = window->scroll_y1 - 10;
+      if (longItem->end > window->scroll_y2)
+	end = window->scroll_y2 + 10;
+
+      if (longItem->end > longItem->start)
+	foo_canvas_item_set(longItem->canvasItem,
+			    "y1", start,
+			    "y2", end,
+			    NULL);
+    }
+  return;
+}
+
+
+
 /*
  *  ------------------- Internal functions -------------------
  */
 
 
 
-
 static gboolean resizeCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data)
 {
   /* widget is the scrolled_window, user_data is the zmapWindow */
-  /*  printf("resized: x: %d, y: %d, height: %d, width: %d\n", alloc->x, alloc->y, alloc->height, alloc->width);*/
+
+  ZMapWindow window = (ZMapWindow)user_data;
+
+
+  printf("resizeCB: x: %d, y: %d, height: %d, width: %d\n", 
+	 alloc->x, alloc->y, alloc->height, alloc->width); 
+
+  if (window->seqLength) /* when window first drawn, seqLength = 0 */
+    {
+      if (window->zoom_status == ZMAP_ZOOM_MIN)
+	window->zoom_factor = zmapWindowCalcZoomFactor(window);
+
+      zMapWindowSetMinZoom(window); 
+      zMapWindowSetZoomStatus(window);
+      zmapWindowSetPageIncr(window); 
+
+      /* call the function given us by zmapView.c to set zoom buttons for this window */
+      /*      (*(window_cbs_G->setZoomButtons))(realizeData->window, realizeData->view);*/
+
+    }
+
   return FALSE;  /* ie allow any other callbacks to run as well */
 }
 
@@ -514,17 +595,23 @@ static gboolean realizeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoi
   /* widget is the canvas, user_data is the realizeData structure */
   RealizeData realizeData = (RealizeDataStruct*)user_data;
 
+  printf("realizeHandlerCB\n");
   /* call the function given us by zmapView.c to set zoom_status
    * for all windows in this view. */
   (*(window_cbs_G->setZoomStatus))(realizeData->window, realizeData->view);
 
   zMapAssert(GTK_WIDGET_REALIZED(widget));
+
+  /* disconnect signal handler before calling sendClientEvent otherwise when splitting
+   * windows, the scroll-to which positions the new window in the same place on the
+   * sequence as the previous one, will trigger another call to this function.  */
+  g_signal_handler_disconnect(G_OBJECT(widget), realizeData->window->realizeHandlerCB);
+
   sendClientEvent(realizeData->window, 
 		  realizeData->current_features, 
 		  realizeData->new_features, 
 		  realizeData->types);
 
-  g_signal_handler_disconnect(G_OBJECT(widget), realizeData->window->realizeHandlerCB);
   realizeData->window->realizeHandlerCB = 0;
   g_free(realizeData);
 
