@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  8 14:44 2004 (rnc)
+ * Last edited: Nov  8 15:06 2004 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.31 2004-11-08 15:02:50 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.32 2004-11-09 14:46:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -276,8 +276,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext feature_contex
 
 
 
-
-void zMapHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData)
+void zmapWindowHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData)
 {                                               
   GdkColor outline;
   GdkColor foreground;
@@ -286,21 +285,33 @@ void zMapHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *canvasDat
   /* if any other feature is currently in focus, revert it to its std colours */
   if (canvasData->focusFeature)
     foo_canvas_item_set(FOO_CANVAS_ITEM(canvasData->focusFeature),
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 			"outline_color_gdk", &canvasData->focusType->outline,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
  			"fill_color_gdk"   , &canvasData->focusType->foreground,
 			NULL);
 
   /* set outline and foreground GdkColors to be the inverse of current settings */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   outline.red      = (65535 - canvasData->thisType->outline.red  );
   outline.green    = (65535 - canvasData->thisType->outline.green);
   outline.blue     = (65535 - canvasData->thisType->outline.blue );
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   
   foreground.red   = (65535 - canvasData->thisType->foreground.red  );
   foreground.green = (65535 - canvasData->thisType->foreground.green);
   foreground.blue  = (65535 - canvasData->thisType->foreground.blue );
 
   foo_canvas_item_set(feature,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		      "outline_color_gdk", &outline,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 		      "fill_color_gdk"   , &foreground,
 		      NULL);
  
@@ -672,7 +683,7 @@ static gboolean handleCanvasEvent(FooCanvasItem *item, GdkEventButton *event, gp
 	canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types),source_lower->str); 
 	zMapAssert(canvasData->thisType);
 									
-  	zMapHighlightObject(item, canvasData);
+  	zmapWindowHighlightObject(item, canvasData);
 
 	result = TRUE;
       }

@@ -23,12 +23,12 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
  *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
  *
- * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Defines internal interfaces/data structures of zMapWindow.
+ *              
  * HISTORY:
- * Last edited: Nov  8 13:51 2004 (rnc)
+ * Last edited: Nov  8 15:08 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.28 2004-11-08 15:04:19 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.29 2004-11-09 14:46:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -190,6 +190,9 @@ GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 
+
+
+void zmapWindowHighlightObject(FooCanvasItem *feature, ZMapCanvasDataStruct *canvasData) ;
 
 
 void zmapFeatureInit(ZMapFeatureCallbacks callbacks) ;

@@ -28,9 +28,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  8 14:46 2004 (rnc)
+ * Last edited: Nov  8 15:07 2004 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.9 2004-11-08 15:03:18 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.10 2004-11-09 14:46:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -245,7 +245,7 @@ static void scrollToItem(FooCanvas *canvas, gchar *name, int start, gchar *type)
   zMapAssert(canvasData->thisType);
       
   /* highlight the item */
-  zMapHighlightObject(item, canvasData);
+  zmapWindowHighlightObject(item, canvasData);
   
   zMapFeatureClickCB(canvasData, canvasData->feature); /* show feature details on info_panel  */
       
