@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 24 13:56 2005 (edgrif)
+ * Last edited: Feb  4 16:44 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.40 2005-01-24 13:57:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.41 2005-02-10 16:42:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -72,6 +72,23 @@ enum
   } ;
 
 
+/* Represents a column group. */
+typedef struct
+{
+  /* which one to use here ?? */
+  gchar *type_name ;
+  GQuark key_id ;
+
+  FooCanvasItem *group ;
+
+  gboolean forward ;
+  ZMapFeatureTypeStyle type ;
+
+} ZMapWindowColumnStruct, *ZMapWindowColumn ;
+
+
+
+
 
 
 typedef struct _ZMapWindowStruct
@@ -105,7 +122,11 @@ typedef struct _ZMapWindowStruct
   GPtrArray     *featureListWindows;
   GData         *featureItems;            /*!< enables unambiguous link between features and canvas items. */
   GData         *longItems;               /*!< features >30k long need to be cropped as we zoom in. */
-  GPtrArray     *columns;                 /* keep track of canvas columns */
+
+  GPtrArray     *columns;				    /* keep track of canvas columns */
+
+
+
 
   FooCanvasItem *scaleBarGroup;           /* canvas item in which we build the scalebar */
   double         scaleBarOffset;
@@ -132,7 +153,8 @@ typedef struct _ZMapWindowStruct
 
 
 
-typedef struct _ZMapWindowLongItemStruct {
+typedef struct _ZMapWindowLongItemStruct
+{
   char          *name;
   double         start;
   double         end;
@@ -140,7 +162,10 @@ typedef struct _ZMapWindowLongItemStruct {
 } ZMapWindowLongItemStruct, *ZMapWindowLongItem;
 
 
-typedef struct _ZMapFeatureItemStruct {   /*!< keyed on feature->id, gives access to canvas item */
+
+/*!< keyed on feature->id, gives access to canvas item */
+typedef struct _ZMapFeatureItemStruct
+{							    
   ZMapFeatureSet feature_set;
   GQuark         feature_key;
   FooCanvasItem *canvasItem;
@@ -148,25 +173,18 @@ typedef struct _ZMapFeatureItemStruct {   /*!< keyed on feature->id, gives acces
 } ZMapFeatureItemStruct, *ZMapFeatureItem;
 
 
-typedef struct
-{
-  ZMapWindow window ;
-  void *data ;						    /* void for now, union later ?? */
-  GData *types;                         
-} zmapWindowDataStruct, *zmapWindowData ;
-
-
 
 /* Used in our event communication.... */
 #define ZMAP_ATOM  "ZMap_Atom"
 
-typedef struct _ZMapColStruct
+
+/* Used to pass data via a "send event" to the canvas window. */
+typedef struct
 {
-  FooCanvasItem       *column;
-  gboolean             forward;
-  ZMapFeatureTypeStyle type;
-  gchar               *type_name;
-} ZMapColStruct, *ZMapCol;
+  ZMapWindow window ;
+  void *data ;
+} zmapWindowDataStruct, *zmapWindowData ;
+
 
 
 
@@ -174,17 +192,24 @@ GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 
-void zmapWindowHighlightObject(FooCanvasItem *feature, ZMapWindow window, ZMapFeatureTypeStyle thisType);
-
+void zmapWindowHighlightObject(FooCanvasItem *feature,
+			       ZMapWindow window, ZMapFeatureTypeStyle thisType);
 void zmapWindowPrintCanvas(FooCanvas *canvas) ;
 
 void     zMapWindowCreateListWindow(ZMapWindow window, ZMapFeatureItem featureItem);
 gboolean zMapWindowFeatureClickCB(ZMapWindow window, ZMapFeature feature);
+
 FooCanvasItem *zmapDrawScale(FooCanvas *canvas, double offset, double zoom_factor, int start, int end,
 			     int *major_units_out, int *minor_units_out);
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
 void   zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data);
+
+void zmapWindowDrawFeatures(ZMapWindow window, 
+			    ZMapFeatureContext current_context, ZMapFeatureContext new_context,
+			    GData *types) ;
+
+void zmapHideUnhideColumns(ZMapWindow window) ;
 
 
 #endif /* !ZMAP_WINDOW_P_H */

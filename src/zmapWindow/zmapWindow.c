@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  1 09:30 2005 (edgrif)
+ * Last edited: Feb  4 17:13 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.60 2005-02-02 11:04:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.61 2005-02-10 16:42:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,15 +42,23 @@
 #include <zmapWindow_P.h>
 
 
+/* Local struct to hold current features and new_features obtained from a server and
+ * relevant types. */
+typedef struct
+{
+  ZMapFeatureContext  current_features ;
+  ZMapFeatureContext  new_features ;
+  GData *types ;
+} FeatureSetsStruct, *FeatureSets ;
+
+
+
 /* This struct is used to pass data to realizeHandlerCB
  * via the g_signal_connect on the canvas's expose_event. */
 typedef struct _RealiseDataStruct
 {
-  ZMapWindow          window;
-  int x, y ;						    /* Initial position of window. */
-  ZMapFeatureContext  current_features ;
-  ZMapFeatureContext  new_features ;
-  GData              *types ;
+  ZMapWindow window ;
+  FeatureSets feature_sets ;
 } RealiseDataStruct, *RealiseData ;
 
 
@@ -61,10 +69,8 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpoint
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 
-static void hideUnhideColumns   (ZMapWindow window);
 static gboolean getConfiguration(ZMapWindow window) ;
-static void sendClientEvent     (ZMapWindow window, ZMapFeatureContext current_features,
-				 ZMapFeatureContext new_features, GData *types);
+static void sendClientEvent     (ZMapWindow window, FeatureSets) ;
 
 
 static void moveWindow(ZMapWindow window, guint state, guint keyval) ;
@@ -142,7 +148,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   window->zoom_status = ZMAP_ZOOM_INIT ;
   window->canvas_maxwin_size = ZMAP_WINDOW_MAX_WINDOW ;
 
-  window->columns = g_ptr_array_new();
+  window->columns = g_ptr_array_new() ;
 
   /* Some things for window can be specified in the configuration file. */
   getConfiguration(window) ;
@@ -227,8 +233,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 
 
       /* Draw the features on the canvas, note that we already have features so we don't
-       * need to do the stuff with event handlers etc. */
-      zmapWindowDrawFeatures(new, feature_context, types) ;
+       * need to do the stuff with event handlers etc. and current and new features are the same. */
+      zmapWindowDrawFeatures(new, feature_context, feature_context, types) ;
 
 
       /* Set the zoom factor, there is no call to get hold of pixels_per_unit so we dive.
@@ -280,21 +286,26 @@ void zMapWindowSetMinZoom(ZMapWindow window)
 void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_features,
 			   ZMapFeatureContext new_features, GData *types)
 {
-  RealiseData realiseData ;
+  FeatureSets feature_sets ;
 
-  realiseData = g_new0(RealiseDataStruct, 1) ;		    /* freed in exposeHandlerCB() */
+  feature_sets = g_new0(FeatureSetsStruct, 1) ;
+  feature_sets->current_features = current_features ;
+  feature_sets->new_features = new_features ;
+  feature_sets->types = types ;
 
   if (GTK_WIDGET(window->canvas)->allocation.height > 1
       && GTK_WIDGET(window->canvas)->window)
     {
-      sendClientEvent(window, current_features, new_features, types) ;
+      sendClientEvent(window, feature_sets) ;
     }
   else
     {
+      RealiseData realiseData ;
+      
+      realiseData = g_new0(RealiseDataStruct, 1) ;	    /* freed in exposeHandlerCB() */
+
       realiseData->window = window ;
-      realiseData->current_features = current_features;
-      realiseData->new_features = new_features;
-      realiseData->types = types;
+      realiseData->feature_sets = feature_sets ;
       window->exposeHandlerCB = g_signal_connect(GTK_OBJECT(window->canvas), "expose_event",
 						 GTK_SIGNAL_FUNC(exposeHandlerCB),
 						 (gpointer)realiseData) ;
@@ -372,8 +383,13 @@ void zMapWindowDestroy(ZMapWindow window)
       g_ptr_array_free(window->featureListWindows, FALSE);
     }
   
+
   if (window->columns)
-    g_ptr_array_free(window->columns, TRUE);                
+    {
+      /* We should first call a foreach routine to free off the canvas obj. etc. */
+
+      g_ptr_array_free(window->columns, TRUE) ;
+    }
   
   g_datalist_clear(&(window->featureItems));
   g_datalist_clear(&(window->longItems));
@@ -513,7 +529,7 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
   /* Now hide/show any columns that have specific show/hide zoom factors set. */
   if (window->columns)
-    hideUnhideColumns(window) ;
+    zmapHideUnhideColumns(window) ;
   
   /* Redraw the scale bar. NB On splitting a window, scaleBarGroup is null at this point. */
   if (FOO_IS_CANVAS_ITEM (window->scaleBarGroup))
@@ -655,6 +671,36 @@ void zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data)
     }
   return;
 }
+
+
+
+void zmapHideUnhideColumns(ZMapWindow window)
+{
+  int i;
+  ZMapWindowColumn column;
+  double min_mag;
+
+  for ( i = 0; i < window->columns->len; i++ )
+    {
+      column = g_ptr_array_index(window->columns, i);
+
+      /* type->min_mag is in bases per line, but window->zoom_factor is pixels per base */
+      min_mag = (column->type->min_mag ? window->max_zoom/column->type->min_mag : 0.0);
+
+      if (window->zoom_factor > min_mag)
+	{
+	  if (column->forward)
+	    foo_canvas_item_show(column->group);
+	  else if (column->type->showUpStrand)
+	    foo_canvas_item_show(column->group);
+	}
+      else
+	foo_canvas_item_hide(column->group) ;
+    }
+
+  return ;
+}
+
 
 
 
@@ -895,37 +941,30 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoin
    * sequence as the previous one, will trigger another call to this function.  */
   g_signal_handler_disconnect(G_OBJECT(widget), realiseData->window->exposeHandlerCB);
 
-  sendClientEvent(realiseData->window, 
-		  realiseData->current_features, 
-		  realiseData->new_features, 
-		  realiseData->types);
+  sendClientEvent(realiseData->window, realiseData->feature_sets) ;
 
   realiseData->window->exposeHandlerCB = 0 ;
 
   g_free(realiseData);
 
-  return FALSE;  /* ie allow any other callbacks to run as well */
+  return FALSE ;  /* ie allow any other callbacks to run as well */
 }
 
 
 
 /* This routine sends a synthesized event to alert the GUI that it needs to
  * do some work and supplies the data for the GUI to process via the event struct. */
-static void sendClientEvent(ZMapWindow window, ZMapFeatureContext current_features, 
-			    ZMapFeatureContext new_features, GData *types)
+static void sendClientEvent(ZMapWindow window, FeatureSets feature_sets)
 {
   GdkEventClient event ;
   gint ret_val = 0 ;
   zmapWindowData window_data ;
 
 
-  /* NEED TO SET UP NEW FEATURES HERE.... */
-
   /* Set up struct to be passed to our callback. */
   window_data = g_new0(zmapWindowDataStruct, 1) ;
   window_data->window = window ;
-  window_data->data = current_features ;
-  window_data->types = types;
+  window_data->data = feature_sets ;
 
   event.type = GDK_CLIENT_EVENT ;
   event.window = NULL ;					    /* no window generates this event. */
@@ -949,35 +988,6 @@ static void sendClientEvent(ZMapWindow window, ZMapFeatureContext current_featur
 
 
 
-static void hideUnhideColumns(ZMapWindow window)
-{
-  int i;
-  ZMapCol column;
-  double min_mag;
-
-  for ( i = 0; i < window->columns->len; i++ )
-    {
-      column = g_ptr_array_index(window->columns, i);
-
-      /* type->min_mag is in bases per line, but window->zoom_factor is pixels per base */
-      min_mag = (column->type->min_mag ? window->max_zoom/column->type->min_mag : 0.0);
-
-      if (window->zoom_factor > min_mag)
-	{
-	  if (column->forward)
-	    foo_canvas_item_show(column->column);
-	  else
-	    if (column->type->showUpStrand)
-	      foo_canvas_item_show(column->column);
-	}
-      else
-	  foo_canvas_item_hide(column->column);
-    }
-  return;
-}
-
-
-
 
 
 /* Called when gtk detects the event sent by signalDataToGUI(), this routine calls
@@ -994,24 +1004,27 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
     {
       zmapWindowData window_data = NULL ;
       ZMapWindow window = NULL ;
+      FeatureSets feature_sets ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       gpointer data = NULL ;
       ZMapFeatureContext feature_context ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      ZMapFeatureContext diff_context ;
+
 
       /* Retrieve the data pointer from the event struct */
       memmove(&window_data, &(event->data.b[0]), sizeof(void *)) ;
 
       window = window_data->window ;
-
-      data = (gpointer)(window_data->data) ;
-
-      /* Can either get data from my dummied up GFF routine or if you set up an acedb server
-       * you can get data from there.... just undef the one you want... */
+      feature_sets = window_data->data ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      feature_context = testGetGFF() ;			    /* Data read from a file... */
+      data = (gpointer)(window_data->data) ;
+      feature_context = (ZMapFeatureContext)data ;	    /* Data from a server... */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      feature_context = (ZMapFeatureContext)data ;	    /* Data from a server... */
 
 
       /* ****Remember that someone needs to free the data passed over....****  */
@@ -1020,11 +1033,18 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       /* We need to validate the feature_context at this point, we should be sure it contains
        * some features before continuing. */
 
+      if (feature_sets->new_features)
+	diff_context = feature_sets->new_features ;
+      else
+	diff_context = feature_sets->current_features ;
+
 
       /* Draw the features on the canvas */
-      zmapWindowDrawFeatures(window, feature_context, window_data->types) ;
+      zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context,
+			     feature_sets->types) ;
 
 
+      g_free(feature_sets) ;
       g_free(window_data) ;				    /* Free the WindowData struct. */
 
       event_handled = TRUE ;
@@ -1100,6 +1120,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
     case GDK_BUTTON_PRESS:
       {
+	printf("GENERAL canvas event handler - CLICK\n") ;
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	/* Not sure if we need this currently..... */
 
@@ -1204,6 +1227,9 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
     {
     case GDK_BUTTON_PRESS:
       {
+	printf("ROOT canvas event handler - CLICK\n") ;
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	/* Call the callers routine for button clicks. */
 	window_cbs_G->click(window, window->app_data, NULL) ;
