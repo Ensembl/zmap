@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jan  5 15:00 2005 (edgrif)
+ * Last edited: Jan 10 09:44 2005 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.42 2005-01-07 12:12:41 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.43 2005-01-10 09:50:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,6 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapControl_P.h>
-
 
 
 /* Used in searching panes for a view_window... */
@@ -617,8 +616,8 @@ static void visibilityChangeCB(ZMapViewWindow view_window, void *app_data, void 
 
   zmapControlWindowSetZoomButtons(zmap, vis_change->zoom_status) ;
 
-  zmapControlNavigatorSetWindowPos(zmap->navigator,
-				   vis_change->scrollable_top, vis_change->scrollable_bot) ;
+  zMapNavigatorSetWindowPos(zmap->navigator,
+			    vis_change->scrollable_top, vis_change->scrollable_bot) ;
 
   return ;
 }
@@ -743,8 +742,8 @@ static void updateControl(ZMap zmap, ZMapView view)
 
       features = zMapViewGetFeatures(view) ;
 
-      zmapControlNavigatorNewView(zmap->navigator, features) ; /* n.b. features may be NULL for
-								  blank views. */
+      zMapNavigatorSetView(zmap->navigator, features) ; /* n.b. features may be NULL for
+							   blank views. */
 
 
       /* Update title bar of zmap window. */
