@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul  2 18:57 2004 (edgrif)
+ * Last edited: Jul 13 18:57 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.4 2004-07-02 18:23:42 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.5 2004-07-14 09:08:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -59,83 +59,62 @@ typedef struct _ZMapStruct
 {
   gchar *zmap_id ;					    /* unique for each zmap.... */
 
-  ZmapState state ;
+  ZmapState state ;					    /* state of this zmap. */
 
+  gboolean firstTime;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  void *app_data ;  
-  ZMapCallbackFunc destroy_zmap_cb ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  GdkAtom zmap_atom ;					    /* Used for communicating with zmap
+							       windows. */
 
+  void *app_data ;					    /* Data passed back to all callbacks
+							       registered for this ZMap. */
 
+  /* Widget stuff for the Zmap. */
+  GtkWidget *toplevel ;					    /* top level widget of zmap window. */
 
-  GtkWidget *toplevel ;
+  GtkWidget *navview_frame ;				    /* Holds all the navigator/view stuff. */
 
-  /* MOVED HERE FROM zmapWindow/    */
+  GtkWidget *hpane ;					    /* Holds the navigator and the view(s). */
+
+  /* The navigator. */
+  GtkWidget *navigator ;
+  FooCanvas *navcanvas ;
+
+  /* The panes and views. */
+
+  /* I'm not completely sure this is necessary....revisit this later.... */
+  GtkWidget      *pane_vbox ;
+
+  /* Panes are windows where views get displayed. */
   ZMapPane        focuspane ;
   GNode          *panesTree ;
-  gboolean        firstTime;
-  GtkWidget      *hpane;  /* allows the user to minimise the navigator pane */
-  GtkWidget      *navigator;
-  GtkWidget      *frame;
-  GtkWidget      *vbox;
+
+
+  /* List of views in this zmap. */
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GtkItemFactory *itemFactory;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  FooCanvas      *navcanvas;
-  GtkWidget      *displayvbox;
-  GtkWidget      *hbox;
-
-
-
-
-
-
-  GtkWidget *view_parent ;
-
   ZMapView curr_view ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   GList *view_list ;
-
-  GdkAtom zmap_atom ;
-
-  /* caller registers a routine that gets called when this zmap is destroyed. */
-  ZMapCallbackFunc app_zmap_destroyed_cb ;
-  void *app_data ;
-
-  ZMapWindow zMapWindow;
 
 } ZMapStruct ;
 
 
 
-typedef struct _ZMapPaneStruct {
-  /* Data associated with one scrolling pane. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapWindow   window;     /* parent */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+/* Data associated with one scrolling pane. */
+typedef struct _ZMapPaneStruct
+{
   ZMap zmap ;						    /* Back ptr to containing zmap. */
 
-  GtkWidget   *graphWidget;
-  GtkWidget   *vbox;
-  GtkWidget   *pane;
-  GtkWidget   *frame;
-  GtkWidget   *scrolledWindow;
-  FooCanvas   *canvas;     /* where we paint the display */
-  FooCanvasItem *background;
-  FooCanvasItem *group;
-  GtkWidget   *combo;
-  int          basesPerLine;
-  InvarCoord   centre;
-  int          graphHeight;
-  int          dragBox, scrollBox;
-  GPtrArray    cols;
-  GArray       *box2seg, *box2col;
+  ZMapViewWindow curr_view_window ;
 
-  int          DNAwidth;
-  double       zoomFactor;
-  int          step_increment;
-} ZMapPaneStruct;
+  GtkWidget   *pane ;
+  GtkWidget   *frame ;
+  GtkWidget   *view_parent_box ;
+
+} ZMapPaneStruct ;
+
 
 
 /* Functions internal to zmapControl. */
@@ -143,6 +122,7 @@ gboolean   zmapControlWindowCreate     (ZMap zmap, char *zmap_id) ;
 GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeFrame  (ZMap zmap) ;
+GtkWidget *zmapControlCreateNavigator(FooCanvas **canvas_out) ;
 void       zmapControlWindowDestroy    (ZMap zmap) ;
 
 void zmapControlTopLevelKillCB(ZMap zmap) ;
@@ -150,6 +130,12 @@ void zmapControlLoadCB        (ZMap zmap) ;
 void zmapControlResetCB       (ZMap zmap) ;
 void zmapControlNewCB         (ZMap zmap, char *testing_text) ;
 
+
+void zmapRecordFocus(ZMapPane pane) ; 
+ZMapPane zmapAddPane(ZMap zmap, char orientation) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean zMapDisplay(ZMap        zmap,
 		     Activate_cb act_cb,
 		     Calc_cb     calc_cb,
@@ -157,15 +143,30 @@ gboolean zMapDisplay(ZMap        zmap,
 		     char       *seqspec, 
 		     char       *fromspec, 
 		     gboolean        isOldGraph);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-void  addPane        (ZMap zmap, char orientation);
+
+
+
+GtkWidget *splitPane(ZMap zmap) ;
+GtkWidget *splitHPane(ZMap zmap) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* NOT CALLED FROM ANYWHERE ????? */
+void  closePane       (GtkWidget *widget, gpointer data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 
 void  drawNavigator  (ZMap zmap) ;
 void  drawWindow     (ZMapPane pane);
 void  zMapZoomToolbar(ZMapWindow window);
 void  navScale       (FooCanvas *canvas, float offset, int start, int end);
 
-int          recordFocus               (GtkWidget *widget, GdkEvent *event, gpointer data); 
+
 
 void         navUpdate                 (GtkAdjustment *adj, gpointer p);
 void         navChange                 (GtkAdjustment *adj, gpointer p);
