@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 13 18:01 2004 (edgrif)
+ * Last edited: Jul 15 15:56 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.5 2004-07-14 09:15:39 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.6 2004-07-15 15:13:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -102,10 +102,11 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
 {
   zMapAssert(!view_cbs_G) ;
 
-  zMapAssert(callbacks && callbacks->button_click && callbacks->destroy) ;
+  zMapAssert(callbacks && callbacks->load_data && callbacks->button_click && callbacks->destroy) ;
 
   view_cbs_G = g_new0(ZMapViewCallbacksStruct, 1) ;
 
+  view_cbs_G->load_data = callbacks->load_data ;
   view_cbs_G->button_click = callbacks->button_click ;
   view_cbs_G->destroy = callbacks->destroy ;
 
@@ -228,10 +229,19 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      int port ;
 	      ZMapConnection connection ;
 
+	      /* There MUST be a host and a protocol, port is not needed for some protocols,
+	       * e.g. http, because it should be allowed to default. */
 	      machine = zMapConfigGetElementString(next_server, "host") ;
 	      port = zMapConfigGetElementInt(next_server, "port") ;
 	      protocol = zMapConfigGetElementString(next_server, "protocol") ;
 
+
+	      if (!machine || !protocol)
+		{
+		  zMapLogWarning("%s",
+				 "Found \"server\" stanza without valid \"host\" or \"protocol\", "
+				 "stanza was ignored.") ;
+		}
 	      if ((connection = zMapConnCreate(machine, port, protocol, zmap_view->sequence)))
 		{
 		  zmap_view->connection_list = g_list_append(zmap_view->connection_list, connection) ;
@@ -239,11 +249,12 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 		}
 	      else
 		{
-		  zMapWarning("Could not connect to %s protocol server "
-			      "on %s, port %s", protocol, machine, port) ;
+		  zMapLogWarning("Could not connect to %s protocol server "
+				 "on %s, port %s", protocol, machine, port) ;
 		}
 	    }
 
+	  /* Ought to return a gerror here........ */
 	  if (!connections)
 	    result = FALSE ;
 	}
@@ -344,6 +355,17 @@ char *zMapViewGetSequence(ZMapView zmap_view)
     sequence = zmap_view->sequence ;
 
   return sequence ;
+}
+
+
+ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view)
+{
+  ZMapFeatureContext features = NULL ;
+
+  if (zmap_view->state != ZMAPVIEW_DYING)
+    features = zmap_view->features ;
+
+  return features ;
 }
 
 
@@ -693,14 +715,30 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		{
 		  if (zmap_view->state == ZMAPVIEW_RUNNING)
 		    {
+		      
 		      zMapDebug("GUI: thread %x, got data\n",
 				zMapConnGetThreadid(connection)) ;
 
 		      /* Is this right....????? check my logic here....  */
 		      zMapConnSetReply(connection, ZMAP_REPLY_WAIT) ;
 		  
+
+
+		      /* What we really need to do is to merge the data here.......
+		       * for now we just set the pointer...
+		       * 
+		       * This should be a call to a merge function which merges new data
+		       * with existing data.....
+		       *  */
+		      zmap_view->features = (ZMapFeatureContext)data ;
+
+
 		      /* Signal the ZMap that there is work to be done. */
 		      displayDataWindows(zmap_view, data) ;
+
+		      /* signal our caller that we have data. */
+		      (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data) ;
+
 		    }
 		  else
 		    zMapDebug("GUI: thread %x, got data but ZMap state is - %s\n",
