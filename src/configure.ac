@@ -109,6 +109,7 @@ if $aceconn ; then
       AC_MSG_ERROR(... We currently need -lAceConn.  You cannot specify --without-ace-conn)
    else
       ACECONN_LIBS="-L$aceconn_location $ACECONN_LIBS"
+      ACECONN_CFLAGS="-I$aceconn_location/.."
    fi
 else
    FOUND_LIBS=
@@ -144,7 +145,7 @@ AC_SUBST(GTK_LIBS)
 ################################################################################
 
 AC_HEADER_STDC
-AC_CHECK_HEADERS([fcntl.h locale.h stdlib.h string.h strings.h sys/param.h unistd.h])
+AC_CHECK_HEADERS([fcntl.h locale.h stdlib.h string.h strings.h sys/param.h unistd.h AceConn.h popt.h])
 
 ################################################################################
 ################################################################################
