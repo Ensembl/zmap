@@ -17,13 +17,13 @@ PUB_HDRS = seqregion.h stringbucket.h zmapDraw.h zmapWindow.h
 
 WIND_SRC = seqregion.c stringbucket.c \
 	zmapbccol.c zmapcols.c zmapDraw.c \
-	zmapsequence.c zmapWindow.c zmapWindowFrame.c GFF_scaffold.c \
+	zmapWindow.c zmapWindowFrame.c GFF_scaffold.c \
 	zmapWindowDrawFeatures.c
 #WIND_SRC = zmapWindow.c zmapWindowFrame.c
 
 WIND_OBJ = seqregion.o stringbucket.o \
 	zmapbccol.o zmapcols.o zmapDraw.o \
-	zmapsequence.o zmapWindow.o zmapWindowFrame.o GFF_scaffold.o \
+	zmapWindow.o zmapWindowFrame.o GFF_scaffold.o \
 	zmapWindowDrawFeatures.o		
 #WIND_OBJ = zmapWindow.o zmapWindowFrame.o
 
