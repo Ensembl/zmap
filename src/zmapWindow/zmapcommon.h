@@ -1,4 +1,4 @@
-/*  Last edited: Apr 13 15:00 2004 (rnc) */
+/*  Last edited: Jun  9 11:47 2004 (rnc) */
 /*  file: zmapcommon.h
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -63,7 +63,9 @@ the _larger_ of the objects coordinates - ie the end coodinate.
 */
 
 typedef int Coord;
+typedef float ScreenCoord;
 typedef int InvarCoord;
+typedef int   VisibleCoord;
 
 typedef int methodID;
 
