@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 21 17:59 2004 (edgrif)
+ * Last edited: Apr  6 16:57 2004 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapConfig_P.h,v 1.1 2004-01-21 18:15:31 edgrif Exp $
+ * CVS info:   $Id: zmapConfig_P.h,v 1.2 2004-04-08 16:46:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_P_H
@@ -36,10 +36,53 @@
 #include <ZMap/zmapConfig.h>
 
 
+/* some defines for configuration files.... */
+
+#define ZMAP_SEPARATOR "/"				    /* WE SHOULD BE ABLE TO CALL A FUNC
+							       FOR THIS..... */
+
+#define ZMAP_USER_CONFIG_DIR    ".ZMap"
+#define ZMAP_CONFIG_FILE        "ZMap"
+
+
+/* Holds a stanza copied from callers stanza in a form easier to process. */
+typedef struct
+{
+  char *name ;
+  GList *elements ;					    /* Array of stanza elements. */
+} MyZMapConfigStanzaStruct, *MyZMapConfigStanza ;
+
+
+
+
+
 typedef struct _ZMapConfigStruct
 {
+  char *config_dir ;
   char *config_file ;
+
+  GList *stanzas ;					    /* List of all config stanzas. */
+
 } ZMapConfigStruct ;
+
+
+
+/* These functions are internal to zmapConfig and should not be used outside of this package. */
+gboolean zmapGetUserConfig(ZMapConfig config) ;
+gboolean zmapMakeUserConfig(ZMapConfig config) ;
+
+gboolean zmapGetConfigStanzas(ZMapConfig config,
+			      ZMapConfigStanza spec_stanza, ZMapConfigStanzaSet *stanzas_out) ;
+
+ZMapConfigStanza zmapConfigCreateStanza(char *stanza_name) ;
+ZMapConfigStanza zmapConfigCopyStanza(ZMapConfigStanza stanza_in) ;
+void zmapConfigDestroyStanza(ZMapConfigStanza stanza) ;
+
+ZMapConfigStanzaElement zmapConfigCreateElement(char *name, ZMapConfigElementType type) ;
+ZMapConfigStanzaElement zmapConfigCopyElement(ZMapConfigStanzaElement element_in) ;
+void zmapConfigCopyElementData(ZMapConfigStanzaElement element_in,
+			       ZMapConfigStanzaElement element_out) ;
+void zmapConfigDestroyElement(ZMapConfigStanzaElement element) ;
 
 
 #endif /* !ZMAP_CONFIG_P_H */
