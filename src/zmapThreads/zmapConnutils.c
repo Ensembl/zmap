@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan  8 16:27 2004 (edgrif)
+ * Last edited: Mar  1 14:26 2004 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapConnutils.c,v 1.2 2004-01-23 13:27:55 edgrif Exp $
+ * CVS info:   $Id: zmapConnutils.c,v 1.3 2004-03-03 12:06:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -203,17 +203,6 @@ void zmapCondVarDestroy(ZMapRequest thread_state)
 }
 
 
-/* Must be kept in step with declaration of ZMapThreadRequest enums in zmapConn_P.h */
-char *zmapVarGetRequestString(ZMapThreadRequest signalled_state)
-{
-  char *str_states[] = {"ZMAP_REQUEST_INIT", "ZMAP_REQUEST_WAIT", "ZMAP_REQUEST_TIMED_OUT",
-			"ZMAP_REQUEST_GETDATA", "ZMAP_REQUEST_EXIT"} ;
-
-  return str_states[signalled_state] ;
-}
-
-
-
 
 /* this set of routines manipulates the variable in the thread state struct but do not
  * involve the Condition Variable. */
@@ -375,16 +364,6 @@ void zmapVarDestroy(ZMapReply thread_state)
   return ;
 }
 
-
-
-/* Must be kept in step with declaration of ZMapThreadReply enums in zmapConn_P.h */
-char *zmapVarGetReplyString(ZMapThreadReply signalled_state)
-{
-  char *str_states[] = {"ZMAP_REPLY_INIT", "ZMAP_REPLY_WAIT",
-			"ZMAP_REPLY_GOTDATA", "ZMAP_REPLY_EXIT", "ZMAP_REPLY_DESTROYED"} ;
-
-  return str_states[signalled_state] ;
-}
 
 
 
