@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Mar 19 10:27 2004 (edgrif)
+ * Last edited: Jul  2 10:40 2004 (edgrif)
  * Created: Thu Mar 18 12:02:52 2004 (edgrif)
- * CVS info:   $Id: dasServer_P.h,v 1.1 2004-03-22 13:45:20 edgrif Exp $
+ * CVS info:   $Id: dasServer_P.h,v 1.2 2004-07-19 10:13:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef DAS_SERVER_P_H
@@ -56,6 +56,10 @@ typedef struct _DasServerStruct
   char *curl_errmsg ;
   char *last_errmsg ;					    /* The general das msg stuf, could be
 							       curl could be my code. */
+
+  /* this will not stay like this, it should more properly be a union of types of data that might
+   * be returned.... */
+  void *data ;
 
 } DasServerStruct, *DasServer ;
 

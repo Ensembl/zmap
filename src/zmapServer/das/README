@@ -19,3 +19,71 @@ For example to get a list of types of data you could issue this request:
 
 	http://dev.acedb.org/das/wormbase/1/type
 
+
+
+
+Some example queries and their replies:
+
+
+http://dev.wormbase.org/das/wormbase/1/feature/processed_transcript:curated/CDS:2L52.1?format=gff
+
+
+<?xml version="1.0" standalone="yes"?>
+
+<FEATURELIST
+      xmlns="http://www.biodas.org/ns/das/2.00"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xml:base="http://dev.wormbase.org/das/wormbase/1/feature/"
+      format="gff">
+II	curated	processed_transcript	1867	4663	.	+	.	ID=CDS:2L52.1;Note=Zinc+finger%2C+C2H2+type;Note=Zinc+finger%2C+C2H2+type;Gene=WBGene00007063;link=http%3A%2F%2Flocalhost%2Fdb%2Fget%3Fname%3D2L52.1%3Bclass%3DCDS
+II	curated	coding_exon	1867	1911	.	+	0	Parent=CDS:2L52.1
+II	curated	coding_exon	2506	2694	.	+	0	Parent=CDS:2L52.1
+II	curated	coding_exon	2738	2888	.	+	0	Parent=CDS:2L52.1
+II	curated	coding_exon	2931	3036	.	+	2	Parent=CDS:2L52.1
+II	curated	coding_exon	3406	3552	.	+	1	Parent=CDS:2L52.1
+II	curated	coding_exon	3802	3984	.	+	1	Parent=CDS:2L52.1
+II	curated	coding_exon	4201	4663	.	+	1	Parent=CDS:2L52.1
+</FEATURELIST>
+
+
+
+http://dev.wormbase.org/das/wormbase/1/feature/processed_transcript:curated/CDS:2L52.1?format=gff3
+
+<?xml version="1.0" standalone="yes"?>
+
+<FEATURELIST
+      xmlns="http://www.biodas.org/ns/das/2.00"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xml:base="http://dev.wormbase.org/das/wormbase/1/feature/"
+      format="gff3">
+II	curated	processed_transcript	1867	4663	.	+	.	ID=CDS:2L52.1;Note=Zinc+finger%2C+C2H2+type;Note=Zinc+finger%2C+C2H2+type;Gene=WBGene00007063;link=http%3A%2F%2Flocalhost%2Fdb%2Fget%3Fname%3D2L52.1%3Bclass%3DCDS
+II	curated	coding_exon	1867	1911	.	+	0	Parent=CDS:2L52.1
+II	curated	coding_exon	2506	2694	.	+	0	Parent=CDS:2L52.1
+II	curated	coding_exon	2738	2888	.	+	0	Parent=CDS:2L52.1
+II	curated	coding_exon	2931	3036	.	+	2	Parent=CDS:2L52.1
+II	curated	coding_exon	3406	3552	.	+	1	Parent=CDS:2L52.1
+II	curated	coding_exon	3802	3984	.	+	1	Parent=CDS:2L52.1
+II	curated	coding_exon	4201	4663	.	+	1	Parent=CDS:2L52.1
+</FEATURELIST>
+
+
+
+
+
+http://dev.wormbase.org/das/wormbase/1/feature/processed_transcript:curated/CDS:B0250.1?format=gff
+
+
+<?xml version="1.0" standalone="yes"?>
+
+<FEATURELIST
+      xmlns="http://www.biodas.org/ns/das/2.00"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xml:base="http://dev.wormbase.org/das/wormbase/1/feature/"
+      format="gff">
+V	curated	processed_transcript	20477735	20478859	.	+	.	ID=CDS:B0250.1;Note=Ribosomal+Proteins+L2;Note=rpl-2;Note=Ribosomal+Proteins+L2;Note=rpl-2;Confirmed_by=EST;Confirmed_by=EST;Gene=WBGene00004413;link=http%3A%2F%2Flocalhost%2Fdb%2Fget%3Fname%3DB0250.1%3Bclass%3DCDS
+V	curated	3_UTR	20478811	20478859	.	+	.	Parent=CDS:B0250.1
+V	curated	5_UTR	20477735	20477745	.	+	.	Parent=CDS:B0250.1
+V	curated	coding_exon	20477746	20478025	.	+	0	Parent=CDS:B0250.1
+V	curated	coding_exon	20478252	20478362	.	+	2	Parent=CDS:B0250.1
+V	curated	coding_exon	20478419	20478810	.	+	2	Parent=CDS:B0250.1
+</FEATURELIST>

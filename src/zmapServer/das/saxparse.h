@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Mar 18 15:29 2004 (edgrif)
+ * Last edited: Jul  2 09:32 2004 (edgrif)
  * Created: Wed Jan 28 16:17:58 2004 (edgrif)
- * CVS info:   $Id: saxparse.h,v 1.1 2004-03-22 13:45:20 edgrif Exp $
+ * CVS info:   $Id: saxparse.h,v 1.2 2004-07-19 10:13:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef SAXPARSE_H
@@ -36,7 +36,7 @@
 
 typedef struct SaxParserStructName *SaxParser ;
 
-SaxParser saxCreateParser(void) ;
+SaxParser saxCreateParser(void *user_data) ;
 
 gboolean saxParseData(SaxParser parser, void *data, int size) ;
 

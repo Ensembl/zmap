@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Mar 19 09:30 2004 (edgrif)
+ * Last edited: Jul  2 14:55 2004 (edgrif)
  * Created: Wed Jan 28 16:17:58 2004 (edgrif)
- * CVS info:   $Id: saxparse_P.h,v 1.1 2004-03-22 13:45:20 edgrif Exp $
+ * CVS info:   $Id: saxparse_P.h,v 1.2 2004-07-19 10:13:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef SAXPARSE_P_H
@@ -37,13 +37,30 @@
 typedef enum {SAXPARSE_NOWHERE, SAXPARSE_STARTDOC,
 	      SAXPARSE_START, SAXPARSE_INSIDE, SAXPARSE_END, SAXPARSE_ENDDOC} SaxParseState ;
 
+/* For an XML tag holds the element name and attributes, i.e.   <element_name attributes>
+ * Used to track which tag we are processing. */
+typedef struct SaxTagStructName
+{
+  char *element_name ;
+
+  char **attributes ;
+} SaxTagStruct, *SaxTag ;
+
+
 typedef struct SaxParserStructName
 {
   XML_Parser p ;
-  GQueue *tag_stack ;
+  gboolean debug ;
+
+  GQueue *tag_stack ;					    /* Stack of SaxTagStruct */
   int Depth ;
+
   GString *content ;
+
   char *last_errmsg ;
+
+  void *user_data ;					    /* Caller stores any data they need here. */
+
 } SaxParserStruct ;
 
 
