@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 15 15:29 2004 (edgrif)
+ * Last edited: Jun 17 13:52 2004 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.1 2004-06-15 14:37:35 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.2 2004-06-18 11:03:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -37,7 +37,7 @@
 
 
 
-/* Some defines for parsing stuff....my need v2 and v3 versions of these. */
+/* Some defines for parsing stuff....may need v2 and v3 versions of these. */
 enum {GFF_MANDATORY_FIELDS = 8, GFF_MAX_FIELD_CHARS = 50, GFF_MAX_FREETEXT_CHARS = 1000} ;
 
 
@@ -60,6 +60,9 @@ typedef enum
 
 
 
+  /* Some features need to be built up from multiple GFF lines so we keep associations
+   * of these features in arrays. The arrays are indexed via sources. These arrays are only used
+   * while building up the final arrays of features. */
 
 /* For each set of features that come from a single source, we keep an array of those features
  * but also a list of features that need to be built up from several GFF lines. */
@@ -86,8 +89,15 @@ typedef struct ZMapGFFParserFeatureSetStruct_
 typedef struct ZMapGFFParserStruct_
 {
   ZMapGFFParseState state ;
-  GError *error ;					    /* Holds recoverable error. */
+  GError *error ;					    /* Holds last parser error. */
   GQuark error_domain ;
+  gboolean stop_on_error ;				    /* Stop parsing if there is an error. */
+
+  int line_count ;					    /* Contains number of lines processed. */
+
+  gboolean SO_compliant ;				    /* TRUE => use only SO terms for
+							       feature types. */
+
 
   /* Header data, need to find all this for parsing to be valid. */
   gboolean done_version ;
@@ -101,29 +111,14 @@ typedef struct ZMapGFFParserStruct_
   char *sequence_name ;
   int sequence_start, sequence_end ;
 
-
-
-
-  /* Some features need to be built up from multiple GFF lines so we keep associations
-   * of these features in arrays. The arrays are indexed via sources. These arrays are only used
-   * while building up the final arrays of features. */
-  GData *feature_sets ;					    /* A list of arrays of features, the
-							       arrays are indexed via their
-							       "source". Hence each array contains
-							       features from a single source. */
+  GData *feature_sets ;					    /* A list of ZMapGFFParserFeatureSetStruct.
+							       There is one of these structs per
+							       "source". The struct contains among
+							       other things an array of all
+							       features for that source. */
 
   gboolean free_on_destroy ;				    /* TRUE => free all feature arrays
 							       when parser is destroyed. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Let's not worry about this for now.........we could even just return the array of arrays
-   * dynamically by zooming through the sources and extracting all the sources.... */
-
-  /* The final array of arrays of features. Each sub-array contains features that all have the
-   * same source. */
-  GArray *feature_sets ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 } ZMapGFFParserStruct ;
 

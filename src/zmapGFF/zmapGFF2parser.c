@@ -26,13 +26,14 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 15 15:27 2004 (edgrif)
+ * Last edited: Jun 17 16:34 2004 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.1 2004-06-15 14:37:35 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.2 2004-06-18 11:03:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
+#include <strings.h>
 #include <errno.h>
 #include <glib.h>
 #include <ZMap/zmapFeature.h>
@@ -56,7 +57,7 @@ static char *getFeatureName(char *attributes) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
 
-static gboolean formatType(char *feature_type, ZMapFeatureType *type_out) ;
+static gboolean formatType(gboolean SO_compliant, char *feature_type, ZMapFeatureType *type_out) ;
 static gboolean formatScore(char *score_str, gdouble *score_out) ;
 static gboolean formatStrand(char *strand_str, ZMapStrand *strand_out) ;
 static gboolean formatPhase(char *phase_str, ZMapPhase *phase_out) ;
@@ -64,6 +65,8 @@ static gboolean formatPhase(char *phase_str, ZMapPhase *phase_out) ;
 
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 void destroyFeatureArray(gpointer data) ;
+
+
 
 
 ZMapGFFParser zMapGFFCreateParser(void)
@@ -75,10 +78,14 @@ ZMapGFFParser zMapGFFCreateParser(void)
   parser->state = ZMAPGFF_PARSE_HEADER ;
   parser->error = NULL ;
   parser->error_domain = g_quark_from_string(ZMAP_GFF_ERROR) ;
+  parser->stop_on_error = FALSE ;
+
+  parser->line_count = 0 ;
+  parser->SO_compliant = FALSE ;
 
 
   parser->done_version = FALSE ;
-  parser->gff_version = 0 ;
+  parser->gff_version = -1 ;
 
   parser->done_source = FALSE ;
   parser->source_name = parser->source_version = NULL ;
@@ -117,6 +124,8 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 {
   gboolean result = FALSE ;
 
+  parser->line_count++ ;
+
   /* Look for the header information. */
   if (parser->state == ZMAPGFF_PARSE_HEADER)
     {
@@ -124,8 +133,9 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 	{
 	  /* returns FALSE for two reasons: there was a parse error, or the header section has
 	   * finished, for the latter we need to cancel the error. */
-	  if (parser->error)
+	  if (parser->error && parser->stop_on_error)
 	    {
+	      result = FALSE ;
 	      parser->state = ZMAPGFF_PARSE_ERROR ;
 	    }
 	  else
@@ -150,7 +160,7 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 	  /* THIS NEEDS WORK, ONCE I'VE SORTED OUT ALL THE PARSING STUFF...... */
 	  if (!(result = parseBodyLine(parser, line)))
 	    {
-	      if (parser->error)
+	      if (parser->error && parser->stop_on_error)
 		{
 		  result = FALSE ;
 		  parser->state = ZMAPGFF_PARSE_ERROR ;
@@ -178,11 +188,37 @@ GArray *zmapGFFGetFeatures(ZMapGFFParser parser)
 }
 
 
+/* If stop_on_error is TRUE the parser will not parse any further lines after it encounters
+ * the first error in the GFF file. */
+void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error)
+{
+  parser->stop_on_error = stop_on_error ;
+
+  return ;
+}
+
+
+/* If SO_compliant is TRUE the parser will only accept SO terms for feature types. */
+void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
+{
+  parser->SO_compliant = SO_compliant ;
+
+  return ;
+}
+
+
 /* Return the GFF version which the parser is using. This is determined from the GFF
  * input stream from the header comments. */
 int zMapGFFGetVersion(ZMapGFFParser parser)
 {
   return parser->gff_version ;
+}
+
+
+/* Return line number of last line processed (this is the same as the number of lines processed. */
+int zMapGFFGetLineNumber(ZMapGFFParser parser)
+{
+  return parser->line_count ;
 }
 
 
@@ -287,7 +323,8 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 	  if ((fields = sscanf(line, format_str, &version)) != 1)
 	    {
 	      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-					  "Bad ##gff-version line: \"%s\"", line) ;
+					  "Bad ##gff-version line %d: \"%s\"",
+					  parser->line_count, line) ;
 	      result = FALSE ;
 	    }
 	  else
@@ -307,7 +344,8 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 	  if ((fields = sscanf(line, format_str, &program[0], &version[0])) != 2)
 	    {
 	      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-					  "Bad ##source-version line: \"%s\"", line) ;
+					  "Bad ##source-version line %d: \"%s\"",
+					  parser->line_count, line) ;
 	      result = FALSE ;
 	    }
 	  else
@@ -329,7 +367,8 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 	  if ((fields = sscanf(line, format_str, &sequence_name[0], &start, &end)) != 3)
 	    {
 	      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-					  "Bad ##sequence-region line: \"%s\"", line) ;
+					  "Bad ##sequence-region line %d: \"%s\"",
+					  parser->line_count, line) ;
 	      result = FALSE ;
 	    }
 	  else
@@ -361,7 +400,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
  * a number. The only tricky bit is to get at the attributes and comments which have
  * white space in them, this scanf format string seems to do it:
  * 
- *  format_str = "%49s%49s%49s%d%d%49s%49s%49s %999[^#] %999c"
+ *  format_str = "%50s%50s%50s%d%d%50s%50s%50s %999[^#] %999c"
  *  
  *  " %999[^#]" Jumps white space after the last mandatory field and then gets everything up to
  *              the next "#", so this will fail if people put a "#" in their attributes !
@@ -380,10 +419,10 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
     source[GFF_MAX_FIELD_CHARS + 1] = {''}, feature_type[GFF_MAX_FIELD_CHARS + 1] = {''},
     score_str[GFF_MAX_FIELD_CHARS + 1] = {''}, strand_str[GFF_MAX_FIELD_CHARS + 1] = {''},
     phase_str[GFF_MAX_FIELD_CHARS + 1] = {''},
-    attributes[GFF_MAX_FIELD_CHARS + 1] = {''}, comments[GFF_MAX_FIELD_CHARS + 1] = {''} ;
+    attributes[GFF_MAX_FREETEXT_CHARS + 1] = {''}, comments[GFF_MAX_FREETEXT_CHARS + 1] = {''} ;
   int start = 0, end = 0 ;
   double score = 0 ;
-  char *format_str = "%49s%49s%49s%d%d%49s%49s%49s %999[^#] %999c" ; 
+  char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %1000[^#] %1000c" ; 
   int fields ;
 
 
@@ -394,7 +433,8 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
       < GFF_MANDATORY_FIELDS)
     {
       parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
-				  "Mandatory fields missing in GFF line: \"%s\"", line) ;
+				  "Mandatory fields missing in GFF line %d: \"%s\"",
+				  parser->line_count, line) ;
       result = FALSE ;
     }
   else
@@ -403,15 +443,26 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
       ZMapStrand strand ;
       ZMapPhase phase ;
 
+      /* I'm afraid I'm not doing assembly stuff at the moment, its not worth it....if I need
+       * to change this decision I can just this section.....
+       * Code just silently drops these lines.
+       *  */
+      if (g_ascii_strcasecmp(source, "assembly_tag") == 0)
+	{
+	  return TRUE ;
+	}
+
       if (strlen(sequence) == GFF_MAX_FREETEXT_CHARS
 	  || strlen(source) == GFF_MAX_FREETEXT_CHARS
-	  || (strlen(feature_type) == GFF_MAX_FREETEXT_CHARS || !formatType(feature_type, &type))
+	  || (strlen(feature_type) == GFF_MAX_FREETEXT_CHARS ||
+	      !formatType(parser->SO_compliant, feature_type, &type))
 	  || !formatScore(score_str, &score)
 	  || !formatStrand(strand_str, &strand)
 	  || !formatPhase(phase_str, &phase))
 	{
 	  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
-				  "Bad format GFF line: \"%s\"", line) ;
+				      "Bad format GFF line %d: \"%s\"",
+				      parser->line_count, line) ;
 	  result = FALSE ;
  	}
       else
@@ -438,13 +489,15 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   ZMapFeature feature = NULL ;
   char *first_attr = NULL ;
   ZMapGFFParserFeatureSet feature_set = NULL ; ;
-
+  gboolean has_name = TRUE ;
 
   /* Look for an explicit feature name for the GFF record, if none exists use the sequence
    * name itself. */
   if (!(feature_name = getFeatureName(attributes)))
-    feature_name = sequence ;
-
+    {
+      feature_name = sequence ;
+      has_name = FALSE ;
+    }
 
   /* Check if the "source" for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
@@ -497,8 +550,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
       /* THIS PIECE OF CODE WILL NEED TO BE CHANGED AS I DO MORE TYPES..... */
       /* If the feature is one that must be built up from several GFF lines then add it to
-       * our set of such features. */
-      if (feature_type != ZMAPFEATURE_HOMOL)
+       * our set of such features. There are arcane/adhoc rules in action here, any features
+       * that do not have their own feature_name  _cannot_  be multiline features as such features
+       * can _only_ be identified if they do have their own name. */
+
+      if (has_name
+	  && (feature_type == ZMAPFEATURE_SEQUENCE || feature_type == ZMAPFEATURE_TRANSCRIPT
+	      || feature_type == ZMAPFEATURE_EXON || feature_type == ZMAPFEATURE_INTRON))
 	{
 	  g_datalist_set_data(&(feature_set->multiline_features), feature_name, feature) ;
 	}
@@ -639,7 +697,7 @@ static char *getFeatureName(char *attributes)
 {
   char *feature_name = NULL ;
   int attr_fields ;
-  char *attr_format_str = "%49s %*[\"]%50[^\"]%*[\"]%*s" ;
+  char *attr_format_str = "%50s %*[\"]%50[^\"]%*[\"]%*s" ;
   char class[GFF_MAX_FIELD_CHARS + 1] = {''}, name[GFF_MAX_FIELD_CHARS + 1] = {''} ;
 
 
@@ -716,51 +774,65 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
  * Not all of these are below because I'm not sure what type they should be classified
  * in to.
  * 
+ * 
+ * If SO_compliant is TRUE then only recognised SO terms will be accepted for feature
+ * types, if FALSE then both SO and more the earlier more adhoc names will be accepted.
+ * 
  *  */
-gboolean formatType(char *feature_type, ZMapFeatureType *type_out)
+gboolean formatType(gboolean SO_compliant, char *feature_type, ZMapFeatureType *type_out)
 {
   gboolean result = FALSE ;
   ZMapFeatureType type = ZMAPFEATURE_INVALID ;
 
-  if (g_ascii_strcasecmp(feature_type, "Clone") == 0
-      || g_ascii_strcasecmp(feature_type, "Clone_right_end") == 0
-      || g_ascii_strcasecmp(feature_type, "Clone_left_end") == 0
-      || g_ascii_strcasecmp(feature_type, "utr") == 0
-      || g_ascii_strcasecmp(feature_type, "experimental") == 0
-      || g_ascii_strcasecmp(feature_type, "reagent") == 0
-      || g_ascii_strcasecmp(feature_type, "repeat") == 0
-      || g_ascii_strcasecmp(feature_type, "structural") == 0
-)
-    {
-      type = ZMAPFEATURE_BASIC ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "Pseudogene") == 0)
-    {
-      /* REALLY NOT SURE ABOUT THIS CLASSIFICATION......SHOULD IT BE A TRANSCRIPT ? */
-      type = ZMAPFEATURE_BASIC ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "SNP") == 0)
-    {
-      type = ZMAPFEATURE_VARIATION ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "Sequence") == 0)
-    {
-      type = ZMAPFEATURE_SEQUENCE ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "transcript") == 0)
-    {
-      type = ZMAPFEATURE_TRANSCRIPT ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "similarity") == 0)
-    {
-      type = ZMAPFEATURE_HOMOL ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "trans-splice_acceptor") == 0)
+
+  /* Is feature_type a SO term. */
+  if (g_ascii_strcasecmp(feature_type, "trans_splice_acceptor_site") == 0)
     {
       type = ZMAPFEATURE_BOUNDARY ;
     }
-  else if (g_ascii_strcasecmp(feature_type, "coding_exon") == 0
-	   || g_ascii_strcasecmp(feature_type, "exon") == 0)
+  else if (g_ascii_strcasecmp(feature_type, "transposable_element_insertion_site") == 0)
+    {
+      type = ZMAPFEATURE_VARIATION ;
+    }
+  if (g_ascii_strcasecmp(feature_type, "region") == 0)
+    {
+      type = ZMAPFEATURE_BASIC ;
+    }
+  else if (g_ascii_strcasecmp(feature_type, "virtual_sequence") == 0)
+    {
+      type = ZMAPFEATURE_SEQUENCE ;
+    }
+  else if (g_ascii_strcasecmp(feature_type, "reagent") == 0
+	   || g_ascii_strcasecmp(feature_type, "clone") == 0
+	   || g_ascii_strcasecmp(feature_type, "clone_end") == 0
+	   || g_ascii_strcasecmp(feature_type, "clone_end") == 0)
+    {
+      type = ZMAPFEATURE_BASIC ;
+    }
+  else if (g_ascii_strcasecmp(feature_type, "UTR") == 0)
+    {
+      /* this should in the end be part of a transcript..... */
+      type = ZMAPFEATURE_BASIC ;
+    }
+  else if (g_ascii_strcasecmp(feature_type, "pseudogene") == 0)
+    {
+      /* In SO terms this is a region but we don't have a basic "region" type that includes
+       * exons like structure...suggests we need to remodel our feature struct.... */
+      type = ZMAPFEATURE_TRANSCRIPT ;
+    }
+  else if (g_ascii_strcasecmp(feature_type, "experimental_result_region") == 0
+	   || g_ascii_strcasecmp(feature_type, "chromosomal_structural_element") == 0)
+    {
+      type = ZMAPFEATURE_BASIC ;
+    }
+
+  else if (g_ascii_strcasecmp(feature_type, "transcript") == 0
+	   || g_ascii_strcasecmp(feature_type, "protein_coding_primary_transcript") == 0
+	   || g_ascii_strcasecmp(feature_type, "CDS") == 0)
+    {
+      type = ZMAPFEATURE_TRANSCRIPT ;
+    }
+  else if (g_ascii_strcasecmp(feature_type, "exon") == 0)
     {
       type = ZMAPFEATURE_EXON ;
     }
@@ -768,7 +840,79 @@ gboolean formatType(char *feature_type, ZMapFeatureType *type_out)
     {
       type = ZMAPFEATURE_INTRON ;
     }
+  else if (g_ascii_strcasecmp(feature_type, "nucleotide_match") == 0
+	   || g_ascii_strcasecmp(feature_type, "expressed_sequence_match") == 0
+	   || g_ascii_strcasecmp(feature_type, "EST_match") == 0
+	   || g_ascii_strcasecmp(feature_type, "cDNA_match") == 0
+	   || g_ascii_strcasecmp(feature_type, "translated_nucleotide_match") == 0
+	   || g_ascii_strcasecmp(feature_type, "protein_match") == 0)
+    {
+      type = ZMAPFEATURE_HOMOL ;
+    }
+  else if (g_ascii_strcasecmp(feature_type, "repeat_region") == 0
+	   || g_ascii_strcasecmp(feature_type, "inverted_repeat") == 0
+	   || g_ascii_strcasecmp(feature_type, "tandem_repeat") == 0)
+    {
+      type = ZMAPFEATURE_BASIC ;
+    }
+  else if (g_ascii_strcasecmp(feature_type, "SNP") == 0)
+    {
+      type = ZMAPFEATURE_VARIATION ;
+    }
 
+
+  if (!SO_compliant)
+    {
+      if (g_ascii_strcasecmp(feature_type, "Clone_right_end") == 0)
+	{
+	  type = ZMAPFEATURE_BASIC ;
+	}
+      else if (g_ascii_strcasecmp(feature_type, "Clone") == 0
+	       || g_ascii_strcasecmp(feature_type, "Clone_left_end") == 0
+	       || g_ascii_strcasecmp(feature_type, "utr") == 0
+	       || g_ascii_strcasecmp(feature_type, "experimental") == 0
+	       || g_ascii_strcasecmp(feature_type, "reagent") == 0
+	       || g_ascii_strcasecmp(feature_type, "repeat") == 0
+	       || g_ascii_strcasecmp(feature_type, "structural") == 0)
+	{
+	  type = ZMAPFEATURE_BASIC ;
+	}
+      else if (g_ascii_strcasecmp(feature_type, "Pseudogene") == 0)
+	{
+	  /* REALLY NOT SURE ABOUT THIS CLASSIFICATION......SHOULD IT BE A TRANSCRIPT ? */
+	  type = ZMAPFEATURE_TRANSCRIPT ;
+	}
+      else if (g_ascii_strcasecmp(feature_type, "SNP") == 0)
+	{
+	  type = ZMAPFEATURE_VARIATION ;
+	}
+      else if (g_ascii_strcasecmp(feature_type, "Sequence") == 0)
+	{
+	  type = ZMAPFEATURE_SEQUENCE ;
+	}
+      else if (g_ascii_strcasecmp(feature_type, "transcript") == 0)
+	{
+	  type = ZMAPFEATURE_TRANSCRIPT ;
+	}
+      else if (g_ascii_strcasecmp(feature_type, "similarity") == 0
+	       || g_ascii_strcasecmp(feature_type, "transcription") == 0)
+	{
+	  type = ZMAPFEATURE_HOMOL ;
+	}
+      else if (g_ascii_strcasecmp(feature_type, "trans-splice_acceptor") == 0)
+	{
+	  type = ZMAPFEATURE_BOUNDARY ;
+	}
+      else if (g_ascii_strcasecmp(feature_type, "coding_exon") == 0
+	       || g_ascii_strcasecmp(feature_type, "exon") == 0)
+	{
+	  type = ZMAPFEATURE_EXON ;
+	}
+      else if (g_ascii_strcasecmp(feature_type, "intron") == 0)
+	{
+	  type = ZMAPFEATURE_INTRON ;
+	}
+    }
 
 
   if (type != ZMAPFEATURE_INVALID)

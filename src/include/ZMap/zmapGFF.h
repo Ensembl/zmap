@@ -28,9 +28,9 @@
  *              of ZMapFeatureStruct's, one for each GFF source.
  *              
  * HISTORY:
- * Last edited: Jun 15 15:20 2004 (edgrif)
+ * Last edited: Jun 17 16:33 2004 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF.h,v 1.1 2004-06-15 14:30:25 edgrif Exp $
+ * CVS info:   $Id: zmapGFF.h,v 1.2 2004-06-18 11:03:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_H
@@ -60,9 +60,15 @@ ZMapGFFParser zMapGFFCreateParser(void) ;
 
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
 
+void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error) ;
+
+void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant) ;
+
 GArray *zmapGFFGetFeatures(ZMapGFFParser parser) ;
 
 int zMapGFFGetVersion(ZMapGFFParser parser) ;
+
+int zMapGFFGetLineNumber(ZMapGFFParser parser) ;
 
 GError *zMapGFFGetError(ZMapGFFParser parser) ;
 
