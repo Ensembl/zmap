@@ -1,4 +1,4 @@
-/*  Last edited: Jul 22 15:03 2004 (rnc) */
+/*  Last edited: Jul 27 17:45 2004 (edgrif) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -27,19 +27,24 @@
 
 #include <glib.h>
 #include <ZMap/zmapDraw.h>
-#include <../zmapWindow/seqregion.h>			    /* Hack to compile for now... */
-
 
 
 
 
 /* function prototypes ***********************************************/
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void drawGene (FooCanvas *canvas) ;
 static void zMapPick (int box, double x, double y);
 static void navPick  (int box, double x, double y);
 static void navDrag  (float *x, float *y, gboolean isDone);
 static void navResize(void);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 
 /* functions ********************************************************/
 
@@ -52,23 +57,6 @@ void zmapDisplayText(FooCanvasGroup *group, char *text, char *colour, double x, 
 					    NULL);
   return;
 }
-
-
-void zmRegBox(ZMapPane pane, int box, ZMapColumn *col, void *arg)
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* hack to get everything to compile......... */
-
-  zMapPaneSetBox2Col(pane, col, box);
-  zMapPaneSetBox2Seg(pane, arg, box);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return;
-}
-
-
 
 void zmapDrawBox (FooCanvasItem *group, double x1, double y1, 
 	      double x2, double y2, 
@@ -202,8 +190,23 @@ float zmapDrawScale(FooCanvas *canvas, float offset, int start, int end)
 
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* all of this commented out because it is not called. */
+
+
+void zmRegBox(ZMapPane pane, int box, ZMapColumn *col, void *arg)
+{
+
+  zMapPaneSetBox2Col(pane, col, box);
+  zMapPaneSetBox2Seg(pane, arg, box);
+
+  return;
+}
+
+
 /* Coordinate stuff ****************************************************/
-/* commenting out as I'm not convinced we're going to use this
+
 VisibleCoord zmVisibleCoord(ZMapWindow window, Coord coord)
 {
   ZMapPane    pane   = zMapWindowGetFocuspane(window);
@@ -241,18 +244,17 @@ gboolean zmIsOnScreen(ZMapPane pane, Coord coord1, Coord coord2)
 
   return TRUE;
 }
-******** end of copout commenting out */
 
 
 /* internal functions **************************************************/
 
 /* zmRecalculate *******************************************************/
 
-/* we will need something like this, but not yet
+/* we will need something like this, but not yet */
 static gboolean zmRecalculate(ZMapWindow window, ZMapCallbackData *zMapCBData)
 {
-*/  /* derive the region for which we need data. */
-/*  int min, max;
+  /* derive the region for which we need data. */
+  int min, max;
 
   Calc_cb calc_cb = zMapCBData->calc_cb;
 
@@ -271,7 +273,7 @@ static gboolean zmRecalculate(ZMapWindow window, ZMapCallbackData *zMapCBData)
 /*  
   min -= 100000;
   max += 100000; *//* TODO elaborate this */
-/*
+
   if (min < 0)
     min = 0;
   if (max > zMapWindowGetRegionLength(window))
@@ -284,10 +286,8 @@ static gboolean zmRecalculate(ZMapWindow window, ZMapCallbackData *zMapCBData)
   
   return TRUE;
 }
-*/
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void zMapPick(int box, double x, double y)
 {
   ZMapColumn *col;
@@ -296,7 +296,7 @@ static void zMapPick(int box, double x, double y)
   static int oldBox = 0;
 
   /* don't actually know what this is doing
-  ** and not convinced I need to know today...  
+  ** and not convinced I need to know today...  */
   if (oldWindow && oldBox)
     {
       col = zMapPaneGetBox2Col(*oldWindow, oldBox);
@@ -317,10 +317,9 @@ static void zMapPick(int box, double x, double y)
       if (col && seg && col->selectFunc)
 	(*col->selectFunc)(*oldWindow, col, seg, oldBox, x, y, TRUE);
     }
-  */
+ 
   return;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 static void drawGene(FooCanvas *canvas)
@@ -473,6 +472,11 @@ static void navPick(int box, double x, double y)
       //      graphBoxDrag(box, navDrag);
     }
 }
+
+
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /************************** end of file *********************************/
