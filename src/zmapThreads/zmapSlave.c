@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Oct 18 10:28 2004 (edgrif)
+ * Last edited: Nov  9 10:43 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.17 2004-10-18 10:15:45 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.18 2004-11-09 14:43:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,17 +153,13 @@ void *zmapNewThread(void *thread_args)
     }
 
 
-  /* Now we have the added step of creating a sequence context from the sequence start/end data. */
-
+  /* Create a sequence context from the sequence and start/end data. */
   context = g_new0(ZMapServerSetContextStruct, 1) ;
   context->sequence = connection->sequence ;
   context->start = connection->start ;
   context->end = connection->end ;
   context->types = connection->types ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (zMapServerSetContext(thread_cb->server, connection->sequence, connection->start, connection->end)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   if (zMapServerSetContext(thread_cb->server, context)
       != ZMAP_SERVERRESPONSE_OK)
     {
@@ -173,11 +169,17 @@ void *zmapNewThread(void *thread_args)
       goto clean_up ;
     }
 
+  g_free(context) ;
+
 
   if (connection->load_features)
     {
       ZMapServerResponseType server_response ;
+      ZMapProtocolGetTypes req_types ;
       ZMapProtocoltGetFeatures req_features ;
+
+
+
 
       req_features = g_new0(ZMapProtocolGetFeaturesStruct, 1) ;
       req_features->request = ZMAP_PROTOCOLREQUEST_SEQUENCE ;
