@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 20 14:09 2004 (edgrif)
+ * Last edited: Oct 20 15:31 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.41 2004-10-20 13:13:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.42 2004-10-20 14:42:55 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -116,6 +116,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
   window->zoom_factor = 1 ; 
   window->step_increment = 10;
+  window->page_increment = 600;
 
 
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
@@ -151,6 +152,8 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
   /* you have to set the step_increment manually or the scrollbar arrows don't work.*/
   GTK_LAYOUT(canvas)->vadjustment->step_increment = window->step_increment;
   GTK_LAYOUT(canvas)->hadjustment->step_increment = window->step_increment;
+  GTK_LAYOUT(canvas)->vadjustment->page_increment = window->page_increment;
+
 
 
   /* This control block holds the state we need for controlling the canvas....should this be in
@@ -261,10 +264,9 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   GtkAdjustment *adjust;
   int direction = +1;
   ZMapCanvasDataStruct *canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
-  double x1, y1, x2, y2, scroll_height, new_height, adj_value = 0.0, width, height, dummy;
+  double x1, y1, x2, y2, scroll_height, new_height, adj_value = 0.0, width, height, unused;
   GtkRequisition req;
 
-  
 
   foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
   scroll_height = y2 - y1 + 1 ;
@@ -310,9 +312,11 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 	  if ((scroll_height * window->zoom_factor) > XWIN_MAXSIZE)
 	    {
 	      canvasData->reduced = TRUE;
-	      foo_canvas_c2w(window->canvas, x, y, &dummy, &y1);
+	      foo_canvas_c2w(window->canvas, x, y, &unused, &y1);
 	      new_height = XWIN_MAXSIZE/window->zoom_factor;
 	      y1 -= new_height/2.0;
+	      if (y1 < 1.0) 
+		y1 = 1.0;
 	      y2 = y1 + new_height;
 	      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
 	    }
@@ -329,8 +333,10 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 	  new_height = XWIN_MAXSIZE/(window->zoom_factor * 2.0);
 	  if (new_height < canvasData->seqLength)
 	    {
-	      foo_canvas_c2w(window->canvas, x, y, &dummy, &y1);
+	      foo_canvas_c2w(window->canvas, x, y, &unused, &y1);
 	      y1 -= new_height/2.0;
+	      if (y1 < 1.0) 
+		y1 = 1.0;
 	      y2 = y1 + new_height;
 	      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
 	    }
@@ -361,6 +367,14 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
     }
 
   g_datalist_foreach(&(canvasData->feature_context->feature_sets), hideUnhideColumn, canvasData) ;
+  
+  /* redraw the scale bar */
+  gtk_object_destroy(GTK_OBJECT(canvasData->scaleBarGroup));
+  canvasData->scaleBarGroup = zmapDrawScale(canvasData->canvas, 
+					    canvasData->scaleBarOffset, 
+					    window->zoom_factor,
+					    canvasData->feature_context->sequence_to_parent.c1, 
+					    canvasData->feature_context->sequence_to_parent.c2);
   
   return;
 }
