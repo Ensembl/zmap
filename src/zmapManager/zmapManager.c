@@ -25,16 +25,15 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: May  6 16:01 2004 (edgrif)
+ * Last edited: May 17 15:21 2004 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.7 2004-05-07 09:23:23 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.8 2004-05-17 16:33:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapManager_P.h>
-#include <ZMap/zmapConfig.h>
 
-static void managerCB(ZMap zmap, void *cb_data) ;
+static void zmapDestroyedCB(ZMap zmap, void *cb_data) ;
 static void removeZmapEntry(ZMapManager zmaps, ZMap zmap) ;
 
 
@@ -46,8 +45,6 @@ ZMapManager zMapManagerCreate(zmapAppCallbackFunc zmap_deleted_func, void *gui_d
   manager = g_new(ZMapManagerStruct, sizeof(ZMapManagerStruct)) ;
 
   manager->zmap_list = NULL ;
-
-  manager->config = zMapConfigCreate() ;
 
   manager->gui_zmap_deleted_func = zmap_deleted_func ;
   manager->gui_data = gui_data ;
@@ -63,8 +60,7 @@ gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, ZMap *zmap_out)
   gboolean result = FALSE ;
   ZMap zmap = NULL ;
 
-  if ((zmap = zMapCreate(sequence, (void *)zmaps, managerCB, zmaps->config))
-      && zMapConnect(zmap))
+  if ((zmap = zMapCreate(sequence, (void *)zmaps, zmapDestroyedCB)))
     {
       zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
       *zmap_out = zmap ;
@@ -74,17 +70,6 @@ gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, ZMap *zmap_out)
   return result ;
 }
 
-
-gboolean zMapManagerLoadData(ZMapManager zmaps_currently_unused, ZMap zmap)
-{
-  gboolean result = FALSE ;
-
-  /* For now I've put in a blank sequence, in the end we would like the user to be able
-   * to interactively set this.... */
-  result = zMapLoad(zmap, "") ;
-
-  return result ;
-}
 
 
 /* Reset an existing ZMap, this call will:
@@ -120,14 +105,24 @@ gboolean zMapManagerKill(ZMapManager zmaps, ZMap zmap)
   return result ;
 }
 
-
-/* A dummy entry at the moment.... */
+/* Frees all resources held by a zmapmanager and then frees the manager itself. */
 gboolean zMapManagerDestroy(ZMapManager zmaps)
 {
   gboolean result = TRUE ;
 
-  printf("zMapManagerDestroy() not implemented at the moment....\n") ;
-  
+  /* Free all the existing zmaps. */
+  if (zmaps->zmap_list)
+    {
+      GList *next_zmap ;
+
+      while ((next_zmap = g_list_next(zmaps->zmap_list)))
+	{
+	  removeZmapEntry(zmaps, (ZMap)(next_zmap->data)) ;
+	}
+    }
+
+  g_free(zmaps) ;
+
   return result ;
 }
 
@@ -136,7 +131,7 @@ gboolean zMapManagerDestroy(ZMapManager zmaps)
 
 /* Gets called when ZMap quits from "under our feet" as a result of user interaction,
  * we then make sure we clean up. */
-static void managerCB(ZMap zmap, void *cb_data)
+static void zmapDestroyedCB(ZMap zmap, void *cb_data)
 {
   ZMapManager zmaps = (ZMapManager)cb_data ;
 
