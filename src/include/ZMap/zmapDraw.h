@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Sep 21 14:42 2004 (rnc)
+ * Last edited: Oct  8 11:30 2004 (rnc)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.8 2004-09-27 09:14:57 rnc Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.9 2004-10-13 12:29:55 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -39,9 +39,11 @@
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapFeature.h>
 
+#define BORDER 5.0
 
 
-float zmapDrawScale(FooCanvas *canvas, float offset, double zoom_factor, int start, int end) ;
+float zmapDrawScale(FooCanvas *canvas, GtkWidget *scrolledWindow,
+		    float offset, double zoom_factor, int start, int end) ;
 void  zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 		   GdkColor *colour, double thickness);
 FooCanvasItem *zmapDrawBox(FooCanvasItem *group, 

@@ -1,4 +1,4 @@
-/*  Last edited: Sep 24 14:33 2004 (rnc) */
+/*  Last edited: Oct 13 09:14 2004 (rnc) */
 /*  file: zmapcontrol.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -108,10 +108,11 @@ void zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double
 }
                                                                                 
 
-float zmapDrawScale(FooCanvas *canvas, float offset, double zoom_factor, int start, int end)
+float zmapDrawScale(FooCanvas *canvas, GtkWidget *scrolledWindow, 
+		    float offset, double zoom_factor, int start, int end)
 {
   FooCanvasItem *group;
-  float mag = 1.0, cutoff, y; 
+  float mag = 1.0, cutoff; 
   int seqUnit;          /* spacing, in bases, of tick on scalebar */
   int subunit;
   int seqPos = 1;       /* where we are, in bases, in the sequence */
@@ -125,18 +126,19 @@ float zmapDrawScale(FooCanvas *canvas, float offset, double zoom_factor, int sta
   int ticks;            /* number of ticks on the scalebar */
   double x1, x2, y1, y2, height;  /* canvas attributes */
   GdkColor black, yellow;
+  GtkAdjustment *adj;
+  int cx,cy;
+  double wx, wy, wtop;
   
   gdk_color_parse("black", &black);
   gdk_color_parse("yellow", &yellow);
 
-  x1 = y1 = x2 = y2 = 0.0;
-  foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
-  height = y2 - y1;
+  adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(scrolledWindow));
 
-  ticks = height/scaleUnit;
+  ticks = adj->page_size/scaleUnit;
   seqUnit = (end - start)/ticks;
 
-  mag = height / (end - start);
+  mag = adj->page_size / (end - start);
   if (mag == 0.0) mag = 1.0;
   cutoff = 5/mag;
 
@@ -159,26 +161,31 @@ float zmapDrawScale(FooCanvas *canvas, float offset, double zoom_factor, int sta
 
   for (seqPos = start, scalePos = 0; seqPos < scaleEnd; seqPos += seqUnit, scalePos += scaleUnit)
     {
-      y = (float)(seqPos - start)*mag;
-      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-8, scalePos+5.0, offset, scalePos+5.0, &black, 1.0);
+      foo_canvas_c2w(canvas, 0, scalePos + BORDER, &wx, &wy);
+      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-8, wy, offset, wy, &black, 1.0);
       buf[0] = unitName[unitType] ; buf[1] = 0 ;
       sprintf (cp, "%d%s", seqPos/type, buf) ;
       if (width < strlen (cp))
         width = strlen (cp) ;
-      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", offset-20, scalePos+4.5); 
-
+      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", offset-20, wy); 
     }		     
 
   /* this is a separate block because sometimes I'm going to want not to run it  */
-  for (scalePos = 0; scalePos < height - 20; scalePos += scaleUnit/10)
-      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-4, scalePos+5.0, offset, scalePos+5.0, &black, 1.0);
-
+  for (scalePos = 0; scalePos < adj->page_size - 20; scalePos += scaleUnit/10)
+    {
+      foo_canvas_c2w(canvas, 0, scalePos + BORDER, &wx, &wy);
+      zmapDrawLine(FOO_CANVAS_GROUP(group), offset-4, wy, offset, wy, &black, 1.0);
+    }
  
-  zmapDrawLine(FOO_CANVAS_GROUP(group), offset+1, 0, offset+1, height-20, &black, 1.0); /* long vertical line */
+  /* just use the wy left over from the last loop */
+  foo_canvas_c2w(canvas, 0, BORDER, &wx, &wtop);
+  zmapDrawLine(FOO_CANVAS_GROUP(group), offset+1, wtop, offset+1, wy, &black, 1.0);   /* long vertical line */
 
-  zmapDrawBox(FOO_CANVAS_ITEM(group), offset-38, 0, offset-35, height, &black, &black);
+  /* black bar separates forward from reverse strands */
+  zmapDrawBox(FOO_CANVAS_ITEM(group), offset-38, wtop, offset-35, wy, &black, &black); 
+										    
 
-  return offset + width + 4 ;
+  return offset;
 }
 
 
