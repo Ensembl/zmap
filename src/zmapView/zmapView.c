@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb 10 16:12 2005 (edgrif)
+ * Last edited: Feb 10 17:02 2005 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.45 2005-02-10 16:43:46 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.46 2005-02-10 17:06:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -851,8 +851,11 @@ static void destroyZMapView(ZMapView zmap_view)
  */
 static void startStateConnectionChecking(ZMapView zmap_view)
 {
+#ifdef UTILISE_ALL_CPU_ON_DESKPRO203
   zmap_view->idle_handle = gtk_idle_add(zmapIdleCB, (gpointer)zmap_view) ;
-
+#endif /* UTILISE_ALL_CPU_ON_DESKPRO203 */ 
+  zmap_view->idle_handle = gtk_timeout_add(100, zmapIdleCB, (gpointer)zmap_view) ;
+  // WARNING: gtk_timeout_add is deprecated and should not be used in newly-written code. Use g_timeout_add() instead.
   return ;
 }
 
@@ -862,7 +865,7 @@ static void startStateConnectionChecking(ZMapView zmap_view)
  * to cancel itself.... */
 static void stopStateConnectionChecking(ZMapView zmap_view)
 {
-  gtk_idle_remove(zmap_view->idle_handle) ;
+  gtk_timeout_remove(zmap_view->idle_handle) ;
 
   return ;
 }
