@@ -26,16 +26,16 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 15:20 2004 (edgrif)
+ * Last edited: Feb 26 11:10 2004 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.4 2004-01-23 13:27:59 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.5 2004-03-03 12:09:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <zmapApp_P.h>
-
+#include <ZMap/zmapUtils.h>
 
 static void createThreadCB(GtkWidget *widget, gpointer data) ;
 
@@ -91,20 +91,24 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
 
   sequence = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->sequence_widg)) ;
 
-  zmap = zMapManagerAdd(app_context->zmap_manager, sequence) ;
-  /* ERROR HANDLING ETC.... */
+  if (!zMapManagerAdd(app_context->zmap_manager, sequence, &zmap))
+    {
+      zmapGUIShowMsg("Failed to create ZMap") ;
+    }
+  else
+    {
+      row_text[0] = zMapGetZMapID(zmap) ;
+      row_text[1] = zMapGetSequence(zmap) ;
+      row_text[2] = zMapGetZMapStatus(zmap) ;
+      row_text[3] = "blah, blah, blah" ;
+      
+      row = gtk_clist_append(GTK_CLIST(app_context->clist_widg), row_text) ;
+      gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, (gpointer)zmap) ;
+      
 
-  row_text[0] = zMapGetZMapID(zmap) ;
-  row_text[1] = zMapGetSequence(zmap) ;
-  row_text[2] = zMapGetZMapStatus(zmap) ;
-  row_text[3] = "rubbish" ;
-
-  row = gtk_clist_append(GTK_CLIST(app_context->clist_widg), row_text) ;
-  gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, (gpointer)zmap) ;
-
-
-  ZMAP_DEBUG(("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
+      ZMAP_DEBUG(("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
 		  (row + 1), row_text[0], row_text[1])) ;
+    }
 
   return ;
 }
