@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 13 13:42 2004 (edgrif)
+ * Last edited: Oct 14 16:25 2004 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.36 2004-10-14 10:20:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.37 2004-10-14 15:26:00 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,6 +41,9 @@
 #include <zmapWindow_P.h>
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapWindowDrawFeatures.h>
+
+#define PIXELS_PER_BASE 20.0   /* arbitrary text size to limit zooming in.  Must be tied
+			       ** in to actual text size dynamically some time soon. */
 
 static void dataEventCB        (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void canvasClickCB      (GtkWidget *widget, GdkEventClient *event, gpointer data) ;
@@ -276,48 +279,52 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   ZMapCanvasDataStruct *canvasData = g_object_get_data(G_OBJECT(window->canvas), "canvasData");
   double x1, y1, x2, y2, z, scroll_height, new_height;
   GtkRequisition req;
+  static int zoomCount = 0;
 
-  if (canvasData->column_position && zoom_factor < 1.0)
-    direction = -1;
+  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
+  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+  scroll_height = y2 - y1;
 
   /* long term I'm going to have to actually work out whether we're down to one base per line,
-  ** but for now this is somewhere in the right ballpark. */
-  if (window->zoom_factor < canvasData->seqLength * 0.064) 
-    {
-      foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
-      foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
-      scroll_height = y2 - y1;
-      
+  ** but for now this is somewhere in the right ballpark. Assuming 20 pixels per base for now. */
+  if (window->zoom_factor < PIXELS_PER_BASE || zoom_factor < 1.0 ) 
       window->zoom_factor *= zoom_factor ;
+  else printf("Reached zoom-in limit of < 1 base per line. %f\n", window->zoom_factor);
       
-      printf("B4: scroll_height * zoom: %f\n", scroll_height * window->zoom_factor);
-
-      /* There's an X-Windows limit of 32k on the dimensions, above which objects
-      ** are not drawn correctly, so we have to handle that here. */ 
+  /* There's an X-Windows limit of 32k on the dimensions, above which objects
+  ** are not drawn correctly, so we have to handle that here. */ 
+  if (canvasData->column_position && zoom_factor > 1.0)        /* ie we're zooming in  */
+    {
       if ((scroll_height * window->zoom_factor) > 30000)
 	{
 	  new_height = 30000.0/window->zoom_factor;
-	  printf("height will exceed 30000 - w->z %f, setting to %f\n", window->zoom_factor, new_height);
 	  foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, new_height);
 	}
-
-      gtk_layout_get_size(GTK_LAYOUT(window->canvas), &width, &height);
-      printf("B4 zoom: layout size: %d %d\n", width, height);
-      
-      foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
-
-      gtk_layout_get_size(GTK_LAYOUT(window->canvas), &width, &height);
-      printf("After: layout size: %d %d\n", width, height);
-      
-      /* scroll to the same point on the canvas as you were at before zooming */ 
-      adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
-      foo_canvas_scroll_to(window->canvas, x, adjust->value );
-      
-      /* The first time this function is called is before any of the columns have been drawn,
-      ** so hideUnhideColumn will fail if we call it then */
-      if (canvasData->column_position)
-	g_datalist_foreach(&(canvasData->feature_context->feature_sets), hideUnhideColumn, canvasData) ;
+      else
+	foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, canvasData->seqLength);
     }
+  else if (zoom_factor < 1.0)                                 /* zooming out */
+    {
+      if ((scroll_height * window->zoom_factor) < 30000)
+	{
+	  new_height = 30000.0/window->zoom_factor;
+	  if (new_height < canvasData->seqLength)
+	    foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, new_height);
+	  else
+	    foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, canvasData->seqLength);
+	}
+    }
+  
+  foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
+
+  /* scroll to the same point on the canvas as you were at before zooming */ 
+  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
+  foo_canvas_scroll_to(window->canvas, x, adjust->value );
+      
+  /* The first time this function is called is before any of the columns have been drawn,
+  ** so hideUnhideColumn will fail if we call it then */
+  if (canvasData->column_position)
+    g_datalist_foreach(&(canvasData->feature_context->feature_sets), hideUnhideColumn, canvasData) ;
 
   return;
 }
@@ -362,27 +369,30 @@ static void hideUnhideColumn(GQuark key_id, gpointer data, gpointer user_data)
 */
 void zMapWindowZoomOut(ZMapWindow window)
 {
-  double window_y, x1, y1, x2, y2;
+  double window_y, x1, y1, x2, y2, scroll_height;
   GtkAdjustment *adjust;
 
   adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow));
   window_y = adjust->page_size;
 
   foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+  scroll_height = y2 - y1;
 
-  if (y2 * window->zoom_factor > window_y)
+
+  /* stop zooming out when whole sequence is visible */
+  if (scroll_height * window->zoom_factor > window_y)
     {
-      if (y2 * window->zoom_factor * 0.5 > window_y)
+      if (scroll_height * window->zoom_factor * 0.5 > window_y)
 	zMapWindowZoom(window, 0.5) ;
       else
 	{
-	  window->zoom_factor = window_y / y2;
+	  window->zoom_factor = window_y / scroll_height;
 	  zMapWindowZoom(window, 1.0);
 	}
     }
   else
     {
-      window->zoom_factor = window_y / y2;
+      window->zoom_factor = window_y / scroll_height;
       zMapWindowZoom(window, 1.0);
     }
 
