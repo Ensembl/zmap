@@ -1,4 +1,4 @@
-/*  Last edited: Dec 13 14:55 2004 (edgrif) */
+/*  Last edited: Dec 20 09:51 2004 (edgrif) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -261,7 +261,12 @@ GtkWidget *splitHPane(ZMap zmap)
   /* focus on the new pane */
   zmapRecordFocus(new_pane) ;
 
+
+  /* I'm not happy this is right Rob, shouldn't this actually be obtained from a new view or an
+   * existing one.... */
   zmapControlWindowSetZoomButtons(zmap, ZMAP_ZOOM_MID);
+
+
 
   gtk_widget_set_sensitive(zmap->close_but, TRUE);
 
