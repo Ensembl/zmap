@@ -21,7 +21,8 @@ include $(MAKE_DIR)/common.defs
 # override any of the common defines that you need to here...
 #
 APP_DIR = zmapApp
-MAKE_DIRS = $(APP_DIR) zmapManager zmapControl zmapView zmapWindow zmapConfig zmapGFF zmapServer zmapThreads zmapUtils zmapNoThreads
+MAKE_DIRS = $(APP_DIR) zmapManager zmapControl zmapView zmapWindow zmapDraw \
+                       zmapConfig zmapGFF zmapServer zmapThreads zmapUtils zmapNoThreads
 
 DOXY_CONFIG = Doxyfile
 
