@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Nov  8 11:59 2004 (rnc)
+ * Last edited: Nov 12 10:37 2004 (rnc)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeature.c,v 1.2 2004-11-08 12:03:31 rnc Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.3 2004-11-12 10:42:45 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 static void contextDump_TD(ZMapFeatureContext feature_context, GIOChannel *channel);
 static void setDump_TD(GQuark key_id, gpointer data, gpointer user_data);
 static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data);
-static gboolean printLine(GIOChannel *channel, char *line);
+static gboolean printLine(GIOChannel *channel, gchar *line);
 
 
 
@@ -98,12 +98,16 @@ void zmapFeatureDump(ZMapFeatureContext feature_context, char *file, int format)
       /* close output file */
       if (channel)
 	{
-	  g_io_channel_shutdown(channel, TRUE, &channel_error);
+	  if (!g_io_channel_shutdown(channel, TRUE, &channel_error))
+	    {
+	      zMapShowMsg(ZMAP_MSG_EXIT, "Error closing output file: %s :%s\n", filepath, channel_error->message);
+	      g_error_free(channel_error);
+	    }
+	  else 
+	    zMapShowMsg(ZMAP_MSG_INFORMATION, "Sequence successfully dumped to file\n");
 	}
     }
-  
   g_free(filepath);
-  filepath = NULL;
 
   return;
 }
@@ -111,31 +115,30 @@ void zmapFeatureDump(ZMapFeatureContext feature_context, char *file, int format)
 
 static void contextDump_TD(ZMapFeatureContext feature_context, GIOChannel *channel)
 {
-  char   *line;
+  GString *line = g_string_sized_new(150);
 
   if (feature_context)
     {
-      line = g_strdup_printf("%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", 
-			     feature_context->sequence, 
-			     feature_context->parent,
-			     feature_context->parent_span.x1,
-			     feature_context->parent_span.x2,
-			     feature_context->sequence_to_parent.p1,
-			     feature_context->sequence_to_parent.p2,
-			     feature_context->sequence_to_parent.c1,
-			     feature_context->sequence_to_parent.c2,
-			     feature_context->features_to_sequence.p1,
-			     feature_context->features_to_sequence.p2,
-			     feature_context->features_to_sequence.c1,
-			     feature_context->features_to_sequence.c2
-			     );
+      g_string_printf(line, "%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", 
+		      feature_context->sequence, 
+		      feature_context->parent,
+		      feature_context->parent_span.x1,
+		      feature_context->parent_span.x2,
+		      feature_context->sequence_to_parent.p1,
+		      feature_context->sequence_to_parent.p2,
+		      feature_context->sequence_to_parent.c1,
+		      feature_context->sequence_to_parent.c2,
+		      feature_context->features_to_sequence.p1,
+		      feature_context->features_to_sequence.p2,
+		      feature_context->features_to_sequence.c1,
+		      feature_context->features_to_sequence.c2
+		      );
 
       /* Only proceed if there's no problem printing the line */
-      if (printLine(channel, line) == TRUE)
+      if (printLine(channel, line->str) == TRUE)
 	g_datalist_foreach(&(feature_context->feature_sets), setDump_TD, channel);
 
-      g_free(line);
-      line = NULL;
+      g_string_free(line, FALSE);
     }
 
   return;
@@ -146,19 +149,17 @@ static void setDump_TD(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data;
   GIOChannel *channel = (GIOChannel*)user_data;
-  char *line;
+  GString *line = g_string_sized_new(50);
 
   if (feature_set)
     {
-      line = g_strdup_printf("%s\n", feature_set->source);
+      g_string_printf(line, "%s\n", feature_set->source);
 
       /* Only proceed if there's no problem printing the line */
-      if (printLine(channel, line) == TRUE)
+      if (printLine(channel, line->str) == TRUE)
 	g_datalist_foreach(&(feature_set->features), featureDump_TD, channel);
     
-      g_free(line);
-      line = NULL;
-
+      g_string_free(line, FALSE);
     }
   return;
 }
@@ -168,11 +169,9 @@ static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data;
   GIOChannel *channel = (GIOChannel*)user_data;
-  ZMapAlignBlock align;
-  ZMapSpan exon;
-  char *line, *type, *strand, *phase;
+  char *type, *strand, *phase;
+  GString *line = g_string_sized_new(150);
   gboolean unused;
-  int i;
 
   if (feature)
     {
@@ -180,20 +179,23 @@ static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data)
       strand = zmapLookUpEnum(feature->strand, STRAND_ENUM);
       phase  = zmapLookUpEnum(feature->phase, PHASE_ENUM);
 
-      line = g_strdup_printf("%d\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%f", 
-			     feature->id,
-			     feature->name,
-			     type,
-			     feature->x1,
-			     feature->x2,
-			     feature->method,
-			     feature->method_name,
-			     strand,
-			     phase,
-			     feature->score
-			     );
+      g_string_printf(line, "%d\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%f", 
+		      feature->id,
+		      feature->name,
+		      type,
+		      feature->x1,
+		      feature->x2,
+		      feature->method,
+		      feature->method_name,
+		      strand,
+		      phase,
+		      feature->score
+		      );
       if (feature->text)
-	line = g_strdup_printf("%s\t%s", line, feature->text);
+	{
+	  g_string_append_c(line, '\t');
+	  g_string_append  (line, feature->text);
+	}
 
       /* all these extra fields not required for now.
       *if (feature->type == ZMAPFEATURE_HOMOL)
@@ -237,11 +239,10 @@ static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data)
       *}
       */
 
-      line = g_strdup_printf("%s\n", line);
-      unused = printLine(channel, line);
+      g_string_append_c(line, '\n');
+      unused = printLine(channel, line->str);
 
-      g_free(line);
-      line = NULL;
+      g_string_free(line, FALSE);
     }
 
 
@@ -250,7 +251,7 @@ static void featureDump_TD(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
-static gboolean printLine(GIOChannel *channel, char *line)
+static gboolean printLine(GIOChannel *channel, gchar *line)
 {
   gboolean status = TRUE;
   int     bytes_written;
@@ -259,9 +260,7 @@ static gboolean printLine(GIOChannel *channel, char *line)
 
   if (channel)
     {
-      g_io_channel_write_chars(channel, line, -1, &bytes_written, &channel_error);
-      
-      if (channel_error)
+      if (!g_io_channel_write_chars(channel, line, -1, &bytes_written, &channel_error))
 	{
 	  zMapShowMsg(ZMAP_MSG_EXIT, "Error writing to output file: %30s :%s\n", line, channel_error->message);
 	  g_error_free(channel_error);
