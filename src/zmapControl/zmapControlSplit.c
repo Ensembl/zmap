@@ -1,4 +1,4 @@
-/*  Last edited: Nov 30 10:10 2004 (rnc) */
+/*  Last edited: Dec  2 16:08 2004 (rnc) */
 /*  file: zmapsplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -225,8 +225,6 @@ void addPane(ZMap zmap, char orientation)
 GtkWidget *splitPane(ZMap zmap)
 {
   ZMapPane new_pane ;
-  ZMapWindow window;
-  ZMapWindowZoomStatus zoom_status;
 
   /* shrink the old pane */
   shrinkPane(zmap) ;
@@ -237,7 +235,7 @@ GtkWidget *splitPane(ZMap zmap)
   /* focus on the new pane */
   zmapRecordFocus(new_pane) ;
 
-  zmapControlWindowSetZoomButtons(zmap, ZMAP_ZOOM_MID);
+  /*  zmapControlWindowSetZoomButtons(zmap, ZMAP_ZOOM_MID);*/
 
   gtk_widget_set_sensitive(zmap->close_but, TRUE);
 
@@ -400,6 +398,7 @@ void zmapRecordFocus(ZMapPane pane)
   GNode *node;
   ZMapWindow window;
   ZMapWindowZoomStatus zoom_status;
+  GdkColor color;
  
   /* point the parent window's focuspane pointer at this pane */
   if (pane)
@@ -417,6 +416,9 @@ void zmapRecordFocus(ZMapPane pane)
 		  unfocus, 
 		  NULL);
   gtk_frame_set_shadow_type(GTK_FRAME(pane->frame), GTK_SHADOW_IN);
+
+  gdk_color_parse("dark blue", &color);
+  gtk_widget_modify_bg(GTK_WIDGET(pane->frame), GTK_STATE_NORMAL, &color);
 
   /* make sure the zoom buttons are appropriately sensitised for this window. */
   if (pane->curr_view_window)
@@ -438,11 +440,14 @@ void zmapRecordFocus(ZMapPane pane)
 static int unfocus(GNode *node, gpointer data)
 {
   ZMapPane pane = (ZMapPane)node->data;
+  GdkColor color;
 
   if (pane) /* skip the actual root node which is not a valid widget */
     {
       gtk_frame_set_shadow_type(GTK_FRAME(pane->frame), GTK_SHADOW_NONE);
 
+      gdk_color_parse("dark grey", &color);
+      gtk_widget_modify_bg(GTK_WIDGET(pane->frame), GTK_STATE_NORMAL, &color);
     }
   return 0;  
 }
@@ -456,12 +461,16 @@ static void shrinkPane(ZMap zmap)
 {
   ZMapPane pane ;
   GNode *node = NULL;
+  GdkColor color;
 
   /* create a new vpane and hook the old scrolled window up to it */
   pane = g_new0(ZMapPaneStruct, 1) ;
   pane->zmap = zmap ;
   pane->pane = gtk_vpaned_new() ;
   pane->frame = gtk_frame_new(NULL) ; 
+
+  gdk_color_parse("dark grey", &color);
+  gtk_widget_modify_bg(GTK_WIDGET(zmap->focuspane->frame), GTK_STATE_NORMAL, &color);
 
   /* I think this is correct ??? */
   pane->view_parent_box = zmap->focuspane->view_parent_box ;
