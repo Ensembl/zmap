@@ -26,28 +26,24 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Jan 10 14:23 2005 (edgrif)
+ * Last edited: Mar  8 09:44 2005 (edgrif)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.13 2005-01-24 11:26:14 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.14 2005-03-08 15:31:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
 #define ZMAP_DRAW_H
 
-#include <gtk/gtk.h>
 #include <libfoocanvas/libfoocanvas.h>
-#include <ZMap/zmapWindow.h>
-#include <ZMap/zmapFeature.h>
-
-#define BORDER 5.0
 
 
-void  zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
-		   GdkColor *colour, double thickness);
-FooCanvasItem *zmapDrawBox(FooCanvasItem *group, 
+FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
+			    GdkColor *colour, double thickness) ;
+FooCanvasItem *zMapDrawBox(FooCanvasItem *group, 
 			   double x1, double y1, double x2, double y2, 
-			   GdkColor *line_colour, GdkColor *fill_colour);
-void  zmapDisplayText(FooCanvasGroup *group, char *text, char *colour, double x, double y);
+			   GdkColor *line_colour, GdkColor *fill_colour) ;
+FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
+			       double x, double y) ;
 
      
 #endif /* ZMAP_DRAW_H */

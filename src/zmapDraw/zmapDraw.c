@@ -22,12 +22,15 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Draw objects into the canvas, these may be unnecessary
+ *              if they map closely enough to the foo_canvas calls.
+ *              
+ * Exported functions: See ZMap/zmapDraw.h
+ *              
  * HISTORY:
- * Last edited: Feb 23 11:07 2005 (edgrif)
+ * Last edited: Mar  8 10:34 2005 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.23 2005-02-25 16:47:43 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.24 2005-03-08 15:31:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,51 +41,53 @@
 
 
 
-
-/* function prototypes ***********************************************/
-
-
-
-
-/* functions ********************************************************/
-
-void zmapDisplayText(FooCanvasGroup *group, char *text, char *colour, double x, double y)
+FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
+			       double x, double y)
 {
-  FooCanvasItem *item = foo_canvas_item_new(group,
-					    FOO_TYPE_CANVAS_TEXT,
-					    "x", x, "y", y, "text", text,
-					    "fill_color", colour,
-					    NULL);
-  return;
+  FooCanvasItem *item = NULL ;
+
+  item = foo_canvas_item_new(group,
+			     FOO_TYPE_CANVAS_TEXT,
+			     "x", x, "y", y,
+			     "text", text,
+			     "fill_color", colour,
+			     NULL);
+
+  return item ;
 }
 
 
 
-FooCanvasItem *zmapDrawBox (FooCanvasItem *group, 
-			    double x1, double y1, double x2, double y2, 
-			    GdkColor *line_colour, GdkColor *fill_colour)
+/* Note that we don't specify "width_units" or "width_pixels" for the outline
+ * here because by not doing so we get a one pixel wide outline that is
+ * completely enclosed within the item. If you specify either width, you end
+ * up with items that are larger than you expect because the outline is drawn
+ * centred on the edge of the rectangle. */
+FooCanvasItem *zMapDrawBox(FooCanvasItem *group, 
+			   double x1, double y1, double x2, double y2, 
+			   GdkColor *line_colour, GdkColor *fill_colour)
 {
-  FooCanvasItem *item;
+  FooCanvasItem *item = NULL ;
+  int line_width = 1 ;
 
   item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
 			     foo_canvas_rect_get_type(),
-			     "x1"               , x1 ,
-			     "y1"               , y1 ,
-			     "x2"               , x2 ,
-			     "y2"               , y2 ,
+			     "x1", x1, "y1", y1,
+			     "x2", x2, "y2", y2,
 			     "outline_color_gdk", line_colour,
-			     "fill_color_gdk"   , fill_colour,
-			     "width_units"      , 1.0,
-			     NULL);
+			     "fill_color_gdk", fill_colour,
+			     NULL) ;
 
   return item;                                                                       
 }
 
 
-
-void zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
-		  GdkColor *colour, double thickness)
+/* It may be good not to specify a width here as well (see zMapDrawBox) but I haven't
+ * experimented yet. */
+FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
+			    GdkColor *colour, double thickness)
 {
+  FooCanvasItem *item = NULL ;
   FooCanvasPoints *points;
 
   /* allocate a new points array */
@@ -95,27 +100,29 @@ void zmapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double
   points->coords[3] = y2;
 
   /* draw the line */
-  foo_canvas_item_new(group,
-		      foo_canvas_line_get_type(),
-		      "points"     , points,
-		      "fill_color_gdk" , colour,
-		      "width_units", thickness,
-		      NULL);
+  item = foo_canvas_item_new(group,
+			     foo_canvas_line_get_type(),
+			     "points", points,
+			     "fill_color_gdk", colour,
+			     "width_units", thickness,
+			     NULL);
 		    
   /* free the points array */
-  foo_canvas_points_free(points);
+  foo_canvas_points_free(points) ;
 
-  return;
+  return item ;
 }
 
 
                                                                                 
-
+/* This routine should not be enhanced or debugged (it does not draw the scale in a good
+ * way, the units are often bizarre, e.g. 10001, 20001 etc.). In the future the scale
+ * will be in a separate window. */
 FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 			     double offset, double zoom_factor, 
 			     int start, int end, int *major_units_out, int *minor_units_out)
 {
-  FooCanvasItem *group;
+  FooCanvasItem *group = NULL ;
   float unit, subunit ;
   int iUnit, iSubunit, type, unitType ;
   int width = 0 ;
@@ -124,6 +131,7 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   int pos;
   GdkColor black, white, yellow ;
   double x1, y1, x2, y2;
+
 
   gdk_color_parse("black", &black) ;
   gdk_color_parse("white", &white) ;
@@ -173,7 +181,6 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   if (end > y2)
     end = y2;
 
-
   group = foo_canvas_item_new(foo_canvas_root(canvas),
 			      foo_canvas_group_get_type(),
 			      "x", offset,
@@ -182,28 +189,42 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 
   /* yellow bar separates forward from reverse strands. Draw first so scalebar text
    * overlies it. */
-  zmapDrawBox(FOO_CANVAS_ITEM(group), 0.0, start, 3.0, end, &white, &yellow); 
+  zMapDrawBox(FOO_CANVAS_ITEM(group), 0.0, start, 3.0, end, &white, &yellow); 
+
+  zmapWindowPrintGroup(group) ;
 										    
   /* major ticks and text */
-  for (pos = start; pos < end; pos += iUnit)
+  for (pos = start ; pos < end ; pos += iUnit)
     {
-      zmapDrawLine(FOO_CANVAS_GROUP(group), 30.0, pos, 40.0, pos, &black, 1.0);
+      zMapDrawLine(FOO_CANVAS_GROUP(group), 30.0, pos, 40.0, pos, &black, 1.0);
+
+      zmapWindowPrintGroup(group) ;
+
       buf[0] = unitName[unitType] ;
       buf[1] = 0 ;
       sprintf(cp, "%d%s", pos/type, buf) ;
       if (width < strlen(cp))
         width = strlen(cp) ;
-      zmapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", (29.0 - (5.0 * width)), pos); 
-    }		     
+
+      zMapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", (29.0 - (5.0 * width)), pos); 
+
+      zmapWindowPrintGroup(group) ;
+    }
+
+  zmapWindowPrintGroup(group) ;
   
-  /* draw the vertical line of the scalebar. */
-  zmapDrawLine(FOO_CANVAS_GROUP(group), 40.0, start, 40.0, end, &black, 1.0);
+  /* draw the vertical line of the scalebar, note we should be drawing. */
+  zMapDrawLine(FOO_CANVAS_GROUP(group), 40.0, start - 1, 40.0, end - 1, &black, 1.0);
+
+  zmapWindowPrintGroup(group) ;
 
   /* minor ticks */
   for (pos = start; pos < end; pos += iSubunit)
     {
-      zmapDrawLine(FOO_CANVAS_GROUP(group), 35.0, pos, 40.0, pos, &black, 1.0) ;
+      zMapDrawLine(FOO_CANVAS_GROUP(group), 35.0, pos, 40.0, pos, &black, 1.0) ;
     }
+
+  zmapWindowPrintGroup(group) ;
 
   if (major_units_out)
     *major_units_out = iUnit ;
@@ -215,233 +236,3 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 }
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* all of this commented out because it is not called. */
-
-
-void zmRegBox(ZMapPane pane, int box, ZMapColumn *col, void *arg)
-{
-
-  zMapPaneSetBox2Col(pane, col, box);
-  zMapPaneSetBox2Seg(pane, arg, box);
-
-  return;
-}
-
-
-/* Coordinate stuff ****************************************************/
-
-VisibleCoord zmVisibleCoord(ZMapWindow window, Coord coord)
-{
-  ZMapPane    pane   = zMapWindowGetFocuspane(window);
-  ZMapRegion *region = zMapPaneGetZMapRegion(pane);
-
-  return coord - srCoord(region, zMapWindowGetOrigin(window)) + 1;
-}
-
-
-ScreenCoord zmScreenCoord(ZMapPane pane, Coord coord)
-{
-  ZMapRegion *region  = zMapPaneGetZMapRegion(pane);
-  Coord basesFromCent = coord - srCoord(region, zMapPaneGetCentre(pane));
-  float linesFromCent = ((float)basesFromCent)/zMapPaneGetBPL(pane);
-
-  return linesFromCent + (float)(zMapPaneGetHeight(pane)/2);
-}
-
-
-Coord zmCoordFromScreen(ZMapPane pane, ScreenCoord coord)
-{
-  float linesFromCent = coord - (zMapPaneGetHeight(pane)/2);
-  int basesFromCent = linesFromCent * zMapPaneGetBPL(pane);
-
-  return srCoord(zMapPaneGetZMapRegion(pane), zMapPaneGetCentre(pane)) + basesFromCent;
-}
-
-gboolean zmIsOnScreen(ZMapPane pane, Coord coord1, Coord coord2)
-{
-  if (zmScreenCoord(pane, coord2) < 0)
-    return FALSE;
-
-  if (zmScreenCoord(pane, coord1) > zMapPaneGetHeight(pane))
-    return FALSE;
-
-  return TRUE;
-}
-
-
-/* internal functions **************************************************/
-
-/* zmRecalculate *******************************************************/
-
-/* we will need something like this, but not yet */
-static gboolean zmRecalculate(ZMapWindow window, ZMapCallbackData *zMapCBData)
-{
-  /* derive the region for which we need data. */
-  int min, max;
-
-  Calc_cb calc_cb = zMapCBData->calc_cb;
-
-  min = zmCoordFromScreen(zMapWindowGetFocuspane(window), 0);
-  max = zmCoordFromScreen(zMapWindowGetFocuspane(window), 
-			  zMapWindowGetHeight(window));
-
-  if (min < 0)
-    min = 0;
-  if (max > zMapWindowGetRegionLength(window))
-    max = zMapWindowGetRegionLength(window);
-
-  if (min >= zMapWindowGetRegionArea(window, 1) &&
-      max <= zMapWindowGetRegionArea(window, 2))
-      return FALSE; *//* already covers area. */
-/*  
-  min -= 100000;
-  max += 100000; *//* TODO elaborate this */
-
-  if (min < 0)
-    min = 0;
-  if (max > zMapWindowGetRegionLength(window))
-    max = zMapWindowGetRegionLength(window);
-
-  (*calc_cb)(zMapCBData->seqRegion, min, max, 
-	     zMapWindowGetRegionReverse(window));  
-
-  buildCols(zMapWindowGetFocuspane(window));
-  
-  return TRUE;
-}
-
-
-static void zMapPick(int box, double x, double y)
-{
-  ZMapColumn *col;
-  void *seg;
-  static ZMapPane *oldWindow = NULL;
-  static int oldBox = 0;
-
-  /* don't actually know what this is doing
-  ** and not convinced I need to know today...  */
-  if (oldWindow && oldBox)
-    {
-      col = zMapPaneGetBox2Col(*oldWindow, oldBox);
-      seg = zMapPaneGetBox2Seg(*oldWindow, oldBox);
-      if (col && seg && col->selectFunc)
-	(*col->selectFunc)(*oldWindow, col, seg, oldBox, x, y, FALSE);
-      oldBox = 0;
-      oldWindow = NULL;
-    }
-  
-  /*  if (graphAssFind(&winAssoc, &oldWindow)) */
-  if (oldWindow)
-    {
-      oldBox = box;
-      col = zMapPaneGetBox2Col(*oldWindow, oldBox);
-      seg = zMapPaneGetBox2Seg(*oldWindow, oldBox);
-
-      if (col && seg && col->selectFunc)
-	(*col->selectFunc)(*oldWindow, col, seg, oldBox, x, y, TRUE);
-    }
- 
-  return;
-}
-
-
-
-static int dragBox;
-
-/* I believe navDrag is only called by navPick.  Since I don't 
-** know what navPick is doing, and don't now know what
-** navDrag is doing, I'm going to comment most of it out. */
-static void navDrag(float *x, float *y, gboolean isDone)
-{
-  static gboolean isDragging = FALSE;
-  static float oldY;
-  ZMapWindow window;
-  ZMapPane pane;
-  Coord startWind, endWind;
-  ScreenCoord startWindf, endWindf, lenWindf;
-  int height;
-  
-  /*  graphFitBounds(NULL, &height);
-    graphAssFind(&navAssoc, &window);
-
-    if (dragBox == zMapWindowGetFocuspane(window)->dragBox)
-    {
-      pane = zMapWindowGetFocuspane(window);
-      *x = zMapWindowGetScaleOffset(window) - 0.3;
-    }
-  else
-    return;
-
-  startWind =  zmCoordFromScreen(pane, 0);
-  endWind =  zmCoordFromScreen(pane, pane->graphHeight);
-  
-  startWindf = zMapWindowGetScreenCoord(window, startWind, height);
-  endWindf   = zMapWindowGetScreenCoord(window, endWind, height);
-  
-    startWindf = height * (startWind - zMapWindowGetCoord(window, "s"))
-                        / (zMapWindowGetCoord(window, "e") - zMapWindowGetCoord(window, "s"));
-
-    endWindf = height * (endWind - zMapWindowGetCoord(window, "s"))
-      / (zMapWindowGetCoord(window, "e") - zMapWindowGetCoord(window, "s"));
-  
-  lenWindf = endWindf - startWindf;
-  
-  
-  if (!isDragging)
-    {
-      oldY = *y;
-      isDragging = TRUE;
-    }
- 
-  if (*y < 0.0)
-    *y = 0.0;
-  else if (*y > height - lenWindf)
-    *y = height - lenWindf;
-
-  if (isDone)
-    {
-      isDragging = FALSE;
-      pane->centre = srInvarCoord(zMapWindowGetFocuspane(window)->zMapRegion, 
-				  srCoord(zMapWindowGetFocuspane(window)->zMapRegion, pane->centre) -
-				  (oldY - *y) * (float)(zMapWindowGetCoord(window, "e") - zMapWindowGetCoord(window, "s"))/(float)height);
-  */
-      /* TO DO: how do I get a zMapCBData into navDrag?
-	 ANS: when I convert the graphRegister to a g_signal_connect I can do that. 
-      if (zmRecalculate(window, zMapCBData))
-	drawNavigator(window);
-      */
-      printf("Well, I'm in navDrag\n");
-      
-      /* we don't have a pane or window, so can't do anything with them here.
-      **      drawWindow(pane); 
-      **      graphActivate(zMapWindowGetNavigator(window));
-      **    } */
-  
-}
-
-/* not sure what navPick is supposed to do, so not
-** going to give it a signal_connect for now. Params
-** are all wrong, anyway. */
-static void navPick(int box, double x, double y)
-{
-  ZMapWindow window;
-
-  /*  graphAssFind(&navAssoc, &window);
-
-  **  if (box == zMapWindowGetFocuspane(window)->dragBox)
-  **  {
-  **    dragBox = box;
-  **    graphBoxDrag(box, navDrag);
-  **  } */
-}
-
-
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-/************************** end of file *********************************/
