@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  8 11:59 2004 (rnc)
+ * Last edited: Nov  8 14:44 2004 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.30 2004-11-08 12:04:44 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.31 2004-11-08 15:02:50 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -330,14 +330,14 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   GdkColor       pink;
   ZMapColStruct  column;
   double         min_mag;
-  GString       *source = g_string_new(feature_set->source);
+  GString       *source = g_string_new(feature_set->source), *source_lower;
 
-  source = g_string_ascii_down(source);
+  source_lower = g_string_ascii_down(source);
 
   gdk_color_parse("white", &white);
   gdk_color_parse("pink", &pink);
 
-  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), source->str);
+  canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types), source_lower->str);
   zMapAssert(canvasData->thisType);
 
   /* context_key is used when a user clicks a canvas item.  The callback function needs to know
@@ -347,7 +347,6 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
   featureKeys = g_new0(FeatureKeyStruct, 1);
   featureKeys->feature_set = canvasData->feature_set;
-  featureKeys->context_key = canvasData->context_key;
   featureKeys->feature_key = 0;
 
   if (!canvasData->thisType) /* ie no method for this source */
@@ -499,7 +498,6 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 
   featureKeys = g_new0(FeatureKeyStruct, 1);
   featureKeys->feature_set = canvasData->feature_set;
-  featureKeys->context_key = canvasData->context_key;
   featureKeys->feature_key = key_id;
 
   /* decide whether this feature lives on the up or down strand */
@@ -543,8 +541,6 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	  g_object_set_data(G_OBJECT(object), itemDataKey, featureKeys);
 	  itemDataKey = "canvasData";
 	  g_object_set_data(G_OBJECT(object), itemDataKey, canvasData);
-	  itemDataKey = "position";
-	  /*	  g_object_set_data(G_OBJECT(object), itemDataKey, position); */
 	  
 	  break;
 
@@ -603,8 +599,6 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 		g_object_set_data(G_OBJECT(object), itemDataKey, featureKeys);
 		itemDataKey = "canvasData";
 		g_object_set_data(G_OBJECT(object), itemDataKey, canvasData);
-		itemDataKey = "position";
-		/*		g_object_set_data(G_OBJECT(object), itemDataKey, position); */
 
 		/* add transcript details for output */
 		g_string_append_printf(buf, " Transcript: %d %d\n", zMapSpan->x1, zMapSpan->x2);
@@ -649,7 +643,7 @@ static gboolean handleCanvasEvent(FooCanvasItem *item, GdkEventButton *event, gp
   const gchar *itemDataKey = "feature";
   FeatureKeys featureKeys;
   gboolean result = FALSE;  /* if not a BUTTON_PRESS, leave for any other event handlers. */
-  GString     *source;
+  GString     *source, *source_lower;
 
   /*
   printf("event type is %d\n", event->type);
@@ -660,7 +654,7 @@ static gboolean handleCanvasEvent(FooCanvasItem *item, GdkEventButton *event, gp
   if (event->type == GDK_BUTTON_RELEASE)  /* GDK_BUTTON_PRESS is 4, RELEASE 7 */
   {
     /* retrieve the FeatureKeyStruct from the clicked object, obtain the feature_set from that and the
-    ** feature from that, using the two GQuarks, context_key and feature_key. Then call the 
+    ** feature from that, using the GQuark feature_key. Then call the 
     ** click callback function, passing canvasData and feature so the details of the clicked object
     ** can be displayed in the info_panel. */
     featureKeys = g_object_get_data(G_OBJECT(item), itemDataKey);  
@@ -669,15 +663,13 @@ static gboolean handleCanvasEvent(FooCanvasItem *item, GdkEventButton *event, gp
 
     if (featureKeys && featureKeys->feature_key)
       {
-	feature_set = g_datalist_id_get_data(&(canvasData->feature_context->feature_sets),
-					     featureKeys->context_key);
-	feature = g_datalist_id_get_data(&(feature_set->features), featureKeys->feature_key); 
+	feature = g_datalist_id_get_data(&(featureKeys->feature_set->features), featureKeys->feature_key); 
 	zMapFeatureClickCB(canvasData, feature);   
-                         
-	source = g_string_new(feature_set->source);
-	source = g_string_ascii_down(source);
 
-	canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types),source->str); 
+	/* lowercase the source as all stored types are lowercase */                         
+	source = g_string_new(featureKeys->feature_set->source);
+	source_lower = g_string_ascii_down(source);
+	canvasData->thisType = (ZMapFeatureTypeStyle)g_datalist_get_data(&(canvasData->types),source_lower->str); 
 	zMapAssert(canvasData->thisType);
 									
   	zMapHighlightObject(item, canvasData);
@@ -695,10 +687,8 @@ static gboolean handleCanvasEvent(FooCanvasItem *item, GdkEventButton *event, gp
 
 	if (featureKeys)
 	  {
-	    feature_set = g_datalist_id_get_data(&(canvasData->feature_context->feature_sets),
-						 featureKeys->context_key);
 	    canvasData->feature = feature;
-	    columnClickCB(canvasData, feature_set);  /* display selectable list of features */
+	    columnClickCB(canvasData, featureKeys->feature_set);  /* display selectable list of features */
 	    result = TRUE;
 	  }
       }
