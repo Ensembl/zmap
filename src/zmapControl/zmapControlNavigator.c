@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul  8 14:22 2004 (edgrif)
+ * Last edited: Jul 15 15:51 2004 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.1 2004-07-15 09:38:37 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.2 2004-07-15 15:06:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,9 +36,11 @@
 #include <zmapControl_P.h>
 
 
+/* AGH, we need a navigator struct to hold navigator stuff.......... */
+
 /* Create the navigator window which is a scrolled window without scroll bars (?),
  * I am unsure why we use a scrolled window here....  with a canvas beneath it. */
-GtkWidget *zmapControlCreateNavigator(FooCanvas **canvas_out)
+GtkWidget *zmapControlNavigatorCreate(FooCanvas **canvas_out)
 {
   GtkWidget *navigator, *canvas ;
  
@@ -63,6 +65,22 @@ GtkWidget *zmapControlCreateNavigator(FooCanvas **canvas_out)
 
   return navigator ;
 }
+
+
+
+/* This functions does nothing because the code to update the navigator is not there yet. */
+void zmapControlNavigatorNewView(ZMapMapBlock sequence_to_parent)
+{
+  /* Need to use sequence_to_parent to set scroll bar size, scale etc..... */
+
+
+
+  return ;
+}
+
+
+
+
 
 
 
