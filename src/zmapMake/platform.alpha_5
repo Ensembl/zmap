@@ -28,7 +28,8 @@ TEST = /bin/test
 #PACKAGE_PATH = PKG_CONFIG_PATH=$(FOO_CANVAS_PATH)/lib/pkgconfig:/nfs/disk100/acedb/gtk2ins-canvas/lib/pkgconfig
 
 PACKAGE_CONFIG = /usr/local/gtk2/bin/pkg-config
-PACKAGE_PATH = PKG_CONFIG_PATH=/usr/local/gtk2/lib/pkgconfig
+PACKAGE_PATH = PKG_CONFIG_PATH=$(FOO_CANVAS_PATH)/lib/pkgconfig:/usr/local/gtk2/lib/pkgconfig
+
 
 POPT_LIB = /nfs/team71/acedb/edgrif/ZMap/popt/popt-ins/lib
 POPT_LIB_DIR = -L$(POPT_LIB)
