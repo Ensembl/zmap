@@ -24,19 +24,15 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Nov 15 15:41 2004 (edgrif)
+ * Last edited: Feb 10 15:57 2005 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.13 2004-11-19 13:46:27 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.14 2005-02-10 16:33:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
 #define ZMAP_UTILS_H
 
 #include <glib.h>
-
-
-/* Currently hard coded name of zmap directory for defaults, logs in users home directory. */
-#define ZMAP_USER_CONTROL_DIR    ".ZMap"
 
 
 
@@ -84,12 +80,12 @@ gboolean zMapLogStart(ZMapLog log) ;
 gboolean zMapLogStop(ZMapLog log) ;
 void zMapLogDestroy(ZMapLog log) ;
 
-const char *zMapGetControlDirName(void) ;
-char *zMapGetControlFileDir(char *directory_in) ;
-char *zMapGetDir(char *directory_in, gboolean home_relative) ;
-char *zMapGetFile(char *directory, char *filename) ;
-gboolean zMapFileEmpty(char *filepath) ;
+char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) ;
+char *zMapGetFile(char *directory, char *filename, gboolean make_file) ;
 char *zMapGetPath(char *path_in) ;
+gboolean zMapFileAccess(char *filepath) ;
+gboolean zMapFileEmpty(char *filepath) ;
+
 
 /* You can use ZMAP_MAKESTRING() to create a string version of a number:
  * 
