@@ -34,15 +34,20 @@ clean :
 
 
 
-# ok there is a bootstrapping problem here in that this makefile won't load unless
-# the makedepend file is already there...so need to attend to that....
+# There seems like a bootstrapping problem here in that the include below won't
+# happen unless the "depend" target below has run but it can't run because the
+# the include won't work. But in fact it all works as long as there is a file
+# there, it can be an empty file but it must be there and this is what the
+# "depend" target in the base directory does: make sure the file exists !
+# We remove the backup copy that makedepend automatically makes because it takes
+# up lots of space and we will have one for every platform...
 depend :
 	@$(TEST) -w $(MAKEDEPEND_FILE) || chmod u+w $(MAKEDEPEND_FILE)
-	makedepend -f$(MAKEDEPEND_FILE) -- $(CFLAGS) -- $(CURRENT_SRC) 
-
-#
+	makedepend -f$(MAKEDEPEND_FILE) -- $(CFLAGS) -- $(CURRENT_SRC)
+	rm -f $(MAKEDEPEND_FILE).bak
 
 include $(MAKEDEPEND_FILE)
+
 
 #
 # include some targets needed by all levels of make.
