@@ -1,4 +1,4 @@
-/*  Last edited: Jul  2 14:42 2004 (rnc) */
+/*  Last edited: Jul  7 14:11 2004 (edgrif) */
 /*  file: zmapcols.c
  *  Author: Simon Kelley (srk@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
@@ -109,6 +109,8 @@ void zMapDNAColumn(ZMapPane pane, ZMapColumn *col,
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void pruneCols(ZMapPane pane)
      /* Remove Columns which have invalid methods */
 { 
@@ -126,6 +128,8 @@ static void pruneCols(ZMapPane pane)
 	}
     }
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void insertCol(ZMapPane pane, methodID meth, ZMapFeatureType type)
 {
