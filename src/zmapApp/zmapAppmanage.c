@@ -19,16 +19,16 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Top level of application, creates ZMaps.
+ *              
+ * Exported functions: None, all functions internal to zmapApp.
  * HISTORY:
- * Last edited: Apr  2 11:51 2004 (edgrif)
+ * Last edited: May 17 15:20 2004 (edgrif)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.7 2004-04-08 16:28:14 edgrif Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.8 2004-05-17 16:25:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,6 @@
 #include <zmapApp_P.h>
 
 
-static void loadThreadCB(GtkWidget *widget, gpointer cb_data) ;
 static void stopThreadCB(GtkWidget *widget, gpointer cb_data) ;
 static void killThreadCB(GtkWidget *widget, gpointer data) ;
 static void checkThreadCB(GtkWidget *widget, gpointer cb_data) ;
@@ -55,8 +54,7 @@ static char *column_titles[ZMAP_NUM_COLS] = {"ZMap", "Sequence", "Status", "Last
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
 {
   GtkWidget *frame ;
-  GtkWidget *vbox, *scrwin, *clist, *hbox,
-    *load_button, *stop_button, *kill_button, *check_button ;
+  GtkWidget *vbox, *scrwin, *clist, *hbox, *stop_button, *kill_button, *check_button ;
 
   frame = gtk_frame_new("Manage ZMaps") ;
   gtk_frame_set_label_align( GTK_FRAME( frame ), 0.0, 0.0 ) ;
@@ -69,25 +67,27 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
   scrwin = gtk_scrolled_window_new(NULL, NULL) ;
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrwin),
 				 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
-  gtk_widget_set_usize(scrwin, -2, 150) ;		    /* -2  =>  leave value unchanged. */
+  gtk_widget_set_usize(scrwin, 600, 150) ;
   gtk_box_pack_start(GTK_BOX(vbox), scrwin, FALSE, FALSE, 0) ;
 
+
+
+  /* Apparently gtkclist is now deprecated, not sure what one uses instead....sigh... */
   app_context->clist_widg = clist = gtk_clist_new_with_titles(4, column_titles) ;
   gtk_signal_connect(GTK_OBJECT(clist), "select_row",
 		     GTK_SIGNAL_FUNC(selectRow), (gpointer)app_context) ;
   gtk_signal_connect(GTK_OBJECT(clist), "unselect_row",
 		     GTK_SIGNAL_FUNC(unselectRow), (gpointer)app_context) ;
   gtk_container_add (GTK_CONTAINER (scrwin), clist);
+  /* Sizing is all a hack, could do with much improvement. */
+  gtk_clist_set_column_width(GTK_CLIST(clist), 1, 100) ;
+  gtk_clist_set_column_width(GTK_CLIST(clist), 2, 150) ;
+  gtk_clist_set_column_width(GTK_CLIST(clist), 3, 150) ;
 
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
   gtk_container_add(GTK_CONTAINER(vbox), hbox);
-
-  load_button = gtk_button_new_with_label("Reload") ;
-  gtk_signal_connect(GTK_OBJECT(load_button), "clicked",
-		     GTK_SIGNAL_FUNC(loadThreadCB), (gpointer)app_context) ;
-  gtk_box_pack_start(GTK_BOX(hbox), load_button, FALSE, FALSE, 0) ;
 
   stop_button = gtk_button_new_with_label("Stop") ;
   gtk_signal_connect(GTK_OBJECT(stop_button), "clicked",
@@ -108,22 +108,6 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
 }
 
 
-
-
-static void loadThreadCB(GtkWidget *widget, gpointer cb_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)cb_data ;
-  int row ;
-
-  if (app_context->selected_zmap)
-    {
-      zMapManagerLoadData(app_context->zmap_manager, app_context->selected_zmap) ;
-    }
-
-
-  return ;
-}
-
 static void stopThreadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
@@ -131,15 +115,8 @@ static void stopThreadCB(GtkWidget *widget, gpointer cb_data)
 
   if (app_context->selected_zmap)
     {
-      printf("not implemented\n") ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* We need a call like this.....but it doesn't exist yet... */
-      zMapManagerStop(app_context->selected_zmap) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+      zMapManagerReset(app_context->selected_zmap) ;
     }
-
 
   return ;
 }
@@ -158,44 +135,23 @@ static void killThreadCB(GtkWidget *widget, gpointer cb_data)
 		 row, app_context->selected_zmap) ;
 
       zMapManagerKill(app_context->zmap_manager, app_context->selected_zmap) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* this all done by a callback now as we need to do this from several places and
-       * at the right time. */
-
-      app_context->selected_zmap = NULL ;
-
-      /* The remove call actually sets my data which I attached to the row to NULL
-       * which is v. naughty, so I reset my data in the widget to NULL to avoid it being
-       * messed with. */
-      gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, NULL) ;
-      gtk_clist_remove(GTK_CLIST(app_context->clist_widg), row) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     }
 
 
   return ;
 }
 
-/* this function was for testing really and needs to go or be updated..... */
+
+/* Does not work yet... */
 static void checkThreadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* REPLACE WITH A CALL TO DISPLAY STATE OF CONNECTIONS.....was for testing only anyway. */
-  ZMapCheckConnections(app_context->connections,
-		       zmapSignalData, app_context,
-		       zmapCleanUpConnection, app_context) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  printf("not implemented yet\n") ;
 
   return ;
 }
+
 
 static void selectRow(GtkCList *clist, gint row, gint column, GdkEventButton *event,
 		      gpointer cb_data)
@@ -203,12 +159,6 @@ static void selectRow(GtkCList *clist, gint row, gint column, GdkEventButton *ev
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
   app_context->selected_zmap = (ZMap)gtk_clist_get_row_data(clist, row) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapDebug(("GUI: select row %d with connection pointer: %x\n", row, connection)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
@@ -219,8 +169,6 @@ static void unselectRow(GtkCList *clist, gint row, gint column, GdkEventButton *
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
   app_context->selected_zmap = NULL ;
-
-  zMapDebug("GUI: unselect row %d\n", row) ;
 
   return ;
 }
