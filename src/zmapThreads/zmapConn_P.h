@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 13:53 2004 (edgrif)
+ * Last edited: Mar  1 14:24 2004 (edgrif)
  * Created: Thu Jul 24 14:36:08 2003 (edgrif)
- * CVS info:   $Id: zmapConn_P.h,v 1.2 2004-01-23 13:27:54 edgrif Exp $
+ * CVS info:   $Id: zmapConn_P.h,v 1.3 2004-03-03 12:05:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONN_PRIV_H
@@ -122,6 +122,5 @@ gboolean zmapVarGetValueWithData(ZMapReply thread_state, ZMapThreadReply *state_
 				 void **data_out, char **err_msg_out) ;
 void zmapVarDestroy(ZMapReply thread_state) ;
 
-char *zmapVarGetReplyString(ZMapThreadReply signalled_state) ;
 
 #endif /* !ZMAP_CONN_PRIV_H */
