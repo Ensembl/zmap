@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Dec 20 10:24 2004 (edgrif)
+ * Last edited: Jan  5 15:00 2005 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.41 2004-12-20 10:53:00 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.42 2005-01-07 12:12:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -148,7 +148,6 @@ ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end)
   return view ;
 }
 
-#include "../zmapView/zmapView_P.h"
 
 gboolean zMapConnectView(ZMap zmap, ZMapView view)
 {
