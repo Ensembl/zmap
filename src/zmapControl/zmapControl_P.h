@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Aug 11 16:47 2004 (rnc)
+ * Last edited: Aug 18 16:39 2004 (rnc)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.18 2004-08-18 15:00:25 rnc Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.19 2004-09-02 08:52:04 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -147,29 +147,12 @@ void zmapRecordFocus(ZMapPane pane) ;
 ZMapPane zmapAddPane(ZMap zmap, char orientation) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-gboolean zMapDisplay(ZMap        zmap,
-		     Activate_cb act_cb,
-		     Calc_cb     calc_cb,
-		     void       *region,
-		     char       *seqspec, 
-		     char       *fromspec, 
-		     gboolean        isOldGraph);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
 GtkWidget *splitPane(ZMap zmap) ;
 GtkWidget *splitHPane(ZMap zmap) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* NOT CALLED FROM ANYWHERE ????? */
 void  closePane       (GtkWidget *widget, gpointer data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 
