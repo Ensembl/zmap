@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 14 17:24 2004 (rnc)
+ * Last edited: Oct 18 07:48 2004 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.22 2004-10-15 16:12:41 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.23 2004-10-18 10:12:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,7 +64,7 @@ static ZMapFeatureCallbacks feature_cbs_G = NULL ;
  * 
  * Note that since this routine is called once per application we do not bother freeing it
  * via some kind of windows terminate routine. */
-void zMapFeatureInit(ZMapFeatureCallbacks callbacks)
+void zmapFeatureInit(ZMapFeatureCallbacks callbacks)
 {
   zMapAssert(!feature_cbs_G) ;
 

@@ -28,9 +28,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 15 16:59 2004 (rnc)
+ * Last edited: Oct 18 07:48 2004 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.38 2004-10-15 16:11:47 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.39 2004-10-18 10:12:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,7 +83,7 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   window_cbs_G->click   = callbacks->click ;
   window_cbs_G->destroy = callbacks->destroy ;
 
-  zMapFeatureInit(&feature_cbs_G);
+  zmapFeatureInit(&feature_cbs_G);
 
   return ;
 }

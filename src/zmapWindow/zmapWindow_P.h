@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 12 16:03 2004 (rnc)
+ * Last edited: Oct 14 15:31 2004 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.20 2004-10-13 12:34:58 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.21 2004-10-18 10:12:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -138,13 +138,27 @@ typedef struct _ZMapCanvasDataStruct
 } ZMapCanvasDataStruct;
 
 
+/* the function to be ultimately called when the user clicks on a canvas item. */
+typedef gboolean (*ZMapFeatureCallbackFunc)(ZMapCanvasDataStruct *canvasData, ZMapFeatureSet feature_set);
+
+
+/* Set of callback routines that allow the caller to be notified when events happen
+ * to a feature. */
+typedef struct _ZMapFeatureCallbacksStruct
+{
+  ZMapWindowFeatureCallbackFunc click ;
+  ZMapFeatureCallbackFunc       rightClick;
+} ZMapFeatureCallbacksStruct, *ZMapFeatureCallbacks ;
+
+
+
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 
 
 
-
+void zmapFeatureInit(ZMapFeatureCallbacks callbacks) ;
 
 
 #endif /* !ZMAP_WINDOW_P_H */
