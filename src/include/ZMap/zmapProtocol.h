@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep 17 14:25 2004 (edgrif)
+ * Last edited: Nov  9 10:39 2004 (edgrif)
  * Created: Wed Sep 15 11:46:18 2004 (edgrif)
- * CVS info:   $Id: zmapProtocol.h,v 1.2 2004-09-23 13:38:35 edgrif Exp $
+ * CVS info:   $Id: zmapProtocol.h,v 1.3 2004-11-09 14:29:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -44,13 +44,16 @@ typedef enum
   {
     ZMAP_PROTOCOLREQUEST_INVALID = 0,
 
-    ZMAP_PROTOCOLREQUEST_SEQUENCE				    /* Get the features. */
+    ZMAP_PROTOCOLREQUEST_TYPES,				    /* Get the feature types. */
+
+    ZMAP_PROTOCOLREQUEST_SEQUENCE			    /* Get the features. */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* these are things I would like to do but have not implemented yet.... */
 
     ZMAP_PROTOCOLREQUEST_NEWCONTEXT,			    /* Set a new sequence name/start/end. */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   } ZMapProtocolRequestType ;
 
@@ -59,13 +62,12 @@ typedef enum
 
 
 
-/* ALL request/response structs must include the below fields as their first fields in the struct
- * so that code can look in all such structs to decode them. */
+/* ALL request/response structs must include the fields from ZMapProtocolAnyStruct
+ * as their first fields in the struct so that code can look in all such structs to decode them. */
 typedef struct
 {
   ZMapProtocolRequestType request ;
 } ZMapProtocolAnyStruct, *ZMapProtocolAny ;
-
 
 
 typedef struct
@@ -81,15 +83,26 @@ typedef struct
 {
   ZMapProtocolRequestType request ;
 
-  ZMapFeatureContext feature_context_out ;
+  GData *types_out ;					    /* Returned list of available feature types. */
+} ZMapProtocolGetTypesStruct, *ZMapProtocolGetTypes ;
+
+
+typedef struct
+{
+  ZMapProtocolRequestType request ;
+
+  GData *types ;					    /* lists types of features required,
+							       NULL means "all". */
+  ZMapFeatureContext feature_context_out ;		    /* Returned feature sets. */
 } ZMapProtocolGetFeaturesStruct, *ZMapProtocoltGetFeatures ;
 
 
 typedef union
 {
   ZMapProtocolAny any ;
-  ZMapProtocolNewContext new_context ;
+  ZMapProtocolGetTypes get_types ;
   ZMapProtocoltGetFeatures get_features ;
+  ZMapProtocolNewContext new_context ;
 } ZMapProtocol ;
 
 
