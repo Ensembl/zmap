@@ -7,11 +7,13 @@ List of changes to put zmap into lace....
 1) otter/ensembl-otter/modules/Bio/Otter/Lace/Client.pm
 
 - add zmap port configuration
-
+  (Done rds)
 - add zmap window_id directory configuration
+  (Done rds)
+- Methods addded to Client
+  (Done edgrif)
 
-
-
+- add browser to otterlace options and correctly create the correct objects
 
 
 otter/tk/MenuCanvasWindow/XaceSeqChooser.pm
@@ -19,6 +21,10 @@ otter/tk/MenuCanvasWindow/XaceSeqChooser.pm
 - launch_zmap() and get_zmap_xwindow_id() added to launch zmap instead of xace.
 
 
+
+otter/PerlModules/Hum/Ace/XaceRemote.pm
+
+- copy to XzmapRemote && s/(x)?ace/zmap/
 
 
 
