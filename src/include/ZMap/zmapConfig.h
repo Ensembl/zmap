@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -22,11 +22,11 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: 
+ * Description:
  * HISTORY:
- * Last edited: Apr  8 17:16 2004 (edgrif)
+ * Last edited: Apr 23 23:10 2004 (edgrif)
  * Created: Fri Jan 23 13:10:06 2004 (edgrif)
- * CVS info:   $Id: zmapConfig.h,v 1.3 2004-04-08 16:21:16 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.h,v 1.4 2004-04-27 09:40:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_H
@@ -34,16 +34,20 @@
 
 #include <glib.h>
 
-/* Opaque type, contains config info. */
-typedef struct _ZMapConfigStruct *ZMapConfig ;
+
+/*! @addtogroup zmapconfig
+ * @{
+ *  */
 
 
-/* Supported data types for stanza fields. */
+/*!
+ * Supported data types for stanza elements. (see ZMapConfigStanzaElementStruct). */
 typedef enum {ZMAPCONFIG_INVALID, ZMAPCONFIG_BOOL, ZMAPCONFIG_INT,
 	      ZMAPCONFIG_FLOAT, ZMAPCONFIG_STRING} ZMapConfigElementType ;
 
 
-/* Defines an element of a stanza, is used both to give a stanza spec (in which
+/*!
+ * Defines an element of a stanza, is used both to specify a stanza spec (in which
  * case the "data" field must be used to give a default value), and also to return actual stanzas,
  * e.g. see zMapConfigGetStanzas().
  *
@@ -51,87 +55,88 @@ typedef enum {ZMAPCONFIG_INVALID, ZMAPCONFIG_BOOL, ZMAPCONFIG_INT,
  * you need to add a new enum for it to ZMapConfigElementType. */
 typedef struct
 {
-  char *name ;
-  ZMapConfigElementType type ;
+  char *name ;						    /*!< name of element. */
+  ZMapConfigElementType type ;				    /*!< element data type. */
   union
   {
-    gboolean b ;					    /* currently implemented as char 't' |
-							       'f' */
+    char     *s ;					    /*!< Must be used for static initialisation. */
+    gboolean b ;					    /*!< currently implemented as char 't' | 'f' */
     int      i ;
     float    f ;
-    char     *s ;
-  } data ;
-} ZMapConfigStanzaElementStruct, *ZMapConfigStanzaElement ;
+  } data ;						    /*!< element data.  */
+} ZMapConfigStanzaElementStruct,
+  *ZMapConfigStanzaElement ;				    /*!< pointer to element struct. */
 
+/*@{*/
+/*!
+ * A set of macros for retrieving the data for a named element from the given stanza.
+ *
+ * @param STANZA       The stanza containing the element.
+ * @param ELEMENT_NAME The name of the element containing the data.
+ * @return             data according to the the macro used.
+ * */
+#define zMapConfigGetElementBool(STANZA, ELEMENT_NAME)             \
+(zMapConfigFindElement((STANZA), (ELEMENT_NAME)))->data.b
+#define zMapConfigGetElementInt(STANZA, ELEMENT_NAME)              \
+(zMapConfigFindElement((STANZA), (ELEMENT_NAME)))->data.i
+#define zMapConfigGetElementFloat(STANZA, ELEMENT_NAME)            \
+(zMapConfigFindElement((STANZA), (ELEMENT_NAME)))->data.f
+#define zMapConfigGetElementString(STANZA, ELEMENT_NAME)           \
+(zMapConfigFindElement((STANZA), (ELEMENT_NAME)))->data.s
+/*@}*/
+
+/*!
+ * Config data available to application. */
+typedef struct _ZMapConfigStruct *ZMapConfig ;
+
+/*!
+ * A set of stanzas, probably read from a config. */
+typedef struct _ZMapConfigStanzaSetStruct *ZMapConfigStanzaSet ;
+
+/*!
+ * A single stanza, containing elements with associated data.
+ *
+ * Used both to specify a stanza to retrieve from a config and to return stanzas found in the config. */
+typedef struct _ZMapConfigStanzaStruct *ZMapConfigStanza ;
+
+
+
+/*! @} end of zmapconfig docs. */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
 /* I'd like to do this but it doesn't work because as far as the compiler is concerned
  * we could return any of the types so we get a type mismatch with the variable we
  * are assigning to....sigh...MUST LOOK UP UNIONS, surely there is a natty way
  * round this.... */
 #define zMapConfigGetElementValue(STANZA, ELEMENT_NAME, ELEMENT_PTR)            \
-((ELEMENT_PTR) = zMapConfigFindElement((STANZA), (ELEMENT_NAME)),           \
-  ((ELEMENT_PTR)->type == ZMAPCONFIG_BOOL ? (ELEMENT_PTR)->data.b               \
-   : ((ELEMENT_PTR)->type == ZMAPCONFIG_INT ? (ELEMENT_PTR)->data.i             \
-      : ((ELEMENT_PTR)->type == ZMAPCONFIG_FLOAT ? (ELEMENT_PTR)->data.f        \
-	 : (ELEMENT_PTR)->data.s))))
+((ELEMENT_PTR) = zMapConfigFindElement((STANZA), (ELEMENT_NAME)),               \
+  ((ELEMENT_PTR)->type == ZMAPCONFIG_BOOL ? (gboolean)((ELEMENT_PTR)->data.b)   \
+   : ((ELEMENT_PTR)->type == ZMAPCONFIG_INT ? (int)((ELEMENT_PTR)->data.i)             \
+      : ((ELEMENT_PTR)->type == ZMAPCONFIG_FLOAT ? (float)((ELEMENT_PTR)->data.f)        \
+	 : (char *)((ELEMENT_PTR)->data.s)))))
 
-/* For now I'll use these.... */
-#define zMapConfigGetElementBool(STANZA, ELEMENT_NAME)            \
-(zMapConfigFindElement((STANZA), (ELEMENT_NAME)))->data.b
-
-#define zMapConfigGetElementInt(STANZA, ELEMENT_NAME)            \
-(zMapConfigFindElement((STANZA), (ELEMENT_NAME)))->data.i
-
-#define zMapConfigGetElementFloat(STANZA, ELEMENT_NAME)            \
-(zMapConfigFindElement((STANZA), (ELEMENT_NAME)))->data.f
-
-#define zMapConfigGetElementString(STANZA, ELEMENT_NAME)            \
-(zMapConfigFindElement((STANZA), (ELEMENT_NAME)))->data.s
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+ZMapConfig zMapConfigCreate(char *config_file) ;
 
-/* May make these types internal only..... */
+gboolean zMapConfigFindStanzas(ZMapConfig config,
+			       ZMapConfigStanza stanza, ZMapConfigStanzaSet *stanzas_out) ;
 
-/* Holds a complete stanza. */
-typedef struct
-{
-  char *name ;
-  GList *elements ;					    /* Array of stanza elements. */
-} ZMapConfigStanzaStruct, *ZMapConfigStanza ;
+void zMapConfigDestroy(ZMapConfig config) ;
 
+void zMapConfigDeleteStanzaSet(ZMapConfigStanzaSet stanzas) ;
 
-
-/* Holds a list of stanzas. */
-typedef struct
-{
-  char *name ;
-  GList *stanzas ;					    /* Array of stanzas. */
-} ZMapConfigStanzaSetStruct, *ZMapConfigStanzaSet ;
-
-
-
-
-/* Utility to ease creating stanzas, elements must have last one with NULL name.... */
-ZMapConfigStanza zMapConfigMakeStanza(char *stanza_name, ZMapConfigStanzaElement elements) ;
-
+ZMapConfigStanza zMapConfigMakeStanza(char *stanza_name, ZMapConfigStanzaElementStruct elements[]) ;
 
 ZMapConfigStanza zMapConfigGetNextStanza(ZMapConfigStanzaSet stanzas, ZMapConfigStanza current_stanza) ;
 
 ZMapConfigStanzaElement zMapConfigFindElement(ZMapConfigStanza stanza, char *element_name) ;
 
-
-ZMapConfig zMapConfigCreate(char *config_file) ;
-
-gboolean zMapConfigGetStanzas(ZMapConfig config,
-			      ZMapConfigStanza stanza, ZMapConfigStanzaSet *stanzas_out) ;
-
-void zMapConfigDestroy(ZMapConfig config) ;
-
-
-
-
-/* Temp hack... */
-gboolean zMapConfigGetServers(ZMapConfig config, char ***servers) ;
+void zMapConfigDestroyStanza(ZMapConfigStanza stanza) ;
 
 
 
