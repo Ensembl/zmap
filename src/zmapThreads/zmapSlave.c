@@ -25,14 +25,18 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Jul 29 15:02 2004 (edgrif)
+ * Last edited: Sep 10 18:07 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.10 2004-08-02 14:06:11 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.11 2004-09-10 17:12:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 /* With some additional calls in the zmapConn code I could get rid of the need for
  * the private header here...... */
+
+/* YOU SHOULD BE AWARE THAT ON SOME PLATFORMS (E.G. ALPHAS) THERE SEEMS TO BE SOME INTERACTION
+ * BETWEEN pthread.h AND gtk.h SUCH THAT IF pthread.h COMES FIRST THEN gtk.h INCLUDES GET MESSED
+ * UP AND THIS FILE WILL NOT COMPILE.... */
 
 #include <strings.h>
 #include <pthread.h>
