@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Sep 29 13:09 2004 (edgrif)
+ * Last edited: Oct 13 14:39 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.13 2004-09-29 12:37:24 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.14 2004-10-14 10:18:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -147,14 +147,23 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence, int start, int end)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapServerSetContext context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       result = server->last_response = (server->funcs->set_context)(server->server_conn,
 								    sequence, start, end) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      result = server->last_response = (server->funcs->set_context)(server->server_conn, context) ;
+
       if (result != ZMAP_SERVERRESPONSE_OK)
 	server->last_error_msg = (server->funcs->errmsg)(server->server_conn) ;
     }

@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Sep 17 09:52 2004 (rnc)
+ * Last edited: Oct 13 14:39 2004 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.3 2004-09-17 08:56:34 rnc Exp $
+ * CVS info:   $Id: fileServer.c,v 1.4 2004-10-14 10:18:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,11 @@ static gboolean createConnection(void **server_out,
 				 char *host, int port,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapServerResponseType setContext(void *server, char *sequence, int start, int end) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static ZMapServerResponseType setContext(void *server, ZMapServerSetContext context) ;
 static ZMapServerResponseType request(void *server_conn, ZMapFeatureContext *feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server) ;
@@ -140,14 +144,18 @@ static ZMapServerResponseType openConnection(void *server_in)
 
 
 /* I'm not sure if I want to create any context here yet.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapServerResponseType setContext(void *server_in, char *sequence, int start, int end)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ; ;
   FileServer server = (FileServer)server_in ;
 
-  server->sequence = g_strdup(sequence) ;
-  server->start = start ;
-  server->end = end ;
+  server->sequence = g_strdup(context->sequence) ;
+  server->start = context->start ;
+  server->end = context->end ;
 
   return result ;
 }

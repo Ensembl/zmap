@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep 16 15:48 2004 (edgrif)
+ * Last edited: Oct 13 21:11 2004 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.3 2004-09-17 08:38:59 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.4 2004-10-14 10:18:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -44,6 +44,10 @@ typedef struct _AcedbServerStruct
   /* this is the virtual sequence context information, probably need to add to this... */
   char *sequence ;
   int start, end ;					    /* Limits of where we want data for. */
+
+  GData *types ;
+  char *method_str ;
+
   ZMapFeatureContext current_context ;
 
 } AcedbServerStruct, *AcedbServer ;

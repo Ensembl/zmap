@@ -27,9 +27,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Sep 29 13:08 2004 (edgrif)
+ * Last edited: Oct 13 14:27 2004 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.8 2004-09-29 12:37:23 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.9 2004-10-14 10:18:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -57,6 +57,18 @@ typedef enum {ZMAP_SERVERRESPONSE_OK,
 	      ZMAP_SERVERRESPONSE_TIMEDOUT, ZMAP_SERVERRESPONSE_SERVERDIED} ZMapServerResponseType ;
 
 
+/* Server context, includes the sequence to be fetched, start/end coords and other stuff needed
+ * to fetch server data. */
+typedef struct
+{
+  char *sequence ;
+  int start ;
+  int end ;
+  GData *types ;
+} ZMapServerSetContextStruct, *ZMapServerSetContext ;
+
+
+
 
 /* This routine must be called before any other server routines and must only be called once.
  * It is the callers responsibility to make sure this happens.
@@ -69,7 +81,16 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_
 
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence, int start, int end) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapServerSetContext context) ;
+
+
 
 ZMapServerResponseType zMapServerRequest(ZMapServer server, ZMapProtocolAny request) ;
 

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 29 13:20 2004 (edgrif)
+ * Last edited: Oct 13 14:48 2004 (edgrif)
  * Created: Thu Jul 24 14:37:18 2003 (edgrif)
- * CVS info:   $Id: zmapConn.c,v 1.11 2004-09-29 12:37:24 edgrif Exp $
+ * CVS info:   $Id: zmapConn.c,v 1.12 2004-10-14 10:18:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,19 +41,22 @@ gboolean zmap_thr_debug_G = TRUE ;
 
 
 static ZMapConnection createConnection(char *machine, int port, char *protocol, int timeout,
-				       char *sequence, int start, int end, gboolean load_features) ;
+				       char *sequence, int start, int end, GData *types,
+				       gboolean load_features) ;
 static void destroyConnection(ZMapConnection connection) ;
 
 
 ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, int timeout,
-			      char *sequence, int start, int end, gboolean load_features)
+			      char *sequence, int start, int end, GData *types,
+			      gboolean load_features)
 {
   ZMapConnection connection ;
   pthread_t thread_id ;
   pthread_attr_t thread_attr ;
   int status = 0 ;
 
-  connection = createConnection(machine, port, protocol, timeout, sequence, start, end, load_features) ;
+  connection = createConnection(machine, port, protocol, timeout,
+				sequence, start, end, types, load_features) ;
 
   /* ok to just set state here because we have not started the thread yet.... */
   zmapCondVarCreate(&(connection->request)) ;
@@ -220,7 +223,8 @@ void zMapConnDestroy(ZMapConnection connection)
 
 
 static ZMapConnection createConnection(char *machine, int port, char *protocol, int timeout,
-				       char *sequence, int start, int end, gboolean load_features)
+				       char *sequence, int start, int end,  GData *types,
+				       gboolean load_features)
 {
   ZMapConnection connection ;
 
@@ -234,6 +238,7 @@ static ZMapConnection createConnection(char *machine, int port, char *protocol, 
   connection->sequence =  g_strdup(sequence) ;
   connection->start = start ;
   connection->end = end ;
+  connection->types = types ;
 
   connection->load_features = load_features ;
 

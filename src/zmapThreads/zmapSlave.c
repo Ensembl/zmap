@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Sep 29 13:07 2004 (edgrif)
+ * Last edited: Oct 13 14:42 2004 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.15 2004-09-29 12:37:24 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.16 2004-10-14 10:18:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -100,7 +100,7 @@ void *zmapNewThread(void *thread_args)
   int status ;
   TIMESPEC timeout ;
   ZMapThreadRequest signalled_state ;
-
+  ZMapServerSetContext context ;
 
   ZMAP_THR_DEBUG(("%x: main thread routine starting....\n", connection->thread_id)) ;
 
@@ -154,7 +154,17 @@ void *zmapNewThread(void *thread_args)
 
 
   /* Now we have the added step of creating a sequence context from the sequence start/end data. */
+
+  context = g_new0(ZMapServerSetContextStruct, 1) ;
+  context->sequence = connection->sequence ;
+  context->start = connection->start ;
+  context->end = connection->end ;
+  context->types = connection->types ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (zMapServerSetContext(thread_cb->server, connection->sequence, connection->start, connection->end)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (zMapServerSetContext(thread_cb->server, context)
       != ZMAP_SERVERRESPONSE_OK)
     {
       thread_cb->thread_died = TRUE ;

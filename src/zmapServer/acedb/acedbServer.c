@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct  4 10:52 2004 (edgrif)
+ * Last edited: Oct 14 09:46 2004 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.12 2004-10-04 12:55:42 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.13 2004-10-14 10:18:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,17 +38,32 @@
 #include <zmapServerPrototype.h>
 #include <acedbServer_P.h>
 
+typedef struct
+{
+  gboolean first_method ;
+  GString *str ;
+} ZMapTypesStringStruct, *ZMapTypesString ;
+
 
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 char *host, int port,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapServerResponseType setContext(void *server, char *sequence, int start, int end) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static ZMapServerResponseType setContext(void *server, ZMapServerSetContext context) ;
+
 static ZMapServerResponseType request(void *server_conn, ZMapFeatureContext *feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static gboolean destroyConnection(void *server) ;
+
+static char *getMethodString(GData *types) ;
+static void addTypeName(GQuark key_id, gpointer data, gpointer user_data) ;
+
 
 static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
 static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
@@ -132,19 +147,31 @@ static ZMapServerResponseType openConnection(void *server_in)
 
 /* I'm not sure if I need to create a context in the server for acedb, really it would be a keyset
  * or a virtual sequence...don't know if we can do this via gif interface.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapServerResponseType setContext(void *server_in, char *sequence, int start, int end)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static ZMapServerResponseType setContext(void *server_in, ZMapServerSetContext context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
   gboolean status ;
   ZMapFeatureContext feature_context ;
+  char *method_str ;
 
-  server->sequence = g_strdup(sequence) ;
-  server->start = start ;
-  server->end = end ;
+  server->sequence = g_strdup(context->sequence) ;
+  server->start = context->start ;
+  server->end = context->end ;
+  server->types = context->types ;
+
+  /* May want this to be dynamic some time, i.e. redone every time there is a request ? */
+  server->method_str = getMethodString(context->types) ;
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  feature_context = zMapFeatureContextCreate() ;
 
   if (!(status = getSequenceMapping(server, feature_context)))
     {
@@ -272,6 +299,52 @@ static gboolean destroyConnection(void *server_in)
 
 
 
+
+
+static char *getMethodString(GData *types)
+{
+  char *type_names = NULL ;
+  ZMapTypesStringStruct types_data ;
+  GString *str ;
+  gboolean free_string = TRUE ;
+
+  str = g_string_new("") ;
+
+  str = g_string_append(str, "+method ") ;
+
+  types_data.first_method = TRUE ;
+  types_data.str = str ;
+  g_datalist_foreach(&types, addTypeName, (void *)&types_data) ;
+
+  if (*(str->str))
+    free_string = FALSE ;
+
+  type_names = g_string_free(str, free_string) ;
+
+  return type_names ;
+}
+
+/* N.B. the unused parameter would point to the struct for the type but we don't need it. */
+static void addTypeName(GQuark key_id, gpointer unused, gpointer user_data)
+{
+  char *type_name = NULL ;
+  ZMapTypesString types_data = (ZMapTypesString)user_data ;
+  GString *str = (GString *)user_data ;
+
+  type_name = (char *)g_quark_to_string(key_id) ;
+
+  if (types_data->first_method)
+    types_data->first_method = FALSE ;
+  else
+    types_data->str = g_string_append(types_data->str, "|") ;
+
+  types_data->str = g_string_append(types_data->str, type_name) ;
+
+  return ;
+}
+
+
+
 /* bit of an issue over returning error messages here.....sort this out as some errors many be
  * aceconn errors, others may be data processing errors, e.g. in GFF etc., e.g.
  * 
@@ -301,14 +374,42 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
   int reply_len = 0 ;
   gboolean found_gff_start ;
 
+  /* THIS IS A HACK FOR TESTING...WE SHOULD BE PASSED THIS AS PART OF THE SEQUENCE REQUEST... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  char *methods = "+method "
+    "RepeatMasker|RepeatMasker_LINE|RepeatMasker_Recon|RepeatMasker_simple"
+    "|RepeatMasker_SINE|RepeatMasker_Waterman"
+    "|GD_mRNA|GD_supported_mRNA|RNA|Saturated_vertebrate_mRNA"
+    "|supported_mRNA|supported_tRNA|vertebrate_mRNA"
+    "|EnsEMBL" ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  char *methods = "+method RepeatMasker|supported_mRNA|readpairs" ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  char *methods = "" ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
   /* Here we can convert the GFF that comes back, in the end we should be doing a number of
    * calls to AceConnRequest() as the server slices...but that will need a change to my
    * AceConn package.....
    * We make the big assumption that what comes back is a C string for now, this is true
    * for most acedb requests, only images/postscript are not and we aren't asking for them. */
 
-  acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d ; seqfeatures",
-				   server->sequence, server->start, server->end) ;
+  acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s ; seqfeatures",
+				   server->sequence, server->start, server->end,
+				   server->method_str) ;
 
   server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len) ;
     
@@ -666,7 +767,5 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
 
   return result ;
 }
-
-
 
 

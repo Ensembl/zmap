@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep 29 12:53 2004 (edgrif)
+ * Last edited: Oct 13 14:46 2004 (edgrif)
  * Created: Thu Jul 24 14:35:58 2003 (edgrif)
- * CVS info:   $Id: zmapConn.h,v 1.7 2004-09-29 12:37:23 edgrif Exp $
+ * CVS info:   $Id: zmapConn.h,v 1.8 2004-10-14 10:18:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONN_H
@@ -54,7 +54,8 @@ typedef struct _ZMapConnectionStruct *ZMapConnection ;
 
 
 ZMapConnection zMapConnCreate(char *machine, int port, char *protocol, int timeout,
-			      char *sequence, int start, int end, gboolean load_features) ;
+			      char *sequence, int start, int end, GData *types,
+			      gboolean load_features) ;
 
 void zMapConnRequest(ZMapConnection connection, void *request) ;
 gboolean zMapConnGetReply(ZMapConnection connection, ZMapThreadReply *state) ;
