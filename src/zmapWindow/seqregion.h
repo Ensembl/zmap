@@ -1,4 +1,4 @@
-/*  Last edited: Apr 15 12:41 2004 (rnc) */
+/*  Last edited: Jun 25 11:20 2004 (rnc) */
 /*  file: seqregion.h
  *  Copyright (c) Sanger Institute, 2003
  *-------------------------------------------------------------------
@@ -28,7 +28,7 @@
 #define SEQREGION_H
 
 #include <../acedb/acedb.h>
-#include <zmapcommon.h>
+#include <../zmapWindow/zmapcalls.h>
 
 
 /*
@@ -60,7 +60,7 @@ InvarCoord srInvarCoord(ZMapRegion *zMapRegion, Coord coord);
 Coord srCoord(ZMapRegion *zMapRegion, InvarCoord coord);
 
 /* Move from id to struct. */
-srMeth *srMethodFromID(ZMapRegion *zMapRegion, methodID id);
+srMeth *srMethodFromID(ZMapRegion *zmapRegion, methodID id);
 
 #endif
 /********************** end of file ************************/
