@@ -1,0 +1,24 @@
+logging...
+
+if you let glib log routines output the message you get something like:
+
+process:554514): ZMap-WARNING **: (zmapAppwindow.c, line 103) - try this for size...
+==================================
+
+the underlined bit if supplied by glib, BUT it does not do this if you use your
+own logging routine which is a bit irritating....
+
+There also seems to be bug in that glib seems to be messing about with fileptrs and hanging
+on to them so that printf statements either don't appear at all or appear in the logfile
+sometimes.....
+
+
+
+
+
+COORDINATES...
+
+By the time we get into the drawing code all features should be as  start,end where
+start <= end ALWAYS !  Any conversions should be done by the thread code on the basis
+of information from the servers...
+
