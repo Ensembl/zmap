@@ -15,10 +15,10 @@ WIND_PRIV_HDRS = zmapWindow_P.h
 PUB_HDRS = zmapDraw.h zmapWindow.h zmapWindowDrawFeatures.h
 
 WIND_SRC = zmapWindow.c zmapWindowFrame.c GFF_scaffold.c zmapWindowDrawFeatures.c \
-           zmapWindowList.c zmapWindowUtils.c
+           zmapWindowList.c zmapWindowUtils.c zmapWindowAlignment.c
 
 WIND_OBJ = zmapWindow.o zmapWindowFrame.o GFF_scaffold.o zmapWindowDrawFeatures.o \
-           zmapWindowList.o zmapWindowUtils.o
+           zmapWindowList.o zmapWindowUtils.o zmapWindowAlignment.o
 
 #
 # These must all be set for the common includes to work.
