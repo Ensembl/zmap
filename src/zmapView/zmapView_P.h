@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul  1 14:53 2004 (rnc)
+ * Last edited: Jul 13 16:14 2004 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.4 2004-07-02 13:50:25 rnc Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.5 2004-07-14 09:16:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -53,18 +53,35 @@ typedef struct _ZMapViewStruct
 
   GtkWidget *parent_widget ;
 
-  GList *window_list ;
+  GList *window_list ;					    /* Of ZMapViewWindowStruct. */
+
   GList *connection_list ;
 
   void *app_data ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapViewCallbackFunc app_destroy_cb ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   ZMapRegion  *zMapRegion; /* the region holding all the SEGS - may be redundant*/
 
 } ZMapViewStruct ;
 
+
+/* We have this because it enables callers to call on a window but us to get the corresponding view. */
+typedef struct _ZMapViewWindowStruct
+{
+  ZMapView parent_view ;
+  
+  ZMapWindow window ;
+} ZMapViewWindowStruct ;
+
+
+
 int          zMapWindowGetRegionLength (ZMapWindow window);
 Coord        zMapWindowGetRegionArea   (ZMapWindow window, int area);
 void         zMapWindowSetRegionArea   (ZMapWindow window, Coord area, int num);
 gboolean     zMapWindowGetRegionReverse(ZMapWindow window);
+
 #endif /* !ZMAP_VIEW_P_H */
