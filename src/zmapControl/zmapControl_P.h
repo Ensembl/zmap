@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Mar  9 12:07 2005 (edgrif)
+ * Last edited: Apr  6 17:03 2005 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.28 2005-03-09 14:54:45 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.29 2005-04-06 16:20:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -115,7 +115,8 @@ void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation o
 void zmapControlRemoveWindow(ZMap zmap) ;
 
 /* these may not need to be exposed.... */
-GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame, GtkOrientation orientation) ;
+GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
+				GtkOrientation orientation, char *view_title) ;
 
 
 void zmapControlWindowDoTheZoom(ZMap zmap, double zoom) ;
