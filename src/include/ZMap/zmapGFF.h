@@ -28,9 +28,9 @@
  *              of ZMapFeatureStruct's, one for each GFF source.
  *              
  * HISTORY:
- * Last edited: Aug  2 14:58 2004 (edgrif)
+ * Last edited: Nov  8 16:24 2004 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF.h,v 1.5 2004-08-02 14:04:14 edgrif Exp $
+ * CVS info:   $Id: zmapGFF.h,v 1.6 2004-11-09 14:41:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_H
@@ -45,7 +45,7 @@ typedef struct ZMapGFFParserStruct_ *ZMapGFFParser ;
 
 
 
-ZMapGFFParser zMapGFFCreateParser(gboolean parse_only) ;
+ZMapGFFParser zMapGFFCreateParser(GData *sources, gboolean parse_only) ;
 
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
 
