@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 27 16:32 2004 (edgrif)
+ * Last edited: Jul 28 14:09 2004 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.14 2004-07-27 15:35:16 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.15 2004-07-29 08:50:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -807,6 +807,17 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    zMapDebug("GUI: thread %x, got data but ZMap state is - %s\n",
 			      zMapConnGetThreadid(connection), zMapViewGetStatus(zmap_view)) ;
 
+		}
+	      else if (reply == ZMAP_REPLY_REQERROR)
+		{
+		  if (err_msg)
+		    zMapWarning("%s", err_msg) ;
+
+		  /* This means the request failed for some reason. */
+		  zMapDebug("GUI: thread %x, request to server failed....\n",
+			    zMapConnGetThreadid(connection)) ;
+
+		  g_free(err_msg) ;
 		}
 	      else if (reply == ZMAP_REPLY_DIED)
 		{
