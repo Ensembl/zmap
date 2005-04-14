@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Apr  5 15:36 2005 (edgrif)
+ * Last edited: Apr 13 09:26 2005 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.34 2005-04-05 14:37:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.35 2005-04-14 10:12:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -56,6 +56,12 @@ typedef struct _ZMapWindowStruct *ZMapWindow ;
  * is displayed at the maximum zoom. */
 typedef enum {ZMAP_ZOOM_INIT, ZMAP_ZOOM_MIN, ZMAP_ZOOM_MID, ZMAP_ZOOM_MAX,
 	      ZMAP_ZOOM_FIXED} ZMapWindowZoomStatus ;
+
+/* Should the original window and the new window be locked together for scrolling and zooming.
+ * vertical means that the vertical scrollbars should be locked together, specifying vertical
+ * or horizontal means locking of zoom as well. */
+typedef enum {ZMAP_WINLOCK_NONE, ZMAP_WINLOCK_VERTICAL, ZMAP_WINLOCK_HORIZONTAL} ZMapWindowLockType ;
+
 
 
 /* Data returned to the visibilityChange callback routine. */
@@ -112,7 +118,9 @@ typedef struct
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
-			  void *app_data, ZMapWindow old, ZMapFeatureContext features, GData *types) ;
+			  void *app_data, ZMapWindow old,
+			  ZMapFeatureContext features, GData *types,
+			  ZMapWindowLockType window_locking) ;
 void zMapWindowDisplayData(ZMapWindow window,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
 			   GData *types) ;
@@ -136,6 +144,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
 gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) ;
 void zMapWindowDestroyLists    (ZMapWindow window);
+void zMapWindowUnlock(ZMapWindow window) ;
 
 void zMapWindowDestroy(ZMapWindow window) ;
 
