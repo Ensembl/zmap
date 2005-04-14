@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Apr  6 17:34 2005 (edgrif)
+ * Last edited: Apr 13 09:56 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.52 2005-04-06 16:46:20 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.53 2005-04-14 10:06:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -219,7 +219,7 @@ ZMapViewWindow zMapViewMakeWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 /* Copies an existing window in a view.
  * Returns the window on success, NULL on failure. */
 ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
-				  ZMapWindow copy_window)
+				  ZMapWindow copy_window, ZMapWindowLockType window_locking)
 {
   ZMapViewWindow view_window = NULL ;
 
@@ -236,7 +236,8 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 
       if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->sequence,
 						 view_window, copy_window,
-						 zmap_view->features, zmap_view->types)))
+						 zmap_view->features, zmap_view->types,
+						 window_locking)))
 	{
 	  /* should glog and/or gerror at this stage....really need g_errors.... */
 	  /* should free view_window.... */
@@ -1500,4 +1501,7 @@ static void setZoomStatus(gpointer data, gpointer user_data)
   
   return;
 }
+
+
+
 

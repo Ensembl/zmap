@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Apr  6 17:32 2005 (edgrif)
+ * Last edited: Apr 13 09:51 2005 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.18 2005-04-06 16:46:19 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.19 2005-04-14 10:06:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -117,7 +117,7 @@ ZMapView zMapViewCreate(char *sequence,	int start, int end, void *app_data) ;
 
 ZMapViewWindow zMapViewMakeWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
-				  ZMapWindow copy_window) ;
+				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
 void zMapViewRemoveWindow(ZMapViewWindow view_window) ;
 gboolean zMapViewConnect(ZMapView zmap_view) ;
 gboolean zMapViewLoad (ZMapView zmap_view) ;

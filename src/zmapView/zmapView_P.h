@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Mar 24 18:41 2005 (edgrif)
+ * Last edited: Apr 14 11:05 2005 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.15 2005-04-05 14:25:43 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.16 2005-04-14 10:06:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -43,6 +43,7 @@ typedef struct _ZMapViewWindowStruct
   ZMapView parent_view ;
   
   ZMapWindow window ;
+
 } ZMapViewWindowStruct ;
 
 
@@ -61,12 +62,7 @@ typedef struct _ZMapViewConnectionStruct
 
   ZMapThreadRequest curr_request ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapConnection connection ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapThread thread ;
-
 
 } ZMapViewConnectionStruct, *ZMapViewConnection ;
 
@@ -109,20 +105,14 @@ typedef struct _ZMapViewStruct
   /* In DAS2 terminology methods are types...easy to change if we don't like the name.
    * These are the stylesheets in effect for the feature sets, this set is a merge of all the
    * sets from the various servers. */
-  GData          *types ;
+  GData *types ;
 
 } ZMapViewStruct ;
-
-
 
 
 
 void zmapViewBusy(ZMapView zmap_view, gboolean busy) ;
 gboolean zmapAnyConnBusy(GList *connection_list) ;
 
-int          zMapWindowGetRegionLength (ZMapWindow window);
-Coord        zMapWindowGetRegionArea   (ZMapWindow window, int area);
-void         zMapWindowSetRegionArea   (ZMapWindow window, Coord area, int num);
-gboolean     zMapWindowGetRegionReverse(ZMapWindow window);
 
 #endif /* !ZMAP_VIEW_P_H */
