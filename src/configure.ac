@@ -198,6 +198,7 @@ AC_CONFIG_FILES([Makefile
 zmapApp/Makefile
 zmapConfig/Makefile
 zmapControl/Makefile
+zmapControl/remote/Makefile
 zmapDocs/Makefile
 zmapDraw/Makefile
 zmapFeature/Makefile
