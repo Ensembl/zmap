@@ -30,14 +30,19 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar 31 10:27 2005 (edgrif)
+ * Last edited: Apr 14 11:34 2005 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.4 2005-04-05 14:37:54 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.5 2005-04-14 10:52:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <string.h>
 #include <gtk/gtk.h>
+#include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapControl_P.h>
 
@@ -49,56 +54,63 @@
 */
 
 
-/* THIS IS HACKED FROM acedb/w2/xremotemain.c it should all be in a separate header.... */
+/* These seem ok here.  At least they're all in one place then */
+static char *executeCommand(ZMap zmap, char *command_text) ; /* To execute one of the commands below */
 
-/* NOTE THAT WE NEED SOME MORE RETURN CODES LIKE "BAD_DATA" */
-
-/* strings written to the XREMOTE_RESPONSE_PROP atom by the server */
-#define XREMOTE_S_200_COMMAND_EXECUTED "200 command executed %s"
-#define XREMOTE_S_500_COMMAND_UNPARSABLE "500 unparsable command %s"
-#define XREMOTE_S_501_COMMAND_UNRECOGNIZED "501 unrecognized command %s"
-#define XREMOTE_S_502_COMMAND_NO_WINDOW "502 no appropriate window for %s"
-
-
-static char *executeCommand(ZMap zmap, char *command_text) ;
 static char *findFeature(ZMap zmap, char *command_text) ;
+static char *createClient(ZMap zmap, char *command_text) ;
+
 
 
 /* Needs top ZMap window.... */
-void zmapControlInstallRemoteAtoms(GdkWindow *top_zmap_window)
+zMapXRemoteObj zmapControlRemoteInstallable(GdkWindow *top_zmap_window, char *name)
 {
-  char *versionString = "1.0" ;
-  char *appName = "zmap" ;				    /* SHOULD BE DYNAMIC..... */
-  static GdkAtom version_atom = 0;
-  static GdkAtom string_atom = 0;
-  static GdkAtom application_atom = 0;
+  zMapXRemoteObj xremote;
+  Window id;
 
-  if (!string_atom)
-    string_atom = gdk_atom_intern("STRING", FALSE);
-  if (!version_atom)
-    version_atom = gdk_atom_intern("_XREMOTE_VERSION", FALSE);
-  if (!application_atom)
-    application_atom = gdk_atom_intern("_XREMOTE_APPLICATION", FALSE);
+  id = (Window)GDK_DRAWABLE_XID(top_zmap_window);
 
-  gdk_property_change(top_zmap_window,
-		      version_atom,
-		      string_atom,
-		      8, 
-		      GDK_PROP_MODE_REPLACE,
-		      (const unsigned char *)versionString,
-		      strlen(versionString));
-
-  gdk_property_change(top_zmap_window,
-		      application_atom,
-		      string_atom,
-		      8, 
-		      GDK_PROP_MODE_REPLACE,
-		      (const unsigned char *)appName,
-		      strlen(appName));
-
-  return ;
+  if((xremote = zMapXRemoteNew()) != NULL){
+    zMapXRemoteInitServer(xremote, id, PACKAGE_NAME, ZMAP_DEFAULT_REQUEST_ATOM_NAME, ZMAP_DEFAULT_RESPONSE_ATOM_NAME);
+    zmapControlWriteWindowIdFile(id, name);
+  }
+  
+  
+  return xremote;
 }
 
+/* Needs top ZMap window.... and name for it. It'll need to be unique */
+void zmapControlWriteWindowIdFile(Window id, char *window_name)
+{
+  GError *g_error = NULL ;
+  GIOChannel *winid_file = NULL;
+  gsize bytes = 0;
+  char *config_dir = NULL;
+  char *path, *id_line;
+
+  if((config_dir = zMapConfigDirGetDir()))
+    {
+      path = g_strdup_printf("%s/%s.%s", config_dir, window_name, WINDOWID_SUFFIX);
+      if((winid_file = g_io_channel_new_file(path, "w+", &g_error)))
+        {
+          g_error = NULL;
+          id_line = g_strdup_printf("WindowID: 0x%lx\n", id);
+          printf("%s", id_line);
+          g_io_channel_write_chars(winid_file, id_line, -1, &bytes, &g_error); /* should catch not writing here */
+          g_io_channel_flush(winid_file, &g_error);                            /* should catch not writing here */
+          g_free(id_line);
+        }
+      else{
+        zMapLogWarning("Error doing something to path '%s', %d", path, g_error);
+      }
+      if(path)
+        g_free(path);
+    }
+  else
+    {
+      zMapLogWarning("%s","Unable to find a configuration directory.") ;
+    }
+}
 
 
 /* Gets called for _ALL_ property events on the top level ZMap window,
@@ -107,35 +119,45 @@ gint zmapControlPropertyEvent(GtkWidget *top_zmap_window, GdkEventProperty *ev, 
 {
   gint result = FALSE ;
   ZMap zmap = (ZMap)user_data ;
-  static GdkAtom remote_command_atom = 0 ;
-  static GdkAtom string_atom = 0 ;
+  zMapXRemoteObj xremote;
+  static GdkAtom request_atom  = 0 ;
   static GdkAtom response_atom = 0 ;
+  static GdkAtom string_atom   = 0 ;
   GdkAtom actualType ;
   gint actualFormat ;
   gint nitems ;
   guchar *command_text = NULL ;
 
-  if (!remote_command_atom)
+  xremote = zmap->xremote;
+  
+  if (!request_atom)
     {
-      remote_command_atom = gdk_atom_intern("_XREMOTE_COMMAND", FALSE) ;
-      string_atom = gdk_atom_intern("STRING", FALSE) ;
-      response_atom = gdk_atom_intern("_XREMOTE_RESPONSE", FALSE) ;
+      request_atom  = zMapXRemoteGdkRequestAtom(xremote); //gdk_atom_intern(ZMAP_DEFAULT_REQUEST_ATOM_NAME, FALSE) ;
+      response_atom = zMapXRemoteGdkResponseAtom(xremote);//gdk_atom_intern(ZMAP_DEFAULT_RESPONSE_ATOM_NAME, FALSE) ;
+      string_atom   = gdk_atom_intern("STRING", FALSE) ;
     }
 
-  if (ev->atom != remote_command_atom)
+  if (ev->atom != request_atom)
     {
       /* not for us */
       result = FALSE ;
     }
-  else if (ev->state != 0)
+  else if (ev->state != GDK_PROPERTY_NEW_VALUE)
     {
       /* THIS IS PROBABLY SIMONS COMMENT FROM ACEDB, I HAVEN'T INVESTIGATED THIS.... */
 
       /* zero is the value for PropertyNewValue, in X.h there's no gdk equivalent that I can find. */
+      /* This looks the equivalent to me */
+      /* typedef enum
+         {
+         GDK_PROPERTY_NEW_VALUE,
+         GDK_PROPERTY_DELETE
+         } GdkPropertyState;
+      */
       result = TRUE ;
     }
   else if (!gdk_property_get(ev->window,
-			     remote_command_atom,
+			     request_atom,
 			     string_atom,
 			     0,
 			     (65536/ sizeof(long)),
@@ -189,33 +211,70 @@ gint zmapControlPropertyEvent(GtkWidget *top_zmap_window, GdkEventProperty *ev, 
 }
 
 
-/* Handle commands sent from xremote, we return strings defined by xremote. */
+/* Handle commands sent from xremote. */
+/* Return is string in the style of ZMAP_XREMOTE_REPLY_FORMAT (see ZMap/zmapXRemote.h) */
+/* Building the reply string is a bit arcane in that the xremote reply strings are really format
+ * strings...perhaps not ideal...., but best in the cicrumstance I guess */
 static char *executeCommand(ZMap zmap, char *command_text)
 {
   char *response_text = NULL ;
-  char *cmd_rc = NULL ;
+  char *xml_reply     = NULL ;
+  char *xml_stub      = NULL ;
+  int statusCode      = ZMAPXREMOTE_INTERNAL; /* Default If it doesn't get
+                                                 changed there must have been a
+                                                 logic error */
+  
+  //command prop = value ; prop = value ; prop = value
 
   /* We assume command is first word in text with no preceding blanks. */
   if (g_str_has_prefix(command_text, "zoom_in"))
     {
+      statusCode = 200;
       zmapControlWindowDoTheZoom(zmap, 2.0) ;
-      cmd_rc = XREMOTE_S_200_COMMAND_EXECUTED ;
+      xml_reply  = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT, "<magnification>1:10</magnification>");
+      
+      //statusCode = zmapControlWindowDoTheZoom(zmap, 2.0, xml_stub) ;
+      //xml_reply  = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT, xml_stub);
     }
   else if (g_str_has_prefix(command_text, "zoom_out"))
     {
+      statusCode = 200;
       zmapControlWindowDoTheZoom(zmap, 0.5) ;
-      cmd_rc = XREMOTE_S_200_COMMAND_EXECUTED ;
+      xml_reply  = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT, "<magnification>1:1000</magnification>");
+
+      //statusCode = zmapControlWindowDoTheZoom(zmap, 0.5, xml_stub) ;
+      //xml_reply  = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT, xml_stub);
     }
   else if (g_str_has_prefix(command_text, "feature_find"))
     {
-      cmd_rc = findFeature(zmap, command_text) ;
+      statusCode = 200;
+      findFeature(zmap, command_text);
+      xml_reply  = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT, "<feature>Found</feature>");
+      //statusCode = findFeature(zmap, command_text, xml_stub);
+      //xml_reply  = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT, xml_stub);
+    }
+  else if (g_str_has_prefix(command_text, "register_client"))
+    {
+      statusCode = 200;
+      createClient(zmap, command_text);
+      xml_reply  = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT, "<loaded>Ok</loaded>");
+      //statusCode = createClient(zmap, command_text, xml_stub);
+      //xml_reply  = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT, xml_stub);
     }
   else
-    cmd_rc = XREMOTE_S_501_COMMAND_UNRECOGNIZED ;
+    {
+      statusCode = 404;
+      xml_stub   = "<error><message>unknown command</message></error>";
+      xml_reply = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT, xml_stub);
+    }
 
-  /* Build reply string, a bit arcane in that the xremote reply strings are really format
-   * strings...perhaps not ideal.... */
-  response_text = g_strdup_printf(cmd_rc, command_text) ;
+  if(xml_stub)
+    g_free(xml_stub);
+
+  response_text = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, statusCode, xml_reply) ;
+
+  if(xml_reply)
+    g_free(xml_reply);
 
   zMapAssert(response_text) ;				    /* Must return something. */
 
@@ -293,7 +352,7 @@ static char *findFeature(ZMap zmap, char *command_text)
       else
 	{
 	  parse_error = TRUE ;
-	  result = XREMOTE_S_500_COMMAND_UNPARSABLE ;
+	  result = "";          /* XREMOTE_S_500_COMMAND_UNPARSABLE ; */
 	}
 
       g_free(keyword) ;
@@ -316,13 +375,14 @@ static char *findFeature(ZMap zmap, char *command_text)
 	  if ((item = zMapWindowFindFeatureItemByName(window, style, feature_type, feature_name,
 						      strand, start, end, query_start, query_end))
 	      && (zMapWindowScrollToItem(zMapViewGetWindow(zmap->focus_viewwindow), item)))
-	    result = XREMOTE_S_200_COMMAND_EXECUTED ;
+	    result = "";      /*  XREMOTE_S_200_COMMAND_EXECUTED ;  */
+
 	  else
-	    result = XREMOTE_S_500_COMMAND_UNPARSABLE ;
+	    result = "";      /* XREMOTE_S_500_COMMAND_UNPARSABLE ; */
 	}
       else
 	{
-	  result = XREMOTE_S_500_COMMAND_UNPARSABLE ;
+	  result = "";        /* XREMOTE_S_500_COMMAND_UNPARSABLE ; */
 	}
     }
 
@@ -331,6 +391,82 @@ static char *findFeature(ZMap zmap, char *command_text)
     g_free(style) ;
   if (feature_name)
     g_free(feature_name) ;
+
+
+  return result ;
+}
+
+static char *createClient(ZMap zmap, char *command_text)
+{
+  char *result = NULL ;
+  gboolean parse_error ;
+  char *next ;
+  char *keyword, *value ;
+  gchar *type = NULL ;
+  char *remote, *request, *response;
+  zMapXRemoteObj client;
+
+
+  next = strtok(command_text, " ") ;			    /* Skip register_client. */
+
+  parse_error = FALSE ;
+  while (!parse_error && (next = strtok(NULL, " ")))
+    {
+      keyword = g_strdup(next) ;			    /* Get keyword. */
+
+      next = strtok(NULL, " ") ;			    /* skip "=" */
+
+      next = strtok(NULL, " ") ;			    /* Get value. */
+      value = g_strdup(next) ;
+
+      next = strtok(NULL, " ") ;			    /* skip ";" */
+
+
+      if (g_ascii_strcasecmp(keyword, "id") == 0)
+        {
+          remote = g_strdup(value) ;
+        }
+      else if (g_ascii_strcasecmp(keyword, "req") == 0)
+	{
+          request = g_strdup(value) ;
+	}
+      else if (g_ascii_strcasecmp(keyword, "res") == 0)
+        {
+          response = g_strdup(value) ;
+        }
+      else
+	{
+	  parse_error = TRUE ;
+	  result = "";          /* XREMOTE_S_500_COMMAND_UNPARSABLE ; */
+	}
+
+      g_free(keyword) ;
+      g_free(value) ;
+    }
+
+  if (!result)
+    {
+      if((client = zMapXRemoteNew()) != NULL)
+        {
+          zMapXRemoteInitClient(client, strtoul(remote, (char **)NULL, 16));
+          zMapXRemoteSetRequestAtomName(client, request);
+          zMapXRemoteSetResponseAtomName(client, response);
+        }
+      else
+	{
+	  result = "";          /* XREMOTE_S_500_COMMAND_UNPARSABLE ; */
+	}
+    }
+
+
+
+  /* Clean up. */
+  if (remote)
+    g_free(remote) ;
+  if (request)
+    g_free(request) ;
+  if (response)
+    g_free(response) ;
 
 
   return result ;

@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Apr 12 15:20 2005 (edgrif)
+ * Last edited: Apr 14 11:35 2005 (rds)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.30 2005-04-14 10:08:58 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.31 2005-04-14 10:52:21 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -38,7 +38,7 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapNavigator.h>
 #include <ZMap/zmapControl.h>
-
+#include <ZMap/zmapXRemote.h>
 
 
 /* The overall state of the zmap, we need this because both the zmap window and the its threads
@@ -96,7 +96,7 @@ typedef struct _ZMapStruct
   /* List of views in this zmap. */
   GList          *view_list ;
 
-
+  zMapXRemoteObj xremote;
 
 } ZMapStruct ;
 
@@ -129,8 +129,9 @@ void zmapControlLoadCB        (ZMap zmap) ;
 void zmapControlResetCB       (ZMap zmap) ;
 void zmapControlNewViewCB(ZMap zmap, char *new_sequence) ;
 
-void zmapControlInstallRemoteAtoms(GdkWindow *top_zmap_window) ;
+zMapXRemoteObj zmapControlRemoteInstallable(GdkWindow *top_zmap_window, char *name);
 gint zmapControlPropertyEvent(GtkWidget *top_zmap_window, GdkEventProperty *ev, gpointer data) ;
+void zmapControlWriteWindowIdFile(Window id, char *window_name);
 
 
 

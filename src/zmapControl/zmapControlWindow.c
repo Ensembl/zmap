@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Jan  7 13:35 2005 (edgrif)
+ * Last edited: Apr  8 10:13 2005 (rds)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.14 2005-01-10 09:51:22 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.15 2005-04-14 10:52:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,8 +54,6 @@ gboolean zmapControlWindowCreate(ZMap zmap)
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)zmap) ;
-  gtk_signal_connect(GTK_OBJECT(toplevel), "property_notify_event",
-		     GTK_SIGNAL_FUNC(zmapControlPropertyEvent), (gpointer)zmap) ;
   gtk_widget_set_events(toplevel, GDK_PROPERTY_CHANGE_MASK) ;
 
 
@@ -84,8 +82,11 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   gtk_widget_show_all(toplevel) ;
 
   /* Cannot do this until we have a window.... */
-  zmapControlInstallRemoteAtoms(toplevel->window) ;
-
+  zmap->xremote = zmapControlRemoteInstallable(toplevel->window, zmap->zmap_id);
+  /* Install the signal handler to respond to requests */
+  gtk_signal_connect(GTK_OBJECT(toplevel), "property_notify_event",
+                         GTK_SIGNAL_FUNC(zmapControlPropertyEvent), (gpointer)zmap) ;
+  
   return result ;
 }
 
