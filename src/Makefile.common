@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS = gnu
 
 NULL = 
 
-ARFLAGS = rv
+ARFLAGS = cru
 
 # including ALPHA_POPT here is really bad FIND BETTER method
 AM_CPPFLAGS = -g -I$(top_srcdir)/include \
