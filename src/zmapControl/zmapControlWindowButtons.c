@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Apr  6 17:39 2005 (edgrif)
+ * Last edited: Apr 14 11:07 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.24 2005-04-06 16:46:19 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.25 2005-04-14 10:08:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,6 +46,7 @@ static void zoomInCB(GtkWindow *widget, gpointer cb_data) ;
 static void zoomOutCB(GtkWindow *widget, gpointer cb_data) ;
 static void vertSplitPaneCB(GtkWidget *widget, gpointer data) ;
 static void horizSplitPaneCB(GtkWidget *widget, gpointer data) ;
+static void unlockCB(GtkWidget *widget, gpointer data) ;
 static void closeWindowCB(GtkWidget *widget, gpointer data) ;
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 
@@ -71,7 +72,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *load_button,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     *stop_button, *quit_button,
-    *hsplit_button, *vsplit_button, *zoomin_button, *zoomout_button,
+    *hsplit_button, *vsplit_button, *zoomin_button, *zoomout_button, *unlock_button,
     *close_button ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
@@ -116,6 +117,11 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
 
+  zmap->unlock_but = unlock_button = gtk_button_new_with_label("Unlock");
+  gtk_signal_connect(GTK_OBJECT(unlock_button), "clicked",
+		     GTK_SIGNAL_FUNC(unlockCB), (gpointer)zmap);
+  gtk_box_pack_start(GTK_BOX(hbox), unlock_button, FALSE, FALSE, 0) ;
+
   zmap->close_but = close_button = gtk_button_new_with_label("Close") ;
   gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
 		     GTK_SIGNAL_FUNC(closeWindowCB), (gpointer)zmap) ;
@@ -147,12 +153,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 void zmapControlWindowDoTheZoom(ZMap zmap, double zoom)
 {
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapWindowZoom(zMapViewGetWindow(zmap->focus_viewwindow), zoom) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  /* need code to say "if locked then do all windows else do the focus window */
-  zMapViewZoom(zMapViewGetView(zmap->focus_viewwindow), NULL, zoom) ;
 
   return ;
 }
@@ -279,6 +280,16 @@ static void horizSplitPaneCB(GtkWidget *widget, gpointer data)
   ZMap zmap = (ZMap)data ;
 
   zmapControlSplitInsertWindow(zmap, NULL, GTK_ORIENTATION_HORIZONTAL) ;
+
+  return ;
+}
+
+
+static void unlockCB(GtkWidget *widget, gpointer data)
+{
+  ZMap zmap = (ZMap)data ;
+
+  zMapWindowUnlock(zMapViewGetWindow(zmap->focus_viewwindow)) ;
 
   return ;
 }

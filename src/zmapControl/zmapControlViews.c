@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Apr  6 17:04 2005 (edgrif)
+ * Last edited: Apr 13 15:18 2005 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.6 2005-04-06 16:21:48 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.7 2005-04-14 10:08:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -123,8 +123,16 @@ void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation o
   if (!zmap_window)
     view_window = zMapViewMakeWindow(zmap_view, view_container) ;
   else
-    view_window = zMapViewCopyWindow(zmap_view, view_container, zmap_window) ;
+    {
+      ZMapWindowLockType window_locking = ZMAP_WINLOCK_NONE ;
 
+      if (orientation == GTK_ORIENTATION_HORIZONTAL)
+	window_locking = ZMAP_WINLOCK_HORIZONTAL ;
+      else if (orientation == GTK_ORIENTATION_VERTICAL)
+	window_locking = ZMAP_WINLOCK_VERTICAL ;
+
+      view_window = zMapViewCopyWindow(zmap_view, view_container, zmap_window, window_locking) ;
+    }
 
   /* Add to hash of viewwindows to frames */
   g_hash_table_insert(zmap->viewwindow_2_parent, view_window, view_container) ;
