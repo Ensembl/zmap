@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr  5 15:58 2005 (edgrif)
+ * Last edited: Apr 13 14:22 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.50 2005-04-05 15:03:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.51 2005-04-14 10:10:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -198,7 +198,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   window->seq_end   = full_context->sequence_to_parent.c2 ;
 
 
-  h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow)) ;
+  h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
 
   /* Need text dimensions to set maximum zoom. */
