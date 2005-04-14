@@ -22,6 +22,7 @@ ZMap/zmapUtilsMesg.h \
 ZMap/zmapView.h \
 ZMap/zmapWindowDrawFeatures.h \
 ZMap/zmapWindow.h \
+ZMap/zmapXRemote.h \
 $(NULL)
 
 
