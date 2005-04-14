@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr  5 13:46 2005 (edgrif)
+ * Last edited: Apr 14 11:13 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.47 2005-04-05 14:40:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.48 2005-04-14 10:14:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -168,8 +168,8 @@ typedef struct _ZMapWindowStruct
   /* Widgets for displaying the data. */
   GtkWidget     *parent_widget ;
   GtkWidget     *toplevel ;
-  GtkWidget     *scrolledWindow;                            /* points to toplevel */
-  FooCanvas     *canvas;				    /* where we paint the display */
+  GtkWidget     *scrolled_window ;			    /* points to toplevel */
+  FooCanvas     *canvas ;				    /* where we paint the display */
 
   ZMapWindowCallbacks caller_cbs ;			    /* table of callbacks registered by
 							     * our caller. */
@@ -178,6 +178,13 @@ typedef struct _ZMapWindowStruct
 							       monitor canvas size changes and
 							       remap the minimum size of the canvas if
 							       needed. */
+  
+  /* Windows can be locked together in their zooming/scrolling. */
+  gboolean locked_display ;				    /* Is this window locked ? */
+  ZMapWindowLockType curr_locking ;			    /* Orientation of current locking. */
+  GHashTable *sibling_locked_windows ;			    /* windows this window is locked with. */
+
+
   GdkColor canvas_background ;
   double         zoom_factor ;
   ZMapWindowZoomStatus zoom_status ;   /* For short sequences that are displayed at max. zoom initially. */
@@ -204,15 +211,13 @@ typedef struct _ZMapWindowStruct
 
   GHashTable *feature_to_item ;				    /* Links a feature to the canvas item
 							       that displays it. */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GData         *featureItems ;            /*!< enables unambiguous link between features and
-					     canvas items. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  GPtrArray     *featureListWindows ;			    /* popup windows showing lists of
+							       column features. */
 
-  GPtrArray     *featureListWindows ;
+  GData         *longItems ;				    /* set of features >30k long, need to be
+							       cropped as we zoom in. */
 
-  GData         *longItems ;               /*!< features >30k long need to be cropped as we zoom in. */
 
   /* This all needs to move and for scale to be in a separate window..... */
   FooCanvasItem *scaleBarGroup;           /* canvas item in which we build the scalebar */
@@ -229,9 +234,6 @@ typedef struct _ZMapWindowStruct
 
   FooCanvasItem       *focus_item ;			    /* the item which has focus */
 
-
-  int            DNAwidth ;
-
 } ZMapWindowStruct ;
 
 
@@ -243,21 +245,6 @@ typedef struct _ZMapWindowLongItemStruct
   double         end;
   FooCanvasItem *canvasItem;
 } ZMapWindowLongItemStruct, *ZMapWindowLongItem;
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* I THINK THAT WE DON'T NEED THIS AT ALL NOW....*/
-
-/*!< keyed on feature->id, gives access to canvas item */
-typedef struct
-{							    
-  ZMapFeatureSet feature_set ;
-  GQuark         feature_key ;
-  FooCanvasItem  *canvas_item ;				    /* May be a group or an item. */
-} ZMapFeatureItemStruct, *ZMapFeatureItem ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 

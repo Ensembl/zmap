@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr  5 14:38 2005 (edgrif)
+ * Last edited: Apr 14 10:22 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.69 2005-04-05 14:48:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.70 2005-04-14 10:14:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,6 +52,14 @@ typedef struct
 } FeatureSetsStruct, *FeatureSets ;
 
 
+/* Used for passing information to the locked display hash callback function. */
+typedef struct
+{
+  ZMapWindow window ;
+  double zoom_factor ;
+} LockedDisplayStruct, *LockedDisplay ;
+
+
 
 /* This struct is used to pass data to realizeHandlerCB
  * via the g_signal_connect on the canvas's expose_event. */
@@ -62,6 +70,9 @@ typedef struct _RealiseDataStruct
 } RealiseDataStruct, *RealiseData ;
 
 
+static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data,
+				 GtkAdjustment *hadjustment, GtkAdjustment *vadjustment) ;
+static void myWindowZoom(ZMapWindow window, double zoom_factor) ;
 
 static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
@@ -71,13 +82,22 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 
 static gboolean getConfiguration(ZMapWindow window) ;
-static void sendClientEvent     (ZMapWindow window, FeatureSets) ;
+static void sendClientEvent(ZMapWindow window, FeatureSets) ;
 
 static void moveWindow(ZMapWindow window, guint state, guint keyval) ;
 static void scrollWindow(ZMapWindow window, guint state, guint keyval) ;
 static void changeRegion(ZMapWindow window, guint keyval) ;
 void hideAlignmentCols(GQuark key_id, gpointer data, gpointer user_data) ;
 static void printGroup(FooCanvasGroup *group, int indent) ;
+
+
+static void setCurrLock(ZMapWindowLockType window_locking, ZMapWindow window, 
+			GtkAdjustment **hadjustment, GtkAdjustment **vadjustment) ;
+static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data) ;
+static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window) ;
+static void lockWindow(ZMapWindow window, ZMapWindowLockType window_locking) ;
+static void unlockWindow(ZMapWindow window) ;
+static GtkAdjustment *copyAdjustmentObj(GtkAdjustment *orig_adj) ;
 
 
 
@@ -132,13 +152,24 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
 }
 
 
+ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data)
+{
+  ZMapWindow window ;
+
+  window = myWindowCreate(parent_widget, sequence, app_data, NULL, NULL) ;
+
+  return window ;
+}
+
+
 /* We will need to allow caller to specify a routine that gets called whenever the user
  * scrolls.....needed to update the navigator...... */
 /* and we will need a callback for focus events as well..... */
 /* I think probably we should insist on being supplied with a sequence.... */
 /* NOTE that not all fields are initialised here as some need to be done when we draw
  * the actual features. */
-ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data)
+static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data,
+				 GtkAdjustment *hadjustment, GtkAdjustment *vadjustment)
 {
   ZMapWindow window ;
   GtkWidget *canvas ;
@@ -167,20 +198,16 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
   /* Add a hash table to map features to their canvas items. */
   window->feature_to_item = zmapWindowFToICreate() ;
-  
 
   window->featureListWindows = g_ptr_array_new();
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_datalist_init(&(window->featureItems));
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   g_datalist_init(&(window->longItems));
 
+
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
-  window->toplevel = window->scrolledWindow = gtk_scrolled_window_new(NULL, NULL) ;
-  gtk_container_add(GTK_CONTAINER(window->parent_widget), window->scrolledWindow) ;
-  g_signal_connect(GTK_OBJECT(window->scrolledWindow), "size-allocate",
+  window->toplevel = window->scrolled_window = gtk_scrolled_window_new(hadjustment, vadjustment) ;
+  gtk_container_add(GTK_CONTAINER(window->parent_widget), window->scrolled_window) ;
+  g_signal_connect(GTK_OBJECT(window->scrolled_window), "size-allocate",
 		   GTK_SIGNAL_FUNC(sizeAllocateCB), (gpointer)window) ;
 
   /* ACTUALLY I'M NOT SURE WHY THE SCROLLED WINDOW IS GETTING THESE...WHY NOT JUST SEND
@@ -190,14 +217,14 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 		     GTK_SIGNAL_FUNC(dataEventCB), (gpointer)window) ;
 
   /* always show scrollbars, however big the display */
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(window->scrolledWindow),
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(window->scrolled_window),
 				 GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS) ;
 
   /* Create the canvas, add it to the scrolled window so all the scrollbar stuff gets linked up
    * and set the background to be white. */
   canvas = foo_canvas_new() ;
   window->canvas = FOO_CANVAS(canvas);
-  gtk_container_add(GTK_CONTAINER(window->scrolledWindow), canvas) ;
+  gtk_container_add(GTK_CONTAINER(window->scrolled_window), canvas) ;
 
   gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(window->canvas_background)) ;
   gtk_widget_modify_bg(GTK_WIDGET(canvas), GTK_STATE_NORMAL, &(window->canvas_background)) ;
@@ -254,71 +281,83 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_
 
 
 /* Makes a new window that is a copy of the existing one, zoom factor and all.
- * Actually this is rubbish....if its a copy why are we putting in the features ? 
-/* NOTE that not all fields are copid here as some need to be done when we draw
+ *
+ * NOTE that not all fields are copied here as some need to be done when we draw
  * the actual features (e.g. anything that refers to canvas items). */
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
-			  void *app_data, ZMapWindow copy_window,
-			  ZMapFeatureContext feature_context, GData *types)
+			  void *app_data, ZMapWindow original_window,
+			  ZMapFeatureContext feature_context, GData *types,
+			  ZMapWindowLockType window_locking)
 {
-  ZMapWindow new = NULL ;
+  ZMapWindow new_window = NULL ;
+  GtkAdjustment *hadjustment = NULL, *vadjustment = NULL ;
+  double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
+  int x, y ;
 
-  if ((new = zMapWindowCreate(parent_widget, sequence, app_data)))
+  if (window_locking != ZMAP_WINLOCK_NONE)
     {
-      double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
-      int x, y ;
-
-
-      /* A new window will have new canvas items so we need a new hash. */
-      new->feature_to_item = zmapWindowFToICreate() ;
-
-
-      /* this is a little hokey, it assumes we have split the parent window and therefore
-       * zoom will now be mid as there will be two scrolled windows... */
-      new->zoom_factor        = copy_window->zoom_factor;
-      new->zoom_status        = copy_window->zoom_status = ZMAP_ZOOM_MID ;
-
-      /* What happened to min zoom ??????? */
-      new->max_zoom           = copy_window->max_zoom;
-
-
-      new->canvas_maxwin_size = copy_window->canvas_maxwin_size;
-      new->border_pixels      = copy_window->border_pixels;
-      new->DNAwidth           = copy_window->DNAwidth;
-      new->text_height        = copy_window->text_height;
-      new->seqLength          = copy_window->seqLength;
-      new->seq_start          = copy_window->seq_start;
-
-      new->focus_item = copy_window->focus_item ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      new->focusFeature       = copy_window->focusFeature;
-      new->focus_style = copy_window->focus_style ;
-      new->typeName           = copy_window->typeName;
-      new->focusQuark         = copy_window->focusQuark;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      /* I'm a little uncertain how much of the below is really necessary as we are
-       * going to call the draw features code anyway. */
-      /* Set the zoom factor, there is no call to get hold of pixels_per_unit so we dive.
-       * into the struct. */
-      foo_canvas_set_pixels_per_unit_xy(new->canvas,
-					copy_window->canvas->pixels_per_unit_x,
-					copy_window->canvas->pixels_per_unit_y) ;
-
-      foo_canvas_get_scroll_region(copy_window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
-      foo_canvas_set_scroll_region(new->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
-
-      foo_canvas_get_scroll_offsets(copy_window->canvas, &x, &y) ;
-      foo_canvas_scroll_to(new->canvas, x, y) ;
-
-
-      /* You cannot just draw the features here as the canvas needs to be realised so we send
-       * an event to get the data drawn which means that the canvas is guaranteed to be
-       * realised by the time we draw into it. */
-      zMapWindowDisplayData(new, feature_context, feature_context, types) ;
+      setCurrLock(window_locking, original_window, 
+		  &hadjustment, &vadjustment) ;
     }
+
+
+  new_window = myWindowCreate(parent_widget, sequence, app_data, hadjustment, vadjustment) ;
+  zMapAssert(new_window) ;
+
+  /* Lock windows together for scrolling/zooming if requested. */
+  if (window_locking != ZMAP_WINLOCK_NONE)
+    {
+      copyLockWindow(original_window, new_window) ;
+    }
+ 
+
+  /* A new window will have new canvas items so we need a new hash. */
+  new_window->feature_to_item = zmapWindowFToICreate() ;
+
+
+  /* this is a little hokey, it assumes we have split the parent window and therefore
+   * zoom will now be mid as there will be two scrolled windows... */
+  new_window->zoom_factor        = original_window->zoom_factor;
+  new_window->zoom_status        = original_window->zoom_status = ZMAP_ZOOM_MID ;
+
+  /* What happened to min zoom ??????? */
+  new_window->max_zoom           = original_window->max_zoom;
+
+  /* Should we do this...I think so.... */
+  new_window->width = original_window->width ;
+  new_window->height = original_window->height ;
+
+
+  new_window->canvas_maxwin_size = original_window->canvas_maxwin_size;
+  new_window->border_pixels      = original_window->border_pixels;
+
+  new_window->text_height        = original_window->text_height;
+  new_window->seqLength          = original_window->seqLength;
+  new_window->seq_start          = original_window->seq_start;
+
+  new_window->focus_item = original_window->focus_item ;
+
+  /* I'm a little uncertain how much of the below is really necessary as we are
+   * going to call the draw features code anyway. */
+  /* Set the zoom factor, there is no call to get hold of pixels_per_unit so we dive.
+   * into the struct. */
+  foo_canvas_set_pixels_per_unit_xy(new_window->canvas,
+				    original_window->canvas->pixels_per_unit_x,
+				    original_window->canvas->pixels_per_unit_y) ;
+
+  foo_canvas_get_scroll_region(original_window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
+  foo_canvas_set_scroll_region(new_window->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
+
+  foo_canvas_get_scroll_offsets(original_window->canvas, &x, &y) ;
+  foo_canvas_scroll_to(new_window->canvas, x, y) ;
+
+
+  /* You cannot just draw the features here as the canvas needs to be realised so we send
+   * an event to get the data drawn which means that the canvas is guaranteed to be
+   * realised by the time we draw into it. */
+  zMapWindowDisplayData(new_window, feature_context, feature_context, types) ;
 			      
-  return new ;
+  return new_window ;
 }
 
 
@@ -411,6 +450,19 @@ void zmapWindowSetPageIncr(ZMapWindow window)
 }
 
 
+/* Unlock this window so it is not zoomed/scrolled with other windows in its group. */
+void zMapWindowUnlock(ZMapWindow window)
+{
+  unlockWindow(window) ;
+
+  return ;
+}
+
+
+
+
+
+
 /* ugh, get rid of this.......... */
 GtkWidget *zMapWindowGetWidget(ZMapWindow window)
 {
@@ -429,15 +481,31 @@ ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window)
 void zMapWindowSetZoomStatus(ZMapWindow window)
 {
   if (window->zoom_factor < window->min_zoom)
-    window->zoom_status = ZMAP_ZOOM_MIN;
+    window->zoom_status = ZMAP_ZOOM_MIN ;
   else if (window->zoom_factor > window->max_zoom)
-    window->zoom_status = ZMAP_ZOOM_MAX;
+    window->zoom_status = ZMAP_ZOOM_MAX ;
   else
-    window->zoom_status = ZMAP_ZOOM_MID;
+    window->zoom_status = ZMAP_ZOOM_MID ;
+
+  return ;
+}
+
+
+/* try out the new zoom window.... */
+void zMapWindowZoom(ZMapWindow window, double zoom_factor)
+{
+
+  if (window->locked_display)
+    {
+      LockedDisplayStruct locked_data = {window, zoom_factor} ;
+
+      g_hash_table_foreach(window->sibling_locked_windows, lockedDisplayCB, (gpointer)&locked_data) ;
+    }
+  else
+    myWindowZoom(window, zoom_factor) ;
 
   return;
 }
-
 
 
 /* Zooming the canvas window in or out.
@@ -448,7 +516,7 @@ void zMapWindowSetZoomStatus(ZMapWindow window)
  * zoom_factor   > 1.0 means zoom in, < 1.0 means zoom out.
  * 
  *  */
-void zMapWindowZoom(ZMapWindow window, double zoom_factor)
+static void myWindowZoom(ZMapWindow window, double zoom_factor)
 {
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
   GtkAdjustment *adjust;
@@ -461,7 +529,7 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   ZMapWindowVisibilityChangeStruct vis_change ;
 
 
-  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow)) ;
+  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
   /* We don't zoom in further than is necessary to show individual bases or further out than
    * is necessary to show the whole sequence, or if the sequence is so short that it can be
@@ -776,7 +844,7 @@ void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos)
    * how much we need to move the canvas window to get to window_y_pos and then use the
    * adjuster to move the canvas window. */
   v_adjuster = 
-    gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow)) ;
+    gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
   half_way = (v_adjuster->page_size / 2.0) ;
 
@@ -804,6 +872,10 @@ void zMapWindowDestroy(ZMapWindow window)
 
   if (window->sequence)
     g_free(window->sequence) ;
+
+  if (window->locked_display)
+    unlockWindow(window) ;
+
 
   /* free the array of featureListWindows and the windows themselves */
   if (window->featureListWindows)
@@ -900,7 +972,7 @@ static void scrollWindow(ZMapWindow window, guint state, guint keyval)
       {
 	GtkAdjustment *adjust ;
 
-	adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow)) ;
+	adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
 	if (state & GDK_CONTROL_MASK)
 	  incr = adjust->page_size - (adjust->page_size / OVERLAP_FACTOR) ;
@@ -1312,7 +1384,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	      double half_way ;
 
 	      v_adjuster = 
-		gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolledWindow)) ;
+		gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
 	      half_way = (v_adjuster->page_size / 2) ;
 
@@ -1516,6 +1588,155 @@ void hideAlignmentCols(GQuark key_id, gpointer data, gpointer user_data)
 
 
   zmapWindowAlignmentHideUnhideColumns(block) ;
+
+  return ;
+}
+
+
+
+/*
+ *   A set of routines for handling locking/unlocking of scrolling/zooming between several windows.
+ */
+
+
+/* Checks to see if the new locking is different in orientation from the existing locking,
+ * if it is we need to remove this window from its locking group and put it in new one.
+ * Returns adjusters appropriate for the requested locking, n.b. the unlocked adjuster
+ * will be set to NULL. */
+static void setCurrLock(ZMapWindowLockType window_locking, ZMapWindow window, 
+			GtkAdjustment **hadjustment, GtkAdjustment **vadjustment)
+{
+
+  if (!window->locked_display)
+    {
+      /* window is not locked, so create a lock set for it. */
+
+      lockWindow(window, window_locking) ;
+    }
+  else
+    {
+      if (window_locking != window->curr_locking)
+	{
+	  /* window is locked but requested lock is different orientation from existing one
+	   * so we need to relock the window in a new orientation. */
+	  unlockWindow(window) ;
+
+	  lockWindow(window, window_locking) ;
+	}
+      else
+	{
+	  /* Window is locked and requested orientation is same as existing one so continue
+	   * with this locking scheme. */
+	  ;
+	}
+    }
+
+  /* Return appropriate adjusters for this locking. */
+  *hadjustment = *vadjustment = NULL ;
+  if (window_locking == ZMAP_WINLOCK_HORIZONTAL)
+    *hadjustment = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+  else if (window_locking == ZMAP_WINLOCK_VERTICAL)
+    *vadjustment = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
+  return ;
+}
+
+
+/* May need to make this routine more flexible..... */
+static void lockWindow(ZMapWindow window, ZMapWindowLockType window_locking)
+{
+  zMapAssert(!window->locked_display && window->curr_locking == ZMAP_WINLOCK_NONE
+	     && !window->sibling_locked_windows) ;
+
+  window->locked_display = TRUE ;
+  window->curr_locking = window_locking ;
+
+  window->sibling_locked_windows = g_hash_table_new(g_direct_hash, g_direct_equal) ;
+  g_hash_table_insert(window->sibling_locked_windows, window, window) ;
+
+  return ;
+}
+
+
+static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window)
+{
+  zMapAssert(original_window->locked_display && original_window->curr_locking != ZMAP_WINLOCK_NONE
+	     && original_window->sibling_locked_windows) ;
+  zMapAssert(!new_window->locked_display && new_window->curr_locking == ZMAP_WINLOCK_NONE
+	     && !new_window->sibling_locked_windows) ;
+
+  new_window->locked_display = original_window->locked_display ;
+  new_window->curr_locking = original_window->curr_locking ;
+  new_window->sibling_locked_windows = original_window->sibling_locked_windows ;
+  g_hash_table_insert(new_window->sibling_locked_windows, new_window, new_window) ;
+
+  return ;
+}
+
+
+static void unlockWindow(ZMapWindow window)
+{
+  gboolean removed ;
+
+  zMapAssert(window->locked_display && window->curr_locking != ZMAP_WINLOCK_NONE
+	     && window->sibling_locked_windows) ;
+
+
+  removed = g_hash_table_remove(window->sibling_locked_windows, window) ;
+  zMapAssert(removed) ;
+
+  if (!g_hash_table_size(window->sibling_locked_windows))
+    {
+      g_hash_table_destroy(window->sibling_locked_windows) ;
+    }
+  else
+    {
+      /* we only need to allocate a new adjuster if the hash table is not empty...otherwise we can
+       * keep our existing adjuster. */
+      GtkAdjustment *adjuster ;
+
+      if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
+	adjuster = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+      else
+	adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
+      adjuster = copyAdjustmentObj(adjuster) ;
+
+      if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
+	gtk_scrolled_window_set_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+      else
+	gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+    }
+
+  window->locked_display= FALSE ;
+  window->curr_locking = ZMAP_WINLOCK_NONE ;
+  window->sibling_locked_windows = NULL ;
+
+  return ;
+}
+
+
+static GtkAdjustment *copyAdjustmentObj(GtkAdjustment *orig_adj)
+{
+  GtkAdjustment *copy_adj ;
+
+  copy_adj = GTK_ADJUSTMENT(gtk_adjustment_new(orig_adj->value,
+					       orig_adj->lower,
+					       orig_adj->upper,
+					       orig_adj->step_increment,
+					       orig_adj->page_increment,
+					       orig_adj->page_size)) ;
+
+  return copy_adj ;
+}
+
+
+static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data)
+{
+  LockedDisplay locked_data = (LockedDisplay)user_data ;
+  ZMapWindow window = (ZMapWindow)key ;
+  
+  myWindowZoom(window, locked_data->zoom_factor) ;
 
   return ;
 }
