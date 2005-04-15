@@ -25,9 +25,9 @@
  * Description: Internals for the thread control code.
  *              
  * HISTORY:
- * Last edited: Feb 23 15:21 2005 (rds)
+ * Last edited: Apr 15 17:43 2005 (edgrif)
  * Created: Thu Jan 27 11:18:44 2005 (edgrif)
- * CVS info:   $Id: zmapThreads_P.h,v 1.3 2005-02-25 16:49:11 rds Exp $
+ * CVS info:   $Id: zmapThreads_P.h,v 1.4 2005-04-15 18:08:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_PRIV_H
@@ -40,9 +40,13 @@
 #include <ZMap/zmapThreads.h>
 
 
+
+/* NOTE THIS WILL GO AWAY ONCE ITS SORTED OUT IN AUTOCONF.... */
 /* Seems that Linux defines the time structure used in some pthread calls as "timespec",
  * whereas alphas call it "timespec_t"....deep sigh.... */
-#ifdef LINUX
+#if defined LINUX
+#define TIMESPEC struct timespec
+#elif defined DARWIN
 #define TIMESPEC struct timespec
 #else
 #define TIMESPEC timespec_t
