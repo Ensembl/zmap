@@ -25,13 +25,25 @@
  * Description: Interface to sub threads of the ZMap GUI thread.
  *              
  * HISTORY:
- * Last edited: Feb  3 11:30 2005 (edgrif)
+ * Last edited: Apr 15 19:07 2005 (edgrif)
  * Created: Thu Jan 27 11:16:13 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.h,v 1.2 2005-02-03 15:00:55 edgrif Exp $
+ * CVS info:   $Id: zmapThreads.h,v 1.3 2005-04-15 18:08:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_H
 #define ZMAP_THREAD_H
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* WARNING, IN THEORY WE SHOULD INCLUDE THIS AS WE REFERENCE A PTHREAD TYPE BELOW,
+ * _BUT_ IF WE DO THEN WE RUN INTO TROUBLE ON THE ALPHAS AS FOR UNKNOWN AND PROBABLY
+ * BIZARRE REASONS IT FAILS TO COMPILE COMPLAINING ABOUT "leave" IN THE Window/View
+ * HEADERS TO BE ILLEGAL...THEY INCLUDE THIS HEADER...SIGH... WE COULD JUST HACK
+ * OUR OWN VERSION OF THE pthread_t type to get round this.... */
+
+#include <pthread.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* The calls need changing to handle a more general
