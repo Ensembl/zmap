@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 14 10:22 2005 (edgrif)
+ * Last edited: Apr 15 18:41 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.70 2005-04-14 10:14:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.71 2005-04-15 18:09:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -301,6 +301,12 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
     }
 
 
+  /* There is an assymetry when splitting windows, when we do a vsplit we lose the scroll
+   * position when we the do the windowcreate so we need to get it here so we can
+   * reset the scroll to where it should be. */
+  foo_canvas_get_scroll_offsets(original_window->canvas, &x, &y) ;
+
+
   new_window = myWindowCreate(parent_widget, sequence, app_data, hadjustment, vadjustment) ;
   zMapAssert(new_window) ;
 
@@ -348,7 +354,9 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   foo_canvas_get_scroll_region(original_window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
   foo_canvas_set_scroll_region(new_window->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
 
-  foo_canvas_get_scroll_offsets(original_window->canvas, &x, &y) ;
+
+  /* Reset our scrolled position otherwise we can end up jumping to the top of the window. */
+  foo_canvas_scroll_to(original_window->canvas, x, y) ;
   foo_canvas_scroll_to(new_window->canvas, x, y) ;
 
 
