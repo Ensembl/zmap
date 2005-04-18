@@ -18,6 +18,8 @@ AC_CANONICAL_BUILD
 case $build in
      *-*-linux*) 
      zmap_os_type="Linux";;
+     *-*-darwin*) 
+     zmap_os_type="darwin";;
      *) 
      zmap_os_type="Unknown";;
 esac
@@ -25,6 +27,12 @@ esac
 if test "$zmap_os_type" = "Linux" ; then
    AC_MSG_RESULT([Got OS type of LINUX])
    AC_DEFINE(LINUX, [], [Operating System is LINUX.  See zmapThreads/zmapThreads_P.h])
+elif test "$zmap_os_type" = "darwin" ; then
+   AC_MSG_RESULT([Got OS type of Darwin])
+   AC_DEFINE(DARWIN, [], [Operating System is DARWIN.  See zmapThreads/zmapThreads_P.h])
+   # this is pretty evil NEED to find a better method
+   ALPHA_POPT=-I/sw/include
+   AC_SUBST(ALPHA_POPT)
 else
    # this is pretty evil NEED to find a better method
    ALPHA_POPT=-I/nfs/disk100/acedb/prefix/ALPHA/include
@@ -50,7 +58,10 @@ DX_INIT_DOXYGEN([AC_PACKAGE_NAME], Doxyfile, docs/[AC_PACKAGE_NAME])
 AM_INIT_AUTOMAKE
 
 AC_LANG(C)
-AC_PATH_X
+
+# for some reason AC_PATH_XTRA doesn't set up -lX11
+AC_PATH_XTRA
+X_LIBS="$X_LIBS -lX11"
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
@@ -191,6 +202,7 @@ zmapThreads \
 zmapUtils \
 zmapView \
 zmapWindow"
+
 AC_SUBST(ZMAP_SRC_DIRS)
 
 
