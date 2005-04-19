@@ -28,9 +28,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Mar 18 11:36 2005 (edgrif)
+ * Last edited: Apr 19 14:26 2005 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.2 2005-03-18 11:44:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.3 2005-04-19 13:35:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -249,7 +249,7 @@ static char *makeMenuItemName(char *string)
 /* Returns copy of menu and size of menu _NOT_ including the final terminating null entry. */
 static ZMapWindowMenuItem copyMenu(ZMapWindowMenuItem old_menu, int *menu_items_out)
 {
-  ZMapWindowMenuItem new_menu, menu_item ;
+  ZMapWindowMenuItem new_menu, old_item, new_item ;
   int i, num_menu_items, menu_size  ;
 
   num_menu_items = itemsInMenu(old_menu) ;
@@ -259,9 +259,10 @@ static ZMapWindowMenuItem copyMenu(ZMapWindowMenuItem old_menu, int *menu_items_
   new_menu = g_memdup(old_menu, menu_size) ;
 
   /* Remember to copy the strings in the old menu. */
-  for (i = 0, menu_item = old_menu ; i < num_menu_items ; i++)
+  for (i = 0, old_item = old_menu, new_item = new_menu ;
+       i < num_menu_items ; i++, old_item++, new_item++)
     {
-      menu_item->name = g_strdup(menu_item->name) ;
+      new_item->name = g_strdup(old_item->name) ;
     }
 
   if (menu_items_out)
