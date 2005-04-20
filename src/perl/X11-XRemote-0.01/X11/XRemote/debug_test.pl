@@ -13,7 +13,7 @@ my $win = undef;
 my $cmd = 'zoom_in';
 GetOptions('win=s' => \$win,
            'cmd=s' => \$cmd);
-
+$win || warn "usage: $0 -win _ID_     \n";
 my $conn = X11::XRemote->new(-server => 0, -id => $win);
 
 print "delimiter should be '" . X11::XRemote::delimiter() . "'\n";
