@@ -1,0 +1,38 @@
+#!/usr/local/bin/bash
+#
+# Noddy script to run bootstrap as alphas need a lot of help.
+#
+
+
+
+msgAndExit ()
+{
+  echo "Error: $1"
+  exit 1
+}
+
+
+opsys=`uname`
+
+case $opsys in
+
+  OSF1 )
+    locals=~acedb/ZMap/prefix/ALPHA/bin
+    PATH="$locals:$PATH"
+    export PATH ;;
+
+  Linux )
+    locals=~acedb/ZMap/prefix/LINUX/bin
+    PATH="$locals:$PATH"
+    export PATH ;;
+
+  * )
+    msgAndExit "unsupported operating system: $opsys" ;;
+
+esac
+
+
+./bootstrap
+
+
+exit 0

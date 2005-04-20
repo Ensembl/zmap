@@ -1,0 +1,56 @@
+#!/usr/local/bin/bash
+#
+# Noddy script to run configure as alphas + Roys machine are far from standard.
+#
+
+msgAndExit ()
+{
+  echo "Error: $1"
+  exit 1
+}
+
+
+opsys=`uname`
+
+case $opsys in
+
+  OSF1 )
+    locals=~acedb/ZMap/prefix/ALPHA/bin
+    PATH="$locals:/usr/local/gtk2/bin:$PATH"
+    export PATH
+
+    popt=~acedb/ZMap/prefix/ALPHA/include
+
+    config_args="CC=cc CFLAGS=-I$popt"
+
+    locals=~acedb/ZMap/prefix/ALPHA/lib/pkgconfig
+    PKG_CONFIG_PATH="$locals:/usr/local/gtk2/lib/pkgconfig"
+    export PKG_CONFIG_PATH ;;
+
+  Linux )
+    locals=~acedb/ZMap/prefix/LINUX/bin
+    PATH="$locals:$PATH"
+    export PATH
+
+    host=`hostname`
+    if [ $host = 'deskpro203' ] ; then
+      echo 'roys machine'
+      # for Roys machine.......
+      LD_LIBRARY_PATH='/usr/local/lib:/usr/lib:/usr/local/oracle/lib:/usr/X11R6/lib'
+      export LD_LIBRARY_PATH
+    fi
+
+    config_args='' ;;
+
+  * )
+    msgAndExit "unsupported operating system: $opsys" ;;
+
+esac
+
+
+# run the configure.......
+configure $config_args
+
+
+
+exit 0
