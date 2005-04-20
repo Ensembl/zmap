@@ -98,45 +98,9 @@ PKG_CHECK_MODULES([FOOCANVAS], [libfoocanvas = 0.1],,AC_MSG_ERROR(foocanvas is r
 # needs curl, we'll be looking using curl-config
 # LIBCURL_CHECK_CONFIG ([DEFAULT-ACTION], [MINIMUM-VERSION],
 #                       [ACTION-IF-YES], [ACTION-IF-NO])
-LIBCURL_CHECK_CONFIG([],7.11.0,[],[AC_MSG_ERROR(Sorry we need at least version 7.11.0)])
+LIBCURL_CHECK_CONFIG([],7.11.0,[AC_MSG_RESULT(LIBCURL FLAGS ${LIBCURL})],[AC_MSG_ERROR(Sorry we need at least version 7.11.0)])
 
-# AceConn & md5
-# Apologies for the monkeying around, but without a nice method for finding
-# the aceconn library, this is the best I could do.  It's kinda sieve like
-# default to use the library
-aceconn=false
-aceconn_location=
-# might possibly have a version not requiring this.
-AC_ARG_WITH(ace-conn,
-           AS_HELP_STRING(--with-ace-conn,
-                          need to specify this to set up AceConn library),
-           aceconn=true;aceconn_location=$withval,)
-
-ACECONN_CFLAGS=
-ACECONN_LIBS="-lAceConn -lmd5"
-
-if $aceconn ; then
-   if test "x$aceconn_location" = "xyes"
-     then
-     echo 
-   elif test "x$aceconn_location" = "xno"; then
-      AC_MSG_ERROR(... We currently need -lAceConn.  You cannot specify --without-ace-conn)
-   else
-      ACECONN_LIBS="-L$aceconn_location $ACECONN_LIBS"
-      ACECONN_CFLAGS="-I$aceconn_location/.."
-   fi
-else
-   FOUND_LIBS=
-   save_ifs=$IFS; IFS=':'
-   for n in $LD_LIBRARY_PATH; do
-      if [ test -e $n/libAceConn.a ]; then
-         AC_MSG_NOTICE(Found libAceConn.a in $n)
-            FOUND_LIBS="-L/usr/lib -L$n"
-      fi
-   done
-   IFS=$save_ifs
-   ACECONN_LIBS="$FOUND_LIBS $ACECONN_LIBS"
-fi
+PKG_CHECK_MODULES([ACECONN], [AceConn-1.1],,AC_MSG_ERROR(AceConn is required))
 
 CPPFLAGS="$CPPFLAGS $ACECONN_CFLAGS"
 LDFLAGS="$LDFLAGS $ACECONN_LIBS"
@@ -155,6 +119,24 @@ AC_SUBST(ACECONN_CFLAGS)
 AC_SUBST(ACECONN_LIBS)
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
+# keep track for rpath
+RPATH=""
+full_paths="${FOOCANVAS_LIBS} ${ACECONN_LIBS} ${GTK_LIBS}"
+if $full_paths ; then
+   save_ifs=$IFS; IFS=':'
+   for l in $full_paths
+    do
+      case $l in
+           -L*) RPATH="${RPATH} $l";;
+      esac      
+   done
+   IFS=$save_ifs
+fi
+echo ${RPATH}
+#zmapMake/platform.alpha_5:LDFLAGS = -rpath '/usr/local/gtk2/lib:$(POPT_LIB)'
+#zmapMake/platform.linux_4:LDFLAGS = -Xlinker -rpath -Xlinker $(FOO_CANVAS_PATH)/lib
+# -rpath :separated_list
+# -Wl,-rpath 
 
 ################################################################################
 ################################################################################
