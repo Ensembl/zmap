@@ -1,0 +1,93 @@
+ZMap Meeting
+
+
+Date: 23.04.2005
+
+
+Present: Richard, Ed, Roy, Rob
+
+
+ZMap/otterlace:
+
+Roy has a prototype system with lace starting simultaneous xace/zmap processes
+which is good for comparison. He has been working on the atom/property
+communication system as the existing xremote code cannot give us all that we
+want.
+
+Roy has added code to Perl/Tk to do atoms/properties...amazingly this is
+missing from the Tk interface. We have a working system so that James can
+write perl to directly control the atoms/properties to communicate with
+zmap. A substantial improvement over the old system.
+
+
+Compara:
+
+We have not worked on this more.
+
+
+
+zmap GUI:
+
+Ed has been working on locking of windows and this is working, highlighting is
+on the way.
+
+The currently focussed view is more obvious but its hard work with gtk.
+
+The code is now in-place to more quickly do things like the intelligent viewing
+of transcripts.
+
+
+
+ZMap demo code/website/mail:
+
+There is now a ~acedb/ZMap, the demo code for alphas is:
+~acedb/ZMap/ZMap/src/zmap
+
+We now have a "zmap" mail alias set to Ed, Roy and Rob.
+
+Rob will be doing some work to set up web pages for the web site.
+
+
+
+Decisions:
+
+We need to produce a demonstration of zmap working alongside of xace in the
+lace system that is good enough that an annotator can start to try it out. In
+particular this needs to show how zmap will display multiple alignments as
+this is seen as a key factor in annotators wanting to use zmap at all.
+
+Ed will:
+
+	- this week send out an email to James, Jen, Tim (cc'ing us) saying
+	that we will produce the demonstration zmap, giving an idea of what
+	it will do and suggesting/soliciting opinions about who would be
+	a good person to test it.
+
+	- send Richard an email on 9th May detailing more precisely what the
+	demo. zmap will do, how it can be used etc.
+
+We will produce the demo. zmap for the 23rd May to show to Richard in our next
+zmap team meeting on that day. The demo. will need to include facilities that
+the annotators commonly use e.g. blixem.
+
+An obvious annotator would be Charlie as he is working the NOD and Black6
+mouse variants and this would provide a good test of the multiple alignment
+display.
+
+
+We also discussed:
+
+- we need to decide on the semantics of single/double clicking on features
+
+- the feature list needs some enhancements/fixes (e.g. it should centre on the
+feature the user clicked on).
+
+- we could allow the user to supply a list of their own features (like the
+"keyset" concept of acedb), this would not necessarily be features of the same
+type. This would be useful but is not seen as a priority.
+
+
+
+Our next meeting will be in three weeks at 1.00pm on the 23rd May.
+
+
