@@ -49,7 +49,7 @@ esac
 
 
 # run the configure.......
-configure $config_args
+./configure $config_args
 
 
 
