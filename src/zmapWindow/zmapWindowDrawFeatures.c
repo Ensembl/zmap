@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 21 14:33 2005 (edgrif)
+ * Last edited: Apr 21 17:00 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.52 2005-04-21 13:47:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.53 2005-04-21 16:05:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,15 +82,12 @@ typedef struct _ZMapCanvasDataStruct
 
 
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
-
+static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 
 static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data) ;
-static void getTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void freeFeatureItem(gpointer data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static void getTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out) ;
 
 static void freeLongItem(gpointer data);
 static void storeLongItem(ZMapWindow window, FooCanvasItem *item, int start, int end,
@@ -463,10 +460,10 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	g_object_set_data(G_OBJECT(top_feature_item), "feature", feature) ;
 	g_object_set_data(G_OBJECT(top_feature_item), "item_feature_type",
 			  GINT_TO_POINTER(ITEM_FEATURE_SIMPLE)) ;
-
 	g_signal_connect(GTK_OBJECT(top_feature_item), "event",
 			 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
-
+	g_signal_connect(GTK_OBJECT(top_feature_item), "destroy",
+			 GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
 
 
 	/* Is this correct, I'm not sure if this doesn't need a more dynamic approach of
@@ -553,6 +550,9 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 				  box_data) ;
 		g_signal_connect(GTK_OBJECT(intron_box), "event",
 				 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
+		g_signal_connect(GTK_OBJECT(intron_box), "destroy",
+				 GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
+
 
 		intron_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
 		intron_data->start = intron_span->x1 ;
@@ -577,6 +577,9 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 				  intron_data) ;
 		g_signal_connect(GTK_OBJECT(intron_line), "event",
 				 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
+		g_signal_connect(GTK_OBJECT(intron_line), "destroy",
+				 GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
+
 
 		/* Now we can get at either twinned item from the other item. */
 		box_data->twin_item = intron_line ;
@@ -613,6 +616,9 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 			      feature_data) ;
 	    g_signal_connect(GTK_OBJECT(exon_box), "event",
 			     GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
+	    g_signal_connect(GTK_OBJECT(exon_box), "destroy",
+			     GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
+
 
 	    /* THIS CODE SHOULD BE LOOKING TO SEE IF THE ITEM IS LONGER THAN THE CANVAS WINDOW
 	     * LENGTH AS THAT IS THE KEY LENGTH, NOT THIS BUILT IN CONSTANT.... */
@@ -684,6 +690,46 @@ static void freeLongItem(gpointer data)
 
   return;
 }
+
+
+/* Callback for destroy of items... */
+static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
+{
+  gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also
+							       get run. */
+  ZMapWindow  window = (ZMapWindowStruct*)data ;
+  ZMapWindowItemFeatureType item_feature_type ;
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+
+  switch (item_feature_type)
+    {
+    case ITEM_FEATURE_SIMPLE:
+    case ITEM_FEATURE_PARENT:
+      {
+	/* Nothing to do... */
+
+	break ;
+      }
+    case ITEM_FEATURE_BOUNDING_BOX:
+    case ITEM_FEATURE_CHILD:
+      {
+	ZMapWindowItemFeature item_data ;
+
+	item_data = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+	g_free(item_data) ;
+	break ;
+      }
+    default:
+      {
+	zMapLogFatal("Coding error, unrecognised ZMapWindowItemFeatureType: %d", item_feature_type) ;
+	break ;
+      }
+    }
+
+  return event_handled ;
+}
+
 
 
 /* Callback for any events that happen on individual canvas items. */
