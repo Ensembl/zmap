@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 28 09:27 2005 (edgrif)
+ * Last edited: Apr 18 16:25 2005 (edgrif)
  * Created: Thu Feb 24 11:19:23 2005 (edgrif)
- * CVS info:   $Id: zmapWindowAlignment.c,v 1.5 2005-04-05 14:49:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAlignment.c,v 1.6 2005-04-21 13:45:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -354,12 +354,12 @@ static gboolean canvasBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  {
 	  case 1:
 	    {
-	      const char *column_text ;
 	      ZMapWindow window = column->parent_block->parent->window ;
+	      ZMapWindowSelectStruct select = {NULL} ;
 
-	      column_text = g_quark_to_string(column->type_name) ;
+	      select.text = (char *)g_quark_to_string(column->type_name) ;
 
-	      (*(window->caller_cbs->click))(window, window->app_data, (char *)column_text) ;
+	      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
 	      event_handled = TRUE ;
 	      break ;
