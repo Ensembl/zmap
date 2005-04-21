@@ -1,29 +1,39 @@
 #!/usr/local/bin/perl -w
 
 use strict;
-#use lib './PREFIX/lib/perl5/site_perl/5.6.1/i386-linux';
-#use lib './PREFIX/lib/perl5/site_perl/5.8.0/alpha-dec_osf-thread-multi-ld';
-use lib './PREFIX/lib/site_perl/5.6.1/alpha-dec_osf';
-#use lib './PREFIX/lib/perl5/site_perl/5.6.1/alpha-dec_osf';
 use X11::XRemote;
+
 use Getopt::Long;
 
 
 my $win = undef;
 my $cmd = 'zoom_in';
+my $deb = 1;
+
 GetOptions('win=s' => \$win,
-           'cmd=s' => \$cmd);
-$win || warn "usage: $0 -win _ID_     \n";
-my $conn = X11::XRemote->new(-server => 0, -id => $win);
+           'cmd=s' => \$cmd,
+           'deb=i' => \$deb);
 
-print "delimiter should be '" . X11::XRemote::delimiter() . "'\n";
-print "We have a $conn with '$win' we should format with string: '".$conn->format_string."'\n";
+$win || warn "usage: $0 -win _ID_ \n";
 
-my @replies = $conn->send_commands(($cmd) x 2);
+my $conn = X11::XRemote->new(-server => 0,
+                             -id     => $win,
+                             -_DEBUG => $deb);
+my $del  = X11::XRemote::delimiter();
+my $fstr = X11::XRemote::format_string();
 
+print "X11::XRemote delimiter is '$del'\n";
+print "X11::XRemote format string is '$fstr'\n";
 
-foreach my $rep(@replies){
-    print "I got a reply of '$rep'\n";
+if($conn){
+    print "We have a $conn\n";
+    print "It will control window with id $win\n" if $win;
+    my @reps = $conn->send_commands(($cmd) x 2);
+    foreach my $rep(@reps){
+        print "I got a reply of '$rep'\n";
+    }
+}else{
+    print "Failed to make a new X11::XRemote Object\n";
 }
 
-
+print "Everything looked ok...\n";
