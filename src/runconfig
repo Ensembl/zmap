@@ -28,18 +28,13 @@ case $opsys in
     export PKG_CONFIG_PATH ;;
 
   Linux )
-    locals=~acedb/ZMap/prefix/LINUX/bin
-    PATH="$locals:$PATH"
+    locals=~acedb/ZMap/prefix/LINUX
+    PATH="$locals/bin:$PATH"
     export PATH
-
-    host=`hostname`
-    if [ $host = 'deskpro203' ] ; then
-      echo 'roys machine'
-      # for Roys machine.......
-      LD_LIBRARY_PATH='/usr/local/lib:/usr/lib:/usr/local/oracle/lib:/usr/X11R6/lib'
-      export LD_LIBRARY_PATH
-    fi
-
+    PKG_CONFIG_PATH="$locals/lib/pkgconfig"
+    export PKG_CONFIG_PATH
+    LD_LIBRARY_PATH=/usr/local/oracle/lib
+    export LD_LIBRARY_PATH
     config_args='' ;;
 
   * )
