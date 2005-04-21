@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 13 14:22 2005 (edgrif)
+ * Last edited: Apr 21 14:33 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.51 2005-04-14 10:10:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.52 2005-04-21 13:47:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,10 +50,6 @@ typedef struct
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
 			 FooCanvasItem *item) ;
 static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
-
-static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean rev_video) ;
-static void highlightFuncCB(gpointer data, gpointer user_data) ;
-static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_video) ;
 
 
 
@@ -82,12 +78,6 @@ typedef struct _ZMapCanvasDataStruct
 
 } ZMapCanvasDataStruct, *ZMapCanvasData ;
 
-
-typedef struct
-{
-  ZMapWindow window ;
-  gboolean rev_video ;
-} HighlightStruct, *Highlight ;
 
 
 
@@ -140,25 +130,6 @@ void destroyAlignment(gpointer data) ;
 
 
 /************************ external functions ************************************************/
-
-
-
-/* This stuff with featureClick is all messed up, it gets called from the list code when
- * really it should be just part of the callback system. */
-
-/* Callback to display feature details on the window.
- *  
- * Control passes up the hierarchy to zmapControl 
- * where a few details of the selected feature are 
- * displayed on the info_panel of the window. 
- */
-gboolean zMapWindowFeatureClickCB(ZMapWindow window, ZMapFeature feature)
-{
-  (*(window->caller_cbs->click))(window, window->app_data, feature);
-
-  return FALSE;  /* FALSE allows any other connected function to be run. */
-}
-
 
 
 
@@ -385,38 +356,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
 
-/* Highlight a feature, note how this function should just take _any_ feature/item but it doesn't 
- * and so needs redoing....sigh....it should also be called something like focusOnItem() */
-void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
-{                                               
-  ZMapFeatureType item_feature_type ;
-
-  /* If any other feature is currently in focus, revert it to its std colours */
-  if (window->focus_item)
-    highlightItem(window, window->focus_item, FALSE) ;
-
-  /* Highlight the new item. */
-  highlightItem(window, item, TRUE) ;
- 
-  /* Make this item the new focus item. */
-  window->focus_item = item ;
-
-
-  /* Only raise this item to the top if it is the whole feature. */
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window->focus_item),
-							"item_feature_type")) ;
-
-  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
-    foo_canvas_item_raise_to_top(window->focus_item) ;
-
-  /* Make sure the canvas gets redisplayed immediately. */
-  foo_canvas_update_now(window->canvas) ;
-
-
-  return ;
-}
-
-
 
 
 
@@ -443,6 +382,8 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   /* Each column is known by its type/style name. */
   type_quark = feature_set->unique_id ;
 
+
+  type_name = (char *)g_quark_to_string(type_quark) ;
 
   /* SHOULDN'T type_quark == key_id ????? CHECK THAT THIS IS SO.... */
 
@@ -491,7 +432,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
   ZMapWindow window = canvas_data->window ;
   int i ;
   FooCanvasItem *column_group, *top_feature_item = NULL ;
-  float line_width  = 1.0 ;
+
 
   double x = 0.0, y = 0.0 ;				    /* for testing... */
 
@@ -520,13 +461,16 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 			     &canvas_data->type->foreground) ;
 	
 	g_object_set_data(G_OBJECT(top_feature_item), "feature", feature) ;
-	g_object_set_data(G_OBJECT(top_feature_item), "item_feature_type", GINT_TO_POINTER(ITEM_FEATURE_SIMPLE)) ;
+	g_object_set_data(G_OBJECT(top_feature_item), "item_feature_type",
+			  GINT_TO_POINTER(ITEM_FEATURE_SIMPLE)) ;
 
 	g_signal_connect(GTK_OBJECT(top_feature_item), "event",
 			 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
 
 
-	/* THIS IS ABSOLUTELY AWFUL CODE......THERE HAS TO BE A BETTER WAY TO WORK THIS OUT. */
+
+	/* Is this correct, I'm not sure if this doesn't need a more dynamic approach of
+	 * recacalculation each time we zoom... */
 
 	/* any object longer than about 1.5k will need to be cropped as we zoom in to avoid
 	 * going over the 30k XWindows limit, so we store them in ZMapWindow->longItem struct. */
@@ -546,7 +490,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	FooCanvasItem *feature_group ;
 
 	/* allocate a points array for drawing the intron lines, we need three points to draw the
-	 * two lines that make the familiar "roof" shape between exons. */
+	 * two lines that make the familiar  /\  shape between exons. */
 	points = foo_canvas_points_new(3) ;
 
 
@@ -562,20 +506,31 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	/* we probably need to set this I think, it means we will go to the group when we
 	 * navigate or whatever.... */
 	g_object_set_data(G_OBJECT(top_feature_item), "feature", feature) ;
-	g_object_set_data(G_OBJECT(top_feature_item), "item_feature_type", GINT_TO_POINTER(ITEM_FEATURE_PARENT)) ;
+	g_object_set_data(G_OBJECT(top_feature_item), "item_feature_type",
+			  GINT_TO_POINTER(ITEM_FEATURE_PARENT)) ;
 
 
 	/* first we draw the introns, then the exons.  Introns will have an invisible
-	 * box around them to allow the user to click there and get a reaction. */
+	 * box around them to allow the user to click there and get a reaction.
+	 * It's a bit hacky but the bounding box has the same coords stored on it as
+	 * the intron...this needs tidying up because its error prone, better if they
+	 * had a surrounding group.....e.g. what happens when we free ?? */
 	if (feature->feature.transcript.introns)
 	  {
+	    float line_width  = 1.5 ;
+
 	    for (i = 0 ; i < feature->feature.transcript.introns->len ; i++)  
 	      {
 		ZMapSpan intron_span ;
 		FooCanvasItem *intron_box, *intron_line ;
 		double left, right, top, middle, bottom ;
+		ZMapWindowItemFeature box_data, intron_data ;
 
 		intron_span = &g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i) ;
+
+		box_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+		box_data->start = intron_span->x1 ;
+		box_data->end = intron_span->x2 ;
 
 		/* Need to remember that group coords start at zero, need to encapsulate this
 		 * in some kind of macro/function that uses the group coords etc. to set positions. */
@@ -594,8 +549,14 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 		g_object_set_data(G_OBJECT(intron_box), "feature", feature) ;
 		g_object_set_data(G_OBJECT(intron_box), "item_feature_type",
 				  GINT_TO_POINTER(ITEM_FEATURE_BOUNDING_BOX)) ;
+		g_object_set_data(G_OBJECT(intron_box), "item_feature_data",
+				  box_data) ;
 		g_signal_connect(GTK_OBJECT(intron_box), "event",
 				 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
+
+		intron_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+		intron_data->start = intron_span->x1 ;
+		intron_data->end = intron_span->x2 ;
 
 		/* fill out the points */
 		points->coords[0] = left ;
@@ -612,18 +573,30 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 		g_object_set_data(G_OBJECT(intron_line), "feature", feature) ;
 		g_object_set_data(G_OBJECT(intron_line), "item_feature_type",
 				  GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
+		g_object_set_data(G_OBJECT(intron_line), "item_feature_data",
+				  intron_data) ;
 		g_signal_connect(GTK_OBJECT(intron_line), "event",
 				 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
+
+		/* Now we can get at either twinned item from the other item. */
+		box_data->twin_item = intron_line ;
+		intron_data->twin_item = intron_box ;
 	      }
 	  }
 
 
+	/* We assume there are exons....I think we should check this actually.... */
 	for (i = 0; i < feature->feature.transcript.exons->len; i++)
 	  {
 	    ZMapSpan exon_span ;
 	    FooCanvasItem *exon_box ;
+	    ZMapWindowItemFeature feature_data ;
 
 	    exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
+
+	    feature_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+	    feature_data->start = exon_span->x1 ;
+	    feature_data->end = exon_span->x2 ;
 
 	    exon_box = zMapDrawBox(feature_group, 
 				   0.0,
@@ -636,6 +609,8 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	    g_object_set_data(G_OBJECT(exon_box), "feature", feature) ;
 	    g_object_set_data(G_OBJECT(exon_box), "item_feature_type",
 			      GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
+	    g_object_set_data(G_OBJECT(exon_box), "item_feature_data",
+			      feature_data) ;
 	    g_signal_connect(GTK_OBJECT(exon_box), "event",
 			     GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
 
@@ -669,7 +644,8 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
     }
 
 
-  /* If we created an object then set up a unique quark etc. */
+  /* If we created an object then set up a hash that allows us to go unambiguously from
+   * (feature, style) -> feature_item. */
   if (top_feature_item)
     {
       zmapWindowFToIAddFeature(window->feature_to_item, feature->style,
@@ -696,7 +672,7 @@ static void storeLongItem(ZMapWindow window, FooCanvasItem *item, int start, int
 
 
 
-/** Destroy function for longItem.
+/* Destroy function for longItem.
  *
  * Called by g_datalist_clear
  */
@@ -723,7 +699,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
     case GDK_BUTTON_PRESS:
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
-
+	ZMapWindowItemFeatureType item_feature_type ;
+	FooCanvasItem *real_item ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	printf("ITEM event handler - CLICK\n") ;
@@ -735,6 +712,16 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	zMapAssert(feature) ;
 
 
+	item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+							      "item_feature_type")) ;
+
+	/* If its a bounding box then we don't want the that to influence highlighting.. */
+	if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
+	  real_item = zMapWindowFindFeatureItemByItem(window, item) ;
+	else
+	  real_item = item ;
+
+
 	/* Button 1 and 3 are handled, 2 is passed on to a general handler which could be
 	 * the root handler. */
 	switch (but_event->button)
@@ -743,23 +730,30 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	    {
 	      /* Highlight the object the user clicked on and pass information about
 	       * about it back to layer above. */
-	      char *feature_text ;
+	      ZMapWindowSelectStruct select = {NULL} ;
 	      double x = 0.0, y = 0.0 ;
-
+	      
 	      /* Pass information about the object clicked on back to the application. */
-	      feature_text = g_strdup_printf("%s   %d   %d   %s   %s", 
-					     (char *)g_quark_to_string(feature->original_id),
-					     feature->x1,
-					     feature->x2,
-					     zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
-					     (char *)g_quark_to_string(feature->style)) ;
+	      select.text = g_strdup_printf("%s   %d   %d   %s   %s", 
+					    (char *)g_quark_to_string(feature->original_id),
+					    feature->x1,
+					    feature->x2,
+					    zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
+					    (char *)g_quark_to_string(feature->style)) ;
 
-	      (*(window->caller_cbs->click))(window, window->app_data, feature_text) ;
+	      select.item = real_item ;
 
-	      g_free(feature_text) ;
+	      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
+	      g_free(select.text) ;
 
-	      zmapWindowHighlightObject(window, item) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      /* I'm not sure what to do here, actually the callback above ends up highlighting
+	       * so there is no need to here....perhaps we should leave it to the caller to
+	       * do any highlighting ??? */
+	      zMapWindowHighlightObject(window, real_item) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      event_handled = TRUE ;
 	      break ;
@@ -774,7 +768,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	  case 3:
 	    {
 	      /* Pop up an item menu. */
-	      makeItemMenu(but_event, window, item) ;
+	      makeItemMenu(but_event, window, real_item) ;
 
 	      event_handled = TRUE ;
 	      break ;
@@ -895,80 +889,6 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
   return ;
 }
 
-
-static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean rev_video)
-{
-  if (FOO_IS_CANVAS_GROUP(item))
-    {
-      HighlightStruct highlight = {window, rev_video} ;
-      FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
-
-      g_list_foreach(group->item_list, highlightFuncCB, (void *)&highlight) ;
-    }
-  else
-    {
-      setItemColour(window, item, rev_video) ;
-    }
-
-  return ;
-}
-
-
-/* This is a g_datalist callback function. */
-static void highlightFuncCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-  Highlight highlight = (Highlight)user_data ;
-
-  setItemColour(highlight->window, item, highlight->rev_video) ;
-
-  return ;
-}
-
-
-static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_video)
-{
-  ZMapWindowItemFeatureType item_feature_type ;
-
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
-
-  if (item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
-    {
-      ZMapFeature feature ;
-      ZMapFeatureTypeStyle style ;
-      GdkColor rev_video_colour ;
-      GdkColor *fill_colour ;
-
-      /* Retrieve the feature from the canvas item. */
-      feature = g_object_get_data(G_OBJECT(item), "feature") ;
-      zMapAssert(feature) ;
-
-      style = (ZMapFeatureTypeStyle)g_datalist_id_get_data(&(window->types), feature->style) ;
-      zMapAssert(style) ;
-
-      if (rev_video)
-	{
-	  /* set foreground GdkColor to be the inverse of current settings */
-	  rev_video_colour.red   = (65535 - style->foreground.red) ;
-	  rev_video_colour.green = (65535 - style->foreground.green) ;
-	  rev_video_colour.blue  = (65535 - style->foreground.blue) ;
-	  
-	  fill_colour = &rev_video_colour ;
-	}
-      else
-	{
-	  fill_colour = &(style->foreground) ;
-	}
-      
-
-      foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-			  "fill_color_gdk", fill_colour,
-			  NULL) ;
-    }
-
-
-  return ;
-}
 
 
 /* I'M TRYING THESE TWO FUNCTIONS BECAUSE I DON'T LIKE THE BIT WHERE IT GOES TO THE ITEMS
