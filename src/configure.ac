@@ -120,19 +120,19 @@ AC_SUBST(ACECONN_LIBS)
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 # keep track for rpath
-RPATH=""
-full_paths="${FOOCANVAS_LIBS} ${ACECONN_LIBS} ${GTK_LIBS}"
-if $full_paths ; then
-   save_ifs=$IFS; IFS=':'
-   for l in $full_paths
-    do
-      case $l in
-           -L*) RPATH="${RPATH} $l";;
-      esac      
-   done
-   IFS=$save_ifs
-fi
-echo ${RPATH}
+#RPATH=""
+#full_paths="${FOOCANVAS_LIBS} ${ACECONN_LIBS} ${GTK_LIBS}"
+#if $full_paths ; then
+#   save_ifs=$IFS; IFS=':'
+#   for l in $full_paths
+#    do
+#      case $l in
+#           -L*) RPATH="${RPATH} $l";;
+#      esac      
+#   done
+#   IFS=$save_ifs
+#fi
+#echo ${RPATH}
 #zmapMake/platform.alpha_5:LDFLAGS = -rpath '/usr/local/gtk2/lib:$(POPT_LIB)'
 #zmapMake/platform.linux_4:LDFLAGS = -Xlinker -rpath -Xlinker $(FOO_CANVAS_PATH)/lib
 # -rpath :separated_list
