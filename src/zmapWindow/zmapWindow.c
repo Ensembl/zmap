@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 15 18:41 2005 (edgrif)
+ * Last edited: Apr 21 14:27 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.71 2005-04-15 18:09:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.72 2005-04-21 13:45:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -133,7 +133,7 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
 
   zMapAssert(callbacks
 	     && callbacks->enter && callbacks->leave
-	     && callbacks->scroll && callbacks->click
+	     && callbacks->scroll && callbacks->focus && callbacks->select
 	     && callbacks->visibilityChange && callbacks->destroy) ;
 
   window_cbs_G = g_new0(ZMapWindowCallbacksStruct, 1) ;
@@ -141,7 +141,8 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   window_cbs_G->enter  = callbacks->enter ;
   window_cbs_G->leave   = callbacks->leave ;
   window_cbs_G->scroll  = callbacks->scroll ;
-  window_cbs_G->click   = callbacks->click ;
+  window_cbs_G->focus   = callbacks->focus ;
+  window_cbs_G->select   = callbacks->select ;
   window_cbs_G->setZoomStatus = callbacks->setZoomStatus;
 
   window_cbs_G->visibilityChange = callbacks->visibilityChange ;
@@ -187,6 +188,11 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   window->app_data = app_data ;
   window->parent_widget = parent_widget ;
 
+
+  gdk_color_parse(ZMAP_WINDOW_ITEM_FILL_COLOUR, &(window->canvas_fill)) ;
+  gdk_color_parse(ZMAP_WINDOW_ITEM_BORDER_COLOUR, &(window->canvas_border)) ;
+  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(window->canvas_background)) ;
+
   window->zmap_atom = gdk_atom_intern(ZMAP_ATOM, FALSE) ;
 
   window->zoom_factor = 0.0 ;
@@ -226,7 +232,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   window->canvas = FOO_CANVAS(canvas);
   gtk_container_add(GTK_CONTAINER(window->scrolled_window), canvas) ;
 
-  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(window->canvas_background)) ;
   gtk_widget_modify_bg(GTK_WIDGET(canvas), GTK_STATE_NORMAL, &(window->canvas_background)) ;
 
 
@@ -341,7 +346,16 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   new_window->seqLength          = original_window->seqLength;
   new_window->seq_start          = original_window->seq_start;
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Surely this cannot work.....the items will be different....
+   * in fact it won't we need to pass the type/feature id combo. into the new window
+   * drawfeature call.... */
   new_window->focus_item = original_window->focus_item ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* I'm a little uncertain how much of the below is really necessary as we are
    * going to call the draw features code anyway. */
@@ -1367,7 +1381,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
 	/* Report to our parent that we have been clicked in, we change "click" to "focus"
 	 * because that is what this is for.... */
-	(*(window_cbs_G->click))(window, window->app_data, NULL) ;
+	(*(window_cbs_G->focus))(window, window->app_data, NULL) ;
 
 	
 	/* Button 2 is handled, we centre on that position, 1 and 3 are passed on as they may
