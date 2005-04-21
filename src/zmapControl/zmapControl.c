@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Mar 23 14:50 2005 (edgrif)
+ * Last edited: Apr 18 14:42 2005 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.48 2005-03-23 17:22:42 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.49 2005-04-21 13:44:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,8 @@ static void updateControl(ZMap zmap, ZMapView view) ;
 static void dataLoadCB(ZMapView view, void *app_data, void *view_data) ;
 static void enterCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
-static void clickCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void visibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
 
@@ -65,7 +66,7 @@ static ZMapCallbacks zmap_cbs_G = NULL ;
 
 /* Holds callbacks we set in the level below us to be called back on. */
 ZMapViewCallbacksStruct view_cbs_G = {enterCB, leaveCB,
-				      dataLoadCB, clickCB,
+				      dataLoadCB, focusCB, selectCB,
 				      visibilityChangeCB, viewKilledCB} ;
 
 
@@ -468,18 +469,12 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
 
 
-/* This routine gets called when someone clicks in one of the zmap windows....it will
- * be called more than once per click, once for the general canvas window handler,
- * and once for any item/column clicked on. This is a bit yucky but forced on us
- * because I can't find a way to get the general handler to be run after the other
- * handlers.
- * 
- * NOTE that there will be no text in view_data for the general handler callback. 
- *  */
-static void clickCB(ZMapViewWindow view_window, void *app_data, void *view_data)
+/* This routine gets called when someone clicks in one of the zmap windows....it
+ * handles general focus handling of windows etc.
+ */ 
+static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data_unused)
 {
   ZMap zmap = (ZMap)app_data ;
-  char *text = (char *)view_data ;
   ZMapView view = zMapViewGetView(view_window) ;
 
   /* Make this view window the focus view window. */
@@ -488,7 +483,21 @@ static void clickCB(ZMapViewWindow view_window, void *app_data, void *view_data)
   /* If view has features then change the window title. */
   updateControl(zmap, view) ;
 
-  /* If there is text then display it in info. box of zmap. */
+  return ;
+}
+
+
+/* This routine gets called when someone clicks in one of the zmap window items, i.e.
+ * a feature, a column etc. It gets passed text which this routine then displays.
+ */
+static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data)
+{
+  ZMap zmap = (ZMap)app_data ;
+  char *text = (char *)view_data ;
+  ZMapView view = zMapViewGetView(view_window) ;
+
+  /* If there is text then display it in info. box of zmap. (There may be no text if
+   * user clicked on blank background.) */
   if (text)
     gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), text) ;
 
