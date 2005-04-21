@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Apr  4 11:10 2005 (edgrif)
+ * Last edited: Apr 21 14:51 2005 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.26 2005-04-05 14:19:28 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.27 2005-04-21 13:52:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -134,6 +134,8 @@ FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
 			     "points", points,
 			     "fill_color_gdk", colour,
 			     "width_units", thickness,
+			     "join_style", GDK_JOIN_BEVEL,
+			     "cap_style", GDK_CAP_BUTT,
 			     NULL);
 		    
   return item ;
