@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr  5 13:52 2005 (edgrif)
+ * Last edited: Apr 21 13:04 2005 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.2 2005-04-05 14:52:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.3 2005-04-21 13:49:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,11 +36,77 @@
 #include <zmapWindow_P.h>
 
 
+/* Used to hold highlight information for the hightlight callback function. */
+typedef struct
+{
+  ZMapWindow window ;
+  gboolean rev_video ;
+} HighlightStruct, *Highlight ;
 
 
+/* Used to hold coord information + return a result the child search callback function. */
+typedef struct
+{
+  int child_start, child_end ;
+  FooCanvasItem *child_item ;
+} ChildSearchStruct, *ChildSearch ;
+
+
+static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean rev_video) ;
+static void highlightFuncCB(gpointer data, gpointer user_data) ;
+static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_video) ;
 
 static void checkScrollRegion(ZMapWindow window, double start, double end) ;
 static void destroyFeaturesHash(gpointer data) ;
+
+
+static void childSearchCB(gpointer data, gpointer user_data) ;
+
+
+
+
+/* Highlight a feature, note how this function should just take _any_ feature/item but it doesn't 
+ * and so needs redoing....sigh....it should also be called something like focusOnItem() */
+void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
+{                                               
+  ZMapWindowItemFeatureType item_feature_type ;
+
+  /* If any other feature is currently in focus, revert it to its std colours */
+  if (window->focus_item)
+    highlightItem(window, window->focus_item, FALSE) ;
+
+  /* Highlight the new item. */
+  highlightItem(window, item, TRUE) ;
+ 
+  /* Make this item the new focus item. */
+  window->focus_item = item ;
+
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window->focus_item),
+							"item_feature_type")) ;
+
+  /* Only raise this item to the top if it is the whole feature. */
+  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
+    foo_canvas_item_raise_to_top(window->focus_item) ;
+  else if (item_feature_type == ITEM_FEATURE_CHILD)
+    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* I'D LIKE TO RAISE THE WHOLE GROUP BUT THIS DOESN'T WORK SO WE JUST RAISE THE
+       * CHILD ITEM...I DON'T LIKE THE FEEL OF THIS...DOES IT REALLY WORK.... */
+      foo_canvas_item_raise_to_top(window->focus_item->parent) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      foo_canvas_item_raise_to_top(window->focus_item) ;
+    }
+
+  /* Make sure the canvas gets redisplayed immediately. */
+  foo_canvas_update_now(window->canvas) ;
+
+
+  return ;
+}
+
 
 
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out)
@@ -54,6 +120,77 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
 
   return ;
 }
+
+
+/* Finds the feature item in a window corresponding to the supplied feature item..which is
+ * usually one from a different window.... */
+FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item)
+{
+  FooCanvasItem *matching_item = NULL ;
+  ZMapFeature feature ;
+  ZMapWindowItemFeatureType item_feature_type ;
+
+
+  /* Retrieve the feature item info from the canvas item. */
+  feature = g_object_get_data(G_OBJECT(item), "feature");  
+  zMapAssert(feature) ;
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+							"item_feature_type")) ;
+
+  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
+    {
+      matching_item = zmapWindowFToIFindItem(window->feature_to_item, feature->style, feature->unique_id) ;
+    }
+  else
+    {
+      ZMapWindowItemFeature item_feature_data ;
+
+      item_feature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
+								   "item_feature_data") ;
+
+      matching_item = zmapWindowFToIFindItemChild(window->feature_to_item, feature->style,
+						  feature->unique_id,
+						  item_feature_data->start, item_feature_data->end) ;
+    }
+
+  return matching_item ;
+}
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Finds the feature item child in a window corresponding to the supplied feature item..which is
+ * usually one from a different window....
+ * A feature item child is something like the feature item representing an exon within a transcript. */
+FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvasItem *item,
+						    int child_start, int child_end)
+{
+  FooCanvasItem *matching_item = NULL ;
+  ZMapFeature feature ;
+
+  zMapAssert(window && item && child_start > 0 && child_end > 0 && child_start <= child_end) ;
+
+
+  /* Retrieve the feature item info from the canvas item. */
+  feature = g_object_get_data(G_OBJECT(item), "feature");  
+  zMapAssert(feature) ;
+
+  /* Find the item that matches */
+  matching_item = zmapWindowFToIFindItem(window->feature_to_item, feature->style, feature->unique_id) ;
+
+  if (FOO_IS_CANVAS_GROUP( matching_item))
+
+
+
+
+  return matching_item ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 
 
@@ -99,8 +236,14 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
   int cx, cy, height ;
   double x1, y1, x2, y2 ;
   ZMapFeature feature ;
+  ZMapWindowSelectStruct select = {NULL} ;
 
   zMapAssert(window && item) ;
+
+
+  /* Really we should create some text here as well.... */
+  select.item = item ;
+
 
   feature = g_object_get_data(G_OBJECT(item), "feature");  
   zMapAssert(feature) ;					    /* this should never fail. */
@@ -131,18 +274,52 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
   foo_canvas_item_raise_to_top(item);
 	  
   /* highlight the item */
-  zmapWindowHighlightObject(window, item) ;
+  zMapWindowHighlightObject(window, item) ;
 	  
-
-  /* this shouldn't be here, it should either call the callback or the caller should be
-   * forced to do this explicitly via some kind of focus call..... */
-  zMapWindowFeatureClickCB(window, feature) ;	    /* show feature details on info_panel  */
+  /* Report the selected object to the layer above us. */
+  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
 
   result = TRUE ;
 
   return result ;
 }
+
+
+
+void zmapWindowShowItem(FooCanvasItem *item)
+{
+  ZMapFeature feature ;
+  ZMapFeatureTypeStyle type ;
+  ZMapWindowItemFeatureType item_feature_type ;
+  ZMapWindowItemFeature item_feature_data ;
+
+  /* Retrieve the feature item info from the canvas item. */
+  feature = g_object_get_data(G_OBJECT(item), "feature");  
+  zMapAssert(feature) ;
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+							"item_feature_type")) ;
+
+  item_feature_data = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+
+
+  printf("\nItem:\n"
+	 "Name: %s, type: %s,  style: %s,  x1: %d,  x2: %d,  "
+	 "item_x1: %d,  item_x1: %d\n",
+	 (char *)g_quark_to_string(feature->original_id),
+	 zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
+	 (char *)g_quark_to_string(feature->style),
+	 feature->x1,
+	 feature->x2,
+	 item_feature_data->start, item_feature_data->end) ;
+
+
+
+  return ;
+}
+
+
 
 
 /* Prints out an items coords in world coords, good for debugging.... */
@@ -228,6 +405,36 @@ FooCanvasItem *zmapWindowFToIFindItem(GHashTable *feature_to_item_hash, GQuark s
 }
 
 
+/* Find the child item that matches the supplied start/end, use for finding feature items
+ * that are part of a compound feature, e.g. exons/introns in a transcript.
+ * Warning, may return null so result MUST BE TESTED by caller. */
+FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_item_hash, GQuark set_id,
+					   GQuark feature_id, int child_start, int child_end)
+{
+  FooCanvasItem *item = NULL ;
+  GHashTable *set_hash ;
+
+  set_hash = (GHashTable *)g_hash_table_lookup(feature_to_item_hash, GUINT_TO_POINTER(set_id)) ;
+
+
+  /* If the returned item is not a compound item then return NULL, otherwise look for the correct
+   * child using the start/end. */
+  if ((item = (FooCanvasItem *)g_hash_table_lookup(set_hash, GUINT_TO_POINTER(feature_id)))
+      && FOO_IS_CANVAS_GROUP(item))
+    {
+      FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
+      ChildSearchStruct child_search = {child_start, child_end, NULL} ;
+
+      g_list_foreach(group->item_list, childSearchCB, (void *)&child_search) ;
+
+      if (child_search.child_item)
+	item = child_search.child_item ;
+    }
+
+  return item ;
+}
+
+
 /* Destroy the feature to item hash, this will cause all the individual feature to
  * item hashes to be destroyed. */
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash)
@@ -242,6 +449,40 @@ void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash)
 /* 
  *                  Internal routines.
  */
+
+
+/* This is a g_datalist callback function. */
+static void childSearchCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ChildSearch child_search = (ChildSearch)user_data ;
+  ZMapWindowItemFeatureType item_feature_type ;
+
+  /* We take the first match we find so this function does nothing if we have already
+   * found matching child item. */
+  if (!(child_search->child_item))
+    {
+      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+							    "item_feature_type")) ;
+      if (item_feature_type == ITEM_FEATURE_CHILD)
+	{
+	  ZMapWindowItemFeature item_feature_data ;
+
+	  item_feature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
+								       "item_feature_data") ;
+
+	  if (item_feature_data->start == child_search->child_start
+	      && item_feature_data->end == child_search->child_end)
+	    child_search->child_item = item ;
+	}
+    }
+
+  return ;
+}
+
+
+
+
 
 
 
@@ -332,4 +573,106 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
   return ;
 }
 
+
+static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean rev_video)
+{
+  if (FOO_IS_CANVAS_GROUP(item))
+    {
+      HighlightStruct highlight = {window, rev_video} ;
+      FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
+
+      g_list_foreach(group->item_list, highlightFuncCB, (void *)&highlight) ;
+    }
+  else
+    {
+      ZMapWindowItemFeatureType item_feature_type ;
+
+      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+
+      if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX
+	  || item_feature_type == ITEM_FEATURE_CHILD)
+	{
+	  ZMapWindowItemFeature item_data ;
+
+	  item_data = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+
+	  if (item_data->twin_item)
+	    setItemColour(window, item_data->twin_item, rev_video) ;
+	}
+
+      setItemColour(window, item, rev_video) ;
+    }
+
+  return ;
+}
+
+
+/* This is a g_datalist callback function. */
+static void highlightFuncCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  Highlight highlight = (Highlight)user_data ;
+
+  setItemColour(highlight->window, item, highlight->rev_video) ;
+
+  return ;
+}
+
+
+static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_video)
+{
+  ZMapWindowItemFeatureType item_feature_type ;
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+
+  if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
+    {
+      GdkColor *colour ;
+
+      if (rev_video)
+	colour = &(window->canvas_border) ;
+      else
+	colour = &(window->canvas_background) ;
+
+      foo_canvas_item_set(FOO_CANVAS_ITEM(item),
+			  "outline_color_gdk", colour,
+			  NULL) ;
+    }
+  else
+    {
+      ZMapFeature feature ;
+      ZMapFeatureTypeStyle style ;
+      GdkColor rev_video_colour ;
+      GdkColor *fill_colour ;
+
+      /* Retrieve the feature from the canvas item. */
+      feature = g_object_get_data(G_OBJECT(item), "feature") ;
+      zMapAssert(feature) ;
+
+      style = (ZMapFeatureTypeStyle)g_datalist_id_get_data(&(window->types), feature->style) ;
+      zMapAssert(style) ;
+
+      if (rev_video)
+	{
+	  /* set foreground GdkColor to be the inverse of current settings */
+	  rev_video_colour.red   = (65535 - style->foreground.red) ;
+	  rev_video_colour.green = (65535 - style->foreground.green) ;
+	  rev_video_colour.blue  = (65535 - style->foreground.blue) ;
+	  
+	  fill_colour = &rev_video_colour ;
+	}
+      else
+	{
+	  fill_colour = &(style->foreground) ;
+	}
+      
+
+      foo_canvas_item_set(FOO_CANVAS_ITEM(item),
+			  "fill_color_gdk", fill_colour,
+			  NULL) ;
+    }
+
+
+  return ;
+}
 
