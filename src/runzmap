@@ -20,7 +20,9 @@ case $opsys in
     export LD_LIBRARY_PATH ;;
 
   Linux )
-    ;;
+    locals=~acedb/ZMap/prefix/LINUX/lib
+    LD_LIBRARY_PATH="$locals"
+    export LD_LIBRARY_PATH ;;
 
   * )
     msgAndExit "unsupported operating system: $opsys" ;;
