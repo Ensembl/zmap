@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Apr 13 09:56 2005 (edgrif)
+ * Last edited: Apr 20 19:30 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.53 2005-04-14 10:06:28 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.54 2005-04-21 13:51:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,7 +49,8 @@ static gint zmapIdleCB(gpointer cb_data) ;
 static void enterCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void leaveCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void scrollCB(ZMapWindow window, void *caller_data, void *window_data) ;
-static void clickCB(ZMapWindow window, void *caller_data, void *window_data) ;
+static void focusCB(ZMapWindow window, void *caller_data, void *window_data) ;
+static void selectCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void visibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data);
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data);
 static void destroyCB(ZMapWindow window, void *caller_data, void *window_data) ;
@@ -100,7 +101,7 @@ static ZMapViewCallbacks view_cbs_G = NULL ;
 
 /* Callbacks back we set in the level below us, i.e. zMapWindow. */
 ZMapWindowCallbacksStruct window_cbs_G = {enterCB, leaveCB,
-					  scrollCB, clickCB,
+					  scrollCB, focusCB, selectCB,
 					  setZoomStatusCB, visibilityChangeCB, destroyCB} ;
 
 
@@ -122,7 +123,7 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
 
   zMapAssert(callbacks
 	     && callbacks->enter && callbacks->leave
-	     && callbacks->load_data && callbacks->click
+	     && callbacks->load_data && callbacks->focus && callbacks->select
 	     && callbacks->visibility_change && callbacks->destroy) ;
 
   view_cbs_G = g_new0(ZMapViewCallbacksStruct, 1) ;
@@ -130,7 +131,8 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
   view_cbs_G->enter = callbacks->enter ;
   view_cbs_G->leave = callbacks->leave ;
   view_cbs_G->load_data = callbacks->load_data ;
-  view_cbs_G->click = callbacks->click ;
+  view_cbs_G->focus = callbacks->focus ;
+  view_cbs_G->select = callbacks->select ;
   view_cbs_G->visibility_change = callbacks->visibility_change ;
   view_cbs_G->destroy = callbacks->destroy ;
 
@@ -739,15 +741,49 @@ static void scrollCB(ZMapWindow window, void *caller_data, void *window_data)
 }
 
 
-static void clickCB(ZMapWindow window, void *caller_data, void *window_data)
+/* Called when a sequence window has been focussed, usually by user actions. */
+static void focusCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
-  ZMapFeature feature = (ZMapFeature)window_data ;
-
-  /* Is there any focus stuff we want to do here ??? */
 
   /* Pass back a ZMapViewWindow as it has both the View and the window. */
-  (*(view_cbs_G->click))(view_window, view_window->parent_view->app_data, feature) ;
+  (*(view_cbs_G->focus))(view_window, view_window->parent_view->app_data, NULL) ;
+
+  return ;
+}
+
+/* Called when some sequence window feature (e.g. column, actual feature etc.)
+ * has been selected. */
+static void selectCB(ZMapWindow window, void *caller_data, void *window_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+  ZMapWindowSelect select_item = (ZMapWindowSelect)window_data ;
+
+
+  if (select_item->item)
+    {
+      GList* list_item ;
+
+      /* Highlight the feature in all windows. */
+      list_item = g_list_first(view_window->parent_view->window_list) ;
+
+      do
+	{
+	  ZMapViewWindow view_window ;
+	  FooCanvasItem *item ;
+
+	  view_window = list_item->data ;
+
+	  item = zMapWindowFindFeatureItemByItem(view_window->window, select_item->item) ;
+	    
+	  zMapWindowHighlightObject(view_window->window, item) ;
+	}
+      while ((list_item = g_list_next(list_item))) ;
+    }
+
+
+  /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
+  (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, (void *)select_item->text) ;
 
   return ;
 }
