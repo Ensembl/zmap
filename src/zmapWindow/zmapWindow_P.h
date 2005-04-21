@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr 14 11:13 2005 (edgrif)
+ * Last edited: Apr 21 10:04 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.48 2005-04-14 10:14:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.49 2005-04-21 13:50:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -73,11 +73,10 @@ enum
   } ;
 
 
-/* Default background colour. */
-#define ZMAP_WINDOW_BACKGROUND_COLOUR "white"
+/* Default colours. */
 #define ZMAP_WINDOW_ITEM_FILL_COLOUR "white"
 #define ZMAP_WINDOW_ITEM_BORDER_COLOUR "black"
-
+#define ZMAP_WINDOW_BACKGROUND_COLOUR "white"
 
 
 /* Represents all blocks for a single alignment, if the alignment is ungapped it
@@ -145,7 +144,9 @@ typedef struct
 
 
 
-
+/* Item features are the canvas items that represent sequence features, they can be of various
+ * types, in particular compound features such as transcripts require a parent, a bounding box
+ * and children for features such as introns/exons. */
 typedef enum
   {
     ITEM_FEATURE_SIMPLE,				    /* Item is the whole feature. */
@@ -155,6 +156,21 @@ typedef enum
 							       feature or subpart of feature.  */
   } ZMapWindowItemFeatureType ;
 
+
+/* Probably will need to expand this to be a union as we come across more features that need
+ * different information recording about them.
+ * The intent of this structure is to hold information for items that are subparts of features,
+ * e.g. exons, where it is tedious/error prone to recover the information from the feature and
+ * canvas item. */
+typedef struct
+{
+  int start, end ;					    /* start/end of feature in sequence coords. */
+  FooCanvasItem *twin_item ;				    /* Some features need to be drawn with
+							       two canvas items, an example is
+							       introns which need an invisible
+							       bounding box for sensible user
+							       interaction. */
+} ZMapWindowItemFeatureStruct, *ZMapWindowItemFeature ;
 
 
 
@@ -184,8 +200,11 @@ typedef struct _ZMapWindowStruct
   ZMapWindowLockType curr_locking ;			    /* Orientation of current locking. */
   GHashTable *sibling_locked_windows ;			    /* windows this window is locked with. */
 
-
+  /* Some default colours, good for hiding boxes/lines. */
+  GdkColor canvas_fill ;
+  GdkColor canvas_border ;
   GdkColor canvas_background ;
+
   double         zoom_factor ;
   ZMapWindowZoomStatus zoom_status ;   /* For short sequences that are displayed at max. zoom initially. */
   double         min_zoom ;				    /* min/max allowable zoom. */
@@ -262,23 +281,17 @@ typedef struct
 
 
 
-
-
-
-
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
-
-void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature) ;
 
 void zmapWindowPrintCanvas(FooCanvas *canvas) ;
 void zmapWindowPrintGroups(FooCanvas *canvas) ;
 void zmapWindowPrintItem(FooCanvasGroup *item) ;
 
+void zmapWindowShowItem(FooCanvasItem *item) ;
 
 void     zMapWindowCreateListWindow(ZMapWindow window, FooCanvasItem *item) ;
-gboolean zMapWindowFeatureClickCB(ZMapWindow window, ZMapFeature feature);
 
 FooCanvasItem *zmapDrawScale(FooCanvas *canvas, double offset, double zoom_factor, int start, int end,
 			     int *major_units_out, int *minor_units_out);
@@ -309,6 +322,8 @@ void zmapWindowFToIAddFeature(GHashTable *feature_to_item_hash, GQuark set_id,
 			      GQuark feature_id, FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowFToIFindItem(GHashTable *feature_to_item_hash, GQuark set_id,
 				      GQuark feature_id) ;
+FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_item_hash, GQuark set_id,
+					   GQuark feature_id, int child_start, int child_end) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
 
