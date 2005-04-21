@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Apr 13 09:51 2005 (edgrif)
+ * Last edited: Apr 18 14:35 2005 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.19 2005-04-14 10:06:28 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.20 2005-04-21 13:40:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -57,6 +57,7 @@ typedef struct _ZMapViewWindowStruct *ZMapViewWindow ;
 typedef void (*ZMapViewWindowCallbackFunc)(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 typedef void (*ZMapViewCallbackFunc)(ZMapView zmap_view, void *app_data, void *view_data) ;
 
+
 /* Set of callback routines that allow the caller to be notified when events happen
  * to a window. */
 typedef struct _ZMapViewCallbacksStruct
@@ -64,10 +65,13 @@ typedef struct _ZMapViewCallbacksStruct
   ZMapViewWindowCallbackFunc enter ;
   ZMapViewWindowCallbackFunc leave ;
   ZMapViewCallbackFunc load_data ;
-  ZMapViewWindowCallbackFunc click ;
+  ZMapViewWindowCallbackFunc focus ;
+  ZMapViewWindowCallbackFunc select ;
   ZMapViewWindowCallbackFunc visibility_change ;
   ZMapViewCallbackFunc destroy ;
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
+
+
 
 
 /* DOES THIS STATE NEED TO BE EXPOSED LIKE THIS...REVISIT.... */
