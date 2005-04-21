@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Apr 13 09:26 2005 (edgrif)
+ * Last edited: Apr 21 14:41 2005 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.35 2005-04-14 10:12:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.36 2005-04-21 13:43:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -65,7 +65,7 @@ typedef enum {ZMAP_WINLOCK_NONE, ZMAP_WINLOCK_VERTICAL, ZMAP_WINLOCK_HORIZONTAL}
 
 
 /* Data returned to the visibilityChange callback routine. */
-typedef struct _ZMapWindowVisibilityChangeStruct
+typedef struct
 {
   ZMapWindowZoomStatus zoom_status ;
 
@@ -74,6 +74,17 @@ typedef struct _ZMapWindowVisibilityChangeStruct
   double scrollable_bot ;
 
 } ZMapWindowVisibilityChangeStruct, *ZMapWindowVisibilityChange ;
+
+
+/* Data returned to the visibilityChange callback routine. */
+typedef struct
+{
+  char *text ;						    /* Describes selected item. */
+
+  FooCanvasItem *item ;					    /* The feature selected, may be null
+							       if a column was selected. */
+
+} ZMapWindowSelectStruct, *ZMapWindowSelect ;
 
 
 /* Callback functions that can be registered with ZMapWindow, functions are registered all in one.
@@ -85,7 +96,8 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc enter ;
   ZMapWindowCallbackFunc leave ;
   ZMapWindowCallbackFunc scroll ;
-  ZMapWindowCallbackFunc click ;
+  ZMapWindowCallbackFunc focus ;
+  ZMapWindowCallbackFunc select ;
   ZMapWindowCallbackFunc setZoomStatus;
   ZMapWindowCallbackFunc visibilityChange ;
   ZMapWindowCallbackFunc destroy ;
@@ -137,17 +149,25 @@ void zMapWindowSetZoomFactor(ZMapWindow window, double zoom_factor);
 void zMapWindowSetMinZoom   (ZMapWindow window);
 
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
+
 FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
 					       ZMapFeatureType feature_type, char *feature_name,
 					       ZMapStrand strand, int start, int end,
 					       int query_start, int query_end) ;
+FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
+
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
+
 gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) ;
-void zMapWindowDestroyLists    (ZMapWindow window);
+
+void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature) ;
+
+
+void zMapWindowDestroyLists(ZMapWindow window) ;
+
 void zMapWindowUnlock(ZMapWindow window) ;
 
 void zMapWindowDestroy(ZMapWindow window) ;
-
 
 /* this may be better in a utils directory...not sure.... */
 void zMapWindowMakeMenu(char *menu_title, ZMapWindowMenuItemStruct menu_items[],
