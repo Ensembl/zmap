@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 18 16:25 2005 (edgrif)
+ * Last edited: Apr 25 19:02 2005 (rds)
  * Created: Thu Feb 24 11:19:23 2005 (edgrif)
- * CVS info:   $Id: zmapWindowAlignment.c,v 1.6 2005-04-21 13:45:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAlignment.c,v 1.7 2005-04-25 18:03:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -240,7 +240,8 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
   ZMapWindowAlignment alignment = block->parent ;
   FooCanvasItem *group, *boundingBox ;
   double min_mag ;
-  GdkColor column_colour ;
+  GdkColor fcolumn_colour ;
+  GdkColor rcolumn_colour ;
   double x1, y1, x2, y2 ;
   double position ;
 
@@ -262,13 +263,14 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
 					     "y", 0.0,
 					     NULL) ;
 
-  gdk_color_parse("white", &column_colour) ;
+  gdk_color_parse("#FFF", &fcolumn_colour); /* XParseColor accepts hex codes so ... white = #FFF */
+  gdk_color_parse("#EEE", &rcolumn_colour); /* greyish = #EEE */
 
   column->forward_group = createColumn(FOO_CANVAS_GROUP(column->column_group),
 				       column,
 				       0.0,
 				       alignment->window->seq_start, alignment->window->seq_end,
-				       type->width, &column_colour) ;
+				       type->width, &fcolumn_colour) ;
 
   if (type->showUpStrand)
     {
@@ -278,7 +280,7 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
 					   x2 + column->strand_gap,
 					   alignment->window->seq_start, alignment->window->seq_end,
 					   type->width,
-					   &column_colour) ;
+					   &rcolumn_colour) ;
     }
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
