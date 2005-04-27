@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 21 17:00 2005 (edgrif)
+ * Last edited: Apr 27 15:14 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.53 2005-04-21 16:05:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.54 2005-04-27 14:37:36 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -768,59 +768,44 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	  real_item = item ;
 
 
-	/* Button 1 and 3 are handled, 2 is passed on to a general handler which could be
+	/* Button 1 and 3 are handled, 2 is left for a general handler which could be
 	 * the root handler. */
-	switch (but_event->button)
+	if (but_event->button == 1 || but_event->button == 3)
 	  {
-	  case 1:
-	    {
-	      /* Highlight the object the user clicked on and pass information about
-	       * about it back to layer above. */
-	      ZMapWindowSelectStruct select = {NULL} ;
-	      double x = 0.0, y = 0.0 ;
-	      
-	      /* Pass information about the object clicked on back to the application. */
-	      select.text = g_strdup_printf("%s   %d   %d   %s   %s", 
-					    (char *)g_quark_to_string(feature->original_id),
-					    feature->x1,
-					    feature->x2,
-					    zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
-					    (char *)g_quark_to_string(feature->style)) ;
-
-	      select.item = real_item ;
-
-	      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-
-	      g_free(select.text) ;
+	    /* Highlight the object the user clicked on and pass information about
+	     * about it back to layer above. */
+	    ZMapWindowSelectStruct select = {NULL} ;
+	    double x = 0.0, y = 0.0 ;
+	    
+	    /* Pass information about the object clicked on back to the application. */
+	    select.text = g_strdup_printf("%s   %d   %d   %s   %s", 
+					  (char *)g_quark_to_string(feature->original_id),
+					  feature->x1,
+					  feature->x2,
+					  zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
+					  (char *)g_quark_to_string(feature->style)) ;
+	    
+	    select.item = real_item ;
+	    
+	    (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+	    
+	    g_free(select.text) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      /* I'm not sure what to do here, actually the callback above ends up highlighting
-	       * so there is no need to here....perhaps we should leave it to the caller to
-	       * do any highlighting ??? */
-	      zMapWindowHighlightObject(window, real_item) ;
+	    /* I'm not sure what to do here, actually the callback above ends up highlighting
+	     * so there is no need to here....perhaps we should leave it to the caller to
+	     * do any highlighting ??? */
+	    zMapWindowHighlightObject(window, real_item) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+	    if (but_event->button == 3)
+	      {
+		/* Pop up an item menu. */
+		makeItemMenu(but_event, window, real_item) ;
+	      }
 
-	      event_handled = TRUE ;
-	      break ;
-	    }
-	    /* We don't do anything for button 2 or any buttons > 3. */
-	  default:
-	  case 2:
-	    {
-	      event_handled = FALSE ;
-	      break ;
-	    }
-	  case 3:
-	    {
-	      /* Pop up an item menu. */
-	      makeItemMenu(but_event, window, real_item) ;
-
-	      event_handled = TRUE ;
-	      break ;
-	    }
+	    event_handled = TRUE ;
 	  }
-	break ;
       }
     default:
       {

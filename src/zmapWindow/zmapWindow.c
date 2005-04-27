@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 21 14:27 2005 (edgrif)
+ * Last edited: Apr 27 10:21 2005 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.72 2005-04-21 13:45:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.73 2005-04-27 14:37:36 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -905,7 +905,8 @@ void zMapWindowDestroy(ZMapWindow window)
       for (i = 0; i < window->featureListWindows->len; i++)
 	{
 	  widget = g_ptr_array_index(window->featureListWindows, i);
-	  gtk_widget_destroy(widget);
+	  if (GTK_IS_WIDGET(widget))
+	    gtk_widget_destroy(widget);
 	}
       g_ptr_array_free(window->featureListWindows, FALSE);
     }

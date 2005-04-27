@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar 31 14:53 2005 (edgrif)
+ * Last edited: Apr 27 14:52 2005 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.25 2005-04-05 14:50:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.26 2005-04-27 14:37:36 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,7 +55,7 @@ enum { NAME, START, END, ID, TYPE, FEATURE_TYPE, X_COORD, FEATURE_ITEM, N_COLUMN
  */
 typedef struct
 {
-  ZMapWindow window ;
+  ZMapWindow    window ;
   ZMapStrand    strand;					    /*!< up or down strand (enum). */
   double        x_coord;				    /*!< X coordinate of selected column. */
   GtkTreeStore *list;					    /*!< list of features in selected column. */
@@ -65,17 +65,20 @@ typedef struct
 
 /* function prototypes ***************************************************/
 static void addItemToList             (GQuark key_id, gpointer data, gpointer user_data);
+static GtkTreeIter findItemInList     (ZMapWindow zmapWindow, GtkTreeModel *sort_model, FooCanvasItem *item);
 static int  tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
 static void recalcScrollRegion        (ZMapWindow window, double start, double end);
 static void quitListCB                (GtkWidget *window, gpointer data);
 
 
 /* functions *************************************************************/
+
+
 /* Displays a list of selectable features
  *
  * All the features the chosen column are displayed in ascending start-coordinate
  * sequence.  When the user selects one, the main display is scrolled to that feature
- * and the selected item hightlighted.
+ * and the selected item highlighted.
  */
 
 
@@ -90,7 +93,8 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
   ZMapFeature feature ;
   double x1, y1, x2, y2;
   GData *feature_sets ;
-
+  GtkTreeIter iter;
+  GtkTreePath *path;
 
   listCol = g_new0(ListColStruct, 1) ;
 
@@ -123,6 +127,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 
   /* set up the top level window */
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  g_object_set_data(G_OBJECT(window), "zmapWindow", zmapWindow) ;
 
   g_ptr_array_add(zmapWindow->featureListWindows, (gpointer)window);
 
@@ -148,11 +153,6 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 				       START,
 				       GTK_SORT_ASCENDING);
 
-  /* finished with list now */
-  g_object_unref(G_OBJECT(listCol->list));
-  g_free(listCol) ;
-
-
   /* render the columns. */
   renderer = gtk_cell_renderer_text_new ();
   column = gtk_tree_view_column_new_with_attributes ("Name",
@@ -167,6 +167,8 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 						     NULL);
   gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
   
+  gtk_tree_view_column_set_visible(column, TRUE);
+   
   column = gtk_tree_view_column_new_with_attributes ("End",
 						     renderer,
 						     "text", END,
@@ -189,7 +191,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 						     NULL);
   gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
 
-  gtk_tree_view_column_set_visible(column, FALSE);
+  gtk_tree_view_column_set_visible(column, TRUE);
   
   column = gtk_tree_view_column_new_with_attributes ("Feature Type",
 						     renderer,
@@ -197,7 +199,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 						     NULL);
   gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
 
-  gtk_tree_view_column_set_visible(column, FALSE);
+  gtk_tree_view_column_set_visible(column, TRUE);
   
   column = gtk_tree_view_column_new_with_attributes ("X Coord",
 						     renderer,
@@ -219,6 +221,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
   select = gtk_tree_view_get_selection (GTK_TREE_VIEW (featureList));
   gtk_tree_selection_set_mode (select, GTK_SELECTION_SINGLE);
 
+
   g_signal_connect (G_OBJECT (select), "changed",
 		    G_CALLBACK (tree_selection_changed_cb),
 		    zmapWindow);
@@ -226,9 +229,42 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
   g_signal_connect(GTK_OBJECT(window), "destroy",
 		   GTK_SIGNAL_FUNC(quitListCB), featureList);
 
-
   gtk_container_add(GTK_CONTAINER(scrolledWindow), featureList);
 
+  /* find the item the user clicked on. */
+  iter = findItemInList(zmapWindow, sort_model, item);
+
+  /* If the clicked object was an exon or intron, then that won't have been
+   * found, as the list holds only the transcript name, so look again. */
+  if (!iter.stamp)
+    {
+      FooCanvasItem *transcript_item = zmapWindowFToIFindItem(listCol->window->feature_to_item,
+						   feature->style, feature->unique_id) ;
+      zMapAssert(transcript_item) ;
+      iter = findItemInList(zmapWindow, sort_model, transcript_item);
+    }
+
+  /* finished with list now */
+  g_object_unref(G_OBJECT(listCol->list));
+  g_free(listCol) ;
+
+  /* highlight the name and scroll to it if necessary. */
+  path = gtk_tree_model_get_path(sort_model, &iter);
+
+  if (path)
+    {
+      gtk_tree_view_set_cursor(GTK_TREE_VIEW(featureList),
+			       path,
+			       NULL,
+			       FALSE);
+      gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(featureList),
+				   path,
+				   NULL,
+				   TRUE,
+				   0.3,  
+				   0.0); 
+      gtk_tree_path_free(path);
+    }
 
   gtk_widget_show_all(window);
 
@@ -238,10 +274,6 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 
 
 
-
-/* THE BUG IN THIS ROUTINE IS THAT WHEN INDIVIDUAL LIST WINDOWS ARE CLOSED BY THE USER
- * THEY ARE _NOT_ REMOVED FROM THE ARRAY OF SUCH WINDOWS.....SIGH.........SO THIS ROUTINE
- * TRIES TO CLOSE THEM AGAIN........... */
 
 /* Called by zmapControlSplit.c when a split window is closed */
 void zMapWindowDestroyLists(ZMapWindow window)
@@ -275,6 +307,7 @@ static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
   ListCol     listCol = (ListColStruct*)user_data;
   GtkTreeIter iter1;
 
+
   if (listCol->strand == feature->strand)
     {
       FooCanvasItem *item ;
@@ -301,6 +334,42 @@ static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
+/** \Brief Locates the selected item in the list.
+ *
+ * When the user clicks an item to see a list of features, 
+ * we want to highlight that item in the resulting list.
+ */
+static GtkTreeIter findItemInList(ZMapWindow zmapWindow, GtkTreeModel *sort_model, FooCanvasItem *item)
+{
+  GtkTreeIter    iter, match_iter = {NULL};
+  gboolean       valid;
+  gint           row_count = 0;
+  FooCanvasItem *listItem;
+
+  /* Get the first iter in the list */
+  valid = gtk_tree_model_get_iter_first (sort_model, &iter);
+
+  while (valid)
+    {
+      gtk_tree_model_get (sort_model, &iter, 
+                          FEATURE_ITEM, &listItem,
+                          -1);
+
+      if (item == listItem)
+	match_iter = iter;;
+
+      row_count ++;
+      valid = gtk_tree_model_iter_next (sort_model, &iter);
+    }
+
+  g_free(&listItem);
+
+  return match_iter;
+}
+
+
+
+
 /** \Brief Extracts the selected feature from the list.
  *
  * Once the selected feature has been determined, calls 
@@ -320,6 +389,7 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
   /* retrieve user's selection */
   if (gtk_tree_selection_get_selected (selection, &model, &iter))
     {
+
       gtk_tree_model_get (model, &iter, NAME, &name, START, &start, END, &end, 
 			  ID, &id, TYPE, &type, FEATURE_TYPE, &feature_type, 
 			  X_COORD, &x_coord, FEATURE_ITEM, &item, -1) ;
@@ -331,12 +401,17 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
 }
 
 
+/** \Brief Destroy the list window
+ *
+ * Destroy the list window and its corresponding entry in the
+ * array of such windows held in the ZMapWindow structure. 
+ */
 static void quitListCB(GtkWidget *window, gpointer data)
 {
+  ZMapWindow zmapWindow;
 
-  /* YES AND WHAT ABOUT THE ENTRY IN THE ARRAY OF THESE WINDOWS ROB ?????????
-   * WHEN DOES THAT GO AWAY....?????? */
-
+  zmapWindow = g_object_get_data(G_OBJECT(window), "zmapWindow");  
+  g_ptr_array_remove(zmapWindow->featureListWindows, (gpointer)window);
   gtk_widget_destroy(GTK_WIDGET(window));
 
   return;
