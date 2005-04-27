@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 27 14:52 2005 (rnc)
+ * Last edited: Apr 27 16:10 2005 (rnc)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.26 2005-04-27 14:37:36 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.27 2005-04-27 15:12:36 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -343,7 +343,6 @@ static GtkTreeIter findItemInList(ZMapWindow zmapWindow, GtkTreeModel *sort_mode
 {
   GtkTreeIter    iter, match_iter = {NULL};
   gboolean       valid;
-  gint           row_count = 0;
   FooCanvasItem *listItem;
 
   /* Get the first iter in the list */
@@ -356,9 +355,8 @@ static GtkTreeIter findItemInList(ZMapWindow zmapWindow, GtkTreeModel *sort_mode
                           -1);
 
       if (item == listItem)
-	match_iter = iter;;
+	match_iter = iter;
 
-      row_count ++;
       valid = gtk_tree_model_iter_next (sort_model, &iter);
     }
 
