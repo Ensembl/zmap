@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 27 15:14 2005 (rnc)
+ * Last edited: Apr 27 15:39 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.54 2005-04-27 14:37:36 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.55 2005-04-27 14:40:46 rnc Exp $
  *-------------------------------------------------------------------
  */
 
