@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 27 10:21 2005 (rnc)
+ * Last edited: Apr 27 16:14 2005 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.73 2005-04-27 14:37:36 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.74 2005-04-27 15:14:41 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,7 @@
 #include <ZMap/zmapConfig.h>
 #include <zmapWindow_P.h>
 
-
+ 
 /* Local struct to hold current features and new_features obtained from a server and
  * relevant types. */
 typedef struct
