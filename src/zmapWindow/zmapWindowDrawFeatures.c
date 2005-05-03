@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 27 15:39 2005 (rnc)
+ * Last edited: May  3 13:45 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.55 2005-04-27 14:40:46 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.56 2005-05-03 14:29:10 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -778,8 +778,9 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	    double x = 0.0, y = 0.0 ;
 	    
 	    /* Pass information about the object clicked on back to the application. */
-	    select.text = g_strdup_printf("%s   %d   %d   %s   %s", 
+	    select.text = g_strdup_printf("%s   %s   %d   %d   %s   %s", 
 					  (char *)g_quark_to_string(feature->original_id),
+					  zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
 					  feature->x1,
 					  feature->x2,
 					  zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
