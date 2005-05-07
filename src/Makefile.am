@@ -54,12 +54,13 @@ zmap_SOURCES = $(top_srcdir)/zmapApp/zmapApp_P.h
 
 # -lZMap was at the end, why is this?
 zmap_LDFLAGS = -L$(top_builddir)/lib -lZMapApp -lZMap -lZMapThr -lZMap -lexpat -lpopt \
-	$(ACECONN_LIBS) \
-	$(GTK_LIBS) \
-	$(FOOCANVAS_LIBS) \
-	$(LIBCURL) \
-	$(X_PRE_LIBS) \
-        $(X_LIBS) 
+	@ACECONN_LIBS@ \
+	@GTK_LIBS@ \
+	@FOOCANVAS_LIBS@ \
+	@LIBCURL@ \
+	@X_PRE_LIBS@ \
+        @X_LIBS@ \
+	$(NULL)
 
 zmap_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
