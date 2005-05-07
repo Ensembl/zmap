@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Apr 14 12:01 2005 (rds)
+ * Last edited: May  6 13:34 2005 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.1 2005-04-14 12:08:52 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.2 2005-05-07 18:15:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -378,6 +378,103 @@ int zMapXRemoteSetReply(zMapXRemoteObj object, char *content)
   return result;
 }
 
+
+/* Gets called for _ALL_ property events on the window,
+ * but only responds to the ones identifiably from xremote. */
+/* This is a bit of a mis mash of gdk and zMapXRemote calls, can it be sorted  (rds) */
+/* I've tried some further generalisattion of this code, although I'm not certain on it's strengths. */
+gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpointer notify_data)
+{
+  gint result = FALSE ;
+  gpointer user_data ;
+  zMapXRemoteNotifyData notifyStruct = (zMapXRemoteNotifyData)notify_data;
+  zMapXRemoteObj xremote;
+  static GdkAtom request_atom  = 0 ;
+  static GdkAtom response_atom = 0 ;
+  static GdkAtom string_atom   = 0 ;
+  GdkAtom actualType ;
+  gint actualFormat ;
+  gint nitems ;
+  guchar *command_text = NULL ;
+
+  xremote   = notifyStruct->xremote;
+  user_data = notifyStruct->data;
+
+  if (!request_atom)
+    {
+      request_atom  = zMapXRemoteGdkRequestAtom(xremote); //gdk_atom_intern(ZMAP_DEFAULT_REQUEST_ATOM_NAME, FALSE) ;
+      response_atom = zMapXRemoteGdkResponseAtom(xremote);//gdk_atom_intern(ZMAP_DEFAULT_RESPONSE_ATOM_NAME, FALSE) ;
+      string_atom   = gdk_atom_intern("STRING", FALSE) ;
+    }
+
+  if (ev->atom != request_atom)
+    {
+      /* not for us */
+      result = FALSE ;
+    }
+  else if (ev->state != GDK_PROPERTY_NEW_VALUE)
+    {
+      /* THIS IS PROBABLY SIMONS COMMENT FROM ACEDB, I HAVEN'T INVESTIGATED THIS.... */
+
+      /* zero is the value for PropertyNewValue, in X.h there's no gdk equivalent that I can find. */
+      /* This looks the equivalent to me */
+      /* typedef enum
+         {
+         GDK_PROPERTY_NEW_VALUE,
+         GDK_PROPERTY_DELETE
+         } GdkPropertyState;
+      */
+      result = TRUE ;
+    }
+  else if (!gdk_property_get(ev->window,
+			     request_atom,
+			     string_atom,
+			     0,
+			     (65536/ sizeof(long)),
+			     TRUE,
+			     &actualType,
+			     &actualFormat,
+			     &nitems,
+			     &command_text))
+    {
+      zMapLogCritical("%s", "X-Atom remote control : unable to read _XREMOTE_COMMAND property") ;
+      
+      result = TRUE ;
+    }
+  else if (!command_text || nitems == 0)
+    {
+      zMapLogCritical("%s", "X-Atom remote control : invalid data on property") ;
+
+      result = TRUE ;
+    }
+  else
+    { 
+      gchar *response_text;
+      char *copy_command ;
+
+      copy_command = g_malloc0(nitems + 1) ;
+      memcpy(copy_command, command_text, nitems);
+      copy_command[nitems] = 0 ;			    /* command_text is not zero terminated */
+
+
+      /* This just proxies the commands to the right place and gets a reply */
+      response_text = (notifyStruct->callback)((char *)copy_command, user_data) ; 
+
+      zMapAssert(response_text); /* Need an answer */
+
+      zMapXRemoteSetReply(xremote, response_text);
+
+      g_free(response_text) ;
+      g_free(copy_command) ;
+
+      result = TRUE ;
+    }
+
+  if (command_text)
+    g_free(command_text) ;
+
+  return result ;
+}
 
 
 

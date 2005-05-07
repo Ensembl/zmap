@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Apr 14 13:08 2005 (rds)
+ * Last edited: May  6 12:44 2005 (rds)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.1 2005-04-14 12:08:52 rds Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.2 2005-05-07 18:16:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,7 @@
 
 
 #include <ZMap/zmapXRemote.h>            /* Public header */
-
+#include <ZMap/zmapUtils.h>
 
 typedef struct _zMapXRemoteObjStruct
 {
