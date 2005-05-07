@@ -17,6 +17,7 @@ libZMapApp_a_SOURCES = $(top_srcdir)/zmapApp/zmapApp_P.h \
 	$(top_srcdir)/zmapApp/zmapAppmanage.c \
 	$(top_srcdir)/zmapApp/zmapAppmenubar.c \
 	$(top_srcdir)/zmapApp/zmapAppwindow.c \
+	$(top_srcdir)/zmapApp/zmapAppremote.c \
 	$(top_srcdir)/zmapManager/zmapManager.c \
 	$(top_srcdir)/zmapManager/zmapManager_P.h
 
