@@ -27,9 +27,9 @@
  *              and files.
  *
  * HISTORY:
- * Last edited: Feb 10 16:10 2005 (edgrif)
+ * Last edited: Apr 25 18:48 2005 (rds)
  * Created: Thu Feb 10 10:33:49 2005 (edgrif)
- * CVS info:   $Id: zmapConfigDir.h,v 1.1 2005-02-10 16:31:16 edgrif Exp $
+ * CVS info:   $Id: zmapConfigDir.h,v 1.2 2005-05-07 18:05:22 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIGDIR_H
@@ -42,6 +42,8 @@
 /* Default configuration file name within configuration directory. */
 #define ZMAP_USER_CONFIG_FILE   "ZMap"
 
+/* suffix for the window id file */
+#define WINDOWID_SUFFIX "win_id" 
 
 /* There is no context here because these commands create a global context for the whole
  * application so there is no point in returning it from the create. */
@@ -51,6 +53,6 @@ char *zMapConfigDirGetDir(void) ;
 char *zMapConfigDirGetFile(void) ;
 char *zMapConfigDirFindFile(char *filename) ;
 void zMapConfigDirDestroy(void) ;
-
+void zMapConfigDirWriteWindowIdFile(unsigned long id, char *name);
 #endif /* !ZMAP_CONFIGDIR_H */
 
