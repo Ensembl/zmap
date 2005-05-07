@@ -26,11 +26,15 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 10 14:58 2005 (edgrif)
+ * Last edited: May  7 18:50 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.18 2005-02-10 16:35:42 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.19 2005-05-07 17:57:33 rds Exp $
  *-------------------------------------------------------------------
  */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -49,8 +53,6 @@ static void checkForCmdLineSequenceArgs(int argc, char *argv[],
 					char **sequence_out, int *start_out, int *end_out) ;
 static void checkConfigDir(void) ;
 
-
-
 int test_global = 10 ;
 int test_overlap = 0 ;
 
@@ -60,6 +62,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   ZMapAppContext app_context ;
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
   GtkWidget *quit_button ;
+
   char *sequence ;
   int start, end ;
 
@@ -115,6 +118,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_window_set_title(GTK_WINDOW(toplevel), "ZMap - Son of FMap !") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
+
+  g_signal_connect(G_OBJECT(toplevel), "realize",
+                   G_CALLBACK(zmapAppRemoteInstaller), (gpointer)app_context);
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
 
@@ -185,7 +191,6 @@ void zmapAppExit(ZMapAppContext app_context)
 /*
  *  ------------------- Internal functions -------------------
  */
-
 
 static void initGnomeGTK(int argc, char *argv[])
 {

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  5 10:53 2004 (edgrif)
+ * Last edited: May  6 09:57 2005 (rds)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.8 2004-11-05 14:22:06 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.9 2005-05-07 17:57:33 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -37,6 +37,7 @@
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapManager.h>
+#include <ZMap/zmapXRemote.h>
 
 
 /* Minimum GTK version supported. */
@@ -59,14 +60,13 @@ typedef struct
 
   ZMapLog logger ;
 
+  zMapXRemoteNotifyData propertyNotifyData;
+
 } ZMapAppContextStruct, *ZMapAppContext ;
 
 
 /* cols in connection list. */
 enum {ZMAP_NUM_COLS = 4} ;
-
-
-
 
 
 int zmapMainMakeAppWindow(int argc, char *argv[]) ;
@@ -76,5 +76,6 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
 void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, int end) ;
 void zmapAppExit(ZMapAppContext app_context) ;
 
+void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data);
 
 #endif /* !ZMAP_APP_PRIV_H */
