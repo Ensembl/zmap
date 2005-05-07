@@ -27,16 +27,15 @@
  *
  * Exported functions: See ZMap/zmapConfigDir.h
  * HISTORY:
- * Last edited: Feb 10 14:10 2005 (edgrif)
+ * Last edited: Apr 26 12:00 2005 (rds)
  * Created: Thu Feb 10 10:05:36 2005 (edgrif)
- * CVS info:   $Id: zmapConfigDir.c,v 1.1 2005-02-10 16:31:50 edgrif Exp $
+ * CVS info:   $Id: zmapConfigDir.c,v 1.2 2005-05-07 18:18:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapConfigDir_P.h>
-
 
 
 
@@ -184,4 +183,37 @@ void zMapConfigDirDestroy(void)
   return ;
 }
 
+/* Needs top ZMap window id.... and name for it. 
+ * Get a window id with GDK_DRAWABLE_XID(top_zmap_window);
+ * It'll need to be a unique name */
+void zMapConfigDirWriteWindowIdFile(unsigned long id, char *window_name)
+{
+  GError *g_error = NULL ;
+  GIOChannel *winid_file = NULL;
+  gsize bytes = 0;
+  char *config_dir = NULL;
+  char *path, *id_line;
 
+  if((config_dir = zMapConfigDirGetDir()))
+    {
+      path = g_strdup_printf("%s/%s.%s", config_dir, window_name, WINDOWID_SUFFIX);
+      if((winid_file = g_io_channel_new_file(path, "w+", &g_error)))
+        {
+          g_error = NULL;
+          id_line = g_strdup_printf("WindowID: 0x%lx\n", id);
+          zMapLogMessage("%s", id_line);
+          g_io_channel_write_chars(winid_file, id_line, -1, &bytes, &g_error); /* should catch not writing here */
+          g_io_channel_flush(winid_file, &g_error);                            /* should catch not writing here */
+          g_free(id_line);
+        }
+      else{
+        zMapLogWarning("Error doing something to path '%s', %d", path, g_error);
+      }
+      if(path)
+        g_free(path);
+    }
+  else
+    {
+      zMapLogWarning("%s","Unable to find a configuration directory.") ;
+    }
+}
