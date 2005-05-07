@@ -6,7 +6,7 @@
 ################################################################################
 ################################################################################
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.57)
 AC_INIT([ZMap],[0.1],[zmap@sanger.ac.uk])
 
 # check we can find the source
@@ -168,6 +168,21 @@ LDFLAGS="$FOOCANVAS_LIBS $ACECONN_LIBS"
 AC_CHECK_LIB(foocanvas, foo_canvas_zmap,:, AC_MSG_ERROR(no patched libfoocanvas!))
 # HAVE_LIBFOOCANVAS is now defined
 
+################################################################################
+################################################################################
+# Stuff for ~/.ZMap directory
+################################################################################
+################################################################################
+# make this if "x$ac_with_blah" = "xyes" then blah else no_blah
+ZMAPSCHEME=acedb
+ZMAPUSERNAMEPASSWORD="any:any@"
+ZMAPHOSTPORT="$ac_hostname:23100"
+ZMAPSTYLESFILE="ZMapTypes.b0250"
+AC_SUBST(ZMAPSCHEME)
+AC_SUBST(ZMAPUSERNAMEPASSWORD)
+AC_SUBST(ZMAPHOSTPORT)
+AC_SUBST(ZMAPSTYLESFILE)
+
 
 # THE zmap* source directories
 ZMAP_SRC_DIRS="zmapApp \
@@ -210,6 +225,7 @@ zmapWindow/Makefile
 include/Makefile
 lib/Makefile
 zmap.pc
+ZMap:dotZmap.in
 ])
 
 AC_OUTPUT

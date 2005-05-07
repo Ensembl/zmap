@@ -1,0 +1,10 @@
+# The Default ZMap file which will be located in ~/.ZMap/
+
+source
+{
+url = "@ZMAPSCHEME@://@ZMAPUSERNAMEPASSWORD@@ZMAPHOSTPORT@"
+stylesfile = "@ZMAPSTYLESFILE@"
+}
+
+
+
