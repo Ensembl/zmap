@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Apr 13 19:18 2005 (rds)
+ * Last edited: May  7 19:03 2005 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.1 2005-04-14 10:52:55 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.2 2005-05-07 18:04:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +40,7 @@
 #include <config.h>
 #endif
 
+#include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
 
@@ -65,10 +66,25 @@
 #define ZMAP_DEFAULT_RESPONSE_ATOM_NAME "_ZMAP_XREMOTE_RESPONSE"
 
 
-#define WINDOWID_SUFFIX "win_id"
-
+#define ZMAPXREMOTE_CALLBACK(f)                    ((zMapXRemoteCallback) (f))
 
 typedef struct _zMapXRemoteObjStruct  *zMapXRemoteObj;
+
+typedef char * (*zMapXRemoteCallback) (char *command, gpointer user_data);
+
+/* This data struct gets passed to the PropertyEvent Handler which
+ * processes the event and if it's a valid event (for us!) execute the
+ * callback with the data.
+ * e.g. g_signal_connect(G_OBJECT(widget), "property_notify_event",
+ *                       G_CALLBACK(zMapXRemotePropertyNotifyEvent), (gpointer)dataStruct) ;
+ */
+typedef struct _zMapXRemoteNotifyDataStruct
+{
+  zMapXRemoteObj  xremote;      /* The xremote object which has the atoms for us to check */
+  zMapXRemoteCallback callback; /* The callback which does something when the property notify event happens */
+  gpointer data;                /* The data which is passed to the callback above. */
+} zMapXRemoteNotifyDataStruct, *zMapXRemoteNotifyData;
+
 typedef enum {
   /* 1xx  Informational */
 
@@ -123,7 +139,7 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command);
 /* SERVER MODE ONLY METHODS */
 /* ================================================ */
 int zMapXRemoteInitServer(zMapXRemoteObj object, Window id, char *appName, char *requestName, char *responseName);
-
+gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpointer notifyData);
 
 /* ================================================ */
 /* METHODS TO HELP PERL INTEGRATION */
