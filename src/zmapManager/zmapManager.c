@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: Oct  1 14:42 2004 (edgrif)
+ * Last edited: May 12 14:35 2005 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.13 2004-10-04 12:54:52 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.14 2005-05-12 16:02:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -105,6 +105,16 @@ gboolean zMapManagerReset(ZMap zmap)
   gboolean result = TRUE ;
 
   result = zMapReset(zmap) ;
+
+  return result ;
+}
+
+
+gboolean zMapManagerRaise(ZMap zmap)
+{
+  gboolean result = TRUE ;
+
+  result = zMapRaise(zmap) ;
 
   return result ;
 }
