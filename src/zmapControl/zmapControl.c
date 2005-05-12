@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Apr 18 14:42 2005 (edgrif)
+ * Last edited: May 12 16:57 2005 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.49 2005-04-21 13:44:15 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.50 2005-05-12 16:23:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -101,7 +101,17 @@ void zMapInit(ZMapCallbacks callbacks)
   return ;
 }
 
+gboolean zMapRaise(ZMap zmap)
+{
+  /* Presents a window to the user. This may mean raising the window
+   * in the stacking order, deiconifying it, moving it to the current
+   * desktop, and/or giving it the keyboard focus, possibly dependent
+   * on the user's platform, window manager, and preferences. 
+   */
+  gtk_window_present(GTK_WINDOW(zmap->toplevel));
 
+  return TRUE;
+}
 
 /* Create a new zmap which is blank with no views. Returns NULL on failure.
  * Note how I casually assume that none of this can fail. */

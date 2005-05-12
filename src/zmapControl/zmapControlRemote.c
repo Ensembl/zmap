@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: May  6 18:42 2005 (rds)
+ * Last edited: May 12 16:45 2005 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.6 2005-05-07 18:09:12 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.7 2005-05-12 16:23:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,11 +58,12 @@
 
 
 /* These seem ok here.  At least they're all in one place then */
-static char *controlexecuteCommand(char *command_text, ZMap zmap) ; /* To execute one of the commands below */
+static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCode);
 
 static char *findFeature(ZMap zmap, char *command_text) ;
 static char *createClient(ZMap zmap, char *command_text) ;
 
+static void destroyNotifyData(gpointer destroy_data);
 
 void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap_data)
 {
@@ -84,16 +85,30 @@ void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap_data)
       zMapXRemoteInitServer(xremote, id, PACKAGE_NAME, ZMAP_DEFAULT_REQUEST_ATOM_NAME, ZMAP_DEFAULT_RESPONSE_ATOM_NAME);
       zMapConfigDirWriteWindowIdFile(id, zmap->zmap_id);
 
-      /* Makes sure we actually get the events!!!! Use add-events as set_events needs to be done BEFORE realize */
+      /* Makes sure we actually get the events!!!! Use add_events as set_events needs to be done BEFORE realize */
       gtk_widget_add_events(widget, GDK_PROPERTY_CHANGE_MASK) ;
-      /* probably need g_signal_connect_data here so we can destroy when disconnected */
-      gtk_signal_connect(GTK_OBJECT(widget), "property_notify_event",
-                         GTK_SIGNAL_FUNC(zMapXRemotePropertyNotifyEvent), (gpointer)notifyData);
+
+      g_signal_connect_data(G_OBJECT(widget), "property_notify_event",
+                            G_CALLBACK(zMapXRemotePropertyNotifyEvent), (gpointer)notifyData,
+                            (GClosureNotify) destroyNotifyData, G_CONNECT_AFTER
+                            );
 
       zmap->propertyNotifyData = notifyData;
     }
   
   return;
+}
+/*  */
+static void destroyNotifyData(gpointer destroy_data)
+{
+  ZMap zmap;
+  zMapXRemoteNotifyData destroy_me = (zMapXRemoteNotifyData)destroy_data;
+
+  zmap = destroy_me->data;
+  zmap->propertyNotifyData = NULL; /* Set this to null, as we're emptying the mem */
+  g_free(destroy_me);           /* Is this all we need to destroy?? */
+
+  return ;
 }
 
 
@@ -101,15 +116,11 @@ void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap_data)
 /* Return is string in the style of ZMAP_XREMOTE_REPLY_FORMAT (see ZMap/zmapXRemote.h) */
 /* Building the reply string is a bit arcane in that the xremote reply strings are really format
  * strings...perhaps not ideal...., but best in the cicrumstance I guess */
-static char *controlexecuteCommand(char *command_text, ZMap zmap)
+static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCode)
 {
-  char *response_text = NULL ;
   char *xml_reply     = NULL ;
-  char *xml_stub      = NULL ;
   gboolean executed   = FALSE;
-  int statusCode      = ZMAPXREMOTE_INTERNAL; /* Default If it doesn't get
-                                                 changed there must have been a
-                                                 logic error */
+
   //  zMapWindow win; 
           /* This will be the focus window. Not
                                sure what will happen if we want to
@@ -124,42 +135,40 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap)
   if (g_str_has_prefix(command_text, "zoom_in"))
     {
       zmapControlWindowDoTheZoom(zmap, 2.0) ;
-      xml_stub = "<a>b</a>";
+      *statusCode = ZMAPXREMOTE_OK;
+      xml_reply = "<a>b</a>";
     }
   else if (g_str_has_prefix(command_text, "zoom_out"))
     {
       zmapControlWindowDoTheZoom(zmap, 0.5) ;
-      xml_stub = "<a>b</a>";
+      *statusCode = ZMAPXREMOTE_OK;
+      xml_reply = "<a>b</a>";
     }
   else if (g_str_has_prefix(command_text, "feature_find"))
     {
       findFeature(zmap, command_text);
-      xml_stub = "<a>b</a>";
+      *statusCode = ZMAPXREMOTE_OK;
+      xml_reply = "<a>b</a>";
     }
   else if (g_str_has_prefix(command_text, "register_client"))
     {
       createClient(zmap, command_text);
-      xml_stub = "<a>b</a>";
+      *statusCode = ZMAPXREMOTE_OK;
+      xml_reply = "<a>b</a>";
     }
   else
     {
-      statusCode = ZMAPXREMOTE_UNKNOWNCMD;
-      xml_stub   = "<error><message>unknown command</message></error>";
+      *statusCode = ZMAPXREMOTE_UNKNOWNCMD;
+      xml_reply   = "<message>unknown command</message>";
     }
 
-  //if(!xml_stub)   // we can now get the xml_reply and statusCode from window->sense.
-  //  xml_stub = functionToFindItFromAWindow(win, &statusCode);
-
-  xml_reply  = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT, xml_stub);
+  //if(!xml_reply)   // we can now get the xml_reply and statusCode from window->sense.
+  //  xml_reply = functionToFindItFromAWindow(win, &statusCode);
 
   // gchar * g_markup_escape_text(const gchar *text, gssize length);
   // gchar * g_markup_printf_escaped(const char * format, ...);
-  response_text = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, statusCode, xml_reply) ;
 
-  if(xml_reply)
-    g_free(xml_reply);
-
-  return response_text;
+  return xml_reply;
 }
 
 
