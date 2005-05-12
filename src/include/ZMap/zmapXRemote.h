@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: May  7 19:03 2005 (rds)
+ * Last edited: May  9 15:23 2005 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.2 2005-05-07 18:04:43 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.3 2005-05-12 15:21:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,8 +53,11 @@
 
 #define ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER  ":"
 #define ZMAP_XREMOTE_REPLY_FORMAT       "%d" ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER "%s" 
-#define ZMAP_XREMOTE_CONTENT_XML_FORMAT "<xml>%s</xml>"
+#define ZMAP_XREMOTE_SUCCESS_XML_FORMAT "<xml>%s</xml>"
 #define ZMAP_XREMOTE_ERROR_XML_FORMAT   "<xml><error>%s</error></xml>"
+
+#define ZMAP_XREMOTE_CONTENT_XML_FORMAT(status) \
+((status) < 300 ? ZMAP_XREMOTE_SUCCESS_XML_FORMAT : ZMAP_XREMOTE_ERROR_XML_FORMAT )
 
 /* These are here just to allow checking */
 #define ZMAP_XREMOTE_CURRENT_VERSION      "0.1"
@@ -70,7 +73,7 @@
 
 typedef struct _zMapXRemoteObjStruct  *zMapXRemoteObj;
 
-typedef char * (*zMapXRemoteCallback) (char *command, gpointer user_data);
+typedef char * (*zMapXRemoteCallback) (char *command, gpointer user_data, int *statusCode);
 
 /* This data struct gets passed to the PropertyEvent Handler which
  * processes the event and if it's a valid event (for us!) execute the

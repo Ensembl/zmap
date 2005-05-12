@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Oct  1 14:41 2004 (edgrif)
+ * Last edited: May 12 14:35 2005 (rds)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapManager.h,v 1.4 2004-10-04 12:53:57 edgrif Exp $
+ * CVS info:   $Id: zmapManager.h,v 1.5 2005-05-12 15:21:10 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_MANAGER_H
@@ -41,6 +41,7 @@ typedef struct _ZMapManagerStruct *ZMapManager ;
 ZMapManager zMapManagerCreate(zmapAppCallbackFunc zmap_deleted_func, void *gui_data) ;
 gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, ZMap *zmap_out) ;
 gboolean zMapManagerReset(ZMap zmap) ;
+gboolean zMapManagerRaise(ZMap zmap) ;
 gboolean zMapManagerKill(ZMapManager zmaps, ZMap zmap) ;
 gboolean zMapManagerDestroy(ZMapManager zmaps) ;
 
