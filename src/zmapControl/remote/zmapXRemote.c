@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: May  6 13:34 2005 (rds)
+ * Last edited: May  9 16:14 2005 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.2 2005-05-07 18:15:56 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.3 2005-05-12 16:03:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -449,22 +449,30 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
     }
   else
     { 
-      gchar *response_text;
+      gchar *response_text, *xml_text, *xml_stub;
       char *copy_command ;
+      int statusCode = ZMAPXREMOTE_INTERNAL;
 
       copy_command = g_malloc0(nitems + 1) ;
       memcpy(copy_command, command_text, nitems);
       copy_command[nitems] = 0 ;			    /* command_text is not zero terminated */
 
+      /* Get an answer from the callback */
+      xml_stub = (notifyStruct->callback)((char *)copy_command, user_data, &statusCode) ; 
 
-      /* This just proxies the commands to the right place and gets a reply */
-      response_text = (notifyStruct->callback)((char *)copy_command, user_data) ; 
+      zMapAssert(xml_stub); /* Need an answer */
 
-      zMapAssert(response_text); /* Need an answer */
+      /* Do some processing of the answer to make it fit the protocol */
+      xml_text      = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT(statusCode), xml_stub);
+      response_text = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, statusCode, xml_text) ;
 
+      /* actually do the replying */
       zMapXRemoteSetReply(xremote, response_text);
 
+      /* clean up */
       g_free(response_text) ;
+      g_free(xml_text) ;
+      g_free(xml_stub) ;
       g_free(copy_command) ;
 
       result = TRUE ;
@@ -482,14 +490,14 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
 /* INTERNALS */
 /* ====================================================== */
 
-char *zmapXRemoteGetAtomName(zMapXRemoteObj obj, Atom atom)
+static char *zmapXRemoteGetAtomName(zMapXRemoteObj obj, Atom atom)
 {
   char *name;
   name = g_strdup(XGetAtomName(obj->display, atom));
   return name;
 }
 
-int zmapXRemoteChangeProperty(zMapXRemoteObj object, Atom atom, char *change_to)
+static int zmapXRemoteChangeProperty(zMapXRemoteObj object, Atom atom, char *change_to)
 {
   Window win;
 
@@ -514,7 +522,7 @@ int zmapXRemoteChangeProperty(zMapXRemoteObj object, Atom atom, char *change_to)
 
 /* Check the client and server were compiled using the same <ZMap/zmapXRemote.h> */
 
-int zmapXRemoteCheckWindow (zMapXRemoteObj object)
+static int zmapXRemoteCheckWindow (zMapXRemoteObj object)
 {
   int r = 1;                    /* failure */
   r = zmapXRemoteCmpAtomString(object, object->version_sanity_atom, ZMAP_XREMOTE_CURRENT_VERSION);
@@ -523,7 +531,7 @@ int zmapXRemoteCheckWindow (zMapXRemoteObj object)
   return r;
 }
 
-int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *expected)
+static int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *expected)
 {
   Atom type;
   int format, x_status;
@@ -579,7 +587,7 @@ int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *expected)
   return 0;			/* success */
 }
 
-char *zmapXRemoteGetComputedContent(zMapXRemoteObj object, Atom atom, Bool atomic_delete)
+static char *zmapXRemoteGetComputedContent(zMapXRemoteObj object, Atom atom, Bool atomic_delete)
 {
   Atom type;
   int format;
@@ -645,7 +653,7 @@ char *zmapXRemoteGetComputedContent(zMapXRemoteObj object, Atom atom, Bool atomi
 #define xml_simple_end   "</simplemessage>"
 
 /* =============================================================== */
-char *zmapXRemoteGetErrorAsResponse(void) /* Translation for users */
+static char *zmapXRemoteGetErrorAsResponse(void) /* Translation for users */
 /* =============================================================== */
 {
   char *err;
@@ -698,7 +706,7 @@ char *zmapXRemoteGetErrorAsResponse(void) /* Translation for users */
 #undef xml_simple_end
 
 
-void zmapXRemoteSetErrMsg(zMapXRemoteStatus status, char *msg, ...)
+static void zmapXRemoteSetErrMsg(zMapXRemoteStatus status, char *msg, ...)
 {
   va_list args;
   char *callErr;
@@ -722,7 +730,7 @@ void zmapXRemoteSetErrMsg(zMapXRemoteStatus status, char *msg, ...)
 }
 
 
-int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
+static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
 {
     char errorText[1024];
 
@@ -743,13 +751,13 @@ int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
     return 1;                   /* This is ignored by the server */
 }
 
-void zmapXTrapErrors(void)
+static void zmapXTrapErrors(void)
 {
   windowError = False;
   XSetErrorHandler(zmapXErrorHandler);
   return ;
 }
-void zmapXUntrapErrors(void)
+static void zmapXUntrapErrors(void)
 {
   XSetErrorHandler(NULL);
   if(!windowError)
