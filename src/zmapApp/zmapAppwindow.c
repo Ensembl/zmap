@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  7 18:50 2005 (rds)
+ * Last edited: May 12 13:41 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.19 2005-05-07 17:57:33 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.20 2005-05-12 15:45:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,6 +52,8 @@ static void removeZmapRow(void *app_data, void *zmap) ;
 static void checkForCmdLineSequenceArgs(int argc, char *argv[],
 					char **sequence_out, int *start_out, int *end_out) ;
 static void checkConfigDir(void) ;
+static gboolean removeZmapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
+                                         GtkTreeIter *iter, gpointer data);
 
 int test_global = 10 ;
 int test_overlap = 0 ;
@@ -218,7 +220,8 @@ static ZMapAppContext createAppContext(void)
 
   app_context = g_new0(ZMapAppContextStruct, 1) ;
 
-  app_context->app_widg = app_context->sequence_widg = app_context->clist_widg = NULL ;
+  app_context->app_widg = app_context->sequence_widg = NULL ;
+  app_context->tree_store_widg = NULL ;
 
   app_context->zmap_manager = zMapManagerCreate(removeZmapRow, (void *)app_context) ;
   app_context->selected_zmap = NULL ;
@@ -241,26 +244,49 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
-static void removeZmapRow(void *app_data, void *zmap_data)
+void removeZmapRow(void *app_data, void *zmap_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_data ;
   ZMap zmap = (ZMap)zmap_data ;
-  int row ;
 
-  row = gtk_clist_find_row_from_data(GTK_CLIST(app_context->clist_widg), zmap) ;
+  /* This has the potential to remove multiple rows, but currently
+     doesn't as the first found one that matches, gets removed an
+     returns true. See
+     http://scentric.net/tutorial/sec-treemodel-remove-many-rows.html
+     for an implementation of mutliple deletes */
+  gtk_tree_model_foreach(GTK_TREE_MODEL(app_context->tree_store_widg), 
+                         (GtkTreeModelForeachFunc)removeZmapRowForeachFunc,
+                         (gpointer)zmap);
 
-  if (app_context->selected_zmap == zmap)
-    app_context->selected_zmap = NULL ;
+  //  if (app_context->selected_zmap == zmap)
+  //  app_context->selected_zmap = NULL ;
 
   /* The remove call actually sets my data which I attached to the row to NULL
    * which is v. naughty, so I reset my data in the widget to NULL to avoid it being
    * messed with. */
-  gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, NULL) ;
-  gtk_clist_remove(GTK_CLIST(app_context->clist_widg), row) ;
+  //  gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, NULL) ;
+  //  gtk_clist_remove(GTK_CLIST(app_context->clist_widg), row) ;
 
   return ;
 }
 
+static gboolean removeZmapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
+                                         GtkTreeIter *iter, gpointer data)
+{
+  ZMap zmap = (ZMap)data;
+  ZMap row_zmap;
+
+  gtk_tree_model_get(model, iter, 
+                     ZMAPDATA_COLUMN, &row_zmap,
+                     -1);
+  if(zmap == row_zmap)
+    {
+      gtk_tree_store_remove(GTK_TREE_STORE(model), iter);
+      return TRUE;
+    }
+
+  return FALSE;                 /* TRUE means it stops! */
+}
 
 /* Did user specify seqence/start/end on command line. */
 static void checkForCmdLineSequenceArgs(int argc, char *argv[],

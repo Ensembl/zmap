@@ -26,9 +26,9 @@
  *              
  * Exported functions: None, all functions internal to zmapApp.
  * HISTORY:
- * Last edited: Nov 22 09:21 2004 (edgrif)
+ * Last edited: May 12 16:17 2005 (rds)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.10 2004-11-22 11:50:36 edgrif Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.11 2005-05-12 15:45:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,20 +41,33 @@
 static void stopThreadCB(GtkWidget *widget, gpointer cb_data) ;
 static void killThreadCB(GtkWidget *widget, gpointer data) ;
 static void checkThreadCB(GtkWidget *widget, gpointer cb_data) ;
-static void selectRow(GtkCList *clist, gint row, gint column, GdkEventButton *event,
-		      gpointer cb_data) ;
-static void unselectRow(GtkCList *clist, gint row, gint column, GdkEventButton *event,
-			gpointer cb_data) ;
-
 
 static char *column_titles[ZMAP_NUM_COLS] = {"ZMap", "Sequence", "Status", "Last Request"} ;
 
+static gboolean view_onButtonPressed (GtkWidget *treeview, GdkEventButton *event, gpointer userdata);
+static void view_popup_menu(GtkWidget *treeview, GdkEventButton *event, gpointer userdata);
+static void view_popup_menu_onDoSomething (GtkWidget *menuitem, gpointer userdata);
+
+static gboolean selectionFunc(GtkTreeSelection *selection, 
+                              GtkTreeModel     *model,
+                              GtkTreePath      *path, 
+                              gboolean          path_currently_selected,
+                              gpointer          userdata);
+
+static void view_onDoubleClick (GtkTreeView        *treeview,
+                                GtkTreePath        *path,
+                                GtkTreeViewColumn  *col,
+                                gpointer            userdata);
 
 
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
 {
-  GtkWidget *frame ;
+  GtkWidget *frame, *treeView ;
   GtkWidget *vbox, *scrwin, *clist, *hbox, *stop_button, *kill_button, *check_button ;
+  GtkTreeStore *treeStore;
+  GtkTreeViewColumn *column;
+  GtkCellRenderer *renderer;
+  GtkTreeSelection  *selection;
 
   frame = gtk_frame_new("Manage ZMaps") ;
   gtk_frame_set_label_align( GTK_FRAME( frame ), 0.0, 0.0 ) ;
@@ -64,26 +77,63 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
   gtk_container_border_width(GTK_CONTAINER(vbox), 5);
   gtk_container_add(GTK_CONTAINER (frame), vbox);
 
+  /* scrolled widget */
   scrwin = gtk_scrolled_window_new(NULL, NULL) ;
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrwin),
 				 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
   gtk_widget_set_usize(scrwin, 600, 150) ;
   gtk_box_pack_start(GTK_BOX(vbox), scrwin, FALSE, FALSE, 0) ;
+  /* tree view widget */
+  app_context->tree_store_widg = 
+    treeStore = gtk_tree_store_new(ZMAP_N_COLUMNS, 
+                                   G_TYPE_STRING,
+                                   G_TYPE_STRING,
+                                   G_TYPE_STRING,
+                                   G_TYPE_STRING,
+                                   G_TYPE_POINTER
+                                   );
+  treeView = gtk_tree_view_new_with_model(GTK_TREE_MODEL(treeStore));
+  gtk_container_add (GTK_CONTAINER (scrwin), treeView); /* tree view in scrolled widget */
 
+  /* Setup the tree view events */
+  g_signal_connect(treeView, "button-press-event", 
+                   (GCallback)view_onButtonPressed, (gpointer)app_context);
+  /* This will need to change if we have a true tree display
+     implemented as double click usually expands/collapses a tree */
+  g_signal_connect(treeView, "row-activated", 
+                   (GCallback)view_onDoubleClick, (gpointer)app_context);
+  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(treeView));
+  gtk_tree_selection_set_select_function(selection, selectionFunc, (gpointer)app_context, NULL);
+
+  //  g_object_unref (G_OBJECT (treeStore)); /* treeView has ref, get rid of ours */
+
+  renderer = gtk_cell_renderer_text_new ();
+  g_object_set (G_OBJECT (renderer),
+                "foreground", "red",
+                NULL);
+
+  column = gtk_tree_view_column_new_with_attributes ("ZMap", renderer,
+                                                     "text", ZMAPID_COLUMN,
+                                                     NULL);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
+  column = gtk_tree_view_column_new_with_attributes ("Sequence", renderer,
+                                                     "text", ZMAPSEQUENCE_COLUMN,
+                                                     NULL);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
+  column = gtk_tree_view_column_new_with_attributes ("State", renderer,
+                                                     "text", ZMAPSTATE_COLUMN,
+                                                     NULL);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
+  column = gtk_tree_view_column_new_with_attributes ("Last request", renderer,
+                                                     "text", ZMAPLASTREQUEST_COLUMN,
+                                                     NULL);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
 
 
   /* Apparently gtkclist is now deprecated, not sure what one uses instead....sigh... */
-  app_context->clist_widg = clist = gtk_clist_new_with_titles(4, column_titles) ;
-  gtk_signal_connect(GTK_OBJECT(clist), "select_row",
-		     GTK_SIGNAL_FUNC(selectRow), (gpointer)app_context) ;
-  gtk_signal_connect(GTK_OBJECT(clist), "unselect_row",
-		     GTK_SIGNAL_FUNC(unselectRow), (gpointer)app_context) ;
-  gtk_container_add (GTK_CONTAINER (scrwin), clist);
-  /* Sizing is all a hack, could do with much improvement. */
-  gtk_clist_set_column_width(GTK_CLIST(clist), 1, 100) ;
-  gtk_clist_set_column_width(GTK_CLIST(clist), 2, 150) ;
-  gtk_clist_set_column_width(GTK_CLIST(clist), 3, 150) ;
 
+
+  /* Buttons */
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -107,6 +157,77 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
   return frame ;
 }
 
+static void view_onDoubleClick (GtkTreeView        *treeview,
+                                GtkTreePath        *path,
+                                GtkTreeViewColumn  *col,
+                                gpointer            userdata)
+{
+  ZMapAppContext app_context = (ZMapAppContext)userdata ;
+  GtkTreeModel *model;
+  GtkTreeIter   iter;
+
+  /* probably will need to change later, but for now, seems
+     reasonable. */
+  model = gtk_tree_view_get_model(treeview);
+
+  zMapManagerRaise(app_context->selected_zmap);
+  
+  return ;
+}
+
+static gboolean view_onButtonPressed (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
+{
+  /* single click with the right mouse button? */
+  if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
+    {
+      GtkTreePath *path;
+
+      if (gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(treeview),
+                                        (gint) event->x, 
+                                        (gint) event->y,
+                                        &path, NULL, NULL, NULL))
+        {
+          view_popup_menu(treeview, event, userdata);
+          return TRUE; /* we handled this */
+        }
+      else
+        {
+          return FALSE;
+        }
+      return FALSE;
+    }
+
+  return FALSE; /* we could not be bothered to handle this */
+}
+
+static void view_popup_menu(GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
+{
+  GtkWidget *menu, *menuitem;
+
+  menu = gtk_menu_new();
+
+  menuitem = gtk_menu_item_new_with_label("Do something");
+
+  g_signal_connect(menuitem, "activate",
+                   (GCallback) view_popup_menu_onDoSomething, userdata);
+
+  gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
+
+  gtk_widget_show_all(menu);
+
+  /* Note: event can be NULL here when called from view_onPopupMenu;
+   *  gdk_event_get_time() accepts a NULL argument */
+  gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
+                 (event != NULL) ? event->button : 0,
+                 gdk_event_get_time((GdkEvent*)event));
+}
+
+static void view_popup_menu_onDoSomething (GtkWidget *menuitem, gpointer userdata)
+{
+  ZMapAppContext app_context = (ZMapAppContext)userdata ;
+  //  zMapManagerRaise(app_context->selected_zmap);
+  g_print ("Do something!\n");
+}
 
 static void stopThreadCB(GtkWidget *widget, gpointer cb_data)
 {
@@ -129,20 +250,13 @@ static void stopThreadCB(GtkWidget *widget, gpointer cb_data)
 static void killThreadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
-  int row ;
-
 
   if (app_context->selected_zmap)
     {
-      row = gtk_clist_find_row_from_data(GTK_CLIST(app_context->clist_widg),
-					 app_context->selected_zmap) ;
-
-      zMapDebug("GUI: kill thread for row %d with connection pointer: %x\n",
-		 row, app_context->selected_zmap) ;
-
-      zMapManagerKill(app_context->zmap_manager, app_context->selected_zmap) ;
+      zMapDebug("GUI: kill thread for zmap id %s with connection pointer: %x\n",
+                "zmapID", app_context->selected_zmap) ;
+      zMapManagerKill(app_context->zmap_manager, app_context->selected_zmap) ;      
     }
-
 
   return ;
 }
@@ -158,23 +272,36 @@ static void checkThreadCB(GtkWidget *widget, gpointer cb_data)
   return ;
 }
 
-
-static void selectRow(GtkCList *clist, gint row, gint column, GdkEventButton *event,
-		      gpointer cb_data)
+static gboolean selectionFunc(GtkTreeSelection *selection, 
+                              GtkTreeModel     *model,
+                              GtkTreePath      *path, 
+                              gboolean          path_currently_selected,
+                              gpointer          user_data)
 {
-  ZMapAppContext app_context = (ZMapAppContext)cb_data ;
+  GtkTreeIter iter;
+  ZMapAppContext app_context = (ZMapAppContext)user_data;
 
-  app_context->selected_zmap = (ZMap)gtk_clist_get_row_data(clist, row) ;
+  if (gtk_tree_model_get_iter(model, &iter, path))
+    {
+      ZMap zmap;
 
-  return ;
+      gtk_tree_model_get(model, &iter, ZMAPDATA_COLUMN, &zmap, -1);
+
+      if (!path_currently_selected)
+        {
+          app_context->selected_zmap = zmap;
+          g_print ("%s is going to be selected.\n", "zmap");
+          
+        }
+      else
+        {
+          app_context->selected_zmap = NULL;
+          g_print ("%s is going to be unselected.\n", "zmap");
+        }
+
+      //      g_free(zmap); // ????
+    }
+
+  return TRUE; /* allow selection state to change */
 }
 
-static void unselectRow(GtkCList *clist, gint row, gint column, GdkEventButton *event,
-			gpointer cb_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)cb_data ;
-
-  app_context->selected_zmap = NULL ;
-
-  return ;
-}

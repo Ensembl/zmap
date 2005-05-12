@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  6 09:57 2005 (rds)
+ * Last edited: May 12 13:37 2005 (rds)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.9 2005-05-07 17:57:33 rds Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.10 2005-05-12 15:45:34 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -45,7 +45,7 @@ enum {ZMAP_GTK_MAJOR = 2, ZMAP_GTK_MINOR = 2, ZMAP_GTK_MICRO = 1} ;
 
 
 /* Overall application control struct. */
-typedef struct
+typedef struct _ZMapAppContextStruct
 {
   GtkWidget *app_widg ;
 
@@ -53,7 +53,7 @@ typedef struct
   GtkWidget *start_widg ;
   GtkWidget *end_widg ;
 
-  GtkWidget *clist_widg ;
+  GtkTreeStore *tree_store_widg ;
 
   ZMapManager zmap_manager ;
   ZMap selected_zmap ;
@@ -68,6 +68,14 @@ typedef struct
 /* cols in connection list. */
 enum {ZMAP_NUM_COLS = 4} ;
 
+enum {
+  ZMAPID_COLUMN,
+  ZMAPSEQUENCE_COLUMN,
+  ZMAPSTATE_COLUMN,
+  ZMAPLASTREQUEST_COLUMN,
+  ZMAPDATA_COLUMN,
+  ZMAP_N_COLUMNS
+};
 
 int zmapMainMakeAppWindow(int argc, char *argv[]) ;
 GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context) ;

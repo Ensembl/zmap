@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Jan  5 11:08 2005 (edgrif)
+ * Last edited: May 10 14:28 2005 (rds)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.12 2005-01-05 11:17:53 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.13 2005-05-12 15:45:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -116,10 +116,8 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
 
 void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, int end)
 {
-  char *row_text[ZMAP_NUM_COLS] = {"", "", ""} ;
-  int row ;
   ZMap zmap ;
-
+  GtkTreeIter iter1;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -136,25 +134,18 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
     }
   else
     {
-      row_text[0] = zMapGetZMapID(zmap) ;
-
-      /* awaiting new call to report some other way of showing what could be multiple sequences
-       * per window..... */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      row_text[1] = zMapGetSequence(zmap) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      row_text[1] = "<dummy>" ;
-
-      row_text[2] = zMapGetZMapStatus(zmap) ;
-      row_text[3] = "blah, blah, blah" ;
-
-      
-      row = gtk_clist_append(GTK_CLIST(app_context->clist_widg), row_text) ;
-      gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, (gpointer)zmap) ;
-      
-
+      gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
+      gtk_tree_store_set (app_context->tree_store_widg, &iter1,
+                          ZMAPID_COLUMN, zMapGetZMapID(zmap),
+                          ZMAPSEQUENCE_COLUMN,"<dummy>" ,
+                          ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
+                          ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
+                          ZMAPDATA_COLUMN, (gpointer)zmap,
+                          -1);
+#ifdef RDS_NEVER_INCLUDE_THIS_CODE      
       zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
-		(row + 1), row_text[0], row_text[1]) ;
+                (row + 1), row_text[0], row_text[1]) ;
+#endif /* RDS_NEVER_INCLUDE_THIS_CODE */
     }
 
   return ;

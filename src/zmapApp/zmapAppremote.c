@@ -27,17 +27,20 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: May  7 18:56 2005 (rds)
+ * Last edited: May 12 16:37 2005 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.1 2005-05-07 17:57:33 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.2 2005-05-12 15:45:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <zmapApp_P.h>
 #include <ZMap/zmapXRemote.h>
 
 
-static char *appexecuteCommand(char *command_text, gpointer app_context);
+static char *appexecuteCommand(char *command_text, gpointer app_context, int *statusCode);
+static char *createZMap(ZMapAppContext app, char *command_text);
+static void destroyNotifyData(gpointer destroy_data);
 
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 {
@@ -62,8 +65,10 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
       /* Makes sure we actually get the events!!!! Use add-events as set_events needs to be done BEFORE realize */
       gtk_widget_add_events(widget, GDK_PROPERTY_CHANGE_MASK) ;
       /* probably need g_signal_connect_data here so we can destroy when disconnected */
-      g_signal_connect(G_OBJECT(widget), "property_notify_event",
-                       G_CALLBACK(zMapXRemotePropertyNotifyEvent), (gpointer)notifyData);
+      g_signal_connect_data(G_OBJECT(widget), "property_notify_event",
+                            G_CALLBACK(zMapXRemotePropertyNotifyEvent), (gpointer)notifyData,
+                            (GClosureNotify) destroyNotifyData, G_CONNECT_AFTER
+                            );
 
       app_context->propertyNotifyData = notifyData; /* So we can free it */
     }
@@ -71,27 +76,99 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
   return;
 }
 
-static char *appexecuteCommand(char *command_text, gpointer app_context){
-  char *response_text = NULL;
-  int statusCode = 200;
-  char *xml_reply = "<n>o</n>";
-  if(g_str_has_prefix(command_text, "explode")){
-    printf("%s\n", "Kaboom!");
-    zmapAppCreateZMap(app_context, "b0250", 1, 0) ;
-  }
-  
-  response_text = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, statusCode, xml_reply) ;
-  
-  return response_text;
+static char *appexecuteCommand(char *command_text, gpointer app_context, int *statusCode){
+  char *xml_reply     = NULL;
+
+  if(g_str_has_prefix(command_text, "newZmap"))
+    {
+      *statusCode = ZMAPXREMOTE_OK;
+      xml_reply   = createZMap((ZMapAppContext) app_context, command_text);
+    }
+  else
+    {
+      *statusCode = ZMAPXREMOTE_UNKNOWNCMD;
+      xml_reply   = "<message>unknown command</message>";
+    }
+  return xml_reply;
 }
 
 
-#ifdef VOIDDESTROY
-void DestroyNotify(void){
+static char *createZMap(ZMapAppContext app, char *command_text)
+{
+  char *result = NULL ;
+  gboolean parse_error ;
+  char *next ;
+  char *keyword, *value ;
+  gchar *type = NULL ;
+  gint start = 0, end = 0;
+  char *sequence;
+
+  next = strtok(command_text, " ") ;			    /* Skip newZmap. */
+
+  parse_error = FALSE ;
+  while (!parse_error && (next = strtok(NULL, " ")))
+    {
+      keyword = g_strdup(next) ;			    /* Get keyword. */
+
+      next = strtok(NULL, " ") ;			    /* skip "=" */
+
+      next = strtok(NULL, " ") ;			    /* Get value. */
+      value = g_strdup(next) ;
+
+      next = strtok(NULL, " ") ;			    /* skip ";" */
+
+
+      if (g_ascii_strcasecmp(keyword, "seq") == 0)
+        {
+          sequence = g_strdup(value) ;
+        }
+      else if (g_ascii_strcasecmp(keyword, "start") == 0)
+	{
+          start = strtol(value, (char **)NULL, 10) ;
+	}
+      else if (g_ascii_strcasecmp(keyword, "end") == 0)
+        {
+          end = strtol(value, (char **)NULL, 10) ;
+        }
+      else
+	{
+	  parse_error = TRUE ;
+	  result = "<message>failed to parse command.</message>";
+	}
+
+      g_free(keyword) ;
+      g_free(value) ;
+    }
+
+  if (!result)
+    zmapAppCreateZMap(app, sequence, start, end) ;
+
+  /* Clean up. */
+  if (sequence)
+    g_free(sequence) ;
+
+  return result ;
+}
+
+
+
+static void destroyNotifyData(gpointer destroy_data)
+{
+  ZMapAppContext app;
+  zMapXRemoteNotifyData destroy_me = (zMapXRemoteNotifyData) destroy_data;
+
+  app = destroy_me->data;
+  app->propertyNotifyData = NULL;
+  g_free(destroy_me);
   /* user_data->data points to parent
    * hold onto this parent.
    * cleanup user_data = NULL;
    * free(user_data)
- */
+   */
+  return ;
 }
-#endif
+
+
+
+
+
