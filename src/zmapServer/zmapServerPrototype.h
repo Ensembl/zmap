@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Mar  8 18:21 2005 (rds)
+ * Last edited: May 17 15:14 2005 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.9 2005-03-10 12:12:53 rds Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.10 2005-05-18 11:13:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -52,6 +52,8 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 					 char *userid, char *passwd, int timeout) ;
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn) ;
 
+typedef ZMapServerResponseType (*ZMapServerGetTypes)(void *server_in, GData **types_out) ;
+
 typedef ZMapServerResponseType
                  (*ZMapServerSetContextFunc)(void *server_conn, char *sequence,
 					     int start, int end, GData *types)  ;
@@ -60,7 +62,11 @@ typedef ZMapFeatureContext
                  (*ZMapServerCopyContextFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType
-                 (*ZMapServerGetFeatures)(void *server_conn, ZMapFeatureContext feature_context) ;
+                 (*ZMapServerGetFeatures)(void *server_conn, GList *requested_types,
+					  ZMapFeatureContext feature_context) ;
+
+typedef ZMapServerResponseType
+                 (*ZMapServerGetSequence)(void *server_conn, ZMapFeatureContext feature_context) ;
 
 typedef ZMapServerResponseType
                  (*ZMapServerGetSequence)(void *server_conn, ZMapFeatureContext feature_context) ;
@@ -77,10 +83,11 @@ typedef struct _ZMapServerFuncsStruct
   ZMapServerGlobalFunc global_init ;
   ZMapServerCreateFunc create ;
   ZMapServerOpenFunc open ;
+  ZMapServerGetTypes get_types ;
   ZMapServerSetContextFunc set_context ;
   ZMapServerCopyContextFunc copy_context ;
   ZMapServerGetFeatures get_features ;
-  ZMapServerGetFeatures get_sequence ;
+  ZMapServerGetSequence get_sequence ;
   ZMapServerGetErrorMsgFunc errmsg ;
   ZMapServerCloseFunc close ;
   ZMapServerDestroyFunc destroy ;
