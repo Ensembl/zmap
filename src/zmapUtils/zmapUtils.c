@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Nov 19 16:55 2004 (edgrif)
+ * Last edited: May 13 14:30 2005 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.9 2004-11-22 11:50:39 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.10 2005-05-18 11:15:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -304,6 +304,29 @@ gboolean zMapStr2LongInt(char *str, long int *long_int_out)
 }
 
 
+gboolean zMapStr2Double(char *str, double *double_out)
+{
+  gboolean result = FALSE ;
+  char *end_ptr ;
+  double ret_val ;
+
+  zMapAssert(str && *str) ;
+
+  errno = 0 ;
+ 
+  ret_val = strtod(str, &end_ptr) ;
+
+  if (*end_ptr != '\0' || errno != 0)
+    result = FALSE ;
+  else
+    {
+      result = TRUE ;
+      if (double_out)
+	*double_out = ret_val ;
+    }
+
+  return result ;
+}
 
 
 static gboolean getVersionNumbers(char *version_str,
