@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr  5 15:16 2005 (edgrif)
+ * Last edited: May 13 14:28 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.21 2005-04-05 14:18:05 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.22 2005-05-18 10:54:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1131,16 +1131,9 @@ gboolean formatScore(char *score_str, gdouble *score_out)
   else
     {
       gdouble score ;
-      char *last_char ;
 
-      score = g_ascii_strtod(score_str, &last_char) ; /* resets errno for us. */
-      if (*last_char != '\0' || errno != 0)
-	result = FALSE ;
-      else
-	{
-	  result = TRUE ;
-	  *score_out = score ;
-	}
+      if ((result = zMapStr2Double(score_str, &score)))
+	*score_out = score ;
     }
 
   return result ;
