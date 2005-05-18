@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Mar 10 11:03 2005 (rds)
+ * Last edited: May 17 15:28 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.21 2005-03-10 12:11:26 rds Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.22 2005-05-18 10:54:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -166,6 +166,20 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server)
   return result ;
 }
 
+ZMapServerResponseType zMapServerGetTypes(ZMapServer server, GData **types_out)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+  result = server->last_response = (server->funcs->get_types)(server->server_conn, types_out) ;
+
+  if (result != ZMAP_SERVERRESPONSE_OK)
+    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
+						    (server->funcs->errmsg)(server->server_conn)) ;
+
+  return result ;
+}
+
+
 
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence,
 					    int start, int end, GData *types)
@@ -209,7 +223,8 @@ ZMapFeatureContext zMapServerCopyContext(ZMapServer server)
 }
 
 
-ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureContext feature_context)
+ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GList *requested_types,
+					     ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
@@ -217,7 +232,7 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureConte
     {
 
       result = server->last_response
-	= (server->funcs->get_features)(server->server_conn, feature_context) ;
+	= (server->funcs->get_features)(server->server_conn, requested_types, feature_context) ;
 
 
       if (result != ZMAP_SERVERRESPONSE_OK)
