@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Feb 10 15:57 2005 (edgrif)
+ * Last edited: May 13 14:12 2005 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.14 2005-02-10 16:33:58 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.15 2005-05-18 10:49:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -113,6 +113,6 @@ char *zMapGetTimeString(void) ;
 
 gboolean zMapStr2Int(char *str, int *int_out) ;
 gboolean zMapStr2LongInt(char *str, long int *long_int_out) ;
-
+gboolean zMapStr2Double(char *str, double *double_out) ;
 
 #endif /* ZMAP_UTILS_H */
