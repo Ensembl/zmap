@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar 28 08:06 2005 (edgrif)
+ * Last edited: May 18 11:16 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.24 2005-04-05 14:27:13 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.25 2005-05-18 11:14:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,19 +52,20 @@ static gboolean createConnection(void **server_out,
 				 char *host, int port, char *format, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
+static ZMapServerResponseType getTypes(void *server, GData **types) ;
 static ZMapServerResponseType setContext(void *server,  char *sequence,
 					 int start, int end, GData *types) ;
 ZMapFeatureContext copyContext(void *server) ;
-static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getFeatures(void *server_in, GList *requested_types,
+					  ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static gboolean destroyConnection(void *server) ;
 
-
-
-static char *getMethodString(GData *types) ;
-static void addTypeName(GQuark key_id, gpointer data, gpointer user_data) ;
+static char *getMethodString(void *types, gboolean dataset) ;
+static void datasetAddTypeName(GQuark key_id, gpointer unused, gpointer user_data) ;
+static void addTypeName(gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
 static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
 static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
@@ -79,6 +80,9 @@ static gboolean checkServerVersion(AcedbServer server) ;
 static gboolean findSequence(AcedbServer server) ;
 static gboolean setQuietMode(AcedbServer server) ;
 
+static gboolean parseTypes(AcedbServer server) ;
+ZMapFeatureTypeStyle parseMethod(char *method_str, char **end_pos) ;
+int getFoundObj(char *text) ;
 
 
 
@@ -90,6 +94,7 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->global_init = globalInit ;
   acedb_funcs->create = createConnection ;
   acedb_funcs->open = openConnection ;
+  acedb_funcs->get_types = getTypes ;
   acedb_funcs->set_context = setContext ;
   acedb_funcs->copy_context = copyContext ;
   acedb_funcs->get_features = getFeatures ;
@@ -181,9 +186,36 @@ static ZMapServerResponseType openConnection(void *server_in)
 }
 
 
+static ZMapServerResponseType getTypes(void *server_in, GData **types_out)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  AcedbServer server = (AcedbServer)server_in ;
+
+  if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
+    {
+      if (parseTypes(server))
+	{
+	  result = ZMAP_SERVERRESPONSE_OK ;
+	  *types_out = server->types ;
+	}
+      else
+	{
+	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+			 "Could get types from server because: %s", server->last_err_msg) ;
+	}
+    }
+
+  return result ;
+}
+
+
 
 /* the struct/param handling will not work in these routines now and needs sorting out.... */
 
+
+/* TYPES NOW NEEDS TO BE GOT DYNAMICALLY..... BUT PERHAPS WE SHOULD SAY IF TYPES != NULL THEN
+ * WE SHOULD MERGE OR OVERRIDE.... */
 
 /* I'm not sure if I need to create a context actually in the acedb server, really it could be a keyset
  * or a virtual sequence...don't know if we can do this via gif interface.... */
@@ -201,9 +233,10 @@ static ZMapServerResponseType setContext(void *server_in,  char *sequence,
   server->types = types ;
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* May want this to be dynamic some time, i.e. redone every time there is a request ? */
-  server->method_str = getMethodString(server->types) ;
-
+  server->method_str = getMethodString((void *)(server->types), TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   feature_context = zMapFeatureContextCreate(server->sequence) ;
 
@@ -240,7 +273,8 @@ ZMapFeatureContext copyContext(void *server_in)
 
 
 /* Get features sequence. */
-static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in, GList *requested_types,
+					  ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -249,6 +283,15 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 
   result = ZMAP_SERVERRESPONSE_OK ;
   server->last_err_status = ACECONN_OK ;
+
+
+  if (requested_types)
+    {
+      /* We should be verifying this against the context types..... */
+
+
+      server->method_str = getMethodString((void *)(requested_types), FALSE) ;
+    }
 
 
   if (!sequenceRequest(server, feature_context))
@@ -380,10 +423,7 @@ static gboolean destroyConnection(void *server_in)
  */
 
 
-
-
-
-static char *getMethodString(GData *types)
+static char *getMethodString(void *types, gboolean dataset)
 {
   char *type_names = NULL ;
   ZMapTypesStringStruct types_data ;
@@ -398,7 +438,15 @@ static char *getMethodString(GData *types)
 
       types_data.first_method = TRUE ;
       types_data.str = str ;
-      g_datalist_foreach(&types, addTypeName, (void *)&types_data) ;
+
+      if (dataset)
+	{
+	  g_datalist_foreach(&((GData *)types), datasetAddTypeName, (void *)&types_data) ;
+	}
+      else
+	{
+	  g_list_foreach((GList *)types, addTypeName, (void *)&types_data) ;
+	}
 
       if (*(str->str))
 	free_string = FALSE ;
@@ -409,10 +457,21 @@ static char *getMethodString(GData *types)
   return type_names ;
 }
 
-/* N.B. the unused parameter would point to the struct for the type but we don't need it. */
-static void addTypeName(GQuark key_id, gpointer unused, gpointer user_data)
+
+/* Just a cover function required for dataset callbacks...we don't actually need
+ * the unused parameter which would point to the struct for the dataset type.
+ */
+static void datasetAddTypeName(GQuark key_id, gpointer unused, gpointer user_data)
+{
+  addTypeName(GUINT_TO_POINTER(key_id), user_data) ;
+
+  return ;
+}
+
+static void addTypeName(gpointer data, gpointer user_data)
 {
   char *type_name = NULL ;
+  GQuark key_id = GPOINTER_TO_UINT(data) ;
   ZMapTypesString types_data = (ZMapTypesString)user_data ;
 
   type_name = (char *)g_quark_to_string(key_id) ;
@@ -426,6 +485,8 @@ static void addTypeName(GQuark key_id, gpointer unused, gpointer user_data)
 
   return ;
 }
+
+
 
 
 
@@ -1074,5 +1135,249 @@ static gboolean setQuietMode(AcedbServer server)
 
   return result ;
 }
+
+/* Makes requests "find method" and "show -a" to get all methods in a form we can
+ * parse, e.g.
+ * 
+ * acedb> show -a
+ * 
+ * Method : "wublastx_briggsae"
+ * Remark   "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
+ * Colour   LIGHTGREEN
+ * Frame_sensitive
+ * Show_up_strand
+ * Score_by_width
+ * Score_bounds     10.000000 100.000000
+ * Right_priority   4.750000
+ * Join_blocks
+ * Blixem_X
+ * GFF_source       "wublastx"
+ * GFF_feature      "similarity"
+ * 
+ * <more methods>
+ * 
+ * // 7 objects dumped
+ * // 7 Active Objects
+ *
+ *  */
+static gboolean parseTypes(AcedbServer server)
+{
+  gboolean result = FALSE ;
+  char *command ;
+  char *acedb_request = NULL ;
+  void *reply = NULL ;
+  int reply_len = 0 ;
+  int num_methods ;
+
+  command = "find method" ;
+  acedb_request =  g_strdup_printf("%s", command) ;
+  if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
+						&reply, &reply_len)) == ACECONN_OK)
+    {
+      /* reply is:
+       *
+       * <blank line>
+       * // Found 132 objects in this class
+       * // 132 Active Objects
+       *
+       */
+      char *scan_text = (char *)reply ;
+      char *next_line = NULL ;
+
+      while ((next_line = strtok(scan_text, "\n")))
+	{
+	  scan_text = NULL ;
+
+	  if (g_str_has_prefix(next_line, "// "))
+	    {
+	      num_methods = getFoundObj(next_line) ;
+	      if (num_methods > 0)
+		result = TRUE ;
+	      else
+		server->last_err_msg = g_strdup_printf("Expected to find method objects but found none.") ;
+	      break ;
+	    }
+	}
+    }
+
+  if (result == TRUE)
+    {
+      command = "show -a" ;
+      acedb_request =  g_strdup_printf("%s", command) ;
+      if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
+						    &reply, &reply_len)) == ACECONN_OK)
+	{
+	  int num_types = 0 ;
+	  char *method_str = (char *)reply ;
+	  char *scan_text = method_str ;
+	  char *curr_pos = NULL ;
+	  char *next_line = NULL ;
+
+	  g_datalist_init(&server->types) ;
+
+	  while ((next_line = strtok_r(scan_text, "\n", &curr_pos))
+		 && !g_str_has_prefix(next_line, "// "))
+	    {
+	      ZMapFeatureTypeStyle style = NULL ;
+
+	      scan_text = NULL ;
+	      
+	      if ((style = parseMethod(next_line, &curr_pos)))
+		{
+		  g_datalist_id_set_data(&server->types, style->unique_id, style) ;
+		  num_types++ ;
+		}
+	    }
+
+	  /* Found no valid types.... */
+	  if (!num_types)
+	    result = FALSE ;
+	  else
+	    result = TRUE ;
+	}
+    }
+
+  g_free(reply) ;
+
+  return result ;
+}
+
+
+
+
+/* The method string should be of the form:
+ *
+ * Method : "wublastx_briggsae"
+ * Remark	 "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
+ * Colour	 LIGHTGREEN
+ * Frame_sensitive	
+ * Show_up_strand	
+ * <white space only line>
+ * more methods....
+ * 
+ * This parses the method using it to create a style struct which it returns.
+ * The function also returns a pointer to the blank line that ends the current
+ * method.
+ * 
+ */
+ZMapFeatureTypeStyle parseMethod(char *method_str_in, char **end_pos)
+{
+  ZMapFeatureTypeStyle style = NULL ;
+  char *method_str = method_str_in ;
+  char *scan_text = NULL ;
+  char *next_line = method_str ;
+  char *name, *outline, *foreground, *background ;
+  double width ;
+  gboolean strand_specific, frame_specific, show_up_strand ;
+  double min_mag ;
+  gboolean errors = FALSE ;
+
+
+  if (!g_str_has_prefix(method_str, "Method : "))
+    return style ;
+
+  name = outline = foreground = background = NULL ;
+
+  do
+    {
+      char *tag = NULL ;
+      char *value = NULL ;
+      char *line_pos = NULL ;
+
+      if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
+	break ;
+
+      if (g_ascii_strcasecmp(tag, "Method") == 0)
+	{
+	  name = g_strdup(strtok_r(NULL, ": \"", &line_pos)) ; /* Skip ': "' */
+	}
+      else if (g_ascii_strcasecmp(tag, "Colour") == 0)
+	outline = g_strdup(strtok_r(NULL, " ", &line_pos)) ;
+      else if (g_ascii_strcasecmp(tag, "Width") == 0)
+	{
+	  char *value ;
+	  char *end_ptr = NULL ;
+
+	  value = strtok_r(NULL, " ", &line_pos) ;
+
+	  if (!(errors = zMapStr2Double(value, &width)))
+	    {
+	      zMapLogWarning("No value for \"Width\" specified in method: %s", name) ;
+	      break ;
+	    }
+	}
+      else if (g_ascii_strcasecmp(tag, "Strand_sensitive") == 0)
+	strand_specific = TRUE ;
+      else if (g_ascii_strcasecmp(tag, "Frame_sensitive") == 0)
+	{
+	  frame_specific = TRUE ;
+	  strand_specific = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Show_up_strand") == 0)
+	{
+	  show_up_strand = TRUE ;
+	  strand_specific = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Min_mag") == 0)
+	{
+	  char *value ;
+	  char *end_ptr = NULL ;
+
+	  value = strtok_r(NULL, " ", &line_pos) ;
+
+	  if (!(errors = zMapStr2Double(value, &min_mag)))
+	    {
+	      zMapLogWarning("No value for \"Min_mag\" specified in method: %s", name) ;
+	      
+	      break ;
+	    }
+	}
+    }
+  while (**end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
+
+  if (!errors)
+    {
+      style = zMapFeatureTypeCreate(name, 
+				    outline, foreground, background,
+				    width, min_mag) ;
+
+      zMapStyleSetStrandAttrs(style, strand_specific, frame_specific, show_up_strand) ;
+    }
+
+
+  /* Clean up, note only name and outline are currently allcoated. */
+  if (name)
+    g_free(name) ;
+  if (outline)
+    g_free(outline) ;
+
+
+  return style ;
+}
+
+
+/* Parses the string returned by an acedb "find" command, if the command found objects
+ * it returns a string of the form:
+ *                                   "// Found 1 objects in this class"
+ */
+int getFoundObj(char *text)
+{
+  int num_obj = 0 ;
+
+  if (strstr(text, "Found"))
+    {
+      char *next ;
+	      
+      next = strtok(text, " ") ;
+      next = strtok(NULL, " ") ;
+      next = strtok(NULL, " ") ;
+
+      num_obj = atoi(next) ;
+    }
+
+  return num_obj ;
+}
+
+
 
 
