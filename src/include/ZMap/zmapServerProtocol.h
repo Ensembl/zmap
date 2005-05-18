@@ -28,9 +28,9 @@
  *              give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Mar 10 12:07 2005 (rds)
+ * Last edited: May 16 11:32 2005 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.3 2005-03-10 12:08:08 rds Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.4 2005-05-18 10:49:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -95,17 +95,6 @@ typedef struct
 } ZMapServerReqOpenStruct, *ZMapServerReqOpen ;
 
 
-/* Set a context/region in a server. */
-typedef struct
-{
-  ZMapServerReqType type ;
-
-  char *sequence ;
-  int start, end ;
-  GData *types ;
-} ZMapServerReqNewContextStruct, *ZMapServerReqNewContext ;
-
-
 /* Find out what types are on a server. */
 typedef struct
 {
@@ -115,10 +104,26 @@ typedef struct
 } ZMapServerReqGetTypesStruct, *ZMapServerReqGetTypes ;
 
 
+/* Set a context/region in a server. */
+typedef struct
+{
+  ZMapServerReqType type ;
+
+  char *sequence ;
+  int start, end ;
+
+  GData *types ;					    /* Set of all types that could be fetched. */
+
+} ZMapServerReqNewContextStruct, *ZMapServerReqNewContext ;
+
+
 /* Get features from a server. */
 typedef struct
 {
   ZMapServerReqType type ;
+
+  GList *req_types ;					    /* types to retrieve for this request,
+							       NULL means get all of them. */
 
   ZMapFeatureContext feature_context_out ;		    /* Returned feature sets. */
 } ZMapServerReqGetFeaturesStruct, *ZMapServerReqGetFeatures ;
@@ -130,6 +135,8 @@ typedef struct
   ZMapServerReqType type ;
 
   ZMapServerReqOpenStruct open ;
+
+  ZMapServerReqGetTypesStruct types ;
 
   ZMapServerReqNewContextStruct context ;
 
