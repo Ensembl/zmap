@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: May  3 13:47 2005 (rnc)
+ * Last edited: May 13 18:01 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.8 2005-05-03 14:28:07 rnc Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.9 2005-05-18 10:53:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -247,7 +247,7 @@ char *zmapFeatureLookUpEnum(int id, int enumType)
   /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
   static char *types[]   = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
 			    "VARIATION", "BOUNDARY", "SEQUENCE"} ;
-  static char *strands[] = {"NONE", "FORWARD", "REVERSE" } ;
+  static char *strands[] = {".", "+", "-" } ;
   static char *phases[]  = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" } ;
   char *enum_str = NULL ;
 
