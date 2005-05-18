@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: Mar 31 13:23 2005 (edgrif)
+ * Last edited: May 13 17:01 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.24 2005-04-05 14:28:39 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.25 2005-05-18 10:48:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -370,6 +370,9 @@ typedef struct ZMapFeatureTypeStyleStruct_
   GQuark original_id ;					    /* Original name. */
   GQuark unique_id ;					    /* Name normalised to be unique. */
 
+  char *description ;					    /* Description of what this style
+							       represents. */
+
   GdkColor  outline ;					    /* Surround/line colour. */
   GdkColor  foreground ;				    /* Overlaid on background. */
   GdkColor  background ;				    /* Fill colour. */
@@ -378,10 +381,15 @@ typedef struct ZMapFeatureTypeStyleStruct_
   ZMapFeatureWidthStyle width_style ;
   ZMapFeatureOverlapStyle overlap_style ;
   double    width ;					    /* column width */
-  int       min_mag, max_mag ;                              /* bases per line */
-  float     min_score, max_score ;
+  double    min_mag, max_mag ;                              /* bases per line */
+  double    min_score, max_score ;
   gboolean  showText ;
-  gboolean  showUpStrand ;
+
+  /* These are all linked, if strand_specific is FALSE, then so are frame_specific
+   * and show_rev_strand. */
+  gboolean  strand_specific ;
+  gboolean  frame_specific ;
+  gboolean  show_rev_strand ;
 
 } ZMapFeatureTypeStyleStruct, *ZMapFeatureTypeStyle ;
 
@@ -389,7 +397,10 @@ typedef struct ZMapFeatureTypeStyleStruct_
 
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 					   char *outline, char *foreground, char *background,
-					   float width, gboolean show_up_strand, int min_mag) ;
+					   double width, double min_mag) ;
+void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
+			     gboolean strand_specific, gboolean frame_specific,
+			     gboolean show_rev_strand) ;
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
 ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type) ;
