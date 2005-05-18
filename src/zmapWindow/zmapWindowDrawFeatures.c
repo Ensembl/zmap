@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 18 10:27 2005 (edgrif)
+ * Last edited: May 18 13:53 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.57 2005-05-18 11:17:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.58 2005-05-18 12:53:29 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -150,6 +150,8 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   ZMapCanvasDataStruct canvas_data = {NULL} ;		    /* Rest of struct gets set to zero. */
   double column_start ;
   double x1, y1, x2, y2 ;
+
+  printf("tracing floating exception: zmapWindowDrawFeatures\n");
 
   zMapAssert(window && full_context && diff_context && types) ;
 
@@ -460,6 +462,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	g_object_set_data(G_OBJECT(top_feature_item), "feature", feature) ;
 	g_object_set_data(G_OBJECT(top_feature_item), "item_feature_type",
 			  GINT_TO_POINTER(ITEM_FEATURE_SIMPLE)) ;
+	g_object_set_data(G_OBJECT(top_feature_item), "feature_set", canvas_data->feature_set);
 	g_signal_connect(GTK_OBJECT(top_feature_item), "event",
 			 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
 	g_signal_connect(GTK_OBJECT(top_feature_item), "destroy",
@@ -551,6 +554,8 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 				  GINT_TO_POINTER(ITEM_FEATURE_BOUNDING_BOX)) ;
 		g_object_set_data(G_OBJECT(intron_box), "item_feature_data",
 				  box_data) ;
+		g_object_set_data(G_OBJECT(top_feature_item), "feature_set", 
+				  canvas_data->feature_set);
 		g_signal_connect(GTK_OBJECT(intron_box), "event",
 				 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
 		g_signal_connect(GTK_OBJECT(intron_box), "destroy",
@@ -578,6 +583,8 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 				  GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
 		g_object_set_data(G_OBJECT(intron_line), "item_feature_data",
 				  intron_data) ;
+		g_object_set_data(G_OBJECT(top_feature_item), "feature_set", 
+				  canvas_data->feature_set);
 		g_signal_connect(GTK_OBJECT(intron_line), "event",
 				 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
 		g_signal_connect(GTK_OBJECT(intron_line), "destroy",
@@ -869,13 +876,39 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
 {
   char *menu_title = "Item menu" ;
   ZMapWindowMenuItemStruct menu[] =
-    {
-      {"Show Feature List", 1, itemMenuCB},
-      {"Dummy",             2, itemMenuCB},
+    {   /* entries must be long enough for longest possible that we might use */
+      {"Show Feature List                                                       ", 1, itemMenuCB},
+      {"Dummy                                                                   ", 2, itemMenuCB},
+      {"Dummy                                                                   ", 3, NULL},
       {NULL,                0, NULL}
     } ;
   ZMapWindowMenuItem menu_item ;
   ItemMenuCBData menu_data ;
+  ZMapFeature feature ;
+
+
+  /* Retrieve the feature item info from the canvas item. */
+  feature = g_object_get_data(G_OBJECT(item), "feature");  
+  if (feature->type == ZMAPFEATURE_HOMOL)
+    if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+      {
+	strcpy(menu[1].name, "Show multiple protein alignment in Blixem");
+	strcpy(menu[2].name, "Show multiple protein alignment for just this type of homology");
+	menu[2].callback_func = itemMenuCB;
+      }
+    else
+      {
+	strcpy(menu[1].name, "Show multiple dna alignment");      
+	strcpy(menu[2].name, "Show multiple dna alignmentfor just this type of homology");      
+	menu[2].callback_func = itemMenuCB;
+      }
+  else
+    {
+      strcpy(menu[1].name, "Dummy"); 
+      menu[2].name = '\0'; 
+      menu[2].id = 0;
+      menu[2].callback_func = NULL;
+    }
 
   menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
   menu_data->window = window ;
@@ -897,6 +930,10 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
 static void itemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapFeature feature ;
+
+  /* Retrieve the feature item info from the canvas item. */
+  feature = g_object_get_data(G_OBJECT(menu_data->item), "feature");  
 
   switch (menu_item_id)
     {
@@ -909,7 +946,20 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       }
     case 2:
       {
-	printf("pillock\n") ;
+	/* call blixem */
+	if (feature->type == ZMAPFEATURE_HOMOL)
+	  zmapWindowCallExternal(menu_data->window, menu_data->item, FALSE) ;
+	else
+	  printf("Dummy!\n");
+	break ;
+      }
+    case 3:
+      {
+	/* call blixem for just this method */
+	if (feature->type == ZMAPFEATURE_HOMOL)
+	  zmapWindowCallExternal(menu_data->window, menu_data->item, TRUE) ;
+	else
+	  printf("Dummy!\n");
 	break ;
       }
     default:
