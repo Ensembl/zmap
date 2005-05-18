@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 31 11:24 2005 (edgrif)
+ * Last edited: May 13 18:14 2005 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.4 2005-04-05 14:29:24 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.5 2005-05-18 10:52:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,16 +50,23 @@ static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data) ;
 /* Create a new type for displaying features. */
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 					   char *outline, char *foreground, char *background,
-					   float width, gboolean show_up_strand, int min_mag)
+					   double width, double min_mag)
 {
   ZMapFeatureTypeStyle new_type = NULL ;
 
+
   /* I am unsure if this is a good thing to do here, I'm attempting to make sure the type is
    * "sane" but no more than that. */
-  zMapAssert(name && *name
-	     && outline && *outline && foreground && *foreground && background && *background
-	     && width > 0.0 && min_mag >= 0) ;
+  zMapAssert(name && *name && width > 0.0 && min_mag >= 0) ;
 
+
+  /* Set some default colours.... */
+  if (!outline)
+    outline = "black" ;
+  if (!foreground)
+    foreground = "white" ;
+  if (!background)
+    background = "white" ;
 
   new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
 
@@ -71,10 +78,33 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
   gdk_color_parse(background, &new_type->background) ;
 
   new_type->width = width ;
-  new_type->showUpStrand = show_up_strand ;
   new_type->min_mag = min_mag ;
 
   return new_type ;
+}
+
+
+
+/* These attributes are not needed for many features and are not independent,
+ * hence we set them in a special routine, none of this is very good as we don't have
+ * a good way of enforcing stuff...so its all a bit heuristic. */
+void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
+			     gboolean strand_specific, gboolean frame_specific,
+			     gboolean show_rev_strand)
+{
+  zMapAssert(type) ;
+
+  if (frame_specific && !strand_specific)
+    strand_specific = TRUE ;
+
+  if (show_rev_strand && !strand_specific)
+    strand_specific = TRUE ;
+
+  type->strand_specific = strand_specific ;
+  type->frame_specific = frame_specific ;
+  type->show_rev_strand = show_rev_strand ;
+
+  return ;
 }
 
 
@@ -181,7 +211,9 @@ GData *zMapFeatureTypeGetFromFile(char *types_file_name)
 	   {"foreground"  , ZMAPCONFIG_STRING, {"white"}},
 	   {"background"  , ZMAPCONFIG_STRING, {"black"}},
 	   {"width"       , ZMAPCONFIG_FLOAT , {NULL}},
-	   {"showUpStrand", ZMAPCONFIG_BOOL  , {NULL}},
+	   {"show_reverse", ZMAPCONFIG_BOOL  , {NULL}},
+	   {"strand_specific", ZMAPCONFIG_BOOL  , {NULL}},
+	   {"frame_specific", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"minmag"      , ZMAPCONFIG_INT   , {NULL}},
 	   {NULL, -1, {NULL}}} ;
 
@@ -217,33 +249,19 @@ GData *zMapFeatureTypeGetFromFile(char *types_file_name)
 	  if ((name = zMapConfigGetElementString(next_types, "name")))
 	    {
 	      ZMapFeatureTypeStyle new_type ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      ZMapFeatureTypeStyle new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
-
-	      /* NB Elements here must match those pre-initialised above or you might segfault. */
-
-	      gdk_color_parse(zMapConfigGetElementString(next_types, "outline"   ), &new_type->outline   ) ;
-	      gdk_color_parse(zMapConfigGetElementString(next_types, "foreground"), &new_type->foreground) ;
-	      gdk_color_parse(zMapConfigGetElementString(next_types, "background"), &new_type->background) ;
-	      new_type->width = zMapConfigGetElementFloat(next_types, "width") ;
-	      new_type->showUpStrand = zMapConfigGetElementBool(next_types, "showUpStrand") ;
-	      new_type->min_mag = zMapConfigGetElementInt(next_types, "minmag") ;
-
-	      /* lowercase the name (aka type).....and FREE the memory....sigh...... */
-	      name_canonical = g_string_new(name) ;
-	      name_canonical = g_string_ascii_down(name_canonical) ;
-	      new_type->name = g_strdup(name_canonical->str) ;
-	      g_string_free(name_canonical, TRUE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	      gboolean strand_specific, frame_specific, show_rev_strand ;
 
 	      new_type = zMapFeatureTypeCreate(name,
 					       zMapConfigGetElementString(next_types, "outline"),
 					       zMapConfigGetElementString(next_types, "foreground"),
 					       zMapConfigGetElementString(next_types, "background"),
 					       zMapConfigGetElementFloat(next_types, "width"),
-					       zMapConfigGetElementBool(next_types, "showUpStrand"),
 					       zMapConfigGetElementInt(next_types, "minmag")) ;
+
+	      zMapStyleSetStrandAttrs(new_type,
+				      zMapConfigGetElementBool(next_types, "strand_specific"),
+				      zMapConfigGetElementBool(next_types, "frame_specific"),
+				      zMapConfigGetElementBool(next_types, "show_reverse")) ;
 
 	      g_datalist_id_set_data(&types, new_type->unique_id, new_type) ;
 	      num_types++ ;
@@ -323,7 +341,8 @@ static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   char *style_name = (char *)g_quark_to_string(key_id) ;
   
-  printf("\t%s: \t%f \t%d\n", style_name, style->width, style->showUpStrand) ;
+  printf("\t%s: \t%f \t%s\n", style_name, style->width,
+	 (style->show_rev_strand ? "show_rev_strand" : "!show_rev_strand")) ;
 
   return ;
 }
