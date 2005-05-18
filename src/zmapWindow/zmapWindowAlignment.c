@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 25 19:02 2005 (rds)
+ * Last edited: May 13 17:22 2005 (edgrif)
  * Created: Thu Feb 24 11:19:23 2005 (edgrif)
- * CVS info:   $Id: zmapWindowAlignment.c,v 1.7 2005-04-25 18:03:41 rds Exp $
+ * CVS info:   $Id: zmapWindowAlignment.c,v 1.8 2005-05-18 11:16:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,7 +171,7 @@ void zmapWindowAlignmentHideUnhideColumns(ZMapWindowAlignmentBlock block)
 	{
 	  if (column->forward)
 	    foo_canvas_item_show(column->forward_group);
-	  else if (column->type->showUpStrand)
+	  else if (column->type->show_rev_strand)
 	    foo_canvas_item_show(column->reverse_group);
 	}
       else
@@ -272,7 +272,7 @@ static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
 				       alignment->window->seq_start, alignment->window->seq_end,
 				       type->width, &fcolumn_colour) ;
 
-  if (type->showUpStrand)
+  if (type->show_rev_strand)
     {
       foo_canvas_item_get_bounds(column->forward_group, &x1, &y1, &x2, &y2) ;
       column->reverse_group = createColumn(FOO_CANVAS_GROUP(column->column_group),
