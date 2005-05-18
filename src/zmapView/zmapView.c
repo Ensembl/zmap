@@ -25,12 +25,13 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Apr 20 19:30 2005 (edgrif)
+ * Last edited: May 18 11:07 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.54 2005-04-21 13:51:13 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.55 2005-05-18 11:16:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <gtk/gtk.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfig.h>
@@ -71,7 +72,8 @@ static void killConnections(ZMapView zmap_view) ;
 /* These are candidates to moved into zmapServer in fact, would be a more logical place for them. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   struct url *url, char *format,
-					   int timeout, char *version, char *types_file,
+					   int timeout, char *version,
+					   char *styles_file, char *styles,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end) ;
 static void destroyConnection(ZMapViewConnection *view_conn) ;
@@ -89,6 +91,9 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 static void freeContext(ZMapFeatureContext feature_context) ;
 
 static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req) ;
+
+static GList *string2StyleQuarks(char *styles) ;
+
 
 
 
@@ -328,6 +333,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 							     {"writeback", ZMAPCONFIG_BOOL, {NULL}},
 							     {"stylesfile", ZMAPCONFIG_STRING, {NULL}},
 							     {"format", ZMAPCONFIG_STRING, {NULL}},
+							     {"styles", ZMAPCONFIG_STRING, {NULL}},
 							     {NULL, -1, {NULL}}} ;
 
 	  /* Set defaults for any element that is not a string. */
@@ -359,7 +365,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	  while (result
 		 && ((next_server = zMapConfigGetNextStanza(server_list, next_server)) != NULL))
 	    {
-	      char *version, *styles_file, *format, *url ;
+	      char *version, *styles_file, *format, *url, *styles ;
 	      int timeout, url_parse_error ;
               struct url *url_struct;
 	      gboolean sequence_server, writeback_server ;
@@ -370,13 +376,15 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      timeout = zMapConfigGetElementInt(next_server, "timeout") ;
 	      version = zMapConfigGetElementString(next_server, "version") ;
 	      styles_file = zMapConfigGetElementString(next_server, "stylesfile") ;
+	      styles = zMapConfigGetElementString(next_server, "styles") ;
 
               /* url is absolutely required. Go on to next stanza if there isn't one.
                * Done before anything else so as not to set seq/write servers to invalid locations  */
-              if(!url){
-                zMapLogWarning("GUI: %s", "computer says no url specified");
-                continue;
-              }
+              if(!url)
+		{
+		  zMapLogWarning("GUI: %s", "computer says no url specified") ;
+		  continue ;
+		}
 
 	      /* We only record the first sequence and writeback servers found, this means you
 	       * can only have one each of these which seems sensible. */
@@ -393,12 +401,13 @@ gboolean zMapViewConnect(ZMapView zmap_view)
                                  url,
                                  url_error(url_parse_error)) ;
                 }
-              else if (url_struct && (view_con = createConnection(zmap_view, url_struct,
-						    format,
-						    timeout, version, styles_file,
-						    sequence_server, writeback_server,
-						    zmap_view->sequence,
-						    zmap_view->start, zmap_view->end)))
+              else if (url_struct
+		       && (view_con = createConnection(zmap_view, url_struct,
+						       format,
+						       timeout, version, styles_file, styles,
+						       sequence_server, writeback_server,
+						       zmap_view->sequence,
+						       zmap_view->start, zmap_view->end)))
 		{
 		  /* Update now we have successfully created a connection. */
 		  zmap_view->connection_list = g_list_append(zmap_view->connection_list, view_con) ;
@@ -1248,14 +1257,24 @@ static void killConnections(ZMapView zmap_view)
 /* Allocate a connection and send over the request to get the sequence displayed. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   struct url *url, char *format,
-					   int timeout, char *version, char *styles_file,
+					   int timeout, char *version,
+					   char *styles_file, char *styles,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end)
 {
   ZMapViewConnection view_con = NULL ;
-  GData *types ;
+  GData *types = NULL ;
+  GList *req_types = NULL ;
   ZMapThread thread ;
   gboolean status = FALSE ;
+
+
+
+  /* THIS CODE WILL HAVE TO GO IN THE END..... */
+
+  /* OK, what we need to do here is use a list of specified method names which give
+   * order of methods etc and then stick the list in the context struct........ */
+
 
   /* Create the thread to service the connection requests, we give it a function that it will call
    * to decode the requests we send it and a terminate function. */
@@ -1265,29 +1284,26 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       char *filepath ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if ((directory = zMapGetControlFileDir((char *)zMapGetControlDirName()))
-	  && (filepath = zMapGetFile(directory, styles_file))
-	  && !(types = zMapFeatureTypeGetFromFile(filepath)))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	if (!(filepath = zMapConfigDirFindFile(styles_file))
-	    || !(types = zMapFeatureTypeGetFromFile(filepath)))
+      if (!(filepath = zMapConfigDirFindFile(styles_file))
+	  || !(types = zMapFeatureTypeGetFromFile(filepath)))
 	{
 	  zMapLogWarning("Could not read types from \"stylesfile\" %s", filepath) ;
 	  status = FALSE ;
 	}
       else
 	status = TRUE ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (directory)
-	g_free(directory) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+      
       if (filepath)
 	g_free(filepath) ;
     }
+
+  /* If user only wants some styles/types displayed then build a list of their quark names. */
+  if (styles)
+    {
+      req_types = string2StyleQuarks(styles) ;
+    }
+
+
 
   if (status && (thread = zMapThreadCreate(zMapServerRequestHandler, zMapServerTerminateHandler)))
     {
@@ -1305,12 +1321,15 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       open_load->context.sequence = g_strdup(sequence) ;
       open_load->context.start = start ;
       open_load->context.end = end ;
-      open_load->context.types = types ;
+
 
       if (sequence_server)
 	open_load->features.type = ZMAP_SERVERREQ_FEATURE_SEQUENCE ;
       else
 	open_load->features.type = ZMAP_SERVERREQ_FEATURES ;
+
+
+      open_load->features.req_types = req_types ;
 
 
       zMapThreadRequest(thread, (void *)open_load) ;
@@ -1538,6 +1557,24 @@ static void setZoomStatus(gpointer data, gpointer user_data)
   return;
 }
 
+/* Take a string containing space separated style names (e.g. "coding fgenes codon")
+ * and convert it to a list of proper style id quarks. */
+static GList *string2StyleQuarks(char *styles)
+{
+  GList *style_quark_list = NULL ;
+  char *curr_pos = NULL ;
+  char *next_style ;
+
+  while ((next_style = strtok_r(styles, " \t", &curr_pos)))
+    {
+      GQuark style_id ;
+      styles = NULL ;
+
+      style_id = zMapStyleCreateID(next_style) ;
+
+      style_quark_list = g_list_append(style_quark_list, GUINT_TO_POINTER(style_id)) ;
+    }
 
 
-
+  return style_quark_list ;
+}
