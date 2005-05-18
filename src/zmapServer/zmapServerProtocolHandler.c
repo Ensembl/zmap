@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 10 12:09 2005 (rds)
+ * Last edited: May 17 14:05 2005 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.4 2005-03-10 12:11:30 rds Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.5 2005-05-18 10:55:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -241,6 +241,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
   ZMapServer server ;
   ZMapServerReqOpen open = &request->open ;
+  ZMapServerReqGetTypes types = &request->types ;
   ZMapServerReqNewContext context = &request->context ;
   ZMapServerReqGetFeatures features = &request->features ;
   ZMapFeatureContext feature_context ;
@@ -260,6 +261,18 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     {
       *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+    }
+
+  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
+      && zMapServerGetTypes(server, &(types->types_out)) != ZMAP_SERVERRESPONSE_OK)
+    {
+      *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+    }
+  else
+    {
+      /* Got the types so record them in the server context. */
+      context->types = types->types_out ;
     }
 
 
@@ -285,7 +298,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && (features->type == ZMAP_SERVERREQ_FEATURES
 	  || features->type == ZMAP_SERVERREQ_FEATURE_SEQUENCE)
-      && zMapServerGetFeatures(server, feature_context) != ZMAP_SERVERRESPONSE_OK)
+      && zMapServerGetFeatures(server, features->req_types, feature_context) != ZMAP_SERVERRESPONSE_OK)
     {
       *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
