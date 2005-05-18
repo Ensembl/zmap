@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 27 16:14 2005 (rnc)
+ * Last edited: May 18 11:01 2005 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.74 2005-04-27 15:14:41 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.75 2005-05-18 12:50:52 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -921,6 +921,11 @@ void zMapWindowDestroy(ZMapWindow window)
 
   g_datalist_clear(&(window->longItems));
 
+  if (window->blixemNetid)
+    g_free(window->blixemNetid);
+  if (window->blixemScript)
+    g_free(window->blixemScript);
+
   g_free(window) ;
   
   return ;
@@ -1321,9 +1326,18 @@ static gboolean getConfiguration(ZMapWindow window)
   gboolean result = FALSE ;
   ZMapConfig config ;
   ZMapConfigStanzaSet window_list = NULL ;
+  ZMapConfigStanzaSet blixem_list = NULL ;
   ZMapConfigStanza window_stanza ;
+  ZMapConfigStanza blixem_stanza ;
   char *window_stanza_name = ZMAP_WINDOW_CONFIG ;
+  char *blixem_stanza_name = ZMAP_BLIXEM_CONFIG ;
   ZMapConfigStanzaElementStruct window_elements[] = {{"canvas_maxsize", ZMAPCONFIG_INT, {NULL}},
+						     {NULL, -1, {NULL}}} ;
+  ZMapConfigStanzaElementStruct blixem_elements[] = {{"netid"     , ZMAPCONFIG_STRING, {NULL}},
+						     {"port"      , ZMAPCONFIG_INT   , {NULL}},
+						     {"script"    , ZMAPCONFIG_STRING, {NULL}},
+						     {"scope"     , ZMAPCONFIG_INT   , {NULL}},
+						     {"homol_max" , ZMAPCONFIG_INT   , {NULL}},
 						     {NULL, -1, {NULL}}} ;
 
   /* Set default values in stanza, keep this in synch with initialisation of window_elements array. */
@@ -1346,6 +1360,27 @@ static gboolean getConfiguration(ZMapWindow window)
 	}
       
       zMapConfigDestroyStanza(window_stanza) ;
+      
+      /* get blixem user prefs from config file.  This probably needs to be rationalised. */
+      blixem_stanza = zMapConfigMakeStanza(blixem_stanza_name, blixem_elements) ;
+
+      if (zMapConfigFindStanzas(config, blixem_stanza, &blixem_list))
+	{
+	  ZMapConfigStanza next_blixem ;
+	  
+	  /* Get the first blixem stanza found, we will ignore any others. */
+	  next_blixem = zMapConfigGetNextStanza(blixem_list, NULL) ;
+	  
+	  window->blixemNetid    = g_strdup(zMapConfigGetElementString(next_blixem, "netid"     )) ;
+	  window->blixemPort     = zMapConfigGetElementInt            (next_blixem, "port"      ) ;
+	  window->blixemScript   = g_strdup(zMapConfigGetElementString(next_blixem, "script"    )) ;
+	  window->blixemScope    = zMapConfigGetElementInt            (next_blixem, "scope"     ) ;
+	  window->blixemHomolMax = zMapConfigGetElementInt            (next_blixem, "homol_max" ) ;
+	  
+	  zMapConfigDeleteStanzaSet(blixem_list) ;		    /* Not needed anymore. */
+	}
+      
+      zMapConfigDestroyStanza(blixem_stanza) ;
       
       zMapConfigDestroy(config) ;
 

@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr 21 10:04 2005 (edgrif)
+ * Last edited: May 18 10:59 2005 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.49 2005-04-21 13:50:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.50 2005-05-18 12:54:09 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -39,8 +39,9 @@
 #include <ZMap/zmapFeature.h>
 
 
-/* This is the name of the window config stanza. */
+/* Names of config stanzas. */
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
+#define ZMAP_BLIXEM_CONFIG "blixem"
 
 
 
@@ -250,6 +251,11 @@ typedef struct _ZMapWindowStruct
   double         seq_start ;
   double         seq_end ;
 
+  gchar         *blixemNetid;                               /* eg pubseq */
+  int            blixemPort;                                /* eg 22100  */
+  gchar         *blixemScript;                              /* script to call blixem standalone */
+  int            blixemScope;                               /* defaults to 40000 */
+  int            blixemHomolMax;                            /* score cutoff point */
 
   FooCanvasItem       *focus_item ;			    /* the item which has focus */
 
@@ -331,6 +337,7 @@ void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 void my_foo_canvas_item_w2i (FooCanvasItem *item, double *x, double *y) ;
 void my_foo_canvas_item_i2w (FooCanvasItem *item, double *x, double *y) ;
 
+void zmapWindowCallExternal(ZMapWindow window, FooCanvasItem *item, gboolean oneType);
 
 
 
