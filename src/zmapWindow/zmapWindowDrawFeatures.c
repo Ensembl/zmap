@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May  3 13:45 2005 (rnc)
+ * Last edited: May 18 10:27 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.56 2005-05-03 14:29:10 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.57 2005-05-18 11:17:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -435,7 +435,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 
 
   /* Users will often not want to see what is on the reverse strand. */
-  if (feature->strand == ZMAPSTRAND_REVERSE && canvas_data->type->showUpStrand == FALSE)
+  if (feature->strand == ZMAPSTRAND_REVERSE && canvas_data->type->show_rev_strand == FALSE)
     return ;
 
   column_group = zmapWindowAlignmentGetColumn(canvas_data->column, feature->strand) ;
@@ -453,7 +453,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	top_feature_item = zMapDrawBox(FOO_CANVAS_ITEM(column_group), 0.0,
 			     feature->x1,
 			     canvas_data->type->width, 
-			     feature->x2,
+			     feature->x2 + 1,
 			     &canvas_data->type->outline,
 			     &canvas_data->type->foreground) ;
 	
@@ -530,11 +530,14 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 		box_data->end = intron_span->x2 ;
 
 		/* Need to remember that group coords start at zero, need to encapsulate this
-		 * in some kind of macro/function that uses the group coords etc. to set positions. */
+		 * in some kind of macro/function that uses the group coords etc. to set
+		 * positions.
+		 * Note that the 2nd coord is "+ 1" because we need to span the whole base. */
 		left = canvas_data->type->width / 2 ;
 		right = canvas_data->type->width ;
 		top = intron_span->x1 - feature->x1 ;
-		bottom = intron_span->x2 - feature->x1 ;
+		bottom = intron_span->x2 - feature->x1 + 1 ;
+
 		middle = top + ((bottom - top + 1) / 2) ;
 
 		intron_box = zMapDrawBox(feature_group,
@@ -605,7 +608,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 				   0.0,
 				   (exon_span->x1 - feature->x1), 
 				   canvas_data->type->width,
-				   (exon_span->x2 - feature->x1), 
+				   (exon_span->x2 - feature->x1 + 1), 
 				   &canvas_data->type->outline, 
 				   &canvas_data->type->foreground) ;
 
