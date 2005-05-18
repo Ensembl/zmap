@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 18 11:16 2005 (edgrif)
+ * Last edited: May 18 15:26 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.25 2005-05-18 11:14:59 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.26 2005-05-18 14:29:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -191,19 +191,16 @@ static ZMapServerResponseType getTypes(void *server_in, GData **types_out)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
 
-  if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
+  if (parseTypes(server))
     {
-      if (parseTypes(server))
-	{
-	  result = ZMAP_SERVERRESPONSE_OK ;
-	  *types_out = server->types ;
-	}
-      else
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-			 "Could get types from server because: %s", server->last_err_msg) ;
-	}
+      result = ZMAP_SERVERRESPONSE_OK ;
+      *types_out = server->types ;
+    }
+  else
+    {
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+		     "Could get types from server because: %s", server->last_err_msg) ;
     }
 
   return result ;
@@ -1101,7 +1098,7 @@ static gboolean findSequence(AcedbServer server)
 	      break ;
 	    }
 	}
-      
+
       g_free(reply) ;
     }
 
@@ -1129,8 +1126,13 @@ static gboolean setQuietMode(AcedbServer server)
 						&reply, &reply_len)) == ACECONN_OK)
     {
       result = TRUE ;
-      
-      g_free(reply) ;
+
+      if (reply_len != 0)
+	{
+	  zMapLogWarning("Replay to \"%s\" should have been NULL but was: \"%s\"",
+			 command, (char *)reply) ;
+	  g_free(reply) ;
+	}
     }
 
   return result ;
