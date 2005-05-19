@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: May 17 15:14 2005 (edgrif)
+ * Last edited: May 19 19:14 2005 (rds)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.10 2005-05-18 11:13:56 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.11 2005-05-19 18:13:54 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -64,9 +64,6 @@ typedef ZMapFeatureContext
 typedef ZMapServerResponseType
                  (*ZMapServerGetFeatures)(void *server_conn, GList *requested_types,
 					  ZMapFeatureContext feature_context) ;
-
-typedef ZMapServerResponseType
-                 (*ZMapServerGetSequence)(void *server_conn, ZMapFeatureContext feature_context) ;
 
 typedef ZMapServerResponseType
                  (*ZMapServerGetSequence)(void *server_conn, ZMapFeatureContext feature_context) ;
