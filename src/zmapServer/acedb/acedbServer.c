@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 18 15:26 2005 (edgrif)
+ * Last edited: May 19 20:25 2005 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.26 2005-05-18 14:29:01 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.27 2005-05-20 11:33:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -438,7 +438,8 @@ static char *getMethodString(void *types, gboolean dataset)
 
       if (dataset)
 	{
-	  g_datalist_foreach(&((GData *)types), datasetAddTypeName, (void *)&types_data) ;
+          GData *types_gData = (GData *)(types);
+	  g_datalist_foreach(&types_gData, datasetAddTypeName, (void *)&types_data) ;
 	}
       else
 	{
