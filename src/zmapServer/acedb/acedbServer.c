@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 19 20:25 2005 (rds)
+ * Last edited: May 24 16:43 2005 (rnc)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.27 2005-05-20 11:33:19 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.28 2005-05-24 15:43:28 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -524,7 +524,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
    * for most acedb requests, only images/postscript are not and we aren't asking for them. */
   /* -rawmethods makes sure that the server does _not_ use the GFF_source field in the method obj
    * to output the source field in the gff, we need to see the raw methods. */
-  acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s ; seqfeatures -rawmethods",
+  acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s ; seqfeatures -rawmethods -zmap",
 				   server->sequence, server->start, server->end,
 				   server->method_str ? server->method_str : "") ;
 
