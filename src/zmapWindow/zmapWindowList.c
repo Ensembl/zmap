@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May  3 15:22 2005 (rnc)
+ * Last edited: May 24 22:12 2005 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.28 2005-05-03 14:31:02 rnc Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.29 2005-05-24 21:41:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -389,7 +389,7 @@ static GtkTreeIter findItemInList(ZMapWindow zmapWindow, GtkTreeModel *sort_mode
       valid = gtk_tree_model_iter_next (sort_model, &iter);
     }
 
-  g_free(&listItem);
+  g_free(listItem);
 
   return match_iter;
 }
