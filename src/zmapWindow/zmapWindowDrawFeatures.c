@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 18 13:53 2005 (rnc)
+ * Last edited: May 20 13:50 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.58 2005-05-18 12:53:29 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.59 2005-05-25 11:48:08 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -462,7 +462,6 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	g_object_set_data(G_OBJECT(top_feature_item), "feature", feature) ;
 	g_object_set_data(G_OBJECT(top_feature_item), "item_feature_type",
 			  GINT_TO_POINTER(ITEM_FEATURE_SIMPLE)) ;
-	g_object_set_data(G_OBJECT(top_feature_item), "feature_set", canvas_data->feature_set);
 	g_signal_connect(GTK_OBJECT(top_feature_item), "event",
 			 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
 	g_signal_connect(GTK_OBJECT(top_feature_item), "destroy",
