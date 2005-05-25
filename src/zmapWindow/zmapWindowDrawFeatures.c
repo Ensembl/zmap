@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 20 13:50 2005 (rnc)
+ * Last edited: May 25 14:21 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.59 2005-05-25 11:48:08 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.60 2005-05-25 13:21:45 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -898,7 +898,7 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
     else
       {
 	strcpy(menu[1].name, "Show multiple dna alignment");      
-	strcpy(menu[2].name, "Show multiple dna alignmentfor just this type of homology");      
+	strcpy(menu[2].name, "Show multiple dna alignment for just this type of homology");      
 	menu[2].callback_func = itemMenuCB;
       }
   else
