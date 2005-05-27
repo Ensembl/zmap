@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 26 15:53 2005 (rnc)
+ * Last edited: May 27 10:06 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.61 2005-05-27 08:51:38 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.62 2005-05-27 15:00:36 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -953,7 +953,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       {
 	/* call blixem */
 	if (feature->type == ZMAPFEATURE_HOMOL)
-	  zmapWindowCallExternal(menu_data->window, menu_data->item, FALSE) ;
+	  zmapWindowCallBlixem(menu_data->window, menu_data->item, FALSE) ;
 	else
 	  printf("Dummy!\n");
 	break ;
@@ -962,7 +962,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       {
 	/* call blixem for just this method */
 	if (feature->type == ZMAPFEATURE_HOMOL)
-	  zmapWindowCallExternal(menu_data->window, menu_data->item, TRUE) ;
+	  zmapWindowCallBlixem(menu_data->window, menu_data->item, TRUE) ;
 	else
 	  printf("Dummy!\n");
 	break ;
