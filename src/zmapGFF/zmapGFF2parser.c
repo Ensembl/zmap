@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: May 13 14:28 2005 (edgrif)
+ * Last edited: May 27 14:56 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.22 2005-05-18 10:54:17 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.23 2005-05-27 15:15:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,14 @@
 #include <glib.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapGFF_P.h>
+
+/* HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
+void setBlock(GQuark key_id, gpointer data, gpointer user_data) ;
+void setSet(GQuark key_id, gpointer data, gpointer user_data) ;
+
+
+
+/* END OF HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
 
 
 static gboolean parseHeaderLine(ZMapGFFParser parser, char *line) ;
@@ -60,6 +68,8 @@ static gboolean formatPhase(char *phase_str, ZMapPhase *phase_out) ;
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
 
+
+static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
 
 /* types is the list of methods/types, call it what you will that we want to see
  * in the output, we may need to filter the incoming data stream to get this.
@@ -185,7 +195,7 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 }
 
 
-gboolean zmapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureContext feature_context)
+gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
 
@@ -195,17 +205,34 @@ gboolean zmapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureContext feature_con
        * for parse_only.... */
       if (!parser->parse_only && parser->feature_sets)
 	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* NOT NEEDED NOW ????? */
+
 	  feature_context->sequence_name = g_quark_from_string(parser->sequence_name) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  feature_context->features_to_sequence.p1 = parser->features_start ;
-	  feature_context->features_to_sequence.p2 = parser->features_end ;
-	  feature_context->features_to_sequence.c1 = parser->features_start ;
-	  feature_context->features_to_sequence.c2 = parser->features_end ;
 
-	  g_datalist_init(&(feature_context->feature_sets)) ;
+	  feature_block->features_to_sequence.p1 = parser->features_start ;
+	  feature_block->features_to_sequence.p2 = parser->features_end ;
+	  feature_block->features_to_sequence.c1 = parser->features_start ;
+	  feature_block->features_to_sequence.c2 = parser->features_end ;
+
+	  g_datalist_init(&(feature_block->feature_sets)) ;
 
 	  g_datalist_foreach(&(parser->feature_sets), getFeatureArray,
-			     &(feature_context->feature_sets)) ;
+			     &(feature_block->feature_sets)) ;
+
+
+
+	  /* OK, THIS IS A HACK, REALLY THIS PARSER CODE SHOULD JUST USE THE FEATURE.H
+	   * HEADER AND NOT DELVE INTO THE FEATURE BLOCK STUFF BY FOR NOW WE HAVE TO FIX
+	   * UP ALL THE LINKS "BY HAND"..... */
+
+	  g_datalist_foreach(&(feature_block->feature_sets), setBlock,
+			     feature_block) ;
+
+
 	}
 
       result = TRUE ;
@@ -213,6 +240,34 @@ gboolean zmapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureContext feature_con
 
   return result ;
 }
+
+
+
+/* HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
+void setBlock(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
+  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)user_data ;
+
+  feature_set->parent_block = feature_block ;
+
+  g_datalist_foreach(&(feature_set->features), setSet, feature_set) ;
+
+  return ;
+}
+
+void setSet(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeature feature = (ZMapFeature)data ;
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data ;
+
+  feature->parent_set = feature_set ;
+
+  return ;
+}
+
+/* END OF HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
+
 
 
 
@@ -549,6 +604,13 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	   * lower case. */
 	  source_lower = g_ascii_strdown(source, -1) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* debugging.... */
+	  g_datalist_foreach(&(parser->sources), printSource, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	  if (parser->sources && !(g_datalist_get_data(&(parser->sources), source_lower)))
 	    err_text = g_strdup_printf("source not request: %s", source_lower) ;
 	}
@@ -574,6 +636,16 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 
   return result ;
+}
+
+
+static void printSource(GQuark key_id, gpointer data, gpointer user_data)
+{
+
+
+  printf("source id: %d, name: %s\n", key_id, g_quark_to_string(key_id)) ;
+
+  return ;
 }
 
 
@@ -676,10 +748,17 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
     }
 
 
-  /* Phew, now fill in the feature....we need to give it proper unique style name... */
-  style_id = zMapStyleCreateID(source) ;
 
-  result = zmapFeatureAugmentData(feature, feature_name_id, feature_name, sequence, style_id,
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* style not kept in feature any more.... */
+
+  /* we need to give it proper unique style name... */
+  style_id = zMapStyleCreateID(source) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  result = zmapFeatureAugmentData(feature, feature_name_id, feature_name, sequence,
 				  feature_type, start, end, score, strand,
 				  phase, homol_type, query_start, query_end) ;
 
@@ -695,108 +774,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
   return result ;
 }
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* no parse_only */
-
-static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *source,
-			       ZMapFeatureType feature_type,
-			       int start, int end, double score, ZMapStrand strand,
-			       ZMapPhase phase, char *attributes)
-{
-  gboolean result = FALSE ;
-  char *feature_name = NULL ;
-  ZMapFeature feature = NULL ;
-  char *first_attr = NULL ;
-  ZMapGFFParserFeatureSet feature_set = NULL ; ;
-  gboolean has_name = TRUE ;
-
-
-  /* Look for an explicit feature name for the GFF record, if none exists use the sequence
-   * name itself. */
-  if (!(feature_name = getFeatureName(attributes)))
-    {
-      feature_name = sequence ;
-      has_name = FALSE ;
-    }
-
-  /* Check if the "source" for this feature is already known, if it is then check if there
-   * is already a multiline feature with the same name as we will need to augment it with this data. */
-  if ((feature_set = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(parser->feature_sets), source)))
-    {
-      feature = (ZMapFeature)g_datalist_get_data(&(feature_set->multiline_features), feature_name) ;
-    }
-
-
-  /* If we haven't got a feature then create one, then add the feature to its source if that exists,
-   * otherwise we have to create a list for the source and then add that to the list of sources
-   *...ugh.  */
-
-  if (!feature)
-    {
-      ZMapFeatureStruct new_feature ;
-
-      memset(&new_feature, 0, sizeof(ZMapFeatureStruct)) ;
-      new_feature.id = ZMAPFEATUREID_NULL ;
-      new_feature.type = ZMAPFEATURE_INVALID ;		    /* hack to detect empty feature.... */
-
-
-      /* If we don't have this feature_set yet, then make one. */
-      if (!feature_set)
-	{
-	  feature_set = g_new0(ZMapGFFParserFeatureSetStruct, 1) ;
-
-	  g_datalist_set_data_full(&(parser->feature_sets), source, feature_set, destroyFeatureArray) ;
-	  
-	  feature_set->source_id = zMapStyleCreateID(source) ;
-	  feature_set->source = g_strdup(source) ;
-
-	  feature_set->multiline_features = NULL ;
-	  g_datalist_init(&(feature_set->multiline_features)) ;
-
-	  feature_set->features = g_array_sized_new(FALSE, FALSE, sizeof(ZMapFeatureStruct), 30) ;
-
-	  feature_set->parser = parser ;		    /* We need parser flags in the destroy
-							       function for the feature_set list. */
-	}
-
-
-      /* Always add every new feature to the final array.... */
-      feature_set->features = g_array_append_val(feature_set->features, new_feature) ;
-
-
-      /* Now set feature pointer to be the feature in the array...tacky.... */
-      feature = &g_array_index(feature_set->features, ZMapFeatureStruct,
-			       (feature_set->features->len - 1)) ;
-
-
-      /* THIS PIECE OF CODE WILL NEED TO BE CHANGED AS I DO MORE TYPES..... */
-      /* If the feature is one that must be built up from several GFF lines then add it to
-       * our set of such features. There are arcane/adhoc rules in action here, any features
-       * that do not have their own feature_name  _cannot_  be multiline features as such features
-       * can _only_ be identified if they do have their own name. */
-
-      if (has_name
-	  && (feature_type == ZMAPFEATURE_SEQUENCE || feature_type == ZMAPFEATURE_TRANSCRIPT
-	      || feature_type == ZMAPFEATURE_EXON || feature_type == ZMAPFEATURE_INTRON))
-	{
-	  g_datalist_set_data(&(feature_set->multiline_features), feature_name, feature) ;
-	}
-
-    }
-
-  /* Phew, now fill in the feature.... */
-  result = addDataToFeature(feature, feature_name, sequence, source, feature_type,
-			    start, end, score, strand,
-			    phase, attributes) ;
-
-  return result ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -1211,6 +1188,9 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 
   new_features = zMapFeatureSetIDCreate(feature_set->original_id, feature_set->unique_id,
 					feature_set->features) ;
+
+  /* agh, poke in feature internals... */
+  new_features->style = feature_set->unique_id ;
 
   g_datalist_id_set_data(features, new_features->unique_id, new_features) ;
 
