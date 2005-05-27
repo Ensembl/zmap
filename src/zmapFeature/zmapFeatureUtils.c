@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: May 13 18:01 2005 (edgrif)
+ * Last edited: May 23 11:53 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.9 2005-05-18 10:53:37 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.10 2005-05-27 15:15:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,14 +45,13 @@ typedef struct
 } DumpFeaturesStruct, *DumpFeatures ;
 
 
+
 static void printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures feature_dump) ;
+static void printFeatureAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
+static void printFeatureBlock(gpointer data, gpointer user_data) ;
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 static gboolean printLine(GIOChannel *channel, gchar *line) ;
-
-
-static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
-static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 
 
 /* This function creates a unique id for a feature. This is essential if we are to use the
@@ -132,14 +131,41 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
 }
 
 
+GQuark zMapFeatureGetStyleQuark(ZMapFeature feature)
+{
+  GQuark style_quark ;
 
+  style_quark = feature->parent_set->style ;
+
+  return style_quark ;
+}
+
+
+ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature)
+{
+  ZMapFeatureTypeStyle style ;
+  GData *types = feature->parent_set->parent_block->parent_alignment->types ;
+
+  style = (ZMapFeatureTypeStyle)g_datalist_id_get_data(&(types),
+						       feature->parent_set->style) ;
+
+  return style ;
+}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* WE MAY STILL WANT A FUNCTION LIKE THIS BUT IT WILL NEED MORE ARGS, E.G. ALIGNMENT... */
 ZMapFeature zMapFeatureFindFeatureInContext(ZMapFeatureContext feature_context,
-					    GQuark type_id, GQuark feature_id)
+					    GQuark type_id, GQuark feature_id) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+ZMapFeature zMapFeatureFindFeatureInBlock(ZMapFeatureBlock feature_block,
+					  GQuark type_id, GQuark feature_id)
 {
   ZMapFeature feature = NULL ;
   ZMapFeatureSet feature_set ;
 
-  if ((feature_set = (ZMapFeatureSet)g_datalist_id_get_data(&(feature_context->feature_sets), type_id)))
+  if ((feature_set = (ZMapFeatureSet)g_datalist_id_get_data(&(feature_block->feature_sets), type_id)))
     {
       feature = (ZMapFeature)g_datalist_id_get_data(&(feature_set->features), feature_id) ;
     }
@@ -159,12 +185,12 @@ ZMapFeature zMapFeatureFindFeatureInSet(ZMapFeatureSet feature_set, GQuark featu
 }
 
 
-GData *zMapFeatureFindSetInContext(ZMapFeatureContext feature_context, GQuark set_id)
+GData *zMapFeatureFindSetInBlock(ZMapFeatureBlock feature_block, GQuark set_id)
 {
   GData *features = NULL ;
   ZMapFeatureSet feature_set ;
 
-  if ((feature_set = g_datalist_id_get_data(&(feature_context->feature_sets), set_id)))
+  if ((feature_set = g_datalist_id_get_data(&(feature_block->feature_sets), set_id)))
     features = feature_set->features ;
 
   return features ;
@@ -284,7 +310,7 @@ static void printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures
 {
   char *line ;
 
-  line = g_strdup_printf("Feature Context:\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", 
+  line = g_strdup_printf("Feature Context:\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n", 
 			 feature_context->sequence_name, 
 			 feature_context->parent_name,
 			 feature_context->parent_span.x1,
@@ -292,15 +318,58 @@ static void printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures
 			 feature_context->sequence_to_parent.p1,
 			 feature_context->sequence_to_parent.p2,
 			 feature_context->sequence_to_parent.c1,
-			 feature_context->sequence_to_parent.c2,
-			 feature_context->features_to_sequence.p1,
-			 feature_context->features_to_sequence.p2,
-			 feature_context->features_to_sequence.c1,
-			 feature_context->features_to_sequence.c2) ;
+			 feature_context->sequence_to_parent.c2) ;
 
   /* Only proceed if there's no problem printing the line */
   if ((dump_features->status = printLine(dump_features->channel, line)))
-    g_datalist_foreach(&(feature_context->feature_sets), printFeatureSet, dump_features) ;
+    g_datalist_foreach(&(feature_context->alignments), printFeatureAlignment, dump_features) ;
+
+  g_free(line) ;
+
+  return ;
+}
+
+
+static void printFeatureAlignment(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
+  DumpFeatures dump_features = (DumpFeatures)user_data ;
+  char *line ;
+
+  /* Once we have failed then we stop printing, note that there is no way to stop this routine
+   * being called which is a shame.... */
+  if (!dump_features->status)
+    return ;
+
+  line = g_strdup_printf("\tAlignment:\t%s\n", g_quark_to_string(alignment->unique_id)) ;
+
+  /* Only proceed if there's no problem printing the line */
+  if ((dump_features->status = printLine(dump_features->channel, line)))
+    g_list_foreach(alignment->blocks, printFeatureBlock, (gpointer)dump_features) ;
+
+  g_free(line) ;
+
+  return ;
+}
+
+
+
+static void printFeatureBlock(gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock block = (ZMapFeatureBlock)data ;
+  DumpFeatures dump_features = (DumpFeatures)user_data ;
+  char *line ;
+
+  line = g_strdup_printf("\tBlock:\t%s\t%d\t%d\t%d\t%d\n", g_quark_to_string(block->unique_id),
+			 block->features_to_sequence.p1,
+			 block->features_to_sequence.p2,
+			 block->features_to_sequence.c1,
+			 block->features_to_sequence.c2) ;
+
+
+  /* Only proceed if there's no problem printing the line */
+  if ((dump_features->status = printLine(dump_features->channel, line)))
+    g_datalist_foreach(&(block->feature_sets), printFeatureSet, dump_features) ;
 
   g_free(line) ;
 
@@ -319,7 +388,9 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   if (!dump_features->status)
     return ;
 
-  line = g_strdup_printf("\tFeature Set:\t%s\n", g_quark_to_string(feature_set->unique_id)) ;
+  line = g_strdup_printf("\tFeature Set:\t%s\t%s\n",
+			 g_quark_to_string(feature_set->unique_id),
+			 (char *)g_quark_to_string(feature_set->style)) ;
 
   /* Only proceed if there's no problem printing the line */
   if ((dump_features->status = printLine(dump_features->channel, line)))
@@ -351,14 +422,13 @@ static void printFeature(GQuark key_id, gpointer data, gpointer user_data)
   strand = zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM);
   phase  = zmapFeatureLookUpEnum(feature->phase, PHASE_ENUM);
   
-  g_string_printf(line, "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%f", 
+  g_string_printf(line, "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%f", 
 		  (char *)g_quark_to_string(key_id),
 		  feature->db_id,
 		  (char *)g_quark_to_string(feature->original_id),
 		  type,
 		  feature->x1,
 		  feature->x2,
-		  (char *)g_quark_to_string(feature->style),
 		  strand,
 		  phase,
 		  feature->score) ;
