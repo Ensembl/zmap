@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: May 18 11:07 2005 (edgrif)
+ * Last edited: May 20 17:26 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.55 2005-05-18 11:16:23 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.56 2005-05-27 15:18:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,8 +87,6 @@ static void killAllWindows(ZMapView zmap_view) ;
 
 static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window) ;
 static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
-
-static void freeContext(ZMapFeatureContext feature_context) ;
 
 static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req) ;
 
@@ -418,7 +416,8 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 		  if (writeback_server)
 		    zmap_view->writeback_server = view_con ;
 
-		  if (!zMapFeatureTypeSetAugment(&(zmap_view->types), &(view_con->types)))
+		  if (view_con->types
+		      && !zMapFeatureTypeSetAugment(&(zmap_view->types), &(view_con->types)))
 		    zMapLogCritical("Could not merge types for server %s into existing types.", 
                                     url_struct->host) ;
 		}
@@ -1266,7 +1265,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
   GData *types = NULL ;
   GList *req_types = NULL ;
   ZMapThread thread ;
-  gboolean status = FALSE ;
+  gboolean status = TRUE ;
 
 
 
@@ -1458,18 +1457,6 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
 
 
 
-/* Temporary....needs to go in some feature handling package.... */
-static void freeContext(ZMapFeatureContext feature_context)
-{
-  zMapAssert(feature_context) ;
-
-  if (feature_context->feature_sets)
-    g_datalist_clear(&(feature_context->feature_sets)) ;
-
-  return ;
-}
-
-
 /* Error handling is rubbish here...stuff needs to be free whether there is an error or not.
  * 
  * new_features should be freed (but not the data...ahhhh actually the merge should
@@ -1488,12 +1475,11 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
     zMapLogCritical("%s", "Cannot merge feature data from....") ;
   else
     {
+
+
       /* We should free the new_features context here....actually better
        * would to have a "free" flag on the above merge call. */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      freeContext(new_features) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       /* Signal the ZMap that there is work to be done. */
       displayDataWindows(zmap_view, zmap_view->features, diff_context) ;
