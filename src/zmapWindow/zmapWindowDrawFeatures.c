@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 27 10:06 2005 (rnc)
+ * Last edited: May 27 16:08 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.62 2005-05-27 15:00:36 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.63 2005-05-27 15:20:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,14 +67,23 @@ typedef struct _ZMapCanvasDataStruct
   ZMapWindow           window ;
   FooCanvas           *canvas ;
 
+  double offset ;
+
+
+  ZMapWindowAlignment win_alignment ;
+  ZMapWindowAlignmentBlock win_block ;
   ZMapWindowColumn column ;
 
   ZMapFeatureContext   full_context ;
 
+  ZMapFeatureAlignment curr_alignment ;
+  ZMapFeatureBlock curr_block ;
+
+  ZMapFeatureTypeStyle curr_type ;
   ZMapFeatureSet       feature_set;
   GQuark               context_key;
 
-  ZMapFeatureTypeStyle type;
+
 
 } ZMapCanvasDataStruct, *ZMapCanvasData ;
 
@@ -84,6 +93,10 @@ typedef struct _ZMapCanvasDataStruct
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 
+
+static void drawFeatures(ZMapCanvasData canvas_data, ZMapFeatureContext diff_context) ;
+static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data) ;
+static void drawBlocks(gpointer data, gpointer user_data) ;
 static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 
@@ -148,18 +161,20 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   GtkAdjustment *h_adj;
   double zoom_factor ;
   ZMapCanvasDataStruct canvas_data = {NULL} ;		    /* Rest of struct gets set to zero. */
-  double column_start ;
   double x1, y1, x2, y2 ;
 
-  printf("tracing floating exception: zmapWindowDrawFeatures\n");
 
-  zMapAssert(window && full_context && diff_context && types) ;
+  zMapAssert(window && full_context && diff_context) ;
 
   /* Must be reset each time because context will change as features get merged in. */
   window->feature_context = full_context ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Must be reset as well as types get merged in. */
   window->types = types ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   window->seqLength
     = full_context->sequence_to_parent.c2 - full_context->sequence_to_parent.c1 + 1 ;
@@ -251,9 +266,11 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
-  column_start = x2 + COLUMN_SPACING ;
+  window->alignment_start = x2 + COLUMN_SPACING ;
 
+  canvas_data.offset = x2 + COLUMN_SPACING ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* FUDGED CODE FOR NOW.....we want to deal with multiple alignments but zmapview etc. don't
    * deal with this at the moment so neither do we. The position of the alignment will be one
    * parameter we need to change as we draw alignments. */
@@ -265,7 +282,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
       g_datalist_init(&window->alignments) ;
 
       alignment = zmapWindowAlignmentCreate(window->sequence, window,
-					    foo_canvas_root(window->canvas), column_start) ;
+					    foo_canvas_root(window->canvas)) ;
 
       g_datalist_set_data_full(&window->alignments, window->sequence, alignment, destroyAlignment) ;
 
@@ -277,14 +294,16 @@ void zmapWindowDrawFeatures(ZMapWindow window,
       g_datalist_set_data(&alignment->blocks, "dummy", block) ;
 
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
   /* 
-   *Draw all the features, so much in so few lines...sigh...
+   *     Draw all the features, so much in so few lines...sigh...
    */
   canvas_data.full_context = full_context ;
-  g_datalist_foreach(&(diff_context->feature_sets), ProcessFeatureSet, &canvas_data) ;
+  drawFeatures(&canvas_data, diff_context) ;
 
 
 
@@ -360,6 +379,89 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 /************************ internal functions **************************************/
 
+static void drawFeatures(ZMapCanvasData canvas_data, ZMapFeatureContext diff_context)
+{
+
+  if (!canvas_data->window->alignments)
+    canvas_data->window->alignments == NULL ;
+
+  g_datalist_foreach(&(diff_context->alignments), drawAlignments, canvas_data) ;
+
+  return ;
+}
+
+
+static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
+  ZMapCanvasData canvas_data = (ZMapCanvasData)user_data ;
+  ZMapWindow window = canvas_data->window ;
+  ZMapWindowAlignment win_alignment ;
+  double x1, y1, x2, y2 ;
+  double position ;
+
+
+  canvas_data->curr_alignment = alignment ;
+
+  win_alignment = zmapWindowAlignmentCreate(window->sequence, window, canvas_data->offset,
+					    foo_canvas_root(window->canvas)) ;
+
+  canvas_data->win_alignment = win_alignment ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Need to add destroy code for alignments. */
+
+  g_list_set_data_full(&window->alignments, window->sequence, win_alignment, destroyAlignment) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  window->alignments = g_list_append(window->alignments, (gpointer)win_alignment) ;
+
+
+  g_list_foreach(alignment->blocks, drawBlocks, canvas_data) ;
+
+
+  /* set offset here.... */
+  /* We find out how big the block is as this encloses all current columns, then we draw the next
+   * column group to the right of the last current column. */
+  foo_canvas_item_get_bounds(win_alignment->alignment_group, &x1, &y1, &x2, &y2) ;
+  canvas_data->offset = x2 + (2 * win_alignment->col_gap) ;
+
+
+  return ;
+}
+
+
+
+static void drawBlocks(gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock block = (ZMapFeatureBlock)data ;
+  ZMapCanvasData canvas_data = (ZMapCanvasData)user_data ;
+  ZMapWindowAlignment win_alignment = canvas_data->win_alignment ;
+  ZMapWindowAlignmentBlock win_block ;
+
+  canvas_data->curr_block = block ;
+
+  win_alignment->blocks = NULL ;
+
+  win_block = zmapWindowAlignmentAddBlock(win_alignment, "dummy", 0.0) ;
+  canvas_data->win_block = win_block ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  g_datalist_set_data(&win_alignment->blocks, "dummy", win_block) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  win_alignment->blocks = g_list_append(win_alignment->blocks, (gpointer)win_block) ;
+
+  
+
+  g_datalist_foreach(&(block->feature_sets), ProcessFeatureSet, canvas_data) ;
+
+  return ;
+}
+
+
 
 
 /* Called for each feature set, it then calls a routine to draw each of its features.  */
@@ -378,18 +480,29 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   ZMapWindowAlignmentBlock block ;
 
 
+  alignment = canvas_data->win_alignment ;
+  block = canvas_data->win_block ;
+
+
   /* Each column is known by its type/style name. */
   type_quark = feature_set->unique_id ;
-
 
   type_name = (char *)g_quark_to_string(type_quark) ;
 
   /* SHOULDN'T type_quark == key_id ????? CHECK THAT THIS IS SO.... */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   canvas_data->type = (ZMapFeatureTypeStyle)g_datalist_id_get_data(&(canvas_data->window->types),
 								   type_quark) ;
   if (!canvas_data->type) printf("type not found: %s\n", type_name);
   zMapAssert(canvas_data->type) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  canvas_data->curr_type = (ZMapFeatureTypeStyle)g_datalist_id_get_data(&(canvas_data->curr_alignment->types),
+								   type_quark) ;
+  zMapAssert(canvas_data->curr_type) ;
+
 
   canvas_data->feature_set = feature_set ;
 
@@ -403,6 +516,9 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   canvas_data->context_key = key_id ;
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   alignment = (ZMapWindowAlignment)g_datalist_get_data(&(canvas_data->window->alignments),
 						       canvas_data->window->sequence) ;
 
@@ -410,9 +526,11 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   /* Hack this for now to simply get a block..... */
   block = (ZMapWindowAlignmentBlock)g_datalist_get_data(&(alignment->blocks),
 							"dummy") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-  canvas_data->column = zmapWindowAlignmentAddColumn(block, type_quark, canvas_data->type) ;
+
+  canvas_data->column = zmapWindowAlignmentAddColumn(block, type_quark, canvas_data->curr_type) ;
 
 
 
@@ -438,7 +556,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 
 
   /* Users will often not want to see what is on the reverse strand. */
-  if (feature->strand == ZMAPSTRAND_REVERSE && canvas_data->type->show_rev_strand == FALSE)
+  if (feature->strand == ZMAPSTRAND_REVERSE && canvas_data->curr_type->show_rev_strand == FALSE)
     return ;
 
   column_group = zmapWindowAlignmentGetColumn(canvas_data->column, feature->strand) ;
@@ -455,10 +573,10 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 
 	top_feature_item = zMapDrawBox(FOO_CANVAS_ITEM(column_group), 0.0,
 			     feature->x1,
-			     canvas_data->type->width, 
+			     canvas_data->curr_type->width, 
 			     feature->x2 + 1,
-			     &canvas_data->type->outline,
-			     &canvas_data->type->foreground) ;
+			     &canvas_data->curr_type->outline,
+			     &canvas_data->curr_type->background) ;
 	
 	g_object_set_data(G_OBJECT(top_feature_item), "feature", feature) ;
 	g_object_set_data(G_OBJECT(top_feature_item), "item_feature_type",
@@ -536,8 +654,8 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 		 * in some kind of macro/function that uses the group coords etc. to set
 		 * positions.
 		 * Note that the 2nd coord is "+ 1" because we need to span the whole base. */
-		left = canvas_data->type->width / 2 ;
-		right = canvas_data->type->width ;
+		left = canvas_data->curr_type->width / 2 ;
+		right = canvas_data->curr_type->width ;
 		top = intron_span->x1 - feature->x1 ;
 		bottom = intron_span->x2 - feature->x1 + 1 ;
 
@@ -554,8 +672,6 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 				  GINT_TO_POINTER(ITEM_FEATURE_BOUNDING_BOX)) ;
 		g_object_set_data(G_OBJECT(intron_box), "item_feature_data",
 				  box_data) ;
-		g_object_set_data(G_OBJECT(top_feature_item), "feature_set", 
-				  canvas_data->feature_set);
 		g_signal_connect(GTK_OBJECT(intron_box), "event",
 				 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
 		g_signal_connect(GTK_OBJECT(intron_box), "destroy",
@@ -576,15 +692,14 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 
 		intron_line = zMapDrawPolyLine(FOO_CANVAS_GROUP(feature_group),
 					       points,
-					       &canvas_data->type->foreground, line_width) ;
+					       &canvas_data->curr_type->background,
+					       line_width) ;
 
 		g_object_set_data(G_OBJECT(intron_line), "feature", feature) ;
 		g_object_set_data(G_OBJECT(intron_line), "item_feature_type",
 				  GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
 		g_object_set_data(G_OBJECT(intron_line), "item_feature_data",
 				  intron_data) ;
-		g_object_set_data(G_OBJECT(top_feature_item), "feature_set", 
-				  canvas_data->feature_set);
 		g_signal_connect(GTK_OBJECT(intron_line), "event",
 				 GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
 		g_signal_connect(GTK_OBJECT(intron_line), "destroy",
@@ -614,10 +729,10 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	    exon_box = zMapDrawBox(feature_group, 
 				   0.0,
 				   (exon_span->x1 - feature->x1), 
-				   canvas_data->type->width,
+				   canvas_data->curr_type->width,
 				   (exon_span->x2 - feature->x1 + 1), 
-				   &canvas_data->type->outline, 
-				   &canvas_data->type->foreground) ;
+				   &canvas_data->curr_type->outline, 
+				   &canvas_data->curr_type->background) ;
 
 	    g_object_set_data(G_OBJECT(exon_box), "feature", feature) ;
 	    g_object_set_data(G_OBJECT(exon_box), "item_feature_type",
@@ -664,7 +779,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
    * (feature, style) -> feature_item. */
   if (top_feature_item)
     {
-      zmapWindowFToIAddFeature(window->feature_to_item, feature->style,
+      zmapWindowFToIAddFeature(window->feature_to_item, canvas_data->curr_type->unique_id,
 			       feature->unique_id, top_feature_item) ;
     }
 
@@ -767,7 +882,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	feature = g_object_get_data(G_OBJECT(item), "feature");  
 	zMapAssert(feature) ;
 
-
 	item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
 							      "item_feature_type")) ;
 
@@ -794,7 +908,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 					  feature->x1,
 					  feature->x2,
 					  zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
-					  (char *)g_quark_to_string(feature->style)) ;
+					  zMapStyleGetName(zMapFeatureGetStyle(feature))) ;
 	    
 	    select.item = real_item ;
 	    
