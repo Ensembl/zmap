@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 24 22:12 2005 (rds)
+ * Last edited: May 27 16:21 2005 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.29 2005-05-24 21:41:20 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.30 2005-05-27 15:21:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -133,7 +133,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
   g_ptr_array_add(zmapWindow->featureListWindows, (gpointer)window);
 
   gtk_container_border_width(GTK_CONTAINER(window), 5) ;
-  gtk_window_set_title(GTK_WINDOW(window), g_quark_to_string(feature->style)) ;
+  gtk_window_set_title(GTK_WINDOW(window), zMapStyleGetName(zMapFeatureGetStyle(feature))) ;
   gtk_window_set_default_size(GTK_WINDOW(window), -1, 600); 
 
   vbox = gtk_vbox_new(FALSE, 0);
@@ -154,7 +154,9 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 
 
   /* Build and populate the list of features */
-  feature_sets = zMapFeatureFindSetInContext(zmapWindow->feature_context, feature->style) ;
+  feature_sets = feature->parent_set->features ;
+
+
   g_datalist_foreach(&feature_sets, addItemToList, listCol) ;
 
   sort_model = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL(listCol->list));
@@ -264,7 +266,8 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
   if (!iter.stamp)
     {
       FooCanvasItem *transcript_item = zmapWindowFToIFindItem(listCol->window->feature_to_item,
-						   feature->style, feature->unique_id) ;
+							      zMapFeatureGetStyleQuark(feature),
+							      feature->unique_id) ;
       zMapAssert(transcript_item) ;
       iter = findItemInList(zmapWindow, sort_model, transcript_item);
     }
@@ -340,7 +343,7 @@ static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
       char strand[8];
 
       item = zmapWindowFToIFindItem(listCol->window->feature_to_item,
-				    feature->style, feature->unique_id) ;
+				    zMapFeatureGetStyleQuark(feature), feature->unique_id) ;
       zMapAssert(item) ;
 
 
@@ -351,7 +354,7 @@ static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
 			 START, feature->x1,
 			 END, feature->x2,
 			 ID, key_id,
-			 TYPE, g_quark_to_string(feature->style),
+			 TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
 			 FEATURE_TYPE, zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
 			 X_COORD, listCol->x_coord,
 			 FEATURE_ITEM, item,
@@ -388,8 +391,6 @@ static GtkTreeIter findItemInList(ZMapWindow zmapWindow, GtkTreeModel *sort_mode
 
       valid = gtk_tree_model_iter_next (sort_model, &iter);
     }
-
-  g_free(listItem);
 
   return match_iter;
 }
