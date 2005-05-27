@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May 18 10:59 2005 (rnc)
+ * Last edited: May 26 15:58 2005 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.50 2005-05-18 12:54:09 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.51 2005-05-27 08:51:39 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -250,12 +250,6 @@ typedef struct _ZMapWindowStruct
   double         seqLength;
   double         seq_start ;
   double         seq_end ;
-
-  gchar         *blixemNetid;                               /* eg pubseq */
-  int            blixemPort;                                /* eg 22100  */
-  gchar         *blixemScript;                              /* script to call blixem standalone */
-  int            blixemScope;                               /* defaults to 40000 */
-  int            blixemHomolMax;                            /* score cutoff point */
 
   FooCanvasItem       *focus_item ;			    /* the item which has focus */
 

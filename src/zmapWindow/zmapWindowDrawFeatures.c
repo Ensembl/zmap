@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 25 14:21 2005 (rnc)
+ * Last edited: May 26 15:53 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.60 2005-05-25 13:21:45 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.61 2005-05-27 08:51:38 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -388,6 +388,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
   canvas_data->type = (ZMapFeatureTypeStyle)g_datalist_id_get_data(&(canvas_data->window->types),
 								   type_quark) ;
+  if (!canvas_data->type) printf("type not found: %s\n", type_name);
   zMapAssert(canvas_data->type) ;
 
   canvas_data->feature_set = feature_set ;
@@ -875,11 +876,11 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
 {
   char *menu_title = "Item menu" ;
   ZMapWindowMenuItemStruct menu[] =
-    {   /* entries must be long enough for longest possible that we might use */
-      {"Show Feature List                                                       ", 1, itemMenuCB},
-      {"Dummy                                                                   ", 2, itemMenuCB},
-      {"Dummy                                                                   ", 3, NULL},
-      {NULL,                0, NULL}
+    {
+      {"Show Feature List", 1, itemMenuCB},
+      {NULL               , 2, itemMenuCB},
+      {NULL               , 3, itemMenuCB},
+      {NULL               , 0, NULL}
     } ;
   ZMapWindowMenuItem menu_item ;
   ItemMenuCBData menu_data ;
@@ -889,24 +890,24 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   /* Retrieve the feature item info from the canvas item. */
   feature = g_object_get_data(G_OBJECT(item), "feature");  
   if (feature->type == ZMAPFEATURE_HOMOL)
-    if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
-      {
-	strcpy(menu[1].name, "Show multiple protein alignment in Blixem");
-	strcpy(menu[2].name, "Show multiple protein alignment for just this type of homology");
-	menu[2].callback_func = itemMenuCB;
-      }
-    else
-      {
-	strcpy(menu[1].name, "Show multiple dna alignment");      
-	strcpy(menu[2].name, "Show multiple dna alignment for just this type of homology");      
-	menu[2].callback_func = itemMenuCB;
-      }
+    {
+      if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+	{
+	  menu[1].name = g_strdup_printf("Show multiple protein alignment in Blixem");
+	  menu[2].name = g_strdup_printf("Show multiple protein alignment for just this type of homology");
+	}
+      else
+	{
+	  menu[1].name = g_strdup_printf("Show multiple dna alignment");      
+	  menu[2].name = g_strdup_printf("Show multiple dna alignment for just this type of homology");      
+	}
+    }
   else
     {
-      strcpy(menu[1].name, "Dummy"); 
-      menu[2].name = '\0'; 
+      g_free(menu[1].name); 
+      g_free(menu[2].name); 
+      menu[1].name = g_strdup_printf("Dummy"); 
       menu[2].id = 0;
-      menu[2].callback_func = NULL;
     }
 
   menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
@@ -921,6 +922,11 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
     }
 
   zMapWindowMakeMenu(menu_title, menu, button_event) ;
+
+  if (menu[1].name)
+    g_free(menu[1].name);
+  if (menu[2].name)
+    g_free(menu[2].name);
 
   return ;
 }
