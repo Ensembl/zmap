@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May 27 12:36 2005 (rnc)
+ * Last edited: May 27 16:08 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.52 2005-05-27 11:36:58 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.53 2005-05-27 15:23:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -79,6 +79,10 @@ enum
 #define ZMAP_WINDOW_BACKGROUND_COLOUR "white"
 
 
+
+/* I'M ACTUALLY THINKING THAT THIS LOT ARE NOT NEEDED, WE HAVE ALL THE ALIGNMENTS ETC. IN THE
+ * CONTEXT AS A TREE, DO WE REALLY WANT ANOTHER TREE...I THINK NOT..... */
+
 /* Represents all blocks for a single alignment, if the alignment is ungapped it
  * will contain just one block. */
 typedef struct ZMapWindowAlignmentStructName
@@ -93,7 +97,7 @@ typedef struct ZMapWindowAlignmentStructName
   FooCanvasItem *alignment_group ;			    /* Group containing all columns for
 							       this alignment. */
 
-  GData *blocks ;					    /* All blocks in the alignment. */
+  GList *blocks ;					    /* All blocks in the alignment. */
 
   double col_gap ;					    /* space between columns. */
 
@@ -111,12 +115,14 @@ typedef struct ZMapWindowAlignmentBlockStructName
   FooCanvasItem *block_group ;				    /* Group containing all columns for
 							       this alignment. */
 
-  GPtrArray *columns ;					    /* All ZMapWindowColumn's in the alignment. */
+  GList *columns ;					    /* All ZMapWindowColumn's in the alignment. */
 
 } ZMapWindowAlignmentBlockStruct, *ZMapWindowAlignmentBlock ;
 
 
 
+
+/* THIS ONE MAY BE NECESSARY BUT I'M NOT COMPLETELY SURE.... */
 
 /* Represents a column on the display. A column contains features that all have the
  * same type/style, e.g. "confirmed" transcripts. The column contains both the forward
@@ -223,9 +229,8 @@ typedef struct _ZMapWindowStruct
    * alignments properly. */
   ZMapFeatureContext feature_context ;			    /* Currently displayed features. */
 
-  GData         *alignments ;
 
-  GData         *types ;
+  GList *alignments ;
 
 
   GHashTable *feature_to_item ;				    /* Links a feature to the canvas item
@@ -244,6 +249,7 @@ typedef struct _ZMapWindowStruct
   int major_scale_units, minor_scale_units ;		    /* Major/minor tick marks on scale. */
 
 
+
   /* The length, start and end of the segment of sequence to be shown, there will be _no_
    * features outside of the start/end. */
   double         seqLength;
@@ -251,6 +257,14 @@ typedef struct _ZMapWindowStruct
   double         seq_end ;
 
   FooCanvasItem       *focus_item ;			    /* the item which has focus */
+
+
+
+  /* THIS FIELD IS TEMPORARY UNTIL ALL THE SCALE/RULER IS SORTED OUT, DO NOT USE... */
+  double alignment_start ;
+
+
+
 
 } ZMapWindowStruct ;
 
@@ -302,16 +316,20 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 			    ZMapFeatureContext current_context, ZMapFeatureContext new_context,
 			    GData *types) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zmapHideUnhideColumns(ZMapWindow window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 ZMapWindowAlignment zmapWindowAlignmentCreate(char *align_name, ZMapWindow window,
-					      FooCanvasGroup *parent_group, double position) ;
+					      double offset, FooCanvasGroup *parent_group) ;
 ZMapWindowAlignmentBlock zmapWindowAlignmentAddBlock(ZMapWindowAlignment alignment,
 						     char *block_id, double position) ;
 ZMapWindowColumn zmapWindowAlignmentAddColumn(ZMapWindowAlignmentBlock block, GQuark type_name,
 					      ZMapFeatureTypeStyle type) ;
 FooCanvasItem *zmapWindowAlignmentGetColumn(ZMapWindowColumn column_group, ZMapStrand strand) ;
-void zmapWindowAlignmentHideUnhideColumns(ZMapWindowAlignmentBlock block) ;
+void zmapWindowAlignmentHideUnhideColumns(GList *alignments) ;
 ZMapWindowAlignment zmapWindowAlignmentDestroy(ZMapWindowAlignment alignment) ;
 
 
