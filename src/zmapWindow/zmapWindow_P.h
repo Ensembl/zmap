@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May 26 15:58 2005 (rnc)
+ * Last edited: May 27 12:36 2005 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.51 2005-05-27 08:51:39 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.52 2005-05-27 11:36:58 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -41,7 +41,6 @@
 
 /* Names of config stanzas. */
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
-#define ZMAP_BLIXEM_CONFIG "blixem"
 
 
 
