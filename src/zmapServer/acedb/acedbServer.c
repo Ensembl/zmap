@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 24 16:43 2005 (rnc)
+ * Last edited: May 27 15:33 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.28 2005-05-24 15:43:28 rnc Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.29 2005-05-27 15:16:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,14 @@ typedef struct
   gboolean first_method ;
   GString *str ;
 } ZMapTypesStringStruct, *ZMapTypesString ;
+
+
+typedef struct
+{
+  ZMapServerResponseType result ;
+  AcedbServer server ;
+} GetFeaturesStruct, *GetFeatures ;
+
 
 
 static gboolean globalInit(void) ;
@@ -66,23 +74,25 @@ static gboolean destroyConnection(void *server) ;
 static char *getMethodString(void *types, gboolean dataset) ;
 static void datasetAddTypeName(GQuark key_id, gpointer unused, gpointer user_data) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
-static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
+static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
 static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
-static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
+static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context,
+				   GData *types) ;
 static gboolean getSMapping(AcedbServer server, char *class,
 			    char *sequence, int start, int end,
 			    char **parent_class_out, char **parent_name_out,
 			    ZMapMapBlock child_to_parent_out) ;
 static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_name,
 			      int *obj_length_out) ;
-
 static gboolean checkServerVersion(AcedbServer server) ;
 static gboolean findSequence(AcedbServer server) ;
 static gboolean setQuietMode(AcedbServer server) ;
-
 static gboolean parseTypes(AcedbServer server) ;
 ZMapFeatureTypeStyle parseMethod(char *method_str, char **end_pos) ;
 int getFoundObj(char *text) ;
+
+void eachAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
+void eachBlock(gpointer data, gpointer user_data) ;
 
 
 
@@ -237,7 +247,7 @@ static ZMapServerResponseType setContext(void *server_in,  char *sequence,
 
   feature_context = zMapFeatureContextCreate(server->sequence) ;
 
-  if (!(status = getSequenceMapping(server, feature_context)))
+  if (!(status = getSequenceMapping(server, feature_context, types)))
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
@@ -263,6 +273,21 @@ ZMapFeatureContext copyContext(void *server_in)
 
   *feature_context = *(server->current_context) ;	    /* n.b. struct copy. */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Try adding another alignment.... */
+  g_datalist_set_data(&(feature_context->alignments), "dummy2",
+		      feature_context->master_align) ;
+
+  g_datalist_set_data(&(feature_context->alignments), "dummy3",
+		      feature_context->master_align) ;
+
+  g_datalist_set_data(&(feature_context->alignments), "dummy4",
+		      feature_context->master_align) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
   return feature_context ;
 }
 
@@ -273,13 +298,13 @@ ZMapFeatureContext copyContext(void *server_in)
 static ZMapServerResponseType getFeatures(void *server_in, GList *requested_types,
 					  ZMapFeatureContext feature_context)
 {
-  ZMapServerResponseType result ;
-  AcedbServer server = (AcedbServer)server_in ;
+  GetFeaturesStruct get_features ;
 
   /* We should check that there is a sequence context here and report an error if there isn't... */
 
-  result = ZMAP_SERVERRESPONSE_OK ;
-  server->last_err_status = ACECONN_OK ;
+  get_features.result = ZMAP_SERVERRESPONSE_OK ;
+  get_features.server = (AcedbServer)server_in ;
+  get_features.server->last_err_status = ACECONN_OK ;
 
 
   if (requested_types)
@@ -287,36 +312,19 @@ static ZMapServerResponseType getFeatures(void *server_in, GList *requested_type
       /* We should be verifying this against the context types..... */
 
 
-      server->method_str = getMethodString((void *)(requested_types), FALSE) ;
+      get_features.server->method_str = getMethodString((void *)(requested_types), FALSE) ;
     }
 
 
-  if (!sequenceRequest(server, feature_context))
-    {
-      /* If the call failed it may be that the connection failed or that the data coming
-       * back had a problem. */
-      if (server->last_err_status == ACECONN_OK)
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	}
-      else if (server->last_err_status == ACECONN_TIMEDOUT)
-	{
-	  result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
-	}
-      else
-	{
-	  /* Probably we will want to analyse the response more than this ! */
-	  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
-	}
 
-      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-		     "Could not map %s because: %s",
-		     server->sequence, server->last_err_msg) ;
-    }
+  /* Here we need to do something along the lines of all aligns, all blocks... */
+  g_datalist_foreach(&(feature_context->alignments), eachAlignment, (gpointer)&get_features) ;
 
 
-  return result ;
+  return get_features.result ;
 }
+
+
 
 
 
@@ -509,7 +517,7 @@ static void addTypeName(gpointer data, gpointer user_data)
  * I guess the best thing is to shove the errors out to the log and look for the gff start...
  * 
  */
-static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_context)
+static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
   char *acedb_request = NULL ;
@@ -667,7 +675,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureContext feature_c
 	  free_on_destroy = TRUE ;
 	  if (result)
 	    {
-	      if (zmapGFFGetFeatures(parser, feature_context))
+	      if (zMapGFFGetFeatures(parser, feature_block))
 		{
 		  free_on_destroy = FALSE ;			    /* Make sure parser does _not_ free our
 								       data. ! */
@@ -749,12 +757,14 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
 /* Tries to smap sequence into whatever its parent is, if the call fails then we set all the
  * mappings in feature_context to be something sensible...we hope....
  */
-static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context)
+static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context,
+				   GData *types)
 {
   gboolean result = FALSE ;
   char *parent_name = NULL, *parent_class = NULL ;
   ZMapMapBlockStruct sequence_to_parent = {0, 0, 0, 0}, parent_to_self = {0, 0, 0, 0} ;
   int parent_length = 0 ;
+
 
   /* We have a special case where the caller can specify  end == 0  meaning "get the sequence
    * up to the end", in this case we explicitly find out what the end is. */
@@ -798,6 +808,26 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       feature_context->sequence_to_parent.p2 = sequence_to_parent.p2 ;
      
       result = TRUE ;
+    }
+
+
+
+  /* Fake up some alignments for now.....perhaps actually this code is correct for acedb
+   * which doesn't have a model for multiple alignments.... */
+  if (result)
+    {
+      ZMapFeatureAlignment alignment ;
+      char *align_name = "align_1" ;
+      ZMapFeatureBlock block ;
+      char *block_name = "block_1" ;
+
+      alignment = zMapFeatureAlignmentCreate(align_name, types) ;
+
+      zMapFeatureContextAddAlignment(feature_context, alignment, TRUE) ;
+
+      block = zMapFeatureBlockCreate(block_name) ;
+
+      zMapFeatureAlignmentAddBlock(alignment, block) ;
     }
 
   return result ;
@@ -1269,17 +1299,16 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in, char **end_pos)
   char *method_str = method_str_in ;
   char *scan_text = NULL ;
   char *next_line = method_str ;
-  char *name, *outline, *foreground, *background ;
-  double width ;
-  gboolean strand_specific, frame_specific, show_up_strand ;
-  double min_mag ;
-  gboolean errors = FALSE ;
+  char *name = NULL, *colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL,
+    *gff_type = NULL ;
+  double width = 0 ;
+  gboolean strand_specific = FALSE, frame_specific = FALSE, show_up_strand = FALSE ;
+  double min_mag = 0 ;
+  gboolean status = TRUE ;
 
 
   if (!g_str_has_prefix(method_str, "Method : "))
     return style ;
-
-  name = outline = foreground = background = NULL ;
 
   do
     {
@@ -1295,7 +1324,13 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in, char **end_pos)
 	  name = g_strdup(strtok_r(NULL, ": \"", &line_pos)) ; /* Skip ': "' */
 	}
       else if (g_ascii_strcasecmp(tag, "Colour") == 0)
-	outline = g_strdup(strtok_r(NULL, " ", &line_pos)) ;
+	{
+	  colour = g_strdup(strtok_r(NULL, " ", &line_pos)) ;
+	}
+      else if (g_ascii_strcasecmp(tag, "GFF_feature") == 0)
+	{
+	  gff_type = g_strdup(strtok_r(NULL, " ", &line_pos)) ;
+	}
       else if (g_ascii_strcasecmp(tag, "Width") == 0)
 	{
 	  char *value ;
@@ -1303,11 +1338,14 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in, char **end_pos)
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (!(errors = zMapStr2Double(value, &width)))
+	  if (!(status = zMapStr2Double(value, &width)))
 	    {
 	      zMapLogWarning("No value for \"Width\" specified in method: %s", name) ;
 	      break ;
 	    }
+	  else if (width < 10)
+	    width = 10 ;
+
 	}
       else if (g_ascii_strcasecmp(tag, "Strand_sensitive") == 0)
 	strand_specific = TRUE ;
@@ -1328,7 +1366,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in, char **end_pos)
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (!(errors = zMapStr2Double(value, &min_mag)))
+	  if (!(status = zMapStr2Double(value, &min_mag)))
 	    {
 	      zMapLogWarning("No value for \"Min_mag\" specified in method: %s", name) ;
 	      
@@ -1338,8 +1376,27 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in, char **end_pos)
     }
   while (**end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
 
-  if (!errors)
+  if (status)
     {
+      /* In acedb methods the colour is interpreted differently according to the type of the
+       * feature which we have to intuit here from the GFF type. */
+      if (colour)
+	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+	  /* this doesn't work because it messes up the rev. video.... */
+	  if (gff_type && (g_ascii_strcasecmp(gff_type, "\"similarity\"") == 0
+			   || g_ascii_strcasecmp(gff_type, "\"repeat\"")
+			   || g_ascii_strcasecmp(gff_type, "\"experimental\"")))
+	    background = colour ;
+	  else
+	    outline = colour ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  background = colour ;
+	}
+
       style = zMapFeatureTypeCreate(name, 
 				    outline, foreground, background,
 				    width, min_mag) ;
@@ -1351,8 +1408,8 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in, char **end_pos)
   /* Clean up, note only name and outline are currently allcoated. */
   if (name)
     g_free(name) ;
-  if (outline)
-    g_free(outline) ;
+  if (colour)
+    g_free(colour) ;
 
 
   return style ;
@@ -1383,4 +1440,49 @@ int getFoundObj(char *text)
 
 
 
+/* Process all the alignments in a context. */
+void eachAlignment(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
+  GetFeatures get_features = (GetFeatures)user_data ;
 
+  if (get_features->result == ZMAP_SERVERRESPONSE_OK)
+    g_list_foreach(alignment->blocks, eachBlock, (gpointer)get_features) ;
+
+  return ;
+}
+
+
+void eachBlock(gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
+  GetFeatures get_features = (GetFeatures)user_data ;
+
+  if (get_features->result == ZMAP_SERVERRESPONSE_OK)
+    {
+      if (!sequenceRequest(get_features->server, feature_block))
+	{
+	  /* If the call failed it may be that the connection failed or that the data coming
+	   * back had a problem. */
+	  if (get_features->server->last_err_status == ACECONN_OK)
+	    {
+	      get_features->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	    }
+	  else if (get_features->server->last_err_status == ACECONN_TIMEDOUT)
+	    {
+	      get_features->result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
+	    }
+	  else
+	    {
+	      /* Probably we will want to analyse the response more than this ! */
+	      get_features->result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+	    }
+
+	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, get_features->server->host,
+			 "Could not map %s because: %s",
+			 get_features->server->sequence, get_features->server->last_err_msg) ;
+	}
+    }
+
+  return ;
+}
