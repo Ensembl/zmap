@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 26 16:21 2005 (rnc)
+ * Last edited: May 27 16:05 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.76 2005-05-27 08:51:36 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.77 2005-05-27 15:18:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,7 +87,6 @@ static void sendClientEvent(ZMapWindow window, FeatureSets) ;
 static void moveWindow(ZMapWindow window, guint state, guint keyval) ;
 static void scrollWindow(ZMapWindow window, guint state, guint keyval) ;
 static void changeRegion(ZMapWindow window, guint keyval) ;
-void hideAlignmentCols(GQuark key_id, gpointer data, gpointer user_data) ;
 static void printGroup(FooCanvasGroup *group, int indent) ;
 
 
@@ -668,9 +667,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   /* N.B. We could pass something else in other than the window as user_date.... */
   if (window->alignments)
-    g_datalist_foreach(&window->alignments, hideAlignmentCols, window) ;
-
-
+    zmapWindowAlignmentHideUnhideColumns(window->alignments) ;
 
   
 
@@ -1600,23 +1597,6 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
   return ;
 }
 
-
-
-void hideAlignmentCols(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapWindow window = (ZMapWindow)user_data ;
-  ZMapWindowAlignment alignment = (ZMapWindowAlignment)data ;
-  ZMapWindowAlignmentBlock block ;
-
-  /* Hack this for now to simply get a block..... */
-  block = (ZMapWindowAlignmentBlock)g_datalist_get_data(&(alignment->blocks),
-							"dummy") ;
-
-
-  zmapWindowAlignmentHideUnhideColumns(block) ;
-
-  return ;
-}
 
 
 
