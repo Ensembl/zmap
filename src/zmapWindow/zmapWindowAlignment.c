@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 13 17:22 2005 (edgrif)
+ * Last edited: May 27 14:50 2005 (edgrif)
  * Created: Thu Feb 24 11:19:23 2005 (edgrif)
- * CVS info:   $Id: zmapWindowAlignment.c,v 1.8 2005-05-18 11:16:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAlignment.c,v 1.9 2005-05-27 15:19:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,13 @@ typedef struct
 } ColumnMenuCBDataStruct, *ColumnMenuCBData ;
 
 
+/* Used to search for a given column. */
+typedef struct
+{
+  GQuark type_name ;
+  gboolean forward_strand ;
+} LookForColStruct, *LookForCol ;
+
 
 
 
@@ -55,7 +62,12 @@ typedef struct
 #define STRAND_GAP COLUMN_GAP / 2
 
 
-static ZMapWindowColumn findColumn(GPtrArray *col_array, GQuark type_name, gboolean forward_strand) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static ZMapWindowColumn findColumn(GList *columns, GQuark type_name, gboolean forward_strand) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+gint findColumn(gconstpointer data, gconstpointer user_data) ;
+
 static ZMapWindowColumn createColumnGroup(ZMapWindowAlignmentBlock block,
 					  GQuark type_name, ZMapFeatureTypeStyle type) ;
 static FooCanvasItem *createColumn(FooCanvasGroup *parent_group, ZMapWindowColumn column,
@@ -67,13 +79,18 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
 
 
+static void hideAligns(gpointer data, gpointer user_data) ;
+static void hideBlocks(gpointer data, gpointer user_data) ;
+static void hideCols(gpointer data, gpointer user_data) ;
+
 
 /* An alignment is all the features for a particular sequence alignment, there may be
  * several alignments within one window. Alignments may be discontinuous, here each
  * section of the alignment is held within and alignment "block",
  * see zmapWindowAlignmentAddBlock() */
 ZMapWindowAlignment zmapWindowAlignmentCreate(char *align_name, ZMapWindow window,
-					      FooCanvasGroup *parent_group, double position)
+					      double offset,
+					      FooCanvasGroup *parent_group)
 {
   ZMapWindowAlignment alignment ;
 
@@ -85,7 +102,7 @@ ZMapWindowAlignment zmapWindowAlignmentCreate(char *align_name, ZMapWindow windo
 
   alignment->alignment_group = foo_canvas_item_new(parent_group,
 						   foo_canvas_group_get_type(),
-						   "x", position,
+						   "x", offset,
 						   "y", 0.0,
 						   NULL) ;
 
@@ -111,11 +128,15 @@ ZMapWindowAlignmentBlock zmapWindowAlignmentAddBlock(ZMapWindowAlignment alignme
 
   block->block_group = foo_canvas_item_new(FOO_CANVAS_GROUP(alignment->alignment_group),
 					   foo_canvas_group_get_type(),
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 					   "x", 0.0,
 					   "y", position,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 					   NULL) ;
 
-  block->columns = g_ptr_array_new() ;
+  block->columns = NULL ;
 
   return block ;
 }
@@ -125,13 +146,15 @@ ZMapWindowColumn zmapWindowAlignmentAddColumn(ZMapWindowAlignmentBlock block, GQ
 					      ZMapFeatureTypeStyle type)
 {
   ZMapWindowColumn column ;
+  LookForColStruct look_col = {type_name, TRUE} ;
+
 
   /* If the column doesn't already exist we need to find a new one. */
-  if (!(column = findColumn(block->columns, type_name, TRUE)))
+  if (!(column = (ZMapWindowColumn)g_list_find_custom(block->columns, &look_col, findColumn)))
     {
       column = createColumnGroup(block, type_name, type) ;
 
-      g_ptr_array_add(block->columns, column) ;
+      block->columns = g_list_append(block->columns, column) ;
     }
 
 
@@ -153,33 +176,31 @@ FooCanvasItem *zmapWindowAlignmentGetColumn(ZMapWindowColumn column_group, ZMapS
 }
 
 
-void zmapWindowAlignmentHideUnhideColumns(ZMapWindowAlignmentBlock block)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Position the columns within a block. */
+void zmapWindowAlignmentGetColumn(ZMapWindowColumn column_group)
 {
-  ZMapWindowAlignment alignment = block->parent ;
-  int i ;
-  ZMapWindowColumn column ;
-  double min_mag ;
 
-  for (i = 0 ; i < block->columns->len ; i++)
-    {
-      column = g_ptr_array_index(block->columns, i) ;
 
-      /* type->min_mag is in bases per line, but window->zoom_factor is pixels per base */
-      min_mag = (column->type->min_mag ? alignment->window->max_zoom/column->type->min_mag : 0.0) ;
 
-      if (alignment->window->zoom_factor > min_mag)
-	{
-	  if (column->forward)
-	    foo_canvas_item_show(column->forward_group);
-	  else if (column->type->show_rev_strand)
-	    foo_canvas_item_show(column->reverse_group);
-	}
-      else
-	foo_canvas_item_hide(column->column_group) ;
-    }
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+
+void zmapWindowAlignmentHideUnhideColumns(GList *alignments)
+{
+  g_list_foreach(alignments, hideAligns, NULL) ;
+
+  return ;
+}
+
 
 
 
@@ -210,12 +231,20 @@ ZMapWindowAlignment zmapWindowAlignmentDestroy(ZMapWindowAlignment alignment)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Find the column with the given name and strand, returns NULL if not found. */
-static ZMapWindowColumn findColumn(GPtrArray *col_array, GQuark type_name, gboolean forward_strand)
+static ZMapWindowColumn findColumn((GList *columns, GQuark type_name, gboolean forward_strand)
 {
   ZMapWindowColumn column = NULL ;
   int i ;
   
+
+
+  columns = g_list_find_custom(columns,
+			       gconstpointer data,
+			       GCompareFunc func);
+
   for (i = 0 ; i < col_array->len ; i++)
     {
       ZMapWindowColumn next_column = g_ptr_array_index(col_array, i) ;
@@ -229,7 +258,23 @@ static ZMapWindowColumn findColumn(GPtrArray *col_array, GQuark type_name, gbool
 
   return column ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+
+gint findColumn(gconstpointer data, gconstpointer user_data)
+{
+  gint found = 1 ;
+  ZMapWindowColumn next_column = (ZMapWindowColumn)data ;
+  LookForCol look_col = (LookForCol)user_data ;
+
+
+  if (next_column->type_name == look_col->type_name && next_column->forward == look_col->forward_strand)
+    found = 0 ;
+
+  return found ;
+}
 
 
 /* create Column */
@@ -463,4 +508,45 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 }
 
 
+static void hideAligns(gpointer data, gpointer user_data)
+{
+  ZMapWindowAlignment alignment = (ZMapWindowAlignment)data ;
+  ZMapWindow window = alignment->window ;
 
+  g_list_foreach(alignment->blocks, hideBlocks, (gpointer)window) ;
+
+  return ;
+}
+
+static void hideBlocks(gpointer data, gpointer user_data)
+{
+  ZMapWindowAlignmentBlock block = (ZMapWindowAlignmentBlock) data ;
+
+  g_list_foreach(block->columns, hideCols, user_data) ;
+
+  return ;
+}
+
+
+static void hideCols(gpointer data, gpointer user_data)
+{
+  ZMapWindowColumn column = (ZMapWindowColumn)data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+  double min_mag ;
+
+
+  /* type->min_mag is in bases per line, but window->zoom_factor is pixels per base */
+  min_mag = (column->type->min_mag ? window->max_zoom/column->type->min_mag : 0.0) ;
+
+  if (window->zoom_factor > min_mag)
+    {
+      if (column->forward)
+	foo_canvas_item_show(column->forward_group);
+      else if (column->type->show_rev_strand)
+	foo_canvas_item_show(column->reverse_group);
+    }
+  else
+    foo_canvas_item_hide(column->column_group) ;
+
+  return ;
+}
