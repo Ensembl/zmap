@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 21 13:04 2005 (edgrif)
+ * Last edited: May 27 14:28 2005 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.3 2005-04-21 13:49:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.4 2005-05-27 15:22:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -140,7 +140,8 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 
   if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
     {
-      matching_item = zmapWindowFToIFindItem(window->feature_to_item, feature->style, feature->unique_id) ;
+      matching_item = zmapWindowFToIFindItem(window->feature_to_item, zMapFeatureGetStyleQuark(feature),
+					     feature->unique_id) ;
     }
   else
     {
@@ -149,7 +150,8 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
       item_feature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
 								   "item_feature_data") ;
 
-      matching_item = zmapWindowFToIFindItemChild(window->feature_to_item, feature->style,
+      matching_item = zmapWindowFToIFindItemChild(window->feature_to_item,
+						  zMapFeatureGetStyleQuark(feature),
 						  feature->unique_id,
 						  item_feature_data->start, item_feature_data->end) ;
     }
@@ -309,7 +311,7 @@ void zmapWindowShowItem(FooCanvasItem *item)
 	 "item_x1: %d,  item_x1: %d\n",
 	 (char *)g_quark_to_string(feature->original_id),
 	 zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
-	 (char *)g_quark_to_string(feature->style),
+	 zMapStyleGetName(zMapFeatureGetStyle(feature)),
 	 feature->x1,
 	 feature->x2,
 	 item_feature_data->start, item_feature_data->end) ;
@@ -629,6 +631,10 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
     {
       GdkColor *colour ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+      /* I'm disabling this for now.... */
       if (rev_video)
 	colour = &(window->canvas_border) ;
       else
@@ -637,6 +643,8 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
       foo_canvas_item_set(FOO_CANVAS_ITEM(item),
 			  "outline_color_gdk", colour,
 			  NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
   else
     {
@@ -649,21 +657,24 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
       feature = g_object_get_data(G_OBJECT(item), "feature") ;
       zMapAssert(feature) ;
 
-      style = (ZMapFeatureTypeStyle)g_datalist_id_get_data(&(window->types), feature->style) ;
+      style = zMapFeatureGetStyle(feature) ;
       zMapAssert(style) ;
+
+      /* there is a problem here with rev. video stuff, some features are drawn with
+       * background, some not. */
 
       if (rev_video)
 	{
 	  /* set foreground GdkColor to be the inverse of current settings */
-	  rev_video_colour.red   = (65535 - style->foreground.red) ;
-	  rev_video_colour.green = (65535 - style->foreground.green) ;
-	  rev_video_colour.blue  = (65535 - style->foreground.blue) ;
+	  rev_video_colour.red   = (65535 - style->background.red) ;
+	  rev_video_colour.green = (65535 - style->background.green) ;
+	  rev_video_colour.blue  = (65535 - style->background.blue) ;
 	  
 	  fill_colour = &rev_video_colour ;
 	}
       else
 	{
-	  fill_colour = &(style->foreground) ;
+	  fill_colour = &(style->background) ;
 	}
       
 
