@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Mar 28 08:06 2005 (edgrif)
+ * Last edited: May 20 14:07 2005 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.14 2005-04-05 14:27:13 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.15 2005-05-27 15:17:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -340,6 +340,8 @@ static void addMapping(ZMapFeatureContext feature_context)
 
   feature_context->parent_name = feature_context->sequence_name ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   feature_context->parent_span.x1
     = feature_context->sequence_to_parent.p1 = feature_context->sequence_to_parent.c1
     = feature_context->features_to_sequence.p1 ;
@@ -347,6 +349,8 @@ static void addMapping(ZMapFeatureContext feature_context)
   feature_context->parent_span.x2
     = feature_context->sequence_to_parent.p2 = feature_context->sequence_to_parent.c2
     = feature_context->features_to_sequence.p2 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   
   return ;
 }
