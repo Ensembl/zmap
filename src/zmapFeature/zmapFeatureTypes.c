@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 13 18:14 2005 (edgrif)
+ * Last edited: May 27 13:23 2005 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.5 2005-05-18 10:52:59 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.6 2005-05-27 15:14:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,12 +53,15 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 					   double width, double min_mag)
 {
   ZMapFeatureTypeStyle new_type = NULL ;
-
+  char *name_lower ;
 
   /* I am unsure if this is a good thing to do here, I'm attempting to make sure the type is
    * "sane" but no more than that. */
-  zMapAssert(name && *name && width > 0.0 && min_mag >= 0) ;
+  zMapAssert(name && *name && width >= 0.0 && min_mag >= 0) ;
 
+
+  if (width == 0)
+    width = 5 ;
 
   /* Set some default colours.... */
   if (!outline)
@@ -70,8 +73,10 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 
   new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
 
+  name_lower = g_ascii_strdown(name, -1) ;
   new_type->original_id = g_quark_from_string(name) ;
-  new_type->unique_id = zMapStyleCreateID(name) ;
+  new_type->unique_id = zMapStyleCreateID(name_lower) ;
+  g_free(name_lower) ;
 
   gdk_color_parse(outline, &new_type->outline) ;
   gdk_color_parse(foreground, &new_type->foreground) ;
@@ -156,6 +161,18 @@ ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type)
 
   return new_type ;
 }
+
+
+char *zMapStyleGetName(ZMapFeatureTypeStyle style)
+{
+  char *style_name ;
+
+  style_name = (char *)g_quark_to_string(style->original_id) ;
+
+  return style_name ;
+}
+
+
 
 
 /* Destroy the type, freeing all resources. */
