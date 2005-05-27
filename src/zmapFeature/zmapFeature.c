@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Mar 28 12:45 2005 (edgrif)
+ * Last edited: May 25 11:38 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.13 2005-04-05 14:34:54 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.14 2005-05-27 15:14:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,12 +54,24 @@
 
 
 /* Could use just one struct...but one step at a time.... */
+
+
+/* this may not be needed..... */
 typedef struct
 {
   GData **current_feature_sets ;
   GData **diff_feature_sets ;
   GData **new_feature_sets ;
 } FeatureContextsStruct, *FeatureContexts ;
+
+
+
+typedef struct
+{
+  GData **current_feature_sets ;
+  GData **diff_feature_sets ;
+  GData **new_feature_sets ;
+} FeatureBlocksStruct, *FeatureBlocks ;
 
 
 typedef struct
@@ -118,7 +130,7 @@ ZMapFeature zmapFeatureCreateEmpty(void)
  * are different for different features.
  *  */
 gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
-				char *sequence, GQuark style_id, ZMapFeatureType feature_type,
+				char *sequence, ZMapFeatureType feature_type,
 				int start, int end, double score, ZMapStrand strand,
 				ZMapPhase phase,
 				ZMapHomolType homol_type, int query_start, int query_end)
@@ -135,7 +147,11 @@ gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char
       feature->type = feature_type ;
       feature->x1 = start ;
       feature->x2 = end ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       feature->style = style_id ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       feature->strand = strand ;
       feature->phase = phase ;
       feature->score = score ;
@@ -279,16 +295,16 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GDat
 
 /* Features must not be null to be added we need at least the feature id and probably should.
  * check for more. */
-gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
+void zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
 {
-  gboolean result = FALSE ;
-
   zMapAssert(feature_set && feature && feature->unique_id != ZMAPFEATURE_NULLQUARK) ;
+
+  feature->parent_set = feature_set ;
 
   g_datalist_id_set_data_full(&(feature_set->features), feature->unique_id, feature,
 			      destroyFeature) ;
 
-  return result ;
+  return ;
 }
 
 
@@ -311,7 +327,100 @@ void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
 }
 
 
+ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, GData *types)
+{
+  ZMapFeatureAlignment alignment ;
 
+  alignment = g_new0(ZMapFeatureAlignmentStruct, 1) ;
+
+  if (align_name)
+    {
+      alignment->original_id = g_quark_from_string(align_name) ;
+
+      /* THIS WILL NEED CHANGING..... */
+      alignment->unique_id = alignment->original_id ;
+    }
+
+  alignment->types = types ;
+
+  return alignment ;
+}
+
+
+void zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatureBlock block)
+{
+  block->parent_alignment = alignment ;
+
+  alignment->blocks = g_list_append(alignment->blocks, block) ;
+
+  return ;
+}
+
+
+void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment)
+{
+
+  /* Need to destroy the blocks here.... */
+
+  g_free(alignment) ;
+
+  return ;
+}
+
+
+
+ZMapFeatureBlock zMapFeatureBlockCreate(char *block_name)
+{
+  ZMapFeatureBlock new_block ;
+
+  zMapAssert(!block_name || (block_name && *block_name)) ;
+
+  new_block = g_new(ZMapFeatureBlockStruct, 1) ;
+
+  if (block_name)
+    {
+      new_block->original_id = g_quark_from_string(block_name) ;
+
+      /* THIS WILL NEED CHANGING..... */
+      new_block->unique_id = new_block->original_id ;
+    }
+
+  return new_block ;
+}
+
+
+void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set)
+{
+
+  zMapAssert(feature_block && feature_set && feature_set->unique_id) ;
+
+  feature_set->parent_block = feature_block ;
+
+  g_datalist_id_set_data_full(&(feature_block->feature_sets), feature_set->unique_id, feature_set,
+			      destroyFeatureSet) ;
+
+  return ;
+}
+
+
+void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data)
+{
+
+  block->original_id = block->unique_id = 0 ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* WE PROBABLY NEED TO DO THIS CALL HERE.... */
+
+  /* Other stuff will need freeing here.... */
+  zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  g_free(block) ;
+
+  return ;
+}
 
 
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence)
@@ -323,21 +432,27 @@ ZMapFeatureContext zMapFeatureContextCreate(char *sequence)
   if (sequence && *sequence)
     feature_context->sequence_name = g_quark_from_string(sequence) ;
 
+  g_datalist_init(&(feature_context->alignments)) ;
+
   return feature_context ;
 }
 
 
-gboolean zMapFeatureContextAddFeatureSet(ZMapFeatureContext feature_context, ZMapFeatureSet feature_set)
+void zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
+				    ZMapFeatureAlignment alignment, gboolean master)
 {
-  gboolean result = TRUE ;
+  zMapAssert(feature_context && alignment) ;
 
-  zMapAssert(feature_context && feature_set && feature_set->unique_id) ;
+  alignment->parent_context = feature_context ;
 
-  g_datalist_id_set_data_full(&(feature_context->feature_sets), feature_set->unique_id, feature_set,
-			      destroyFeatureSet) ;
+  g_datalist_id_set_data(&(feature_context->alignments), alignment->unique_id, alignment) ;
 
-  return result ;
+  if (master)
+    feature_context->master_align = alignment ;
+
+  return ;
 }
+
 
 
 
@@ -406,12 +521,23 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
     }
   else
     {
+
+      /* Here we need to merge for all alignments and all blocks.... */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* THIS WILL HAVE TO CHANGE..... */
+
       /* Check that certain basic things about the sequences to be merged are true....
        * this will probably have to be revised, for now we check that the name and length of the
        * sequences are the same. */
-      if (current_context->sequence_name == new_context->sequence_name
+      if (current_context->unique_id == new_context->unique_id
 	  && current_context->features_to_sequence.p1 == new_context->features_to_sequence.p1
 	  && current_context->features_to_sequence.p2 == new_context->features_to_sequence.p2)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	{
 	  FeatureContextsStruct contexts ;
 
@@ -448,7 +574,11 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 
 	  result = TRUE ;
 	}
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }
+
+
 
 
   if (result)
@@ -492,6 +622,11 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free_data)
 {
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* We need to call routines to free blocks etc. */
+
+
   /* Delete the feature set list, freeing the feature sets if required. */
   if (!free_data)
     {
@@ -501,6 +636,8 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
 			 (gpointer)feature_context) ;
     }
   g_datalist_clear(&(feature_context->feature_sets)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   g_free(feature_context) ;
 
@@ -566,10 +703,184 @@ static void removeNotFreeFeatureSet(GQuark key_id, gpointer data, gpointer user_
 {
   ZMapFeatureContext feature_context = (ZMapFeatureContext)user_data ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* need to call funcs to free blocks etc. here.... */
+
   g_datalist_id_remove_no_notify(&(feature_context->feature_sets), key_id) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
+
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Merge two feature blocks, the blocks must be for the same sequence.
+ * The merge works by:
+ *
+ * - Feature sets and/or features in new_block that already exist in current_block
+ *   are simply removed from new_block.
+ * 
+ * - Feature sets and/or features in new_block that do not exist in current_block
+ *   are transferred from new_block to current_block and pointers to these new
+ *   features/sets are returned in diff_block.
+ *
+ * Hence at the start of the merge we have:
+ * 
+ * current_block  - contains the current feature sets and features
+ *     new_block  - contains the new feature sets and features (some of which
+ *                    may already be in the current_block)
+ *    diff_block  - is empty
+ * 
+ * and at the end of the merge we will have:
+ * 
+ * current_block  - contains the merge of all feature sets and features
+ *     new_block  - is now empty
+ *    diff_block  - contains just the new features sets and features that
+ *                    were added to current_block by this merge.
+ * 
+ * We return diff_block so that the caller has the option to update its display
+ * by simply adding the features in diff_block rather than completely redrawing
+ * with current_block which may be very expensive.
+ * 
+ * If called with current_block_inout == NULL (i.e. there are no "current
+ * features"), current_block_inout just gets set to new_block and
+ * diff_block will be NULL as there are no differences.
+ * 
+ * NOTE that diff_block may also be NULL if there are no differences
+ * between the current and new blocks.
+ * 
+ * NOTE that diff_block does _not_ have its own copies of features, it points
+ * at the ones in current_block so anything you do to diff_block will be
+ * reflected in current_block. In particular you should free diff_block
+ * using the free block function provided in this interface.
+ * 
+ * 
+ * Returns TRUE if the merge was successful, FALSE otherwise. */
+gboolean zMapFeatureBlockMerge(ZMapFeatureBlock *current_block_inout,
+				 ZMapFeatureBlock new_block,
+				 ZMapFeatureBlock *diff_block_out)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureBlock current_block ;
+  ZMapFeatureBlock diff_block ;
+
+  zMapAssert(current_block_inout && new_block && diff_block_out) ;
+
+  current_block = *current_block_inout ;
+
+  /* If there are no current features we just return the new ones and the diff is
+   * set to NULL, otherwise we need to do a merge of the new and current feature sets. */
+  if (!current_block)
+    {
+      current_block = new_block ;
+      diff_block = NULL ;
+
+      result = TRUE ;
+    }
+  else
+    {
+      /* Check that certain basic things about the sequences to be merged are true....
+       * this will probably have to be revised, for now we check that the name and length of the
+       * sequences are the same. */
+      if (current_block->unique_id == new_block->unique_id
+	  && current_block->features_to_sequence.p1 == new_block->features_to_sequence.p1
+	  && current_block->features_to_sequence.p2 == new_block->features_to_sequence.p2)
+	{
+	  FeatureBlocksStruct blocks ;
+
+	  diff_block = zMapFeatureBlockCreate(NULL) ;
+
+	  blocks.current_feature_sets = &(current_block->feature_sets) ;
+	  blocks.diff_feature_sets = &(diff_block->feature_sets) ;
+	  blocks.new_feature_sets = &(new_block->feature_sets) ;
+
+	  /* OK, this is where we do the merge, the real work is in the functions that get called
+	   * from here. */
+	  g_datalist_foreach(&(new_block->feature_sets),
+			     doNewFeatureSets, (void *)&blocks) ;
+
+	  if (diff_block->feature_sets)
+	    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      /* Fill in the sequence/mapping details. */
+	      diff_block->sequence_name = current_block->sequence_name ;
+	      diff_block->parent_name = current_block->parent_name ;
+	      diff_block->parent_span = current_block->parent_span ; /* n.b. struct copies. */
+	      diff_block->sequence_to_parent = current_block->sequence_to_parent ;
+	      diff_block->features_to_sequence = current_block->features_to_sequence ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	      diff_block->unique_id = current_block->unique_id ;
+	      diff_block->original_id = current_block->original_id ;
+	      diff_block->features_to_sequence = current_block->features_to_sequence ;
+							    /* n.b. struct copies. */
+	    }
+	  else
+	    {
+	      zMapFeatureBlockDestroy(diff_block, FALSE) ; /* No need to free data, there
+								  isn't any. */
+	      diff_block = NULL ;
+	    }
+
+
+	  /* Somewhere around here we should get rid of the new_block..... */
+
+
+	  result = TRUE ;
+	}
+    }
+
+
+  if (result)
+    {
+      *current_block_inout = current_block ;
+      *diff_block_out = diff_block ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* debugging.... */
+      printf("\ncurrent block\n") ;
+      zmapPrintFeatureBlock(*current_block_inout) ;
+
+
+      printf("\nnew block\n") ;
+      zmapPrintFeatureBlock(new_block) ;
+
+      if (*diff_block_out)
+	{
+	  printf("\ndiff block\n") ;
+	  zmapPrintFeatureBlock(*diff_block_out) ;
+	}
+
+      zMapAssert(fflush(stdout) == 0) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* delete the new_block.... */
+      zMapFeatureBlockDestroy(new_block, TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
+
+  return result ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+
+
 
 
 
@@ -580,12 +891,12 @@ static void doNewFeatureSets(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureSet new_set = (ZMapFeatureSet)data ;
 
-  FeatureContexts contexts = (FeatureContexts)user_data ;
-  GData **current_result = contexts->current_feature_sets ;
+  FeatureBlocks blocks = (FeatureBlocks)user_data ;
+  GData **current_result = blocks->current_feature_sets ;
   GData *current_feature_sets = *current_result ;
-  GData **diff_result = contexts->diff_feature_sets ;
+  GData **diff_result = blocks->diff_feature_sets ;
   GData *diff_feature_sets = *diff_result ;
-  GData **new_result = contexts->new_feature_sets ;
+  GData **new_result = blocks->new_feature_sets ;
   GData *new_feature_sets = *new_result ;
 
   ZMapFeatureSet current_set, diff_set ;
