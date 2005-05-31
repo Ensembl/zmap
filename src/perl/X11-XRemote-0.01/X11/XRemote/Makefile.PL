@@ -79,11 +79,11 @@ sub configure{
     if(exists($opt->{'pkgconfig'})){
         print STDERR "using " . $opt->{'pkgconfig'} . "\n";
         print STDERR "looking for gdk-2.0 libraries\n";
-        my $out1 = get_output($opt->{'pkgconfig'} . " --libs gdk-2.0");
+        my $out1 = get_output($opt->{'pkgconfig'} . " --libs gdk-2.0 atk");
         unshift(@$lib, $out1);
 
         print STDERR "looking for gdk-2.0 cflags\n";
-        my $out2 = get_output($opt->{'pkgconfig'} . " --cflags gdk-2.0");
+        my $out2 = get_output($opt->{'pkgconfig'} . " --cflags gdk-2.0 atk");
         unshift(@$inc, $out2);
         
     }
@@ -95,9 +95,14 @@ sub configure{
     }
     if(exists($opt->{'with-zmap-libs'})){
         unshift(@$lib, $opt->{'with-zmap-libs'});
+    }else{
+        warn "Without specifying --with-zmap-libs= you probably won't find the -lZMap.\n";
+        #unshift(@$lib, '-L../../../../build/alpha/lib');
     }
     if(exists($opt->{'with-zmap-inc'})){
         unshift(@$inc, $opt->{'with-zmap-inc'});
+    }else{
+        unshift(@$inc, '-I../../../../include'); # default, should be in ZMap checkout
     }
     if(exists($opt->{'with-symbols'})){
         unshift(@$inc, '-g');
