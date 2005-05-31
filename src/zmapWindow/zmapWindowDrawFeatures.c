@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 27 16:08 2005 (edgrif)
+ * Last edited: May 31 14:01 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.63 2005-05-27 15:20:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.64 2005-05-31 13:19:40 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1007,20 +1007,20 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
     {
       if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
 	{
-	  menu[1].name = g_strdup_printf("Show multiple protein alignment in Blixem");
-	  menu[2].name = g_strdup_printf("Show multiple protein alignment for just this type of homology");
+	  menu[1].name = g_strdup("Show multiple protein alignment in Blixem");
+	  menu[2].name = g_strdup("Show multiple protein alignment for just this type of homology");
 	}
       else
 	{
-	  menu[1].name = g_strdup_printf("Show multiple dna alignment");      
-	  menu[2].name = g_strdup_printf("Show multiple dna alignment for just this type of homology");      
+	  menu[1].name = g_strdup("Show multiple dna alignment");      
+	  menu[2].name = g_strdup("Show multiple dna alignment for just this type of homology");      
 	}
     }
   else
     {
       g_free(menu[1].name); 
       g_free(menu[2].name); 
-      menu[1].name = g_strdup_printf("Dummy"); 
+      menu[1].name = g_strdup("Dummy"); 
       menu[2].id = 0;
     }
 
