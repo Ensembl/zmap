@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: May 27 11:15 2005 (rds)
+ * Last edited: May 31 11:51 2005 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.51 2005-05-31 10:48:36 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.52 2005-05-31 10:51:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -259,6 +259,7 @@ gboolean zMapDestroy(ZMap zmap)
   return TRUE ;
 }
 /* should be using this other places too I feel zmapControlRemote.c for example... */
+/* Gets the toplevel widget x-window window id */
 unsigned long zMapGetXID(ZMap zmap)
 {
   GtkWidget *top = NULL;
@@ -269,10 +270,6 @@ unsigned long zMapGetXID(ZMap zmap)
     id = (Window)GDK_DRAWABLE_XID(top->window);
 
   return id;
-}
-char *zMapGetName(ZMap zmap)
-{
-  return zmap->zmap_id;         /* seems petty, but required I think */
 }
 
 
