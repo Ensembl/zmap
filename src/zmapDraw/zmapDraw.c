@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Apr 21 14:51 2005 (edgrif)
+ * Last edited: Jun  1 14:01 2005 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.27 2005-04-21 13:52:21 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.28 2005-06-01 13:13:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,7 +146,7 @@ FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
 /* This routine should not be enhanced or debugged (it does not draw the scale in a good
  * way, the units are often bizarre, e.g. 10001, 20001 etc.). In the future the scale
  * will be in a separate window. */
-FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
+FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
 			     double offset, double zoom_factor, 
 			     int start, int end, int *major_units_out, int *minor_units_out)
 {
@@ -242,7 +242,7 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
 
       buf[0] = unitName[unitType] ;
       buf[1] = 0 ;
-      sprintf(cp, "%d%s", pos/type, buf) ;
+      sprintf(cp, "%d%s", ((pos/type) ? (pos/type) - 1 : 0), buf) ;
       if (width < strlen(cp))
         width = strlen(cp) ;
 
@@ -292,4 +292,34 @@ FooCanvasItem *zmapDrawScale(FooCanvas *canvas,
   return group ;
 }
 
+/* We use the canvas, get the root group and create it there so we can
+ * raise to top and always see it. It'll hide behind widgets though,
+ * but we don't have any of those.
+ */
+FooCanvasItem *zMapRubberbandCreate(FooCanvas *canvas)
+{
+  FooCanvasItem *rubberband;
+  rubberband = foo_canvas_item_new (foo_canvas_root(FOO_CANVAS(canvas)),
+                             foo_canvas_rect_get_type (),
+                             "outline_color", "black",
+                             "width_pixels", 1,
+                             NULL);
+  return rubberband;
+}
 
+void zMapRubberbandResize(FooCanvasItem *band, 
+                          double origin_x, double origin_y, 
+                          double current_x, double current_y
+                          )
+{
+  foo_canvas_item_hide(band);
+  foo_canvas_item_set(band,
+                      "x1", MINVAL(origin_x, current_x),
+                      "y1", MINVAL(origin_y, current_y),
+                      "x2", MAXVAL(origin_x, current_x),
+                      "y2", MAXVAL(origin_y, current_y),
+                      NULL);
+  foo_canvas_item_show(band);
+  foo_canvas_item_raise_to_top(band);
+  return ;
+}
