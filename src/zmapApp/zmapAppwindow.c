@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 12 13:41 2005 (rds)
+ * Last edited: Jun  1 13:02 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.20 2005-05-12 15:45:35 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.21 2005-06-01 13:12:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,19 +41,26 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
+#include <ZMap/zmapControl.h> 
 #include <zmapApp_P.h>
-
 
 
 static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
 static void quitCB(GtkWidget *widget, gpointer data) ;
 static void removeZmapRow(void *app_data, void *zmap) ;
+static void infoSetCB(void *app_data, void *zmap) ;
 static void checkForCmdLineSequenceArgs(int argc, char *argv[],
 					char **sequence_out, int *start_out, int *end_out) ;
 static void checkConfigDir(void) ;
 static gboolean removeZmapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
+
+
+ZMapAppCallbacksStruct app_window_cbs_G = {
+  removeZmapRow,
+  infoSetCB
+};
 
 int test_global = 10 ;
 int test_overlap = 0 ;
@@ -223,7 +230,7 @@ static ZMapAppContext createAppContext(void)
   app_context->app_widg = app_context->sequence_widg = NULL ;
   app_context->tree_store_widg = NULL ;
 
-  app_context->zmap_manager = zMapManagerCreate(removeZmapRow, (void *)app_context) ;
+  app_context->zmap_manager = zMapManagerCreate(&app_window_cbs_G, (void *)app_context) ;
   app_context->selected_zmap = NULL ;
 
   app_context->logger = NULL ;
@@ -341,4 +348,38 @@ static void checkConfigDir(void)
     }
 
   return ;
+}
+
+/* This function isn't very intelligent at the moment.  It's function
+ * is to set the info (GError) object of the appcontext so that the
+ * remote control code can set the reply atom when opening, closing ...
+ * a child zmap.  It's just sucking info out of the zmap at the moment
+ * without worrying about context.  Maybe this will be what we want, but
+ * I doubt it.
+ * I doubt we should want to support too many remote calls through the 
+ * appcontext window though, currently I can think of open/close maybe
+ * raise.  Anything more and we'll need to worry about how to get more 
+ * info and the calls should *REALLY* be going direct to the zmap itself
+ */
+static void infoSetCB(void *app_data, void *zmap)
+{
+  ZMapAppContext app = (ZMapAppContext)app_data;
+  ZMap info_zmap = (ZMap)zmap;
+
+  g_clear_error(&(app->info));
+  /* Suck as much as we can from this zmap. Make it into xml perl can
+   * parse that as easily as we can make it here. We should probably be 
+   * escaping the printf string pointers (I think there's a glib function)
+   * and also propagating any info/error into the appcontext's info too.
+   * I've not specified any schema for this xml.  It seems too simple 
+   * to require one at the moment.
+   */
+  app->info = 
+    g_error_new(g_quark_from_string(__FILE__), /* Not sure why we need a domain, we're not gonna use it */
+                1,
+                "<zmapid>%s</zmapid><windowid>0x%lx</windowid>",
+                zMapGetZMapID(info_zmap),
+                zMapGetXID(info_zmap)
+                );
+
 }

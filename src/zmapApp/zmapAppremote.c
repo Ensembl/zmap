@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: May 12 16:37 2005 (rds)
+ * Last edited: May 27 11:25 2005 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.2 2005-05-12 15:45:35 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.3 2005-06-01 13:12:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -141,7 +141,13 @@ static char *createZMap(ZMapAppContext app, char *command_text)
     }
 
   if (!result)
-    zmapAppCreateZMap(app, sequence, start, end) ;
+    {
+      zmapAppCreateZMap(app, sequence, start, end) ;
+      /* get the result of the zmapAppCreate by looking in the
+         app->info struct using this result we can set the result
+         here. Interpretation of the info is done here! */
+      result = g_strdup(app->info->message);
+    }
 
   /* Clean up. */
   if (sequence)
