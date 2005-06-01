@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 27 16:05 2005 (edgrif)
+ * Last edited: Jun  1 14:00 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.77 2005-05-27 15:18:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.78 2005-06-01 13:15:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -675,7 +675,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor)
   if (FOO_IS_CANVAS_ITEM (window->scaleBarGroup))
     gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
 
-  window->scaleBarGroup = zmapDrawScale(window->canvas,
+  window->scaleBarGroup = zMapDrawScale(window->canvas,
 					window->scaleBarOffset, 
 					window->zoom_factor,
 					top, bot,
@@ -730,7 +730,7 @@ void zMapWindowMove(ZMapWindow window, double start, double end)
 
   gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup)) ;
 
-  window->scaleBarGroup = zmapDrawScale(window->canvas,
+  window->scaleBarGroup = zMapDrawScale(window->canvas,
 					window->scaleBarOffset, 
 					window->zoom_factor,
 					start, end,
@@ -1362,9 +1362,14 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 {
   gboolean event_handled ;
   ZMapWindow window = (ZMapWindow)data ;
-
+  static double origin_x, origin_y; /* The world coords of the source of the button 1 event */
+  double wx, wy;                /* These hold the current world coords of the event */
+  GdkCursor *xhair;
+  static gboolean dragging = FALSE;
   /* MUST be false if the other per-item event handlers are to run.  */
   event_handled = FALSE ;
+
+  /* We need to check that canvas is mapped here */
 
   switch (event->type)
     {
@@ -1393,33 +1398,26 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	  default:
 	  case 1:
 	    {
+              dragging = TRUE;  /* we can be dragging */
+              foo_canvas_window_to_world(window->canvas, 
+                               but_event->x, but_event->y, 
+                               &origin_x, &origin_y);
+              if(!window->rubberband)
+                window->rubberband = zMapRubberbandCreate(window->canvas);
+#ifdef fixedcursrorproblem
+              xhair = gdk_cursor_new (GDK_CROSSHAIR);
+              foo_canvas_item_grab (window->rubberband,
+                                    (GDK_POINTER_MOTION_MASK | GDK_BUTTON_RELEASE_MASK),
+                                    xhair,
+                                    but_event->time);
+              gdk_cursor_destroy (xhair);
+#endif
 	      event_handled = FALSE ;
 	      break ;
 	    }
 	  case 2:
 	    {
 	      zMapWindowScrollToWindowPos(window, but_event->y) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      GtkAdjustment *v_adjuster ;
-	      double new_value ;
-	      double half_way ;
-
-	      v_adjuster = 
-		gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
-
-	      half_way = (v_adjuster->page_size / 2) ;
-
-	      new_value = v_adjuster->value +
-		((double)but_event->y - (v_adjuster->value + half_way)) ;
-
-	      if (new_value + v_adjuster->page_size > v_adjuster->upper)
-		new_value = new_value - ((new_value + v_adjuster->page_size) - v_adjuster->upper) ;
-
-	      gtk_adjustment_set_value(v_adjuster, new_value) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 	      event_handled = TRUE ;
 	      break ;
@@ -1466,6 +1464,30 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	  }
 	
 	break ;
+      }
+    case GDK_MOTION_NOTIFY:
+      {
+	GdkEventMotion *mot_event = (GdkEventMotion *)event ;
+        /* work out the world of where we are */
+        foo_canvas_window_to_world(window->canvas,
+                                   mot_event->x, mot_event->y,
+                                   &wx, &wy
+                                   );
+        if(dragging && (mot_event->state & GDK_BUTTON1_MASK))
+          zMapRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
+	event_handled = TRUE ;
+        break;
+      }
+    case GDK_BUTTON_RELEASE:
+      {
+        // zoomCallback(size of area)
+#ifdef fixedcursrorproblem
+        foo_canvas_item_ungrab(window->rubberband, event->button.time);
+#endif
+        foo_canvas_item_hide(window->rubberband);
+        dragging = FALSE;
+        event_handled = TRUE;
+        break;
       }
     default:
       {
