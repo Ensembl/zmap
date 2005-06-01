@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 12 13:37 2005 (rds)
+ * Last edited: May 27 11:16 2005 (rds)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.10 2005-05-12 15:45:34 rds Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.11 2005-06-01 13:11:18 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -54,6 +54,10 @@ typedef struct _ZMapAppContextStruct
   GtkWidget *end_widg ;
 
   GtkTreeStore *tree_store_widg ;
+
+  GError *info;                 /* This is an object to hold a code
+                                 * and a message as info for the
+                                 * remote control simple IPC stuff */
 
   ZMapManager zmap_manager ;
   ZMap selected_zmap ;
