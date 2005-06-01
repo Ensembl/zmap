@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 12 14:06 2004 (edgrif)
+ * Last edited: May 27 10:27 2005 (rds)
  * Created: Thu Jul 24 14:36:17 2003 (edgrif)
- * CVS info:   $Id: zmapSys.h,v 1.2 2004-03-12 15:10:39 edgrif Exp $
+ * CVS info:   $Id: zmapSys.h,v 1.3 2005-06-01 13:09:32 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SYS_H
@@ -42,6 +42,14 @@
 /* I would like the data passed to be ZMapWinConn but this produces circularities
  * in header dependencies between zmapApp.h and zmapManager.h....think about this. */
 typedef void (*zmapAppCallbackFunc)(void *app_data, void * zmap) ;
+
+
+/* This isn't good in fact the more I think about it, it's bad, but I need to get stuff done */
+typedef struct _ZMapAppCallbacksStruct
+{
+  zmapAppCallbackFunc zmap_deleted_func;
+  zmapAppCallbackFunc zmap_set_info_func;
+} ZMapAppCallbacksStruct, *ZMapAppCallbacks;
 
 /* Simple callback function. */
 typedef void (*zmapVoidIntCallbackFunc)(void *cb_data, int reason_code) ;
