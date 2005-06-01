@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: May 25 11:37 2005 (edgrif)
+ * Last edited: May 31 20:48 2005 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.26 2005-05-27 15:12:42 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.27 2005-06-01 11:17:26 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -141,8 +141,6 @@ typedef struct
 
 typedef struct ZMapFeatureAlignmentStruct_ *ZMapFeatureAlignment ;
 
-
-
 /* Holds a set of ZMapFeatureSet's.
  * Structure would usually contain a complete set of data from a server for a particular span
  * of a sequence. */
@@ -181,11 +179,6 @@ typedef struct ZMapFeatureContextStruct_
 
 } ZMapFeatureContextStruct, *ZMapFeatureContext ;
 
-
-
-
-
-
 typedef struct ZMapFeatureAlignmentStruct_
 {
   ZMapFeatureContext parent_context ;			    /* Our parent context. */
@@ -199,8 +192,7 @@ typedef struct ZMapFeatureAlignmentStruct_
 
   GList *blocks ;					    /* A set of ZMapFeatureStruct. */
 
-} ZMapFeatureAlignmentStruct, *ZMapFeatureAlignment ;
-
+} ZMapFeatureAlignmentStruct;
 
 
 
