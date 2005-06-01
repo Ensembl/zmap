@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 27 14:28 2005 (edgrif)
+ * Last edited: Jun  1 14:03 2005 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.4 2005-05-27 15:22:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.5 2005-06-01 13:17:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -547,7 +547,7 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
       top = (int)y1;                   /* zmapDrawScale expects integer coordinates */
       bot = (int)y2;
       gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
-      window->scaleBarGroup = zmapDrawScale(window->canvas, 
+      window->scaleBarGroup = zMapDrawScale(window->canvas, 
 					    window->scaleBarOffset, 
 					    window->zoom_factor,
 					    top, bot,

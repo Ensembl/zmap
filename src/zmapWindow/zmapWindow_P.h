@@ -26,15 +26,16 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May 27 16:08 2005 (edgrif)
+ * Last edited: Jun  1 14:00 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.53 2005-05-27 15:23:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.54 2005-06-01 13:17:20 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
 #define ZMAP_WINDOW_P_H
 
 #include <gtk/gtk.h>
+#include <ZMap/zmapDraw.h>
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapFeature.h>
 
@@ -192,6 +193,9 @@ typedef struct _ZMapWindowStruct
   GtkWidget     *toplevel ;
   GtkWidget     *scrolled_window ;			    /* points to toplevel */
   FooCanvas     *canvas ;				    /* where we paint the display */
+  FooCanvas     *ruler_canvas ;				    /* where we paint the display */
+
+  FooCanvasItem *rubberband;
 
   ZMapWindowCallbacks caller_cbs ;			    /* table of callbacks registered by
 							     * our caller. */
@@ -306,8 +310,6 @@ void zmapWindowShowItem(FooCanvasItem *item) ;
 
 void     zMapWindowCreateListWindow(ZMapWindow window, FooCanvasItem *item) ;
 
-FooCanvasItem *zmapDrawScale(FooCanvas *canvas, double offset, double zoom_factor, int start, int end,
-			     int *major_units_out, int *minor_units_out);
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
 void   zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data);

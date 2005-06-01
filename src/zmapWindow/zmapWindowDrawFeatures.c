@@ -26,14 +26,14 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 31 14:01 2005 (rnc)
+ * Last edited: Jun  1 14:19 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.64 2005-05-31 13:19:40 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.65 2005-06-01 13:16:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
 
-#include <ZMap/zmapDraw.h>
+
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
@@ -257,7 +257,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 			       0.0, window->seq_start, 
 			       SCALEBAR_WIDTH, window->seq_end) ;
 
-  window->scaleBarGroup = zmapDrawScale(window->canvas,
+  window->scaleBarGroup = zMapDrawScale(window->canvas,
 					0.0, window->zoom_factor,
 					full_context->sequence_to_parent.c1,
 					full_context->sequence_to_parent.c2,
