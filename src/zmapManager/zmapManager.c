@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: May 12 14:35 2005 (rds)
+ * Last edited: May 27 10:40 2005 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.14 2005-05-12 16:02:54 rds Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.15 2005-06-01 13:14:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,6 @@ static void zmapDestroyedCB(ZMap zmap, void *cb_data) ;
 static void removeZmapEntry(ZMapManager zmaps, ZMap zmap) ;
 
 
-
 /* Do we want a full callback struct for callbacks here ? Might be overkill.... */
 
 /* ZMap callbacks passed to zMapInit() */
@@ -45,7 +44,7 @@ ZMapCallbacksStruct zmap_cbs_G = {zmapDestroyedCB} ;
 
 
 
-ZMapManager zMapManagerCreate(zmapAppCallbackFunc zmap_deleted_func, void *gui_data)
+ZMapManager zMapManagerCreate(ZMapAppCallbacks zmap_gui_funcs, void *gui_data)
 {
   ZMapManager manager ;
 
@@ -53,7 +52,8 @@ ZMapManager zMapManagerCreate(zmapAppCallbackFunc zmap_deleted_func, void *gui_d
 
   manager->zmap_list = NULL ;
 
-  manager->gui_zmap_deleted_func = zmap_deleted_func ;
+  manager->gui_zmap_deleted_func  = zmap_gui_funcs->zmap_deleted_func ; /* called when zmaps close */
+  manager->gui_zmap_set_info_func = zmap_gui_funcs->zmap_set_info_func ; /* called when zmap does something that gui needs to know about (remote calls) */
   manager->gui_data = gui_data ;
 
   zMapInit(&zmap_cbs_G) ;
@@ -82,6 +82,8 @@ gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, Z
 	      && ((view = zMapAddView(zmap, sequence, start, end)))
 	      && ((zMapConnectView(zmap, view)))))
 	result = TRUE ;
+      /* Either way we should have a zmap now, fill in the info */
+      (*(zmaps->gui_zmap_set_info_func))(zmaps->gui_data, zmap) ;      
     }
 
   return result ;
