@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: May 31 11:51 2005 (rds)
+ * Last edited: May 31 20:46 2005 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.52 2005-05-31 10:51:31 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.53 2005-06-01 12:00:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -264,7 +264,7 @@ unsigned long zMapGetXID(ZMap zmap)
 {
   GtkWidget *top = NULL;
   top = zmap->toplevel;
-  unsigned long id = NULL;
+  unsigned long id = 0;
 
   if(GTK_WIDGET_REALIZED(top) == TRUE)
     id = (Window)GDK_DRAWABLE_XID(top->window);
