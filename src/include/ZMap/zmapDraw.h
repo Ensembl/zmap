@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Apr  4 11:20 2005 (edgrif)
+ * Last edited: Jun  1 13:53 2005 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.15 2005-04-05 14:19:28 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.16 2005-06-01 13:05:49 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -36,6 +36,8 @@
 
 #include <libfoocanvas/libfoocanvas.h>
 
+#define MINVAL(x, y) ((x) < (y) ? (x) : (y))
+#define MAXVAL(x, y) ((x) > (y) ? (x) : (y))
 
 FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 			    GdkColor *colour, double thickness) ;
@@ -46,6 +48,19 @@ FooCanvasItem *zMapDrawBox(FooCanvasItem *group,
 			   GdkColor *line_colour, GdkColor *fill_colour) ;
 FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 			       double x, double y) ;
+
+FooCanvasItem *zMapDrawScale(FooCanvas *canvas, 
+                             double offset, double zoom_factor, int start, int end,
+			     int *major_units_out, int *minor_units_out);
+
+
+/* This needs to be a bit cleverer, so you can't actually move the origin */
+FooCanvasItem *zMapRubberbandCreate(FooCanvas *canvas);
+
+void zMapRubberbandResize(FooCanvasItem *band, 
+                          double origin_x, double origin_y, 
+                          double current_x, double current_y
+                          );
 
      
 #endif /* ZMAP_DRAW_H */
