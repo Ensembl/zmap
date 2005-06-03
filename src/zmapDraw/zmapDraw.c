@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Jun  1 14:01 2005 (rds)
+ * Last edited: Jun  1 18:07 2005 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.28 2005-06-01 13:13:10 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.29 2005-06-03 11:13:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -321,5 +321,47 @@ void zMapRubberbandResize(FooCanvasItem *band,
                       NULL);
   foo_canvas_item_show(band);
   foo_canvas_item_raise_to_top(band);
+  return ;
+}
+
+FooCanvasItem *zMapHorizonCreate(FooCanvas *canvas)
+{
+  FooCanvasItem *line;
+
+  line = foo_canvas_item_new (foo_canvas_root(FOO_CANVAS(canvas)),
+                             foo_canvas_line_get_type (),
+                             "fill_color", "black",
+                             "width_pixels", 1,
+                             NULL);
+  return line;
+}
+
+void zMapHorizonReposition(FooCanvasItem *line, double current_y)
+{
+  FooCanvasPoints *points;
+  //FooCanvasGroup *root;
+  double x1, x2, y1, y2;
+
+  foo_canvas_get_scroll_region(line->canvas, &x1, &y1, &x2, &y2);
+
+  //  root = foo_canvas_root(line->canvas);
+  //  foo_canvas_item_get_bounds((FooCanvasItem *)root, &x1, &y1, &x2, &y2);
+
+  /* allocate a new points array */
+  points = foo_canvas_points_new(2) ;
+				                                            
+  /* fill out the points */
+  points->coords[0] = x1;
+  points->coords[1] = current_y ;
+  points->coords[2] = x2;
+  points->coords[3] = current_y ;
+
+  foo_canvas_item_hide(line);
+  foo_canvas_item_set(line,
+                      "points", points,
+                      NULL);
+  foo_canvas_item_show(line);
+  foo_canvas_item_raise_to_top(line);
+  foo_canvas_points_free(points) ;
   return ;
 }
