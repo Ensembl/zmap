@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  1 14:00 2005 (rds)
+ * Last edited: Jun  3 12:15 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.78 2005-06-01 13:15:02 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.79 2005-06-03 11:16:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -98,7 +98,7 @@ static void lockWindow(ZMapWindow window, ZMapWindowLockType window_locking) ;
 static void unlockWindow(ZMapWindow window) ;
 static GtkAdjustment *copyAdjustmentObj(GtkAdjustment *orig_adj) ;
 
-
+static void zoomToRubberBandArea(ZMapWindow window);
 
 /* Callbacks we make back to the level above us. This structure is static
  * because the callback routines are set just once for the lifetime of the
@@ -1178,7 +1178,6 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoin
   /* widget is the canvas, user_data is the realizeData structure */
   RealiseData realiseData = (RealiseDataStruct*)user_data;
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("exposeHandlerCB\n");
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -1364,11 +1363,10 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
   ZMapWindow window = (ZMapWindow)data ;
   static double origin_x, origin_y; /* The world coords of the source of the button 1 event */
   double wx, wy;                /* These hold the current world coords of the event */
-  GdkCursor *xhair;
-  static gboolean dragging = FALSE;
+  static gboolean allowdragging = FALSE, dragging = FALSE, guide = FALSE;
   /* MUST be false if the other per-item event handlers are to run.  */
   event_handled = FALSE ;
-
+  gboolean debug_case = FALSE;
   /* We need to check that canvas is mapped here */
 
   switch (event->type)
@@ -1398,21 +1396,23 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	  default:
 	  case 1:
 	    {
-              dragging = TRUE;  /* we can be dragging */
               foo_canvas_window_to_world(window->canvas, 
-                               but_event->x, but_event->y, 
-                               &origin_x, &origin_y);
-              if(!window->rubberband)
-                window->rubberband = zMapRubberbandCreate(window->canvas);
-#ifdef fixedcursrorproblem
-              xhair = gdk_cursor_new (GDK_CROSSHAIR);
-              foo_canvas_item_grab (window->rubberband,
-                                    (GDK_POINTER_MOTION_MASK | GDK_BUTTON_RELEASE_MASK),
-                                    xhair,
-                                    but_event->time);
-              gdk_cursor_destroy (xhair);
-#endif
-	      event_handled = FALSE ;
+                                         but_event->x, but_event->y, 
+                                         &origin_x, &origin_y);
+              if(but_event->state & GDK_SHIFT_MASK)
+                {
+                  if(!window->horizon_guide_line)
+                    window->horizon_guide_line = zMapHorizonCreate(window->canvas);
+                  zMapHorizonReposition(window->horizon_guide_line, origin_y);
+                  guide = TRUE;
+                }
+              else
+                {
+                  allowdragging = TRUE;  /* we can be dragging */
+                  if(!window->rubberband)
+                    window->rubberband = zMapRubberbandCreate(window->canvas);
+                }
+	      event_handled = TRUE ;
 	      break ;
 	    }
 	  case 2:
@@ -1473,19 +1473,29 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
                                    mot_event->x, mot_event->y,
                                    &wx, &wy
                                    );
-        if(dragging && (mot_event->state & GDK_BUTTON1_MASK))
-          zMapRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
+        if(allowdragging && (mot_event->state & GDK_BUTTON1_MASK))
+          {
+            dragging = TRUE;
+            zMapRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
+          }
+        else if(guide && mot_event->state & GDK_BUTTON1_MASK)
+          zMapHorizonReposition(window->horizon_guide_line, wy);
+
 	event_handled = TRUE ;
         break;
       }
     case GDK_BUTTON_RELEASE:
       {
-        // zoomCallback(size of area)
-#ifdef fixedcursrorproblem
-        foo_canvas_item_ungrab(window->rubberband, event->button.time);
-#endif
-        foo_canvas_item_hide(window->rubberband);
-        dragging = FALSE;
+        if(dragging)
+          {
+            zoomToRubberBandArea(window);
+            foo_canvas_item_hide(window->rubberband);
+          }
+        else if(guide)
+          {
+            foo_canvas_item_hide(window->horizon_guide_line);
+          }
+        allowdragging = dragging = guide = FALSE;
         event_handled = TRUE;
         break;
       }
@@ -1497,10 +1507,60 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
       }
     }
 
-
   return event_handled ;
 }
 
+#define ZOOM_SENSITIVITY 200.0
+static void zoomToRubberBandArea(ZMapWindow window)
+{
+  GtkAdjustment *v_adjuster ;
+  /* The bands bounds */
+  double rootx1, rootx2, rooty1, rooty2;
+  /* size of bound area */
+  double ydiff;
+  int win_height, canvasx, canvasy, beforex, beforey;
+  /* Zoom factor */
+  double zoom_by_factor, target_zoom_factor;
+
+  int yOff;
+
+  if(!window->rubberband)
+    return ;
+  
+  
+  v_adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+  win_height = v_adjuster->page_size;
+
+  /* this returns world coords */
+  foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2);
+  /* make them canvas so we can scroll there */
+  foo_canvas_w2c(window->canvas, rootx1, rooty1, &beforex, &beforey);
+
+  /* work out the zoom factor to show all the area (vertically) and
+     calculate how much we need to zoom by to achieve that. */
+  ydiff = rooty2 - rooty1;
+  if(ydiff < ZOOM_SENSITIVITY)
+    return ;
+  target_zoom_factor = (double)(win_height / ydiff);
+  zoom_by_factor = (target_zoom_factor / window->zoom_factor);
+
+  /* actually do the zoom */
+  zMapWindowZoom(window, zoom_by_factor);
+
+  /* Now we need to find where the original top of the area is in
+     canvas coords after the effect of the zoom */
+  foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
+
+  /* And scroll there.  
+   * We use this rather than zMapWindowScrollTo as we may have zoomed 
+   * in so far that we can't just sroll the current canvas buffer to 
+   * where we clicked. We'll actually have to use a combination.
+   */
+  if(beforey != canvasy)
+    foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
+
+  return ;
+}
 
 /* THIS FUNCTION IS NOT CURRENTLY USED BUT I'VE KEPT IT IN CASE WE NEED A
  * HANDLER THAT WILL RESPOND TO EVENTS ON ALL ITEMS.... */
@@ -1512,7 +1572,6 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 {
   gboolean event_handled = FALSE ;
   ZMapWindow window = (ZMapWindow)data ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("ROOT canvas event handler\n") ;
