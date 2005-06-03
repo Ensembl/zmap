@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Jun  1 13:53 2005 (rds)
+ * Last edited: Jun  1 15:03 2005 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.16 2005-06-01 13:05:49 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.17 2005-06-03 11:12:53 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -61,6 +61,10 @@ void zMapRubberbandResize(FooCanvasItem *band,
                           double origin_x, double origin_y, 
                           double current_x, double current_y
                           );
+
+FooCanvasItem *zMapHorizonCreate(FooCanvas *canvas);
+
+void zMapHorizonReposition(FooCanvasItem *line, double current_x);
 
      
 #endif /* ZMAP_DRAW_H */
