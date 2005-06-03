@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun  1 14:00 2005 (rds)
+ * Last edited: Jun  1 15:17 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.54 2005-06-01 13:17:20 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.55 2005-06-03 11:17:02 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -196,6 +196,7 @@ typedef struct _ZMapWindowStruct
   FooCanvas     *ruler_canvas ;				    /* where we paint the display */
 
   FooCanvasItem *rubberband;
+  FooCanvasItem *horizon_guide_line;
 
   ZMapWindowCallbacks caller_cbs ;			    /* table of callbacks registered by
 							     * our caller. */
