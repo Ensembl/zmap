@@ -43,6 +43,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapDocs/ZMapMainPage.c \
 	$(top_srcdir)/zmapDraw/zmapDraw.c \
 	$(top_srcdir)/zmapFeature/zmapFeature.c \
+	$(top_srcdir)/zmapFeature/zmapFeatureEditor.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureTypes.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureUtils.c \
 	$(top_srcdir)/zmapFeature/zmapFeature_P.h \
