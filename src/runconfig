@@ -35,7 +35,7 @@ case $opsys in
     export PKG_CONFIG_PATH
     LD_LIBRARY_PATH=/usr/local/oracle/lib
     export LD_LIBRARY_PATH
-    config_args='' ;;
+    config_args='CXXFLAGS=-g CFLAGS=-g' ;;
 
   * )
     msgAndExit "unsupported operating system: $opsys" ;;
