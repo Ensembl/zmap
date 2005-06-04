@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  3 12:15 2005 (rds)
+ * Last edited: Jun  4 14:11 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.79 2005-06-03 11:16:23 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.80 2005-06-04 13:10:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1406,13 +1406,13 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
                   zMapHorizonReposition(window->horizon_guide_line, origin_y);
                   guide = TRUE;
                 }
-              else
+              else if(but_event->state & GDK_CONTROL_MASK)
                 {
                   allowdragging = TRUE;  /* we can be dragging */
                   if(!window->rubberband)
                     window->rubberband = zMapRubberbandCreate(window->canvas);
                 }
-	      event_handled = TRUE ;
+	      event_handled = FALSE ;
 	      break ;
 	    }
 	  case 2:
@@ -1476,6 +1476,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
         if(allowdragging && (mot_event->state & GDK_BUTTON1_MASK))
           {
             dragging = TRUE;
+            /* I wanted to change the cursor for this, 
+             * but foo_canvas_item_grab/ungrab specifically the ungrab didn't work */
             zMapRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
           }
         else if(guide && mot_event->state & GDK_BUTTON1_MASK)
@@ -1488,8 +1490,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
       {
         if(dragging)
           {
-            zoomToRubberBandArea(window);
             foo_canvas_item_hide(window->rubberband);
+            zoomToRubberBandArea(window);
           }
         else if(guide)
           {
@@ -1510,7 +1512,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
   return event_handled ;
 }
 
-#define ZOOM_SENSITIVITY 200.0
+#define ZOOM_SENSITIVITY 5.0
 static void zoomToRubberBandArea(ZMapWindow window)
 {
   GtkAdjustment *v_adjuster ;
@@ -1518,17 +1520,17 @@ static void zoomToRubberBandArea(ZMapWindow window)
   double rootx1, rootx2, rooty1, rooty2;
   /* size of bound area */
   double ydiff;
+  double area_middle;
   int win_height, canvasx, canvasy, beforex, beforey;
   /* Zoom factor */
   double zoom_by_factor, target_zoom_factor;
-
-  int yOff;
+  double wx1, wx2, wy1, wy2;
 
   if(!window->rubberband)
     return ;
   
-  
-  v_adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+  v_adjuster = 
+    gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
   win_height = v_adjuster->page_size;
 
   /* this returns world coords */
@@ -1541,24 +1543,42 @@ static void zoomToRubberBandArea(ZMapWindow window)
   ydiff = rooty2 - rooty1;
   if(ydiff < ZOOM_SENSITIVITY)
     return ;
+  area_middle = rooty1 + (ydiff / 2.0); /* So we can make this the centre later */
   target_zoom_factor = (double)(win_height / ydiff);
   zoom_by_factor = (target_zoom_factor / window->zoom_factor);
+
 
   /* actually do the zoom */
   zMapWindowZoom(window, zoom_by_factor);
 
   /* Now we need to find where the original top of the area is in
-     canvas coords after the effect of the zoom */
-  foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
-
-  /* And scroll there.  
+   * canvas coords after the effect of the zoom. Hence the w2c calls
+   * below.
+   * And scroll there:
    * We use this rather than zMapWindowScrollTo as we may have zoomed 
    * in so far that we can't just sroll the current canvas buffer to 
-   * where we clicked. We'll actually have to use a combination.
+   * where we clicked. We actually need to check we haven't zoomed off.
+   * If we have then we need to move there first, otherwise scroll_to
+   * doesn't do anything.
    */
-  if(beforey != canvasy)
-    foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
-
+  foo_canvas_get_scroll_region(window->canvas, &wx1, &wy1, &wx2, &wy2);
+  if(rooty1 > wy1 && rooty2 < wy2)
+    {                           /* We're still in the same area, */
+      foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
+      if(beforey != canvasy)
+        foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
+    }
+  else
+    {                           /* This takes a lot of time.... */
+      double half_win_span = (window->canvas_maxwin_size / 2.0);
+      double min_seq = area_middle - half_win_span;
+      double max_seq = area_middle + half_win_span - 1;
+      /* unfortunately freeze/thaw child-notify doesn't stop flicker */
+      /* can we do something else to make it busy?? */
+      zMapWindowMove(window, min_seq, max_seq);
+      foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
+      foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
+    }
   return ;
 }
 
