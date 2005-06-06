@@ -20,15 +20,15 @@
  * This file is part of the ZMap genome database package
  * and was written by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk and
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 27 15:33 2005 (edgrif)
+ * Last edited: Jun  6 11:58 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.29 2005-05-27 15:16:50 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.30 2005-06-06 12:45:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -536,9 +536,10 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 				   server->sequence, server->start, server->end,
 				   server->method_str ? server->method_str : "") ;
 
-  server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len) ;
+  
     
-  if (server->last_err_status == ACECONN_OK)
+  if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
+      == ACECONN_OK)
     {
       char *next_line ;
       ZMapReadLine line_reader ;
@@ -690,11 +691,11 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 
       zMapReadLineDestroy(line_reader, FALSE) ;		    /* n.b. don't free string as it is the
 							       same as reply which is freed later.*/
+
+      g_free(reply) ;
     }
 
-
   g_free(acedb_request) ;
-  g_free(reply) ;
 
   return result ;
 }
@@ -1231,6 +1232,9 @@ static gboolean parseTypes(AcedbServer server)
 	      break ;
 	    }
 	}
+
+      g_free(reply) ;
+      reply = NULL ;
     }
 
   if (result == TRUE)
@@ -1267,10 +1271,12 @@ static gboolean parseTypes(AcedbServer server)
 	    result = FALSE ;
 	  else
 	    result = TRUE ;
+
+	  g_free(reply) ;
+	  reply = NULL ;
 	}
     }
 
-  g_free(reply) ;
 
   return result ;
 }
