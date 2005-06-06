@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun  1 14:19 2005 (rds)
+ * Last edited: Jun  6 11:32 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.65 2005-06-01 13:16:43 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.66 2005-06-06 11:03:20 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +50,8 @@ typedef struct
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
 			 FooCanvasItem *item) ;
 static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
+static void blixemAllTypesMenuCB(int menu_item_id, gpointer callbackk_data);
+  static void blixemOneTypeMenuCB(int menu_item_id, gpointer callbackk_data);
 
 
 
@@ -992,8 +994,8 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   ZMapWindowMenuItemStruct menu[] =
     {
       {"Show Feature List", 1, itemMenuCB},
-      {NULL               , 2, itemMenuCB},
-      {NULL               , 3, itemMenuCB},
+      {NULL               , 2, blixemAllTypesMenuCB},
+      {NULL               , 3, blixemOneTypeMenuCB},
       {NULL               , 0, NULL}
     } ;
   ZMapWindowMenuItem menu_item ;
@@ -1007,21 +1009,14 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
     {
       if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
 	{
-	  menu[1].name = g_strdup("Show multiple protein alignment in Blixem");
-	  menu[2].name = g_strdup("Show multiple protein alignment for just this type of homology");
+	  menu[1].name = "Show multiple protein alignment in Blixem";
+	  menu[2].name = "Show multiple protein alignment for just this type of homology";
 	}
       else
 	{
-	  menu[1].name = g_strdup("Show multiple dna alignment");      
-	  menu[2].name = g_strdup("Show multiple dna alignment for just this type of homology");      
+	  menu[1].name = "Show multiple dna alignment";      
+	  menu[2].name = "Show multiple dna alignment for just this type of homology";      
 	}
-    }
-  else
-    {
-      g_free(menu[1].name); 
-      g_free(menu[2].name); 
-      menu[1].name = g_strdup("Dummy"); 
-      menu[2].id = 0;
     }
 
   menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
@@ -1037,13 +1032,35 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
 
   zMapWindowMakeMenu(menu_title, menu, button_event) ;
 
-  if (menu[1].name)
-    g_free(menu[1].name);
-  if (menu[2].name)
-    g_free(menu[2].name);
+  return ;
+}
+
+
+
+static void blixemAllTypesMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  
+  zmapWindowCallBlixem(menu_data->window, menu_data->item, FALSE) ;
+  
+  g_free(menu_data) ;
 
   return ;
 }
+
+
+
+static void blixemOneTypeMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  zmapWindowCallBlixem(menu_data->window, menu_data->item, TRUE) ;
+  
+  g_free(menu_data) ;
+
+  return ;
+}
+
 
 
 static void itemMenuCB(int menu_item_id, gpointer callback_data)
