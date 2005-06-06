@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun  6 10:55 2005 (rnc)
+ * Last edited: Jun  6 13:48 2005 (rnc)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.5 2005-06-06 10:59:01 rnc Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.6 2005-06-06 12:49:54 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -586,7 +586,7 @@ static char *getDesc(blixemData blixem_data)
 static gboolean printLine(blixemData blixem_data, char *line)
 {
   GError *channel_error = NULL;
-  ulong bytes_written;
+  gsize bytes_written;
   gboolean status = TRUE;
 
   if (blixem_data->errorMsg == NULL)  /* redundant: should not get here with errorMsg set */
