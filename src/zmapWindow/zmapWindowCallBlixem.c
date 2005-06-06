@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 31 14:17 2005 (rnc)
+ * Last edited: Jun  3 12:12 2005 (rnc)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.3 2005-05-31 13:25:33 rnc Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.4 2005-06-06 08:44:18 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,11 +67,17 @@ typedef struct BlixemDataStruct
 static gboolean getUserPrefs     (blixemData blixem_data);
 static char    *buildParamString (blixemData blixem_data);
 static gboolean writeExblxFile   (blixemData blixem_data);
+static void     processAlignments(GQuark key_id, gpointer data, gpointer user_data);
+static void     processBlocks    (gpointer data, gpointer user_data);
 static void     processFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
 static void     writeExblxLine   (GQuark key_id, gpointer data, gpointer user_data);
+static char    *getDesc          (blixemData blixem_data);
 static gboolean printLine        (blixemData blixem_data, char *line);
 static gboolean writeFastAFile   (blixemData blixem_data);
+static gboolean processExons     (blixemData blixem_data, ZMapFeature feature);
 static void     freeBlixemData   (blixemData blixem_data);
+static void     adjustCoords     (blixemData blixem_data,
+				  int *sstart, int *send, int *qstart, int *qend);
 
 
 
@@ -90,29 +96,33 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneTy
       blixem_data.window  = window;
       blixem_data.item    = item;
       blixem_data.oneType = oneType;
+      paramString = buildParamString(&blixem_data);
 
-      if (!(paramString = buildParamString(&blixem_data)))
+      if (!paramString)
 	status = FALSE;	 
     } 
 
   if (status == TRUE)
+    status = writeExblxFile(&blixem_data);
+
+  if (status == TRUE)
+    status = writeFastAFile(&blixem_data);
+
+  if (status == TRUE)
     {
-      if (writeExblxFile(&blixem_data) == TRUE
-	  && writeFastAFile(&blixem_data) == TRUE)
-	{
-	  commandString = g_strdup_printf("%s %s &", blixem_data.Script, paramString);
-	  printf("%s\n", commandString);
-	  /* Note that since blixem is being called as a background process, 
-	  ** we can only tell whether or not the system call was successful,
-	  ** and not whether or not blixem ran successfully. */
-	  if (system(commandString) != 0)
-	    zMapShowMsg(ZMAP_MSG_WARNING, "System call failed: blixem not invoked.") ;
-	  
-	  g_free(commandString);
-	}
+      commandString = g_strdup_printf("%s %s &", blixem_data.Script, paramString);
+      printf("%s\n", commandString);
+      /* Note that since blixem is being called as a background process, 
+      ** we can only tell whether or not the system call was successful,
+      ** and not whether or not blixem ran successfully. */
+      if (system(commandString) != 0)
+	zMapShowMsg(ZMAP_MSG_WARNING, "System call failed: blixem not invoked.") ;
       
-      g_free(paramString);
+      g_free(commandString);
     }
+   
+  if (paramString)   
+    g_free(paramString);
 
   freeBlixemData(&blixem_data);
 
@@ -192,7 +202,6 @@ static char *buildParamString(blixemData blixem_data)
   char       *pfetchParams;
   int         start;
   int         offset;
-  int         len;
   int         scope = 40000;          /* set from user prefs */
 
 
@@ -202,20 +211,17 @@ static char *buildParamString(blixemData blixem_data)
   pfetchParams = g_strdup_printf("%s:%d", blixem_data->Netid, 
 				 blixem_data->Port);
   feature = g_object_get_data(G_OBJECT(blixem_data->item), "feature");
-  zMapAssert(feature);       /* no point going on without a feature. */
-
-  len     = blixem_data->window->feature_context->length;
+  zMapAssert(feature);       /* something badly wrong if no feature. */
 
   blixem_data->min = feature->x1 - scope/2;
   blixem_data->max = feature->x2 + scope/2;
   if (blixem_data->min < 0)
     blixem_data->min = 0;
-  if (blixem_data->max > len)
-    blixem_data->max = len;
+  if (blixem_data->max > blixem_data->window->feature_context->length)
+    blixem_data->max = blixem_data->window->feature_context->length;
 
   start   = feature->x1 - blixem_data->min - 30;
   offset  = blixem_data->min ? blixem_data->min - 1 : 0;
-
 
   if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)  /* protein */
     {
@@ -227,8 +233,8 @@ static char *buildParamString(blixemData blixem_data)
   else
     blixem_data->opts = g_strdup("N+BR");                     /* dna */
       
-
-  if ((login = g_strdup(getlogin())))
+  login = g_strdup(getlogin());
+  if (login)
     {
       path = g_strdup_printf("/tmp/%s_ZMAP_BLIXEM/", login);
       g_free(login);
@@ -262,8 +268,6 @@ static char *buildParamString(blixemData blixem_data)
 	{
 	  /* blixem wants only the unique filename, not the path */
 	  blixem_data->fastAFile = g_strdup(g_strrstr(tmpfile, "/")+1);
-	  
-	  sprintf(tmpfile, "%sZMAPXXXXXX", blixem_data->tmpDir);
 	  close(file);
 	  file = 0;
 	}
@@ -273,10 +277,12 @@ static char *buildParamString(blixemData blixem_data)
 		      "Error: could not open temporary fastA for Blixem");
 	  status = FALSE;
 	}
+      g_free(tmpfile);
     }
 
   if (status == TRUE)             /* exblx file */
     {
+      tmpfile = g_strdup_printf("%sZMAPXXXXXX", blixem_data->tmpDir);
       if ((file = g_mkstemp(tmpfile)))
 	{
 	  blixem_data->exblxFile = g_strdup(g_strrstr(tmpfile, "/")+1);
@@ -288,6 +294,7 @@ static char *buildParamString(blixemData blixem_data)
 		      "Error: could not open temporary exblx for Blixem");
 	  status = FALSE;
 	}
+      g_free(tmpfile);
     }
 
       
@@ -306,9 +313,6 @@ static char *buildParamString(blixemData blixem_data)
      printf("paramString: %s\n", paramString);
    }
 
-  if (tmpfile)
-    g_free(tmpfile);
-  
   g_free(pfetchParams);
  
   return paramString;
@@ -335,12 +339,10 @@ static gboolean writeExblxFile(blixemData blixem_data)
 	  zMapShowMsg(ZMAP_MSG_WARNING, "Error writing headers to exblx file: %50s... : %s",
 		      line, channel_error->message) ;
 	  g_error_free(channel_error) ;
-	  g_free(line);
 	  status = FALSE ;
 	}
       else
 	{
-	  g_free(line);
 	  blixem_data->errorMsg = NULL;
 	  if (blixem_data->oneType)
 	    {
@@ -353,7 +355,7 @@ static gboolean writeExblxFile(blixemData blixem_data)
 	  else
 	    {
 	      g_datalist_foreach(&(blixem_data->window->feature_context->alignments), 
-				 processFeatureSet, blixem_data);
+				 processAlignments, blixem_data);
 	    }
 	  /* if there are errors writing the data to the file, the first such
 	  ** error will be recorded in blixem_data->errorMsg. */
@@ -361,8 +363,11 @@ static gboolean writeExblxFile(blixemData blixem_data)
 	    {
 	      zMapShowMsg(ZMAP_MSG_WARNING, blixem_data->errorMsg);
 	      status = FALSE;
+	      g_free(blixem_data->errorMsg);
 	    }
 	}
+
+      g_free(line);
       g_io_channel_shutdown(blixem_data->channel, TRUE, &channel_error);
       if (channel_error)
 	g_free(channel_error);
@@ -381,6 +386,29 @@ static gboolean writeExblxFile(blixemData blixem_data)
 }
 
 
+
+static void processAlignments(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data;
+  blixemData     blixem_data = (blixemData)user_data;
+
+  g_list_foreach(alignment->blocks, processBlocks, blixem_data);
+
+  return;
+}
+
+
+static void processBlocks(gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock block = (ZMapFeatureBlock)data;
+  blixemData     blixem_data = (blixemData)user_data;
+
+  g_datalist_foreach(&(block->feature_sets), processFeatureSet, blixem_data);
+
+  return;
+}
+
+
 static void processFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data;
@@ -391,20 +419,20 @@ static void processFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   return;
 }
 
+
+
 static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeature feature     = (ZMapFeature)data;
   blixemData  blixem_data = (blixemData)user_data;
   int   min, max, x1, x2, scope = 40000;          /* scope set from user prefs */
   int score = 0, qstart, qend, sstart, send;
-  char *sname = NULL, *sseq = NULL;
+  ZMapSpan span = NULL;
+  char *sname = NULL, *desc = NULL;
   char *qframe = NULL;
   GString *line;
-  ZMapSpan span = NULL, jspan = NULL;
   int i, j;
-  GArray *noDups = NULL;
   char buf[255];
-  gboolean skip = FALSE;
   gboolean status = TRUE;
 
 
@@ -455,11 +483,10 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 		  sstart = feature->feature.homol.y1;
 		  send   = feature->feature.homol.y2;
 		}
-	      
+
+	      adjustCoords(blixem_data, &sstart, &send, &qstart, &qend);
+
 	      score = feature->feature.homol.score;
-	      /*  sseq  =  */ 
-	      
-	      printf("Homol: %s %d %d\n", sname, qstart, feature->strand);
 	      
 	      if (score)
 		{
@@ -479,84 +506,23 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 					  (g_array_index(feature->feature.homol.align, ZMapAlignBlock, i))->t2);
 			  line = g_string_append(line, gaps->str);
 			}
-		      g_string_free(gaps, TRUE);
 		    }
 		  
 		  line = g_string_append(line, "\n");
 		  
 		  status = printLine(blixem_data, line->str);
 		}
-	      
+	      g_free(sname);
+	      g_free(qframe);
 	      break;       /* case HOMOL */
 	      
 	    case ZMAPFEATURE_TRANSCRIPT:
+
+	      status = processExons(blixem_data, feature);
 	      
-	      for (i = 0; i < feature->feature.transcript.exons->len; i++)
-		{
-		  span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
-		  
-		  /* Sometimes exons are present in the GFF dump more than once.   
-		  ** This block of code detects duplicates and skips them.  If
-		  ** giface is changed to skip duplicates this bit becomes 
-		  ** redundant, but should do no harm. */
-		  skip = FALSE;
-		  if (!noDups)
-		    {
-		      noDups = g_array_new(FALSE, TRUE, sizeof(ZMapSpanStruct));
-		      g_array_append_val(noDups, *span);
-		    }
-		  else 
-		    {
-		      for (j = 0; j < noDups->len; j++)
-			{
-			  jspan = &g_array_index(noDups, ZMapSpanStruct, j);
-			  if (jspan->x1 == span->x1 && jspan->x2 == span->x2)
-			    {
-			      skip = TRUE;
-			      j = noDups->len;
-			    }
-			}
-		      if (skip == TRUE)
-			continue;
-		      else
-			g_array_append_val(noDups, *span);    
-		    }
-		  
-		  if (feature->strand == ZMAPSTRAND_REVERSE)
-		    {
-		      qstart = span->x2 - min + 1;
-		      qend   = span->x1 - min + 1;
-		      qframe = g_strdup("(-99)");
-		    }
-		  else
-		    {
-		      qstart = span->x1 - min + 1;
-		      qend   = span->x2 - min + 1;
-		      qframe = g_strdup("(+99)");
-		    }
-		  
-		  sstart = 99999;
-		  send   = 99999;
-		  score  = -1;
-		  sname  = g_strdup_printf("%sx", g_quark_to_string(feature->original_id));
-		  printf("Transcript: %s %d %d\n", sname, qstart, feature->strand);
-		  if (score)
-		    {
-		      g_string_printf(line, "%d %s\t%d\t%d\t%d\t%d %s\n", 
-				      score, qframe, qstart, qend, sstart, send, sname);
-		      
-		      status = printLine(blixem_data, line->str);
-		    }
-		}       /* for .. exons .. */
-	      
-	      if (noDups)
-		g_array_free(noDups, TRUE);
-	      if (jspan)
-		g_free(jspan);
-	      
-	      if (status == TRUE)
+	      if (status == TRUE && feature->feature.transcript.introns)
 		{	      
-		  for (i = 0; i < feature->feature.transcript.introns->len; i++)
+		  for (i = 0; i < feature->feature.transcript.introns->len && status == TRUE; i++)
 		    {
 		      span = &g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i);
 		      
@@ -564,13 +530,11 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 			{
 			  qstart = span->x2 - min + 1;
 			  qend   = span->x1 - min + 1;
-			  qframe = g_strdup_printf("(-%d)", 1 + (qstart - 1)%3);
 			}
 		      else
 			{
 			  qstart = span->x1 - min + 1;
 			  qend   = span->x2 - min + 1;
-			  qframe = g_strdup_printf("(+%d)", 1 + (qstart - 1)%3);
 			}
 		      
 		      sstart = send = 0;
@@ -578,39 +542,44 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 		      sname  = g_strdup_printf("%si", g_quark_to_string(feature->original_id));
 		      
 		      if (feature->strand == ZMAPSTRAND_REVERSE)
-			qframe = g_strdup("(+1)");
-		      else
 			qframe = g_strdup("(-1)");
+		      else
+			qframe = g_strdup("(+1)");
 		      
-		      if (score)
-			{
-			  g_string_printf(line, "%d %s\t%d\t%d\t%d\t%d\t%s\n", 
-					  score, qframe, qstart, qend, sstart, send, sname);
-			  
-			  status = printLine(blixem_data, line->str);
-			}
+		      adjustCoords(blixem_data, &sstart, &send, &qstart, &qend);
+
+		      desc = getDesc(blixem_data);
+
+		      g_string_printf(line, "%d %s\t%d\t%d\t%d\t%d\t%s\n", 
+				      score, qframe, qstart, qend, sstart, send, sname);
+		      g_free(qframe);
+		      g_free(sname);
+		      g_free(desc);
+		      status = printLine(blixem_data, line->str);
+
 		    }        /* for .. introns .. */
 		}          /* if (status == TRUE) */
 	      
 	      break;     /* case TRANSCRIPT */
 	      
 	    default:
-	      sname = g_strdup(g_quark_to_string(feature->original_id));
-	      printf("Other %s type %d\n", sname, feature->type);
 	      break;
 	    }            /* switch (feature->type)   */
 	  
-	  if (sname)
-	    g_free(sname);
-	  if (sseq)
-	    g_free(sseq);
-	  if (qframe)
-	    g_free(qframe);
 	}                /* if within the min-max range */
-      
       g_string_free(line, TRUE);
     }                    /* if (!blixem_data->errorMsg) */
   return;
+}
+
+
+
+/* just a stub until I can find out what to put in desc */
+static char *getDesc(blixemData blixem_data)
+{
+  char *desc = g_strdup("dummy");
+
+  return desc;
 }
 
 
@@ -731,6 +700,118 @@ static gboolean writeFastAFile(blixemData blixem_data)
 
 
 
+static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
+{
+  int i, j, next_base_no = 0, tLen = 0;
+  ZMapSpan span = NULL, jspan = NULL;
+  int score = -1, qstart, qend, sstart, send, prev_sstart;
+  int min, max;
+  char *sname, *qframe;
+  GString *line = g_string_new("");
+  GArray *noDups = NULL;
+  gboolean skip = FALSE;
+  gboolean status = TRUE;
+
+
+  /* Sometimes exons are present in the GFF dump more than once.   
+  ** This loop copies unique exons to a new array and for reversed
+  ** features accumulates the number of bases in the transcript. */
+  for (i = 0; i < feature->feature.transcript.exons->len; i++)
+    {
+      span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
+      
+      skip = FALSE;
+      if (!noDups)
+	{
+	  noDups = g_array_new(FALSE, TRUE, sizeof(ZMapSpanStruct));
+	  g_array_append_val(noDups, *span);
+	  /* With reversed features, sstart and send need to start at the
+	  ** far end and work backwards. Must avoid duplicate exons, too. 
+	  ** Determine No of bases in transcript */
+	  if (feature->strand == ZMAPSTRAND_REVERSE)
+	    next_base_no += span->x2 - span->x1;
+	}
+      else 
+	{
+	  for (j = 0; j < noDups->len && skip == FALSE; j++)
+	    {
+	      jspan = &g_array_index(noDups, ZMapSpanStruct, j);
+	      if (jspan->x1 == span->x1 && jspan->x2 == span->x2)
+		  skip = TRUE;
+	    }
+	  if (skip == TRUE)
+	    continue;
+	  else
+	    {
+ 	      g_array_append_val(noDups, *span);    
+
+	      /* With reversed features, sstart and send need to start at the
+	      ** far end and work backwards. Must avoid duplicate exons, too. 
+	      ** Determine No of bases in transcript */
+	      if (feature->strand == ZMAPSTRAND_REVERSE)
+		next_base_no += span->x2 - span->x1 + 1;
+	    }
+	}
+    }      
+
+
+  /* now we just process the unique exons from noDups array */
+  for (i = 0; i < noDups->len && status == TRUE; i++)
+    {
+      min = blixem_data->min;
+      max = blixem_data->max;
+
+      span = &g_array_index(noDups, ZMapSpanStruct, i);
+
+      /* We need to keep track of the number of the first base of each exon
+      ** within the transcript, with introns snipped out, so next_base_no is
+      ** the base number we're expecting the next exon to start at. */
+
+      if (feature->strand == ZMAPSTRAND_REVERSE)
+	{
+	  qstart = span->x2 - min + 1;
+	  qend   = span->x1 - min + 1;
+
+	  send   = next_base_no/3;
+	  sstart = ((next_base_no - (span->x2 - span->x1))/3) + 1;
+
+	  next_base_no -= (span->x2 - span->x1 + 1);
+ 	  qframe = g_strdup_printf("(-%d)", 
+				   (1 + ((max - min + 1) - qstart - next_base_no) % 3));
+	}
+      else
+	{
+	  qstart = span->x1 - min + 1;
+	  qend   = span->x2 - min + 1;
+	  qframe = g_strdup_printf("(+%d)", ((qstart - next_base_no - 1) % 3) + 1);
+
+	  sstart = (next_base_no + 3)/3;
+	  send   = (next_base_no + span->x2 - span->x1)/3;
+	  next_base_no += (span->x2 - span->x1);
+	}
+
+      adjustCoords(blixem_data, &sstart, &send, &qstart, &qend);
+
+      sname  = g_strdup_printf("%sx", g_quark_to_string(feature->original_id));
+      
+      g_string_printf(line, "%d %s\t%d\t%d\t%d\t%d %s\n", 
+		      score, qframe, qstart, qend, sstart, send, sname);
+      g_free(sname);
+      g_free(qframe);
+	  
+      status = printLine(blixem_data, line->str);
+
+    }       /* for .. exons .. */
+  
+  g_string_free(line, TRUE);
+
+  if (noDups)
+    g_array_free(noDups, TRUE);
+  
+  return status;
+}
+
+
 
 static void freeBlixemData(blixemData blixem_data)
 {
@@ -738,11 +819,49 @@ static void freeBlixemData(blixemData blixem_data)
   g_free(blixem_data->fastAFile);
   g_free(blixem_data->exblxFile);
   g_free(blixem_data->opts);
-  g_free(blixem_data->errorMsg);
   g_free(blixem_data->Netid);
   g_free(blixem_data->Script);
 
   return;
 }
+
+
+static void adjustCoords(blixemData blixem_data, 
+			 int *sstart, int *send, 
+			 int *qstart, int *qend)
+{
+  ZMapFeature feature;
+  int len = blixem_data->max - blixem_data->min;;
+
+
+  feature = g_object_get_data(G_OBJECT(blixem_data->item), "feature");
+  
+  if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)  /* protein */
+    {
+      if (*qstart < 1)
+	{
+	  *sstart += (3 - *qstart) / 3 ;
+	  *qstart += 3 * ((3 - *qstart) / 3) ;
+	}
+      if (*qend > len + 1)
+	{
+	  *send -= (*qend + 2 - len) / 3 ;
+	  *qend -= 3 * ((*qend + 2 - len) / 3) ;
+	}
+    }
+  else				/* DNA */
+    { if (*qstart < 1)
+	{ *sstart += 1 - *qstart ;
+	  *qstart  = 1 ;
+	}
+      if (*qend > len + 1)
+	{ *send -= len + 1 - *qend ;
+	  *qend  = len + 1 ;
+	}
+    }
+
+  return;
+}
+
 
 /*************************** end of file *********************************/
