@@ -43,7 +43,6 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapDocs/ZMapMainPage.c \
 	$(top_srcdir)/zmapDraw/zmapDraw.c \
 	$(top_srcdir)/zmapFeature/zmapFeature.c \
-	$(top_srcdir)/zmapFeature/zmapFeatureEditor.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureTypes.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureUtils.c \
 	$(top_srcdir)/zmapFeature/zmapFeature_P.h \
@@ -70,10 +69,11 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/GFF_scaffold.c \
 	$(top_srcdir)/zmapWindow/zmapWindow.c \
 	$(top_srcdir)/zmapWindow/zmapWindowAlignment.c \
+	$(top_srcdir)/zmapWindow/zmapWindowCallBlixem.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures.c \
+	$(top_srcdir)/zmapFeature/zmapWindowEditor.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFrame.c \
 	$(top_srcdir)/zmapWindow/zmapWindowList.c \
-	$(top_srcdir)/zmapWindow/zmapWindowCallBlixem.c \
 	$(top_srcdir)/zmapWindow/zmapWindowMenus.c \
 	$(top_srcdir)/zmapWindow/zmapWindowUtils.c \
 	$(top_srcdir)/zmapWindow/zmapWindow_P.h 
