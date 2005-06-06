@@ -71,7 +71,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowAlignment.c \
 	$(top_srcdir)/zmapWindow/zmapWindowCallBlixem.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures.c \
-	$(top_srcdir)/zmapFeature/zmapWindowEditor.c \
+	$(top_srcdir)/zmapWindow/zmapWindowEditor.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFrame.c \
 	$(top_srcdir)/zmapWindow/zmapWindowList.c \
 	$(top_srcdir)/zmapWindow/zmapWindowMenus.c \
