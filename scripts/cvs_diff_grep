@@ -1,0 +1,107 @@
+#!/usr/local/bin/perl -w
+
+use strict;
+use warnings;
+use Getopt::Long;
+use Data::Dumper;
+
+my $REGEXP = '';
+my $usage = sub {
+    exit(exec('perldoc', $0));
+};
+
+GetOptions(
+           'reg=s' => \$REGEXP,
+) or $usage->();
+$usage->() unless $REGEXP;
+
+{
+    local $/ = "\n===================================================================\n";
+    my $matched = [];
+    while(<>){
+        process_file($_, $matched);
+    }
+    print $/;
+    print_matches($matched);
+}
+
+sub process_file{
+    my ($contents, $matched) = @_;
+    # no point if file doesn't contain it at all
+    return unless $contents =~ /$REGEXP/; 
+    my $block = {
+        'addedlines' => 0,
+        'addeddiff'  => 0
+    };
+    foreach my $bit(split(/(\@\@\s[0-9\-\,\s+]+\s\@\@)/, $contents)){        
+        if($bit =~ /^\@.+\@$/){
+            $block->{'lines'}      = $bit;
+            $block->{'addedlines'} = 1;
+        }elsif($bit =~ /^RCS.+/){
+            $block->{'file_info'} = $bit;
+        }else{
+            $block->{'diff'}      = $bit;
+            $block->{'addeddiff'} = 1;
+            $block = process_block($block, $matched);
+        }
+    }
+    
+}
+
+sub process_block{
+    my ($block, $matches) = @_; # block is like an object.
+    # check block is good and parsing didn't assume too much
+    if($block->{'addedlines'} == 1 &&  $block->{'addeddiff'} == 1){
+        # check this block contains regex
+        if($block->{'diff'} =~ /$REGEXP/){
+            push(@$matches, $block);
+        }
+    }
+    my $finf = $block->{'file_info'};
+    $block = {};
+    $block->{'file_info'} = $finf;
+    return $block;
+}
+
+sub print_matches{
+    my ($matches) = @_;
+    foreach my $blck(@$matches){
+        $blck->{diff} =~ s/Index:.+//;
+        print $blck->{'file_info'} .
+            $blck->{'lines'} . 
+            $blck->{'diff'};
+    }
+}
+
+
+1;
+__END__
+
+=pod
+
+=head1 cvs_diff_grep
+
+ Not a very well named script
+
+=head1 DESCRIPTION
+
+ Does something with cvs unified  diffs.  To be more specific. It will
+search your  diff for the supplied  regexp (perl style)  and print out
+all it knows about it.
+
+=head1 USAGE
+
+ Get a unified diff from cvs..
+
+ $ cvs diff -u -D'2 days ago' > my2dayold.diff
+
+ then run this script
+
+ $ cvs_diff_grep -reg 'g_free' my2dayold.diff > interesting_bit.diff
+
+It should preserve enough info for  the diff to still be used to patch
+if that's what you want.  
+
+
+=cut
+
