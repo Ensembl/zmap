@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun  3 12:12 2005 (rnc)
+ * Last edited: Jun  6 10:55 2005 (rnc)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.4 2005-06-06 08:44:18 rnc Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.5 2005-06-06 10:59:01 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -147,7 +147,6 @@ static gboolean getUserPrefs(blixemData blixem_data)
     {
       /* get blixem user prefs from config file. */
       stanza = zMapConfigMakeStanza(stanza_name, elements) ;
-      g_free(stanza_name);
 
       if (zMapConfigFindStanzas(config, stanza, &list))
 	{
