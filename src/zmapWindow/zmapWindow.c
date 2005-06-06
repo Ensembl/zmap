@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  4 14:11 2005 (rds)
+ * Last edited: Jun  6 14:42 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.80 2005-06-04 13:10:57 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.81 2005-06-06 13:52:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1362,12 +1362,25 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
   gboolean event_handled ;
   ZMapWindow window = (ZMapWindow)data ;
   static double origin_x, origin_y; /* The world coords of the source of the button 1 event */
-  double wx, wy;                /* These hold the current world coords of the event */
-  static gboolean allowdragging = FALSE, dragging = FALSE, guide = FALSE;
-  /* MUST be false if the other per-item event handlers are to run.  */
-  event_handled = FALSE ;
-  gboolean debug_case = FALSE;
-  /* We need to check that canvas is mapped here */
+  static gboolean dragging = FALSE, guide = FALSE;
+
+  double wx, wy; /* These hold the current world coords of the event */
+
+  event_handled = FALSE ; /* FALSE means other handlers run. */
+
+  /* PLEASE be very careful when altering this function, as I've
+   * already messed stuff up when working on it! The event_handled
+   * boolean _SHOULD_ be set to true any time we handle the event.
+   * While this sounds obvious I fell over it when implementing the
+   * motion as well as button down and release. If there is a track 
+   * of events, such as button/key down .. motion .. button release
+   * then the event_handled should be true for the whole of the life
+   * of the track of events.  All of the statics above could/probably
+   * should be replaced with a stuct... please think about this if 
+   * adding any more!
+   */
+
+  /* We need to check that canvas is mapped here (slow connections) */
 
   switch (event->type)
     {
@@ -1399,20 +1412,25 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
               foo_canvas_window_to_world(window->canvas, 
                                          but_event->x, but_event->y, 
                                          &origin_x, &origin_y);
+              event_handled = FALSE; /* false so item events
+                                      * happen. Unless we _ARE_
+                                      * handling here! 
+                                      */
               if(but_event->state & GDK_SHIFT_MASK)
                 {
+                  guide = TRUE;
                   if(!window->horizon_guide_line)
                     window->horizon_guide_line = zMapHorizonCreate(window->canvas);
                   zMapHorizonReposition(window->horizon_guide_line, origin_y);
-                  guide = TRUE;
+                  event_handled = TRUE ; /* We _ARE_ handling */
                 }
               else if(but_event->state & GDK_CONTROL_MASK)
                 {
-                  allowdragging = TRUE;  /* we can be dragging */
+                  dragging = TRUE;  /* we can be dragging */
                   if(!window->rubberband)
                     window->rubberband = zMapRubberbandCreate(window->canvas);
+                  event_handled = TRUE ; /* We _ARE_ handling */
                 }
-	      event_handled = FALSE ;
 	      break ;
 	    }
 	  case 2:
@@ -1473,32 +1491,37 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
                                    mot_event->x, mot_event->y,
                                    &wx, &wy
                                    );
-        if(allowdragging && (mot_event->state & GDK_BUTTON1_MASK))
+        event_handled = FALSE ;
+        if(dragging && (mot_event->state & GDK_BUTTON1_MASK))
           {
-            dragging = TRUE;
             /* I wanted to change the cursor for this, 
              * but foo_canvas_item_grab/ungrab specifically the ungrab didn't work */
             zMapRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
+            event_handled = TRUE; /* We _ARE_ handling */
           }
         else if(guide && mot_event->state & GDK_BUTTON1_MASK)
-          zMapHorizonReposition(window->horizon_guide_line, wy);
-
-	event_handled = TRUE ;
+          {
+            zMapHorizonReposition(window->horizon_guide_line, wy);
+            event_handled = TRUE ; /* We _ARE_ handling */
+          }
         break;
       }
     case GDK_BUTTON_RELEASE:
       {
+        event_handled = FALSE;
         if(dragging)
           {
             foo_canvas_item_hide(window->rubberband);
             zoomToRubberBandArea(window);
+            event_handled = TRUE; /* We _ARE_ handling */
           }
         else if(guide)
           {
             foo_canvas_item_hide(window->horizon_guide_line);
+            event_handled = TRUE; /* We _ARE_ handling */
           }
-        allowdragging = dragging = guide = FALSE;
-        event_handled = TRUE;
+        dragging = guide = FALSE;
+        
         break;
       }
     default:
