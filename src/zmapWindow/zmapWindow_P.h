@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun  1 15:17 2005 (rds)
+ * Last edited: Jun  6 14:02 2005 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.55 2005-06-03 11:17:02 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.56 2005-06-08 13:16:17 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -352,6 +352,7 @@ void my_foo_canvas_item_w2i (FooCanvasItem *item, double *x, double *y) ;
 void my_foo_canvas_item_i2w (FooCanvasItem *item, double *x, double *y) ;
 
 void zmapWindowCallExternal(ZMapWindow window, FooCanvasItem *item, gboolean oneType);
+void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item); 
 
 
 
