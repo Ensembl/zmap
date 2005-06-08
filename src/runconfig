@@ -19,9 +19,12 @@ case $opsys in
     PATH="$locals:/usr/local/gtk2/bin:$PATH"
     export PATH
 
-    popt=~acedb/ZMap/prefix/ALPHA/include
-
-    config_args="CC=cc CFLAGS=-I$popt"
+    # NOTE that currently the LDFLAGS stuff does not get through the configure step
+    # and so does not work....not sure why....
+    popt=~acedb/ZMap/prefix/ALPHA
+    cc_args='CC=cc'
+    cflags_args="CFLAGS=-I$popt/include -msg_enable level4"
+    ld_args="LDFLAGS=-rpath /usr/local/gtk2/lib:$popt/lib"
 
     locals=~acedb/ZMap/prefix/ALPHA/lib/pkgconfig
     PKG_CONFIG_PATH="$locals:/usr/local/gtk2/lib/pkgconfig"
@@ -31,11 +34,15 @@ case $opsys in
     locals=~acedb/ZMap/prefix/LINUX
     PATH="$locals/bin:$PATH"
     export PATH
+
     PKG_CONFIG_PATH="$locals/lib/pkgconfig"
     export PKG_CONFIG_PATH
     LD_LIBRARY_PATH=/usr/local/oracle/lib
     export LD_LIBRARY_PATH
-    config_args='CXXFLAGS=-g CFLAGS=-g' ;;
+
+    cc_args='CXXFLAGS=-g CFLAGS=-g'
+    cflags_args=''
+    ld_args='' ;;
 
   * )
     msgAndExit "unsupported operating system: $opsys" ;;
@@ -43,9 +50,9 @@ case $opsys in
 esac
 
 
-# run the configure.......
-./configure $config_args
-
+# run the configure.......watch out for the quoting, sometimes we want the variable to
+# be interpreted as a single cmdline arg, sometimes as multiple ones.
+./configure $cc_args "$cflags_args" "$ld_args"
 
 
 exit 0
