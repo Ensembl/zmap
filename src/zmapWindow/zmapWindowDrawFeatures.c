@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun  6 11:32 2005 (rnc)
+ * Last edited: Jun  6 14:11 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.66 2005-06-06 11:03:20 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.67 2005-06-08 13:17:49 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,8 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
 			 FooCanvasItem *item) ;
 static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
 static void blixemAllTypesMenuCB(int menu_item_id, gpointer callbackk_data);
-  static void blixemOneTypeMenuCB(int menu_item_id, gpointer callbackk_data);
+static void blixemOneTypeMenuCB(int menu_item_id, gpointer callbackk_data);
+static void editorMenuCB(int menu_item_id, gpointer callback_data);
 
 
 
@@ -994,8 +995,9 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   ZMapWindowMenuItemStruct menu[] =
     {
       {"Show Feature List", 1, itemMenuCB},
-      {NULL               , 2, blixemAllTypesMenuCB},
-      {NULL               , 3, blixemOneTypeMenuCB},
+      {"Edit Details"     , 2, editorMenuCB},
+      {NULL               , 3, blixemAllTypesMenuCB},
+      {NULL               , 4, blixemOneTypeMenuCB},
       {NULL               , 0, NULL}
     } ;
   ZMapWindowMenuItem menu_item ;
@@ -1009,13 +1011,13 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
     {
       if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
 	{
-	  menu[1].name = "Show multiple protein alignment in Blixem";
-	  menu[2].name = "Show multiple protein alignment for just this type of homology";
+	  menu[2].name = "Show multiple protein alignment in Blixem";
+	  menu[3].name = "Show multiple protein alignment for just this type of homology";
 	}
       else
 	{
-	  menu[1].name = "Show multiple dna alignment";      
-	  menu[2].name = "Show multiple dna alignment for just this type of homology";      
+	  menu[2].name = "Show multiple dna alignment";      
+	  menu[3].name = "Show multiple dna alignment for just this type of homology";      
 	}
     }
 
@@ -1037,6 +1039,20 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
 
 
 
+static void editorMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  
+  zmapWindowEditor(menu_data->window, menu_data->item) ;
+  
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
+
+/* call blixem for all types of homology */
 static void blixemAllTypesMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
@@ -1050,6 +1066,7 @@ static void blixemAllTypesMenuCB(int menu_item_id, gpointer callback_data)
 
 
 
+/* call blixem for a single type of homology */
 static void blixemOneTypeMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
@@ -1082,20 +1099,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       }
     case 2:
       {
-	/* call blixem */
-	if (feature->type == ZMAPFEATURE_HOMOL)
-	  zmapWindowCallBlixem(menu_data->window, menu_data->item, FALSE) ;
-	else
-	  printf("Dummy!\n");
-	break ;
-      }
-    case 3:
-      {
-	/* call blixem for just this method */
-	if (feature->type == ZMAPFEATURE_HOMOL)
-	  zmapWindowCallBlixem(menu_data->window, menu_data->item, TRUE) ;
-	else
-	  printf("Dummy!\n");
+	printf("Dummy!\n");
 	break ;
       }
     default:
