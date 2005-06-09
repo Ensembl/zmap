@@ -24,6 +24,18 @@ if [ $1 ]; then
 else
     PREFIX=`pwd`/PREFIX
 fi
+
+opsys=`uname`
+
+case $opsys in
+
+  OSF1 )
+        locals=/nfs/disk100/acedb/ZMap/prefix/ALPHA/lib/pkgconfig
+    PKG_CONFIG_PATH="/usr/local/gtk2/lib/pkgconfig"
+    export PKG_CONFIG_PATH ;;
+esac
+
+
 ADD_PERL5LIB=$PREFIX/lib/perl5/site_perl/$PERL_VERSION/$PERL_ARCH:\
 $PREFIX/lib/site_perl/$PERL_VERSION/$PERL_ARCH
 
