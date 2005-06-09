@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: May  9 15:23 2005 (rds)
+ * Last edited: Jun  9 13:52 2005 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.3 2005-05-12 15:21:10 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.4 2005-06-09 19:58:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,6 +63,9 @@
 #define ZMAP_XREMOTE_CURRENT_VERSION      "0.1"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
+
+#define ZMAP_CLIENT_REQUEST_ATOM_NAME  "_CLIENT_REQUEST_NAME"
+#define ZMAP_CLIENT_RESPONSE_ATOM_NAME "_CLIENT_RESPONSE_NAME"
 
 /* Not sure these need to be public */
 #define ZMAP_DEFAULT_REQUEST_ATOM_NAME  "_ZMAP_XREMOTE_COMMAND"
