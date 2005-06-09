@@ -309,7 +309,13 @@ to split the reply string.
 
 A string which looks remarkablly similar to the version number.
 
+=item client_request_name()
 
+A string which corresponds to the name of the default request atom the client should use.
+
+=item client_response_name()
+
+A string which corresponds to the name of the default response atom the client should use.
 
 =back
 
