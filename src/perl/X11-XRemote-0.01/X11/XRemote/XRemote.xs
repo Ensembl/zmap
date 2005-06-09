@@ -1,12 +1,17 @@
-/*  Last edited: Apr 13 17:25 2005 (rds) */
+/*  Last edited: Jun  9 14:09 2005 (rds) */
 /* Hej, Emacs, this is -*- C -*- mode!   */
 
+/* This is  before the perl code  includes as, as Ed and  I have found
+   pthreads.h  and gtk.h have  some weird  interaction.  I  found this
+   when   compiling    on   alpha   for    perl5.8.0   (alpha-dec_osf-
+   thread-multi-ld).  The  symptom was a complaint about  (* leave) in
+   gtkbutton.h . This simple move has */
+
+#include <ZMap/zmapXRemote.h>   /* all the ZMap stuff we need */
 
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
-
-#include <ZMap/zmapXRemote.h>   /* all the ZMap stuff we need */
 
 typedef zMapXRemoteObj X11__XRemote__Handle;
 
@@ -30,6 +35,20 @@ char *
 version(...)
       CODE:
       RETVAL = ZMAP_XREMOTE_CURRENT_VERSION;
+      OUTPUT:
+      RETVAL
+
+char *
+client_request_name(...)
+      CODE:
+      RETVAL = ZMAP_CLIENT_REQUEST_ATOM_NAME;
+      OUTPUT:
+      RETVAL
+
+char *
+client_response_name(...)
+      CODE:
+      RETVAL = ZMAP_CLIENT_RESPONSE_ATOM_NAME;
       OUTPUT:
       RETVAL
 
