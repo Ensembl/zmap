@@ -13,4 +13,5 @@ $GTK_CFLAGS \
 -std -fprm d -ieee \
 test.c -o test \
 $GTK_LIBS \
+-L/nfs/team71/analysis/rds/workspace/ZMap/src/lib \
 -L/usr/local/lib -L/usr/X11R6/lib -lX11 zmapXRemote.o 
