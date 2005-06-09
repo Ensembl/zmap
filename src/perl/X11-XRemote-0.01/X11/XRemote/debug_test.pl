@@ -1,6 +1,7 @@
 #!/usr/local/bin/perl -w
 
 use strict;
+use warnings;
 use X11::XRemote;
 
 use Getopt::Long;
