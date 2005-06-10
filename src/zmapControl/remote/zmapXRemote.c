@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: May  9 16:14 2005 (rds)
+ * Last edited: Jun 10 11:07 2005 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.3 2005-05-12 16:03:40 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.4 2005-06-10 10:10:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -204,10 +204,10 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
              zmapXRemoteGetAtomName(object, object->request_atom),
              command, (unsigned int) object->window_id);
 
-  result = zmapXRemoteChangeProperty(object, object->request_atom, command);
-  
   XSelectInput(object->display, object->window_id, event_mask);
 
+  result = zmapXRemoteChangeProperty(object, object->request_atom, command);
+  
   zmapXDebug("sent '%s'...\n", command);
 
   while (!isDone && !windowError)
@@ -534,10 +534,11 @@ static int zmapXRemoteCheckWindow (zMapXRemoteObj object)
 static int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *expected)
 {
   Atom type;
-  int format, x_status;
+  int format, x_status, unmatched;
   unsigned long nitems, bytesafter;
   unsigned char *versionStr = 0;
   Window win;
+  unmatched = 0; 			/* success */
 
   win = object->window_id;
 
@@ -580,11 +581,12 @@ static int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *exp
 	       "version %s.\n",
 	       (unsigned int) win,
 	       versionStr, expected);
+      unmatched = 8;
     }
 
   XFree (versionStr);
 
-  return 0;			/* success */
+  return unmatched;
 }
 
 static char *zmapXRemoteGetComputedContent(zMapXRemoteObj object, Atom atom, Bool atomic_delete)
