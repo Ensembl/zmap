@@ -102,6 +102,9 @@ sub send_commands{
     my ($self, @commands) = @_;
     return ("503:<xml><message>servers may not send_commands. command not sent</message></xml>") x @commands 
         if $self->_is_server();
+    warn __PACKAGE__ . ": Avoided race condition." if  blocked();
+    return ("500:<xml>you cannot send while receiving until you have replied. See perldoc ".__PACKAGE__."</xml>") x @commands
+        if blocked();
     $self->{'_response_list'} = [];
     $self->{'_request_list'} = [];
     foreach my $cmd(@commands){
@@ -135,12 +138,29 @@ sub request_string{
     }
     return $req;
 }
-sub send_reply{
-    my ($self, $reply) = @_;
-    return unless $self->_is_server();
-    $self->_handle->reply($reply);
-}
 
+{
+    # BLOCK should only be available here!!!
+    # Nothing should be allowed to reset it except send_reply()
+    my $BLOCK = 0;
+
+    sub block{
+        $BLOCK = 1;
+    }
+    sub blocked{
+        return ($BLOCK ? 1 : undef);
+    }
+
+    sub send_reply{
+        my ($self, $reply) = @_;
+        return unless $self->_is_server();
+        local *unblock = sub { 
+            $BLOCK = 0; # man perlref says this should work
+        };
+        $self->_handle->reply($reply);
+        unblock();
+    }
+}
 #==========================================================#
 #                   INTERNALS                              #
 #==========================================================#
