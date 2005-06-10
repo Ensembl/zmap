@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Jun  9 13:52 2005 (rds)
+ * Last edited: Jun 10 10:48 2005 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.4 2005-06-09 19:58:59 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.5 2005-06-10 09:49:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,7 +60,7 @@
 ((status) < 300 ? ZMAP_XREMOTE_SUCCESS_XML_FORMAT : ZMAP_XREMOTE_ERROR_XML_FORMAT )
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "0.1"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.5 $"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
 
