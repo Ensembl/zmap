@@ -27,32 +27,33 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: May 27 11:25 2005 (rds)
+ * Last edited: Jun  9 19:08 2005 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.3 2005-06-01 13:12:22 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.4 2005-06-13 20:29:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <zmapApp_P.h>
 #include <ZMap/zmapXRemote.h>
+#include <ZMap/zmapCmdLineArgs.h>
 
 
 static char *appexecuteCommand(char *command_text, gpointer app_context, int *statusCode);
-static char *createZMap(ZMapAppContext app, char *command_text);
+static gboolean createZMap(ZMapAppContext app, char *command_text);
 static void destroyNotifyData(gpointer destroy_data);
 
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_context_data;
   zMapXRemoteObj xremote;
+  ZMapCmdLineArgsType value ;
+  Window id;
+  id = (Window)GDK_DRAWABLE_XID(widget->window);
   
   if((xremote = zMapXRemoteNew()) != NULL)
     {
-      Window id;
       zMapXRemoteNotifyData notifyData;
-      
-      id = (Window)GDK_DRAWABLE_XID(widget->window);
 
       notifyData           = g_new0(zMapXRemoteNotifyDataStruct, 1);
       notifyData->xremote  = xremote;
@@ -72,31 +73,128 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 
       app_context->propertyNotifyData = notifyData; /* So we can free it */
     }
+
+  if (zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, &value))
+    {
+      unsigned long l_id = 0;
+      char *win_id       = NULL;
+      win_id = value.s ;
+      l_id   = strtoul(win_id, (char **)NULL, 16);
+      if(l_id)
+        {
+          zMapXRemoteObj client = NULL;
+          if((client = zMapXRemoteNew()) != NULL)
+            {
+              char *req = NULL;
+              req = g_strdup_printf("register_client id = 0x%lx ; request = %s ; response = %s;",
+                                    id,
+                                    ZMAP_DEFAULT_REQUEST_ATOM_NAME,
+                                    ZMAP_DEFAULT_RESPONSE_ATOM_NAME
+                                    );
+              zMapXRemoteInitClient(client, l_id);
+              zMapXRemoteSetRequestAtomName(client, ZMAP_CLIENT_REQUEST_ATOM_NAME);
+              zMapXRemoteSetResponseAtomName(client, ZMAP_CLIENT_RESPONSE_ATOM_NAME);
+              zMapXRemoteSendRemoteCommand(client, req);
+              if(req)
+                g_free(req);
+            }
+        }
+
+    }
+
   
   return;
 }
-
+/* This should just be a filter command passing to the correct
+   function defined by the primary word of the request */
 static char *appexecuteCommand(char *command_text, gpointer app_context, int *statusCode){
+  ZMapAppContext app  = (ZMapAppContext)app_context;
   char *xml_reply     = NULL;
+  int code            = ZMAPXREMOTE_INTERNAL; /* unknown command if this isn't changed */
 
+  g_clear_error(&(app->info));
+
+  /* check command for primary word */
   if(g_str_has_prefix(command_text, "newZmap"))
     {
-      *statusCode = ZMAPXREMOTE_OK;
-      xml_reply   = createZMap((ZMapAppContext) app_context, command_text);
+      if(createZMap(app, command_text))
+        code = ZMAPXREMOTE_OK;
+      else
+        code = ZMAPXREMOTE_BADREQUEST;
     }
-  else
+  else if(g_str_has_prefix(command_text, "closeZmap"))
     {
-      *statusCode = ZMAPXREMOTE_UNKNOWNCMD;
-      xml_reply   = "<message>unknown command</message>";
+      code = ZMAPXREMOTE_FORBIDDEN;
+      //      closeZMap(app, command_text);
     }
+
+  /* Now check what the status is */
+  switch (code)
+    {
+    case ZMAPXREMOTE_INTERNAL:
+      {
+        code = ZMAPXREMOTE_UNKNOWNCMD;    
+        app->info = 
+          g_error_new(g_quark_from_string(__FILE__),
+                      code,
+                      "<request>%s</request><message>%s</message>",
+                      command_text,
+                      "unknown command"
+                      );
+        break;
+      }
+    case ZMAPXREMOTE_BADREQUEST:
+      {
+        app->info = 
+          g_error_new(g_quark_from_string(__FILE__),
+                      code,
+                      "<request>%s</request><message>%s</message>",
+                      command_text,
+                      "bad request"
+                      );
+        break;
+      }
+    case ZMAPXREMOTE_FORBIDDEN:
+      {
+        app->info = 
+          g_error_new(g_quark_from_string(__FILE__),
+                      code,
+                      "<request>%s</request><message>%s</message>",
+                      command_text,
+                      "forbidden request"
+                      );
+        break;
+      }
+    default:
+      {
+        /* If the info isn't set then someone forgot to set it */
+        if(!app->info)
+          {
+            code = ZMAPXREMOTE_INTERNAL;
+            app->info || (app->info = 
+              g_error_new(g_quark_from_string(__FILE__),
+                          code,
+                          "<request>%s</request><message>%s</message>",
+                          command_text,
+                          "CODE error on the part of the zmap programmers."
+                          ));
+          }
+        break;
+      }
+    }
+  
+
+  /* We should have a info object by now, pass it on. */
+  xml_reply   = g_strdup(app->info->message);
+  *statusCode = code;
+
   return xml_reply;
 }
 
 
-static char *createZMap(ZMapAppContext app, char *command_text)
+static gboolean createZMap(ZMapAppContext app, char *command_text)
 {
-  char *result = NULL ;
-  gboolean parse_error ;
+  gboolean parse_error, executed ;
   char *next ;
   char *keyword, *value ;
   gchar *type = NULL ;
@@ -105,7 +203,7 @@ static char *createZMap(ZMapAppContext app, char *command_text)
 
   next = strtok(command_text, " ") ;			    /* Skip newZmap. */
 
-  parse_error = FALSE ;
+  executed = parse_error = FALSE ;
   while (!parse_error && (next = strtok(NULL, " ")))
     {
       keyword = g_strdup(next) ;			    /* Get keyword. */
@@ -133,27 +231,23 @@ static char *createZMap(ZMapAppContext app, char *command_text)
       else
 	{
 	  parse_error = TRUE ;
-	  result = "<message>failed to parse command.</message>";
 	}
 
       g_free(keyword) ;
       g_free(value) ;
     }
 
-  if (!result)
+  if (!parse_error)
     {
       zmapAppCreateZMap(app, sequence, start, end) ;
-      /* get the result of the zmapAppCreate by looking in the
-         app->info struct using this result we can set the result
-         here. Interpretation of the info is done here! */
-      result = g_strdup(app->info->message);
+      executed = TRUE;
     }
 
   /* Clean up. */
   if (sequence)
     g_free(sequence) ;
 
-  return result ;
+  return executed;
 }
 
 
