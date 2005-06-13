@@ -30,9 +30,9 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: Feb 10 15:38 2005 (edgrif)
+ * Last edited: Jun  8 17:08 2005 (rds)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.1 2005-02-10 16:31:50 edgrif Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.2 2005-06-13 20:20:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -186,7 +186,7 @@ static void makeContext(int argc, char *argv[])
   arg_context->start = -1 ;
   arg_context->end = -1 ;
   arg_context->config_file_path = arg_context->config_dir = NULL ;
-
+  arg_context->window = NULL;
   makePoptContext(arg_context) ;
 
   return ;
@@ -215,6 +215,8 @@ static void makePoptContext(ZMapCmdLineArgs arg_context)
        "Relative or full path to configuration file.", "file_path"},
       {ZMAPARG_CONFIG_DIR, '\0', POPT_ARG_STRING, NULL, ARG_CONF_DIR,
        "Relative or full path to configuration directory.", "directory"},
+      {ZMAPARG_WINDOW_ID, '\0', POPT_ARG_STRING, NULL, ARG_WINID,
+       "sdfghsjdfhghsjdfghsjdfhg win id, very drunk.", "0x0000000"},
       POPT_TABLEEND
     } ;
   static struct poptOption options_table[] =
@@ -240,6 +242,7 @@ static void makePoptContext(ZMapCmdLineArgs arg_context)
   setPoptArgPtr(ZMAPARG_SEQUENCE_END, &arg_context->end) ;
   setPoptArgPtr(ZMAPARG_CONFIG_FILE, &arg_context->config_file_path) ;
   setPoptArgPtr(ZMAPARG_CONFIG_DIR, &arg_context->config_dir) ;
+  setPoptArgPtr(ZMAPARG_WINDOW_ID, &arg_context->window) ;
 
 
   /* Create the context. */
@@ -262,6 +265,9 @@ static void makePoptContext(ZMapCmdLineArgs arg_context)
 	  break ;
 	case ARG_CONF_DIR:
 	  setPoptValPtr(ZMAPARG_CONFIG_DIR, ARG_SET) ;
+	  break ;
+	case ARG_WINID:
+	  setPoptValPtr(ZMAPARG_WINDOW_ID, ARG_SET) ;
 	  break ;
 	default:
 	  zMapAssert("coding error, bad popt value") ;
