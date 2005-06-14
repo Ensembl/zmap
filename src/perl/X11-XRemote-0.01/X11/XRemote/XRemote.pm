@@ -24,7 +24,7 @@ our @EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT      = qw( );
 our $VERSION     = '0.01';
 our $DEBUG_VALUE = 0;
-
+my $PING_COMMAND = 'ping';
 
 bootstrap X11::XRemote $VERSION;
 
@@ -90,7 +90,7 @@ sub response_name{
 sub is_error{
     my ($self, $response) = @_;
     return 0 unless $response;
-    my $del = $self->_handle->delimiter();
+    my $del = $self->delimiter();
     my ($status, $xml) = split(/$del/, $response, 2);
     return ($status =~ /^20\d$/ ? 0 : 1);
 }
@@ -118,7 +118,14 @@ sub send_commands{
     }
     return @{$self->{'_response_list'}};
 }
-
+sub ping{
+    my ($self) = @_;
+    my $resp = ($self->send_commands($PING_COMMAND))[0];
+    if($self->is_error($resp)){
+        return 0 if $resp =~ /bad\s?window/i;
+    }
+    return 1;
+}
 #==========================================================#
 # SERVER ONLY MODE SUBS: available for server modes only   #
 #==========================================================#
