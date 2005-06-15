@@ -1,4 +1,4 @@
-/*  Last edited: Feb 14 15:22 2005 (rds) */
+/*  Last edited: Jun 15 08:20 2005 (edgrif) */
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: 8; c-basic-offset: 8 -*- */
 /*
  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
@@ -531,7 +531,7 @@ gulong foo_canvas_get_color_pixel (FooCanvas *canvas,
  */
 void foo_canvas_set_stipple_origin (FooCanvas *canvas, GdkGC *gc);
 
-void foo_canvas_zmap();
+void foo_canvas_zmap(void);
 
 G_END_DECLS
 
