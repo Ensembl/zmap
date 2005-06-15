@@ -1,19 +1,22 @@
 #!/bin/sh
+# uncomment set -x for debug
 #set -x
 #==========================================
 # Find where we are
 HERE=`pwd`
  SRC=`dirname $HERE`
 #==========================================
-# This works for alpha builds at the moment
-#
+# This works from the /ZMap/src/perl directory
 ZMAP_INC="$SRC/include"
-ZMAP_LIB="$SRC/build/alpha/lib"
+ZMAP_LIB="$SRC/build/linux/lib"
 #==========================================
 # chose a perl version
     PERL_EXE=/usr/local/bin/perl
+# That should be it
+#==========================================
    PERL_ARCH=`$PERL_EXE -MConfig -e 'print $Config{archname}'`
 PERL_VERSION=`$PERL_EXE -MConfig -e 'print $Config{version}'`
+PERL_INSTALL=`$PERL_EXE -MConfig -e 'print $Config{installstyle}'`
 #==========================================
 #==========================================
 
@@ -32,12 +35,12 @@ case $opsys in
   OSF1 )
         locals=/nfs/disk100/acedb/ZMap/prefix/ALPHA/lib/pkgconfig
     PKG_CONFIG_PATH="/usr/local/gtk2/lib/pkgconfig"
+    ZMAP_LIB="$SRC/build/alpha/lib"
     export PKG_CONFIG_PATH ;;
 esac
 
 
-ADD_PERL5LIB=$PREFIX/lib/perl5/site_perl/$PERL_VERSION/$PERL_ARCH:\
-$PREFIX/lib/site_perl/$PERL_VERSION/$PERL_ARCH
+ADD_PERL5LIB=$PREFIX/$PERL_INSTALL/site_perl/$PERL_VERSION/$PERL_ARCH
 
 $PERL_EXE Makefile.PL PREFIX=$PREFIX \
 --with-zmap-inc "-I$ZMAP_INC" \
@@ -53,7 +56,7 @@ export PERL5LIB
 echo 
 echo "Testing installation..."
 echo "=================================="
-./debug_test.pl
+$PERL_EXE ./debug_test.pl
 echo "=================================="
 echo
 echo "Make sure $ADD_PERL5LIB is in your PERL5LIB"
