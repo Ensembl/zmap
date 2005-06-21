@@ -27,13 +27,15 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun  6 13:48 2005 (rnc)
+ * Last edited: Jun 21 09:12 2005 (rnc)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.6 2005-06-06 12:49:54 rnc Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.7 2005-06-21 08:17:33 rnc Exp $
  *-------------------------------------------------------------------
  */
 
 #include <unistd.h>           /* for getlogin() */
+#include <string.h>           /* for memcpy */
+#include <sys/wait.h>         /* for WIFEXITED */
 #include <glib.h>
 #include <zmapWindow_P.h>
 #include <ZMap/zmapUtils.h>
@@ -44,7 +46,7 @@
 
 typedef struct BlixemDataStruct 
 {
-  int            min, max;
+  int            min, max, offset;
   char          *tmpDir;
   char          *fastAFile;
   char          *exblxFile;
@@ -71,7 +73,6 @@ static void     processAlignments(GQuark key_id, gpointer data, gpointer user_da
 static void     processBlocks    (gpointer data, gpointer user_data);
 static void     processFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
 static void     writeExblxLine   (GQuark key_id, gpointer data, gpointer user_data);
-static char    *getDesc          (blixemData blixem_data);
 static gboolean printLine        (blixemData blixem_data, char *line);
 static gboolean writeFastAFile   (blixemData blixem_data);
 static gboolean processExons     (blixemData blixem_data, ZMapFeature feature);
@@ -85,7 +86,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneTy
 {
   gboolean         status;
   char            *commandString;
-  char            *paramString;
+  char            *paramString = NULL;
   blixemDataStruct blixem_data = {0};
   
 
@@ -111,11 +112,12 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneTy
   if (status == TRUE)
     {
       commandString = g_strdup_printf("%s %s &", blixem_data.Script, paramString);
-      printf("%s\n", commandString);
+      /* printf("%s\n", commandString); useful when debugging */
+
       /* Note that since blixem is being called as a background process, 
       ** we can only tell whether or not the system call was successful,
       ** and not whether or not blixem ran successfully. */
-      if (system(commandString) != 0)
+      if (WIFEXITED(system(commandString)) == FALSE)
 	zMapShowMsg(ZMAP_MSG_WARNING, "System call failed: blixem not invoked.") ;
       
       g_free(commandString);
@@ -197,18 +199,13 @@ static char *buildParamString(blixemData blixem_data)
   char       *login;
   char       *tmpfile;
   int         file = 0;
-
-  char       *pfetchParams;
   int         start;
-  int         offset;
   int         scope = 40000;          /* set from user prefs */
 
 
   if (blixem_data->Scope > 0)
     scope = blixem_data->Scope;
 
-  pfetchParams = g_strdup_printf("%s:%d", blixem_data->Netid, 
-				 blixem_data->Port);
   feature = g_object_get_data(G_OBJECT(blixem_data->item), "feature");
   zMapAssert(feature);       /* something badly wrong if no feature. */
 
@@ -216,40 +213,59 @@ static char *buildParamString(blixemData blixem_data)
   blixem_data->max = feature->x2 + scope/2;
   if (blixem_data->min < 0)
     blixem_data->min = 0;
-  if (blixem_data->max > blixem_data->window->feature_context->length)
-    blixem_data->max = blixem_data->window->feature_context->length;
 
+  /* Unresolved: what to do when max is too long. In acedb, max is limited
+   * to the featuremap length.  However, as this is set to at least 3 times
+   * the length of the requested object, max seems unlikely ever to be
+   * trimmed, so we don't here. */
+
+  /* start tells blixem to position itself slightly
+   * to the left of the centre of the overall viewing window.
+   * This is blindly copied from acedb. */
   start   = feature->x1 - blixem_data->min - 30;
-  offset  = blixem_data->min ? blixem_data->min - 1 : 0;
+
+  /* qstart and qend coordinates passed to blixem in the exblx file
+   * are relative to the ends of the viewing window (depending on
+   * strand), so offset tells blixem where that starts relative to
+   * the start of the sequence in question. */
+  blixem_data->offset  = blixem_data->min - blixem_data->window->feature_context->sequence_to_parent.c1;
+  if (blixem_data->offset < 0)
+    blixem_data->offset = 0;
 
   if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)  /* protein */
     {
       if (feature->strand == ZMAPSTRAND_REVERSE)
-	blixem_data->opts = g_strdup("X-BR");
+	blixem_data->opts = "X-BR";
       else
-	blixem_data->opts = g_strdup("X+BR");
+	blixem_data->opts = "X+BR";
     }
   else
-    blixem_data->opts = g_strdup("N+BR");                     /* dna */
+    blixem_data->opts = "N+BR";                     /* dna */
       
-  login = g_strdup(getlogin());
+
+  login = getlogin();
   if (login)
     {
       path = g_strdup_printf("/tmp/%s_ZMAP_BLIXEM/", login);
-      g_free(login);
-    } 
-  else
-    {
-      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not determine your login.");
-      status = FALSE;
-    }
-
-
-  if (status == TRUE)
-    {	  
       /*                         zMapGetDir(path, home-relative, create) */
       if ((blixem_data->tmpDir = zMapGetDir(path, FALSE, TRUE)))
-	tmpfile = g_strdup_printf("%sZMAPXXXXXX", blixem_data->tmpDir);
+	{
+	  /* g_mkstemp replaces the XXXXXX with unique string of chars */
+	  tmpfile = g_strdup_printf("%sZMAPXXXXXX", blixem_data->tmpDir);
+	  if ((file = g_mkstemp(tmpfile)))
+	    {
+	      blixem_data->fastAFile = g_strdup(tmpfile);
+	      close(file);
+	      file = 0;  /* reuse for exblx file */
+	    }
+	  else
+	    {
+	      zMapShowMsg(ZMAP_MSG_WARNING, 
+			  "Error: could not open temporary fastA for Blixem");
+	      status = FALSE;
+	    }
+	  g_free(tmpfile);
+	}
       else
 	{
 	  zMapShowMsg(ZMAP_MSG_WARNING, 
@@ -259,32 +275,19 @@ static char *buildParamString(blixemData blixem_data)
 
       g_free(path);
     }
-
-
-  if (status == TRUE)            /* fastA file */
+  else
     {
-      if ((file = g_mkstemp(tmpfile)))
-	{
-	  /* blixem wants only the unique filename, not the path */
-	  blixem_data->fastAFile = g_strdup(g_strrstr(tmpfile, "/")+1);
-	  close(file);
-	  file = 0;
-	}
-      else
-	{
-	  zMapShowMsg(ZMAP_MSG_WARNING, 
-		      "Error: could not open temporary fastA for Blixem");
-	  status = FALSE;
-	}
-      g_free(tmpfile);
+      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not determine your login.");
+      status = FALSE;
     }
+
 
   if (status == TRUE)             /* exblx file */
     {
       tmpfile = g_strdup_printf("%sZMAPXXXXXX", blixem_data->tmpDir);
       if ((file = g_mkstemp(tmpfile)))
 	{
-	  blixem_data->exblxFile = g_strdup(g_strrstr(tmpfile, "/")+1);
+	  blixem_data->exblxFile = g_strdup(tmpfile);
 	  close(file);
 	}
       else
@@ -299,21 +302,18 @@ static char *buildParamString(blixemData blixem_data)
       
   if (status == TRUE)
    {
-     paramString = g_strdup_printf("-P %s -S %d -O %d -o %s %s%s %s%s",
-				   pfetchParams, 
+     paramString = g_strdup_printf("-P %s:%d -S %d -O %d -o %s %s %s",
+				   blixem_data->Netid, 
+				   blixem_data->Port,
 				   start,
-				   offset,
+				   blixem_data->offset,
 				   blixem_data->opts,
-				   blixem_data->tmpDir,
 				   blixem_data->fastAFile,
-				   blixem_data->tmpDir,
 				   blixem_data->exblxFile);
      
      printf("paramString: %s\n", paramString);
    }
 
-  g_free(pfetchParams);
- 
   return paramString;
 }
 
@@ -327,9 +327,8 @@ static gboolean writeExblxFile(blixemData blixem_data)
   char    *filepath, *line;
   gboolean status = TRUE;
 
-  filepath = g_build_path("/", blixem_data->tmpDir, blixem_data->exblxFile, NULL);
 
-  if ((blixem_data->channel = g_io_channel_new_file(filepath, "w", &channel_error)))
+  if ((blixem_data->channel = g_io_channel_new_file(blixem_data->exblxFile, "w", &channel_error)))
     {
       line = g_strdup_printf("# exblx\n# blast%c\n", *blixem_data->opts);
       if (g_io_channel_write_chars(blixem_data->channel, 
@@ -379,8 +378,6 @@ static gboolean writeExblxFile(blixemData blixem_data)
       status = FALSE;
     }
 
-  g_free(filepath);
-
   return status;
 }
 
@@ -408,6 +405,7 @@ static void processBlocks(gpointer data, gpointer user_data)
 }
 
 
+
 static void processFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data;
@@ -427,7 +425,7 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
   int   min, max, x1, x2, scope = 40000;          /* scope set from user prefs */
   int score = 0, qstart, qend, sstart, send;
   ZMapSpan span = NULL;
-  char *sname = NULL, *desc = NULL;
+  char *sname = NULL;
   char *qframe = NULL;
   GString *line;
   int i, j;
@@ -446,13 +444,20 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
       x1    = feature->x1;
       x2    = feature->x2;
 
+
       if ((x1 >= blixem_data->min && x1 <= blixem_data->max)
-	  && (x1 >= blixem_data->min && x2 <= blixem_data->max))
+	  && (x2 >= blixem_data->min && x2 <= blixem_data->max)
+	  && ((*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+	      || (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
+	  )
 	{
 	  min   = blixem_data->min;
 	  max   = blixem_data->max;
 	  sstart = send = 0;
 	  
+	  /* qstart and qend are the coordinates of the current
+	   * homology relative to the viewing window, rather 
+	   * than absolute coordinages. */
 	  if (feature->strand == ZMAPSTRAND_REVERSE)
 	    {
 	      qstart = x2 - min + 1;
@@ -470,6 +475,10 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 	      
 	      sname  = g_strdup(g_quark_to_string(feature->original_id));
 	      
+	      /* qframe is derived from the position of the start position
+	       * of this homology relative to one end of the viewing window
+	       * or the other, depending on strand.  Mod3 gives us the odd
+	       * bases if that distance is not a whole number of codons. */
 	      if (feature->strand == ZMAPSTRAND_REVERSE)
 		{
 		  qframe = g_strdup_printf("(-%d)", 1 + ((max - min + 1) - qstart) %3 );
@@ -485,7 +494,7 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 
 	      adjustCoords(blixem_data, &sstart, &send, &qstart, &qend);
 
-	      score = feature->feature.homol.score;
+	      score = feature->feature.homol.score + 0.5;  /* round up to integer */
 	      
 	      if (score)
 		{
@@ -511,8 +520,8 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 		  
 		  status = printLine(blixem_data, line->str);
 		}
-	      g_free(sname);
 	      g_free(qframe);
+	      g_free(sname);
 	      break;       /* case HOMOL */
 	      
 	    case ZMAPFEATURE_TRANSCRIPT:
@@ -547,13 +556,11 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 		      
 		      adjustCoords(blixem_data, &sstart, &send, &qstart, &qend);
 
-		      desc = getDesc(blixem_data);
-
 		      g_string_printf(line, "%d %s\t%d\t%d\t%d\t%d\t%s\n", 
 				      score, qframe, qstart, qend, sstart, send, sname);
 		      g_free(qframe);
 		      g_free(sname);
-		      g_free(desc);
+
 		      status = printLine(blixem_data, line->str);
 
 		    }        /* for .. introns .. */
@@ -573,15 +580,6 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
-/* just a stub until I can find out what to put in desc */
-static char *getDesc(blixemData blixem_data)
-{
-  char *desc = g_strdup("dummy");
-
-  return desc;
-}
-
-
 
 static gboolean printLine(blixemData blixem_data, char *line)
 {
@@ -589,39 +587,41 @@ static gboolean printLine(blixemData blixem_data, char *line)
   gsize bytes_written;
   gboolean status = TRUE;
 
-  if (blixem_data->errorMsg == NULL)  /* redundant: should not get here with errorMsg set */
+  if (g_io_channel_write_chars(blixem_data->channel, line, -1, 
+			       &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
     {
-      if (g_io_channel_write_chars(blixem_data->channel, line, -1, 
-				   &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
-	{
-	  /* don't display an error at this point, just write it to blixem_data for later.
-	  ** Set and return status to prevent further processing. */
-	  blixem_data->errorMsg = g_strdup_printf("Error writing data to exblx file: %50s... : %s",
-						  line, channel_error->message) ;
-	  g_error_free(channel_error) ;
-	  status = FALSE;
-	}
+      /* don't display an error at this point, just write it to blixem_data for later.
+      ** Set and return status to prevent further processing. */
+      blixem_data->errorMsg = g_strdup_printf("Error writing data to exblx file: %50s... : %s",
+					      line, channel_error->message) ;
+      g_error_free(channel_error) ;
+      status = FALSE;
     }
+    
   return status;
 }
 
 
-
+/* Write out the dna sequence into a file in fasta format, ie a header record with the 
+ * sequence name, then as many lines 50 characters long as it takes to write out the 
+ * complete sequence.  
+ * Note that what we want is the sequence from the beginning of the "viewable window",
+ * ie from min onwards.  This is given by blixem_data->offset because this is relative
+ * to the start of the clone, whereas min is an absolute coordinate. */
 static gboolean writeFastAFile(blixemData blixem_data)
 {
   enum { FASTA_CHARS = 50 };
   gsize    bytes_written;
   GError  *channel_error = NULL;
-  char    *filepath, *line;
+  char    *line;
   gboolean status = TRUE;
   char     buffer[FASTA_CHARS + 2] ;			    /* FASTA CHARS + \n + \0 */
   int      lines = 0, chars_left = 0 ;
   char    *cp = NULL ;
-  int i ;
+  int      i ;
 
-  filepath = g_build_path("/", blixem_data->tmpDir, blixem_data->fastAFile, NULL);
 
-  if ((blixem_data->channel = g_io_channel_new_file(filepath, "w", &channel_error)))
+  if ((blixem_data->channel = g_io_channel_new_file(blixem_data->fastAFile, "w", &channel_error)))
     {
       line = g_strdup_printf(">%s\n", 
 			     g_quark_to_string(blixem_data->window->feature_context->parent_name));
@@ -637,20 +637,20 @@ static gboolean writeFastAFile(blixemData blixem_data)
       else
 	{
 	  g_free(line);
-	  /* this code lifted straight from acedb */
-	  lines      = (blixem_data->window->feature_context->sequence.length - blixem_data->min - 1) / FASTA_CHARS ;
-	  chars_left = (blixem_data->window->feature_context->sequence.length - blixem_data->min - 1) % FASTA_CHARS ;
+
+	  lines      = (blixem_data->window->feature_context->length - blixem_data->offset) / FASTA_CHARS ;
+	  chars_left = (blixem_data->window->feature_context->length - blixem_data->offset) % FASTA_CHARS ;
 	  if (blixem_data->min > 0)
-	    cp = blixem_data->window->feature_context->sequence.sequence + blixem_data->min - 1;
+	    cp = blixem_data->window->feature_context->sequence.sequence + blixem_data->offset;
 	  else
 	    cp = blixem_data->window->feature_context->sequence.sequence;
 
 	  /* Do the full length lines.                                           */
-	  if (lines != 0)
+	  if (lines > 0)
 	    {
 	      buffer[FASTA_CHARS] = '\n' ;
 	      buffer[FASTA_CHARS + 1] = '\0' ; 
-	      for (i = 0 ; i < lines && status ; i++)
+	      for (i = 0 ; i < lines && status == TRUE; i++)
 		{
 		  memcpy(&buffer[0], cp, FASTA_CHARS) ;
 		  cp += FASTA_CHARS ;
@@ -662,7 +662,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	    }
 
 	  /* Do the last line.                                                   */
-	  if (chars_left != 0 && status == TRUE)
+	  if (chars_left > 0 && status == TRUE)
 	    {
 	      memcpy(&buffer[0], cp, chars_left) ;
 	      buffer[chars_left] = '\n' ;
@@ -676,7 +676,6 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	    {
 	      zMapShowMsg(ZMAP_MSG_WARNING, "Error: writing to fastA file: %s",
 			  channel_error->message) ;
-	      printf("%d left; buffer: %s\n", chars_left, buffer);
 	      g_error_free(channel_error) ;
 	    }
 	}        /* if g_io_channel_write_chars(.... */
@@ -691,8 +690,6 @@ static gboolean writeFastAFile(blixemData blixem_data)
       g_error_free(channel_error) ;
       status = FALSE;
     }
-
-  g_free(filepath);
 
   return status;
 }
@@ -728,7 +725,7 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
 	  ** far end and work backwards. Must avoid duplicate exons, too. 
 	  ** Determine No of bases in transcript */
 	  if (feature->strand == ZMAPSTRAND_REVERSE)
-	    next_base_no += span->x2 - span->x1;
+	    next_base_no += span->x2 - span->x1 + 1;
 	}
       else 
 	{
@@ -817,7 +814,7 @@ static void freeBlixemData(blixemData blixem_data)
   g_free(blixem_data->tmpDir);
   g_free(blixem_data->fastAFile);
   g_free(blixem_data->exblxFile);
-  g_free(blixem_data->opts);
+
   g_free(blixem_data->Netid);
   g_free(blixem_data->Script);
 
