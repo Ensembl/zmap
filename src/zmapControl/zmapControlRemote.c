@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: May 12 16:45 2005 (rds)
+ * Last edited: Jun 22 19:33 2005 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.7 2005-05-12 16:23:55 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.8 2005-06-22 18:34:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,7 +61,7 @@
 static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCode);
 
 static char *findFeature(ZMap zmap, char *command_text) ;
-static char *createClient(ZMap zmap, char *command_text) ;
+static gboolean createClient(ZMap zmap, char *command_text) ;
 
 static void destroyNotifyData(gpointer destroy_data);
 
@@ -75,27 +75,39 @@ void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap_data)
       Window id;
       zMapXRemoteNotifyData notifyData;
 
-      id = (Window)GDK_DRAWABLE_XID(widget->window);
-      
+      id = (Window)GDK_DRAWABLE_XID(GTK_WIDGET(widget)->window);
+
       notifyData           = g_new0(zMapXRemoteNotifyDataStruct, 1);
       notifyData->xremote  = xremote;
       notifyData->callback = ZMAPXREMOTE_CALLBACK(controlexecuteCommand);
       notifyData->data     = zmap_data; 
+
+      /* Moving this (add_events) BEFORE the call to InitServer stops
+         some Xlib BadWindow errors (turn on debugging in zmapXRemote 2 c
+         them).  This doesn't feel right, but I couldn't bear the
+         thought of having to store a handler id for an expose_event
+         in the zmap struct just so I could use it over realize in
+         much the same way as the zmapWindow code does.  This
+         definitely points to some problem with GTK2.  The Widget
+         reports it's realized GTK_WIDGET_REALIZED(widget) has a
+         window id, but then the XChangeProperty() fails in the
+         zmapXRemote code.  Hmmm.  If this continues to be a problem
+         then I'll change it to use expose.  Only appeared on Linux. */
+      /* Makes sure we actually get the events!!!! Use add_events as set_events needs to be done BEFORE realize */
+      gtk_widget_add_events(widget, GDK_PROPERTY_CHANGE_MASK) ;
       
       zMapXRemoteInitServer(xremote, id, PACKAGE_NAME, ZMAP_DEFAULT_REQUEST_ATOM_NAME, ZMAP_DEFAULT_RESPONSE_ATOM_NAME);
       zMapConfigDirWriteWindowIdFile(id, zmap->zmap_id);
-
-      /* Makes sure we actually get the events!!!! Use add_events as set_events needs to be done BEFORE realize */
-      gtk_widget_add_events(widget, GDK_PROPERTY_CHANGE_MASK) ;
 
       g_signal_connect_data(G_OBJECT(widget), "property_notify_event",
                             G_CALLBACK(zMapXRemotePropertyNotifyEvent), (gpointer)notifyData,
                             (GClosureNotify) destroyNotifyData, G_CONNECT_AFTER
                             );
-
+      
       zmap->propertyNotifyData = notifyData;
+      
     }
-  
+
   return;
 }
 /*  */
@@ -118,56 +130,105 @@ static void destroyNotifyData(gpointer destroy_data)
  * strings...perhaps not ideal...., but best in the cicrumstance I guess */
 static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCode)
 {
-  char *xml_reply     = NULL ;
-  gboolean executed   = FALSE;
+  char *xml_reply = NULL ;
+  int code        = ZMAPXREMOTE_INTERNAL;
 
-  //  zMapWindow win; 
-          /* This will be the focus window. Not
-                               sure what will happen if we want to
-                               add a command 'change_focus_win
-                               window_name' */
-  //  win = zMapViewGetWindow(zmap->focus_viewwindow); /* Esp. as we get it here!! */
 
-  
+  g_clear_error(&(zmap->info));
+
   //command prop = value ; prop = value ; prop = value
-
   /* We assume command is first word in text with no preceding blanks. */
   if (g_str_has_prefix(command_text, "zoom_in"))
     {
-      zmapControlWindowDoTheZoom(zmap, 2.0) ;
-      *statusCode = ZMAPXREMOTE_OK;
-      xml_reply = "<a>b</a>";
+      if(zmapControlWindowDoTheZoomR(zmap, 2.0) == TRUE)
+        code = ZMAPXREMOTE_OK;
+      else
+        code = ZMAPXREMOTE_PRECOND;
     }
   else if (g_str_has_prefix(command_text, "zoom_out"))
     {
-      zmapControlWindowDoTheZoom(zmap, 0.5) ;
-      *statusCode = ZMAPXREMOTE_OK;
-      xml_reply = "<a>b</a>";
+      if(zmapControlWindowDoTheZoomR(zmap, 0.5) == TRUE)
+        code = ZMAPXREMOTE_OK;
+      else
+        code = ZMAPXREMOTE_PRECOND;
     }
   else if (g_str_has_prefix(command_text, "feature_find"))
     {
       findFeature(zmap, command_text);
-      *statusCode = ZMAPXREMOTE_OK;
+      code = ZMAPXREMOTE_OK;
       xml_reply = "<a>b</a>";
     }
   else if (g_str_has_prefix(command_text, "register_client"))
     {
-      createClient(zmap, command_text);
-      *statusCode = ZMAPXREMOTE_OK;
-      xml_reply = "<a>b</a>";
-    }
-  else
-    {
-      *statusCode = ZMAPXREMOTE_UNKNOWNCMD;
-      xml_reply   = "<message>unknown command</message>";
+      if(createClient(zmap, command_text) == TRUE)
+        code = ZMAPXREMOTE_OK;
+      else
+        code = ZMAPXREMOTE_BADREQUEST;
     }
 
-  //if(!xml_reply)   // we can now get the xml_reply and statusCode from window->sense.
-  //  xml_reply = functionToFindItFromAWindow(win, &statusCode);
+  /* Now check what the status is */
+  /* zmap->info is tested for truth first in case a function called
+     above set the info, we don't want to kill this information as it
+     might be more useful than these defaults! */
+  switch (code)
+    {
+    case ZMAPXREMOTE_INTERNAL:
+      {
+        code = ZMAPXREMOTE_UNKNOWNCMD;    
+        zmap->info || (zmap->info = 
+                       g_error_new(g_quark_from_string(__FILE__),
+                                   code,
+                                   "<request>%s</request><message>%s</message>",
+                                   command_text,
+                                   "unknown command"
+                                   ));
+        break;
+      }
+    case ZMAPXREMOTE_BADREQUEST:
+      {
+        zmap->info || (zmap->info = 
+                       g_error_new(g_quark_from_string(__FILE__),
+                                   code,
+                                   "<request>%s</request><message>%s</message>",
+                                   command_text,
+                                   "bad request"
+                                   ));
+        break;
+      }
+    case ZMAPXREMOTE_FORBIDDEN:
+      {
+        zmap->info || (zmap->info = 
+                       g_error_new(g_quark_from_string(__FILE__),
+                                   code,
+                                   "<request>%s</request><message>%s</message>",
+                                   command_text,
+                                   "forbidden request"
+                                   ));
+        break;
+      }
+    default:
+      {
+        /* If the info isn't set then someone forgot to set it */
+        if(!zmap->info)
+          {
+            code = ZMAPXREMOTE_INTERNAL;
+            zmap->info || (zmap->info = 
+              g_error_new(g_quark_from_string(__FILE__),
+                          code,
+                          "<request>%s</request><message>%s</message>",
+                          command_text,
+                          "CODE error on the part of the zmap programmers."
+                          ));
+          }
+        break;
+      }
+    }
 
   // gchar * g_markup_escape_text(const gchar *text, gssize length);
   // gchar * g_markup_printf_escaped(const char * format, ...);
-
+  xml_reply = g_strdup(zmap->info->message);
+  *statusCode = code;
+  
   return xml_reply;
 }
 
@@ -286,20 +347,19 @@ static char *findFeature(ZMap zmap, char *command_text)
   return result ;
 }
 
-static char *createClient(ZMap zmap, char *command_text)
+static gboolean createClient(ZMap zmap, char *command_text)
 {
-  char *result = NULL ;
-  gboolean parse_error ;
+  gboolean parse_error, result ;
   char *next ;
   char *keyword, *value ;
   gchar *type = NULL ;
   char *remote, *request, *response;
   zMapXRemoteObj client;
-
+  remote = request = response = NULL;
 
   next = strtok(command_text, " ") ;			    /* Skip register_client. */
 
-  parse_error = FALSE ;
+  result = parse_error = FALSE ;
   while (!parse_error && (next = strtok(NULL, " ")))
     {
       keyword = g_strdup(next) ;			    /* Get keyword. */
@@ -316,40 +376,33 @@ static char *createClient(ZMap zmap, char *command_text)
         {
           remote = g_strdup(value) ;
         }
-      else if (g_ascii_strcasecmp(keyword, "req") == 0)
+      else if (g_ascii_strcasecmp(keyword, "request") == 0)
 	{
           request = g_strdup(value) ;
 	}
-      else if (g_ascii_strcasecmp(keyword, "res") == 0)
+      else if (g_ascii_strcasecmp(keyword, "response") == 0)
         {
           response = g_strdup(value) ;
         }
       else
 	{
 	  parse_error = TRUE ;
-	  result = "";          /* XREMOTE_S_500_COMMAND_UNPARSABLE ; */
 	}
 
       g_free(keyword) ;
       g_free(value) ;
     }
 
-  if (!result)
+  if (!parse_error && remote && request && response)
     {
       if((client = zMapXRemoteNew()) != NULL)
         {
           zMapXRemoteInitClient(client, strtoul(remote, (char **)NULL, 16));
           zMapXRemoteSetRequestAtomName(client, request);
           zMapXRemoteSetResponseAtomName(client, response);
+          result = TRUE;
         }
-      else
-	{
-	  result = "";          /* XREMOTE_S_500_COMMAND_UNPARSABLE ; */
-	}
     }
-
-
-
   /* Clean up. */
   if (remote)
     g_free(remote) ;
@@ -357,6 +410,8 @@ static char *createClient(ZMap zmap, char *command_text)
     g_free(request) ;
   if (response)
     g_free(response) ;
+  
+
 
 
   return result ;
