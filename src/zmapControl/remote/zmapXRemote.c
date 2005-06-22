@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jun 10 11:07 2005 (rds)
+ * Last edited: Jun 22 19:37 2005 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.4 2005-06-10 10:10:52 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.5 2005-06-22 18:39:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,9 +66,9 @@ zMapXRemoteObj zMapXRemoteNew(void)
       object->init_called = FALSE;
       object->is_server   = FALSE;
     }
-
-  //  XSynchronize(object->display, True);
-
+#ifdef DO_DEBUGGING
+  XSynchronize(object->display, True);
+#endif
   return object;
 }
 
