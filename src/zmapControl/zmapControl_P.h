@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: May  6 11:11 2005 (rds)
+ * Last edited: Jun 22 19:35 2005 (rds)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.32 2005-05-07 18:13:27 rds Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.33 2005-06-22 18:35:48 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -95,6 +95,10 @@ typedef struct _ZMapStruct
 
   /* List of views in this zmap. */
   GList          *view_list ;
+
+  GError         *info;                 /* This is an object to hold a code
+                                         * and a message as info for the
+                                         * remote control simple IPC stuff */
 
   zMapXRemoteNotifyData propertyNotifyData;
 
