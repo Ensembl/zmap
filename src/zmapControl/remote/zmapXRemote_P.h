@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: May  9 15:05 2005 (rds)
+ * Last edited: Jun 22 19:38 2005 (rds)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.3 2005-05-12 16:03:44 rds Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.4 2005-06-22 18:40:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,12 +80,12 @@ static int zmapXRemoteChangeProperty(zMapXRemoteObj object, Atom atom, char *cha
 
 
 /*====================== DEBUGGING =========================*/
-//////////////////////////////////////////#define DO_DEBUGGING
+/* #define DO_DEBUGGING */
 #ifdef DO_DEBUGGING
-#define ZMAP_MSG_FORMAT_STRING  "(%s, line %d) - "
+#define ZMAP_X_MSG_FORMAT_STRING  "(%s, line %d) - "
 #define zmapXDebug(FORMAT, ...)                           \
 G_STMT_START{                                             \
-       g_printerr(ZMAP_MSG_FORMAT_STRING FORMAT,          \
+       g_printerr(ZMAP_X_MSG_FORMAT_STRING FORMAT,        \
 		  __FILE__,			          \
 		  __LINE__,				  \
 		  __VA_ARGS__) ;                          \
