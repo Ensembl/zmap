@@ -49,7 +49,8 @@ sub new ($){
         $self->_handle($xrh);
         my $id = $self->{'_id'} if $self->{'_id'};
         if($self->{'_server'} && $id){
-            $xrh->initialiseServer("perl", oct($id));
+            my $app = $self->application("perl");
+            $xrh->initialiseServer($app, oct($id));
             $xrh->setRequestName($self->{'_request_name'}) 
                 if $self->{'_request_name'};
             $xrh->setResponseName($self->{'_response_name'})
@@ -144,6 +145,11 @@ sub request_string{
         $self->{'_current_request'} = $req;
     }
     return $req;
+}
+sub application{
+    my ($self, $app) = @_;
+    $self->{'_application'} ||= $app if $app;
+    return $self->{'_application'};
 }
 
 {
