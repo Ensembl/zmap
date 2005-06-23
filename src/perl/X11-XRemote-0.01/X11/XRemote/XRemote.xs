@@ -1,4 +1,4 @@
-/*  Last edited: Jun  9 14:09 2005 (rds) */
+/*  Last edited: Jun 17 15:58 2005 (rds) */
 /* Hej, Emacs, this is -*- C -*- mode!   */
 
 /* This is  before the perl code  includes as, as Ed and  I have found
@@ -62,6 +62,16 @@ init_obj(class)
       RETVAL = zMapXRemoteNew();
     OUTPUT:
       RETVAL
+
+void
+DESTROY(self)
+     X11::XRemote::Handle self
+     CODE:
+     {
+       zMapXRemoteDestroy(self);
+       XSRETURN(1);
+     }
+
 
 int 
 initialiseServer(self, app, id)
