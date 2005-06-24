@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: May 20 17:26 2005 (edgrif)
+ * Last edited: Jun 24 13:07 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.56 2005-05-27 15:18:02 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.57 2005-06-24 13:19:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,11 @@
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <ZMap/zmapWindow.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapUrl.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <zmapView_P.h>
 
 
@@ -78,8 +82,6 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   char *sequence, int start, int end) ;
 static void destroyConnection(ZMapViewConnection *view_conn) ;
 
-
-
 static void resetWindows(ZMapView zmap_view) ;
 static void displayDataWindows(ZMapView zmap_view,
 			       ZMapFeatureContext all_features, ZMapFeatureContext new_features) ;
@@ -92,6 +94,11 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 
 static GList *string2StyleQuarks(char *styles) ;
 
+
+static ZMapFeatureContext createContext(char *sequence, int start, int end, GList *types) ;
+ZMapAlignBlock zMapAlignBlockCreate(char *ref_seq, int ref_start, int ref_end, int ref_strand,
+				    char *non_seq, int non_start, int non_end, int non_strand) ;
+static void addAlignments(ZMapFeatureContext context) ;
 
 
 
@@ -241,7 +248,7 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 
       if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->sequence,
 						 view_window, copy_window,
-						 zmap_view->features, zmap_view->types,
+						 zmap_view->features,
 						 window_locking)))
 	{
 	  /* should glog and/or gerror at this stage....really need g_errors.... */
@@ -384,6 +391,13 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 		  continue ;
 		}
 
+	      if (styles_file && styles)
+		{
+		  styles = NULL ;
+		  zMapLogWarning("GUI: %s", "Both Styles name list and Styles file specified, "
+				 "Styles name list has been ignored.") ;
+		}
+
 	      /* We only record the first sequence and writeback servers found, this means you
 	       * can only have one each of these which seems sensible. */
 	      if (!zmap_view->sequence_server)
@@ -416,10 +430,16 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 		  if (writeback_server)
 		    zmap_view->writeback_server = view_con ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+		  /* FEATURE AUGMENT NEEDS REWRITING TO USE LISTS, NOT DATA_LISTS */
 		  if (view_con->types
 		      && !zMapFeatureTypeSetAugment(&(zmap_view->types), &(view_con->types)))
 		    zMapLogCritical("Could not merge types for server %s into existing types.", 
                                     url_struct->host) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 		}
 	      else
 		{
@@ -836,21 +856,9 @@ static ZMapView createZMapView(char *sequence, int start, int end, void *app_dat
   zmap_view->parent_widget = NULL ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
   zmap_view->window_list = zmap_view->connection_list = NULL ;
 
   zmap_view->app_data = app_data ;
-
-
-  /* Hack to read methods from a file in $HOME/.ZMap for now.....really we should be getting
-   * this from a server and updating it for information from different servers. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmap_view->types = getTypesFromFile() ;
-  zMapAssert(zmap_view->types) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   return zmap_view ;
 }
@@ -874,11 +882,14 @@ static void destroyZMapView(ZMapView zmap_view)
  */
 static void startStateConnectionChecking(ZMapView zmap_view)
 {
+
 #ifdef UTILISE_ALL_CPU_ON_DESKPRO203
   zmap_view->idle_handle = gtk_idle_add(zmapIdleCB, (gpointer)zmap_view) ;
 #endif /* UTILISE_ALL_CPU_ON_DESKPRO203 */ 
+
   zmap_view->idle_handle = gtk_timeout_add(100, zmapIdleCB, (gpointer)zmap_view) ;
   // WARNING: gtk_timeout_add is deprecated and should not be used in newly-written code. Use g_timeout_add() instead.
+
   return ;
 }
 
@@ -1257,31 +1268,25 @@ static void killConnections(ZMapView zmap_view)
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   struct url *url, char *format,
 					   int timeout, char *version,
-					   char *styles_file, char *styles,
+					   char *styles_file, char *styles_names,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end)
 {
   ZMapViewConnection view_con = NULL ;
-  GData *types = NULL ;
+  GList *types = NULL ;
   GList *req_types = NULL ;
   ZMapThread thread ;
   gboolean status = TRUE ;
 
 
 
-  /* THIS CODE WILL HAVE TO GO IN THE END..... */
-
-  /* OK, what we need to do here is use a list of specified method names which give
-   * order of methods etc and then stick the list in the context struct........ */
-
-
-  /* Create the thread to service the connection requests, we give it a function that it will call
-   * to decode the requests we send it and a terminate function. */
+  /* User can either specify a list of style names and we get the style data from the server
+   * or they can specify a file containing style names/data. In either case the order of the
+   * styles determines the order their columns are displayed in. */
   if (styles_file)
     {
       char *directory ;
       char *filepath ;
-
 
       if (!(filepath = zMapConfigDirFindFile(styles_file))
 	  || !(types = zMapFeatureTypeGetFromFile(filepath)))
@@ -1289,21 +1294,19 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 	  zMapLogWarning("Could not read types from \"stylesfile\" %s", filepath) ;
 	  status = FALSE ;
 	}
-      else
-	status = TRUE ;
       
       if (filepath)
 	g_free(filepath) ;
     }
-
-  /* If user only wants some styles/types displayed then build a list of their quark names. */
-  if (styles)
+  else if (styles_names)
     {
-      req_types = string2StyleQuarks(styles) ;
+      /* If user only wants some styles/types displayed then build a list of their quark names. */
+      req_types = string2StyleQuarks(styles_names) ;
     }
 
 
-
+  /* Create the thread to service the connection requests, we give it a function that it will call
+   * to decode the requests we send it and a terminate function. */
   if (status && (thread = zMapThreadCreate(zMapServerRequestHandler, zMapServerTerminateHandler)))
     {
       ZMapServerReqOpenLoad open_load = NULL ;
@@ -1317,10 +1320,10 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       open_load->open.timeout = timeout ;
       open_load->open.version = g_strdup(version) ;
 
-      open_load->context.sequence = g_strdup(sequence) ;
-      open_load->context.start = start ;
-      open_load->context.end = end ;
 
+      open_load->context.context = createContext(sequence, start, end, types) ;
+
+      open_load->types.req_types = req_types ;
 
       if (sequence_server)
 	open_load->features.type = ZMAP_SERVERREQ_FEATURE_SEQUENCE ;
@@ -1328,9 +1331,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 	open_load->features.type = ZMAP_SERVERREQ_FEATURES ;
 
 
-      open_load->features.req_types = req_types ;
-
-
+      /* Send the request to the thread to open a connection and get the date. */
       zMapThreadRequest(thread, (void *)open_load) ;
 
       view_con = g_new0(ZMapViewConnectionStruct, 1) ;
@@ -1406,7 +1407,7 @@ static void displayDataWindows(ZMapView zmap_view,
 
       view_window = list_item->data ;
 
-      zMapWindowDisplayData(view_window->window, all_features, new_features, zmap_view->types) ;
+      zMapWindowDisplayData(view_window->window, all_features, new_features) ;
     }
   while ((list_item = g_list_next(list_item))) ;
 
@@ -1564,3 +1565,151 @@ static GList *string2StyleQuarks(char *styles)
 
   return style_quark_list ;
 }
+
+
+
+/* Trial code to get alignments from a file and create a context...... */
+static ZMapFeatureContext createContext(char *sequence, int start, int end, GList* types)
+{
+  ZMapFeatureContext context = NULL ;
+  GData *list = NULL ;
+  ZMapFeatureAlignment alignment ;
+  char *align_name = "align_1" ;
+  ZMapFeatureBlock block ;
+  char *block_name = "block_1" ;
+
+  context = zMapFeatureContextCreate(sequence, start, end, types) ;
+
+  /* Add the master/target alignment. */
+  align_name = "master" ;
+  alignment = zMapFeatureAlignmentCreate(align_name) ;
+
+  zMapFeatureContextAddAlignment(context, alignment, TRUE) ;
+
+  block = zMapFeatureBlockCreate(sequence, start, end, ZMAPSTRAND_FORWARD,
+				 sequence, start, end, ZMAPSTRAND_FORWARD) ;
+
+  zMapFeatureAlignmentAddBlock(alignment, block) ;
+
+
+  addAlignments(context) ;
+
+
+  return context ;
+}
+
+
+static void addAlignments(ZMapFeatureContext context)
+{
+  ZMapConfigStanzaSet blocks_list = NULL ;
+  ZMapConfig config ;
+  char *config_file ;
+  char *stanza_name = "align" ;
+  gboolean result = FALSE ;
+  char *ref_seq ;
+  int start, end ;
+  ZMapFeatureAlignment alignment = NULL ;
+
+
+  ref_seq = (char *)g_quark_to_string(context->sequence_name) ;
+  start = context->sequence_to_parent.c1 ;
+  end = context->sequence_to_parent.c2 ;
+
+
+
+
+  config_file = zMapConfigDirGetFile() ;
+  if ((config = zMapConfigCreateFromFile(config_file)))
+    {
+      ZMapConfigStanza block_stanza ;
+      ZMapConfigStanzaElementStruct block_elements[]
+	= {{"reference_seq"        , ZMAPCONFIG_STRING , {NULL}},
+	   {"reference_start"      , ZMAPCONFIG_INT    , {NULL}},
+	   {"reference_end"        , ZMAPCONFIG_INT    , {NULL}},
+	   {"reference_strand"     , ZMAPCONFIG_INT    , {NULL}},
+	   {"non_reference_seq"    , ZMAPCONFIG_STRING , {NULL}},
+	   {"non_reference_start"  , ZMAPCONFIG_INT    , {NULL}},
+	   {"non_reference_end"    , ZMAPCONFIG_INT    , {NULL}},
+	   {"non_reference_strand" , ZMAPCONFIG_INT    , {NULL}},
+	   {NULL, -1, {NULL}}} ;
+
+      /* init non string elements. */
+      zMapConfigGetStructInt(block_elements, "reference_start")      = 0 ;
+      zMapConfigGetStructInt(block_elements, "reference_end")        = 0 ;
+      zMapConfigGetStructInt(block_elements, "reference_strand")     = 0 ;
+      zMapConfigGetStructInt(block_elements, "non_reference_start")  = 0 ;
+      zMapConfigGetStructInt(block_elements, "non_reference_end")    = 0 ;
+      zMapConfigGetStructInt(block_elements, "non_reference_strand") = 0 ;
+
+      block_stanza = zMapConfigMakeStanza(stanza_name, block_elements) ;
+
+      result = zMapConfigFindStanzas(config, block_stanza, &blocks_list) ;
+    }
+
+  if (result)
+    {
+      ZMapConfigStanza next_block = NULL;
+
+      while ((next_block = zMapConfigGetNextStanza(blocks_list, next_block)) != NULL)
+        {
+          ZMapFeatureBlock data_block = NULL ;
+	  char *reference_seq, *non_reference_seq ;
+	  int reference_start, reference_end, non_reference_start, non_reference_end ;
+	  ZMapStrand ref_strand = ZMAPSTRAND_REVERSE, non_strand = ZMAPSTRAND_REVERSE ;
+	  int diff ;
+
+	  reference_seq = zMapConfigGetElementString(next_block, "reference_seq") ;
+	  reference_start = zMapConfigGetElementInt(next_block, "reference_start") ;
+	  reference_end = zMapConfigGetElementInt(next_block, "reference_end") ;
+	  non_reference_seq = zMapConfigGetElementString(next_block, "non_reference_seq") ;
+	  non_reference_start = zMapConfigGetElementInt(next_block, "non_reference_start") ;
+	  non_reference_end = zMapConfigGetElementInt(next_block, "non_reference_end") ;
+	  if (zMapConfigGetElementInt(next_block, "reference_strand"))
+	    ref_strand = ZMAPSTRAND_FORWARD ;
+	  if (zMapConfigGetElementInt(next_block, "non_reference_strand"))
+	    non_strand = ZMAPSTRAND_FORWARD ;
+
+
+	  /* We only add aligns/blocks that are for the relevant reference sequence and within
+	   * the start/end for that sequence. */
+	  if (g_ascii_strcasecmp(ref_seq, reference_seq) == 0
+	      && !(reference_start > end || reference_end < start))
+	    {
+
+	      if (!alignment)
+		{
+		  /* Add the other alignment, note that we do this dumbly at the moment assuming
+		   * that there is only one other alignment */
+		  alignment = zMapFeatureAlignmentCreate(non_reference_seq) ;
+	  
+		  zMapFeatureContextAddAlignment(context, alignment, FALSE) ;
+		}
+
+
+	      /* Add the block for this set of data. */
+
+	      /* clamp coords... */
+	      if ((diff = start - reference_start) > 0)
+		{
+		  reference_start += diff ;
+		  non_reference_start += diff ;
+		}
+	      if ((diff = reference_end - end) > 0)
+		{
+		  reference_end -= diff ;
+		  non_reference_end -= diff ;
+		}
+
+	      data_block = zMapFeatureBlockCreate(reference_seq,
+						  reference_start, reference_end, ref_strand,
+						  non_reference_seq,
+						  non_reference_start, non_reference_end, non_strand) ;
+
+	      zMapFeatureAlignmentAddBlock(alignment, data_block) ;
+	    }
+        }
+    }
+
+  return ;
+}
+
