@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 24 14:15 2005 (edgrif)
+ * Last edited: Jun 24 15:02 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.58 2005-06-24 13:26:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.59 2005-06-24 17:07:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -145,6 +145,7 @@ typedef struct _ZMapWindowStruct
   GdkColor canvas_fill ;
   GdkColor canvas_border ;
   GdkColor canvas_background ;
+  GdkColor align_background ;
 
   double         zoom_factor ;
   ZMapWindowZoomStatus zoom_status ;   /* For short sequences that are displayed at max. zoom initially. */
@@ -165,18 +166,7 @@ typedef struct _ZMapWindowStruct
   gulong         exposeHandlerCB ;
 
 
-  /* The relationship between context and alignment will need refining when we do multiple
-   * alignments properly. */
   ZMapFeatureContext feature_context ;			    /* Currently displayed features. */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* WE SHOULDN'T NEED THIS ANYMORE....ONCE THE HASH IS IN PLACE.... */
-  GList *alignments ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   GHashTable *context_to_item ;				    /* Links parts of a feature context to
 							       the canvas groups/items that

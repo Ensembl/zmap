@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 24 13:52 2005 (edgrif)
+ * Last edited: Jun 24 15:28 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.68 2005-06-24 13:27:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.69 2005-06-24 17:07:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,6 +92,7 @@ typedef struct _ZMapCanvasDataStruct
   FooCanvasGroup *curr_forward_col ;
   FooCanvasGroup *curr_reverse_col ;
 
+  GdkColor *curr_background ;
 
 } ZMapCanvasDataStruct, *ZMapCanvasData ;
 
@@ -401,18 +402,29 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
 
   canvas_data->curr_alignment = alignment ;
 
+  /* Set different backgrounds for master alignment and other alignments. */
+  if (canvas_data->curr_alignment == window->feature_context->master_align)
+    canvas_data->curr_background = &(window->canvas_background) ;
+  else
+    canvas_data->curr_background = &(window->align_background) ;
+
+
   /* Always reset the aligns to start at y = 0. */
   canvas_data->curr_y_offset = 0.0 ;
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapWindowPrintI2W(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)),
 		     "align group offset", canvas_data->curr_x_offset, canvas_data->curr_y_offset) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   canvas_data->curr_align_group = FOO_CANVAS_GROUP(foo_canvas_item_new(foo_canvas_root(window->canvas),
 								       foo_canvas_group_get_type(),
 								       "x", canvas_data->curr_x_offset,
 								       "y", canvas_data->curr_y_offset,
 								       NULL)) ;
+
 
   /* add dummy colouring group.... */
   {
@@ -423,19 +435,20 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
     bottom = alignment->parent_context->sequence_to_parent.c2 ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     zmapWindowPrintI2W(FOO_CANVAS_ITEM(canvas_data->curr_align_group),
 		       "align fake background offset", 0.0, top) ;
 
-
     gdk_color_parse("light green", &colour) ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     background_item = zMapDrawBox(FOO_CANVAS_ITEM(canvas_data->curr_align_group),
 				  0.0,
 				  top,
 				  10, 
 				  bottom,
-				  &colour, &colour) ;
+				  &(window->canvas_background), &(window->canvas_background)) ;
   }
 
   status = zmapWindowFToIAddAlign(window->context_to_item, key_id, canvas_data->curr_align_group) ;
@@ -474,8 +487,12 @@ static void drawBlocks(gpointer data, gpointer user_data)
   canvas_data->curr_y_offset = block->block_to_sequence.t1 ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapWindowPrintI2W(FOO_CANVAS_ITEM(canvas_data->curr_align_group),
 		     "block offset", 0.0, canvas_data->curr_y_offset) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Add a group for the block and groups for the forward and reverse columns. */
   canvas_data->curr_block_group = FOO_CANVAS_GROUP(foo_canvas_item_new(canvas_data->curr_align_group,
@@ -490,23 +507,23 @@ static void drawBlocks(gpointer data, gpointer user_data)
   if (canvas_data->curr_alignment != canvas_data->full_context->master_align)
     {
       double height ;
-      GdkColor background_colour, border_colour ;
 
       /* height is not "+ 1" because we starting from zero. */
       height = block->block_to_sequence.t2 - block->block_to_sequence.t1 ; 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmapWindowPrintI2W(FOO_CANVAS_ITEM(canvas_data->curr_block_group),
 			 "block background offset", 0.0, 0.0) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      gdk_color_parse(ZMAP_WINDOW_BLOCK_COLOUR, &background_colour) ;
-      gdk_color_parse("black", &border_colour) ;
 
       background_item = zMapDrawBox(FOO_CANVAS_ITEM(canvas_data->curr_block_group),
 				    0.0,
 				    0.0,
 				    10,			    /* place holder, proper width set below. */
 				    height,
-				    &border_colour, &background_colour) ;
+				    &(canvas_data->window->canvas_border),
+				    canvas_data->curr_background) ;
 
       foo_canvas_item_lower_to_bottom(background_item) ;	    /* Put pink box in the background. */
     }
@@ -547,8 +564,12 @@ static void drawBlocks(gpointer data, gpointer user_data)
    * resetting their positions....should we have a reverse group if there are no reverse cols ? */
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(canvas_data->curr_reverse_group), &x1, &y1, &x2, &y2) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapWindowPrintI2W(FOO_CANVAS_ITEM(canvas_data->curr_block_group),
 		     "column forward group", x2 + STRAND_SPACING, 0.0) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   foo_canvas_item_set(FOO_CANVAS_ITEM(canvas_data->curr_forward_group),
 		      "x", x2 + STRAND_SPACING,
@@ -579,8 +600,6 @@ static void createSetColumn(gpointer data, gpointer user_data)
   GQuark type_quark ;
   double x1, y1, x2, y2 ;
   FooCanvasItem *group ;
-  GdkColor fcolumn_colour ;
-  GdkColor rcolumn_colour ;
   double top, bottom ;
   gboolean status ;
 
@@ -598,24 +617,14 @@ static void createSetColumn(gpointer data, gpointer user_data)
     - canvas_data->curr_block->block_to_sequence.t1 ;   /* height is not "+ 1" because we
 							   starting from zero. */
 
-  /* Leave for debugging for now.... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gdk_color_parse("#F00", &fcolumn_colour);
-  gdk_color_parse("#EEE", &rcolumn_colour);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  gdk_color_parse(ZMAP_WINDOW_BLOCK_COLOUR, &fcolumn_colour);
-  gdk_color_parse(ZMAP_WINDOW_BLOCK_COLOUR, &rcolumn_colour);
-
-
   /* we need to add the groups to our hash mechanism..... */
   canvas_data->curr_forward_col = createColumn(FOO_CANVAS_GROUP(canvas_data->curr_forward_group),
 					       window,
 					       style->original_id,
 					       canvas_data->curr_forward_offset,
 					       top, bottom,
-					       canvas_data->curr_style->width, &fcolumn_colour) ;
+					       canvas_data->curr_style->width,
+					       canvas_data->curr_background) ;
 
   /* We need a special hash here for a forward group.... */
   canvas_data->curr_forward_col_id = zmapWindowFToIMakeSetID(type_quark, ZMAPSTRAND_FORWARD) ;
@@ -641,7 +650,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
 						   canvas_data->curr_reverse_offset,
 						   top, bottom,
 						   canvas_data->curr_style->width,
-						   &rcolumn_colour) ;
+						   canvas_data->curr_background) ;
 
       /* We need a special hash here for a reverse group.... */
       canvas_data->curr_reverse_col_id = zmapWindowFToIMakeSetID(type_quark, ZMAPSTRAND_REVERSE) ;
@@ -674,8 +683,12 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   FooCanvasItem *boundingBox ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapWindowPrintI2W(FOO_CANVAS_ITEM(parent_group),
 		     "column group", start, top) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   group = FOO_CANVAS_GROUP(foo_canvas_item_new(parent_group,
 					       foo_canvas_group_get_type(),
@@ -684,7 +697,11 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
 					       NULL)) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapWindowPrintI2W(FOO_CANVAS_ITEM(parent_group), "column background", 0, top) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* should use draw box.... */
@@ -723,16 +740,10 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   GQuark type_quark ;
   double x1, y1, x2, y2 ;
   GList *types ;
-
   ZMapFeatureBlock block = feature_set->parent_block ;
   FooCanvasItem *group ;
-  
-  GdkColor fcolumn_colour ;
-  GdkColor rcolumn_colour ;
-  
   double top, bottom ;
   gboolean status ;
-
   FooCanvasItem *bounding_box ;
 
 

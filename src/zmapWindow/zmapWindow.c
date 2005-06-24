@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 24 13:11 2005 (edgrif)
+ * Last edited: Jun 24 15:03 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.82 2005-06-24 13:25:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.83 2005-06-24 17:07:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -190,6 +190,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   gdk_color_parse(ZMAP_WINDOW_ITEM_FILL_COLOUR, &(window->canvas_fill)) ;
   gdk_color_parse(ZMAP_WINDOW_ITEM_BORDER_COLOUR, &(window->canvas_border)) ;
   gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(window->canvas_background)) ;
+  gdk_color_parse(ZMAP_WINDOW_BLOCK_COLOUR, &(window->align_background)) ;
 
   window->zmap_atom = gdk_atom_intern(ZMAP_ATOM, FALSE) ;
 
