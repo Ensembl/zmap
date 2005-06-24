@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 21 09:12 2005 (rnc)
+ * Last edited: Jun 24 12:29 2005 (rnc)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.7 2005-06-21 08:17:33 rnc Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.8 2005-06-24 12:09:41 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -201,6 +201,7 @@ static char *buildParamString(blixemData blixem_data)
   int         file = 0;
   int         start;
   int         scope = 40000;          /* set from user prefs */
+  int         x1, x2;
 
 
   if (blixem_data->Scope > 0)
@@ -209,8 +210,12 @@ static char *buildParamString(blixemData blixem_data)
   feature = g_object_get_data(G_OBJECT(blixem_data->item), "feature");
   zMapAssert(feature);       /* something badly wrong if no feature. */
 
-  blixem_data->min = feature->x1 - scope/2;
-  blixem_data->max = feature->x2 + scope/2;
+  /* visible coords are 1-based, but internally we work with 0-based coords */
+  x1 = feature->x1 - 1;
+  x2 = feature->x2 - 1;
+
+  blixem_data->min = x1 - scope/2;
+  blixem_data->max = x2 + scope/2;
   if (blixem_data->min < 0)
     blixem_data->min = 0;
 
@@ -222,7 +227,7 @@ static char *buildParamString(blixemData blixem_data)
   /* start tells blixem to position itself slightly
    * to the left of the centre of the overall viewing window.
    * This is blindly copied from acedb. */
-  start   = feature->x1 - blixem_data->min - 30;
+  start   = x1 - blixem_data->min - 30;
 
   /* qstart and qend coordinates passed to blixem in the exblx file
    * are relative to the ends of the viewing window (depending on
@@ -441,8 +446,10 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
   if (!blixem_data->errorMsg)
     {  
       line = g_string_new("");
-      x1    = feature->x1;
-      x2    = feature->x2;
+
+      /* visible coords are 1-based but internally we use 0-based coords */
+      x1    = feature->x1 - 1;
+      x2    = feature->x2 - 1;
 
 
       if ((x1 >= blixem_data->min && x1 <= blixem_data->max)
@@ -498,20 +505,18 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 	      
 	      if (score)
 		{
-		  g_string_printf(line, "%d %s\t%d\t%d\t%d\t%d\t%s", 
+		  g_string_printf(line, "%d %s\t%d\t%d\t%d\t%d %s ", 
 				  score, qframe, qstart, qend, sstart, send, sname);
 		  if (feature->feature.homol.align)
 		    {
-		      int i;
+		      ZMapAlignBlockStruct gap;
 		      GString *gaps = g_string_new("");
+		      int k;
 		      
-		      for (i = 0; i < feature->feature.homol.align->len; i++)
+		      for (k = 0; k < feature->feature.homol.align->len; k++)
 			{
-			  g_string_printf(gaps, " %d %d %d %d", 
-					  (g_array_index(feature->feature.homol.align, ZMapAlignBlock, i))->q1,
-					  (g_array_index(feature->feature.homol.align, ZMapAlignBlock, i))->q2,
-					  (g_array_index(feature->feature.homol.align, ZMapAlignBlock, i))->t1,
-					  (g_array_index(feature->feature.homol.align, ZMapAlignBlock, i))->t2);
+			  gap = g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, k);
+			  g_string_printf(gaps, " %d %d %d %d", gap.q1, gap.q2, gap.t1 - min, gap.t2 - min);
 			  line = g_string_append(line, gaps->str);
 			}
 		    }
