@@ -26,16 +26,16 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: May 17 15:28 2005 (edgrif)
+ * Last edited: Jun 24 12:57 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.22 2005-05-18 10:54:48 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.23 2005-06-24 13:21:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <strings.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapServer_P.h>
-#include <ZMap/zmapUrl.h>
+
 
 /* We need matching serverInit and serverCleanup functions that are only called once
  * for each server type, libcurl needs this to avoid memory leaks but maybe this is not
@@ -105,8 +105,7 @@ gboolean zMapServerGlobalInit(struct url *url, void **server_global_data_out)
 
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
 				    struct url *url, char *format,
-				    int timeout, char *version_str
-                                    )
+				    int timeout, char *version_str)
 {
   gboolean result = TRUE ;
   ZMapServer server ;
@@ -166,11 +165,12 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server)
   return result ;
 }
 
-ZMapServerResponseType zMapServerGetTypes(ZMapServer server, GData **types_out)
+ZMapServerResponseType zMapServerGetTypes(ZMapServer server, GList *requested_types, GList **types_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
-  result = server->last_response = (server->funcs->get_types)(server->server_conn, types_out) ;
+  result = server->last_response = (server->funcs->get_types)(server->server_conn,
+							      requested_types, types_out) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
     server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
@@ -181,32 +181,20 @@ ZMapServerResponseType zMapServerGetTypes(ZMapServer server, GData **types_out)
 
 
 
-ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence,
-					    int start, int end, GData *types)
+ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
+  zMapAssert(feature_context) ;
+
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
     {
-      if (!sequence || !*sequence
-	  || (end != 0 && start > end))
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	  ZMAPSERVER_LOG(Warning, server->protocol, server->host, "Cannot set server context:%s%s",
-			 ((sequence || !*sequence)
-			  ? " no sequence name" : ""),
-			 ((end != 0 && start > end)
-			  ? "bad coords, start > end" : "")) ;
-	}
-      else
-	{
-	  result = server->last_response
-	    = (server->funcs->set_context)(server->server_conn, sequence, start, end, types) ;
+      result = server->last_response
+	= (server->funcs->set_context)(server->server_conn, feature_context) ;
 
-	  if (result != ZMAP_SERVERRESPONSE_OK)
-	    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
-							    (server->funcs->errmsg)(server->server_conn)) ;
-	}
+      if (result != ZMAP_SERVERRESPONSE_OK)
+	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
+							(server->funcs->errmsg)(server->server_conn)) ;
     }
 
   return result ;
@@ -223,8 +211,7 @@ ZMapFeatureContext zMapServerCopyContext(ZMapServer server)
 }
 
 
-ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GList *requested_types,
-					     ZMapFeatureContext feature_context)
+ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
@@ -232,7 +219,7 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GList *requested
     {
 
       result = server->last_response
-	= (server->funcs->get_features)(server->server_conn, requested_types, feature_context) ;
+	= (server->funcs->get_features)(server->server_conn, feature_context) ;
 
 
       if (result != ZMAP_SERVERRESPONSE_OK)

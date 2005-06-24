@@ -28,9 +28,9 @@
  *              give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: May 16 11:32 2005 (edgrif)
+ * Last edited: Jun 24 09:28 2005 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.4 2005-05-18 10:49:21 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.5 2005-06-24 13:21:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -100,7 +100,10 @@ typedef struct
 {
   ZMapServerReqType type ;
 
-  GData *types_out ;					    /* Returned list of available feature types. */
+  GList *req_types ;					    /* types to retrieve for this request,
+							       NULL means get all of them. */
+
+  GList *types_out ;					    /* Returned list of available feature types. */
 } ZMapServerReqGetTypesStruct, *ZMapServerReqGetTypes ;
 
 
@@ -109,11 +112,7 @@ typedef struct
 {
   ZMapServerReqType type ;
 
-  char *sequence ;
-  int start, end ;
-
-  GData *types ;					    /* Set of all types that could be fetched. */
-
+  ZMapFeatureContext context ;
 } ZMapServerReqNewContextStruct, *ZMapServerReqNewContext ;
 
 
@@ -121,9 +120,6 @@ typedef struct
 typedef struct
 {
   ZMapServerReqType type ;
-
-  GList *req_types ;					    /* types to retrieve for this request,
-							       NULL means get all of them. */
 
   ZMapFeatureContext feature_context_out ;		    /* Returned feature sets. */
 } ZMapServerReqGetFeaturesStruct, *ZMapServerReqGetFeatures ;

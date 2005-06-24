@@ -23,11 +23,11 @@
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: May 17 14:05 2005 (edgrif)
+ * Last edited: Jun 24 13:00 2005 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.5 2005-05-18 10:55:28 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.6 2005-06-24 13:21:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,7 +46,6 @@
 #include <ZMap/zmapThreads.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <zmapServer_P.h>
-#include <ZMap/zmapUrl.h>
 
 
 /* Some protocols have global init/cleanup functions that must only be called once, this type/list
@@ -263,46 +262,72 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
     }
 
+
+  /* If there are requested types OR the context has no types, then get them. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
-      && zMapServerGetTypes(server, &(types->types_out)) != ZMAP_SERVERRESPONSE_OK)
+      && types->req_types || !context->context->types)
+    {
+      if (zMapServerGetTypes(server, types->req_types, &(types->types_out)) != ZMAP_SERVERRESPONSE_OK)
+	{
+	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	}
+      else
+	{
+	  /* Got the types so record them in the server context. */
+	  context->context->types = types->types_out ;
+	}
+    }
+
+  /* Create a sequence context from the sequence and start/end data. */
+  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
+      && zMapServerSetContext(server, context->context)
+      != ZMAP_SERVERRESPONSE_OK)
     {
       *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
     }
   else
     {
-      /* Got the types so record them in the server context. */
-      context->types = types->types_out ;
+      /* The start/end for the master alignment may have been specified as start = 1 and end = 0
+       * so we may need to fill in the start/end for the master align block. */
+
+      GList *block_list = context->context->master_align->blocks ;
+      ZMapFeatureBlock block ;
+
+      zMapAssert(g_list_length(block_list) == 1) ;
+
+      block = block_list->data ;
+      block->block_to_sequence.q1 = block->block_to_sequence.t1
+	= context->context->sequence_to_parent.c1 ;
+      block->block_to_sequence.q2 = block->block_to_sequence.t2
+	= context->context->sequence_to_parent.c2 ;
+      
+      block->block_to_sequence.q_strand = block->block_to_sequence.t_strand = ZMAPSTRAND_FORWARD ;
+
     }
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
-  /* Create a sequence context from the sequence and start/end data. */
-  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
-      && zMapServerSetContext(server, context->sequence,
-			      context->start, context->end, context->types)
-      != ZMAP_SERVERRESPONSE_OK)
-    {
-      *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
-      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-    }
-
+  /* I can't remember why we need to copy the context now.....sigh... */
 
   /* Get a copy of the context to use in fetching the features and/or sequence. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
       feature_context = zMapServerCopyContext(server) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
  
 
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && (features->type == ZMAP_SERVERREQ_FEATURES
 	  || features->type == ZMAP_SERVERREQ_FEATURE_SEQUENCE)
-      && zMapServerGetFeatures(server, features->req_types, feature_context) != ZMAP_SERVERRESPONSE_OK)
+      && zMapServerGetFeatures(server, context->context) != ZMAP_SERVERRESPONSE_OK)
     {
       *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* We need to free feature_context here, its subparts should have been freed by routines
@@ -312,10 +337,11 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
     }
 
+
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && (features->type == ZMAP_SERVERREQ_SEQUENCE
 	  || features->type == ZMAP_SERVERREQ_FEATURE_SEQUENCE)
-      && zMapServerGetSequence(server, feature_context) != ZMAP_SERVERRESPONSE_OK)
+      && zMapServerGetSequence(server, context->context) != ZMAP_SERVERRESPONSE_OK)
     {
       *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
@@ -335,8 +361,14 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
       *server_out = server ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       features->feature_context_out = feature_context ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      features->feature_context_out = context->context ;
     }
+
 
 
   return thread_rc ;

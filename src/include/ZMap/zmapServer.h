@@ -26,9 +26,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: May 17 14:05 2005 (edgrif)
+ * Last edited: Jun 24 09:23 2005 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.14 2005-05-18 10:49:02 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.15 2005-06-24 13:21:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -55,12 +55,11 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_
 				    struct url *url,  char *format,
 				    int timeout, char *version_str);
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
-ZMapServerResponseType zMapServerGetTypes(ZMapServer server, GData **types_out) ;
-ZMapServerResponseType zMapServerSetContext(ZMapServer server, char *sequence,
-					    int start, int end, GData *types) ;
+ZMapServerResponseType zMapServerGetTypes(ZMapServer server,
+					  GList *requested_types, GList **types_out) ;
+ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContext feature_context) ;
 ZMapFeatureContext zMapServerCopyContext(ZMapServer server) ;
-ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GList *requested_types,
-					     ZMapFeatureContext feature_context) ;
+ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureContext feature_context) ;
 ZMapServerResponseType zMapServerGetSequence(ZMapServer server, ZMapFeatureContext feature_context) ;
 char *zMapServerLastErrorMsg(ZMapServer server) ;
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) ;

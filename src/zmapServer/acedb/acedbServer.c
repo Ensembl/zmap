@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun  6 11:58 2005 (edgrif)
+ * Last edited: Jun 24 13:03 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.30 2005-06-06 12:45:29 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.31 2005-06-24 13:21:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,6 +43,7 @@
 typedef struct
 {
   gboolean first_method ;
+  gboolean find_string ;
   GString *str ;
 } ZMapTypesStringStruct, *ZMapTypesString ;
 
@@ -54,30 +55,29 @@ typedef struct
 } GetFeaturesStruct, *GetFeatures ;
 
 
-
+/* These provide the interface functions for an acedb server implementation, i.e. you
+ * shouldn't change these prototypes without changing all the other server prototypes..... */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 char *host, int port, char *format, char *version_str,
 				 char *userid, char *passwd, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
-static ZMapServerResponseType getTypes(void *server, GData **types) ;
-static ZMapServerResponseType setContext(void *server,  char *sequence,
-					 int start, int end, GData *types) ;
+static ZMapServerResponseType getTypes(void *server, GList *requested_types, GList **types) ;
+static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
 ZMapFeatureContext copyContext(void *server) ;
-static ZMapServerResponseType getFeatures(void *server_in, GList *requested_types,
-					  ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static gboolean destroyConnection(void *server) ;
 
-static char *getMethodString(void *types, gboolean dataset) ;
-static void datasetAddTypeName(GQuark key_id, gpointer unused, gpointer user_data) ;
+
+/* general internal routines. */
+static char *getMethodString(void *types, gboolean find_string) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
 static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
-static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context,
-				   GData *types) ;
+static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
 static gboolean getSMapping(AcedbServer server, char *class,
 			    char *sequence, int start, int end,
 			    char **parent_class_out, char **parent_name_out,
@@ -87,8 +87,9 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
 static gboolean checkServerVersion(AcedbServer server) ;
 static gboolean findSequence(AcedbServer server) ;
 static gboolean setQuietMode(AcedbServer server) ;
-static gboolean parseTypes(AcedbServer server) ;
+static gboolean parseTypes(AcedbServer server, GList *requested_types) ;
 ZMapFeatureTypeStyle parseMethod(char *method_str, char **end_pos) ;
+gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data) ;
 int getFoundObj(char *text) ;
 
 void eachAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
@@ -196,12 +197,18 @@ static ZMapServerResponseType openConnection(void *server_in)
 }
 
 
-static ZMapServerResponseType getTypes(void *server_in, GData **types_out)
+static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, GList **types_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
 
-  if (parseTypes(server))
+  if (requested_types)
+    {
+      server->method_str = getMethodString((void *)(requested_types), FALSE) ;
+      server->find_method_str = getMethodString((void *)(requested_types), TRUE) ;
+    }
+
+  if (parseTypes(server, requested_types))
     {
       result = ZMAP_SERVERRESPONSE_OK ;
       *types_out = server->types ;
@@ -210,7 +217,7 @@ static ZMapServerResponseType getTypes(void *server_in, GData **types_out)
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-		     "Could get types from server because: %s", server->last_err_msg) ;
+		     "Could not get types from server because: %s", server->last_err_msg) ;
     }
 
   return result ;
@@ -220,39 +227,28 @@ static ZMapServerResponseType getTypes(void *server_in, GData **types_out)
 
 /* the struct/param handling will not work in these routines now and needs sorting out.... */
 
-
-/* TYPES NOW NEEDS TO BE GOT DYNAMICALLY..... BUT PERHAPS WE SHOULD SAY IF TYPES != NULL THEN
- * WE SHOULD MERGE OR OVERRIDE.... */
-
-/* I'm not sure if I need to create a context actually in the acedb server, really it could be a keyset
- * or a virtual sequence...don't know if we can do this via gif interface.... */
-static ZMapServerResponseType setContext(void *server_in,  char *sequence,
-					 int start, int end, GData *types)
+static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
   gboolean status ;
-  ZMapFeatureContext feature_context ;
 
-  server->sequence = g_strdup(sequence) ;
-  server->start = start ;
-  server->end = end ;
-  server->types = types ;
+  server->req_context = feature_context ;
 
 
+  /*  HERE WE NEED TO ACCEPT A PASSED IN FEATURE CONTEXT AND THEN COPY IT AND FILL IT IN,
+      THE COPY CONTEXT NEEDS TO HAPPEN HERE.....*/
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* May want this to be dynamic some time, i.e. redone every time there is a request ? */
-  server->method_str = getMethodString((void *)(server->types), TRUE) ;
+  feature_context = zMapFeatureContextCreate(server->sequence) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  feature_context = zMapFeatureContextCreate(server->sequence) ;
 
-  if (!(status = getSequenceMapping(server, feature_context, types)))
+  if (!(status = getSequenceMapping(server, feature_context)))
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
 		     "Could not map %s because: %s",
-		     server->sequence, server->last_err_msg) ;
+		     g_quark_to_string(server->req_context->sequence_name), server->last_err_msg) ;
       g_free(feature_context) ;
     }
   else
@@ -271,22 +267,8 @@ ZMapFeatureContext copyContext(void *server_in)
   /* This should be via a feature context "copy" constructor..... */
   feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
+  /* this won't be nearly enough...need a deep copy... */
   *feature_context = *(server->current_context) ;	    /* n.b. struct copy. */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Try adding another alignment.... */
-  g_datalist_set_data(&(feature_context->alignments), "dummy2",
-		      feature_context->master_align) ;
-
-  g_datalist_set_data(&(feature_context->alignments), "dummy3",
-		      feature_context->master_align) ;
-
-  g_datalist_set_data(&(feature_context->alignments), "dummy4",
-		      feature_context->master_align) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   return feature_context ;
 }
@@ -295,37 +277,19 @@ ZMapFeatureContext copyContext(void *server_in)
 
 
 /* Get features sequence. */
-static ZMapServerResponseType getFeatures(void *server_in, GList *requested_types,
-					  ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context)
 {
   GetFeaturesStruct get_features ;
-
-  /* We should check that there is a sequence context here and report an error if there isn't... */
 
   get_features.result = ZMAP_SERVERRESPONSE_OK ;
   get_features.server = (AcedbServer)server_in ;
   get_features.server->last_err_status = ACECONN_OK ;
 
-
-  if (requested_types)
-    {
-      /* We should be verifying this against the context types..... */
-
-
-      get_features.server->method_str = getMethodString((void *)(requested_types), FALSE) ;
-    }
-
-
-
-  /* Here we need to do something along the lines of all aligns, all blocks... */
+  /* Fetch all the alignment blocks for all the sequences. */
   g_datalist_foreach(&(feature_context->alignments), eachAlignment, (gpointer)&get_features) ;
-
 
   return get_features.result ;
 }
-
-
-
 
 
 /* Get features and/or sequence. */
@@ -360,7 +324,8 @@ static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext fe
 
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
 		     "Could not map %s because: %s",
-		     server->sequence, server->last_err_msg) ;
+		     g_quark_to_string(server->req_context->sequence_name),
+		     server->last_err_msg) ;
     }
 
 
@@ -428,7 +393,7 @@ static gboolean destroyConnection(void *server_in)
  */
 
 
-static char *getMethodString(void *types, gboolean dataset)
+static char *getMethodString(void *types, gboolean find_string)
 {
   char *type_names = NULL ;
   ZMapTypesStringStruct types_data ;
@@ -439,20 +404,16 @@ static char *getMethodString(void *types, gboolean dataset)
     {
       str = g_string_new("") ;
 
-      str = g_string_append(str, "+method ") ;
+      if (find_string)
+	str = g_string_append(str, "Find method ") ;
+      else
+	str = g_string_append(str, "+method ") ;
 
       types_data.first_method = TRUE ;
+      types_data.find_string = find_string ;
       types_data.str = str ;
 
-      if (dataset)
-	{
-          GData *types_gData = (GData *)(types);
-	  g_datalist_foreach(&types_gData, datasetAddTypeName, (void *)&types_data) ;
-	}
-      else
-	{
-	  g_list_foreach((GList *)types, addTypeName, (void *)&types_data) ;
-	}
+      g_list_foreach((GList *)types, addTypeName, (void *)&types_data) ;
 
       if (*(str->str))
 	free_string = FALSE ;
@@ -464,15 +425,6 @@ static char *getMethodString(void *types, gboolean dataset)
 }
 
 
-/* Just a cover function required for dataset callbacks...we don't actually need
- * the unused parameter which would point to the struct for the dataset type.
- */
-static void datasetAddTypeName(GQuark key_id, gpointer unused, gpointer user_data)
-{
-  addTypeName(GUINT_TO_POINTER(key_id), user_data) ;
-
-  return ;
-}
 
 static void addTypeName(gpointer data, gpointer user_data)
 {
@@ -482,12 +434,16 @@ static void addTypeName(gpointer data, gpointer user_data)
 
   type_name = (char *)g_quark_to_string(key_id) ;
 
-  if (types_data->first_method)
-    types_data->first_method = FALSE ;
-  else
+  if (!types_data->first_method)
     types_data->str = g_string_append(types_data->str, "|") ;
 
   types_data->str = g_string_append(types_data->str, type_name) ;
+
+  if (types_data->first_method && types_data->find_string)
+    types_data->str = g_string_append(types_data->str, "*") ;
+
+  if (types_data->first_method)
+    types_data->first_method = FALSE ;
 
   return ;
 }
@@ -532,12 +488,14 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
    * for most acedb requests, only images/postscript are not and we aren't asking for them. */
   /* -rawmethods makes sure that the server does _not_ use the GFF_source field in the method obj
    * to output the source field in the gff, we need to see the raw methods. */
+
   acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s ; seqfeatures -rawmethods -zmap",
-				   server->sequence, server->start, server->end,
+				   g_quark_to_string(feature_block->original_id),
+				   feature_block->block_to_sequence.q1,
+				   feature_block->block_to_sequence.q2,
 				   server->method_str ? server->method_str : "") ;
 
-  
-    
+
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
       == ACECONN_OK)
     {
@@ -723,7 +681,7 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
        * calls to AceConnRequest() as the server slices...but that will need a change to my
        * AceConn package....
        * -u says get the dna as a single unformatted C string.*/
-      acedb_request =  g_strdup_printf("dna -u -x1 %d -x2 %d", server->start, server->end) ;
+      acedb_request =  g_strdup_printf("dna -u -x1 %d -x2 %d", server->req_context->sequence_to_parent.c1, server->req_context->sequence_to_parent.c2) ;
 
       server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len) ;
       if (server->last_err_status == ACECONN_OK)
@@ -758,8 +716,7 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
 /* Tries to smap sequence into whatever its parent is, if the call fails then we set all the
  * mappings in feature_context to be something sensible...we hope....
  */
-static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context,
-				   GData *types)
+static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context)
 {
   gboolean result = FALSE ;
   char *parent_name = NULL, *parent_class = NULL ;
@@ -769,19 +726,22 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
 
   /* We have a special case where the caller can specify  end == 0  meaning "get the sequence
    * up to the end", in this case we explicitly find out what the end is. */
-  if (server->end == 0)
+  if (server->req_context->sequence_to_parent.c2 == 0)
     {
       int child_length ;
 
       /* NOTE that we hard code sequence in here...but what to do...gff does not give back the
        * class of the sequence object..... */
-      if (getSMapLength(server, "sequence", server->sequence, &child_length))
-	server->end =  child_length ;
+      if (getSMapLength(server, "sequence",
+			(char *)g_quark_to_string(server->req_context->sequence_name),
+			&child_length))
+	server->req_context->sequence_to_parent.c2 =  child_length ;
     }
 
-  if (getSMapping(server, NULL, server->sequence, server->start, server->end,
+  if (getSMapping(server, NULL, (char *)g_quark_to_string(server->req_context->sequence_name),
+		  server->req_context->sequence_to_parent.c1, server->req_context->sequence_to_parent.c2,
 		  &parent_class, &parent_name, &sequence_to_parent)
-      && ((server->end - server->start + 1) == (sequence_to_parent.c2 - sequence_to_parent.c1 + 1))
+      && ((server->req_context->sequence_to_parent.c2 - server->req_context->sequence_to_parent.c1 + 1) == (sequence_to_parent.c2 - sequence_to_parent.c1 + 1))
       && getSMapLength(server, parent_class, parent_name, &parent_length))
     {
       feature_context->length = sequence_to_parent.c2 - sequence_to_parent.c1 + 1 ;
@@ -809,26 +769,6 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       feature_context->sequence_to_parent.p2 = sequence_to_parent.p2 ;
      
       result = TRUE ;
-    }
-
-
-
-  /* Fake up some alignments for now.....perhaps actually this code is correct for acedb
-   * which doesn't have a model for multiple alignments.... */
-  if (result)
-    {
-      ZMapFeatureAlignment alignment ;
-      char *align_name = "align_1" ;
-      ZMapFeatureBlock block ;
-      char *block_name = "block_1" ;
-
-      alignment = zMapFeatureAlignmentCreate(align_name, types) ;
-
-      zMapFeatureContextAddAlignment(feature_context, alignment, TRUE) ;
-
-      block = zMapFeatureBlockCreate(block_name) ;
-
-      zMapFeatureAlignmentAddBlock(alignment, block) ;
     }
 
   return result ;
@@ -1095,7 +1035,8 @@ static gboolean findSequence(AcedbServer server)
   void *reply = NULL ;
   int reply_len = 0 ;
 
-  acedb_request =  g_strdup_printf("%s %s", command, server->sequence) ;
+  acedb_request =  g_strdup_printf("%s %s", command,
+				   g_quark_to_string(server->req_context->sequence_name)) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
 						&reply, &reply_len)) == ACECONN_OK)
@@ -1126,7 +1067,8 @@ static gboolean findSequence(AcedbServer server)
 	      else
 		server->last_err_msg = g_strdup_printf("Expected to find \"1\" object with name %s, "
 						       "but found %d objects.",
-						       server->sequence, num_obj) ;
+						       g_quark_to_string(server->req_context->sequence_name),
+						       num_obj) ;
 	      break ;
 	    }
 	}
@@ -1170,6 +1112,9 @@ static gboolean setQuietMode(AcedbServer server)
   return result ;
 }
 
+
+
+
 /* Makes requests "find method" and "show -a" to get all methods in a form we can
  * parse, e.g.
  * 
@@ -1192,9 +1137,21 @@ static gboolean setQuietMode(AcedbServer server)
  * 
  * // 7 objects dumped
  * // 7 Active Objects
+ * 
+ * 
+ * Where we just specific methods I am using this syntax as I can't otherwise
+ * seem to make acedb just find the named methods (note the single "*"):
+ * 
+ * acedb> Find method  genomic_canonical*|curated|coding_transcript
+ * // Found 3 objects in this class
+ * // 3 Active Objects
+ * acedb> 
+ * 
+ * This is not ideal because it will pick up other methods that match these
+ * patterns, it will have to do for now....
  *
  *  */
-static gboolean parseTypes(AcedbServer server)
+static gboolean parseTypes(AcedbServer server, GList *requested_types)
 {
   gboolean result = FALSE ;
   char *command ;
@@ -1203,7 +1160,11 @@ static gboolean parseTypes(AcedbServer server)
   int reply_len = 0 ;
   int num_methods ;
 
-  command = "find method" ;
+  /* Get the requested styles/methods into the current keyset on the server. */
+  if (server->find_method_str)
+    command = server->find_method_str ;
+  else
+    command = "find method" ;
   acedb_request =  g_strdup_printf("%s", command) ;
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
 						&reply, &reply_len)) == ACECONN_OK)
@@ -1237,6 +1198,7 @@ static gboolean parseTypes(AcedbServer server)
       reply = NULL ;
     }
 
+  /* Retrieve the requested methods in text form. */
   if (result == TRUE)
     {
       command = "show -a" ;
@@ -1250,8 +1212,6 @@ static gboolean parseTypes(AcedbServer server)
 	  char *curr_pos = NULL ;
 	  char *next_line = NULL ;
 
-	  g_datalist_init(&server->types) ;
-
 	  while ((next_line = strtok_r(scan_text, "\n", &curr_pos))
 		 && !g_str_has_prefix(next_line, "// "))
 	    {
@@ -1261,7 +1221,7 @@ static gboolean parseTypes(AcedbServer server)
 	      
 	      if ((style = parseMethod(next_line, &curr_pos)))
 		{
-		  g_datalist_id_set_data(&server->types, style->unique_id, style) ;
+		  server->types = g_list_append(server->types, style) ;
 		  num_types++ ;
 		}
 	    }
@@ -1278,10 +1238,36 @@ static gboolean parseTypes(AcedbServer server)
     }
 
 
+  /* Sadly acedb automatically sorts the current (all) keysets into alphabetical order so we
+   * have to reset them as the point is to retain the order the user wanted. */
+  if (result)
+    {
+      server->types = g_list_sort_with_data(server->types, resortStyles, (gpointer)requested_types) ;
+    }
+
   return result ;
 }
 
 
+/* GCompareDataFunc () used to resort our list of styles to match users original sorting. */
+gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+  gint result = 0 ;
+  ZMapFeatureTypeStyle style_a = (ZMapFeatureTypeStyle)a, style_b = (ZMapFeatureTypeStyle)b ;
+  GList *style_list = (GList *)user_data ;
+  gint pos_a, pos_b ;
+  
+  pos_a = g_list_index(style_list, GUINT_TO_POINTER(style_a->unique_id)) ;
+  pos_b = g_list_index(style_list, GUINT_TO_POINTER(style_b->unique_id)) ;
+  zMapAssert(pos_a >= 0 && pos_b >= 0 && pos_a != pos_b) ;
+
+  if (pos_a < pos_b)
+    result = -1 ;
+  else
+    result = 1 ;
+
+  return result ;
+}
 
 
 /* The method string should be of the form:
@@ -1486,7 +1472,8 @@ void eachBlock(gpointer data, gpointer user_data)
 
 	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, get_features->server->host,
 			 "Could not map %s because: %s",
-			 get_features->server->sequence, get_features->server->last_err_msg) ;
+			 g_quark_to_string(get_features->server->req_context->sequence_name),
+			 get_features->server->last_err_msg) ;
 	}
     }
 

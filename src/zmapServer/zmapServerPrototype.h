@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: May 19 19:14 2005 (rds)
+ * Last edited: Jun 23 12:23 2005 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.11 2005-05-19 18:13:54 rds Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.12 2005-06-24 13:21:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -52,18 +52,19 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 					 char *userid, char *passwd, int timeout) ;
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn) ;
 
-typedef ZMapServerResponseType (*ZMapServerGetTypes)(void *server_in, GData **types_out) ;
+typedef ZMapServerResponseType (*ZMapServerGetTypes)(void *server_in,
+						     GList *requested_types, GList **types_out) ;
 
 typedef ZMapServerResponseType
-                 (*ZMapServerSetContextFunc)(void *server_conn, char *sequence,
-					     int start, int end, GData *types)  ;
+                 (*ZMapServerSetContextFunc)(void *server_conn,
+					     ZMapFeatureContext feature_context)  ;
+
 
 typedef ZMapFeatureContext
                  (*ZMapServerCopyContextFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType
-                 (*ZMapServerGetFeatures)(void *server_conn, GList *requested_types,
-					  ZMapFeatureContext feature_context) ;
+                 (*ZMapServerGetFeatures)(void *server_conn, ZMapFeatureContext feature_context) ;
 
 typedef ZMapServerResponseType
                  (*ZMapServerGetSequence)(void *server_conn, ZMapFeatureContext feature_context) ;
