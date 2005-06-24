@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun 22 19:33 2005 (rds)
+ * Last edited: Jun 24 14:14 2005 (edgrif)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.8 2005-06-22 18:34:14 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.9 2005-06-24 13:17:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,10 +45,7 @@
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapControl_P.h>
-#include <ZMap/zmapXRemote.h>
 
-/* Looks like we need to include this here... */
-#include <ZMap/zmapWindow.h>
 
 /* OK THERE IS A GENERAL PROBLEM HERE....WE NEED TO BE ABLE TO SEND COMMANDS TO A SPECIFIC WINDOW
    WITHIN THE ZMAP.......TRICKY....WE NEED THE WINDOW ID REALLY.... ok so we've got that

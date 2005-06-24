@@ -27,15 +27,14 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jun  9 19:08 2005 (rds)
+ * Last edited: Jun 24 08:45 2005 (edgrif)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.4 2005-06-13 20:29:37 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.5 2005-06-24 13:17:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <zmapApp_P.h>
-#include <ZMap/zmapXRemote.h>
 #include <ZMap/zmapCmdLineArgs.h>
 
 
