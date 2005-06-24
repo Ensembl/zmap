@@ -19,16 +19,16 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 23 09:44 2005 (rnc)
+ * Last edited: Jun 24 14:15 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.57 2005-06-23 08:45:51 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.58 2005-06-24 13:26:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -78,77 +78,7 @@ enum
 #define ZMAP_WINDOW_ITEM_FILL_COLOUR "white"
 #define ZMAP_WINDOW_ITEM_BORDER_COLOUR "black"
 #define ZMAP_WINDOW_BACKGROUND_COLOUR "white"
-
-
-
-/* I'M ACTUALLY THINKING THAT THIS LOT ARE NOT NEEDED, WE HAVE ALL THE ALIGNMENTS ETC. IN THE
- * CONTEXT AS A TREE, DO WE REALLY WANT ANOTHER TREE...I THINK NOT..... */
-
-/* Represents all blocks for a single alignment, if the alignment is ungapped it
- * will contain just one block. */
-typedef struct ZMapWindowAlignmentStructName
-{
-  GQuark alignment_id ;
-
-  ZMapWindow window ;					    /* our parent window. */
-
-  /* We may need to have a feature context in here.... */
-
-
-  FooCanvasItem *alignment_group ;			    /* Group containing all columns for
-							       this alignment. */
-
-  GList *blocks ;					    /* All blocks in the alignment. */
-
-  double col_gap ;					    /* space between columns. */
-
-} ZMapWindowAlignmentStruct, *ZMapWindowAlignment ;
-
-
-/* Represents all the columns of features for one contiguous alignment block.
- * There may be multiple discontinuous blocks displayed for a single alignment. */
-typedef struct ZMapWindowAlignmentBlockStructName
-{
-  GQuark block_id ;					    /* Needed ???? */
-
-  ZMapWindowAlignment parent ;				    /* Our parent alignment. */
-
-  FooCanvasItem *block_group ;				    /* Group containing all columns for
-							       this alignment. */
-
-  GList *columns ;					    /* All ZMapWindowColumn's in the alignment. */
-
-} ZMapWindowAlignmentBlockStruct, *ZMapWindowAlignmentBlock ;
-
-
-
-
-/* THIS ONE MAY BE NECESSARY BUT I'M NOT COMPLETELY SURE.... */
-
-/* Represents a column on the display. A column contains features that all have the
- * same type/style, e.g. "confirmed" transcripts. The column contains both the forward
- * and reverse strand features. */
-typedef struct
-{
-  GQuark type_name ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GQuark key_id ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  ZMapWindowAlignmentBlock parent_block ;		    /* Our Alignment block parent. */
-
-  FooCanvasItem *column_group ;				    /* The whole column. */
-  FooCanvasItem *forward_group, *reverse_group ;	    /* The forward and reverse groups. */
-
-  gboolean forward ;
-  ZMapFeatureTypeStyle type ;
-
-  double strand_gap ;					    /* space between strands. */
-
-} ZMapWindowColumnStruct, *ZMapWindowColumn ;
-
+#define ZMAP_WINDOW_BLOCK_COLOUR "light pink"
 
 
 /* Item features are the canvas items that represent sequence features, they can be of various
@@ -224,6 +154,11 @@ typedef struct _ZMapWindowStruct
   int            border_pixels ;			    /* top/bottom border to sequence. */
   double         text_height;                               /* used to calculate min/max zoom */
 
+
+  double align_gap ;					    /* horizontal gap between alignments. */
+  double column_gap ;					    /* horizontal gap between columns. */
+
+
   GtkWidget     *text ;
   GdkAtom        zmap_atom ;
   void          *app_data ;
@@ -235,11 +170,17 @@ typedef struct _ZMapWindowStruct
   ZMapFeatureContext feature_context ;			    /* Currently displayed features. */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* WE SHOULDN'T NEED THIS ANYMORE....ONCE THE HASH IS IN PLACE.... */
   GList *alignments ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-  GHashTable *feature_to_item ;				    /* Links a feature to the canvas item
-							       that displays it. */
+
+  GHashTable *context_to_item ;				    /* Links parts of a feature context to
+							       the canvas groups/items that
+							       represent those parts. */
 
   GPtrArray     *featureListWindows ;			    /* popup windows showing lists of
 							       column features. */
@@ -316,8 +257,7 @@ void   zmapWindowSetPageIncr    (ZMapWindow window);
 void   zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data);
 
 void zmapWindowDrawFeatures(ZMapWindow window, 
-			    ZMapFeatureContext current_context, ZMapFeatureContext new_context,
-			    GData *types) ;
+			    ZMapFeatureContext current_context, ZMapFeatureContext new_context) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -325,31 +265,38 @@ void zmapHideUnhideColumns(ZMapWindow window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-ZMapWindowAlignment zmapWindowAlignmentCreate(char *align_name, ZMapWindow window,
-					      double offset, FooCanvasGroup *parent_group) ;
-ZMapWindowAlignmentBlock zmapWindowAlignmentAddBlock(ZMapWindowAlignment alignment,
-						     char *block_id, double position) ;
-ZMapWindowColumn zmapWindowAlignmentAddColumn(ZMapWindowAlignmentBlock block, GQuark type_name,
-					      ZMapFeatureTypeStyle type) ;
-FooCanvasItem *zmapWindowAlignmentGetColumn(ZMapWindowColumn column_group, ZMapStrand strand) ;
-void zmapWindowAlignmentHideUnhideColumns(GList *alignments) ;
-ZMapWindowAlignment zmapWindowAlignmentDestroy(ZMapWindowAlignment alignment) ;
-
-
 GHashTable *zmapWindowFToICreate(void) ;
-void zmapWindowFToIAddSet(GHashTable *feature_to_item_hash, GQuark set_id) ;
-void zmapWindowFToIAddFeature(GHashTable *feature_to_item_hash, GQuark set_id,
-			      GQuark feature_id, FooCanvasItem *item) ;
-FooCanvasItem *zmapWindowFToIFindItem(GHashTable *feature_to_item_hash, GQuark set_id,
-				      GQuark feature_id) ;
-FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_item_hash, GQuark set_id,
-					   GQuark feature_id, int child_start, int child_end) ;
+GQuark zmapWindowFToIMakeSetID(GQuark set_id, ZMapStrand strand) ;
+gboolean zmapWindowFToIAddAlign(GHashTable *feature_to_context_hash,
+				GQuark align_id,
+				FooCanvasGroup *align_group) ;
+gboolean zmapWindowFToIAddBlock(GHashTable *feature_to_context_hash,
+				GQuark align_id, GQuark block_id,
+				FooCanvasGroup *block_group) ;
+gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
+			      GQuark align_id, GQuark block_id, GQuark set_id,
+			      FooCanvasGroup *set_group) ;
+gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
+				  GQuark align_id, GQuark block_id, GQuark set_id,
+				  GQuark feature_id, FooCanvasItem *feature_item) ;
+FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
+					  GQuark align_id, GQuark block_id, GQuark set_id,
+					  GQuark feature_id) ;
+FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
+					 ZMapFeatureSet feature_set, ZMapStrand strand) ;
+FooCanvasItem *zmapWindowFToIFindItem(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
+FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash, ZMapFeature feature,
+					   int child_start, int child_end) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
 
+
 void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
+
 void my_foo_canvas_item_w2i (FooCanvasItem *item, double *x, double *y) ;
 void my_foo_canvas_item_i2w (FooCanvasItem *item, double *x, double *y) ;
+void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
+void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 
 void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType);
 void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item); 
