@@ -1,4 +1,4 @@
-/*  Last edited: Mar  8 12:38 2005 (rds) */
+/*  Last edited: Jun 22 14:00 2005 (edgrif) */
 /* Declarations for utils.c.
    Copyright (C) 1995, 1996, 1997, 1998 Free Software Foundation, Inc.
 
@@ -43,14 +43,6 @@ so, delete this exception statement from your version.  */
    It will make Wget extremely slow, so only do it in development
    builds.  */
 #undef DEBUG_MALLOC
-
-#ifndef PARAMS
-# if PROTOTYPES
-#  define PARAMS(args) args
-# else
-#  define PARAMS(args) ()
-# endif
-#endif
 
 /* `gettext (FOO)' is long to write, so we use `_(FOO)'.  If NLS is
    unavailable, _(STRING) simply returns STRING.  */
@@ -115,9 +107,9 @@ void logprintf ();
 #define xstrdup  xstrdup_real
 #define xfree    free
 
-void *xmalloc_real PARAMS ((size_t));
-void *xrealloc_real PARAMS ((void *, size_t));
-char *xstrdup_real PARAMS ((const char *));
+void *xmalloc_real(size_t) ;
+void *xrealloc_real(void *, size_t) ;
+char *xstrdup_real(const char *) ;
 
 #define MD5_HASHLEN 16
 
@@ -304,12 +296,12 @@ struct file_memory {
 
 struct wget_timer;
 
-char *xstrdup_lower PARAMS ((const char *));
+char *xstrdup_lower(const char *) ;
 
-char *strdupdelim PARAMS ((const char *, const char *));
+char *strdupdelim(const char *, const char *) ;
 
-int numdigit PARAMS ((long));
-char *number_to_string PARAMS ((char *, long));
+int numdigit(long) ;
+char *number_to_string(char *, long) ;
 
 #endif /* ZMAPURLUTILS_H */
 

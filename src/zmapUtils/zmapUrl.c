@@ -1,4 +1,4 @@
-/*  Last edited: Mar  8 15:46 2005 (rds) */
+/*  Last edited: Jun 22 14:02 2005 (edgrif) */
 /* URL handling.
    Copyright (C) 1995, 1996, 1997, 2000, 2001, 2003, 2003
    Free Software Foundation, Inc.
@@ -82,7 +82,7 @@ static struct scheme_data supported_schemes[] =
 
 /* Forward declarations: */
 
-static int path_simplify PARAMS ((char *));
+static int path_simplify(char *) ;
 
 /* Support for encoding and decoding of URL strings.  We determine
    whether a character is unsafe through static table lookup.  This
@@ -574,7 +574,7 @@ rewrite_shorthand_url (const char *url)
     }
 }
 
-static void split_path PARAMS ((const char *, char **, char **));
+static void split_path(const char *, char **, char **) ;
 
 /* Like strpbrk, with the exception that it returns the pointer to the
    terminating zero (end-of-string aka "eos") if no matching character
