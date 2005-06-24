@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  6 14:42 2005 (rds)
+ * Last edited: Jun 24 13:11 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.81 2005-06-06 13:52:36 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.82 2005-06-24 13:25:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,6 @@ typedef struct
 {
   ZMapFeatureContext  current_features ;
   ZMapFeatureContext  new_features ;
-  GData *types ;
 } FeatureSetsStruct, *FeatureSets ;
 
 
@@ -202,7 +201,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   getConfiguration(window) ;
 
   /* Add a hash table to map features to their canvas items. */
-  window->feature_to_item = zmapWindowFToICreate() ;
+  window->context_to_item = zmapWindowFToICreate() ;
 
   window->featureListWindows = g_ptr_array_new();
 
@@ -290,7 +289,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
  * the actual features (e.g. anything that refers to canvas items). */
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
 			  void *app_data, ZMapWindow original_window,
-			  ZMapFeatureContext feature_context, GData *types,
+			  ZMapFeatureContext feature_context,
 			  ZMapWindowLockType window_locking)
 {
   ZMapWindow new_window = NULL ;
@@ -322,7 +321,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
  
 
   /* A new window will have new canvas items so we need a new hash. */
-  new_window->feature_to_item = zmapWindowFToICreate() ;
+  new_window->context_to_item = zmapWindowFToICreate() ;
 
 
   /* this is a little hokey, it assumes we have split the parent window and therefore
@@ -376,7 +375,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
-  zMapWindowDisplayData(new_window, feature_context, feature_context, types) ;
+  zMapWindowDisplayData(new_window, feature_context, feature_context) ;
 			      
   return new_window ;
 }
@@ -415,19 +414,19 @@ void zMapWindowSetMinZoom(ZMapWindow window)
  * achieve realised status (ie GTK_WIDGET_REALIZED yields TRUE) without having a 
  * valid vertical dimension. 
  *
- * Rob,
+ * Rob
+ *
  *    No, that's not the problem, it is realised, it just hasn't got sized properly yet. Ed
  * 
  *  */
 void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_features,
-			   ZMapFeatureContext new_features, GData *types)
+			   ZMapFeatureContext new_features)
 {
   FeatureSets feature_sets ;
 
   feature_sets = g_new0(FeatureSetsStruct, 1) ;
   feature_sets->current_features = current_features ;
   feature_sets->new_features = new_features ;
-  feature_sets->types = types ;
 
   if (GTK_WIDGET(window->canvas)->allocation.height > 1
       && GTK_WIDGET(window->canvas)->window)
@@ -521,7 +520,10 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
   if (window->locked_display)
     {
-      LockedDisplayStruct locked_data = {window, zoom_factor} ;
+      LockedDisplayStruct locked_data ;
+
+      locked_data.window = window ;
+      locked_data.zoom_factor = zoom_factor ;
 
       g_hash_table_foreach(window->sibling_locked_windows, lockedDisplayCB, (gpointer)&locked_data) ;
     }
@@ -665,9 +667,13 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor)
   if (window->columns)
     zmapHideUnhideColumns(window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* N.B. We could pass something else in other than the window as user_date.... */
   if (window->alignments)
     zmapWindowAlignmentHideUnhideColumns(window->alignments) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   
 
@@ -912,7 +918,7 @@ void zMapWindowDestroy(ZMapWindow window)
     }
   
   
-  zmapWindowFToIDestroy(window->feature_to_item) ;
+  zmapWindowFToIDestroy(window->context_to_item) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1292,8 +1298,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 
 
       /* Draw the features on the canvas */
-      zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context,
-			     feature_sets->types) ;
+      zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context) ;
 
 
       g_free(feature_sets) ;
