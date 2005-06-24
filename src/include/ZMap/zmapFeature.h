@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun 24 14:13 2005 (edgrif)
+ * Last edited: Jun 24 17:32 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.29 2005-06-24 13:20:39 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.30 2005-06-24 17:05:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -416,6 +416,7 @@ GQuark zMapStyleCreateID(char *style_name) ;
 
 char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
 ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id) ;
+gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
 ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type) ;
 void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
 GList *zMapFeatureTypeGetFromFile(char *types_file) ;

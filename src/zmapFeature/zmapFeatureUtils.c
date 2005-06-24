@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Jun 24 11:58 2005 (edgrif)
+ * Last edited: Jun 24 17:39 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.11 2005-06-24 13:20:39 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.12 2005-06-24 17:05:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,7 +53,7 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 static gboolean printLine(GIOChannel *channel, gchar *line) ;
 static gint findStyle(gconstpointer list_data, gconstpointer user_data) ;
-
+static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
 
 
 /* This function creates a unique id for a feature. This is essential if we are to use the
@@ -154,18 +154,39 @@ ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature)
 }
 
 
-
+/* Retrieve a style struct for the given style id. */
 ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id)
 {
   ZMapFeatureTypeStyle style ;
   GList *list ;
 
   list = g_list_find_custom(styles, GUINT_TO_POINTER(style_id), findStyle) ;
+  zMapAssert(list) ;
 
   style = list->data ;
 
   return style ;
 }
+
+
+/* Check that a style name exists in a list of styles. */
+gboolean zMapStyleNameExists(GList *style_name_list, char *style_name)
+{
+  gboolean result = FALSE ;
+  GList *list ;
+  GQuark style_id ;
+
+  style_id = zMapStyleCreateID(style_name) ;
+
+  if ((list = g_list_find_custom(style_name_list, GUINT_TO_POINTER(style_id), findStyleName)))
+    result = TRUE ;
+
+  return result ;
+}
+
+
+
+
 
 
 
@@ -551,9 +572,29 @@ static gint findStyle(gconstpointer list_data, gconstpointer user_data)
 {
   gint result = -1 ;
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)list_data ;
-  GQuark style_quark =  GPOINTER_TO_INT(user_data) ;
+  GQuark style_quark =  GPOINTER_TO_UINT(user_data) ;
 
   if (style_quark == style->unique_id)
+    result = 0 ;
+
+
+  printf("Looking for: %s   Found: %s\n",
+	 g_quark_to_string(style_quark), g_quark_to_string(style->unique_id)) ;
+
+
+  return result ;
+}
+
+
+/* GCompareFunc function, called for each member of a list of styles ids to see if the supplied 
+ * style id matches one in the style list. */
+static gint findStyleName(gconstpointer list_data, gconstpointer user_data)
+{
+  gint result = -1 ;
+  GQuark style_list_id = GPOINTER_TO_UINT(list_data) ;
+  GQuark style_quark =  GPOINTER_TO_UINT(user_data) ;
+
+  if (style_quark == style_list_id)
     result = 0 ;
 
   return result ;
