@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Apr 14 11:07 2005 (edgrif)
+ * Last edited: Jun 24 14:56 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.25 2005-04-14 10:08:58 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.26 2005-06-24 13:56:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -156,6 +156,22 @@ void zmapControlWindowDoTheZoom(ZMap zmap, double zoom)
   zMapWindowZoom(zMapViewGetWindow(zmap->focus_viewwindow), zoom) ;
 
   return ;
+}
+gboolean zmapControlWindowDoTheZoomR(ZMap zmap, double zoom)
+{
+
+  ZMapWindow window = NULL;
+  double factor;
+  window = zMapViewGetWindow(zmap->focus_viewwindow);
+  zMapWindowZoom(window, zoom) ;
+  factor = zMapWindowZoomingGetFactor(window);
+  zmap->info = g_error_new(g_quark_from_string(__FILE__),
+                           1,
+                           "<magnification>%f</magnification>",
+                           factor
+                           );
+  return TRUE;
+
 }
 
 
