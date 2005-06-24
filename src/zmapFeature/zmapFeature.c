@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: May 25 11:38 2005 (edgrif)
+ * Last edited: Jun 23 20:02 2005 (rnc)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.14 2005-05-27 15:14:02 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.15 2005-06-24 12:08:30 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -122,6 +122,7 @@ ZMapFeature zmapFeatureCreateEmpty(void)
 }
 
 
+
 /*!
  * Adds data to a feature which may be "NULL" or may already have partial features,
  * e.g. transcript that does not yet have all its exons.
@@ -133,7 +134,8 @@ gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char
 				char *sequence, ZMapFeatureType feature_type,
 				int start, int end, double score, ZMapStrand strand,
 				ZMapPhase phase,
-				ZMapHomolType homol_type, int query_start, int query_end)
+				ZMapHomolType homol_type, int query_start, int query_end,
+				GArray *gaps)
 {
   gboolean result = FALSE ;
 
@@ -216,14 +218,11 @@ gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char
     }
   else if (feature_type == ZMAPFEATURE_HOMOL)
     {
-      /* Note that we do not put the extra "align" information for gapped alignments into the
-       * GFF files from acedb so no need to worry about it just now...... */
-
       feature->feature.homol.type = homol_type ;
       feature->feature.homol.y1 = query_start ;
       feature->feature.homol.y2 = query_end ;
       feature->feature.homol.score = score ;
-      feature->feature.homol.align = NULL ;		    /* not supported currently.... */
+      feature->feature.homol.align = gaps;
     }
 
   return result ;
@@ -247,6 +246,11 @@ void zmapFeatureDestroy(ZMapFeature feature)
 
       if (feature->feature.transcript.introns)
 	g_array_free(feature->feature.transcript.introns, TRUE) ;
+    }
+  else if (feature->type == ZMAPFEATURE_HOMOL)
+    {
+      if (feature->feature.homol.align)
+	g_array_free(feature->feature.homol.align, TRUE) ;
     }
 
   g_free(feature) ;

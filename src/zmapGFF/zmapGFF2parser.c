@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: May 27 14:56 2005 (edgrif)
+ * Last edited: Jun 23 20:00 2005 (rnc)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.23 2005-05-27 15:15:48 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.24 2005-06-24 12:09:16 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,7 +54,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line) ;
 static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *source,
 			       ZMapFeatureType feature_type,
 			       int start, int end, double score, ZMapStrand strand,
-			       ZMapPhase phase, char *attributes) ;
+			       ZMapPhase phase, char *attributes, GArray *gaps) ;
 static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
@@ -68,6 +68,7 @@ static gboolean formatPhase(char *phase_str, ZMapPhase *phase_out) ;
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
 
+static void loadGaps(char *currentPos, GArray *gaps);
 
 static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
 
@@ -145,6 +146,7 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 {
   gboolean result = FALSE ;
 
+
   parser->line_count++ ;
 
   /* Look for the header information. */
@@ -190,6 +192,7 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 	    }
 	}
     }
+
 
   return result ;
 }
@@ -549,14 +552,38 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   int start = 0, end = 0 ;
   double score = 0 ;
   char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %1000[^#] %1000c" ; 
-  int fields ;
+  char *format_str_gaps = "%50s%50s%50s%d%d%50s%50s%50s %n" ; 
+  int fields, charsRead, attsLen ;
+  char *attsPos, *gapsPos;
+  GArray *gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
 
 
-  if (((fields = sscanf(line, format_str,
-		       &sequence[0], &source[0], &feature_type[0],
-		       &start, &end, &score_str[0], &strand_str[0], &phase_str[0],
-		       &attributes[0], &comments[0]))
-       < GFF_MANDATORY_FIELDS)
+  gapsPos = strstr(line, " Gaps ");
+  if (gapsPos == NULL)
+    {
+      fields = sscanf(line, format_str,
+		      &sequence[0], &source[0], &feature_type[0],
+		      &start, &end, &score_str[0], &strand_str[0], &phase_str[0],
+		      &attributes[0], &comments[0]);
+    }
+  else
+    {
+      fields = sscanf(line, format_str_gaps,
+		      &sequence[0], &source[0], &feature_type[0],
+		      &start, &end, &score_str[0], &strand_str[0], &phase_str[0],
+		      &charsRead);
+
+      /* The hard bit here is to distinguish the attributes field from any following
+       * gaps pairs, so for now I'm just saying copy from where the sscanf ended
+       * up to the Gaps tag, then go and do the gaps. */
+      attsPos = line + charsRead;
+      attsLen = gapsPos - attsPos;
+      strncpy(attributes, attsPos, attsLen);
+      
+      loadGaps(gapsPos, gaps); 
+    }
+
+  if (fields  < GFF_MANDATORY_FIELDS
       || (g_ascii_strcasecmp(source, ".") == 0)
       || (g_ascii_strcasecmp(feature_type, ".") == 0))
     {
@@ -627,16 +654,52 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	{
 	  result = makeNewFeature(parser, sequence, source, type,
 				  start, end, score, strand, phase,
-				  attributes) ;
+				  attributes, gaps) ;
 	}
 
       if (source_lower)
 	g_free(source_lower) ;
     }
 
-
   return result ;
 }
+
+
+
+/* This reads any gaps which are present on the gff line.
+ * They are preceded by a Gaps tag, and are presented as
+ * space-delimited groups of 4, consecutive groups being
+ * comma-delimited. gapsPos is wherever we are in the gff
+ * and is set to NULL when strstr can't find another comma.
+ * fields must be 4 for a gap so either way we drop out
+ * of the loop at the end. */
+static void loadGaps(char *gapsPos, GArray *gaps)
+{
+  ZMapAlignBlockStruct gap;
+  char *gaps_format_str = "%d%d%d%d," ; 
+  int fields, i;
+  gboolean status = TRUE;
+
+  gapsPos += 7;  /* skip over Gaps tag */
+
+  while (status == TRUE)
+    {
+      fields = sscanf(gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2);
+      if (fields == 4)
+	{
+	  gaps = g_array_append_val(gaps, gap);
+	  if ((gapsPos = strstr(gapsPos, ",")) != NULL)
+	    gapsPos++;
+	  else
+	    status = FALSE;    /* no more commas means we're at the end */
+	}
+      else
+	status = FALSE;  /* anything other than 4 is not a gap */
+    }
+
+  return;
+}
+
 
 
 static void printSource(GQuark key_id, gpointer data, gpointer user_data)
@@ -654,7 +717,7 @@ static void printSource(GQuark key_id, gpointer data, gpointer user_data)
 static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *source,
 			       ZMapFeatureType feature_type,
 			       int start, int end, double score, ZMapStrand strand,
-			       ZMapPhase phase, char *attributes)
+			       ZMapPhase phase, char *attributes, GArray *gaps)
 {
   gboolean result = FALSE ;
   char *feature_name_id = NULL, *feature_name = NULL ;
@@ -755,12 +818,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   /* we need to give it proper unique style name... */
   style_id = zMapStyleCreateID(source) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
+ 
   result = zmapFeatureAugmentData(feature, feature_name_id, feature_name, sequence,
 				  feature_type, start, end, score, strand,
-				  phase, homol_type, query_start, query_end) ;
+				  phase, homol_type, query_start, query_end, gaps) ;
 
   g_free(feature_name) ;
   g_free(feature_name_id) ;
@@ -863,7 +924,7 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
  * 
  * Format of similarity/homol attribute section is:
  * 
- *          Target "class:obj_name" start end
+ *          Target "class:obj_name" start end [Gaps "Qstart Qend Tstart Tend, ..."]
  * 
  * Format string extracts  class:obj_name  and  start and end.
  * 
@@ -1175,6 +1236,7 @@ gboolean formatPhase(char *phase_str, ZMapPhase *phase_out)
 
   return result ;
 }
+
 
 
 /* This is a GDataForeachFunc() and is called for each element of a GData list as a result

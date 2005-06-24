@@ -25,9 +25,9 @@
  * Description: Data structures describing a genetic feature.
  *              
  * HISTORY:
- * Last edited: May 31 20:48 2005 (rds)
+ * Last edited: Jun 23 09:37 2005 (rnc)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.27 2005-06-01 11:17:26 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.28 2005-06-24 12:07:12 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -395,7 +395,8 @@ gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char
 				char *sequence, ZMapFeatureType feature_type,
 				int start, int end, double score, ZMapStrand strand,
 				ZMapPhase phase,
-				ZMapHomolType homol_type_out, int start_out, int end_out) ;
+				ZMapHomolType homol_type_out, int start_out, int end_out,
+				GArray *gaps) ;
 GQuark zMapFeatureGetStyleQuark(ZMapFeature feature) ;
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature) ;
 void zmapFeatureDestroy(ZMapFeature feature) ;
