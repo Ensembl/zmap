@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 24 13:03 2005 (edgrif)
+ * Last edited: Jun 24 17:55 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.31 2005-06-24 13:21:47 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.32 2005-06-24 17:06:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -88,7 +88,7 @@ static gboolean checkServerVersion(AcedbServer server) ;
 static gboolean findSequence(AcedbServer server) ;
 static gboolean setQuietMode(AcedbServer server) ;
 static gboolean parseTypes(AcedbServer server, GList *requested_types) ;
-ZMapFeatureTypeStyle parseMethod(char *method_str, char **end_pos) ;
+ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str, char **end_pos) ;
 gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data) ;
 int getFoundObj(char *text) ;
 
@@ -439,7 +439,7 @@ static void addTypeName(gpointer data, gpointer user_data)
 
   types_data->str = g_string_append(types_data->str, type_name) ;
 
-  if (types_data->first_method && types_data->find_string)
+  if (types_data->find_string)
     types_data->str = g_string_append(types_data->str, "*") ;
 
   if (types_data->first_method)
@@ -1139,10 +1139,10 @@ static gboolean setQuietMode(AcedbServer server)
  * // 7 Active Objects
  * 
  * 
- * Where we just specific methods I am using this syntax as I can't otherwise
- * seem to make acedb just find the named methods (note the single "*"):
+ * Where we have specific methods I am using this syntax as I can't otherwise
+ * seem to make acedb find just the named methods (note the "*"):
  * 
- * acedb> Find method  genomic_canonical*|curated|coding_transcript
+ * acedb> Find method  genomic_canonical*|curated*|coding_transcript*
  * // Found 3 objects in this class
  * // 3 Active Objects
  * acedb> 
@@ -1219,7 +1219,7 @@ static gboolean parseTypes(AcedbServer server, GList *requested_types)
 
 	      scan_text = NULL ;
 	      
-	      if ((style = parseMethod(next_line, &curr_pos)))
+	      if ((style = parseMethod(requested_types, next_line, &curr_pos)))
 		{
 		  server->types = g_list_append(server->types, style) ;
 		  num_types++ ;
@@ -1282,10 +1282,11 @@ gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data)
  * 
  * This parses the method using it to create a style struct which it returns.
  * The function also returns a pointer to the blank line that ends the current
- * method.
+ * method. If the method name is not in the list of methods in requested_types
+ * then NULL is returned.
  * 
  */
-ZMapFeatureTypeStyle parseMethod(char *method_str_in, char **end_pos)
+ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, char **end_pos)
 {
   ZMapFeatureTypeStyle style = NULL ;
   char *method_str = method_str_in ;
@@ -1314,6 +1315,14 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in, char **end_pos)
       if (g_ascii_strcasecmp(tag, "Method") == 0)
 	{
 	  name = g_strdup(strtok_r(NULL, ": \"", &line_pos)) ; /* Skip ': "' */
+
+	  /* Make sure that this method is one of the required ones, see comments for parseTypes()
+	   * function. */
+	  if (!zMapStyleNameExists(requested_types, name))
+	    {
+	      status = FALSE ;
+	      break ;
+	    }
 	}
       else if (g_ascii_strcasecmp(tag, "Colour") == 0)
 	{
