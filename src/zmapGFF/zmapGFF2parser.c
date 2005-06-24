@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 23 20:00 2005 (rnc)
+ * Last edited: Jun 24 14:15 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.24 2005-06-24 12:09:16 rnc Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.25 2005-06-24 13:16:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,6 +36,7 @@
 #include <strings.h>
 #include <errno.h>
 #include <glib.h>
+#include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapGFF_P.h>
 
@@ -67,10 +68,10 @@ static gboolean formatStrand(char *strand_str, ZMapStrand *strand_out) ;
 static gboolean formatPhase(char *phase_str, ZMapPhase *phase_out) ;
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
+static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
 
 static void loadGaps(char *currentPos, GArray *gaps);
 
-static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
 
 /* types is the list of methods/types, call it what you will that we want to see
  * in the output, we may need to filter the incoming data stream to get this.
@@ -79,7 +80,7 @@ static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
  * _not_ create any features. This means the parser can be tested/used on huge datasets
  * without having to have huge amounts of memory to hold the feature structs.
  * You can only set parse_only when you create the parser, it cannot be set later. */
-ZMapGFFParser zMapGFFCreateParser(GData *sources, gboolean parse_only)
+ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only)
 {
   ZMapGFFParser parser ;
 
@@ -208,30 +209,15 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
        * for parse_only.... */
       if (!parser->parse_only && parser->feature_sets)
 	{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* NOT NEEDED NOW ????? */
-
-	  feature_context->sequence_name = g_quark_from_string(parser->sequence_name) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-	  feature_block->features_to_sequence.p1 = parser->features_start ;
-	  feature_block->features_to_sequence.p2 = parser->features_end ;
-	  feature_block->features_to_sequence.c1 = parser->features_start ;
-	  feature_block->features_to_sequence.c2 = parser->features_end ;
-
 	  g_datalist_init(&(feature_block->feature_sets)) ;
 
 	  g_datalist_foreach(&(parser->feature_sets), getFeatureArray,
 			     &(feature_block->feature_sets)) ;
 
 
-
 	  /* OK, THIS IS A HACK, REALLY THIS PARSER CODE SHOULD JUST USE THE FEATURE.H
 	   * HEADER AND NOT DELVE INTO THE FEATURE BLOCK STUFF BY FOR NOW WE HAVE TO FIX
 	   * UP ALL THE LINKS "BY HAND"..... */
-
 	  g_datalist_foreach(&(feature_block->feature_sets), setBlock,
 			     feature_block) ;
 
@@ -598,7 +584,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
       ZMapStrand strand ;
       ZMapPhase phase ;
       char *err_text = NULL ;
-      char *source_lower = NULL ;
 
       /* I'm afraid I'm not doing assembly stuff at the moment, its not worth it....if I need
        * to change this decision I can just this section.....
@@ -626,20 +611,18 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	err_text = g_strdup_printf("phase format not recognised: %s", phase_str) ;
       else
 	{
-	  /* Check further constraints, including that the source in the GFF record must be
-	   * one we have requested, note also that we require the source to have been translated into
-	   * lower case. */
-	  source_lower = g_ascii_strdown(source, -1) ;
-
+	  GQuark source_id ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  /* debugging.... */
 	  g_datalist_foreach(&(parser->sources), printSource, NULL) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+	  source_id = zMapStyleCreateID(source) ;
 
-	  if (parser->sources && !(g_datalist_get_data(&(parser->sources), source_lower)))
-	    err_text = g_strdup_printf("source not request: %s", source_lower) ;
+	  if (parser->sources && !(zMapFindStyle(parser->sources, source_id)))
+	    err_text = g_strdup_printf("features with this source were not requested: %s",
+				       source) ;
 	}
 
       if (err_text)
@@ -656,9 +639,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 				  start, end, score, strand, phase,
 				  attributes, gaps) ;
 	}
-
-      if (source_lower)
-	g_free(source_lower) ;
     }
 
   return result ;
@@ -1252,7 +1232,7 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 					feature_set->features) ;
 
   /* agh, poke in feature internals... */
-  new_features->style = feature_set->unique_id ;
+  new_features->style_id = feature_set->unique_id ;
 
   g_datalist_id_set_data(features, new_features->unique_id, new_features) ;
 

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 28 12:37 2005 (edgrif)
+ * Last edited: Jun 24 09:46 2005 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.8 2005-04-05 14:18:06 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.9 2005-06-24 13:16:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -121,7 +121,7 @@ typedef struct ZMapGFFParserStruct_
   char *sequence_name ;
   int features_start, features_end ;
 
-  GData *sources ;					    /* If present, only make features from
+  GList *sources ;					    /* If present, only make features from
 							       GFF records with a source from this
 							       list. */
 
