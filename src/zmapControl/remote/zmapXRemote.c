@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jun 22 19:37 2005 (rds)
+ * Last edited: Jun 24 12:28 2005 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.5 2005-06-22 18:39:44 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.6 2005-06-24 11:26:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,6 +70,29 @@ zMapXRemoteObj zMapXRemoteNew(void)
   XSynchronize(object->display, True);
 #endif
   return object;
+}
+
+void zMapXRemoteDestroy(zMapXRemoteObj object)
+{
+  zmapXDebug("%s id: 0x%lx\n", "Destroying object", object->window_id);
+
+  if(object->remote_app)
+    g_free(object->remote_app);
+
+  /* Don't think we need this bit
+   * ****************************
+   * zmapXTrapErrors();  
+   * XDeleteProperty(object->display, object->window_id, object->request_atom);
+   * XDeleteProperty(object->display, object->window_id, object->response_atom);
+   * XDeleteProperty(object->display, object->window_id, object->app_sanity_atom);
+   * XDeleteProperty(object->display, object->window_id, object->version_sanity_atom);
+   * XSync(object->display, False);
+   * zmapXUntrapErrors();
+   * ****************************
+   */
+
+  g_free(object);
+  return ;
 }
 
 void zMapXRemoteSetWindowID(zMapXRemoteObj object, Window id)
