@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 27 16:21 2005 (edgrif)
+ * Last edited: Jun 20 12:16 2005 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.30 2005-05-27 15:21:42 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.31 2005-06-24 13:24:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,8 +65,9 @@ typedef struct
 
 /* function prototypes ***************************************************/
 static void addItemToList             (GQuark key_id, gpointer data, gpointer user_data);
-static GtkTreeIter findItemInList     (ZMapWindow zmapWindow, GtkTreeModel *sort_model, FooCanvasItem *item);
-static int  tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
+static GtkTreeIter *findItemInList(ZMapWindow zmapWindow,
+				   GtkTreeModel *sort_model, FooCanvasItem *item);
+static int  tree_selection_changed_cb(GtkTreeSelection *selection, gpointer data);
 static void recalcScrollRegion        (ZMapWindow window, double start, double end);
 static void quitListCB                (GtkWidget *window, gpointer data);
 
@@ -84,6 +85,7 @@ static void quitListCB                (GtkWidget *window, gpointer data);
 
 void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 {
+  FooCanvasItem *parent_item ;
   GtkWidget *window, *featureList, *vbox, *hbox, *closeButton, *scrolledWindow;
   GtkTreeModel *sort_model;
   GtkCellRenderer *renderer;
@@ -93,8 +95,10 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
   ZMapFeature feature ;
   double x1, y1, x2, y2;
   GData *feature_sets ;
-  GtkTreeIter iter;
-  GtkTreePath *path;
+  GtkTreeIter *iter ;
+  GtkTreePath *path ;
+
+
 
   listCol = g_new0(ListColStruct, 1) ;
 
@@ -103,6 +107,11 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
   /* Get hold of the feature corresponding to this item. */
   feature = g_object_get_data(G_OBJECT(item), "feature");  
   zMapAssert(feature) ;
+
+  /* The item the user clicked on may have been a subpart of a feature, e.g. transcript, so
+   * we need to find the parent item for highlighting etc. */
+  parent_item = zmapWindowFToIFindItem(listCol->window->context_to_item, feature) ;
+  zMapAssert(parent_item) ;
 
 
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);	    /* world coords */
@@ -155,7 +164,6 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 
   /* Build and populate the list of features */
   feature_sets = feature->parent_set->features ;
-
 
   g_datalist_foreach(&feature_sets, addItemToList, listCol) ;
 
@@ -258,43 +266,38 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 
   gtk_container_add(GTK_CONTAINER(scrolledWindow), featureList);
 
-  /* find the item the user clicked on. */
-  iter = findItemInList(zmapWindow, sort_model, item);
 
-  /* If the clicked object was an exon or intron, then that won't have been
-   * found, as the list holds only the transcript name, so look again. */
-  if (!iter.stamp)
-    {
-      FooCanvasItem *transcript_item = zmapWindowFToIFindItem(listCol->window->feature_to_item,
-							      zMapFeatureGetStyleQuark(feature),
-							      feature->unique_id) ;
-      zMapAssert(transcript_item) ;
-      iter = findItemInList(zmapWindow, sort_model, transcript_item);
-    }
+
+  /* Find the item the user clicked on in our tree list. */
+  iter = findItemInList(zmapWindow, sort_model, parent_item) ;
+  zMapAssert(iter) ;
 
   /* finished with list now */
   g_object_unref(G_OBJECT(listCol->list));
   g_free(listCol) ;
 
-  /* highlight the name and scroll to it if necessary. */
-  path = gtk_tree_model_get_path(sort_model, &iter);
 
-  if (path)
-    {
-      gtk_tree_view_set_cursor(GTK_TREE_VIEW(featureList),
+  /* highlight the name and scroll to it if necessary. */
+  path = gtk_tree_model_get_path(sort_model, iter) ;
+  zMapAssert(path) ;
+
+  gtk_tree_view_set_cursor(GTK_TREE_VIEW(featureList),
+			   path,
+			   NULL,
+			   FALSE) ;
+
+  gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(featureList),
 			       path,
 			       NULL,
-			       FALSE);
-      gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(featureList),
-				   path,
-				   NULL,
-				   TRUE,
-				   0.3,  
-				   0.0); 
-      gtk_tree_path_free(path);
-    }
+			       TRUE,
+			       0.3,  
+			       0.0) ;
 
-  gtk_widget_show_all(window);
+  gtk_tree_path_free(path) ;
+
+  g_free(iter) ;
+
+  gtk_widget_show_all(window) ;
 
   return;
 }
@@ -335,17 +338,13 @@ static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
   ListCol     listCol = (ListColStruct*)user_data;
   GtkTreeIter iter1;
 
-
-
   if (listCol->strand == feature->strand)
     {
       FooCanvasItem *item ;
       char strand[8];
 
-      item = zmapWindowFToIFindItem(listCol->window->feature_to_item,
-				    zMapFeatureGetStyleQuark(feature), feature->unique_id) ;
+      item = zmapWindowFToIFindItem(listCol->window->context_to_item, feature) ;
       zMapAssert(item) ;
-
 
       gtk_tree_store_append(GTK_TREE_STORE(listCol->list), &iter1, NULL);
       gtk_tree_store_set(GTK_TREE_STORE(listCol->list), &iter1, 
@@ -371,28 +370,34 @@ static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
  * When the user clicks an item to see a list of features, 
  * we want to highlight that item in the resulting list.
  */
-static GtkTreeIter findItemInList(ZMapWindow zmapWindow, GtkTreeModel *sort_model, FooCanvasItem *item)
+static GtkTreeIter *findItemInList(ZMapWindow zmapWindow, GtkTreeModel *sort_model, FooCanvasItem *item)
 {
-  GtkTreeIter    iter, match_iter = {NULL};
+  GtkTreeIter    iter, *match_iter = NULL ;
   gboolean       valid;
-  FooCanvasItem *listItem;
+  FooCanvasItem *listItem ;
 
   /* Get the first iter in the list */
-  valid = gtk_tree_model_get_iter_first (sort_model, &iter);
+  valid = gtk_tree_model_get_iter_first(sort_model, &iter) ;
 
   while (valid)
     {
-      gtk_tree_model_get (sort_model, &iter, 
-                          FEATURE_ITEM, &listItem,
-                          -1);
+      gtk_tree_model_get(sort_model, &iter, 
+			 FEATURE_ITEM, &listItem,
+			 -1) ;
 
       if (item == listItem)
-	match_iter = iter;
+	{
+	  match_iter = g_new0(GtkTreeIter, 1) ;
 
-      valid = gtk_tree_model_iter_next (sort_model, &iter);
+	  *match_iter = iter ;				    /* n.b. struct copy. */
+	  
+	  break ;
+	}
+
+      valid = gtk_tree_model_iter_next(sort_model, &iter);
     }
 
-  return match_iter;
+  return match_iter ;
 }
 
 
