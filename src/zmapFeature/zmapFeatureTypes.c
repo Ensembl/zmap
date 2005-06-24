@@ -27,12 +27,13 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 27 13:23 2005 (edgrif)
+ * Last edited: Jun 24 08:45 2005 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.6 2005-05-27 15:14:31 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.7 2005-06-24 13:20:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <stdio.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfig.h>
 #include <zmapFeature_P.h>
@@ -211,9 +212,9 @@ gboolean zMapFeatureTypeSetAugment(GData **current, GData **new)
 
 /* Read the type/method/source (call it what you will) information from the given file
  * which currently must reside in the users $HOME/.ZMap directory. */
-GData *zMapFeatureTypeGetFromFile(char *types_file_name)
+GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 {
-  GData *types = NULL ;
+  GList *types = NULL ;
   gboolean result = FALSE ;
   ZMapConfigStanzaSet types_list = NULL ;
   ZMapConfig config ;
@@ -251,7 +252,7 @@ GData *zMapFeatureTypeGetFromFile(char *types_file_name)
       int num_types = 0 ;
       ZMapConfigStanza next_types ;
 
-      g_datalist_init(&types) ;
+      types = NULL ;
 
       /* Current error handling policy is to connect to servers that we can and
        * report errors for those where we fail but to carry on and set up the ZMap
@@ -280,7 +281,9 @@ GData *zMapFeatureTypeGetFromFile(char *types_file_name)
 				      zMapConfigGetElementBool(next_types, "frame_specific"),
 				      zMapConfigGetElementBool(next_types, "show_reverse")) ;
 
-	      g_datalist_id_set_data(&types, new_type->unique_id, new_type) ;
+
+	      types = g_list_append(types, new_type) ;
+
 	      num_types++ ;
 	    }
 	  else

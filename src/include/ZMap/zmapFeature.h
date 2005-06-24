@@ -22,12 +22,12 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: Data structures describing a genetic feature.
+ * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun 23 09:37 2005 (rnc)
+ * Last edited: Jun 24 14:13 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.28 2005-06-24 12:07:12 rnc Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.29 2005-06-24 13:20:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -118,7 +118,9 @@ typedef struct
 typedef struct
 {
   int q1, q2 ;						    /* coords in query sequence */
+  ZMapStrand q_strand ;
   int t1, t2 ;						    /* coords in target sequence */
+  ZMapStrand t_strand ;
 } ZMapAlignBlockStruct, *ZMapAlignBlock ;
 
 
@@ -136,7 +138,8 @@ typedef struct
 
 
 
-/* DO THESE STRUCTS NEED TO BE EXPOSED ? PROBABLY NOT.... */
+/* DO THESE STRUCTS NEED TO BE EXPOSED ? PROBABLY NOT....TO HIDE THEM WOULD REQUIRE
+ * QUITE A NUMBER OF ACCESS FUNCTIONS.... */
 
 
 typedef struct ZMapFeatureAlignmentStruct_ *ZMapFeatureAlignment ;
@@ -163,32 +166,25 @@ typedef struct ZMapFeatureContextStruct_
   ZMapMapBlockStruct sequence_to_parent ;		    /* Shows how this sequence maps to its
 							       ultimate parent. */
 
-
   ZMapFeatureAlignment master_align ;			    /* The target/master alignment out of
 							       the below set. */
 
-  /* Alignments.... */
+  GList *types ;					    /* Global list of types, _only_ these
+							       types are loaded into the context. */
+
   GData *alignments ;					    /* All the alignements for this zmap
 							       as a set of ZMapFeatureAlignment. */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Feature sets. */
-  GData *feature_sets ;					    /* A set of ZMapFeatureSetStruct. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 } ZMapFeatureContextStruct, *ZMapFeatureContext ;
+
+
 
 typedef struct ZMapFeatureAlignmentStruct_
 {
   ZMapFeatureContext parent_context ;			    /* Our parent context. */
 
   GQuark unique_id ;					    /* Unique id this alignment. */
-  GQuark original_id ;					    /* Original id, species ? */
-
-  /* We may need some mapping data here.... */
-
-  GData *types ;
+  GQuark original_id ;					    /* Original id of this sequence. */
 
   GList *blocks ;					    /* A set of ZMapFeatureStruct. */
 
@@ -201,9 +197,9 @@ typedef struct ZMapFeatureBlockStruct_
   ZMapFeatureAlignment parent_alignment ;		    /* Our parent alignment. */
 
   GQuark unique_id ;					    /* Unique id for this block. */
-  GQuark original_id ;					    /* Original id, not needed ? */
-
-  ZMapMapBlockStruct features_to_sequence ;		    /* Shows how these features map to the
+  GQuark original_id ;					    /* Original id, probably not needed ? */
+  
+  ZMapAlignBlockStruct block_to_sequence ;		    /* Shows how these features map to the
 							       sequence, n.b. this feature set may only
 							       span part of the sequence. */
 
@@ -227,7 +223,7 @@ typedef struct ZMapFeatureSetStruct_
 
   GData *features ;					    /* A set of ZMapFeatureStruct. */
 
-  GQuark style ;					    /* Style for these features. */
+  GQuark style_id ;					    /* Style for these features. */
 
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
@@ -273,12 +269,6 @@ typedef struct
  *  */
 typedef struct ZMapFeatureStruct_ 
 {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* I think actually we want to have a pointer to our parent.... */
-
-  GQuark style ;					    /* Style for this feature. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   ZMapFeatureSet parent_set ;				    /* Our containing set. */
 
 
@@ -293,9 +283,10 @@ typedef struct ZMapFeatureStruct_
 
   Coord x1, x2 ;					    /* start, end of feature in absolute coords. */
 
-
   ZMapStrand strand ;
+
   ZMapPhase phase ;
+
   float score ;
 
   char *text ;						    /* needed ????? */
@@ -353,6 +344,10 @@ typedef struct ZMapFeatureTypeStyleStruct_
 
 
 
+GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean query_sequence) ; 
+GQuark zMapFeatureBlockCreateID(char *align_sequence,
+				int target_start, int target_end, ZMapStrand target_strand,
+				int query_start, int query_end, ZMapStrand query_strand) ;
 
 
 char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature_name,
@@ -373,7 +368,7 @@ ZMapFeature zMapFeatureFindFeatureInSet(ZMapFeatureSet feature_set, GQuark featu
 GData *zMapFeatureFindSetInContext(ZMapFeatureContext feature_context, GQuark set_id) ;
 
 
-ZMapFeatureContext zMapFeatureContextCreate(char *sequence) ;
+ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end, GList *types) ;
 gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext new_context,
 				 ZMapFeatureContext *diff_context_out) ;
@@ -382,11 +377,14 @@ void zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
 void zMapFeatureDump(ZMapFeatureContext feature_context, char *file) ;
 void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
-ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, GData *types) ;
+ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name) ;
 void zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatureBlock block) ;
 void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment) ;
 
-ZMapFeatureBlock zMapFeatureBlockCreate(char *block_name) ;
+ZMapFeatureBlock zMapFeatureBlockCreate(char *ref_seq,
+					int ref_start, int ref_end, ZMapStrand ref_strand,
+					char *non_seq,
+					int non_start, int non_end, ZMapStrand non_strand) ;
 void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set) ;
 void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;
 
@@ -417,10 +415,10 @@ char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
 
 char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
-
+ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id) ;
 ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type) ;
 void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
-GData *zMapFeatureTypeGetFromFile(char *types_file) ;
+GList *zMapFeatureTypeGetFromFile(char *types_file) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
 

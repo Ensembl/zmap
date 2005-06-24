@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: May 23 11:53 2005 (edgrif)
+ * Last edited: Jun 24 11:58 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.10 2005-05-27 15:15:06 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.11 2005-06-24 13:20:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,6 +52,8 @@ static void printFeatureBlock(gpointer data, gpointer user_data) ;
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 static gboolean printLine(GIOChannel *channel, gchar *line) ;
+static gint findStyle(gconstpointer list_data, gconstpointer user_data) ;
+
 
 
 /* This function creates a unique id for a feature. This is essential if we are to use the
@@ -135,7 +137,7 @@ GQuark zMapFeatureGetStyleQuark(ZMapFeature feature)
 {
   GQuark style_quark ;
 
-  style_quark = feature->parent_set->style ;
+  style_quark = feature->parent_set->style_id ;
 
   return style_quark ;
 }
@@ -144,13 +146,28 @@ GQuark zMapFeatureGetStyleQuark(ZMapFeature feature)
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature)
 {
   ZMapFeatureTypeStyle style ;
-  GData *types = feature->parent_set->parent_block->parent_alignment->types ;
+  GList *styles = feature->parent_set->parent_block->parent_alignment->parent_context->types ;
 
-  style = (ZMapFeatureTypeStyle)g_datalist_id_get_data(&(types),
-						       feature->parent_set->style) ;
+  style = zMapFindStyle(styles, feature->parent_set->style_id) ;
 
   return style ;
 }
+
+
+
+ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id)
+{
+  ZMapFeatureTypeStyle style ;
+  GList *list ;
+
+  list = g_list_find_custom(styles, GUINT_TO_POINTER(style_id), findStyle) ;
+
+  style = list->data ;
+
+  return style ;
+}
+
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* WE MAY STILL WANT A FUNCTION LIKE THIS BUT IT WILL NEED MORE ARGS, E.G. ALIGNMENT... */
@@ -197,10 +214,6 @@ GData *zMapFeatureFindSetInBlock(ZMapFeatureBlock feature_block, GQuark set_id)
 }
 
 
-
-
-
-
 /* Dump out a feature context, if file is NULL then goes to stdout. */
 void zMapFeatureDump(ZMapFeatureContext feature_context, char *file)
 {
@@ -238,8 +251,12 @@ void zMapFeatureDump(ZMapFeatureContext feature_context, char *file)
 
   if (!channel)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zMapShowMsg(ZMAP_MSG_WARNING, "Can't open output file \"%s\": %s",
 		  filepath, channel_error->message) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       g_error_free(channel_error) ;
     }
   else
@@ -253,12 +270,20 @@ void zMapFeatureDump(ZMapFeatureContext feature_context, char *file)
       /* close output file */
       if (g_io_channel_shutdown(channel, TRUE, &channel_error) != G_IO_STATUS_NORMAL)
 	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMapShowMsg(ZMAP_MSG_WARNING, "Error closing output file \"%s\": %s",
 		      filepath, channel_error->message) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	  g_error_free(channel_error) ;
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       else 
 	zMapShowMsg(ZMAP_MSG_INFORMATION, "Feature Context dumped to \"%s\"", filepath) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   g_free(filepath) ;
@@ -311,8 +336,8 @@ static void printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures
   char *line ;
 
   line = g_strdup_printf("Feature Context:\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n", 
-			 feature_context->sequence_name, 
-			 feature_context->parent_name,
+			 g_quark_to_string(feature_context->sequence_name),
+			 g_quark_to_string(feature_context->parent_name),
 			 feature_context->parent_span.x1,
 			 feature_context->parent_span.x2,
 			 feature_context->sequence_to_parent.p1,
@@ -361,15 +386,22 @@ static void printFeatureBlock(gpointer data, gpointer user_data)
   char *line ;
 
   line = g_strdup_printf("\tBlock:\t%s\t%d\t%d\t%d\t%d\n", g_quark_to_string(block->unique_id),
-			 block->features_to_sequence.p1,
-			 block->features_to_sequence.p2,
-			 block->features_to_sequence.c1,
-			 block->features_to_sequence.c2) ;
+			 block->block_to_sequence.t1,
+			 block->block_to_sequence.t2,
+			 block->block_to_sequence.q1,
+			 block->block_to_sequence.q2) ;
 
 
   /* Only proceed if there's no problem printing the line */
+
+  /* JUST FOR NOW.... */
+  dump_features->status = printLine(dump_features->channel, line) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if ((dump_features->status = printLine(dump_features->channel, line)))
     g_datalist_foreach(&(block->feature_sets), printFeatureSet, dump_features) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   g_free(line) ;
 
@@ -390,7 +422,7 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
   line = g_strdup_printf("\tFeature Set:\t%s\t%s\n",
 			 g_quark_to_string(feature_set->unique_id),
-			 (char *)g_quark_to_string(feature_set->style)) ;
+			 (char *)g_quark_to_string(feature_set->style_id)) ;
 
   /* Only proceed if there's no problem printing the line */
   if ((dump_features->status = printLine(dump_features->channel, line)))
@@ -499,13 +531,32 @@ static gboolean printLine(GIOChannel *channel, gchar *line)
 
   if (g_io_channel_write_chars(channel, line, -1, &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zMapShowMsg(ZMAP_MSG_WARNING, "Error writing to output file: %50s... : %s",
 		  line, channel_error->message) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       g_error_free(channel_error) ;
       status = FALSE ;
     }
 
   return status ;
+}
+
+
+/* GCompareFunc function, called for each member of a list of styles to see if the supplied 
+ * style id matches the that in the style. */
+static gint findStyle(gconstpointer list_data, gconstpointer user_data)
+{
+  gint result = -1 ;
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)list_data ;
+  GQuark style_quark =  GPOINTER_TO_INT(user_data) ;
+
+  if (style_quark == style->unique_id)
+    result = 0 ;
+
+  return result ;
 }
 
 

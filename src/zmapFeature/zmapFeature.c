@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jun 23 20:02 2005 (rnc)
+ * Last edited: Jun 24 14:14 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.15 2005-06-24 12:08:30 rnc Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.16 2005-06-24 13:20:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -149,11 +149,6 @@ gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char
       feature->type = feature_type ;
       feature->x1 = start ;
       feature->x2 = end ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      feature->style = style_id ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       feature->strand = strand ;
       feature->phase = phase ;
       feature->score = score ;
@@ -331,7 +326,7 @@ void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
 }
 
 
-ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, GData *types)
+ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name)
 {
   ZMapFeatureAlignment alignment ;
 
@@ -344,8 +339,6 @@ ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, GData *types)
       /* THIS WILL NEED CHANGING..... */
       alignment->unique_id = alignment->original_id ;
     }
-
-  alignment->types = types ;
 
   return alignment ;
 }
@@ -373,24 +366,41 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment)
 
 
 
-ZMapFeatureBlock zMapFeatureBlockCreate(char *block_name)
+ZMapFeatureBlock zMapFeatureBlockCreate(char *ref_seq,
+					int ref_start, int ref_end, ZMapStrand ref_strand,
+					char *non_seq,
+					int non_start, int non_end, ZMapStrand non_strand)
 {
   ZMapFeatureBlock new_block ;
+  char *id_base ;
 
-  zMapAssert(!block_name || (block_name && *block_name)) ;
+
+  /* need some asserts in here.... */
 
   new_block = g_new(ZMapFeatureBlockStruct, 1) ;
 
-  if (block_name)
-    {
-      new_block->original_id = g_quark_from_string(block_name) ;
 
-      /* THIS WILL NEED CHANGING..... */
-      new_block->unique_id = new_block->original_id ;
-    }
+  id_base = g_strdup_printf("%s:%d-%d_vs_%s:%d-%d", 
+			    ref_seq, ref_start, 
+			    ref_end, non_seq, 
+			    non_start, non_end) ;
+  new_block->unique_id = g_quark_from_string(id_base) ;
+  g_free(id_base) ;
+
+  /* Use the sequence name for the original_id */
+  new_block->original_id = g_quark_from_string(non_seq) ; 
+
+  new_block->block_to_sequence.t1 = ref_start ;
+  new_block->block_to_sequence.t2 = ref_end ;
+  new_block->block_to_sequence.t_strand = ref_strand ;
+
+  new_block->block_to_sequence.q1 = non_start ;
+  new_block->block_to_sequence.q2 = non_end ;
+  new_block->block_to_sequence.q_strand = non_strand ;
 
   return new_block ;
 }
+
 
 
 void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set)
@@ -427,14 +437,20 @@ void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data)
 }
 
 
-ZMapFeatureContext zMapFeatureContextCreate(char *sequence)
+ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end, GList *types)
 {
   ZMapFeatureContext feature_context ;
 
   feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
   if (sequence && *sequence)
-    feature_context->sequence_name = g_quark_from_string(sequence) ;
+    {
+      feature_context->sequence_name = g_quark_from_string(sequence) ;
+      feature_context->sequence_to_parent.c1 = start ;
+      feature_context->sequence_to_parent.c2 = end ;
+    }
+
+  feature_context->types = types ;
 
   g_datalist_init(&(feature_context->alignments)) ;
 
@@ -545,7 +561,7 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 	{
 	  FeatureContextsStruct contexts ;
 
-	  diff_context = zMapFeatureContextCreate(NULL) ;
+	  diff_context = zMapFeatureContextCreate(NULL, 0, 0, NULL) ;
 
 	  contexts.current_feature_sets = &(current_context->feature_sets) ;
 	  contexts.diff_feature_sets = &(diff_context->feature_sets) ;
