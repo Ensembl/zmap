@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  8 14:14 2005 (rnc)
+ * Last edited: Jun  8 15:32 2005 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.1 2005-06-08 13:15:32 rnc Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.2 2005-06-24 13:23:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <stdio.h>
@@ -254,6 +254,11 @@ static void setupEntries(GtkWidget *vbox, editorData editor_data, gboolean undo)
 	}
     } 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* TEMP. BECAUSE CODE CRASHES OTHERWISE.... */
+
   g_free(fType);
   g_free(fX1);
   g_free(fX2);
@@ -271,6 +276,8 @@ static void setupEntries(GtkWidget *vbox, editorData editor_data, gboolean undo)
   g_free(tPhase);
   g_free(tSNF);
   g_free(tENF);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return;
 }
