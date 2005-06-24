@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  1 14:03 2005 (rds)
+ * Last edited: Jun 24 13:24 2005 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.5 2005-06-01 13:17:20 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.6 2005-06-24 13:23:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,24 +44,12 @@ typedef struct
 } HighlightStruct, *Highlight ;
 
 
-/* Used to hold coord information + return a result the child search callback function. */
-typedef struct
-{
-  int child_start, child_end ;
-  FooCanvasItem *child_item ;
-} ChildSearchStruct, *ChildSearch ;
-
 
 static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean rev_video) ;
 static void highlightFuncCB(gpointer data, gpointer user_data) ;
 static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_video) ;
 
 static void checkScrollRegion(ZMapWindow window, double start, double end) ;
-static void destroyFeaturesHash(gpointer data) ;
-
-
-static void childSearchCB(gpointer data, gpointer user_data) ;
-
 
 
 
@@ -140,8 +128,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 
   if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
     {
-      matching_item = zmapWindowFToIFindItem(window->feature_to_item, zMapFeatureGetStyleQuark(feature),
-					     feature->unique_id) ;
+      matching_item = zmapWindowFToIFindItem(window->context_to_item, feature) ;
     }
   else
     {
@@ -150,9 +137,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
       item_feature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
 								   "item_feature_data") ;
 
-      matching_item = zmapWindowFToIFindItemChild(window->feature_to_item,
-						  zMapFeatureGetStyleQuark(feature),
-						  feature->unique_id,
+      matching_item = zmapWindowFToIFindItemChild(window->context_to_item, feature,
 						  item_feature_data->start, item_feature_data->end) ;
     }
 
@@ -161,8 +146,6 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Finds the feature item child in a window corresponding to the supplied feature item..which is
  * usually one from a different window....
  * A feature item child is something like the feature item representing an exon within a transcript. */
@@ -180,19 +163,22 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
   zMapAssert(feature) ;
 
   /* Find the item that matches */
-  matching_item = zmapWindowFToIFindItem(window->feature_to_item, feature->style, feature->unique_id) ;
+  matching_item = zmapWindowFToIFindItem(window->context_to_item, feature) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I don't know what happened to this bit of code... */
 
   if (FOO_IS_CANVAS_GROUP( matching_item))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
 
   return matching_item ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
 
 
@@ -220,7 +206,14 @@ FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
 	  && (style_name = zMapStyleCreateName(style))
 	  && (style_id = g_quark_try_string(style_name)))
 	{
+
+	  /* NEEDS TO BE REDONE TO USE NEW HASH FUNCTION...PROBABLY A NEW HASH FUNCTION
+	   * WILL NEED TO BE WRITTEN.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  item = zmapWindowFToIFindItem(window->feature_to_item, style_id, feature_id) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	}
     }
 
@@ -342,109 +335,122 @@ void zmapWindowPrintItemCoords(FooCanvasItem *item)
 }
 
 
-
-
-/* Create the table that hashes feature set ids to hash tables of features.
- * NOTE that the glib hash stuff does not store anything except the pointers to the
- * keys and values which is a pain if you are only hashing on ints....as I am.
- * I've therefore decided to try using their "direct hash" stuff to only work on
- * the pointers... */
-GHashTable *zmapWindowFToICreate(void)
+/* Converts given world coords to an items coord system and prints them. */
+void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1_in, double y1_in)
 {
-  GHashTable *feature_to_item ;
+  double x1 = x1_in, y1 = y1_in;
 
-  feature_to_item = g_hash_table_new_full(g_direct_hash, g_direct_equal,
-					  NULL,		    /* Nothing to destroy for hash key. */
-					  destroyFeaturesHash) ;
+  my_foo_canvas_item_w2i(item, &x1, &y1) ;
 
-  return feature_to_item ;
+  if (!text)
+    text = "Item" ;
+
+  printf("%s -  world(%f, %f)  ->  item(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
+
+  return ;
+}
+
+/* Converts coords in an items coord system into world coords and prints them. */
+/* Prints out item coords position in world and its parents coords.... */
+void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1_in, double y1_in)
+{
+  double x1 = x1_in, y1 = y1_in;
+
+  my_foo_canvas_item_i2w(item, &x1, &y1) ;
+
+  if (!text)
+    text = "Item" ;
+
+  printf("%s -  item(%f, %f)  ->  world(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
+
+
+  return ;
 }
 
 
-/* Add a hash for the given feature set. The set may already exist if we are merging
- * more data from another server, if so then no action is taken otherwise we would lose
- * all our existing feature hashes ! */
-void zmapWindowFToIAddSet(GHashTable *feature_to_item_hash, GQuark set_id)
-{
-  GHashTable *new_set_hash ;
 
-  if (!(new_set_hash = (GHashTable *)g_hash_table_lookup(feature_to_item_hash,
-							 GUINT_TO_POINTER(set_id))))
-    {
-      new_set_hash = g_hash_table_new(g_direct_hash, g_direct_equal) ;
-      g_hash_table_insert(feature_to_item_hash, GUINT_TO_POINTER(set_id), new_set_hash) ;
+
+
+
+
+/* I'M TRYING THESE TWO FUNCTIONS BECAUSE I DON'T LIKE THE BIT WHERE IT GOES TO THE ITEMS
+ * PARENT IMMEDIATELY....WHAT IF THE ITEM IS ALREADY A GROUP ?????? */
+
+/**
+ * foo_canvas_item_w2i:
+ * @item: A canvas item.
+ * @x: X coordinate to convert (input/output value).
+ * @y: Y coordinate to convert (input/output value).
+ *
+ * Converts a coordinate pair from world coordinates to item-relative
+ * coordinates.
+ **/
+void my_foo_canvas_item_w2i (FooCanvasItem *item, double *x, double *y)
+{
+  g_return_if_fail (FOO_IS_CANVAS_ITEM (item));
+  g_return_if_fail (x != NULL);
+  g_return_if_fail (y != NULL);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* orginal code... */
+  item = item->parent;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (!FOO_IS_CANVAS_GROUP (item))
+    item = item->parent;
+
+  while (item) {
+    if (FOO_IS_CANVAS_GROUP (item)) {
+      *x -= FOO_CANVAS_GROUP (item)->xpos;
+      *y -= FOO_CANVAS_GROUP (item)->ypos;
     }
 
-  return ;
-}
-
-
-void zmapWindowFToIAddFeature(GHashTable *feature_to_item_hash, GQuark set_id,
-			      GQuark feature_id, FooCanvasItem *item)
-{
-  GHashTable *set_hash ;
-
-  set_hash = (GHashTable *)g_hash_table_lookup(feature_to_item_hash, GUINT_TO_POINTER(set_id)) ;
-
-  g_hash_table_insert(set_hash, GUINT_TO_POINTER(feature_id), item) ;
+    item = item->parent;
+  }
 
   return ;
 }
 
 
-/* Warning, may return null so result MUST BE TESTED by caller. */
-FooCanvasItem *zmapWindowFToIFindItem(GHashTable *feature_to_item_hash, GQuark set_id,
-				      GQuark feature_id)
+/**
+ * foo_canvas_item_i2w:
+ * @item: A canvas item.
+ * @x: X coordinate to convert (input/output value).
+ * @y: Y coordinate to convert (input/output value).
+ *
+ * Converts a coordinate pair from item-relative coordinates to world
+ * coordinates.
+ **/
+void my_foo_canvas_item_i2w (FooCanvasItem *item, double *x, double *y)
 {
-  FooCanvasItem *item ;
-  GHashTable *set_hash ;
-
-  set_hash = (GHashTable *)g_hash_table_lookup(feature_to_item_hash, GUINT_TO_POINTER(set_id)) ;
-
-  item = (FooCanvasItem *)g_hash_table_lookup(set_hash, GUINT_TO_POINTER(feature_id)) ;
-
-  return item ;
-}
+  g_return_if_fail (FOO_IS_CANVAS_ITEM (item));
+  g_return_if_fail (x != NULL);
+  g_return_if_fail (y != NULL);
 
 
-/* Find the child item that matches the supplied start/end, use for finding feature items
- * that are part of a compound feature, e.g. exons/introns in a transcript.
- * Warning, may return null so result MUST BE TESTED by caller. */
-FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_item_hash, GQuark set_id,
-					   GQuark feature_id, int child_start, int child_end)
-{
-  FooCanvasItem *item = NULL ;
-  GHashTable *set_hash ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Original code... */
+  item = item->parent;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (!FOO_IS_CANVAS_GROUP (item))
+    item = item->parent;
 
-  set_hash = (GHashTable *)g_hash_table_lookup(feature_to_item_hash, GUINT_TO_POINTER(set_id)) ;
-
-
-  /* If the returned item is not a compound item then return NULL, otherwise look for the correct
-   * child using the start/end. */
-  if ((item = (FooCanvasItem *)g_hash_table_lookup(set_hash, GUINT_TO_POINTER(feature_id)))
-      && FOO_IS_CANVAS_GROUP(item))
-    {
-      FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
-      ChildSearchStruct child_search = {child_start, child_end, NULL} ;
-
-      g_list_foreach(group->item_list, childSearchCB, (void *)&child_search) ;
-
-      if (child_search.child_item)
-	item = child_search.child_item ;
+  while (item) {
+    if (FOO_IS_CANVAS_GROUP (item)) {
+      *x += FOO_CANVAS_GROUP (item)->xpos;
+      *y += FOO_CANVAS_GROUP (item)->ypos;
     }
 
-  return item ;
-}
-
-
-/* Destroy the feature to item hash, this will cause all the individual feature to
- * item hashes to be destroyed. */
-void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash)
-{
-  g_hash_table_destroy(feature_to_item_hash) ;
+    item = item->parent;
+  }
 
   return ;
 }
+
+
+
+
+
 
 
 
@@ -452,53 +458,6 @@ void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash)
  *                  Internal routines.
  */
 
-
-/* This is a g_datalist callback function. */
-static void childSearchCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-  ChildSearch child_search = (ChildSearch)user_data ;
-  ZMapWindowItemFeatureType item_feature_type ;
-
-  /* We take the first match we find so this function does nothing if we have already
-   * found matching child item. */
-  if (!(child_search->child_item))
-    {
-      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							    "item_feature_type")) ;
-      if (item_feature_type == ITEM_FEATURE_CHILD)
-	{
-	  ZMapWindowItemFeature item_feature_data ;
-
-	  item_feature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
-								       "item_feature_data") ;
-
-	  if (item_feature_data->start == child_search->child_start
-	      && item_feature_data->end == child_search->child_end)
-	    child_search->child_item = item ;
-	}
-    }
-
-  return ;
-}
-
-
-
-
-
-
-
-/* Is called for all entries in the hash table of feature set ids -> hash table of features. For
- * each one we need to destroy the feature hash table. Note no resources need to be destroyed,
- * the hash table just needs to be removed. */
-static void destroyFeaturesHash(gpointer data)
-{
-  GHashTable *feature_hash_table = (GHashTable *)data ;
-
-  g_hash_table_destroy(feature_hash_table) ;
-
-  return ;
-}
 
 
 
@@ -580,8 +539,11 @@ static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
 {
   if (FOO_IS_CANVAS_GROUP(item))
     {
-      HighlightStruct highlight = {window, rev_video} ;
+      HighlightStruct highlight = {NULL, FALSE} ;
       FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
+
+      highlight.window = window ;
+      highlight.rev_video = rev_video ;
 
       g_list_foreach(group->item_list, highlightFuncCB, (void *)&highlight) ;
     }
