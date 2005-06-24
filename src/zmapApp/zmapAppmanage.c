@@ -26,9 +26,9 @@
  *              
  * Exported functions: None, all functions internal to zmapApp.
  * HISTORY:
- * Last edited: May 12 16:17 2005 (rds)
+ * Last edited: Jun 24 08:37 2005 (edgrif)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.11 2005-05-12 15:45:35 rds Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.12 2005-06-24 13:12:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -177,6 +177,8 @@ static void view_onDoubleClick (GtkTreeView        *treeview,
 
 static gboolean view_onButtonPressed (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
 {
+  gboolean event_handled = FALSE ;
+
   /* single click with the right mouse button? */
   if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
     {
@@ -188,16 +190,11 @@ static gboolean view_onButtonPressed (GtkWidget *treeview, GdkEventButton *event
                                         &path, NULL, NULL, NULL))
         {
           view_popup_menu(treeview, event, userdata);
-          return TRUE; /* we handled this */
+          event_handled = TRUE; /* we handled this */
         }
-      else
-        {
-          return FALSE;
-        }
-      return FALSE;
     }
-
-  return FALSE; /* we could not be bothered to handle this */
+  
+  return event_handled ; /* we could not be bothered to handle this */
 }
 
 static void view_popup_menu(GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
