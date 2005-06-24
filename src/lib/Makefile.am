@@ -68,11 +68,11 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapView/zmapView_P.h \
 	$(top_srcdir)/zmapWindow/GFF_scaffold.c \
 	$(top_srcdir)/zmapWindow/zmapWindow.c \
-	$(top_srcdir)/zmapWindow/zmapWindowAlignment.c \
 	$(top_srcdir)/zmapWindow/zmapWindowCallBlixem.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures.c \
 	$(top_srcdir)/zmapWindow/zmapWindowEditor.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFrame.c \
+	$(top_srcdir)/zmapWindow/zmapWindowItemHash.c \
 	$(top_srcdir)/zmapWindow/zmapWindowList.c \
 	$(top_srcdir)/zmapWindow/zmapWindowMenus.c \
 	$(top_srcdir)/zmapWindow/zmapWindowUtils.c \
