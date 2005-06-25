@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 24 12:29 2005 (rnc)
+ * Last edited: Jun 25 12:54 2005 (rnc)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.8 2005-06-24 12:09:41 rnc Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.9 2005-06-25 11:55:25 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -219,10 +219,8 @@ static char *buildParamString(blixemData blixem_data)
   if (blixem_data->min < 0)
     blixem_data->min = 0;
 
-  /* Unresolved: what to do when max is too long. In acedb, max is limited
-   * to the featuremap length.  However, as this is set to at least 3 times
-   * the length of the requested object, max seems unlikely ever to be
-   * trimmed, so we don't here. */
+  if (blixem_data->max >= blixem_data->window->feature_context->length)
+    blixem_data->max = blixem_data->window->feature_context->length - 1;
 
   /* start tells blixem to position itself slightly
    * to the left of the centre of the overall viewing window.
@@ -232,8 +230,10 @@ static char *buildParamString(blixemData blixem_data)
   /* qstart and qend coordinates passed to blixem in the exblx file
    * are relative to the ends of the viewing window (depending on
    * strand), so offset tells blixem where that starts relative to
-   * the start of the sequence in question. */
-  blixem_data->offset  = blixem_data->min - blixem_data->window->feature_context->sequence_to_parent.c1;
+   * the start of the sequence in question. Since this is an offset,
+   * not a coord, and context->s_to_p.c1 is 1-based, while min is
+   * 0-based, we add 1. */
+  blixem_data->offset  = blixem_data->min - blixem_data->window->feature_context->sequence_to_parent.c1 + 1;
   if (blixem_data->offset < 0)
     blixem_data->offset = 0;
 
@@ -488,7 +488,7 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 	       * bases if that distance is not a whole number of codons. */
 	      if (feature->strand == ZMAPSTRAND_REVERSE)
 		{
-		  qframe = g_strdup_printf("(-%d)", 1 + ((max - min + 1) - qstart) %3 );
+		  qframe = g_strdup_printf("(-%d)", 1 + ((max - blixem_data->offset + 1) - qstart) %3 );
 		  sstart = feature->feature.homol.y2;
 		  send   = feature->feature.homol.y1;
 		}
