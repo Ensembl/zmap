@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 25 12:54 2005 (rnc)
+ * Last edited: Jun 26 11:54 2005 (rnc)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.9 2005-06-25 11:55:25 rnc Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.10 2005-06-26 11:13:43 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -219,8 +219,8 @@ static char *buildParamString(blixemData blixem_data)
   if (blixem_data->min < 0)
     blixem_data->min = 0;
 
-  if (blixem_data->max >= blixem_data->window->feature_context->length)
-    blixem_data->max = blixem_data->window->feature_context->length - 1;
+  if (blixem_data->max >= blixem_data->window->feature_context->sequence_to_parent.c2)
+    blixem_data->max = blixem_data->window->feature_context->sequence_to_parent.c2 - 1;
 
   /* start tells blixem to position itself slightly
    * to the left of the centre of the overall viewing window.
