@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 24 15:28 2005 (edgrif)
+ * Last edited: Jun 27 16:30 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.69 2005-06-24 17:07:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.70 2005-06-27 15:40:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,6 +93,13 @@ typedef struct _ZMapCanvasDataStruct
   FooCanvasGroup *curr_reverse_col ;
 
   GdkColor *curr_background ;
+
+  GdkColor mblock_for ;
+  GdkColor mblock_rev ;
+  GdkColor qblock_for ;
+  GdkColor qblock_rev ;
+
+
 
 } ZMapCanvasDataStruct, *ZMapCanvasData ;
 
@@ -190,6 +197,15 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
   zMapAssert(window && full_context && diff_context) ;
+
+
+  /* Set up colours. */
+  gdk_color_parse(ZMAP_WINDOW_MBLOCK_F_BG, &canvas_data.mblock_for) ;
+  gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &canvas_data.mblock_rev) ;
+  gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &canvas_data.qblock_for) ;
+  gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &canvas_data.qblock_rev) ;
+
+
 
   /* Must be reset each time because context will change as features get merged in. */
   window->feature_context = full_context ;
@@ -480,6 +496,8 @@ static void drawBlocks(gpointer data, gpointer user_data)
   gboolean status ;
   double x1, y1, x2, y2 ;
   FooCanvasItem *background_item = NULL ;
+  GdkColor *bg_colour ;
+  double height ;
 
   canvas_data->curr_block = block ;
 
@@ -503,30 +521,29 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   /* Add a background colouring for the align block.
    * NOTE that the height of the box is the height of the block _not_ the span
-   * of all features, the user will want to see the full extent of the alignment. */
-  if (canvas_data->curr_alignment != canvas_data->full_context->master_align)
-    {
-      double height ;
+   * of all features, the user will want to see the full extent of the alignment block. */
+  if (canvas_data->curr_alignment == canvas_data->full_context->master_align)
+    bg_colour = &(canvas_data->mblock_for) ;
+  else
+    bg_colour = &(canvas_data->qblock_for) ;
 
-      /* height is not "+ 1" because we starting from zero. */
-      height = block->block_to_sequence.t2 - block->block_to_sequence.t1 ; 
+  /* height is not "+ 1" because we starting from zero. */
+  height = block->block_to_sequence.t2 - block->block_to_sequence.t1 ; 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmapWindowPrintI2W(FOO_CANVAS_ITEM(canvas_data->curr_block_group),
-			 "block background offset", 0.0, 0.0) ;
+  zmapWindowPrintI2W(FOO_CANVAS_ITEM(canvas_data->curr_block_group),
+		     "block background offset", 0.0, 0.0) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  background_item = zMapDrawBox(FOO_CANVAS_ITEM(canvas_data->curr_block_group),
+				0.0,
+				0.0,
+				10,			    /* place holder, proper width set below. */
+				height,
+				&(canvas_data->window->canvas_border),
+				bg_colour) ;
 
-      background_item = zMapDrawBox(FOO_CANVAS_ITEM(canvas_data->curr_block_group),
-				    0.0,
-				    0.0,
-				    10,			    /* place holder, proper width set below. */
-				    height,
-				    &(canvas_data->window->canvas_border),
-				    canvas_data->curr_background) ;
-
-      foo_canvas_item_lower_to_bottom(background_item) ;	    /* Put pink box in the background. */
-    }
+  foo_canvas_item_lower_to_bottom(background_item) ;	    /* Put box in the background. */
 
 
   /* Add this block to our hash for going from the feature context to its on screen item. */
@@ -570,20 +587,15 @@ static void drawBlocks(gpointer data, gpointer user_data)
 		     "column forward group", x2 + STRAND_SPACING, 0.0) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
   foo_canvas_item_set(FOO_CANVAS_ITEM(canvas_data->curr_forward_group),
 		      "x", x2 + STRAND_SPACING,
 		      NULL) ;
 
-  /* If we added background colouring to the block, then expand it to cover the entire width
-   * of the block. */
-  if (background_item)
-    {
-      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(canvas_data->curr_block_group), &x1, &y1, &x2, &y2) ;
-      foo_canvas_item_set(background_item,
-			  "x2", x2 - x1,
-			  NULL) ;
-    }
+  /* Expand it to cover the entire width of the block. */
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(canvas_data->curr_block_group), &x1, &y1, &x2, &y2) ;
+  foo_canvas_item_set(background_item,
+		      "x2", x2 - x1,
+		      NULL) ;
 
   return ;
 }
@@ -602,6 +614,20 @@ static void createSetColumn(gpointer data, gpointer user_data)
   FooCanvasItem *group ;
   double top, bottom ;
   gboolean status ;
+  GdkColor *forward_colour, *reverse_colour ;
+
+  /* Set colours... */
+  if (canvas_data->curr_alignment == canvas_data->full_context->master_align)
+    {
+      forward_colour = &(canvas_data->mblock_for) ;
+      reverse_colour = &(canvas_data->mblock_rev) ;
+    }
+  else
+    {
+      forward_colour = &(canvas_data->qblock_for) ;
+      reverse_colour = &(canvas_data->qblock_rev) ;
+    }
+
 
 
   /* Each column is known by its type/style name. */
@@ -624,7 +650,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
 					       canvas_data->curr_forward_offset,
 					       top, bottom,
 					       canvas_data->curr_style->width,
-					       canvas_data->curr_background) ;
+					       forward_colour) ;
 
   /* We need a special hash here for a forward group.... */
   canvas_data->curr_forward_col_id = zmapWindowFToIMakeSetID(type_quark, ZMAPSTRAND_FORWARD) ;
@@ -650,7 +676,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
 						   canvas_data->curr_reverse_offset,
 						   top, bottom,
 						   canvas_data->curr_style->width,
-						   canvas_data->curr_background) ;
+						   reverse_colour) ;
 
       /* We need a special hash here for a reverse group.... */
       canvas_data->curr_reverse_col_id = zmapWindowFToIMakeSetID(type_quark, ZMAPSTRAND_REVERSE) ;
@@ -823,14 +849,31 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
   GQuark column_id ;
   FooCanvasItem *top_feature_item = NULL ;
   double feature_top, feature_bottom, feature_offset ;
-
+  GdkColor *background ;
   double x = 0.0, y = 0.0 ;				    /* for testing... */
-
 
 
   /* Users will often not want to see what is on the reverse strand. */
   if (feature->strand == ZMAPSTRAND_REVERSE && canvas_data->curr_style->show_rev_strand == FALSE)
     return ;
+
+
+
+  /* Set colours... */
+  if (canvas_data->curr_alignment == canvas_data->full_context->master_align)
+    {
+      if (feature->strand == ZMAPSTRAND_REVERSE)
+	background = &(canvas_data->mblock_rev) ;
+      else
+	background = &(canvas_data->mblock_for) ;
+    }
+  else
+    {
+      if (feature->strand == ZMAPSTRAND_REVERSE)
+	background = &(canvas_data->qblock_rev) ;
+      else
+	background = &(canvas_data->qblock_for) ;
+    }
 
 
   if (feature->strand == ZMAPSTRAND_FORWARD || feature->strand == ZMAPSTRAND_NONE)
@@ -957,8 +1000,8 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 		intron_box = zMapDrawBox(feature_group,
 					 0.0, top,
 					 right, bottom,
-					 &(window->canvas_background),
-					 &(window->canvas_background)) ;
+					 background,
+					 background) ;
 
 		g_object_set_data(G_OBJECT(intron_box), "feature", feature) ;
 		g_object_set_data(G_OBJECT(intron_box), "item_feature_type",
