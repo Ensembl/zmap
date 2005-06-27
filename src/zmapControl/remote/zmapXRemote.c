@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jun 24 12:28 2005 (rds)
+ * Last edited: Jun 27 14:34 2005 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.6 2005-06-24 11:26:33 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.7 2005-06-27 13:55:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,8 +57,9 @@ zMapXRemoteObj zMapXRemoteNew(void)
           zmapXDebug("Failed to open display '%s'\n", display_str);
 
           zmapXRemoteSetErrMsg(ZMAPXREMOTE_PRECOND, 
-                               "<message>Failed to open display '%s'</message>", 
-                               display_str);
+                               ZMAP_XREMOTE_META_FORMAT
+                               ZMAP_XREMOTE_ERROR_FORMAT,
+                               display_str, 0, "", "Failed to open display");
           free(display_str);
           free(object);
           return NULL;
@@ -251,10 +252,12 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
 	  event.xdestroywindow.window == window)
 	{
           zmapXRemoteSetErrMsg(ZMAPXREMOTE_UNAVAILABLE, 
-                               "<display>%s</display>"
+                               ZMAP_XREMOTE_META_FORMAT
+                               ZMAP_XREMOTE_ERROR_FORMAT,
+                               /*"<display>%s</display>"
                                "<windowid>0x%0x</windowid>"
-                               "<message>window was destroyed</message>", 
-                               XDisplayString(dpy), window);
+                               "<message>window was destroyed</message>", */
+                               XDisplayString(dpy), window, "", "window was destroyed");
 	  zmapXDebug("remote : window 0x%x was destroyed.\n",
 		   (unsigned int) object->window_id);
 	  result = 6;		/* invalid window */
@@ -295,10 +298,11 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
 	  if (x_status != Success)
 	    {
               zmapXRemoteSetErrMsg(ZMAPXREMOTE_UNAVAILABLE, 
-                                   "<display>%s</display>"
-                                   "<windowid>0x%0x</windowid>"
-                                   "<message>failed reading atom '%s' from window</message>", 
-                                   XDisplayString(dpy), window, 
+                                   ZMAP_XREMOTE_META_FORMAT
+                                   ZMAP_XREMOTE_ERROR_START
+                                   "failed reading atom '%s' from window"
+                                   ZMAP_XREMOTE_ERROR_END,
+                                   XDisplayString(dpy), window, "", 
                                    zmapXRemoteGetAtomName(object, object->response_atom));
 	      zmapXDebug("remote: failed reading %s from window 0x%0x.\n",
                          zmapXRemoteGetAtomName(object, object->response_atom),
@@ -317,10 +321,11 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
 	      else
 		{
                   zmapXRemoteSetErrMsg(ZMAPXREMOTE_CONFLICT, 
-                                       "<display>%s</display>"
-                                       "<windowid>0x%0x</windowid>"
-                                       "<message>invalid data on atom '%s'</message>", 
-                                       XDisplayString(dpy), window,
+                                       ZMAP_XREMOTE_META_FORMAT
+                                       ZMAP_XREMOTE_ERROR_START
+                                       "invalid data on atom '%s'"
+                                       ZMAP_XREMOTE_ERROR_END, 
+                                       XDisplayString(dpy), window, "",
                                        zmapXRemoteGetAtomName(object, object->response_atom));
 		  zmapXDebug("remote: invalid data on %s property of window 0x%0x.\n",
                              zmapXRemoteGetAtomName(object, object->response_atom),
@@ -486,7 +491,7 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
       zMapAssert(xml_stub); /* Need an answer */
 
       /* Do some processing of the answer to make it fit the protocol */
-      xml_text      = g_strdup_printf(ZMAP_XREMOTE_CONTENT_XML_FORMAT(statusCode), xml_stub);
+      xml_text      = zmapXRemoteProcessForReply(xremote, statusCode, xml_stub);
       response_text = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, statusCode, xml_text) ;
 
       /* actually do the replying */
@@ -507,11 +512,28 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
   return result ;
 }
 
-
-
 /* ====================================================== */
 /* INTERNALS */
 /* ====================================================== */
+static char *zmapXRemoteProcessForReply(zMapXRemoteObj object, int statusCode, char *cb_output)
+{
+  char *reply = NULL;
+  if(statusCode >= ZMAPXREMOTE_BADREQUEST)
+    {
+      reply = g_strdup_printf(ZMAP_XREMOTE_ERROR_FORMAT ZMAP_XREMOTE_META_FORMAT,
+                              cb_output,
+                              XDisplayString(object->display),
+                              object->window_id,
+                              ""
+                              );
+    }
+  else
+    {
+      reply = g_strdup_printf(ZMAP_XREMOTE_SUCCESS_FORMAT, cb_output);
+    }
+
+  return reply;
+}
 
 static char *zmapXRemoteGetAtomName(zMapXRemoteObj obj, Atom atom)
 {
@@ -581,8 +603,12 @@ static int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *exp
   if (x_status != Success || !versionStr)
     {
       zmapXRemoteSetErrMsg(ZMAPXREMOTE_PRECOND, 
-                           "Warning : window 0x%x is not a valid remote-controllable window.",
-                           (unsigned int) win
+                           ZMAP_XREMOTE_META_FORMAT
+                           ZMAP_XREMOTE_ERROR_FORMAT,
+                           XDisplayString(object->display),                           
+                           (unsigned int) win,
+                           "",
+                           "not a valid remote-controllable window"
                            );
       zmapXDebug("Warning : window 0x%x is not a valid remote-controllable window.\n",	       
                (unsigned int) win
@@ -593,11 +619,14 @@ static int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *exp
   if (strcmp ((char*)versionStr, expected) != 0)
     {
       zmapXRemoteSetErrMsg(ZMAPXREMOTE_PRECOND, 
-                           "Warning : remote controllable window 0x%x uses "
-                           "different version %s of remote control system, expected "
-
-                           "version %s.",
-                           (unsigned int) win,
+                           ZMAP_XREMOTE_META_FORMAT
+                           ZMAP_XREMOTE_ERROR_START
+                           "remote controllable window uses"
+                           " different version %s of remote"
+                           " control system, expected version %s."
+                           ZMAP_XREMOTE_ERROR_END,
+                           XDisplayString(object->display),                           
+                           (unsigned int) win, "",
                            versionStr, expected);
       zmapXDebug("Warning : remote controllable window 0x%x uses "
 	       "different version %s of remote control system, expected "
@@ -637,7 +666,12 @@ static char *zmapXRemoteGetComputedContent(zMapXRemoteObj object, Atom atom, Boo
   if(windowError || x_status != Success)
     {
       zmapXRemoteSetErrMsg(ZMAPXREMOTE_INTERNAL, 
-                           "couldn't get the content from the atom with name %s",
+                           ZMAP_XREMOTE_META_FORMAT
+                           ZMAP_XREMOTE_ERROR_START
+                           "couldn't get the content from the atom with name %s"
+                           ZMAP_XREMOTE_ERROR_END,
+                           XDisplayString(object->display),
+                           win, "",
                            zmapXRemoteGetAtomName(object, atom)
                            );
       return zmapXRemoteGetErrorAsResponse();
@@ -646,7 +680,13 @@ static char *zmapXRemoteGetComputedContent(zMapXRemoteObj object, Atom atom, Boo
   else if(type != XA_STRING)
     {
       zmapXRemoteSetErrMsg(ZMAPXREMOTE_INTERNAL, 
-                           "couldn't get the atom with name %s and type STRING, got type 0x%0x",
+                           ZMAP_XREMOTE_META_FORMAT
+                           ZMAP_XREMOTE_ERROR_START
+                           "couldn't get the atom with name %s"
+                           " and type STRING, got type 0x%0x"
+                           ZMAP_XREMOTE_ERROR_END,
+                           XDisplayString(object->display),
+                           win, "",
                            zmapXRemoteGetAtomName(object, atom), type
                            );
       return zmapXRemoteGetErrorAsResponse();      
@@ -674,9 +714,6 @@ static char *zmapXRemoteGetComputedContent(zMapXRemoteObj object, Atom atom, Boo
 
 /*============ ERROR FUNCTIONS BELOW ===================  */
 
-#define xml_simple_start "<simplemessage>"
-#define xml_simple_end   "</simplemessage>"
-
 /* =============================================================== */
 static char *zmapXRemoteGetErrorAsResponse(void) /* Translation for users */
 /* =============================================================== */
@@ -689,21 +726,21 @@ static char *zmapXRemoteGetErrorAsResponse(void) /* Translation for users */
         {
           /* 1xx  Informational */
           /* 2xx  Successful    */
-          {ZMAPXREMOTE_METAERROR   , xml_simple_start "meta error" xml_simple_end},
-          {ZMAPXREMOTE_NOCONTENT   , xml_simple_start "no content was returned" xml_simple_end}, 
+          {ZMAPXREMOTE_METAERROR   , ZMAP_XREMOTE_ERROR_START "meta error" ZMAP_XREMOTE_ERROR_END},
+          {ZMAPXREMOTE_NOCONTENT   , ZMAP_XREMOTE_ERROR_START "no content was returned" ZMAP_XREMOTE_ERROR_END}, 
           /* 3xx  Redirection   */
           /* Redirect??? I don't think so */          
           /* 4xx  Client Errors */
-          {ZMAPXREMOTE_BADREQUEST  , xml_simple_start "you made a bad request to the server" xml_simple_end},
-          {ZMAPXREMOTE_FORBIDDEN   , xml_simple_start "you are not allowed to see this" xml_simple_end},
-          {ZMAPXREMOTE_UNKNOWNCMD  , xml_simple_start "unknown command" xml_simple_end},          
-          {ZMAPXREMOTE_PRECOND     , xml_simple_start "something went wrong with sanity checking" xml_simple_end},          
+          {ZMAPXREMOTE_BADREQUEST  , ZMAP_XREMOTE_ERROR_START "you made a bad request to the server" ZMAP_XREMOTE_ERROR_END},
+          {ZMAPXREMOTE_FORBIDDEN   , ZMAP_XREMOTE_ERROR_START "you are not allowed to see this" ZMAP_XREMOTE_ERROR_END},
+          {ZMAPXREMOTE_UNKNOWNCMD  , ZMAP_XREMOTE_ERROR_START "unknown command" ZMAP_XREMOTE_ERROR_END},          
+          {ZMAPXREMOTE_PRECOND     , ZMAP_XREMOTE_ERROR_START "something went wrong with sanity checking" ZMAP_XREMOTE_ERROR_END},          
           /* 5xx  Server Errors  */
-          {ZMAPXREMOTE_INTERNAL    , xml_simple_start "Internal Server Error" xml_simple_end},
-          {ZMAPXREMOTE_UNKNOWNATOM , xml_simple_start "Unknown Server Atom" xml_simple_end},
-          {ZMAPXREMOTE_NOCREATE    , xml_simple_start "No Resource was created" xml_simple_end},
-          {ZMAPXREMOTE_UNAVAILABLE , xml_simple_start "Unavailable Server Resource" xml_simple_end},
-          {ZMAPXREMOTE_TIMEDOUT    , xml_simple_start "Server Timeout" xml_simple_end},
+          {ZMAPXREMOTE_INTERNAL    , ZMAP_XREMOTE_ERROR_START "Internal Server Error" ZMAP_XREMOTE_ERROR_END},
+          {ZMAPXREMOTE_UNKNOWNATOM , ZMAP_XREMOTE_ERROR_START "Unknown Server Atom" ZMAP_XREMOTE_ERROR_END},
+          {ZMAPXREMOTE_NOCREATE    , ZMAP_XREMOTE_ERROR_START "No Resource was created" ZMAP_XREMOTE_ERROR_END},
+          {ZMAPXREMOTE_UNAVAILABLE , ZMAP_XREMOTE_ERROR_START "Unavailable Server Resource" ZMAP_XREMOTE_ERROR_END},
+          {ZMAPXREMOTE_TIMEDOUT    , ZMAP_XREMOTE_ERROR_START "Server Timeout" ZMAP_XREMOTE_ERROR_END},
           /* NULL to end the while loop below! */
           {ZMAPXREMOTE_OK          , NULL}
         } ;
@@ -727,9 +764,6 @@ static char *zmapXRemoteGetErrorAsResponse(void) /* Translation for users */
                         zmapXRemoteErrorText);
   return err;
 }
-#undef xml_simple_start
-#undef xml_simple_end
-
 
 static void zmapXRemoteSetErrMsg(zMapXRemoteStatus status, char *msg, ...)
 {
@@ -746,8 +780,9 @@ static void zmapXRemoteSetErrMsg(zMapXRemoteStatus status, char *msg, ...)
 
 
   zmapXRemoteErrorStatus = status;
-  zmapXRemoteErrorText   = g_strdup_printf(ZMAP_XREMOTE_ERROR_XML_FORMAT, 
-                                           callErr) ;
+  /* zmapXRemoteErrorText   = g_strdup_printf(ZMAP_XREMOTE_ERROR_FORMAT, 
+     callErr) ; */
+  zmapXRemoteErrorText   = g_strdup( callErr ) ;
 
   g_free(callErr);
 
@@ -764,10 +799,9 @@ static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
     XGetErrorText( dpy, e->error_code, errorText, sizeof(errorText) );
     /* N.B. The continuation of string here */
     zmapXRemoteSetErrMsg(zmapXRemoteErrorStatus, 
-                         "<display>%s</display>"
-                         "<windowid>0x%0x</windowid>"
-                         "<message>%s</message>",
-                         XDisplayString(dpy), e->resourceid, errorText);
+                         ZMAP_XREMOTE_META_FORMAT
+                         ZMAP_XREMOTE_ERROR_FORMAT,
+                         XDisplayString(dpy), e->resourceid, "", errorText);
 
     zmapXDebug("%s\n","**********************************");
     zmapXDebug("X Error: %s\n", errorText);

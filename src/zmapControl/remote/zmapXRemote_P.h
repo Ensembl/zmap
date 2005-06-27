@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jun 22 19:38 2005 (rds)
+ * Last edited: Jun 27 13:09 2005 (rds)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.4 2005-06-22 18:40:20 rds Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.5 2005-06-27 13:55:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,6 +78,7 @@ static int zmapXRemoteCheckWindow   (zMapXRemoteObj object);
 static int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *expected);
 static int zmapXRemoteChangeProperty(zMapXRemoteObj object, Atom atom, char *change_to);
 
+static char *zmapXRemoteProcessForReply(zMapXRemoteObj object, int statusCode, char *cb_output);
 
 /*====================== DEBUGGING =========================*/
 /* #define DO_DEBUGGING */
