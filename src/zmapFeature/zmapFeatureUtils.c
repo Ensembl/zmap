@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Jun 27 16:37 2005 (edgrif)
+ * Last edited: Jun 27 16:51 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.13 2005-06-27 15:37:59 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.14 2005-06-27 15:53:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,7 +65,7 @@ char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature,
 {
   char *feature_name = NULL ;
 
-  zMapAssert(feature_type && feature && start >= 1 && start <= end) ;
+  zMapAssert(feature_type >= 0 && feature && start >= 1 && start <= end) ;
 
   if (feature_type == ZMAPFEATURE_HOMOL)
     feature_name = g_strdup_printf("%s_%d.%d_%d.%d", feature,
