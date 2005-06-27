@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 24 13:07 2005 (edgrif)
+ * Last edited: Jun 27 13:44 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.57 2005-06-24 13:19:01 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.58 2005-06-27 15:35:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1573,21 +1573,21 @@ static ZMapFeatureContext createContext(char *sequence, int start, int end, GLis
 {
   ZMapFeatureContext context = NULL ;
   GData *list = NULL ;
+  gboolean master = TRUE ;
   ZMapFeatureAlignment alignment ;
-  char *align_name = "align_1" ;
   ZMapFeatureBlock block ;
   char *block_name = "block_1" ;
 
   context = zMapFeatureContextCreate(sequence, start, end, types) ;
 
   /* Add the master/target alignment. */
-  align_name = "master" ;
-  alignment = zMapFeatureAlignmentCreate(align_name) ;
+  alignment = zMapFeatureAlignmentCreate(sequence, master) ; /* TRUE => master alignment. */
 
-  zMapFeatureContextAddAlignment(context, alignment, TRUE) ;
+  zMapFeatureContextAddAlignment(context, alignment, master) ;
 
-  block = zMapFeatureBlockCreate(sequence, start, end, ZMAPSTRAND_FORWARD,
-				 sequence, start, end, ZMAPSTRAND_FORWARD) ;
+  block = zMapFeatureBlockCreate(sequence,
+				 start, end, ZMAPSTRAND_FORWARD,
+				 start, end, ZMAPSTRAND_FORWARD) ;
 
   zMapFeatureAlignmentAddBlock(alignment, block) ;
 
@@ -1680,7 +1680,7 @@ static void addAlignments(ZMapFeatureContext context)
 		{
 		  /* Add the other alignment, note that we do this dumbly at the moment assuming
 		   * that there is only one other alignment */
-		  alignment = zMapFeatureAlignmentCreate(non_reference_seq) ;
+		  alignment = zMapFeatureAlignmentCreate(non_reference_seq, FALSE) ;
 	  
 		  zMapFeatureContextAddAlignment(context, alignment, FALSE) ;
 		}
@@ -1700,9 +1700,8 @@ static void addAlignments(ZMapFeatureContext context)
 		  non_reference_end -= diff ;
 		}
 
-	      data_block = zMapFeatureBlockCreate(reference_seq,
+	      data_block = zMapFeatureBlockCreate(non_reference_seq,
 						  reference_start, reference_end, ref_strand,
-						  non_reference_seq,
 						  non_reference_start, non_reference_end, non_strand) ;
 
 	      zMapFeatureAlignmentAddBlock(alignment, data_block) ;
