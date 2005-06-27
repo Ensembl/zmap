@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 24 14:15 2005 (edgrif)
+ * Last edited: Jun 27 14:06 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.25 2005-06-24 13:16:44 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.26 2005-06-27 15:36:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -845,6 +845,9 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
   gboolean has_name = FALSE ;
 
 
+  /* Probably we should do some checking to make sure start/end are in correct order....and
+   * that other fields are correct.... */
+
   if (feature_type == ZMAPFEATURE_SEQUENCE || feature_type == ZMAPFEATURE_TRANSCRIPT
       || feature_type == ZMAPFEATURE_EXON || feature_type == ZMAPFEATURE_INTRON)
     {
@@ -859,7 +862,17 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 	{
 	  has_name = TRUE ;
 	  *feature_name = g_strdup(name) ;
+
 	  *feature_name_id = g_strdup(*feature_name) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* don't do this or it messes up completely for the above multi-part features. */
+
+	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						   start, end, query_start, query_end) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	}
 
     }
@@ -894,6 +907,8 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 					       start, end, query_start, query_end) ;
     }
+
+
 
 
   return has_name ;
