@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 24 17:55 2005 (edgrif)
+ * Last edited: Jun 27 18:06 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.32 2005-06-24 17:06:39 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.33 2005-06-27 17:09:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1238,9 +1238,10 @@ static gboolean parseTypes(AcedbServer server, GList *requested_types)
     }
 
 
-  /* Sadly acedb automatically sorts the current (all) keysets into alphabetical order so we
-   * have to reset them as the point is to retain the order the user wanted. */
-  if (result)
+  /* Sadly acedb automatically sorts the current (all) keysets into alphabetical order so if
+   * the user supplied a list of methods we need to resort them to get them in the order
+   * the user wanted. */
+  if (result && requested_types)
     {
       server->types = g_list_sort_with_data(server->types, resortStyles, (gpointer)requested_types) ;
     }
@@ -1316,9 +1317,9 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	{
 	  name = g_strdup(strtok_r(NULL, ": \"", &line_pos)) ; /* Skip ': "' */
 
-	  /* Make sure that this method is one of the required ones, see comments for parseTypes()
-	   * function. */
-	  if (!zMapStyleNameExists(requested_types, name))
+	  /* If a list of required methods was supplied, make sure that this is one of them,
+	   * see comments for parseTypes() function. */
+	  if (requested_types && !zMapStyleNameExists(requested_types, name))
 	    {
 	      status = FALSE ;
 	      break ;
@@ -1377,7 +1378,13 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
     }
   while (**end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
 
-  if (status)
+
+  if (!status)
+    {
+      /* If we failed skip to end of paragraph. */
+      while (**end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
+    }
+  else
     {
       /* In acedb methods the colour is interpreted differently according to the type of the
        * feature which we have to intuit here from the GFF type. */
