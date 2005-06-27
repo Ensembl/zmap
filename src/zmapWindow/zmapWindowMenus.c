@@ -28,9 +28,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Apr 19 14:26 2005 (edgrif)
+ * Last edited: Jun 27 22:49 2005 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.3 2005-04-19 13:35:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.4 2005-06-27 21:49:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -213,7 +213,7 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
 
   /* Get rid of our copy of the callers original menu. */
   destroyMenu(our_data->callers_menu_copy) ;
-
+  
   /* Now we have got rid of the factory, clean up the item factory input data we created
    * when we made the menu. NOTE that we do this here because on some systems if we delete
    * this before the menu is popped up the GTK menu code segfaults...this is poor because
@@ -281,7 +281,7 @@ static void destroyMenu(ZMapWindowMenuItem menu)
   /* Count items in menu. */
   num_menu_items = itemsInMenu(menu) ;
 
-  for (i = 0, menu_item = menu ; i < num_menu_items ; i++)
+  for (i = 0, menu_item = menu ; i < num_menu_items ; i++, menu_item++)
     {
       g_free(menu_item->name) ;
     }
