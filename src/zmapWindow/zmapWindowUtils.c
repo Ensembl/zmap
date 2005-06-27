@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 24 13:24 2005 (edgrif)
+ * Last edited: Jun 27 16:41 2005 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.6 2005-06-24 13:23:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.7 2005-06-27 15:42:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -182,6 +182,7 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
 
 
 
+/* this is going to need align name, block name and much else besides.... */
 
 FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
 					       ZMapFeatureType feature_type, char *feature,
@@ -189,32 +190,31 @@ FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
 					       int query_start, int query_end)
 {
   FooCanvasItem *item = NULL ;
+  char *feature_name ;
+  GQuark feature_id ;
+  char *style_name ;
+  GQuark style_id ;
 
-  /* Need coords to be the right way round...they may be supplied wrongly as they may not have
-   * been mapped to our coord frame...there is a problem here which we will have to sort out... */
-  if (zMapFeatureSetCoords(strand, &start, &end, &query_start, &query_end))
+  zMapAssert(window && style && feature_type && feature && start >= 1 && start <= end) ;
+
+  /* Make a string name and see if the system knows about it, if not then forget it. */
+  if ((feature_name = zMapFeatureCreateName(feature_type, feature, strand, start, end,
+					    query_start, query_end))
+      && (feature_id = g_quark_try_string(feature_name))
+      && (style_name = zMapStyleCreateName(style))
+      && (style_id = g_quark_try_string(style_name)))
     {
-      char *feature_name ;
-      GQuark feature_id ;
-      char *style_name ;
-      GQuark style_id ;
 
-      /* Make a string name and see if the system knows about it, if not then forget it. */
-      if ((feature_name = zMapFeatureCreateName(feature_type, feature, strand, start, end,
-						query_start, query_end))
-	  && (feature_id = g_quark_try_string(feature_name))
-	  && (style_name = zMapStyleCreateName(style))
-	  && (style_id = g_quark_try_string(style_name)))
-	{
-
-	  /* NEEDS TO BE REDONE TO USE NEW HASH FUNCTION...PROBABLY A NEW HASH FUNCTION
-	   * WILL NEED TO BE WRITTEN.... */
+      /* NEEDS TO BE REDONE TO USE NEW HASH FUNCTION...PROBABLY A NEW HASH FUNCTION
+       * WILL NEED TO BE WRITTEN.... */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  item = zmapWindowFToIFindItem(window->feature_to_item, style_id, feature_id) ;
+      item = zmapWindowFToIFindItem(window->feature_to_item, style_id, feature_id) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	}
+
+      printf("function needs recoding\n") ;
+
     }
 
   return item ;
@@ -229,22 +229,24 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 {
   gboolean result = FALSE ;
   int cx, cy, height ;
+  double feature_x1 = 0.0, feature_x2 = 0.0 ;
   double x1, y1, x2, y2 ;
   ZMapFeature feature ;
   ZMapWindowSelectStruct select = {NULL} ;
 
   zMapAssert(window && item) ;
 
-
   /* Really we should create some text here as well.... */
   select.item = item ;
-
 
   feature = g_object_get_data(G_OBJECT(item), "feature");  
   zMapAssert(feature) ;					    /* this should never fail. */
 
+  /* Get the features canvas coords (may be very different for align block features... */
+  zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2) ;
+
   /* May need to move scroll region if object is outside it. */
-  checkScrollRegion(window, feature->x1, feature->x2) ;
+  checkScrollRegion(window, feature_x1, feature_x2) ;
 
   /* scroll up or down to user's selection. */
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2); /* world coords */
@@ -279,7 +281,6 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
   return result ;
 }
-
 
 
 void zmapWindowShowItem(FooCanvasItem *item)
