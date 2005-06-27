@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Jun 24 17:39 2005 (edgrif)
+ * Last edited: Jun 27 16:37 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.12 2005-06-24 17:05:45 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.13 2005-06-27 15:37:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,14 +65,13 @@ char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature,
 {
   char *feature_name = NULL ;
 
-  if (zMapFeatureSetCoords(strand, &start, &end, &query_start, &query_end))
-    {
-      if (feature_type == ZMAPFEATURE_HOMOL)
-	feature_name = g_strdup_printf("%s.%d-%d-%d-%d", feature,
-				       start, end, query_start, query_end) ;
-      else
-	feature_name = g_strdup_printf("%s.%d-%d", feature, start, end) ;
-    }
+  zMapAssert(feature_type && feature && start >= 1 && start <= end) ;
+
+  if (feature_type == ZMAPFEATURE_HOMOL)
+    feature_name = g_strdup_printf("%s_%d.%d_%d.%d", feature,
+				   start, end, query_start, query_end) ;
+  else
+    feature_name = g_strdup_printf("%s_%d.%d", feature, start, end) ;
 
   return feature_name ;
 }
@@ -104,6 +103,8 @@ GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature,
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *query_start, int *query_end)
 {
   gboolean result = FALSE ;
+
+  zMapAssert(start && end && query_start && query_end) ;
 
   if (strand == ZMAPSTRAND_REVERSE)
     {
@@ -344,6 +345,29 @@ char *zmapFeatureLookUpEnum(int id, int enumType)
 }
 
 
+/* For blocks within alignments other than the master alignment, it is not possible to simply
+ * use the x1,x2 positions in the feature struct as these are the positions in the original
+ * feature. We need to know the coordinates in the master alignment. */
+void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2)
+{
+  double master_x1 = 0.0, master_x2 = 0.0 ;
+  ZMapFeatureBlock block ;
+  double feature_offset = 0.0 ;
+
+  zMapAssert(feature->parent_set && feature->parent_set->parent_block) ;
+
+  block = feature->parent_set->parent_block ;
+
+  feature_offset = block->block_to_sequence.t1 - block->block_to_sequence.q1 ;
+  
+  master_x1 = feature->x1 + feature_offset ;
+  master_x2 = feature->x2 + feature_offset ;
+
+  *feature_x1 = master_x1 ;
+  *feature_x2 = master_x2 ;
+
+  return ;
+}
 
 
 
@@ -577,10 +601,10 @@ static gint findStyle(gconstpointer list_data, gconstpointer user_data)
   if (style_quark == style->unique_id)
     result = 0 ;
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("Looking for: %s   Found: %s\n",
 	 g_quark_to_string(style_quark), g_quark_to_string(style->unique_id)) ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return result ;
 }
