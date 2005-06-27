@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 24 15:02 2005 (edgrif)
+ * Last edited: Jun 27 15:33 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.59 2005-06-24 17:07:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.60 2005-06-27 15:42:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -75,10 +75,20 @@ enum
 
 
 /* Default colours. */
+
+#define ZMAP_WINDOW_BACKGROUND_COLOUR "white"		    /* main canvas background */
+
+/* Colours for master alignment block (forward and reverse). */
+#define ZMAP_WINDOW_MBLOCK_F_BG "white"
+#define ZMAP_WINDOW_MBLOCK_R_BG "light gray"
+
+/* Colours for query alignment block (forward and reverse). */
+#define ZMAP_WINDOW_QBLOCK_F_BG "light pink"
+#define ZMAP_WINDOW_QBLOCK_R_BG "pink"
+
+/* Default colours for features. */
 #define ZMAP_WINDOW_ITEM_FILL_COLOUR "white"
 #define ZMAP_WINDOW_ITEM_BORDER_COLOUR "black"
-#define ZMAP_WINDOW_BACKGROUND_COLOUR "white"
-#define ZMAP_WINDOW_BLOCK_COLOUR "light pink"
 
 
 /* Item features are the canvas items that represent sequence features, they can be of various
