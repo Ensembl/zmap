@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun 24 14:14 2005 (edgrif)
+ * Last edited: Jun 27 14:47 2005 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.9 2005-06-24 13:17:26 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.10 2005-06-27 13:54:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,7 +130,6 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
   char *xml_reply = NULL ;
   int code        = ZMAPXREMOTE_INTERNAL;
 
-
   g_clear_error(&(zmap->info));
 
   //command prop = value ; prop = value ; prop = value
@@ -153,7 +152,6 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
     {
       findFeature(zmap, command_text);
       code = ZMAPXREMOTE_OK;
-      xml_reply = "<a>b</a>";
     }
   else if (g_str_has_prefix(command_text, "register_client"))
     {
@@ -175,7 +173,7 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
         zmap->info || (zmap->info = 
                        g_error_new(g_quark_from_string(__FILE__),
                                    code,
-                                   "<request>%s</request><message>%s</message>",
+                                   "<!-- request was %s -->%s",
                                    command_text,
                                    "unknown command"
                                    ));
@@ -186,7 +184,7 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
         zmap->info || (zmap->info = 
                        g_error_new(g_quark_from_string(__FILE__),
                                    code,
-                                   "<request>%s</request><message>%s</message>",
+                                   "<!-- request was %s -->%s",
                                    command_text,
                                    "bad request"
                                    ));
@@ -197,7 +195,7 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
         zmap->info || (zmap->info = 
                        g_error_new(g_quark_from_string(__FILE__),
                                    code,
-                                   "<request>%s</request><message>%s</message>",
+                                   "<!-- request was %s -->%s",
                                    command_text,
                                    "forbidden request"
                                    ));
@@ -212,7 +210,7 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
             zmap->info || (zmap->info = 
               g_error_new(g_quark_from_string(__FILE__),
                           code,
-                          "<request>%s</request><message>%s</message>",
+                          "<!-- request was %s -->%s",
                           command_text,
                           "CODE error on the part of the zmap programmers."
                           ));
@@ -221,8 +219,6 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
       }
     }
 
-  // gchar * g_markup_escape_text(const gchar *text, gssize length);
-  // gchar * g_markup_printf_escaped(const char * format, ...);
   xml_reply = g_strdup(zmap->info->message);
   *statusCode = code;
   

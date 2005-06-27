@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Jun 24 12:31 2005 (rds)
+ * Last edited: Jun 27 14:52 2005 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.6 2005-06-24 11:29:00 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.7 2005-06-27 13:54:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,22 +47,37 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 
+/* These are here just to allow checking */
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.7 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
+#define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
+
 /* In HTTP the break between Header and body is \n\n, here we'll use : */
 /* Everything before will be a status code (int), everything after response (str [xml]) */
 /* e.g. "200:<xml><magnification>100</magnification></xml>" */
 
 #define ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER  ":"
-#define ZMAP_XREMOTE_REPLY_FORMAT       "%d" ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER "%s" 
-#define ZMAP_XREMOTE_SUCCESS_XML_FORMAT "<xml>%s</xml>"
-#define ZMAP_XREMOTE_ERROR_XML_FORMAT   "<xml><error>%s</error></xml>"
 
-#define ZMAP_XREMOTE_CONTENT_XML_FORMAT(status) \
-((status) < 300 ? ZMAP_XREMOTE_SUCCESS_XML_FORMAT : ZMAP_XREMOTE_ERROR_XML_FORMAT )
+#define ZMAP_XREMOTE_USE_XML    /* This is the default! */
+/* ================================== */
+#ifdef ZMAP_XREMOTE_USE_XML
+#define ZMAP_XREMOTE_REPLY_FORMAT   "%d" ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER "<xml>%s</xml>" 
+#define ZMAP_XREMOTE_SUCCESS_FORMAT "<response>%s</response>"
+#define ZMAP_XREMOTE_ERROR_START    "<error><message>"
+#define ZMAP_XREMOTE_ERROR_END      "</message></error>"
+#define ZMAP_XREMOTE_META_FORMAT    \
+"<meta display=\"%s\" windowid=\"0x%lx\" application=\"%s\" version=\"" ZMAP_XREMOTE_CURRENT_VERSION "\" />"
+/* ================================== */
+#else
+#define ZMAP_XREMOTE_REPLY_FORMAT   "%d" ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER "%s" 
+#define ZMAP_XREMOTE_SUCCESS_FORMAT "%s"
+#define ZMAP_XREMOTE_ERROR_START    "Error: "
+#define ZMAP_XREMOTE_ERROR_END      ""
+#define ZMAP_XREMOTE_META_FORMAT    "\n%s 0x%lx %s" ZMAP_XREMOTE_CURRENT_VERSION
+/* ================================== */
+#endif /* ZMAP_XREMOTE_USE_XML */
 
-/* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.6 $"
-#define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
-#define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
+#define ZMAP_XREMOTE_ERROR_FORMAT   ZMAP_XREMOTE_ERROR_START "%s" ZMAP_XREMOTE_ERROR_END
 
 #define ZMAP_CLIENT_REQUEST_ATOM_NAME  "_CLIENT_REQUEST_NAME"
 #define ZMAP_CLIENT_RESPONSE_ATOM_NAME "_CLIENT_RESPONSE_NAME"
