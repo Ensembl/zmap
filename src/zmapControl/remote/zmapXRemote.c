@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jun 27 14:34 2005 (rds)
+ * Last edited: Jun 27 19:13 2005 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.7 2005-06-27 13:55:43 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.8 2005-06-27 18:15:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -359,13 +359,25 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
 
   return result;  
 }
-
+/*! zMapXRemoteGetResponse 
+ * ------------------------
+ * Generally for the perl bit so it can get the response.
+ * Tests for a windowError, then for an error message and 
+ * if neither goes to the atom.  The windowError may be
+ * false an error message exist when a precondition is not
+ * met!
+ */
 char *zMapXRemoteGetResponse(zMapXRemoteObj object)
 {
   zmapXDebug("%s\n", "just a message to say we're in zMapXRemoteGetResponse");
 
   if(windowError)
     {
+      return zmapXRemoteGetErrorAsResponse();
+    }
+  else if(zmapXRemoteErrorText != NULL)
+    {
+      zmapXDebug("%s\n", "else if");
       return zmapXRemoteGetErrorAsResponse();
     }
   else
@@ -827,47 +839,3 @@ static void zmapXUntrapErrors(void)
 /* ======================================================= */
 /* END */
 /* ======================================================= */
-
-
-
-#ifdef AN_ALTERNATE_ZMAPXREMOTEGETCOMPUTEDCONTENT
-static Bool
-zmapXRemoteGetComputedContent (zMapXRemoteObj object, Atom atom, char *content)
-{
-  Atom type;
-  int format;
-  unsigned long nitems, bytesafter;
-  unsigned char *computedString = 0;
-  int x_status;
-  char *computedString;
-  int result;
-
-  *content = 0;
-
-  zmapXTrapErrors();
-  zmapXRemoteErrorStatus = ZMAPXREMOTE_INTERNAL;
-  result = XGetWindowProperty (object->display,
-                               object->window_id,
-                               atom,
-                               0, (65536 / sizeof (long)),
-                               False, XA_STRING, 
-                               &type, &format, &nitems,
-                               &bytes_after, &computedString);  
-  zmapXUntrapErrors();
-  if (windowError || result != Success)
-    return False;
-  
-  if (type != XA_STRING)
-    {
-      XFree (computedString);
-      return False;
-    }
-
-  *content = *computedString;
-  
-  XFree (computedString);
-
-  return True;
-}
-#endif
-
