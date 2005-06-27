@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun 24 15:24 2005 (rds)
+ * Last edited: Jun 27 16:42 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.27 2005-06-24 14:25:34 rds Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.28 2005-06-27 15:43:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -150,16 +150,8 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 
 /* We make an assumption in this routine that zoom will only be one of fixed, min, mid or max and
  * that zoom can only go from min to max _via_ the mid state. */
-void zmapControlWindowDoTheZoom(ZMap zmap, double zoom)
+gboolean zmapControlWindowDoTheZoom(ZMap zmap, double zoom)
 {
-
-  zMapWindowZoom(zMapViewGetWindow(zmap->focus_viewwindow), zoom) ;
-
-  return ;
-}
-gboolean zmapControlWindowDoTheZoomR(ZMap zmap, double zoom)
-{
-
   ZMapWindow window = NULL;
   double factor;
   window = zMapViewGetWindow(zmap->focus_viewwindow);
@@ -171,7 +163,6 @@ gboolean zmapControlWindowDoTheZoomR(ZMap zmap, double zoom)
                            factor
                            );
   return TRUE;
-
 }
 
 

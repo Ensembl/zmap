@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun 27 14:47 2005 (rds)
+ * Last edited: Jun 27 16:43 2005 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.10 2005-06-27 13:54:41 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.11 2005-06-27 15:43:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -136,14 +136,14 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
   /* We assume command is first word in text with no preceding blanks. */
   if (g_str_has_prefix(command_text, "zoom_in"))
     {
-      if(zmapControlWindowDoTheZoomR(zmap, 2.0) == TRUE)
+      if(zmapControlWindowDoTheZoom(zmap, 2.0) == TRUE)
         code = ZMAPXREMOTE_OK;
       else
         code = ZMAPXREMOTE_PRECOND;
     }
   else if (g_str_has_prefix(command_text, "zoom_out"))
     {
-      if(zmapControlWindowDoTheZoomR(zmap, 0.5) == TRUE)
+      if(zmapControlWindowDoTheZoom(zmap, 0.5) == TRUE)
         code = ZMAPXREMOTE_OK;
       else
         code = ZMAPXREMOTE_PRECOND;
