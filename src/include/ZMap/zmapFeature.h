@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun 24 17:32 2005 (edgrif)
+ * Last edited: Jun 27 14:52 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.30 2005-06-24 17:05:45 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.31 2005-06-27 15:38:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -358,7 +358,7 @@ GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
 char *zmapFeatureLookUpEnum (int id, int enumType) ;
-
+void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
 
 ZMapFeature zMapFeatureFindFeatureInContext(ZMapFeatureContext feature_context,
 					    GQuark type_id, GQuark feature_id) ;
@@ -377,13 +377,12 @@ void zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
 void zMapFeatureDump(ZMapFeatureContext feature_context, char *file) ;
 void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
-ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name) ;
+ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;
 void zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatureBlock block) ;
 void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment) ;
 
-ZMapFeatureBlock zMapFeatureBlockCreate(char *ref_seq,
+ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
 					int ref_start, int ref_end, ZMapStrand ref_strand,
-					char *non_seq,
 					int non_start, int non_end, ZMapStrand non_strand) ;
 void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set) ;
 void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;

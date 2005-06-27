@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jun 24 14:14 2005 (edgrif)
+ * Last edited: Jun 27 13:42 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.16 2005-06-24 13:20:39 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.17 2005-06-27 15:39:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -326,19 +326,25 @@ void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
 }
 
 
-ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name)
+ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment)
 {
   ZMapFeatureAlignment alignment ;
+  char *unique_name ;
+
+  zMapAssert(align_name) ;
 
   alignment = g_new0(ZMapFeatureAlignmentStruct, 1) ;
 
-  if (align_name)
-    {
-      alignment->original_id = g_quark_from_string(align_name) ;
+  if (master_alignment)
+    unique_name = g_strdup_printf("%s_master", align_name) ;
+  else
+    unique_name = g_strdup(align_name) ;
 
-      /* THIS WILL NEED CHANGING..... */
-      alignment->unique_id = alignment->original_id ;
-    }
+  alignment->original_id = g_quark_from_string(align_name) ;
+
+  alignment->unique_id = g_quark_from_string(unique_name) ;
+
+  g_free(unique_name) ;
 
   return alignment ;
 }
@@ -366,29 +372,29 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment)
 
 
 
-ZMapFeatureBlock zMapFeatureBlockCreate(char *ref_seq,
+ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
 					int ref_start, int ref_end, ZMapStrand ref_strand,
-					char *non_seq,
 					int non_start, int non_end, ZMapStrand non_strand)
 {
   ZMapFeatureBlock new_block ;
   char *id_base ;
 
+  zMapAssert((ref_strand == ZMAPSTRAND_FORWARD || ref_strand == ZMAPSTRAND_REVERSE)
+	     && (non_strand == ZMAPSTRAND_FORWARD || non_strand == ZMAPSTRAND_REVERSE)) ;
 
-  /* need some asserts in here.... */
 
   new_block = g_new(ZMapFeatureBlockStruct, 1) ;
 
-
-  id_base = g_strdup_printf("%s:%d-%d_vs_%s:%d-%d", 
-			    ref_seq, ref_start, 
-			    ref_end, non_seq, 
-			    non_start, non_end) ;
+  id_base = g_strdup_printf("%d.%d.%s_%d.%d.%s", 
+			    ref_start, ref_end,
+			    (ref_strand == ZMAPSTRAND_FORWARD ? "+" : "-"), 
+			    non_start, non_end,
+			    (non_strand == ZMAPSTRAND_FORWARD ? "+" : "-")) ;
   new_block->unique_id = g_quark_from_string(id_base) ;
   g_free(id_base) ;
 
   /* Use the sequence name for the original_id */
-  new_block->original_id = g_quark_from_string(non_seq) ; 
+  new_block->original_id = g_quark_from_string(block_seq) ; 
 
   new_block->block_to_sequence.t1 = ref_start ;
   new_block->block_to_sequence.t2 = ref_end ;
