@@ -3,6 +3,9 @@
 # Noddy script to run configure as alphas + Roys machine are far from standard.
 #
 
+root=`dirname $0`
+script=`basename $0`
+
 msgAndExit ()
 {
   echo "Error: $1"
@@ -49,10 +52,11 @@ case $opsys in
 
 esac
 
+echo "$script : Running " $root/configure $cc_args "$cflags_args" "$ld_args"
+echo "=========================================================================="
 
 # run the configure.......watch out for the quoting, sometimes we want the variable to
 # be interpreted as a single cmdline arg, sometimes as multiple ones.
-./configure $cc_args "$cflags_args" "$ld_args"
-
+$root/configure $cc_args "$cflags_args" "$ld_args"
 
 exit 0
