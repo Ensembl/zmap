@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 27 16:41 2005 (edgrif)
+ * Last edited: Jun 30 14:55 2005 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.7 2005-06-27 15:42:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.8 2005-06-30 14:55:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -315,6 +315,22 @@ void zmapWindowShowItem(FooCanvasItem *item)
   return ;
 }
 
+
+/* Prints out an items coords in local coords, good for debugging.... */
+void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item)
+{
+  double x1, y1, x2, y2 ;
+
+  /* Gets bounding box in parents coord system. */
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+
+  printf("%s:\t%f,%f -> %f,%f\n",
+	 (msg_prefix ? msg_prefix : ""),
+	 x1, y1, x2, y2) ;
+
+
+  return ;
+}
 
 
 

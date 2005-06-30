@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 27 15:33 2005 (edgrif)
+ * Last edited: Jun 30 14:55 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.60 2005-06-27 15:42:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.61 2005-06-30 14:55:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -247,10 +247,11 @@ GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 void zmapWindowPrintCanvas(FooCanvas *canvas) ;
 void zmapWindowPrintGroups(FooCanvas *canvas) ;
 void zmapWindowPrintItem(FooCanvasGroup *item) ;
+void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item) ;
 
 void zmapWindowShowItem(FooCanvasItem *item) ;
 
-void     zMapWindowCreateListWindow(ZMapWindow window, FooCanvasItem *item) ;
+void zMapWindowCreateListWindow(ZMapWindow window, FooCanvasItem *item) ;
 
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
