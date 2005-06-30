@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jun 24 08:45 2005 (edgrif)
+ * Last edited: Jun 27 14:50 2005 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.5 2005-06-24 13:17:26 edgrif Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.6 2005-06-30 15:07:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -136,7 +136,7 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
         app->info = 
           g_error_new(g_quark_from_string(__FILE__),
                       code,
-                      "<request>%s</request><message>%s</message>",
+                      "<!-- request was %s -->%s",
                       command_text,
                       "unknown command"
                       );
@@ -147,7 +147,7 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
         app->info = 
           g_error_new(g_quark_from_string(__FILE__),
                       code,
-                      "<request>%s</request><message>%s</message>",
+                      "<!-- request was %s -->%s",
                       command_text,
                       "bad request"
                       );
@@ -158,7 +158,7 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
         app->info = 
           g_error_new(g_quark_from_string(__FILE__),
                       code,
-                      "<request>%s</request><message>%s</message>",
+                      "<!-- request was %s -->%s",
                       command_text,
                       "forbidden request"
                       );
@@ -173,7 +173,7 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
             app->info || (app->info = 
               g_error_new(g_quark_from_string(__FILE__),
                           code,
-                          "<request>%s</request><message>%s</message>",
+                          "<!-- request was %s -->%s",
                           command_text,
                           "CODE error on the part of the zmap programmers."
                           ));
