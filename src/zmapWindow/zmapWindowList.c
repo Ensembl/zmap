@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 20 12:16 2005 (edgrif)
+ * Last edited: Jun 30 14:36 2005 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.31 2005-06-24 13:24:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.32 2005-06-30 15:04:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -110,7 +110,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 
   /* The item the user clicked on may have been a subpart of a feature, e.g. transcript, so
    * we need to find the parent item for highlighting etc. */
-  parent_item = zmapWindowFToIFindItem(listCol->window->context_to_item, feature) ;
+  parent_item = zmapWindowFToIFindFeatureItem(listCol->window->context_to_item, feature) ;
   zMapAssert(parent_item) ;
 
 
@@ -343,7 +343,7 @@ static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
       FooCanvasItem *item ;
       char strand[8];
 
-      item = zmapWindowFToIFindItem(listCol->window->context_to_item, feature) ;
+      item = zmapWindowFToIFindFeatureItem(listCol->window->context_to_item, feature) ;
       zMapAssert(item) ;
 
       gtk_tree_store_append(GTK_TREE_STORE(listCol->list), &iter1, NULL);

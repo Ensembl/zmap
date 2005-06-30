@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 30 14:55 2005 (edgrif)
+ * Last edited: Jun 30 16:01 2005 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.8 2005-06-30 14:55:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.9 2005-06-30 15:04:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -128,7 +128,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 
   if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
     {
-      matching_item = zmapWindowFToIFindItem(window->context_to_item, feature) ;
+      matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item, feature) ;
     }
   else
     {
@@ -163,7 +163,7 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
   zMapAssert(feature) ;
 
   /* Find the item that matches */
-  matching_item = zmapWindowFToIFindItem(window->context_to_item, feature) ;
+  matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item, feature) ;
 
 
 
@@ -209,7 +209,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
        * WILL NEED TO BE WRITTEN.... */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      item = zmapWindowFToIFindItem(window->feature_to_item, style_id, feature_id) ;
+      item = zmapWindowFToIFindFeatureItem(window->feature_to_item, style_id, feature_id) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 

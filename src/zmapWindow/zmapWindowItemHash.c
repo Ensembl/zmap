@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Jun 23 09:34 2005 (edgrif)
+ * Last edited: Jun 30 16:06 2005 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.1 2005-06-24 13:28:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.2 2005-06-30 15:06:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -260,8 +260,8 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 
 
 /* RENAME TO FINDFEATUREITEM.... */
-FooCanvasItem *zmapWindowFToIFindItem(GHashTable *feature_to_context_hash,
-				      ZMapFeature feature)
+FooCanvasItem *zmapWindowFToIFindFeatureItem(GHashTable *feature_to_context_hash,
+                                             ZMapFeature feature)
 {
   FooCanvasItem *item = NULL ;
   GQuark column_id ;
@@ -319,7 +319,6 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
   /* Required for minimum query. */
   zMapAssert(feature_to_context_hash && align_id) ;
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
 					      GUINT_TO_POINTER(align_id)))
@@ -332,6 +331,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
     }
 
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Cascade down through the hashes until we reach the point the caller wants to stop at. */
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
@@ -372,7 +372,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
 
   /* If the returned item is not a compound item then return NULL, otherwise look for the correct
    * child using the start/end. */
-  if ((item = zmapWindowFToIFindItem(feature_to_context_hash, feature))
+  if ((item = zmapWindowFToIFindFeatureItem(feature_to_context_hash, feature))
       && FOO_IS_CANVAS_GROUP(item))
     {
       FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
@@ -397,10 +397,44 @@ FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
 void zmapWindowFToIDestroy(GHashTable *feature_to_context_hash)
 {
   g_hash_table_destroy(feature_to_context_hash) ;
-
+  
   return ;
 }
 
+
+FooCanvasItem *zMapWindowFindFeatureItemByQuery(ZMapWindow window, ZMapWindowFeatureQuery ft_q)
+{
+  FooCanvasItem *item  = NULL;
+  GQuark feature_id ;
+  GQuark column_id ;
+
+
+  if(ft_q->name &&
+     ft_q->type != ZMAPFEATURE_INVALID &&
+     ft_q->strand_set 
+     )
+    {
+      column_id  = zmapWindowFToIMakeSetID(g_quark_from_string(ft_q->style), ft_q->strand);
+
+      feature_id = zMapFeatureCreateID(ft_q->type, ft_q->name, ft_q->strand, 
+                                       ft_q->target_start, ft_q->target_end,
+                                       ft_q->query_start, ft_q->query_end
+                                       );
+#ifdef HHHHHHHHHHHHHH
+FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
+					  GQuark align_id, GQuark block_id, GQuark set_id,
+					  GQuark feature_id)
+#endif
+      item = zmapWindowFToIFindItemFull(window->feature_to_context,
+                                        g_quark_from_string(ft_q->alignment),
+                                        g_quark_from_string(ft_q->block),
+                                        column_id,
+                                        feature_id);
+      /* MUST CHECK item != NULL users send rubbish! */
+    }
+
+  return item;
+}
 
 
 /* 
