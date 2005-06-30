@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jun 24 09:06 2005 (edgrif)
+ * Last edited: Jun 30 16:08 2005 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.37 2005-06-24 13:22:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.38 2005-06-30 15:09:01 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -122,6 +122,21 @@ typedef struct
 } ZMapWindowMenuItemStruct, *ZMapWindowMenuItem ;
 
 
+typedef struct _ZMapWindowFeatureQueryStruct
+{
+  char *name;                   /* Feature name */
+  char *alignment;              /* Alignment */
+  int query_start, query_end;   /* Query start and end */
+  int target_start, target_end; /* Target start and end */
+  ZMapFeatureType type;         /* Feature type */
+  ZMapStrand strand;            /* Feature strand */
+  char *style;                  /* Feature style */
+  /* Whether these have been set */
+  gboolean alignment_set;
+  gboolean style_set;          
+  gboolean strand_set;
+} ZMapWindowFeatureQueryStruct, *ZMapWindowFeatureQuery;
+
 
 /*! @} end of zmapwindow docs. */
 
@@ -152,6 +167,8 @@ FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
 					       ZMapFeatureType feature_type, char *feature_name,
 					       ZMapStrand strand, int start, int end,
 					       int query_start, int query_end) ;
+FooCanvasItem *zMapWindowFindFeatureItemByQuery(ZMapWindow window, ZMapWindowFeatureQuery ft_q);
+
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
