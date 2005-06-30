@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Jun 30 16:06 2005 (rds)
+ * Last edited: Jun 30 16:16 2005 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.2 2005-06-30 15:06:32 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.3 2005-06-30 15:20:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -425,7 +425,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
 					  GQuark align_id, GQuark block_id, GQuark set_id,
 					  GQuark feature_id)
 #endif
-      item = zmapWindowFToIFindItemFull(window->feature_to_context,
+      item = zmapWindowFToIFindItemFull(window->context_to_item,
                                         g_quark_from_string(ft_q->alignment),
                                         g_quark_from_string(ft_q->block),
                                         column_id,

@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jun 30 16:08 2005 (rds)
+ * Last edited: Jun 30 16:19 2005 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.38 2005-06-30 15:09:01 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.39 2005-06-30 15:19:42 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -126,6 +126,7 @@ typedef struct _ZMapWindowFeatureQueryStruct
 {
   char *name;                   /* Feature name */
   char *alignment;              /* Alignment */
+  char *block;
   int query_start, query_end;   /* Query start and end */
   int target_start, target_end; /* Target start and end */
   ZMapFeatureType type;         /* Feature type */
