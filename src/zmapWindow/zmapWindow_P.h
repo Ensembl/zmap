@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 30 14:55 2005 (edgrif)
+ * Last edited: Jun 30 16:02 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.61 2005-06-30 14:55:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.62 2005-06-30 15:03:54 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -215,7 +215,6 @@ typedef struct _ZMapWindowStruct
 } ZMapWindowStruct ;
 
 
-
 typedef struct _ZMapWindowLongItemStruct
 {
   char          *name;
@@ -285,12 +284,12 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
 					  GQuark feature_id) ;
 FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
 					 ZMapFeatureSet feature_set, ZMapStrand strand) ;
-FooCanvasItem *zmapWindowFToIFindItem(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
+FooCanvasItem *zmapWindowFToIFindFeatureItem(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash, ZMapFeature feature,
 					   int child_start, int child_end) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
-
+FooCanvasItem *zmapWindowFindByFeatureQuery(ZMapWindow window, ZMapWindowFeatureQuery query);
 
 void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 
