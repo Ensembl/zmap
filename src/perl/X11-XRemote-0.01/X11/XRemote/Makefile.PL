@@ -1,4 +1,8 @@
+use strict;
+use warnings;
+
 use ExtUtils::MakeMaker;
+#use ExtUtils::PkgConfig; # better version than below, no doubt, swap at some time.
 use File::Copy;
 use Cwd;
 
