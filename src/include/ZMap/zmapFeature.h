@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun 27 14:52 2005 (edgrif)
+ * Last edited: Jul  4 17:09 2005 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.31 2005-06-27 15:38:42 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.32 2005-07-04 16:20:16 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -345,9 +345,8 @@ typedef struct ZMapFeatureTypeStyleStruct_
 
 
 GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean query_sequence) ; 
-GQuark zMapFeatureBlockCreateID(char *align_sequence,
-				int target_start, int target_end, ZMapStrand target_strand,
-				int query_start, int query_end, ZMapStrand query_strand) ;
+GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_strand,
+                                int non_start, int non_end, ZMapStrand non_strand);
 
 
 char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature_name,
