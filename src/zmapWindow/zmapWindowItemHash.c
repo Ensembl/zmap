@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Jun 30 16:16 2005 (rds)
+ * Last edited: Jul  4 17:15 2005 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.3 2005-06-30 15:20:06 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.4 2005-07-04 17:02:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -402,32 +402,46 @@ void zmapWindowFToIDestroy(GHashTable *feature_to_context_hash)
 }
 
 
-FooCanvasItem *zMapWindowFindFeatureItemByQuery(ZMapWindow window, ZMapWindowFeatureQuery ft_q)
+FooCanvasItem *zMapWindowFindFeatureItemByQuery(ZMapWindow window, ZMapWindowFeatureQuery ftq)
 {
   FooCanvasItem *item  = NULL;
   GQuark feature_id ;
   GQuark column_id ;
 
-
-  if(ft_q->name &&
-     ft_q->type != ZMAPFEATURE_INVALID &&
-     ft_q->strand_set 
+  /* Do a (hash, '.', '.', 'style', 'feature') lookup */
+  /* Check we won't fail any Asserts!!!!
+   * type >= 0 (!= ZMAPFEATURE_INVALID)
+   * feature name != NULL
+   * start >= 1
+   * start <= end
+   */
+  if(ftq->ft_name && ftq->type != ZMAPFEATURE_INVALID
+     && ftq->strand_set  && ftq->start >= 1
+     && ftq->start <= ftq->end
      )
     {
-      column_id  = zmapWindowFToIMakeSetID(g_quark_from_string(ft_q->style), ft_q->strand);
+      column_id  = zmapWindowFToIMakeSetID(g_quark_from_string(ftq->style), ftq->strand);
 
-      feature_id = zMapFeatureCreateID(ft_q->type, ft_q->name, ft_q->strand, 
-                                       ft_q->target_start, ft_q->target_end,
-                                       ft_q->query_start, ft_q->query_end
+      feature_id = zMapFeatureCreateID(ftq->type, ftq->ft_name, ftq->strand, 
+                                       ftq->start, ftq->end,
+                                       ftq->query_start, ftq->query_end
                                        );
-#ifdef HHHHHHHHHHHHHH
-FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
-					  GQuark align_id, GQuark block_id, GQuark set_id,
-					  GQuark feature_id)
-#endif
+      if(!ftq->alignment)
+        ftq->alignment = g_strdup_printf("%s_master", window->sequence);
+
+      if(!ftq->block)
+        {
+          int start, end;
+          start = window->seq_start;
+          end   = (window->seq_end == window->seqLength ? 0 : window->seq_end);
+          /* This next bit is backward in coming forward... */
+          ftq->block = g_strdup(g_quark_to_string(zMapFeatureBlockCreateID(start, end, ZMAPSTRAND_FORWARD,
+                                                                           start, end, ZMAPSTRAND_FORWARD)));
+        }
+
       item = zmapWindowFToIFindItemFull(window->context_to_item,
-                                        g_quark_from_string(ft_q->alignment),
-                                        g_quark_from_string(ft_q->block),
+                                        g_quark_from_string(ftq->alignment),
+                                        g_quark_from_string(ftq->block),
                                         column_id,
                                         feature_id);
       /* MUST CHECK item != NULL users send rubbish! */
