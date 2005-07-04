@@ -28,16 +28,16 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Jun  1 18:07 2005 (rds)
+ * Last edited: Jul  4 17:56 2005 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.29 2005-06-03 11:13:20 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.30 2005-07-04 16:59:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <glib.h>
 #include <ZMap/zmapDraw.h>
-
+#include <math.h>
 
 /* OK, THIS IS ALL HATEFUL, ITS FOR THE SCALE WHICH WILL SOON NOT BE DRAWN IN THE WINDOW
  * ANYWAY....SO ALL THIS WILL GO AWAY...... */
@@ -46,6 +46,37 @@
 #define SCALE_RIGHT SCALE_LEFT + 10.0
 #define SCALE_MID   SCALE_LEFT + ((SCALE_RIGHT - SCALE_LEFT) / 2)
 
+#define UNITCOUNT 4
+#define ZMAP_SCALE_MINORS_PER_MAJOR 10
+#define ZMAP_FORCE_FIVES TRUE
+/* #define SIZING_DEBUG 1 */
+
+/* Just a collection of ints, boring but makes it easier */
+typedef struct _ZMapScaleBarStruct
+{
+  int base;                     /* One of 1 1e3 1e6 1e9 1e12 1e15 */
+  int major;                    /* multiple of base */
+  int minor;                    /* major / ZMAP_SCALE_MINORS_PER_MAJOR */
+  int lp_major;                 /* The loop use this */
+  int trueMinor;
+  char *unit;                     /* One of bp k M G T P */
+
+  gboolean force_multiples_of_five;
+  double zoom_factor;
+
+  int start;
+  int end;
+
+  /* Not sure we need these */
+  unsigned int firstMajor;
+  unsigned int lastMajor;
+} ZMapScaleBarStruct, *ZMapScaleBar;
+
+
+
+static ZMapScaleBar createScaleBar_start_end_zoom_height(int start, int end, double zoom, double line);
+static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group);
+static void destroyScaleBar(ZMapScaleBar scaleBar);
 
 
 FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
@@ -151,56 +182,10 @@ FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
 			     int start, int end, int *major_units_out, int *minor_units_out)
 {
   FooCanvasItem *group = NULL ;
-  float unit, subunit ;
-  int iUnit, iSubunit, type, unitType ;
   int width = 0 ;
-  char cp[20], unitName[] = { 0, 'k', 'M', 'G', 'T', 'P' }, buf[2] ;
-  float cutoff;
-  int pos;
   GdkColor black, white, yellow ;
-  double x1, y1, x2, y2;
-
-
-  gdk_color_parse("black", &black) ;
-  gdk_color_parse("white", &white) ;
-  gdk_color_parse("yellow", &yellow) ;
-
-  /* work out units and subunits for the scale bar
-   * cutoff defines, via the while loop, the units for our major and minor ticks. This code was
-   * all copied directly from acedb - w7/mapcontrol.c - which seems to assume that a screen line
-   * is about 13 pixels high and that a major scalebar tick every 5 lines is about right. We work
-   * in pixels, which is why we use 65 as our seed.  It's 5 times the number of bases/pixel. When
-   * I work out how to get the line height from the canvas directly, I'll change this bit. */
-
-  cutoff = 65.0 / zoom_factor;    
-  unit = subunit = 1.0 ;
-
-  if (cutoff < 0)
-    cutoff = -cutoff ;
-
-  /* each time through this loop unit and subunit increase by 10 times until unit exceeds cutoff,
-   * so we end up with a nice round number for our major ticks, and 10 minor ticks per major one. */
-  while (unit < cutoff)
-    {
-      unit *= 2 ;
-      subunit *= 5 ;
-      if (unit >= cutoff)
-	break ;
-      unit *= 2.5000001 ;	/* safe rounding */
-      if (unit >= cutoff)
-	break ;
-      unit *= 2 ;
-      subunit *= 2 ;
-    }
-  subunit /= 10 ;
-
-  iUnit = unit + 0.5 ;
-  iSubunit = subunit + 0.5 ;
-
-  /* calculate nomial ie thousands, millions, etc */
-  for (type = 1, unitType = 0 ; 
-       iUnit > 0 && 1000 * type < iUnit && unitType < 5 ;
-       unitType++, type *= 1000) ;
+  double x1, y1, x2, y2, height;
+  ZMapScaleBar scaleBar = NULL;
 
   /* If the scrolled_region has been cropped, we need to crop the scalebar too */
   foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
@@ -209,85 +194,26 @@ FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
   if (end > y2)
     end = y2;
 
+
   group = foo_canvas_item_new(foo_canvas_root(canvas),
 			      foo_canvas_group_get_type(),
 			      "x", offset,
 			      "y", 0.0,
 			      NULL) ;
 
+  zMapDrawGetTextDimensions(FOO_CANVAS_GROUP(group), NULL, &height);
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* yellow bar separates forward from reverse strands. Draw first so scalebar text
-   * overlies it. */
-  zMapDrawBox(FOO_CANVAS_ITEM(group), 0.0, start, 3.0, end, &white, &yellow); 
+  scaleBar = createScaleBar_start_end_zoom_height(start, end, zoom_factor, height);
 
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  drawScaleBar(scaleBar, FOO_CANVAS_GROUP(group));
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowPrintGroup(group) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-										    
-  /* major ticks and text */
-  for (pos = start ; pos < end ; pos += iUnit)
-    {
-      zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_LEFT, pos, SCALE_RIGHT, pos, &black, 1.0);
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmapWindowPrintGroup(group) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      buf[0] = unitName[unitType] ;
-      buf[1] = 0 ;
-      sprintf(cp, "%d%s", ((pos/type) ? (pos/type) - 1 : 0), buf) ;
-      if (width < strlen(cp))
-        width = strlen(cp) ;
-
-      zMapDisplayText(FOO_CANVAS_GROUP(group), cp, "black", ((SCALE_LEFT - 1.0) - (5.0 * width)), pos); 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmapWindowPrintGroup(group) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowPrintGroup(group) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  
-  /* draw the vertical line of the scalebar, note we should be drawing. */
-  zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_RIGHT, start - 1, SCALE_RIGHT, end - 1, &black, 1.0);
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowPrintGroup(group) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* minor ticks */
-
-  for (pos = start; pos < end; pos += iSubunit)
-    {
-      zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_MID, pos, SCALE_RIGHT, pos, &black, 1.0) ;
-    }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowPrintGroup(group) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  destroyScaleBar(scaleBar);
 
   if (major_units_out)
-    *major_units_out = iUnit ;
+    *major_units_out = scaleBar->major ;
 
   if (minor_units_out)
-    *minor_units_out = iSubunit ;
+    *minor_units_out = scaleBar->minor ;
 
   return group ;
 }
@@ -365,3 +291,208 @@ void zMapHorizonReposition(FooCanvasItem *line, double current_y)
   foo_canvas_points_free(points) ;
   return ;
 }
+
+/* Find out the text size for a group. */
+void zMapDrawGetTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out)
+{
+  double width = -1.0, height = -1.0 ;
+  FooCanvasItem *item ;
+
+  item = foo_canvas_item_new(group,
+			     FOO_TYPE_CANVAS_TEXT,
+			     "x", -400.0, "y", 0.0, "text", "dummy",
+			     NULL);
+
+  g_object_get(GTK_OBJECT(item),
+	       "FooCanvasText::text_width", &width,
+	       "FooCanvasText::text_height", &height,
+	       NULL) ;
+
+  gtk_object_destroy(GTK_OBJECT(item));
+
+  if (width_out)
+    *width_out = width ;
+  if (height_out)
+    *height_out = height ;
+
+  return ;
+}
+
+
+/* ========================================================================== */
+/* INTERNAL */
+/* ========================================================================== */
+
+static ZMapScaleBar createScaleBar_start_end_zoom_height(int start, int end, double zoom, double line)
+{
+  ZMapScaleBar scaleBar       = NULL;
+  int majorUnits[UNITCOUNT]   = {1   , 1000, 1000000, 1000000000};
+  char *majorAlpha[UNITCOUNT] = {"", " k" , " M"    , " G"};
+  int unitIndex               = 0;
+  int speed_factor            = 4;
+
+  double basesPerPixel;
+  int minorsPerMajor = 10;
+
+  int majorSize, minorSize, diff, modulus;
+  int majorCount, lastMajor, i, tmp;
+  int absolute_min, lineheight;
+  int basesBetween;
+  double maxMajorCount;
+  
+  scaleBar = g_new0(ZMapScaleBarStruct, 1);
+  scaleBar->start = start;
+  scaleBar->end   = end;
+  scaleBar->force_multiples_of_five = ZMAP_FORCE_FIVES;
+  scaleBar->zoom_factor = zoom;
+
+  /* line * zoom is constant @ 14 on my machine, 
+   * simply increasing this decreases the number of majors (makes it faster),
+   * hence inclusion of 'speed_factor'. May want to refine what looks good
+   * 2 or 4 are reasonable, while 10 is way OTT!
+   */
+  if(speed_factor >= 1)
+    lineheight = ceil(line * zoom * speed_factor); 
+  else
+    lineheight = ceil(line * zoom); 
+
+  /* Abosulte minimum of (ZMAP_SCALE_MINORS_PER_MAJOR * 2) + 1
+   * Explain: pixel width for each line, plus one to see it + 1 for good luck!
+   * Require 1 * text line height + 1 so they're not merged
+   * 
+   */
+#ifdef SIZING_DEBUG
+  printf("%s\n", "====================== calculating ================");
+  printf(" * lineheight %d \n", lineheight);
+#endif
+
+  diff          = scaleBar->end - scaleBar->start + 1;
+  basesPerPixel = diff / (diff * scaleBar->zoom_factor);
+
+  lineheight++;
+  absolute_min = (ZMAP_SCALE_MINORS_PER_MAJOR * 2) + 1;
+  basesBetween = floor((lineheight >= absolute_min ?
+                        lineheight : absolute_min) * basesPerPixel);
+  /* Now we know we can put a major tick every basesBetween pixels */
+
+  for(i = 0; i < UNITCOUNT; i++){
+    int mod;
+    mod = basesBetween % majorUnits[i];
+
+    if(mod && mod != basesBetween)
+      unitIndex = i;
+    else if (basesBetween > majorUnits[i] && !mod)
+      unitIndex = i;
+  }
+
+  /* Now we think we know what the major should be */
+  majorSize  = majorUnits[unitIndex];
+  scaleBar->base = majorSize;
+
+#ifdef SIZING_DEBUG
+  printf(" * Chose %d (%d) [%s] bpp %f bbtween %d\n", 
+         unitIndex, majorUnits[unitIndex], 
+         majorAlpha[unitIndex], basesPerPixel, 
+         basesBetween); 
+#endif
+
+  tmp = ceil((basesBetween / majorSize));
+
+#ifdef SIZING_DEBUG
+  printf(" * tmp %d \n", tmp);
+#endif
+
+  /* This isn't very elegant, and is kind of a reverse of the previous
+   * logic used. */
+  if(scaleBar->force_multiples_of_five == TRUE)
+    {
+      if(tmp <= 5)
+        majorSize = 5  * majorSize;
+      else if(tmp <= 10)
+        majorSize = 10 * majorSize;
+      else if (tmp <= 50)
+        majorSize = 50 * majorSize;
+      else if (tmp <= 100)
+        majorSize = 100 * majorSize;
+      else if (tmp <= 500)
+        majorSize = 500 * majorSize;
+      else if (tmp <= 1000)
+        {
+          majorSize = 1000 * majorSize;
+          unitIndex++;
+        }
+    }
+  else
+    {
+      majorSize = tmp * majorSize;
+    }
+
+  scaleBar->base  = majorUnits[unitIndex];
+  scaleBar->major = majorSize;
+  scaleBar->unit  = g_strdup( majorAlpha[unitIndex] );
+
+  if(scaleBar->major >= 10)
+    scaleBar->minor = majorSize / ZMAP_SCALE_MINORS_PER_MAJOR;
+  else
+    scaleBar->minor = 1;
+
+  return scaleBar;
+}
+
+static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group)
+{
+  int i, n, width = 0;
+  GdkColor black, white, yellow ;
+
+  gdk_color_parse("black", &black) ;
+  gdk_color_parse("white", &white) ;
+  gdk_color_parse("yellow", &yellow) ;
+
+  scaleBar->trueMinor = scaleBar->minor;
+
+  n = floor((scaleBar->start % (scaleBar->major == 1 ? 10 : scaleBar->major)) / scaleBar->trueMinor);
+  i = (scaleBar->start - (scaleBar->start % scaleBar->trueMinor));
+
+  for( ; i <= scaleBar->end; i+=scaleBar->trueMinor, n++)
+    {      
+      char *digitUnit = NULL;
+      if(n % ZMAP_SCALE_MINORS_PER_MAJOR)
+        {
+          zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_MID, i, SCALE_RIGHT, i, &black, 1.0) ;
+          //          digitUnit = g_strdup_printf("%8.1f", (double)i / scaleBar->base);
+        }
+      else
+        {
+          if(i)
+            {
+              zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_LEFT, i, SCALE_RIGHT, i, &black, 1.0);
+              digitUnit = g_strdup_printf("%d%s", 
+                                          (i / scaleBar->base), 
+                                          scaleBar->unit);
+            }
+        }
+      if(digitUnit)
+        {
+          width = strlen(digitUnit);
+          zMapDisplayText(FOO_CANVAS_GROUP(group), digitUnit, "black", ((SCALE_LEFT) - (5.0 * width)), i); 
+          g_free(digitUnit);
+        }
+
+    }
+
+  /* draw the vertical line of the scalebar, note we should be drawing. */
+  zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_RIGHT, scaleBar->start, SCALE_RIGHT, scaleBar->end, &black, 1.0);
+
+  return ;
+}
+
+static void destroyScaleBar(ZMapScaleBar scaleBar)
+{
+  if(scaleBar->unit)
+    g_free(scaleBar->unit);
+
+  g_free(scaleBar);
+
+  return ;
+}
+
