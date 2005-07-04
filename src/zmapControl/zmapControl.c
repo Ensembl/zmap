@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: May 31 20:46 2005 (rds)
+ * Last edited: Jul  1 14:10 2005 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.53 2005-06-01 12:00:57 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.54 2005-07-04 16:31:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -695,4 +695,41 @@ static void updateControl(ZMap zmap, ZMapView view)
   return ;
 }
 
+void zmapControlInfoOverwrite(void *data, int code, char *format, ...)
+{
+  ZMap zmap = (ZMap)data ;
+  char *callInfo = NULL;
+  va_list args;
 
+  g_clear_error(&(zmap->info));
+
+  va_start(args, format);
+  callInfo = g_strdup_vprintf(format, args);
+  va_end(args);
+
+  zmap->info = g_error_new(g_quark_from_string(__FILE__),
+                           code,
+                           callInfo
+                           );
+  g_free(callInfo);
+
+  return ;
+}
+
+void zmapControlInfoSet(void *data, int code, char *format, ...)
+{
+  ZMap zmap = (ZMap)data ;
+  char *callInfo = NULL;
+  va_list args;
+
+  va_start(args, format);
+  callInfo = g_strdup_vprintf(format, args);
+  va_end(args);
+
+  if(!zmap->info)
+    zmapControlInfoOverwrite(zmap, code, callInfo);
+
+  g_free(callInfo);
+
+  return ;
+}

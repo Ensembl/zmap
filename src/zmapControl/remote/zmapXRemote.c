@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jun 27 19:13 2005 (rds)
+ * Last edited: Jul  1 14:37 2005 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.8 2005-06-27 18:15:24 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.9 2005-07-04 16:31:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -506,6 +506,9 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
       xml_text      = zmapXRemoteProcessForReply(xremote, statusCode, xml_stub);
       response_text = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, statusCode, xml_text) ;
 
+      printf("%s\n", response_text);
+
+
       /* actually do the replying */
       zMapXRemoteSetReply(xremote, response_text);
 
@@ -541,7 +544,12 @@ static char *zmapXRemoteProcessForReply(zMapXRemoteObj object, int statusCode, c
     }
   else
     {
-      reply = g_strdup_printf(ZMAP_XREMOTE_SUCCESS_FORMAT, cb_output);
+      reply = g_strdup_printf(ZMAP_XREMOTE_SUCCESS_FORMAT ZMAP_XREMOTE_META_FORMAT, 
+                              cb_output,
+                              XDisplayString(object->display),
+                              object->window_id,
+                              ""
+                              );
     }
 
   return reply;
