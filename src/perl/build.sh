@@ -16,7 +16,7 @@ ZMAP_LIB="$SRC/build/linux/lib"
 #==========================================
    PERL_ARCH=`$PERL_EXE -MConfig -e 'print $Config{archname}'`
 PERL_VERSION=`$PERL_EXE -MConfig -e 'print $Config{version}'`
-PERL_INSTALL=`$PERL_EXE -MConfig -e 'print $Config{installstyle}'`
+#PERL_INSTALL=`$PERL_EXE -MConfig -e 'print $Config{installstyle}'`
 #==========================================
 #==========================================
 
@@ -39,8 +39,21 @@ case $opsys in
     export PKG_CONFIG_PATH ;;
 esac
 
+   PERL_CODE=$(cat <<EOF 
+\$m = ExtUtils::MakeMaker->new({qw(NAME X)});
+\$a = \$m->{INSTALLSITEARCH};
+\$b = \$m->{INSTALLSITELIB};
+\$a =~ s!\\\$\\(SITEPREFIX\\)!$PREFIX!;
+\$b =~ s!\\\$\\(SITEPREFIX\\)!$PREFIX!;
+print STDOUT "\$a:\$b";
+print STDERR "\$a:\$b";
+EOF
+)
 
-ADD_PERL5LIB=$PREFIX/$PERL_INSTALL/site_perl/$PERL_VERSION/$PERL_ARCH
+PERL_INSTALL=`$PERL_EXE -MExtUtils::MakeMaker -le "$PERL_CODE" PREFIX=$PREFIX`
+
+
+ADD_PERL5LIB=$PERL_INSTALL
 
 $PERL_EXE Makefile.PL PREFIX=$PREFIX \
 --with-zmap-inc "-I$ZMAP_INC" \
