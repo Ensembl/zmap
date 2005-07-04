@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Jun 27 16:51 2005 (edgrif)
+ * Last edited: Jul  4 17:06 2005 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.14 2005-06-27 15:53:25 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.15 2005-07-04 17:00:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,6 +93,23 @@ GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature,
     }
 
   return feature_id ;
+}
+
+GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_strand,
+                                int non_start, int non_end, ZMapStrand non_strand)
+{
+  GQuark block_id = 0;
+  char *id_base ;
+
+  id_base = g_strdup_printf("%d.%d.%s_%d.%d.%s", 
+			    ref_start, ref_end,
+			    (ref_strand == ZMAPSTRAND_FORWARD ? "+" : "-"), 
+			    non_start, non_end,
+			    (non_strand == ZMAPSTRAND_FORWARD ? "+" : "-")) ;
+  block_id = g_quark_from_string(id_base) ;
+  g_free(id_base) ;
+
+  return block_id;
 }
 
 

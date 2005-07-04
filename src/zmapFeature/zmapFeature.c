@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jun 27 13:42 2005 (edgrif)
+ * Last edited: Jul  4 17:11 2005 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.17 2005-06-27 15:39:01 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.18 2005-07-04 17:00:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -377,7 +377,6 @@ ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
 					int non_start, int non_end, ZMapStrand non_strand)
 {
   ZMapFeatureBlock new_block ;
-  char *id_base ;
 
   zMapAssert((ref_strand == ZMAPSTRAND_FORWARD || ref_strand == ZMAPSTRAND_REVERSE)
 	     && (non_strand == ZMAPSTRAND_FORWARD || non_strand == ZMAPSTRAND_REVERSE)) ;
@@ -385,14 +384,9 @@ ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
 
   new_block = g_new(ZMapFeatureBlockStruct, 1) ;
 
-  id_base = g_strdup_printf("%d.%d.%s_%d.%d.%s", 
-			    ref_start, ref_end,
-			    (ref_strand == ZMAPSTRAND_FORWARD ? "+" : "-"), 
-			    non_start, non_end,
-			    (non_strand == ZMAPSTRAND_FORWARD ? "+" : "-")) ;
-  new_block->unique_id = g_quark_from_string(id_base) ;
-  g_free(id_base) ;
-
+  new_block->unique_id = zMapFeatureBlockCreateID(ref_start, ref_end, ref_strand,
+                                                  non_start, non_end, non_strand
+                                                  );
   /* Use the sequence name for the original_id */
   new_block->original_id = g_quark_from_string(block_seq) ; 
 
