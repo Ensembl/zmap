@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 30 15:51 2005 (edgrif)
+ * Last edited: Jul  4 11:08 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.71 2005-06-30 14:56:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.72 2005-07-04 17:02:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -129,7 +129,6 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 static FooCanvasItem *getBoundingBoxChild(FooCanvasGroup *parent_group) ;
 
 
-static void getTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out) ;
 
 static void freeLongItem(gpointer data);
 static void storeLongItem(ZMapWindow window, FooCanvasItem *item, int start, int end,
@@ -219,7 +218,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
   /* Need text dimensions to set maximum zoom. */
-  getTextDimensions(foo_canvas_root(window->canvas), NULL, &window->text_height) ;
+  zMapDrawGetTextDimensions(foo_canvas_root(window->canvas), NULL, &window->text_height) ;
 
   /* Set border space for top/bottom of sequence. */
   window->border_pixels = window->text_height * 2 ;
@@ -1395,31 +1394,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 
 
-/* Find out the text size for a group. */
-static void getTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out)
-{
-  double width = -1.0, height = -1.0 ;
-  FooCanvasItem *item ;
-
-  item = foo_canvas_item_new(group,
-			     FOO_TYPE_CANVAS_TEXT,
-			     "x", -400.0, "y", 0.0, "text", "dummy",
-			     NULL);
-
-  g_object_get(GTK_OBJECT(item),
-	       "FooCanvasText::text_width", &width,
-	       "FooCanvasText::text_height", &height,
-	       NULL) ;
-
-  gtk_object_destroy(GTK_OBJECT(item));
-
-  if (width_out)
-    *width_out = width ;
-  if (height_out)
-    *height_out = height ;
-
-  return ;
-}
 
 
 
