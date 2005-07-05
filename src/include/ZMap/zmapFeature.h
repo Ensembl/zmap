@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul  4 17:09 2005 (rds)
+ * Last edited: Jul  5 15:50 2005 (rnc)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.32 2005-07-04 16:20:16 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.33 2005-07-05 14:51:01 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -55,7 +55,7 @@ typedef int Coord ;					    /* we do need this here.... */
 
 
 /* used by zmapFeatureLookUpEnums() to translate enums into strings */
-typedef enum { TYPE_ENUM, STRAND_ENUM, PHASE_ENUM } ZMapEnumType ;
+typedef enum { TYPE_ENUM, STRAND_ENUM, PHASE_ENUM, HOMOLTYPE_ENUM } ZMapEnumType ;
 
 
 /* Unsure about this....probably should be some sort of key...... */
@@ -421,5 +421,6 @@ GList *zMapFeatureTypeGetFromFile(char *types_file) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
 
+ZMapFeature zMapFeatureCopy(ZMapFeature feature);
 
 #endif /* ZMAP_FEATURE_H */
