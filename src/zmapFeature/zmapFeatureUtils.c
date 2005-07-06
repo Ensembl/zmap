@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Jul  4 17:06 2005 (rds)
+ * Last edited: Jul  6 11:15 2005 (rnc)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.15 2005-07-04 17:00:42 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.16 2005-07-06 10:15:59 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -339,9 +339,11 @@ char *zmapFeatureLookUpEnum(int id, int enumType)
 			    "VARIATION", "BOUNDARY", "SEQUENCE"} ;
   static char *strands[] = {".", "+", "-" } ;
   static char *phases[]  = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" } ;
+  static char *homolTypes[] = {"ZMAPHOMOL_N_HOMOL", "ZMAPHOMOL_X_HOMOL", "ZMAPHOMOL_TX_HOMOL"} ;
   char *enum_str = NULL ;
 
-  zMapAssert(enumType == TYPE_ENUM || enumType == STRAND_ENUM || enumType == PHASE_ENUM) ;
+  zMapAssert(enumType == TYPE_ENUM || enumType == STRAND_ENUM 
+	     || enumType == PHASE_ENUM || enumType == HOMOLTYPE_ENUM) ;
 
   switch (enumType)
     {
@@ -355,6 +357,10 @@ char *zmapFeatureLookUpEnum(int id, int enumType)
       
     case PHASE_ENUM:
       enum_str = phases[id];
+      break;
+
+    case HOMOLTYPE_ENUM:
+      enum_str = homolTypes[id];
       break;
     }
   
@@ -386,6 +392,14 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
   return ;
 }
 
+
+
+ZMapFeature zMapFeatureCopy(ZMapFeature feature)
+{
+  ZMapFeature newFeature = (ZMapFeature)g_memdup(feature, sizeof(feature));
+
+  return newFeature;
+}
 
 
 /* 
