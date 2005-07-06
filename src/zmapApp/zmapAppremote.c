@@ -27,16 +27,16 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jun 27 14:50 2005 (rds)
+ * Last edited: Jul  6 11:31 2005 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.6 2005-06-30 15:07:50 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.7 2005-07-06 10:36:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <zmapApp_P.h>
 #include <ZMap/zmapCmdLineArgs.h>
-
+#include <ZMap/zmapConfigDir.h>
 
 static char *appexecuteCommand(char *command_text, gpointer app_context, int *statusCode);
 static gboolean createZMap(ZMapAppContext app, char *command_text);
