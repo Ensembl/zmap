@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 27 18:06 2005 (edgrif)
+ * Last edited: Jul  6 10:24 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.33 2005-06-27 17:09:33 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.34 2005-07-06 09:26:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,6 +44,7 @@ typedef struct
 {
   gboolean first_method ;
   gboolean find_string ;
+  gboolean name_list ;
   GString *str ;
 } ZMapTypesStringStruct, *ZMapTypesString ;
 
@@ -73,7 +74,8 @@ static gboolean destroyConnection(void *server) ;
 
 
 /* general internal routines. */
-static char *getMethodString(void *types, gboolean find_string) ;
+static char *getMethodString(GList *styles_or_style_names,
+			     gboolean style_name_list, gboolean find_string) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
 static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
@@ -204,8 +206,8 @@ static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, 
 
   if (requested_types)
     {
-      server->method_str = getMethodString((void *)(requested_types), FALSE) ;
-      server->find_method_str = getMethodString((void *)(requested_types), TRUE) ;
+      server->method_str = getMethodString(requested_types, TRUE, FALSE) ;
+      server->find_method_str = getMethodString(requested_types, TRUE, TRUE) ;
     }
 
   if (parseTypes(server, requested_types))
@@ -388,62 +390,81 @@ static gboolean destroyConnection(void *server_in)
 
 
 
+
 /* 
  * ---------------------  Internal routines.  ---------------------
  */
 
 
-static char *getMethodString(void *types, gboolean find_string)
+/* Make up a string that contains method names in the correct format for an acedb "Find" command
+ * (find_string == TRUE) or to be part of an acedb "seqget" command.
+ * We may be passed either a list of style names in GQuark form (style_name_list == TRUE)
+ * or a list of the actual styles. */
+static char *getMethodString(GList *styles_or_style_names,
+			     gboolean style_name_list, gboolean find_string)
 {
   char *type_names = NULL ;
   ZMapTypesStringStruct types_data ;
   GString *str ;
   gboolean free_string = TRUE ;
 
-  if (types)
-    {
-      str = g_string_new("") ;
+  zMapAssert(styles_or_style_names) ;
 
-      if (find_string)
-	str = g_string_append(str, "Find method ") ;
-      else
-	str = g_string_append(str, "+method ") ;
+  str = g_string_new("") ;
 
-      types_data.first_method = TRUE ;
-      types_data.find_string = find_string ;
-      types_data.str = str ;
+  if (find_string)
+    str = g_string_append(str, "query find method ") ;
+  else
+    str = g_string_append(str, "+method ") ;
 
-      g_list_foreach((GList *)types, addTypeName, (void *)&types_data) ;
+  types_data.first_method = TRUE ;
+  types_data.find_string = find_string ;
+  types_data.name_list = style_name_list ;
+  types_data.str = str ;
 
-      if (*(str->str))
-	free_string = FALSE ;
+  g_list_foreach(styles_or_style_names, addTypeName, (void *)&types_data) ;
 
-      type_names = g_string_free(str, free_string) ;
-    }
+  if (*(str->str))
+    free_string = FALSE ;
+
+  type_names = g_string_free(str, free_string) ;
+
 
   return type_names ;
 }
 
 
-
+/* GFunc() callback function, appends style names to a string, its called for lists
+ * of either style name GQuarks or lists of style structs. */
 static void addTypeName(gpointer data, gpointer user_data)
 {
   char *type_name = NULL ;
-  GQuark key_id = GPOINTER_TO_UINT(data) ;
+  GQuark key_id ;
   ZMapTypesString types_data = (ZMapTypesString)user_data ;
+
+  /* We might be passed either a list of style names (as quarks) or a list of the actual styles
+   * from which we need to extract the style name. */
+  if (types_data->name_list)
+    key_id = GPOINTER_TO_UINT(data) ;
+  else
+    key_id = ((ZMapFeatureTypeStyle)(data))->original_id ;
 
   type_name = (char *)g_quark_to_string(key_id) ;
 
   if (!types_data->first_method)
-    types_data->str = g_string_append(types_data->str, "|") ;
-
-  types_data->str = g_string_append(types_data->str, type_name) ;
+    {
+      if (types_data->find_string)
+	types_data->str = g_string_append(types_data->str, " OR ") ;
+      else
+	types_data->str = g_string_append(types_data->str, "|") ;
+    }
+  else
+    types_data->first_method = FALSE ;
 
   if (types_data->find_string)
-    types_data->str = g_string_append(types_data->str, "*") ;
-
-  if (types_data->first_method)
-    types_data->first_method = FALSE ;
+    g_string_append_printf(types_data->str, "\"%s\"", type_name) ;
+  else
+    types_data->str = g_string_append(types_data->str, type_name) ;
 
   return ;
 }
@@ -479,7 +500,20 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
+  GList *styles ;
+  char *methods = "" ;
 
+  /* Did the user have specify the styles completely via a styles file ? If so we will
+   * need to construct the method string from them. */
+  styles = feature_block->parent_alignment->parent_context->types ;
+  if (!server->method_str && styles)
+    {
+      server->method_str = getMethodString(styles, FALSE, FALSE) ;
+    }
+
+
+  if (server->method_str)
+    methods = server->method_str ;
 
   /* Here we can convert the GFF that comes back, in the end we should be doing a number of
    * calls to AceConnRequest() as the server slices...but that will need a change to my
@@ -487,15 +521,19 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
    * We make the big assumption that what comes back is a C string for now, this is true
    * for most acedb requests, only images/postscript are not and we aren't asking for them. */
   /* -rawmethods makes sure that the server does _not_ use the GFF_source field in the method obj
-   * to output the source field in the gff, we need to see the raw methods. */
+   * to output the source field in the gff, we need to see the raw methods.
+   * 
+   * Note that we specify the methods both for the seqget and the seqfeatures to try and exclude
+   * the parent sequence if it is not required, this is actually quite fiddly to do in the acedb
+   * code in a way that won't break zmap so we do it here. */
 
-  acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s ; seqfeatures -rawmethods -zmap",
+  acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s ; "
+				   "seqfeatures -rawmethods -zmap %s",
 				   g_quark_to_string(feature_block->original_id),
 				   feature_block->block_to_sequence.q1,
 				   feature_block->block_to_sequence.q2,
-				   server->method_str ? server->method_str : "") ;
-
-
+				   methods,
+				   methods) ;
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
       == ACECONN_OK)
     {
@@ -1118,6 +1156,18 @@ static gboolean setQuietMode(AcedbServer server)
 /* Makes requests "find method" and "show -a" to get all methods in a form we can
  * parse, e.g.
  * 
+ * The "query find" command is used to find either a requested list of methods
+ * or all methods:
+ * 
+ * acedb> query find method "coding" OR  "genepairs" OR "genefinder"
+ *
+ * // Found 3 objects
+ * // 3 Active Objects
+ * acedb>
+ * 
+ * 
+ * Then the "show" command is used to display the methods themselves:
+ * 
  * acedb> show -a
  * 
  * Method : "wublastx_briggsae"
@@ -1139,16 +1189,6 @@ static gboolean setQuietMode(AcedbServer server)
  * // 7 Active Objects
  * 
  * 
- * Where we have specific methods I am using this syntax as I can't otherwise
- * seem to make acedb find just the named methods (note the "*"):
- * 
- * acedb> Find method  genomic_canonical*|curated*|coding_transcript*
- * // Found 3 objects in this class
- * // 3 Active Objects
- * acedb> 
- * 
- * This is not ideal because it will pick up other methods that match these
- * patterns, it will have to do for now....
  *
  *  */
 static gboolean parseTypes(AcedbServer server, GList *requested_types)
@@ -1164,7 +1204,7 @@ static gboolean parseTypes(AcedbServer server, GList *requested_types)
   if (server->find_method_str)
     command = server->find_method_str ;
   else
-    command = "find method" ;
+    command = "query find method" ;
   acedb_request =  g_strdup_printf("%s", command) ;
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
 						&reply, &reply_len)) == ACECONN_OK)
