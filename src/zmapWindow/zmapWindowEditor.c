@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul  6 12:07 2005 (rnc)
+ * Last edited: Jul  7 09:19 2005 (rnc)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.4 2005-07-06 11:08:24 rnc Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.5 2005-07-07 08:21:52 rnc Exp $
  *-------------------------------------------------------------------
  */
 #include <stdio.h>
@@ -38,6 +38,15 @@
 #include <libfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapUtils.h>
+
+/* this struct used to build the displays
+
+ * of variable data, eg exons, introns, etc */
+typedef struct ColInfoStruct
+{
+  char *label;
+  int colNo;
+} colInfoStruct;
 
 
 /* this struct used for stringifying arrays. */
@@ -59,6 +68,7 @@ typedef struct MainTableStruct
   fieldType  fieldtype;  /* ENTRY, RADIO, etc */
   char      *name;  /* probably redundant */
   char      *label;
+  void      *fieldPtr;
   GtkWidget *widget;
   union
   {
@@ -95,7 +105,9 @@ static void createWindow(editorData editor_data);
 static void closeWindowCB(GtkWidget *widget, gpointer data);
 static void closeButtonCB(GtkWidget *widget, gpointer data);
 static void undoChangesCB(GtkWidget *widget, gpointer data);
+static void applyChangesCB(GtkWidget *widget, gpointer data);
 static void saveChangesCB(GtkWidget *widget, gpointer data);
+static void updateArray(mainTable table, int i, ZMapFeature feature);
 
 static void addFields (editorData editor_data);
 static void addArrayCB(gpointer data, editorData editor_data);
@@ -103,7 +115,7 @@ static void addCheckButtonCB(GtkWidget *vbox, gpointer data);
 static void addEntryCB(GtkWidget *vbox, gpointer data);
 static void addLabelCB(GtkWidget *vbox, gpointer data);
 
-static void treeSelectionChangedCB (GtkTreeSelection *selection, gpointer data);
+static void buildCol(colInfoStruct colInfo, GtkWidget *treeView, mainTable table);
 static void arrayEditedCB(GtkCellRendererText *renderer, 
 			  char *path, char *new_text, gpointer user_data);
 
@@ -118,32 +130,32 @@ void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item)
   editorData editor_data;
 
   /* Keep the freeTable() function in sync with this */
-  mainTableStruct init[] = {{ LABEL, "feature_type"  , "Type"           , NULL, NULL, FALSE },
-			    { ENTRY, "feature_x1"    , "Start"          , NULL, NULL, TRUE  },
-			    { ENTRY, "feature_x2"    , "End"            , NULL, NULL, TRUE  },
-			    { ENTRY, "feature_strand", "Strand"         , NULL, NULL, FALSE },
-			    { ENTRY, "feature_phase" , "Phase"          , NULL, NULL, TRUE  },
-			    { ENTRY, "feature_score" , "Score"          , NULL, NULL, TRUE  },
+  mainTableStruct init[] = {{ LABEL, "feature_type"  , "Type"           , NULL, NULL, NULL, FALSE },
+			    { ENTRY, "feature_x1"    , "Start"          , NULL, NULL, NULL, TRUE  },
+			    { ENTRY, "feature_x2"    , "End"            , NULL, NULL, NULL, TRUE  },
+			    { ENTRY, "feature_strand", "Strand"         , NULL, NULL, NULL, FALSE },
+			    { ENTRY, "feature_phase" , "Phase"          , NULL, NULL, NULL, TRUE  },
+			    { ENTRY, "feature_score" , "Score"          , NULL, NULL, NULL, TRUE  },
 			    
-			    { LABEL, "blank line"    , " "              , NULL, NULL, TRUE  },
+			    { LABEL, "blank line"    , " "              , NULL, NULL, NULL, TRUE  },
 			    
-			    { ENTRY, "homol_type"    , "Type"           , NULL, NULL, TRUE  },
-			    { ENTRY, "homol_y1"      , "Start"          , NULL, NULL, TRUE  },
-			    { ENTRY, "homol_y2"      , "End"            , NULL, NULL, TRUE  },
-			    { ENTRY, "homol_strand"  , "Strand"         , NULL, NULL, FALSE },
-			    { ENTRY, "homol_phase"   , "Phase"          , NULL, NULL, TRUE  },
-			    { ENTRY, "homol_score"   , "Score"          , NULL, NULL, TRUE  },
-			    { ALIGN, "homol_align"   , "Alignments"     , NULL, NULL, TRUE  },
+			    { ENTRY, "homol_type"    , "Type"           , NULL, NULL, NULL, TRUE  },
+			    { ENTRY, "homol_y1"      , "Start"          , NULL, NULL, NULL, TRUE  },
+			    { ENTRY, "homol_y2"      , "End"            , NULL, NULL, NULL, TRUE  },
+			    { ENTRY, "homol_strand"  , "Strand"         , NULL, NULL, NULL, FALSE },
+			    { ENTRY, "homol_phase"   , "Phase"          , NULL, NULL, NULL, TRUE  },
+			    { ENTRY, "homol_score"   , "Score"          , NULL, NULL, NULL, TRUE  },
+			    { ALIGN, "homol_align"   , "Alignments"     , NULL, NULL, NULL, TRUE  },
 			    
-			    { ENTRY, "trans_Start"   , "CDS Start"      , NULL, NULL, TRUE  },
-			    { ENTRY, "trans_End"     , "CDS End"        , NULL, NULL, TRUE  },
-			    { ENTRY, "trans_Phase"   , "CDS Phase"      , NULL, NULL, TRUE  },
-			    { CHECK, "trans_SNF"     , "Start Not Found", NULL, NULL, TRUE  },
-			    { CHECK, "trans_ENF"     , "End Not Found " , NULL, NULL, TRUE  },
-			    { SPAN , "trans_exons"   , "Exons"          , NULL, NULL, TRUE  },
-			    { SPAN , "trans_introns" , "Introns"        , NULL, NULL, TRUE  },
+			    { ENTRY, "trans_Start"   , "CDS Start"      , NULL, NULL, NULL, TRUE  },
+			    { ENTRY, "trans_End"     , "CDS End"        , NULL, NULL, NULL, TRUE  },
+			    { ENTRY, "trans_Phase"   , "CDS Phase"      , NULL, NULL, NULL, TRUE  },
+			    { CHECK, "trans_SNF"     , "Start Not Found", NULL, NULL, NULL, TRUE  },
+			    { CHECK, "trans_ENF"     , "End Not Found " , NULL, NULL, NULL, TRUE  },
+			    { SPAN , "trans_exons"   , "Exons"          , NULL, NULL, NULL, TRUE  },
+			    { SPAN , "trans_introns" , "Introns"        , NULL, NULL, NULL, TRUE  },
 			    
-			    { LAST , NULL, NULL, NULL, NULL, NULL }};
+			    { LAST , NULL, NULL, NULL, NULL, NULL, NULL }};
 
   feature = g_object_get_data(G_OBJECT(item), "feature");
   zMapAssert(feature);       /* something badly wrong if no feature. */
@@ -153,6 +165,7 @@ void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item)
   editor_data->original_id = feature->original_id;
   editor_data->hbox = NULL;
   editor_data->table = (mainTable)g_memdup(init, sizeof(init));
+  editor_data->originalFeature = zMapFeatureCopy(feature);
 
   parseFeature(editor_data->table, feature);
   createWindow(editor_data);
@@ -179,14 +192,21 @@ static void parseFeature(mainTableStruct table[], ZMapFeature feature)
 	{
 	case 0:
 	  table[i].value.entry = zmapFeatureLookUpEnum(feature->type, TYPE_ENUM);
+	  table[i].fieldPtr = &feature->type;
 	  break;
+
 	case 1:
 	  table[i].value.entry = g_strdup_printf("%d", feature->x1);
+	  table[i].fieldPtr = &feature->x1;
 	  break;
+
 	case 2:
 	  table[i].value.entry = g_strdup_printf("%d", feature->x2);
+	  table[i].fieldPtr = &feature->x2;
 	  break;
+
 	case 3:
+	  table[i].fieldPtr = &feature->strand;
 	  switch (feature->strand)
 	    {
 	    case ZMAPSTRAND_FORWARD:
@@ -200,41 +220,60 @@ static void parseFeature(mainTableStruct table[], ZMapFeature feature)
 	      break;
 	    }
 	  break;
+
 	case 4:
+	  table[i].fieldPtr = &feature->phase;
 	  table[i].value.entry = g_strdup_printf("%d", feature->phase);
 	  break;
+
 	case 5:
+	  table[i].fieldPtr = &feature->score;
 	  table[i].value.entry = g_strdup_printf("%.2f", feature->score);
 	  break;
+
 	case 6:
 	  table[i].value.entry = " ";  /* blank label to separate feature fields from the rest */
 	  break;
+
 	case 7:
 	  if (feature->type == ZMAPFEATURE_HOMOL)
-	  switch (feature->feature.homol.type)
 	    {
-	    case ZMAPHOMOL_X_HOMOL:
-	      table[i].value.entry = "X";
-	      break;
-	    case ZMAPHOMOL_N_HOMOL:
-	      table[i].value.entry = "N";
-	      break;
-	    case ZMAPHOMOL_TX_HOMOL:
-	      table[i].value.entry = "TX";
-	      break;
+	      table[i].fieldPtr = &feature->type;
+	      switch (feature->feature.homol.type)
+		{
+		case ZMAPHOMOL_X_HOMOL:
+		  table[i].value.entry = "X";
+		  break;
+		case ZMAPHOMOL_N_HOMOL:
+		  table[i].value.entry = "N";
+		  break;
+		case ZMAPHOMOL_TX_HOMOL:
+		  table[i].value.entry = "TX";
+		  break;
+		}
 	    }
 	  break;
+
 	case 8:
 	  if (feature->type == ZMAPFEATURE_HOMOL)
-	    table[i].value.entry = g_strdup_printf("%d", feature->feature.homol.y1);
+	    {
+	      table[i].value.entry = g_strdup_printf("%d", feature->feature.homol.y1);
+	      table[i].fieldPtr = &feature->feature.homol.y1;
+	    }
 	  break;
+
 	case 9:
 	  if (feature->type == ZMAPFEATURE_HOMOL)
-	    table[i].value.entry = g_strdup_printf("%d", feature->feature.homol.y2);
+	    {
+	      table[i].value.entry = g_strdup_printf("%d", feature->feature.homol.y2);
+	      table[i].fieldPtr = &feature->feature.homol.y2;
+	    }
 	  break;
+
 	case 10:
 	  if (feature->type == ZMAPFEATURE_HOMOL)
 	    {
+	      table[i].fieldPtr = &feature->feature.homol.target_strand;
 	      switch (feature->feature.homol.target_strand)
 		{
 		case ZMAPSTRAND_FORWARD:
@@ -249,46 +288,78 @@ static void parseFeature(mainTableStruct table[], ZMapFeature feature)
 		}
 	    }
 	  break;
+
 	case 11:
 	  if (feature->type == ZMAPFEATURE_HOMOL)
-	    table[i].value.entry = g_strdup_printf("%d", feature->feature.homol.target_phase);
+	    {
+	      table[i].value.entry = g_strdup_printf("%d", feature->feature.homol.target_phase);
+	      table[i].fieldPtr = &feature->feature.homol.target_phase;
+	    }
 	  break;
+
 	case 12:
 	  if (feature->type == ZMAPFEATURE_HOMOL)
-	    table[i].value.entry = g_strdup_printf("%.2f", feature->feature.homol.score);
+	    {
+	      table[i].value.entry = g_strdup_printf("%.2f", feature->feature.homol.score);
+	      table[i].fieldPtr = &feature->feature.homol.score;
+	    }
 	  break;
+
 	case 13:
 	  if (feature->type == ZMAPFEATURE_HOMOL
 	      && feature->feature.homol.align->len > (guint)0)
 	    array2List(&table[i], feature->feature.homol.align, feature->type);
 	  break;
+
 	case 14:
 	  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-	    table[i].value.entry = g_strdup_printf("%d", feature->feature.transcript.cdsStart);
+	    {
+	      table[i].value.entry = g_strdup_printf("%d", feature->feature.transcript.cdsStart);
+	      table[i].fieldPtr = &feature->feature.transcript.cdsStart;
+	    }
 	  break;
+
 	case 15:
 	  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-	    table[i].value.entry = g_strdup_printf("%d", feature->feature.transcript.cdsEnd);
+	    {
+	      table[i].value.entry = g_strdup_printf("%d", feature->feature.transcript.cdsEnd);
+	      table[i].fieldPtr = &feature->feature.transcript.cdsEnd;
+	    }
 	  break;
+
 	case 16:
 	  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-	    table[i].value.entry = g_strdup_printf("%d", feature->feature.transcript.cds_phase);
+	    {
+	      table[i].value.entry = g_strdup_printf("%d", feature->feature.transcript.cds_phase);
+	      table[i].fieldPtr = &feature->feature.transcript.cds_phase;
+	    }
 	  break;
+
 	case 17:
 	  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-	    table[i].value.entry = feature->feature.transcript.start_not_found ? "True" : "False";
+	    {
+	      table[i].value.entry = feature->feature.transcript.start_not_found ? "True" : "False";
+	      table[i].fieldPtr = &feature->feature.transcript.start_not_found;
+	    }
 	  break;
+
 	case 18:
 	  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-	    table[i].value.entry = feature->feature.transcript.endNotFound ? "True" : "False";
+	    {
+	      table[i].value.entry = feature->feature.transcript.endNotFound ? "True" : "False";
+	      table[i].fieldPtr = &feature->feature.transcript.endNotFound;
+	    }
 	  break;
+
 	case 19:
 	  if (feature->type == ZMAPFEATURE_TRANSCRIPT
 	      && feature->feature.transcript.exons->len > (guint)0)
 	    array2List(&table[i], feature->feature.transcript.exons, feature->type);
 	  break;
+
 	case 20:
 	  if (feature->type == ZMAPFEATURE_TRANSCRIPT
+	      && feature->feature.transcript.introns != NULL /* might not be an introns array */
 	      && feature->feature.transcript.introns->len > (guint)0)
 	    array2List(&table[i], feature->feature.transcript.introns, feature->type);
 	  break;
@@ -367,6 +438,11 @@ static void createWindow(editorData editor_data)
 
   buttonbox = gtk_hbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(frame), buttonbox);
+
+  button = gtk_button_new_with_label("Apply");
+  g_signal_connect(GTK_OBJECT(button), "clicked",
+		   GTK_SIGNAL_FUNC(applyChangesCB), editor_data);
+  gtk_box_pack_start(GTK_BOX(buttonbox), button, TRUE, TRUE, 0) ;
 
   button = gtk_button_new_with_label("Undo");
   g_signal_connect(GTK_OBJECT(button), "clicked",
@@ -505,58 +581,28 @@ static void addArrayCB(gpointer data, editorData editor_data)
 {
   mainTable table = (mainTable)data;
   GtkWidget *treeView, *frame, *scrolledWindow;
-  GtkCellRenderer *renderer;
-  GtkTreeViewColumn *column;
-  GtkTreeSelection *selection;
   char *frameLabel;
-  int column_width = 50;
-
+  colInfoStruct colInfo[] = {{"Start", COL1},
+			     {"End"  , COL2},
+			     {"Start", COL3},
+			     {"End"  , COL4}};
+  int i, cols = 0;
 
   gtk_window_resize(GTK_WINDOW(editor_data->window), 100, 600); 
 
   treeView = gtk_tree_view_new_with_model (GTK_TREE_MODEL (table->value.listStore));
   g_object_unref (G_OBJECT (table->value.listStore));
 
-  renderer = gtk_cell_renderer_text_new ();
-  g_object_set(G_OBJECT(renderer), "editable", TRUE, "editable_set", TRUE, NULL);
-  g_object_set_data(G_OBJECT(renderer), "ColNo", GUINT_TO_POINTER(COL1));
-  g_signal_connect (G_OBJECT (renderer), "edited",
-		    G_CALLBACK (arrayEditedCB), editor_data);
+  if (table->fieldtype == SPAN)
+    cols = 2;
+  else if (table->fieldtype == ALIGN)
+    cols = 4;
 
-  column = gtk_tree_view_column_new_with_attributes ("Start",
-						     renderer,
-						     "text", COL1,
-						     NULL);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
-  gtk_tree_view_column_set_min_width(column, column_width);
-
-  g_object_set_data(G_OBJECT(renderer), "ColNo", GUINT_TO_POINTER(COL2));
-  column = gtk_tree_view_column_new_with_attributes ("End",
-						     renderer,
-						     "text", COL2,
-						     NULL);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
-  gtk_tree_view_column_set_min_width(column, column_width);
-
-  if (table->fieldtype == ALIGN)
+  for (i = 0; i < cols; i++)
     {
-      g_object_set_data(G_OBJECT(renderer), "ColNo", GUINT_TO_POINTER(COL3));
-      column = gtk_tree_view_column_new_with_attributes ("Start",
-							 renderer,
-							 "text", COL3,
-							 NULL);
-      gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
-      gtk_tree_view_column_set_min_width(column, column_width);
-      
-      g_object_set_data(G_OBJECT(renderer), "ColNo", GUINT_TO_POINTER(COL4));
-      column = gtk_tree_view_column_new_with_attributes ("End",
-							 renderer,
-							 "text", COL4,
-							 NULL);
-      gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
-      gtk_tree_view_column_set_min_width(column, column_width);
+      buildCol(colInfo[i], treeView, table);
     }
-  
+
   if (editor_data->hbox == NULL)
     {
       editor_data->hbox = gtk_hbox_new(FALSE, 0);
@@ -573,52 +619,54 @@ static void addArrayCB(gpointer data, editorData editor_data)
   frame = gtk_frame_new(frameLabel);
   gtk_box_pack_start(GTK_BOX(editor_data->hbox), frame, TRUE, TRUE, 0);
 
-  g_free(frameLabel);
-
   scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
-  gtk_container_add(GTK_CONTAINER(frame), scrolledWindow);
-
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow),
 				 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
+  gtk_container_add(GTK_CONTAINER(frame), scrolledWindow);
   gtk_container_add(GTK_CONTAINER(scrolledWindow), treeView);
 
-  selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (treeView));
-  gtk_tree_selection_set_mode (selection, GTK_SELECTION_SINGLE);
-  g_signal_connect (G_OBJECT (selection), "changed",
-		    G_CALLBACK (treeSelectionChangedCB),
-		    editor_data);
   return;
 }
 
-/* on entering a scrolled window, we record the corresponding GtkListStore
- * so that arryEditedCB knows which one to update */
-static void treeSelectionChangedCB (GtkTreeSelection *selection, gpointer data)
+
+
+
+static void buildCol(colInfoStruct colInfo,GtkWidget *treeView, mainTable table)
 {
-  GtkTreeIter iter;
-  editorData editor_data = (editorData)data;
+  GtkCellRenderer *renderer;
+  GtkTreeViewColumn *column;
+  int column_width = 50;
 
-  gtk_tree_selection_get_selected (selection, &editor_data->selectedModel, &iter);
+
+  renderer = gtk_cell_renderer_text_new ();
+  g_object_set(G_OBJECT(renderer), "editable", TRUE, "editable_set", TRUE, NULL);
+  g_object_set_data(G_OBJECT(renderer), "ColNo", GUINT_TO_POINTER(colInfo.colNo));
+  g_signal_connect (G_OBJECT (renderer), "edited",
+		    G_CALLBACK (arrayEditedCB), table->value.listStore);
+
+  column = gtk_tree_view_column_new_with_attributes (colInfo.label,
+						     renderer,
+						     "text", colInfo.colNo,
+						     NULL);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
+  gtk_tree_view_column_set_min_width(column, column_width);
 
   return;
 }
 
-/* I think I need to have a signal on the treeView, so I can identify
- * which liststore they've clicked on, and have that stick it into
- * editor data first, before this signal handler gets called.  Or 
- * something like that. Some way to identify which listStore we're
- * actually looking at. */
+
+
 static void arrayEditedCB(GtkCellRendererText *renderer, 
 			  char *path, char *new_text, gpointer user_data)
 {
-  editorData editor_data = (editorData)user_data;
+  GtkTreeModel *model = (GtkTreeModel*)user_data;
   GtkTreeIter iter;
   guint colNo;
 
   colNo = GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(renderer), "ColNo"));
-  gtk_tree_model_get_iter_from_string(editor_data->selectedModel, &iter, path);
-
-  //  gtk_list_store_set_value(editor_data->selectedModel, iter, colNo, new_text);
+  gtk_tree_model_get_iter_from_string(model, &iter, path);
+  gtk_list_store_set(GTK_LIST_STORE(model), &iter, colNo, atoi(new_text), -1);
 
   return;
 }
@@ -626,6 +674,7 @@ static void arrayEditedCB(GtkCellRendererText *renderer,
 
 static void undoChangesCB(GtkWidget *widget, gpointer data)
 {
+  printf("Undo called\n");
   return;
 }
 
@@ -633,21 +682,28 @@ static void undoChangesCB(GtkWidget *widget, gpointer data)
 
 static void saveChangesCB(GtkWidget *widget, gpointer data)
 {
+  printf("Save called\n");
+  return;
+}
+
+
+
+
+static void applyChangesCB(GtkWidget *widget, gpointer data)
+{
   editorData editor_data = (editorData)data;
   mainTable table = editor_data->table;
   ZMapFeature feature;
   const char *value;
-  int i;
+  int i, n;
+  float f;
   gboolean pressed;
 
   feature = g_object_get_data(G_OBJECT(editor_data->item), "feature");
 
-  editor_data->originalFeature = zMapFeatureCopy(feature);
-
   for (i = 1; table[i].fieldtype != LAST; i++)
     {
-      /* switch statement must be in sync with the table structure
-       * so you direct the screen data at the correct feature variables. */
+      /* switch statement must be in sync with the table structure */
       switch (table[i].fieldtype)
 	{
 	case ENTRY:
@@ -657,62 +713,47 @@ static void saveChangesCB(GtkWidget *widget, gpointer data)
 	      
 	      switch (i)
 		{
-		case 1:
-		  feature->x1 = atoi(value);
+		case 1: case 2:        /* feature->x1 and x2 */ 
+		case 8: case 9:        /* homol->y1 and y2   */
+		case 14: case 15:      /* transcript->cdsStart and end */
+		  if ((n = atoi(value)) > 0
+		      && table[i].fieldPtr != NULL)
+		    *((int *)table[i].fieldPtr) = n;
 		  break;
 		  
-		case 2:
-		  feature->x2 = atoi(value);
+		case 3: /* strand */ 
+		case 10: /* homol strand */ 
 		  break;
 		  
-		case 3: /* strand */ case 4: /* phase */ 
-		case 10: /* homol strand */ case 11: /* homol phase */
-		case 16: /* transcript phase */ 
+		case 4: case 11: case 16: /* phases */ 
+		  if ((n = atoi(value)) > 0 
+		      && table[i].fieldPtr != NULL
+		      && n < 4)
+		    *((int *)table[i].fieldPtr) = n;
 		  break;
 		  
-		case 5:
-		  feature->score = atof(value);
+		case 5: case 12:          /* scores */
+		  if ((f = atof(value)) > 0.0
+		      && table[i].fieldPtr != NULL)
+		    *((float *)table[i].fieldPtr) = f;
 		  break;
 		  
-		case 7:
-		  if (feature->type == ZMAPFEATURE_HOMOL)
-		    if (value == "X")
-		      feature->feature.homol.type = ZMAPHOMOL_X_HOMOL;
-		    else if (value == "N")
-		      feature->feature.homol.type = ZMAPHOMOL_N_HOMOL;
-		    else if (value == "TX")
-		      feature->feature.homol.type = ZMAPHOMOL_TX_HOMOL;
-		  break;
-		  
-		case 8:
-		  if (feature->type == ZMAPFEATURE_HOMOL)
-		    feature->feature.homol.y1 = atoi(value);
-		  break;
-		  
-		case 9:
-		  if (feature->type == ZMAPFEATURE_HOMOL)
-		    feature->feature.homol.y2 = atoi(value);
-		  break;
-		  
-		case 12:
-		  if (feature->type == ZMAPFEATURE_HOMOL)
-		    feature->feature.homol.score = atof(value);
-		  break;
-		  
-		case 14:
-		  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-		    feature->feature.transcript.cdsStart = atoi(value);
-		  break;
-		  
-		case 15:
-		  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-		    feature->feature.transcript.cdsEnd = atoi(value);
+		case 7:                   /* homol type */
+		  if (table[i].fieldPtr != NULL)
+		    {
+		      if (value == "X")
+			*((int *)table[i].fieldPtr) = ZMAPHOMOL_X_HOMOL;
+		      else if (value == "N")
+			*((int *)table[i].fieldPtr) = ZMAPHOMOL_N_HOMOL;
+		      else if (value == "TX")
+			*((int *)table[i].fieldPtr) = ZMAPHOMOL_TX_HOMOL;
+		    }
 		  break;
 		}
 	    }
 	  break;
-
-	case CHECK:
+	  
+	case CHECK:                        /* transcript start/end not found */
 	  if (table[i].widget != NULL)
 	    {
 	      pressed = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(table[i].widget));
@@ -722,10 +763,73 @@ static void saveChangesCB(GtkWidget *widget, gpointer data)
 		feature->feature.transcript.endNotFound = pressed;
 	    }
 	  break;
+
+	case SPAN: ALIGN:
+	  updateArray(&table[i], i, feature);
+	  break;
 	}
     }
   return;
 }
+
+
+
+/* Update the appropriate array in the feature, as indicated by i. */
+static void updateArray(mainTable table, int i, ZMapFeature feature)
+{
+  ZMapAlignBlockStruct align;
+  ZMapSpanStruct span;
+  GtkTreeIter iter;
+  gboolean valid;
+
+  if (i == 13) /* homol alignments */
+    {
+      g_array_free(feature->feature.homol.align, TRUE);
+      feature->feature.homol.align = g_array_new(FALSE, TRUE, sizeof(ZMapAlignBlockStruct));
+    }
+  else if (i == 19) /* transcript exons */
+    {
+      g_array_free(feature->feature.transcript.exons, TRUE);
+      feature->feature.transcript.exons = g_array_new(FALSE, TRUE, sizeof(ZMapSpanStruct));
+    }
+  else if (i == 20)    /* transcript introns */
+    {
+      g_array_free(feature->feature.transcript.introns, TRUE);
+      feature->feature.transcript.introns = g_array_new(FALSE, TRUE, sizeof(ZMapSpanStruct));
+    }
+
+  valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL(table->value.listStore), &iter);
+
+  while (valid)
+    {
+      if (i == 13)  
+	{
+	  gtk_tree_model_get (GTK_TREE_MODEL(table->value.listStore), &iter, 
+			      COL1, &align.q1,
+			      COL2, &align.q2,
+			      COL3, &align.t1,
+			      COL4, &align.t2,
+			      -1);
+	  g_array_append_val(feature->feature.homol.align, align);
+	}
+      else if (i == 19 || i == 20)
+	{
+	  gtk_tree_model_get (GTK_TREE_MODEL(table->value.listStore), &iter, 
+			      COL1, &span.x1,
+			      COL2, &span.x2,
+			      -1);
+	  if (i == 19)
+	    g_array_append_val(feature->feature.transcript.exons, span);
+	  else if (i == 20)
+	    g_array_append_val(feature->feature.transcript.introns, span);
+	}
+
+      valid = gtk_tree_model_iter_next (GTK_TREE_MODEL(table->value.listStore), &iter);
+    }
+
+  return;
+}
+
 
 
 /* We don't want the close button to call closeWindowCB directly
@@ -748,6 +852,7 @@ static void closeWindowCB(GtkWidget *widget, gpointer data)
   editorData editor_data = (editorDataStruct*)data;
     
   freeTable(editor_data->table);
+  g_free(editor_data->originalFeature);
   gtk_widget_destroy(GTK_WIDGET(editor_data->window));
   g_free(editor_data);
                                                                                 
