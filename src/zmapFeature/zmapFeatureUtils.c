@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Jul  6 11:15 2005 (rnc)
+ * Last edited: Jul  7 17:29 2005 (rnc)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.16 2005-07-06 10:15:59 rnc Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.17 2005-07-07 16:34:39 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -396,7 +396,63 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
 
 ZMapFeature zMapFeatureCopy(ZMapFeature feature)
 {
-  ZMapFeature newFeature = (ZMapFeature)g_memdup(feature, sizeof(feature));
+  int i;
+  ZMapFeature newFeature = (ZMapFeature)g_memdup(feature, sizeof(ZMapFeatureStruct));
+
+  if (feature->type == ZMAPFEATURE_HOMOL)
+    {
+      ZMapAlignBlockStruct align;
+      if (feature->feature.homol.align != NULL
+	  && feature->feature.homol.align->len > (guint)0)
+	{
+	  newFeature->feature.homol.align = 
+	    g_array_sized_new(FALSE, TRUE, 
+			      sizeof(ZMapAlignBlockStruct),
+			      feature->feature.homol.align->len);
+
+	  for (i = 0; i < feature->feature.homol.align->len; i++)
+	    {
+	      align = g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
+	      newFeature->feature.homol.align = 
+		g_array_append_val(newFeature->feature.homol.align, align);
+	    }
+	}
+    }
+  else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+    {
+      ZMapSpanStruct span;
+      if (feature->feature.transcript.exons != NULL
+	  && feature->feature.transcript.exons->len > (guint)0)
+	{
+	  newFeature->feature.transcript.exons = 
+	    g_array_sized_new(FALSE, TRUE, 
+			      sizeof(ZMapSpanStruct),
+			      feature->feature.transcript.exons->len);
+
+	  for (i = 0; i < feature->feature.transcript.exons->len; i++)
+	    {
+	      span = g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
+	      newFeature->feature.transcript.exons = 
+		g_array_append_val(newFeature->feature.transcript.exons, span);
+	    }
+	}
+
+      if (feature->feature.transcript.introns != NULL
+	  && feature->feature.transcript.introns->len > (guint)0)
+	{
+	  newFeature->feature.transcript.introns = 
+	    g_array_sized_new(FALSE, TRUE, 
+			      sizeof(ZMapSpanStruct),
+			      feature->feature.transcript.introns->len);
+
+	  for (i = 0; i < feature->feature.transcript.introns->len; i++)
+	    {
+	      span = g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i);
+	      newFeature->feature.transcript.introns = 
+		g_array_append_val(newFeature->feature.transcript.introns, span);
+	    }
+	}
+    }
 
   return newFeature;
 }
