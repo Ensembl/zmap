@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jun 24 13:04 2005 (edgrif)
+ * Last edited: Jul  7 11:36 2005 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.6 2005-06-24 13:21:47 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.7 2005-07-07 11:22:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -56,6 +56,8 @@ typedef struct _AcedbServerStruct
 
   ZMapFeatureContext req_context ;
 
+  gboolean user_specified_styles ;			    /* Did the user specify a set of
+							       styles ? */
   GList *types ;
   char *method_str ;
   char *find_method_str ;

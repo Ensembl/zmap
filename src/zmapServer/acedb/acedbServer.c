@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jul  6 10:24 2005 (edgrif)
+ * Last edited: Jul  7 12:16 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.34 2005-07-06 09:26:08 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.35 2005-07-07 11:22:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -149,6 +149,8 @@ static gboolean createConnection(void **server_out,
 
   server->host = g_strdup(host) ;
 
+  server->user_specified_styles = TRUE ;
+
   /* We need a minimum server version but user can specify a higher one in the config file. */
   if (version_str)
     {
@@ -209,6 +211,8 @@ static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, 
       server->method_str = getMethodString(requested_types, TRUE, FALSE) ;
       server->find_method_str = getMethodString(requested_types, TRUE, TRUE) ;
     }
+  else
+    server->user_specified_styles = FALSE ;
 
   if (parseTypes(server, requested_types))
     {
@@ -500,15 +504,21 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
-  GList *styles ;
   char *methods = "" ;
 
-  /* Did the user have specify the styles completely via a styles file ? If so we will
+
+
+  /* Did the user specify the styles completely via a styles file ? If so we will
    * need to construct the method string from them. */
-  styles = feature_block->parent_alignment->parent_context->types ;
-  if (!server->method_str && styles)
+  if (server->user_specified_styles == TRUE)
     {
-      server->method_str = getMethodString(styles, FALSE, FALSE) ;
+      GList *styles ;
+
+      styles = feature_block->parent_alignment->parent_context->types ;
+      if (!server->method_str && styles)
+	{
+	  server->method_str = getMethodString(styles, FALSE, FALSE) ;
+	}
     }
 
 
