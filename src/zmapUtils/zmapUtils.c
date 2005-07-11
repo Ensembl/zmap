@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May 13 14:30 2005 (edgrif)
+ * Last edited: Jul 11 12:52 2005 (rnc)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.10 2005-05-18 11:15:24 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.11 2005-07-11 11:55:41 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -275,7 +275,7 @@ gboolean zMapStr2Int(char *str, int *int_out)
 gboolean zMapStr2LongInt(char *str, long int *long_int_out)
 {
   gboolean result = FALSE ;
-  char *endptr ;
+  char *endptr = NULL;
   long int retval ;
 
   zMapAssert(str && *str) ;
@@ -287,6 +287,11 @@ gboolean zMapStr2LongInt(char *str, long int *long_int_out)
     {
       /* Invalid string in some way. */
       result = FALSE ;
+    }
+  else if (*endptr != '\0')
+    {
+      /* non-digit found in string */
+      result = FALSE;
     }
   else if (errno !=0 && (retval == LONG_MAX || retval == LONG_MIN))
     {
