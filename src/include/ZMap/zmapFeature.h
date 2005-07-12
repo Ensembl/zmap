@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul  5 15:50 2005 (rnc)
+ * Last edited: Jul 11 14:45 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.33 2005-07-05 14:51:01 rnc Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.34 2005-07-12 10:06:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -332,6 +332,10 @@ typedef struct ZMapFeatureTypeStyleStruct_
   double    min_score, max_score ;
   gboolean  showText ;
 
+  gboolean bump ;					    /* Should homols etc. be displayed in
+							       an offset way across the column. */
+
+
   /* These are all linked, if strand_specific is FALSE, then so are frame_specific
    * and show_rev_strand. */
   gboolean  strand_specific ;
@@ -409,6 +413,8 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean strand_specific, gboolean frame_specific,
 			     gboolean show_rev_strand) ;
+
+void zMapStyleSetBump(ZMapFeatureTypeStyle type, gboolean bump) ;
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
 

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 24 08:45 2005 (edgrif)
+ * Last edited: Jul 11 14:46 2005 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.7 2005-06-24 13:20:39 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.8 2005-07-12 10:06:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,6 +112,16 @@ void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 
   return ;
 }
+
+void zMapStyleSetBump(ZMapFeatureTypeStyle type, gboolean bump)
+{
+  zMapAssert(type) ;
+
+  type->bump = bump ;
+
+  return ;
+}
+
 
 
 /* Pretty brain dead but we need some way to deal with the situation where a style may differ in
@@ -233,6 +243,7 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	   {"strand_specific", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"frame_specific", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"minmag"      , ZMAPCONFIG_INT   , {NULL}},
+	   {"bump"      , ZMAPCONFIG_BOOL   , {NULL}},
 	   {NULL, -1, {NULL}}} ;
 
       /* Init fields that cannot default to string NULL. */
@@ -281,6 +292,7 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 				      zMapConfigGetElementBool(next_types, "frame_specific"),
 				      zMapConfigGetElementBool(next_types, "show_reverse")) ;
 
+	      zMapStyleSetBump(new_type, zMapConfigGetElementBool(next_types, "bump")) ;
 
 	      types = g_list_append(types, new_type) ;
 

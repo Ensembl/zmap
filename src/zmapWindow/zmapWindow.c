@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 27 16:14 2005 (edgrif)
+ * Last edited: Jul 11 13:09 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.84 2005-06-27 15:39:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.85 2005-07-12 10:06:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -198,6 +198,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   window->zoom_status = ZMAP_ZOOM_INIT ;
   window->canvas_maxwin_size = ZMAP_WINDOW_MAX_WINDOW ;
 
+  window->min_coord = window->max_coord = 0.0 ;
+
   /* Some things for window can be specified in the configuration file. */
   getConfiguration(window) ;
 
@@ -205,8 +207,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   window->context_to_item = zmapWindowFToICreate() ;
 
   window->featureListWindows = g_ptr_array_new();
-
-  g_datalist_init(&(window->longItems));
 
 
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
@@ -337,16 +337,15 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   new_window->width = original_window->width ;
   new_window->height = original_window->height ;
 
+  new_window->canvas_maxwin_size = original_window->canvas_maxwin_size ;
+  new_window->border_pixels = original_window->border_pixels ;
+  new_window->min_coord = original_window->min_coord ;
+  new_window->max_coord = original_window->min_coord ;
+  new_window->text_height = original_window->text_height ;
 
-  new_window->canvas_maxwin_size = original_window->canvas_maxwin_size;
-  new_window->border_pixels      = original_window->border_pixels;
-
-  new_window->text_height        = original_window->text_height;
-  new_window->seqLength          = original_window->seqLength;
-  new_window->seq_start          = original_window->seq_start;
-
-
-
+  new_window->seq_start = original_window->seq_start ;
+  new_window->seq_end = original_window->seq_end ;
+  new_window->seqLength = original_window->seqLength ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Surely this cannot work.....the items will be different....
@@ -387,12 +386,12 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 
 double zmapWindowCalcZoomFactor(ZMapWindow window)
 {
-  /* debugging floating exception */
-  if (window->seqLength == 0) printf("window->seqLength is zero\n");
-
-  double zoom_factor = GTK_WIDGET(window->canvas)->allocation.height / window->seqLength;
-
-  return zoom_factor;
+  double zoom_factor ;
+ 
+  zoom_factor
+    = GTK_WIDGET(window->canvas)->allocation.height / zmapWindowExt(window->min_coord,
+								    window->max_coord) ;
+  return zoom_factor ;
 }
 
 
@@ -604,7 +603,13 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor)
 
   /* Calculate limits to what we can show. */
   max_win_span = (double)(window->canvas_maxwin_size) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   seq_span = window->seqLength * window->zoom_factor ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  seq_span = zmapWindowExt(window->min_coord, window->max_coord) * window->zoom_factor ;
+
 
   /* Calculate the extent of the new span, new span must not exceed maximum X window size
    * but we must display as much of the sequence as we can for zooming out. */
@@ -624,17 +629,17 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor)
   top = curr_pos - (new_canvas_span / 2) ;
   bot = curr_pos + (new_canvas_span / 2) ;
 
-  if (top < window->seq_start)
+  if (top < window->min_coord)
     {
-      if ((bot = bot + (window->seq_start - top)) > window->seq_end)
-	bot = window->seq_end ;
-      top = window->seq_start ;
+      if ((bot = bot + (window->min_coord - top)) > window->max_coord)
+	bot = window->max_coord ;
+      top = window->min_coord ;
     }
-  else if (bot > window->seq_end)
+  else if (bot > window->max_coord)
     {
-      if ((top = top - (bot - window->seq_end)) < window->seq_start)
-	top = window->seq_start ;
-      bot = window->seq_end ;
+      if ((top = top - (bot - window->max_coord)) < window->min_coord)
+	top = window->min_coord ;
+      bot = window->max_coord ;
     }
 
 
@@ -689,12 +694,8 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor)
 					&(window->major_scale_units), &(window->minor_scale_units));
 
 
-  /* Presumeably this only needs to be done if the extent of the features is longer than the
-   * scrolled region ? Really this call to g_datalist should be within a function.... */
-  /* There is a hard limit on the absolute size of an xwindow of 32k pixels, some objects which
-   * span the whole of a sequence may exceed this as we zoom in and therefore we need to crop
-   * them. */
-  g_datalist_foreach(&(window->longItems), zmapWindowCropLongFeature, window);
+  /* May need to crop very long canvas items. */
+  zmapWindowLongItemCrop(window) ;
 
 
   /* Call the visibility change callback to notify our caller that our zoom/position has
@@ -717,10 +718,10 @@ void zMapWindowMove(ZMapWindow window, double start, double end)
   ZMapWindowVisibilityChangeStruct vis_change ;
 
   /* Clamp the start/end. */
-  if (start < window->seq_start)
-    start = window->seq_start ;
-  if (end > window->seq_end)
-    end = window->seq_end ;
+  if (start < window->min_coord)
+    start = window->min_coord ;
+  if (end > window->max_coord)
+    end = window->max_coord ;
 
   /* We don't need the y1/y2 probably, but we do need the x1, x2.... */
   foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
@@ -730,6 +731,10 @@ void zMapWindowMove(ZMapWindow window, double start, double end)
     {
       foo_canvas_set_scroll_region(window->canvas, x1, start, x2, end) ;
     }
+
+
+  /* need to redo some of the large objects.... */
+  zmapWindowLongItemCrop(window) ;
 
 
   /* Redraw the scale bar. */
@@ -743,6 +748,8 @@ void zMapWindowMove(ZMapWindow window, double start, double end)
 					start, end,
 					&(window->major_scale_units), &(window->minor_scale_units)) ;
 
+
+  foo_canvas_update_now(window->canvas) ;
 
   /* Call the visibility change callback to notify our caller that our zoom/position has
    * changed, note there is some redundancy here if the call to this routine came as a.
@@ -801,54 +808,6 @@ void zmapWindowPrintGroup(FooCanvasGroup *group)
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(group), &x1, &y1, &x2, &y2) ;
   printf("Pos: %f, %f  Bounds: %f -> %f,  %f -> %f\n",
 	 group->xpos, group->ypos, x1, x2, y1, y2) ;
-
-  return ;
-}
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-GQuark zMapWindowGetFocusQuark(ZMapWindow window)
-{
-  return window->focusQuark;
-}
-
-
-gchar *zMapWindowGetTypeName(ZMapWindow window)
-{
-  return window->typeName;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-void zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data)
-{
-  ZMapWindowLongItem longItem = (ZMapWindowLongItem)data ;
-  ZMapWindow window = (ZMapWindow)user_data ;
-  double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
-  double start, end ;
-
-  foo_canvas_get_scroll_region(window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
-
-  start = longItem->start;
-  end  = longItem->end;
-
-  if ((longItem->start <= scroll_y1 && longItem->end >= scroll_y2)
-      || (longItem->start <= scroll_y1 && longItem->end >= scroll_y1)
-      || (longItem->start <= scroll_y2 && longItem->end >= scroll_y2))
-    {
-      if (longItem->start < scroll_y1)
-	start = scroll_y1 - 10;
-      if (longItem->end > scroll_y2)
-	end = scroll_y2 + 10;
-
-      if (longItem->end > longItem->start)
-	foo_canvas_item_set(longItem->canvasItem,
-			    "y1", start,
-			    "y2", end,
-			    NULL);
-    }
 
   return ;
 }
@@ -926,7 +885,7 @@ void zMapWindowDestroy(ZMapWindow window)
   g_datalist_clear(&(window->featureItems));
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  g_datalist_clear(&(window->longItems));
+  zmapWindowLongItemFree(window->long_items) ;
 
   g_free(window) ;
   
@@ -1069,7 +1028,7 @@ static void changeRegion(ZMapWindow window, guint keyval)
   foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
 
   /* There is no sense in trying to scroll the region if we already showing all of it already. */
-  if (y1 > window->seq_start || y2 < window->seq_end)
+  if (y1 > window->min_coord || y2 < window->max_coord)
     {
       window_size = y2 - y1 + 1 ;
 
@@ -1120,14 +1079,14 @@ static void changeRegion(ZMapWindow window, guint keyval)
 	  }
 	}
 
-      if (y1 < window->seq_start)
+      if (y1 < window->min_coord)
 	{
-	  y1 = window->seq_start ;
+	  y1 = window->min_coord ;
 	  y2 = y1 + window_size - 1 ;
 	}
-      if (y2 > window->seq_end)
+      if (y2 > window->max_coord)
 	{
-	  y2 = window->seq_end ;
+	  y2 = window->max_coord ;
 	  y1 = y2 - window_size + 1 ;
 	}
 

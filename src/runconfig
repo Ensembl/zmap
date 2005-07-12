@@ -55,8 +55,11 @@ esac
 echo "$script : Running " $root/configure $cc_args "$cflags_args" "$ld_args"
 echo "=========================================================================="
 
+
 # run the configure.......watch out for the quoting, sometimes we want the variable to
 # be interpreted as a single cmdline arg, sometimes as multiple ones.
+
 $root/configure $cc_args "$cflags_args" "$ld_args"
+
 
 exit 0
