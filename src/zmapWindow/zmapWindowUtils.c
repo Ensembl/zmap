@@ -26,12 +26,13 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 30 16:01 2005 (rds)
+ * Last edited: Jul 12 11:14 2005 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.9 2005-06-30 15:04:44 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.10 2005-07-12 10:14:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
@@ -50,6 +51,171 @@ static void highlightFuncCB(gpointer data, gpointer user_data) ;
 static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_video) ;
 
 static void checkScrollRegion(ZMapWindow window, double start, double end) ;
+
+static void cropLongItem(gpointer data, gpointer user_data) ;
+static void freeLongItem(gpointer data, gpointer user_data_unused) ;
+
+
+
+/* A couple of simple coord calculation routines, if these prove too expensive they
+ * can be replaced with macros. */
+
+/* This is the basic length calculation, obvious, but the "+ 1" is constantly overlooked. */
+double zmapWindowExt(double start, double end)
+{
+  double extent ;
+
+  zMapAssert(start <= end) ;
+
+  extent = end - start + 1 ;
+
+  return extent ;
+}
+
+/* Converts a sequence extent into a canvas extent.
+ *
+ * Less obvious as it covers the following slightly subtle problem:
+ * 
+ * sequence coords:           1  2  3  4  5  6  7  8                                         
+ *                                                                                           
+ * canvas coords:            |__|__|__|__|__|__|__|__|                                       
+ *                                                                                           
+ *                           |                       |                                       
+ *                          1.0                     9.0                                      
+ *                                                                                           
+ * i.e. when we actually come to draw it we need to go one _past_ the sequence end           
+ * coord because our drawing needs to draw in the whole of the last base.                    
+ * 
+ */
+void zmapWindowSeq2CanExt(double *start_inout, double *end_inout)
+{
+  zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
+
+  *end_inout = *end_inout + 1 ;
+
+  return ;
+}
+
+/* Converts a start/end pair of coords into a zero based pair of coords.
+ *
+ * For quite a lot of the canvas group stuff we need to take two coords defining a range
+ * in some kind of parent system and convert that range into the same range but starting at zero,
+ * e.g.  range  3 -> 6  becomes  0 -> 3  */
+void zmapWindowExt2Zero(double *start_inout, double *end_inout)
+{
+  zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
+
+  *end_inout = *end_inout - *start_inout ;		    /* do this first before zeroing start ! */
+
+  *start_inout = 0.0 ;
+
+  return ;
+}
+
+
+/* Converts a sequence extent into a zero based canvas extent.
+ *
+ * Combines zmapWindowSeq2CanvasExtent() and zmapWindowExtent2Zero(), used in positioning
+ * groups/features a lot because in the canvas item coords are relative to their parent group
+ * and hence zero-based. */
+void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout)
+{
+  zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
+
+  *end_inout = *end_inout - *start_inout ;		    /* do this first before zeroing start ! */
+
+  *start_inout = 0.0 ;
+
+  *end_inout = *end_inout + 1 ;
+
+  return ;
+}
+
+
+/* NOTE: offset may not be quite what you think, the routine recalculates */
+void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offset)
+{
+  zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
+
+  *start_inout -= offset ;
+
+  *end_inout -= offset ;
+
+  *end_inout += 1 ;
+
+  return ;
+}
+
+
+
+
+/* The zmapWindowLongItemXXXXX() functions manage the cropping of canvas items that
+ * can exceed the X Windows size limit of 32k for graphical items. We have to do this
+ * because the foocanvas does not handle this. */
+
+/* n.b. we could get the start/end from the item but perhaps it doesn't matter...and it is
+ * more efficient + the user could always get the start/end themselves before calling us. */
+void zmapWindowLongItemCheck(ZMapWindow window, FooCanvasItem *item, double start, double end)
+{
+  double length ;
+
+  length = zmapWindowExt(start, end) * window->max_zoom ;
+
+  /* Only add the item if it can exceed the windows limit. */
+  if (length > ZMAP_WINDOW_MAX_WINDOW)
+    {
+      ZMapWindowLongItem long_item ;
+
+      long_item = g_new0(ZMapWindowLongItemStruct, 1) ;
+
+      long_item->item = item ;
+
+      if (FOO_IS_CANVAS_LINE(long_item->item))
+	{
+	  FooCanvasPoints *item_points ;
+
+	  g_object_get(G_OBJECT(long_item->item),
+		       "points", &item_points,
+		       NULL) ;
+
+	  long_item->pos.points = foo_canvas_points_new(ZMAP_WINDOW_INTRON_POINTS) ;
+
+	  memcpy(long_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
+
+	  memcpy(long_item->pos.points->coords,
+		 item_points->coords,
+		 ((item_points->num_points * 2) * sizeof(double))) ;
+	}
+      else
+	{
+	  long_item->pos.box.start = start ;
+	  long_item->pos.box.end = end ;
+	}
+
+      window->long_items = g_list_append(window->long_items, long_item) ;
+    }
+
+  return ;
+}
+
+void zmapWindowLongItemCrop(ZMapWindow window)
+{
+  if (window->long_items)
+    g_list_foreach(window->long_items, cropLongItem, window) ;
+
+  return ;
+}
+
+
+/* Free all the long items by freeing individual structs then the list itself. */
+void zmapWindowLongItemFree(GList *long_items)
+{
+  g_list_foreach(long_items, freeLongItem, NULL) ;
+
+  g_list_free(long_items) ;
+
+  return ;
+}
 
 
 
@@ -479,6 +645,7 @@ void my_foo_canvas_item_i2w (FooCanvasItem *item, double *x, double *y)
 
 
 
+/* THIS FUNCTION HAS TOTALLY THE WRONG NAME, IT __SETS__ THE SCROLL REGION.... */
 /** \Brief Recalculate the scroll region.
  *
  * If the selected feature is outside the current scroll region, recalculate
@@ -504,14 +671,14 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
 
       y1 = start - (height / 2.0) ;
 
-      if (y1 < window->seq_start)
-	y1 = window->seq_start;
+      if (y1 < window->min_coord)
+	y1 = window->min_coord ;
 
       y2 = y1 + height;
 
       /* this shouldn't happen */
-      if (y2 > window->seq_end)
-	y2 = window->seq_end ;
+      if (y2 > window->max_coord)
+	y2 = window->max_coord ;
 
 
       foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
@@ -532,11 +699,14 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
 
       /* agh, this seems to be here because we move the scroll region...we need a function
        * to do this all....... */
-      if (window->longItems)
-	g_datalist_foreach(&(window->longItems), zmapWindowCropLongFeature, window);
+      zmapWindowLongItemCrop(window) ;
 
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      foo_canvas_update_now(window->canvas) ;
+      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       /* Call the visibility change callback to notify our caller that our zoom/position has
        * changed. */
@@ -665,4 +835,120 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
 
   return ;
 }
+
+
+
+
+/* A GFunc list callback function, called to free data attached to each list member. */
+static void freeLongItem(gpointer data, gpointer user_data_unused)
+{
+  ZMapWindowLongItem long_item = (ZMapWindowLongItem)data ;
+
+  g_free(long_item) ;
+
+  return ;
+}
+
+/* A GFunc list callback function, called to check whether a canvas item needs to be cropped. */
+static void cropLongItem(gpointer data, gpointer user_data)
+{
+  ZMapWindowLongItem long_item = (ZMapWindowLongItem)data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+  double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
+  double start, end, dummy_x ;
+
+  zMapAssert(FOO_IS_CANVAS_ITEM(long_item->item)) ;
+
+  foo_canvas_get_scroll_region(window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("\nScroll region: %f -> %f\n", scroll_y1, scroll_y2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  /* Reset to original coords because we may be zooming out, you could be more clever
+   * about this but is it worth the convoluted code ? */
+  if (FOO_IS_CANVAS_LINE(long_item->item))
+    {
+
+      foo_canvas_item_set(long_item->item,
+			  "points", long_item->pos.points,
+			  NULL) ;
+
+      start = long_item->pos.points->coords[1] ;
+      end = long_item->pos.points->coords[((long_item->pos.points->num_points * 2) - 1)] ;
+    }
+  else
+    {
+      foo_canvas_item_set(long_item->item,
+			  "y1", long_item->pos.box.start,
+			  "y2", long_item->pos.box.end,
+			  NULL) ;
+
+      start = long_item->pos.box.start ;
+      end  = long_item->pos.box.end ;
+    }
+
+
+  dummy_x = 0 ;
+  my_foo_canvas_item_i2w(long_item->item, &dummy_x, &start) ;
+  my_foo_canvas_item_i2w(long_item->item, &dummy_x, &end) ;
+
+
+  /* Now clip anything that overlaps the boundaries of the scrolled region. */
+  if (!(end < scroll_y1) && !(start > scroll_y2)
+      && ((start < scroll_y1) || (end > scroll_y2)))
+    {
+      if (start < scroll_y1)
+	start = scroll_y1 ;
+
+      if (end > scroll_y2)
+	end = scroll_y2 ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      printf("item global/local: %f -> %f  ", start, end) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      my_foo_canvas_item_w2i(long_item->item, &dummy_x, &start) ;
+      my_foo_canvas_item_w2i(long_item->item, &dummy_x, &end) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      printf("     %f -> %f\n", start, end) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+      if (FOO_IS_CANVAS_LINE(long_item->item))
+	{
+	  FooCanvasPoints *item_points ;
+
+	  g_object_get(G_OBJECT(long_item->item),
+		       "points", &item_points,
+		       NULL) ;
+
+	  item_points->coords[1] = start ;
+	  item_points->coords[((item_points->num_points * 2) - 1)] = end ;
+	  
+	  foo_canvas_item_set(long_item->item,
+			      "points", item_points,
+			      NULL) ;
+	}
+      else
+	{
+	  foo_canvas_item_set(long_item->item,
+			      "y1", start,
+			      "y2", end,
+			      NULL) ;
+	}
+    }
+
+  return ;
+}
+
 
