@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 30 16:04 2005 (rds)
+ * Last edited: Jul 11 14:14 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.63 2005-06-30 15:04:27 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.64 2005-07-12 10:16:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -62,6 +62,10 @@
  * that covers this entire span and so position things anywhere inside it. In a way
  * its completely crap and confusing.......
  * 
+ * BUT....it means that in the visible window you are limited to the range 0 - 32767.
+ * by sticking at 30,000 we allow ourselves a margin for error that should work on any
+ * machine.
+ * 
  */
 
 
@@ -71,6 +75,12 @@ enum
     ZMAP_WINDOW_STEP_INCREMENT = 10,                        /* scrollbar stepping increment */
     ZMAP_WINDOW_PAGE_INCREMENT = 600,                       /* scrollbar paging increment */
     ZMAP_WINDOW_MAX_WINDOW = 30000			    /* Largest canvas window. */
+  } ;
+
+
+enum
+  {
+    ZMAP_WINDOW_INTRON_POINTS = 3			    /* Number of points to draw an intron. */
   } ;
 
 
@@ -165,6 +175,9 @@ typedef struct _ZMapWindowStruct
   int            border_pixels ;			    /* top/bottom border to sequence. */
   double         text_height;                               /* used to calculate min/max zoom */
 
+  /* I'm trying these out as using the sequence start/end is not correct for window stuff. */
+  double min_coord ;					    /* min/max canvas coords */
+  double max_coord ;
 
   double align_gap ;					    /* horizontal gap between alignments. */
   double column_gap ;					    /* horizontal gap between columns. */
@@ -185,8 +198,10 @@ typedef struct _ZMapWindowStruct
   GPtrArray     *featureListWindows ;			    /* popup windows showing lists of
 							       column features. */
 
-  GData         *longItems ;				    /* set of features >30k long, need to be
-							       cropped as we zoom in. */
+  /* The stupid foocanvas can generate graphics items that are greater than the X Windows 32k
+   * limit, so we have to keep a list of the canvas items that can generate graphics greater
+   * than this limit as we zoom in and crop them ourselves. */
+  GList         *long_items ;				    
 
 
   /* This all needs to move and for scale to be in a separate window..... */
@@ -215,13 +230,21 @@ typedef struct _ZMapWindowStruct
 } ZMapWindowStruct ;
 
 
+/* We use this to hold info. about canvas items that will exceed the X Windows 32k limit
+ * for graphical objects and hence may need to be clipped. */
 typedef struct _ZMapWindowLongItemStruct
 {
-  char          *name;
-  double         start;
-  double         end;
-  FooCanvasItem *canvasItem;
-} ZMapWindowLongItemStruct, *ZMapWindowLongItem;
+  FooCanvasItem *item ;
+
+  union
+  {
+    struct {
+      double         start ;
+      double         end ;
+    } box ;
+    FooCanvasPoints *points ;
+  } pos ;
+} ZMapWindowLongItemStruct, *ZMapWindowLongItem ;
 
 
 
@@ -254,11 +277,20 @@ void zMapWindowCreateListWindow(ZMapWindow window, FooCanvasItem *item) ;
 
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
-void   zmapWindowCropLongFeature(GQuark quark, gpointer data, gpointer user_data);
+
+void zmapWindowLongItemCheck(ZMapWindow window, FooCanvasItem *item, double start, double end) ;
+void zmapWindowLongItemCrop(ZMapWindow window) ;
+void zmapWindowLongItemFree(GList *long_items) ;
 
 void zmapWindowDrawFeatures(ZMapWindow window, 
 			    ZMapFeatureContext current_context, ZMapFeatureContext new_context) ;
 
+
+double zmapWindowExt(double start, double end) ;
+void zmapWindowSeq2CanExt(double *start_inout, double *end_inout) ;
+void zmapWindowExt2Zero(double *start_inout, double *end_inout) ;
+void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout) ;
+void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offset) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zmapHideUnhideColumns(ZMapWindow window) ;
