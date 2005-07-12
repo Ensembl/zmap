@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 11 13:09 2005 (edgrif)
+ * Last edited: Jul 12 11:11 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.85 2005-07-12 10:06:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.86 2005-07-12 10:12:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -346,14 +346,6 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   new_window->seq_start = original_window->seq_start ;
   new_window->seq_end = original_window->seq_end ;
   new_window->seqLength = original_window->seqLength ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Surely this cannot work.....the items will be different....
-   * in fact it won't we need to pass the type/feature id combo. into the new window
-   * drawfeature call.... */
-  new_window->focus_item = original_window->focus_item ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   /* I'm a little uncertain how much of the below is really necessary as we are
    * going to call the draw features code anyway. */
@@ -879,11 +871,6 @@ void zMapWindowDestroy(ZMapWindow window)
   
   
   zmapWindowFToIDestroy(window->context_to_item) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_datalist_clear(&(window->featureItems));
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   zmapWindowLongItemFree(window->long_items) ;
 
