@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 27 13:44 2005 (edgrif)
+ * Last edited: Jul 13 10:28 2005 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.58 2005-06-27 15:35:19 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.59 2005-07-14 15:25:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1526,17 +1526,19 @@ static void setZoomStatus(gpointer data, gpointer user_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)data ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
   zMapWindowSetMinZoom(view_window->window) ;
   zMapWindowSetZoomStatus(view_window->window) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Would be better to have a function that just scrolls to the current focus item...?? */
 
   if (zMapWindowGetFocusQuark(view_window->window))
     zMapWindowScrollToItem(view_window->window, 
 			   zMapWindowGetTypeName(view_window->window), 
 			   zMapWindowGetFocusQuark(view_window->window)) ;
+
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
