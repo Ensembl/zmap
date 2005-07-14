@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Jul  4 17:56 2005 (rds)
+ * Last edited: Jul 14 15:43 2005 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.30 2005-07-04 16:59:47 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.31 2005-07-14 15:24:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,17 +39,8 @@
 #include <ZMap/zmapDraw.h>
 #include <math.h>
 
-/* OK, THIS IS ALL HATEFUL, ITS FOR THE SCALE WHICH WILL SOON NOT BE DRAWN IN THE WINDOW
- * ANYWAY....SO ALL THIS WILL GO AWAY...... */
-
-#define SCALE_LEFT  60.0
-#define SCALE_RIGHT SCALE_LEFT + 10.0
-#define SCALE_MID   SCALE_LEFT + ((SCALE_RIGHT - SCALE_LEFT) / 2)
-
-#define UNITCOUNT 4
 #define ZMAP_SCALE_MINORS_PER_MAJOR 10
 #define ZMAP_FORCE_FIVES TRUE
-/* #define SIZING_DEBUG 1 */
 
 /* Just a collection of ints, boring but makes it easier */
 typedef struct _ZMapScaleBarStruct
@@ -57,21 +48,14 @@ typedef struct _ZMapScaleBarStruct
   int base;                     /* One of 1 1e3 1e6 1e9 1e12 1e15 */
   int major;                    /* multiple of base */
   int minor;                    /* major / ZMAP_SCALE_MINORS_PER_MAJOR */
-  int lp_major;                 /* The loop use this */
-  int trueMinor;
-  char *unit;                     /* One of bp k M G T P */
+  char *unit;                   /* One of bp k M G T P */
 
   gboolean force_multiples_of_five;
   double zoom_factor;
 
   int start;
   int end;
-
-  /* Not sure we need these */
-  unsigned int firstMajor;
-  unsigned int lastMajor;
 } ZMapScaleBarStruct, *ZMapScaleBar;
-
 
 
 static ZMapScaleBar createScaleBar_start_end_zoom_height(int start, int end, double zoom, double line);
@@ -177,9 +161,11 @@ FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
 /* This routine should not be enhanced or debugged (it does not draw the scale in a good
  * way, the units are often bizarre, e.g. 10001, 20001 etc.). In the future the scale
  * will be in a separate window. */
+
+/* This function NEEDS Seq2CanExt output coords i.e. seqstart -> seqend + 1 */
 FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
-			     double offset, double zoom_factor, 
-			     int start, int end, int *major_units_out, int *minor_units_out)
+			     double zoom_factor, 
+			     int start, int end)
 {
   FooCanvasItem *group = NULL ;
   int width = 0 ;
@@ -187,17 +173,19 @@ FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
   double x1, y1, x2, y2, height;
   ZMapScaleBar scaleBar = NULL;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* If the scrolled_region has been cropped, we need to crop the scalebar too */
+  /* This shouldn't be needed!!! we should just draw from the start, we know what the zoom is!! */
   foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
   if (start < y1)
-    start = y1;
+      start = y1;
   if (end > y2)
-    end = y2;
-
+      end = y2;
+#endif
 
   group = foo_canvas_item_new(foo_canvas_root(canvas),
 			      foo_canvas_group_get_type(),
-			      "x", offset,
+			      "x", 0.0,
 			      "y", 0.0,
 			      NULL) ;
 
@@ -209,12 +197,6 @@ FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
 
   destroyScaleBar(scaleBar);
 
-  if (major_units_out)
-    *major_units_out = scaleBar->major ;
-
-  if (minor_units_out)
-    *minor_units_out = scaleBar->minor ;
-
   return group ;
 }
 
@@ -222,7 +204,7 @@ FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
  * raise to top and always see it. It'll hide behind widgets though,
  * but we don't have any of those.
  */
-FooCanvasItem *zMapRubberbandCreate(FooCanvas *canvas)
+FooCanvasItem *zMapDrawRubberbandCreate(FooCanvas *canvas)
 {
   FooCanvasItem *rubberband;
   rubberband = foo_canvas_item_new (foo_canvas_root(FOO_CANVAS(canvas)),
@@ -233,10 +215,10 @@ FooCanvasItem *zMapRubberbandCreate(FooCanvas *canvas)
   return rubberband;
 }
 
-void zMapRubberbandResize(FooCanvasItem *band, 
-                          double origin_x, double origin_y, 
-                          double current_x, double current_y
-                          )
+void zMapDrawRubberbandResize(FooCanvasItem *band, 
+                              double origin_x, double origin_y, 
+                              double current_x, double current_y
+                              )
 {
   foo_canvas_item_hide(band);
   foo_canvas_item_set(band,
@@ -250,7 +232,7 @@ void zMapRubberbandResize(FooCanvasItem *band,
   return ;
 }
 
-FooCanvasItem *zMapHorizonCreate(FooCanvas *canvas)
+FooCanvasItem *zMapDrawHorizonCreate(FooCanvas *canvas)
 {
   FooCanvasItem *line;
 
@@ -262,16 +244,12 @@ FooCanvasItem *zMapHorizonCreate(FooCanvas *canvas)
   return line;
 }
 
-void zMapHorizonReposition(FooCanvasItem *line, double current_y)
+void zMapDrawHorizonReposition(FooCanvasItem *line, double current_y)
 {
   FooCanvasPoints *points;
-  //FooCanvasGroup *root;
   double x1, x2, y1, y2;
 
   foo_canvas_get_scroll_region(line->canvas, &x1, &y1, &x2, &y2);
-
-  //  root = foo_canvas_root(line->canvas);
-  //  foo_canvas_item_get_bounds((FooCanvasItem *)root, &x1, &y1, &x2, &y2);
 
   /* allocate a new points array */
   points = foo_canvas_points_new(2) ;
@@ -318,24 +296,120 @@ void zMapDrawGetTextDimensions(FooCanvasGroup *group, double *width_out, double 
   return ;
 }
 
+int zMapDrawBorderSize(FooCanvasGroup *group)
+{
+  int size = 0;
+  double height, zoom;
 
+  zMapDrawGetTextDimensions(group, NULL, &height);
+
+  g_object_get(GTK_OBJECT(group),
+	       "FooCanvas::pixels_per_unit", &zoom,
+	       NULL) ;
+
+  size = ceil(height / zoom) + 1;
+
+  return size;
+}
+
+FooCanvasGroup *zMapDrawToolTipCreate(FooCanvas *canvas)
+{
+  FooCanvasGroup *tooltip;
+  FooCanvasItem *box, *tip;
+  GdkColor border, bgcolor;
+  /* Parse colours */
+  gdk_color_parse("#000000", &border);
+  gdk_color_parse("#e2e2de", &bgcolor);
+  /* tooltip group */
+  tooltip = 
+    FOO_CANVAS_GROUP(foo_canvas_item_new(foo_canvas_root(FOO_CANVAS(canvas)),
+                                         foo_canvas_group_get_type(),
+                                         "x", 0.0,
+                                         "y", 0.0,
+                                         NULL));
+  /* Create the item for the background/outline of the tip */
+  box = foo_canvas_item_new(tooltip,
+			     foo_canvas_rect_get_type(),
+			     "x1", 0.0, "y1", 0.0,
+			     "x2", 1.0, "y2", 1.0,
+			     "outline_color_gdk", &border,
+			     "fill_color_gdk", &bgcolor,
+			     NULL) ;
+  g_object_set_data(G_OBJECT(tooltip), "tooltip_box", box);
+  /* Create the item for the text of the tip */
+  tip = foo_canvas_item_new(tooltip,
+			     FOO_TYPE_CANVAS_TEXT,
+			     "x", 0.0, "y", 0.0,
+			     "text", "",
+			     "fill_color", "black",
+			     NULL);
+  g_object_set_data(G_OBJECT(tooltip), "tooltip_tip", tip);
+
+  /* Hide the naked tooltip. */
+  foo_canvas_item_hide(FOO_CANVAS_ITEM(tooltip));
+
+  return tooltip;
+}
+
+void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, char *text)
+{
+  FooCanvasItem *box, *tip;
+  double x1, x2, y1, y2, height, n;
+  int width;
+  n     = 7.0;
+  width = strlen(text);
+  foo_canvas_item_hide(FOO_CANVAS_ITEM(tooltip));
+
+  box = FOO_CANVAS_ITEM( g_object_get_data(G_OBJECT(tooltip), "tooltip_box") );
+  tip = FOO_CANVAS_ITEM( g_object_get_data(G_OBJECT(tooltip), "tooltip_tip") );
+
+  g_object_get(GTK_OBJECT(tip),
+	       "FooCanvasText::text_height", &height,
+	       NULL) ;
+
+  foo_canvas_item_set(tip,
+                      "text", text,
+                      NULL);
+  /* This seems to hold tighter to x than y so we add and subtract a bit */
+  foo_canvas_item_get_bounds(tip, &x1, &y1, &x2, &y2);  
+  foo_canvas_item_set(box,
+                      "x1", x1 - 2,
+                      "y1", y1,
+                      "x2", x2 + 2,
+                      "y2", y2,
+                      NULL);
+  /* Here we want about 70% of the height, so we get a space between
+   * line and box. We have a problem about the cursor though... (x
+   * axis and positioning the tt far enough right). n * width does
+   * not work as it make the tt "jump" when text changes length!
+   * Just using x centers the text on the cursor.
+   */
+  foo_canvas_item_set(FOO_CANVAS_ITEM(tooltip),
+                      "x", x,
+                      "y", y - (height * 0.7),
+                      NULL);
+  foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(tooltip));
+  foo_canvas_item_show(FOO_CANVAS_ITEM(tooltip));
+  
+  return ;
+}
 /* ========================================================================== */
 /* INTERNAL */
 /* ========================================================================== */
 
 static ZMapScaleBar createScaleBar_start_end_zoom_height(int start, int end, double zoom, double line)
 {
-  ZMapScaleBar scaleBar       = NULL;
-  int majorUnits[UNITCOUNT]   = {1   , 1000, 1000000, 1000000000};
-  char *majorAlpha[UNITCOUNT] = {"", " k" , " M"    , " G"};
-  int unitIndex               = 0;
-  int speed_factor            = 4;
-
+  ZMapScaleBar scaleBar = NULL;
+  int majorUnits[]      = {1   , 1000, 1000000, 1000000000, 0};
+  char *majorAlpha[]    = {"", " k" , " M"    , " G"};
+  int unitIndex         = 0;
+  int speed_factor      = 4;
+  int *iter;
   double basesPerPixel;
   int minorsPerMajor = 10;
 
   int majorSize, minorSize, diff, modulus;
-  int majorCount, lastMajor, i, tmp;
+  int majorCount, i, tmp;
   int absolute_min, lineheight;
   int basesBetween;
   double maxMajorCount;
@@ -350,6 +424,9 @@ static ZMapScaleBar createScaleBar_start_end_zoom_height(int start, int end, dou
    * simply increasing this decreases the number of majors (makes it faster),
    * hence inclusion of 'speed_factor'. May want to refine what looks good
    * 2 or 4 are reasonable, while 10 is way OTT!
+   * 1 gives precision issues when drawing the mnor ticks. At reasonable zoom
+   * it gives about 1 pixel between minor ticks and this sometimes equates to 
+   * two pixels (precision) which looks odd.
    */
   if(speed_factor >= 1)
     lineheight = ceil(line * zoom * speed_factor); 
@@ -361,10 +438,6 @@ static ZMapScaleBar createScaleBar_start_end_zoom_height(int start, int end, dou
    * Require 1 * text line height + 1 so they're not merged
    * 
    */
-#ifdef SIZING_DEBUG
-  printf("%s\n", "====================== calculating ================");
-  printf(" * lineheight %d \n", lineheight);
-#endif
 
   diff          = scaleBar->end - scaleBar->start + 1;
   basesPerPixel = diff / (diff * scaleBar->zoom_factor);
@@ -375,7 +448,7 @@ static ZMapScaleBar createScaleBar_start_end_zoom_height(int start, int end, dou
                         lineheight : absolute_min) * basesPerPixel);
   /* Now we know we can put a major tick every basesBetween pixels */
 
-  for(i = 0; i < UNITCOUNT; i++){
+  for(i = 0, iter = majorUnits; *iter != 0; iter++, i++){
     int mod;
     mod = basesBetween % majorUnits[i];
 
@@ -389,21 +462,10 @@ static ZMapScaleBar createScaleBar_start_end_zoom_height(int start, int end, dou
   majorSize  = majorUnits[unitIndex];
   scaleBar->base = majorSize;
 
-#ifdef SIZING_DEBUG
-  printf(" * Chose %d (%d) [%s] bpp %f bbtween %d\n", 
-         unitIndex, majorUnits[unitIndex], 
-         majorAlpha[unitIndex], basesPerPixel, 
-         basesBetween); 
-#endif
-
   tmp = ceil((basesBetween / majorSize));
 
-#ifdef SIZING_DEBUG
-  printf(" * tmp %d \n", tmp);
-#endif
-
   /* This isn't very elegant, and is kind of a reverse of the previous
-   * logic used. */
+   * logic used */
   if(scaleBar->force_multiples_of_five == TRUE)
     {
       if(tmp <= 5)
@@ -431,7 +493,7 @@ static ZMapScaleBar createScaleBar_start_end_zoom_height(int start, int end, dou
   scaleBar->major = majorSize;
   scaleBar->unit  = g_strdup( majorAlpha[unitIndex] );
 
-  if(scaleBar->major >= 10)
+  if(scaleBar->major >= ZMAP_SCALE_MINORS_PER_MAJOR)
     scaleBar->minor = majorSize / ZMAP_SCALE_MINORS_PER_MAJOR;
   else
     scaleBar->minor = 1;
@@ -443,45 +505,106 @@ static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group)
 {
   int i, n, width = 0;
   GdkColor black, white, yellow ;
+  double scale_left, scale_right, scale_mid;
+  FooCanvasPoints *points ;
+
+  scale_left  = 60.0;
+  scale_right = scale_left + 10.0;
+  scale_mid   = scale_left + ((scale_right - scale_left) / 2);
 
   gdk_color_parse("black", &black) ;
   gdk_color_parse("white", &white) ;
   gdk_color_parse("yellow", &yellow) ;
 
-  scaleBar->trueMinor = scaleBar->minor;
+  n = ceil( (scaleBar->start % 
+             (scaleBar->major < ZMAP_SCALE_MINORS_PER_MAJOR 
+              ? ZMAP_SCALE_MINORS_PER_MAJOR 
+              : scaleBar->major
+              )
+             ) / scaleBar->minor
+            );
+  i = (scaleBar->start - (scaleBar->start % scaleBar->minor));
 
-  n = floor((scaleBar->start % (scaleBar->major == 1 ? 10 : scaleBar->major)) / scaleBar->trueMinor);
-  i = (scaleBar->start - (scaleBar->start % scaleBar->trueMinor));
-
-  for( ; i <= scaleBar->end; i+=scaleBar->trueMinor, n++)
-    {      
+  /* What I want to do here rather than worry about width of
+   * characters is to have two groups/columns. One for the
+   * numbers/units and one for the line/marks, but I haven't worked
+   * out how best to right align the numbers/units without relying on
+   * width.  Until then this works.
+   */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("%d to %d\n", scaleBar->start, scaleBar->end);
+#endif
+  /* < rather than <= to avoid final minor as end is seq_end + 1 */
+  for( ; i < scaleBar->end; i+=scaleBar->minor, n++)
+    {
+      /* More conditionals than I intended here... */
       char *digitUnit = NULL;
-      if(n % ZMAP_SCALE_MINORS_PER_MAJOR)
+      if(n % ZMAP_SCALE_MINORS_PER_MAJOR) /* Minors */
         {
-          zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_MID, i, SCALE_RIGHT, i, &black, 1.0) ;
-          //          digitUnit = g_strdup_printf("%8.1f", (double)i / scaleBar->base);
+          if( i < scaleBar->start )
+            zMapDrawLine(FOO_CANVAS_GROUP(group), 
+                         scale_mid, scaleBar->start, 
+                         scale_right, scaleBar->start, 
+                         &black, 1.0) ;
+          else if( i == scaleBar->start && n < 5)
+            {                   /* n < 5 to stop overlap of digitUnit at some zooms */
+              digitUnit = g_strdup_printf("%d", scaleBar->start);
+              zMapDrawLine(FOO_CANVAS_GROUP(group), scale_mid, i, scale_right, i, &black, 1.0) ;
+            }
+          else
+            zMapDrawLine(FOO_CANVAS_GROUP(group), scale_mid, i, scale_right, i, &black, 1.0) ;
         }
-      else
+      else                      /* Majors */
         {
-          if(i)
+          if(i && i >= scaleBar->start)
             {
-              zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_LEFT, i, SCALE_RIGHT, i, &black, 1.0);
+              zMapDrawLine(FOO_CANVAS_GROUP(group), scale_left, i, scale_right, i, &black, 1.0);
               digitUnit = g_strdup_printf("%d%s", 
                                           (i / scaleBar->base), 
                                           scaleBar->unit);
             }
+          else
+            {
+              zMapDrawLine(FOO_CANVAS_GROUP(group), 
+                           scale_mid, scaleBar->start, 
+                           scale_right, scaleBar->start, 
+                           &black, 1.0);
+              digitUnit = g_strdup_printf("%d", scaleBar->start);
+            }
         }
+      /* =========================================================== */
       if(digitUnit)
         {
           width = strlen(digitUnit);
-          zMapDisplayText(FOO_CANVAS_GROUP(group), digitUnit, "black", ((SCALE_LEFT) - (5.0 * width)), i); 
+          zMapDisplayText(FOO_CANVAS_GROUP(group), 
+                          digitUnit, "black", 
+                          ((scale_left) - (5.0 * width)), 
+                          (i < scaleBar->start ? scaleBar->start : i)); 
           g_free(digitUnit);
         }
-
     }
 
-  /* draw the vertical line of the scalebar, note we should be drawing. */
-  zMapDrawLine(FOO_CANVAS_GROUP(group), SCALE_RIGHT, scaleBar->start, SCALE_RIGHT, scaleBar->end, &black, 1.0);
+  /* draw the vertical line of the scalebar. */
+    /* allocate a new points array */
+  points = foo_canvas_points_new(2) ;
+				                                            
+  /* fill out the points */
+  points->coords[0] = scale_right ;
+  points->coords[1] = scaleBar->start ;
+  points->coords[2] = scale_right ;
+  points->coords[3] = scaleBar->end ;
+
+  /* draw the line, unfortunately we need to use GDK_CAP_PROJECTING here to make it work */
+  foo_canvas_item_new(group,
+                      foo_canvas_line_get_type(),
+                      "points", points,
+                      "fill_color_gdk", &black,
+                      "width_units", 1.0,
+                      "cap_style", GDK_CAP_PROJECTING,
+                      NULL);
+		    
+  /* free the points array */
+  foo_canvas_points_free(points) ;
 
   return ;
 }

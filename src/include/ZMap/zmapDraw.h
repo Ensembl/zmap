@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Jul  4 11:02 2005 (rds)
+ * Last edited: Jul 11 17:01 2005 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.18 2005-07-04 16:19:51 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.19 2005-07-14 15:21:01 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -50,23 +50,26 @@ FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 			       double x, double y) ;
 
 FooCanvasItem *zMapDrawScale(FooCanvas *canvas, 
-                             double offset, double zoom_factor, int start, int end,
-			     int *major_units_out, int *minor_units_out);
+                             double zoom_factor, 
+                             int start, int end);
 
 
 /* This needs to be a bit cleverer, so you can't actually move the origin */
-FooCanvasItem *zMapRubberbandCreate(FooCanvas *canvas);
+FooCanvasItem *zMapDrawRubberbandCreate(FooCanvas *canvas);
 
-void zMapRubberbandResize(FooCanvasItem *band, 
-                          double origin_x, double origin_y, 
-                          double current_x, double current_y
-                          );
+void zMapDrawRubberbandResize(FooCanvasItem *band, 
+                              double origin_x, double origin_y, 
+                              double current_x, double current_y
+                              );
 
-FooCanvasItem *zMapHorizonCreate(FooCanvas *canvas);
+FooCanvasItem *zMapDrawHorizonCreate(FooCanvas *canvas);
 
-void zMapHorizonReposition(FooCanvasItem *line, double current_x);
+void zMapDrawHorizonReposition(FooCanvasItem *line, double current_x);
 
 void zMapDrawGetTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out) ;
+int zMapDrawBorderSize(FooCanvasGroup *group);
 
-     
+FooCanvasGroup *zMapDrawToolTipCreate(FooCanvas *canvas);
+void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, char *text);
+
 #endif /* ZMAP_DRAW_H */
