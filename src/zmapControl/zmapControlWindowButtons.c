@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul  1 14:38 2005 (rds)
+ * Last edited: Jul 12 11:09 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.29 2005-07-04 16:31:01 rds Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.30 2005-07-14 15:24:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -173,24 +173,35 @@ void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status
     {
       if (GTK_WIDGET_IS_SENSITIVE(zmap->zoomin_but))
 	gtk_widget_set_sensitive(zmap->zoomin_but, FALSE) ;
-      
       if (GTK_WIDGET_IS_SENSITIVE(zmap->zoomout_but))
 	gtk_widget_set_sensitive(zmap->zoomout_but, FALSE) ;
     }
-  else if (zoom_status == ZMAP_ZOOM_MIN && GTK_WIDGET_IS_SENSITIVE(zmap->zoomout_but))
-    gtk_widget_set_sensitive(zmap->zoomout_but, FALSE) ;
+  else if (zoom_status == ZMAP_ZOOM_MIN)
+    {
+      if(!GTK_WIDGET_IS_SENSITIVE(zmap->zoomin_but))
+        gtk_widget_set_sensitive(zmap->zoomin_but, TRUE) ;
+      if(GTK_WIDGET_IS_SENSITIVE(zmap->zoomout_but))
+        gtk_widget_set_sensitive(zmap->zoomout_but, FALSE) ;
+    }
   else if (zoom_status == ZMAP_ZOOM_MID)
     {
       if (!GTK_WIDGET_IS_SENSITIVE(zmap->zoomin_but))
 	gtk_widget_set_sensitive(zmap->zoomin_but, TRUE) ;
-
       if (!GTK_WIDGET_IS_SENSITIVE(zmap->zoomout_but))
 	gtk_widget_set_sensitive(zmap->zoomout_but, TRUE) ;
     }
-  else if (zoom_status == ZMAP_ZOOM_MAX && GTK_WIDGET_IS_SENSITIVE(zmap->zoomin_but))
-    gtk_widget_set_sensitive(zmap->zoomin_but, FALSE) ;
-
-
+  else if (zoom_status == ZMAP_ZOOM_MAX)
+    {
+      if(GTK_WIDGET_IS_SENSITIVE(zmap->zoomin_but))
+        gtk_widget_set_sensitive(zmap->zoomin_but, FALSE) ;
+      if (!GTK_WIDGET_IS_SENSITIVE(zmap->zoomout_but)) /* not needed...? */
+	gtk_widget_set_sensitive(zmap->zoomout_but, TRUE) ;
+    }
+  else if (zoom_status == ZMAP_ZOOM_INIT)
+    { /* IN & OUT should be False until we know which Zoom we are. */
+      gtk_widget_set_sensitive(zmap->zoomin_but,  FALSE) ;
+      gtk_widget_set_sensitive(zmap->zoomout_but, FALSE) ;
+    }
   return ;
 }
 
