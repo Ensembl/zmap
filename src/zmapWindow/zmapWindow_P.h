@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 11 14:14 2005 (edgrif)
+ * Last edited: Jul 14 14:50 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.64 2005-07-12 10:16:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.65 2005-07-14 15:27:18 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -39,11 +39,8 @@
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapFeature.h>
 
-
 /* Names of config stanzas. */
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
-
-
 
 
 /* X Windows has some limits that are part of the protocol, this means they cannot
@@ -129,8 +126,7 @@ typedef struct
 							       interaction. */
 } ZMapWindowItemFeatureStruct, *ZMapWindowItemFeature ;
 
-
-
+typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
 /* Represents a single sequence display window with its scrollbars, canvas and feature
  * display. */
@@ -147,6 +143,7 @@ typedef struct _ZMapWindowStruct
 
   FooCanvasItem *rubberband;
   FooCanvasItem *horizon_guide_line;
+  FooCanvasGroup *tooltip;
 
   ZMapWindowCallbacks caller_cbs ;			    /* table of callbacks registered by
 							     * our caller. */
@@ -167,13 +164,9 @@ typedef struct _ZMapWindowStruct
   GdkColor canvas_background ;
   GdkColor align_background ;
 
-  double         zoom_factor ;
-  ZMapWindowZoomStatus zoom_status ;   /* For short sequences that are displayed at max. zoom initially. */
-  double         min_zoom ;				    /* min/max allowable zoom. */
-  double         max_zoom ;
+  ZMapWindowZoomControl zoom;
+
   int            canvas_maxwin_size ;			    /* 30,000 is the maximum (default). */
-  int            border_pixels ;			    /* top/bottom border to sequence. */
-  double         text_height;                               /* used to calculate min/max zoom */
 
   /* I'm trying these out as using the sequence start/end is not correct for window stuff. */
   double min_coord ;					    /* min/max canvas coords */
@@ -203,13 +196,8 @@ typedef struct _ZMapWindowStruct
    * than this limit as we zoom in and crop them ourselves. */
   GList         *long_items ;				    
 
-
   /* This all needs to move and for scale to be in a separate window..... */
   FooCanvasItem *scaleBarGroup;           /* canvas item in which we build the scalebar */
-  double         scaleBarOffset;
-  int major_scale_units, minor_scale_units ;		    /* Major/minor tick marks on scale. */
-
-
 
   /* The length, start and end of the segment of sequence to be shown, there will be _no_
    * features outside of the start/end. */
@@ -219,13 +207,8 @@ typedef struct _ZMapWindowStruct
 
   FooCanvasItem       *focus_item ;			    /* the item which has focus */
 
-
-
   /* THIS FIELD IS TEMPORARY UNTIL ALL THE SCALE/RULER IS SORTED OUT, DO NOT USE... */
   double alignment_start ;
-
-
-
 
 } ZMapWindowStruct ;
 
@@ -331,6 +314,18 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType);
 void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item); 
 
+void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a);
+
+/* ================= in zmapWindowZoomControl.c ========================= */
+ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
+void zmapWindowZoomControlInitialise(ZMapWindow window) ;
+gboolean zmapWindowZoomControlZoomByFactor(ZMapWindow window, double factor);
+void zmapWindowZoomControlHandleResize(ZMapWindow window);
+double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2) ;
+void zmapWindowZoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
+void zmapWindowDebugWindowCopy(ZMapWindow window);
+void zmapWindowGetBorderSize(ZMapWindow window, double *border);
+/* End of zmapWindowZoomControl.c functions */
 
 
 #endif /* !ZMAP_WINDOW_P_H */

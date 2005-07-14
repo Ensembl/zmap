@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 12 11:14 2005 (edgrif)
+ * Last edited: Jul 13 14:10 2005 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.10 2005-07-12 10:14:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.11 2005-07-14 15:27:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -115,7 +115,7 @@ void zmapWindowExt2Zero(double *start_inout, double *end_inout)
 
 /* Converts a sequence extent into a zero based canvas extent.
  *
- * Combines zmapWindowSeq2CanvasExtent() and zmapWindowExtent2Zero(), used in positioning
+ * Combines zmapWindowSeq2CanExt() and zmapWindowExt2Zero(), used in positioning
  * groups/features a lot because in the canvas item coords are relative to their parent group
  * and hence zero-based. */
 void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout)
@@ -158,8 +158,10 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
 void zmapWindowLongItemCheck(ZMapWindow window, FooCanvasItem *item, double start, double end)
 {
   double length ;
+  double zoom;
 
-  length = zmapWindowExt(start, end) * window->max_zoom ;
+  zoom   = zMapWindowGetZoomFactor(window);
+  length = zmapWindowExt(start, end) * zoom;
 
   /* Only add the item if it can exceed the windows limit. */
   if (length > ZMAP_WINDOW_MAX_WINDOW)
@@ -551,9 +553,31 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1_in, double y1
 }
 
 
+/* Either wants SeqCoords (start, end) _or_ (0.0, 0.0) in which case it'll use
+ * window->min_coord, window->max_coord
+ */
+void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
+{
+  double c_start = start;
+  double c_end   = end;        /* Canvas start and end */
 
+  if (FOO_IS_CANVAS_ITEM( (window->scaleBarGroup) ))
+    gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
 
+  if(start > 0.0 && end > start)
+      zmapWindowSeq2CanExt(&c_start, &c_end);
+  else
+    {
+      c_start = window->min_coord;
+      c_end   = window->max_coord;
+    }
 
+  window->scaleBarGroup = zMapDrawScale(window->canvas, 
+                                        zMapWindowGetZoomFactor(window),
+                                        c_start,
+                                        c_end);
+  return ;
+}
 
 
 /* I'M TRYING THESE TWO FUNCTIONS BECAUSE I DON'T LIKE THE BIT WHERE IT GOES TO THE ITEMS
@@ -680,9 +704,8 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
       if (y2 > window->max_coord)
 	y2 = window->max_coord ;
 
-
+      /* This should probably call zmapWindow_set_scroll_region */
       foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
-
 
       /* UGH, I'M NOT SURE I LIKE THE LOOK OF ALL THIS INT CONVERSION STUFF.... */
 
@@ -690,27 +713,16 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
       top = (int)y1;                   /* zmapDrawScale expects integer coordinates */
       bot = (int)y2;
       gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
-      window->scaleBarGroup = zMapDrawScale(window->canvas, 
-					    window->scaleBarOffset, 
-					    window->zoom_factor,
-					    top, bot,
-					    &(window->major_scale_units),
-					    &(window->minor_scale_units)) ;
+
+      zmapWindowDrawScaleBar(window, top, bot);
 
       /* agh, this seems to be here because we move the scroll region...we need a function
        * to do this all....... */
       zmapWindowLongItemCrop(window) ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      foo_canvas_update_now(window->canvas) ;
-      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       /* Call the visibility change callback to notify our caller that our zoom/position has
        * changed. */
-      vis_change.zoom_status = window->zoom_status ;
+      vis_change.zoom_status = zMapWindowGetZoomStatus(window) ;
       vis_change.scrollable_top = y1 ;
       vis_change.scrollable_bot = y2 ;
       (*(window->caller_cbs->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
@@ -837,8 +849,6 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
 }
 
 
-
-
 /* A GFunc list callback function, called to free data attached to each list member. */
 static void freeLongItem(gpointer data, gpointer user_data_unused)
 {
@@ -950,5 +960,3 @@ static void cropLongItem(gpointer data, gpointer user_data)
 
   return ;
 }
-
-

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 14 16:17 2005 (rds)
+ * Last edited: Jul 14 16:29 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.87 2005-07-14 15:27:17 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.88 2005-07-14 15:29:40 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -804,7 +804,6 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
   vis_change.zoom_status = zMapWindowGetZoomStatus(window) ;
   vis_change.scrollable_top = top ;
   vis_change.scrollable_bot = bot ;
-  window_cbs_G = zmapWindowGetCallbacks();
   (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
     
   return ;

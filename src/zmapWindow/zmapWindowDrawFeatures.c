@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 12 11:17 2005 (edgrif)
+ * Last edited: Jul 14 16:14 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.73 2005-07-12 10:18:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.74 2005-07-14 15:27:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -201,10 +201,8 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 			    ZMapFeatureContext full_context, ZMapFeatureContext diff_context)
 {
   GtkAdjustment *h_adj;
-  double zoom_factor ;
   ZMapCanvasDataStruct canvas_data = {NULL} ;		    /* Rest of struct gets set to zero. */
   double x1, y1, x2, y2 ;
-
 
   zMapAssert(window && full_context && diff_context) ;
 
@@ -221,95 +219,30 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   window->seq_end = full_context->sequence_to_parent.c2 ;
   window->seqLength = zmapWindowExt(window->seq_start, window->seq_end) ;
 
+  zmapWindowZoomControlInitialise(window); /* Sets min/max/zf */
   window->min_coord = window->seq_start ;
   window->max_coord = window->seq_end ;
   zmapWindowSeq2CanExt(&(window->min_coord), &(window->max_coord)) ;
 
   h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
-
-  /* Need text dimensions to set maximum zoom. */
-  zMapDrawGetTextDimensions(foo_canvas_root(window->canvas), NULL, &window->text_height) ;
-
-  /* Set border space for top/bottom of sequence. */
-  window->border_pixels = window->text_height * 2 ;
-
-
-  /* Set the zoom factor. By default we start at min zoom, BUT note that if user has a
-   * very short sequence it may be displayed at maximum zoom already. */
-
-  /* Zoom_factor: calculate it locally so we can set zoom_status
-   * properly if the whole of the sequence is visible and we're
-   * already at max zoom.  Then check to see if there's already
-   * a value in the ZMapWindow and only if not, use the new one. 
-   * So far, if window->zoom_factor and min_zoom are zero we 
-   * assume this is the first window, not a splitting one. */
-  zoom_factor = zmapWindowCalcZoomFactor(window);
-
-
-  /* Record min/max zooms, the max zoom we want is large enough to hold the text required
-   * to display a DNA base or other text + a bit. */
-  if (window->max_zoom == 0.0)
-    window->max_zoom = window->text_height + (double)(ZMAP_WINDOW_TEXT_BORDER * 2) ;
-
-  if (window->zoom_status == ZMAP_ZOOM_INIT)
-    window->zoom_status = ZMAP_ZOOM_MIN ;
-
-  if (zoom_factor > window->max_zoom)
-    {
-      zoom_factor = window->max_zoom ;
-      window->zoom_status = ZMAP_ZOOM_FIXED ;
-    }
-
-  /* if the screen is being split, use the previous zoom_factor
-   * so the data is displayed the same size */
-  if (window->zoom_factor == 0.0)
-    window->zoom_factor = zoom_factor;
-
-
-  if (window->min_zoom == 0.0)
-    window->min_zoom = window->zoom_factor ;
-
-
-  foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, window->zoom_factor) ;
-
-
-  /* OH DEAR, THIS IS HORRIBLE.......... */
-  zmapWindowSetPageIncr(window);
-  
+  foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, zMapWindowGetZoomFactor(window)) ;
 
   canvas_data.window = window;
   canvas_data.canvas = window->canvas;
 
-
-  foo_canvas_set_scroll_region(window->canvas,
-			       0.0, window->min_coord, 
-			       SCALEBAR_WIDTH, window->max_coord) ;
-
-  window->scaleBarGroup = zMapDrawScale(window->canvas,
-					0.0, window->zoom_factor,
-					window->min_coord,
-					window->max_coord,
-					&(window->major_scale_units),
-					&(window->minor_scale_units)) ;
-
+  zmapWindowDrawScaleBar(window, 0.0, 0.0);
 
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
   window->alignment_start = x2 + COLUMN_SPACING ;
 
   canvas_data.curr_x_offset = x2 + COLUMN_SPACING ;
 
-
   /* 
    *     Draw all the features, so much in so few lines...sigh...
    */
   canvas_data.full_context = full_context ;
   drawZMap(&canvas_data, diff_context) ;
-
-
-  /* THE BELOW ALL NEEDS SORTING OUT, WE SURELY DO NOT NEED TO SET THE SCROLL REGION SO MANY
-   * TIMES... */
-
 
   /* There may be a focus item if this routine is called as a result of splitting a window
    * or adding more features, make sure we scroll to the same point as we were
@@ -327,6 +260,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 	foo_canvas_set_scroll_region(window->canvas,
 				     0.0, window->min_coord,
 				     h_adj->page_size, window->max_coord) ;
+      /* Not sure what this set_scroll_region achieves, page_size is
+         likely to be too small at some point (more and more
+         columns) */
     }
 
 
@@ -339,23 +275,23 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
   /* Expand the scroll region to include everything, note the hard-coded zero start, this is
    * because the actual visible window may not change when the scrolled region changes if its
    * still visible so we can end up with the visible window starting where the alignment box.
    * starts...should go away when scale moves into separate window. */  
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
-  foo_canvas_set_scroll_region(window->canvas,
-			       0.0, window->min_coord, 
-			       x2, window->max_coord) ;
 
   zmapWindowLongItemCrop(window) ;
 
   /* Expand the scroll region to include everything again as we need to include the scale bar. */  
+  zmapWindow_set_scroll_region(window, window->seq_start, window->seq_end);
+
+#ifdef RDS_CONFUSED_________
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
   foo_canvas_set_scroll_region(window->canvas,
 			       0.0, window->min_coord, 
 			       x2, window->max_coord) ;
+#endif
 
   return ;
 }
@@ -632,7 +568,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
   type_quark = style->unique_id ;
 
   /* Get hold of the style. */
-  canvas_data->curr_style = style ;
+  canvas_data->curr_style = style ; 
 
   /* We need the background column object to span the entire bottom of the alignment block. */
   top = canvas_data->curr_block->block_to_sequence.t1 ;
@@ -1017,7 +953,6 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 					     &canvas_data->curr_style->outline,
 					     &canvas_data->curr_style->background,
 					     window) ;
-
 	break ;
       }
     case ZMAPFEATURE_TRANSCRIPT:
@@ -1029,7 +964,6 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 						 &canvas_data->curr_style->background,
 						 background,
 						 window) ;
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	zmapWindowPrintGroup(FOO_CANVAS_GROUP(feature_group)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
