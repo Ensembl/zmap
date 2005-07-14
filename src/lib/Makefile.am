@@ -68,6 +68,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapView/zmapView_P.h \
 	$(top_srcdir)/zmapWindow/GFF_scaffold.c \
 	$(top_srcdir)/zmapWindow/zmapWindow.c \
+	$(top_srcdir)/zmapWindow/zmapWindow_P.h \
 	$(top_srcdir)/zmapWindow/zmapWindowCallBlixem.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures.c \
 	$(top_srcdir)/zmapWindow/zmapWindowEditor.c \
@@ -76,7 +77,8 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowList.c \
 	$(top_srcdir)/zmapWindow/zmapWindowMenus.c \
 	$(top_srcdir)/zmapWindow/zmapWindowUtils.c \
-	$(top_srcdir)/zmapWindow/zmapWindow_P.h \
+	$(top_srcdir)/zmapWindow/zmapWindowZoomControl.c \
+	$(top_srcdir)/zmapWindow/zmapWindowZoomControl_P.h \
 	$(top_srcdir)/zmapWindow/zmapWindowBump_P.h \
 	$(top_srcdir)/zmapWindow/zmapWindowBump.h \
 	$(top_srcdir)/zmapWindow/zmapWindowBump.c
