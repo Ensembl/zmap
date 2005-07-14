@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 14 16:14 2005 (rds)
+ * Last edited: Jul 14 19:15 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.74 2005-07-14 15:27:17 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.75 2005-07-14 19:20:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -284,14 +284,14 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   zmapWindowLongItemCrop(window) ;
 
   /* Expand the scroll region to include everything again as we need to include the scale bar. */  
-  zmapWindow_set_scroll_region(window, window->seq_start, window->seq_end);
+  //  if(window->curr_locking == ZMAP_WINLOCK_NONE)
 
-#ifdef RDS_CONFUSED_________
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
-  foo_canvas_set_scroll_region(window->canvas,
-			       0.0, window->min_coord, 
-			       x2, window->max_coord) ;
-#endif
+  foo_canvas_get_scroll_region(window->canvas, NULL, &y1, NULL, &y2);
+  /* zmapWindow_set_scroll_region(window, window->seq_start, window->seq_end); */
+  zmapWindow_set_scroll_region(window, y1, y2);
+
+
+
 
   return ;
 }
