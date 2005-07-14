@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 27 14:06 2005 (edgrif)
+ * Last edited: Jul 14 09:44 2005 (rnc)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.26 2005-06-27 15:36:01 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.27 2005-07-14 09:55:58 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,7 +70,7 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
 static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
 
-static void loadGaps(char *currentPos, GArray *gaps);
+static gboolean loadGaps(char *currentPos, GArray *gaps);
 
 
 /* types is the list of methods/types, call it what you will that we want to see
@@ -525,11 +525,17 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
  * If it turns out that people do have "#" chars in their attributes we will have do our own
  * parsing of this section of the line.
  * 
+ * For ZMap, we've modified the acedb gff dumper to output homology alignments after the
+ * attributes, marked by a tag " Gaps ".  They're in groups of 4 space-separated coordinates,
+ * successive groups being comma-separated.  
+ *
+ * If there's a Gaps tag, we scanf using a different format string, then copy the attributes
+ * manually, then call the loadGaps function to load the alignments.
  * 
  *  */
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
   char sequence[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
     source[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, feature_type[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
     score_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, strand_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
@@ -541,7 +547,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   char *format_str_gaps = "%50s%50s%50s%d%d%50s%50s%50s %n" ; 
   int fields, charsRead, attsLen ;
   char *attsPos, *gapsPos;
-  GArray *gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
+  GArray *gaps = NULL;
 
 
   gapsPos = strstr(line, " Gaps ");
@@ -562,16 +568,18 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
       /* The hard bit here is to distinguish the attributes field from any following
        * gaps pairs, so for now I'm just saying copy from where the sscanf ended
        * up to the Gaps tag, then go and do the gaps. */
+      gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
       attsPos = line + charsRead;
       attsLen = gapsPos - attsPos;
       strncpy(attributes, attsPos, attsLen);
       
-      loadGaps(gapsPos, gaps); 
+      result = loadGaps(gapsPos, gaps);
     }
 
-  if (fields  < GFF_MANDATORY_FIELDS
-      || (g_ascii_strcasecmp(source, ".") == 0)
-      || (g_ascii_strcasecmp(feature_type, ".") == 0))
+  if (result == TRUE 
+      && (fields  < GFF_MANDATORY_FIELDS
+	  || (g_ascii_strcasecmp(source, ".") == 0)
+	  || (g_ascii_strcasecmp(feature_type, ".") == 0)))
     {
       parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
 				  "GFF line %d - Mandatory fields missing in: \"%s\"",
@@ -653,16 +661,16 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
  * and is set to NULL when strstr can't find another comma.
  * fields must be 4 for a gap so either way we drop out
  * of the loop at the end. */
-static void loadGaps(char *gapsPos, GArray *gaps)
+static gboolean loadGaps(char *gapsPos, GArray *gaps)
 {
   ZMapAlignBlockStruct gap;
   char *gaps_format_str = "%d%d%d%d," ; 
   int fields, i;
-  gboolean status = TRUE;
+  gboolean status = TRUE, valid = TRUE;
 
   gapsPos += 7;  /* skip over Gaps tag */
 
-  while (status == TRUE)
+  while (status == TRUE && valid == TRUE)
     {
       fields = sscanf(gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2);
       if (fields == 4)
@@ -674,10 +682,10 @@ static void loadGaps(char *gapsPos, GArray *gaps)
 	    status = FALSE;    /* no more commas means we're at the end */
 	}
       else
-	status = FALSE;  /* anything other than 4 is not a gap */
+	valid = FALSE;  /* anything other than 4 is not a gap */
     }
 
-  return;
+  return valid;
 }
 
 
