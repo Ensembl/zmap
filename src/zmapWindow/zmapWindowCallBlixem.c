@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 26 11:54 2005 (rnc)
+ * Last edited: Jul 14 10:51 2005 (rnc)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.10 2005-06-26 11:13:43 rnc Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.11 2005-07-14 09:53:47 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,8 +69,6 @@ typedef struct BlixemDataStruct
 static gboolean getUserPrefs     (blixemData blixem_data);
 static char    *buildParamString (blixemData blixem_data);
 static gboolean writeExblxFile   (blixemData blixem_data);
-static void     processAlignments(GQuark key_id, gpointer data, gpointer user_data);
-static void     processBlocks    (gpointer data, gpointer user_data);
 static void     processFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
 static void     writeExblxLine   (GQuark key_id, gpointer data, gpointer user_data);
 static gboolean printLine        (blixemData blixem_data, char *line);
@@ -315,8 +313,9 @@ static char *buildParamString(blixemData blixem_data)
 				   blixem_data->opts,
 				   blixem_data->fastAFile,
 				   blixem_data->exblxFile);
-     
+     /* debugging code     
      printf("paramString: %s\n", paramString);
+     */
    }
 
   return paramString;
@@ -331,6 +330,7 @@ static gboolean writeExblxFile(blixemData blixem_data)
   GError  *channel_error = NULL;
   char    *filepath, *line;
   gboolean status = TRUE;
+  ZMapFeature feature;
 
 
   if ((blixem_data->channel = g_io_channel_new_file(blixem_data->exblxFile, "w", &channel_error)))
@@ -347,18 +347,16 @@ static gboolean writeExblxFile(blixemData blixem_data)
       else
 	{
 	  blixem_data->errorMsg = NULL;
+	  feature = g_object_get_data(G_OBJECT(blixem_data->item), "feature");
+
 	  if (blixem_data->oneType)
 	    {
-	      GData *feature_set;
-	      ZMapFeature feature;
-	      
-	      feature = g_object_get_data(G_OBJECT(blixem_data->item), "feature");
 	      g_datalist_foreach(&feature->parent_set->features, writeExblxLine, blixem_data);
 	    }
 	  else
 	    {
-	      g_datalist_foreach(&(blixem_data->window->feature_context->alignments), 
-				 processAlignments, blixem_data);
+	      g_datalist_foreach(&feature->parent_set->parent_block->feature_sets, 
+				 processFeatureSet, blixem_data);
 	    }
 	  /* if there are errors writing the data to the file, the first such
 	  ** error will be recorded in blixem_data->errorMsg. */
@@ -384,29 +382,6 @@ static gboolean writeExblxFile(blixemData blixem_data)
     }
 
   return status;
-}
-
-
-
-static void processAlignments(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data;
-  blixemData     blixem_data = (blixemData)user_data;
-
-  g_list_foreach(alignment->blocks, processBlocks, blixem_data);
-
-  return;
-}
-
-
-static void processBlocks(gpointer data, gpointer user_data)
-{
-  ZMapFeatureBlock block = (ZMapFeatureBlock)data;
-  blixemData     blixem_data = (blixemData)user_data;
-
-  g_datalist_foreach(&(block->feature_sets), processFeatureSet, blixem_data);
-
-  return;
 }
 
 
