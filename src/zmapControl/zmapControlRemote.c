@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul  4 17:26 2005 (rds)
+ * Last edited: Jul  5 11:58 2005 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.12 2005-07-04 16:30:46 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.13 2005-07-14 15:24:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -259,6 +259,8 @@ static gboolean findFeature(ZMap zmap, char *command_text)
 
 	  if (g_ascii_strcasecmp(value, "homol") == 0)
 	    query->type = ZMAPFEATURE_HOMOL ;
+	  if (g_ascii_strcasecmp(value, "transcript") == 0)
+	    query->type = ZMAPFEATURE_TRANSCRIPT ;
 	}
       else if (g_ascii_strcasecmp(keyword, "feature") == 0)
 	query->ft_name = g_strdup(value) ;
