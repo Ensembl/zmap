@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 13 14:10 2005 (rds)
+ * Last edited: Jul 15 18:50 2005 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.11 2005-07-14 15:27:17 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.12 2005-07-15 17:51:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,7 +146,68 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
   return ;
 }
 
+int zmapWindowClampStartEnd(ZMapWindow window, double *top_inout, double *bot_inout)
+{
+  int clamp = ZMAP_WINDOW_CLAMP_INIT;
+  double top, bot;
 
+  top = *top_inout;
+  bot = *bot_inout;
+
+  if (top <= window->min_coord)
+    {
+      top    = window->min_coord ;
+      clamp |= ZMAP_WINDOW_CLAMP_START;
+    }
+
+  if (bot >= window->max_coord)
+    {
+      bot    = window->max_coord ;
+      clamp |= ZMAP_WINDOW_CLAMP_END;
+    }
+
+  *top_inout = top;
+  *bot_inout = bot;
+
+  return clamp;  
+}
+
+/* Clamps the span within the length of the sequence,
+ * possibly shifting the span to keep it the same size. */
+int zmapWindowClampSpan(ZMapWindow window, double *top_inout, double *bot_inout)
+{
+  double top, bot;
+  int clamp = ZMAP_WINDOW_CLAMP_INIT;
+
+  top = *top_inout;
+  bot = *bot_inout;
+
+  if (top < window->min_coord)
+    {
+      if ((bot = bot + (window->min_coord - top)) > window->max_coord)
+        {
+          bot    = window->max_coord ;
+          clamp |= ZMAP_WINDOW_CLAMP_END;
+        }
+      clamp |= ZMAP_WINDOW_CLAMP_START;
+      top    = window->min_coord ;
+    }
+  else if (bot > window->max_coord)
+    {
+      if ((top = top - (bot - window->max_coord)) < window->min_coord)
+        {
+          clamp |= ZMAP_WINDOW_CLAMP_START;
+          top    = window->min_coord ;
+        }
+      clamp |= ZMAP_WINDOW_CLAMP_END;
+      bot    = window->max_coord ;
+    }
+
+  *top_inout = top;
+  *bot_inout = bot;
+
+  return ;
+}
 
 
 /* The zmapWindowLongItemXXXXX() functions manage the cropping of canvas items that
@@ -564,6 +625,7 @@ void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
   if (FOO_IS_CANVAS_ITEM( (window->scaleBarGroup) ))
     gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
 
+  /* This isn't very good, but won't be needed when in separate canvas/window/pane */
   if(start > 0.0 && end > start)
       zmapWindowSeq2CanExt(&c_start, &c_end);
   else
@@ -574,8 +636,8 @@ void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
 
   window->scaleBarGroup = zMapDrawScale(window->canvas, 
                                         zMapWindowGetZoomFactor(window),
-                                        c_start,
-                                        c_end);
+                                        (int)c_start,
+                                        (int)c_end);
   return ;
 }
 
