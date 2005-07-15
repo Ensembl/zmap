@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 15 18:21 2005 (rds)
+ * Last edited: Jul 15 18:43 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.89 2005-07-15 17:23:47 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.90 2005-07-15 17:52:10 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -351,6 +351,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 
   /* Need to do this so that the scroll_to call works */
   foo_canvas_get_scroll_region(original_window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
+  zmapWindowClampStartEnd(original_window, &scroll_y1, &scroll_y2);
   foo_canvas_set_scroll_region(new_window->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
 
   /* Reset our scrolled position otherwise we can end up jumping to the top of the window. */
@@ -539,7 +540,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
   top = curr_pos - (new_canvas_span / 2) ;
   bot = curr_pos + (new_canvas_span / 2) ;
 
-  zmapWindowZoomControlClampSpan(window, &top, &bot);
+  zmapWindowClampSpan(window, &top, &bot);
 
   /* Set the new scroll_region and the new zoom. N.B. may need to do a "freeze" of the canvas here
    * to avoid a double redraw....but that might never happen actually, depends how much there is
@@ -762,7 +763,7 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
   double border, x1, x2, y1, y2, top, bot;
   ZMapWindowVisibilityChangeStruct vis_change ;
   gboolean start_border, end_border;
-
+  int clamp = ZMAP_WINDOW_CLAMP_INIT;
   control = window->zoom;
   zmapWindowSeq2CanExt(&y1a, &y2a);
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), 
@@ -776,6 +777,7 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
    */
   zmapWindowGetBorderSize(window, &border);
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Not sure these checks work exactly there's almost certainly some
    * edge conditions when it doesn't */
   if(y1a <= window->min_coord)
@@ -790,6 +792,11 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
     
   top = (y1a - (start_border ? border : 0));
   bot = (y2a + (end_border ? border : 0));
+#endif
+
+  clamp = zmapWindowClampStartEnd(window, &y1a, &y2a);
+  top = (y1a - ((clamp & ZMAP_WINDOW_CLAMP_START) ? border : 0));
+  bot = (y2a + ((clamp & ZMAP_WINDOW_CLAMP_END)   ? border : 0));
 
   foo_canvas_set_scroll_region(window->canvas,
 #ifdef RDS_THIS_SHOULD_BE_THIS
