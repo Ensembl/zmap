@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Jul 14 15:43 2005 (rds)
+ * Last edited: Jul 15 22:42 2005 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.31 2005-07-14 15:24:49 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.32 2005-07-15 21:39:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -248,8 +248,13 @@ void zMapDrawHorizonReposition(FooCanvasItem *line, double current_y)
 {
   FooCanvasPoints *points;
   double x1, x2, y1, y2;
+  double width;
 
   foo_canvas_get_scroll_region(line->canvas, &x1, &y1, &x2, &y2);
+  /* A little unsure if we ever need to use the x2 from above 
+   * and can depend on the width below as we won't see the line 
+   * past the edge of the widget. horizontal scrolling?? */
+  width = GTK_WIDGET(line->canvas)->allocation.width;
 
   /* allocate a new points array */
   points = foo_canvas_points_new(2) ;
@@ -257,7 +262,7 @@ void zMapDrawHorizonReposition(FooCanvasItem *line, double current_y)
   /* fill out the points */
   points->coords[0] = x1;
   points->coords[1] = current_y ;
-  points->coords[2] = x2;
+  points->coords[2] = MAX(x2, width);
   points->coords[3] = current_y ;
 
   foo_canvas_item_hide(line);
