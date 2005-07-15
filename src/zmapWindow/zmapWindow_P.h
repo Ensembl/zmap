@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 14 14:50 2005 (rds)
+ * Last edited: Jul 15 18:38 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.65 2005-07-14 15:27:18 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.66 2005-07-15 17:57:44 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -65,6 +65,13 @@
  * 
  */
 
+enum
+  {
+    ZMAP_WINDOW_CLAMP_INIT  = 0,
+    ZMAP_WINDOW_CLAMP_NONE  = (1 << 0),
+    ZMAP_WINDOW_CLAMP_START = (1 << 1),
+    ZMAP_WINDOW_CLAMP_END   = (1 << 2)
+  } ;
 
 enum
   {
@@ -316,13 +323,18 @@ void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item);
 
 void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a);
 
+int zmapWindowClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
+int zmapWindowClampStartEnd(ZMapWindow window, double *top_inout, double *bot_inout) ;
+
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
 void zmapWindowZoomControlInitialise(ZMapWindow window) ;
 gboolean zmapWindowZoomControlZoomByFactor(ZMapWindow window, double factor);
 void zmapWindowZoomControlHandleResize(ZMapWindow window);
 double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2) ;
-void zmapWindowZoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
+/* 
+void zmapWindowzoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
+*/
 void zmapWindowDebugWindowCopy(ZMapWindow window);
 void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 /* End of zmapWindowZoomControl.c functions */
