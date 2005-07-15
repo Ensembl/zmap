@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 14 19:15 2005 (rds)
+ * Last edited: Jul 15 18:53 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.75 2005-07-14 19:20:28 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.76 2005-07-15 17:58:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -216,7 +216,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   window->feature_context = full_context ;
 
   window->seq_start = full_context->sequence_to_parent.c1 ;
-  window->seq_end = full_context->sequence_to_parent.c2 ;
+  window->seq_end   = full_context->sequence_to_parent.c2 ;
   window->seqLength = zmapWindowExt(window->seq_start, window->seq_end) ;
 
   zmapWindowZoomControlInitialise(window); /* Sets min/max/zf */
@@ -231,7 +231,8 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   canvas_data.window = window;
   canvas_data.canvas = window->canvas;
 
-  zmapWindowDrawScaleBar(window, 0.0, 0.0);
+  foo_canvas_get_scroll_region(window->canvas, NULL, &y1, NULL, &y2);
+  zmapWindowDrawScaleBar(window, y1, y2);
 
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
   window->alignment_start = x2 + COLUMN_SPACING ;
@@ -275,23 +276,22 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  zmapWindowLongItemCrop(window) ;
+
   /* Expand the scroll region to include everything, note the hard-coded zero start, this is
    * because the actual visible window may not change when the scrolled region changes if its
    * still visible so we can end up with the visible window starting where the alignment box.
    * starts...should go away when scale moves into separate window. */  
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
 
-  zmapWindowLongItemCrop(window) ;
-
   /* Expand the scroll region to include everything again as we need to include the scale bar. */  
-  //  if(window->curr_locking == ZMAP_WINLOCK_NONE)
-
   foo_canvas_get_scroll_region(window->canvas, NULL, &y1, NULL, &y2);
-  /* zmapWindow_set_scroll_region(window, window->seq_start, window->seq_end); */
-  zmapWindow_set_scroll_region(window, y1, y2);
 
-
-
+  if(y1 && y2)
+    zmapWindow_set_scroll_region(window, y1, y2);
+  else
+    zmapWindow_set_scroll_region(window, window->min_coord, window->max_coord);
+  
 
   return ;
 }
