@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 15 15:30 2005 (rds)
+ * Last edited: Jul 15 18:38 2005 (rds)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.2 2005-07-15 17:14:23 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.3 2005-07-15 17:57:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -197,7 +197,7 @@ double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2)
   
   return canv_span;
 }
-
+#ifdef NOW_IN_UTILS_RDS
 void zmapWindowZoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout)
 {
   ZMapWindowZoomControl control;
@@ -225,6 +225,7 @@ void zmapWindowZoomControlClampSpan(ZMapWindow window, double *top_inout, double
 
   return ;
 }
+#endif   /* NOW_IN_UTILS_RDS  */
 
 void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new)
 {
