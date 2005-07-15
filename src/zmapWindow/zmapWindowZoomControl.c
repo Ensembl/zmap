@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 14 14:49 2005 (rds)
+ * Last edited: Jul 15 15:30 2005 (rds)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.1 2005-07-14 15:23:04 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.2 2005-07-15 17:14:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,7 +96,6 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window)
   zMapDrawGetTextDimensions(foo_canvas_root(window->canvas), NULL, &text_height) ;
 
   num_cruncher->maxZF      = text_height + (double)(ZMAP_WINDOW_TEXT_BORDER * 2);
-  //  num_cruncher->lineHeight = text_height; /* This will _NEED_ to change */
   num_cruncher->border     = text_height; /* This should _NOT_ be changed */
   num_cruncher->status     = ZMAP_ZOOM_INIT;
 
