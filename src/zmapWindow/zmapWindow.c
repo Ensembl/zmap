@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 14 16:29 2005 (rds)
+ * Last edited: Jul 15 18:21 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.88 2005-07-14 15:29:40 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.89 2005-07-15 17:23:47 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -1560,7 +1560,6 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
   return event_handled ;
 }
 
-
 /* This routine only gets called when the canvas widgets parent requests a resize, not when
  * the canvas changes its own size through zooming. We need to take different action according
  * to whether parent requests we get bigger or smaller:
@@ -1573,6 +1572,13 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
  *                                   accordingly (i.e. the canvas will reset its width/height
  *                                   to its size before the parent request).
  * 
+ * This is essentially a time when visibility may have changed or need to be
+ * changed. zmapZoomControlHandleResize below works out whether the
+ * zoom factor needs changing based on the window height.  Currently
+ * this calls zMapWindowZoom (if required) which natively has a
+ * visibility change cb call, so no need to call again here. Otherwise if 
+ * smaller size call visibility cb from here.
+ *
  * As far a I can tell the sizes in the allocation struct passed in match those in the canvas
  * widget...always ???
  */
@@ -1582,9 +1588,9 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
 
   if (window->width == 0 && window->height == 0)
     {
-      /* First time through we just record the new size. */
-
-      window->width = widget->allocation.width ;
+      /* First time through we just record the new size. 
+       * Something I think we should always do? */
+      window->width  = widget->allocation.width ;
       window->height = widget->allocation.height ;
     }
   else if (widget->allocation.width > window->width || widget->allocation.height > window->height)
@@ -1598,7 +1604,24 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
 
       if (widget->allocation.height > window->height)
         zmapWindowZoomControlHandleResize(window);
+
     }
+  else if (widget->allocation.height < window->height)
+    {                           /* May need to revisit as above... */
+      ZMapWindowVisibilityChangeStruct vis_change ;
+      double start, end;
+
+      foo_canvas_get_scroll_region(window->canvas, NULL, &start, NULL, &end);
+      vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
+      vis_change.scrollable_top = start ;
+      vis_change.scrollable_bot = end ;
+      (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
+    }
+
+#ifdef RDS_DONT_INCLUDE
+  window->width  = widget->allocation.width ;
+  window->height = widget->allocation.height ;
+#endif
 
   return ;
 }
