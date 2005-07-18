@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Jul 18 11:49 2005 (rds)
+ * Last edited: Jul 18 12:25 2005 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.33 2005-07-18 10:51:34 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.34 2005-07-18 11:29:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -360,9 +360,10 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
 
     canvas  = FOO_CANVAS_ITEM(tooltip)->canvas;
     boxSize = height * 0.7;
-    foo_canvas_w2c(canvas, x, boxSize, &cx, &cBoxSize);
+    foo_canvas_w2c(canvas, x, y + (boxSize * 2.0), NULL, &cBoxSize);
     foo_canvas_w2c(canvas, x, y, &cx, &cy);
-    vValue = canvas->layout.vadjustment->value;
+    cBoxSize -= cy;
+    vValue    = canvas->layout.vadjustment->value;
 
     if((cy - vValue) > cBoxSize)
       y -= boxSize;
