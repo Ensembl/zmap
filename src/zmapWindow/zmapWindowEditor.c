@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 13 12:39 2005 (rnc)
+ * Last edited: Jul 17 10:20 2005 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.7 2005-07-13 11:42:04 rnc Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.8 2005-07-18 09:20:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,7 +171,7 @@ void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item)
 			    { LAST , NULL, NULL, NULL, NULL, NULL, NULL }};
 
   editor_data = g_new0(editorDataStruct, 1);
-  editor_data->originalFeature = g_object_get_data(G_OBJECT(item), "feature");
+  editor_data->originalFeature = g_object_get_data(G_OBJECT(item), "item_feature_data");
   zMapAssert(editor_data->originalFeature);   
   /* need to rethink this if we're going to handle creating a new feature */
 

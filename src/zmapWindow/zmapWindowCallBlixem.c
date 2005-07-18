@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 14 10:51 2005 (rnc)
+ * Last edited: Jul 18 10:14 2005 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.11 2005-07-14 09:53:47 rnc Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.12 2005-07-18 09:20:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -205,7 +205,7 @@ static char *buildParamString(blixemData blixem_data)
   if (blixem_data->Scope > 0)
     scope = blixem_data->Scope;
 
-  feature = g_object_get_data(G_OBJECT(blixem_data->item), "feature");
+  feature = g_object_get_data(G_OBJECT(blixem_data->item), "item_feature_data");
   zMapAssert(feature);       /* something badly wrong if no feature. */
 
   /* visible coords are 1-based, but internally we work with 0-based coords */
@@ -347,7 +347,7 @@ static gboolean writeExblxFile(blixemData blixem_data)
       else
 	{
 	  blixem_data->errorMsg = NULL;
-	  feature = g_object_get_data(G_OBJECT(blixem_data->item), "feature");
+	  feature = g_object_get_data(G_OBJECT(blixem_data->item), "item_feature_data");
 
 	  if (blixem_data->oneType)
 	    {
@@ -810,7 +810,7 @@ static void adjustCoords(blixemData blixem_data,
   int len = blixem_data->max - blixem_data->min;;
 
 
-  feature = g_object_get_data(G_OBJECT(blixem_data->item), "feature");
+  feature = g_object_get_data(G_OBJECT(blixem_data->item), "item_feature_data");
   
   if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)  /* protein */
     {

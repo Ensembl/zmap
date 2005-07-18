@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 15 18:50 2005 (rds)
+ * Last edited: Jul 18 10:17 2005 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.12 2005-07-15 17:51:38 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.13 2005-07-18 09:22:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,6 +171,69 @@ int zmapWindowClampStartEnd(ZMapWindow window, double *top_inout, double *bot_in
 
   return clamp;  
 }
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* I THOUGHT I NEEDED THIS BUT I DON'T JUST YET, I THINK WE WILL SO I'VE LEFT THIS
+ * SKELETON CODE HERE FOR NOW.... */
+
+/* Find the nearest canvas feature item in a given feature set to a given coord.
+ * 
+ * If the coord is not within the bounds of the given feature set then NULL is
+ * returned.
+ * 
+ *  */
+FooCanvasItem *zmapWindowFindNearestItem(FooCanvasGroup *column_group, double x, double y)
+{
+  FooCanvasItem *item = NULL ;
+  double x1, x2, y1, y2 ;
+
+
+  zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group) && x >= 0 && y >= 0) ;
+
+  
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(column_group), &x1, &y1, &x2, &y2) ;
+
+  /* Safety check really...caller should be sending us the exact event coords for the column
+   * group. */
+  if (x >= x1 && x <= x2 && y >= y1 && y <= y2)
+    {
+      FooCanvasItem *closest_item ;
+      
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      GList *item_list
+
+
+
+	void        g_list_foreach                  (GList *list,
+						     GFunc func,
+						     gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+    }
+
+
+  return item ;
+}
+
+
+
+void checkCoords(gpointer data, gpointer user_data)
+{
+
+
+
+
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* Clamps the span within the length of the sequence,
  * possibly shifting the span to keep it the same size. */
@@ -349,7 +412,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), "feature");  
+  feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
   zMapAssert(feature) ;
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
@@ -361,13 +424,14 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
     }
   else
     {
-      ZMapWindowItemFeature item_feature_data ;
+      ZMapWindowItemFeature item_subfeature_data ;
 
-      item_feature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
-								   "item_feature_data") ;
+      item_subfeature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
+								      "item_subfeature_data") ;
 
       matching_item = zmapWindowFToIFindItemChild(window->context_to_item, feature,
-						  item_feature_data->start, item_feature_data->end) ;
+						  item_subfeature_data->start,
+						  item_subfeature_data->end) ;
     }
 
   return matching_item ;
@@ -388,7 +452,7 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
 
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), "feature");  
+  feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
   zMapAssert(feature) ;
 
   /* Find the item that matches */
@@ -468,7 +532,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
   /* Really we should create some text here as well.... */
   select.item = item ;
 
-  feature = g_object_get_data(G_OBJECT(item), "feature");  
+  feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
   zMapAssert(feature) ;					    /* this should never fail. */
 
   /* Get the features canvas coords (may be very different for align block features... */
@@ -517,16 +581,16 @@ void zmapWindowShowItem(FooCanvasItem *item)
   ZMapFeature feature ;
   ZMapFeatureTypeStyle type ;
   ZMapWindowItemFeatureType item_feature_type ;
-  ZMapWindowItemFeature item_feature_data ;
+  ZMapWindowItemFeature item_subfeature_data ;
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), "feature");  
+  feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
   zMapAssert(feature) ;
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
 							"item_feature_type")) ;
 
-  item_feature_data = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  item_subfeature_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data") ;
 
 
   printf("\nItem:\n"
@@ -537,7 +601,7 @@ void zmapWindowShowItem(FooCanvasItem *item)
 	 zMapStyleGetName(zMapFeatureGetStyle(feature)),
 	 feature->x1,
 	 feature->x2,
-	 item_feature_data->start, item_feature_data->end) ;
+	 item_subfeature_data->start, item_subfeature_data->end) ;
 
 
 
@@ -819,7 +883,7 @@ static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
 	{
 	  ZMapWindowItemFeature item_data ;
 
-	  item_data = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+	  item_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data") ;
 
 	  if (item_data->twin_item)
 	    setItemColour(window, item_data->twin_item, rev_video) ;
@@ -877,7 +941,7 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
       GdkColor *fill_colour ;
 
       /* Retrieve the feature from the canvas item. */
-      feature = g_object_get_data(G_OBJECT(item), "feature") ;
+      feature = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
       zMapAssert(feature) ;
 
       style = zMapFeatureGetStyle(feature) ;
