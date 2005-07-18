@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 15 18:43 2005 (rds)
+ * Last edited: Jul 15 23:04 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.90 2005-07-15 17:52:10 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.91 2005-07-18 10:53:42 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -762,8 +762,8 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
   ZMapWindowZoomControl control;
   double border, x1, x2, y1, y2, top, bot;
   ZMapWindowVisibilityChangeStruct vis_change ;
-  gboolean start_border, end_border;
-  int clamp = ZMAP_WINDOW_CLAMP_INIT;
+  ZMapWindowClampType clamp = ZMAP_WINDOW_CLAMP_INIT;
+
   control = window->zoom;
   zmapWindowSeq2CanExt(&y1a, &y2a);
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), 
@@ -1390,12 +1390,16 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
         else if(guide && mot_event->state & GDK_BUTTON1_MASK)
           {
             int bp = 0;
+            double y1, y2;
+            foo_canvas_get_scroll_region(window->canvas, NULL, &y1, NULL, &y2);
+            zmapWindowClampStartEnd(window, &y1, &y2);
             zMapDrawHorizonReposition(window->horizon_guide_line, wy);
             /* We floor the value here as it works with the way we draw our bases. */
             /* This test is FLAWED ATM it needs to test for displayed seq start & end */
-            if((bp = (int)floor(wy)) > 0)
+            if(y1 <= wy && y2 >= wy)
               {
                 char *tip = NULL;
+                bp = (int)floor(wy);
                 tip = g_strdup_printf("%d bp", bp);
                 zMapDrawToolTipSetPosition(window->tooltip, wx, wy, tip);
                 g_free(tip);
