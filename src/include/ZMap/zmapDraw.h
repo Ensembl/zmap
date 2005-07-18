@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Jul 11 17:01 2005 (rds)
+ * Last edited: Jul 18 09:08 2005 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.19 2005-07-14 15:21:01 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.20 2005-07-18 10:52:46 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -36,8 +36,8 @@
 
 #include <libfoocanvas/libfoocanvas.h>
 
-#define MINVAL(x, y) ((x) < (y) ? (x) : (y))
-#define MAXVAL(x, y) ((x) > (y) ? (x) : (y))
+//#define MINVAL(x, y) ((x) < (y) ? (x) : (y))
+//#define MAXVAL(x, y) ((x) > (y) ? (x) : (y))
 
 FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 			    GdkColor *colour, double thickness) ;
@@ -51,7 +51,7 @@ FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 
 FooCanvasItem *zMapDrawScale(FooCanvas *canvas, 
                              double zoom_factor, 
-                             int start, int end);
+                             double start, double end);
 
 
 /* This needs to be a bit cleverer, so you can't actually move the origin */
