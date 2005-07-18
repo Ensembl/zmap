@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Jul  4 17:15 2005 (rds)
+ * Last edited: Jul 17 10:12 2005 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.4 2005-07-04 17:02:30 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.5 2005-07-18 09:31:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,14 +58,22 @@ typedef struct
  * May want to consider more efficient way of storing these than malloc... */
 typedef struct
 {
-  union
-  {
-    FooCanvasGroup *group ;
-    FooCanvasItem *item ;
-  } canvas ;
+  FooCanvasItem *item ;					    /* could be group or item. */
 
   GHashTable *hash_table ;
 } ID2CanvasStruct, *ID2Canvas ;
+
+
+
+typedef struct
+{
+  GList *search ;					    /* List of quarks specifying search. */
+
+  GList **results ;					    /* result of search. */
+
+} ItemListSearchStruct, *ItemListSearch ;
+
+
 
 
 
@@ -79,6 +87,13 @@ static gboolean equalIDHash(gconstpointer a, gconstpointer b) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void destroyIDHash(gpointer data) ;
+
+
+static void doHashSet(GHashTable *hash_table, GList *search, GList **result) ;
+static void searchItem(gpointer key, gpointer value, gpointer user_data) ;
+static void getItem(gpointer key, gpointer value, gpointer user_data) ;
+
+
 
 static void childSearchCB(gpointer data, gpointer user_data) ;
 
@@ -142,7 +157,7 @@ gboolean zmapWindowFToIAddAlign(GHashTable *feature_to_context_hash,
       ID2Canvas align ;
 
       align = g_new0(ID2CanvasStruct, 1) ;
-      align->canvas.group = align_group ;
+      align->item = FOO_CANVAS_ITEM(align_group) ;
       align->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
 
       g_hash_table_insert(feature_to_context_hash, GUINT_TO_POINTER(align_id), align) ;
@@ -172,7 +187,7 @@ gboolean zmapWindowFToIAddBlock(GHashTable *feature_to_context_hash,
 	  ID2Canvas block ;
 
 	  block = g_new0(ID2CanvasStruct, 1) ;
-	  block->canvas.group = block_group ;
+	  block->item = FOO_CANVAS_ITEM(block_group) ;
 	  block->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
 
 	  g_hash_table_insert(align->hash_table, GUINT_TO_POINTER(block_id), block) ;
@@ -209,13 +224,8 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
 	  ID2Canvas set ;
 
 	  set = g_new0(ID2CanvasStruct, 1) ;
-	  set->canvas.group = set_group ;
-
-	  /* Actually, we probably don't need to have a destroy for the next level down...  */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  set->item = FOO_CANVAS_ITEM(set_group) ;
 	  set->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	  set->hash_table = g_hash_table_new(NULL, NULL) ;
 
 	  g_hash_table_insert(block->hash_table, GUINT_TO_POINTER(set_id), set) ;
 	}
@@ -249,7 +259,13 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
     {
       if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
 	{
-	  g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), feature_item) ;
+	  ID2Canvas feature ;
+
+	  feature = g_new0(ID2CanvasStruct, 1) ;
+	  feature->item = feature_item ;
+	  feature->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+
+	  g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), feature) ;
 	}
 
       result = TRUE ;
@@ -306,7 +322,21 @@ FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
 
 
 
-/* Warning, may return null so result MUST BE TESTED by caller. */
+/* Returns the Foo canvas item/group corresponding to the supplied ids or NULL
+ * if the id(s) could not be found.
+ * 
+ * Which hash tables are searched is decided by the ids supplied:
+ * 
+ *   align     block      set     feature
+ * 
+ *     id        0         < not read >         returns the alignment item
+ * 
+ *     id        id        0     <not read>     returns the block item within the alignment
+ * 
+ * etc.
+ * 
+ * Warning, may return null so result MUST BE TESTED by caller.
+ *  */
 FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
 					  GQuark align_id, GQuark block_id, GQuark set_id,
 					  GQuark feature_id)
@@ -315,43 +345,33 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
   ID2Canvas align ;
   ID2Canvas block ;
   ID2Canvas set ;
+  ID2Canvas feature ;
 
   /* Required for minimum query. */
   zMapAssert(feature_to_context_hash && align_id) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
-					      GUINT_TO_POINTER(align_id)))
-      && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
-						 GUINT_TO_POINTER(block_id)))
-      && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
-					       GUINT_TO_POINTER(set_id))))
-    {
-      item = (FooCanvasItem *)g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id)) ;
-    }
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   /* Cascade down through the hashes until we reach the point the caller wants to stop at. */
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
 					      GUINT_TO_POINTER(align_id))))
     {
       if (!block_id)
-	item = FOO_CANVAS_ITEM(align->canvas.group) ;
+	item = FOO_CANVAS_ITEM(align->item) ;
       else if ((block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
 						       GUINT_TO_POINTER(block_id))))
 	{
 	  if (!set_id)
-	    item = FOO_CANVAS_ITEM(block->canvas.group) ;
+	    item = FOO_CANVAS_ITEM(block->item) ;
 	  else if ((set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
 							 GUINT_TO_POINTER(set_id))))
 	    {
 	      if (!feature_id)
-		item = FOO_CANVAS_ITEM(set->canvas.group) ;
+		item = FOO_CANVAS_ITEM(set->item) ;
 	      else
-		item = (FooCanvasItem *)g_hash_table_lookup(set->hash_table,
-							    GUINT_TO_POINTER(feature_id)) ;
+		{
+		  feature = (ID2Canvas)g_hash_table_lookup(set->hash_table,
+							   GUINT_TO_POINTER(feature_id)) ;
+		  item = feature->item ;
+		}
 	    }
 	}
     }
@@ -389,6 +409,257 @@ FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
 
   return item ;
 }
+
+
+
+
+/* Returns the Foo canvas item/groups corresponding to the supplied ids or NULL
+ * if the id(s) could not be found.
+ * 
+ * Which hash tables are searched is decided by the ids supplied, "*" acts as the
+ * the wild card and 0 acts as search limiter.
+ * 
+ *   align     block      set     feature
+ * 
+ *     "*"       <    not  read       >       returns all the alignment items
+ * 
+ *     id       "*"        < not read >       returns all block items within the alignment
+ * 
+ *     "*"      id        "*"       0         returns all sets in the block "id" in all alignments.
+ * 
+ * 
+ * 
+ * etc.
+ * 
+ * Warning, may return null so result MUST BE TESTED by caller.
+ *  */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
+				     GQuark align_id, GQuark block_id, GQuark set_id,
+				     GQuark feature_id)
+{
+  GList *item_list = NULL ;
+  GQuark wild_card ;
+  ID2Canvas align ;
+  ID2Canvas block ;
+  ID2Canvas set ;
+
+
+  /* Required for minimum query. */
+  zMapAssert(feature_to_context_hash && align_id) ;
+
+
+  wild_card = g_quark_from_string("*") ;
+
+
+  /* Cascade down through the hashes until we reach the point the caller wants to stop at. */
+  if (align_id == wild_card)
+    {
+      /* return list of alignments */
+      g_hash_table_foreach(feature_to_context_hash, getItem,
+			   &item_list) ;
+    }
+  else if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
+						   GUINT_TO_POINTER(align_id))))
+    {
+      if (block_id == wild_card)
+	{
+	  /* return list of blocks */
+	  g_hash_table_foreach(align->hash_table, getItem,
+			       &item_list) ;
+	}
+      else if ((block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
+						       GUINT_TO_POINTER(block_id))))
+	{
+	  if (set_id == wild_card)
+	    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      item = FOO_CANVAS_ITEM(block->item) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	    }
+	  else if ((set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
+							 GUINT_TO_POINTER(set_id))))
+	    {
+	      FooCanvasItem *item = NULL ;
+
+	      if (feature_id == wild_card)
+		{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		  item = FOO_CANVAS_ITEM(set->item) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		}
+	      else if ((item = (FooCanvasItem *)g_hash_table_lookup(set->hash_table,
+								    GUINT_TO_POINTER(feature_id))))
+		{
+		  /* Return the single item as list. */
+		  item_list = g_list_append(item_list, item) ;
+		}
+	    }
+	}
+    }
+
+  return item_list ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
+				     GQuark align_id, GQuark block_id, GQuark set_id,
+				     GQuark feature_id)
+{
+  GList *item_list = NULL ;
+  GQuark wild_card ;
+  GList *search = NULL, *result = NULL ;
+
+
+  /* Required for minimum query. */
+  zMapAssert(feature_to_context_hash && align_id) ;
+
+
+  /* build the search list. */
+  search = g_list_append(search, GUINT_TO_POINTER(align_id)) ;
+  search = g_list_append(search, GUINT_TO_POINTER(block_id)) ;
+  search = g_list_append(search, GUINT_TO_POINTER(set_id)) ;
+  search = g_list_append(search, GUINT_TO_POINTER(feature_id)) ;
+  search = g_list_append(search, GUINT_TO_POINTER(0)) ; /* Terminal stop. */
+
+
+  /* Now do the search */
+  doHashSet(feature_to_context_hash, search, &result) ;
+
+
+
+  return result ;
+}
+
+
+static void doHashSet(GHashTable *hash_table, GList *search, GList **results_out)
+{
+  GQuark curr_search, next_search ;
+  GQuark wild_card ;
+  GQuark stop = 0 ;
+  GList *results = *results_out ;
+
+  wild_card = g_quark_from_string("*") ;
+
+  curr_search = GPOINTER_TO_UINT(search->data) ; 
+  next_search = GPOINTER_TO_UINT(search->next->data) ;
+
+
+  if (curr_search == stop)
+    {
+      /* I'm not sure if we should get here.... */
+      printf("stopped\n") ;
+    }
+  else
+    {
+      if (next_search == stop)
+	{
+	  if (curr_search == wild_card)
+	    {
+	      g_hash_table_foreach(hash_table, getItem, (gpointer)&results) ;
+	    }
+	  else 
+	    {
+	      ID2Canvas item_id ;
+	      
+	      if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
+							    GUINT_TO_POINTER(curr_search))))
+		{
+		  results = g_list_append(results, item_id->item) ;
+		}
+	    }	      
+	}
+      else
+	{
+	  ItemListSearchStruct search_data ;
+
+	  /* bump on to next search pattern. */
+	  search = g_list_next(search) ;
+
+	  search_data.search = search ;
+	  search_data.results = &results ;
+
+	  if (curr_search == wild_card)
+	    {
+	      g_hash_table_foreach(hash_table, searchItem, (gpointer)&search_data) ;
+
+	      /* need to return results list here.... */
+
+	    }
+	  else 
+	    {
+	      ID2Canvas item_id ;
+	      
+	      if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
+							    GUINT_TO_POINTER(curr_search))))
+		{
+
+		  g_hash_table_foreach(item_id->hash_table, searchItem, (gpointer)&search_data) ;
+		}
+	      
+	    }
+	}
+
+    }
+
+  *results_out = results ;
+
+  return ;
+}
+
+
+
+
+
+/* A GHFunc() callback to add the foo canvas item stored in each hash in the table
+ * to a list of such items. */
+static void getItem(gpointer key, gpointer value, gpointer user_data)
+{
+  ID2Canvas hash_item = (ID2Canvas)value ;
+  GList **results = (GList **)user_data ;
+
+  *results = g_list_append(*results, hash_item->item) ;
+
+  return ;
+}
+
+
+/* A GHFunc() callback to add the foo canvas item stored in each hash in the table
+ * to a list of such items. */
+static void searchItem(gpointer key, gpointer value, gpointer user_data)
+{
+  ID2Canvas hash_item = (ID2Canvas)value ;
+  ItemListSearch search = (ItemListSearch)user_data ;
+
+  doHashSet(hash_item->hash_table, search->search, search->results) ;
+
+  return ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -508,13 +779,13 @@ static void childSearchCB(gpointer data, gpointer user_data)
 							    "item_feature_type")) ;
       if (item_feature_type == ITEM_FEATURE_CHILD)
 	{
-	  ZMapWindowItemFeature item_feature_data ;
+	  ZMapWindowItemFeature item_subfeature_data ;
 
-	  item_feature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
-								       "item_feature_data") ;
+	  item_subfeature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
+									  "item_subfeature_data") ;
 
-	  if (item_feature_data->start == child_search->child_start
-	      && item_feature_data->end == child_search->child_end)
+	  if (item_subfeature_data->start == child_search->child_start
+	      && item_subfeature_data->end == child_search->child_end)
 	    child_search->child_item = item ;
 	}
     }
