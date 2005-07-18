@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 15 18:38 2005 (rds)
+ * Last edited: Jul 18 10:18 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.66 2005-07-15 17:57:44 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.67 2005-07-18 09:22:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -110,6 +110,9 @@ enum
  * and children for features such as introns/exons. */
 typedef enum
   {
+    ITEM_ALIGN,
+    ITEM_BLOCK,
+    ITEM_SET,
     ITEM_FEATURE_SIMPLE,				    /* Item is the whole feature. */
     ITEM_FEATURE_PARENT,				    /* Item is parent group of whole feature. */
     ITEM_FEATURE_CHILD,					    /* Item is child/subpart of feature. */
@@ -238,7 +241,6 @@ typedef struct _ZMapWindowLongItemStruct
 
 
 
-
 /* Used in our event communication.... */
 #define ZMAP_ATOM  "ZMap_Atom"
 
@@ -249,6 +251,7 @@ typedef struct
   ZMapWindow window ;
   void *data ;
 } zmapWindowDataStruct, *zmapWindowData ;
+
 
 
 
