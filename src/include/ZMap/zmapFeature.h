@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 11 14:45 2005 (edgrif)
+ * Last edited: Jul 17 12:53 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.34 2005-07-12 10:06:33 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.35 2005-07-18 09:19:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -404,6 +404,7 @@ void zmapFeatureDestroy(ZMapFeature feature) ;
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GData *features) ;
 void zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
+ZMapFeatureTypeStyle zMapFeatureSetGetStyle(ZMapFeatureSet feature_set) ;
 void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 
 

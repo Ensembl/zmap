@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Jul  7 17:29 2005 (rnc)
+ * Last edited: Jul 17 12:58 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.17 2005-07-07 16:34:39 rnc Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.18 2005-07-18 09:19:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -161,6 +161,7 @@ GQuark zMapFeatureGetStyleQuark(ZMapFeature feature)
 }
 
 
+
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature)
 {
   ZMapFeatureTypeStyle style ;
@@ -170,6 +171,19 @@ ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature)
 
   return style ;
 }
+
+
+ZMapFeatureTypeStyle zMapFeatureSetGetStyle(ZMapFeatureSet feature_set)
+{
+  ZMapFeatureTypeStyle style ;
+  GList *styles = feature_set->parent_block->parent_alignment->parent_context->types ;
+
+  style = zMapFindStyle(styles, feature_set->style_id) ;
+
+  return style ;
+}
+
+
 
 
 /* Retrieve a style struct for the given style id. */
