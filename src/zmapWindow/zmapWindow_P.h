@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 18 10:30 2005 (edgrif)
+ * Last edited: Jul 18 10:39 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.68 2005-07-18 09:31:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.69 2005-07-18 10:54:54 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -64,14 +64,6 @@
  * machine.
  * 
  */
-
-enum
-  {
-    ZMAP_WINDOW_CLAMP_INIT  = 0,
-    ZMAP_WINDOW_CLAMP_NONE  = (1 << 0),
-    ZMAP_WINDOW_CLAMP_START = (1 << 1),
-    ZMAP_WINDOW_CLAMP_END   = (1 << 2)
-  } ;
 
 enum
   {
@@ -120,6 +112,14 @@ typedef enum
 							       feature or subpart of feature.  */
   } ZMapWindowItemFeatureType ;
 
+/* A bit field I found I needed to make it easier to calc what had been clamped. */
+typedef enum
+  {
+    ZMAP_WINDOW_CLAMP_INIT  = 0,
+    ZMAP_WINDOW_CLAMP_NONE  = (1 << 0),
+    ZMAP_WINDOW_CLAMP_START = (1 << 1),
+    ZMAP_WINDOW_CLAMP_END   = (1 << 2)
+  } ZMapWindowClampType;
 
 /* Probably will need to expand this to be a union as we come across more features that need
  * different information recording about them.
@@ -329,8 +329,12 @@ void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item);
 
 void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a);
 
-int zmapWindowClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
-int zmapWindowClampStartEnd(ZMapWindow window, double *top_inout, double *bot_inout) ;
+ZMapWindowClampType zmapWindowClampSpan(ZMapWindow window, 
+                                        double *top_inout, 
+                                        double *bot_inout) ;
+ZMapWindowClampType zmapWindowClampStartEnd(ZMapWindow window, 
+                                            double *top_inout, 
+                                            double *bot_inout) ;
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;

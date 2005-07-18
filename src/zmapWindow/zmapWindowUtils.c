@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 18 10:17 2005 (edgrif)
+ * Last edited: Jul 18 10:39 2005 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.13 2005-07-18 09:22:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.14 2005-07-18 10:54:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,9 +146,9 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
   return ;
 }
 
-int zmapWindowClampStartEnd(ZMapWindow window, double *top_inout, double *bot_inout)
+ZMapWindowClampType zmapWindowClampStartEnd(ZMapWindow window, double *top_inout, double *bot_inout)
 {
-  int clamp = ZMAP_WINDOW_CLAMP_INIT;
+  ZMapWindowClampType clamp = ZMAP_WINDOW_CLAMP_INIT;
   double top, bot;
 
   top = *top_inout;
@@ -237,10 +237,10 @@ void checkCoords(gpointer data, gpointer user_data)
 
 /* Clamps the span within the length of the sequence,
  * possibly shifting the span to keep it the same size. */
-int zmapWindowClampSpan(ZMapWindow window, double *top_inout, double *bot_inout)
+ZMapWindowClampType zmapWindowClampSpan(ZMapWindow window, double *top_inout, double *bot_inout)
 {
   double top, bot;
-  int clamp = ZMAP_WINDOW_CLAMP_INIT;
+  ZMapWindowClampType clamp = ZMAP_WINDOW_CLAMP_INIT;
 
   top = *top_inout;
   bot = *bot_inout;
@@ -269,7 +269,7 @@ int zmapWindowClampSpan(ZMapWindow window, double *top_inout, double *bot_inout)
   *top_inout = top;
   *bot_inout = bot;
 
-  return ;
+  return clamp;
 }
 
 
@@ -685,23 +685,27 @@ void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
 {
   double c_start = start;
   double c_end   = end;        /* Canvas start and end */
+  ZMapWindowClampType clmp;
 
   if (FOO_IS_CANVAS_ITEM( (window->scaleBarGroup) ))
     gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
 
   /* This isn't very good, but won't be needed when in separate canvas/window/pane */
-  if(start > 0.0 && end > start)
-      zmapWindowSeq2CanExt(&c_start, &c_end);
-  else
+  if(start <= 0.0 )
+    
+    //      zmapWindowSeq2CanExt(&c_start, &c_end);
+    //else
     {
       c_start = window->min_coord;
       c_end   = window->max_coord;
     }
+  /* SHOULD NOT NEED TO BE THIS!!!!!! */
+  clmp = zmapWindowClampStartEnd(window, &c_start, &c_end);
 
   window->scaleBarGroup = zMapDrawScale(window->canvas, 
                                         zMapWindowGetZoomFactor(window),
-                                        (int)c_start,
-                                        (int)c_end);
+                                        c_start,
+                                        c_end);
   return ;
 }
 
