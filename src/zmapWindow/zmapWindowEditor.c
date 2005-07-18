@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 17 10:20 2005 (edgrif)
+ * Last edited: Jul 18 10:40 2005 (rds)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.8 2005-07-18 09:20:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.9 2005-07-18 10:54:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -168,7 +168,8 @@ void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item)
 			    { EXON  , TEXON  , "Exons"          , NULL, NULL, NULL, NULL, TRUE  },
 			    { INTRON, TINTRON, "Introns"        , NULL, NULL, NULL, NULL, TRUE  },
 			    
-			    { LAST , NULL, NULL, NULL, NULL, NULL, NULL }};
+			    { LAST  , TINTRON, NULL             , NULL, NULL, NULL, NULL, FALSE }
+  };
 
   editor_data = g_new0(editorDataStruct, 1);
   editor_data->originalFeature = g_object_get_data(G_OBJECT(item), "item_feature_data");
