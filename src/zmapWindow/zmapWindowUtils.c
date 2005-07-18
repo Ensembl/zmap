@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 18 10:39 2005 (rds)
+ * Last edited: Jul 18 15:18 2005 (rnc)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.14 2005-07-18 10:54:44 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.15 2005-07-18 14:42:40 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -708,6 +708,38 @@ void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
                                         c_end);
   return ;
 }
+
+/* moves a feature to the new coordinates */
+void zMapWindowMoveItem(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item)
+{
+  ZMapWindowSelectStruct select = {NULL} ;
+  double top, bottom;
+
+  zMapFeature2MasterCoords(feature, &top, &bottom);
+
+  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+    foo_canvas_item_set(item->parent, "y", top, NULL);
+  else
+    foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
+  
+
+  /* redo the info panel with new coords if any */
+  select.text = g_strdup_printf("%s   %s   %d   %d   %s   %s", 
+				(char *)g_quark_to_string(feature->original_id),
+				zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
+				feature->x1,
+				feature->x2,
+				zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
+				zMapStyleGetName(zMapFeatureGetStyle(feature))) ;
+  select.item = item ;
+  
+  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+	    
+  g_free(select.text) ;
+
+  return;
+}
+
 
 
 /* I'M TRYING THESE TWO FUNCTIONS BECAUSE I DON'T LIKE THE BIT WHERE IT GOES TO THE ITEMS
