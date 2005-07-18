@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 30 14:36 2005 (rds)
+ * Last edited: Jul 17 13:10 2005 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.32 2005-06-30 15:04:57 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.33 2005-07-18 09:21:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,12 +80,11 @@ static void quitListCB                (GtkWidget *window, gpointer data);
  * All the features the chosen column are displayed in ascending start-coordinate
  * sequence.  When the user selects one, the main display is scrolled to that feature
  * and the selected item highlighted.
+ * 
  */
-
-
 void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 {
-  FooCanvasItem *parent_item ;
+  FooCanvasItem *parent_item = NULL ;
   GtkWidget *window, *featureList, *vbox, *hbox, *closeButton, *scrolledWindow;
   GtkTreeModel *sort_model;
   GtkCellRenderer *renderer;
@@ -94,27 +93,61 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
   ListCol listCol ;
   ZMapFeature feature ;
   double x1, y1, x2, y2;
-  GData *feature_sets ;
+  GData *feature_sets = NULL ;
   GtkTreeIter *iter ;
   GtkTreePath *path ;
-
-
+  ZMapWindowItemFeatureType item_feature_type ;
+  char *window_title = NULL ;
 
   listCol = g_new0(ListColStruct, 1) ;
 
   listCol->window = zmapWindow ;
 
-  /* Get hold of the feature corresponding to this item. */
-  feature = g_object_get_data(G_OBJECT(item), "feature");  
-  zMapAssert(feature) ;
 
-  /* The item the user clicked on may have been a subpart of a feature, e.g. transcript, so
-   * we need to find the parent item for highlighting etc. */
-  parent_item = zmapWindowFToIFindFeatureItem(listCol->window->context_to_item, feature) ;
-  zMapAssert(parent_item) ;
+  /* The foocanvas item we get passed may represent a feature or the column itself depending
+   * where the user clicked. */
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+
+  if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
+    {
+      ZMapFeatureSet feature_set ;
+
+      feature_set = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+
+      feature_sets = feature_set->features ;
+
+      listCol->strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+							  "item_feature_strand")) ;
 
 
-  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);	    /* world coords */
+      window_title = zMapStyleGetName(zMapFeatureSetGetStyle(feature_set)) ;
+    }
+  else
+    {
+      /* Get hold of the feature corresponding to this item. */
+      feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
+      zMapAssert(feature) ;
+
+      /* The item the user clicked on may have been a subpart of a feature, e.g. transcript, so
+       * we need to find the parent item for highlighting etc. */
+      parent_item = zmapWindowFToIFindFeatureItem(listCol->window->context_to_item, feature) ;
+      zMapAssert(parent_item) ;
+
+      feature_sets = feature->parent_set->features ;
+
+      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);	    /* world coords */
+      /* I have no idea why this x coord is kept.... */
+      listCol->x_coord = x1;
+
+      /* need to know whether the column is up or down strand, 
+       * so we load the right set of features */
+      listCol->strand = feature->strand ;
+
+      window_title = zMapStyleGetName(zMapFeatureGetStyle(feature)) ;
+    }
+
+
+
 
   listCol->list = gtk_tree_store_new(N_COLUMNS,
 				     G_TYPE_STRING,
@@ -127,13 +160,6 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 				     G_TYPE_DOUBLE,
 				     G_TYPE_POINTER) ;
 
-  /* I have no idea why this x coord is kept.... */
-  listCol->x_coord = x1;
-
-  /* need to know whether the column is up or down strand, 
-   * so we load the right set of features */
-  listCol->strand = feature->strand ;
-
 
   /* set up the top level window */
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -142,7 +168,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
   g_ptr_array_add(zmapWindow->featureListWindows, (gpointer)window);
 
   gtk_container_border_width(GTK_CONTAINER(window), 5) ;
-  gtk_window_set_title(GTK_WINDOW(window), zMapStyleGetName(zMapFeatureGetStyle(feature))) ;
+  gtk_window_set_title(GTK_WINDOW(window), window_title) ;
   gtk_window_set_default_size(GTK_WINDOW(window), -1, 600); 
 
   vbox = gtk_vbox_new(FALSE, 0);
@@ -163,8 +189,6 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 
 
   /* Build and populate the list of features */
-  feature_sets = feature->parent_set->features ;
-
   g_datalist_foreach(&feature_sets, addItemToList, listCol) ;
 
   sort_model = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL(listCol->list));
@@ -267,35 +291,38 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
   gtk_container_add(GTK_CONTAINER(scrolledWindow), featureList);
 
 
+  /* If the user clicked on an item, find it in our tree list. */
+  if (parent_item)
+    {
+      iter = findItemInList(zmapWindow, sort_model, parent_item) ;
+      zMapAssert(iter) ;
 
-  /* Find the item the user clicked on in our tree list. */
-  iter = findItemInList(zmapWindow, sort_model, parent_item) ;
-  zMapAssert(iter) ;
+      /* highlight the name and scroll to it if necessary. */
+      path = gtk_tree_model_get_path(sort_model, iter) ;
+      zMapAssert(path) ;
+
+      gtk_tree_view_set_cursor(GTK_TREE_VIEW(featureList),
+			       path,
+			       NULL,
+			       FALSE) ;
+
+      gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(featureList),
+				   path,
+				   NULL,
+				   TRUE,
+				   0.3,  
+				   0.0) ;
+
+      gtk_tree_path_free(path) ;
+
+      g_free(iter) ;
+    }
+  
 
   /* finished with list now */
   g_object_unref(G_OBJECT(listCol->list));
   g_free(listCol) ;
 
-
-  /* highlight the name and scroll to it if necessary. */
-  path = gtk_tree_model_get_path(sort_model, iter) ;
-  zMapAssert(path) ;
-
-  gtk_tree_view_set_cursor(GTK_TREE_VIEW(featureList),
-			   path,
-			   NULL,
-			   FALSE) ;
-
-  gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(featureList),
-			       path,
-			       NULL,
-			       TRUE,
-			       0.3,  
-			       0.0) ;
-
-  gtk_tree_path_free(path) ;
-
-  g_free(iter) ;
 
   gtk_widget_show_all(window) ;
 
