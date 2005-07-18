@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 15 23:04 2005 (rds)
+ * Last edited: Jul 18 12:26 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.91 2005-07-18 10:53:42 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.92 2005-07-18 11:28:23 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -776,23 +776,6 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
    * zmapWindowZoomControlZoomByFactor() has been called!!!
    */
   zmapWindowGetBorderSize(window, &border);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Not sure these checks work exactly there's almost certainly some
-   * edge conditions when it doesn't */
-  if(y1a <= window->min_coord)
-    start_border = TRUE;
-  else
-    start_border = FALSE;
-
-  if(y2a >= window->max_coord)
-    end_border = TRUE;
-  else
-    end_border = FALSE;
-    
-  top = (y1a - (start_border ? border : 0));
-  bot = (y2a + (end_border ? border : 0));
-#endif
 
   clamp = zmapWindowClampStartEnd(window, &y1a, &y2a);
   top = (y1a - ((clamp & ZMAP_WINDOW_CLAMP_START) ? border : 0));
