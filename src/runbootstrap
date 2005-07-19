@@ -32,7 +32,7 @@ case $opsys in
 esac
 
 
-./bootstrap
+./bootstrap || msgAndExit "bootstrap script failed"
 
 
 exit 0
