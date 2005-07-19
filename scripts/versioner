@@ -16,7 +16,7 @@ use File::Basename;
         my ($path, $name) = @_;
 
         $path = abs_path($path);
-        if($path =~ /(.+$name)(.+)/){
+        if($path =~ m!(.+/$name)/(.+)!){
             $checkout_dir = $1;
         }else{
             $checkout_dir = $path;
