@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 19 14:56 2005 (rds)
+ * Last edited: Jul 19 16:45 2005 (rds)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
- * CVS info:   $Id: zmapUtils_P.h,v 1.6 2005-07-19 13:56:54 rds Exp $
+ * CVS info:   $Id: zmapUtils_P.h,v 1.7 2005-07-19 15:46:25 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_P_H
@@ -40,8 +40,8 @@
 #define ZMAP_TITLE "ZMap"
 #define ZMAP_DESCRIPTION "A multi-threaded genome browser and annotation tool."
 #define ZMAP_VERSION 0
-#define ZMAP_RELEASE 0
-#define ZMAP_UPDATE  1
+#define ZMAP_RELEASE 1
+#define ZMAP_UPDATE 0
 
 
 /* Make a single version number out of the version, release and update numbers. */
