@@ -1,0 +1,100 @@
+#!/usr/local/bin/bash
+#
+# Check out the zmap source and copy scripts to where they need to be for
+# the build to run
+#
+
+
+
+msgAndExit ()
+{
+  echo "$script - Fatal Error: $1"
+  exit 1
+}
+
+
+msgInfo ()
+{
+  echo "$script - Info: $1"
+}
+
+
+usage ()
+{
+  if [ -n "$1" ]
+  then
+    echo
+    echo "Warning: $1"
+  fi
+
+  echo
+  echo "Usage:        $script <target_build_directory>"
+  echo
+  echo "  <target_build_directory> specifies the sub directory of ~acedb/ZMap/builds"
+  echo "                     where the checkout and build should take place."
+  echo
+
+  exit 1
+}
+
+
+
+
+
+
+
+#
+# main routine
+#
+
+
+script=`basename $0`
+
+zmaproot=~acedb/ZMap
+builddir="$zmaproot/builds"
+zmapcvstarget='ZMap'
+
+if [ -z "$1" ] ; then
+  usage "No target build directory specified."
+fi
+
+targetdir=$1
+
+
+# move to the generic buld directory.
+#
+cd $builddir || msgAndExit "Cannot cd to ZMap build directory: $builddir"
+
+# remove the previous source tree and checkout the latest.
+#
+if [ -d $targetdir ] ; then
+
+  rm -rf $targetdir || msgAndExit "Cannot remove contents of ZMap build directory: $targetdir"
+
+fi
+
+mkdir $targetdir || msgAndExit "Cannot make ZMap build directory: $targetdir"
+
+cd $targetdir || msgAndExit "Cannot cd to ZMap build directory: $targetdir"
+
+cvs checkout $zmapcvstarget || msgAndExit "Cannot cvs checkout: $zmapcvstarget"
+
+
+
+# do the build.
+#
+cvsbuilddir='ZMap/src'
+
+cd $cvsbuilddir || msgAndExit "Cannot cd to ZMap build directory: $cvsbuilddir"
+
+runbootstrap || msgAndExit "runbootstrap script failed"
+
+runconfig || msgAndExit "runconfig script failed"
+
+make || msgAndExit "make failed"
+
+runzmap '--version' || msgAndExit "zmap would not run"
+
+
+exit 0
+
