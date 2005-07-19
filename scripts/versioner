@@ -165,14 +165,14 @@ sub cvs_tag{
     my ($co, $tag) = @_;
     print STDERR "Tagging $co with tag $tag\n";
 
-    my @sys = ('cvs', 'tag', '-F', $tag);
+    my $sys = "cvs tag -F $tag >/dev/null";
 
     chdir($co);
     
     print STDERR "current directory '".getcwd()."'\n";
-    print STDERR "*** Running @sys ***\n";
+    print STDERR "*** Running $sys ***\n";
 
-    system(@sys) == 0 or die "ERROR $0: Couldn't do '@sys'\n";
+    system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
 
 }
 
@@ -185,13 +185,13 @@ sub cvs_commit{
     my $b = pop(@p);
     my $d = join($sep, @p);
 
-    my @sys = ('cvs', 'commit', '-m', "$0 run by " . (getpwuid($<))[0], $b);
+    my $sys = "cvs commit -m '$0 run by ".(getpwuid($<))[0]."' $b >/dev/null";
 
     chdir($d);
 
     print STDERR "current directory '".getcwd()."'\n";
 
-    system(@sys) == 0 or die "ERROR $0: Couldn't do '@sys'\n";
+    system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
 }
 
 1;
