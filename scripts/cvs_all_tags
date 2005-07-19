@@ -1,0 +1,94 @@
+#!/usr/local/bin/perl -w
+
+use strict;
+use warnings;
+use Getopt::Long;
+use Data::Dumper;
+use Cwd qw(abs_path getcwd);
+use File::Basename;
+
+{
+    my $checkout_dir = 'ZMap';
+    sub checkout_dir{
+        return $checkout_dir;
+    }
+    sub set_checkout_dir{
+        my ($path, $name) = @_;
+
+        $path = abs_path($path);
+        if($path =~ m!(.+/$name)/(.+)!){
+            $checkout_dir = $1;
+        }else{
+            $checkout_dir = $path;
+        }
+        print STDERR "Using '" .checkout_dir() . "' as Checkout Directory.\n";
+    }
+}
+
+{
+    # SOME DEFAULTS
+    my $SRC          = abs_path(dirname($0));
+    my $usage = sub { exit(exec('perldoc', $0)) };
+
+    GetOptions(
+               'path=s'  => \$SRC,          # The path for the checkout dir
+               'help'    => $usage,
+               ) or $usage->();
+    $usage->() unless $SRC;
+
+
+    # ===================================================== #
+    # Now do the work...
+    set_checkout_dir($SRC, checkout_dir());
+
+    my $all_tags = cvs_status_get_tags(checkout_dir);
+    local $" = "\n";
+    print "CVS Tags:  \n@$all_tags\n";
+}
+
+
+
+
+
+# ================================================================== #
+#                      SUBS                                          #
+# ================================================================== #
+
+sub cvs_status_get_tags{
+    my ($path) = @_;
+    chdir($path);
+    my $cmd = "cvs status -v";
+    open(my $fh, "$cmd |") or die "Can't open pipe to $cmd\n";
+    local $/ = "===================================================================";
+    my $tagHash = {};
+    while(<$fh>){
+        my @a = split("Existing Tags:", $_);
+        my $t = pop @a;
+        $t =~ s!([^.:$@ \t\n=]+).+\n!$tagHash->{$1} = 1!ge;
+    }
+    close $fh;
+    my $tags = [ keys(%$tagHash) ];
+    return $tags;
+}
+
+1;
+__END__
+
+=pod
+
+=head1 cvs_all_tags
+
+    shows all the current cvs_tags
+
+=head1 DESCRIPTION
+
+    like it says
+
+=head1 USAGE
+
+    ./cvs_all_tags [options]
+    
+    -path  path to look for tags in
+    -help  display this help.
+
+=cut
