@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 18 15:18 2005 (rnc)
+ * Last edited: Jul 19 10:33 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.70 2005-07-18 14:42:59 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.71 2005-07-19 09:34:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -300,15 +300,18 @@ gboolean zmapWindowFToIAddBlock(GHashTable *feature_to_context_hash,
 				FooCanvasGroup *block_group) ;
 gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
 			      GQuark align_id, GQuark block_id, GQuark set_id,
+			      ZMapStrand strand,
 			      FooCanvasGroup *set_group) ;
 gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 				  GQuark align_id, GQuark block_id, GQuark set_id,
 				  GQuark feature_id, FooCanvasItem *feature_item) ;
 FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
 					  GQuark align_id, GQuark block_id, GQuark set_id,
+					  ZMapStrand strand,
 					  GQuark feature_id) ;
 GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark set_id,
+				     ZMapStrand strand,
 				     GQuark feature_id) ;
 FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
 					 ZMapFeatureSet feature_set, ZMapStrand strand) ;
