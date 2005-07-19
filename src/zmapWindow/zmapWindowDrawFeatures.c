@@ -26,18 +26,15 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 18 10:26 2005 (edgrif)
+ * Last edited: Jul 19 09:46 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.77 2005-07-18 09:28:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.78 2005-07-19 09:35:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
-
-/* testing only */
-static void printGlist(gpointer data, gpointer user_data) ;
 
 
 /* Used to pass data back to column menu callbacks. */
@@ -298,81 +295,8 @@ void zmapWindowDrawFeatures(ZMapWindow window,
     zmapWindow_set_scroll_region(window, window->min_coord, window->max_coord);
   
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* TEST CODE, PLEASE LEAVE FOR NOW.... */
-
-  {
-    GList *result ;
-    GQuark wild_card = g_quark_from_string("*") ;
-    GQuark align, block, set, feature ;
-
-    align = block = set = feature = wild_card ;
-
-
-    /* Testing.... */
-    result = zmapWindowFToIFindItemSetFull(window->context_to_item,
-					   align, block, set, feature) ;
-
-    
-
-    g_list_foreach(result,   printGlist, NULL) ;
-
-    printf("number of list items: %d\n", g_list_length(result)) ;
-
-    printf("stop\n") ;
-  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   return ;
 }
-
-
-static void printGlist(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-  gpointer feature_data ;
-  GQuark feature_id = 0 ;
-  ZMapWindowItemFeatureType item_feature_type ;
-
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
-  feature_data = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
-
-  switch (item_feature_type)
-    {
-    case ITEM_ALIGN:
-      feature_id = ((ZMapFeatureAlignment)feature_data)->unique_id ;
-      break ;
-    case ITEM_BLOCK:
-      feature_id = ((ZMapFeatureBlock)feature_data)->unique_id ;
-      break ;
-    case ITEM_SET:
-      if (!feature_data)
-	printf("set without any features\n") ;
-      else
-	feature_id = ((ZMapFeatureSet)feature_data)->unique_id ;
-      break ;
-    case ITEM_FEATURE_SIMPLE:
-    case ITEM_FEATURE_PARENT:
-      feature_id = ((ZMapFeature)feature_data)->unique_id ;
-      break ;
-    default:
-      {
-	zMapLogFatal("Coding error, bad ZMapWindowItemFeatureType: %d", item_feature_type) ;
-	break ;
-      }
-    }
-
-  if (feature_id)
-    printf("feature: %s\n", g_quark_to_string(feature_id)) ;
-
-  return ;
-}
-
-
-
-
 
 
 
@@ -679,10 +603,12 @@ static void createSetColumn(gpointer data, gpointer user_data)
 
   /* We need a special hash here for a forward group.... */
   canvas_data->curr_forward_col_id = zmapWindowFToIMakeSetID(type_quark, ZMAPSTRAND_FORWARD) ;
+
   status = zmapWindowFToIAddSet(window->context_to_item,
 				canvas_data->curr_alignment->unique_id,
 				canvas_data->curr_block->unique_id,
-				canvas_data->curr_forward_col_id,
+				type_quark,
+				ZMAPSTRAND_FORWARD,
 				canvas_data->curr_forward_col) ;
   zMapAssert(status) ;
 
@@ -716,7 +642,8 @@ static void createSetColumn(gpointer data, gpointer user_data)
       status = zmapWindowFToIAddSet(window->context_to_item,
 				    canvas_data->curr_alignment->unique_id,
 				    canvas_data->curr_block->unique_id,
-				    canvas_data->curr_reverse_col_id,
+				    type_quark,
+				    ZMAPSTRAND_REVERSE,
 				    canvas_data->curr_reverse_col) ;
       zMapAssert(status) ;
 
@@ -825,11 +752,14 @@ static void positionColumn(gpointer data, gpointer user_data)
   FooCanvasItem *bounding_box ;
 
   /* Get the forward column group. */
+
   id = zmapWindowFToIMakeSetID(style->unique_id, ZMAPSTRAND_FORWARD) ;
+
   forward_col = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item,
 							    canvas_data->curr_alignment->unique_id,
 							    canvas_data->curr_block->unique_id,
-							    id,
+							    style->unique_id,
+							    ZMAPSTRAND_FORWARD,
 							    0)) ;
   zMapAssert(forward_col) ;
 
@@ -856,11 +786,14 @@ static void positionColumn(gpointer data, gpointer user_data)
   /* Repeat the same for the reverse strand column if there is one displayed. */
   if (style->show_rev_strand)
     {
+
       id = zmapWindowFToIMakeSetID(style->unique_id, ZMAPSTRAND_REVERSE) ;
+
       reverse_col = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item,
 								canvas_data->curr_alignment->unique_id,
 								canvas_data->curr_block->unique_id,
-								id,
+								style->unique_id,
+								ZMAPSTRAND_REVERSE,
 								0)) ;
       zMapAssert(reverse_col) ;
 
@@ -927,8 +860,8 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   /* Get hold of the style for this feature set. */
   types = canvas_data->curr_alignment->parent_context->types ;
 
-  canvas_data->curr_style = zMapFindStyle(types, type_quark) ;
 
+  canvas_data->curr_style = zMapFindStyle(types, type_quark) ;
   zMapAssert(canvas_data->curr_style) ;
 
 
@@ -948,6 +881,8 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   zMapAssert(bounding_box) ;
 
   g_object_set_data(G_OBJECT(bounding_box), "item_feature_data", feature_set) ;
+
+
 
   canvas_data->curr_forward_col_id = zmapWindowFToIMakeSetID(feature_set->unique_id,
 							     ZMAPSTRAND_FORWARD) ;
