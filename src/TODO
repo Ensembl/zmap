@@ -42,6 +42,12 @@ Down = Urgent \
 Not_Urgent
 
 
+[Shape Diversity]
+Across = Not_Important
+Down = Not_Urgent
+Text = We could do with supporting more shapes styles of "boxes" \
+e.g. pointing boxes to show strandedness, start/end not found, text \
+on features.... many more I'm sure
 
 [Produce better Autoconf]
 Across = Important
@@ -66,10 +72,10 @@ makeQuad files should also end up there so we just have the one docs directory. 
 [scale display]
 Across = Important
 Down = Not_Urgent
-Text = The scale is not good, the units seem utterly bizarre as you zoom in. \
-Also, it needs moving into a separate slidable window like the other locators \
+Text = The scale needs moving into a separate slidable window like the other locators \
 so that it is always visible. It will have to be linked to scrolling in the \
-focus canvas.
+focus canvas. It will potentially need redrawing/relinking every time focus \
+canvas changes.
 
 
 [DNA display]
@@ -99,12 +105,6 @@ Across = Important
 Down = Not_Urgent
 Text = The Region/Scroll scrollbars should be sorted to be the correct width by magic. \
 Can we add a double click to hide/show to the vertical line of dots??
-
-[Resize of zmap window that requires canvas size to increase does not work.]
-Across = Important
-Down = Not_Urgent
-Text = Resize of window DOES NOT redraw canvas, this should happen.  Also needs to  \
-re-enable/disable Zoom In/Out buttons (does redraw already have a hook? to do this?)
 
 
 [glib logging glitches]
@@ -150,9 +150,6 @@ Text = Check requirement of -DPANGO_ENABLE_{BACKEND,ENGINE} also fontconfig, see
 "Fontconfig error: Cannot load default config file" \
 FONTCONFIG_PATH \
 FONTCONFIG_FILE 
-
-
-
 
 
 [GFF stuff]
@@ -213,43 +210,15 @@ Main thing is to protect whole GDatas that we move into our new sets and null ou
 don't want. But also, what happens to datastructs of features that we have allocated but \
 no longer need...they should be freed.... \
 
-
-[zmapwindow resize method]
-Across = Important
-Down = Urgent
-Text = We _must_ have a resize method so that if the window size gets changes in a way \
-that resizes the canvas window then we alter the zoom etc.....
-
-
-## 20050304 meeting
-
-
 [ACedb tools: xremote and blixem]
 Across = Important
 Down = Urgent
 Block = SwapPhase II
-Text = code should be moved out of acedb tree into a new directory and it should \
-have a separate header that defines the atoms used. Apps can then use this to include \
-and respond to commands etc. The same should be done for a small library to launch blixem \
+Text = The same should be done for a small library to launch blixem \
 given a sequence name/sequences.\
 \
 We will need a parameter/keyword in the config file to point zmap at the file to run\
 blixem, note this might be a cover script that itself runs blixem.
-
-
-
-[zmap dynamic methods]
-Across = Important
-Down = Urgent
-Block = SwapPhase I
-Text = Need to have the ability to dynamically create/read methods/styles from acedb.
-
-[zmap window id]
-Across = Important
-Down = Urgent
-Block = SwapPhase I
-Text = xwininfo is the current method and needs to be replaced to allow communication with zmap. \
-Same with port and anything else that otter does with xwininfo output.
 
 [zmap configuration file]
 Across = Important
@@ -266,7 +235,19 @@ Across = Important
 Down = Urgent
 Block = SwapPhase I
 Text = compare and contrast FMap display and ZMap display. Does ZMap look sane? \
-Has it drawn all the information?...
+Has it drawn all the information?... Are we missing critical fmap features?
+
+[Bumping]
+Across = Important
+Down = Urgent
+Text = Support multiple types of bumping.
+
+[Updating]
+Across = Important
+Down = Urgent
+Text = We need to be able to dynamically update the zmap display and features \
+thereon.  Need an interface to create, modify and delete objects.  This needs \
+to be available to xremote.
 
 [zmap_remote]
 Across = Important
@@ -314,3 +295,12 @@ Text = decide on editing mechanism. \
 Do our own interface... <br/>\
 xremote -> DAS2 translation... <br/> \
 xremote -> Otter translation.. 
+
+[buttons and control level]
+Across = Important
+Down = Not_Urgent
+Text = Sensitivity of buttons is all out of whack.  This needs a state reading/setting routine \
+to modify their sensitivity in a similar way to zoom buttons.  Menu items of main menu should \
+also be included in this design. (comment unused ones ATM [Urgent]).  The display layout is also \
+currently not optimal.
+
