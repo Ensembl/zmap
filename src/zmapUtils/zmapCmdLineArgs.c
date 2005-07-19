@@ -30,9 +30,9 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: Jun  8 17:08 2005 (rds)
+ * Last edited: Jul 19 13:59 2005 (edgrif)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.2 2005-06-13 20:20:32 rds Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.3 2005-07-19 13:32:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -183,6 +183,7 @@ static void makeContext(int argc, char *argv[])
   arg_context->argv = argv ;
 
   /* Set default values. */
+  arg_context->version = FALSE ;
   arg_context->start = -1 ;
   arg_context->end = -1 ;
   arg_context->config_file_path = arg_context->config_dir = NULL ;
@@ -200,6 +201,12 @@ static void makePoptContext(ZMapCmdLineArgs arg_context)
    * here. We could have a really fancy system where subcomponents of the code register their
    * flags/args but that introduces its own problems and seems not worth it for this application.
    * Note that they are static because we need to look in the tables to retrieve values later. */
+  static struct poptOption globalOptionsTable[] =
+    {
+      {ZMAPARG_VERSION, '\0', POPT_ARG_NONE, NULL, ARG_VERSION,
+       "Program version.", "<none>"},
+      POPT_TABLEEND
+    } ;
   static struct poptOption sequenceOptionsTable[] =
     {
       {ZMAPARG_SEQUENCE_START, '\0', POPT_ARG_INT, NULL, ARG_START,
@@ -232,12 +239,14 @@ static void makePoptContext(ZMapCmdLineArgs arg_context)
 
 
   /* Set up the options tables....try this statically now ?? */
-  options_table[0].arg = sequenceOptionsTable ;
-  options_table[1].arg = configFileOptionsTable ;
+  options_table[0].arg = globalOptionsTable ;
+  options_table[1].arg = sequenceOptionsTable ;
+  options_table[2].arg = configFileOptionsTable ;
   arg_context->options_table = options_table ;
 
 
   /* Fill all the stuff that STUPID ANSI-C can't manage. */
+  setPoptArgPtr(ZMAPARG_VERSION, &arg_context->version) ;
   setPoptArgPtr(ZMAPARG_SEQUENCE_START, &arg_context->start) ;
   setPoptArgPtr(ZMAPARG_SEQUENCE_END, &arg_context->end) ;
   setPoptArgPtr(ZMAPARG_CONFIG_FILE, &arg_context->config_file_path) ;
@@ -254,6 +263,9 @@ static void makePoptContext(ZMapCmdLineArgs arg_context)
     {
       switch (popt_rc)
 	{
+	case ARG_VERSION:
+	  setPoptValPtr(ZMAPARG_VERSION, ARG_SET) ;
+	  break ;
 	case ARG_START:
 	  setPoptValPtr(ZMAPARG_SEQUENCE_START, ARG_SET) ;
 	  break ;

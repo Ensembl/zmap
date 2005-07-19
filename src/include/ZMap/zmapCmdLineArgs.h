@@ -27,9 +27,9 @@
  *              program.
  *
  * HISTORY:
- * Last edited: Jun  8 13:44 2005 (rds)
+ * Last edited: Jul 19 12:00 2005 (edgrif)
  * Created: Mon Feb  7 08:19:50 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.h,v 1.2 2005-06-13 20:10:55 rds Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.h,v 1.3 2005-07-19 13:32:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_H
@@ -39,6 +39,7 @@
 
 
 /* These are all the keywords that can be used as command line option flags (e.g. --start) */
+#define ZMAPARG_VERSION        "version"
 #define ZMAPARG_SEQUENCE_START "start"
 #define ZMAPARG_SEQUENCE_END   "end"
 #define ZMAPARG_CONFIG_FILE    "conf_file"
@@ -47,7 +48,7 @@
 
 
 /* The value (if any) for the command line option is returned in this union.
- * NOTE that since the code that uses the option _must_ know what sort of data it is, ther
+ * NOTE that since the code that uses the option _must_ know what sort of data it is, there
  * is no type field here to record which member of the union is valid. */
 typedef union
 {

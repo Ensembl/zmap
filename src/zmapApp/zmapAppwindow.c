@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  1 13:02 2005 (rds)
+ * Last edited: Jul 19 14:16 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.21 2005-06-01 13:12:22 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.22 2005-07-19 13:32:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +50,7 @@ static ZMapAppContext createAppContext(void) ;
 static void quitCB(GtkWidget *widget, gpointer data) ;
 static void removeZmapRow(void *app_data, void *zmap) ;
 static void infoSetCB(void *app_data, void *zmap) ;
+static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArgs(int argc, char *argv[],
 					char **sequence_out, int *start_out, int *end_out) ;
 static void checkConfigDir(void) ;
@@ -102,6 +103,12 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Set up command line parsing object, globally available anywhere, this function exits if
    * there are bad command line args. */
   zMapCmdLineArgsCreate(argc, argv) ;
+
+
+  /* If user specified version flag, show zmap version and exit with zero return code. */
+  checkForCmdLineVersionArg(argc, argv) ;
+
+
 
   /* Set up configuration directory/files, this function exits if the directory/files can't be
    * accessed. */
@@ -329,6 +336,30 @@ static void checkForCmdLineSequenceArgs(int argc, char *argv[],
  
   return ;
 }
+
+
+/* Did user specify the version arg. */
+static void checkForCmdLineVersionArg(int argc, char *argv[])
+{
+  ZMapCmdLineArgsType value ;
+  gboolean show_version = FALSE ;
+
+  if (zMapCmdLineArgsValue(ZMAPARG_VERSION, &value))
+    show_version = value.b ;
+
+  if (show_version)
+    {
+      printf("%s - %s\n", zMapGetAppName(), zMapGetVersionString()) ;
+
+      exit(EXIT_SUCCESS) ;
+    }
+
+ 
+  return ;
+}
+
+
+
 
 
 /* Did user specify a config directory and/or config file within that directory on the command line. */

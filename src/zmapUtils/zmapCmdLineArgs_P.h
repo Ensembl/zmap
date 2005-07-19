@@ -26,9 +26,9 @@
  * Description: Internals for command line parsing.
  *
  * HISTORY:
- * Last edited: Jun  8 17:07 2005 (rds)
+ * Last edited: Jul 19 13:50 2005 (edgrif)
  * Created: Fri Feb  4 19:11:23 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.2 2005-06-13 20:20:32 rds Exp $
+ * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.3 2005-07-19 13:32:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_P_H
@@ -40,6 +40,7 @@
 
 
 enum {ARG_SET = 1,					    /* Special value, do not alter. */
+      ARG_VERSION,
       ARG_START, ARG_END,
       ARG_CONF_FILE, ARG_CONF_DIR,
       ARG_WINID
@@ -61,6 +62,8 @@ typedef struct _ZMapCmdLineArgsStruct
   char *sequence_arg ;
 
   /* All option values are stored here for later reference. */
+  gboolean version ;
+
   int start, end ;
 
   char *config_dir ;
