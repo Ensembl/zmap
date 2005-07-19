@@ -53,7 +53,7 @@ sub process_block{
     # check block is good and parsing didn't assume too much
     if($block->{'addedlines'} == 1 &&  $block->{'addeddiff'} == 1){
         # check this block contains regex
-        if($block->{'diff'} =~ /$REGEXP/){
+        if($block->{'diff'} =~ /\n[\+\-]([^\n]+)?$REGEXP/){
             push(@$matches, $block);
         }
     }
