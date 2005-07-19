@@ -1,0 +1,49 @@
+# $HOME/bin/functions
+
+# usage $HOME/bin/functions [unset]
+
+if [ "$1" = "unset" ]; then
+    # UNSET the functions used
+    unset pathmunge pathremmunge
+
+else
+    # .... loading ....
+################################################################################
+################################################################################
+# Functions - notice no indenting for ease of reading
+################################################################################
+################################################################################
+    # pathmunge (from /etc/profile)
+    # default is to APPEND though!!!
+pathmunge () {
+    # check for not existing
+    if ! echo $PATH | /bin/egrep -q "(^|:)$1($|:)" ; then
+        if [ "$2" = "prepend" ] ; then
+            PATH=$1:$PATH
+        else
+            PATH=$PATH:$1
+        fi
+    fi
+}
+pathremmunge () {
+    # check for existing
+    if echo $PATH | /bin/egrep -q "(^|:)$1($|:)" ; then
+        if [ "$2" = "remove" ] ; then
+            local IFS=::
+            NEW=
+            for d in $PATH ; do
+                if [ "$1" != "$d" ] ; then
+                 #   echo
+                    NEW=$NEW$d:
+                fi
+            done
+            PATH=$NEW
+        fi
+    else
+        # didn't exist, maybe called by mistake
+        # might as well call pathmunge
+        pathmunge $1 $2
+    fi
+}
+
+fi

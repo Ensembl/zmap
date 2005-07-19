@@ -1,0 +1,74 @@
+#!/usr/local/bin/bash
+#
+# Noddy script to build acedb binaries and install correct bits in to
+# zmap prefix dirs.
+#
+
+
+
+msgAndExit ()
+{
+  echo "Error: $1"
+  exit 1
+}
+
+
+
+#
+# main routine
+#
+
+zmapsrcdir=~acedb/ZMap
+builddir='acedbbuild'
+cvs_acedb="acedb"
+
+# make a build directory in our zmap subdirectory.
+#
+cd $zmapsrcdir || msgAndExit "Cannot cd to ZMap directory: $zmapsrcdir"
+
+mkdir $builddir || msgAndExit "Could not make build directory: $builddir"
+
+cd $builddir || msgAndExit "Could not cd to build directory: $builddir"
+
+
+# checkout the code and build it.
+#
+cvs checkout $cvs_acedb || msgAndExit "Could not checkout $cvs_acedb from cvs."
+
+cd $cvs_acedb || msgAndExit "Could not cd to build directory: $cvs_acedb"
+
+
+case $ACEDB_MACHINE in
+
+  ALPHA_* )
+    target_dir='ALPHA' ;;
+
+  LINUX_* )
+    target_dir='LINUX' ;;
+
+  * )
+    msgAndExit "unsupported ACEDB_MACHINE type: $ACEDB_MACHINE" ;;
+
+esac
+
+
+ln -s wmake/makefile || msgAndExit "Cannot make symbolic link for makefile."
+
+make all bindistclean || msgAndExit "Build of $cvs_acedb failed."
+
+
+# put binaries where they should be.
+#
+mv -f bin.$ACEDB_MACHINE/* $zmapsrcdir/prefix/$target_dir/bin || msgAndExit "copy of binaries failed."
+
+
+
+# clear up.
+#
+cd $zmapsrcdir || msgAndExit "Cannot cd to ZMap directory: $zmapsrcdir"
+
+rm -rf $builddir || msgAndExit "Could not remove build directory: $builddir"
+
+
+exit 0
+
