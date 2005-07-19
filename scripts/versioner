@@ -89,7 +89,7 @@ use File::Basename;
     cvs_commit($version_path, "/") if $commit;
 
     $cvs_tag = make_cvs_tag($version_path, $PREPROC_VARS, $VERSION_STR);
-    print STDERR "Version is now $cvs_tag\n";
+    print STDERR "Development Version is now $cvs_tag\n";
 }
 
 
@@ -106,7 +106,9 @@ sub find_file{
     my ($path, $file) = @_;
     $path .= "/$file";
     return $path if($path && -e $path);
-    die "ERROR $0: Couldn't find $file under $path...\n";
+    die "ERROR $0: ".
+        "Couldn't find '$file' under '$path'...\n".
+        "Suggest using -path option\n";
 }
 
 # Increment the version numbers in $file according 
