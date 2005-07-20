@@ -5,57 +5,26 @@
 #
 
 
-
-msgAndExit ()
-{
-  echo "$script - Fatal Error: $1"
-  exit 1
-}
-
-
-msgInfo ()
-{
-  echo "$script - Info: $1"
-}
-
-
-usage ()
-{
-  if [ -n "$1" ]
-  then
-    echo
-    echo "Warning: $1"
-  fi
-
-  echo
-  echo "Usage:        $script <target_build_directory>"
-  echo
-  echo "  <target_build_directory> specifies the sub directory of ~acedb/ZMap/builds"
-  echo "                     where the checkout and build should take place."
-  echo
-
-  exit 1
-}
-
-
-
-
-
-
-
 #
 # main routine
 #
 
+# set up common functions.
+. ./ZBfunctions $0
 
-script=`basename $0`
+# set up usage strings.
+cmdstring='<target_build_directory>'
+descstring='
+         <target_build_directory> specifies the sub directory of ~acedb/ZMap/builds"
+                                  where the checkout and build should take place.'
+
 
 zmaproot=~acedb/ZMap
 builddir="$zmaproot/builds"
 zmapcvstarget='ZMap'
 
 if [ -z "$1" ] ; then
-  usage "No target build directory specified."
+  ZBusage "$cmdstring" "$descstring" "No target build directory specified."
 fi
 
 targetdir=$1
@@ -63,21 +32,21 @@ targetdir=$1
 
 # move to the generic buld directory.
 #
-cd $builddir || msgAndExit "Cannot cd to ZMap build directory: $builddir"
+ZBGotoDir $builddir
 
 # remove the previous source tree and checkout the latest.
 #
 if [ -d $targetdir ] ; then
 
-  rm -rf $targetdir || msgAndExit "Cannot remove contents of ZMap build directory: $targetdir"
+  rm -rf $targetdir || ZBmsgAndExit "Cannot remove contents of ZMap build directory: $targetdir"
 
 fi
 
-mkdir $targetdir || msgAndExit "Cannot make ZMap build directory: $targetdir"
+mkdir $targetdir || ZBmsgAndExit "Cannot make ZMap build directory: $targetdir"
 
-cd $targetdir || msgAndExit "Cannot cd to ZMap build directory: $targetdir"
+ZBGotoDir $targetdir
 
-cvs checkout $zmapcvstarget || msgAndExit "Cannot cvs checkout: $zmapcvstarget"
+cvs checkout $zmapcvstarget || ZBmsgAndExit "Cannot cvs checkout: $zmapcvstarget"
 
 
 
@@ -85,15 +54,15 @@ cvs checkout $zmapcvstarget || msgAndExit "Cannot cvs checkout: $zmapcvstarget"
 #
 cvsbuilddir='ZMap/src'
 
-cd $cvsbuilddir || msgAndExit "Cannot cd to ZMap build directory: $cvsbuilddir"
+ZBGotoDir $cvsbuilddir
 
-runbootstrap || msgAndExit "runbootstrap script failed"
+runbootstrap || ZBmsgAndExit "runbootstrap script failed"
 
-runconfig || msgAndExit "runconfig script failed"
+runconfig || ZBmsgAndExit "runconfig script failed"
 
-make || msgAndExit "make failed"
+make || ZBmsgAndExit "make failed"
 
-runzmap '--version' || msgAndExit "zmap would not run"
+runzmap '--version' || ZBmsgAndExit "zmap would not run"
 
 
 exit 0

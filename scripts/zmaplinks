@@ -5,47 +5,22 @@
 
 
 
-msgAndExit ()
-{
-  echo "$script - Fatal Error: $1"
-  exit 1
-}
-
-
-msgInfo ()
-{
-  echo "$script - Info: $1"
-}
-
-
-usage ()
-{
-  if [ -n "$1" ]
-  then
-    echo
-    echo "Warning: $1"
-  fi
-
-  echo
-  echo "Usage:   $script [-o] [-d] [-r] <source_directory>"
-  echo
-  echo "  -o  link ~acedb/ZMAP.OVERNIGHT_BUILD to source_directory (default)"
-  echo
-  echo "  -d  link ~acedb/ZMAP.DEVELOPMENT_BUILD to source_directory (default)"
-  echo
-  echo "  -r  link ~acedb/ZMAP.RELEASE_BUILD to source_directory (default)"
-  echo
-
-  exit 1
-}
-
-
-
 #
 # main routine
 #
 
-script=`basename $0`
+# set up common functions.
+. ./ZBfunctions $0
+
+# set up usage strings.
+cmdstring='[-o] [-d] [-r] <source_directory>'
+descstring='
+  -o  link ~acedb/ZMAP.OVERNIGHT_BUILD to source_directory (default)
+
+  -d  link ~acedb/ZMAP.DEVELOPMENT_BUILD to source_directory (default)
+
+  -r  link ~acedb/ZMAP.RELEASE_BUILD to source_directory (default)'
+
 
 linksroot=~acedb
 
@@ -61,7 +36,7 @@ while getopts ":odr" opt ; do
     o  ) links="$links $overnight"  ;;
     d  ) links="$links $development" ;;
     r  ) links="$links $release" ;;
-    \? ) usage "Bad command line flag"
+    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
 
   esac
 done
@@ -69,7 +44,7 @@ done
 # Get the source directory to be linked to.
 shift $(($OPTIND - 1))
 if [ -z "$1" ] ; then
-  usage "No link source directory specified."
+  ZBusage "$cmdstring" "$descstring" "No link source directory specified."
 fi
 sourcedir=$1
 
@@ -82,24 +57,24 @@ fi
 
 # move to ~acedb where we will make the symbolic links.
 #
-cd $linksroot || msgAndExit "Cannot cd to ZMap build directory: $linksroot"
+ZBGotoDir $linksroot
 
 
 
 # Make sure the source dir exists.
 #
 if [ ! -d $sourcedir ] ; then
-  msgAndExit "Cannot find source directory for link: $sourcedir"
+  ZBmsgAndExit "Cannot find source directory for link: $sourcedir"
 fi
 
 
 for dir in $links
 do
   if [ -L $dir ] ; then
-    rm -f $dir || msgAndExit "Cannot remove symbolic link: $linksroot/$dir"
+    rm -f $dir || ZBmsgAndExit "Cannot remove symbolic link: $linksroot/$dir"
   fi
 
-  ln -s $sourcedir $dir || msgAndExit "Cannot make symbolic link: $linksroot/$dir"
+  ln -s $sourcedir $dir || ZBmsgAndExit "Cannot make symbolic link: $linksroot/$dir"
 
 done
 
