@@ -85,9 +85,11 @@ my $QUIET = 0;
     # Now do the work...
     set_checkout_dir($SRC, checkout_dir());
     my $version_path = find_file(checkout_dir(), $VERSION_FILE);
-    
+
     my $cvs_tag = make_cvs_tag($version_path, $PREPROC_VARS, $VERSION_STR);
+
     print STDERR "The CVS tag should be $cvs_tag. \n" unless $QUIET;
+
     print "$cvs_tag\n";
 
     cvs_tag(checkout_dir, $cvs_tag) if $tag;
