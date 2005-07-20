@@ -7,6 +7,7 @@ use Data::Dumper;
 use Cwd qw(abs_path getcwd);
 use File::Basename;
 
+my $QUIET = 0;
 {
     my $checkout_dir = 'ZMap';
     sub checkout_dir{
@@ -21,7 +22,7 @@ use File::Basename;
         }else{
             $checkout_dir = $path;
         }
-        print STDERR "Using '" .checkout_dir() . "' as Checkout Directory.\n";
+        print STDERR "Using '" .checkout_dir() . "' as Checkout Directory.\n" unless $QUIET;
     }
 }
 
@@ -33,7 +34,8 @@ use File::Basename;
                            release ZMAP_RELEASE
                            update  ZMAP_UPDATE)
                         };
-    my $VERSION_STR  = "RELEASE_ZMAP_VERSION-ZMAP_RELEASE-ZMAP_UPDATE";
+    my $VERSION_STR  = "ZMAP_VERSION-ZMAP_RELEASE-ZMAP_UPDATE";
+    my $VS_PREFIX    = "RELEASE_";
     my $requested    = {};
     my $commit       = 0;
     my $tag          = 1;
@@ -61,6 +63,7 @@ use File::Basename;
         }
     };
     my $blindly = sub { return $_[1] + 1 };
+    my $version_only = 0;
     GetOptions(
                'file=s'  => \$VERSION_FILE, # 
                'path=s'  => \$SRC,          # The path for the checkout dir
@@ -70,10 +73,13 @@ use File::Basename;
                'all'     => $all,
                'show'    => sub {$tag = 0},
                'cvs'     => \$commit,
+               'quiet'   => \$QUIET,
+               'V'       => \$version_only,
                'help'    => $usage,
                ) or $usage->();
     $usage->() unless $VERSION_FILE;
 
+    $VERSION_STR  = $VS_PREFIX . $VERSION_STR unless $version_only;
 
     # ===================================================== #
     # Now do the work...
@@ -81,7 +87,7 @@ use File::Basename;
     my $version_path = find_file(checkout_dir(), $VERSION_FILE);
     
     my $cvs_tag = make_cvs_tag($version_path, $PREPROC_VARS, $VERSION_STR);
-    print STDERR "The CVS tag should be $cvs_tag. \n";
+    print STDERR "The CVS tag should be $cvs_tag. \n" unless $QUIET;
     print "$cvs_tag\n";
 
     cvs_tag(checkout_dir, $cvs_tag) if $tag;
@@ -92,7 +98,7 @@ use File::Basename;
     cvs_commit($version_path, "/") if $commit;
 
     $cvs_tag = make_cvs_tag($version_path, $PREPROC_VARS, $VERSION_STR);
-    print STDERR "Development Version is now $cvs_tag\n";
+    print STDERR "Development Version is now $cvs_tag\n" unless $QUIET;
 }
 
 
@@ -221,8 +227,10 @@ __END__
     -update   increment the update
     -all      increment all the above
     -cvs      CVS Commit the -file file
+    -show     just show the tag
+    -V        just show the version part of the cvs tag
     -help     Display this help
-
+    
 
 
 =cut
