@@ -1,0 +1,108 @@
+#!/usr/local/bin/bash
+#
+# Create the symbolic links in ~acedb to point to the various releases of zmap.
+#
+
+
+
+msgAndExit ()
+{
+  echo "$script - Fatal Error: $1"
+  exit 1
+}
+
+
+msgInfo ()
+{
+  echo "$script - Info: $1"
+}
+
+
+usage ()
+{
+  if [ -n "$1" ]
+  then
+    echo
+    echo "Warning: $1"
+  fi
+
+  echo
+  echo "Usage:   $script [-o] [-d] [-r] <source_directory>"
+  echo
+  echo "  -o  link ~acedb/ZMAP.OVERNIGHT_BUILD to source_directory (default)"
+  echo
+  echo "  -d  link ~acedb/ZMAP.DEVELOPMENT_BUILD to source_directory (default)"
+  echo
+  echo "  -r  link ~acedb/ZMAP.RELEASE_BUILD to source_directory (default)"
+  echo
+
+  exit 1
+}
+
+
+
+#
+# main routine
+#
+
+script=`basename $0`
+
+linksroot=~acedb
+
+prefix='ZMap'
+suffix='BUILD'
+overnight=$prefix'.OVERNIGHT.'$suffix
+development=$prefix'.DEVELOPMENT.'$suffix
+release=$prefix'.RELEASE.'$suffix
+links=""
+
+while getopts ":odr" opt ; do
+  case $opt in
+    o  ) links="$links $overnight"  ;;
+    d  ) links="$links $development" ;;
+    r  ) links="$links $release" ;;
+    \? ) usage "Bad command line flag"
+
+  esac
+done
+
+# Get the source directory to be linked to.
+shift $(($OPTIND - 1))
+if [ -z "$1" ] ; then
+  usage "No link source directory specified."
+fi
+sourcedir=$1
+
+
+# default to overnight link...
+if [ -z "$links" ] ; then
+  links=$overnight
+fi
+
+
+# move to ~acedb where we will make the symbolic links.
+#
+cd $linksroot || msgAndExit "Cannot cd to ZMap build directory: $linksroot"
+
+
+
+# Make sure the source dir exists.
+#
+if [ ! -d $sourcedir ] ; then
+  msgAndExit "Cannot find source directory for link: $sourcedir"
+fi
+
+
+for dir in $links
+do
+  if [ -L $dir ] ; then
+    rm -f $dir || msgAndExit "Cannot remove symbolic link: $linksroot/$dir"
+  fi
+
+  ln -s $sourcedir $dir || msgAndExit "Cannot make symbolic link: $linksroot/$dir"
+
+done
+
+
+exit 0
+
