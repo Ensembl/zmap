@@ -1,0 +1,31 @@
+#!/usr/local/bin/bash
+#
+# This script checks out the build scripts into our zmap scripts directory
+#
+
+
+#
+# main routine
+#
+
+# set up common functions.
+. ./ZBfunctions $0
+
+
+# set up usage strings.
+cmdstring=' '
+descstring='
+  no args required.'
+
+
+scriptdir=~acedb/ZMap/prefix/scripts
+
+# move to the zmap build scripts dir.
+#
+ZBGotoDir $scriptdir
+
+cvs update . || ZBmsgAndExit "Cannot cvs update the build scripts"
+
+
+exit 0
+
