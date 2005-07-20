@@ -15,24 +15,36 @@
 # set up usage strings.
 cmdstring='<target_build_directory>'
 descstring='
-         <target_build_directory> specifies the sub directory of ~acedb/ZMap/builds"
-                                  where the checkout and build should take place.'
+   -v   do the build replacing target_build_directory name with ZMap.<version>.BUILD
+
+   <target_build_directory> specifies the sub directory of ~acedb/ZMap/builds"
+                            where the checkout and build should take place.'
 
 
 zmaproot=~acedb/ZMap
 builddir="$zmaproot/builds"
 zmapcvstarget='ZMap'
+version=""
 
+while getopts ":v" opt ; do
+  case $opt in
+    v  ) version="true"  ;;
+    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
+  esac
+done
+
+# Get the source directory for the build.
+shift $(($OPTIND - 1))
 if [ -z "$1" ] ; then
   ZBusage "$cmdstring" "$descstring" "No target build directory specified."
 fi
-
 targetdir=$1
 
 
-# move to the generic buld directory.
+# move to the generic build directory.
 #
 ZBGotoDir $builddir
+
 
 # remove the previous source tree and checkout the latest.
 #
@@ -63,6 +75,21 @@ runconfig || ZBmsgAndExit "runconfig script failed"
 make || ZBmsgAndExit "make failed"
 
 runzmap '--version' || ZBmsgAndExit "zmap would not run"
+
+
+# If release directory needs to be given a proper release name then do so...
+#
+
+if [ -n "$version" ] ; then
+
+  ZBGotoDir $builddir
+
+  version=`versioner -path $targetdir/ZMap/src/include/ZMap/ -show -V -quiet` || ZBmsgAndExit "Could not get zmap version"
+
+  mv $targetdir 'ZMap.'$version'.BUILD' || ZBmsgAndExit "Could not rename build directory"
+fi
+
+
 
 
 exit 0
