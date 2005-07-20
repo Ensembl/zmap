@@ -10,7 +10,7 @@
 #
 
 # set up common functions.
-. ./ZBfunctions $0
+. ZBfunctions $0
 
 # set up usage strings.
 cmdstring='[-o] [-d] [-r] <source_directory>'

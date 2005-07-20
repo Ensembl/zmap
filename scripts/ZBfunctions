@@ -6,11 +6,15 @@
 # Should be run as a dot script as the first statement executed in all
 # build scripts, $0 should be given as the single arg so the script name
 # can be included in messages: 
-#                                . ./ZBfunctions $0
+#                                . ZBfunctions $0
 #
 # to unset the functions call like this:
 #
-#                                . ./ZBfunctions unset
+#                                . ZBfunctions unset
+#
+# Note that this will pick up the first ZBfunctions on your path which should
+# be the same as your script versions, if you don't like this then give some
+# kind of more restrictive directory spec.
 #
 
 
