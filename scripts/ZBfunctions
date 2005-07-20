@@ -1,0 +1,72 @@
+#!/usr/local/bin/bash
+#
+# Sets up general functions needed by all ZMap build scripts, these
+# general functions have the prefix "ZB" for Zmap Build.
+#
+# Should be run as a dot script as the first statement executed in all
+# build scripts, $0 should be given as the single arg so the script name
+# can be included in messages: 
+#                                . ./ZBfunctions $0
+#
+# to unset the functions call like this:
+#
+#                                . ./ZBfunctions unset
+#
+
+
+if [ "$1" = "unset" ]; then
+
+    # UNSET the functions used
+    unset ZBmsgAndExit ZBmsgInfo
+
+else
+
+ZBGotoDir ()
+{
+
+  cd $1 || ZBmsgAndExit "Cannot cd to ZMap build directory: $1"
+
+}
+
+
+ZBmsgAndExit ()
+{
+  echo "$ZBscript - Fatal Error: $1"
+  exit 1
+}
+
+
+ZBmsgInfo ()
+{
+  echo "$ZBscript - Info: $1"
+}
+
+
+ZBusage ()
+{
+  if [ -n "$3" ]
+  then
+    echo
+    echo "Warning: $3"
+  fi
+
+  echo
+  echo "Usage:   $ZBscript $1"
+  echo
+  echo "$2"
+  echo
+
+  exit 1
+}
+
+
+
+ZBscript=`basename $1`
+
+
+fi
+
+
+#
+# do NOT exit from this, it is run as a dot script by other shell scripts.
+#
