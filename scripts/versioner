@@ -85,7 +85,9 @@ use File::Basename;
     print "$cvs_tag\n";
 
     cvs_tag(checkout_dir, $cvs_tag) if $tag;
-    
+
+    exit($tag) unless $tag;
+
     increment_numbers($requested, $version_path, $rotate);
     cvs_commit($version_path, "/") if $commit;
 
