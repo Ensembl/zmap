@@ -68,6 +68,7 @@ use File::Basename;
                'release' => $all,
                'update'  => $all,
                'all'     => $all,
+               'show'    => sub {$tag = 0},
                'cvs'     => \$commit,
                'help'    => $usage,
                ) or $usage->();
