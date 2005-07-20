@@ -1,0 +1,20 @@
+
+This directory contains scripts used to build and test zmap.
+
+The scripts can be run by hand but are also run from a crontab so be careful
+when changing them !
+
+If you add scripts to this directory then here are some points to note:
+
+1) scripts must either be perl or bash, i.e. not sh, csh, awk or ksh.
+
+2) If you write a bash script then you should make use of the general
+functions in the ZBfunctions script file. Look in one of the other bash
+scripts for how to call this at the start of your script. If you come up with
+a useful general function then add it to ZBfunctions.
+
+3) The scripts get copied to ~acedb/ZMap/prefix/scripts which the zmap
+developers and the acedb userid have on their path. While this is where your
+script will be found, you should not assume that this is where your script
+will be running from.
+
