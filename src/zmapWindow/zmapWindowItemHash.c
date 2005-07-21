@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Jul 18 14:36 2005 (edgrif)
+ * Last edited: Jul 20 12:10 2005 (rnc)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.6 2005-07-19 09:34:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.7 2005-07-21 12:49:25 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -403,6 +403,8 @@ FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
 
       if (child_search.child_item)
 	item = child_search.child_item ;
+      else
+	item = NULL;
     }
 
   return item ;
