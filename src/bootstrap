@@ -45,7 +45,9 @@ DEFAULT_INC="-I ."
 ############################################################
 
 # clean up first
-cat .cvsignore | xargs -rt rm -f
+# xargs: I've removed the -r because not all platforms have it.
+# rm: I've added -r to deal with directories and taken away the -f so we can see any errors.
+cat .cvsignore | xargs -t rm -r
 
 # Run the autoprogs
 echo "Running ${ACLOCAL}..."
