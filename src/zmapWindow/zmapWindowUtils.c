@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 21 11:58 2005 (rnc)
+ * Last edited: Jul 22 14:47 2005 (rnc)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.16 2005-07-21 12:50:40 rnc Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.17 2005-07-25 12:53:02 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -716,13 +716,13 @@ void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
   return ;
 }
 
+
 /* moves a feature to the new coordinates */
 void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature, 
 			ZMapFeature modFeature, FooCanvasItem *item)
 {
   ZMapWindowSelectStruct select = {NULL} ;
   double top, bottom, offset;
-  int displacement;
   double x1, y1, x2, y2;
 
   if (FOO_IS_CANVAS_ITEM (item))
@@ -737,8 +737,6 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 	  zMapAssert(origFeature);
 	  
 	  foo_canvas_item_set(item->parent, "y", top, NULL);
-	  
-	  displacement = origFeature->x1 - modFeature->x1;
 	  
 	  if (modFeature->feature.transcript.exons != NULL
 	      && modFeature->feature.transcript.exons->len > (guint)0
@@ -872,12 +870,9 @@ void my_foo_canvas_item_i2w (FooCanvasItem *item, double *x, double *y)
  *                  Internal routines.
  */
 
-static void moveExonsIntrons(ZMapWindow window, 
-			     ZMapFeature origFeature,
-			     GArray *origArray, 
-			     GArray *modArray,
-			     int transcriptOrigin,
-			     gboolean isExon)
+static void moveExonsIntrons(ZMapWindow window, ZMapFeature origFeature,
+			     GArray *origArray, GArray *modArray,
+			     int transcriptOrigin, gboolean isExon)
 {
   FooCanvasItem *item = NULL, *intron, *intron_box;
   FooCanvasPoints *points ;
@@ -902,16 +897,26 @@ static void moveExonsIntrons(ZMapWindow window,
       bottom = (double)modSpan.x2 - transcriptOrigin;
 
       if (isExon)
-	foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
+	{
+	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
+	  
+	  box_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data");
+	  box_data->start = top + transcriptOrigin;
+	  box_data->end = bottom + transcriptOrigin;
+	}
       else
 	{
 	  itemFeatureType = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type"));
+
 	  if (itemFeatureType == ITEM_FEATURE_BOUNDING_BOX)
 	    {
 	      intron_box = item;
 	      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-	      box_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data");
+	      box_data = g_object_get_data(G_OBJECT(intron_box), "item_subfeature_data");
 	      intron = box_data->twin_item;
+	      
+	      box_data->start = top + transcriptOrigin;
+	      box_data->end = bottom + transcriptOrigin;
 	    }
 	  else
 	    {
@@ -919,6 +924,9 @@ static void moveExonsIntrons(ZMapWindow window,
 	      intron_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data");
 	      intron_box = intron_data->twin_item;
 	      foo_canvas_item_get_bounds(intron_box, &x1, &y1, &x2, &y2);
+	      
+	      intron_data->start = top + transcriptOrigin;
+	      intron_data->end = bottom + transcriptOrigin;
 	    }
 
 	  points = foo_canvas_points_new(ZMAP_WINDOW_INTRON_POINTS) ;
