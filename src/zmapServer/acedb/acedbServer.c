@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jul  7 12:16 2005 (edgrif)
+ * Last edited: Jul 25 10:07 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.35 2005-07-07 11:22:13 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.36 2005-07-27 12:22:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,8 +94,8 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str, char 
 gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data) ;
 int getFoundObj(char *text) ;
 
-void eachAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
-void eachBlock(gpointer data, gpointer user_data) ;
+static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
+static void eachBlock(gpointer data, gpointer user_data) ;
 
 
 
@@ -1499,7 +1499,7 @@ int getFoundObj(char *text)
 
 
 /* Process all the alignments in a context. */
-void eachAlignment(GQuark key_id, gpointer data, gpointer user_data)
+static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
   GetFeatures get_features = (GetFeatures)user_data ;
@@ -1511,7 +1511,7 @@ void eachAlignment(GQuark key_id, gpointer data, gpointer user_data)
 }
 
 
-void eachBlock(gpointer data, gpointer user_data)
+static void eachBlock(gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
   GetFeatures get_features = (GetFeatures)user_data ;
