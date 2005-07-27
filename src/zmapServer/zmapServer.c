@@ -26,13 +26,14 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Jun 24 12:57 2005 (edgrif)
+ * Last edited: Jul 26 18:10 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.23 2005-06-24 13:21:46 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.24 2005-07-27 12:23:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <strings.h>
+#include <ZMap/zmapUrl.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapServer_P.h>
 
@@ -49,7 +50,8 @@ gboolean zMapServerGlobalInit(struct url *url, void **server_global_data_out)
 {
   gboolean result = TRUE ;
   ZMapServerFuncs serverfuncs ;
-  int protocol = url->scheme ;
+  enum url_scheme protocol = url->scheme ;
+
   serverfuncs = g_new0(ZMapServerFuncsStruct, 1) ;	    /* n.b. crashes on failure. */
 
   /* Set up the server according to the protocol, this is all a bit hard coded but it
@@ -112,15 +114,17 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
   ZMapServerFuncs serverfuncs = (ZMapServerFuncs)global_data ;
   char *host = url->host;
   int port = url->port;
-  int protocol = url->scheme;
+  enum url_scheme protocol = url->scheme ;
+
   char *userid = url->user;
   char *passwd = url->passwd;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* we must have as a minumum the host name and a protocol, everything else is optional. */
-  zMapAssert(host && *host && protocol && *protocol) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  zMapAssert(server_out && global_data && url) ;
+
+  /* For some protocols we finesse the host as a filename or whatever... */
+  if (protocol == SCHEME_FILE)
+    host = url->path ;
 
   server = g_new0(ZMapServerStruct, 1) ;		    /* n.b. crashes on failure. */
   *server_out = server ;
