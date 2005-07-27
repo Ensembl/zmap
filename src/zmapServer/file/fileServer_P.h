@@ -26,28 +26,30 @@
  *              of the server code.
  *              
  * HISTORY:
- * Last edited: Nov  8 16:29 2004 (edgrif)
+ * Last edited: Jul 26 09:03 2005 (edgrif)
  * Created: Fri Sep 10 18:42:18 2004 (edgrif)
- * CVS info:   $Id: fileServer_P.h,v 1.3 2004-11-09 14:41:01 edgrif Exp $
+ * CVS info:   $Id: fileServer_P.h,v 1.4 2005-07-27 12:36:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef FILE_SERVER_P_H
 #define FILE_SERVER_P_H
 
+
+#define FILE_PROTOCOL_STR "GFF File"			    /* For error messages. */
+
+
+
+
 /* Holds all the state we need to access the file. */
 typedef struct _FileServerStruct
 {
   gchar *file_path ;
-
   GIOChannel* gff_file ;
-  GError *gff_file_err ;
 
+  gboolean error ;					    /* TRUE if any error occurred. */
   char *last_err_msg ;
 
-  char *sequence ;
-  int start, end ;
-
-  GData *types ;
+  ZMapFeatureContext req_context ;
 
 } FileServerStruct, *FileServer ;
 
