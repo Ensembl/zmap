@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Jul 17 12:58 2005 (edgrif)
+ * Last edited: Jul 27 13:12 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.18 2005-07-18 09:19:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.19 2005-07-27 12:19:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -168,6 +168,7 @@ ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature)
   GList *styles = feature->parent_set->parent_block->parent_alignment->parent_context->types ;
 
   style = zMapFindStyle(styles, feature->parent_set->style_id) ;
+  zMapAssert(style) ;
 
   return style ;
 }
@@ -179,6 +180,7 @@ ZMapFeatureTypeStyle zMapFeatureSetGetStyle(ZMapFeatureSet feature_set)
   GList *styles = feature_set->parent_block->parent_alignment->parent_context->types ;
 
   style = zMapFindStyle(styles, feature_set->style_id) ;
+  zMapAssert(style) ;
 
   return style ;
 }
@@ -189,13 +191,11 @@ ZMapFeatureTypeStyle zMapFeatureSetGetStyle(ZMapFeatureSet feature_set)
 /* Retrieve a style struct for the given style id. */
 ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id)
 {
-  ZMapFeatureTypeStyle style ;
+  ZMapFeatureTypeStyle style = NULL ;
   GList *list ;
 
-  list = g_list_find_custom(styles, GUINT_TO_POINTER(style_id), findStyle) ;
-  zMapAssert(list) ;
-
-  style = list->data ;
+  if ((list = g_list_find_custom(styles, GUINT_TO_POINTER(style_id), findStyle)))
+    style = list->data ;
 
   return style ;
 }
@@ -481,7 +481,9 @@ static void printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures
 {
   char *line ;
 
-  line = g_strdup_printf("Feature Context:\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n", 
+  line = g_strdup_printf("Feature Context:\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n", 
+			 g_quark_to_string(feature_context->unique_id),
+			 g_quark_to_string(feature_context->original_id),
 			 g_quark_to_string(feature_context->sequence_name),
 			 g_quark_to_string(feature_context->parent_name),
 			 feature_context->parent_span.x1,

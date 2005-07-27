@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jul  4 17:11 2005 (rds)
+ * Last edited: Jul 27 13:14 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.18 2005-07-04 17:00:42 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.19 2005-07-27 12:19:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -445,7 +445,8 @@ ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end, 
 
   if (sequence && *sequence)
     {
-      feature_context->sequence_name = g_quark_from_string(sequence) ;
+      feature_context->unique_id = feature_context->original_id
+	= feature_context->sequence_name = g_quark_from_string(sequence) ;
       feature_context->sequence_to_parent.c1 = start ;
       feature_context->sequence_to_parent.c2 = end ;
     }
@@ -575,6 +576,8 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 	  if (diff_context->feature_sets)
 	    {
 	      /* Fill in the sequence/mapping details. */
+	      diff_context->unique_id = current_context->unique_id ;
+	      diff_context->original_id = current_context->original_id ;
 	      diff_context->sequence_name = current_context->sequence_name ;
 	      diff_context->parent_name = current_context->parent_name ;
 	      diff_context->parent_span = current_context->parent_span ; /* n.b. struct copies. */
@@ -830,6 +833,8 @@ gboolean zMapFeatureBlockMerge(ZMapFeatureBlock *current_block_inout,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      /* Fill in the sequence/mapping details. */
+	      diff_context->unique_id = current_context->unique_id ;
+	      diff_context->original_id = current_context->original_id ;
 	      diff_block->sequence_name = current_block->sequence_name ;
 	      diff_block->parent_name = current_block->parent_name ;
 	      diff_block->parent_span = current_block->parent_span ; /* n.b. struct copies. */

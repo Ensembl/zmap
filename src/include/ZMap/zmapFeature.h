@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 17 12:53 2005 (edgrif)
+ * Last edited: Jul 27 12:59 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.35 2005-07-18 09:19:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.36 2005-07-27 12:19:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -144,14 +144,41 @@ typedef struct
 
 typedef struct ZMapFeatureAlignmentStruct_ *ZMapFeatureAlignment ;
 
+
+/* WARNING: READ THIS BEFORE CHANGING ANY FEATURE STRUCTS:
+ * 
+ * This is the generalised feature struct which can be used to process any feature struct.
+ * I'm not completely sure this is necessary at the moment but it may help with certain
+ * kinds of processing, e.g. in the hash searching code. It relies on these fields being
+ * common to all feature structs.
+ * 
+ * unique_id is used for the hash table that connects any feature struct to the canvas item
+ * that represents it.
+ * 
+ * original_id is used for displaying a human readable name for the struct, e.g. the feature
+ * name.
+ *  */
+typedef struct ZMapFeatureAnyStruct_
+{
+  GQuark unique_id ;					    /* Unique id of this feature. */
+  GQuark original_id ;					    /* Original id of this feature. */
+
+
+} ZMapFeatureAnyStruct, *ZMapFeatureAny ;
+
+
 /* Holds a set of ZMapFeatureSet's.
  * Structure would usually contain a complete set of data from a server for a particular span
  * of a sequence. */
 typedef struct ZMapFeatureContextStruct_
 {
+  GQuark unique_id ;					    /* Unique id of this feature. */
+  GQuark original_id ;					    /* Sequence name. */
+
   GQuark sequence_name ;				    /* The sequence to be displayed. */
 
-  GQuark parent_name ;					    /* Name of parent, not needed ? */
+  GQuark parent_name ;					    /* Name of parent sequence
+							       (== sequence_name if no parent). */
 
   int length ;						    /* total length of sequence. */
 
@@ -181,10 +208,10 @@ typedef struct ZMapFeatureContextStruct_
 
 typedef struct ZMapFeatureAlignmentStruct_
 {
-  ZMapFeatureContext parent_context ;			    /* Our parent context. */
-
   GQuark unique_id ;					    /* Unique id this alignment. */
   GQuark original_id ;					    /* Original id of this sequence. */
+
+  ZMapFeatureContext parent_context ;			    /* Our parent context. */
 
   GList *blocks ;					    /* A set of ZMapFeatureStruct. */
 
@@ -194,11 +221,11 @@ typedef struct ZMapFeatureAlignmentStruct_
 
 typedef struct ZMapFeatureBlockStruct_
 {
-  ZMapFeatureAlignment parent_alignment ;		    /* Our parent alignment. */
-
   GQuark unique_id ;					    /* Unique id for this block. */
   GQuark original_id ;					    /* Original id, probably not needed ? */
   
+  ZMapFeatureAlignment parent_alignment ;		    /* Our parent alignment. */
+
   ZMapAlignBlockStruct block_to_sequence ;		    /* Shows how these features map to the
 							       sequence, n.b. this feature set may only
 							       span part of the sequence. */
@@ -215,11 +242,11 @@ typedef struct ZMapFeatureBlockStruct_
  * the style here.... */
 typedef struct ZMapFeatureSetStruct_
 {
-  ZMapFeatureBlock parent_block ;			    /* Our parent block. */
-
   GQuark unique_id ;					    /* Unique id for feature set used by
 							     * ZMap. */
   GQuark original_id ;					    /* Original name, e.g. "Genewise predictions" */
+
+  ZMapFeatureBlock parent_block ;			    /* Our parent block. */
 
   GData *features ;					    /* A set of ZMapFeatureStruct. */
 
@@ -269,15 +296,15 @@ typedef struct
  *  */
 typedef struct ZMapFeatureStruct_ 
 {
+  GQuark unique_id ;					    /* Unique id for just this feature for
+							       use by ZMap. */
+  GQuark original_id ;					    /* Original name, e.g. "bA404F10.4.mRNA" */
+
   ZMapFeatureSet parent_set ;				    /* Our containing set. */
 
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */
-
-  GQuark unique_id ;					    /* Unique id for just this feature for
-							       use by ZMap. */
-  GQuark original_id ;					    /* Original name, e.g. "bA404F10.4.mRNA" */
 
   ZMapFeatureType type ;				    /* e.g. intron, homol etc. */
 
