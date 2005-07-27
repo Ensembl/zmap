@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 13 10:28 2005 (rds)
+ * Last edited: Jul 26 08:16 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.59 2005-07-14 15:25:18 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.60 2005-07-27 12:39:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1582,7 +1582,7 @@ static ZMapFeatureContext createContext(char *sequence, int start, int end, GLis
 
   context = zMapFeatureContextCreate(sequence, start, end, types) ;
 
-  /* Add the master/target alignment. */
+  /* Add the master alignment and block. */
   alignment = zMapFeatureAlignmentCreate(sequence, master) ; /* TRUE => master alignment. */
 
   zMapFeatureContextAddAlignment(context, alignment, master) ;
@@ -1594,6 +1594,7 @@ static ZMapFeatureContext createContext(char *sequence, int start, int end, GLis
   zMapFeatureAlignmentAddBlock(alignment, block) ;
 
 
+  /* Add other alignments if any were specified in a config file. */
   addAlignments(context) ;
 
 
@@ -1601,6 +1602,7 @@ static ZMapFeatureContext createContext(char *sequence, int start, int end, GLis
 }
 
 
+/* Add other alignments if any specified in a config file. */
 static void addAlignments(ZMapFeatureContext context)
 {
   ZMapConfigStanzaSet blocks_list = NULL ;
@@ -1616,8 +1618,6 @@ static void addAlignments(ZMapFeatureContext context)
   ref_seq = (char *)g_quark_to_string(context->sequence_name) ;
   start = context->sequence_to_parent.c1 ;
   end = context->sequence_to_parent.c2 ;
-
-
 
 
   config_file = zMapConfigDirGetFile() ;
@@ -1690,7 +1690,7 @@ static void addAlignments(ZMapFeatureContext context)
 
 	      /* Add the block for this set of data. */
 
-	      /* clamp coords... */
+	      /* clamp coords...SHOULD WE DO THIS, PERHAPS WE JUST REJECT THINGS THAT DON'T FIT ? */
 	      if ((diff = start - reference_start) > 0)
 		{
 		  reference_start += diff ;
