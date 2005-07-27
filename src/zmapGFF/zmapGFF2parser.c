@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul 14 09:44 2005 (rnc)
+ * Last edited: Jul 26 18:12 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.27 2005-07-14 09:55:58 rnc Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.28 2005-07-27 12:38:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,12 +40,13 @@
 #include <ZMap/zmapFeature.h>
 #include <zmapGFF_P.h>
 
+
+/* THIS FILE NEEDS WORK TO COPE WITH ALIGN/BLOCK/COORD INFO..... */
+
+
 /* HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
-void setBlock(GQuark key_id, gpointer data, gpointer user_data) ;
-void setSet(GQuark key_id, gpointer data, gpointer user_data) ;
-
-
-
+static void setBlock(GQuark key_id, gpointer data, gpointer user_data) ;
+static void setSet(GQuark key_id, gpointer data, gpointer user_data) ;
 /* END OF HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
 
 
@@ -95,6 +96,8 @@ ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only)
   parser->line_count = 0 ;
   parser->SO_compliant = FALSE ;
   parser->default_to_basic = FALSE ;
+  parser->clip_mode = GFF_CLIP_OVERLAP ;
+  parser->clip_start = parser->clip_end = 0 ;
 
   parser->done_header = FALSE ;
   parser->done_version = FALSE ;
@@ -123,13 +126,17 @@ ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only)
 
 
 
-
-/* This function expects a null-terminated C string that contains a complete GFF line
+/* Parses a single line of GFF data, should be called repeatedly with successive lines
+ * GFF data from a GFF source. This function expects to find first the GFF header and
+ * then the GFF data. (See zMapGFFParseHeader() if you want to parse out the header
+ * first.
+ * 
+ * This function expects a null-terminated C string that contains a complete GFF line
  * (comment or non-comment line), the function expects the caller to already have removed the
  * newline char from the end of the GFF line.
  * 
  * Returns FALSE if there is any error in the GFF header.
- * Returns FALSE if there is an error in the GFF body and  stop_on_error == TRUE.
+ * Returns FALSE if there is an error in the GFF body and stop_on_error == TRUE.
  *
  * Once an error has been returned the parser object cannot be used anymore and
  * zMapGFFDestroyParser() should be called to free it.
@@ -199,6 +206,106 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 }
 
 
+
+/* Parses a single line of GFF data, should be called repeatedly with successive lines
+ * GFF data from a GFF source. This function expects to find the GFF header, once all
+ * the required header lines have been found or a non-comment line is found it will stop.
+ * The zMapGFFParseLine() function can be used to parse the rest of the file.
+ * 
+ * This function expects a null-terminated C string that contains a complete GFF line
+ * (comment or non-comment line), the function expects the caller to already have removed the
+ * newline char from the end of the GFF line.
+ * 
+ * Returns FALSE if there is any error in the GFF header.
+ * Returns FALSE if there is an error in the GFF body and stop_on_error == TRUE.
+ *
+ * Once an error has been returned the parser object cannot be used anymore and
+ * zMapGFFDestroyParser() should be called to free it.
+ *
+ */
+
+/* ISSUE: need to decide on rules for comments, can they be embedded within other gff lines, are
+ * the header comments compulsory ? etc. etc. 
+ * 
+ * Current code assumes that the header block will be a contiguous set of header lines
+ * at the top of the file and that the first non-header line marks the beginning
+ * of the GFF data. If this is not true then its an error.
+ */ 
+gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line)
+{
+  gboolean result = FALSE ;
+
+
+  parser->line_count++ ;
+
+  /* Look for the header information. */
+  if (parser->state == ZMAPGFF_PARSE_HEADER)
+    {
+      if (!(result = parseHeaderLine(parser, line)))
+	{
+	  /* returns FALSE for two reasons: there was a parse error (note that we ignore
+	   * stop_on_error, the header _must_ be correct), or the header section has
+	   * finished - in this case we need to cancel the error and reparse the line. */
+	  if (parser->error)
+	    {
+	      result = FALSE ;
+	      parser->state = ZMAPGFF_PARSE_ERROR ;
+	    }
+	  else
+	    {
+	      result = TRUE ;
+
+	      /* If we found all the header parts move on to the body. */
+	      if (parser->done_header)
+		parser->state = ZMAPGFF_PARSE_BODY ;
+	    }
+	}
+    }
+
+  return result ;
+}
+
+
+
+
+/* Returns as much information as possible from the header comments of the gff file.
+ * Note that our current parsing code makes this an all or nothing piece of code:
+ * either the whole header is there or nothing is.... */
+ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser)
+{
+  ZMapGFFHeader header = NULL ;
+
+  if (parser->done_header)
+    {
+      header = g_new0(ZMapGFFHeaderStruct, 1) ;
+
+      header->gff_version = parser->gff_version ;
+
+      header->source_name  = g_strdup(parser->source_name) ;
+      header->source_version = g_strdup(parser->source_version) ;
+
+      header->sequence_name = g_strdup(parser->sequence_name) ;
+      header->features_start =  parser->features_start ;
+      header->features_end = parser->features_end ;
+    }      
+
+  return header ;
+}
+
+
+void zMapGFFFreeHeader(ZMapGFFHeader header)
+{
+  zMapAssert(header) ;
+
+  g_free(header->source_name) ;
+  g_free(header->source_version) ;
+  g_free(header->sequence_name) ;
+
+  g_free(header) ;
+
+  return ;
+}
+
 gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
@@ -233,7 +340,7 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 
 
 /* HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
-void setBlock(GQuark key_id, gpointer data, gpointer user_data)
+static void setBlock(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)user_data ;
@@ -245,7 +352,7 @@ void setBlock(GQuark key_id, gpointer data, gpointer user_data)
   return ;
 }
 
-void setSet(GQuark key_id, gpointer data, gpointer user_data)
+static void setSet(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
   ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data ;
@@ -279,6 +386,34 @@ void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
 
   return ;
 }
+
+
+/* Sets the clipping mode for handling features that are either partly or wholly outside
+ * the requested start/end for the target sequence. */
+void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode)
+{
+  if (parser->state != ZMAPGFF_PARSE_ERROR)
+    parser->clip_mode = clip_mode ;
+
+  return ;
+}
+
+
+/* Sets the start/end coords for clipping features. */
+void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end)
+{
+  zMapAssert(start > 0 && end > 0 && start <= end) ;
+
+  if (parser->state != ZMAPGFF_PARSE_ERROR)
+    {
+      parser->clip_start = start ;
+      parser->clip_end = end ;
+    }
+
+  return ;
+}
+
+
 
 
 /* If default_to_basic is TRUE the parser will create basic features for any unrecognised
@@ -488,6 +623,13 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 	      parser->features_start = start ;
 	      parser->features_end = end ;
 	      parser->done_sequence_region = TRUE ;
+
+	      /* If Clip start/end not set, they default to features start/end. */
+	      if (parser->clip_start == 0)
+		{
+		  parser->clip_start = parser->features_start ;
+		  parser->clip_end = parser->features_end ;
+		}
 	    }
      
 	}
@@ -643,9 +785,41 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
  	}
       else
 	{
-	  result = makeNewFeature(parser, sequence, source, type,
-				  start, end, score, strand, phase,
-				  attributes, gaps) ;
+	  gboolean include_feature = TRUE ;
+
+	  /* Clip start/end as specified in clip_mode. */
+	  if (parser->clip_mode != GFF_CLIP_NONE)
+	    {
+	      /* Anything outside always excluded. */
+	      if (parser->clip_mode == GFF_CLIP_ALL || parser->clip_mode == GFF_CLIP_OVERLAP)
+		{
+		  if (start > parser->clip_end || end < parser->clip_start)
+		    include_feature = FALSE ;
+		}
+
+	      /* Exclude overlaps for CLIP_ALL */
+	      if (include_feature && parser->clip_mode == GFF_CLIP_ALL)
+		{
+		  if (start < parser->clip_start || end > parser->clip_end)
+		    include_feature = FALSE ;
+		}
+
+	      /* Clip overlaps for CLIP_OVERLAP */
+	      if (include_feature && parser->clip_mode == GFF_CLIP_OVERLAP)
+		{
+		  if (start < parser->clip_start)
+		    start = parser->clip_start ;
+		  if (end > parser->clip_end)
+		    end = parser->clip_end ;
+		}
+	    }
+
+	  if (include_feature)
+	    {
+	      result = makeNewFeature(parser, sequence, source, type,
+				      start, end, score, strand, phase,
+				      attributes, gaps) ;
+	    }
 	}
     }
 
@@ -799,14 +973,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
     }
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* style not kept in feature any more.... */
-
-  /* we need to give it proper unique style name... */
-  style_id = zMapStyleCreateID(source) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
- 
   result = zmapFeatureAugmentData(feature, feature_name_id, feature_name, sequence,
 				  feature_type, start, end, score, strand,
 				  phase, homol_type, query_start, query_end, gaps) ;

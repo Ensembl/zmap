@@ -22,12 +22,12 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Internal types, functions etc. for the GFF parser,
+ *              currently this parser only does GFF v2.
  * HISTORY:
- * Last edited: Jun 24 09:46 2005 (edgrif)
+ * Last edited: Jul 26 13:05 2005 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.9 2005-06-24 13:16:44 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.10 2005-07-27 12:38:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -85,9 +85,7 @@ typedef struct ZMapGFFParserFeatureSetStruct_
 
 
 
-
-/* this struct will need to hold the buffers for the parsing, the hash tables for referencing
- * features etc. etc....... */
+/* The main parser struct, this represents an instance of a parser. */
 typedef struct ZMapGFFParserStruct_
 {
   ZMapGFFParseState state ;
@@ -105,6 +103,10 @@ typedef struct ZMapGFFParserStruct_
 							       feature types. */
   gboolean free_on_destroy ;				    /* TRUE => free all feature arrays
 							       when parser is destroyed. */
+  ZMapGFFClipMode clip_mode ;				    /* Decides how features that overlap
+							       or are outside the start/end are
+							       handled. */
+  int clip_start, clip_end ;				    /* Coords used for clipping. */
 
 
   /* Header data, need to find all this for parsing to be valid. */

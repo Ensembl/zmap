@@ -28,9 +28,9 @@
  *              of ZMapFeatureStruct's, one for each GFF source.
  *              
  * HISTORY:
- * Last edited: Jun 24 09:45 2005 (edgrif)
+ * Last edited: Jul 26 15:29 2005 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF.h,v 1.8 2005-06-24 13:16:44 edgrif Exp $
+ * CVS info:   $Id: zmapGFF.h,v 1.9 2005-07-27 12:38:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_H
@@ -39,34 +39,53 @@
 #include <glib.h>
 #include <ZMap/zmapFeature.h>
 
+
 /* An instance of a parser. */
 typedef struct ZMapGFFParserStruct_ *ZMapGFFParser ;
 
 
+/* Feature clip mode, selects how individual feature coords should be clipped in relation
+ * to the requested feature range (the gff file may contain features that are outside the
+ * requested range. */
+typedef enum
+  {
+    GFF_CLIP_NONE,					    /* Don't clip feature coords at all. */
+    GFF_CLIP_OVERLAP,					    /* Exclude features outside the range,
+							       clip anything that overlaps (default). */
+    GFF_CLIP_ALL					    /* Exclude features outside or
+							       overlapping. */
+  } ZMapGFFClipMode ;
+
+/* Struct holding GFF file header info. */
+typedef struct
+{
+  int gff_version ;
+
+  char *source_name ;
+  char *source_version ;
+
+  char *sequence_name ;
+  int features_start ;
+  int features_end ;
+} ZMapGFFHeaderStruct, *ZMapGFFHeader ;
 
 
 ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only) ;
-
+gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line) ;
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
-
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error) ;
-
 void zMapGFFSetParseOnly(ZMapGFFParser parser, gboolean parse_only) ;
-
 void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant) ;
-
+void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode) ;
+void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end) ;
+ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser) ;
+void zMapGFFFreeHeader(ZMapGFFHeader header) ;
 gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block) ;
-
 int zMapGFFGetVersion(ZMapGFFParser parser) ;
-
 int zMapGFFGetLineNumber(ZMapGFFParser parser) ;
-
 GError *zMapGFFGetError(ZMapGFFParser parser) ;
-
 gboolean zMapGFFTerminated(ZMapGFFParser parser) ;
-
 void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy) ;
-
 void zMapGFFDestroyParser(ZMapGFFParser parser) ;
 
 
