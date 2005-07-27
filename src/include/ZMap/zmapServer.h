@@ -26,9 +26,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Jun 24 09:23 2005 (edgrif)
+ * Last edited: Jul 25 07:55 2005 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.15 2005-06-24 13:21:46 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.16 2005-07-27 12:34:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -44,8 +44,9 @@ typedef struct _ZMapServerStruct *ZMapServer ;
 
 /* Possible responses to a server request. */
 typedef enum {ZMAP_SERVERRESPONSE_OK,
-	      ZMAP_SERVERRESPONSE_BADREQ, ZMAP_SERVERRESPONSE_REQFAIL,
-	      ZMAP_SERVERRESPONSE_TIMEDOUT, ZMAP_SERVERRESPONSE_SERVERDIED} ZMapServerResponseType ;
+	      ZMAP_SERVERRESPONSE_BADREQ, ZMAP_SERVERRESPONSE_UNSUPPORTED,
+	      ZMAP_SERVERRESPONSE_REQFAIL, ZMAP_SERVERRESPONSE_TIMEDOUT,
+	      ZMAP_SERVERRESPONSE_SERVERDIED} ZMapServerResponseType ;
 
 /* This routine must be called before any other server routines and must only be called once.
  * It is the callers responsibility to make sure this happens.
