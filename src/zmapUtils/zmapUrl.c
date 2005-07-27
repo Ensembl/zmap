@@ -1,4 +1,4 @@
-/*  Last edited: Jun 22 14:02 2005 (edgrif) */
+/*  Last edited: Jul 25 14:10 2005 (edgrif) */
 /* URL handling.
    Copyright (C) 1995, 1996, 1997, 2000, 2001, 2003, 2003
    Free Software Foundation, Inc.
@@ -874,11 +874,27 @@ url_parse (const char *url, int *error)
       host_e = p;
     }
 
+
+
+  /* ROY HERE IS THE CODE I THINK MAY NOT BE WORKING.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (host_b == host_e)
     {
       error_code = PE_EMPTY_HOST;
       goto error;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* My alternative version... */
+  if ((scheme != SCHEME_FILE) && host_b == host_e)
+    {
+      error_code = PE_EMPTY_HOST;
+      goto error;
+    }
+
+
+
+
 
   port = scheme_default_port (scheme);
   if (*p == ':')
