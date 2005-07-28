@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 20 12:12 2005 (rnc)
+ * Last edited: Jul 26 13:20 2005 (rnc)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.72 2005-07-21 12:51:17 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.73 2005-07-28 09:18:00 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -341,6 +341,14 @@ ZMapWindowClampType zmapWindowClampStartEnd(ZMapWindow window,
 
 void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 			ZMapFeature modFeature,  FooCanvasItem *item);
+
+void zMapWindowMoveSubFeatures(ZMapWindow window, 
+			       ZMapFeature originalFeature, 
+			       ZMapFeature modifiedFeature,
+			       GArray *origArray, GArray *modArray,
+			       gboolean isExon);
+
+void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item);
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;

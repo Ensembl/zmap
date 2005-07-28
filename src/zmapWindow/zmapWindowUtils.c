@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 22 14:47 2005 (rnc)
+ * Last edited: Jul 28 09:53 2005 (rnc)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.17 2005-07-25 12:53:02 rnc Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.18 2005-07-28 09:18:11 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -717,11 +717,10 @@ void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
 }
 
 
-/* moves a feature to the new coordinates */
+/* moves a feature to new coordinates */
 void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature, 
 			ZMapFeature modFeature, FooCanvasItem *item)
 {
-  ZMapWindowSelectStruct select = {NULL} ;
   double top, bottom, offset;
   double x1, y1, x2, y2;
 
@@ -737,50 +736,108 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 	  zMapAssert(origFeature);
 	  
 	  foo_canvas_item_set(item->parent, "y", top, NULL);
-	  
-	  if (modFeature->feature.transcript.exons != NULL
-	      && modFeature->feature.transcript.exons->len > (guint)0
-	      && origFeature->feature.transcript.exons != NULL
-	      && origFeature->feature.transcript.exons->len > (guint)0)
-	    {
-	      moveExonsIntrons(window, origFeature,
-			       origFeature->feature.transcript.exons, 
-			       modFeature->feature.transcript.exons,
-			       top, TRUE);
-	    }
-	  if (modFeature->feature.transcript.introns != NULL
-	      && modFeature->feature.transcript.introns->len > (guint)0
-	      && origFeature->feature.transcript.introns != NULL
-	      && modFeature->feature.transcript.introns->len > (guint)0)
-	    {
-	      moveExonsIntrons(window, origFeature,
-			       origFeature->feature.transcript.introns, 
-			       modFeature->feature.transcript.introns,
-			       top, FALSE);
-	    } 
 	}
       else
-	foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
-      
-      
-      /* redo the info panel with new coords if any */
-      select.text = g_strdup_printf("%s   %s   %d   %d   %s   %s", 
-				    (char *)g_quark_to_string(modFeature->original_id),
-				    zmapFeatureLookUpEnum(modFeature->strand, STRAND_ENUM),
-				    modFeature->x1,
-				    modFeature->x2,
-				    zmapFeatureLookUpEnum(modFeature->type, TYPE_ENUM),
-				    zMapStyleGetName(zMapFeatureGetStyle(modFeature))) ;
-      select.item = item ;
-  
-      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-	    
-      g_free(select.text) ;
+	{
+	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
+	}
+
+      zMapWindowUpdateInfoPanel(window, modFeature, item);      
     }
   return;
 }
 
 
+
+
+void zMapWindowMoveSubFeatures(ZMapWindow window, 
+			       ZMapFeature originalFeature, 
+			       ZMapFeature modifiedFeature,
+			       GArray *origArray, GArray *modArray,
+			       gboolean isExon)
+{
+  FooCanvasItem *item = NULL, *intron, *intron_box;
+  FooCanvasPoints *points ;
+  ZMapSpanStruct origSpan, modSpan;
+  ZMapWindowItemFeatureType itemFeatureType;
+  int i, offset;
+  double top, bottom, left, right, middle;
+  double x1, y1, x2, y2, transcriptOrigin, transcriptBottom;
+  ZMapWindowItemFeature box_data, intron_data ;
+
+
+  offset = modifiedFeature->parent_set->parent_block->block_to_sequence.q1;
+  transcriptOrigin = modifiedFeature->x1;
+  transcriptBottom = modifiedFeature->x2;
+  zmapWindowSeq2CanOffset(&transcriptOrigin, &transcriptBottom, offset);
+  
+  for (i = 0; i < modArray->len; i++)
+    {
+      /* get the FooCanvasItem using original feature */
+      origSpan = g_array_index(origArray, ZMapSpanStruct, i);
+      
+      item = zmapWindowFToIFindItemChild(window->context_to_item,
+					 originalFeature, origSpan.x1, origSpan.x2);
+      
+      /* coords are relative to start of transcript. */
+      modSpan  = g_array_index(modArray, ZMapSpanStruct, i);
+      top = (double)modSpan.x1 - transcriptOrigin;
+      bottom = (double)modSpan.x2 - transcriptOrigin;
+
+      if (isExon)
+	{
+	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
+	  
+	  box_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data");
+	  box_data->start = top + transcriptOrigin;
+	  box_data->end = bottom + transcriptOrigin;
+	}
+      else
+	{
+	  itemFeatureType = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type"));
+
+	  if (itemFeatureType == ITEM_FEATURE_BOUNDING_BOX)
+	    {
+	      intron_box = item;
+	      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
+	      box_data = g_object_get_data(G_OBJECT(intron_box), "item_subfeature_data");
+	      intron = box_data->twin_item;
+	      
+	      box_data->start = top + transcriptOrigin;
+	      box_data->end = bottom + transcriptOrigin;
+	    }
+	  else
+	    {
+	      intron = item;
+	      intron_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data");
+	      intron_box = intron_data->twin_item;
+	      foo_canvas_item_get_bounds(intron_box, &x1, &y1, &x2, &y2);
+	      
+	      intron_data->start = top + transcriptOrigin;
+	      intron_data->end = bottom + transcriptOrigin;
+	    }
+
+	  points = foo_canvas_points_new(ZMAP_WINDOW_INTRON_POINTS) ;
+
+	  left = (x2 - x1)/2;
+	  right = x2;
+	  middle = top + (bottom - top + 1)/2;
+
+	  points->coords[0] = left;
+	  points->coords[1] = top;
+	  points->coords[2] = right;
+	  points->coords[3] = middle;
+	  points->coords[4] = left;
+	  points->coords[5] = bottom;
+
+	  foo_canvas_item_set(intron_box, "y1", top, "y2", bottom, NULL);
+	  foo_canvas_item_set(intron, "points", points, NULL);
+
+	  foo_canvas_points_free(points);
+	}
+    }
+  return;
+}
 
 
 
@@ -869,88 +926,6 @@ void my_foo_canvas_item_i2w (FooCanvasItem *item, double *x, double *y)
 /* 
  *                  Internal routines.
  */
-
-static void moveExonsIntrons(ZMapWindow window, ZMapFeature origFeature,
-			     GArray *origArray, GArray *modArray,
-			     int transcriptOrigin, gboolean isExon)
-{
-  FooCanvasItem *item = NULL, *intron, *intron_box;
-  FooCanvasPoints *points ;
-  ZMapSpanStruct origSpan, modSpan;
-  ZMapWindowItemFeatureType itemFeatureType;
-  int i;
-  double top, bottom, left, right, middle;
-  double x1, y1, x2, y2;
-  ZMapWindowItemFeature box_data, intron_data ;
-
-  for (i = 0; i < modArray->len; i++)
-    {
-      /* get the FooCanvasItem using original feature */
-      origSpan = g_array_index(origArray, ZMapSpanStruct, i);
-      
-      item = zmapWindowFToIFindItemChild(window->context_to_item,
-					 origFeature, origSpan.x1, origSpan.x2);
-      
-      /* coords are relative to start of transcript. */
-      modSpan  = g_array_index(modArray, ZMapSpanStruct, i);
-      top = (double)modSpan.x1 - transcriptOrigin;
-      bottom = (double)modSpan.x2 - transcriptOrigin;
-
-      if (isExon)
-	{
-	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
-	  
-	  box_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data");
-	  box_data->start = top + transcriptOrigin;
-	  box_data->end = bottom + transcriptOrigin;
-	}
-      else
-	{
-	  itemFeatureType = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type"));
-
-	  if (itemFeatureType == ITEM_FEATURE_BOUNDING_BOX)
-	    {
-	      intron_box = item;
-	      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-	      box_data = g_object_get_data(G_OBJECT(intron_box), "item_subfeature_data");
-	      intron = box_data->twin_item;
-	      
-	      box_data->start = top + transcriptOrigin;
-	      box_data->end = bottom + transcriptOrigin;
-	    }
-	  else
-	    {
-	      intron = item;
-	      intron_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data");
-	      intron_box = intron_data->twin_item;
-	      foo_canvas_item_get_bounds(intron_box, &x1, &y1, &x2, &y2);
-	      
-	      intron_data->start = top + transcriptOrigin;
-	      intron_data->end = bottom + transcriptOrigin;
-	    }
-
-	  points = foo_canvas_points_new(ZMAP_WINDOW_INTRON_POINTS) ;
-
-	  left = (x2 - x1)/2;
-	  right = x2;
-	  middle = top + (bottom - top + 1)/2;
-
-	  points->coords[0] = left;
-	  points->coords[1] = top;
-	  points->coords[2] = right;
-	  points->coords[3] = middle;
-	  points->coords[4] = left;
-	  points->coords[5] = bottom;
-
-	  foo_canvas_item_set(intron_box, "y1", top, "y2", bottom, NULL);
-	  foo_canvas_item_set(intron, "points", points, NULL);
-
-	  foo_canvas_points_free(points);
-	}
-    }
-  return;
-}
-
 
 
 /* THIS FUNCTION HAS TOTALLY THE WRONG NAME, IT __SETS__ THE SCROLL REGION.... */
