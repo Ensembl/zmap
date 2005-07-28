@@ -26,9 +26,9 @@
  *              1
  * Exported functions: See zmapFeature.h
  * HISTORY:
- * Last edited: Jul 27 13:12 2005 (edgrif)
+ * Last edited: Jul 28 09:37 2005 (rnc)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.19 2005-07-27 12:19:53 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.20 2005-07-28 08:38:22 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -382,6 +382,38 @@ char *zmapFeatureLookUpEnum(int id, int enumType)
 }
 
 
+gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand)
+{
+  gboolean status = TRUE;
+
+  if (g_ascii_strcasecmp(string, "forward") == 0)
+    *strand = ZMAPSTRAND_FORWARD;
+  else if (g_ascii_strcasecmp(string, "reverse") == 0)
+    *strand = ZMAPSTRAND_REVERSE;
+  else if (g_ascii_strcasecmp(string, "none") == 0)
+    *strand = ZMAPSTRAND_NONE;
+  else
+    status = FALSE;
+
+  return status;
+}
+
+
+
+gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase)
+{
+  gboolean status = TRUE;
+
+  *phase = ZMAPPHASE_NONE;
+
+  if (zMapStr2Int(value, phase) != TRUE || *phase < 0 || *phase > 3)
+	status = FALSE;
+
+  return status;
+}
+
+
+
 /* For blocks within alignments other than the master alignment, it is not possible to simply
  * use the x1,x2 positions in the feature struct as these are the positions in the original
  * feature. We need to know the coordinates in the master alignment. */
@@ -405,6 +437,7 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
 
   return ;
 }
+
 
 
 

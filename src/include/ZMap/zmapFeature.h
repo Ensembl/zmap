@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 27 12:59 2005 (edgrif)
+ * Last edited: Jul 28 09:36 2005 (rnc)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.36 2005-07-27 12:19:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.37 2005-07-28 08:36:38 rnc Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -455,6 +455,9 @@ GList *zMapFeatureTypeGetFromFile(char *types_file) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
 
-ZMapFeature zMapFeatureCopy(ZMapFeature feature);
+ZMapFeature zMapFeatureCopy  (ZMapFeature feature);
+
+gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);
+gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase);
 
 #endif /* ZMAP_FEATURE_H */
