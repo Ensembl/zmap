@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 18 12:26 2005 (rds)
+ * Last edited: Jul 28 09:49 2005 (rnc)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.92 2005-07-18 11:28:23 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.93 2005-07-28 09:15:41 rnc Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -798,6 +798,29 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
     
   return ;
 }
+
+
+
+void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item)
+{
+  ZMapWindowSelectStruct select = {NULL} ;
+
+  select.text = g_strdup_printf("%s   %s   %d   %d   %s   %s", 
+				(char *)g_quark_to_string(feature->original_id),
+				zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
+				feature->x1,
+				feature->x2,
+				zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
+				zMapStyleGetName(zMapFeatureGetStyle(feature))) ;
+  select.item = item ;
+  
+  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+  
+  g_free(select.text) ;
+
+  return;
+}
+
 
 
 /*
