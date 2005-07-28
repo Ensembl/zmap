@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 19 09:46 2005 (edgrif)
+ * Last edited: Jul 26 11:03 2005 (rnc)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.78 2005-07-19 09:35:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.79 2005-07-28 09:16:59 rnc Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1385,19 +1385,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	    double x = 0.0, y = 0.0 ;
 	    
 	    /* Pass information about the object clicked on back to the application. */
-	    select.text = g_strdup_printf("%s   %s   %d   %d   %s   %s", 
-					  (char *)g_quark_to_string(feature->original_id),
-					  zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
-					  feature->x1,
-					  feature->x2,
-					  zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
-					  zMapStyleGetName(zMapFeatureGetStyle(feature))) ;
-	    
-	    select.item = real_item ;
-	    
-	    (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-	    
-	    g_free(select.text) ;
+	    zMapWindowUpdateInfoPanel(window, feature, item);      
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    /* I'm not sure what to do here, actually the callback above ends up highlighting
