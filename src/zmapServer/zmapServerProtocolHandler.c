@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Jun 24 13:00 2005 (edgrif)
+ * Last edited: Aug  5 13:33 2005 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.6 2005-06-24 13:21:47 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.7 2005-08-09 11:12:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -263,21 +263,35 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     }
 
 
-  /* If there are requested types OR the context has no types, then get them. */
+  /* If there is no feature set list or no styles then we need build the feature
+   * set list and/or get the styles. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
-      && types->req_types || !context->context->types)
+      && (!types->req_featuresets || !context->context->styles))
     {
-      if (zMapServerGetTypes(server, types->req_types, &(types->types_out)) != ZMAP_SERVERRESPONSE_OK)
+      /* No styles ?  Then get them from the server. */
+      if (!context->context->styles)
 	{
-	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
-	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	  if (zMapServerGetTypes(server, types->req_featuresets, &(types->types_out))
+	      != ZMAP_SERVERRESPONSE_OK)
+	    {
+	      *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	    }
+	  else
+	    {
+	      /* Got the types so record them in the server context. */
+	      context->context->styles = types->types_out ;
+	    }
 	}
-      else
+
+      /* No featureset list ? Then build it from the styles. */
+      if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
+	  && !types->req_featuresets)
 	{
-	  /* Got the types so record them in the server context. */
-	  context->context->types = types->types_out ;
+	  context->context->feature_set_names = zMapStylesGetNames(context->context->styles) ;
 	}
     }
+
 
   /* Create a sequence context from the sequence and start/end data. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
