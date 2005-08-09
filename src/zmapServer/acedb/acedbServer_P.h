@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul  7 11:36 2005 (edgrif)
+ * Last edited: Aug  5 18:04 2005 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.7 2005-07-07 11:22:13 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.8 2005-08-09 11:00:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -58,7 +58,6 @@ typedef struct _AcedbServerStruct
 
   gboolean user_specified_styles ;			    /* Did the user specify a set of
 							       styles ? */
-  GList *types ;
   char *method_str ;
   char *find_method_str ;
 
