@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 28 09:36 2005 (rnc)
+ * Last edited: Aug  9 11:51 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.37 2005-07-28 08:36:38 rnc Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.38 2005-08-09 10:51:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -142,7 +142,11 @@ typedef struct
  * QUITE A NUMBER OF ACCESS FUNCTIONS.... */
 
 
+
+/* We need some forward declarations for pointers we include in some structs. */
 typedef struct ZMapFeatureAlignmentStruct_ *ZMapFeatureAlignment ;
+
+typedef struct ZMapFeatureTypeStyleStruct_ *ZMapFeatureTypeStyle ;
 
 
 /* WARNING: READ THIS BEFORE CHANGING ANY FEATURE STRUCTS:
@@ -162,14 +166,16 @@ typedef struct ZMapFeatureAnyStruct_
 {
   GQuark unique_id ;					    /* Unique id of this feature. */
   GQuark original_id ;					    /* Original id of this feature. */
-
-
 } ZMapFeatureAnyStruct, *ZMapFeatureAny ;
 
 
-/* Holds a set of ZMapFeatureSet's.
- * Structure would usually contain a complete set of data from a server for a particular span
- * of a sequence. */
+
+/* Holds a set of data that is the complete "view" of the requested sequence.
+ * 
+ * This includes all the alignments which in the case of the original "fmap" like view
+ * will be a single alignment containing a single block.
+ * 
+ */
 typedef struct ZMapFeatureContextStruct_
 {
   GQuark unique_id ;					    /* Unique id of this feature. */
@@ -193,11 +199,19 @@ typedef struct ZMapFeatureContextStruct_
   ZMapMapBlockStruct sequence_to_parent ;		    /* Shows how this sequence maps to its
 							       ultimate parent. */
 
+
+  GList *feature_set_names ;				    /* Global list of _names_ of all requested
+							       feature sets for the context,
+							       _only_ these sets are loaded into
+							       the context. */
+
+  GList *styles ;					    /* Global list of all styles, some of
+							       these styles may not be used if not
+							       required for the list given by
+							       feature_set_names. */
+
   ZMapFeatureAlignment master_align ;			    /* The target/master alignment out of
 							       the below set. */
-
-  GList *types ;					    /* Global list of types, _only_ these
-							       types are loaded into the context. */
 
   GData *alignments ;					    /* All the alignements for this zmap
 							       as a set of ZMapFeatureAlignment. */
@@ -237,9 +251,10 @@ typedef struct ZMapFeatureBlockStruct_
 
 
 
-/* Holds a set of ZMapFeature's, note that the id for the set is the same as the style name for
- * the set of features. There is duplication here and probably we should hold a pointer to the
- * the style here.... */
+/* Holds a set of ZMapFeature's, note that the id for the set is by default the same name
+ * as the style for all features in the set. BUT it may not be, the set may consist of
+ * features with many types/styles. The set id is completely independent of the style name.
+ */
 typedef struct ZMapFeatureSetStruct_
 {
   GQuark unique_id ;					    /* Unique id for feature set used by
@@ -249,9 +264,6 @@ typedef struct ZMapFeatureSetStruct_
   ZMapFeatureBlock parent_block ;			    /* Our parent block. */
 
   GData *features ;					    /* A set of ZMapFeatureStruct. */
-
-  GQuark style_id ;					    /* Style for these features. */
-
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
 
@@ -302,6 +314,8 @@ typedef struct ZMapFeatureStruct_
 
   ZMapFeatureSet parent_set ;				    /* Our containing set. */
 
+  ZMapFeatureTypeStyle style ;				    /* style defining how this feature is
+							       drawn. */
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */
@@ -369,7 +383,7 @@ typedef struct ZMapFeatureTypeStyleStruct_
   gboolean  frame_specific ;
   gboolean  show_rev_strand ;
 
-} ZMapFeatureTypeStyleStruct, *ZMapFeatureTypeStyle ;
+} ZMapFeatureTypeStyleStruct ;
 
 
 
@@ -398,7 +412,8 @@ ZMapFeature zMapFeatureFindFeatureInSet(ZMapFeatureSet feature_set, GQuark featu
 GData *zMapFeatureFindSetInContext(ZMapFeatureContext feature_context, GQuark set_id) ;
 
 
-ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end, GList *types) ;
+ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
+					    GList *styles, GList *feature_set_names) ;
 gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext new_context,
 				 ZMapFeatureContext *diff_context_out) ;
@@ -419,21 +434,33 @@ void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;
 
 ZMapFeature zmapFeatureCreateEmpty(void) ;
 gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
-				char *sequence, ZMapFeatureType feature_type,
-				int start, int end, double score, ZMapStrand strand,
-				ZMapPhase phase,
+				char *sequence,
+				ZMapFeatureType feature_type,  ZMapFeatureTypeStyle style,
+				int start, int end, double score, ZMapStrand strand, ZMapPhase phase,
 				ZMapHomolType homol_type_out, int start_out, int end_out,
 				GArray *gaps) ;
-GQuark zMapFeatureGetStyleQuark(ZMapFeature feature) ;
+
+GList *zMapStylesGetNames(GList *styles) ;
+
+
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature) ;
+
+ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature) ;
+
+
 void zmapFeatureDestroy(ZMapFeature feature) ;
 
+
+
+
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
+
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GData *features) ;
 void zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
-ZMapFeatureTypeStyle zMapFeatureSetGetStyle(ZMapFeatureSet feature_set) ;
-void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 
+char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
+
+void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 					   char *outline, char *foreground, char *background,

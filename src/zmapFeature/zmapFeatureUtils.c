@@ -22,13 +22,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: Manipulates features.
- *              1
- * Exported functions: See zmapFeature.h
+ * Description: Utility routines for handling features/sets/blocks etc.
+ *              
+ * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 28 09:37 2005 (rnc)
+ * Last edited: Aug  9 11:55 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.20 2005-07-28 08:38:22 rnc Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.21 2005-08-09 10:55:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,6 +54,7 @@ static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 static gboolean printLine(GIOChannel *channel, gchar *line) ;
 static gint findStyle(gconstpointer list_data, gconstpointer user_data) ;
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
+static void addTypeQuark(gpointer data, gpointer user_data) ;
 
 
 /* This function creates a unique id for a feature. This is essential if we are to use the
@@ -151,40 +152,35 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
 }
 
 
-GQuark zMapFeatureGetStyleQuark(ZMapFeature feature)
+
+ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature)
 {
-  GQuark style_quark ;
+  ZMapFeatureSet feature_set ;
 
-  style_quark = feature->parent_set->style_id ;
+  feature_set = feature->parent_set ;
 
-  return style_quark ;
+  return feature_set ;
 }
-
 
 
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature)
 {
   ZMapFeatureTypeStyle style ;
-  GList *styles = feature->parent_set->parent_block->parent_alignment->parent_context->types ;
 
-  style = zMapFindStyle(styles, feature->parent_set->style_id) ;
-  zMapAssert(style) ;
+  style = feature->style ;
 
   return style ;
 }
 
 
-ZMapFeatureTypeStyle zMapFeatureSetGetStyle(ZMapFeatureSet feature_set)
+char *zMapFeatureSetGetName(ZMapFeatureSet feature_set)
 {
-  ZMapFeatureTypeStyle style ;
-  GList *styles = feature_set->parent_block->parent_alignment->parent_context->types ;
+  char *set_name ;
 
-  style = zMapFindStyle(styles, feature_set->style_id) ;
-  zMapAssert(style) ;
+  set_name = (char *)g_quark_to_string(feature_set->original_id) ;
 
-  return style ;
+  return set_name ;
 }
-
 
 
 
@@ -218,7 +214,32 @@ gboolean zMapStyleNameExists(GList *style_name_list, char *style_name)
 
 
 
+/* Retrieve a Glist of the names of all the styles... */
+GList *zMapStylesGetNames(GList *styles)
+{
+  GList *quark_list = NULL ;
 
+  zMapAssert(styles) ;
+
+  g_list_foreach(styles, addTypeQuark, (void *)&quark_list) ;
+
+  return quark_list ;
+}
+
+/* GFunc() callback function, appends style names to a string, its called for lists
+ * of either style name GQuarks or lists of style structs. */
+static void addTypeQuark(gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
+  GList **quarks_out = (GList **)user_data ;
+  GList *quark_list = *quarks_out ;
+
+  quark_list = g_list_append(quark_list, GUINT_TO_POINTER(style->unique_id)) ;
+
+  *quarks_out = quark_list ;
+
+  return ;
+}
 
 
 
@@ -402,14 +423,14 @@ gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand)
 
 gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase)
 {
-  gboolean status = TRUE;
+  gboolean status = TRUE ;
 
-  *phase = ZMAPPHASE_NONE;
+  *phase = ZMAPPHASE_NONE ;
 
   if (zMapStr2Int(value, phase) != TRUE || *phase < 0 || *phase > 3)
-	status = FALSE;
+    status = FALSE ;
 
-  return status;
+  return status ;
 }
 
 
@@ -603,7 +624,7 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
   line = g_strdup_printf("\tFeature Set:\t%s\t%s\n",
 			 g_quark_to_string(feature_set->unique_id),
-			 (char *)g_quark_to_string(feature_set->style_id)) ;
+			 (char *)g_quark_to_string(feature_set->original_id)) ;
 
   /* Only proceed if there's no problem printing the line */
   if ((dump_features->status = printLine(dump_features->channel, line)))

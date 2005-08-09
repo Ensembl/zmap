@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jul 27 13:14 2005 (edgrif)
+ * Last edited: Aug  5 16:47 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.19 2005-07-27 12:19:53 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.20 2005-08-09 10:52:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -131,7 +131,8 @@ ZMapFeature zmapFeatureCreateEmpty(void)
  * are different for different features.
  *  */
 gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
-				char *sequence, ZMapFeatureType feature_type,
+				char *sequence,
+				ZMapFeatureType feature_type, ZMapFeatureTypeStyle style,
 				int start, int end, double score, ZMapStrand strand,
 				ZMapPhase phase,
 				ZMapHomolType homol_type, int query_start, int query_end,
@@ -147,6 +148,7 @@ gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char
       feature->unique_id = g_quark_from_string(feature_name_id) ;
       feature->original_id = g_quark_from_string(name) ;
       feature->type = feature_type ;
+      feature->style = style ;
       feature->x1 = start ;
       feature->x2 = end ;
       feature->strand = strand ;
@@ -437,7 +439,8 @@ void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data)
 }
 
 
-ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end, GList *types)
+ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
+					    GList *types, GList *set_names)
 {
   ZMapFeatureContext feature_context ;
 
@@ -451,7 +454,8 @@ ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end, 
       feature_context->sequence_to_parent.c2 = end ;
     }
 
-  feature_context->types = types ;
+  feature_context->styles = types ;
+  feature_context->feature_set_names = set_names ;
 
   g_datalist_init(&(feature_context->alignments)) ;
 
