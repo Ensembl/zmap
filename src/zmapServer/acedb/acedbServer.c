@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jul 25 10:07 2005 (edgrif)
+ * Last edited: Aug  9 11:58 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.36 2005-07-27 12:22:04 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.37 2005-08-09 10:59:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,7 +89,7 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
 static gboolean checkServerVersion(AcedbServer server) ;
 static gboolean findSequence(AcedbServer server) ;
 static gboolean setQuietMode(AcedbServer server) ;
-static gboolean parseTypes(AcedbServer server, GList *requested_types) ;
+static gboolean parseTypes(AcedbServer server, GList *requested_types, GList **types_out) ;
 ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str, char **end_pos) ;
 gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data) ;
 int getFoundObj(char *text) ;
@@ -214,10 +214,13 @@ static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, 
   else
     server->user_specified_styles = FALSE ;
 
-  if (parseTypes(server, requested_types))
+
+  if (parseTypes(server, requested_types, types_out))
     {
       result = ZMAP_SERVERRESPONSE_OK ;
-      *types_out = server->types ;
+
+      /* Construct a string for getting the requested methods.... */
+
     }
   else
     {
@@ -505,22 +508,22 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
   void *reply = NULL ;
   int reply_len = 0 ;
   char *methods = "" ;
+  GList *styles ;
 
+
+  /* Get any styles stored in the context. */
+  styles = feature_block->parent_alignment->parent_context->styles ;
 
 
   /* Did the user specify the styles completely via a styles file ? If so we will
    * need to construct the method string from them. */
   if (server->user_specified_styles == TRUE)
     {
-      GList *styles ;
-
-      styles = feature_block->parent_alignment->parent_context->types ;
       if (!server->method_str && styles)
 	{
 	  server->method_str = getMethodString(styles, FALSE, FALSE) ;
 	}
     }
-
 
   if (server->method_str)
     methods = server->method_str ;
@@ -612,7 +615,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 	  gboolean free_on_destroy ;
       
 
-	  parser = zMapGFFCreateParser(server->types, FALSE) ;
+	  parser = zMapGFFCreateParser(styles, FALSE) ;
 
 
 	  /* We probably won't have to deal with part lines here acedb should only return whole lines
@@ -1201,20 +1204,19 @@ static gboolean setQuietMode(AcedbServer server)
  * 
  *
  *  */
-static gboolean parseTypes(AcedbServer server, GList *requested_types)
+static gboolean parseTypes(AcedbServer server, GList *requested_types, GList **types_out)
 {
   gboolean result = FALSE ;
   char *command ;
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
-  int num_methods ;
+  GList *types = NULL ;
 
-  /* Get the requested styles/methods into the current keyset on the server. */
-  if (server->find_method_str)
-    command = server->find_method_str ;
-  else
-    command = "query find method" ;
+  /* Get all the methods and then filter them if there are requested types. */
+
+  /* Get all the methods into the current keyset on the server. */
+  command = "query find method" ;
   acedb_request =  g_strdup_printf("%s", command) ;
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
 						&reply, &reply_len)) == ACECONN_OK)
@@ -1228,6 +1230,7 @@ static gboolean parseTypes(AcedbServer server, GList *requested_types)
        */
       char *scan_text = (char *)reply ;
       char *next_line = NULL ;
+      int num_methods ;
 
       while ((next_line = strtok(scan_text, "\n")))
 	{
@@ -1271,51 +1274,24 @@ static gboolean parseTypes(AcedbServer server, GList *requested_types)
 	      
 	      if ((style = parseMethod(requested_types, next_line, &curr_pos)))
 		{
-		  server->types = g_list_append(server->types, style) ;
+		  types = g_list_append(types, style) ;
 		  num_types++ ;
 		}
 	    }
 
-	  /* Found no valid types.... */
 	  if (!num_types)
 	    result = FALSE ;
 	  else
-	    result = TRUE ;
+	    {
+	      result = TRUE ;
+	      *types_out = types ;
+	    }
 
 	  g_free(reply) ;
 	  reply = NULL ;
 	}
     }
 
-
-  /* Sadly acedb automatically sorts the current (all) keysets into alphabetical order so if
-   * the user supplied a list of methods we need to resort them to get them in the order
-   * the user wanted. */
-  if (result && requested_types)
-    {
-      server->types = g_list_sort_with_data(server->types, resortStyles, (gpointer)requested_types) ;
-    }
-
-  return result ;
-}
-
-
-/* GCompareDataFunc () used to resort our list of styles to match users original sorting. */
-gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data)
-{
-  gint result = 0 ;
-  ZMapFeatureTypeStyle style_a = (ZMapFeatureTypeStyle)a, style_b = (ZMapFeatureTypeStyle)b ;
-  GList *style_list = (GList *)user_data ;
-  gint pos_a, pos_b ;
-  
-  pos_a = g_list_index(style_list, GUINT_TO_POINTER(style_a->unique_id)) ;
-  pos_b = g_list_index(style_list, GUINT_TO_POINTER(style_b->unique_id)) ;
-  zMapAssert(pos_a >= 0 && pos_b >= 0 && pos_a != pos_b) ;
-
-  if (pos_a < pos_b)
-    result = -1 ;
-  else
-    result = 1 ;
 
   return result ;
 }
@@ -1333,8 +1309,11 @@ gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data)
  * 
  * This parses the method using it to create a style struct which it returns.
  * The function also returns a pointer to the blank line that ends the current
- * method. If the method name is not in the list of methods in requested_types
- * then NULL is returned.
+ * method. 
+ *
+ * If the method name is not in the list of methods in requested_types
+ * then NULL is returned. NOTE that this is not just dependent on comparing method
+ * name to the requested list we have to look in column group as well.
  * 
  */
 ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, char **end_pos)
@@ -1344,7 +1323,7 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
   char *scan_text = NULL ;
   char *next_line = method_str ;
   char *name = NULL, *colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL,
-    *gff_type = NULL ;
+    *gff_type = NULL, *column_group = NULL ;
   double width = 0 ;
   gboolean strand_specific = FALSE, frame_specific = FALSE, show_up_strand = FALSE ;
   double min_mag = 0 ;
@@ -1366,14 +1345,6 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
       if (g_ascii_strcasecmp(tag, "Method") == 0)
 	{
 	  name = g_strdup(strtok_r(NULL, ": \"", &line_pos)) ; /* Skip ': "' */
-
-	  /* If a list of required methods was supplied, make sure that this is one of them,
-	   * see comments for parseTypes() function. */
-	  if (requested_types && !zMapStyleNameExists(requested_types, name))
-	    {
-	      status = FALSE ;
-	      break ;
-	    }
 	}
       else if (g_ascii_strcasecmp(tag, "Colour") == 0)
 	{
@@ -1386,7 +1357,6 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
       else if (g_ascii_strcasecmp(tag, "Width") == 0)
 	{
 	  char *value ;
-	  char *end_ptr = NULL ;
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
@@ -1414,7 +1384,6 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
       else if (g_ascii_strcasecmp(tag, "Min_mag") == 0)
 	{
 	  char *value ;
-	  char *end_ptr = NULL ;
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
@@ -1425,16 +1394,39 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	      break ;
 	    }
 	}
+       else if (g_ascii_strcasecmp(tag, "Column_group") == 0)
+	{
+	  /* Format for this tag:   Column_group "eds_column" "wublastx_fly" */
+
+	  column_group = g_strdup(strtok_r(NULL, ": \"", &line_pos)) ; /* Skip ': "' */
+	}
     }
   while (**end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
 
-
+  
+  /* If we failed while processing a method we won't have reached the end of the current
+   * method paragraph so we need to skip to the end so the next method can be processed. */
   if (!status)
     {
-      /* If we failed skip to end of paragraph. */
       while (**end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
     }
-  else
+
+
+  /* If a list of required methods was supplied, make sure that this is one of them,
+   * column_group takes precedence, otherwise we default to the actual method name. */
+  if (status)
+    {
+      if (requested_types 
+	  && ((column_group && !zMapStyleNameExists(requested_types, column_group))
+	      || !zMapStyleNameExists(requested_types, name)))
+	{
+	  status = FALSE ;
+	}
+    }
+
+
+  /* Set some final method stuff and create the ZMap style. */
+  if (status)
     {
       /* In acedb methods the colour is interpreted differently according to the type of the
        * feature which we have to intuit here from the GFF type. */
@@ -1442,7 +1434,6 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	{
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
 	  /* this doesn't work because it messes up the rev. video.... */
 	  if (gff_type && (g_ascii_strcasecmp(gff_type, "\"similarity\"") == 0
 			   || g_ascii_strcasecmp(gff_type, "\"repeat\"")
@@ -1455,10 +1446,12 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	  background = colour ;
 	}
 
+      /* NOTE that style is created with the method name, NOT the column_group, column
+       * names are independent of method names, they may or may not be the same. */
       style = zMapFeatureTypeCreate(name, 
 				    outline, foreground, background,
 				    width, min_mag) ;
-
+      
       zMapStyleSetStrandAttrs(style, strand_specific, frame_specific, show_up_strand) ;
     }
 
@@ -1468,10 +1461,33 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
     g_free(name) ;
   if (colour)
     g_free(colour) ;
-
+  if (column_group)
+    g_free(column_group) ;
 
   return style ;
 }
+
+
+/* GCompareDataFunc () used to resort our list of styles to match users original sorting. */
+gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+  gint result = 0 ;
+  ZMapFeatureTypeStyle style_a = (ZMapFeatureTypeStyle)a, style_b = (ZMapFeatureTypeStyle)b ;
+  GList *style_list = (GList *)user_data ;
+  gint pos_a, pos_b ;
+  
+  pos_a = g_list_index(style_list, GUINT_TO_POINTER(style_a->unique_id)) ;
+  pos_b = g_list_index(style_list, GUINT_TO_POINTER(style_b->unique_id)) ;
+  zMapAssert(pos_a >= 0 && pos_b >= 0 && pos_a != pos_b) ;
+
+  if (pos_a < pos_b)
+    result = -1 ;
+  else
+    result = 1 ;
+
+  return result ;
+}
+
 
 
 /* Parses the string returned by an acedb "find" command, if the command found objects
@@ -1515,6 +1531,7 @@ static void eachBlock(gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
   GetFeatures get_features = (GetFeatures)user_data ;
+
 
   if (get_features->result == ZMAP_SERVERRESPONSE_OK)
     {
