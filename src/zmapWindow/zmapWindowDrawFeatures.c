@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 26 11:03 2005 (rnc)
+ * Last edited: Aug  9 12:09 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.79 2005-07-28 09:16:59 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.80 2005-08-09 11:10:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,7 +78,9 @@ typedef struct _ZMapCanvasDataStruct
   ZMapFeatureAlignment curr_alignment ;
   ZMapFeatureBlock curr_block ;
   ZMapFeatureSet curr_set ;
-  ZMapFeatureTypeStyle curr_style ;
+
+  GQuark curr_set_name ;
+
   GQuark curr_forward_col_id ;
   GQuark curr_reverse_col_id ;
 
@@ -122,7 +124,8 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 static void positionColumn(gpointer data, gpointer user_data) ;
 static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
 				    ZMapWindow window,
-				    ZMapFeatureTypeStyle style, ZMapStrand strand,
+				    GQuark feature_set_id,
+				    ZMapStrand strand,
 				    double start, double top, double bot, GdkColor *colour) ;
 static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
@@ -239,13 +242,16 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
   window->alignment_start = x2 + COLUMN_SPACING ;
 
-  canvas_data.curr_x_offset = x2 + COLUMN_SPACING ;
+
 
   /* 
    *     Draw all the features, so much in so few lines...sigh...
    */
+  canvas_data.curr_x_offset = x2 + COLUMN_SPACING ;
   canvas_data.full_context = full_context ;
   drawZMap(&canvas_data, diff_context) ;
+
+
 
   /* There may be a focus item if this routine is called as a result of splitting a window
    * or adding more features, make sure we scroll to the same point as we were
@@ -278,7 +284,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
   zmapWindowLongItemCrop(window) ;
+
 
   /* Expand the scroll region to include everything, note the hard-coded zero start, this is
    * because the actual visible window may not change when the scrolled region changes if its
@@ -454,9 +462,6 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   top = block->block_to_sequence.t1 ;
   bottom = block->block_to_sequence.t2 ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowExtent2Zero(&top, &bottom) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   zmapWindowSeq2CanExtZero(&top, &bottom) ;
 
 
@@ -502,7 +507,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
 
   /* Add _all_ the types cols for the block whether or not they have any features. */
-  g_list_foreach(canvas_data->full_context->types, createSetColumn, canvas_data) ;
+  g_list_foreach(canvas_data->full_context->feature_set_names, createSetColumn, canvas_data) ;
 
 
   /* Now draw all features within each column. */
@@ -510,11 +515,16 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
 
 
+  /* At this point we could hide all cols with no features, this would be reasonable where
+   * the user had not given a feature set list..... */
+
+
+
   /* THIS SHOULD BE WRITTEN AS A GENERAL FUNCTION TO POSITION STUFF, IN FACT WE WILL NEED
    *  A FUNCTION THAT REPOSITIONS EVERYTHING....... */
   /* Now we must position all the columns as some columns will have been bumped. */
   canvas_data->curr_forward_offset = canvas_data->curr_reverse_offset = 0.0 ;
-  g_list_foreach(canvas_data->full_context->types, positionColumn, canvas_data) ;
+  g_list_foreach(canvas_data->full_context->feature_set_names, positionColumn, canvas_data) ;
 
 
 
@@ -548,7 +558,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
  * columns may end up not having any features at all. */
 static void createSetColumn(gpointer data, gpointer user_data)
 {
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
+  GQuark feature_set_id = GPOINTER_TO_UINT(data) ;
   ZMapCanvasData canvas_data  = (ZMapCanvasData)user_data ;
   ZMapWindow window = canvas_data->window ;
   ZMapFeatureBlock block = canvas_data->curr_block ;
@@ -572,12 +582,6 @@ static void createSetColumn(gpointer data, gpointer user_data)
     }
 
 
-  /* Each column is known by its type/style name. */
-  type_quark = style->unique_id ;
-
-  /* Cache the style. */
-  canvas_data->curr_style = style ;
-
   /* We need the background column object to span the entire bottom of the alignment block. */
   top = canvas_data->curr_block->block_to_sequence.t1 ;
   bottom = canvas_data->curr_block->block_to_sequence.t2 ;
@@ -586,7 +590,8 @@ static void createSetColumn(gpointer data, gpointer user_data)
 
   canvas_data->curr_forward_col = createColumn(FOO_CANVAS_GROUP(canvas_data->curr_forward_group),
 					       window,
-					       style, ZMAPSTRAND_FORWARD,
+					       feature_set_id,
+					       ZMAPSTRAND_FORWARD,
 					       canvas_data->curr_forward_offset,
 					       top, bottom,
 					       forward_colour) ;
@@ -600,14 +605,12 @@ static void createSetColumn(gpointer data, gpointer user_data)
    * have feature sets. */
 
 
-
-  /* We need a special hash here for a forward group.... */
-  canvas_data->curr_forward_col_id = zmapWindowFToIMakeSetID(type_quark, ZMAPSTRAND_FORWARD) ;
+  canvas_data->curr_forward_col_id = zmapWindowFToIMakeSetID(feature_set_id, ZMAPSTRAND_FORWARD) ;
 
   status = zmapWindowFToIAddSet(window->context_to_item,
 				canvas_data->curr_alignment->unique_id,
 				canvas_data->curr_block->unique_id,
-				type_quark,
+				feature_set_id,
 				ZMAPSTRAND_FORWARD,
 				canvas_data->curr_forward_col) ;
   zMapAssert(status) ;
@@ -618,17 +621,23 @@ static void createSetColumn(gpointer data, gpointer user_data)
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(canvas_data->curr_forward_group), &x1, &y1, &x2, &y2) ;
   canvas_data->curr_forward_offset = x2 + COLUMN_SPACING ;
 
+
+  /* We are going to make all cols and then eventually hide some.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (canvas_data->curr_style->show_rev_strand)
     {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       canvas_data->curr_reverse_col = createColumn(FOO_CANVAS_GROUP(canvas_data->curr_reverse_group),
 						   window,
-						   style, ZMAPSTRAND_REVERSE,
+						   feature_set_id,
+						   ZMAPSTRAND_REVERSE,
 						   canvas_data->curr_reverse_offset,
 						   top, bottom,
 						   reverse_colour) ;
       g_object_set_data(G_OBJECT(canvas_data->curr_reverse_col), "item_feature_type",
 			GINT_TO_POINTER(ITEM_SET)) ;
-      g_object_set_data(G_OBJECT(canvas_data->curr_forward_col), "item_feature_strand",
+      g_object_set_data(G_OBJECT(canvas_data->curr_reverse_col), "item_feature_strand",
 			GINT_TO_POINTER(ZMAPSTRAND_REVERSE)) ;
 
       /* We can't set the "item_feature_data" as we don't have the feature set at this point.
@@ -637,12 +646,11 @@ static void createSetColumn(gpointer data, gpointer user_data)
        * have feature sets. */
 
 
-      /* We need a special hash here for a reverse group.... */
-      canvas_data->curr_reverse_col_id = zmapWindowFToIMakeSetID(type_quark, ZMAPSTRAND_REVERSE) ;
+      canvas_data->curr_reverse_col_id = zmapWindowFToIMakeSetID(feature_set_id, ZMAPSTRAND_REVERSE) ;
       status = zmapWindowFToIAddSet(window->context_to_item,
 				    canvas_data->curr_alignment->unique_id,
 				    canvas_data->curr_block->unique_id,
-				    type_quark,
+				    feature_set_id,
 				    ZMAPSTRAND_REVERSE,
 				    canvas_data->curr_reverse_col) ;
       zMapAssert(status) ;
@@ -652,7 +660,11 @@ static void createSetColumn(gpointer data, gpointer user_data)
       foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(canvas_data->curr_reverse_group),
 				 &x1, &y1, &x2, &y2) ;
       canvas_data->curr_reverse_offset = x2 + COLUMN_SPACING ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -662,7 +674,8 @@ static void createSetColumn(gpointer data, gpointer user_data)
 /* Create an individual column group, this will have the feature items added to it. */
 static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
 				    ZMapWindow window,
-				    ZMapFeatureTypeStyle style, ZMapStrand strand,
+				    GQuark feature_set_name,
+				    ZMapStrand strand,
 				    double start, double top, double bot,
 				    GdkColor *colour)
 {
@@ -692,15 +705,27 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
    * will only be called if someone has clicked on an item in the group. The item is drawn
    * first and in white to match the canvas background to make an 'invisible' box. */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   left = 1 ;
   right = style->width ;
   zmapWindowExt2Zero(&left, &right) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   boundingBox = foo_canvas_item_new(group,
 				    foo_canvas_rect_get_type(),
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 				    "x1", left,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 				    "y1", top,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 				    "x2", right,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 				    "y2", bot,
 				    "fill_color_gdk", colour,
 				    NULL) ;
@@ -719,12 +744,10 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
 
   g_object_set_data(G_OBJECT(boundingBox), "item_feature_type",
 		    GINT_TO_POINTER(ITEM_FEATURE_BOUNDING_BOX)) ;
-
   g_object_set_data(G_OBJECT(boundingBox), "item_feature_strand",
 		    GINT_TO_POINTER(strand)) ;
   g_object_set_data(G_OBJECT(boundingBox), "item_feature_style",
-		    (gpointer)style) ;
-
+		    GINT_TO_POINTER(feature_set_name)) ;
 
   g_signal_connect(GTK_OBJECT(boundingBox), "event",
 		   GTK_SIGNAL_FUNC(columnBoundingBoxEventCB), (gpointer)window) ;
@@ -743,7 +766,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
  * know their size until they've been drawn. */
 static void positionColumn(gpointer data, gpointer user_data)
 {
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
+  GQuark feature_set_id = GPOINTER_TO_UINT(data) ;
   ZMapCanvasData canvas_data  = (ZMapCanvasData)user_data ;
   ZMapWindow window = canvas_data->window ;
   double x1, y1, x2, y2 ;
@@ -752,13 +775,10 @@ static void positionColumn(gpointer data, gpointer user_data)
   FooCanvasItem *bounding_box ;
 
   /* Get the forward column group. */
-
-  id = zmapWindowFToIMakeSetID(style->unique_id, ZMAPSTRAND_FORWARD) ;
-
   forward_col = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item,
 							    canvas_data->curr_alignment->unique_id,
 							    canvas_data->curr_block->unique_id,
-							    style->unique_id,
+							    feature_set_id,
 							    ZMAPSTRAND_FORWARD,
 							    0)) ;
   zMapAssert(forward_col) ;
@@ -784,15 +804,17 @@ static void positionColumn(gpointer data, gpointer user_data)
 		      NULL) ;
 
   /* Repeat the same for the reverse strand column if there is one displayed. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (style->show_rev_strand)
     {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      id = zmapWindowFToIMakeSetID(style->unique_id, ZMAPSTRAND_REVERSE) ;
 
       reverse_col = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item,
 								canvas_data->curr_alignment->unique_id,
 								canvas_data->curr_block->unique_id,
-								style->unique_id,
+								feature_set_id,
 								ZMAPSTRAND_REVERSE,
 								0)) ;
       zMapAssert(reverse_col) ;
@@ -812,7 +834,11 @@ static void positionColumn(gpointer data, gpointer user_data)
       foo_canvas_item_set(bounding_box,
 			  "x2", x2,
 			  NULL) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -857,14 +883,6 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   zMapAssert(type_quark == key_id) ;			    /* sanity check. */
 
 
-  /* Get hold of the style for this feature set. */
-  types = canvas_data->curr_alignment->parent_context->types ;
-
-
-  canvas_data->curr_style = zMapFindStyle(types, type_quark) ;
-  zMapAssert(canvas_data->curr_style) ;
-
-
   /* Get hold of the current column and set up canvas_data to do the right thing,
    * remember that there must always be a forward column but that there might
    * not be a reverse column ! */
@@ -877,10 +895,25 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   g_object_set_data(G_OBJECT(canvas_data->curr_forward_col), "item_feature_data", feature_set) ;
 
 
+
   bounding_box = getBoundingBoxChild(canvas_data->curr_forward_col) ;
   zMapAssert(bounding_box) ;
-
   g_object_set_data(G_OBJECT(bounding_box), "item_feature_data", feature_set) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Hack for now...this is not the answer....we need some default behaviour...for when there is
+   * nothing in the column..... */
+  foo_canvas_item_get_bounds(bounding_box, &x1, &y1, &x2, &y2) ;
+  if (x2 == 0)
+    foo_canvas_item_set(bounding_box,
+			"x2", 10,
+			NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+    
 
 
 
@@ -920,6 +953,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ; 
+  ZMapFeatureTypeStyle style = feature->style ;
   ZMapCanvasData canvas_data  = (ZMapCanvasDataStruct*)user_data ;
   ZMapWindow window = canvas_data->window ;
   int i ;
@@ -933,7 +967,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 
 
   /* Users will often not want to see what is on the reverse strand. */
-  if (feature->strand == ZMAPSTRAND_REVERSE && canvas_data->curr_style->show_rev_strand == FALSE)
+  if (feature->strand == ZMAPSTRAND_REVERSE && style->show_rev_strand == FALSE)
     return ;
 
   /* Set colours... */
@@ -976,7 +1010,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
   /* NOTE THAT ONCE WE SUPPORT HOMOLOGIES MORE FULLY WE WILL WANT SEPARATE BOXES
    * FOR BLOCKS WITHIN A SINGLE ALIGNMENT, this will mean a change to "item_feature_type"
    * in line with how its done for transcripts. */
-  if (feature->type == ZMAPFEATURE_HOMOL && canvas_data->curr_style->bump)
+  if (feature->type == ZMAPFEATURE_HOMOL && style->bump)
     {
       double bump ;
 
@@ -987,7 +1021,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	    
 
       start_x = bump ;
-      end_x = bump + canvas_data->curr_style->width ;
+      end_x = bump + style->width ;
 
       if (feature->strand == ZMAPSTRAND_FORWARD)
 	canvas_data->bump_for += 2.0 ;
@@ -998,7 +1032,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
   else
     {
       start_x = 0.0 ;
-      end_x = canvas_data->curr_style->width ;
+      end_x = style->width ;
     }
 
 
@@ -1011,8 +1045,8 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	top_feature_item = drawSimpleFeature(column_group, feature,
 					     feature_offset,
 					     start_x, feature->x1, end_x, feature->x2,
-					     &canvas_data->curr_style->outline,
-					     &canvas_data->curr_style->background,
+					     &style->outline,
+					     &style->background,
 					     window) ;
 	break ;
       }
@@ -1021,8 +1055,8 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	top_feature_item = drawTranscriptFeature(column_group, feature,
 						 feature_offset,
 						 start_x, feature->x1, end_x, feature->x2,
-						 &canvas_data->curr_style->outline,
-						 &canvas_data->curr_style->background,
+						 &style->outline,
+						 &style->background,
 						 background,
 						 window) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1558,19 +1592,8 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 {
   gboolean event_handled = FALSE ;
   ZMapWindow window = (ZMapWindow)data ;
-  ZMapFeatureSet feature_set = NULL ;
-  ZMapFeatureTypeStyle style = NULL ;
-  GQuark column_id = 0 ;
 
 
-  /* If a column is empty it will not have a feature set but it will have a style from which we
-   * can display the column id. */
-  feature_set = (ZMapFeatureSet)g_object_get_data(G_OBJECT(item), "item_feature_data") ;
-  style = (ZMapFeatureTypeStyle)g_object_get_data(G_OBJECT(item), "item_feature_style") ;
-  zMapAssert(feature_set || style) ;			    /* MUST have one or the other. */
-
-  if (!feature_set)
-    column_id = style->original_id ;
 
 
   switch (event->type)
@@ -1578,6 +1601,14 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
     case GDK_BUTTON_PRESS:
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
+	ZMapFeatureSet feature_set = NULL ;
+	GQuark feature_set_id = 0 ;
+
+	/* If a column is empty it will not have a feature set but it will have a style from which we
+	 * can display the column id. */
+	feature_set = (ZMapFeatureSet)g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+	feature_set_id = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_style")) ;
+	zMapAssert(feature_set || feature_set_id) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	printf("in COLUMN group event handler - CLICK\n") ;
@@ -1594,7 +1625,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	      if (feature_set)
 		select.text = (char *)g_quark_to_string(feature_set->original_id) ;
 	      else
-		select.text = (char *)g_quark_to_string(column_id) ;
+		select.text = (char *)g_quark_to_string(feature_set_id) ;
 
 	      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
