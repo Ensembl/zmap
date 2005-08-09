@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 17 13:10 2005 (edgrif)
+ * Last edited: Aug  2 15:28 2005 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.33 2005-07-18 09:21:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.34 2005-08-09 11:11:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,6 +92,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
   GtkTreeSelection *select;
   ListCol listCol ;
   ZMapFeature feature ;
+  ZMapFeatureSet feature_set ;
   double x1, y1, x2, y2;
   GData *feature_sets = NULL ;
   GtkTreeIter *iter ;
@@ -110,17 +111,12 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 
   if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
     {
-      ZMapFeatureSet feature_set ;
-
       feature_set = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
 
       feature_sets = feature_set->features ;
 
       listCol->strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
 							  "item_feature_strand")) ;
-
-
-      window_title = zMapStyleGetName(zMapFeatureSetGetStyle(feature_set)) ;
     }
   else
     {
@@ -143,10 +139,10 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
        * so we load the right set of features */
       listCol->strand = feature->strand ;
 
-      window_title = zMapStyleGetName(zMapFeatureGetStyle(feature)) ;
+      feature_set = zMapFeatureGetSet(feature) ;
     }
 
-
+  window_title = zMapFeatureSetGetName(feature_set) ;
 
 
   listCol->list = gtk_tree_store_new(N_COLUMNS,
