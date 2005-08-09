@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul 26 18:12 2005 (edgrif)
+ * Last edited: Aug  9 11:37 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.28 2005-07-27 12:38:52 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.29 2005-08-09 11:15:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,12 +54,13 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line) ;
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line) ;
 
 static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *source,
-			       ZMapFeatureType feature_type,
+			       ZMapFeatureType feature_type, ZMapFeatureTypeStyle curr_style,
 			       int start, int end, double score, ZMapStrand strand,
 			       ZMapPhase phase, char *attributes, GArray *gaps) ;
 static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
+static GQuark getColumnGroup(char *attributes) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
 static gboolean formatType(gboolean SO_compliant, gboolean default_to_basic,
@@ -306,6 +307,8 @@ void zMapGFFFreeHeader(ZMapGFFHeader header)
   return ;
 }
 
+
+/* Return the set of features read from a file for a block. */
 gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
@@ -688,11 +691,16 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %1000[^#] %1000c" ; 
   char *format_str_gaps = "%50s%50s%50s%d%d%50s%50s%50s %n" ; 
   int fields, charsRead, attsLen ;
-  char *attsPos, *gapsPos;
-  GArray *gaps = NULL;
+  char *attsPos, *gapsPos ;
+  GArray *gaps = NULL ;
+  ZMapFeatureTypeStyle curr_style = NULL ;
 
 
+  /* this is not really a good test as Gaps could occur anywhere and may be preceded by a tab
+   * and not a space...better to parse the line once, look for gaps in the attributes and
+   * then parse the attributes, I don't understand why it wasn't done like this.... */
   gapsPos = strstr(line, " Gaps ");
+
   if (gapsPos == NULL)
     {
       fields = sscanf(line, format_str,
@@ -719,7 +727,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
     }
 
   if (result == TRUE 
-      && (fields  < GFF_MANDATORY_FIELDS
+      && (fields < GFF_MANDATORY_FIELDS
 	  || (g_ascii_strcasecmp(source, ".") == 0)
 	  || (g_ascii_strcasecmp(feature_type, ".") == 0)))
     {
@@ -770,8 +778,9 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 	  source_id = zMapStyleCreateID(source) ;
 
-	  if (parser->sources && !(zMapFindStyle(parser->sources, source_id)))
-	    err_text = g_strdup_printf("features with this source were not requested: %s",
+	  if (parser->sources && !(curr_style = zMapFindStyle(parser->sources, source_id)))
+	    err_text = g_strdup_printf("this feature has source \"%s\", features with this source "
+				       "were not requested.",
 				       source) ;
 	}
 
@@ -816,7 +825,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 	  if (include_feature)
 	    {
-	      result = makeNewFeature(parser, sequence, source, type,
+	      result = makeNewFeature(parser, sequence, source, type, curr_style,
 				      start, end, score, strand, phase,
 				      attributes, gaps) ;
 	    }
@@ -828,46 +837,8 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 
 
-/* This reads any gaps which are present on the gff line.
- * They are preceded by a Gaps tag, and are presented as
- * space-delimited groups of 4, consecutive groups being
- * comma-delimited. gapsPos is wherever we are in the gff
- * and is set to NULL when strstr can't find another comma.
- * fields must be 4 for a gap so either way we drop out
- * of the loop at the end. */
-static gboolean loadGaps(char *gapsPos, GArray *gaps)
-{
-  ZMapAlignBlockStruct gap;
-  char *gaps_format_str = "%d%d%d%d," ; 
-  int fields, i;
-  gboolean status = TRUE, valid = TRUE;
-
-  gapsPos += 7;  /* skip over Gaps tag */
-
-  while (status == TRUE && valid == TRUE)
-    {
-      fields = sscanf(gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2);
-      if (fields == 4)
-	{
-	  gaps = g_array_append_val(gaps, gap);
-	  if ((gapsPos = strstr(gapsPos, ",")) != NULL)
-	    gapsPos++;
-	  else
-	    status = FALSE;    /* no more commas means we're at the end */
-	}
-      else
-	valid = FALSE;  /* anything other than 4 is not a gap */
-    }
-
-  return valid;
-}
-
-
-
 static void printSource(GQuark key_id, gpointer data, gpointer user_data)
 {
-
-
   printf("source id: %d, name: %s\n", key_id, g_quark_to_string(key_id)) ;
 
   return ;
@@ -877,7 +848,7 @@ static void printSource(GQuark key_id, gpointer data, gpointer user_data)
 
 
 static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *source,
-			       ZMapFeatureType feature_type,
+			       ZMapFeatureType feature_type, ZMapFeatureTypeStyle curr_style,
 			       int start, int end, double score, ZMapStrand strand,
 			       ZMapPhase phase, char *attributes, GArray *gaps)
 {
@@ -885,11 +856,22 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   char *feature_name_id = NULL, *feature_name = NULL ;
   ZMapFeature feature = NULL ;
   ZMapGFFParserFeatureSet feature_set = NULL ; 
+  char *feature_set_name = NULL ;
   gboolean feature_has_name ;
   GQuark style_id ;
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0 ;
+  GQuark column_id = 0 ;
+
+  feature_set_name = source ;
+
+  /* Look for a zmap specific attribute field which specifies a column group independently of
+   * the required "source" (aka method) field. */
+  if ((column_id = getColumnGroup(attributes)))
+    {
+      feature_set_name = g_quark_to_string(column_id) ;
+    }
 
 
   /* We require additional information from the attributes for some types. */
@@ -906,11 +888,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
 
-
-  /* Check if the "source" for this feature is already known, if it is then check if there
+  /* Check if the feature_set_name for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
   if (!parser->parse_only &&
-      (feature_set = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(parser->feature_sets), source)))
+      (feature_set = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(parser->feature_sets),
+								  feature_set_name)))
     {
       feature = (ZMapFeature)g_datalist_get_data(&(feature_set->multiline_features), feature_name_id) ;
     }
@@ -931,19 +913,20 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
     }
   else if (!feature)
     {
-      /* If we haven't got a feature then create one, then add the feature to its source if that exists,
-       * otherwise we have to create a list for the source and then add that to the list of sources
-       *...ugh.  */
+      /* If we haven't got a feature then create one, then add the feature to its feature_set_name
+       * if that exists, otherwise we have to create a list for the feature_set_name and then
+       * add that to the list of sources...ugh.  */
 
       /* If we don't have this feature_set yet, then make one. */
       if (!feature_set)
 	{
 	  feature_set = g_new0(ZMapGFFParserFeatureSetStruct, 1) ;
 
-	  g_datalist_set_data_full(&(parser->feature_sets), source, feature_set, destroyFeatureArray) ;
+	  g_datalist_set_data_full(&(parser->feature_sets),
+				   feature_set_name, feature_set, destroyFeatureArray) ;
 	  
-	  feature_set->original_id = g_quark_from_string(source) ;
-	  feature_set->unique_id = zMapStyleCreateID(source) ;
+	  feature_set->original_id = g_quark_from_string(feature_set_name) ;
+	  feature_set->unique_id = zMapStyleCreateID(feature_set_name) ;
 	  feature_set->multiline_features = NULL ;
 	  g_datalist_init(&(feature_set->multiline_features)) ;
 
@@ -974,8 +957,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
 
   result = zmapFeatureAugmentData(feature, feature_name_id, feature_name, sequence,
-				  feature_type, start, end, score, strand,
-				  phase, homol_type, query_start, query_end, gaps) ;
+				  feature_type, curr_style,
+				  start, end, score, strand, phase,
+				  homol_type, query_start, query_end, gaps) ;
 
   g_free(feature_name) ;
   g_free(feature_name_id) ;
@@ -988,6 +972,44 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
     }
 
   return result ;
+}
+
+
+
+
+/* This reads any gaps which are present on the gff line.
+ * They are preceded by a Gaps tag, and are presented as
+ * space-delimited groups of 4, consecutive groups being
+ * comma-delimited. gapsPos is wherever we are in the gff
+ * and is set to NULL when strstr can't find another comma.
+ * fields must be 4 for a gap so either way we drop out
+ * of the loop at the end. */
+static gboolean loadGaps(char *gapsPos, GArray *gaps)
+{
+  gboolean valid = TRUE ;
+  ZMapAlignBlockStruct gap;
+  char *gaps_format_str = "%d%d%d%d," ; 
+  int fields, i ;
+  gboolean status = TRUE ;
+
+  gapsPos += 7;  /* skip over Gaps tag */
+
+  while (status == TRUE && valid == TRUE)
+    {
+      fields = sscanf(gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2);
+      if (fields == 4)
+	{
+	  gaps = g_array_append_val(gaps, gap);
+	  if ((gapsPos = strstr(gapsPos, ",")) != NULL)
+	    gapsPos++;
+	  else
+	    status = FALSE;    /* no more commas means we're at the end */
+	}
+      else
+	valid = FALSE;  /* anything other than 4 is not a gap */
+    }
+
+  return valid ;
 }
 
 
@@ -1052,19 +1074,25 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
     }
   else if (feature_type == ZMAPFEATURE_HOMOL)
     {
-      /* In acedb output at least, homologies all have the same format. */
-      int attr_fields ;
-      char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
-      char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+      /* This needs amalgamating with the gethomols routine..... */
+      char *tag_pos ;
 
-      attr_fields = sscanf(attributes, attr_format_str, &name[0]) ;
-
-      if (attr_fields == 1)
+      if ((tag_pos = strstr(attributes, "Target")))
 	{
-	  has_name = FALSE ;
-	  *feature_name = g_strdup(name) ;
-	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-						   start, end, query_start, query_end) ;
+	  /* In acedb output at least, homologies all have the same format. */
+	  int attr_fields ;
+	  char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
+	  char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+	  attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
+
+	  if (attr_fields == 1)
+	    {
+	      has_name = FALSE ;
+	      *feature_name = g_strdup(name) ;
+	      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						       start, end, query_start, query_end) ;
+	    }
 	}
     }
   else
@@ -1089,6 +1117,35 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 }
 
 
+/* Format of column group attribute section is:
+ * 
+ *          Column_group "<column name>" ;
+ * 
+ * Format string extracts  column name as a quark.
+ * 
+ *  */
+static GQuark getColumnGroup(char *attributes)
+{
+  GQuark column_id = NULL ;
+  char *tag_pos ;
+
+  if ((tag_pos = strstr(attributes, "Column_group")))
+    {
+      int attr_fields ;
+      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s[;]" ;
+      char column_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+      if ((attr_fields = sscanf(tag_pos, attr_format_str, &column_field[0])) == 1)
+	{
+	  column_id = g_quark_from_string(&column_field[0]) ;
+	}
+    }
+
+  return column_id ;
+}
+
+
+
 /* 
  * 
  * Format of similarity/homol attribute section is:
@@ -1102,23 +1159,28 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out)
 {
   gboolean result = FALSE ;
-  int attr_fields ;
-  char *attr_format_str = "%*s %*[\"]%50[^\"]%*s%d%d" ;
-  char homol_type[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
-  int start = 0, end = 0 ;
+  char *tag_pos ;
 
-  if ((attr_fields = sscanf(attributes, attr_format_str, &homol_type[0], &start, &end)) == 3)
+  if ((tag_pos = strstr(attributes, "Target")))
     {
-      if (g_ascii_strncasecmp(homol_type, "Sequence:", 9) == 0)
-	*homol_type_out = ZMAPHOMOL_N_HOMOL ;
-      else if (g_ascii_strncasecmp(homol_type, "Protein:", 8) == 0)
-	*homol_type_out = ZMAPHOMOL_X_HOMOL ;
-      /* or what.....these seem to the only possibilities for acedb gff output. */
+      int attr_fields ;
+      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s%d%d" ;
+      char homol_type[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+      int start = 0, end = 0 ;
 
-      *start_out = start ;
-      *end_out = end ;
-
-      result = TRUE ;
+      if ((attr_fields = sscanf(tag_pos, attr_format_str, &homol_type[0], &start, &end)) == 3)
+	{
+	  if (g_ascii_strncasecmp(homol_type, "Sequence:", 9) == 0)
+	    *homol_type_out = ZMAPHOMOL_N_HOMOL ;
+	  else if (g_ascii_strncasecmp(homol_type, "Protein:", 8) == 0)
+	    *homol_type_out = ZMAPHOMOL_X_HOMOL ;
+	  /* or what.....these seem to the only possibilities for acedb gff output. */
+	  
+	  *start_out = start ;
+	  *end_out = end ;
+	  
+	  result = TRUE ;
+	}
     }
 
   return result ;
@@ -1419,9 +1481,6 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 
   new_features = zMapFeatureSetIDCreate(feature_set->original_id, feature_set->unique_id,
 					feature_set->features) ;
-
-  /* agh, poke in feature internals... */
-  new_features->style_id = feature_set->unique_id ;
 
   g_datalist_id_set_data(features, new_features->unique_id, new_features) ;
 
