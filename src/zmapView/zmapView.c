@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 26 08:16 2005 (edgrif)
+ * Last edited: Aug  5 17:10 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.60 2005-07-27 12:39:18 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.61 2005-08-09 11:02:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,11 +39,6 @@
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <ZMap/zmapWindow.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapUrl.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <zmapView_P.h>
 
 
@@ -77,7 +72,7 @@ static void killConnections(ZMapView zmap_view) ;
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   struct url *url, char *format,
 					   int timeout, char *version,
-					   char *styles_file, char *styles,
+					   char *styles_file, char *feature_sets,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end) ;
 static void destroyConnection(ZMapViewConnection *view_conn) ;
@@ -92,10 +87,11 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 
 static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req) ;
 
-static GList *string2StyleQuarks(char *styles) ;
+static GList *string2StyleQuarks(char *feature_sets) ;
 
 
-static ZMapFeatureContext createContext(char *sequence, int start, int end, GList *types) ;
+static ZMapFeatureContext createContext(char *sequence, int start, int end,
+					GList *types, GList *feature_set_names) ;
 ZMapAlignBlock zMapAlignBlockCreate(char *ref_seq, int ref_start, int ref_end, int ref_strand,
 				    char *non_seq, int non_start, int non_end, int non_strand) ;
 static void addAlignments(ZMapFeatureContext context) ;
@@ -108,6 +104,7 @@ static void addAlignments(ZMapFeatureContext context) ;
 
 /* Callbacks we make back to the level above us. */
 static ZMapViewCallbacks view_cbs_G = NULL ;
+
 
 /* Callbacks back we set in the level below us, i.e. zMapWindow. */
 ZMapWindowCallbacksStruct window_cbs_G = {enterCB, leaveCB,
@@ -177,6 +174,7 @@ ZMapView zMapViewCreate(char *sequence,	int start, int end, void *app_data)
 
   return zmap_view ;
 }
+
 
 
 /* NEED TO REVISIT THIS, IT MAY ACTUALLY BE BETTER TO AMALGAMATE THIS ROUTINE WITH
@@ -329,8 +327,6 @@ gboolean zMapViewConnect(ZMapView zmap_view)
       if ((config = zMapConfigCreateFromFile(config_file)))
 	{
 	  ZMapConfigStanza server_stanza ;
-	  /* NOTE: If you change this resource array be sure to check that the subsequent
-	   * initialisation is still correct. */
 	  ZMapConfigStanzaElementStruct server_elements[] = {{"url", ZMAPCONFIG_STRING, {NULL}},
 							     {"timeout", ZMAPCONFIG_INT, {NULL}},
 							     {"version", ZMAPCONFIG_STRING, {NULL}},
@@ -338,7 +334,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 							     {"writeback", ZMAPCONFIG_BOOL, {NULL}},
 							     {"stylesfile", ZMAPCONFIG_STRING, {NULL}},
 							     {"format", ZMAPCONFIG_STRING, {NULL}},
-							     {"styles", ZMAPCONFIG_STRING, {NULL}},
+							     {"featuresets", ZMAPCONFIG_STRING, {NULL}},
 							     {NULL, -1, {NULL}}} ;
 
 	  /* Set defaults for any element that is not a string. */
@@ -370,7 +366,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	  while (result
 		 && ((next_server = zMapConfigGetNextStanza(server_list, next_server)) != NULL))
 	    {
-	      char *version, *styles_file, *format, *url, *styles ;
+	      char *version, *styles_file, *format, *url, *featuresets ;
 	      int timeout, url_parse_error ;
               struct url *url_struct;
 	      gboolean sequence_server, writeback_server ;
@@ -381,7 +377,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	      timeout = zMapConfigGetElementInt(next_server, "timeout") ;
 	      version = zMapConfigGetElementString(next_server, "version") ;
 	      styles_file = zMapConfigGetElementString(next_server, "stylesfile") ;
-	      styles = zMapConfigGetElementString(next_server, "styles") ;
+	      featuresets = zMapConfigGetElementString(next_server, "featuresets") ;
 
               /* url is absolutely required. Go on to next stanza if there isn't one.
                * Done before anything else so as not to set seq/write servers to invalid locations  */
@@ -391,11 +387,11 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 		  continue ;
 		}
 
-	      if (styles_file && styles)
+	      if (styles_file && featuresets)
 		{
-		  styles = NULL ;
-		  zMapLogWarning("GUI: %s", "Both Styles name list and Styles file specified, "
-				 "Styles name list has been ignored.") ;
+		  featuresets = NULL ;
+		  zMapLogWarning("GUI: %s", "Both Featuresets name list and Styles file specified, "
+				 "Featuresets name list has been ignored.") ;
 		}
 
 	      /* We only record the first sequence and writeback servers found, this means you
@@ -416,7 +412,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
               else if (url_struct
 		       && (view_con = createConnection(zmap_view, url_struct,
 						       format,
-						       timeout, version, styles_file, styles,
+						       timeout, version, styles_file, featuresets,
 						       sequence_server, writeback_server,
 						       zmap_view->sequence,
 						       zmap_view->start, zmap_view->end)))
@@ -1268,21 +1264,20 @@ static void killConnections(ZMapView zmap_view)
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   struct url *url, char *format,
 					   int timeout, char *version,
-					   char *styles_file, char *styles_names,
+					   char *styles_file, char *featuresets_names,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end)
 {
   ZMapViewConnection view_con = NULL ;
   GList *types = NULL ;
-  GList *req_types = NULL ;
+  GList *req_featuresets = NULL ;
   ZMapThread thread ;
   gboolean status = TRUE ;
 
 
 
-  /* User can either specify a list of style names and we get the style data from the server
-   * or they can specify a file containing style names/data. In either case the order of the
-   * styles determines the order their columns are displayed in. */
+  /* User can specify styles in a file. If they don't we get them all and filter them
+   * according to the feature set name list if specified. */
   if (styles_file)
     {
       char *directory ;
@@ -1298,10 +1293,14 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       if (filepath)
 	g_free(filepath) ;
     }
-  else if (styles_names)
+
+
+  /* User can specify feature set names that should be displayed in an ordered list. Order of
+   * list determines order of columns. */
+  if (featuresets_names)
     {
-      /* If user only wants some styles/types displayed then build a list of their quark names. */
-      req_types = string2StyleQuarks(styles_names) ;
+      /* If user only wants some featuresets/types displayed then build a list of their quark names. */
+      req_featuresets = string2StyleQuarks(featuresets_names) ;
     }
 
 
@@ -1321,9 +1320,9 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       open_load->open.version = g_strdup(version) ;
 
 
-      open_load->context.context = createContext(sequence, start, end, types) ;
+      open_load->context.context = createContext(sequence, start, end, types, req_featuresets) ;
 
-      open_load->types.req_types = req_types ;
+      open_load->types.req_featuresets = req_featuresets ;
 
       if (sequence_server)
 	open_load->features.type = ZMAP_SERVERREQ_FEATURE_SEQUENCE ;
@@ -1546,32 +1545,32 @@ static void setZoomStatus(gpointer data, gpointer user_data)
   return;
 }
 
-/* Take a string containing space separated style names (e.g. "coding fgenes codon")
- * and convert it to a list of proper style id quarks. */
-static GList *string2StyleQuarks(char *styles)
+/* Take a string containing space separated featureset names (e.g. "coding fgenes codon")
+ * and convert it to a list of proper featureset id quarks. */
+static GList *string2StyleQuarks(char *featuresets)
 {
-  GList *style_quark_list = NULL ;
+  GList *featureset_quark_list = NULL ;
   char *curr_pos = NULL ;
-  char *next_style ;
+  char *next_featureset ;
 
-  while ((next_style = strtok_r(styles, " \t", &curr_pos)))
+  while ((next_featureset = strtok_r(featuresets, " \t", &curr_pos)))
     {
-      GQuark style_id ;
-      styles = NULL ;
+      GQuark featureset_id ;
+      featuresets = NULL ;
 
-      style_id = zMapStyleCreateID(next_style) ;
+      featureset_id = zMapStyleCreateID(next_featureset) ;
 
-      style_quark_list = g_list_append(style_quark_list, GUINT_TO_POINTER(style_id)) ;
+      featureset_quark_list = g_list_append(featureset_quark_list, GUINT_TO_POINTER(featureset_id)) ;
     }
 
-
-  return style_quark_list ;
+  return featureset_quark_list ;
 }
 
 
 
 /* Trial code to get alignments from a file and create a context...... */
-static ZMapFeatureContext createContext(char *sequence, int start, int end, GList* types)
+static ZMapFeatureContext createContext(char *sequence, int start, int end,
+					GList* types, GList *feature_set_names)
 {
   ZMapFeatureContext context = NULL ;
   GData *list = NULL ;
@@ -1580,7 +1579,7 @@ static ZMapFeatureContext createContext(char *sequence, int start, int end, GLis
   ZMapFeatureBlock block ;
   char *block_name = "block_1" ;
 
-  context = zMapFeatureContextCreate(sequence, start, end, types) ;
+  context = zMapFeatureContextCreate(sequence, start, end, types, feature_set_names) ;
 
   /* Add the master alignment and block. */
   alignment = zMapFeatureAlignmentCreate(sequence, master) ; /* TRUE => master alignment. */
