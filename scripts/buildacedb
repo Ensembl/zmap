@@ -1,74 +1,46 @@
 #!/usr/local/bin/bash
 #
-# Noddy script to build acedb binaries and install correct bits in to
-# zmap prefix dirs.
+# checkout, build and test acedb and put binaries in common zmap bin dirs
+# for linux and alpha.
 #
-
-
-
-msgAndExit ()
-{
-  echo "Error: $1"
-  exit 1
-}
-
 
 
 #
 # main routine
 #
 
-zmapsrcdir=~acedb/ZMap
-builddir='acedbbuild'
-cvs_acedb="acedb"
+# set up common functions.
+if [[ -f Bfunctions && -x Bfunctions ]] ; then
+  . ZBfunctions $0
+else
+  echo 'Cannot load ZBfunctions'
+  exit 1
+fi
 
-# make a build directory in our zmap subdirectory.
+
+acedb_dir=~acedb
+zmap_dir=~acedb/ZMap
+prefix='ZMAP_ACEDB_BUILD'
+user=`whoami`
+logfile="$prefix.out"
+
+# go to acedb build dir.
 #
-cd $zmapsrcdir || msgAndExit "Cannot cd to ZMap directory: $zmapsrcdir"
-
-mkdir $builddir || msgAndExit "Could not make build directory: $builddir"
-
-cd $builddir || msgAndExit "Could not cd to build directory: $builddir"
+ZBGotoDir $acedb_dir
 
 
-# checkout the code and build it.
-#
-cvs checkout $cvs_acedb || msgAndExit "Could not checkout $cvs_acedb from cvs."
-
-cd $cvs_acedb || msgAndExit "Could not cd to build directory: $cvs_acedb"
+# use the acedb build script to do the checkout/build/test
+updatetree $prefix $user nostatic >$logfile 2>&1 || ZBmsgAndExit "Acedb build failed, look in: $logfile"
 
 
-case $ACEDB_MACHINE in
+# Now we will need to copy stuff around to get it in the correct places...
 
-  ALPHA_* )
-    target_dir='ALPHA' ;;
+cp -f $prefix/bin.ALPHA_5/* ZMap/prefix/ALPHA/bin || ZBmsgAndExit "Could not copy binaries in $prefix/bin.ALPHA_5/"
 
-  LINUX_* )
-    target_dir='LINUX' ;;
+cp -f $prefix/bin.LINUX_4/* ZMap/prefix/LINUX/bin || ZBmsgAndExit "Could not copy binaries in $prefix/bin.LINUX_4/"
 
-  * )
-    msgAndExit "unsupported ACEDB_MACHINE type: $ACEDB_MACHINE" ;;
-
-esac
-
-
-ln -s wmake/makefile || msgAndExit "Cannot make symbolic link for makefile."
-
-make all bindistclean || msgAndExit "Build of $cvs_acedb failed."
-
-
-# put binaries where they should be.
-#
-mv -f bin.$ACEDB_MACHINE/* $zmapsrcdir/prefix/$target_dir/bin || msgAndExit "copy of binaries failed."
-
-
-
-# clear up.
-#
-cd $zmapsrcdir || msgAndExit "Cannot cd to ZMap directory: $zmapsrcdir"
-
-rm -rf $builddir || msgAndExit "Could not remove build directory: $builddir"
-
+# and tidy up...
+rm -rf ./$prefix ./$prefix.BUILD ./$logfile || ZBmsgAndExit "Could not erase build dirs/files"
 
 exit 0
 
