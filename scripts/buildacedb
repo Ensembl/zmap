@@ -10,12 +10,7 @@
 #
 
 # set up common functions.
-if [[ -f Bfunctions && -x Bfunctions ]] ; then
-  . ZBfunctions $0
-else
-  echo 'Cannot load ZBfunctions'
-  exit 1
-fi
+. ZBfunctions $0
 
 
 acedb_dir=~acedb
