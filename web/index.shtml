@@ -1,0 +1,25 @@
+<!--#set var="banner" value="Page Heading"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<hr>
+<h1>ZMap Developer Site</h1>
+
+<!-- This all hacked up for now...would be better to use sanger like stuff...  -->
+
+
+<P>ZMap is a project to produce a stand alone version of FMap, the popular
+sequence annoation component of acedb.
+
+<P>These web pages are the development site for ZMap.
+
+
+<P><A HREF="doclinks.shtml">Developer Docs</A>
+
+
+
+
+<hr>
+
+<!--#include virtual="/perl/footer"-->
+

@@ -1,0 +1,61 @@
+<!--#set var="banner" value="ZMap Developer Docs"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<hr>
+<h1>ZMap Developer Docs</h1>
+
+<!-- This all hacked up for now...would be better to use sanger like stuff...  -->
+
+
+<h1>External Packages, Libs.</h1>
+
+
+<h2>Coding</h2>
+
+<h4>Core</h4>
+
+<P> <A HREF="http://pauillac.inria.fr/~xleroy/linuxthreads/" ADD_DATE="1077801868" LAST_CHARSET="UTF-8" ID="rdf:#$HXxmB2">The LinuxThreads library</A>
+
+
+<h4>GUI</h4>
+
+<P><A HREF="http://www.gtk.org/api/" ADD_DATE="1080809430" LAST_VISIT="1123682271" LAST_CHARSET="UTF-8" ID="rdf:#$0iB5m">GTK+ - API Documentation</A>
+<P><A HREF="http://www.gtk.org/tutorial/ch-gtkrcfiles.html" ADD_DATE="1087559224" LAST_VISIT="1123224973" LAST_CHARSET="UTF-8" ID="rdf:#$irTQY3">GTK's rc Files</A>
+<P><A HREF="http://docs.mandragor.org/files/Operating_systems/Linux/GTK_Gnome_Application_Development_en/cha-canvas.html" ADD_DATE="1112282746" LAST_CHARSET="ISO-8859-15" ID="rdf:#$m5qKM">GnomeCanvas</A>
+<P><A HREF="http://cvs.gnome.org/viewcvs/foocanvas/" ADD_DATE="1116855731" LAST_VISIT="1116855786" LAST_MODIFIED="1116855774" ICON="http://developer.gnome.org/images/gnome-16.png" LAST_CHARSET="UTF-8" ID="rdf:#$R1EOU1">foocanvas (CVS)</A>
+
+
+
+<h4>XML</h4>
+
+<P> <A HREF="file:///nfs/team71/acedb/edgrif/ZMap/downloads/expat-1.95.7/doc/reference.html" ADD_DATE="1088760175" LAST_CHARSET="ISO-8859-1" ID="rdf:#$ZT3Rx3">Expat XML Parser</A>
+
+
+
+<h4>Bioinformatics</h4>
+
+<P> <A HREF="http://www.ensembl.org/Docs/wiki/html/EnsemblDocs/CigarFormat.html" ADD_DATE="1094743944" LAST_VISIT="1095063457" LAST_MODIFIED="1094743968" LAST_CHARSET="UTF-8" ID="rdf:#$FqAeS2">Cigar format</A>
+
+<P> <A HREF="http://bioinfo.hku.hk/ucsc/goldenPath/gbdDescriptions.html" ADD_DATE="1097487536" LAST_MODIFIED="1097487574" LAST_CHARSET="ISO-8859-1" ID="rdf:#$b0NSj">UCSC Genome Bioinformatics: Database formats</A>
+
+
+<h4>Build/Development</h4>
+
+<P> <A HREF="http://autotoolset.sourceforge.net/tutorial.html" ADD_DATE="1105366183" LAST_CHARSET="UTF-8" ID="rdf:#$0Abh13">Learning the GNU development tools:</A>
+
+<P> <A HREF="http://seul.org/docs/autotut/#breeding" ADD_DATE="1105522146" LAST_VISIT="1105534829" LAST_CHARSET="ISO-8859-1" ID="rdf:#$NzaZC2">autotut: Using GNU auto{conf,make,header}</A>
+
+
+
+      
+<h4>Doc system</h4>
+
+<P>Our current system: <A HREF="http://www.stack.nl/~dimitri/doxygen/index.html">Doxygen</A>
+      
+<P>An alternative: <A HREF="http://docpp.sourceforge.net/">DOC++'s Home Page</A>
+
+<hr>
+
+<!--#include virtual="/perl/footer"-->
+
