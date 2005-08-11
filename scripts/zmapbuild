@@ -13,6 +13,10 @@
 . ZBfunctions $0
 
 
+
+ZBlogmsg "ZMap build started"
+
+
 # set up usage strings.
 cmdstring='<target_build_directory>'
 descstring='
@@ -91,6 +95,7 @@ if [ -n "$version" ] ; then
 fi
 
 
+ZBlogmsg "ZMap build finished"
 
 
 exit 0

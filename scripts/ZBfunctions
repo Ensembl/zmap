@@ -46,6 +46,14 @@ ZBmsgInfo ()
 }
 
 
+ZBlogmsg ()
+{
+  echo
+  echo "----- $ZBscript (`date`): $1 -----"
+  echo
+}
+
+
 ZBusage ()
 {
   if [ -n "$3" ]
