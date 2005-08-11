@@ -29,10 +29,10 @@
  * HISTORY:
  * Last edited: Jul 16 09:39 2004 (edgrif)
  * Created: Thu Mar 18 15:45:59 2004 (edgrif)
- * CVS info:   $Id: saxparse.c,v 1.2 2004-07-16 08:46:23 edgrif Exp $
+ * CVS info:   $Id: saxparse.c,v 1.3 2005-08-11 13:13:50 rds Exp $
  *-------------------------------------------------------------------
  */
-
+#include <config.h>
 #include <stdio.h>
 #include <expat.h>
 #include <glib.h>
@@ -45,7 +45,13 @@ static void end_tag(void *userData, const char *el) ;
 static void charhndl(void *userData, const XML_Char *s, int len) ;
 static void tagFree(gpointer data, gpointer user_data) ;
 
-
+#if defined DARWIN
+/* total hack to get round problem on mac... See note in runconfig!!!!! */
+XML_Bool XML_ParserReset(XML_Parser parser, const XML_Char *encoding)
+{
+  return FALSE ;
+}
+#endif
 
 SaxParser saxCreateParser(void *user_data)
 {
