@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 18 10:14 2005 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.12 2005-07-18 09:20:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.13 2005-08-11 13:28:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,13 +109,15 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneTy
 
   if (status == TRUE)
     {
+      int sysrc;
       commandString = g_strdup_printf("%s %s &", blixem_data.Script, paramString);
+      sysrc = system(commandString);
       /* printf("%s\n", commandString); useful when debugging */
 
       /* Note that since blixem is being called as a background process, 
       ** we can only tell whether or not the system call was successful,
       ** and not whether or not blixem ran successfully. */
-      if (WIFEXITED(system(commandString)) == FALSE)
+      if (WIFEXITED(sysrc) == FALSE)
 	zMapShowMsg(ZMAP_MSG_WARNING, "System call failed: blixem not invoked.") ;
       
       g_free(commandString);
