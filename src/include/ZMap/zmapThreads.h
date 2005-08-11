@@ -27,12 +27,15 @@
  * HISTORY:
  * Last edited: Apr 15 19:07 2005 (edgrif)
  * Created: Thu Jan 27 11:16:13 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.h,v 1.3 2005-04-15 18:08:06 edgrif Exp $
+ * CVS info:   $Id: zmapThreads.h,v 1.4 2005-08-11 14:02:23 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_H
 #define ZMAP_THREAD_H
-
+#include <config.h>
+#if defined DARWIN
+#include <pthread.h>
+#endif
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* WARNING, IN THEORY WE SHOULD INCLUDE THIS AS WE REFERENCE A PTHREAD TYPE BELOW,
