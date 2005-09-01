@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 28 09:54 2005 (rnc)
+ * Last edited: Sep  1 10:42 2005 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.12 2005-07-28 09:20:41 rnc Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.13 2005-09-01 09:44:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,7 +59,7 @@ typedef struct ArrayRowStruct
 } arrayRowStruct, *ArrayRow;
 
 
-typedef enum {LABEL, ENTRY, INT, FLOAT, STRAND, PHASE, FTYPE, HTYPE, CHECK, ALIGN, EXON, INTRON, LAST} fieldType;
+typedef enum {NONE, LABEL, ENTRY, INT, FLOAT, STRAND, PHASE, FTYPE, HTYPE, CHECK, ALIGN, EXON, INTRON, LAST} fieldType;
 
 enum {COL1, COL2, COL3, COL4, N_COLS};  /* columns to display arrays */
 
@@ -213,7 +213,7 @@ static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapF
 		  texonInit   = { EXON  , EXON  , "Exons"          , 0, NULL, NULL, NULL, TRUE , NULL  },
 		  tintronInit = { INTRON, INTRON, "Introns"        , 0, NULL, NULL, NULL, TRUE , NULL  },
 			    
-		  lastInit    = { LAST  , NULL  ,  NULL            , 0, NULL, NULL, NULL, NULL , NULL  };
+		  lastInit    = { LAST  , NONE  ,  ""            , 0, NULL, NULL, NULL, FALSE , NULL  };
 		  
   table[i] = ftypeInit;
   table[i].fieldPtr = &feature->type;
@@ -1010,7 +1010,7 @@ static gboolean validateStrandCB(char *label, char *value, void *retValue)
 {
   gboolean status = TRUE;
 
-  if (zMapFeatureStr2Strand(value, (int *)retValue) == FALSE)
+  if (zMapFeatureStr2Strand(value, (ZMapStrand *)retValue) == FALSE)
     {
       zMapMessage("%s (%s) must be Forward, Reverse or None", label, value);
       status = FALSE;
@@ -1024,7 +1024,7 @@ static gboolean validatePhaseCB(char *label, char *value, void *retValue)
 {
   gboolean status = TRUE;
 
-  if ((status = zMapFeatureValidatePhase(value, (int *)retValue)) == FALSE)
+  if ((status = zMapFeatureValidatePhase(value, (ZMapPhase *)retValue)) == FALSE)
     zMapMessage("%s (%s) must be 0, 1 or 2", label, value);
 
   return status;
