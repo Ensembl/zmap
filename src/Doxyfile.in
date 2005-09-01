@@ -17,13 +17,13 @@
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded 
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = $(PACKAGE_NAME)
+PROJECT_NAME           = @PACKAGE_NAME@
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. 
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = $(PACKAGE_VERSION)
+PROJECT_NUMBER         = @PACKAGE_VERSION@
 
 
 CREATE_SUBDIRS         = YES
@@ -395,7 +395,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = $(ZMAP_SRC_DIRS) include/ZMap
+INPUT                  = @ZMAP_SRC_DIRS@ include/ZMap
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
