@@ -73,9 +73,13 @@ cvsbuilddir='ZMap/src'
 
 ZBGotoDir $cvsbuilddir
 
+
+# NOTE THAT CURRENTLY THE BUILD MUST ALL BE DONE ON THE SAME MACHINE OTHERWISE NONE
+# OF THE CONFIG STUFF IS SET UP CORRECTLY....
+
 # This will be ssh'd in the final version...on different machines....
 # and we may not wish to exit, just report the failure....
-ssh griffin2 "zmapmake `pwd`" || ZBmsgAndExit "zmap make failed"
+ssh deskpro110 "zmapmake `pwd`" || ZBmsgAndExit "zmap make failed"
 
 
 # making docs only works on linux at the moment as we need doxygen executables.
