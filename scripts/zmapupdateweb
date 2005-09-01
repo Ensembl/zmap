@@ -1,0 +1,86 @@
+#!/usr/local/bin/bash
+#
+# Update the ZMap website in wwwDev and optionally update the live website as well.
+#
+# Currently the script assumes the
+
+#
+# we need user to be able to specify a directory to take docs from or we should
+# use a default or do a cvs checkout and use that....
+#
+
+
+#
+# main routine
+#
+
+# set up common functions.
+. ZBfunctions $0
+
+
+
+# set up usage strings.
+cmdstring='[-p]'
+descstring='
+  -p  Publish to the live website as well'
+
+
+
+ZBacedb='/nfs/disk100/acedb'
+ZBBaseDir="$ZBacedb/ZMap"
+ZBOverDir="$ZBacedb/ZMap.OVERNIGHT.BUILD"
+ZBDevDir="$ZBacedb/ZMap.DEVELOPMENT.BUILD"
+
+
+webpublish=''
+web_site='/nfs/WWWdev/ACEDB_docs/htdocs/Development/developers_only/ZMap'
+doc_rep="$ZBDevDir/ZMap"
+doc_dirs="web src/docs/ZMap/html"
+
+
+while getopts ":p" opt ; do
+  case $opt in
+    p  ) webpublish='true'  ;;
+    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
+  esac
+done
+
+
+# Get the source directory to be linked to.
+shift $(($OPTIND - 1))
+if [ -n "$1" ] ; then
+  ZBusage "$cmdstring" "$descstring" "Command does not take args."
+fi
+
+
+# Make sure the website dir exists and is writeable/executable....
+#
+if [[ ! -d $web_site || ! -r $web_site || ! -w $web_site || ! -x $web_site ]] ; then
+  ZBmsgAndExit "Website directory must exist and be readable/writeable/executable: $web_site"
+fi
+
+
+for dir in $doc_dirs
+do
+  this_dir="$doc_rep/$dir"
+
+  echo "doing dir: $this_dir"
+
+  if [[ ! -d $this_dir || ! -r $this_dir || ! -x $this_dir ]] ; then
+    ZBmsgAndExit "Repository for website docs must exist and be readable/executable: $this_dir"
+  fi
+
+
+  cp -fr "$this_dir/"* $web_site ||  ZBmsgAndExit "Could not copy $this_dir to $website"
+
+done
+
+# -t is for test apparently....
+if [ -n "$webpublish" ] ; then
+  webpublish -t $web_site
+fi
+
+
+exit 0
+
+
