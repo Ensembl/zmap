@@ -34,7 +34,7 @@ target=""
 while getopts ":bct:" opt ; do
   case $opt in
     b  ) bootstrap='true' ;;
-    t  ) configure='true' ;;
+    c  ) configure='true' ;;
     t  ) target=$OPTARG ;;
     \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
   esac
