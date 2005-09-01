@@ -64,7 +64,7 @@ fi
 
 for dir in $doc_dirs
 do
-  this_dir="$doc_rep/$dir"
+  this_dir="`dirname $doc_rep`/`dirname $dir`"
 
   echo "doing dir: $this_dir"
 
