@@ -64,13 +64,13 @@ fi
 
 for dir in $doc_dirs
 do
-  this_dir="`dirname $doc_rep`/`dirname $dir`"
+  this_dir="$doc_rep/$dir"
 
   echo "doing dir: $this_dir"
 
-  if [[ ! -d $this_dir || ! -r $this_dir || ! -x $this_dir ]] ; then
-    ZBmsgAndExit "Repository for website docs must exist and be readable/executable: $this_dir"
-  fi
+#  if [[ ! -d $this_dir || ! -r $this_dir || ! -x $this_dir ]] ; then
+#    ZBmsgAndExit "Repository for website docs must exist and be readable/executable: $this_dir"
+#  fi
 
     echo command is: cp -fr $this_dir $web_site
 
