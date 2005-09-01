@@ -13,10 +13,6 @@
 . ZBfunctions $0
 
 
-# Make sure the build scripts are all in place.
-zmapbootstrap  || ZBmsgAndExit "Could not update build scripts."
-
-
 ZBlogmsg "ZMap build started"
 
 
