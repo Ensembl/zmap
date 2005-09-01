@@ -79,7 +79,9 @@ ZBGotoDir $cvsbuilddir
 
 # This will be ssh'd in the final version...on different machines....
 # and we may not wish to exit, just report the failure....
-ssh deskpro110 "zmapmake `pwd`" || ZBmsgAndExit "zmap make failed"
+# -b and -c get the bootstrap and config run, we may be able to do the bootstrap
+# as a one time operation like the cvs stuff...
+ssh deskpro110 "zmapmake -b -c `pwd`" || ZBmsgAndExit "zmap make failed"
 
 
 # making docs only works on linux at the moment as we need doxygen executables.

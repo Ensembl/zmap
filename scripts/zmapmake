@@ -18,15 +18,23 @@ ZBlogmsg "ZMap make started"
 # set up usage strings.
 cmdstring='<make_directory>'
 descstring='
-   -t   target for the make (defaults to no target which usually means "all"
+   -t <target>  target for the make (defaults to no target which usually means "all").
+
+   -b           run bootstrap script before doing the make.
+
+   -c           run configure script before doing the make.
 
    <make_directory> specifies directory where make is take place.'
 
 
+bootstrap=""
+configure=""
 target=""
 
-while getopts ":t:" opt ; do
+while getopts ":bct:" opt ; do
   case $opt in
+    b  ) bootstrap='true' ;;
+    t  ) configure='true' ;;
     t  ) target=$OPTARG ;;
     \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
   esac
@@ -48,9 +56,15 @@ ZBGotoDir $builddir
 
 # do the build.
 #
-runbootstrap || ZBmsgAndExit "runbootstrap script failed"
+if [ -z "$bootstrap" ] ; then
+  runbootstrap || ZBmsgAndExit "runbootstrap script failed"
+fi
 
-runconfig || ZBmsgAndExit "runconfig script failed"
+
+if [ -z "$configure" ] ; then
+  runconfig || ZBmsgAndExit "runconfig script failed"
+fi
+
 
 make $target || ZBmsgAndExit "make failed"
 
