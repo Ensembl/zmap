@@ -48,8 +48,6 @@ if [ -z "$1" ] ; then
 fi
 builddir=$1
 
-ZBmsgInfo "path is: $builddir"
-
 # move to the build directory.
 #
 ZBGotoDir $builddir
@@ -57,13 +55,13 @@ ZBGotoDir $builddir
 
 # do the build.
 #
-if [ -z "$bootstrap" ] ; then
+if [ -n "$bootstrap" ] ; then
   ZBmsgInfo "running bootstrap"
   runbootstrap || ZBmsgAndExit "runbootstrap script failed"
 fi
 
 
-if [ -z "$configure" ] ; then
+if [ -n "$configure" ] ; then
   ZBmsgInfo "running configure"
   runconfig || ZBmsgAndExit "runconfig script failed"
 fi
