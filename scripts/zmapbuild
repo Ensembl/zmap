@@ -66,6 +66,8 @@ ZBGotoDir $targetdir
 cvs checkout $zmapcvstarget || ZBmsgAndExit "Cannot cvs checkout: $zmapcvstarget"
 
 
+cvscopy="$builddir/$targetdir"
+
 
 # do the builds on the different machines via ssh....
 #
@@ -88,6 +90,11 @@ ssh deskpro110 "zmapmake -b -c $abspath" || ZBmsgAndExit "zmap make failed"
 # making docs only works on linux at the moment as we need doxygen executables.
 #
 ssh deskpro110 "zmapmake -t docs $abspath" || ZBmsgAndExit "zmap make of docs failed"
+
+
+# Copy docs onto Sanger web dev site
+#
+zmapupdateweb "$cvscopy/ZMap"
 
 
 # If release directory needs to be given a proper release name then do so...

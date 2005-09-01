@@ -66,13 +66,10 @@ for dir in $doc_dirs
 do
   this_dir="$doc_rep/$dir"
 
-  echo "doing dir: $this_dir"
-
+# This doesn't work because I can't get dirname top clip $dir in the way I want....
 #  if [[ ! -d $this_dir || ! -r $this_dir || ! -x $this_dir ]] ; then
 #    ZBmsgAndExit "Repository for website docs must exist and be readable/executable: $this_dir"
 #  fi
-
-    echo command is: cp -fr $this_dir $web_site
 
   cp -fr $this_dir $web_site ||  ZBmsgAndExit "Could not copy $this_dir to $website"
 
