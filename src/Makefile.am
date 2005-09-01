@@ -75,9 +75,6 @@ zmap_DEPENDENCIES = $(LIBS_ZMAP) src-copy
 ################################################################################
 ################################################################################
 
-Doxyfile:
-	@echo "using doxygen configuration in $@"
-
 docs: doxygen-doc
 
 maintainer-clean-local:

@@ -226,6 +226,7 @@ include/Makefile
 lib/Makefile
 zmap.pc
 ZMap:dotZmap.in
+Doxyfile:Doxyfile.in
 ])
 
 AC_OUTPUT
