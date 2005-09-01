@@ -1,8 +1,8 @@
 #!/usr/local/bin/bash
 #
-# Check out the zmap source and copy scripts to where they need to be for
-# the build to run
+# Runs entire build/checkout on various machines.
 #
+
 
 
 #
@@ -27,9 +27,10 @@ descstring='
 
 
 zmaproot=~acedb/ZMap
-builddir="$zmaproot/builds"
+builddir="$zmaproot/BUILDS"
 zmapcvstarget='ZMap'
 version=""
+
 
 while getopts ":v" opt ; do
   case $opt in
@@ -67,19 +68,30 @@ cvs checkout $zmapcvstarget || ZBmsgAndExit "Cannot cvs checkout: $zmapcvstarget
 
 
 
-# do the build.
+# do the builds on the different machines via ssh....
 #
+#cvsbuilddir='ZMap/src'
+#
+#ZBGotoDir $cvsbuilddir
+#
+#runbootstrap || ZBmsgAndExit "runbootstrap script failed"
+#
+#runconfig || ZBmsgAndExit "runconfig script failed"
+#
+#make || ZBmsgAndExit "make failed"
+#
+#runzmap '--version' || ZBmsgAndExit "zmap would not run"
+
+
 cvsbuilddir='ZMap/src'
 
 ZBGotoDir $cvsbuilddir
 
-runbootstrap || ZBmsgAndExit "runbootstrap script failed"
 
-runconfig || ZBmsgAndExit "runconfig script failed"
+# This will be ssh'd in the final version...on different machines....
+# and we may not wish to exit, just report the failure....
+zmapmake `pwd` || ZBmsgAndExit "zmap make failed"
 
-make || ZBmsgAndExit "make failed"
-
-runzmap '--version' || ZBmsgAndExit "zmap would not run"
 
 
 # If release directory needs to be given a proper release name then do so...
