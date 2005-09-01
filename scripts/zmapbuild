@@ -69,28 +69,18 @@ cvs checkout $zmapcvstarget || ZBmsgAndExit "Cannot cvs checkout: $zmapcvstarget
 
 # do the builds on the different machines via ssh....
 #
-#cvsbuilddir='ZMap/src'
-#
-#ZBGotoDir $cvsbuilddir
-#
-#runbootstrap || ZBmsgAndExit "runbootstrap script failed"
-#
-#runconfig || ZBmsgAndExit "runconfig script failed"
-#
-#make || ZBmsgAndExit "make failed"
-#
-#runzmap '--version' || ZBmsgAndExit "zmap would not run"
-
-
 cvsbuilddir='ZMap/src'
 
 ZBGotoDir $cvsbuilddir
 
-
 # This will be ssh'd in the final version...on different machines....
 # and we may not wish to exit, just report the failure....
-zmapmake `pwd` || ZBmsgAndExit "zmap make failed"
+ssh griffin2 "zmapmake `pwd`" || ZBmsgAndExit "zmap make failed"
 
+
+# making docs only works on linux at the moment as we need doxygen executables.
+#
+ssh deskpro110 "zmapmake -t docs `pwd`" || ZBmsgAndExit "zmap make of docs failed"
 
 
 # If release directory needs to be given a proper release name then do so...
