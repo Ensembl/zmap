@@ -48,6 +48,7 @@ if [ -z "$1" ] ; then
 fi
 builddir=$1
 
+ZBmsgInfo "path is: $builddir"
 
 # move to the build directory.
 #

@@ -73,6 +73,7 @@ cvsbuilddir='ZMap/src'
 
 ZBGotoDir $cvsbuilddir
 
+abspath=`pwd`
 
 # NOTE THAT CURRENTLY THE BUILD MUST ALL BE DONE ON THE SAME MACHINE OTHERWISE NONE
 # OF THE CONFIG STUFF IS SET UP CORRECTLY....
@@ -81,12 +82,12 @@ ZBGotoDir $cvsbuilddir
 # and we may not wish to exit, just report the failure....
 # -b and -c get the bootstrap and config run, we may be able to do the bootstrap
 # as a one time operation like the cvs stuff...
-ssh deskpro110 "zmapmake -b -c `pwd`" || ZBmsgAndExit "zmap make failed"
+ssh deskpro110 "zmapmake -b -c $abspath" || ZBmsgAndExit "zmap make failed"
 
 
 # making docs only works on linux at the moment as we need doxygen executables.
 #
-ssh deskpro110 "zmapmake -t docs `pwd`" || ZBmsgAndExit "zmap make of docs failed"
+ssh deskpro110 "zmapmake -t docs $abspath" || ZBmsgAndExit "zmap make of docs failed"
 
 
 # If release directory needs to be given a proper release name then do so...
