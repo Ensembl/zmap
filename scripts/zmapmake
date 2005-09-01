@@ -1,0 +1,68 @@
+#!/usr/local/bin/bash
+#
+# Runs make on requested target (defaults to no target)
+#
+
+
+#
+# main routine
+#
+
+# set up common functions.
+. ZBfunctions $0
+
+
+ZBlogmsg "ZMap make started"
+
+
+# set up usage strings.
+cmdstring='<make_directory>'
+descstring='
+   -t   target for the make (defaults to no target which usually means "all"
+
+   <make_directory> specifies directory where make is take place.'
+
+
+target=""
+
+while getopts ":t:" opt ; do
+  case $opt in
+    t  ) target=$OPTARG ;;
+    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
+  esac
+done
+
+
+# Get the source directory for the build.
+shift $(($OPTIND - 1))
+if [ -z "$1" ] ; then
+  ZBusage "$cmdstring" "$descstring" "No target build directory specified."
+fi
+builddir=$1
+
+
+# move to the build directory.
+#
+ZBGotoDir $builddir
+
+
+# do the build.
+#
+runbootstrap || ZBmsgAndExit "runbootstrap script failed"
+
+runconfig || ZBmsgAndExit "runconfig script failed"
+
+make $target || ZBmsgAndExit "make failed"
+
+
+# A hack really, generalise to run a given command if you feel like it...
+#
+if [ -z $target ] ; then 
+  runzmap '--version' || ZBmsgAndExit "zmap would not run"
+fi
+
+ZBlogmsg "ZMap make finished"
+
+
+exit 0
+
