@@ -1,4 +1,4 @@
-/*  Last edited: Jun 22 13:59 2005 (edgrif) */
+/*  Last edited: Aug 31 11:05 2005 (rds) */
 /* Declarations for url.c.
    Copyright (C) 1995, 1996, 1997 Free Software Foundation, Inc.
 
@@ -43,7 +43,7 @@ so, delete this exception statement from your version.  */
 /* Note: the ordering here is related to the order of elements in
    `supported_schemes' in url.c.  */
 
-enum url_scheme {
+typedef enum {
   SCHEME_HTTP,
 #ifdef HAVE_SSL
   SCHEME_HTTPS,
@@ -53,14 +53,15 @@ enum url_scheme {
   SCHEME_FILE,
   SCHEME_MYSQL,
   SCHEME_INVALID
-};
+} zMapURL_scheme;
 
 
 /* Structure containing info on a URL.  */
-struct url
+typedef struct _zMapURLStruct
 {
   char *url;			/* Original URL */
-  enum url_scheme scheme;	/* URL scheme */
+  zMapURL_scheme scheme;	/* URL scheme */
+  char *protocol;
 
   char *host;			/* Extracted hostname */
   int port;			/* Port number */
@@ -78,30 +79,30 @@ struct url
   /* Username and password (unquoted). */
   char *user;
   char *passwd;
-};
+} zMapURLStruct, *zMapURL;
 
 /* Function declarations */
 
 char *url_escape(const char *) ;
 
-struct url *url_parse(const char *, int *) ;
+zMapURL url_parse(const char *, int *) ;
 const char *url_error(int) ;
-char *url_full_path(const struct url *) ;
-void url_set_dir(struct url *, const char *) ;
-void url_set_file(struct url *, const char *) ;
-void url_free(struct url *) ;
+char *url_full_path(const zMapURL) ;
+void url_set_dir(zMapURL, const char *) ;
+void url_set_file(zMapURL, const char *) ;
+void url_free(zMapURL) ;
 
-enum url_scheme url_scheme(const char *) ;
+zMapURL_scheme url_scheme(const char *) ;
 int url_has_scheme(const char *) ;
-int scheme_default_port(enum url_scheme) ;
-void scheme_disable(enum url_scheme) ;
+int scheme_default_port(zMapURL_scheme) ;
+void scheme_disable(zMapURL_scheme) ;
 
-char *url_string(const struct url *, int) ;
-char *url_file_name(const struct url *) ;
+char *url_string(const zMapURL, int) ;
+char *url_file_name(const zMapURL) ;
 
 char *uri_merge(const char *, const char *) ;
 
 char *rewrite_shorthand_url(const char *) ;
-int schemes_are_similar_p(enum url_scheme a, enum url_scheme b) ;
+int schemes_are_similar_p(zMapURL_scheme a, zMapURL_scheme b) ;
 
 #endif /* ZMAPURL_H */
