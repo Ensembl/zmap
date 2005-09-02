@@ -1,4 +1,4 @@
-/*  Last edited: Jul 25 14:10 2005 (edgrif) */
+/*  Last edited: Aug 31 11:41 2005 (rds) */
 /* URL handling.
    Copyright (C) 1995, 1996, 1997, 2000, 2001, 2003, 2003
    Free Software Foundation, Inc.
@@ -137,6 +137,8 @@ static const unsigned char urlchr_table[256] =
 #undef R
 #undef U
 #undef RU
+
+static char* protocol_from_scheme(zMapURL_scheme scheme);
 
 /* URL-unescape the string S.
 
@@ -414,7 +416,7 @@ reencode_escapes (const char *s)
 /* Returns the scheme type if the scheme is supported, or
    SCHEME_INVALID if not.  */
 
-enum url_scheme
+zMapURL_scheme
 url_scheme (const char *url)
 {
   int i;
@@ -424,7 +426,7 @@ url_scheme (const char *url)
 			  strlen (supported_schemes[i].leading_string)))
       {
 	if (supported_schemes[i].enabled)
-	  return (enum url_scheme) i;
+	  return (zMapURL_scheme) i;
 	else
 	  return SCHEME_INVALID;
       }
@@ -455,15 +457,16 @@ url_has_scheme (const char *url)
 }
 
 int
-scheme_default_port (enum url_scheme scheme)
+scheme_default_port (zMapURL_scheme scheme)
 {
   return supported_schemes[scheme].default_port;
 }
 
 void
-scheme_disable (enum url_scheme scheme)
+scheme_disable (zMapURL_scheme scheme)
 {
   supported_schemes[scheme].enabled = 0;
+  return ;
 }
 
 /* Skip the username and password, if present here.  The function
@@ -781,18 +784,40 @@ is_valid_ipv6_address (const char *str, const char *end)
 #endif
 
 /* Parse a URL.
+ *******************************************************************************
+ * Return a new zMapURL if successful, NULL on error.  In case of
+ * error, and if ERROR is not NULL, also set *ERROR to the appropriate
+ * error code. 
+ *
+ * This follows the following RFC ...
+ * http://rfc.net/rfc1738.html
+ * 
+ * Generally
+ * <scheme>://[user][:password]@<host>[:port]/[url-path][;typecode][?query][#fragment]
+ *
+ * Some Notes:
+ * 1) [] square brackets are optional, <> angle brackets compulsory, with the 
+ *    exception of host when scheme == file. 
+ * 2) The original source of this code is wget, which did nothing to support
+ *    the file scheme.  According to the rfc above and in order to support both
+ *    relative and absolute url-paths for the file scheme the leading / is NOT
+ *    part of the url-path and IS a separator.
+ *    e.g. file:///tmp/file.tmp            is relative
+ *         file:////tmp/file.tmp           is absolute 
+ *         file://localhost/tmp/file.tmp   is relative
+ *         file://localhost//tmp/file.tmp  is absolute
+ * 3) this documentation should be elsewhere.
+ *******************************************************************************
+ */
 
-   Return a new struct url if successful, NULL on error.  In case of
-   error, and if ERROR is not NULL, also set *ERROR to the appropriate
-   error code. */
-struct url *
+zMapURL
 url_parse (const char *url, int *error)
 {
-  struct url *u;
+  zMapURL u;
   const char *p;
   int path_modified, host_modified;
 
-  enum url_scheme scheme;
+  zMapURL_scheme scheme;
 
   const char *uname_b,     *uname_e;
   const char *host_b,      *host_e;
@@ -987,10 +1012,11 @@ url_parse (const char *url, int *error)
 	}
     }
 
-  u = (struct url *)xmalloc (sizeof (struct url));
+  u = (zMapURL)xmalloc(sizeof(zMapURLStruct));
   memset (u, 0, sizeof (*u));
 
   u->scheme = scheme;
+  u->protocol = protocol_from_scheme(scheme);
   u->host   = strdupdelim (host_b, host_e);
   u->port   = port;
   u->user   = user;
@@ -1095,7 +1121,7 @@ split_path (const char *path, char **dir, char **file)
    zero.  */
 
 static int
-full_path_length (const struct url *url)
+full_path_length (const zMapURL url)
 {
   int len = 0;
 
@@ -1113,7 +1139,7 @@ full_path_length (const struct url *url)
 /* Write out the full path. */
 
 static void
-full_path_write (const struct url *url, char *where)
+full_path_write (const zMapURL url, char *where)
 {
 #define FROB(el, chr) do {			\
   char *f_el = url->el;				\
@@ -1137,7 +1163,7 @@ full_path_write (const struct url *url, char *where)
    "/foo/bar?param=value". */
 
 char *
-url_full_path (const struct url *url)
+url_full_path (const zMapURL url)
 {
   int length = full_path_length (url);
   char *full_path = (char *)xmalloc(length + 1);
@@ -1184,7 +1210,7 @@ url_escape_dir (const char *dir)
    u->file or u->dir have been changed, typically by the FTP code.  */
 
 static void
-sync_path (struct url *u)
+sync_path (zMapURL u)
 {
   char *newpath, *efile, *edir;
 
@@ -1232,7 +1258,7 @@ sync_path (struct url *u)
    This way we can sync u->path and u->url when they get changed.  */
 
 void
-url_set_dir (struct url *url, const char *newdir)
+url_set_dir (zMapURL url, const char *newdir)
 {
   xfree (url->dir);
   url->dir = xstrdup (newdir);
@@ -1240,7 +1266,7 @@ url_set_dir (struct url *url, const char *newdir)
 }
 
 void
-url_set_file (struct url *url, const char *newfile)
+url_set_file (zMapURL url, const char *newfile)
 {
   xfree (url->file);
   url->file = xstrdup (newfile);
@@ -1248,7 +1274,7 @@ url_set_file (struct url *url, const char *newfile)
 }
 
 void
-url_free (struct url *url)
+url_free (zMapURL url)
 {
   xfree (url->host);
   xfree (url->path);
@@ -1475,7 +1501,7 @@ append_uri_pathel (const char *b, const char *e, int escaped_p,
    Each component of the path is quoted for use as file name.  */
 
 static void
-append_dir_structure (const struct url *u, struct growable *dest)
+append_dir_structure (const zMapURL u, struct growable *dest)
 {
   char *pathel, *next;
   int cut = opt.cut_dirs;
@@ -1502,7 +1528,7 @@ append_dir_structure (const struct url *u, struct growable *dest)
    possible.  Does not create directories on the file system.  */
 
 char *
-url_file_name (const struct url *u)
+url_file_name (const zMapURL u)
 {
   struct growable fnres;
 
@@ -1904,7 +1930,7 @@ uri_merge (const char *base, const char *link)
    characters in the URL will be quoted.  */
 
 char *
-url_string (const struct url *url, int hide_password)
+url_string (const zMapURL url, int hide_password)
 {
   int size;
   char *result, *p;
@@ -1994,7 +2020,7 @@ url_string (const struct url *url, int hide_password)
    are also similar if one is http (SCHEME_HTTP) and the other is https
    (SCHEME_HTTPS).  */
 int
-schemes_are_similar_p (enum url_scheme a, enum url_scheme b)
+schemes_are_similar_p (zMapURL_scheme a, zMapURL_scheme b)
 {
   if (a == b)
     return 1;
@@ -2005,6 +2031,17 @@ schemes_are_similar_p (enum url_scheme a, enum url_scheme b)
 #endif
   return 0;
 }
+
+static char *
+protocol_from_scheme(zMapURL_scheme scheme)
+{
+  char *tmp = NULL;
+  tmp = supported_schemes[scheme].leading_string;
+  if(tmp)
+    return strdupdelim(tmp, tmp + strlen(tmp) - 3);
+  return tmp;
+}
+
 
 #if 0
 /* Debugging and testing support for path_simplify. */
