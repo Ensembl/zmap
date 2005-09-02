@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Aug  9 11:58 2005 (edgrif)
+ * Last edited: Sep  2 11:32 2005 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.37 2005-08-09 10:59:18 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.38 2005-09-02 10:33:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,8 +60,8 @@ typedef struct
  * shouldn't change these prototypes without changing all the other server prototypes..... */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 char *host, int port, char *format, char *version_str,
-				 char *userid, char *passwd, int timeout) ;
+				 zMapURL url, char *format, 
+                                 char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getTypes(void *server, GList *requested_types, GList **types) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
@@ -137,8 +137,8 @@ static gboolean globalInit(void)
 
 
 static gboolean createConnection(void **server_out,
-				 char *host, int port, char *format, char *version_str,
-				 char *userid, char *passwd, int timeout)
+				 zMapURL url, char *format, 
+                                 char *version_str, int timeout)
 {
   gboolean result = FALSE ;
   AcedbServer server ;
@@ -147,7 +147,7 @@ static gboolean createConnection(void **server_out,
   server = (AcedbServer)g_new0(AcedbServerStruct, 1) ;
   server->last_err_status = ACECONN_OK ;
 
-  server->host = g_strdup(host) ;
+  server->host = g_strdup(url->host) ;
 
   server->user_specified_styles = TRUE ;
 
@@ -170,7 +170,7 @@ static gboolean createConnection(void **server_out,
   *server_out = (void *)server ;
 
   if ((server->last_err_status =
-       AceConnCreate(&(server->connection), host, port, userid, passwd, timeout)) == ACECONN_OK)
+       AceConnCreate(&(server->connection), server->host, url->port, url->user, url->passwd, timeout)) == ACECONN_OK)
     result = TRUE ;
 
   return result ;
@@ -556,7 +556,6 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
       char *first_error = NULL ;
 
       line_reader = zMapReadLineCreate((char *)reply, inplace) ;
-
 
       /* Look for "##gff-version" at start of line which signals start of GFF, as detailed above
        * there may be errors before the GFF output. */

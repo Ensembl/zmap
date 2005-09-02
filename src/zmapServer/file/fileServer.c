@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Aug  5 08:48 2005 (edgrif)
+ * Last edited: Aug 31 13:47 2005 (rds)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.17 2005-08-09 11:01:07 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.18 2005-09-02 10:32:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,9 +62,14 @@ typedef struct
 
 
 static gboolean globalInit(void) ;
+/*
 static gboolean createConnection(void **server_out,
 				 char *host, int port, char *format, char *version_str,
-				 char *userid, char *passwd, int timeout) ;
+				 char *userid, char *passwd, int timeout) ;*/
+static gboolean createConnection(void **server_out,
+				 zMapURL url, char *format, 
+                                 char *version_str, int timeout) ;
+
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getTypes(void *server, GList *requested_types, GList **types) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
@@ -132,13 +137,13 @@ static gboolean globalInit(void)
  * 
  *  */
 static gboolean createConnection(void **server_out,
-				 char *host, int port_unused, char *format, char *version_str,
-				 char *userid_unused, char *passwd_unused, int timeout_unused)
+				 zMapURL url, char *format, 
+                                 char *version_str, int timeout_unused)
 {
   gboolean result = TRUE ;
   FileServer server ;
 
-  zMapAssert(host) ;
+  zMapAssert(url->path) ;
 
   /* Always return a server struct as it contains error message stuff. */
   server = (FileServer)g_new0(FileServerStruct, 1) ;
@@ -152,14 +157,14 @@ static gboolean createConnection(void **server_out,
    * urls from our config file will chop the leading "/" off the file path....which causes the
    * zMapGetPath() call below to construct an incorrect path.... */
   {
-    char *tmp_path = host ;
+    char *tmp_path = url->path ;
 
-    if (*host != '/')
-      tmp_path = g_strdup_printf("/%s", host) ;
+    if (*(url->path) != '/')
+      tmp_path = g_strdup_printf("/%s", url->path) ;
 
     server->file_path = zMapGetPath(tmp_path) ;
 
-    if (tmp_path != host)
+    if (tmp_path != url->path)
       g_free(tmp_path) ;
   }
 
@@ -458,7 +463,7 @@ static void setLastErrorMsg(FileServer server, GError **gff_file_err_inout)
 
   gff_file_err = *gff_file_err_inout ;
 
-  server->last_err_msg = g_strdup(gff_file_err->message) ;
+  server->last_err_msg = g_strdup_printf("%s %s", server->file_path, gff_file_err->message) ;
 
   g_error_free(gff_file_err) ;
 

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Aug  5 17:10 2005 (edgrif)
+ * Last edited: Aug 31 11:03 2005 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.61 2005-08-09 11:02:09 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.62 2005-09-02 10:31:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,7 +70,7 @@ static void killConnections(ZMapView zmap_view) ;
 
 /* These are candidates to moved into zmapServer in fact, would be a more logical place for them. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
-					   struct url *url, char *format,
+					   zMapURL url, char *format,
 					   int timeout, char *version,
 					   char *styles_file, char *feature_sets,
 					   gboolean sequence_server, gboolean writeback_server,
@@ -368,7 +368,7 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 	    {
 	      char *version, *styles_file, *format, *url, *featuresets ;
 	      int timeout, url_parse_error ;
-              struct url *url_struct;
+              zMapURL urlObj;
 	      gboolean sequence_server, writeback_server ;
 	      ZMapViewConnection view_con ;
 
@@ -402,15 +402,15 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 		writeback_server = zMapConfigGetElementBool(next_server, "writeback") ;
 
               /* Parse the url, only here if there is a url to parse */
-              url_struct = url_parse(url, &url_parse_error);
-              if (!url_struct)
+              urlObj = url_parse(url, &url_parse_error);
+              if (!urlObj)
                 {
                   zMapLogWarning("GUI: url %s did not parse. Parse error < %s >\n",
                                  url,
                                  url_error(url_parse_error)) ;
                 }
-              else if (url_struct
-		       && (view_con = createConnection(zmap_view, url_struct,
+              else if (urlObj
+		       && (view_con = createConnection(zmap_view, urlObj,
 						       format,
 						       timeout, version, styles_file, featuresets,
 						       sequence_server, writeback_server,
@@ -433,19 +433,19 @@ gboolean zMapViewConnect(ZMapView zmap_view)
 		  if (view_con->types
 		      && !zMapFeatureTypeSetAugment(&(zmap_view->types), &(view_con->types)))
 		    zMapLogCritical("Could not merge types for server %s into existing types.", 
-                                    url_struct->host) ;
+                                    urlObj->host) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 		}
 	      else
 		{
                   zMapLogWarning("GUI: url %s looks ok, host: %s\nport: %d....\n",
-                                 url_struct->url, 
-                                 url_struct->host, 
-                                 url_struct->port) ; 
+                                 urlObj->url, 
+                                 urlObj->host, 
+                                 urlObj->port) ; 
 		  zMapLogWarning("Could not connect to server on %s, port %d", 
-                                 url_struct->host, 
-                                 url_struct->port) ;
+                                 urlObj->host, 
+                                 urlObj->port) ;
 		}
 	    }
 
@@ -1262,7 +1262,7 @@ static void killConnections(ZMapView zmap_view)
 
 /* Allocate a connection and send over the request to get the sequence displayed. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
-					   struct url *url, char *format,
+					   zMapURL url, char *format,
 					   int timeout, char *version,
 					   char *styles_file, char *featuresets_names,
 					   gboolean sequence_server, gboolean writeback_server,
@@ -1318,7 +1318,6 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       open_load->open.format  = g_strdup(format) ;
       open_load->open.timeout = timeout ;
       open_load->open.version = g_strdup(version) ;
-
 
       open_load->context.context = createContext(sequence, start, end, types, req_featuresets) ;
 
