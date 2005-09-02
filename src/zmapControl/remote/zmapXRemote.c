@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jul  1 14:37 2005 (rds)
+ * Last edited: Aug 23 18:05 2005 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.9 2005-07-04 16:31:01 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.10 2005-09-02 10:25:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -218,6 +218,8 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
 
   if(object->is_server == TRUE)
     return result;
+
+  zmapXRemoteResetErrMsg();
 
   result = zmapXRemoteCheckWindow(object);
 
@@ -785,6 +787,13 @@ static char *zmapXRemoteGetErrorAsResponse(void) /* Translation for users */
   return err;
 }
 
+static void zmapXRemoteResetErrMsg(void)
+{
+  if(zmapXRemoteErrorText != NULL)
+    g_free(zmapXRemoteErrorText);
+  zmapXRemoteErrorText = NULL;
+  return ;
+}
 static void zmapXRemoteSetErrMsg(zMapXRemoteStatus status, char *msg, ...)
 {
   va_list args;

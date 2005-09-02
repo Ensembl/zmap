@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jun 27 13:09 2005 (rds)
+ * Last edited: Aug 24 15:20 2005 (rds)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.5 2005-06-27 13:55:58 rds Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.6 2005-09-02 10:25:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -144,6 +144,7 @@ static int  zmapXErrorHandler(Display *dpy, XErrorEvent *e);
 static zMapXRemoteStatus zmapXRemoteErrorStatus = ZMAPXREMOTE_INTERNAL;
 static char *zmapXRemoteErrorText = NULL;
 static void zmapXRemoteSetErrMsg(zMapXRemoteStatus status, char *msg, ...);
+static void zmapXRemoteResetErrMsg(void);
 static char *zmapXRemoteGetErrorAsResponse(void);
 /* End of Xlib Error stuff                                  */
 /*==========================================================*/
