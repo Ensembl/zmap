@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Jun 23 12:23 2005 (edgrif)
+ * Last edited: Aug 31 13:43 2005 (rds)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.12 2005-06-24 13:21:47 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.13 2005-09-05 17:14:21 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -48,8 +48,8 @@
  * of a particular protocol. */
 typedef gboolean (*ZMapServerGlobalFunc)(void) ;
 typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
-					 char *host, int port, char *format, char *version_str,
-					 char *userid, char *passwd, int timeout) ;
+					 zMapURL url, char *format, 
+                                         char *version_str, int timeout) ;
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetTypes)(void *server_in,
@@ -101,7 +101,7 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs) ;
 
 
 /* Try to give consistent messages/logging.... */
-#define ZMAP_SERVER_MSGPREFIX "Server %d:%s - "
+#define ZMAP_SERVER_MSGPREFIX "Server %s:%s - "
 
 /* LOGTYPE just be one of the zMapLogXXXX types, i.e. Message, Warning, Critical or Fatal */
 #define ZMAPSERVER_LOG(LOGTYPE, PROTOCOL, HOST, FORMAT, ...) \

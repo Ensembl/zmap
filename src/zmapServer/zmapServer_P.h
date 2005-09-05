@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  8 17:59 2005 (rds)
+ * Last edited: Aug 31 13:50 2005 (rds)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer_P.h,v 1.7 2005-03-10 12:13:24 rds Exp $
+ * CVS info:   $Id: zmapServer_P.h,v 1.8 2005-09-05 17:14:46 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_P_H
@@ -42,17 +42,16 @@
 /* A connection to a database. */
 typedef struct _ZMapServerStruct
 {
-  /* We keep a copy of these as they are the minimum required for _any_ type of server. */
-  char *host ;
-  int protocol ;
+  zMapURL url ;                 /* Replace the host & protocol ... */
 
-  ZMapServerFuncs funcs ;
+  ZMapServerFuncs funcs ;       /* implementation specific functions
+                                   to make the server do the right
+                                   thing for it's protocol */
+  void *server_conn ;         /* opaque type used for server calls. */
 
-  void *server_conn ;					    /* opaque type used for server calls. */
+  ZMapServerResponseType last_response ; /* For errors returned by connection. */
 
-  ZMapServerResponseType last_response ;		    /* For errors returned by connection. */
   char *last_error_msg ;
-
 
 } ZMapServerStruct ;
 
@@ -61,11 +60,9 @@ typedef struct _ZMapServerStruct
 typedef struct _ZMapServerContextStruct
 {
   ZMapServer server ;
-
-  void *server_conn_context ;				    /* opaque type used for server calls. */
+  void *server_conn_context ; /* opaque type used for server calls. */
 
 } ZMapServerContextStruct ;
-
 
 
 /* Hard coded for now...sigh....would like to be more dynamic really.... */

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Jul 26 18:10 2005 (edgrif)
+ * Last edited: Sep  2 11:34 2005 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.24 2005-07-27 12:23:19 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.25 2005-09-05 17:13:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,11 +46,10 @@
 /* This routine must be called before any other server routine and must only be called once,
  * it is the callers responsibility to make sure this is true....
  * NOTE the result is always TRUE at the moment because if we fail on any of these we crash... */
-gboolean zMapServerGlobalInit(struct url *url, void **server_global_data_out)
+gboolean zMapServerGlobalInit(zMapURL url, void **server_global_data_out)
 {
   gboolean result = TRUE ;
   ZMapServerFuncs serverfuncs ;
-  enum url_scheme protocol = url->scheme ;
 
   serverfuncs = g_new0(ZMapServerFuncsStruct, 1) ;	    /* n.b. crashes on failure. */
 
@@ -59,29 +58,31 @@ gboolean zMapServerGlobalInit(struct url *url, void **server_global_data_out)
   /* Probably I should do this with a table of protocol and function stuff...perhaps
    * even using dynamically constructed function names....  */
 
-  if (protocol == SCHEME_ACEDB)
-    {
-      acedbGetServerFuncs(serverfuncs) ;
-    }
-  else if (protocol == SCHEME_HTTP) /* Force http to BE das at the moment, but later I think we should have FORMAT too */
-    {                               /* Not that Format gets passed in here though!!! we'd need to pass the url struct */
-      //      if(strcasecmp(format, 'das') == 0)
-      // {
-          dasGetServerFuncs(serverfuncs) ;
-          //  }
-    }
-  else if (protocol == SCHEME_FILE)
-    {
+  switch(url->scheme){
+  case SCHEME_ACEDB:
+    acedbGetServerFuncs(serverfuncs) ;
+    break;
+  case SCHEME_HTTP:
+    /*  case SCHEME_HTTPS: */
+    /* Force http[s] to BE das at the moment, but later I think we should have FORMAT too */
+    /* Not that Format gets passed in here though!!! we'd need to pass the url struct */
+    /* if(strcasecmp(format, 'das') == 0) */
+    dasGetServerFuncs(serverfuncs);
+    break;
+  case SCHEME_FILE:
+    if(url->params)
+      dasGetServerFuncs(serverfuncs);
+    else
       fileGetServerFuncs(serverfuncs) ;
-    }
-  else
-    {
-      /* Fatal coding error, we exit here..... Nothing more can happen
-         without setting up serverfuncs! */
-      /* Getting here means somethings been added to ZMap/zmapUrl.h
-         and not to the above protocol decision above. */
-      zMapLogFatal("Unsupported server protocol: %s", protocol) ;
-    }
+    break;
+  default:
+    /* Fatal coding error, we exit here..... Nothing more can happen
+       without setting up serverfuncs! */
+    /* Getting here means somethings been added to ZMap/zmapUrl.h
+       and not to the above protocol decision above. */
+    zMapLogFatal("Unsupported server protocol: %s", url->protocol) ;
+    break;
+  }
 
   /* All functions MUST be specified. */
   zMapAssert(serverfuncs->global_init
@@ -106,47 +107,42 @@ gboolean zMapServerGlobalInit(struct url *url, void **server_global_data_out)
 
 
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
-				    struct url *url, char *format,
+				    zMapURL url, char *format,
 				    int timeout, char *version_str)
 {
   gboolean result = TRUE ;
   ZMapServer server ;
   ZMapServerFuncs serverfuncs = (ZMapServerFuncs)global_data ;
-  char *host = url->host;
-  int port = url->port;
-  enum url_scheme protocol = url->scheme ;
-
-  char *userid = url->user;
-  char *passwd = url->passwd;
-
-
+  int parse_error;
   zMapAssert(server_out && global_data && url) ;
 
-  /* For some protocols we finesse the host as a filename or whatever... */
-  if (protocol == SCHEME_FILE)
-    host = url->path ;
-
-  server = g_new0(ZMapServerStruct, 1) ;		    /* n.b. crashes on failure. */
+  server      = g_new0(ZMapServerStruct, 1) ; /* n.b. crashes on failure. */
   *server_out = server ;
-
   /* set function table. */
   server->funcs = serverfuncs ;
 
+  /* COPY/REPARSE the url into server... with paranoia as it managed to parse 1st time! */
+  if((server->url = url_parse(url->url, &parse_error)) == NULL)
+    {
+      result = FALSE;
+      server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(url->protocol, 
+                                                      url->host, "%s",
+                                                      url_error(parse_error)) ;
+    }
+
   if (result)
     {
-      if ((server->funcs->create)(&(server->server_conn), host, port, format, version_str,
-				  userid, passwd, timeout))
+      if ((server->funcs->create)(&(server->server_conn), url, format, 
+                                  version_str, timeout))
 	{
-	  server->host = g_strdup(host) ;
-	  server->protocol = protocol ;
-	  server->last_response = ZMAP_SERVERRESPONSE_OK ;
+	  server->last_response  = ZMAP_SERVERRESPONSE_OK ;
 	  server->last_error_msg = NULL ;
-
 	  result = TRUE ;
 	}
       else
 	{
-	  server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
+	  server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                          server->url->host, "%s",
 							  (server->funcs->errmsg)(server->server_conn)) ;
 	  result = FALSE ;
 	}
@@ -163,7 +159,8 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server)
   result = server->last_response = (server->funcs->open)(server->server_conn) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
-    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
+    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                    server->url->host, "%s",
 						    (server->funcs->errmsg)(server->server_conn)) ;
 
   return result ;
@@ -177,7 +174,8 @@ ZMapServerResponseType zMapServerGetTypes(ZMapServer server, GList *requested_ty
 							      requested_types, types_out) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
-    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
+    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                    server->url->host, "%s",
 						    (server->funcs->errmsg)(server->server_conn)) ;
 
   return result ;
@@ -197,7 +195,8 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContex
 	= (server->funcs->set_context)(server->server_conn, feature_context) ;
 
       if (result != ZMAP_SERVERRESPONSE_OK)
-	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
+	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                        server->url->host, "%s",
 							(server->funcs->errmsg)(server->server_conn)) ;
     }
 
@@ -227,7 +226,8 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureConte
 
 
       if (result != ZMAP_SERVERRESPONSE_OK)
-	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
+	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                        server->url->host, "%s",
 							(server->funcs->errmsg)(server->server_conn)) ;
     }
 
@@ -245,7 +245,8 @@ ZMapServerResponseType zMapServerGetSequence(ZMapServer server, ZMapFeatureConte
 	= (server->funcs->get_sequence)(server->server_conn, feature_context) ;
 
       if (result != ZMAP_SERVERRESPONSE_OK)
-	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
+	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                        server->url->host, "%s",
 							(server->funcs->errmsg)(server->server_conn)) ;
     }
 
@@ -261,7 +262,8 @@ ZMapServerResponseType zMapServerCloseConnection(ZMapServer server)
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
     {
       if (!(result = (server->funcs->close)(server->server_conn)))
-	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->protocol, server->host, "%s",
+	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                        server->url->host, "%s",
 							(server->funcs->errmsg)(server->server_conn)) ;
     }
 
@@ -273,7 +275,7 @@ gboolean zMapServerFreeConnection(ZMapServer server)
   gboolean result = TRUE ;
 
   (server->funcs->destroy)(server->server_conn) ;
-  g_free(server->host) ;
+  /* Free zMapURL!!!! url_free(server->url)*/
   g_free(server) ;
 
   return result ;
