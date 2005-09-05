@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Sep  5 18:07 2005 (rds)
+ * Last edited: Sep  5 18:51 2005 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.11 2005-09-05 17:27:52 rds Exp $
+ * CVS info:   $Id: dasServer.c,v 1.12 2005-09-05 17:54:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -476,9 +476,9 @@ static gboolean requestAndParseOverHTTP(DasServer server, char *url, dasDataType
                   curl_easy_setopt(server->curl_handle, CURLOPT_URL, url)) != CURLE_OK))
     {
       result = FALSE ;
-      server->last_errmsg = g_strdup_printf("dasServer requesting '%s' over HTTP Error: %s, %s",
+      server->last_errmsg = g_strdup_printf("dasServer requesting '%s' over HTTP Error: %d, %s",
                                             url,
-                                            curl_easy_strerror(server->curl_error),
+                                            server->curl_error,
                                             server->curl_errmsg
                                             );
     }
@@ -502,9 +502,9 @@ static gboolean requestAndParseOverHTTP(DasServer server, char *url, dasDataType
           if((server->curl_error != CURLE_WRITE_ERROR) ||
              ((server->curl_error == CURLE_WRITE_ERROR) 
               && ((server->last_errmsg = zMapXMLParser_lastErrorMsg(server->parser)) == NULL)))
-            server->last_errmsg = g_strdup_printf("dasServer url: '%s', HTTP Error: %s, %s",
+            server->last_errmsg = g_strdup_printf("dasServer url: '%s', HTTP Error: %d, %s",
                                                   url,
-                                                  curl_easy_strerror(server->curl_error),
+                                                  server->curl_error,
                                                   server->curl_errmsg
                                                   );
         }
