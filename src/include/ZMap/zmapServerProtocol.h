@@ -28,9 +28,9 @@
  *              give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Aug  5 09:47 2005 (edgrif)
+ * Last edited: Aug 31 17:45 2005 (rds)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.6 2005-08-09 10:56:17 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.7 2005-09-05 17:25:06 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -73,7 +73,7 @@ typedef enum
 
 
 /* ALL request/response structs must include the fields from ZMapServerReqType
- * as their first field in the struct so that code can look in all such structs to decode them. */
+ * as their _FIRST_ field in the struct so that code can look in all such structs to decode them. */
 
 
 /* The canonical request, use the "type" field to detect the contents of the struct. */
@@ -88,7 +88,7 @@ typedef struct
 {
   ZMapServerReqType type ;
 
-  struct url *url ;             /* replaces host, port, protocol and allows more info */
+  zMapURL url ;             /* replaces host, port, protocol and allows more info */
   char *format ;
   int timeout ;
   char *version ;

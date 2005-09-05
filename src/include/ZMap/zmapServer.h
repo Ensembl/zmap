@@ -26,9 +26,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Jul 25 07:55 2005 (edgrif)
+ * Last edited: Aug 30 12:05 2005 (rds)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.16 2005-07-27 12:34:56 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.17 2005-09-05 17:24:52 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -51,9 +51,9 @@ typedef enum {ZMAP_SERVERRESPONSE_OK,
 /* This routine must be called before any other server routines and must only be called once.
  * It is the callers responsibility to make sure this happens.
  * Provide matching Termination routine ???? */
-gboolean zMapServerGlobalInit(struct url *url, void **server_global_data_out) ;
+gboolean zMapServerGlobalInit(zMapURL url, void **server_global_data_out) ;
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
-				    struct url *url,  char *format,
+				    zMapURL url,  char *format,
 				    int timeout, char *version_str);
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
 ZMapServerResponseType zMapServerGetTypes(ZMapServer server,
