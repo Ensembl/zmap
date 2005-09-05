@@ -4,12 +4,20 @@ include $(top_srcdir)/Makefile.common
 # Building Libraries
 ################################################################################
 
-LIBS_ZMAP = libZMapApp.a \
+LIBS_ZMAP_LOCAL = libZMapApp.a \
 	libZMap.a \
 	libZMapThr.a \
+        libZMapXML.a \
 	$(NULL)
 
-noinst_LIBRARIES = $(LIBS_ZMAP)
+noinst_LIBRARIES = $(LIBS_ZMAP_LOCAL)
+
+libZMapXML_a_SOURCES = $(top_srcdir)/zmapXML/zmapXML_P.h \
+	$(top_srcdir)/zmapXML/zmapXMLDocument.c \
+	$(top_srcdir)/zmapXML/zmapXMLElement.c \
+	$(top_srcdir)/zmapXML/zmapXMLAttribute.c \
+	$(top_srcdir)/zmapXML/zmapXMLParse.c \
+	$(top_srcdir)/zmapXML/zmapXMLFactory.c
 
 libZMapApp_a_SOURCES = $(top_srcdir)/zmapApp/zmapApp_P.h \
 	$(top_srcdir)/zmapApp/zmapAppconnect.c \
@@ -42,6 +50,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapDocs/ZMapConfigFiles.c \
 	$(top_srcdir)/zmapDocs/ZMapMainPage.c \
 	$(top_srcdir)/zmapDraw/zmapDraw.c \
+	$(top_srcdir)/zmapDraw/zmapDraw_P.h \
 	$(top_srcdir)/zmapFeature/zmapFeature.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureTypes.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureUtils.c \
@@ -94,6 +103,9 @@ libZMapThr_a_SOURCES = $(top_srcdir)/zmapServer/zmapServer.c \
 	$(top_srcdir)/zmapServer/das/saxparse.c \
 	$(top_srcdir)/zmapServer/das/saxparse.h \
 	$(top_srcdir)/zmapServer/das/saxparse_P.h \
+	$(top_srcdir)/zmapServer/das/das1schema.h \
+	$(top_srcdir)/zmapServer/das/das1meta.c \
+	$(top_srcdir)/zmapServer/das/das1XMLhandlers.c \
 	$(top_srcdir)/zmapServer/file/fileServer.c \
 	$(top_srcdir)/zmapServer/file/fileServer_P.h \
 	$(top_srcdir)/zmapThreads/zmapSlave.c \
@@ -101,6 +113,9 @@ libZMapThr_a_SOURCES = $(top_srcdir)/zmapServer/zmapServer.c \
 	$(top_srcdir)/zmapThreads/zmapThreads.c \
 	$(top_srcdir)/zmapThreads/zmapThreadsUtils.c \
 	$(top_srcdir)/zmapThreads/zmapThreads_P.h
+
+libZMapXML_a_CPPFLAGS = $(AM_CPPFLAGS) \
+	-I$(top_srcdir)/zmapXML
 
 libZMapApp_a_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(top_srcdir)/zmapApp \
@@ -123,8 +138,8 @@ libZMapThr_a_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(top_srcdir)/zmapThreads
 
 libZMapApp_a_DEPENDENCIES = src-link
-libZMap_a_DEPENDENCIES = src-link
-libZMapThr_a_DEPENDENCIES = src-link
+libZMap_a_DEPENDENCIES = src-link libZMapXML.a
+libZMapThr_a_DEPENDENCIES = src-link libZMapXML.a
 
 
 src-link: 
