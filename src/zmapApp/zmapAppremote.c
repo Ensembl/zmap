@@ -27,19 +27,49 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jul  6 11:31 2005 (rds)
+ * Last edited: Aug 26 16:08 2005 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.7 2005-07-06 10:36:43 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.8 2005-09-05 17:15:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <zmapApp_P.h>
+#include <ZMap/zmapXML.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 
+typedef enum {
+  ZMAP_APP_REMOTE_ALL = 1
+} appObjType;
+
+typedef enum {
+  ZMAP_APP_REMOTE_UNKNOWN,
+  ZMAP_APP_REMOTE_OPEN_ZMAP,
+  ZMAP_APP_REMOTE_CLOSE_ZMAP
+} appValidActions;
+
+/* This should be somewhere else ... 
+   or we should be making other objects */
+typedef struct 
+{
+  appValidActions action;
+  GQuark sequence;
+  GQuark start;
+  GQuark end;
+  GQuark source;
+} appRemoteAllStruct, *appRemoteAll;
+
+static void getMeMyHashTable(GHashTable **userTable);
+static gboolean start(void *userData, 
+                      zmapXMLElement element, 
+                      zmapXMLParser parser);
+static gboolean end(void *userData, 
+                    zmapXMLElement element, 
+                    zmapXMLParser parser);
+
 static char *appexecuteCommand(char *command_text, gpointer app_context, int *statusCode);
-static gboolean createZMap(ZMapAppContext app, char *command_text);
+static gboolean createZMap(ZMapAppContext app, appRemoteAll obj);
 static void destroyNotifyData(gpointer destroy_data);
 
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
@@ -59,7 +89,7 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
       notifyData->callback = ZMAPXREMOTE_CALLBACK(appexecuteCommand);
       notifyData->data     = app_context_data; 
       
-      zMapXRemoteInitServer(xremote, id, PACKAGE_NAME, ZMAP_DEFAULT_REQUEST_ATOM_NAME, ZMAP_DEFAULT_RESPONSE_ATOM_NAME);
+     zMapXRemoteInitServer(xremote, id, PACKAGE_NAME, ZMAP_DEFAULT_REQUEST_ATOM_NAME, ZMAP_DEFAULT_RESPONSE_ATOM_NAME);
       zMapConfigDirWriteWindowIdFile(id, "main");
 
       /* Makes sure we actually get the events!!!! Use add-events as set_events needs to be done BEFORE realize */
@@ -105,27 +135,57 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
   return;
 }
 /* This should just be a filter command passing to the correct
-   function defined by the primary word of the request */
+   function defined by the action="value" of the request */
 static char *appexecuteCommand(char *command_text, gpointer app_context, int *statusCode){
-  ZMapAppContext app  = (ZMapAppContext)app_context;
-  char *xml_reply     = NULL;
-  int code            = ZMAPXREMOTE_INTERNAL; /* unknown command if this isn't changed */
+  ZMapAppContext app   = (ZMapAppContext)app_context;
+  char *xml_reply      = NULL;
+  int code             = ZMAPXREMOTE_INTERNAL; /* unknown command if this isn't changed */
+  zmapXMLParser parser = NULL;
+  gboolean cmd_debug   = FALSE;
+  gboolean parse_ok    = FALSE;
+  GList *list          = NULL;
+  GHashTable *table;
 
   g_clear_error(&(app->info));
 
-  /* check command for primary word */
-  if(g_str_has_prefix(command_text, "newZmap"))
+  getMeMyHashTable(&table);
+  parser = zMapXMLParser_create(table, FALSE, cmd_debug);
+  zMapXMLParser_setMarkupObjectHandler(parser, start, end);
+  parse_ok = zMapXMLParser_parseBuffer(parser, command_text, strlen(command_text));
+
+  if(parse_ok && 
+     zMapXMLFactoryListFromNameQuark(table, g_quark_from_string("zmap"), &list) > 0 
+     && !(list == NULL))
     {
-      if(createZMap(app, command_text))
-        code = ZMAPXREMOTE_OK;
-      else
-        code = ZMAPXREMOTE_BADREQUEST;
+      appRemoteAll appOpen = (appRemoteAll)(list->data);
+
+      switch(appOpen->action){
+      case ZMAP_APP_REMOTE_OPEN_ZMAP:
+        if(createZMap(app, appOpen))
+          code = ZMAPXREMOTE_OK;
+        else
+          code = ZMAPXREMOTE_BADREQUEST;
+        break;
+      case ZMAP_APP_REMOTE_CLOSE_ZMAP:
+        printf("Doesn't do this yet\n");
+        break;
+      default:
+        break;
+      }
     }
-  else if(g_str_has_prefix(command_text, "closeZmap"))
+  else if(!parse_ok)
     {
-      code = ZMAPXREMOTE_FORBIDDEN;
-      //      closeZMap(app, command_text);
+      code = ZMAPXREMOTE_BADREQUEST;
+      app->info = 
+        g_error_new(g_quark_from_string(__FILE__),
+                    code,
+                    "%s",
+                    zMapXMLParser_lastErrorMsg(parser)
+                    );      
     }
+
+  /* Free the parser!!! */
+  /* zMapXMLParser_free(parser); */
 
   /* Now check what the status is */
   switch (code)
@@ -133,24 +193,24 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
     case ZMAPXREMOTE_INTERNAL:
       {
         code = ZMAPXREMOTE_UNKNOWNCMD;    
-        app->info = 
-          g_error_new(g_quark_from_string(__FILE__),
-                      code,
-                      "<!-- request was %s -->%s",
-                      command_text,
-                      "unknown command"
-                      );
+        app->info || (app->info = 
+                      g_error_new(g_quark_from_string(__FILE__),
+                                  code,
+                                  "<!-- request was %s -->%s",
+                                  command_text,
+                                  "unknown command"
+                                  ));
         break;
       }
     case ZMAPXREMOTE_BADREQUEST:
       {
-        app->info = 
-          g_error_new(g_quark_from_string(__FILE__),
-                      code,
-                      "<!-- request was %s -->%s",
-                      command_text,
-                      "bad request"
-                      );
+        app->info || ( app->info = 
+                       g_error_new(g_quark_from_string(__FILE__),
+                                   code,
+                                   "<!-- request was %s -->%s",
+                                   command_text,
+                                   "bad request"
+                                   ));
         break;
       }
     case ZMAPXREMOTE_FORBIDDEN:
@@ -158,8 +218,7 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
         app->info = 
           g_error_new(g_quark_from_string(__FILE__),
                       code,
-                      "<!-- request was %s -->%s",
-                      command_text,
+                      "%s",
                       "forbidden request"
                       );
         break;
@@ -170,13 +229,13 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
         if(!app->info)
           {
             code = ZMAPXREMOTE_INTERNAL;
-            app->info || (app->info = 
+            app->info = 
               g_error_new(g_quark_from_string(__FILE__),
                           code,
                           "<!-- request was %s -->%s",
                           command_text,
                           "CODE error on the part of the zmap programmers."
-                          ));
+                          );
           }
         break;
       }
@@ -191,57 +250,14 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
 }
 
 
-static gboolean createZMap(ZMapAppContext app, char *command_text)
+static gboolean createZMap(ZMapAppContext app, appRemoteAll obj)
 {
-  gboolean parse_error, executed ;
-  char *next ;
-  char *keyword, *value ;
-  gchar *type = NULL ;
-  gint start = 0, end = 0;
-  char *sequence;
+  gboolean executed = FALSE;
+  char *sequence    = g_strdup(g_quark_to_string(obj->sequence));
 
-  next = strtok(command_text, " ") ;			    /* Skip newZmap. */
-
-  executed = parse_error = FALSE ;
-  while (!parse_error && (next = strtok(NULL, " ")))
-    {
-      keyword = g_strdup(next) ;			    /* Get keyword. */
-
-      next = strtok(NULL, " ") ;			    /* skip "=" */
-
-      next = strtok(NULL, " ") ;			    /* Get value. */
-      value = g_strdup(next) ;
-
-      next = strtok(NULL, " ") ;			    /* skip ";" */
-
-
-      if (g_ascii_strcasecmp(keyword, "seq") == 0)
-        {
-          sequence = g_strdup(value) ;
-        }
-      else if (g_ascii_strcasecmp(keyword, "start") == 0)
-	{
-          start = strtol(value, (char **)NULL, 10) ;
-	}
-      else if (g_ascii_strcasecmp(keyword, "end") == 0)
-        {
-          end = strtol(value, (char **)NULL, 10) ;
-        }
-      else
-	{
-	  parse_error = TRUE ;
-	}
-
-      g_free(keyword) ;
-      g_free(value) ;
-    }
-
-  if (!parse_error)
-    {
-      zmapAppCreateZMap(app, sequence, start, end) ;
-      executed = TRUE;
-    }
-
+  zmapAppCreateZMap(app, sequence, obj->start, obj->end) ;
+  executed = TRUE;
+  
   /* Clean up. */
   if (sequence)
     g_free(sequence) ;
@@ -269,5 +285,95 @@ static void destroyNotifyData(gpointer destroy_data)
 
 
 
+static gboolean start(void *userData, 
+                      zmapXMLElement element, 
+                      zmapXMLParser parser)
+{
+  GHashTable *table = (GHashTable *)userData;
+  GList *list       = NULL;
+  gboolean handled  = FALSE;
+  appObjType type;
+
+  type  = (appObjType)zMapXMLFactoryDecodeElement(table, element, NULL);
+
+  switch(type){
+  case ZMAP_APP_REMOTE_ALL:
+    {
+      zmapXMLAttribute attr = NULL;
+      appRemoteAll objAll   = g_new0(appRemoteAllStruct, 1);
+      if((attr = zMapXMLElement_getAttributeByName(element, "action")) != NULL)
+        {
+          GQuark action = zMapXMLAttributeValue(attr);
+          if(action == g_quark_from_string("new"))
+            objAll->action = ZMAP_APP_REMOTE_OPEN_ZMAP;
+          if(action == g_quark_from_string("close"))
+            objAll->action = ZMAP_APP_REMOTE_CLOSE_ZMAP;
+        }
+      /* Add obj to list */
+      zMapXMLFactory_listAppend(table, element, objAll);
+    }
+    break;
+  default:
+    break;
+  }
+  return handled;
+}
+static gboolean end(void *userData, 
+                    zmapXMLElement element, 
+                    zmapXMLParser parser)
+{
+  GHashTable *obj  = (GHashTable *)userData;
+  GList *list      = NULL;
+  gboolean handled = FALSE;
+  appObjType type  = (appObjType)zMapXMLFactoryDecodeElement(obj, element, &list);
 
 
+  switch(type){
+  case ZMAP_APP_REMOTE_ALL:
+    {
+      zmapXMLElement child = NULL;
+      appRemoteAll appOpen = (appRemoteAll)(list->data);
+      if((child = zMapXMLElement_getChildByName(element, g_quark_from_string("segment"))) != NULL)
+        {
+          zmapXMLAttribute attr = NULL;
+          if((attr = zMapXMLElement_getAttributeByName(child, "sequence")) != NULL)
+            appOpen->sequence = zMapXMLAttributeValue(attr);
+          if((attr = zMapXMLElement_getAttributeByName(child, "start")) != NULL)
+            appOpen->start = zMapXMLAttributeValue(attr);
+          else
+            appOpen->start = 1;
+          if((attr = zMapXMLElement_getAttributeByName(child, "end")) != NULL)
+            appOpen->end = zMapXMLAttributeValue(attr);
+          else
+            appOpen->end = 0;
+        }
+      if((child = zMapXMLElement_getChildByName(element, g_quark_from_string("segment"))) != NULL)
+        appOpen->source = child->contents;
+    }
+    handled = TRUE;
+    break;
+  default:
+    break;
+  }
+  return handled;
+}
+
+
+static void getMeMyHashTable(GHashTable **userTable)
+{
+  GHashTable *table       = NULL;
+  zmapXMLFactoryItem zmap = g_new0(zmapXMLFactoryItemStruct, 1);
+
+  if(!userTable)
+    return ;
+
+  zmap->type = (int)ZMAP_APP_REMOTE_ALL;
+  table      = g_hash_table_new(NULL, NULL);
+
+  g_hash_table_insert(table,
+                      GINT_TO_POINTER(g_quark_from_string("zmap")),
+                      zmap);
+  *userTable = table;
+
+  return ;
+}
