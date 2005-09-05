@@ -77,7 +77,7 @@ echo "==========================================================================
 # run the configure.......watch out for the quoting, sometimes we want the variable to
 # be interpreted as a single cmdline arg, sometimes as multiple ones.
 
-$root/configure $cc_args "$cflags_args" "$ld_args" || msgAndExit "configure script failed"
+$root/configure --enable-debug $cc_args "$cflags_args" "$ld_args" || msgAndExit "configure script failed"
 
 
 exit 0
