@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Aug 26 16:08 2005 (rds)
+ * Last edited: Sep  5 18:21 2005 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.8 2005-09-05 17:15:59 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.9 2005-09-05 17:23:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -303,7 +303,7 @@ static gboolean start(void *userData,
       appRemoteAll objAll   = g_new0(appRemoteAllStruct, 1);
       if((attr = zMapXMLElement_getAttributeByName(element, "action")) != NULL)
         {
-          GQuark action = zMapXMLAttributeValue(attr);
+          GQuark action = zMapXMLAttribute_getValue(attr);
           if(action == g_quark_from_string("new"))
             objAll->action = ZMAP_APP_REMOTE_OPEN_ZMAP;
           if(action == g_quark_from_string("close"))
@@ -337,13 +337,13 @@ static gboolean end(void *userData,
         {
           zmapXMLAttribute attr = NULL;
           if((attr = zMapXMLElement_getAttributeByName(child, "sequence")) != NULL)
-            appOpen->sequence = zMapXMLAttributeValue(attr);
+            appOpen->sequence = zMapXMLAttribute_getValue(attr);
           if((attr = zMapXMLElement_getAttributeByName(child, "start")) != NULL)
-            appOpen->start = zMapXMLAttributeValue(attr);
+            appOpen->start = zMapXMLAttribute_getValue(attr);
           else
             appOpen->start = 1;
           if((attr = zMapXMLElement_getAttributeByName(child, "end")) != NULL)
-            appOpen->end = zMapXMLAttributeValue(attr);
+            appOpen->end = zMapXMLAttribute_getValue(attr);
           else
             appOpen->end = 0;
         }

@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Sep  5 18:17 2005 (rds)
+ * Last edited: Sep  5 18:20 2005 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.14 2005-09-05 17:17:40 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.15 2005-09-05 17:23:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -478,7 +478,7 @@ static void setActionType(zmapXMLElement ele, xmlObjectsData obj)
 
   if((attr = zMapXMLElement_getAttributeByName(ele, "action")) != NULL)
     {
-      GQuark action = zMapXMLAttributeValue(attr);
+      GQuark action = zMapXMLAttribute_getValue(attr);
       if(action == g_quark_from_string("zoom_in"))
         obj->action = ZMAP_CONTROL_ACTION_ZOOM_IN;
       if(action == g_quark_from_string("zoom_out"))
@@ -575,13 +575,13 @@ static gboolean start(void *userData,
       if((xid_attr = zMapXMLElement_getAttributeByName(element, "id")) != NULL)
         {
           char *xid;
-          xid = (char *)g_quark_to_string(zMapXMLAttributeValue(xid_attr));
+          xid = (char *)g_quark_to_string(zMapXMLAttribute_getValue(xid_attr));
           clientObj->xid = strtoul(xid, (char **)NULL, 16);
         }
       if((req_attr  = zMapXMLElement_getAttributeByName(element, "request")) != NULL)
-        clientObj->request = zMapXMLAttributeValue(req_attr);
+        clientObj->request = zMapXMLAttribute_getValue(req_attr);
       if((res_attr  = zMapXMLElement_getAttributeByName(element, "response")) != NULL)
-        clientObj->response = zMapXMLAttributeValue(res_attr);
+        clientObj->response = zMapXMLAttribute_getValue(res_attr);
 
       zMapXMLFactory_listAppend(obj->hashtable, element, clientObj);
     }
