@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  5 11:36 2005 (rds)
+ * Last edited: Sep  5 18:47 2005 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.1 2005-09-05 17:28:22 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.2 2005-09-05 17:54:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -127,11 +127,13 @@ gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser,
   int isFinal ;
   isFinal = (size ? 0 : 1);
 
+#ifdef NEW_FEATURE_NOT_ON_ALPHAS
   XML_ParsingStatus status;
   XML_GetParsingStatus(parser->expat, &status);
 
   if(status.parsing == XML_FINISHED)
     zMapXMLParser_reset(parser);
+#endif
 
   if (XML_Parse(parser->expat, (char *)data, size, isFinal) != XML_STATUS_OK)
     {
@@ -143,6 +145,9 @@ gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser,
                                             XML_ErrorString(XML_GetErrorCode(parser->expat))) ;
       result = FALSE ;
     }
+  /* Because XML_ParsingStatus XML_GetParsingStatus aren't on alphas! */
+  if(isFinal)
+    zMapXMLParser_reset(parser);
 
   return result ;
 }
