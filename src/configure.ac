@@ -63,6 +63,19 @@ AC_LANG(C)
 AC_PATH_XTRA
 X_LIBS="$X_LIBS -lX11"
 
+AC_ARG_ENABLE(debug,
+        AC_HELP_STRING([--enable-debug], [enable debug info compilation (no)]),
+        deb=$enableval, deb=no)
+
+CFLAGS=""
+
+if test "x$deb" = xyes; then
+   CFLAGS="$CFLAGS -g";
+else
+   CFLAGS="$CFLAGS -O2";
+fi
+
+
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
@@ -198,10 +211,16 @@ zmapServer \
 zmapThreads \
 zmapUtils \
 zmapView \
-zmapWindow"
+zmapWindow \
+zmapXML"
 
 AC_SUBST(ZMAP_SRC_DIRS)
-
+ZMAP_SRC_DIRS_DOXYGEN=""
+for zm_srcdir in $ZMAP_SRC_DIRS
+do
+   ZMAP_SRC_DIRS_DOXYGEN="$ZMAP_SRC_DIRS_DOXYGEN $srcdir/$zm_srcdir"
+done
+AC_SUBST(ZMAP_SRC_DIRS_DOXYGEN)
 
 AC_CONFIG_FILES([Makefile
 zmapApp/Makefile
@@ -222,11 +241,13 @@ zmapThreads/Makefile
 zmapUtils/Makefile
 zmapView/Makefile
 zmapWindow/Makefile
+zmapXML/Makefile
 include/Makefile
 lib/Makefile
+testbed/Makefile
 zmap.pc
 ZMap:dotZmap.in
-Doxyfile:Doxyfile.in
+$srcdir/$DX_CONFIG:Doxyfile.in
 ])
 
 AC_OUTPUT
