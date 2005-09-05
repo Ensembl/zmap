@@ -26,7 +26,7 @@ PROJECT_NAME           = @PACKAGE_NAME@
 PROJECT_NUMBER         = @PACKAGE_VERSION@
 
 
-CREATE_SUBDIRS         = YES
+#CREATE_SUBDIRS         = YES
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
@@ -395,7 +395,10 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = @ZMAP_SRC_DIRS@ include/ZMap
+# Just a simple $(SRCDIR) may have been enough here, but there are directories
+# containing C src which doesn't need to be included (perl & testbed).
+
+INPUT                  = @ZMAP_SRC_DIRS_DOXYGEN@ $(SRCDIR)/include/ZMap
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
