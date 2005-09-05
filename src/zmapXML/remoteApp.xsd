@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xsd:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            xmlns:rem="http://www.sanger.ac.uk/zmap/remoteApp" >
+
+<xsd:annotation>
+  <xsd:documentation xml:lang="en">
+  A schema to expose what zmap can handle as remote commands.
+  If you have any issues with this document or would like to 
+  request an addition please contact zmap@sanger.ac.uk
+  </xsd:documentation>
+</xsd:annotation>
+
+<!-- Annoymous type for the root element -->
+<xsd:element name="zmap">
+  <xsd:complexType>
+    <xsd:attribute name="action" type="ValidActions" use="required" />
+    <xsd:element name="segment" type="SequenceDescriptor" minOccurs="1" maxOccurs="unbounded" />
+    <xsd:element name="source"  type="anyURI"             minOccurs="0" maxOccurs="1" />
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:complexType name="SequenceDescriptor">
+  <xsd:attribute name="sequence" type="xsd:string"  use="required" />
+  <xsd:attribute name="start"    type="xsd:positiveInteger" />
+  <xsd:attribute name="end"      type="xsd:positiveInteger" />
+</xsd:complexType>
+
+
+<!-- A list of valid values for the action attribute of the root element. -->
+<xsd:simpleType name="ValidActions">
+  <xsd:restriction base="xsd:string">
+    <!-- simple takes nothing else -->
+    <xsd:enumeration value="zoom_in"  />
+    <xsd:enumeration value="zoom_out" />
+
+    <!-- takes location or feature construct -->
+    <xsd:enumeration value="zoom_to"  />
+
+    <!-- takes feature construct(s) -->
+    <xsd:enumeration value="create_feature" />
+    <xsd:enumeration value="alter_feature"  />
+    <xsd:enumeration value="delete_feature" />
+    <xsd:enumeration value="find_feature"   />
+    <xsd:enumeration value="highlight_feature"   />
+    <xsd:enumeration value="unhighlight_feature" />
+
+    <!-- takes a client construct -->
+    <xsd:enumeration value="create_client" />
+
+  </xsd:restriction>
+</xsd:simpleType>
+
+</xsd:schema>

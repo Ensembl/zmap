@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xsd:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            xmlns:rem="http://www.sanger.ac.uk/zmap/remoteCommand" >
+
+<xsd:annotation>
+  <xsd:documentation xml:lang="en">
+  A schema to expose what zmap can handle as remote commands.
+  If you have any issues with this document or would like to 
+  request an addition please contact zmap@sanger.ac.uk
+  </xsd:documentation>
+</xsd:annotation>
+
+<!-- Annoymous type for the root element -->
+<xsd:element name="zmap">
+  <xsd:complexType>
+    <xsd:attribute name="action" type="ValidActions" use="required" />
+    <xsd:choice>
+      <xsd:group    ref="FeaturesAndOrListsOf" />
+      <xsd:element name="location" type="LocationType"   />
+      <xsd:element name="client"   type="ClientInfoType" />
+    </xsd:choice>
+  </xsd:complexType>
+</xsd:element>
+
+
+<!-- Group to allow top level to have multiple features AND feature elements
+     N.B. features elements have 1 or more feature elements!
+  -->
+<xsd:group id="FeaturesAndOrListsOf">
+  <xsd:element name="features" type="FeatureListType" minOccurs="0" maxOccurs="unbounded" />
+  <xsd:element name="feature"  type="FeatureType"     minOccurs="0" maxOccurs="unbounded" />  
+</xsd:group>
+
+<!-- The feature type -->
+<xsd:complexType name="FeatureType">
+  <xsd:attribute name="name"  type="xsd:string" />   <!-- b0250.1 -->
+  <xsd:attribute name="style" type="xsd:string" />   <!-- fgenesh -->
+  <xsd:attribute name="start" type="xsd:decimal" />  <!-- 102532  -->
+  <xsd:attribute name="end"   type="xsd:decimal" />  <!-- 102600  -->
+  <xsd:attribute name="suid"  type="xsd:string" />   <!-- session unique id -->
+
+  <!-- This is flattened to avoid recursion as there
+       doesn't seem to be a way to limit the depth. 
+       Also there's no need for suid
+       N.B. THIS IS NOT LIKE A MODIFICATION e.g. phosphorylation
+    -->
+  <xsd:element name="alteration" minOccurs="0" maxOccurs="1">
+    <xsd:complexType>
+      <xsd:attribute name="name"  type="xsd:string" />   <!-- b0250.1 -->
+      <xsd:attribute name="style" type="xsd:string" />   <!-- fgenesh -->
+      <xsd:attribute name="start" type="xsd:decimal" />  <!-- 102533  -->
+      <xsd:attribute name="end"   type="xsd:decimal" />  <!-- 102601  -->
+    </xsd:complexType>
+  </xsd:element>
+
+</xsd:complexType>
+
+<!-- A list of linked features.  This should be used to "group" 
+     exons, ORF, Splice sites, poly A sites/signals into genes!
+     This should also be extensible to group homologies... (although VERY verbosely)
+  -->
+<xsd:complexType name="FeatureListType">
+  <xsd:element name="features" type="FeatureType" minOccurs="1" maxOccurs="unbounded" />
+</xsd:complexType>
+
+<!-- A location element with just a start and end -->
+<xsd:complexType name="LocationType">
+  <xsd:attribute name="start" type="xsd:decimal" />
+  <xsd:attribute name="end"   type="xsd:decimal" />
+</xsd:complexType>
+
+<!-- A client as the server sees it. -->
+<xsd:complexType name="ClientInfoType">
+  <xsd:attribute name="xwid"            type="xsd:string" />
+  <xsd:attribute name="request_atom"    type="xsd:string" />
+  <xsd:attribute name="response_atom"   type="xsd:string" />
+</xsd:complexType>
+
+
+<!-- A list of valid values for the action attribute of the root element. -->
+<xsd:simpleType name="ValidActions">
+  <xsd:restriction base="xsd:string">
+    <!-- simple takes nothing else -->
+    <xsd:enumeration value="zoom_in"  />
+    <xsd:enumeration value="zoom_out" />
+
+    <!-- takes location or feature construct -->
+    <xsd:enumeration value="zoom_to"  />
+
+    <!-- takes feature construct(s) -->
+    <xsd:enumeration value="create_feature" />
+    <xsd:enumeration value="alter_feature"  />
+    <xsd:enumeration value="delete_feature" />
+    <xsd:enumeration value="find_feature"   />
+    <xsd:enumeration value="highlight_feature"   />
+    <xsd:enumeration value="unhighlight_feature" />
+
+    <!-- takes a client construct -->
+    <xsd:enumeration value="create_client" />
+
+  </xsd:restriction>
+</xsd:simpleType>
+
+</xsd:schema>
