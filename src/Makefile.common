@@ -14,3 +14,10 @@ AM_CPPFLAGS = -g -I$(top_srcdir)/include \
 	@ACECONN_CFLAGS@ \
         @LIBCURL_CPPFLAGS@ \
         $(NULL)
+
+LIBS_ZMAP = $(top_builddir)/lib/libZMapApp.a \
+	$(top_builddir)/lib/libZMap.a \
+	$(top_builddir)/lib/libZMapThr.a \
+        $(top_builddir)/lib/libZMapXML.a \
+	$(NULL)
+

@@ -28,7 +28,8 @@ MOSTLYCLEANFILES = $(DX_CLEANFILES)
 
 EXTRA_DIST = INSTALL \
 	README.zmap \
-	bootstrap
+	bootstrap \
+	$(DX_CONFIG)
 	$(NULL)
 
 # support for pkg-config
@@ -53,7 +54,7 @@ zmap_SOURCES = $(top_srcdir)/zmapApp/zmapApp_P.h
 #	$(NULL) 
 
 # -lZMap was at the end, why is this?
-zmap_LDFLAGS = -L$(top_builddir)/lib -lZMapApp -lZMap -lZMapThr -lZMap -lexpat -lpopt \
+zmap_LDFLAGS = -L$(top_builddir)/lib -lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lexpat -lpopt \
 	@ACECONN_LIBS@ \
 	@GTK_LIBS@ \
 	@FOOCANVAS_LIBS@ \
