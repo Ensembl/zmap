@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug 16 18:41 2005 (rds)
+ * Last edited: Sep  5 10:16 2005 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.1 2005-08-17 09:10:42 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.2 2005-09-05 17:25:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,19 +72,22 @@ typedef gboolean
 
 
 /* ATTRIBUTES */
-GQuark zMapXMLAttributeValue(zmapXMLAttribute attr);
+GQuark zMapXMLAttribute_getValue(zmapXMLAttribute attr);
+
+
 
 /* DOCUMENTS */
 zmapXMLDocument zMapXMLDocument_create(const XML_Char *version,
                                        const XML_Char *encoding,
                                        int standalone);
-void zMapXMLDocument_set_root(zmapXMLDocument doc,
+void zMapXMLDocument_setRoot(zmapXMLDocument doc,
                               zmapXMLElement root);
 char *zMapXMLDocument_version(zmapXMLDocument doc);
 char *zMapXMLDocument_encoding(zmapXMLDocument doc);
-gboolean zMapXMLDocument_is_standalone(zmapXMLDocument doc);
+gboolean zMapXMLDocument_isStandalone(zmapXMLDocument doc);
 void zMapXMLDocument_reset(zmapXMLDocument doc);
 void zMapXMLDocument_destroy(zmapXMLDocument doc);
+
 
 
 /* ELEMENTS */
@@ -107,25 +110,41 @@ char *zMapXMLElement_getAttributeValueByName(zmapXMLElement element,
                                              GQuark name);
 #endif
 
+
+
+
 /* PARSER */
 zmapXMLParser zMapXMLParser_create(void *userData, gboolean validating, gboolean debug);
 
-void zMapXMLParser_SetMarkupObjectHandler(zmapXMLParser parser, 
+void zMapXMLParser_setMarkupObjectHandler(zmapXMLParser parser, 
                                           zmapXML_StartMarkupObjectHandler start,
                                           zmapXML_EndMarkupObjectHandler end);
 
-gboolean zMapXMLParser_parse_file(zmapXMLParser parser,
+gboolean zMapXMLParser_parseFile(zmapXMLParser parser,
                                   FILE *file);
-gboolean zMapXMLParser_parse_buffer(zmapXMLParser parser, 
+gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser, 
                                     void *data, 
                                     int size);
-zmapXMLElement zMapXMLParser_get_root(zmapXMLParser parser);
+
+char *zMapXMLParser_lastErrorMsg(zmapXMLParser parser);
+
+zmapXMLElement zMapXMLParser_getRoot(zmapXMLParser parser);
+
+void zMapXMLParser_reset(zmapXMLParser parser);
+void zMapXMLParser_destroy(zmapXMLParser parser);
 
 
 
-int zMapXMLFactoryDecodeElement(GHashTable *userTypesTable, 
-                                zmapXMLElement element, 
-                                GList **listout);
+
+int zMapXMLFactory_decodeElement(GHashTable *userTypesTable, 
+                                 zmapXMLElement element,
+                                 GList **listout);
+void zMapXMLFactory_listAppend(GHashTable *userTypesTable, 
+                               zmapXMLElement element, 
+                               void *listItem);
+int zMapXMLFactory_listFromNameQuark(GHashTable *userTypesTable, 
+                                     GQuark name,
+                                     GList **listout);
 
 
 #endif /* ZMAP_XML_H */
