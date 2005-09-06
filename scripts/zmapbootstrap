@@ -13,18 +13,48 @@
 
 
 # set up usage strings.
-cmdstring=' '
+cmdstring='[-c "command"]'
 descstring='
-  no args required.'
+  -c "command to be run with args"   Just like the -c arg to many shells, e.g. C shell'
+
+command=""
 
 
+while getopts ":c:" opt ; do
+  case $opt in
+    c  ) command=$OPTARG ;;
+    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
+  esac
+done
+
+# Check no more args
+shift $(($OPTIND - 1))
+if [ -n "$1" ] ; then
+  ZBusage "$cmdstring" "$descstring" "Excess arguments to script."
+fi
+
+
+currdir=`pwd`
+
+
+# move to the zmap build scripts dir and update the scripts there.
+#
 scriptdir=~acedb/ZMap/prefix/scripts
 
-# move to the zmap build scripts dir.
-#
 ZBGotoDir $scriptdir
 
 cvs update . || ZBmsgAndExit "Cannot cvs update the build scripts"
+
+
+# If there is a command, then execute it.
+#
+if [ -n "$command" ] ; then
+  eval $command || ZBmsgAndExit "Command failed: $command"
+fi
+
+
+# return to the original dir.
+ZBGotoDir $currdir
 
 
 exit 0
