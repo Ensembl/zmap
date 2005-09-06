@@ -27,9 +27,9 @@
  *              
  * Exported functions: none, dummy file.
  * HISTORY:
- * Last edited: Apr 23 16:22 2004 (edgrif)
+ * Last edited: Sep  6 07:54 2005 (edgrif)
  * Created: Tue Apr 20 09:54:38 2004 (edgrif)
- * CVS info:   $Id: ZMapMainPage.c,v 1.1 2005-01-06 08:15:26 edgrif Exp $
+ * CVS info:   $Id: ZMapMainPage.c,v 1.2 2005-09-06 06:55:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,12 +62,13 @@
  * \section credits Credits
  *
  * \author Ed Griffiths
- * \author Rob Clack
+ * \author Roy Storey
  *
  * ZMap was originally written by 
  * <A href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</A>
- * and <A href="mailto:rnc@sanger.ac.uk">Rob Clack</A>
- * of the Sanger Institute and is currently maintained by them.
+ * and <A href="mailto:rds@sanger.ac.uk">Roy Storey</A>
+ * (of the Sanger Institute) and Rob Clack.
+ * It is currently maintained by Ed and Roy.
  * 
  * 
  *  */
