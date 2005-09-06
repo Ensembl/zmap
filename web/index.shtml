@@ -1,16 +1,16 @@
-<!--#set var="banner" value="Page Heading"-->
+<!--#set var="banner" value="ZMap Developer Site"-->
 <!--#include virtual="/perl/header"-->
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
-<h1>ZMap Developer Site</h1>
+<h1>Overview</h1>
 
 <h2>Authors: Ed Griffiths & Roy Storey</h2>
 
 <P>ZMap is a project to produce a stand alone version of FMap, the popular
 sequence annoation component of acedb.
 
-<P>These web pages are the development site for ZMap.
+<P>These web pages are the development site for ZMap.</P>
 
-
+<p>
 <!--#include virtual="/perl/footer"-->
 
