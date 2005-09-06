@@ -1,0 +1,39 @@
+<!--#set var="banner" value="ZMap Developer Docs"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<ul>
+  <li><b>ZMap Coding and Design</b>
+      <ul>
+	<li> <A HREF="coding_notes.html">Coding Style</A>
+	<li> <A HREF="design_notes.shtml">Design</A>
+	<li> <A HREF="issues.html">Current issues</A>
+	<li> <A HREF="lace.changes">Integration with lace system</A>
+	<li> <A HREF="talks/index.shtml">Talks</A>
+      </ul>
+  <li><b>ZMap User Guides</b>
+      <ul>
+	<li> <A HREF="user_guide.shtml">User Guide</A>
+	<li> <A HREF="resource_files.html">Resource Files</A>
+      </ul>
+  <li><b>FooCanvas</b>
+      <ul>
+	<li> <A HREF="foo_canvas.html">FooCanvas Notes</A>
+      </ul>
+  <li><b>GTK</b>
+      <ul>
+	<li><A HREF="gdk_events.txt">GDK raw events</A>
+      </ul>
+</ul>
+
+
+<h2>Authors: Ed Griffiths & Roy Storey</h2>
+
+<P>ZMap is a project to produce a stand alone version of FMap, the popular
+sequence annoation component of acedb.
+
+<P>These web pages are the development site for ZMap.</P>
+
+<p>
+<!--#include virtual="/perl/footer"-->
+
