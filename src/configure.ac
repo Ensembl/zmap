@@ -244,7 +244,6 @@ zmapWindow/Makefile
 zmapXML/Makefile
 include/Makefile
 lib/Makefile
-testbed/Makefile
 zmap.pc
 ZMap:dotZmap.in
 $srcdir/$DX_CONFIG:Doxyfile.in
