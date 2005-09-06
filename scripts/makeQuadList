@@ -1,0 +1,504 @@
+#!/bin/perl -w
+#
+# This script reads a windows ini style file and produces from it
+# a prioritised task list in the familiar  2 * 2 array of:
+#
+#                    cat1            cat2
+#
+#     type 1       events           events
+#
+#     type 2       events           events
+#
+# You might make the categories  "Urgent"/"Not Urgent" and the types
+# "Important"/"Not important" for instance...
+#
+# See the documentation at the end for more stuff.
+#
+# NOTE, not all deskpros and certainly not most Alphas have Config::IniFiles
+# installed so you may have to search around for one that has it.
+#
+# Error handling is.......non-existent.
+#
+# The files this program outputs are all removed before new ones are written.
+#
+# Many things could be improved I expect....
+#
+#
+# To do list:
+#
+# Tidy up the code ??
+#
+# Add sub categories to items for better grouping in windows ??
+#
+
+use strict ;
+use Carp ;
+use File::Basename ;
+use Getopt::Long ;
+use Config::IniFiles ;
+
+
+sub makeHead ;
+sub makeFoot ;
+sub makeFrameFile ;
+sub makeFrameStyleFile ;
+sub makeFullFile ;
+sub makeFilePath ;
+sub makeFileName ;
+sub usage ;
+
+
+
+# These are hard coded, look at the data at the end of this file to see why.
+my $category_section = 'Categories' ;
+my $title_parameter = 'Title' ;
+my $category_parameter = 'Category' ;
+my $down_parameter = 'Down' ;
+my $across_parameter = 'Across' ;
+my $text_parameter = 'Text' ;
+
+
+
+my $directory = "." ;
+my $help ;
+
+
+# command line stuff...
+#
+GetOptions( "directory=s" => \$directory,
+	    "help" => \$help ) || die "Incorrect arguments to program.\n" ;
+
+if ( $help )
+  {
+  usage() ;
+  }
+
+die "No input file specified.\n" if (! @ARGV) ;
+
+
+my $input_file = $ARGV[0] ;
+
+
+# file name related stuff....
+my $cat_char = "-" ;
+my $framefile = makeFilePath("frame_file.html") ;
+my $stylefile = makeFilePath("frame_file.css") ;
+my $fullfile = makeFilePath("full_file.html") ;
+
+
+
+# Read the data file, note that we allow items to be continued over several
+# lines (do we need the "\" for this to work ??).
+#
+my $cfg = new Config::IniFiles( -file => "$input_file",
+                                -allowcontinue => 1 ) ;
+
+#use Data::Dumper;
+#print Dumper($cfg);
+
+my $title = $cfg->val($category_section, $title_parameter) ;
+my @down = split ' ', $cfg->val($category_section, $down_parameter) ;
+my @across = split ' ', $cfg->val($category_section, $across_parameter) ;
+
+
+my $across ;
+my $down ;
+my @categories ;
+my $category ;
+
+
+# Read all the headers......
+#
+foreach $across (@across)
+  {
+  foreach $down (@down)
+    {
+    push @categories, makeFileName($across, $down) ;
+    }
+  }
+
+
+# Remove all the old files.
+#
+unlink $framefile, $stylefile, $fullfile ;
+foreach $category (@categories)
+  {
+  unlink makeFilePath("$category.html") ;
+  }
+
+
+# Make the style file referenced by the frame file.
+#
+makeFrameStyleFile() ;
+
+# Make the html frame file which will display the individual category files.
+#
+makeFrameFile($title, @categories) ;
+
+
+# Read all sections from the file (n.b. this will include the "Categories" section itself) .
+#
+my @all_sections = $cfg->Sections ;
+
+
+# Make a file containing a kind of html version of the full items file.
+#
+makeFullFile($cfg, @all_sections) ;
+
+
+# Gather all the items for each category into a hash (ignoring the "Categories" section).
+#
+my $section ;
+my %cat2txt ;
+
+foreach $section (@all_sections)
+  {
+  if ($section ne $category_section)
+    {
+    my $section_across ;
+    my $section_down ;
+
+    # Find which category this section is in.
+    FOUND: foreach $across (@across)
+      {
+      foreach $down (@down)
+	{
+	$section_across = $cfg->val($section, $across_parameter) ;
+	$section_down = $cfg->val($section, $down_parameter) ;
+
+	last FOUND if ($section_across eq $across && $section_down eq $down) ;
+	}
+      }
+
+    # Add the text for this section to the the other texts in this category.
+    foreach $category (@categories)
+      {
+      my $section_cat = makeFileName($section_across, $section_down) ;
+
+      if ($section_cat eq $category)
+	{
+	push @{ $cat2txt{$section_cat} }, $section ;
+	}
+      }
+
+    }
+  }
+
+
+# Output all the categories, note that we do headers/footers for all files
+# even though they may not have any items, because all files are referenced
+# in the master frames file.
+#
+
+# Heading.........
+foreach $category (@categories)
+  {
+  my $file = makeFilePath("$category.html") ;
+
+  open CATFILE, ">>$file" or die "Can't open $file: $!\n" ;
+
+  print CATFILE  makeHead($category) ;
+
+  print CATFILE "<H1>$category</H1>\n" ;
+
+  close CATFILE ;
+  }
+
+# Items..........
+my $item ;
+foreach $item ( keys %cat2txt )
+  {
+  my $i ;
+  my $file = makeFilePath("$item.html") ;
+
+
+  open CATFILE, ">>$file" or die "Can't open $file: $!\n" ;
+
+  foreach $i ( 0 .. $#{ $cat2txt{$item} } )
+    {
+    my $title = $cat2txt{$item}[$i] ;
+    my $file = basename($fullfile) ;
+
+#    print CATFILE "<P>$cat2txt{$item}[$i]\n" ;
+
+    print CATFILE qq`<P><a href="file:$file#$title">$title</a>\n` ;
+    }
+
+  close CATFILE ;
+  }
+
+
+# Footer.........
+foreach $category (@categories)
+  {
+  my $file = makeFilePath("$category.html") ;
+
+  open CATFILE, ">>$file" or die "Can't open $file: $!\n" ;
+
+  print CATFILE makeFoot() ;
+
+  close CATFILE ;
+  }
+
+
+exit 0 ;
+
+
+# Make the CSS style file for the frames html.
+#
+sub makeFrameStyleFile
+  {
+  open STYLEFILE, ">>$stylefile" or die "Can't open $stylefile: $!\n" ;
+
+  print STYLEFILE <<'EOTEXT' ;
+body {
+     font-family: Optima, 'Trebuchet MS', 'Lucida Grande', Trebuchet, Verdana, Lucida, Geneva, Arial, Helvetica, sans-serif;
+     font-size: 12px;
+     line-height: 17px;
+     background-color: #FFFFFF;
+     text-align: center;
+     margin: 30px auto;
+     background-position: center; 
+}
+#container {
+           width: 98%;
+///////////width: 760px;
+           height:660px; 
+           border: 1px solid; 
+           text-align: center; 
+           margin-left: auto; 
+           margin-right: auto;   
+}
+ul.frames {
+          float:center;
+          width:100%;
+          list-style:none;
+          margin:0px 0px;
+          padding: 0px;
+}
+.frames li {
+        display: block;
+        border: 1px solid;
+        width: 49%;
+////////width: 300px;
+        height: 300px;
+        float: left;
+        margin: 1px 1px 1px 1px;
+}
+iframe{
+       width: 100%;
+       height: 100%;
+       padding: 0px;
+}
+EOTEXT
+
+  close STYLEFILE ;
+}
+
+
+
+# Make the html frames file which contains the various category summary files produced by the main
+# routine.
+#
+# NOTE THE hard-code frame file name....this needs to be changed......
+#
+sub makeFrameFile
+  {
+  my $title = shift(@_) ;
+  my @categories = @_ ;
+  my $category ;
+
+  open FRAMEFILE, ">>$framefile" or die "Can't open $framefile: $!\n" ;
+
+  print FRAMEFILE  qq`
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+	<title>$title</title>
+        <link rel="stylesheet" type="text/css" href="frame_file.css">
+</head>
+
+<body>
+<h1>$title</h1>
+<div id="container">
+<ul class="frames">` ;
+
+
+  foreach $category (@categories)
+    {
+    print FRAMEFILE qq`<li><iframe scrolling=yes frameborder="0" src="file:$category.html"></iframe></li>\n` ;
+    }
+
+  print FRAMEFILE  <<'EOTEXT' ;
+</ul>
+</div>
+</body>
+</html>
+EOTEXT
+
+  close FRAMEFILE ;
+}
+
+
+# Make an html hyperlinked version of the original items file, this is cross referenced
+# from the individual frames files.
+#
+sub makeFullFile
+  {
+  my $cfg = shift(@_) ;
+  my @all_sections = @_ ;
+  my $section ;
+
+  open FULLFILE, ">>$fullfile" or die "Can't open $fullfile: $!\n" ;
+  
+  print FULLFILE makeHead($input_file) ;
+  
+foreach $section (@all_sections)
+  {
+  print FULLFILE qq`<p><a name="$section"><B>$section: </B></a>` . $cfg->val($section, $text_parameter) . "\n"
+  if $cfg->val( $section, $text_parameter ) ;
+  }
+
+  print FULLFILE makeFoot() ;
+
+  close FULLFILE ;
+  }
+
+
+# Make a general html file header.
+#
+sub makeHead
+  {
+  return <<EOTEXT ;
+<HTML>
+
+<HEAD>
+<TITLE>$_[0]</TITLE>
+</HEAD>
+
+<BODY>
+EOTEXT
+  }
+
+
+# Make a general html file footer.
+#
+sub makeFoot
+  {
+  return <<'EOTEXT' ;
+</BODY>
+</HTML>
+EOTEXT
+  }
+
+
+
+sub makeFilePath
+  {
+  return $directory . "/" . $_[0] ;
+  }
+
+
+
+sub makeFileName
+  {
+  return $_[0] . $cat_char . $_[1] ;
+  }
+
+
+sub usage
+  {
+  print "\n makeQuad  [ --directory == /where/to/put/output | --help ] input_file\n\n" ;
+
+  exit 1 ;
+}
+
+
+
+
+__END__
+
+
+
+
+=pod
+
+=head1 NAME
+
+makePriorityQuad - filters a file containing a list of tasks into task priority quadrants
+
+=head1 SYNOPSIS
+
+     B<makeQuadList>  --directory == /where/to/put/output --help   E<lt> <input_file> E<gt>
+
+=head1 DESCRIPTION
+
+Takes a file that looks like this:
+
+[Categories]
+Down = Important \
+Not_Important
+Across = Urgent \
+Not_Urgent
+
+[Some short description]
+Down = Important
+Across = Not_Urgent
+Text = Some very long piece of text describing the item \
+perhaps spanning \
+many lines
+
+...lots more of the last type of paragraph.........
+
+and turns it into a hyperlinked display of the tasks where each task will be placed in one of
+the four categories ranging from "Important & Urgent" to "Not Important & Not Urgent". Each
+task is represented by the short description text which is linked to a file containging
+the longer description.
+
+This provides a way of ranking tasks which can be added/removed from a simple windows INI format
+text file.
+
+
+=head1 AUTHOR
+
+Ed Griffiths B<email> edgrif@sanger.ac.uk
+
+Thanks to Roy Storey B<email> rds@sanger.ac.uk for setting up the fancy frames html stuff.
+
+=head1 HISTORY
+
+Version 1
+
+=cut
+
+
+
+
+__DATA__
+
+# 
+# Here is an example of the sort of file format I would like it to read. 
+# 
+[Categories]
+Title = ZMap Priorities
+Down = Important \
+Not_Important
+Across = Urgent \
+Not_Urgent
+
+
+[Zmap columns]
+Down = Important
+Across = Not_Urgent
+Text = Allow interactive drag and drop \
+of columns from one position to \
+another and the resulting positions should be sticky across sessions.
+
+[Zmap tidy up]
+Down = Not_Important
+Across = Not_Urgent
+Text = Make zmap code aesthetically beautiful \
+in a truly \
+pleasing manner.
+
