@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Sep  5 18:21 2005 (rds)
+ * Last edited: Sep  6 16:46 2005 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.9 2005-09-05 17:23:42 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.10 2005-09-06 15:47:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -348,7 +348,7 @@ static gboolean end(void *userData,
             appOpen->end = 0;
         }
       if((child = zMapXMLElement_getChildByName(element, g_quark_from_string("segment"))) != NULL)
-        appOpen->source = child->contents;
+        appOpen->source = g_quark_from_string( child->contents->str );
     }
     handled = TRUE;
     break;
