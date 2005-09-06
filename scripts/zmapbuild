@@ -91,6 +91,9 @@ ssh deskpro110 "zmapmake -b -c $abspath" || ZBmsgAndExit "zmap make failed"
 #
 ssh deskpro110 "zmapmake -t docs $abspath" || ZBmsgAndExit "zmap make of docs failed"
 
+docdir="$cvscopy/ZMap/doc"
+ssh deskpro110 "cd $docdir ; makeQuadList TODO"
+
 
 # Copy docs onto Sanger web dev site
 #
