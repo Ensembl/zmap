@@ -127,4 +127,15 @@ things to be removed.
 
 
 
+edit_new_subsequence	integers_from_clipboard
+
+An indirect interaction with fmap, xace can be configured so that it puts the coords
+of a feature in the clip board when the feature is selected. We need to replicate
+this function.
+
+
+
+
+
+
 
