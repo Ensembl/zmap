@@ -1,0 +1,20 @@
+<!--#set var="banner" value="ZMap Talks"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<p>A collection of talks about ZMap and related issues.
+
+
+<ul>
+  <li><b>ZMap Coding and Design</b>
+      <ul>
+	<li> <A HREF="Acedb_ZMap.ppt">Acedb and ZMap</A>
+	<li> <A HREF="ZMap_and_DAS2.ppt">ZMap and DAS2</A>
+	<li> <A HREF="BigWindows.ppt">ZMap display of very large windows</A>
+	<li> <A HREF="zmapRemoteControlOverview.ppt">ZMap remote control overview</A>
+      </ul>
+</ul>
+
+
+<!--#include virtual="/perl/footer"-->
+
