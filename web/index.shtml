@@ -4,12 +4,12 @@
 
 <h1>Overview</h1>
 
-<h2>Authors: Ed Griffiths & Roy Storey</h2>
+<P>These web pages are the development site for ZMap.
+ZMap is a project to produce a stand alone version of FMap, the popular
+sequence annotation component of acedb.
 
-<P>ZMap is a project to produce a stand alone version of FMap, the popular
-sequence annoation component of acedb.
-
-<P>These web pages are the development site for ZMap.</P>
+<p>Authors: <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a>
+& <a href="mailto:rds@sanger.ac.uk">Roy Storey &lt;rds@sanger.ac.uk&gt;</a>
 
 <p>
 <!--#include virtual="/perl/footer"-->
