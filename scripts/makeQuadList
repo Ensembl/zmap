@@ -221,7 +221,7 @@ foreach $item ( keys %cat2txt )
 
 #    print CATFILE "<P>$cat2txt{$item}[$i]\n" ;
 
-    print CATFILE qq`<P><a href="file:$file#$title">$title</a>\n` ;
+    print CATFILE qq`<P><a href="$file#$title">$title</a>\n` ;
     }
 
   close CATFILE ;
