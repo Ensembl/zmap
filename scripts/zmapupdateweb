@@ -36,7 +36,7 @@ ZBDevDir="$ZBacedb/ZMap.DEVELOPMENT.BUILD"
 
 webpublish=''
 web_site='/nfs/WWWdev/ACEDB_docs/htdocs/Development/developers_only/ZMap'
-doc_dirs="web/* src/docs/ZMap/html docs"
+doc_dirs="web/* src/docs/ZMap/html doc"
 
 
 while getopts ":p" opt ; do
