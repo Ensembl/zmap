@@ -314,6 +314,9 @@ sub makeFrameFile
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 
 <html>
+
+<!-- Script generated file - do not edit -->
+
 <head>
 	<title>$title</title>
         <link rel="stylesheet" type="text/css" href="frame_file.css">
@@ -327,7 +330,7 @@ sub makeFrameFile
 
   foreach $category (@categories)
     {
-    print FRAMEFILE qq`<li><iframe scrolling=yes frameborder="0" src="file:$category.html"></iframe></li>\n` ;
+    print FRAMEFILE qq`<li><iframe scrolling=yes frameborder="0" src="$category.html"></iframe></li>\n` ;
     }
 
   print FRAMEFILE  <<'EOTEXT' ;
@@ -372,6 +375,8 @@ sub makeHead
   {
   return <<EOTEXT ;
 <HTML>
+
+<!-- Script generated file - do not edit -->
 
 <HEAD>
 <TITLE>$_[0]</TITLE>
