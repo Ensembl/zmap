@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  8 18:37 2005 (rds)
+ * Last edited: Sep  8 19:10 2005 (rds)
  * Created: Thu Sep  1 14:44:07 2005 (rds)
- * CVS info:   $Id: das1XMLhandlers.c,v 1.2 2005-09-08 17:45:35 rds Exp $
+ * CVS info:   $Id: das1XMLhandlers.c,v 1.3 2005-09-08 18:12:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -354,7 +354,6 @@ gboolean internalDasEnd(void *userData,
               if(dasOneFeature_id1(feat) == seq)
                 {
                   clear = FALSE;
-                  printf("Wow we found %s.\n", g_quark_to_string(seq));
                   setCurrentSegment(server, element);
                 }
               list = list->next;

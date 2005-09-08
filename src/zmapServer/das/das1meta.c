@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  7 15:56 2005 (rds)
+ * Last edited: Sep  8 18:53 2005 (rds)
  * Created: Wed Aug 31 15:58:38 2005 (rds)
- * CVS info:   $Id: das1meta.c,v 1.2 2005-09-08 17:45:35 rds Exp $
+ * CVS info:   $Id: das1meta.c,v 1.3 2005-09-08 18:12:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -242,14 +242,14 @@ GQuark dasOneSegment_id1(dasOneSegment seg)
   return (seg->id);
 }
 
-void dasOneSegment_getBounds(dasOneSegment seg, int *start, int *end)
+gboolean dasOneSegment_getBounds(dasOneSegment seg, int *start, int *end)
 {
   if(start)
     *start = seg->start;
   if(end)
     *end   = seg->stop;
 
-  return ;
+  return TRUE;
 }
 dasOneRefProperties dasOneSegment_refProperties(dasOneSegment seg, 
                                                 char *isRef,

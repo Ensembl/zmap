@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Sep  8 18:31 2005 (rds)
+ * Last edited: Sep  8 19:06 2005 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.13 2005-09-08 17:45:36 rds Exp $
+ * CVS info:   $Id: dasServer.c,v 1.14 2005-09-08 18:12:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -390,7 +390,8 @@ static gboolean destroyConnection(void *server_in)
 
 static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_context)
 {
-  ZMapMapBlockStruct seq2p = {0, 0, 0, 0}, p2self = {0, 0, 0, 0} ;
+  ZMapMapBlockStruct seq2p = {0, 0, 0, 0};
+  ZMapSpanStruct pspan = {0, 0} ;
   char *url = NULL, *urlep = NULL;
   dasOneEntryPoint ep;
   dasOneDSN dsn = NULL;
@@ -426,8 +427,12 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
     {
       if(server->current_segment != NULL)
         {
-          /* Ok look like we're a top level segment, this is easy. */
-          printf("Setting up feature context\n"); /* Set up the feature context */
+          /* Ok look like we're a top level segment, this is easy. it only returns true!*/
+          if(dasOneSegment_getBounds(server->current_segment, &(pspan.x1), &(pspan.x2)))
+            {
+              seq2p.p1 = seq2p.c1 = pspan.x1;
+              seq2p.p2 = seq2p.c2 = pspan.x2;
+            }
         }
       /* This is quite a big query */
       else if (searchAssembly(server, dsn))
@@ -450,35 +455,11 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
                   dasOneFeature feat = (dasOneFeature)list->data;
                   if(dasOneFeature_id1(feat) == feature_context->sequence_name)
                     {
-                      int start, stop, tstart, tstop, begin, end;
-                      dasOneFeature_getLocation(feat, &start, &stop);
-                      dasOneFeature_getTargetBounds(feat, &tstart, &tstop);
-                      printf("Got the location start, stop: %d, %d\n", start, stop);
-                      dasOneSegment_getBounds(server->current_segment, &begin, &end);
-                      printf("I know the parent is %s, %d, %d\n", 
-                             (char *)g_quark_to_string(dasOneSegment_id1(server->current_segment)),
-                             begin, end);
-                      feature_context->length = tstop - tstart + 1;
-                      feature_context->sequence_to_parent.c1 = tstart;
-                      feature_context->sequence_to_parent.c2 = tstop;
-                      feature_context->sequence_to_parent.p1 = start;
-                      feature_context->sequence_to_parent.p2 = end;
-                      feature_context->parent_span.x1 = begin;
-                      feature_context->parent_span.x2 = end;
-                      feature_context->parent_name    = dasOneSegment_id1(server->current_segment);
-  
-
-                      printf("|-----------------------------------------|\n");
-                      printf("|Parent is segment=%s:%d,%d\n",
-                             (char *)g_quark_to_string( feature_context->parent_name ),
-                             feature_context->sequence_to_parent.p1,
-                             feature_context->sequence_to_parent.p2);
-                      printf("|child is segment=%s:%d,%d\n", 
-                             (char *)g_quark_to_string( feature_context->parent_name ),
-                             feature_context->sequence_to_parent.c1,
-                             feature_context->sequence_to_parent.c2);
-
-                  }
+                      if(!(dasOneFeature_getLocation(feat, &(seq2p.p1), &(seq2p.p2)) &&
+                           dasOneFeature_getTargetBounds(feat, &(seq2p.c1), &(seq2p.c2)) &&
+                           dasOneSegment_getBounds(server->current_segment, &(pspan.x1), &(pspan.x2))))
+                        result = FALSE;
+                    }
                   list = list->next;
                 }
             }
@@ -486,6 +467,27 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
         }
       else
         result = FALSE;
+    }
+
+  if(result)
+    {
+      feature_context->length = seq2p.c2 - seq2p.c1 + 1;
+      feature_context->sequence_to_parent.c1 = seq2p.c1;
+      feature_context->sequence_to_parent.c2 = seq2p.c2;
+      feature_context->sequence_to_parent.p1 = seq2p.p1;
+      feature_context->sequence_to_parent.p2 = seq2p.p2;
+      feature_context->parent_span.x1 = pspan.x1;
+      feature_context->parent_span.x2 = pspan.x2;
+      feature_context->parent_name = dasOneSegment_id1(server->current_segment);
+      printf("|-----------------------------------------|\n");
+      printf("|Parent is segment=%s:%d,%d\n",
+             (char *)g_quark_to_string( feature_context->parent_name ),
+             feature_context->sequence_to_parent.p1,
+             feature_context->sequence_to_parent.p2);
+      printf("|child is segment=%s:%d,%d\n", 
+             (char *)g_quark_to_string( feature_context->parent_name ),
+             feature_context->sequence_to_parent.c1,
+             feature_context->sequence_to_parent.c2);
     }
 
   return result;
