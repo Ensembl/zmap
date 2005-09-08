@@ -25,16 +25,20 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Aug  9 11:51 2005 (edgrif)
+ * Last edited: Sep  8 10:23 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.38 2005-08-09 10:51:40 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.39 2005-09-08 09:28:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
 
 #include <gdk/gdkcolor.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <libfoocanvas/libfoocanvas.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
