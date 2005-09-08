@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  5 17:59 2005 (rds)
+ * Last edited: Sep  8 17:26 2005 (rds)
  * Created: Wed Aug 31 15:59:12 2005 (rds)
- * CVS info:   $Id: das1schema.h,v 1.1 2005-09-05 17:27:51 rds Exp $
+ * CVS info:   $Id: das1schema.h,v 1.2 2005-09-08 17:45:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,24 +71,32 @@ typedef enum {
   DASONE_GLYPH_PRIMERS
 } dasOneGlyphType;
 
+typedef enum {
+  DASONE_REF_UNSET       = 0,
+  DASONE_REF_ISREFERENCE = 1 << 0,
+  DASONE_REF_HASSUBPARTS = 1 << 1,
+  DASONE_REF_HASSUPPARTS = 1 << 2
+} dasOneRefProperties;
+
 typedef struct _dasOneGlyphStruct
 {
   dasOneGlyphType type;
   /* Further decide on this later as it's not important now */
 }dasOneGlyphStruct, *dasOneGlyph;
 
-typedef struct _dasOneRefPropertyStruct
-{
-  gboolean isRef;
-  gboolean sub;
-  gboolean super;
-} dasOneRefPropertyStruct, *dasOneRefProperty;
-
 typedef struct _dasOneStylesheetStruct
 {
   GQuark type;
   dasOneGlyph glyph;
 }dasOneStylesheetStruct, *dasOneStylesheet;
+
+typedef struct _dasOneMethodStruct *dasOneMethod;
+
+typedef struct _dasOneTargetStruct *dasOneTarget;
+
+typedef struct _dasOneTypeStruct *dasOneType;
+
+typedef struct _dasOneFeatureStruct *dasOneFeature;
 
 typedef struct _dasOneSequenceStruct *dasOneSequence;
 
@@ -98,8 +106,9 @@ typedef struct _dasOneEntryPointStruct *dasOneEntryPoint;
 
 typedef struct _dasOneDSNStruct *dasOneDSN;
 
-
+/* =========== */
 /* DSN methods */
+
 dasOneDSN dasOneDSN_create(char *id, char *version, char *name);
 dasOneDSN dasOneDSN_create1(GQuark id, GQuark version, GQuark name);
 void dasOneDSN_setAttributes(dasOneDSN dsn, char *mapmaster, char *description);
@@ -110,34 +119,86 @@ GQuark dasOneDSN_id1(dasOneDSN dsn);
 
 void dasOneDSN_free(dasOneDSN dsn);
 
+/* ================== */
 /* EntryPoint methods */
+/* These maybe seem a little pointless ATM */
 dasOneEntryPoint dasOneEntryPoint_create(char *href, char *version);
 dasOneEntryPoint dasOneEntryPoint_create1(GQuark href, GQuark version);
 void dasOneEntryPoint_addSegment(dasOneEntryPoint ep, dasOneSegment seg);
-GList dasOneEntryPoint_getSegmentsList(dasOneEntryPoint ep);
+GList *dasOneEntryPoint_getSegmentsList(dasOneEntryPoint ep);
 void dasOneEntryPoint_free(dasOneEntryPoint ep);
 
+/* =============== */
 /* Segment methods */
+
 dasOneSegment dasOneSegment_create(char *id, int start, 
                                    int stop, char *type, 
                                    char *orientation);
 dasOneSegment dasOneSegment_create1(GQuark id, int start, 
                                     int stop, GQuark type, 
                                     GQuark orientation);
-dasOneRefProperty dasOneSegment_refProperties(dasOneSegment seg, 
-                                              gboolean isRef,
-                                              gboolean subparts,
-                                              gboolean superparts,
-                                              gboolean set);
+GQuark dasOneSegment_id1(dasOneSegment seg);
+void dasOneSegment_getBounds(dasOneSegment seg, int *start_out, int *end_out);
+
+dasOneRefProperties dasOneSegment_refProperties(dasOneSegment seg, 
+                                                char *isRef,
+                                                char *subparts,
+#ifdef SEGMENTS_HAVE_SUPERPARTS
+                                                char *superparts,
+#endif /* SEGMENTS_HAVE_SUPERPARTS */
+                                                gboolean set);
+
 char *dasOneSegment_description(dasOneSegment seg, char *desc);
 void dasOneSegment_free(dasOneSegment seg);
 
+/* ================ */
 /* Sequence methods */
-dasOneSequence dasOneSequence_create(char *id, int start, int stop, char *version);
-dasOneSequence dasOneSequence_create1(GQuark id, int start, int stop, GQuark version);
+dasOneSequence dasOneSequence_create(char *id, 
+                                     int start, int stop, 
+                                     char *version);
+dasOneSequence dasOneSequence_create1(GQuark id, 
+                                      int start, int stop, 
+                                      GQuark version);
 void dasOneSequence_setMolType(dasOneSequence seq, char *molecule);
 void dasOneSequence_setSequence(dasOneSequence seq, char *sequence);
 void dasOneSequence_free(dasOneSequence seq);
+
+
+/* =============== */
+/* Feature Methods */
+dasOneFeature dasOneFeature_create1(GQuark id, GQuark label);
+GQuark dasOneFeature_id1(dasOneFeature feature);
+gboolean dasOneFeature_getLocation(dasOneFeature feature,
+                                  int *start_out, int *stop_out);
+void dasOneFeature_setProperties(dasOneFeature feature, 
+                                 int start, int stop,
+                                 double score, char *orientation,
+                                 int phase);
+void dasOneFeature_setTarget(dasOneFeature feature, 
+                             dasOneTarget target);
+gboolean dasOneFeature_getTargetBounds(dasOneFeature feature, 
+                                       int *start_out, int *stop_out);
+void dasOneFeature_setType(dasOneFeature feature, 
+                           dasOneType type);
+void dasOneFeature_free(dasOneFeature feat);
+
+/* ============ */
+/* Type Methods */
+dasOneType          dasOneType_create1(GQuark id, GQuark name, GQuark category);
+dasOneRefProperties dasOneType_refProperties(dasOneType type, char *ref, 
+                                             char *sub, char *super, 
+                                             gboolean set);
+void dasOneType_free(dasOneType type);
+
+/* ============== */
+/* Method Methods */
+dasOneMethod dasOneMethod_create(char *id_or_name);
+void dasOneMethod_free(dasOneMethod meth);
+
+/* ============== */
+/* Target Methods */
+dasOneTarget dasOneTarget_create1(GQuark id, int start, int stop);
+void dasOneTarget_free(dasOneTarget target);
 
 
 #endif /* DAS1SCHEMA_H */

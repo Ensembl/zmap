@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  5 16:15 2005 (rds)
+ * Last edited: Sep  7 15:56 2005 (rds)
  * Created: Wed Aug 31 15:58:38 2005 (rds)
- * CVS info:   $Id: das1meta.c,v 1.1 2005-09-05 17:27:51 rds Exp $
+ * CVS info:   $Id: das1meta.c,v 1.2 2005-09-08 17:45:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,6 +44,7 @@ typedef struct _dasOneSegmentStruct
   GQuark type;
   ZMapStrand orientation;
   GQuark description;
+  dasOneRefProperties reference;
 } dasOneSegmentStruct;
 
 typedef struct _dasOneEntryPointStruct
@@ -121,9 +122,13 @@ dasOneEntryPoint dasOneDSN_entryPoint(dasOneDSN dsn, dasOneEntryPoint ep)
     return NULL;
 
   if(ep != NULL)
-    dsn->entryPoint = ep;
+    {
+      if(dsn->entryPoint == NULL)
+        dsn->entryPoint = ep;
+      /* Should we have an else here? */
+    }
 
-  return dsn->entryPoint;
+  return (dsn->entryPoint);
 }
 
 GQuark dasOneDSN_id1(dasOneDSN dsn)
@@ -131,11 +136,6 @@ GQuark dasOneDSN_id1(dasOneDSN dsn)
   return dsn->sourceId;
 }
 
-/** 
- * 
- * 
- * @param dsn 
- */
 void dasOneDSN_free(dasOneDSN dsn)
 {
   if(dsn->entryPoint)
@@ -173,6 +173,12 @@ void dasOneEntryPoint_addSegment(dasOneEntryPoint ep, dasOneSegment seg)
 
   return ;
 
+}
+GList *dasOneEntryPoint_getSegmentsList(dasOneEntryPoint ep)
+{
+  GList *list = NULL;
+  list = g_list_first(ep->segments);
+  return list;
 }
 
 void dasOneEntryPoint_free(dasOneEntryPoint ep)
@@ -229,6 +235,58 @@ dasOneSegment dasOneSegment_create1(GQuark id, int start,
     seg->orientation = ZMAPSTRAND_NONE;
   }
   return seg;
+}
+
+GQuark dasOneSegment_id1(dasOneSegment seg)
+{
+  return (seg->id);
+}
+
+void dasOneSegment_getBounds(dasOneSegment seg, int *start, int *end)
+{
+  if(start)
+    *start = seg->start;
+  if(end)
+    *end   = seg->stop;
+
+  return ;
+}
+dasOneRefProperties dasOneSegment_refProperties(dasOneSegment seg, 
+                                                char *isRef,
+                                                char *subparts,
+#ifdef SEGMENTS_HAVE_SUPERPARTS
+                                                char *superparts,
+#endif /* SEGMENTS_HAVE_SUPERPARTS */
+                                                gboolean set)
+{
+  dasOneRefProperties props = DASONE_REF_UNSET;
+  
+  if(set)
+    {
+      GQuark yes = 0;
+      yes        = g_quark_from_string("yes");
+      seg->reference = props;
+      if(isRef && 
+         *isRef && 
+         (g_quark_from_string( g_ascii_strdown(isRef, -1) ) == yes))
+        seg->reference |= DASONE_REF_ISREFERENCE;
+        
+      if(subparts && 
+         *subparts && 
+         (g_quark_from_string( g_ascii_strdown(subparts, -1) ) == yes))
+        seg->reference |= DASONE_REF_HASSUBPARTS;
+        
+#ifdef SEGMENTS_HAVE_SUPERPARTS
+      if(superparts && 
+         *superparts && 
+         (g_quark_from_string( g_ascii_strdown(superparts, -1) ) == yes))
+        seg->reference |= DASONE_REF_HASSUPPARTS;
+#endif /* SEGMENTS_HAVE_SUPERPARTS */
+    }
+  else
+    props = seg->reference;
+
+  return props;
 }
 
 char *dasOneSegment_description(dasOneSegment seg, char *desc)

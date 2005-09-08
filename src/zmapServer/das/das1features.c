@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug 31 18:38 2005 (rds)
+ * Last edited: Sep  8 17:28 2005 (rds)
  * Created: Wed Aug 31 18:37:38 2005 (rds)
- * CVS info:   $Id: das1features.c,v 1.1 2005-09-05 17:27:51 rds Exp $
+ * CVS info:   $Id: das1features.c,v 1.2 2005-09-08 17:45:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,3 +38,265 @@
 
 
 
+
+typedef struct _dasOneMethodStruct
+{
+  GQuark id;
+  GQuark name;
+} dasOneMethodStruct;
+
+typedef struct _dasOneTargetStruct
+{
+  GQuark id;
+  int start;
+  int stop;
+} dasOneTargetStruct;
+
+typedef struct _dasOneTypeStruct
+{
+  GQuark id;
+  GQuark name;
+  GQuark category;
+  dasOneRefProperties reference;
+} dasOneTypeStruct;
+
+typedef struct _dasOneFeatureStruct
+{
+  GQuark id;
+  GQuark label;
+  int start;
+  int stop;
+  float score;
+
+  ZMapStrand orientation;
+  ZMapPhase phase;
+
+  dasOneType type;
+  dasOneMethod method;
+  dasOneTarget target;
+
+  GList *groups;
+  
+} dasOneFeatureStruct;
+
+
+dasOneFeature dasOneFeature_create1(GQuark id, GQuark label)
+{
+  dasOneFeature feature = NULL;
+  feature = g_new0(dasOneFeatureStruct, 1);
+  feature->id    = id;
+  feature->label = label;
+
+  feature->orientation = ZMAPSTRAND_NONE;
+  feature->phase       = ZMAPPHASE_NONE;
+
+  feature->type = dasOneType_create1(0,0,0);
+
+  return feature;
+}
+
+GQuark dasOneFeature_id1(dasOneFeature feature)
+{
+  return feature->id;
+}
+
+gboolean dasOneFeature_getLocation(dasOneFeature feature,
+                                  int *start_out, int *stop_out)
+{
+  gboolean res = TRUE;
+  if(!feature->start || !feature->stop)
+    res = FALSE;
+  if(res)
+    {
+      if(start_out)
+        *start_out = feature->start;
+      if(stop_out)
+        *stop_out = feature->stop;
+    }
+  return res;
+}
+
+void dasOneFeature_setProperties(dasOneFeature feature, 
+                                 int start, int stop,
+                                 double score, char *orientation,
+                                 int phase)
+{
+  feature->start = start;
+  feature->stop  = stop;
+  feature->score = score;
+
+  if(orientation && *orientation && (g_quark_from_string(orientation) == g_quark_from_string("-")))
+    feature->orientation = ZMAPSTRAND_REVERSE;
+  else
+    feature->orientation = ZMAPSTRAND_FORWARD;
+
+  switch(phase)
+    {
+    case 0:
+      feature->phase = ZMAPPHASE_0;
+      break;
+    case 1:
+      feature->phase = ZMAPPHASE_1;
+      break;
+    case 2:
+      feature->phase = ZMAPPHASE_2;
+      break;
+    default:
+      feature->phase = ZMAPPHASE_NONE;
+      break;
+    }
+
+  return ;
+}
+
+void dasOneFeature_setTarget(dasOneFeature feature, 
+                             dasOneTarget target)
+{
+  if(!target)
+    return ;
+  feature->target = target;
+  return ;
+}
+
+void dasOneFeature_setType(dasOneFeature feature, 
+                           dasOneType type)
+{
+  if(!type)
+    return ;
+
+  if(feature->type)
+    dasOneType_free(feature->type);
+
+  feature->type = type;
+
+  return ;
+}
+
+gboolean dasOneFeature_getTargetBounds(dasOneFeature feature, 
+                                       int *start_out, int *stop_out)
+{
+  gboolean res = TRUE;
+
+  if(feature->target == NULL)
+    res = FALSE;
+
+  if(!(feature->type->reference & DASONE_REF_ISREFERENCE))
+    res = FALSE;
+
+  if(res)
+    {
+      if(start_out)
+        *start_out = feature->target->start;
+      if(stop_out)
+        *stop_out = feature->target->stop;
+    }
+
+  return res;
+}
+void dasOneFeature_free(dasOneFeature feat)
+{
+  feat->id = 0;
+  feat->label = 0;
+  feat->start = 0;
+  feat->stop = 0;
+  feat->score = 0.0;
+  
+  feat->orientation = 0;
+  feat->phase = 0;
+  
+  dasOneType_free(feat->type);
+  feat->type = NULL;
+
+  dasOneMethod_free(feat->method);
+  feat->method = NULL;
+  
+  dasOneTarget_free(feat->target);
+  feat->target = NULL;
+
+  feat->groups = NULL;          /* This will need to be freed later */
+
+  g_free(feat);
+
+  return ;
+}
+
+dasOneType dasOneType_create1(GQuark id, GQuark name, GQuark category)
+{
+  dasOneType type = NULL;
+  type = g_new0(dasOneTypeStruct,1);
+  type->id       = id;
+  type->name     = name;
+  type->category = category;
+  return type;
+}
+
+dasOneRefProperties dasOneType_refProperties(dasOneType type, char *ref, 
+                                             char *sub, char *super, 
+                                             gboolean set)
+{
+  dasOneRefProperties props = DASONE_REF_UNSET;
+  if(!set)
+    props = type->reference;
+  else
+    {
+      GQuark yes      = g_quark_from_string("yes");
+      type->reference = props;
+      if(ref && *ref && (g_quark_from_string(g_ascii_strdown(ref, -1)) == yes))
+        type->reference |= DASONE_REF_ISREFERENCE;
+      if(sub && *sub && (g_quark_from_string(g_ascii_strdown(sub, -1)) == yes))
+        type->reference |= DASONE_REF_HASSUBPARTS;
+      if(super && *super && (g_quark_from_string(g_ascii_strdown(super, -1)) == yes))
+        type->reference |= DASONE_REF_HASSUPPARTS;
+      props = type->reference;
+    }
+  return props;
+}
+
+void dasOneType_free(dasOneType type)
+{
+  if(type)
+    g_free(type);
+  return ;
+}
+
+dasOneMethod dasOneMethod_create(char *id_or_name)
+{
+  dasOneMethod method = NULL;
+
+  if(id_or_name && *id_or_name)
+    {
+      method     = g_new0(dasOneMethodStruct, 1);
+      method->id = 
+        method->name = g_quark_from_string(id_or_name);
+    }
+
+  return method;
+}
+
+void dasOneMethod_free(dasOneMethod meth)
+{
+  if(meth)
+    g_free(meth);
+  return ;
+}
+
+dasOneTarget dasOneTarget_create1(GQuark id, int start, int stop)
+{
+  dasOneTarget target = NULL;
+
+  if((start > 0) && (stop > start))
+    {
+      target = g_new0(dasOneTargetStruct,1);
+      target->id    = id;
+      target->start = start;
+      target->stop  = stop;
+    }
+    
+  return target;
+}
+void dasOneTarget_free(dasOneTarget target)
+{
+  if(target)
+    g_free(target);
+  return ;
+}

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Sep  5 18:51 2005 (rds)
+ * Last edited: Sep  8 18:31 2005 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.12 2005-09-05 17:54:14 rds Exp $
+ * CVS info:   $Id: dasServer.c,v 1.13 2005-09-08 17:45:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,21 +54,24 @@ static ZMapServerResponseType closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
 
 /* Internal */
-static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data) ;
-static gboolean requestAndParseOverHTTP(DasServer server, char *url, dasDataType type);
-static void getMyHashTable(GHashTable **userTable);
-static char *dsnFullURL(DasServer server, char *query);
-static gboolean checkDSNExists(DasServer das, dasOneDSN *dsn);
+static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_context);
+static gboolean searchAssembly(DasServer server, dasOneDSN dsn);
 
-/* Requests */
-static void fetchAllDSN(DasServer server);
-static void fetch_entry_points(DasServer server);
-static void fetch_dna(DasServer server);
-static void fetch_sequence(DasServer server);
-static void fetch_types(DasServer server);
-static void fetch_features(DasServer server);
-static void fetch_link(DasServer server);
-static void fetch_stylesheet(DasServer server);
+/* curl required */
+static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data) ;
+
+/* Parsing required */
+static void getMyHashTable(GHashTable **userTable);
+/* helpers */
+static char *dsnFullURL(DasServer server, 
+                        char *query);
+static char *getSegmentString(DasServer das, 
+                              ZMapFeatureContext feature_context);
+
+/* To do all requests */
+static gboolean requestAndParseOverHTTP(DasServer server, 
+                                        char *url, 
+                                        dasDataType type);
 
 /* Although most of these "external" routines are static they are properly part of our
  * external interface and hence are in the external section of this file. */
@@ -116,7 +119,7 @@ static gboolean createConnection(void **server_out,
 {
   gboolean result = TRUE;
   gboolean fail_on_error = TRUE; /* Makes curl fail on none 200s */
-  gboolean debug         = TRUE; /* Makes parser print debug */
+  gboolean debug         = FALSE; /* Makes parser print debug */
   DasServer server ;
 
   server = (DasServer)g_new0(DasServerStruct, 1) ;
@@ -213,33 +216,57 @@ static ZMapServerResponseType openConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   DasServer server = (DasServer)server_in ;
-  dasOneDSN dsn    = NULL;
 
   if(server->protocol == g_quark_from_string("file"))
     return result;
   else
-    fetchAllDSN(server);
+    {
+      char *url = NULL, *preDASPath = "";
+      
+      /* Only need to do this once */
+      if(server->dsn_list != NULL)
+        return ;
+
+      /* Need to work out what preDASPath is
+       * Not all servers are http://das.host.tld/das/dasSourceName
+       * Some are set up as http://das.host.tld/web/dataAccess/das/dasSourceName
+       * The dsn request in the latter case should be a url like
+       * http://das.host.tld/web/dataAccess/das/dsn which obviously includes
+       * the pre "das" part "web/dataAccess/".  This pre das part MUST
+       * include the trailing "/" 
+       * For now I'm assuming they're all the former!
+       */
+      
+      /* Can we do a prompt for passwd here? */
+      if(server->user && server->passwd)
+        url = g_strdup_printf("%s://%s:%s@%s:%d/%sdas/dsn", 
+                              g_quark_to_string(server->protocol),
+                              g_quark_to_string(server->user),
+                              g_quark_to_string(server->passwd),
+                              g_quark_to_string(server->host),
+                              server->port,
+                              preDASPath
+                              );
+      else
+        url = g_strdup_printf("%s://%s:%d/%sdas/dsn",
+                              g_quark_to_string(server->protocol),
+                              g_quark_to_string(server->host),
+                              server->port,
+                              preDASPath
+                              );
+      
+      requestAndParseOverHTTP(server, url, ZMAP_DASONE_DSN);
+    }
 
   if(server->curl_error != CURLE_OK)
     result = ZMAP_SERVERRESPONSE_REQFAIL;
 
-  if((result == ZMAP_SERVERRESPONSE_OK) && (checkDSNExists(server, &dsn) != TRUE))
+  if((result == ZMAP_SERVERRESPONSE_OK) && (checkDSNExists(server, NULL) != TRUE))
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL;
       server->last_errmsg = "DSN does not exist";
     }
 
-  if(result == ZMAP_SERVERRESPONSE_OK)
-    {
-      char *url2 = NULL;
-      dasOneEntryPoint ep;
-      url2 = dsnFullURL(server, "entry_points");
-      ep   = dasOneEntryPoint_create1(g_quark_from_string(url2), g_quark_from_string("1.0"));
-      dasOneDSN_entryPoint(dsn, ep);
-      /*  */
-      requestAndParseOverHTTP(server, url2, ZMAP_DASONE_ENTRY_POINTS);
-
-    }
   return result ;
 }
 
@@ -267,19 +294,11 @@ static ZMapServerResponseType setContext(void *server, ZMapFeatureContext featur
 
   das->req_context = feature_context ;
 
-#ifdef LASALKSKASKLSKLAKS
-  /* Set the feature_context for the SequenceMapping */
-  if (!(status = getSequenceMapping(server, feature_context)))
-    {
-      result = ZMAP_SERVERRESPONSE_REQFAIL ;
-      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-		     "Could not map %s because: %s",
-		     g_quark_to_string(server->req_context->sequence_name), server->last_err_msg) ;
-      g_free(feature_context) ;
-    }
+  if(!(status = setSequenceMapping(server, feature_context)))
+    result = ZMAP_SERVERRESPONSE_REQFAIL;
   else
-    server->current_context = feature_context ;
-#endif
+    das->cur_context = feature_context;
+
   return result ;
 }
 
@@ -299,14 +318,8 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
   DasServer server = (DasServer)server_in;
-  char *url = NULL;
 
-  url = dsnFullURL(server, "features");
-
-  requestAndParseOverHTTP(server, url, ZMAP_DASONE_TYPES);
-
-
-  return result;
+  
 
 
   return result ;
@@ -374,6 +387,119 @@ static gboolean destroyConnection(void *server_in)
 /* 
  * ---------------------  Internal routines.  ---------------------
  */
+
+static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_context)
+{
+  ZMapMapBlockStruct seq2p = {0, 0, 0, 0}, p2self = {0, 0, 0, 0} ;
+  char *url = NULL, *urlep = NULL;
+  dasOneEntryPoint ep;
+  dasOneDSN dsn = NULL;
+  gboolean result = FALSE;     /* A Flag to continue going */
+
+  /* First we need to know whether we can get the sequence.
+   * We get the entry points
+   */
+  if((result = checkDSNExists(server, &dsn)) == TRUE)
+    {
+      GList *list = NULL;
+      urlep = dsnFullURL(server, "entry_points");
+      ep    = dasOneEntryPoint_create1(g_quark_from_string(urlep), g_quark_from_string("1.0"));
+      dasOneDSN_entryPoint(dsn, ep);
+      requestAndParseOverHTTP(server, urlep, ZMAP_DASONE_ENTRY_POINTS);
+      zMapXMLFactoryDecodeNameQuark(server->hashtable, 
+                                    g_quark_from_string("segment"),
+                                    &list);
+      while(list)
+        {
+          dasOneSegment current_segment = (dasOneSegment)list->data;
+          dasOneEntryPoint_addSegment(ep, current_segment);
+          if(dasOneSegment_id1(current_segment) == feature_context->sequence_name)
+            server->current_segment = current_segment;
+          list = list->next;
+        }
+      g_free(urlep);
+    }
+  
+  /* Now we have entry points we can move on and get the rest of the information we need */
+
+  if(result)
+    {
+      if(server->current_segment != NULL)
+        {
+          /* Ok look like we're a top level segment, this is easy. */
+          printf("Setting up feature context\n"); /* Set up the feature context */
+        }
+      /* This is quite a big query */
+      else if (searchAssembly(server, dsn))
+        {
+          if(!server->current_segment)
+            {
+              server->last_errmsg = g_strdup_printf("Segment '%s' not available", 
+                                                    g_quark_to_string(feature_context->sequence_name));
+              result = FALSE;
+            }
+          else /* now we need to do some complex sh1 te work it all out */
+            {
+              GList *list = NULL;
+              
+              zMapXMLFactoryDecodeNameQuark(server->hashtable, 
+                                            g_quark_from_string("feature"),
+                                            &list);
+              while(list)
+                {
+                  dasOneFeature feat = (dasOneFeature)list->data;
+                  if(dasOneFeature_id1(feat) == feature_context->sequence_name)
+                    {
+                      int start, stop, tstart, tstop, begin, end;
+                      dasOneFeature_getLocation(feat, &start, &stop);
+                      dasOneFeature_getTargetBounds(feat, &tstart, &tstop);
+                      printf("Got the location start, stop: %d, %d\n", start, stop);
+                      dasOneSegment_getBounds(server->current_segment, &begin, &end);
+                      printf("I know the parent is %s, %d, %d\n", 
+                             (char *)g_quark_to_string(dasOneSegment_id1(server->current_segment)),
+                             begin, end);
+                      feature_context->length = tstop - tstart + 1;
+                      feature_context->sequence_to_parent.c1 = tstart;
+                      feature_context->sequence_to_parent.c2 = tstop;
+                      feature_context->sequence_to_parent.p1 = start;
+                      feature_context->sequence_to_parent.p2 = end;
+                      feature_context->parent_span.x1 = begin;
+                      feature_context->parent_span.x2 = end;
+                      feature_context->parent_name    = dasOneSegment_id1(server->current_segment);
+  
+
+                      printf("|-----------------------------------------|\n");
+                      printf("|Parent is segment=%s:%d,%d\n",
+                             (char *)g_quark_to_string( feature_context->parent_name ),
+                             feature_context->sequence_to_parent.p1,
+                             feature_context->sequence_to_parent.p2);
+                      printf("|child is segment=%s:%d,%d\n", 
+                             (char *)g_quark_to_string( feature_context->parent_name ),
+                             feature_context->sequence_to_parent.c1,
+                             feature_context->sequence_to_parent.c2);
+
+                  }
+                  list = list->next;
+                }
+            }
+          
+        }
+      else
+        result = FALSE;
+    }
+
+  return result;
+}
+
+#ifdef FOR_LATER
+          char *query = g_strdup_printf("features?%s", segStr);
+          url = dsnFullURL(server, query);
+          requestAndParseOverHTTP(server, url, ZMAP_DASONE_TYPES);
+          g_free(segStr);
+          g_free(query);
+          g_free(url); 
+#endif
+
 
 /*
 
@@ -444,6 +570,9 @@ static gboolean requestAndParseOverHTTP(DasServer server, char *url, dasDataType
   case ZMAP_DASONE_TYPES:
     zMapXMLParser_setMarkupObjectHandler(server->parser, typesStart, typesEnd);
     break ;
+  case ZMAP_DASONE_INTERNALFEATURES:
+    zMapXMLParser_setMarkupObjectHandler(server->parser, internalDasStart, internalDasEnd);
+    break ;
   case ZMAP_DASONE_FEATURES:
 #ifdef FINISHED
     zMapXMLParser_setMarkupObjectHandler(server->parser, featuresStart, featuresEnd);
@@ -465,6 +594,12 @@ static gboolean requestAndParseOverHTTP(DasServer server, char *url, dasDataType
     result = FALSE;
     break ;
   }
+
+  if(result && !(url && *url))
+    {
+      result = FALSE;
+      server->last_errmsg = "dasServer cannot continue with null url";
+    }
 
   /* result will be TRUE unless we've been passed an unknown
      dasDataType in which case the next two conditionals will be
@@ -507,6 +642,9 @@ static gboolean requestAndParseOverHTTP(DasServer server, char *url, dasDataType
                                                   server->curl_error,
                                                   server->curl_errmsg
                                                   );
+          /* I haven't checked, but I think we need to finish off the parser if we get here.
+           * need to consider/preserve/copy the parser->last_errmsg though.
+           */
         }
     }
   /* finish off the parser... */
@@ -520,61 +658,8 @@ static gboolean requestAndParseOverHTTP(DasServer server, char *url, dasDataType
   return response;
 }
 
-
-static void fetchAllDSN(DasServer server)
-{
-  char *url = NULL, *preDASPath = "";
-
-  /* Only need to do this once */
-  if(server->dsn_list != NULL)
-    return ;
-
-  /* Need to work out what preDASPath is
-   * Not all servers are http://das.host.tld/das/dasSourceName
-   * Some are set up as http://das.host.tld/web/dataAccess/das/dasSourceName
-   * The dsn request in the latter case should be a url like
-   * http://das.host.tld/web/dataAccess/das/dsn which obviously includes
-   * the pre "das" part "web/dataAccess/".  This pre das part MUST
-   * include the trailing "/" 
-   * For now I'm assuming they're all the former!
-   */
-
-  /* Can we do a prompt for passwd here? */
-  if(server->user && server->passwd)
-    url = g_strdup_printf("%s://%s:%s@%s:%d/%sdas/dsn", 
-                          g_quark_to_string(server->protocol),
-                          g_quark_to_string(server->user),
-                          g_quark_to_string(server->passwd),
-                          g_quark_to_string(server->host),
-                          server->port,
-                          preDASPath
-                          );
-  else
-    url = g_strdup_printf("%s://%s:%d/%sdas/dsn",
-                          g_quark_to_string(server->protocol),
-                          g_quark_to_string(server->host),
-                          server->port,
-                          preDASPath
-                          );
-
-  requestAndParseOverHTTP(server, url, ZMAP_DASONE_DSN);
-
-  if(0)
-    {
-      GList *list = NULL;
-      list = server->dsn_list;
-      while(list)
-        {
-          dasOneDSN dsn = list->data;
-          printf("Have DSN with id %s\n", g_quark_to_string(dasOneDSN_id1(dsn)));
-          list = list->next;
-        }
-    }
-
-  return ;
-}
-
-static gboolean checkDSNExists(DasServer das, dasOneDSN *dsn)
+/* Needs RENAMING */
+gboolean checkDSNExists(DasServer das, dasOneDSN *dsn)
 {
   gboolean exists = FALSE;
   GList *list = NULL;
@@ -598,12 +683,123 @@ static gboolean checkDSNExists(DasServer das, dasOneDSN *dsn)
       if(want == dasOneDSN_id1(cur_dsn))
         {
           exists = TRUE;
-          *dsn   = cur_dsn;
+          if(dsn != NULL)
+            *dsn = cur_dsn;
+          break;
         }
       list = list->next;
     }
   
   return exists;
+}
+
+/* We might get asked for a sequence which is quite a valid reference
+ * sequence (clone/contig) that isn't listed in the entry_points query.
+ * In order to get round this we must request all of the features of 
+ * category component from all of the segments listed in the entry_points
+ * results which have subparts="yes".  These segments _MUST_ already be 
+ * a property of the dsn entry point.
+
+ * The data is set up in the handler routine (see das1XMLhandlers.c)
+ */
+
+static gboolean searchAssembly(DasServer server, dasOneDSN dsn)
+{
+  char *asmURL = NULL;
+  char *format = "segment=%s:%d,%d;";
+  GList *list  = NULL;
+  GString *tmp = NULL;
+  gboolean res = FALSE;
+
+  list = dasOneEntryPoint_getSegmentsList( dasOneDSN_entryPoint(dsn, NULL) );
+  tmp  = g_string_sized_new(400); /* segment=ID:1,1000000 (length = 20) * 20 = 400 */
+  while(list)
+    {
+      int start, stop;
+      dasOneRefProperties ref;
+      dasOneSegment s = (dasOneSegment)list->data;
+      dasOneSegment_getBounds(s, &start, &stop);
+      ref = dasOneSegment_refProperties(s, NULL, NULL, FALSE);
+      /* ONLY append those which have subparts */
+      if(ref & (DASONE_REF_ISREFERENCE | DASONE_REF_HASSUBPARTS))
+        g_string_append_printf(tmp, format, 
+                               g_quark_to_string(dasOneSegment_id1(s)), 
+                               start, stop);
+      list = list->next;
+    }
+
+  if(tmp->str && *(tmp->str))   /* Check we have a string */
+    {
+      char *tmpURL = NULL;
+      tmpURL = dsnFullURL(server, "features?");
+      asmURL = g_strdup_printf("%s%scategory=component", tmpURL, tmp->str);
+      g_free(tmpURL);
+    }
+  /* We've copied the data, so we can free it */
+  g_string_free(tmp, TRUE);
+  
+  if(!(res = requestAndParseOverHTTP(server, asmURL, ZMAP_DASONE_INTERNALFEATURES)))
+    server->current_segment = NULL; /* Just in case something odd is going on */
+    
+  if(asmURL)
+    g_free(asmURL);
+
+  return res;
+}
+
+/* This needs to be a little bit cleverer than it currently is.  ATM
+ * it only calculates the string based on the assumption (wrongly)
+ * that the server->current_segment will be a listed entry_point and
+ * hence we'll fetch the wrong/too much of the segment.
+
+ * <entry_points>
+ *   <segment id="chr3" />
+ * </entry_points>
+
+ * <segment id="chr3">
+ *   <feature id="AL10102.3.1.123123">
+ *   <start>2001</start>
+ *   <stop>9000</stop>
+ *   <target start="1" stop="9000" />
+ * </segment>
+
+ *   |-------------------------chr3--------------------------------|
+ *   1                                                           10000
+ *          |---------------AL10102.3.1.123123-----------------|
+
+ * Hence we need to map the AL10102.3.1.123123 to chr3 coords.
+ */
+static char *getSegmentString(DasServer das, ZMapFeatureContext feature_context)
+{
+  char *segStr = NULL;
+  GList *segs  = NULL;
+  dasOneSegment segment = NULL;
+  /* *******************************************************
+   * Does the segment listed in the feature context exist?
+   * What are the bounds of the segment?
+   * Are the bounds in feature_context
+   * Are the bounds in feature_context contained by segment.
+   * *******************************************************
+   */
+  if(segment = das->current_segment)
+    {
+      int start, end;
+      dasOneSegment_getBounds(segment, &start, &end);
+      if((feature_context->sequence_to_parent.c1 >= start) &&
+         (feature_context->sequence_to_parent.c2 >  feature_context->sequence_to_parent.c1) && 
+         (feature_context->sequence_to_parent.c2 <= end))
+        segStr = g_strdup_printf("segment=%s:%d,%d", 
+                                 g_quark_to_string(feature_context->original_id),
+                                 feature_context->sequence_to_parent.c1,
+                                 feature_context->sequence_to_parent.c2);
+      else
+        segStr = g_strdup_printf("segment=%s:%d,%d", 
+                                 g_quark_to_string(feature_context->original_id),
+                                 start,
+                                 end);        
+    }
+
+  return segStr;
 }
 
 /* Must free me when done with me!!! */
@@ -635,15 +831,26 @@ static char *dsnFullURL(DasServer server, char *query)
 static void getMyHashTable(GHashTable **userTable)
 {
   GHashTable *table = NULL;
+
+  zmapXMLFactoryItem error   = g_new0(zmapXMLFactoryItemStruct, 1);
+
   zmapXMLFactoryItem dsn     = g_new0(zmapXMLFactoryItemStruct, 1);
   zmapXMLFactoryItem type    = g_new0(zmapXMLFactoryItemStruct, 1);
   zmapXMLFactoryItem segment = g_new0(zmapXMLFactoryItemStruct, 1);
+  zmapXMLFactoryItem feature = g_new0(zmapXMLFactoryItemStruct, 1);
+
+  error->type   = (int)TAG_DASONE_ERROR;
   
   dsn->type     = (int)TAG_DASONE_DSN;
   type->type    = (int)TAG_DASONE_TYPES;
   segment->type = (int)TAG_DASONE_SEGMENT;
+  feature->type = (int)TAG_DASONE_FEATURES; 
 
   table = g_hash_table_new(NULL, NULL);
+
+  g_hash_table_insert(table,
+                      GINT_TO_POINTER(g_quark_from_string("errorsegment")),
+                      error);
 
   g_hash_table_insert(table,
                       GINT_TO_POINTER(g_quark_from_string("dsn")),
@@ -656,6 +863,10 @@ static void getMyHashTable(GHashTable **userTable)
   g_hash_table_insert(table,
                       GINT_TO_POINTER(g_quark_from_string("segment")),
                       segment);
+
+  g_hash_table_insert(table,
+                      GINT_TO_POINTER(g_quark_from_string("feature")),
+                      feature);
 
   *userTable = table;  
   return ;

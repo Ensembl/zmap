@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep  5 15:53 2005 (rds)
+ * Last edited: Sep  8 16:17 2005 (rds)
  * Created: Thu Mar 18 12:02:52 2004 (edgrif)
- * CVS info:   $Id: dasServer_P.h,v 1.3 2005-09-05 17:27:52 rds Exp $
+ * CVS info:   $Id: dasServer_P.h,v 1.4 2005-09-08 17:45:36 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef DAS_SERVER_P_H
@@ -49,7 +49,8 @@ typedef enum {
   ZMAP_DASONE_DNA,
   ZMAP_DASONE_SEQUENCE,
   ZMAP_DASONE_TYPES,
-  ZMAP_DASONE_FEATURES,
+  ZMAP_DASONE_INTERNALFEATURES, /* Special type to get das features as */
+  ZMAP_DASONE_FEATURES,         /* das not zmap like this one */
   ZMAP_DASONE_LINK,
   ZMAP_DASONE_STYLESHEET,
   ZMAP_DASTWO_UNKNOWN          /* DOESN'T look like DAS2 */
@@ -58,11 +59,13 @@ typedef enum {
 typedef enum {
   TAG_DAS_UNKNOWN,
   TAG_DASONE_UNKNOWN,
+  TAG_DASONE_ERROR,
   TAG_DASONE_DSN,
   TAG_DASONE_ENTRY_POINTS,
   TAG_DASONE_DNA,
   TAG_DASONE_SEQUENCE,
   TAG_DASONE_TYPES,
+  TAG_DASONE_INTERNALFEATURES,  /* THIS ISN'T NEEDED. */
   TAG_DASONE_FEATURES,
   TAG_DASONE_LINK,
   TAG_DASONE_STYLESHEET,
@@ -86,9 +89,10 @@ typedef struct _DasServerStruct
   CURLcode curl_error ;					    /* curl specific error stuff */
   char *curl_errmsg ;
   char *last_errmsg ;					    /* The general das msg stuf, could be
-							       curl could be my code. */
+                                                               curl could be my code. */
 
   GList *dsn_list;
+  dasOneSegment current_segment;
   GHashTable *hashtable;
 
   /* this will not stay like this, it should more properly be a union of types of data that might
@@ -99,6 +103,10 @@ typedef struct _DasServerStruct
   ZMapFeatureContext req_context ;
   ZMapFeatureContext cur_context ;
 } DasServerStruct, *DasServer ;
+
+
+gboolean checkDSNExists(DasServer das, 
+                        dasOneDSN *dsn);
 
 
 /* Parsing handlers (see das1handlers.c) */
@@ -120,6 +128,7 @@ gboolean epStart(void *userData,
 gboolean epEnd(void *userData, 
                zmapXMLElement element, 
                zmapXMLParser parser);
+
 /* Types Handlers */
 gboolean typesStart(void *userData, 
                     zmapXMLElement element, 
@@ -127,6 +136,14 @@ gboolean typesStart(void *userData,
 gboolean typesEnd(void *userData, 
                   zmapXMLElement element, 
                   zmapXMLParser parser);
+
+/* Internal DAS Features Handlers */
+gboolean internalDasStart(void *userData, 
+                          zmapXMLElement element, 
+                          zmapXMLParser parser);
+gboolean internalDasEnd(void *userData, 
+                        zmapXMLElement element, 
+                        zmapXMLParser parser);
 
 
 #endif /* !DAS_SERVER_P_H */
