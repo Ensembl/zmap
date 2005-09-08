@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  5 10:16 2005 (rds)
+ * Last edited: Sep  8 17:12 2005 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.2 2005-09-05 17:25:39 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.3 2005-09-08 17:47:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,22 +94,20 @@ void zMapXMLDocument_destroy(zmapXMLDocument doc);
 zmapXMLElement zMapXMLElement_nextSibling(zmapXMLElement ele);
 zmapXMLElement zMapXMLElement_previousSibling(zmapXMLElement ele);
 
+zmapXMLElement zMapXMLElement_getChildByPath(zmapXMLElement parent,
+                                             char *path);
+
 zmapXMLElement zMapXMLElement_getChildByName(zmapXMLElement parent,
-                                             GQuark name);
+                                             char *name);
+zmapXMLElement zMapXMLElement_getChildByName1(zmapXMLElement parent,
+                                              GQuark name);
 GList *zMapXMLElement_getChildrenByName(zmapXMLElement parent,
                                         GQuark name,
                                         int expect);
-
 zmapXMLAttribute zMapXMLElement_getAttributeByName(zmapXMLElement ele,
                                                    char *name);
-
-#ifdef RANDASDKASJDFJAJSDASDHJ
-GQuark zMapXMLElement_getAttributeQuarkByName(zmapXMLElement element,
-                                              GQuark name);
-char *zMapXMLElement_getAttributeValueByName(zmapXMLElement element,
-                                             GQuark name);
-#endif
-
+zmapXMLAttribute zMapXMLElement_getAttributeByName1(zmapXMLElement ele,
+                                                    GQuark name);
 
 
 
@@ -135,16 +133,21 @@ void zMapXMLParser_destroy(zmapXMLParser parser);
 
 
 
+/* FACTORY Methods */
 
-int zMapXMLFactory_decodeElement(GHashTable *userTypesTable, 
+int zMapXMLFactoryDecodeElement(GHashTable *userTypesTable, 
                                  zmapXMLElement element,
                                  GList **listout);
-void zMapXMLFactory_listAppend(GHashTable *userTypesTable, 
+void zMapXMLFactoryListAddItem(GHashTable *userTypesTable, 
                                zmapXMLElement element, 
                                void *listItem);
-int zMapXMLFactory_listFromNameQuark(GHashTable *userTypesTable, 
-                                     GQuark name,
-                                     GList **listout);
+int zMapXMLFactoryDecodeNameQuark(GHashTable *userTypesTable, 
+                                  GQuark name,
+                                  GList **listout);
+void zMapXMLFactoryFreeListComplete(GHashTable *userTypesTable,
+                                    GQuark name,
+                                    GFunc func,
+                                    gpointer userData);
 
 
 #endif /* ZMAP_XML_H */
