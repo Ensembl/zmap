@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  2 17:02 2005 (rds)
+ * Last edited: Sep  8 12:09 2005 (rds)
  * Created: Fri Aug  5 14:33:49 2005 (rds)
- * CVS info:   $Id: zmapXMLElement.c,v 1.1 2005-09-05 17:28:22 rds Exp $
+ * CVS info:   $Id: zmapXMLElement.c,v 1.2 2005-09-08 17:49:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,9 +41,11 @@ static void freeElement(gpointer data, gpointer unused);
 zmapXMLElement zmapXMLElement_create(const XML_Char *name)
 {
   zmapXMLElement ele = NULL;
-
+  int len   = 100;
   ele       = g_new0(zmapXMLElementStruct, 1);
   ele->name = g_quark_from_string(g_ascii_strdown((char *)name, -1));
+
+  ele->contents = g_string_sized_new(len);
 
   return ele;
 }
@@ -82,9 +84,6 @@ void zmapXMLElement_add_content(zmapXMLElement ele,
                                 const XML_Char *content,
                                 int len)
 {
-  if(ele->contents == NULL)
-    ele->contents = g_string_sized_new(2 * len);
-
   /* N.B. we _only_ get away with this because XML_Char == char at the moment, 
    * this will need to be fixed in the future to support UNICODE/UTF-16 etc...
    * See expat docs & expat_external.h for further info. SCEW's str.h uses
@@ -121,13 +120,51 @@ zmapXMLElement zMapXMLElement_previousSibling(zmapXMLElement ele)
   return (sibling ? sibling->data : NULL);
 }
 
+/* This can only get first Child path. Probably not commonly used, but
+ * here in case.
+ */
+zmapXMLElement zMapXMLElement_getChildByPath(zmapXMLElement parent,
+                                             char *path)
+{
+  zmapXMLElement ele = NULL, pele = NULL;
+  gchar **names = NULL;
+  gboolean exist = TRUE;
+  names = g_strsplit_set(path, ".", -1);
+  int i = 0;
+  pele = parent;
+  while(exist)
+    {
+      if(names[i] == NULL)
+        break;                  /* We're finished */
+      if(strlen(names[i]) == 0)
+        {                       /* path looked like 'elementa..elementb' */
+          i++;
+          continue;
+        }
+      if((ele = zMapXMLElement_getChildByName(pele, names[i])) == NULL)
+        exist = FALSE;          /* Search failed, ele = NULL */
+      pele = ele;
+      i++;
+    }
+
+  return ele;
+}
+
+zmapXMLElement zMapXMLElement_getChildByName(zmapXMLElement parent,
+                                             char *name)
+{
+  if(name && *name)
+    return zMapXMLElement_getChildByName1(parent, g_quark_from_string(g_ascii_strdown(name, -1)));
+  else
+    return NULL;
+}
 
 /* These two could provide use when converting the tree to users'
  * objects and basically allow slow hash style access to the GList 
  * which is implemented as a list for the reason mentioned below.
  */
-zmapXMLElement zMapXMLElement_getChildByName(zmapXMLElement parent,
-                                             GQuark name)
+zmapXMLElement zMapXMLElement_getChildByName1(zmapXMLElement parent,
+                                              GQuark name)
 {
   GList *list;
 

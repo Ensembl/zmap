@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug 26 16:08 2005 (rds)
+ * Last edited: Sep  8 17:12 2005 (rds)
  * Created: Tue Aug 16 14:40:59 2005 (rds)
- * CVS info:   $Id: zmapXMLFactory.c,v 1.1 2005-09-05 17:28:22 rds Exp $
+ * CVS info:   $Id: zmapXMLFactory.c,v 1.2 2005-09-08 17:49:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,26 +41,12 @@ int zMapXMLFactoryDecodeElement(GHashTable *userTypesTable,
                                 zmapXMLElement element,
                                 GList **listout)
 {
-  return zMapXMLFactoryListFromNameQuark(userTypesTable, element->name, listout);
-
-  zmapXMLFactoryItem ptype = NULL;
-  int type = -1;
-
-  ptype = g_hash_table_lookup(userTypesTable, 
-                              GINT_TO_POINTER(element->name));
-  if(ptype)
-    {
-      type = ptype->type;
-      if(listout)
-        *listout = ptype->list;
-    }
-
-  return type;
+  return zMapXMLFactoryDecodeNameQuark(userTypesTable, element->name, listout);
 }
 
-int zMapXMLFactoryListFromNameQuark(GHashTable *userTypesTable, 
-                                    GQuark name,
-                                    GList **listout)
+int zMapXMLFactoryDecodeNameQuark(GHashTable *userTypesTable, 
+                                  GQuark name,
+                                  GList **listout)
 {
   zmapXMLFactoryItem ptype = NULL;
   int type = -1;
@@ -77,9 +63,7 @@ int zMapXMLFactoryListFromNameQuark(GHashTable *userTypesTable,
   return type;
 }
 
-
-
-void zMapXMLFactory_listAppend(GHashTable *userTypesTable, 
+void zMapXMLFactoryListAddItem(GHashTable *userTypesTable, 
                                zmapXMLElement element, 
                                void *listItem)
 {
@@ -91,7 +75,26 @@ void zMapXMLFactory_listAppend(GHashTable *userTypesTable,
   ptype = g_hash_table_lookup(userTypesTable, 
                               GINT_TO_POINTER(element->name));
   if(ptype)
-    ptype->list = g_list_append(ptype->list, listItem);
+    ptype->list = g_list_prepend(ptype->list, listItem);
+
+  return ;
+}
+
+
+
+void zMapXMLFactoryFreeListComplete(GHashTable *userTypesTable,
+                                    GQuark name,
+                                    GFunc func,
+                                    gpointer userData)
+{
+  zmapXMLFactoryItem ptype = NULL;
+  
+  ptype = g_hash_table_lookup(userTypesTable, 
+                              GINT_TO_POINTER(name));
+
+  g_list_foreach(ptype->list, func, userData);
+  g_list_free(ptype->list);
+  ptype->list = NULL;
 
   return ;
 }
