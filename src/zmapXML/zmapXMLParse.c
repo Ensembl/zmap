@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  5 18:47 2005 (rds)
+ * Last edited: Sep  9 00:24 2005 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.2 2005-09-05 17:54:35 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.3 2005-09-08 23:52:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -147,7 +147,7 @@ gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser,
     }
   /* Because XML_ParsingStatus XML_GetParsingStatus aren't on alphas! */
   if(isFinal)
-    zMapXMLParser_reset(parser);
+    result = zMapXMLParser_reset(parser);
 
   return result ;
 }
@@ -166,8 +166,9 @@ char *zMapXMLParser_lastErrorMsg(zmapXMLParser parser)
   return parser->last_errmsg;
 }
 
-void zMapXMLParser_reset(zmapXMLParser parser)
+gboolean zMapXMLParser_reset(zmapXMLParser parser)
 {
+  gboolean result = TRUE;
   /* Clean up our data structures */
 #warning FIX THIS MEMORY LEAK
   /* Check out this memory leak. 
@@ -179,7 +180,7 @@ void zMapXMLParser_reset(zmapXMLParser parser)
   parser->document = NULL;
   freeUpTheQueue(parser);
 
-  if(XML_ParserReset(parser->expat, NULL)) /* encoding as it was created */
+  if(result = XML_ParserReset(parser->expat, NULL)) /* encoding as it was created */
     setupExpat(parser);
   else
     parser->last_errmsg = "Failed Resetting the parser.";
@@ -192,7 +193,7 @@ void zMapXMLParser_reset(zmapXMLParser parser)
   parser->elementStack = g_queue_new() ;
   parser->last_errmsg  = NULL ;
 
-  return ;
+  return result;
 }
 
 void zMapXMLParser_destroy(zmapXMLParser parser)

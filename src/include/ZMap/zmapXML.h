@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  8 17:12 2005 (rds)
+ * Last edited: Sep  9 00:25 2005 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.3 2005-09-08 17:47:15 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.4 2005-09-08 23:53:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -128,7 +128,7 @@ char *zMapXMLParser_lastErrorMsg(zmapXMLParser parser);
 
 zmapXMLElement zMapXMLParser_getRoot(zmapXMLParser parser);
 
-void zMapXMLParser_reset(zmapXMLParser parser);
+gboolean zMapXMLParser_reset(zmapXMLParser parser);
 void zMapXMLParser_destroy(zmapXMLParser parser);
 
 
