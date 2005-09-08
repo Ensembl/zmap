@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Aug  9 11:37 2005 (edgrif)
+ * Last edited: Sep  8 10:27 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.29 2005-08-09 11:15:39 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.30 2005-09-08 09:28:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -870,7 +870,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
    * the required "source" (aka method) field. */
   if ((column_id = getColumnGroup(attributes)))
     {
-      feature_set_name = g_quark_to_string(column_id) ;
+      feature_set_name = (char *)g_quark_to_string(column_id) ;
     }
 
 
