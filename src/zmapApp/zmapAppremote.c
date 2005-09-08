@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Sep  6 16:46 2005 (rds)
+ * Last edited: Sep  8 11:32 2005 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.10 2005-09-06 15:47:39 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.11 2005-09-08 17:48:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -154,7 +154,7 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
   parse_ok = zMapXMLParser_parseBuffer(parser, command_text, strlen(command_text));
 
   if(parse_ok && 
-     zMapXMLFactoryListFromNameQuark(table, g_quark_from_string("zmap"), &list) > 0 
+     zMapXMLFactoryDecodeNameQuark(table, g_quark_from_string("zmap"), &list) > 0 
      && !(list == NULL))
     {
       appRemoteAll appOpen = (appRemoteAll)(list->data);
@@ -310,7 +310,7 @@ static gboolean start(void *userData,
             objAll->action = ZMAP_APP_REMOTE_CLOSE_ZMAP;
         }
       /* Add obj to list */
-      zMapXMLFactory_listAppend(table, element, objAll);
+      zMapXMLFactoryListAddItem(table, element, objAll);
     }
     break;
   default:
@@ -333,7 +333,7 @@ static gboolean end(void *userData,
     {
       zmapXMLElement child = NULL;
       appRemoteAll appOpen = (appRemoteAll)(list->data);
-      if((child = zMapXMLElement_getChildByName(element, g_quark_from_string("segment"))) != NULL)
+      if((child = zMapXMLElement_getChildByName(element, "segment")) != NULL)
         {
           zmapXMLAttribute attr = NULL;
           if((attr = zMapXMLElement_getAttributeByName(child, "sequence")) != NULL)
@@ -347,7 +347,7 @@ static gboolean end(void *userData,
           else
             appOpen->end = 0;
         }
-      if((child = zMapXMLElement_getChildByName(element, g_quark_from_string("segment"))) != NULL)
+      if((child = zMapXMLElement_getChildByName(element, "segment")) != NULL)
         appOpen->source = g_quark_from_string( child->contents->str );
     }
     handled = TRUE;

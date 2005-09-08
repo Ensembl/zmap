@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Sep  5 18:20 2005 (rds)
+ * Last edited: Sep  7 18:58 2005 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.15 2005-09-05 17:23:49 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.16 2005-09-08 17:48:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -186,7 +186,7 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
 
   /* Do the parsing and check all ok */
   if((parse_ok = zMapXMLParser_parseBuffer(parser, command_text, strlen(command_text))) == TRUE
-     && zMapXMLFactoryListFromNameQuark(objdata->hashtable, g_quark_from_string("zmap"), &list) > 0)
+     && zMapXMLFactoryDecodeNameQuark(objdata->hashtable, g_quark_from_string("zmap"), &list) > 0)
     {
       /* Check which action  */
       switch(objdata->action){
@@ -227,7 +227,7 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
         break;
       case ZMAP_CONTROL_ACTION_REGISTER_CLIENT:
         list = NULL;
-        if(zMapXMLFactoryListFromNameQuark(objdata->hashtable, g_quark_from_string("client"), &list) > 0 
+        if(zMapXMLFactoryDecodeNameQuark(objdata->hashtable, g_quark_from_string("client"), &list) > 0 
            && !(list == NULL))
           {
             if(createClient(zmap, (controlClientObj)list->data) == TRUE)
@@ -583,7 +583,7 @@ static gboolean start(void *userData,
       if((res_attr  = zMapXMLElement_getAttributeByName(element, "response")) != NULL)
         clientObj->response = zMapXMLAttribute_getValue(res_attr);
 
-      zMapXMLFactory_listAppend(obj->hashtable, element, clientObj);
+      zMapXMLFactoryListAddItem(obj->hashtable, element, clientObj);
     }
     break;
   default:
