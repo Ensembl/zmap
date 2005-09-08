@@ -12,6 +12,9 @@
 # set up common functions.
 . ZBfunctions $0
 
+# Setting this variable means fatal messages also get mailed to mail id "zmap"
+ZBmailOnExit="true"
+
 
 ZBlogmsg "ZMap build started"
 

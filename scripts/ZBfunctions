@@ -25,6 +25,7 @@ if [ "$1" = "unset" ]; then
 
 else
 
+
 ZBGotoDir ()
 {
 
@@ -32,10 +33,21 @@ ZBGotoDir ()
 
 }
 
-
+# If the global variable ZMmailOnExit is set then the error message is sent
+# to the zmap developers before exitting.
 ZBmsgAndExit ()
 {
-  echo "$ZBscript - Fatal Error: $1"
+  errmsg="$ZBscript - Fatal Error: $1"
+
+  if [ -n "$ZBmailOnExit" ]
+  then
+    echo "ZMap build failed because:
+  
+$errmsg" | mail zmap
+  fi
+
+  echo "$errmsg"
+
   exit 1
 }
 
@@ -72,8 +84,20 @@ ZBusage ()
 }
 
 
-
+# all variables must be after functions...
+#
 ZBscript=`basename $1`
+
+# For some reason this doesn't work, the variables don't get passed on....
+# do they need to be exported....probably, even though this is a dot script ????
+# TRY OUT LATER...
+
+# Yes, that's it the variables need to be exported....
+export ZBacedb='/nfs/disk100/acedb'
+ZBBaseDir="$ZBacedb/ZMap"
+ZBOverDir="$ZBacedb/ZMap.OVERNIGHT.BUILD"
+ZBDevDir="$ZBacedb/ZMap.DEVELOPMENT.BUILD"
+
 
 
 fi
