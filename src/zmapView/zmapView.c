@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Aug 31 11:03 2005 (rds)
+ * Last edited: Sep  7 13:58 2005 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.62 2005-09-02 10:31:36 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.63 2005-09-08 17:48:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1576,7 +1576,6 @@ static ZMapFeatureContext createContext(char *sequence, int start, int end,
   gboolean master = TRUE ;
   ZMapFeatureAlignment alignment ;
   ZMapFeatureBlock block ;
-  char *block_name = "block_1" ;
 
   context = zMapFeatureContextCreate(sequence, start, end, types, feature_set_names) ;
 
