@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  9 12:12 2005 (rds)
+ * Last edited: Sep  9 19:25 2005 (rds)
  * Created: Thu Sep  1 14:44:07 2005 (rds)
- * CVS info:   $Id: das1XMLhandlers.c,v 1.4 2005-09-09 11:12:28 rds Exp $
+ * CVS info:   $Id: das1XMLhandlers.c,v 1.5 2005-09-09 18:26:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -205,28 +205,6 @@ gboolean typesStart(void *userData,
 
   return FALSE;
 }
-gboolean typesEnd(void *userData, 
-                  zmapXMLElement element, 
-                  zmapXMLParser parser)
-{
-  gboolean handled = FALSE;
-  DasServer server = (DasServer)userData;
-
-  dasXMLTagType type = (dasXMLTagType)zMapXMLFactoryDecodeElement(server->hashtable, 
-                                                                  element, NULL);
-
-  switch(type){
-  case TAG_DASONE_TYPES:
-    
-    break;
-  default:
-    break;
-  }
-
-  return handled;
-}
-
-
 
 gboolean typesEnd(void *userData, 
                   zmapXMLElement element, 
