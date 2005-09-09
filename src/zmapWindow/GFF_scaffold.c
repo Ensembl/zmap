@@ -1,4 +1,4 @@
-/*  Last edited: Nov  8 16:25 2004 (edgrif) */
+/*  Last edited: Sep  9 14:32 2005 (edgrif) */
 /* This is a temporary file only to help with testing....it will go once GFF code is combined
  * into the threads etc. code proper.... */
 
@@ -111,7 +111,7 @@ static ZMapFeatureContext parseGFF(char *filename)
 
 
       /* Try getting the features. */
-      feature_context = g_new(ZMapFeatureContextStruct, 1) ;
+      feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
       zmapGFFGetFeatures(parser, feature_context) ;	    /* we ignore success/failure of call... */
 
       zMapGFFSetFreeOnDestroy(parser, free_arrays) ;
