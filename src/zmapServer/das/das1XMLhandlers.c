@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  8 19:10 2005 (rds)
+ * Last edited: Sep  9 12:12 2005 (rds)
  * Created: Thu Sep  1 14:44:07 2005 (rds)
- * CVS info:   $Id: das1XMLhandlers.c,v 1.3 2005-09-08 18:12:56 rds Exp $
+ * CVS info:   $Id: das1XMLhandlers.c,v 1.4 2005-09-09 11:12:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,17 +73,14 @@ gboolean dsnEnd(void *userData,
             id = zMapXMLAttribute_getValue(idAttr);
           if((versionAttr = zMapXMLElement_getAttributeByName(srcEle, "version")) != NULL)
             version = zMapXMLAttribute_getValue(versionAttr);
-          if(srcEle->contents)
-            name = g_quark_from_string(srcEle->contents->str);
+          name = g_quark_from_string(srcEle->contents->str);
         }
 
       if((mapEle = zMapXMLElement_getChildByName(element, "mapmaster")) != NULL)
-        if(mapEle->contents)
-          map = g_quark_from_string(mapEle->contents->str);
+        map = g_quark_from_string(mapEle->contents->str);
 
       if((descEle = zMapXMLElement_getChildByName(element, "description")) != NULL)
-        if(descEle->contents)
-          desc = g_quark_from_string(descEle->contents->str);
+        desc = g_quark_from_string(descEle->contents->str);
 
       if((dsn = dasOneDSN_create1(id, version, name)) != NULL)
         {
@@ -119,22 +116,22 @@ gboolean epStart(void *userData,
         GQuark id = 0, type = 0, orientation = 0;
         zmapXMLAttribute attr;
         orientation = g_quark_from_string("+"); /* optional and assumed positive */
-        if(attr = zMapXMLElement_getAttributeByName(element, "id"))
+        if((attr = zMapXMLElement_getAttributeByName(element, "id")))
           id = zMapXMLAttribute_getValue(attr);
-        if(attr = zMapXMLElement_getAttributeByName(element, "class"))
+        if((attr = zMapXMLElement_getAttributeByName(element, "class")))
           type = zMapXMLAttribute_getValue(attr);
-        if(attr = zMapXMLElement_getAttributeByName(element, "orientation"))
+        if((attr = zMapXMLElement_getAttributeByName(element, "orientation")))
           orientation = zMapXMLAttribute_getValue(attr);
-        if(attr = zMapXMLElement_getAttributeByName(element, "start"))
+        if((attr = zMapXMLElement_getAttributeByName(element, "start")))
           start = strtol((char *)g_quark_to_string(zMapXMLAttribute_getValue(attr)), (char **)NULL, 10);
-        if(attr = zMapXMLElement_getAttributeByName(element, "stop"))
+        if((attr = zMapXMLElement_getAttributeByName(element, "stop")))
           stop = strtol((char *)g_quark_to_string(zMapXMLAttribute_getValue(attr)), (char **)NULL, 10);
-        if(attr = zMapXMLElement_getAttributeByName(element, "size"))
+        if((attr = zMapXMLElement_getAttributeByName(element, "size")))
           size = strtol((char *)g_quark_to_string(zMapXMLAttribute_getValue(attr)), (char **)NULL, 10);
 
-        if(attr = zMapXMLElement_getAttributeByName(element, "reference"))
+        if((attr = zMapXMLElement_getAttributeByName(element, "reference")))
           ref = (char *)g_quark_to_string( zMapXMLAttribute_getValue(attr) );
-        if(attr = zMapXMLElement_getAttributeByName(element, "subparts"))
+        if((attr = zMapXMLElement_getAttributeByName(element, "subparts")))
           sub = (char *)g_quark_to_string( zMapXMLAttribute_getValue(attr) );
 
         /* For Old skool */
@@ -229,6 +226,30 @@ gboolean typesEnd(void *userData,
   return handled;
 }
 
+
+
+gboolean typesEnd(void *userData, 
+                  zmapXMLElement element, 
+                  zmapXMLParser parser)
+{
+  gboolean handled = FALSE;
+  DasServer server = (DasServer)userData;
+
+  dasXMLTagType type = (dasXMLTagType)zMapXMLFactoryDecodeElement(server->hashtable, 
+                                                                  element, NULL);
+
+  switch(type){
+  case TAG_DASONE_TYPES:
+    
+    break;
+  default:
+    break;
+  }
+
+  return handled;
+}
+
+
 gboolean internalDasStart(void *userData, 
                           zmapXMLElement element, 
                           zmapXMLParser parser)
@@ -245,9 +266,9 @@ gboolean internalDasStart(void *userData,
       dasOneFeature feat = NULL;
       zmapXMLAttribute attr = NULL;
       GQuark id = 0, label = 0;
-      if(attr = zMapXMLElement_getAttributeByName(element, "id"))
+      if((attr = zMapXMLElement_getAttributeByName(element, "id")))
         id = zMapXMLAttribute_getValue(attr);
-      if(attr = zMapXMLElement_getAttributeByName(element, "label"))
+      if((attr = zMapXMLElement_getAttributeByName(element, "label")))
         label = zMapXMLAttribute_getValue(attr);
       feat = dasOneFeature_create1(id, label);
       if(feat)
@@ -276,19 +297,19 @@ gboolean internalDasEnd(void *userData,
       dasOneMethod method = NULL;
       dasOneTarget target = NULL;
       zmapXMLElement ele  = NULL; /* temp 2 hold subelements */
-      if(ele = zMapXMLElement_getChildByName(element, "type"))
+      if((ele = zMapXMLElement_getChildByName(element, "type")))
         {
           zmapXMLAttribute attr = NULL;
           GQuark id = 0, cat = 0, ref = 0, sub = 0, sup = 0;
-          if(attr = zMapXMLElement_getAttributeByName(ele, "id"))
+          if((attr = zMapXMLElement_getAttributeByName(ele, "id")))
             id = zMapXMLAttribute_getValue(attr);
-          if(attr = zMapXMLElement_getAttributeByName(ele, "category"))
+          if((attr = zMapXMLElement_getAttributeByName(ele, "category")))
             cat = zMapXMLAttribute_getValue(attr);
-          if(attr = zMapXMLElement_getAttributeByName(ele, "reference"))
+          if((attr = zMapXMLElement_getAttributeByName(ele, "reference")))
             ref = zMapXMLAttribute_getValue(attr);
-          if(attr = zMapXMLElement_getAttributeByName(ele, "subparts"))
+          if((attr = zMapXMLElement_getAttributeByName(ele, "subparts")))
             sub = zMapXMLAttribute_getValue(attr);
-          if(attr = zMapXMLElement_getAttributeByName(ele, "superparts"))
+          if((attr = zMapXMLElement_getAttributeByName(ele, "superparts")))
             sup = zMapXMLAttribute_getValue(attr);
           type = dasOneType_create1(id, g_quark_from_string(ele->contents->str), cat);
           dasOneType_refProperties(type, 
@@ -297,17 +318,17 @@ gboolean internalDasEnd(void *userData,
                                    (char *)g_quark_to_string(sup),
                                    TRUE);
         }
-      if(ele = zMapXMLElement_getChildByName(element, "method"))
+      if((ele = zMapXMLElement_getChildByName(element, "method")))
         method = dasOneMethod_create(ele->contents->str);
-      if(ele = zMapXMLElement_getChildByName(element, "target"))
+      if((ele = zMapXMLElement_getChildByName(element, "target")))
         {
           zmapXMLAttribute attr = NULL;
           GQuark id = 0, start = 0, stop = 0;
-          if(attr = zMapXMLElement_getAttributeByName(ele, "id"))
+          if((attr = zMapXMLElement_getAttributeByName(ele, "id")))
             id = zMapXMLAttribute_getValue(attr);
-          if(attr = zMapXMLElement_getAttributeByName(ele, "start"))
+          if((attr = zMapXMLElement_getAttributeByName(ele, "start")))
             start = strtol((char *)g_quark_to_string(zMapXMLAttribute_getValue(attr)), (char **)NULL, 10);
-          if(attr = zMapXMLElement_getAttributeByName(ele, "stop"))
+          if((attr = zMapXMLElement_getAttributeByName(ele, "stop")))
             stop = strtol((char *)g_quark_to_string(zMapXMLAttribute_getValue(attr)), (char **)NULL, 10);
           target = dasOneTarget_create1(id, start, stop);
         }
@@ -318,15 +339,15 @@ gboolean internalDasEnd(void *userData,
           char *orientation = 0;
           int start = 0, stop = 0, phase = 0;
           double score = 0.0;
-          if(ele = zMapXMLElement_getChildByName(element, "start"))
+          if((ele = zMapXMLElement_getChildByName(element, "start")))
             start = strtol(ele->contents->str, (char **)NULL, 10);
-          if(ele = zMapXMLElement_getChildByName(element, "end"))
+          if((ele = zMapXMLElement_getChildByName(element, "end")))
             stop = strtol(ele->contents->str, (char **)NULL, 10);
-          if(ele = zMapXMLElement_getChildByName(element, "orientation"))
+          if((ele = zMapXMLElement_getChildByName(element, "orientation")))
             orientation = ele->contents->str;
-          if(ele = zMapXMLElement_getChildByName(element, "score"))
+          if((ele = zMapXMLElement_getChildByName(element, "score")))
             score = strtod(ele->contents->str, (char **)NULL);
-          if(ele = zMapXMLElement_getChildByName(element, "phase"))
+          if((ele = zMapXMLElement_getChildByName(element, "phase")))
             phase = strtol(ele->contents->str, (char **)NULL, 10);
 
           dasOneFeature_setProperties(feature, start, stop, score, orientation, phase);
@@ -388,7 +409,7 @@ static void setCurrentSegment(DasServer server, zmapXMLElement segElement)
   GQuark id = 0;
   checkDSNExists(server, &dsn);
 
-  if(attr = zMapXMLElement_getAttributeByName(segElement, "id"))
+  if((attr = zMapXMLElement_getAttributeByName(segElement, "id")))
     {
       id = zMapXMLAttribute_getValue(attr);
     }
