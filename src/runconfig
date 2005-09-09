@@ -70,7 +70,7 @@ case $opsys in
 
 esac
 
-echo "$script : Running " $root/configure $cc_args "$cflags_args" "$ld_args"
+echo "$script : Running " $root/configure --enable-debug $cc_args "$cflags_args" "$ld_args"
 echo "=========================================================================="
 
 
