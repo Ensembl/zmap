@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Sep  9 16:28 2005 (edgrif)
+ * Last edited: Sep  9 16:52 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.21 2005-09-09 15:28:28 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.22 2005-09-09 15:53:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -412,13 +412,8 @@ void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSe
 
   feature_set->parent_block = feature_block ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_datalist_id_set_data_full(&(feature_block->feature_sets), feature_set->unique_id, feature_set,
 			      destroyFeatureSet) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  feature_block->feature_sets = g_list_append(feature_block->feature_sets, feature_set) ;
 
   /* NEED TO DO SOMETHING ABOUT DESTROYING LIST.... */
 
@@ -464,11 +459,7 @@ ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
   feature_context->styles = types ;
   feature_context->feature_set_names = set_names ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_datalist_init(&(feature_context->alignments)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return feature_context ;
 }
@@ -481,12 +472,7 @@ void zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
 
   alignment->parent_context = feature_context ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_datalist_id_set_data(&(feature_context->alignments), alignment->unique_id, alignment) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  feature_context->alignments = g_list_append(feature_context->alignments, alignment) ;
 
   if (master)
     feature_context->master_align = alignment ;
