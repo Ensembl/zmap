@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  9 00:24 2005 (rds)
+ * Last edited: Sep  9 11:57 2005 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.3 2005-09-08 23:52:39 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.4 2005-09-09 11:03:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -180,7 +180,7 @@ gboolean zMapXMLParser_reset(zmapXMLParser parser)
   parser->document = NULL;
   freeUpTheQueue(parser);
 
-  if(result = XML_ParserReset(parser->expat, NULL)) /* encoding as it was created */
+  if((result = XML_ParserReset(parser->expat, NULL))) /* encoding as it was created */
     setupExpat(parser);
   else
     parser->last_errmsg = "Failed Resetting the parser.";
