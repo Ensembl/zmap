@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  9 12:06 2005 (rds)
+ * Last edited: Sep  9 16:21 2005 (edgrif)
  * Created: Fri Aug  5 14:33:49 2005 (rds)
- * CVS info:   $Id: zmapXMLElement.c,v 1.3 2005-09-09 11:06:41 rds Exp $
+ * CVS info:   $Id: zmapXMLElement.c,v 1.4 2005-09-09 15:21:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
