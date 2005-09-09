@@ -67,8 +67,6 @@ AC_ARG_ENABLE(debug,
         AC_HELP_STRING([--enable-debug], [enable debug info compilation (no)]),
         deb=$enableval, deb=no)
 
-CFLAGS=""
-
 if test "x$deb" = xyes; then
    CFLAGS="$CFLAGS -g";
 else
