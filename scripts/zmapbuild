@@ -100,7 +100,7 @@ ssh deskpro110 "cd $docdir ; makeQuadList TODO"
 
 # Copy docs onto Sanger web dev site
 #
-zmapupdateweb "$cvscopy/ZMap"
+zmapupdateweb "$cvscopy/ZMap" || ZBmsgAndExit "Could not copy docs to development web site."
 
 
 # If release directory needs to be given a proper release name then do so...
@@ -115,6 +115,7 @@ if [ -n "$version" ] ; then
   mv $targetdir 'ZMap.'$version'.BUILD' || ZBmsgAndExit "Could not rename build directory"
 fi
 
+ZBmsgInfo "Build completed successfully"
 
 ZBlogmsg "ZMap build finished"
 

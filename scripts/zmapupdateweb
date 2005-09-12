@@ -77,7 +77,7 @@ done
 
 # -t is for test apparently....
 if [ -n "$webpublish" ] ; then
-  webpublish -t $web_site
+  webpublish -t $web_site || ZBmsgAndExit "Could not copy docs to live web site."
 fi
 
 

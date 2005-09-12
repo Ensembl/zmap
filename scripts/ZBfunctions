@@ -41,9 +41,7 @@ ZBmsgAndExit ()
 
   if [ -n "$ZBmailOnExit" ]
   then
-    echo "ZMap build failed because:
-  
-$errmsg" | mail zmap
+    ZBmsgMail "$errmsg"
   fi
 
   echo "$errmsg"
@@ -54,7 +52,27 @@ $errmsg" | mail zmap
 
 ZBmsgInfo ()
 {
-  echo "$ZBscript - Info: $1"
+  msg="$ZBscript - Info: $1"
+
+  if [ -n "$ZBmailOnExit" ]
+  then
+    ZBmsgMail "$msg"
+  fi
+
+  echo "$msg"
+}
+
+# mailx is used because there are complications on the Alphas with what
+# flags are supported by the basic mail program.
+#
+ZBmsgMail ()
+{
+  if [ -n "$ZBmailOnExit" ]
+  then
+    echo "Message:
+  
+$1" | mailx -s "ZMap Build System Message" zmap
+  fi
 }
 
 
