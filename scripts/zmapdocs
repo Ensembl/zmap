@@ -1,0 +1,99 @@
+#!/usr/local/bin/bash
+#
+# encapsulate docs production....
+#
+#
+
+
+#
+# foocanvas.html needs to have headers removed from it and have links
+# to pages prepared as above.
+#
+# May also be useful to do some gtk headers as well...
+#
+# and perhaps some other stuff like expat etc.
+#
+#
+
+
+
+#
+# main routine
+#
+
+# set up common functions.
+. ZBfunctions $0
+
+
+# Prepares the foocanvas docs...
+#
+foocanvasDocs ()
+{
+  foocanvas_docs="foo-canvas.h foo-canvas-widget.h foo-canvas-util.h foo-canvas-text.h \
+foo-canvas-rect-ellipse.h foo-canvas-polygon.h foo-canvas-pixbuf.h \
+foo-canvas-line.h foo-canvas-i18n.h"
+  src_dir=$1
+  dest_dir=$2
+
+  for i in $foocanvas_docs
+  do
+    header="$src_dir/$i"
+    html="$dest_dir/`basename $i`.html"
+    
+    echo "$header -> $html"
+
+    enscript --color -W html -Ec -o $html $header
+  done
+
+}
+
+
+
+
+# set up usage strings.
+cmdstring='<none>'
+descstring='
+  no args yet.'
+
+
+
+ZBacedb='/nfs/disk100/acedb'
+ZBBaseDir="$ZBacedb/ZMap"
+ZBOverDir="$ZBacedb/ZMap.OVERNIGHT.BUILD"
+ZBDevDir="$ZBacedb/ZMap.DEVELOPMENT.BUILD"
+
+
+doc_rep="$ZBDevDir/ZMap"
+doc_make_dir="$doc_rep/src"
+
+
+
+#while getopts ":p" opt ; do
+#  case $opt in
+#    p  ) webpublish='true'  ;;
+#    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
+#  esac
+#done
+
+
+# Get the source directory to be linked to.
+shift $(($OPTIND - 1))
+if [ -n "$1" ] ; then
+  ZBusage "$cmdstring" "$descstring" "Command does not take args."
+fi
+web_site=$1
+
+
+
+# we need to run whatever scripts to create some of the dynamic pages, maybe these should be in
+# a special makefile somewhere....
+
+foocanvas_src_dir="$ZBBaseDir/prefix/packages/foocanvas/libfoocanvas"
+foocanvas_dest_dir="$web_site/foocanvas"
+foocanvasDocs $foocanvas_src_dir $foocanvas_dest_dir
+
+
+
+exit 0
+
+
