@@ -75,6 +75,13 @@ do
 
 done
 
+
+# Set up docs that needs generating/copying in some way...
+#
+zmapdocs $web_site || ZBmsgAndExit "Processing of docs by zmapdocs script failed."
+
+
+
 # -t is for test apparently....
 if [ -n "$webpublish" ] ; then
   webpublish -t $web_site || ZBmsgAndExit "Could not copy docs to live web site."
