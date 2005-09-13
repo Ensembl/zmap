@@ -26,6 +26,12 @@ case $opsys in
     PATH="$locals:$PATH"
     export PATH ;;
 
+  Darwin )
+    # This is for our Mac laptop....
+    locals=/Users/edgrif/install/bin
+    PATH="$locals:$PATH"
+    export PATH ;;
+
   * )
     msgAndExit "unsupported operating system: $opsys" ;;
 
