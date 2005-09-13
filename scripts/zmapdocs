@@ -35,6 +35,22 @@ foo-canvas-line.h foo-canvas-i18n.h"
   src_dir=$1
   dest_dir=$2
 
+  opsys=`uname`
+
+  case $opsys in
+  
+    OSF1 )
+      output_flag='-W' ;;
+
+    Linux )
+      output_flag='-w' ;;
+  
+    * )
+      ZBmsgAndExit "unsupported operating system: $opsys" ;;
+  
+  esac
+
+
   for i in $foocanvas_docs
   do
     header="$src_dir/$i"
@@ -42,7 +58,7 @@ foo-canvas-line.h foo-canvas-i18n.h"
     
     echo "$header -> $html"
 
-    enscript --color -W html -Ec -o $html $header
+    enscript --color $output_flag html -Ec -o $html $header || ZBmsgAndExit "enscript failed."
   done
 
 }
