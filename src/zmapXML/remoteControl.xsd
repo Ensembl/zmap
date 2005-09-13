@@ -27,17 +27,18 @@
      N.B. features elements have 1 or more feature elements!
   -->
 <xsd:group id="FeaturesAndOrListsOf">
-  <xsd:element name="features" type="FeatureListType" minOccurs="0" maxOccurs="unbounded" />
-  <xsd:element name="feature"  type="FeatureType"     minOccurs="0" maxOccurs="unbounded" />  
+  <xsd:element name="featureset" type="FeatureListType" minOccurs="0" maxOccurs="unbounded" />
+  <xsd:element name="feature"    type="FeatureType"     minOccurs="0" maxOccurs="unbounded" />  
 </xsd:group>
 
 <!-- The feature type -->
 <xsd:complexType name="FeatureType">
-  <xsd:attribute name="name"  type="xsd:string" />   <!-- b0250.1 -->
-  <xsd:attribute name="style" type="xsd:string" />   <!-- fgenesh -->
-  <xsd:attribute name="start" type="xsd:decimal" />  <!-- 102532  -->
-  <xsd:attribute name="end"   type="xsd:decimal" />  <!-- 102600  -->
-  <xsd:attribute name="suid"  type="xsd:string" />   <!-- session unique id -->
+  <xsd:attribute name="name"   type="xsd:string" />   <!-- b0250.1 -->
+  <xsd:attribute name="style"  type="xsd:string" />   <!-- fgenesh -->
+  <xsd:attribute name="start"  type="xsd:decimal" />  <!-- 102532  -->
+  <xsd:attribute name="end"    type="xsd:decimal" />  <!-- 102600  -->
+  <xsd:attribute name="strand" type="strandType" />   <!-- +, -, .  -->
+  <xsd:attribute name="suid"   type="xsd:string" />   <!-- session unique id -->
 
   <!-- This is flattened to avoid recursion as there
        doesn't seem to be a way to limit the depth. 
@@ -60,6 +61,7 @@
      This should also be extensible to group homologies... (although VERY verbosely)
   -->
 <xsd:complexType name="FeatureListType">
+  <xsd:attribute name="suid"   type="xsd:string" />   <!-- session unique id -->
   <xsd:element name="features" type="FeatureType" minOccurs="1" maxOccurs="unbounded" />
 </xsd:complexType>
 
@@ -75,6 +77,15 @@
   <xsd:attribute name="request_atom"    type="xsd:string" />
   <xsd:attribute name="response_atom"   type="xsd:string" />
 </xsd:complexType>
+
+
+<xsd:simpleType name="strandType">
+  <xsd:restriction base="xsd:string">
+    <xsd:enumeration value="+" />
+    <xsd:enumeration value="-" />
+    <xsd:enumeration value="." />
+  </xsd:restriction>
+</xsd:simpleType>
 
 
 <!-- A list of valid values for the action attribute of the root element. -->
