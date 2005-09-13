@@ -51,9 +51,9 @@ foo-canvas-line.h foo-canvas-i18n.h"
 
 
 # set up usage strings.
-cmdstring='<none>'
+cmdstring='<destination_directory>'
 descstring='
-  no args yet.'
+  <destination_directory> the root directory of the zmap web pages.'
 
 
 
@@ -78,8 +78,8 @@ doc_make_dir="$doc_rep/src"
 
 # Get the source directory to be linked to.
 shift $(($OPTIND - 1))
-if [ -n "$1" ] ; then
-  ZBusage "$cmdstring" "$descstring" "Command does not take args."
+if [ -z "$1" ] ; then
+  ZBusage "$cmdstring" "$descstring" "no zmap web page root directory specified."
 fi
 web_site=$1
 
