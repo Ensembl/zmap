@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xsd:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            xmlns:res="http://www.sanger.ac.uk/zmap/remoteResponse" >
+
+<xsd:annotation>
+  <xsd:documentation xml:lang="en">
+  A schema to expose what zmap will send as response.
+  If you have any issues with this document or would like to 
+  request an addition please contact zmap@sanger.ac.uk
+  </xsd:documentation>
+</xsd:annotation>
+
+<!-- Annoymous type for the root element -->
+<xsd:element name="zmap">
+  <xsd:complexType>
+    <xsd:choice>
+      <xsd:element name="response" type="xsd:anyType" minOccurs="0" maxOccurs="1"/>
+      <xsd:element name="error"    type="errorType"   minOccurs="0" maxOccurs="1" />
+    </xsd:choice>
+    <xsd:element name="meta"  type="metaType"  minOccurs="0" maxOccurs="1" />
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:complexType name="errorType">
+  <xsd:element name="message" type="xsd:string" minOccurs="1" maxOccurs="unbounded" />
+</xsd:complexType>
+
+<xsd:complexType name="metaType">
+  <xsd:attribute name="display"     type="xsd:string" />
+  <xsd:attribute name="windowid"    type="xsd:string" />
+  <xsd:attribute name="application" type="xsd:string" />
+  <xsd:attribute name="version"     type="xsd:string" />
+</xsd:complexType>
+
+</xsd:schema>
