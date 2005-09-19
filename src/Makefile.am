@@ -76,7 +76,12 @@ zmap_DEPENDENCIES = $(LIBS_ZMAP) src-copy
 ################################################################################
 ################################################################################
 
-docs: doxygen-doc
+mkdocdir:
+	@if test ! -d docs ; then \
+	  mkdir docs; \
+	fi
+
+docs: mkdocdir doxygen-doc
 
 maintainer-clean-local:
 	rm -rf cleanDir
