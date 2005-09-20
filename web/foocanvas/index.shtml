@@ -1,6 +1,5 @@
-<!--#set var="banner" value="ZMap Developer Site"-->
+<!--#set var="banner" value="ZMap and the FooCanvas"-->
 <!--#include virtual="/perl/header"-->
-<!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
 <h1>FooCanvas</h1>
 
@@ -16,5 +15,6 @@ pedigree.
 to do with event handling and grouping of objects.
 
 <p>
+
 <!--#include virtual="/perl/footer"-->
 
