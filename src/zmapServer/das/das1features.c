@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  8 17:28 2005 (rds)
+ * Last edited: Sep 16 11:11 2005 (rds)
  * Created: Wed Aug 31 18:37:38 2005 (rds)
- * CVS info:   $Id: das1features.c,v 1.2 2005-09-08 17:45:35 rds Exp $
+ * CVS info:   $Id: das1features.c,v 1.3 2005-09-20 17:16:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,12 @@
 #include <ZMap/zmapFeature.h>
 
 
+typedef struct _dasOneGroupStruct
+{
+  GQuark id;
+  GQuark type;
+  GQuark label;
+} dasOneGroupStruct;
 
 
 typedef struct _dasOneMethodStruct
@@ -66,7 +72,7 @@ typedef struct _dasOneFeatureStruct
   GQuark label;
   int start;
   int stop;
-  float score;
+  double score;
 
   ZMapStrand orientation;
   ZMapPhase phase;
@@ -118,33 +124,15 @@ gboolean dasOneFeature_getLocation(dasOneFeature feature,
 
 void dasOneFeature_setProperties(dasOneFeature feature, 
                                  int start, int stop,
-                                 double score, char *orientation,
-                                 int phase)
+                                 char *score, char *orientation,
+                                 char *phase)
 {
   feature->start = start;
   feature->stop  = stop;
-  feature->score = score;
 
-  if(orientation && *orientation && (g_quark_from_string(orientation) == g_quark_from_string("-")))
-    feature->orientation = ZMAPSTRAND_REVERSE;
-  else
-    feature->orientation = ZMAPSTRAND_FORWARD;
-
-  switch(phase)
-    {
-    case 0:
-      feature->phase = ZMAPPHASE_0;
-      break;
-    case 1:
-      feature->phase = ZMAPPHASE_1;
-      break;
-    case 2:
-      feature->phase = ZMAPPHASE_2;
-      break;
-    default:
-      feature->phase = ZMAPPHASE_NONE;
-      break;
-    }
+  zMapFeatureFormatScore(score, &(feature->score));
+  zMapFeatureFormatStrand(orientation, &(feature->orientation));
+  zMapFeatureFormatPhase(phase, &(feature->phase));
 
   return ;
 }
@@ -299,4 +287,22 @@ void dasOneTarget_free(dasOneTarget target)
   if(target)
     g_free(target);
   return ;
+}
+
+
+dasOneGroup dasOneGroup_create1(GQuark id, GQuark type, GQuark label)
+{
+  dasOneGroup grp = NULL;
+
+  grp = g_new0(dasOneGroupStruct, 1);
+
+  grp->id    = id;
+  grp->type  = type;
+  grp->label = label;
+
+  return grp;
+}
+GQuark dasOneGroup_id1(dasOneGroup grp)
+{
+  return grp->id;
 }

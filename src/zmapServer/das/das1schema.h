@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  8 18:53 2005 (rds)
+ * Last edited: Sep 15 18:15 2005 (rds)
  * Created: Wed Aug 31 15:59:12 2005 (rds)
- * CVS info:   $Id: das1schema.h,v 1.3 2005-09-08 18:12:57 rds Exp $
+ * CVS info:   $Id: das1schema.h,v 1.4 2005-09-20 17:16:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,6 +89,8 @@ typedef struct _dasOneStylesheetStruct
   GQuark type;
   dasOneGlyph glyph;
 }dasOneStylesheetStruct, *dasOneStylesheet;
+
+typedef struct _dasOneGroupStruct *dasOneGroup;
 
 typedef struct _dasOneMethodStruct *dasOneMethod;
 
@@ -173,8 +175,8 @@ gboolean dasOneFeature_getLocation(dasOneFeature feature,
                                   int *start_out, int *stop_out);
 void dasOneFeature_setProperties(dasOneFeature feature, 
                                  int start, int stop,
-                                 double score, char *orientation,
-                                 int phase);
+                                 char *score, char *orientation,
+                                 char *phase);
 void dasOneFeature_setTarget(dasOneFeature feature, 
                              dasOneTarget target);
 gboolean dasOneFeature_getTargetBounds(dasOneFeature feature, 
@@ -201,5 +203,9 @@ void dasOneMethod_free(dasOneMethod meth);
 dasOneTarget dasOneTarget_create1(GQuark id, int start, int stop);
 void dasOneTarget_free(dasOneTarget target);
 
+/* ============= */
+/* Group Methods */
+dasOneGroup dasOneGroup_create1(GQuark id, GQuark type, GQuark label);
+GQuark dasOneGroup_id1(dasOneGroup grp);
 
 #endif /* DAS1SCHEMA_H */

@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep  8 16:17 2005 (rds)
+ * Last edited: Sep 14 16:20 2005 (rds)
  * Created: Thu Mar 18 12:02:52 2004 (edgrif)
- * CVS info:   $Id: dasServer_P.h,v 1.4 2005-09-08 17:45:36 rds Exp $
+ * CVS info:   $Id: dasServer_P.h,v 1.5 2005-09-20 17:16:11 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef DAS_SERVER_P_H
@@ -38,6 +38,10 @@
 #include <ZMap/zmapXML.h>
 #include <ZMap/zmapFeature.h>
 #include <das1schema.h>
+
+#define ZMAP_DAS_FORMAT_SEGMENT "segment=%s:%d,%d;"
+#define ZMAP_URL_FORMAT_UN_PWD "%s://%s:%s@%s:%d/%s/%s"
+#define ZMAP_URL_FORMAT        "%s://%s:%d/%s/%s"
 
 /* http://www.biodas.org/documents/spec.html */
 
@@ -83,6 +87,7 @@ typedef struct _DasServerStruct
   int chunks ;						    /* for debugging at the moment... */
 
   zmapXMLParser parser;
+  zmapXMLFactory factory;
   gboolean debug;
 
   /* error stuff... */
@@ -91,9 +96,9 @@ typedef struct _DasServerStruct
   char *last_errmsg ;					    /* The general das msg stuf, could be
                                                                curl could be my code. */
 
+  GList *hostAbilities;
   GList *dsn_list;
   dasOneSegment current_segment;
-  GHashTable *hashtable;
 
   /* this will not stay like this, it should more properly be a union of types of data that might
    * be returned.... */
@@ -109,6 +114,37 @@ gboolean checkDSNExists(DasServer das,
                         dasOneDSN *dsn);
 
 
+
+gpointer dsnStart(void *userData,
+                  zmapXMLElement element,
+                  gpointer storage,
+                  zmapXMLFactoryDetail detail);
+gpointer dsnEnd(void *userData,
+                zmapXMLElement element,
+                gpointer storage,
+                zmapXMLFactoryDetail detail);
+gpointer segStart(void *userData,
+                  zmapXMLElement element,
+                  gpointer storage,
+                  zmapXMLFactoryDetail detail);
+
+gpointer segEnd(void *userData,
+                zmapXMLElement element,
+                gpointer storage,
+                zmapXMLFactoryDetail detail);
+gpointer featStart(void *userData,
+                    zmapXMLElement element,
+                    gpointer storage,
+                   zmapXMLFactoryDetail detail);
+gpointer featEnd(void *userData,
+                 zmapXMLElement element,
+                 gpointer storage,
+                 zmapXMLFactoryDetail detail);
+gpointer cleanUpDoc(void *userData,
+                    zmapXMLElement element,
+                    gpointer storage,
+                    zmapXMLFactoryDetail detail);
+#ifdef OLDVERSION
 /* Parsing handlers (see das1handlers.c) */
 /* There is a pair of handlers for each DAS document type 
  * E.G one for DASDSN formatted xml (http://www.biodas.org/dtd/dasdsn.dtd)
@@ -137,6 +173,14 @@ gboolean typesEnd(void *userData,
                   zmapXMLElement element, 
                   zmapXMLParser parser);
 
+gboolean zmapFeaturesStart(void *userData, 
+                           zmapXMLElement element, 
+                           zmapXMLParser parser);
+gboolean zmapFeaturesEnd(void *userData, 
+                         zmapXMLElement element, 
+                         zmapXMLParser parser);
+
+
 /* Internal DAS Features Handlers */
 gboolean internalDasStart(void *userData, 
                           zmapXMLElement element, 
@@ -145,5 +189,6 @@ gboolean internalDasEnd(void *userData,
                         zmapXMLElement element, 
                         zmapXMLParser parser);
 
+#endif /* OLDVERSION */
 
 #endif /* !DAS_SERVER_P_H */
