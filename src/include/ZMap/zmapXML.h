@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  9 00:25 2005 (rds)
+ * Last edited: Sep 15 12:12 2005 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.4 2005-09-08 23:53:34 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.5 2005-09-20 17:10:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,16 +54,38 @@ typedef struct _zmapXMLElementStruct
   zmapXMLElement parent;
   GList   *children;
 } zmapXMLElementStruct;
+
 typedef struct _zmapXMLAttributeStruct *zmapXMLAttribute;
 typedef struct _zmapXMLDocumentStruct  *zmapXMLDocument;
 typedef struct _zmapXMLParserStruct    *zmapXMLParser;
 
-typedef struct _zmapXMLFactoryItemStruct
-{
-  int    type;
-  GList *list;
-}zmapXMLFactoryItemStruct, *zmapXMLFactoryItem;
+typedef struct _zmapXMLFactoryStruct         *zmapXMLFactory;
+typedef struct _zmapXMLFactoryItemStruct     *zmapXMLFactoryItem;
+typedef struct _zmapXMLFactoryLiteItemStruct *zmapXMLFactoryLiteItem;
 
+typedef struct _zmapXMLFactoryDetailStruct
+{
+  gboolean result;
+  GQuark key;
+  GDestroyNotify notify;
+} zmapXMLFactoryDetailStruct, *zmapXMLFactoryDetail;
+
+
+typedef enum {
+  ZMAP_XML_FACTORY_NONE = 0,
+  ZMAP_XML_FACTORY_LIST,
+  ZMAP_XML_FACTORY_DATALIST
+} zmapXMLFactoryStorageType;
+
+typedef gpointer (*zmapXMLFactoryFunc)(gpointer userData,
+                                       zmapXMLElement element,
+                                       gpointer storage,
+                                       zmapXMLFactoryDetail detail
+#ifdef OLDVERSION
+                                       gboolean *handled_out,
+                                       GQuark *key_out
+#endif
+);
 
 typedef gboolean 
 (*zmapXML_StartMarkupObjectHandler)(void *userData, zmapXMLElement element, zmapXMLParser parser);
@@ -110,7 +132,6 @@ zmapXMLAttribute zMapXMLElement_getAttributeByName1(zmapXMLElement ele,
                                                     GQuark name);
 
 
-
 /* PARSER */
 zmapXMLParser zMapXMLParser_create(void *userData, gboolean validating, gboolean debug);
 
@@ -123,6 +144,8 @@ gboolean zMapXMLParser_parseFile(zmapXMLParser parser,
 gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser, 
                                     void *data, 
                                     int size);
+void zMapXMLParser_useFactory(zmapXMLParser parser,
+                              zmapXMLFactory factory);
 
 char *zMapXMLParser_lastErrorMsg(zmapXMLParser parser);
 
@@ -134,21 +157,67 @@ void zMapXMLParser_destroy(zmapXMLParser parser);
 
 
 /* FACTORY Methods */
+zmapXMLFactory zMapXMLFactory_create(gboolean isLite);
+void zMapXMLFactory_setUserData(zmapXMLFactory factory, 
+                                gpointer data);
 
-int zMapXMLFactoryDecodeElement(GHashTable *userTypesTable, 
-                                 zmapXMLElement element,
-                                 GList **listout);
-void zMapXMLFactoryListAddItem(GHashTable *userTypesTable, 
-                               zmapXMLElement element, 
-                               void *listItem);
-int zMapXMLFactoryDecodeNameQuark(GHashTable *userTypesTable, 
-                                  GQuark name,
-                                  GList **listout);
-void zMapXMLFactoryFreeListComplete(GHashTable *userTypesTable,
+
+/* lite methods */
+zmapXMLFactoryLiteItem zMapXMLFactoryLiteItem_create(int tag_type);
+void zMapXMLFactoryLite_addItem(zmapXMLFactory factory, 
+                                zmapXMLFactoryLiteItem item,
+                                char *tag);
+
+int zMapXMLFactoryLite_decodeElement(zmapXMLFactory factory,
+                                     zmapXMLElement element,
+                                     GList **listout);
+int zMapXMLFactoryLite_decodeNameQuark(zmapXMLFactory factory,
+                                       GQuark name,
+                                       GList **listout);
+
+void zMapXMLFactoryLite_addOutput(zmapXMLFactory factory, 
+                                  zmapXMLElement element, 
+                                  void *listItem);
+
+
+/* main methods */
+void zMapXMLFactory_addItem(zmapXMLFactory factory, 
+                            zmapXMLFactoryItem item,
+                            char *tag);
+
+
+void zMapXMLFactory_createItemInsert(zmapXMLFactory factory,
+                                     char *tag,
+                                     zmapXMLFactoryFunc start,
+                                     zmapXMLFactoryFunc end,
+                                     zmapXMLFactoryStorageType type
+                                     );
+zmapXMLFactoryItem zMapXMLFactory_decodeElement(zmapXMLFactory factory,
+                                                zmapXMLElement element);
+
+zmapXMLFactoryItem zMapXMLFactory_decodeNameQuark(zmapXMLFactory factory,
+                                                  GQuark name);
+
+GList *zMapXMLFactory_listFetchOutput(zmapXMLFactory factory,
+                                      GQuark name);
+
+GData *zMapXMLFactory_dataFetchOutput(zmapXMLFactory factory,
+                                      GQuark name);
+
+void zMapXMLFactory_dataAddOutput(zmapXMLFactoryItem item, 
+                                  gpointer data,
+                                  GQuark key,
+                                  GDestroyNotify notify);
+void zMapXMLFactory_listAddOutput(zmapXMLFactoryItem item, 
+                                  gpointer data);
+
+
+void zMapXMLFactoryFreeListComplete(zmapXMLFactory factory,
                                     GQuark name,
                                     GFunc func,
                                     gpointer userData);
 
+void zMapXMLFactoryItem_dataListClear(zmapXMLFactoryItem item);
 
 #endif /* ZMAP_XML_H */
 
