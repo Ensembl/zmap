@@ -49,7 +49,10 @@ cvs update . || ZBmsgAndExit "Cannot cvs update the build scripts"
 # If there is a command, then execute it.
 #
 if [ -n "$command" ] ; then
-  eval $command || ZBmsgAndExit "Command failed: $command"
+    for machine in 'deskpro110' 'cbi1a' 
+      do
+      eval $command -m '$machine' || ZBmsgAndExit "Command failed: $command"
+    done 
 fi
 
 

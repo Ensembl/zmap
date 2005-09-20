@@ -17,6 +17,8 @@
 # kind of more restrictive directory spec.
 #
 
+ZBbuildOSDir=""
+
 
 if [ "$1" = "unset" ]; then
 
@@ -25,6 +27,22 @@ if [ "$1" = "unset" ]; then
 
 else
 
+ZBExportOSVars()
+{
+    opsys=`uname`
+
+    case $opsys in
+
+        OSF1 )
+            ZBbuildOSDir=build/alpha ;;
+        Linux )
+            ZBbuildOSDir=build/linux ;;
+        Darwin )
+            ZBbuildOSDir=build/macosx ;;
+        * )
+            ZBmsgAndExit "unsupported operating system: $opsys" ;;       
+    esac
+}
 
 ZBGotoDir ()
 {

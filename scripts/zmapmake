@@ -3,7 +3,6 @@
 # Runs make on requested target (defaults to no target)
 #
 
-
 #
 # main routine
 #
@@ -24,7 +23,7 @@ descstring='
 
    -c           run configure script before doing the make.
 
-   <make_directory> specifies directory where make is take place.'
+   <make_directory> specifies FULL PATH of directory where make is take place.'
 
 
 bootstrap=""
@@ -57,13 +56,17 @@ ZBGotoDir $builddir
 #
 if [ -n "$bootstrap" ] ; then
   ZBmsgInfo "running bootstrap"
-  runbootstrap || ZBmsgAndExit "runbootstrap script failed"
+  $builddir/runbootstrap || ZBmsgAndExit "runbootstrap script failed"
 fi
 
 
 if [ -n "$configure" ] ; then
   ZBmsgInfo "running configure"
-  runconfig || ZBmsgAndExit "runconfig script failed"
+
+  ZBExportOSVars
+  echo $ZBbuildOSDir
+  ZBGotoDir $ZBbuildOSDir
+  $builddir/runconfig || ZBmsgAndExit "runconfig script failed"
 fi
 
 
@@ -73,7 +76,7 @@ make $target || ZBmsgAndExit "make failed"
 # A hack really, generalise to run a given command if you feel like it...
 #
 if [ -z $target ] ; then 
-  runzmap '--version' || ZBmsgAndExit "zmap would not run"
+  $builddir/runzmap '--version' || ZBmsgAndExit "zmap would not run"
 fi
 
 ZBlogmsg "ZMap make finished"

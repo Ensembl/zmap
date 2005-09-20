@@ -33,10 +33,13 @@ ZBBaseDir="$ZBacedb/ZMap"
 ZBOverDir="$ZBacedb/ZMap.OVERNIGHT.BUILD"
 ZBDevDir="$ZBacedb/ZMap.DEVELOPMENT.BUILD"
 
-
+ZBExportOSVars
+if [ ! -z $ZBbuildOSDir ] ; then
+    ZBbuildOSDir=$ZBbuildOSDir/
+fi
 webpublish=''
 web_site='/nfs/WWWdev/ACEDB_docs/htdocs/Development/developers_only/ZMap'
-doc_dirs="web/* src/docs/ZMap/html doc"
+doc_dirs="web/* src/${ZBbuildOSDir}docs/ZMap/html doc"
 
 
 while getopts ":p" opt ; do

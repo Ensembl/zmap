@@ -13,7 +13,7 @@
 . ZBfunctions $0
 
 # Setting this variable means fatal messages also get mailed to mail id "zmap"
-ZBmailOnExit="true"
+ZBmailOnExit=""
 
 
 ZBlogmsg "ZMap build started"
@@ -27,19 +27,11 @@ descstring='
    <target_build_directory> specifies the sub directory of ~acedb/ZMap/builds"
                             where the checkout and build should take place.'
 
-
+machine="DESPOT"
 zmaproot=~acedb/ZMap
 builddir="$zmaproot/BUILDS"
 zmapcvstarget='ZMap'
 version=""
-
-
-while getopts ":v" opt ; do
-  case $opt in
-    v  ) version="true"  ;;
-    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
-  esac
-done
 
 # Get the source directory for the build.
 shift $(($OPTIND - 1))
@@ -47,6 +39,23 @@ if [ -z "$1" ] ; then
   ZBusage "$cmdstring" "$descstring" "No target build directory specified."
 fi
 targetdir=$1
+
+# Note on setting OPTIND here. Doing echo $* here results in something like:
+# OVERNIGHT -m deskpro110
+# getopts doesn't know that the -m is after the OVERNIGHT and doesn't bother
+# looking unless we set OPTIND to 2 ($2). clever or insane? must b another way
+# echo $*
+OPTIND=2
+while getopts ":vm:" opt ; do
+  case $opt in
+    v  ) version="true"  ;;
+    m  ) machine=$OPTARG ;;
+    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
+  esac
+done
+
+ZBlogmsg "building on machine '$machine'"
+
 
 
 # move to the generic build directory.
@@ -59,7 +68,6 @@ ZBGotoDir $builddir
 if [ -d $targetdir ] ; then
 
   rm -rf $targetdir || ZBmsgAndExit "Cannot remove contents of ZMap build directory: $targetdir"
-
 fi
 
 mkdir $targetdir || ZBmsgAndExit "Cannot make ZMap build directory: $targetdir"
@@ -87,15 +95,16 @@ abspath=`pwd`
 # and we may not wish to exit, just report the failure....
 # -b and -c get the bootstrap and config run, we may be able to do the bootstrap
 # as a one time operation like the cvs stuff...
-ssh deskpro110 "zmapmake -b -c $abspath" || ZBmsgAndExit "zmap make failed"
+ssh $machine "zmapmake -b -c $abspath" || ZBmsgAndExit "zmap make failed"
 
 
 # making docs only works on linux at the moment as we need doxygen executables.
 #
-ssh deskpro110 "zmapmake -t docs $abspath" || ZBmsgAndExit "zmap make of docs failed"
+ZBExportOSVars
+ssh $machine "zmapmake -t docs $abspath/$ZBbuildOSDir" || ZBmsgAndExit "zmap make of docs failed"
 
 docdir="$cvscopy/ZMap/doc"
-ssh deskpro110 "cd $docdir ; makeQuadList TODO"
+ssh $machine "cd $docdir ; makeQuadList TODO"
 
 
 # Copy docs onto Sanger web dev site
