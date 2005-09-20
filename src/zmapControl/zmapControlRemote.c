@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Sep  7 18:58 2005 (rds)
+ * Last edited: Sep 12 13:26 2005 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.16 2005-09-08 17:48:14 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.17 2005-09-20 17:21:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,10 +79,10 @@ typedef struct {
 
 typedef struct {
   zmapControlAction action;
-  GHashTable *hashtable;
+  zmapXMLFactory factory;
 } xmlObjectsDataStruct, *xmlObjectsData;
 
-static void getMyHashTable(GHashTable **userTable);
+static zmapXMLFactory openFactory(void);
 static gboolean start(void *userData, 
                       zmapXMLElement element, 
                       zmapXMLParser parser);
@@ -167,29 +167,28 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
 {
   char *xml_reply = NULL ;
   int code        = ZMAPXREMOTE_INTERNAL;
-  zmapXMLElement root  = NULL;
+  //  zmapXMLElement root  = NULL;
   zmapXMLParser parser = NULL;
   gboolean cmd_debug   = TRUE;
   gboolean parse_ok    = FALSE;
-  xmlObjectsData objdata = g_new0(xmlObjectsDataStruct, 1);
-  GHashTable *h;
+  xmlObjectsDataStruct objdata = {0, NULL};
   GList *list;
   /* All the parsing will be done here in the future!!!! */
   /* And that future is now. */
 
   g_clear_error(&(zmap->info)); /* Clear the info */
-  getMyHashTable(&(objdata->hashtable)); /* Setup the hash table */
-  objdata->action = -1;         
+  objdata.factory = openFactory();
+  objdata.action  = -1;         
   /* Create and setup the parser */
-  parser = zMapXMLParser_create(objdata, FALSE, cmd_debug);
+  parser = zMapXMLParser_create(&objdata, FALSE, cmd_debug);
   zMapXMLParser_setMarkupObjectHandler(parser, start, end);
 
   /* Do the parsing and check all ok */
   if((parse_ok = zMapXMLParser_parseBuffer(parser, command_text, strlen(command_text))) == TRUE
-     && zMapXMLFactoryDecodeNameQuark(objdata->hashtable, g_quark_from_string("zmap"), &list) > 0)
+     && zMapXMLFactoryLite_decodeNameQuark(objdata.factory, g_quark_from_string("zmap"), &list) > 0)
     {
       /* Check which action  */
-      switch(objdata->action){
+      switch(objdata.action){
         /* PRECOND falls through to default below, so info gets set there. */
       case ZMAP_CONTROL_ACTION_ZOOM_IN:
         if(zmapControlWindowDoTheZoom(zmap, 2.0) == TRUE)
@@ -227,7 +226,7 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
         break;
       case ZMAP_CONTROL_ACTION_REGISTER_CLIENT:
         list = NULL;
-        if(zMapXMLFactoryDecodeNameQuark(objdata->hashtable, g_quark_from_string("client"), &list) > 0 
+        if(zMapXMLFactoryLite_decodeNameQuark(objdata.factory, g_quark_from_string("client"), &list) > 0 
            && !(list == NULL))
           {
             if(createClient(zmap, (controlClientObj)list->data) == TRUE)
@@ -504,39 +503,25 @@ static void setActionType(zmapXMLElement ele, xmlObjectsData obj)
   return ;
 }
 
-static void getMyHashTable(GHashTable **userTable)
+static zmapXMLFactory openFactory(void)
 {
-  GHashTable *table = NULL;
-  zmapXMLFactoryItem zmap     = g_new0(zmapXMLFactoryItemStruct, 1);
-  zmapXMLFactoryItem features = g_new0(zmapXMLFactoryItemStruct, 1);
-  zmapXMLFactoryItem feature  = g_new0(zmapXMLFactoryItemStruct, 1);
-  zmapXMLFactoryItem location = g_new0(zmapXMLFactoryItemStruct, 1);
-  zmapXMLFactoryItem client   = g_new0(zmapXMLFactoryItemStruct, 1);
+  zmapXMLFactory factory = NULL;
+  zmapXMLFactoryLiteItem zmap, features, feature, location, client;
 
-  zmap->type     = (int)ZMAP_CONTROL_OBJ_ZMAP;
-  features->type = (int)ZMAP_CONTROL_OBJ_FEATURES;
-  feature->type  = (int)ZMAP_CONTROL_OBJ_FEATURE;
-  location->type = (int)ZMAP_CONTROL_OBJ_LOCATION;
-  client->type   = (int)ZMAP_CONTROL_OBJ_CLIENT;
+  factory  = zMapXMLFactory_create(TRUE);
+  zmap     = zMapXMLFactoryLiteItem_create(ZMAP_CONTROL_OBJ_ZMAP);
+  features = zMapXMLFactoryLiteItem_create(ZMAP_CONTROL_OBJ_FEATURES);
+  feature  = zMapXMLFactoryLiteItem_create(ZMAP_CONTROL_OBJ_FEATURE);
+  location = zMapXMLFactoryLiteItem_create(ZMAP_CONTROL_OBJ_LOCATION);
+  client   = zMapXMLFactoryLiteItem_create(ZMAP_CONTROL_OBJ_CLIENT);
 
-  table = g_hash_table_new(NULL, NULL);
-  g_hash_table_insert(table,
-                      GINT_TO_POINTER(g_quark_from_string("zmap")),
-                      zmap);
-  g_hash_table_insert(table,
-                      GINT_TO_POINTER(g_quark_from_string("features")),
-                      features);
-  g_hash_table_insert(table,
-                      GINT_TO_POINTER(g_quark_from_string("feature")),
-                      feature);
-  g_hash_table_insert(table,
-                      GINT_TO_POINTER(g_quark_from_string("location")),
-                      location);
-  g_hash_table_insert(table,
-                      GINT_TO_POINTER(g_quark_from_string("client")),
-                      client);
-  *userTable = table;
-  return ;
+  zMapXMLFactoryLite_addItem(factory, zmap,     "zmap");
+  zMapXMLFactoryLite_addItem(factory, features, "features");
+  zMapXMLFactoryLite_addItem(factory, feature,  "feature");
+  zMapXMLFactoryLite_addItem(factory, location, "location");
+  zMapXMLFactoryLite_addItem(factory, client,   "client");
+
+  return factory;
 }
 
 
@@ -548,7 +533,7 @@ static gboolean start(void *userData,
   GList *list        = NULL;
   gboolean handled   = FALSE;
 
-  controlremotexmlobj type = (controlremotexmlobj)zMapXMLFactoryDecodeElement(obj->hashtable, element, &list);
+  controlremotexmlobj type = (controlremotexmlobj)zMapXMLFactoryLite_decodeElement(obj->factory, element, &list);
 
   switch(type){
   case ZMAP_CONTROL_OBJ_ZMAP:
@@ -583,7 +568,7 @@ static gboolean start(void *userData,
       if((res_attr  = zMapXMLElement_getAttributeByName(element, "response")) != NULL)
         clientObj->response = zMapXMLAttribute_getValue(res_attr);
 
-      zMapXMLFactoryListAddItem(obj->hashtable, element, clientObj);
+      zMapXMLFactoryLite_addOutput(obj->factory, element, clientObj);
     }
     break;
   default:
@@ -601,7 +586,7 @@ static gboolean end(void *userData,
   GList *list        = NULL;
   gboolean handled   = TRUE;
 
-  controlremotexmlobj type = (controlremotexmlobj)zMapXMLFactoryDecodeElement(obj->hashtable, element, &list);
+  controlremotexmlobj type = (controlremotexmlobj)zMapXMLFactoryLite_decodeElement(obj->factory, element, &list);
 
   switch(type){
   case ZMAP_CONTROL_OBJ_ZMAP:

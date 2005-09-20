@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Sep  8 11:32 2005 (rds)
+ * Last edited: Sep 20 12:27 2005 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.11 2005-09-08 17:48:03 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.12 2005-09-20 17:21:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,7 +60,7 @@ typedef struct
   GQuark source;
 } appRemoteAllStruct, *appRemoteAll;
 
-static void getMeMyHashTable(GHashTable **userTable);
+static zmapXMLFactory openFactory(void);
 static gboolean start(void *userData, 
                       zmapXMLElement element, 
                       zmapXMLParser parser);
@@ -115,7 +115,7 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
           if((client = zMapXRemoteNew()) != NULL)
             {
               char *req = NULL;
-              req = g_strdup_printf("register_client id = 0x%lx ; request = %s ; response = %s;",
+              req = g_strdup_printf("<zmap action=\"register_client\"><client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\" /></zmap>",
                                     id,
                                     ZMAP_DEFAULT_REQUEST_ATOM_NAME,
                                     ZMAP_DEFAULT_RESPONSE_ATOM_NAME
@@ -144,17 +144,17 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
   gboolean cmd_debug   = FALSE;
   gboolean parse_ok    = FALSE;
   GList *list          = NULL;
-  GHashTable *table;
+  zmapXMLFactory factory = NULL;
 
   g_clear_error(&(app->info));
 
-  getMeMyHashTable(&table);
-  parser = zMapXMLParser_create(table, FALSE, cmd_debug);
+  factory = openFactory();
+  parser  = zMapXMLParser_create(factory, FALSE, cmd_debug);
   zMapXMLParser_setMarkupObjectHandler(parser, start, end);
   parse_ok = zMapXMLParser_parseBuffer(parser, command_text, strlen(command_text));
 
   if(parse_ok && 
-     zMapXMLFactoryDecodeNameQuark(table, g_quark_from_string("zmap"), &list) > 0 
+     zMapXMLFactoryLite_decodeNameQuark(factory, g_quark_from_string("zmap"), &list) > 0 
      && !(list == NULL))
     {
       appRemoteAll appOpen = (appRemoteAll)(list->data);
@@ -289,12 +289,11 @@ static gboolean start(void *userData,
                       zmapXMLElement element, 
                       zmapXMLParser parser)
 {
-  GHashTable *table = (GHashTable *)userData;
-  GList *list       = NULL;
+  zmapXMLFactory factory = (zmapXMLFactory)userData;
   gboolean handled  = FALSE;
   appObjType type;
 
-  type  = (appObjType)zMapXMLFactoryDecodeElement(table, element, NULL);
+  type  = (appObjType)zMapXMLFactoryLite_decodeElement(factory, element, NULL);
 
   switch(type){
   case ZMAP_APP_REMOTE_ALL:
@@ -310,7 +309,7 @@ static gboolean start(void *userData,
             objAll->action = ZMAP_APP_REMOTE_CLOSE_ZMAP;
         }
       /* Add obj to list */
-      zMapXMLFactoryListAddItem(table, element, objAll);
+      zMapXMLFactoryLite_addOutput(factory, element, objAll);
     }
     break;
   default:
@@ -322,12 +321,12 @@ static gboolean end(void *userData,
                     zmapXMLElement element, 
                     zmapXMLParser parser)
 {
-  GHashTable *obj  = (GHashTable *)userData;
+  zmapXMLFactory factory = (zmapXMLFactory)userData;
   GList *list      = NULL;
   gboolean handled = FALSE;
-  appObjType type  = (appObjType)zMapXMLFactoryDecodeElement(obj, element, &list);
-
-
+  appObjType type  = (appObjType)zMapXMLFactoryLite_decodeElement(factory, 
+                                                                 element, 
+                                                                 &list);
   switch(type){
   case ZMAP_APP_REMOTE_ALL:
     {
@@ -339,11 +338,11 @@ static gboolean end(void *userData,
           if((attr = zMapXMLElement_getAttributeByName(child, "sequence")) != NULL)
             appOpen->sequence = zMapXMLAttribute_getValue(attr);
           if((attr = zMapXMLElement_getAttributeByName(child, "start")) != NULL)
-            appOpen->start = zMapXMLAttribute_getValue(attr);
+            appOpen->start = strtol(g_quark_to_string(zMapXMLAttribute_getValue(attr)), (char **)NULL, 10);
           else
             appOpen->start = 1;
           if((attr = zMapXMLElement_getAttributeByName(child, "end")) != NULL)
-            appOpen->end = zMapXMLAttribute_getValue(attr);
+            appOpen->end = strtol(g_quark_to_string(zMapXMLAttribute_getValue(attr)), (char **)NULL, 10);
           else
             appOpen->end = 0;
         }
@@ -358,22 +357,15 @@ static gboolean end(void *userData,
   return handled;
 }
 
-
-static void getMeMyHashTable(GHashTable **userTable)
+static zmapXMLFactory openFactory(void)
 {
-  GHashTable *table       = NULL;
-  zmapXMLFactoryItem zmap = g_new0(zmapXMLFactoryItemStruct, 1);
+  zmapXMLFactory factory = NULL;
+  zmapXMLFactoryLiteItem zmap = NULL;
 
-  if(!userTable)
-    return ;
+  factory = zMapXMLFactory_create(TRUE);
+  zmap    = zMapXMLFactoryLiteItem_create(ZMAP_APP_REMOTE_ALL);
+  
+  zMapXMLFactoryLite_addItem(factory, zmap, "zmap");
 
-  zmap->type = (int)ZMAP_APP_REMOTE_ALL;
-  table      = g_hash_table_new(NULL, NULL);
-
-  g_hash_table_insert(table,
-                      GINT_TO_POINTER(g_quark_from_string("zmap")),
-                      zmap);
-  *userTable = table;
-
-  return ;
+  return factory;
 }
