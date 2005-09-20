@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: May 10 14:28 2005 (rds)
+ * Last edited: Sep 20 18:06 2005 (rds)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.13 2005-05-12 15:45:35 rds Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.14 2005-09-20 17:06:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -125,8 +125,8 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
 
   zMapAssert(sequence && *sequence && start >= 1 && (end == 0 || end > start)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+  /* Set the text.  This is done even if it's already set, ah well! */
+  gtk_entry_set_text(GTK_ENTRY(app_context->sequence_widg), sequence);
 
   if (!zMapManagerAdd(app_context->zmap_manager, sequence, start, end, &zmap))
     {
