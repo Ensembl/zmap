@@ -208,7 +208,7 @@ sub _is_server{
 sub __DEBUG{
     return unless shift;
     my @c = (caller(1))[0..3];
-    warn "(" .$c[1] . ") LINE:". $c[2]. ", says: @_\n";
+    warn "($c[1]) LINE: $c[2], says: @_\n";
 }
 #==========================================================#
 #                  DESTROY                                 #
