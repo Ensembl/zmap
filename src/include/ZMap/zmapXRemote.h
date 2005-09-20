@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Jun 27 18:46 2005 (rds)
+ * Last edited: Sep 13 17:33 2005 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.8 2005-06-27 18:14:48 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.9 2005-09-20 17:11:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@
 #include <X11/Xatom.h>
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.8 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.9 $"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
 
@@ -67,7 +67,7 @@
 #define ZMAP_XREMOTE_META_FORMAT    "\n%s 0x%lx %s" ZMAP_XREMOTE_CURRENT_VERSION
 /* ================================== */
 #else
-#define ZMAP_XREMOTE_REPLY_FORMAT   "%d" ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER "<xml>%s</xml>" 
+#define ZMAP_XREMOTE_REPLY_FORMAT   "%d" ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER "<zmap>%s</zmap>" 
 #define ZMAP_XREMOTE_SUCCESS_FORMAT "<response>%s</response>"
 #define ZMAP_XREMOTE_ERROR_START    "<error><message>"
 #define ZMAP_XREMOTE_ERROR_END      "</message></error>"
