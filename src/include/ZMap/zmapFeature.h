@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep  8 10:23 2005 (edgrif)
+ * Last edited: Sep 20 18:19 2005 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.39 2005-09-08 09:28:48 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.40 2005-09-20 17:20:32 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -68,11 +68,10 @@ typedef int methodID ;
 
 /* NB if you add to these enums, make sure any corresponding arrays in
 ** zmapFeatureLookUpEnums() are kept in synch. */
-
 /* What about "sequence", atg, and allele as basic feature types ?           */
 typedef enum {ZMAPFEATURE_INVALID = -1,
 	      ZMAPFEATURE_BASIC = 0, ZMAPFEATURE_HOMOL,
-	      ZMAPFEATURE_EXON, ZMAPFEATURE_INTRON, 
+              ZMAPFEATURE_EXON, ZMAPFEATURE_INTRON, 
 	      ZMAPFEATURE_TRANSCRIPT, ZMAPFEATURE_VARIATION,
 	      ZMAPFEATURE_BOUNDARY, ZMAPFEATURE_SEQUENCE} ZMapFeatureType ;
 
@@ -437,7 +436,7 @@ void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSe
 void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;
 
 ZMapFeature zmapFeatureCreateEmpty(void) ;
-gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
+gboolean zMapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
 				char *sequence,
 				ZMapFeatureType feature_type,  ZMapFeatureTypeStyle style,
 				int start, int end, double score, ZMapStrand strand, ZMapPhase phase,
@@ -490,5 +489,16 @@ ZMapFeature zMapFeatureCopy  (ZMapFeature feature);
 
 gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);
 gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase);
+
+
+/* ================================================================= */
+/* functions in zmapFeatureFormatInput.c */
+/* ================================================================= */
+
+gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
+                               char *feature_type, ZMapFeatureType *type_out);
+gboolean zMapFeatureFormatScore(char *score_str, gdouble *score_out);
+gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out);
+gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out);
 
 #endif /* ZMAP_FEATURE_H */
