@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Sep  9 16:52 2005 (edgrif)
+ * Last edited: Sep 20 18:12 2005 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.22 2005-09-09 15:53:16 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.23 2005-09-20 17:19:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,7 +130,7 @@ ZMapFeature zmapFeatureCreateEmpty(void)
  * NOTE that really we need this to be a polymorphic function so that the arguments
  * are different for different features.
  *  */
-gboolean zmapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
+gboolean zMapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
 				char *sequence,
 				ZMapFeatureType feature_type, ZMapFeatureTypeStyle style,
 				int start, int end, double score, ZMapStrand strand,
