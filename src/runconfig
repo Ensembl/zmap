@@ -43,7 +43,7 @@ case $opsys in
     LD_LIBRARY_PATH=/usr/local/oracle/lib
     export LD_LIBRARY_PATH
 
-    cc_args='CXXFLAGS=-g CFLAGS=-g'
+    cc_args='CFLAGS=-Wall'
     cflags_args=''
     ld_args='' ;;
 
