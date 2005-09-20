@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Sep  8 10:27 2005 (edgrif)
+ * Last edited: Sep 20 18:22 2005 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.30 2005-09-08 09:28:07 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.31 2005-09-20 17:22:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,11 +63,13 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 static GQuark getColumnGroup(char *attributes) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
+#ifdef NOW_IN_ZMAPFEATUREFORMATINPUT_C
 static gboolean formatType(gboolean SO_compliant, gboolean default_to_basic,
 			   char *feature_type, ZMapFeatureType *type_out) ;
 static gboolean formatScore(char *score_str, gdouble *score_out) ;
 static gboolean formatStrand(char *strand_str, ZMapStrand *strand_out) ;
 static gboolean formatPhase(char *phase_str, ZMapPhase *phase_out) ;
+#endif /* NOW_IN_ZMAPFEATUREFORMATINPUT_C */
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
 static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
@@ -759,13 +761,13 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	err_text = g_strdup_printf("source name too long: %s", source) ;
       else if (strlen(feature_type) == GFF_MAX_FREETEXT_CHARS)
 	err_text = g_strdup_printf("feature_type name too long: %s", feature_type) ;
-      else if (!formatType(parser->SO_compliant, parser->default_to_basic, feature_type, &type))
+      else if (!zMapFeatureFormatType(parser->SO_compliant, parser->default_to_basic, feature_type, &type))
 	err_text = g_strdup_printf("feature_type not recognised: %s", feature_type) ;
-      else if (!formatScore(score_str, &score))
+      else if (!zMapFeatureFormatScore(score_str, &score))
 	err_text = g_strdup_printf("score format not recognised: %s", score_str) ;
-      else if (!formatStrand(strand_str, &strand))
+      else if (!zMapFeatureFormatStrand(strand_str, &strand))
 	err_text = g_strdup_printf("strand format not recognised: %s", strand_str) ;
-      else if (!formatPhase(phase_str, &phase))
+      else if (!zMapFeatureFormatPhase(phase_str, &phase))
 	err_text = g_strdup_printf("phase format not recognised: %s", phase_str) ;
       else
 	{
@@ -956,7 +958,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
     }
 
 
-  result = zmapFeatureAugmentData(feature, feature_name_id, feature_name, sequence,
+  result = zMapFeatureAugmentData(feature, feature_name_id, feature_name, sequence,
 				  feature_type, curr_style,
 				  start, end, score, strand, phase,
 				  homol_type, query_start, query_end, gaps) ;
@@ -1056,21 +1058,10 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 
       if (attr_fields == 2)
 	{
-	  has_name = TRUE ;
-	  *feature_name = g_strdup(name) ;
-
+	  has_name         = TRUE ;
+	  *feature_name    = g_strdup(name) ;
 	  *feature_name_id = g_strdup(*feature_name) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* don't do this or it messes up completely for the above multi-part features. */
-
-	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-						   start, end, query_start, query_end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-	}
-
+        }
     }
   else if (feature_type == ZMAPFEATURE_HOMOL)
     {
@@ -1180,288 +1171,6 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	  *end_out = end ;
 	  
 	  result = TRUE ;
-	}
-    }
-
-  return result ;
-}
-
-
-
-
-
-/* Type must equal something that the code understands. In GFF v1 this is unregulated and
- * could be anything. By default unrecognised terms are not converted.
- * 
- * 
- * SO_compliant == TRUE   only recognised SO terms will be accepted for feature types.
- * SO_compliant == FALSE  both SO and the earlier more adhoc names will be accepted (source for
- *                        these terms is wormbase GFF dumps).
- * 
- * This option is only valid when SO_compliant == FALSE.
- * misc_default == TRUE   unrecognised terms will be returned as "misc_feature" features types.
- * misc_default == FALSE  unrecognised terms will not be converted.
- * 
- * 
- *  */
-gboolean formatType(gboolean SO_compliant, gboolean default_to_basic,
-		    char *feature_type, ZMapFeatureType *type_out)
-{
-  gboolean result = FALSE ;
-  ZMapFeatureType type = ZMAPFEATURE_INVALID ;
-
-
-  /* Is feature_type a SO term, note that I do case-independent compares, hope this is correct. */
-  if (g_ascii_strcasecmp(feature_type, "trans_splice_acceptor_site") == 0)
-    {
-      type = ZMAPFEATURE_BOUNDARY ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "transposable_element_insertion_site") == 0
-	   || g_ascii_strcasecmp(feature_type, "deletion") == 0)
-    {
-      type = ZMAPFEATURE_VARIATION ;
-    }
-  if (g_ascii_strcasecmp(feature_type, "region") == 0)
-    {
-      type = ZMAPFEATURE_BASIC ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "virtual_sequence") == 0)
-    {
-      type = ZMAPFEATURE_SEQUENCE ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "reagent") == 0
-	   || g_ascii_strcasecmp(feature_type, "oligo") == 0
-	   || g_ascii_strcasecmp(feature_type, "PCR_product") == 0
-	   || g_ascii_strcasecmp(feature_type, "RNAi_reagent") == 0
-	   || g_ascii_strcasecmp(feature_type, "clone") == 0
-	   || g_ascii_strcasecmp(feature_type, "clone_end") == 0
-	   || g_ascii_strcasecmp(feature_type, "clone_end") == 0)
-    {
-      type = ZMAPFEATURE_BASIC ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "UTR") == 0
-	   || g_ascii_strcasecmp(feature_type, "polyA_signal_sequence") == 0
-	   || g_ascii_strcasecmp(feature_type, "polyA_site") == 0)
-    {
-      /* these should in the end be part of a gene structure..... */
-      type = ZMAPFEATURE_BASIC ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "operon") == 0)
-    {
-      /* this should in the end be part of a gene group, not sure how we display that..... */
-      type = ZMAPFEATURE_BASIC ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "pseudogene") == 0)
-    {
-      /* In SO terms this is a region but we don't have a basic "region" type that includes
-       * exons like structure...suggests we need to remodel our feature struct.... */
-      type = ZMAPFEATURE_TRANSCRIPT ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "experimental_result_region") == 0
-	   || g_ascii_strcasecmp(feature_type, "chromosomal_structural_element") == 0)
-    {
-      type = ZMAPFEATURE_BASIC ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "transcript") == 0
-	   || g_ascii_strcasecmp(feature_type, "protein_coding_primary_transcript") == 0
-	   || g_ascii_strcasecmp(feature_type, "CDS") == 0
-	   || g_ascii_strcasecmp(feature_type, "mRNA") == 0
-	   || g_ascii_strcasecmp(feature_type, "nc_primary_transcript") == 0)
-    {
-      type = ZMAPFEATURE_TRANSCRIPT ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "exon") == 0)
-    {
-      type = ZMAPFEATURE_EXON ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "intron") == 0)
-    {
-      type = ZMAPFEATURE_INTRON ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "nucleotide_match") == 0
-	   || g_ascii_strcasecmp(feature_type, "expressed_sequence_match") == 0
-	   || g_ascii_strcasecmp(feature_type, "EST_match") == 0
-	   || g_ascii_strcasecmp(feature_type, "cDNA_match") == 0
-	   || g_ascii_strcasecmp(feature_type, "translated_nucleotide_match") == 0
-	   || g_ascii_strcasecmp(feature_type, "protein_match") == 0)
-    {
-      type = ZMAPFEATURE_HOMOL ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "repeat_region") == 0
-	   || g_ascii_strcasecmp(feature_type, "inverted_repeat") == 0
-	   || g_ascii_strcasecmp(feature_type, "tandem_repeat") == 0
-	   || g_ascii_strcasecmp(feature_type, "transposable_element") == 0)
-    {
-      type = ZMAPFEATURE_BASIC ;
-    }
-  else if (g_ascii_strcasecmp(feature_type, "SNP") == 0
-	   || g_ascii_strcasecmp(feature_type, "sequence_variant") == 0
-	   || g_ascii_strcasecmp(feature_type, "substitution") == 0)
-    {
-      type = ZMAPFEATURE_VARIATION ;
-    }
-
-
-  if (!SO_compliant)
-    {
-      if (g_ascii_strcasecmp(feature_type, "SL1_acceptor_site") == 0
-	  || g_ascii_strcasecmp(feature_type, "SL2_acceptor_site") == 0)
-	{
-	  type = ZMAPFEATURE_BOUNDARY ;
-	}
-      else if (g_ascii_strcasecmp(feature_type, "Clone_right_end") == 0)
-	{
-	  type = ZMAPFEATURE_BASIC ;
-	}
-      else if (g_ascii_strcasecmp(feature_type, "Clone") == 0
-	       || g_ascii_strcasecmp(feature_type, "Clone_left_end") == 0
-	       || g_ascii_strcasecmp(feature_type, "utr") == 0
-	       || g_ascii_strcasecmp(feature_type, "experimental") == 0
-	       || g_ascii_strcasecmp(feature_type, "reagent") == 0
-	       || g_ascii_strcasecmp(feature_type, "repeat") == 0
-	       || g_ascii_strcasecmp(feature_type, "structural") == 0
-	       || g_ascii_strcasecmp(feature_type, "misc_feature") == 0)
-	{
-	  type = ZMAPFEATURE_BASIC ;
-	}
-      else if (g_ascii_strcasecmp(feature_type, "Pseudogene") == 0)
-	{
-	  /* REALLY NOT SURE ABOUT THIS CLASSIFICATION......SHOULD IT BE A TRANSCRIPT ? */
-	  type = ZMAPFEATURE_TRANSCRIPT ;
-	}
-      else if (g_ascii_strcasecmp(feature_type, "SNP") == 0
-	       || g_ascii_strcasecmp(feature_type, "complex_change_in_nucleotide_sequence") == 0)
-	{
-	  type = ZMAPFEATURE_VARIATION ;
-	}
-      else if (g_ascii_strcasecmp(feature_type, "Sequence") == 0)
-	{
-	  type = ZMAPFEATURE_SEQUENCE ;
-	}
-      else if (g_ascii_strcasecmp(feature_type, "transcript") == 0
-	       || g_ascii_strcasecmp(feature_type, "protein-coding_primary_transcript") == 0
-	       || g_ascii_strcasecmp(feature_type, "miRNA_primary_transcript") == 0
-	       || g_ascii_strcasecmp(feature_type, "snRNA_primary_transcript") == 0
-	       || g_ascii_strcasecmp(feature_type, "snoRNA_primary_transcript") == 0
-	       || g_ascii_strcasecmp(feature_type, "tRNA_primary_transcript") == 0
-	       || g_ascii_strcasecmp(feature_type, "rRNA_primary_transcript") == 0)
-	{
-	  /* N.B. "protein-coding_primary_transcript" is a typo in wormDB currently, should
-	   * be all underscores. */
-	  type = ZMAPFEATURE_TRANSCRIPT ;
-	}
-      else if (g_ascii_strcasecmp(feature_type, "similarity") == 0
-	       || g_ascii_strcasecmp(feature_type, "transcription") == 0)
-	{
-	  type = ZMAPFEATURE_HOMOL ;
-	}
-      else if (g_ascii_strcasecmp(feature_type, "trans-splice_acceptor") == 0)
-	{
-	  type = ZMAPFEATURE_BOUNDARY ;
-	}
-      else if (g_ascii_strcasecmp(feature_type, "coding_exon") == 0
-	       || g_ascii_strcasecmp(feature_type, "exon") == 0)
-	{
-	  type = ZMAPFEATURE_EXON ;
-	}
-      else if (g_ascii_strcasecmp(feature_type, "intron") == 0)
-	{
-	  type = ZMAPFEATURE_INTRON ;
-	}
-      else if (default_to_basic)
-	{
-	  /* If we allow defaulting of unrecognised features, the default is a "basic" feature. */
-	  type = ZMAPFEATURE_BASIC ;
-	}
-    }
-
-
-  if (type != ZMAPFEATURE_INVALID)
-    {
-      result = TRUE ;
-      *type_out = type ;
-    }
-
-  return result ;
-}
-
-
-/* Score must either be the char '.' or a valid floating point number, currently
- * if the score is '.' we return 0, this may not be correct. */
-gboolean formatScore(char *score_str, gdouble *score_out)
-{
-  gboolean result = FALSE ;
-
-  if (strlen(score_str) == 1 && strcmp(score_str, ".") == 0)
-    {
-      result = TRUE ;
-      *score_out = 0 ;
-    }
-  else
-    {
-      gdouble score ;
-
-      if ((result = zMapStr2Double(score_str, &score)))
-	*score_out = score ;
-    }
-
-  return result ;
-}
-	
-
-/* Strand must be one of the chars '+', '-' or '.'. */
-gboolean formatStrand(char *strand_str, ZMapStrand *strand_out)
-{
-  gboolean result = FALSE ;
-
-  if (strlen(strand_str) == 1
-      && (*strand_str == '+' || *strand_str == '-' || *strand_str == '.'))
-    {
-      result = TRUE ;
-
-      switch (*strand_str)
-	{
-	case '+':
-	  *strand_out = ZMAPSTRAND_FORWARD ;
-	  break ;
-	case '-':
-	  *strand_out = ZMAPSTRAND_REVERSE ;
-	  break ;
-	default:
-	  *strand_out = ZMAPSTRAND_NONE ;
-	  break ;
-	}
-    }
-
-  return result ;
-}
-	
-
-/* Phase must either be the char '.' or 0, 1 or 2. */
-gboolean formatPhase(char *phase_str, ZMapPhase *phase_out)
-{
-  gboolean result = FALSE ;
-
-  if (strlen(phase_str) == 1
-      && (*phase_str == '.' == 0
-	  || *phase_str == '0' == 0 || *phase_str == '1' == 0 || *phase_str == '2' == 0))
-    {
-      result = TRUE ;
-
-      switch (*phase_str)
-	{
-	case '0':
-	  *phase_out = ZMAPPHASE_0 ;
-	  break ;
-	case '1':
-	  *phase_out = ZMAPPHASE_1 ;
-	  break ;
-	case '2':
-	  *phase_out = ZMAPPHASE_2 ;
-	  break ;
-	default:
-	  *phase_out = ZMAPPHASE_NONE ;
-	  break ;
 	}
     }
 
