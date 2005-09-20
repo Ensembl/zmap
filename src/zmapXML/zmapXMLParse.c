@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  9 11:57 2005 (rds)
+ * Last edited: Sep 12 16:45 2005 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.4 2005-09-09 11:03:53 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.5 2005-09-20 17:18:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -161,6 +161,21 @@ void zMapXMLParser_setMarkupObjectHandler(zmapXMLParser parser,
   return ;
 }
 
+void zMapXMLParser_useFactory(zmapXMLParser parser,
+                              zmapXMLFactory factory)
+{
+  if(factory->isLite)
+    return ;                    /* Lite factories can't be used! */
+
+  /* The parser doesn't free any of the user data so just overwriting
+     here is fine. */
+  parser->user_data = factory;
+  zMapXMLParser_setMarkupObjectHandler(parser,
+                                       zmapXML_FactoryStartHandler,
+                                       zmapXML_FactoryEndHandler);
+  return ;
+}
+
 char *zMapXMLParser_lastErrorMsg(zmapXMLParser parser)
 {
   return parser->last_errmsg;
@@ -169,6 +184,9 @@ char *zMapXMLParser_lastErrorMsg(zmapXMLParser parser)
 gboolean zMapXMLParser_reset(zmapXMLParser parser)
 {
   gboolean result = TRUE;
+
+  printf("\n\n ++++ PARSER is being reset ++++ \n\n");
+
   /* Clean up our data structures */
 #warning FIX THIS MEMORY LEAK
   /* Check out this memory leak. 
@@ -292,7 +310,7 @@ static void start_handler(void *userData,
       /* In case there wasn't a <?xml version="1.0" ?> */
       if(!(parser->document))
         parser->document = zMapXMLDocument_create("1.0", "UTF-8", -1);
-      zMapXMLDocument_set_root(parser->document, current_ele);
+      zMapXMLDocument_setRoot(parser->document, current_ele);
     }
   else
     {
@@ -346,9 +364,10 @@ static void end_handler(void *userData,
     {
       if(((*handler)((void *)parser->user_data, current_ele, parser)) == TRUE)
         {
-          /* We can free the current_ele and all it's children */
-          /* First we need to tell it's parent it's being freed. */
-          zmapXMLElement_removeChild(current_ele->parent, current_ele);
+          /* We can free the current_ele and all its children */
+          /* First we need to tell the parent that its child is being freed. */
+          if(!(zmapXMLElement_signalParentChildFree(current_ele)))
+             printf("Empty'ing document... this might cure memory leak...\n ");
           zmapXMLElement_free(current_ele);
         }
     }
@@ -369,11 +388,10 @@ static void character_handler(void *userData,
 {
   zmapXMLElement content4ele;
   zmapXMLParser parser = (zmapXMLParser)userData ; 
-  int i ;
 
   content4ele = g_queue_peek_head(parser->elementStack);
 
-  zmapXMLElement_add_content(content4ele, s, len);
+  zmapXMLElement_addContent(content4ele, s, len);
 
   return ;
 }

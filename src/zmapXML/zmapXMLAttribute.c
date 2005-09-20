@@ -27,16 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  5 18:19 2005 (rds)
+ * Last edited: Sep  9 12:41 2005 (rds)
  * Created: Fri Aug  5 14:20:13 2005 (rds)
- * CVS info:   $Id: zmapXMLAttribute.c,v 1.1 2005-09-05 17:28:22 rds Exp $
+ * CVS info:   $Id: zmapXMLAttribute.c,v 1.2 2005-09-20 17:18:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapXML_P.h>
-
-static void freeAttr(gpointer data, gpointer unused);
-
 
 zmapXMLAttribute zmapXMLAttribute_create(const XML_Char *name,
                                          const XML_Char *value)
@@ -54,14 +51,11 @@ zmapXMLAttribute zmapXMLAttribute_create(const XML_Char *name,
 void zmapXMLAttribute_free(zmapXMLAttribute attr)
 {
   if(attr != NULL)
-    g_free(attr);
-  return ;
-}
-
-void zmapXMLAttribute_list_free(GList *attr_list)
-{
-  g_list_foreach(attr_list, freeAttr, NULL);
-  g_list_free(attr_list);
+    {
+      attr->name  = 0;
+      attr->value = 0;
+      g_free(attr);
+    }
   return ;
 }
 
@@ -72,11 +66,3 @@ GQuark zMapXMLAttribute_getValue(zmapXMLAttribute attr)
 
 
 /* Internal ! */
-static void freeAttr(gpointer data, gpointer unused)
-{
-  zmapXMLAttribute attr = (zmapXMLAttribute)data;
-
-  g_free(attr);
-
-  return ;
-}

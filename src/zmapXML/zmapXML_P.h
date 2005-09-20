@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  5 10:22 2005 (rds)
+ * Last edited: Sep 14 13:23 2005 (rds)
  * Created: Fri Aug  5 12:50:44 2005 (rds)
- * CVS info:   $Id: zmapXML_P.h,v 1.1 2005-09-05 17:28:22 rds Exp $
+ * CVS info:   $Id: zmapXML_P.h,v 1.2 2005-09-20 17:18:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -88,6 +88,35 @@ typedef struct _zmapXMLParserStruct
 } zmapXMLParserStruct ;
 
 
+typedef struct _zmapXMLFactoryStruct
+{
+  GHashTable *hash;
+  gboolean isLite;
+  gpointer userData;            /* pointer to the user's data */
+}zmapXMLFactoryStruct;
+
+typedef struct _zmapXMLFactoryLiteItemStruct
+{
+  int    tag_type;
+  GList *list;
+}zmapXMLFactoryLiteItemStruct;
+
+typedef struct _zmapXMLFactoryItemStruct
+{
+  zmapXMLFactory parent;       /* pointer to the hash that holds us */
+
+  zmapXMLFactoryFunc begin;
+  zmapXMLFactoryFunc end;
+
+  zmapXMLFactoryStorageType datatype; /* What's in the below */
+  union{
+    GList *list;
+    GData *datalist;
+  } storage;
+
+}zmapXMLFactoryItemStruct;
+
+
 /* ATTRIBUTES */
 zmapXMLAttribute zmapXMLAttribute_create(const XML_Char *name,
                                          const XML_Char *value);
@@ -99,13 +128,25 @@ gboolean zmapXMLElement_addAttribute(zmapXMLElement ele, zmapXMLAttribute attr);
 gboolean zmapXMLElement_addAttrPair(zmapXMLElement ele,
                                     const XML_Char *name,
                                     const XML_Char *value);
+void zmapXMLElement_addContent(zmapXMLElement ele, 
+                               const XML_Char *content,
+                               int len);
 void zmapXMLElement_addChild(zmapXMLElement parent, zmapXMLElement child);
-void zmapXMLElement_removeChild(zmapXMLElement parent, zmapXMLElement child);
+gboolean zmapXMLElement_signalParentChildFree(zmapXMLElement child);
 void zmapXMLElement_free(zmapXMLElement ele);
+void zmapXMLElement_freeAttrList(zmapXMLElement ele);
 
 /* PARSER */
 
 
+/* FACTORY */
+
+gboolean zmapXML_FactoryEndHandler(void *userData,
+                                  zmapXMLElement element,
+                                  zmapXMLParser parser);
+gboolean zmapXML_FactoryStartHandler(void *userData,
+                                    zmapXMLElement element,
+                                    zmapXMLParser parser);
 
 
 #endif /* !ZMAP_XML_P_H */
@@ -116,149 +157,13 @@ void zmapXMLElement_free(zmapXMLElement ele);
 
 
 
+#ifdef NEWFACTORYINTERFACE
+/* Lite Items */
 
+void zmapXMLFactoryDataAddItem(zmapXMLFactoryItem item, 
+                               gpointer output,
+                               GQuark key);
+void zmapXMLFactoryListAddItem(zmapXMLFactoryItem item, 
+                               gpointer output);
 
-
-
-
-
-
-
-
-
-
-
-
-#ifdef SOME_THOUGHTS_EXAMPLES_OF_WHAT_MIGHT_HAPPEN_HERE
-
-typedef enum {
-  ZMAP_OBJ_TYPE_A,
-  ZMAP_OBJ_TYPE_B,
-  ZMAP_OBJ_TYPE_C,
-  ZMAP_OBJ_TYPE_D,
-  ZMAP_OBJ_TYPE_E,
-  ZMAP_OBJ_LAST
-}zmapObjectType;
-
-typedef struct beepBeep
-{
-  zmapObjectType type;
-  char *elementname;
-} BeepTable;
-
-typedef struct _zmapFactoryOutputStruct
-{
-  zmapObjTypeA typeA;
-  zmapObjTypeB typeB;
-  zmapObjTypeC typeC;
-  zmapObjTypeD typeD;
-  zmapObjTypeE typeE;
-} zmapFactoryOutputStruct, *zmapFactoryOutputStruct;
-
-void factory2create(void *userData, zmapXMLElement element);
-void factory2create(void *userData, zmapXMLElement element)
-{
-  zmapFactoryOutput fo = (zmapFactoryOutput)userData;
-  zmapObjectType type;
-  /* This probably relies on tree of data....
-   */
-  type = decodeElement(element);
-  switch (type){
-  case ZMAP_OBJ_TYPE_A:
-    fo->typeA = makeObjectAFrom(element);
-    break;
-  case ZMAP_OBJ_TYPE_B:
-    fo->typeB = makeObjectBFrom(element);
-    break;
-  case ZMAP_OBJ_TYPE_C:
-    fo->typeC = makeObjectCFrom(element);
-    break;
-  case ZMAP_OBJ_TYPE_D:
-    fo->typeD = makeObjectDFrom(element);
-    break;
-  case ZMAP_OBJ_TYPE_E:
-    fo->typeE = makeObjectEFrom(element);
-    break;
-  default:
-    zMapFatal("Something went WRONG");
-    break;
-  }
-}
-void factory2complete(void *userData, zmapXMLElement element);
-void factory2complete(void *userData, zmapXMLElement element)
-{
-  zmapFactoryOutput fo = (zmapFactoryOutput)userData;
-  zmapObjectType type;
-  /* This probably relies on tree of data....
-   */
-  type = decodeElement(element);
-  switch (type){
-  case ZMAP_OBJ_TYPE_A:
-    completeObjectA(fo->typeA, element);
-    draw_or_do_something_else_with_it(fo->typeA);
-    fo->typeA = NULL;
-    break;
-  case ZMAP_OBJ_TYPE_B:
-    /* Same here, but for B... */
-    break;
-  case ZMAP_OBJ_TYPE_C:
-    break;
-  case ZMAP_OBJ_TYPE_D:
-    break;
-  case ZMAP_OBJ_TYPE_E:
-    break;
-  default:
-    zMapFatal("Something went WRONG");
-    break;
-  }
-
-}
-
-zmapObjectType decodeElement(zmapXMLElement element)
-{
-  zmapObjectType type = ZMAP_OBJ_UNKNOWN;
-  GList *interestingElements = NULL;
-  int i = 0;
-  gboolean escape = FALSE;
-
-  interestingElements = getElementNames();
-  /* should step through ourselves, probably */
-  while(notEndOfList && !escape)
-    {
-      if(g_quark_from_string(listItem) == element->name)
-        {
-          type = (zmapObjectType)i;
-          escape = TRUE;
-        }
-      i++;
-    }
-  if(type >= ZMAP_OBJ_LAST)
-    zMapFatal("Inconsistency.\n");
-
-  return type;
-}
-
-zmapObjectType decodeElement(zmapXMLElement element)
-{
-  static beepBeep[] = {
-    {ZMAP_OBJ_TYPE_A, "objectTypeA"},
-    {ZMAP_OBJ_TYPE_B, "objectTypeB"},
-    {ZMAP_OBJ_TYPE_C, "objectTypeC"},
-    {ZMAP_OBJ_TYPE_D, "objectTypeD"},
-    {ZMAP_OBJ_TYPE_E, "objectTypeE"},    
-    {ZMAP_OBJ_LAST, NULL}
-  };
-  int i;
-  zmapObjectType type;
-  for(i = 0; beepBeep[i] != ZMAP_OBJ_LAST; i++)
-    {
-      if(element->name = g_quark_from_string((beepBeep[i])->elementname))
-        {
-          type = i;
-          i = ZMAP_OBJ_LAST;
-        }
-    }
-  return type;
-}
-#endif /* SOME_THOUGHTS_EXAMPLES_OF_WHAT_MIGHT_HAPPEN_HERE */
-
+#endif

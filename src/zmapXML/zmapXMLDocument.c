@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug 10 12:53 2005 (rds)
+ * Last edited: Sep  9 12:53 2005 (rds)
  * Created: Tue Aug  9 14:25:26 2005 (rds)
- * CVS info:   $Id: zmapXMLDocument.c,v 1.1 2005-09-05 17:28:22 rds Exp $
+ * CVS info:   $Id: zmapXMLDocument.c,v 1.2 2005-09-20 17:18:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,7 @@ zmapXMLDocument zMapXMLDocument_create(const XML_Char *version,
   return doc;
 }
 
-void zMapXMLDocument_set_root(zmapXMLDocument doc,
+void zMapXMLDocument_setRoot(zmapXMLDocument doc,
                               zmapXMLElement root)
 {
   if(!(doc->root))
@@ -71,7 +71,7 @@ char *zMapXMLDocument_encoding(zmapXMLDocument doc)
   return g_strdup(g_quark_to_string(doc->encoding));
 }
 
-gboolean zMapXMLDocument_is_standalone(zmapXMLDocument doc)
+gboolean zMapXMLDocument_isStandalone(zmapXMLDocument doc)
 {
   if(doc->standalone)
     return TRUE;

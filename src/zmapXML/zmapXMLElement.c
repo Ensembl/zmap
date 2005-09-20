@@ -27,15 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  9 16:21 2005 (edgrif)
+ * Last edited: Sep 12 16:36 2005 (rds)
  * Created: Fri Aug  5 14:33:49 2005 (rds)
- * CVS info:   $Id: zmapXMLElement.c,v 1.4 2005-09-09 15:21:53 edgrif Exp $
+ * CVS info:   $Id: zmapXMLElement.c,v 1.5 2005-09-20 17:18:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapXML_P.h>
 
 static void freeElement(gpointer data, gpointer unused);
+static void freeAttributeListItems(gpointer item, gpointer data);
 
 /* Creates a named element.  That's it.  */
 zmapXMLElement zmapXMLElement_create(const XML_Char *name)
@@ -70,19 +71,24 @@ void zmapXMLElement_addChild(zmapXMLElement parent, zmapXMLElement child)
   child->parent    = parent;
   return ;
 }
-void zmapXMLElement_removeChild(zmapXMLElement parent, zmapXMLElement child)
+gboolean zmapXMLElement_signalParentChildFree(zmapXMLElement child)
 {
-  /* In case we get passed the root element as the the child, it's
+  /* In case we get passed the root element as the the child, its
      parent is NULL! */
+  zmapXMLElement parent = NULL;
+  parent = child->parent;
+
   if(parent == NULL)
-    return ;                    /* NOT SURE THIS IS RIGHT!  */
+    return FALSE;
+
   parent->children = g_list_remove(parent->children, child);
-  return ;
+
+  return TRUE;
 }
 
-void zmapXMLElement_add_content(zmapXMLElement ele, 
-                                const XML_Char *content,
-                                int len)
+void zmapXMLElement_addContent(zmapXMLElement ele, 
+                               const XML_Char *content,
+                               int len)
 {
   /* N.B. we _only_ get away with this because XML_Char == char at the moment, 
    * this will need to be fixed in the future to support UNICODE/UTF-16 etc...
@@ -237,8 +243,6 @@ zmapXMLAttribute zMapXMLElement_getAttributeByName(zmapXMLElement ele,
 */
 void zmapXMLElement_free(zmapXMLElement ele)
 {
-  GList *c;
-
   if(ele == NULL)
     return ;
 
@@ -251,7 +255,7 @@ void zmapXMLElement_free(zmapXMLElement ele)
     g_string_free(ele->contents, TRUE);
   
   /* Now the attributes */
-  zmapXMLAttribute_list_free(ele->attributes);
+  zmapXMLElement_freeAttrList(ele);
   
   /* my parent, doesn't need 2 b freed so set to null! */
   /* I might want a handler here, but not sure 
@@ -265,6 +269,18 @@ void zmapXMLElement_free(zmapXMLElement ele)
   return ;
 }
 
+void zmapXMLElement_freeAttrList(zmapXMLElement ele)
+{
+  GList *list = NULL;
+  list = ele->attributes;
+
+  g_list_foreach(list, freeAttributeListItems, NULL);
+  g_list_free(list);
+
+  ele->attributes = NULL;
+
+  return ;
+}
 
 
 
@@ -275,5 +291,14 @@ static void freeElement(gpointer data, gpointer unused)
 {
   zmapXMLElement ele = (zmapXMLElement)data;
   zmapXMLElement_free(ele);
+  return ;
+}
+
+static void freeAttributeListItems(gpointer item, gpointer data)
+{
+  zmapXMLAttribute attr = (zmapXMLAttribute)item; 
+
+  zmapXMLAttribute_free(attr);
+
   return ;
 }
