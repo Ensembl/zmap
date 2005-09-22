@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 22 12:12 2005 (edgrif)
+ * Last edited: Sep 22 14:33 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.81 2005-09-22 12:39:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.82 2005-09-22 13:35:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -751,7 +751,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   foo_canvas_item_get_bounds(bounding_box, &x1, &y1, &x2, &y2) ;
   if (x2 == 0)
     foo_canvas_item_set(bounding_box,
-			"x2", 10,
+			"x2", 10.0,
 			NULL) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
