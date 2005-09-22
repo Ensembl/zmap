@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Aug  2 15:28 2005 (edgrif)
+ * Last edited: Sep 20 16:18 2005 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.34 2005-08-09 11:11:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.35 2005-09-22 12:35:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,7 +109,7 @@ void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
    * where the user clicked. */
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
 
-  if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
+  if (item_feature_type == ITEM_SET)
     {
       feature_set = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
 
