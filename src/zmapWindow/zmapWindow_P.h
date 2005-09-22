@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 26 13:20 2005 (rnc)
+ * Last edited: Sep 22 10:56 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.73 2005-07-28 09:18:00 rnc Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.74 2005-09-22 12:37:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -41,6 +41,13 @@
 
 /* Names of config stanzas. */
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
+
+
+/* default spacings...will be tailorable one day ? */
+#define ALIGN_SPACING    30.0
+#define STRAND_SPACING   20.0
+#define COLUMN_SPACING    5.0
+
 
 
 /* X Windows has some limits that are part of the protocol, this means they cannot
@@ -121,6 +128,7 @@ typedef enum
     ZMAP_WINDOW_CLAMP_END   = (1 << 2)
   } ZMapWindowClampType;
 
+
 /* Probably will need to expand this to be a union as we come across more features that need
  * different information recording about them.
  * The intent of this structure is to hold information for items that are subparts of features,
@@ -135,6 +143,17 @@ typedef struct
 							       bounding box for sensible user
 							       interaction. */
 } ZMapWindowItemFeatureStruct, *ZMapWindowItemFeature ;
+
+
+/* Bump type for columns. */
+typedef enum
+  {
+    ZMAP_WINDOW_BUMP_NONE,				    /* i.e. reset to no bumping. */
+    ZMAP_WINDOW_BUMP_SIMPLE,				    /* only for testing really... */
+    ZMAP_WINDOW_BUMP_POSITION				    /* bump on y position */
+  } ZMapWindowBumpType ;
+
+
 
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
@@ -322,8 +341,10 @@ void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
 void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 
-void my_foo_canvas_item_w2i (FooCanvasItem *item, double *x, double *y) ;
-void my_foo_canvas_item_i2w (FooCanvasItem *item, double *x, double *y) ;
+void my_foo_canvas_item_w2i(FooCanvasItem *item, double *x, double *y) ;
+void my_foo_canvas_item_i2w(FooCanvasItem *item, double *x, double *y) ;
+void my_foo_canvas_item_goto(FooCanvasItem *item, double *x, double *y) ;
+
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
 void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 
@@ -339,6 +360,8 @@ ZMapWindowClampType zmapWindowClampStartEnd(ZMapWindow window,
                                             double *top_inout, 
                                             double *bot_inout) ;
 
+void zmapWindowMaximiseRectangle(FooCanvasItem *rectangle) ;
+
 void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 			ZMapFeature modFeature,  FooCanvasItem *item);
 
@@ -350,18 +373,42 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item);
 
+
+void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapWindowBumpType bump_type) ;
+void zmapWindowColumnReposition(FooCanvasGroup *column_group) ;
+
+FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
+					  GdkColor *background_fill_colour,
+					  GdkColor *background_border_colour) ;
+FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *child) ;
+FooCanvasGroup *zmapWindowContainerGetGroup(FooCanvasGroup *parent) ;
+FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *parent) ;
+void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *parent_group, double y_extent) ;
+
+
+void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout) ;
+
+
+
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
 void zmapWindowZoomControlInitialise(ZMapWindow window) ;
 gboolean zmapWindowZoomControlZoomByFactor(ZMapWindow window, double factor);
 void zmapWindowZoomControlHandleResize(ZMapWindow window);
 double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2) ;
+void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new) ;
+
+
+
 /* 
 void zmapWindowzoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
 */
 void zmapWindowDebugWindowCopy(ZMapWindow window);
 void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 /* End of zmapWindowZoomControl.c functions */
+
+
+void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end) ;
 
 
 #endif /* !ZMAP_WINDOW_P_H */
