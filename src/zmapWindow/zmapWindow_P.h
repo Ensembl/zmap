@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 22 10:56 2005 (edgrif)
+ * Last edited: Sep 22 17:45 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.74 2005-09-22 12:37:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.75 2005-09-22 16:51:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -348,7 +348,7 @@ void my_foo_canvas_item_goto(FooCanvasItem *item, double *x, double *y) ;
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
 void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 
-void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType);
+gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType);
 void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item); 
 
 void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a);

@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 22 14:33 2005 (rds)
+ * Last edited: Sep 22 17:51 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.82 2005-09-22 13:35:46 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.83 2005-09-22 16:51:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1543,6 +1543,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   gboolean single_homol_type = FALSE ;
+  gboolean status ;
 
   switch (menu_item_id)
     {
@@ -1557,7 +1558,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       break ;
     }
 
-  zmapWindowCallBlixem(menu_data->window, menu_data->item, single_homol_type) ;
+  status = zmapWindowCallBlixem(menu_data->window, menu_data->item, single_homol_type) ;
   
   g_free(menu_data) ;
 

@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 18 10:14 2005 (edgrif)
+ * Last edited: Sep 22 17:44 2005 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.13 2005-08-11 13:28:43 rds Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.14 2005-09-22 16:51:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,17 +80,25 @@ static void     adjustCoords     (blixemData blixem_data,
 
 
 
-void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType)
+gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType)
 {
-  gboolean         status;
-  char            *commandString;
-  char            *paramString = NULL;
-  blixemDataStruct blixem_data = {0};
-  
+  gboolean status = FALSE ;
+  char *commandString ;
+  char *paramString = NULL ;
+  blixemDataStruct blixem_data = {0} ;
+  char *err_msg = "error in zmapWindowCallBlixem()" ;
 
-  status = getUserPrefs(&blixem_data);
+  /* We need the dna sequence to send to blixem....so can't do anything without it... */
+  if (window->feature_context->sequence.type == ZMAPSEQUENCE_NONE)
+    {
+      status = FALSE ;
+      err_msg = "No DNA in feature context so cannot call blixem." ;
+    }
 
-  if (status == TRUE)
+  if (status)
+    status = getUserPrefs(&blixem_data);
+
+  if (status)
     {
       blixem_data.window  = window;
       blixem_data.item    = item;
@@ -101,13 +109,13 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneTy
 	status = FALSE;	 
     } 
 
-  if (status == TRUE)
+  if (status)
     status = writeExblxFile(&blixem_data);
 
-  if (status == TRUE)
+  if (status)
     status = writeFastAFile(&blixem_data);
 
-  if (status == TRUE)
+  if (status)
     {
       int sysrc;
       commandString = g_strdup_printf("%s %s &", blixem_data.Script, paramString);
@@ -115,20 +123,24 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneTy
       /* printf("%s\n", commandString); useful when debugging */
 
       /* Note that since blixem is being called as a background process, 
-      ** we can only tell whether or not the system call was successful,
-      ** and not whether or not blixem ran successfully. */
+       * we can only tell whether or not the system call was successful,
+       * and not whether or not blixem ran successfully. */
       if (WIFEXITED(sysrc) == FALSE)
-	zMapShowMsg(ZMAP_MSG_WARNING, "System call failed: blixem not invoked.") ;
+	err_msg = "System call failed: blixem not invoked." ;
       
       g_free(commandString);
     }
    
   if (paramString)   
-    g_free(paramString);
+    g_free(paramString) ;
 
-  freeBlixemData(&blixem_data);
+  freeBlixemData(&blixem_data) ;
 
-  return;
+  if (!status)
+    zMapShowMsg(ZMAP_MSG_WARNING, err_msg) ;
+
+
+  return status ;
 }
 
 
@@ -287,7 +299,7 @@ static char *buildParamString(blixemData blixem_data)
     }
 
 
-  if (status == TRUE)             /* exblx file */
+  if (status)             /* exblx file */
     {
       tmpfile = g_strdup_printf("%sZMAPXXXXXX", blixem_data->tmpDir);
       if ((file = g_mkstemp(tmpfile)))
@@ -305,7 +317,7 @@ static char *buildParamString(blixemData blixem_data)
     }
 
       
-  if (status == TRUE)
+  if (status)
    {
      paramString = g_strdup_printf("-P %s:%d -S %d -O %d -o %s %s %s",
 				   blixem_data->Netid, 
@@ -510,9 +522,9 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 
 	      status = processExons(blixem_data, feature);
 	      
-	      if (status == TRUE && feature->feature.transcript.introns)
+	      if (status && feature->feature.transcript.introns)
 		{	      
-		  for (i = 0; i < feature->feature.transcript.introns->len && status == TRUE; i++)
+		  for (i = 0; i < feature->feature.transcript.introns->len && status; i++)
 		    {
 		      span = &g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i);
 		      
@@ -546,7 +558,7 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 		      status = printLine(blixem_data, line->str);
 
 		    }        /* for .. introns .. */
-		}          /* if (status == TRUE) */
+		}          /* if (status) */
 	      
 	      break;     /* case TRANSCRIPT */
 	      
@@ -632,7 +644,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	    {
 	      buffer[FASTA_CHARS] = '\n' ;
 	      buffer[FASTA_CHARS + 1] = '\0' ; 
-	      for (i = 0 ; i < lines && status == TRUE; i++)
+	      for (i = 0 ; i < lines && status; i++)
 		{
 		  memcpy(&buffer[0], cp, FASTA_CHARS) ;
 		  cp += FASTA_CHARS ;
@@ -644,7 +656,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	    }
 
 	  /* Do the last line.                                                   */
-	  if (chars_left > 0 && status == TRUE)
+	  if (chars_left > 0 && status)
 	    {
 	      memcpy(&buffer[0], cp, chars_left) ;
 	      buffer[chars_left] = '\n' ;
@@ -734,7 +746,7 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
 
 
   /* now we just process the unique exons from noDups array */
-  for (i = 0; i < noDups->len && status == TRUE; i++)
+  for (i = 0; i < noDups->len && status; i++)
     {
       min = blixem_data->min;
       max = blixem_data->max;
