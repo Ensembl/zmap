@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Jul 18 12:25 2005 (rds)
+ * Last edited: Sep 22 13:22 2005 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.34 2005-07-18 11:29:20 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.35 2005-09-22 12:34:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,6 +75,28 @@ FooCanvasItem *zMapDrawBox(FooCanvasItem *group,
 
   return item;                                                                       
 }
+
+
+/* As above but we do not set outline.... */
+FooCanvasItem *zMapDrawSolidBox(FooCanvasItem *group, 
+				double x1, double y1, double x2, double y2, 
+				GdkColor *fill_colour)
+{
+  FooCanvasItem *item = NULL ;
+  int line_width = 1 ;
+
+  item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
+			     foo_canvas_rect_get_type(),
+			     "x1", x1, "y1", y1,
+			     "x2", x2, "y2", y2,
+			     "fill_color_gdk", fill_colour,
+			     NULL) ;
+
+  return item;                                                                       
+}
+
+
+
 
 
 /* It may be good not to specify a width here as well (see zMapDrawBox) but I haven't
