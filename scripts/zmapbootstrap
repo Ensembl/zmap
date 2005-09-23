@@ -1,8 +1,8 @@
-#!/usr/local/bin/bash
-#
+#!/bin/bash
+# /bin/bash MUST EXIST!!
+##########################################################################
 # This script checks out the build scripts into our zmap scripts directory
 #
-
 
 #
 # main routine
@@ -46,12 +46,21 @@ ZBGotoDir $scriptdir
 cvs update . || ZBmsgAndExit "Cannot cvs update the build scripts"
 
 
+
+
 # If there is a command, then execute it.
 #
 if [ -n "$command" ] ; then
+    set - $command
+    script=$1
+    dir=$2
+    INIT='-I'
+    # first machine must be able to build docs
     for machine in 'deskpro110' 'cbi1a' 
       do
-      eval $command -m '$machine' || ZBmsgAndExit "Command failed: $command"
+      eval $script -m '$machine' $INIT $dir || ZBmsgAndExit "Command failed: $command"
+      # Only do it once.
+      INIT=""
     done 
 fi
 

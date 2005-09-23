@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/bin/bash
 #
 # Create the symbolic links in ~acedb to point to the various releases of zmap.
 #

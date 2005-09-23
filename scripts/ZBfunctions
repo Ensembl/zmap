@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/bin/echo Run as '. ZBfunctions unset' Or '. ZBfunctions <build script>' Note the DOT, see usage at top of file.
 #
 # Sets up general functions needed by all ZMap build scripts, these
 # general functions have the prefix "ZB" for Zmap Build.
@@ -18,14 +18,20 @@
 #
 
 ZBbuildOSDir=""
-
+ZBHostname=`hostname`
+ZBDebug=""
 
 if [ "$1" = "unset" ]; then
 
     # UNSET the functions used
     unset ZBmsgAndExit ZBmsgInfo
-
+elif [ "x$1" = "x" ]; then
+   ./ZBfunctions
 else
+
+if [ "x$ZBDebug" = "xtrue" ]; then
+  set -x
+fi
 
 ZBExportOSVars()
 {
@@ -55,7 +61,7 @@ ZBGotoDir ()
 # to the zmap developers before exitting.
 ZBmsgAndExit ()
 {
-  errmsg="$ZBscript - Fatal Error: $1"
+  errmsg="$ZBscript ($ZBHostname) - Fatal Error: $1"
 
   if [ -n "$ZBmailOnExit" ]
   then
@@ -70,7 +76,7 @@ ZBmsgAndExit ()
 
 ZBmsgInfo ()
 {
-  msg="$ZBscript - Info: $1"
+  msg="$ZBscript ($ZBHostname) - Info: $1"
 
   if [ -n "$ZBmailOnExit" ]
   then
@@ -97,7 +103,7 @@ $1" | mailx -s "ZMap Build System Message" zmap
 ZBlogmsg ()
 {
   echo
-  echo "----- $ZBscript (`date`): $1 -----"
+  echo "----- $ZBscript ($ZBHostname `date`): $1 -----"
   echo
 }
 
