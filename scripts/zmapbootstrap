@@ -43,7 +43,7 @@ scriptdir=~acedb/ZMap/prefix/scripts
 
 ZBGotoDir $scriptdir
 
-cvs update . || ZBmsgAndExit "Cannot cvs update the build scripts"
+cvs update -C . || ZBmsgAndExit "Cannot cvs update the build scripts"
 
 
 
