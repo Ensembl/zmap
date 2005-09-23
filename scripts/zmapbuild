@@ -101,7 +101,8 @@ ssh $machine "zmapmake -b -c $abspath" || ZBmsgAndExit "zmap make failed"
 # making docs only works on linux at the moment as we need doxygen executables.
 #
 ZBExportOSVars
-ssh $machine "zmapmake -t docs $abspath/$ZBbuildOSDir" || ZBmsgAndExit "zmap make of docs failed"
+#ssh $machine "zmapmake -t docs $abspath/$ZBbuildOSDir" || ZBmsgAndExit "zmap make of docs failed"
+ssh $machine "zmapmake -t docs $abspath" || ZBmsgAndExit "zmap make of docs failed"
 
 docdir="$cvscopy/ZMap/doc"
 ssh $machine "cd $docdir ; makeQuadList TODO"
