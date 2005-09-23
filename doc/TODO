@@ -33,7 +33,9 @@
 #
 #
 
-# DO NOT CHANGE THIS WILLY-NILLY.....
+
+# DO NOT CHANGE THIS STANZA WILLY-NILLY.....the Across/Down categories are
+# used in the rest of the file....
 [Categories]
 Title = ZMap Priorities
 Across = Important \
@@ -49,17 +51,106 @@ Text = We could do with supporting more shapes styles of "boxes" \
 e.g. pointing boxes to show strandedness, start/end not found, text \
 on features.... many more I'm sure
 
-[Produce better Autoconf]
+[Install package via Autoconf/configure system]
 Across = Important
 Down = Not_Urgent
-Text = Having moved to an autoconf/make etc. can we improve?
+Text = We need a pucker install package for zmap \
+we need to sort -rpath stuff on alpha....
+
+[A wish list from James (needs rationalising)]
+Across = Important
+Down = Urgent
+Text = Better system than current right_priority system for the ordering of                       \
+columns. (Maybe user defined zones like "transcripts",                                     \
+"similarity_features", and named columns are put into a zone or                            \
+left/right of other named columns, or simply in order of appearance if                     \
+the named column doesn't exist or isn't specified. Can have "default"                      \
+zone which is right of all the other zones to contain any columns which                    \
+don't have a zone defined.)  WE DON'T HAVE THIS, SO TALK TO JAMES...                                                              \
+                                                                                           \
+Ability for user to change the order of columns by dragging to new                         \
+position. This preference is sticky between sessions.                                      \
+                                                                                           \
+If multiple different methods are drawn in the same column, it can be                      \
+chosen whether they are drawn on top of each other, or stack. Could                        \
+have different types of transcript appearing in the same column (saves                     \
+screen space), and draw symbols signifying polyA signals and sites on                      \
+top of the transcripts.  DON'T HAVE THIS BUT COULD DO....                                                                  \
+                                                                                           \
+Zoom in to a particular region by dragging a lasso.                                        \
+                                                                                           \
+Can choose custom colours for fill and outline for boxes, and different                    \
+ones for CDS regions of transcripts. Colours can be chosen using the                       \
+standard X colour definitions. WE DON'T USE THIS INFORMATION AND I THINK \
+CURRENTLY ITS NOT DUMPED AS GFF SO WOULD NEED TO ADD TO ACEDB....                                                            \
+                                                                                           \
+Can change the shade of a colour of a feature according to its score.                      \
+Maybe a gradient from one colour to another? Maybe a 256bit look up                        \
+table? COULD BE PART OF THE STYLE...ALSO USE WIDTH OF BLOCK...(LOG SCALE)                                                                                    \
+                                                                                           \
+Can choose a variety of symbols (circles, triangles, stars) for                            \
+features in a columns. NOT DONE...                                                                     \
+                                                                                           \
+Feature boxes can have arrow heads/tails at either or both ends.                           \
+                                   \
+ \
+HOMOLS SHOULD USE GAPS ARRAY \
+                                                         \
+Can change the symbol used to draw a feature depending upon the zoom                       \
+level. (Not necessary? Could just have features drawn in the same                          \
+column that are visible at different zoom levels.) ALLELE LIKE THING \
+                                         \
+                                                                                           \
+Can have labels attached to features, and labels that appear on                            \
+mouse-over. Labels repel each other so that they don't get drawn on top                    \
+of each other. ACEDB TEXT COLUMN....WE NEED THIS SOON....                                                                            \
+                                                                                           \
+A graph column type, for displaying properties such as GC content. GC                      \
+content could be calculated on-the-fly by zMap. Graphs could be                            \
+histogram, line, or varying shade of a colour (maybe a gradient?).                         \
+                                                                                           \
+Have the basepair distance scale permanently on the edge of the window                     \
+like a ruler in a drawing application.                                                     \
+                                                                                           \
+All columns, including the default ones, can easily be hidden and                          \
+revealed by the user.                                                                     
 
 
-[focus window red border]
+
+
+
+[focus window red border + user specified border]
 Across = Important
 Down = Not_Urgent
 Text = Currently canvas windows are surrounded by a frame, while this can be \
-coloured red it cannot be made wider and so is almost invisible.
+coloured red it cannot be made wider and so is almost invisible. Users also \
+want to be able to colour borders separately to show which window is which.
+
+
+[feature search window]
+Across = Important
+Down = Urgent
+Text = implement the feature search window
+
+[external feature list]
+Across = Important
+Down = Not_Urgent
+Text = we should alllow external programs to \
+supplying a list of objects from an external source rather like the current feature list \
+- would enable user/lace/whatever to select their own sets of features
+
+[stacking of features in a single column]
+Across = Important
+Down = Urgent
+Text = james would like to multiple feature types per column, we need to implement this \
+in a good way, e.g. allow user to specify ordering perhaps ?
+
+
+[long term plans]
+Across = Important
+Down = Not_Urgent
+Text = need another person, must plan for conferences.
+
 
 [document rationalisation]
 Across = Not_Important
@@ -67,6 +158,80 @@ Down = Not_Urgent
 Text = The docs directories need sorting out. We should have a script which ensures \
 that the doxygen generated docs end up in the "docs" directory below src. The \
 makeQuad files should also end up there so we just have the one docs directory. \
+
+
+[install/user guide]
+Across = Important
+Down = Not_Urgent
+Text = We need to start these.
+
+
+[zmap vs. fmap]
+Across = Important
+Down = Urgent
+Text = We don't have: \
+ \
+- clear indication of which forward/reverse strand - users want a line to separate... \
+ \
+- need scale outside of sequence view - separate window using a canvas which would be resized \
+  to line up with selected display.... \
+ \
+- recalculate button (fmap can do redraw and recalculate....can we do that....??) \
+ \
+- no view of clones making up assembly \
+ \
+- no text display with names of stuff \
+ \
+- no "columns" button \
+ \
+- no "redraw" button \
+ \
+- no "dna" button \
+ \
+- no "revcomp" button \
+ \
+- no individual column button for configuring buttons \
+ \
+- On/Off Rev strand                                                                      \
+ \
+- Column hiding on magnification                                                         \
+ \
+- embl entry display (pfetch -F <seqName>)                                               \
+ \
+  - Superior feature view                                                                  \
+  - Superior feature list 
+
+
+[demos]
+Across = Important
+Down = Not_Urgent
+Text = need to add readpairs demo to our demo set + beef up how demos are run... \
+we also need a das demo.
+
+
+[bugs]
+Across = Important
+Down = Urgent
+Text = Here are some bugs we must fix.... \
+ \
+  - memory leaking  features....need also to have this linked to fTOi mechanism for when things \
+   are deleted...                                                                       \
+  - scale                                                                                  \
+  - multiple sources                                                                       \
+  - feature list/view (I also think that there should be a way of clicking on  \
+a feature in the feature  in the feature          \
+list window and have the feature viewer popup.  
+
+[export features]
+Across = Important
+Down = Not_Urgent
+Text = we should export at least xml and gff3 (but perhaps do gff2 as a stop gap ?
+
+
+[print]
+Across = Important
+Down = Not_Urgent
+Text = we need a way to print displays....check gd library and other methods.
 
 
 [scale display]
@@ -163,6 +328,16 @@ and tedious... \
  \
 Need to scope how long it will take to do GFF3.....as this is what we really want....
 
+[Long item bug]
+Across = Important
+Down = Urgent
+Text = There is still a bug in the long item code so that it doesn't clip properly
+
+[transcript display]
+Across = Important
+Down = Urgent
+Text = There is bug: transcripts are narrower than their column...why ? Also, we \
+don't display cds and start/stop
 
 
 [file server interface code]
@@ -240,7 +415,9 @@ Has it drawn all the information?... Are we missing critical fmap features?
 [Bumping]
 Across = Important
 Down = Urgent
-Text = Support multiple types of bumping.
+Text = Support multiple types of bumping, still some bugs and need different sorts \
+including on key, and one for genomic_canonical to give assembly like display \
+showing clone overlaps
 
 [Updating]
 Across = Important
@@ -253,7 +430,47 @@ to be available to xremote.
 Across = Important
 Down = Urgent
 Block = SwapPhase II
-Text = support external calls via xremote mechanism, to allow external programs to drive zmap.
+Text = support external calls via xremote mechanism, to allow external programs to drive zmap. \
+Review xremote code \
+ \
+More stuff... \
+ \
+> We would like to be able to at least support all of the current xremote                  \
+> commands, which from my calculations are:                                                \
+>  * gif                                                                                   \
+>  * seqrecalc                                                                             \
+>  * seqget _SeqName_                                                                      \
+>  * seqdisplay                                                                            \
+>  * seqdisplay -visible_coords _Start_ _End_                                              \
+>  * seqactions -rev_comp                                                                  \
+>  * parse _FileName_                                                                      \
+>  * writeaccess -gain                                                                     \
+>  * save                                                                                  \
+> If you know of any more please let me know.  We would rather change the                  \
+> names for these commands, which will probably help with debugging in a                   \
+> test system if we find old commands coming from otterlace for example.                   \
+ \
+ \
+Looks like a complete list of our commands. I intend to replace all the                    \
+editing that the annotators currently do in tree view with Perl/Tk                         \
+interfaces, so you don't need to support that.                                             \
+                                                                                           \
+Feel free to change the names and structures of commands.                                  \
+                                                                                           \
+My only concern with xremote is whether we get useful feedback from                        \
+zMap. We get an exit status from xremote, but we don't get any                             \
+messages. Can we get feedback actually from the zMap, or is all that                       \
+xremote can say is that it sent the message to a valid window? It would                    \
+be nice, for instance, to be able to ask zMap what region it is                            \
+currently displaying.                                                                      \
+                                                                                           \
+I assume we will be launching the zMap process from our perl code.                         \
+Could it just print its X window ID on STDERR, and fork a child that                       \
+does the actual work (ie: daemon)? This would avoid us messing with the                    \
+filing system.                                                                            
+
+
+
 
 [zmap remote sematics]
 Across = Important
@@ -279,6 +496,19 @@ Across = Important
 Down = Not_Urgent
 Block = ReplacePhase
 Text = More replacement of acedb .ace files
+
+
+[otter lace stuff]
+Across = Important
+Down = Urgent
+Block = ReplacePhase
+Text = 1) Lace - > sgifaceserver, Roy needs to check code works or if it needs                    \
+tweaking.  Add -readonly and have zmap and xace launch together.                           \
+                                                                                           \
+2) Otterlace -> zmap, protocol + support code ready, but actual operations                 \
+not finished.  Roy needs to look @ it.                                                    
+
+
 
 [local blast execution]
 Across = Important
