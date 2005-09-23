@@ -20,18 +20,31 @@ ZBlogmsg "ZMap build started"
 
 
 # set up usage strings.
-cmdstring='<target_build_directory>'
+cmdstring='[-v] [-m build_machine] <target_build_directory>'
 descstring='
-   -v   do the build replacing target_build_directory name with ZMap.<version>.BUILD
+   -v               do the build replacing target_build_directory name with ZMap.<version>.BUILD
+   -m build_machine specify where build should happen
 
    <target_build_directory> specifies the sub directory of ~acedb/ZMap/builds"
                             where the checkout and build should take place.'
 
-machine="DESPOT"
+machine="deskpro110"
 zmaproot=~acedb/ZMap
 builddir="$zmaproot/BUILDS"
 zmapcvstarget='ZMap'
 version=""
+
+
+
+# do the command line flags
+while getopts ":vm:" opt ; do
+  case $opt in
+    v  ) version="true"  ;;
+    m  ) machine=$OPTARG ;;
+    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
+  esac
+done
+
 
 # Get the source directory for the build.
 shift $(($OPTIND - 1))
@@ -40,19 +53,6 @@ if [ -z "$1" ] ; then
 fi
 targetdir=$1
 
-# Note on setting OPTIND here. Doing echo $* here results in something like:
-# OVERNIGHT -m deskpro110
-# getopts doesn't know that the -m is after the OVERNIGHT and doesn't bother
-# looking unless we set OPTIND to 2 ($2). clever or insane? must b another way
-# echo $*
-OPTIND=2
-while getopts ":vm:" opt ; do
-  case $opt in
-    v  ) version="true"  ;;
-    m  ) machine=$OPTARG ;;
-    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
-  esac
-done
 
 ZBlogmsg "building on machine '$machine'"
 
