@@ -11,7 +11,7 @@
 . ZBfunctions $0
 
 
-ZBlogmsg "ZMap make started in `pwd`"
+ZBlogmsg "ZMap make started"
 
 
 # set up usage strings.
@@ -70,7 +70,7 @@ if [ -n "$configure" ] ; then
 fi
 
 
-make $target || ZBmsgAndExit "make failed"
+make $target || ZBmsgAndExit "make failed in `pwd`"
 
 
 # A hack really, generalise to run a given command if you feel like it...
