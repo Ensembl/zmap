@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # uncomment set -x for debug
 #set -x
 #==========================================
@@ -43,8 +43,8 @@ esac
 \$m = ExtUtils::MakeMaker->new({qw(NAME X)});
 \$a = \$m->{INSTALLSITEARCH};
 \$b = \$m->{INSTALLSITELIB};
-\$a =~ s!\\\$\\(SITEPREFIX\\)!$PREFIX!;
-\$b =~ s!\\\$\\(SITEPREFIX\\)!$PREFIX!;
+\$a =~ s!\\\$\\((SITE)?PREFIX\\)!$PREFIX!;
+\$b =~ s!\\\$\\((SITE)?PREFIX\\)!$PREFIX!;
 print STDOUT "\$a:\$b";
 print STDERR "\$a:\$b";
 EOF
