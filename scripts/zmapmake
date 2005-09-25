@@ -11,7 +11,7 @@
 . ZBfunctions $0
 
 
-ZBlogmsg "ZMap make started"
+ZBlogmsg "ZMap make started in `pwd`"
 
 
 # set up usage strings.
