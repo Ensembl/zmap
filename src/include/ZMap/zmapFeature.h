@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep 20 18:19 2005 (rds)
+ * Last edited: Sep 25 12:43 2005 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.40 2005-09-20 17:20:32 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.41 2005-09-25 11:39:35 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -58,7 +58,7 @@ typedef int Coord ;					    /* we do need this here.... */
 
 
 
-/* used by zmapFeatureLookUpEnums() to translate enums into strings */
+/* used by zmapFeatureLookUpEnum() to translate enums into strings */
 typedef enum { TYPE_ENUM, STRAND_ENUM, PHASE_ENUM, HOMOLTYPE_ENUM } ZMapEnumType ;
 
 
@@ -67,7 +67,7 @@ typedef int methodID ;
 
 
 /* NB if you add to these enums, make sure any corresponding arrays in
-** zmapFeatureLookUpEnums() are kept in synch. */
+** zmapFeatureLookUpEnum() are kept in synch. */
 /* What about "sequence", atg, and allele as basic feature types ?           */
 typedef enum {ZMAPFEATURE_INVALID = -1,
 	      ZMAPFEATURE_BASIC = 0, ZMAPFEATURE_HOMOL,
@@ -254,19 +254,21 @@ typedef struct ZMapFeatureBlockStruct_
 
 
 
-/* Holds a set of ZMapFeature's, note that the id for the set is by default the same name
+/*!\struct ZMapFeatureSetStruct_
+ * \brief a set of ZMapFeature structs.
+ * Holds a set of ZMapFeature structs, note that the id for the set is by default the same name
  * as the style for all features in the set. BUT it may not be, the set may consist of
  * features with many types/styles. The set id is completely independent of the style name.
  */
 typedef struct ZMapFeatureSetStruct_
 {
-  GQuark unique_id ;					    /* Unique id for feature set used by
+  GQuark unique_id ;					    /*!< Unique id for feature set used by
 							     * ZMap. */
-  GQuark original_id ;					    /* Original name, e.g. "Genewise predictions" */
+  GQuark original_id ;					    /*!< Original name, e.g. "Genewise predictions" */
 
-  ZMapFeatureBlock parent_block ;			    /* Our parent block. */
+  ZMapFeatureBlock parent_block ;			    /*!< Our parent block. */
 
-  GData *features ;					    /* A set of ZMapFeatureStruct. */
+  GData *features ;					    /*!< A set of ZMapFeatureStruct. */
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
 
@@ -404,6 +406,7 @@ GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
 			   int query_start, int query_end) ;
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
+
 char *zmapFeatureLookUpEnum (int id, int enumType) ;
 void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
 
