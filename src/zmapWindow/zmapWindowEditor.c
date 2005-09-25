@@ -27,18 +27,19 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep  1 10:42 2005 (edgrif)
+ * Last edited: Sep 22 17:11 2005 (rds)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.13 2005-09-01 09:44:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.14 2005-09-25 11:42:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindow_P.h>
 #include <ZMap/zmapUtils.h>
 
-
 #define LIST_COLUMN_WIDTH 50
-
+#define EDITOR_COL_DATA_KEY   "column_decoding_data"
+#define EDITOR_COL_NUMBER_KEY "column_number_data"
+/* Be nice to have a struct to reduce gObject set/get data calls to 1 */
 
 /* this struct used to build the displays
  * of variable data, eg exons, introns, etc */
@@ -47,7 +48,6 @@ typedef struct ColInfoStruct
   char *label;
   int colNo;
 } colInfoStruct;
-
 
 /* this struct used for stringifying arrays. */
 typedef struct ArrayRowStruct
@@ -58,14 +58,44 @@ typedef struct ArrayRowStruct
   char *x4;
 } arrayRowStruct, *ArrayRow;
 
-
-typedef enum {NONE, LABEL, ENTRY, INT, FLOAT, STRAND, PHASE, FTYPE, HTYPE, CHECK, ALIGN, EXON, INTRON, LAST} fieldType;
+typedef enum {
+  NONE, 
+  LABEL, 
+  ENTRY, 
+  INT, 
+  FLOAT, 
+  STRAND, 
+  PHASE, 
+  FTYPE, 
+  HTYPE, 
+  CHECK, 
+  ALIGN, 
+  EXON, 
+  INTRON, 
+  LAST
+} fieldType;
 
 enum {COL1, COL2, COL3, COL4, N_COLS};  /* columns to display arrays */
+enum {
+  EDIT_COL_NAME, 
+  EDIT_COL_TYPE, 
+  EDIT_COL_START,
+  EDIT_COL_END,
+  EDIT_COL_STRAND,
+  EDIT_COL_PHASE,
+  EDIT_COL_SCORE,
+  EDIT_COL_NUMBER
+};
+static char *column_titles[EDIT_COL_NUMBER] = {"Name", "Type", "Start", "End", "Strand", "Phase", "Score"};
 
+typedef enum {
+  VIEW_ONLY   = 1 << 1, /*!< Only ever view the properties */
+  EDIT_ONLY   = 1 << 2, /*!< Allow users to edit stuff */
+  CREATE_ONLY = 1 << 3, /*!< Uncoded version where only creation of new features will be allowed */
+  EDIT_CREATE = 1 << 4  /*!< Further uncoded where editing of created features will take place */
+} editorMode;
 
 typedef gboolean (*EditorCallbackFunc)(char *label, char *value, void *retValue) ;
-
 
 /* An array of this struct is the main driver for the program */
 typedef struct MainTableStruct
@@ -87,38 +117,45 @@ typedef struct MainTableStruct
 
 } mainTableStruct, *mainTable;
 
-
-
-typedef struct EditorDataStruct
+typedef struct _zmapWindowEditorDataStruct
 {
   ZMapWindow     zmapWindow;
-  GtkWidget     *window;
-  GtkWidget     *mainVbox;    /* holds buttons and next vbox */
+
+  GtkWidget     *window;        /*!< our window  */
+  GtkWidget     *mainVbox;    /*!< maybe its the main vbox */
   GtkWidget     *vbox;        /* most attributes are just stacked in here */
   GtkWidget     *hbox;        /* exon & intron arrays stacked side by side. */
-  FooCanvasItem *item;
-  GQuark         original_id;
-  mainTable      table;
-  ZMapFeature    originalFeature;  /* as supplied */
-  ZMapFeature    modifiedFeature;  /* latest changes */
-  ZMapFeature    appliedFeature;   /* previous changes */
-  gboolean       applyPressed;
-  gboolean       savePressed;
 
-} editorDataStruct, *editorData;
+  GtkTreeStore  *store;
+
+  mainTable      table;
+
+  FooCanvasItem *item;          /*!< The item the user called us on  */
+
+  ZMapFeature    origFeature; /*!< Feature as supplied, this MUST not be changed */
+  ZMapFeature    wcopyFeature;  /*!< Our working copy. */
+  GList *appliedChanges;  /*!< A list Features with the changes the user made  */
+
+  editorMode mode;        /*!< which mode the editor is in.  Not taken note of currently, but later...  */
+  gboolean applyPressed;  /* I really do not want this */
+  gboolean savePressed;   /* nor this, just silly.  Surely there's another way */
+  gboolean editable;      /*!< Whether or not the treeView columns are editable  */
+  gboolean Ontology_compliant; /*!< Whether or not we're interested in compliance with a user specified ontology  */
+
+} zmapWindowEditorDataStruct;
 
 
 
 /* function prototypes ************************************/
-static gboolean arrayClickedCB(GObject *gobject,
-				GParamSpec *arg1,
-			       gpointer user_data);
+//static gboolean arrayClickedCB(GObject *gobject,
+//			GParamSpec *arg1,
+//		       gpointer user_data);
 
 static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapFeature feature);
-static void parseField(mainTable table, ZMapFeature feature);
+//static void parseField(mainTable table, ZMapFeature feature);
 static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_type);
 
-static void createWindow(editorData editor_data);
+static void createEditWindow(ZMapWindowEditor editor_data);
 static void closeWindowCB(GtkWidget *widget, gpointer data);
 static void closeButtonCB(GtkWidget *widget, gpointer data);
 static void undoChangesCB(GtkWidget *widget, gpointer data);
@@ -130,14 +167,14 @@ static gboolean validateEntryCB (char *label, char *value, void *retValue);
 static gboolean validateStrandCB(char *label, char *value, void *retValue);
 static gboolean validatePhaseCB (char *label, char *value, void *retValue);
 static gboolean validateFloatCB (char *label, char *value, void *retValue);
-static gboolean validateArray   (editorData editor_data);
+static gboolean validateArray   (ZMapWindowEditor editor_data);
 static gboolean checkCoords     (int x1, int x2, ZMapSpan span);
 static int      findNextElement (GArray *array, int start);
 
 static void updateArray(mainTable table, GArray *array);
 
-static void addFields (editorData editor_data);
-static void addArray(gpointer data, editorData editor_data);
+static void addFields (ZMapWindowEditor editor_data);
+static void addArray(gpointer data, ZMapWindowEditor editor_data);
 static void addCheckButton(GtkWidget *vbox, mainTable table);
 static void addEntry(GtkWidget *vbox, mainTable table);
 static void addLabel(GtkWidget *vbox, mainTable table);
@@ -146,74 +183,177 @@ static void buildCol(colInfoStruct colInfo, GtkWidget *treeView, mainTable table
 static gboolean arrayEditedCB(GtkCellRendererText *renderer, 
 			  char *path, char *new_text, gpointer user_data);
 
+/* My new methods*/
+static char *myFeatureLookupEnum(int id, int enumType);
+static gboolean selectionFunc(GtkTreeSelection *selection, 
+                              GtkTreeModel     *model,
+                              GtkTreePath      *path, 
+                              gboolean          path_currently_selected,
+                              gpointer          user_data);
+static void cellEditedCB(GtkCellRendererText *renderer, 
+                         char *path, char *new_text, 
+                         gpointer user_data);
+static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor, int colNumber);
+
 /* function code *******************************************/
-
-void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item)
+/* This is the create function!
+ * What does it do?
+ * - Creates the window in which to draw everything.
+ * - fills in the original feature. If it exists
+ * - Sets up all the frames and boxes and keeps ref to them.
+ */
+/* For now we accept the item here, but when we start being a feature
+ * creator as well, it'll be set before draw. */
+ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item)
 {
-  ZMapFeature feature;
-  editorData editor_data;
+  ZMapWindowEditor editor = NULL;
+  gboolean lazy           = TRUE;
+  int type                = 0;
+  editor = g_new0(zmapWindowEditorDataStruct, 1);
 
-  editor_data = g_new0(editorDataStruct, 1);
-  editor_data->originalFeature = g_object_get_data(G_OBJECT(item), "item_feature_data");
-  zMapAssert(editor_data->originalFeature);   
-  /* need to rethink this if we're going to handle creating a new feature */
+  editor->origFeature  = g_object_get_data(G_OBJECT(item), "item_feature_data");
+  type = GPOINTER_TO_INT( g_object_get_data(G_OBJECT(item), "item_feature_type") );
+  zMapAssert(editor->origFeature && ((type == ITEM_FEATURE_SIMPLE) || 
+                                     (type == ITEM_FEATURE_PARENT) || 
+                                     (type == ITEM_FEATURE_CHILD)
+                                     )
+             );
+  /* Otherwise we end up with trash */
 
-  editor_data->zmapWindow = zmapWindow;
-  editor_data->item = item;
-  editor_data->original_id = editor_data->originalFeature->original_id;
-  editor_data->hbox = NULL;
-  editor_data->applyPressed = FALSE;
-  editor_data->savePressed = FALSE;
-  editor_data->table = g_new0(mainTableStruct, 16);
+  editor->zmapWindow   = zmapWindow;
+  editor->item         = item;
+  editor->hbox         = NULL;
+  editor->applyPressed = FALSE;
+  editor->savePressed  = FALSE;
+  editor->table        = g_new0(mainTableStruct, 16);
+  editor->appliedChanges = NULL;
+  editor->wcopyFeature   = zMapFeatureCopy(editor->origFeature);
+  editor->editable       = TRUE;
+  parseFeature(editor->table, editor->origFeature, editor->wcopyFeature);
 
-  editor_data->modifiedFeature = zMapFeatureCopy(editor_data->originalFeature);
+  createEditWindow(editor);
 
-  parseFeature(editor_data->table, editor_data->originalFeature, editor_data->modifiedFeature);
-  createWindow(editor_data);
+  if(lazy == TRUE)
+    zmapWindowEditorDraw(editor);
 
-  gtk_widget_show_all(editor_data->window);
-  
-  return;
+  return editor;
 }
 
 
+void zmapWindowEditorDraw(ZMapWindowEditor editor)
+{
+  /* More needs to go here, like actually clearing the vbox or something... */
+  //  addFields(editor);
+  /* This all should go in a separate function called resetTreeView(ZMapWindowEditor editor, ZMapFeature feature) */
+#define PUT_IN_SEP_FUNC
+#ifdef PUT_IN_SEP_FUNC
+  GtkTreeIter rootIter, childIter;
+  ZMapFeature feature = NULL;
+  /* For now this is here, but will call resetTreeView(editor, editor->origFeature); */
+  feature             = editor->origFeature;
+
+  gtk_tree_store_append(editor->store, &rootIter, NULL);
+  gtk_tree_store_set(editor->store, &rootIter,
+                     EDIT_COL_NAME, g_quark_to_string(feature->original_id),
+                     EDIT_COL_TYPE, myFeatureLookupEnum(feature->type, TYPE_ENUM),
+                     EDIT_COL_START, feature->x1,
+                     EDIT_COL_END, feature->x2,
+                     EDIT_COL_STRAND, myFeatureLookupEnum(feature->strand, STRAND_ENUM),
+                     EDIT_COL_PHASE, myFeatureLookupEnum(feature->phase, PHASE_ENUM),
+                     -1);
+  /* Foreach sub feature go through from adding more and more sub features */
+  gtk_tree_store_append(editor->store, &childIter, &rootIter);
+  gtk_tree_store_set(editor->store, &childIter,
+                     EDIT_COL_NAME, g_quark_to_string(feature->original_id),
+                     EDIT_COL_TYPE, myFeatureLookupEnum(feature->type, TYPE_ENUM),
+                     -1);
+#endif
+  
+  gtk_widget_show_all(editor->window);
+
+  return ;
+}
 
 
+static char *myFeatureLookupEnum(int id, int enumType)
+{
+  /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
+  static char *types[]   = {"Basic", "Homol", "Exon", "Intron", "Transcript",
+			    "Variation", "Boundary", "Sequence"} ;
+  static char *strands[] = {".", "Forward", "Reverse" } ;
+  static char *phases[]  = {"None", "0", "1", "2" } ;
+  static char *homolTypes[] = {"ZMAPHOMOL_N_HOMOL", "ZMAPHOMOL_X_HOMOL", "ZMAPHOMOL_TX_HOMOL"} ;
+  char *enum_str = NULL ;
+
+  zMapAssert(enumType    == TYPE_ENUM 
+             || enumType == STRAND_ENUM 
+	     || enumType == PHASE_ENUM 
+             || enumType == HOMOLTYPE_ENUM) ;
+
+  switch (enumType)
+    {
+    case TYPE_ENUM:
+      enum_str = types[id];
+      break;
+      
+    case STRAND_ENUM:
+      enum_str = strands[id];
+      break;
+      
+    case PHASE_ENUM:
+      enum_str = phases[id];
+      break;
+
+    case HOMOLTYPE_ENUM:
+      enum_str = homolTypes[id];
+      break;
+    }
+  
+  return enum_str ;
+}
 
 
-/* So that the draw routines don't need to know more than the minimum about what they're
- * drawing, everything in the table, apart from the arrays, is held as a string. */
+/* I see what's going on here, but it doesn't feel dynamic enough to
+ * cope with what I want. I don't need it to have super strength what
+ * is that gonna be. But a little cleverer than it currently is would
+ * be nice .
+ */
+
+/* So that the draw routines don't need to know more than the minimum
+ * about what they're drawing, everything in the table, apart from the
+ * arrays, is held as a string. 
+ */
 static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapFeature feature)
 {
   int i = 0;
   /*                          fieldtype          label                fieldPtr     value       validateCB
    *                                   datatype                    pair      widget     editable   */
-  mainTableStruct ftypeInit   = { ENTRY , FTYPE , "Type"           , 0, NULL, NULL, NULL, FALSE, NULL },
-                  fx1Init     = { ENTRY , INT   , "Start"          , 0, NULL, NULL, NULL, TRUE , validateEntryCB  },
-                  fx2Init     = { ENTRY , INT   , "End"            ,-1, NULL, NULL, NULL, TRUE , validateEntryCB  },
-	          fstrandInit = { ENTRY , STRAND, "Strand"         , 0, NULL, NULL, NULL, FALSE, NULL  },
-	          fphaseInit  = { ENTRY , PHASE , "Phase"          , 0, NULL, NULL, NULL, TRUE , validatePhaseCB  },
-	          fscoreInit  = { ENTRY , FLOAT , "Score"          , 0, NULL, NULL, NULL, TRUE , validateFloatCB  },
+  mainTableStruct ftypeInit   = { ENTRY , FTYPE , "Type"           , 0, NULL, NULL, {NULL}, FALSE, NULL },
+                  fx1Init     = { ENTRY , INT   , "Start"          , 0, NULL, NULL, {NULL}, TRUE , validateEntryCB  },
+                  fx2Init     = { ENTRY , INT   , "End"            ,-1, NULL, NULL, {NULL}, TRUE , validateEntryCB  },
+	          fstrandInit = { ENTRY , STRAND, "Strand"         , 0, NULL, NULL, {NULL}, FALSE, NULL  },
+	          fphaseInit  = { ENTRY , PHASE , "Phase"          , 0, NULL, NULL, {NULL}, TRUE , validatePhaseCB  },
+	          fscoreInit  = { ENTRY , FLOAT , "Score"          , 0, NULL, NULL, {NULL}, TRUE , validateFloatCB  },
 	      
-	          blankInit   = { LABEL , LABEL , " "              , 0, NULL, NULL, NULL, TRUE , NULL  },
+	          blankInit   = { LABEL , LABEL , " "              , 0, NULL, NULL, {NULL}, TRUE , NULL  },
 			    
-		  htypeInit   = { ENTRY , HTYPE , "Homol Type"     , 0, NULL, NULL, NULL, FALSE, NULL  },
-		  hy1Init     = { ENTRY , INT   , "Query Start"    , 0, NULL, NULL, NULL, FALSE, NULL  },
-		  hy2Init     = { ENTRY , INT   , "Query End"      ,-1, NULL, NULL, NULL, FALSE, NULL  },
-		  hstrandInit = { ENTRY , STRAND, "Query Strand"   , 0, NULL, NULL, NULL, FALSE, NULL  },
-		  hphaseInit  = { ENTRY , PHASE , "Query Phase"    , 0, NULL, NULL, NULL, FALSE, NULL  },
-		  hscoreInit  = { ENTRY , FLOAT , "Query Score"    , 0, NULL, NULL, NULL, FALSE, NULL  },
-		  halignInit  = { ALIGN , ALIGN , "Alignments"     , 0, NULL, NULL, NULL, FALSE, NULL  },
+		  htypeInit   = { ENTRY , HTYPE , "Homol Type"     , 0, NULL, NULL, {NULL}, FALSE, NULL  },
+		  hy1Init     = { ENTRY , INT   , "Query Start"    , 0, NULL, NULL, {NULL}, FALSE, NULL  },
+		  hy2Init     = { ENTRY , INT   , "Query End"      ,-1, NULL, NULL, {NULL}, FALSE, NULL  },
+		  hstrandInit = { ENTRY , STRAND, "Query Strand"   , 0, NULL, NULL, {NULL}, FALSE, NULL  },
+		  hphaseInit  = { ENTRY , PHASE , "Query Phase"    , 0, NULL, NULL, {NULL}, FALSE, NULL  },
+		  hscoreInit  = { ENTRY , FLOAT , "Query Score"    , 0, NULL, NULL, {NULL}, FALSE, NULL  },
+		  halignInit  = { ALIGN , ALIGN , "Alignments"     , 0, NULL, NULL, {NULL}, FALSE, NULL  },
 			    
-		  tx1Init     = { ENTRY , INT   , "CDS Start"      , 0, NULL, NULL, NULL, TRUE , validateEntryCB  },
-		  tx2Init     = { ENTRY , INT   , "CDS End"        ,-1, NULL, NULL, NULL, TRUE , validateEntryCB  },
-		  tphaseInit  = { ENTRY , PHASE , "CDS Phase"      , 0, NULL, NULL, NULL, TRUE , validatePhaseCB  },
-		  tsnfInit    = { CHECK , CHECK , "Start Not Found", 0, NULL, NULL, NULL, TRUE , NULL  },
-		  tenfInit    = { CHECK , CHECK , "End Not Found " , 0, NULL, NULL, NULL, TRUE , NULL  },
-		  texonInit   = { EXON  , EXON  , "Exons"          , 0, NULL, NULL, NULL, TRUE , NULL  },
-		  tintronInit = { INTRON, INTRON, "Introns"        , 0, NULL, NULL, NULL, TRUE , NULL  },
+		  tx1Init     = { ENTRY , INT   , "CDS Start"      , 0, NULL, NULL, {NULL}, TRUE , validateEntryCB  },
+		  tx2Init     = { ENTRY , INT   , "CDS End"        ,-1, NULL, NULL, {NULL}, TRUE , validateEntryCB  },
+		  tphaseInit  = { ENTRY , PHASE , "CDS Phase"      , 0, NULL, NULL, {NULL}, TRUE , validatePhaseCB  },
+		  tsnfInit    = { CHECK , CHECK , "Start Not Found", 0, NULL, NULL, {NULL}, TRUE , NULL  },
+		  tenfInit    = { CHECK , CHECK , "End Not Found " , 0, NULL, NULL, {NULL}, TRUE , NULL  },
+		  texonInit   = { EXON  , EXON  , "Exons"          , 0, NULL, NULL, {NULL}, TRUE , NULL  },
+		  tintronInit = { INTRON, INTRON, "Introns"        , 0, NULL, NULL, {NULL}, TRUE , NULL  },
 			    
-		  lastInit    = { LAST  , NONE  ,  ""            , 0, NULL, NULL, NULL, FALSE , NULL  };
+		  lastInit    = { LAST  , NONE  ,  ""              , 0, NULL, NULL, {NULL}, FALSE , NULL };
 		  
   table[i] = ftypeInit;
   table[i].fieldPtr = &feature->type;
@@ -367,68 +507,137 @@ static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_t
 
 
 
-
-static void createWindow(editorData editor_data)
+/* Hide this away to make the exposed function smaller... */
+static void createEditWindow(ZMapWindowEditor editor_data)
 {
-  GtkWidget *buttonbox, *button;
-  GtkWidget *frame, *hbox;
+  GtkWidget *buttonHBox;
+  GtkWidget *subFrame;
+  GtkWidget *mainVBox;
+  GtkWidget *treeView;
+  GtkTreeStore *treeStore;
+  GtkTreeViewColumn *column;
+  GtkTreeSelection *selection;
+  int colNo;                    /* the for loop iterator */
   char *title;
 
-  title = g_strdup_printf("Feature Editor - %s", 
-			  g_quark_to_string(editor_data->original_id));
+  /* Set the Title of the Window */
+  title = g_strdup_printf("%s - Feature Editor",
+			  g_quark_to_string(editor_data->origFeature->original_id));
   editor_data->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title (GTK_WINDOW (editor_data->window), title);
   g_free(title);
+  /* Finished setting title */
 
+  /* Set a few properties ... */
   g_signal_connect (G_OBJECT (editor_data->window), "destroy",
 		    G_CALLBACK (closeWindowCB), editor_data);
-
   gtk_container_set_border_width (GTK_CONTAINER (editor_data->window), 10);
 
-  editor_data->mainVbox = gtk_vbox_new(FALSE, 0);
-  gtk_container_add(GTK_CONTAINER(editor_data->window), editor_data->mainVbox);
+  /* Create a Vertical Box and add to Window */
+  mainVBox = gtk_vbox_new(FALSE, 0);
+  gtk_container_add(GTK_CONTAINER(editor_data->window), mainVBox);
 
-  frame = gtk_frame_new(NULL);
-  gtk_container_border_width(GTK_CONTAINER(frame), 10);
-  gtk_box_pack_start(GTK_BOX(editor_data->mainVbox), frame, FALSE, FALSE, 0);
-  
-  buttonbox = gtk_hbox_new(FALSE, 0);
-  gtk_container_add(GTK_CONTAINER(frame), buttonbox);
+  /* This is where we'll put stuff */
+  subFrame = gtk_frame_new(g_quark_to_string(editor_data->origFeature->original_id));
+  gtk_container_add(GTK_CONTAINER(mainVBox), subFrame);
 
-  button = gtk_button_new_with_label("Apply");
-  g_signal_connect(GTK_OBJECT(button), "clicked",
-		   GTK_SIGNAL_FUNC(applyChangesCB), editor_data);
-  gtk_box_pack_start(GTK_BOX(buttonbox), button, TRUE, TRUE, 0) ;
 
-  button = gtk_button_new_with_label("Undo");
-  g_signal_connect(GTK_OBJECT(button), "clicked",
-		   GTK_SIGNAL_FUNC(undoChangesCB), editor_data);
-  gtk_box_pack_start(GTK_BOX(buttonbox), button, TRUE, TRUE, 0) ;
 
-  button = gtk_button_new_with_label("Save");
-  g_signal_connect(GTK_OBJECT(button), "clicked",
-		   GTK_SIGNAL_FUNC(saveChangesCB), editor_data);
-  gtk_box_pack_start(GTK_BOX(buttonbox), button, TRUE, TRUE, 0) ;
+  /* Sort out the treeStore and view... */
+  editor_data->store = treeStore = 
+    gtk_tree_store_new(EDIT_COL_NUMBER,
+                       G_TYPE_STRING, G_TYPE_STRING,
+                       G_TYPE_INT,    G_TYPE_INT,
+                       G_TYPE_STRING, G_TYPE_STRING,
+                       G_TYPE_FLOAT);
 
-  button = gtk_button_new_with_label("Close");
-  g_signal_connect(GTK_OBJECT(button), "clicked",
-		   GTK_SIGNAL_FUNC(closeButtonCB), editor_data);
-  gtk_box_pack_start(GTK_BOX(buttonbox), button, TRUE, TRUE, 0) ;
+  treeView = gtk_tree_view_new_with_model(GTK_TREE_MODEL(treeStore));
+  gtk_tree_view_set_expander_column(GTK_TREE_VIEW(treeView), NULL);
+  subFrame = gtk_frame_new("Details...");
+  gtk_container_add(GTK_CONTAINER(mainVBox), subFrame);
+  gtk_container_add(GTK_CONTAINER(subFrame), GTK_WIDGET(treeView));
 
-  editor_data->vbox = gtk_vbox_new(FALSE, 0);
-  gtk_box_pack_start(GTK_BOX(editor_data->mainVbox), editor_data->vbox, TRUE, TRUE, 0);
+  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(treeView));
+  gtk_tree_selection_set_select_function(selection, selectionFunc, (gpointer)editor_data, NULL);
 
-  addFields(editor_data);
+  /* Setup the columns */
+  for(colNo = EDIT_COL_NAME; colNo < EDIT_COL_NUMBER; colNo++)
+    {
+      /* As part of the new cleverness we need to do something with
+       * the lookup object here. I'm not sure if we need new renderers
+       * everytime. I guess so. getColRenderer(editor, colNo);*/
+      GtkCellRenderer *colRenderer = NULL;
+      colRenderer = getColRenderer(editor_data, colNo);
+      column 
+        = gtk_tree_view_column_new_with_attributes(column_titles[colNo], 
+                                                   colRenderer,
+                                                   "text",
+                                                   colNo,
+                                                   NULL);
+      gtk_tree_view_append_column(GTK_TREE_VIEW (treeView), column);
+    }
+
+  /* Sort out the buttons frame */
+  subFrame   = gtk_frame_new("buttons");
+  buttonHBox = gtk_hbox_new(FALSE, 0);
+  gtk_container_add(GTK_CONTAINER(subFrame), buttonHBox);
+  gtk_box_pack_start(GTK_BOX(mainVBox), subFrame, FALSE, FALSE, 0);
+
+  if(1)
+    {
+      GtkWidget *button, *buttonBox;
+      int spacing = 10;
+      /* These should end up over the left hand side */
+      buttonBox = gtk_hbutton_box_new();
+      gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_START);
+      gtk_box_set_spacing (GTK_BOX (buttonBox), spacing);
+      gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 5);
+      gtk_button_box_set_child_size (GTK_BUTTON_BOX(buttonBox), 100, 1);
+
+      button = gtk_button_new_with_label("Close");
+      g_signal_connect(GTK_OBJECT(button), "clicked",
+                       GTK_SIGNAL_FUNC(closeButtonCB), editor_data);
+      gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
+      /*  GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);  */
+
+      button = gtk_button_new_with_label("Undo");
+      g_signal_connect(GTK_OBJECT(button), "clicked",
+                       GTK_SIGNAL_FUNC(undoChangesCB), editor_data);
+      gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
+
+      /* Add them to the Hbox */
+      gtk_box_pack_start(GTK_BOX(buttonHBox), buttonBox, TRUE, TRUE, 0) ;
+
+      /* These on the right */
+      buttonBox = gtk_hbutton_box_new();
+      gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
+      gtk_box_set_spacing (GTK_BOX (buttonBox), spacing);
+      gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 5);
+      gtk_button_box_set_child_size (GTK_BUTTON_BOX(buttonBox), 100, 1);
+
+      button = gtk_button_new_with_label("Apply Changes");
+      g_signal_connect(GTK_OBJECT(button), "clicked",
+                       GTK_SIGNAL_FUNC(applyChangesCB), editor_data);
+      gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
+
+      button = gtk_button_new_with_label("Save & Close");
+      g_signal_connect(GTK_OBJECT(button), "clicked",
+                       GTK_SIGNAL_FUNC(saveChangesCB), editor_data);
+      gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
+
+      /* Add them to the Hbox */
+      gtk_box_pack_start(GTK_BOX(buttonHBox), buttonBox, TRUE, TRUE, 0) ;      
+    }
+
 
   return;
 }
 
 
 
-static void addFields(editorData editor_data)
+static void addFields(ZMapWindowEditor editor_data)
 {
   mainTable table = editor_data->table;
-  GtkWidget *hbox;
   int i = 0;
 
   while (table[i].fieldtype != LAST)
@@ -456,7 +665,8 @@ static void addFields(editorData editor_data)
 	  if (table[i].value.listStore != NULL)
 	    addArray(&table[i], editor_data);
 	  break;
-
+        default:
+          break;
 	}
       i++;
     }
@@ -545,6 +755,8 @@ static void addEntry(GtkWidget *vbox, mainTable table)
 	  break;
 	}
       break;
+    default:
+      break;
     }
 
   if (table->editable == FALSE)
@@ -578,7 +790,7 @@ static void addCheckButton(GtkWidget *vbox, mainTable table)
 
 
 
-static void addArray(gpointer data, editorData editor_data)
+static void addArray(gpointer data, ZMapWindowEditor editor_data)
 {
   mainTable table = (mainTable)data;
   GtkWidget *treeView, *frame, *scrolledWindow;
@@ -663,8 +875,6 @@ static void buildCol(colInfoStruct colInfo, GtkWidget *treeView, mainTable table
 		   NULL);
 
   g_object_set_data(G_OBJECT(renderer), "ColNo", GUINT_TO_POINTER(colInfo.colNo));
-  g_signal_connect (G_OBJECT (renderer), "edited",
-		    G_CALLBACK (arrayEditedCB), table->value.listStore);
 
   column = gtk_tree_view_column_new_with_attributes (colInfo.label,
 						     renderer,
@@ -676,7 +886,42 @@ static void buildCol(colInfoStruct colInfo, GtkWidget *treeView, mainTable table
   return;
 }
 
+static void cellEditedCB(GtkCellRendererText *renderer, 
+                         char *path, char *new_text, 
+                         gpointer user_data)
+{
+  ZMapWindowEditor editor = (ZMapWindowEditor)user_data;
+  char *saved_data = NULL;
+  int colNumber    = EDIT_COL_NUMBER;
 
+  saved_data = (char *)g_object_get_data(G_OBJECT(renderer), EDITOR_COL_DATA_KEY);
+  colNumber  = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(renderer), EDITOR_COL_NUMBER_KEY));
+
+  if (colNumber < EDIT_COL_NUMBER)
+    {
+      GtkTreeIter iter;
+      gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(editor->store), &iter, path);
+      gtk_tree_store_set(editor->store, &iter, 
+                         colNumber, new_text, 
+                         -1);
+
+      printf("Cell Edited: column '%d', new text = '%s', decoding data was '%s'. CHANGE THIS \n", 
+             colNumber, new_text, saved_data);
+    }
+  /* What to do here? */
+  /* We MUST store the new_text in the model */
+  /* We're also going to set the text in the rest of the display */
+  
+
+  /* First though we must validate the data . */
+  /* get callback (from table [modified version]) and if !NULL call it
+   * with new_text.  It must return the validated text or NULL */
+#ifdef WHEN_COMPLETE
+  if((validated = (*validateCB)(new_text)) != NULL)
+    updateModel(validated);
+#endif
+  return ;
+}
 
 /* If the user changes a cell in one of the lists of introns or
  * exons, we need to copy that change to the GtkListStore that drives
@@ -690,13 +935,12 @@ static gboolean arrayEditedCB(GtkCellRendererText *renderer,
   gboolean valid = FALSE;
   ZMapSpanStruct span;
 
- 
   colNo = GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(renderer), "ColNo"));
   gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(listStore), &iter, path);
   gtk_list_store_set(listStore, &iter, colNo, atoi(new_text), -1);
 
   valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL(listStore), &iter);
-  
+  /* What is this doing, we've already changed the data!?! */
   while (valid)
     {
       gtk_tree_model_get (GTK_TREE_MODEL(listStore), &iter, 
@@ -717,52 +961,52 @@ static gboolean arrayEditedCB(GtkCellRendererText *renderer,
  * just redraw everything below the buttons. */
 static void undoChangesCB(GtkWidget *widget, gpointer data)
 {
-  editorData editor_data = (editorData)data;
+  ZMapWindowEditor editor_data = (ZMapWindowEditor)data;
 
   if (editor_data->applyPressed == TRUE)
     {
-      zmapFeatureDestroy(editor_data->modifiedFeature);
-      editor_data->modifiedFeature = zMapFeatureCopy(editor_data->appliedFeature);
-      zmapFeatureDestroy(editor_data->appliedFeature);
+      zmapFeatureDestroy(editor_data->wcopyFeature);
+      //editor_data->wcopyFeature = zMapFeatureCopy(editor_data->appliedFeature);
+      //      zmapFeatureDestroy(editor_data->appliedFeature);
       editor_data->applyPressed = FALSE;
     }
 
-  if (editor_data->originalFeature->type != ZMAPFEATURE_HOMOL)
+  if (editor_data->origFeature->type != ZMAPFEATURE_HOMOL)
     {
-      zMapWindowMoveItem(editor_data->zmapWindow, editor_data->modifiedFeature,
-			 editor_data->originalFeature, editor_data->item);
+      zMapWindowMoveItem(editor_data->zmapWindow, editor_data->wcopyFeature,
+			 editor_data->origFeature, editor_data->item);
 
-      if (editor_data->originalFeature->type == ZMAPFEATURE_TRANSCRIPT)
+      if (editor_data->origFeature->type == ZMAPFEATURE_TRANSCRIPT)
 	{
-	  if (editor_data->modifiedFeature->feature.transcript.exons != NULL
-	      && editor_data->modifiedFeature->feature.transcript.exons->len > (guint)0
-	      && editor_data->originalFeature->feature.transcript.exons != NULL
-	      && editor_data->originalFeature->feature.transcript.exons->len > (guint)0)
+	  if (editor_data->wcopyFeature->feature.transcript.exons != NULL
+	      && editor_data->wcopyFeature->feature.transcript.exons->len > (guint)0
+	      && editor_data->origFeature->feature.transcript.exons != NULL
+	      && editor_data->origFeature->feature.transcript.exons->len > (guint)0)
 	    {
 	      zMapWindowMoveSubFeatures(editor_data->zmapWindow, 
-					editor_data->modifiedFeature,
-					editor_data->originalFeature,
-					editor_data->modifiedFeature->feature.transcript.exons, 
-					editor_data->originalFeature->feature.transcript.exons,
+					editor_data->wcopyFeature,
+					editor_data->origFeature,
+					editor_data->wcopyFeature->feature.transcript.exons, 
+					editor_data->origFeature->feature.transcript.exons,
 					TRUE);
 	    }
-	  if (editor_data->modifiedFeature->feature.transcript.introns != NULL
-	      && editor_data->modifiedFeature->feature.transcript.introns->len > (guint)0
-	      && editor_data->originalFeature->feature.transcript.introns != NULL
-	      && editor_data->modifiedFeature->feature.transcript.introns->len > (guint)0)
+	  if (editor_data->wcopyFeature->feature.transcript.introns != NULL
+	      && editor_data->wcopyFeature->feature.transcript.introns->len > (guint)0
+	      && editor_data->origFeature->feature.transcript.introns != NULL
+	      && editor_data->wcopyFeature->feature.transcript.introns->len > (guint)0)
 	    {
 	      zMapWindowMoveSubFeatures(editor_data->zmapWindow, 
-					editor_data->modifiedFeature,
-					editor_data->originalFeature,
-					editor_data->modifiedFeature->feature.transcript.introns, 
-					editor_data->originalFeature->feature.transcript.introns,
+					editor_data->wcopyFeature,
+					editor_data->origFeature,
+					editor_data->wcopyFeature->feature.transcript.introns, 
+					editor_data->origFeature->feature.transcript.introns,
 					FALSE);
 	    } 
 	}
     }
-  editor_data->modifiedFeature = zMapFeatureCopy(editor_data->originalFeature);
+  editor_data->wcopyFeature = zMapFeatureCopy(editor_data->origFeature);
 
-  parseFeature(editor_data->table, editor_data->originalFeature, editor_data->modifiedFeature);
+  parseFeature(editor_data->table, editor_data->origFeature, editor_data->wcopyFeature);
 
   gtk_widget_destroy(editor_data->vbox);
   editor_data->vbox = gtk_vbox_new(FALSE, 0);
@@ -781,7 +1025,7 @@ static void undoChangesCB(GtkWidget *widget, gpointer data)
  * set the object data for the item to point to it. */
 static void saveChangesCB(GtkWidget *widget, gpointer data)
 {
-  editorData editor_data = (editorData)data;
+  ZMapWindowEditor editor_data = (ZMapWindowEditor)data;
   gboolean valid = TRUE;
 
   if (editor_data->applyPressed == FALSE)
@@ -789,11 +1033,11 @@ static void saveChangesCB(GtkWidget *widget, gpointer data)
 
   if (valid == TRUE)
     {
-      zmapFeatureDestroy(editor_data->originalFeature);
+      zmapFeatureDestroy(editor_data->origFeature);
 
-      editor_data->originalFeature = zMapFeatureCopy(editor_data->modifiedFeature);
+      editor_data->origFeature = zMapFeatureCopy(editor_data->wcopyFeature);
 
-      g_object_set_data(G_OBJECT(editor_data->item), "item_feature_data", editor_data->originalFeature);
+      g_object_set_data(G_OBJECT(editor_data->item), "item_feature_data", editor_data->origFeature);
 
       editor_data->savePressed = TRUE;
       editor_data->applyPressed = FALSE;
@@ -830,16 +1074,15 @@ static void saveArray(GArray *original, GArray *modified)
 
 
 
-/* saves any user changes in editor_data->modifiedFeature, but 
+/* saves any user changes in editor_data->wcopyFeature, but 
  * leaves the original copy untouched in case they want to Undo. */
 static gboolean applyChangesCB(GtkWidget *widget, gpointer data)
 {
-  editorData editor_data = (editorData)data;
+  ZMapWindowEditor editor_data = (ZMapWindowEditor)data;
   mainTable table = editor_data->table;
   ZMapFeature feature;
   char *value;
-  int i, n;
-  double d;
+  int i;
   gboolean valid = TRUE, checked = FALSE;
   void *retValue = NULL;
   int prevValue;
@@ -847,7 +1090,7 @@ static gboolean applyChangesCB(GtkWidget *widget, gpointer data)
   retValue = g_new0(double, 1);
   zMapAssert(retValue);
 
-  feature = editor_data->modifiedFeature;
+  feature = editor_data->wcopyFeature;
 
   for (i = 1; table[i].fieldtype != LAST && valid == TRUE; i++)
     {
@@ -888,6 +1131,8 @@ static gboolean applyChangesCB(GtkWidget *widget, gpointer data)
 		   * to convert it. */
 		  *((float *)table[i].fieldPtr) = *((double *)retValue);
 		  break;
+                default:
+                  break;        /* 981 */
 		}
 	    }
 	}
@@ -928,6 +1173,8 @@ static gboolean applyChangesCB(GtkWidget *widget, gpointer data)
 	    case INTRON: 
 	      updateArray(&table[i], feature->feature.transcript.introns);
 	      break;
+            default:
+              break;
 	    }
 	}
     }
@@ -940,50 +1187,50 @@ static gboolean applyChangesCB(GtkWidget *widget, gpointer data)
   if (valid == TRUE)
     valid = validateArray(editor_data);
 
-  if (valid == TRUE && editor_data->originalFeature->type != ZMAPFEATURE_HOMOL)
+  if (valid == TRUE && editor_data->origFeature->type != ZMAPFEATURE_HOMOL)
     {
       ZMapFeature origFeature;
 
       if (editor_data->applyPressed == TRUE)
-	origFeature = editor_data->appliedFeature;
+	origFeature = origFeature; //editor_data->appliedFeature;
       else
-	origFeature = editor_data->originalFeature;
+	origFeature = editor_data->origFeature;
 
       zMapWindowMoveItem(editor_data->zmapWindow, origFeature,
-			 editor_data->modifiedFeature, editor_data->item);
+			 editor_data->wcopyFeature, editor_data->item);
 
-      if (editor_data->originalFeature->type == ZMAPFEATURE_TRANSCRIPT)
+      if (editor_data->origFeature->type == ZMAPFEATURE_TRANSCRIPT)
 	{
-	  if (editor_data->modifiedFeature->feature.transcript.exons != NULL
-	      && editor_data->modifiedFeature->feature.transcript.exons->len > (guint)0
+	  if (editor_data->wcopyFeature->feature.transcript.exons != NULL
+	      && editor_data->wcopyFeature->feature.transcript.exons->len > (guint)0
 	      && origFeature->feature.transcript.exons != NULL
 	      && origFeature->feature.transcript.exons->len > (guint)0)
 	    {
 	      zMapWindowMoveSubFeatures(editor_data->zmapWindow, 
 					origFeature,
-					editor_data->modifiedFeature,
+					editor_data->wcopyFeature,
 					origFeature->feature.transcript.exons, 
-					editor_data->modifiedFeature->feature.transcript.exons,
+					editor_data->wcopyFeature->feature.transcript.exons,
 				        TRUE);
 	    }
-	  if (editor_data->modifiedFeature->feature.transcript.introns != NULL
-	      && editor_data->modifiedFeature->feature.transcript.introns->len > (guint)0
+	  if (editor_data->wcopyFeature->feature.transcript.introns != NULL
+	      && editor_data->wcopyFeature->feature.transcript.introns->len > (guint)0
 	      && origFeature->feature.transcript.introns != NULL
 	      && origFeature->feature.transcript.introns->len > (guint)0)
 	    {
 	      zMapWindowMoveSubFeatures(editor_data->zmapWindow, 
 					origFeature,
-					editor_data->modifiedFeature,
+					editor_data->wcopyFeature,
 					origFeature->feature.transcript.introns, 
-					editor_data->modifiedFeature->feature.transcript.introns,
+					editor_data->wcopyFeature->feature.transcript.introns,
 					FALSE);
 	    } 
 	}
 
       if (editor_data->applyPressed == TRUE)
-	zmapFeatureDestroy(editor_data->appliedFeature);
+	zmapFeatureDestroy(editor_data->wcopyFeature); /* was appliedFeature */
 
-      editor_data->appliedFeature = zMapFeatureCopy(editor_data->modifiedFeature);
+      //      editor_data->appliedFeature = zMapFeatureCopy(editor_data->wcopyFeature);
       editor_data->applyPressed = TRUE;
     }
     
@@ -1050,11 +1297,11 @@ static gboolean validateFloatCB(char *label, char *value, void *retValue)
 
 /* Very simplistic validation;  assume that there
  * should just be a simple consecutive series of exons and introns.  */
-static gboolean validateArray(editorData editor_data)
+static gboolean validateArray(ZMapWindowEditor editor_data)
 {
   int i;
   gboolean valid = TRUE, finished = FALSE;
-  ZMapFeature modifiedFeature = editor_data->modifiedFeature;
+  ZMapFeature modifiedFeature = editor_data->wcopyFeature;
   ZMapSpanStruct span;
 
   if (modifiedFeature->type == ZMAPFEATURE_TRANSCRIPT)
@@ -1113,21 +1360,21 @@ static gboolean validateArray(editorData editor_data)
        * bad data, though it is still displayed on the screen.  */
       if (valid == FALSE)
 	{
-	  ZMapFeature originalFeature = editor_data->originalFeature;
+	  ZMapFeature origFeature = editor_data->origFeature;
 
-	  if (originalFeature->feature.transcript.exons != NULL
-	      && originalFeature->feature.transcript.exons->len > (guint)0)
+	  if (origFeature->feature.transcript.exons != NULL
+	      && origFeature->feature.transcript.exons->len > (guint)0)
 	    {
 	      g_array_free(modifiedFeature->feature.transcript.exons, TRUE);
 
 	      modifiedFeature->feature.transcript.exons = 
 		g_array_sized_new(FALSE, TRUE, 
 				  sizeof(ZMapSpanStruct),
-				  originalFeature->feature.transcript.exons->len);
+				  origFeature->feature.transcript.exons->len);
 	      
-	      for (i = 0; i < originalFeature->feature.transcript.exons->len; i++)
+	      for (i = 0; i < origFeature->feature.transcript.exons->len; i++)
 		{
-		  span = g_array_index(originalFeature->feature.transcript.exons, ZMapSpanStruct, i);
+		  span = g_array_index(origFeature->feature.transcript.exons, ZMapSpanStruct, i);
 		  modifiedFeature->feature.transcript.exons = 
 		    g_array_append_val(modifiedFeature->feature.transcript.exons, span);
 		}
@@ -1141,11 +1388,11 @@ static gboolean validateArray(editorData editor_data)
 	      modifiedFeature->feature.transcript.introns = 
 		g_array_sized_new(FALSE, TRUE, 
 				  sizeof(ZMapSpanStruct),
-				  originalFeature->feature.transcript.introns->len);
+				  origFeature->feature.transcript.introns->len);
 	      
-	      for (i = 0; i < originalFeature->feature.transcript.introns->len; i++)
+	      for (i = 0; i < origFeature->feature.transcript.introns->len; i++)
 		{
-		  span = g_array_index(originalFeature->feature.transcript.introns, ZMapSpanStruct, i);
+		  span = g_array_index(origFeature->feature.transcript.introns, ZMapSpanStruct, i);
 		  modifiedFeature->feature.transcript.introns = 
 		    g_array_append_val(modifiedFeature->feature.transcript.introns, span);
 		}
@@ -1196,7 +1443,6 @@ static int findNextElement(GArray *array, int start)
 /* Update the appropriate array in the feature with data from the screen */
 static void updateArray(mainTable table, GArray *array)
 {
-  ZMapAlignBlockStruct align;
   ZMapSpanStruct span;
   GtkTreeIter iter;
   gboolean valid = FALSE;
@@ -1237,7 +1483,7 @@ static void updateArray(mainTable table, GArray *array)
  * twice.  This way it's only called once. */
 static void closeButtonCB(GtkWidget *widget, gpointer data)
 {
-  editorData editor_data = (editorData)data;
+  ZMapWindowEditor editor_data = (ZMapWindowEditor)data;
 
   if (editor_data->applyPressed == TRUE
       && editor_data->savePressed == FALSE)
@@ -1255,7 +1501,7 @@ static void closeButtonCB(GtkWidget *widget, gpointer data)
 
 static void closeWindowCB(GtkWidget *widget, gpointer data)
 {
-  editorData editor_data = (editorData)data;
+  ZMapWindowEditor editor_data = (ZMapWindowEditor)data;
     
   if (editor_data->applyPressed == TRUE
       && editor_data->savePressed == FALSE)
@@ -1264,14 +1510,59 @@ static void closeWindowCB(GtkWidget *widget, gpointer data)
       zMapMessage("You had unsaved changes! %s", "They have been lost!");
     }
 
+  /* remove reference to this as the foocanvas still holds it and it
+   * will clean it up reather than us. */
+  editor_data->origFeature = NULL; 
+
   g_free(editor_data->table);
-  g_free(editor_data->modifiedFeature);
+  g_free(editor_data->wcopyFeature);
   gtk_widget_destroy(GTK_WIDGET(editor_data->window));
   g_free(editor_data);
                                                            
   return;
 }
 
+static gboolean selectionFunc(GtkTreeSelection *selection, 
+                              GtkTreeModel     *model,
+                              GtkTreePath      *path, 
+                              gboolean          path_currently_selected,
+                              gpointer          user_data)
+{
+  
+  return TRUE;
+}
+static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor, int colNumber)
+{
+  GtkCellRenderer *renderer = NULL;
+  GList *list = NULL;
+  GdkColor background;
 
+  gdk_color_parse("WhiteSmoke", &background);
+
+  /* make renderer */
+  renderer = gtk_cell_renderer_text_new ();
+
+  g_object_set (G_OBJECT (renderer),
+                "foreground", "red",
+                "background-gdk", &background,
+                "editable", editor->editable,
+                NULL);
+
+  if(colNumber < EDIT_COL_NUMBER)
+    {
+#warning fix the freeing of this user data RDS
+      char *decoder = "Ha ha ha ha.";
+      g_object_set_data_full(G_OBJECT(renderer),
+                             EDITOR_COL_DATA_KEY, decoder,
+                             NULL); /* Needs to be freed */
+      g_object_set_data_full(G_OBJECT(renderer),
+                             EDITOR_COL_NUMBER_KEY, GINT_TO_POINTER(colNumber),
+                             NULL);
+      g_signal_connect (G_OBJECT (renderer), "edited",
+                        G_CALLBACK(cellEditedCB), editor);
+    }
+
+  return renderer;
+}
 
 /********************* end of file ********************************/

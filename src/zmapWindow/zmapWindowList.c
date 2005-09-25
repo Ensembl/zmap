@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 20 16:18 2005 (edgrif)
+ * Last edited: Sep 25 12:38 2005 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.35 2005-09-22 12:35:42 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.36 2005-09-25 11:42:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,30 +37,37 @@
 #include <zmapWindow_P.h>
 #include <ZMap/zmapUtils.h>
 
+enum { 
+  LIST_COL_NAME, 
+  LIST_COL_TYPE, 
+  LIST_COL_STRAND, 
+  LIST_COL_START, 
+  LIST_COL_END, 
+  LIST_COL_FEATURE_TYPE, 
+  LIST_COL_FEATURE_ITEM, 
+  LIST_COL_NUMBER
+};
 
 
-/* I have changed this function quite a lot and it could do with more tidying up still,
- * there is much that is not very tidy about it at all. EG */
-
-
-
-enum { NAME, STRAND, START, END, ID, TYPE, FEATURE_TYPE, X_COORD, FEATURE_ITEM, N_COLUMNS };
-
-
-/* ListColStruct structure declaration
+/* ZMapWindowListStruct structure declaration
  *
  * Used to pass a couple of variables and a GtkTreeStore list
  * of feature details through the g_datalist_foreach() call 
  * and into the addItemToList() function where the list is loaded.
  */
-typedef struct
+typedef struct _ZMapWindowListStruct
 {
-  ZMapWindow    window ;
-  ZMapStrand    strand;					    /*!< up or down strand (enum). */
-  double        x_coord;				    /*!< X coordinate of selected column. */
-  GtkTreeStore *list;					    /*!< list of features in selected column. */
-} ListColStruct, *ListCol ;				    /*!< pointer to ListColStruct. */
-
+  ZMapWindow  zMpwindow;
+  FooCanvasItem *item  ;  /*!< hold ptr to the original item. DO NOT FREE!  */
+  ZMapStrand    strand ;  /*!< up or down strand (enum). */
+  double        x_coord;  /*!< X coordinate of selected column. */
+  gboolean      useTree;
+  union{
+    GtkTreeStore *tree;  /*!< list of features in selected column. */
+    GtkListStore *list;
+  }store; 
+  char *title;
+} ZMapWindowListStruct, *ZMapWindowList ; /*!< pointer to ZMapWindowListStruct. */
 
 
 /* function prototypes ***************************************************/
@@ -69,8 +76,25 @@ static GtkTreeIter *findItemInList(ZMapWindow zmapWindow,
 				   GtkTreeModel *sort_model, FooCanvasItem *item);
 static int  tree_selection_changed_cb(GtkTreeSelection *selection, gpointer data);
 static void recalcScrollRegion        (ZMapWindow window, double start, double end);
-static void quitListCB                (GtkWidget *window, gpointer data);
 
+static void createStore   (ZMapWindowList windowList);
+static void populateStore (ZMapWindowList windowList);
+static void drawListWindow(ZMapWindowList windowList);
+static GtkWidget *createModelView(ZMapWindowList windowList);
+static GtkTreeModel *getModel    (ZMapWindowList windowList);
+
+static gint sortByFunc (GtkTreeModel *model,
+                        GtkTreeIter  *a,
+                        GtkTreeIter  *b,
+                        gpointer      userdata);
+
+static void columnClickedCB    (GtkTreeViewColumn *col, gpointer user_data);
+static void closeButtonCB      (GtkWidget *widget, gpointer user_data);
+static void destroyListWindowCB(GtkWidget *window, gpointer user_data);
+static void view_RowActivatedCB(GtkTreeView *treeView,
+                                GtkTreePath        *path,
+                                GtkTreeViewColumn  *col,
+                                gpointer            userdata);
 
 /* functions *************************************************************/
 
@@ -84,243 +108,31 @@ static void quitListCB                (GtkWidget *window, gpointer data);
  */
 void zMapWindowCreateListWindow(ZMapWindow zmapWindow, FooCanvasItem *item)
 {
-  FooCanvasItem *parent_item = NULL ;
-  GtkWidget *window, *featureList, *vbox, *hbox, *closeButton, *scrolledWindow;
-  GtkTreeModel *sort_model;
-  GtkCellRenderer *renderer;
-  GtkTreeViewColumn *column;
-  GtkTreeSelection *select;
-  ListCol listCol ;
-  ZMapFeature feature ;
-  ZMapFeatureSet feature_set ;
-  double x1, y1, x2, y2;
-  GData *feature_sets = NULL ;
-  GtkTreeIter *iter ;
-  GtkTreePath *path ;
-  ZMapWindowItemFeatureType item_feature_type ;
-  char *window_title = NULL ;
+  ZMapWindowList windowList;
 
-  listCol = g_new0(ListColStruct, 1) ;
+  windowList = g_new0(ZMapWindowListStruct, 1) ;
 
-  listCol->window = zmapWindow ;
+  windowList->zMpwindow = zmapWindow ;
+  windowList->item      = item;
+  windowList->useTree   = TRUE;
 
+  /* as this function is a mile long, lets split it out into functions
+   * a little.. 
+   */
+  createStore(windowList);
 
-  /* The foocanvas item we get passed may represent a feature or the column itself depending
-   * where the user clicked. */
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+  populateStore(windowList);
 
-  if (item_feature_type == ITEM_SET)
-    {
-      feature_set = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  drawListWindow(windowList);
 
-      feature_sets = feature_set->features ;
-
-      listCol->strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							  "item_feature_strand")) ;
-    }
-  else
-    {
-      /* Get hold of the feature corresponding to this item. */
-      feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
-      zMapAssert(feature) ;
-
-      /* The item the user clicked on may have been a subpart of a feature, e.g. transcript, so
-       * we need to find the parent item for highlighting etc. */
-      parent_item = zmapWindowFToIFindFeatureItem(listCol->window->context_to_item, feature) ;
-      zMapAssert(parent_item) ;
-
-      feature_sets = feature->parent_set->features ;
-
-      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);	    /* world coords */
-      /* I have no idea why this x coord is kept.... */
-      listCol->x_coord = x1;
-
-      /* need to know whether the column is up or down strand, 
-       * so we load the right set of features */
-      listCol->strand = feature->strand ;
-
-      feature_set = zMapFeatureGetSet(feature) ;
-    }
-
-  window_title = zMapFeatureSetGetName(feature_set) ;
+  /* Isn't that easier. */
 
 
-  listCol->list = gtk_tree_store_new(N_COLUMNS,
-				     G_TYPE_STRING,
-				     G_TYPE_STRING,
-				     G_TYPE_INT,
-				     G_TYPE_INT,
-				     G_TYPE_INT,
-				     G_TYPE_STRING,
-				     G_TYPE_STRING,
-				     G_TYPE_DOUBLE,
-				     G_TYPE_POINTER) ;
-
-
-  /* set up the top level window */
-  window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  g_object_set_data(G_OBJECT(window), "zmapWindow", zmapWindow) ;
-
-  g_ptr_array_add(zmapWindow->featureListWindows, (gpointer)window);
-
-  gtk_container_border_width(GTK_CONTAINER(window), 5) ;
-  gtk_window_set_title(GTK_WINDOW(window), window_title) ;
-  gtk_window_set_default_size(GTK_WINDOW(window), -1, 600); 
-
-  vbox = gtk_vbox_new(FALSE, 0);
-  gtk_container_add(GTK_CONTAINER(window), vbox);
-
-  scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
-  gtk_box_pack_start(GTK_BOX(vbox), scrolledWindow, TRUE, TRUE, 0);
-
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow),
-				 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-  
-  hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
-
-  closeButton = gtk_button_new_with_label("Close") ;
-  g_object_set_data(G_OBJECT(closeButton), "zmapWindow", zmapWindow) ;
-  gtk_box_pack_start(GTK_BOX(hbox), closeButton, TRUE, TRUE, 0) ;
-
-
-  /* Build and populate the list of features */
-  g_datalist_foreach(&feature_sets, addItemToList, listCol) ;
-
-  sort_model = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL(listCol->list));
-
-  featureList = gtk_tree_view_new_with_model(GTK_TREE_MODEL(sort_model));
-
-  /* connect close button signal now that featureList exists */
-  g_signal_connect(GTK_OBJECT(closeButton), "clicked",
-		   GTK_SIGNAL_FUNC(quitListCB), window);
-
-  /* sort the list on the start coordinate */
-  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(sort_model),
-				       START,
-				       GTK_SORT_ASCENDING);
-
-  /* render the columns. */
-  renderer = gtk_cell_renderer_text_new ();
-  column = gtk_tree_view_column_new_with_attributes ("Name",
-						     renderer,
-						     "text", NAME,
-						     NULL);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
-
-  column = gtk_tree_view_column_new_with_attributes ("Strand",
-						     renderer,
-						     "text", STRAND,
-						     NULL);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
-  
-  gtk_tree_view_column_set_visible(column, TRUE);
-   
-  column = gtk_tree_view_column_new_with_attributes ("Start",
-						     renderer,
-						     "text", START,
-						     NULL);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
-  
-  gtk_tree_view_column_set_visible(column, TRUE);
-   
-  column = gtk_tree_view_column_new_with_attributes ("End",
-						     renderer,
-						     "text", END,
-						     NULL);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
-
-  gtk_tree_view_column_set_visible(column, TRUE);
-   
-  column = gtk_tree_view_column_new_with_attributes ("ID",
-						     renderer,
-						     "text", ID,
-						     NULL);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
-
-  gtk_tree_view_column_set_visible(column, FALSE);
-   
-  column = gtk_tree_view_column_new_with_attributes ("Feature Type",
-						     renderer,
-						     "text", FEATURE_TYPE,
-						     NULL);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
-
-  gtk_tree_view_column_set_visible(column, TRUE);
-  
-  column = gtk_tree_view_column_new_with_attributes ("Type",
-						     renderer,
-						     "text", TYPE,
-						     NULL);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
-
-  gtk_tree_view_column_set_visible(column, TRUE);
-  
-  column = gtk_tree_view_column_new_with_attributes ("X Coord",
-						     renderer,
-						     "text", X_COORD,
-						     NULL);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
-
-  gtk_tree_view_column_set_visible(column, FALSE);
-   
-  column = gtk_tree_view_column_new_with_attributes ("Feature Item",
-						     renderer,
-						     "text", FEATURE_ITEM,
-						     NULL);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (featureList), column);
-
-  gtk_tree_view_column_set_visible(column, FALSE);
-   
-  /* Setup the selection handler */
-  select = gtk_tree_view_get_selection (GTK_TREE_VIEW (featureList));
-  gtk_tree_selection_set_mode (select, GTK_SELECTION_SINGLE);
-
-
-  g_signal_connect (G_OBJECT (select), "changed",
-		    G_CALLBACK (tree_selection_changed_cb),
-		    zmapWindow);
-
-  g_signal_connect(GTK_OBJECT(window), "destroy",
-		   GTK_SIGNAL_FUNC(quitListCB), window);
-
-  gtk_container_add(GTK_CONTAINER(scrolledWindow), featureList);
-
-
-  /* If the user clicked on an item, find it in our tree list. */
-  if (parent_item)
-    {
-      iter = findItemInList(zmapWindow, sort_model, parent_item) ;
-      zMapAssert(iter) ;
-
-      /* highlight the name and scroll to it if necessary. */
-      path = gtk_tree_model_get_path(sort_model, iter) ;
-      zMapAssert(path) ;
-
-      gtk_tree_view_set_cursor(GTK_TREE_VIEW(featureList),
-			       path,
-			       NULL,
-			       FALSE) ;
-
-      gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(featureList),
-				   path,
-				   NULL,
-				   TRUE,
-				   0.3,  
-				   0.0) ;
-
-      gtk_tree_path_free(path) ;
-
-      g_free(iter) ;
-    }
-  
-
-  /* finished with list now */
-  g_object_unref(G_OBJECT(listCol->list));
-  g_free(listCol) ;
-
-
-  gtk_widget_show_all(window) ;
+  /* finished with list now. Are we sure? */
+#ifdef ISSUE111111111111111
+  g_object_unref(G_OBJECT(winList->store));
+  g_free(winList) ;
+#endif
 
   return;
 }
@@ -357,30 +169,55 @@ void zMapWindowDestroyLists(ZMapWindow window)
  */
 static void addItemToList(GQuark key_id, gpointer data, gpointer user_data)
 {
-  ZMapFeature feature = (ZMapFeature)data ;
-  ListCol     listCol = (ListColStruct*)user_data;
-  GtkTreeIter iter1;
+  ZMapFeature feature    = (ZMapFeature)data ;
+  ZMapWindowList winList = (ZMapWindowList)user_data;
 
-  if (listCol->strand == feature->strand)
+  /* Only do our current strand. As ZMAPSTRAND_FORWARD = 1 &&
+   * ZMAPSTRAND_REVERSE = 2 it's conceiveable we could show both and
+   * bit and here */
+  if (winList->strand == feature->strand)
     {
       FooCanvasItem *item ;
-      char strand[8];
+      GtkTreeIter iter1;
 
-      item = zmapWindowFToIFindFeatureItem(listCol->window->context_to_item, feature) ;
+      item = zmapWindowFToIFindFeatureItem(winList->zMpwindow->context_to_item, feature) ;
       zMapAssert(item) ;
 
-      gtk_tree_store_append(GTK_TREE_STORE(listCol->list), &iter1, NULL);
-      gtk_tree_store_set(GTK_TREE_STORE(listCol->list), &iter1, 
-			 NAME, (char *)g_quark_to_string(feature->original_id),
-			 STRAND, zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
-			 START, feature->x1,
-			 END, feature->x2,
-			 ID, key_id,
-			 TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
-			 FEATURE_TYPE, zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
-			 X_COORD, listCol->x_coord,
-			 FEATURE_ITEM, item,
-			 -1) ;
+#ifdef PRINT_LIKE_ITS_TEXT
+      printf("%s, %s, %s, %d, %d, %s\n", (char *)g_quark_to_string(feature->original_id),
+             zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
+             zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
+             feature->x1,
+             feature->x2,
+             zMapStyleGetName(zMapFeatureGetStyle(feature))
+             );
+#endif
+      if(winList->useTree)
+        {
+          gtk_tree_store_append(GTK_TREE_STORE(winList->store.tree), &iter1, NULL);
+          gtk_tree_store_set(GTK_TREE_STORE(winList->store.tree), &iter1, 
+                             LIST_COL_NAME,   (char *)g_quark_to_string(feature->original_id),
+                             LIST_COL_STRAND, zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
+                             LIST_COL_START,  feature->x1,
+                             LIST_COL_END,    feature->x2,
+                             LIST_COL_TYPE,   zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
+                             LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
+                             LIST_COL_FEATURE_ITEM, item,
+                             -1) ;
+        }
+      else
+        {
+          gtk_list_store_append(GTK_LIST_STORE(winList->store.list), &iter1);
+          gtk_list_store_set(GTK_LIST_STORE(winList->store.list), &iter1, 
+                             LIST_COL_NAME,   (char *)g_quark_to_string(feature->original_id),
+                             LIST_COL_STRAND, zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
+                             LIST_COL_START,  feature->x1,
+                             LIST_COL_END,    feature->x2,
+                             LIST_COL_TYPE,   zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
+                             LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
+                             LIST_COL_FEATURE_ITEM, item,
+                             -1) ;
+        }
     }
 
   return ;
@@ -405,7 +242,7 @@ static GtkTreeIter *findItemInList(ZMapWindow zmapWindow, GtkTreeModel *sort_mod
   while (valid)
     {
       gtk_tree_model_get(sort_model, &iter, 
-			 FEATURE_ITEM, &listItem,
+			 LIST_COL_FEATURE_ITEM, &listItem,
 			 -1) ;
 
       if (item == listItem)
@@ -433,22 +270,25 @@ static GtkTreeIter *findItemInList(ZMapWindow zmapWindow, GtkTreeModel *sort_mod
  */
 static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
 {
-  ZMapWindow window = (ZMapWindowStruct*)data;
+  ZMapWindow window = (ZMapWindow)data;
   GtkTreeIter iter;
   GtkTreeModel *model;
   int start = 0, end = 0;
-  double x_coord;
   gchar *name, *type, *feature_type;
-  GQuark id;
   FooCanvasItem *item ;
 
   /* retrieve user's selection */
   if (gtk_tree_selection_get_selected (selection, &model, &iter))
     {
 
-      gtk_tree_model_get (model, &iter, NAME, &name, START, &start, END, &end, 
-			  ID, &id, TYPE, &type, FEATURE_TYPE, &feature_type, 
-			  X_COORD, &x_coord, FEATURE_ITEM, &item, -1) ;
+      gtk_tree_model_get (model, &iter, 
+                          LIST_COL_NAME, &name, 
+                          LIST_COL_START, &start, 
+                          LIST_COL_END, &end, 
+                          LIST_COL_TYPE, &type, 
+                          LIST_COL_FEATURE_TYPE, &feature_type, 
+                          LIST_COL_FEATURE_ITEM, &item, 
+                          -1);
     }
 
   zMapWindowScrollToItem(window, item) ;
@@ -456,22 +296,391 @@ static int tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data
   return TRUE ;
 }
 
+static void createStore(ZMapWindowList windowList)
+{
+  GtkTreeSortable *sortable = NULL;
+  int colNo = 0;
+  if(windowList->useTree)
+    {
+      windowList->store.tree
+        = gtk_tree_store_new(LIST_COL_NUMBER,
+                             G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+                             G_TYPE_INT,    G_TYPE_INT,    G_TYPE_STRING,
+                             G_TYPE_POINTER
+                             );
+      sortable = GTK_TREE_SORTABLE(windowList->store.tree);
+    }
+  else
+    {
+      windowList->store.list
+        = gtk_list_store_new(LIST_COL_NUMBER,
+                             G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+                             G_TYPE_INT,    G_TYPE_INT,    G_TYPE_STRING,
+                             G_TYPE_POINTER
+                             );
+      sortable = GTK_TREE_SORTABLE(windowList->store.list);
+    }
+
+  for(colNo = 0; colNo < LIST_COL_NUMBER; colNo++)
+    {  
+      gtk_tree_sortable_set_sort_func(sortable, 
+                                      colNo, 
+                                      sortByFunc, 
+                                      GINT_TO_POINTER(colNo), 
+                                      NULL);
+    }
+  /* sort the list on the start coordinate */
+  gtk_tree_sortable_set_sort_column_id(sortable, 
+                                       LIST_COL_START, 
+                                       GTK_SORT_ASCENDING);
+
+  return ;
+}
+
+static GtkTreeModel *getModel(ZMapWindowList windowList)
+{
+  GtkTreeModel *model = NULL;
+  if(windowList->useTree)
+    model = GTK_TREE_MODEL(windowList->store.tree);
+  else
+    model = GTK_TREE_MODEL(windowList->store.list);
+  return model;
+}
+
+static GtkWidget *createModelView(ZMapWindowList windowList)
+{
+  GtkTreeModel *treeModel;
+  GtkWidget    *treeView;
+  GtkTreeSelection  *select;
+  GtkCellRenderer   *renderer;
+  int colNo = 0;
+  char *column_titles[LIST_COL_NUMBER] = {"Name", "Type", "Strand", "Start", "End", "Method", "FEATURE_ITEM"};
+
+  /* Get our model */
+  treeModel = getModel(windowList);
+  /* Create the view from the model */
+  treeView  = gtk_tree_view_new_with_model(treeModel);
+
+  /* A renderer for the columns. */
+  renderer = gtk_cell_renderer_text_new ();
+  /* Add it to all of them, not sure we need to add it to all, just the visible ones... */
+  for(colNo = 0; colNo < LIST_COL_NUMBER; colNo++)
+    {
+      GtkTreeViewColumn *column = NULL;
+      column = gtk_tree_view_column_new_with_attributes(column_titles[colNo],
+                                                        renderer,
+                                                        "text", colNo,
+                                                        NULL);
+      /* The order of the next two calls IS IMPORTANT.  With the
+       * signal_connect FIRST the callback is called BEFORE the
+       * sorting happens. A user can then manipulate how the sort is
+       * done, but the other way round the sorting is done FIRST and
+       * the callback is useless to effect the sort without needlessly
+       * sorting again!! This gives me a headache.
+       */
+      gtk_signal_connect(GTK_OBJECT(column), "clicked",
+                         GTK_SIGNAL_FUNC(columnClickedCB), windowList);
+      gtk_tree_view_column_set_sort_column_id(column, colNo);
+      /* set the pointer and data rows to be invisible */
+      if(colNo > LIST_COL_FEATURE_TYPE)
+        gtk_tree_view_column_set_visible(column, FALSE);
+
+      /* Add the column to the view now it's all set up */
+      gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
+    }
+
+  gtk_tree_view_set_headers_clickable(GTK_TREE_VIEW(treeView), TRUE);
+
+  /* Setup the selection handler */
+  select = gtk_tree_view_get_selection (GTK_TREE_VIEW (treeView));
+  gtk_tree_selection_set_mode (select, GTK_SELECTION_SINGLE);
+
+#ifdef NO_SELECT
+  g_signal_connect (G_OBJECT (select), "changed",
+		    G_CALLBACK (tree_selection_changed_cb),
+		    windowList->zMpwindow);
+#endif
+
+  return treeView;
+}
+
+static void populateStore(ZMapWindowList windowList)
+{
+  FooCanvasItem *item        = NULL;
+  FooCanvasItem *parent_item = NULL;
+  ZMapFeature feature        = NULL;
+  ZMapFeatureSet feature_set = NULL;
+  GData *feature_sets        = NULL;
+  ZMapWindowItemFeatureType item_feature_type;
+  double x1, y1, x2, y2;
+
+  item      = windowList->item;
+
+  /* The foocanvas item we get passed may represent a feature or the column itself depending
+   * where the user clicked. */
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+
+  switch(item_feature_type)
+    {
+    case ITEM_SET:
+      {
+        feature_set     = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+        feature_sets    = feature_set->features ;
+        windowList->strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+                                                               "item_feature_strand")) ;
+      }
+      break;
+    case ITEM_FEATURE_SIMPLE:
+    case ITEM_FEATURE_PARENT:
+    case ITEM_FEATURE_CHILD:
+      {
+        /* Get hold of the feature corresponding to this item. */
+        feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
+        zMapAssert(feature);
+        
+        /* The item the user clicked on may have been a subpart of a feature, e.g. transcript, so
+         * we need to find the parent item for highlighting etc. */
+        parent_item = zmapWindowFToIFindFeatureItem(windowList->zMpwindow->context_to_item, feature) ;
+        zMapAssert(parent_item) ;
+        
+        feature_sets = feature->parent_set->features ;
+        
+        foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);	    /* world coords */
+        /* I have no idea why this x coord is kept.... */
+        windowList->x_coord = x1;
+
+        /* need to know whether the column is up or down strand, 
+         * so we load the right set of features */
+        windowList->strand = feature->strand ;
+        feature_set        = zMapFeatureGetSet(feature) ;
+      }
+      break;
+    default:
+      windowList->title = "Error";
+      printf("Error here!\n");
+      break;
+    }
+
+  /* Build and populate the list of features */
+  if(feature_sets)
+    {
+      /* This needs setting here so we can draw it later. */
+      windowList->title = zMapFeatureSetGetName(feature_set) ;
+      g_datalist_foreach(&feature_sets, addItemToList, windowList) ;
+    }
+
+  /* If the user clicked on an item, find it in our tree list. */
+#ifdef ISSUE111111111111111
+  if (parent_item)
+    {
+      GtkTreeIter *iter ;
+      GtkTreePath *path ;
+      iter = findItemInList(windowList->zMpwindow, windowList->store, parent_item) ;
+      zMapAssert(iter) ;
+
+      /* highlight the name and scroll to it if necessary. */
+      path = gtk_tree_model_get_path(windowList->store, iter) ;
+      zMapAssert(path) ;
+      gtk_tree_view_set_cursor(GTK_TREE_VIEW(featureList),
+			       path,
+			       NULL,
+			       FALSE) ;
+
+      gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(featureList),
+				   path,
+				   NULL,
+				   TRUE,
+				   0.3,  
+				   0.0) ;
+      gtk_tree_path_free(path) ;
+
+      g_free(iter) ;
+    }
+#endif
+
+  return ;
+}
+
+static void drawListWindow(ZMapWindowList windowList)
+{
+  GtkWidget *window, *vBox, *subFrame, *scrolledWindow;
+  GtkWidget *button, *buttonBox, *treeView;
+  char *frame_label = NULL;
+  int spacing = 10;
+
+  /* Create window top level */
+  window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+
+  /* Set it up graphically nice */
+  gtk_window_set_title(GTK_WINDOW(window), windowList->title) ;
+  gtk_window_set_default_size(GTK_WINDOW(window), -1, 600); 
+  gtk_container_border_width(GTK_CONTAINER(window), 5) ;
+  /* Add ptrs so parent knows about us, and we know parent */
+  g_ptr_array_add(windowList->zMpwindow->featureListWindows, (gpointer)window);
+  g_object_set_data(G_OBJECT(window), "zmapWindow", windowList->zMpwindow) ;
+  /* And a destroy function */
+  g_signal_connect(GTK_OBJECT(window), "destroy",
+                   GTK_SIGNAL_FUNC(destroyListWindowCB), window);
+
+  /* Start drawing things in it. */
+  vBox = gtk_vbox_new(FALSE, 0);
+  gtk_container_add(GTK_CONTAINER(window), vBox);
+
+  frame_label = g_strdup_printf("Feature set %s", windowList->title);
+  subFrame = gtk_frame_new(frame_label);
+  if(frame_label)
+    g_free(frame_label);
+
+  gtk_frame_set_shadow_type(GTK_FRAME(subFrame), GTK_SHADOW_NONE);
+  gtk_box_pack_start(GTK_BOX(vBox), subFrame, TRUE, TRUE, 0);
+
+  scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow),
+				 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+  gtk_container_add(GTK_CONTAINER(subFrame), GTK_WIDGET(scrolledWindow));
+
+  /* Get our treeView */
+  treeView = createModelView(windowList);
+  gtk_container_add(GTK_CONTAINER(scrolledWindow), treeView);
+  /* Allow users to edit from this list... Need to do it here so we get teh right userdata passed */
+  gtk_signal_connect(GTK_OBJECT(treeView), "row-activated", 
+                     GTK_SIGNAL_FUNC(view_RowActivatedCB), window);
+
+
+  /* Our Button(s) */
+  subFrame = gtk_frame_new(NULL);
+  gtk_frame_set_shadow_type(GTK_FRAME(subFrame), GTK_SHADOW_NONE);
+  gtk_box_pack_start(GTK_BOX(vBox), subFrame, FALSE, FALSE, 0);
+
+  buttonBox = gtk_hbutton_box_new();
+  gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
+  gtk_box_set_spacing (GTK_BOX (buttonBox), spacing);
+  gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 5);
+
+  button = gtk_button_new_with_label("Close");
+  gtk_signal_connect(GTK_OBJECT(button), "clicked",
+                     GTK_SIGNAL_FUNC(closeButtonCB), (gpointer)(window));
+  GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT); 
+  
+  gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
+  gtk_container_add(GTK_CONTAINER(subFrame), buttonBox) ;      
+
+  /* Now show everything. */
+  gtk_widget_show_all(window) ;
+
+  return ;
+}
+static void columnClickedCB(GtkTreeViewColumn *col, gpointer user_data)
+{
+  ZMapWindowList windowList = (ZMapWindowList)user_data;
+  GtkTreeModel *model       = NULL;
+  int sortable_id = 0, column_id = 0;
+  GtkSortType order = 0;
+
+  model = getModel(windowList);
+  column_id = gtk_tree_view_column_get_sort_column_id(col);
+  gtk_tree_sortable_get_sort_column_id(GTK_TREE_SORTABLE(model), &sortable_id, &order);
+
+  printf("Well on the way to sorting columns %d, %d by order %d\n", column_id, sortable_id, order);
+
+  return ;
+}
+
+
+static gint sortByFunc (GtkTreeModel *model,
+                        GtkTreeIter  *a,
+                        GtkTreeIter  *b,
+                        gpointer      userdata)
+{
+  gint answer = 0;
+  gint col    = GPOINTER_TO_INT(userdata);
+  printf("Want to sort by column %d\n", col);
+  /* remember to g_free() any strings! */
+  switch(col)
+    {
+    case LIST_COL_END:
+      {
+        int endA, endB;
+        
+        gtk_tree_model_get(model, a, col, &endA, -1);
+        gtk_tree_model_get(model, b, col, &endB, -1);
+        answer = ( (endA == endB) ? 0 : ((endA < endB) ? -1 : 1 ) );
+      }
+      break;
+    case LIST_COL_START:
+      {
+        int startA, startB;
+        
+        gtk_tree_model_get(model, a, col, &startA, -1);
+        gtk_tree_model_get(model, b, col, &startB, -1);
+        answer = ( (startA == startB) ? 0 : ((startA < startB) ? -1 : 1 ) );
+      }
+      break;
+    default:
+      printf("Can't sort by that!\n");
+      break;
+    }
+  return answer;
+}
+
+
+/** \Brief Ends up calling destroyListWindowCB via g_signal "destroy"
+ * Just for the close button.
+ */
+static void closeButtonCB(GtkWidget *widget, gpointer user_data)
+{
+  GtkWidget *window = (GtkWidget *)user_data;
+  g_signal_emit_by_name(window, "destroy", NULL, NULL);
+  return ;
+}
 
 /** \Brief Destroy the list window
  *
  * Destroy the list window and its corresponding entry in the
  * array of such windows held in the ZMapWindow structure. 
  */
-static void quitListCB(GtkWidget *widget, gpointer data)
+static void destroyListWindowCB(GtkWidget *widget, gpointer user_data)
 {
-  ZMapWindow zmapWindow;
-  GtkWidget *window = (GtkWidget*)data;
+  GtkWidget *window = (GtkWidget*)user_data;
+  ZMapWindow zmapWindow = NULL;
 
   zmapWindow = g_object_get_data(G_OBJECT(window), "zmapWindow");  
-  g_ptr_array_remove(zmapWindow->featureListWindows, (gpointer)window);
+
+  if(zmapWindow != NULL)
+    g_ptr_array_remove(zmapWindow->featureListWindows, (gpointer)window);
+
   gtk_widget_destroy(GTK_WIDGET(window));
 
   return;
+}
+static void view_RowActivatedCB(GtkTreeView       *treeView,
+                                GtkTreePath       *path,
+                                GtkTreeViewColumn *col,
+                                gpointer          userdata)
+{
+  GtkTreeModel *model;
+  GtkTreeIter   iter;
+  g_print ("A row has been double-clicked!\n");
+
+  model = gtk_tree_view_get_model(treeView);
+
+  if (gtk_tree_model_get_iter(model, &iter, path))
+    {
+      GtkWidget *window     = (GtkWidget *)userdata;
+      ZMapWindow zmapWindow = NULL;
+      FooCanvasItem *item   = NULL;
+
+      zmapWindow = g_object_get_data(G_OBJECT(window), "zmapWindow");  
+
+      gtk_tree_model_get(model, &iter, 
+                         LIST_COL_FEATURE_ITEM, &item,
+                         -1);
+
+      //      g_print ("Double-clicked row contains name %s\n", name);
+      if(item)
+        zmapWindowEditorCreate(zmapWindow, item);
+    }
+  return ;
 }
 
 

@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 22 17:51 2005 (edgrif)
+ * Last edited: Sep 23 13:41 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.83 2005-09-22 16:51:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.84 2005-09-25 11:42:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1585,7 +1585,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       zMapWindowCreateListWindow(menu_data->window, menu_data->item) ;
       break ;
     case 2:
-      zmapWindowEditor(menu_data->window, menu_data->item) ;
+      zmapWindowEditorCreate(menu_data->window, menu_data->item) ;
       break ;
     case 3:
     case 4:

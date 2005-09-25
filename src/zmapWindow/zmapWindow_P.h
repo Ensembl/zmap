@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 22 17:45 2005 (edgrif)
+ * Last edited: Sep 23 16:28 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.75 2005-09-22 16:51:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.76 2005-09-25 11:42:09 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -271,7 +271,7 @@ typedef struct
   void *data ;
 } zmapWindowDataStruct, *zmapWindowData ;
 
-
+typedef struct _zmapWindowEditorDataStruct *ZMapWindowEditor;
 
 
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
@@ -349,7 +349,11 @@ void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
 void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 
 gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType);
-void zmapWindowEditor(ZMapWindow zmapWindow, FooCanvasItem *item); 
+
+/* Window Editor functions */
+ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item); 
+void zmapWindowEditorDraw(ZMapWindowEditor editor);
+/* End of Window Editor functions */
 
 void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a);
 
