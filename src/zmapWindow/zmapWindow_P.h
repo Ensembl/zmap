@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 23 16:28 2005 (rds)
+ * Last edited: Sep 27 14:30 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.76 2005-09-25 11:42:09 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.77 2005-09-27 13:37:19 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -85,7 +85,26 @@ enum
   {
     ZMAP_WINDOW_INTRON_POINTS = 3			    /* Number of points to draw an intron. */
   } ;
+enum 
+  {
+    ZMAP_WINDOW_GTK_BOX_SPACING = 5, /* Size in pixels for the GTK_BOX spacing between children */
+    ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING = 10
+  };
+enum 
+  {
+    ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH = 5
+  };
 
+typedef enum { 
+  ZMAP_WINDOW_LIST_COL_NAME,                /*!< feature name column  */
+  ZMAP_WINDOW_LIST_COL_TYPE,                /*!< feature type column  */
+  ZMAP_WINDOW_LIST_COL_STRAND,              /*!< feature strand  */
+  ZMAP_WINDOW_LIST_COL_START,               /*!< feature start */
+  ZMAP_WINDOW_LIST_COL_END,                 /*!< feature end  */
+  ZMAP_WINDOW_LIST_COL_FEATURE_TYPE,        /*!< feature method  */
+  ZMAP_WINDOW_LIST_COL_FEATURE_ITEM,        /*!< foocanvas item  */
+  ZMAP_WINDOW_LIST_COL_NUMBER               /*!< number of columns  */
+} zmapWindowFeatureListColumn;
 
 /* Default colours. */
 
@@ -273,6 +292,13 @@ typedef struct
 
 typedef struct _zmapWindowEditorDataStruct *ZMapWindowEditor;
 
+typedef struct _zmapWindowFeatureListCallbacksStruct
+{
+  GCallback columnClickedCB;
+  GCallback rowActivatedCB;
+  GtkTreeSelectionFunc selectionFuncCB;
+} zmapWindowFeatureListCallbacksStruct, *zmapWindowFeatureListCallbacks;
+
 
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
@@ -285,7 +311,7 @@ void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item) ;
 
 void zmapWindowShowItem(FooCanvasItem *item) ;
 
-void zMapWindowCreateListWindow(ZMapWindow window, FooCanvasItem *item) ;
+void zmapWindowListWindowCreate(ZMapWindow window, FooCanvasItem *item, ZMapStrand strandMask) ;
 
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
@@ -392,6 +418,16 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *parent_group, double y
 
 void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout) ;
 
+
+GtkTreeModel *zmapWindowFeatureListCreateStore(void);
+GtkWidget    *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
+                                              zmapWindowFeatureListCallbacks callbacks,
+                                              gpointer user_data);
+void zmapWindowFeatureListPopulateStore(GtkTreeModel *treeModel,
+                                        ZMapWindow window,
+                                        ZMapStrand strand,
+                                        GData *featureSet
+                                        );
 
 
 /* ================= in zmapWindowZoomControl.c ========================= */

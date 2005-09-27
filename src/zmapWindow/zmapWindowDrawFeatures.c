@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 23 13:41 2005 (rds)
+ * Last edited: Sep 27 14:30 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.84 2005-09-25 11:42:08 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.85 2005-09-27 13:36:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1582,7 +1582,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
     case 1:
       /* display a list of the features in this column so the user
        * can select one and have the display scroll to it. */
-      zMapWindowCreateListWindow(menu_data->window, menu_data->item) ;
+      zmapWindowListWindowCreate(menu_data->window, menu_data->item, 0) ;
       break ;
     case 2:
       zmapWindowEditorCreate(menu_data->window, menu_data->item) ;
@@ -1728,7 +1728,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
     case 1:
       /* display a list of the features in this column so the user
        * can select one and have the display scroll to it. */
-      zMapWindowCreateListWindow(menu_data->window, menu_data->item) ;
+      zmapWindowListWindowCreate(menu_data->window, menu_data->item, 0) ;
       break ;
     case 2:
       zmapWindowColumnBump(FOO_CANVAS_GROUP(menu_data->item), ZMAP_WINDOW_BUMP_SIMPLE) ;
