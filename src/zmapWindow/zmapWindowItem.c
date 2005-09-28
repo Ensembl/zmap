@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep  8 16:48 2005 (edgrif)
+ * Last edited: Sep 27 20:34 2005 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.1 2005-09-22 12:39:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.2 2005-09-28 08:09:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -276,54 +276,71 @@ FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
 gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 {
   gboolean result = FALSE ;
-  int cx, cy, height ;
+  int cx1, cy1, cx2, cy2;
   double feature_x1 = 0.0, feature_x2 = 0.0 ;
-  double x1, y1, x2, y2 ;
-  ZMapFeature feature ;
-  ZMapWindowSelectStruct select = {NULL} ;
+  double x1, y1, x2, y2;
+  ZMapFeature feature;
 
   zMapAssert(window && item) ;
 
-  /* Really we should create some text here as well.... */
-  select.item = item ;
-
   feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
-  zMapAssert(feature) ;					    /* this should never fail. */
-
+  zMapAssert(feature) ;         /* this should never fail. */
+  
   /* Get the features canvas coords (may be very different for align block features... */
-  zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2) ;
-
+  zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2);
   /* May need to move scroll region if object is outside it. */
   checkScrollRegion(window, feature_x1, feature_x2) ;
-
+  
   /* scroll up or down to user's selection. */
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2); /* world coords */
-	  
+  /* Fix the numbers to make sense. */
+  foo_canvas_item_i2w(item, &x1, &y1);
+  foo_canvas_item_i2w(item, &x2, &y2);
+
   if (y1 <= 0.0)    /* we might be dealing with a multi-box item, eg transcript */
     {
       double px1, py1, px2, py2;
-	      
+      /* Is this used? */
       foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(item->parent),
 				 &px1, &py1, &px2, &py2); 
       if (py1 > 0.0)
 	y1 = py1;
     }
-	  
-  /* Note that because we zoom asymmetrically, we only convert the y coord 
-   * to canvas coordinates, leaving the x as is.  */
-  foo_canvas_w2c(window->canvas, 0.0, y1, &cx, &cy); 
+  
+  /* convert to canvas pixels */
+  foo_canvas_w2c(window->canvas, x1, y1, &cx1, &cy1); 
+  foo_canvas_w2c(window->canvas, x2, y2, &cx2, &cy2); 
+  {
+    int cx, cy, tmpx, tmpy, cheight, cwidth;
+    tmpx = cx2 - cx1; tmpy = cy2 - cy1;
+    if(tmpx & 1)
+      tmpx += 1;
+    if(tmpy & 1)
+      tmpy += 1;
+    cx = cx1 + (tmpx / 2);
+    cy = cy1 + (tmpy / 2);
+    tmpx = GTK_WIDGET(window->canvas)->allocation.width;
+    tmpy = GTK_WIDGET(window->canvas)->allocation.height;
+    if(tmpx & 1)
+      tmpx -= 1;
+    if(tmpy & 1)
+      tmpy -= 1;
+    cwidth = tmpx / 2; cheight = tmpy / 2;
+    cx -= cwidth; cy -= cheight;
+    foo_canvas_scroll_to(window->canvas, cx, cy);
+  }
 
-  height = GTK_WIDGET(window->canvas)->allocation.height;
-  foo_canvas_scroll_to(window->canvas, (int)x1, cy - height/3);             /* canvas pixels */
-	  
-  foo_canvas_item_raise_to_top(item);
-	  
-  /* highlight the item */
+  /* highlight the item, which also does raise_to_top! */
   zMapWindowHighlightObject(window, item) ;
-	  
+  
   /* Report the selected object to the layer above us. */
-  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-
+  if(window->caller_cbs->select != NULL)
+    {
+      ZMapWindowSelectStruct select = {NULL} ;
+      /* Really we should create some text here as well.... */
+      select.item = item ;
+      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+    }
 
   result = TRUE ;
 
@@ -438,7 +455,6 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 			ZMapFeature modFeature, FooCanvasItem *item)
 {
   double top, bottom, offset;
-  double x1, y1, x2, y2;
 
   if (FOO_IS_CANVAS_ITEM (item))
     {
@@ -707,7 +723,7 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
       /* redraw the scale bar */
       top = (int)y1;                   /* zmapDrawScale expects integer coordinates */
       bot = (int)y2;
-      gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
+      /* gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup)); */
 
       zmapWindowDrawScaleBar(window, top, bot);
 
@@ -785,10 +801,9 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
 
   if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
     {
-      GdkColor *colour ;
-
-
+      
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      GdkColor *colour ;
 
       /* I'm disabling this for now.... */
       if (rev_video)
