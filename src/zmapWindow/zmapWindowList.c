@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 27 14:37 2005 (rds)
+ * Last edited: Sep 27 15:16 2005 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.37 2005-09-27 13:37:12 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.38 2005-09-28 08:08:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,9 +50,7 @@ typedef struct _ZMapWindowListStruct
   ZMapWindow  zmapWindow; /*!< pointer to the zmapWindow that created us. We shouldn't depend on this....  */
   FooCanvasItem *item  ;  /*!< hold ptr to the original item. DO NOT FREE!  */
   ZMapStrand    strand ;  /*!< up or down strand (enum). */
-  double        x_coord;  /*!< X coordinate of selected column. */
   char          *title ;  /*!< Title for the window  */
-  gboolean      useTree;  /*!< Whether to use TreeStore or ListStore */
   GtkWidget     *view  ;  /*!< The treeView so we can get store, selection ... */
 } ZMapWindowListStruct, *ZMapWindowList ; /*!< pointer to ZMapWindowListStruct. */
 
@@ -107,7 +105,6 @@ void zmapWindowListWindowCreate(ZMapWindow zmapWindow,
 
   windowList->zmapWindow = zmapWindow ;
   windowList->item       = item;
-  windowList->useTree    = TRUE;
   if(strandMask)
     windowList->strand   = strandMask;
 
@@ -140,7 +137,6 @@ static void populateStore(ZMapWindowList windowList, GtkTreeModel *treeModel)
   ZMapFeatureSet feature_set = NULL;
   GData *feature_sets        = NULL;
   ZMapWindowItemFeatureType item_feature_type;
-  double x1, y1, x2, y2;
 
   item      = windowList->item;
 
@@ -174,11 +170,12 @@ static void populateStore(ZMapWindowList windowList, GtkTreeModel *treeModel)
 
         windowList->item = parent_item;
         feature_sets = feature->parent_set->features ;
-        
+#ifdef COPLETELY_UNUSED        
+        double x1, y1, x2, y2;
         foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);	    /* world coords */
         /* I have no idea why this x coord is kept.... */
         windowList->x_coord = x1;
-
+#endif
         /* need to know whether the column is up or down strand, 
          * so we load the right set of features */
         if(!windowList->strand)
