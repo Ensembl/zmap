@@ -1,0 +1,2 @@
+<!--#set var="banner" value="$title"-->
+<!--#include virtual="/perl/header"-->
