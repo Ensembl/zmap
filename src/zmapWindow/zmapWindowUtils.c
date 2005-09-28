@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 20 13:00 2005 (edgrif)
+ * Last edited: Sep 27 19:58 2005 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.19 2005-09-22 12:36:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.20 2005-09-28 08:07:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -328,7 +328,7 @@ void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
   double c_end   = end;        /* Canvas start and end */
   ZMapWindowClampType clmp;
 
-  if (FOO_IS_CANVAS_ITEM( (window->scaleBarGroup) ))
+  if (window->scaleBarGroup && (FOO_IS_CANVAS_ITEM( (window->scaleBarGroup) )))
     gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
 
   /* This isn't very good, but won't be needed when in separate canvas/window/pane */
