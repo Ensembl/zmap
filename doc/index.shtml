@@ -30,14 +30,6 @@
       </ul>
 </ul>
 
-
-<h2>Authors: Ed Griffiths & Roy Storey</h2>
-
-<P>ZMap is a project to produce a stand alone version of FMap, the popular
-sequence annoation component of acedb.
-
-<P>These web pages are the development site for ZMap.</P>
-
 <p>
 <!--#include virtual="/perl/footer"-->
 
