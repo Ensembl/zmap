@@ -54,7 +54,7 @@ foo-canvas-line.h foo-canvas-i18n.h"
   for i in $foocanvas_docs
   do
     header="$src_dir/$i"
-    html="$dest_dir/`basename $i`.html"
+    html="$dest_dir/`basename $i`.shtml"
     
     echo "$header -> $html"
 
