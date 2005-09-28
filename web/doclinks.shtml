@@ -19,10 +19,18 @@
   <li><b>XML</b>
       <ul>
 	<li> <A HREF="file:///nfs/team71/acedb/edgrif/ZMap/downloads/expat-1.95.7/doc/reference.html" ADD_DATE="1088760175" LAST_CHARSET="ISO-8859-1" ID="rdf:#$ZT3Rx3">Expat XML Parser</A>
+	<li> <A HREF="http://www.w3.org/TR/xmlschema-0/" ADD_DATE="1088760175" LAST_CHARSET="ISO-8859-1" ID="rdf:#$ZT3Rx3">XML Schema</A>
+      </ul>
+  <li><b>HTTP</b>
+      <ul>
+	<li> <A HREF="http://www.w3.org/Protocols/" ADD_DATE="1088760175" LAST_CHARSET="ISO-8859-1" ID="rdf:#$ZT3Rx3">HTTP Protocol</A>
+	<li> <A HREF="http://curl.haxx.se/libcurl/c/" ADD_DATE="1088760175" LAST_CHARSET="ISO-8859-1" ID="rdf:#$ZT33">libcurl (groks URLs)</A>        
       </ul>
   <li><b>Bioinformatics</b>
       <ul>
-	<li> <A HREF="http://www.ensembl.org/Docs/wiki/html/EnsemblDocs/CigarFormat.html" ADD_DATE="1094743944" LAST_VISIT="1095063457" LAST_MODIFIED="1094743968" LAST_CHARSET="UTF-8" ID="rdf:#$FqAeS2">Cigar format</A>
+        <li> <A HREF="http://www.biodas.org/documents/spec.html" ADD_DATE="1088760175" LAST_CHARSET="ISO-8859-1" ID="rdf:#$ZT3Rx3">DAS 1</A>
+        <li> <A HREF="http://www.biodas.org/documents/das2/" ADD_DATE="1088760175" LAST_CHARSET="ISO-8859-1" ID="rdf:#$ZT3Rx3">DAS 2</A>        
+        <li> <A HREF="http://www.ensembl.org/Docs/wiki/html/EnsemblDocs/CigarFormat.html" ADD_DATE="1094743944" LAST_VISIT="1095063457" LAST_MODIFIED="1094743968" LAST_CHARSET="UTF-8" ID="rdf:#$FqAeS2">Cigar format</A>
 	<li> <A HREF="http://bioinfo.hku.hk/ucsc/goldenPath/gbdDescriptions.html" ADD_DATE="1097487536" LAST_MODIFIED="1097487574" LAST_CHARSET="ISO-8859-1" ID="rdf:#$b0NSj">UCSC Genome Bioinformatics: Database formats</A>
       </ul>
   <li><b>Build/Development</b>
