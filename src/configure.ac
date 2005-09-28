@@ -53,6 +53,24 @@ DX_PDF_FEATURE(ON)
 DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([AC_PACKAGE_NAME], Doxyfile, docs/[AC_PACKAGE_NAME])
 
+AC_ARG_ENABLE(shtml-doc,
+        AC_HELP_STRING([--enable-shtml-doc], [enable shtml documentation info compilation (no)]),
+        shtml=$enableval, shtml=no)
+
+ZMAP_DOXY_HTML_FILE_EXT=".html"
+ZMAP_DOXY_HTML_HEADER=""
+ZMAP_DOXY_HTML_FOOTER=""
+
+if test "x$shtml" = "xyes"; then
+  ZMAP_DOXY_HTML_FILE_EXT=".shtml";
+  ZMAP_DOXY_HTML_HEADER="doxyhtml.hdr";
+  ZMAP_DOXY_HTML_FOOTER="doxyhtml.ftr";
+fi
+AC_SUBST(ZMAP_DOXY_HTML_FILE_EXT)
+AC_SUBST(ZMAP_DOXY_HTML_HEADER)
+AC_SUBST(ZMAP_DOXY_HTML_FOOTER)
+
+
 #AC_PROG_LIBTOOL
 #AC_DISABLE_SHARED
 AM_INIT_AUTOMAKE
@@ -67,7 +85,7 @@ AC_ARG_ENABLE(debug,
         AC_HELP_STRING([--enable-debug], [enable debug info compilation (no)]),
         deb=$enableval, deb=no)
 
-if test "x$deb" = xyes; then
+if test "x$deb" = "xyes"; then
    CFLAGS="$CFLAGS -g";
 else
    CFLAGS="$CFLAGS -O2";
