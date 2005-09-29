@@ -18,7 +18,8 @@
       </ul>
   <li><b>XML</b>
       <ul>
-	<li> <A HREF="expat/index.shtml" ADD_DATE="1088760175" LAST_CHARSET="ISO-8859-1" ID="rdf:#$ZT3Rx3">Expat XML Parser</A>
+	<li> <A HREF="expat/index.shtml" ADD_DATE="1088760175" LAST_CHARSET="ISO-8859-1" ID="rdf:#$ZT3Rx3">Expat XML Parser Doc (local copy)</A>
+	<li> <A HREF="http://expat.sourceforge.net/" ADD_DATE="1088760175" LAST_CHARSET="ISO-8859-1" ID="rdf:#$ZT3Rx3">Expat XML Parser (main site)</A>
 	<li> <A HREF="http://www.w3.org/TR/xmlschema-0/" ADD_DATE="1088760175" LAST_CHARSET="ISO-8859-1" ID="rdf:#$ZT3Rx3">XML Schema</A>
       </ul>
   <li><b>HTTP</b>
