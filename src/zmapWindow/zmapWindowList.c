@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 27 15:16 2005 (rds)
+ * Last edited: Sep 29 10:59 2005 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.38 2005-09-28 08:08:27 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.39 2005-09-29 13:23:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,9 +41,6 @@
 
 /* ZMapWindowListStruct structure declaration
  *
- * Used to pass a couple of variables and a GtkTreeStore list
- * of feature details through the g_datalist_foreach() call 
- * and into the addFeatureToStore() function where the list is loaded.
  */
 typedef struct _ZMapWindowListStruct
 {
@@ -194,7 +191,7 @@ static void populateStore(ZMapWindowList windowList, GtkTreeModel *treeModel)
     {
       /* This needs setting here so we can draw it later. */
       windowList->title = zMapFeatureSetGetName(feature_set) ;
-      zmapWindowFeatureListPopulateStore(treeModel, windowList->zmapWindow, windowList->strand, feature_sets);
+      zmapWindowFeatureListPopulateStoreDataList(treeModel, windowList->zmapWindow, windowList->strand, feature_sets);
     }
 
   return ;
@@ -328,13 +325,17 @@ static void columnClickedCB(GtkTreeViewColumn *col, gpointer user_data)
   ZMapWindowList windowList = (ZMapWindowList)user_data;
   GtkTreeModel *model       = NULL;
   int sortable_id = 0, column_id = 0;
-  GtkSortType order = 0;
+  GtkSortType order = 0, neworder;
 
   model     = gtk_tree_view_get_model(GTK_TREE_VIEW(windowList->view));
   column_id = gtk_tree_view_column_get_sort_column_id(col);
   gtk_tree_sortable_get_sort_column_id(GTK_TREE_SORTABLE(model), &sortable_id, &order);
 
-  printf("Well on the way to sorting columns %d, %d by order %d\n", column_id, sortable_id, order);
+  neworder = (order == GTK_SORT_ASCENDING) ? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
+  /* The sort indicator looks wrong to me, points up on descending numbers down the list??? */
+  /*  gtk_tree_view_column_set_sort_order (col, order);  doesn't alter anything*/
+  /*  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(model), sortable_id, order); breaks sorting,  */
+  printf("Well on the way to sorting columns %d, %d by order %d, neworder %d\n", column_id, sortable_id, order, neworder);
 
   return ;
 }
