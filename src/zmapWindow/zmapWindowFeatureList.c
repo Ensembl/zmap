@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 27 14:33 2005 (rds)
+ * Last edited: Sep 29 13:23 2005 (rds)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.1 2005-09-27 13:37:05 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.2 2005-09-29 13:21:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,13 +49,18 @@ typedef struct _strandWindowModelStruct
 
 /* ======================================================= */
 /* INTERNAL prototypes. */
-static void addFeatureToStore(GQuark key_id, 
-                              gpointer data, 
-                              gpointer user_data);
+static void addDataToStore(GQuark key_id, 
+                           gpointer data, 
+                           gpointer user_data);
 static gint sortByFunc (GtkTreeModel *model,
                         GtkTreeIter  *a,
                         GtkTreeIter  *b,
                         gpointer      userdata);
+static char *featureLookUpEnum(int id, int enumType);
+
+static void addFeatureItemToStore(GtkTreeModel *treeModel, 
+                                  ZMapFeature feature, 
+                                  FooCanvasItem *item);
 
 /* ======================================================= */
 /* Functions */
@@ -65,13 +70,26 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(void)
   GtkTreeSortable *sortable = NULL;
   GtkTreeModel *treeModel   = NULL;
   int colNo = 0;
+  /* Not sure on the sanity of this.  It's going to make the order
+   * look a bit odd maybe. Forward is logically before Reverse and 
+   * 1 before 2, but for feature type this isn't going to be the 
+   * case. Oh well it's really easy to change*/
+  int columnSortIDs[ZMAP_WINDOW_LIST_COL_NUMBER] = { 
+    ZMAP_WINDOW_LIST_COL_NAME,        ZMAP_WINDOW_LIST_COL_SORT_TYPE,
+    ZMAP_WINDOW_LIST_COL_SORT_STRAND, ZMAP_WINDOW_LIST_COL_START,
+    ZMAP_WINDOW_LIST_COL_END,         ZMAP_WINDOW_LIST_COL_SORT_PHASE,
+    ZMAP_WINDOW_LIST_COL_SCORE,       ZMAP_WINDOW_LIST_COL_FEATURE_TYPE,
+    -1, -1, -1, -1
+  };
+
   if(USE_TREE_STORE)
     {
       GtkTreeStore *store = NULL;
       store = gtk_tree_store_new(ZMAP_WINDOW_LIST_COL_NUMBER,
                                  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
                                  G_TYPE_INT,    G_TYPE_INT,    G_TYPE_STRING,
-                                 G_TYPE_POINTER
+                                 G_TYPE_FLOAT,  G_TYPE_STRING, G_TYPE_POINTER,
+                                 G_TYPE_INT,    G_TYPE_INT,    G_TYPE_INT
                                  );
       treeModel = GTK_TREE_MODEL(store);
     }
@@ -81,7 +99,8 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(void)
       list = gtk_list_store_new(ZMAP_WINDOW_LIST_COL_NUMBER,
                                 G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
                                 G_TYPE_INT,    G_TYPE_INT,    G_TYPE_STRING,
-                                G_TYPE_POINTER
+                                G_TYPE_FLOAT,  G_TYPE_STRING, G_TYPE_POINTER,
+                                G_TYPE_INT,    G_TYPE_INT,    G_TYPE_INT
                                 );
       treeModel = GTK_TREE_MODEL(list);
     }
@@ -92,7 +111,7 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(void)
       gtk_tree_sortable_set_sort_func(sortable, 
                                       colNo, 
                                       sortByFunc, 
-                                      GINT_TO_POINTER(colNo), 
+                                      GINT_TO_POINTER(columnSortIDs[colNo]), 
                                       NULL);
     }
 
@@ -108,7 +127,7 @@ GtkWidget *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
   GtkTreeSelection  *selection;
   GtkCellRenderer   *renderer;
   int colNo = 0;
-  char *column_titles[ZMAP_WINDOW_LIST_COL_NUMBER] = {"Name", "Type", "Strand", "Start", "End", "Method", "FEATURE_ITEM"};
+  char *column_titles[ZMAP_WINDOW_LIST_COL_NUMBER] = {"Name", "Type", "Strand", "Start", "End", "Phase", "Score", "Method", "FEATURE_ITEM", "","",""};
 
   /* Create the view from the model */
   treeView = gtk_tree_view_new_with_model(treeModel);
@@ -134,16 +153,18 @@ GtkWidget *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
         g_signal_connect(G_OBJECT(column), "clicked",
                          G_CALLBACK(callbacks->columnClickedCB), 
                          user_data);
-      gtk_tree_view_column_set_sort_column_id(column, colNo);
+
       /* set the pointer and data rows to be invisible */
-      if(colNo > ZMAP_WINDOW_LIST_COL_FEATURE_TYPE)
+      if(colNo >= ZMAP_WINDOW_LIST_COL_FEATURE_ITEM)
         gtk_tree_view_column_set_visible(column, FALSE);
+      else
+        gtk_tree_view_column_set_sort_column_id(column, colNo);
 
       /* Add the column to the view now it's all set up */
       gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
     }
 
-  gtk_tree_view_set_headers_clickable(GTK_TREE_VIEW(treeView), TRUE);
+  //  gtk_tree_view_set_headers_clickable(GTK_TREE_VIEW(treeView), TRUE);
 
   /* Setup the selection handler */
   selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (treeView));
@@ -162,20 +183,38 @@ GtkWidget *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
   return treeView;
 }
 
-void zmapWindowFeatureListPopulateStore(GtkTreeModel *treeModel,
-                                        ZMapWindow window,
-                                        ZMapStrand strand,
-                                        GData *featureSet)
+void zmapWindowFeatureListPopulateStoreDataList(GtkTreeModel *treeModel,
+                                                ZMapWindow window,
+                                                ZMapStrand strand,
+                                                GData *featureSet)
 {
   strandWindowModelStruct winListModel = {ZMAPSTRAND_NONE, NULL, NULL};
   winListModel.filterStrand = strand;
   winListModel.zmapWindow   = window;
   winListModel.model        = treeModel;
   /* This needs setting here so we can draw it later. */
-  g_datalist_foreach(&featureSet, addFeatureToStore, &winListModel) ;
+  g_datalist_foreach(&featureSet, addDataToStore, &winListModel) ;
   return ;
 }
 
+void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel,
+                                            GList *list)
+{
+  while(list)
+    {
+      FooCanvasItem *item = NULL;
+      ZMapFeature feature = NULL;
+
+      item    = (FooCanvasItem *)list->data;
+      /* do we need some kind of type check on feature here? */
+      feature = g_object_get_data(G_OBJECT(item), "item_feature_data");
+
+      addFeatureItemToStore(treeModel, feature, item);
+
+      list = list->next;
+    }
+  return ;
+}
 
 
 /* ======================================================= */
@@ -187,13 +226,15 @@ void zmapWindowFeatureListPopulateStore(GtkTreeModel *treeModel,
  * The x coordinate is in canvasData, but is only guaranteed while no other
  * column has its own list, so we put it into the list for this column now.
  */
-static void addFeatureToStore(GQuark key_id, 
-                              gpointer data, 
-                              gpointer user_data)
+static void addDataToStore(GQuark key_id, 
+                           gpointer data, 
+                           gpointer user_data)
 {
-  ZMapFeature feature = (ZMapFeature)data ;
+  ZMapFeature feature   = (ZMapFeature)data ;
   strandWindowModel swm = (strandWindowModel)user_data;
 
+#define STRAND_DOESNT_ADD_ANYTHING
+#ifdef STRAND_DOESNT_ADD_ANYTHING
   /* Only do our current strand. As ZMAPSTRAND_FORWARD = 1 &&
    * ZMAPSTRAND_REVERSE = 2 it's conceiveable we could show both and
    * bit and here */
@@ -203,48 +244,66 @@ static void addFeatureToStore(GQuark key_id,
      * sets the strand of the column feature set to be forward! Doh!
      * and this still isn't right! */
     {
+#endif /* STRAND_DOESNT_ADD_ANYTHING */
       FooCanvasItem *item ;
-      GtkTreeIter iter1;
 
       item = zmapWindowFToIFindFeatureItem(swm->zmapWindow->context_to_item, feature) ;
-      zMapAssert(item) ;
-
-      if(USE_TREE_STORE)
-        {
-          GtkTreeStore *store = NULL;
-          store = GTK_TREE_STORE(swm->model);
-          gtk_tree_store_append(store, &iter1, NULL);
-          gtk_tree_store_set(store, &iter1, 
-                             ZMAP_WINDOW_LIST_COL_NAME,   (char *)g_quark_to_string(feature->original_id),
-                             ZMAP_WINDOW_LIST_COL_STRAND, zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
-                             ZMAP_WINDOW_LIST_COL_START,  feature->x1,
-                             ZMAP_WINDOW_LIST_COL_END,    feature->x2,
-                             ZMAP_WINDOW_LIST_COL_TYPE,   zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
-                             ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
-                             ZMAP_WINDOW_LIST_COL_FEATURE_ITEM, item,
-                             -1) ;
-        }
-      else
-        {
-          GtkListStore *store = NULL;
-          store = GTK_LIST_STORE(swm->model);
-          gtk_list_store_append(store, &iter1);
-          gtk_list_store_set(store, &iter1, 
-                             ZMAP_WINDOW_LIST_COL_NAME,   (char *)g_quark_to_string(feature->original_id),
-                             ZMAP_WINDOW_LIST_COL_STRAND, zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
-                             ZMAP_WINDOW_LIST_COL_START,  feature->x1,
-                             ZMAP_WINDOW_LIST_COL_END,    feature->x2,
-                             ZMAP_WINDOW_LIST_COL_TYPE,   zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
-                             ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
-                             ZMAP_WINDOW_LIST_COL_FEATURE_ITEM, item,
-                             -1) ;
-        }
-
+      //zMapAssert(item) ;
+      if(item)
+        addFeatureItemToStore(swm->model, feature, item);
+#ifdef STRAND_DOESNT_ADD_ANYTHING
     }
-
+#endif /* STRAND_DOESNT_ADD_ANYTHING */
   return ;
 }
 
+static void addFeatureItemToStore(GtkTreeModel *treeModel, 
+                                  ZMapFeature feature, 
+                                  FooCanvasItem *item)
+{
+  GtkTreeIter iter1;
+
+  zMapAssert(feature && item);
+
+  if(USE_TREE_STORE)
+    {
+      GtkTreeStore *store = NULL;
+      store = GTK_TREE_STORE(treeModel);
+      gtk_tree_store_append(store, &iter1, NULL);
+      gtk_tree_store_set(store, &iter1, 
+                         ZMAP_WINDOW_LIST_COL_NAME,   (char *)g_quark_to_string(feature->original_id),
+                         ZMAP_WINDOW_LIST_COL_STRAND, featureLookUpEnum(feature->strand, STRAND_ENUM),
+                         ZMAP_WINDOW_LIST_COL_START,  feature->x1,
+                         ZMAP_WINDOW_LIST_COL_END,    feature->x2,
+                         ZMAP_WINDOW_LIST_COL_TYPE,   featureLookUpEnum(feature->type, TYPE_ENUM),
+                         ZMAP_WINDOW_LIST_COL_PHASE,  featureLookUpEnum(feature->phase, PHASE_ENUM),
+                         ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
+                         ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
+                         ZMAP_WINDOW_LIST_COL_FEATURE_ITEM, item,
+                         -1) ;
+    }
+  else
+    {
+      GtkListStore *store = NULL;
+      store = GTK_LIST_STORE(treeModel);
+      gtk_list_store_append(store, &iter1);
+      gtk_list_store_set(store, &iter1, 
+                         ZMAP_WINDOW_LIST_COL_NAME,   (char *)g_quark_to_string(feature->original_id),
+                         ZMAP_WINDOW_LIST_COL_STRAND, featureLookUpEnum(feature->strand, STRAND_ENUM),
+                         ZMAP_WINDOW_LIST_COL_START,  feature->x1,
+                         ZMAP_WINDOW_LIST_COL_END,    feature->x2,
+                         ZMAP_WINDOW_LIST_COL_TYPE,   featureLookUpEnum(feature->type, TYPE_ENUM),
+                         ZMAP_WINDOW_LIST_COL_PHASE,  featureLookUpEnum(feature->phase, PHASE_ENUM),
+                         ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
+                         ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
+                         ZMAP_WINDOW_LIST_COL_FEATURE_ITEM, item,
+                         ZMAP_WINDOW_LIST_COL_SORT_PHASE,   feature->phase,
+                         ZMAP_WINDOW_LIST_COL_SORT_TYPE,    feature->type,
+                         ZMAP_WINDOW_LIST_COL_SORT_STRAND,  feature->strand,
+                         -1) ;
+    }
+  return ;
+}
 /** \Brief To sort the column  
  */
 static gint sortByFunc (GtkTreeModel *model,
@@ -254,38 +313,100 @@ static gint sortByFunc (GtkTreeModel *model,
 {
   gint answer = 0;
   gint col    = GPOINTER_TO_INT(userdata);
-
   /* remember to g_free() any strings! */
   switch(col)
     {
-    case ZMAP_WINDOW_LIST_COL_END:
+    case ZMAP_WINDOW_LIST_COL_SCORE:
       {
-        int endA, endB;
-        
+        float endA, endB;
         gtk_tree_model_get(model, a, col, &endA, -1);
         gtk_tree_model_get(model, b, col, &endB, -1);
         answer = ( (endA == endB) ? 0 : ((endA < endB) ? -1 : 1 ) );
       }
       break;
+    case ZMAP_WINDOW_LIST_COL_END:
     case ZMAP_WINDOW_LIST_COL_START:
+    case ZMAP_WINDOW_LIST_COL_SORT_PHASE:
+    case ZMAP_WINDOW_LIST_COL_SORT_TYPE:
+    case ZMAP_WINDOW_LIST_COL_SORT_STRAND:
       {
-        int startA, startB;
+        int rowA, rowB;
         
-        gtk_tree_model_get(model, a, col, &startA, -1);
-        gtk_tree_model_get(model, b, col, &startB, -1);
-        answer = ( (startA == startB) ? 0 : ((startA < startB) ? -1 : 1 ) );
+        gtk_tree_model_get(model, a, col, &rowA, -1);
+        gtk_tree_model_get(model, b, col, &rowB, -1);
+        answer = ( (rowA == rowB) ? 0 : ((rowA < rowB) ? -1 : 1 ) );
       }
       break;
     case ZMAP_WINDOW_LIST_COL_FEATURE_TYPE:
     case ZMAP_WINDOW_LIST_COL_NAME:
+      /* These need writing! */
+      {
+        gchar *row1, *row2;
+
+        gtk_tree_model_get(model, a, col, &row1, -1);
+        gtk_tree_model_get(model, b, col, &row2, -1);
+
+        if (row1 == NULL || row2 == NULL)
+        {
+          if (!(row1 == NULL && row2 == NULL))
+            answer = (row1 == NULL) ? -1 : 1;
+        }
+        else
+        {
+          answer = g_utf8_collate(row1,row2);
+        }
+        if(row1)
+          g_free(row1);
+        if(row2)
+          g_free(row2);
+      }
+      break;
     case ZMAP_WINDOW_LIST_COL_TYPE:
     case ZMAP_WINDOW_LIST_COL_STRAND:
-      /* These need writing! */
+    case ZMAP_WINDOW_LIST_COL_PHASE:
       answer = 0;
+      zMapAssert(answer);
       break;
     default:
       g_print("Column isn't sortable.\n");
       break;
     }
   return answer;
+}
+
+static char *featureLookUpEnum(int id, int enumType)
+{
+  /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
+  static char *types[]   = {"Basic", "Homology", "Exon", "Intron", "Transcript",
+			    "Variation", "Boundary", "Sequence"} ;
+  static char *strands[] = {".", "Forward", "Reverse" } ;
+  static char *phases[]  = {"NONE", "0", "1", "2" } ;
+  static char *homolTypes[] = {"dna", "protein", "translated"} ;
+  char *enum_str = NULL ;
+
+  zMapAssert(enumType == TYPE_ENUM || enumType == STRAND_ENUM 
+	     || enumType == PHASE_ENUM || enumType == HOMOLTYPE_ENUM) ;
+
+  switch (enumType)
+    {
+    case TYPE_ENUM:
+      enum_str = types[id];
+      break;
+      
+    case STRAND_ENUM:
+      enum_str = strands[id];
+      break;
+      
+    case PHASE_ENUM:
+      enum_str = phases[id];
+      break;
+
+    case HOMOLTYPE_ENUM:
+      enum_str = homolTypes[id];
+      break;
+    default:
+      break;
+    }
+  
+  return enum_str ;
 }

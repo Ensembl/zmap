@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 27 14:30 2005 (rds)
+ * Last edited: Sep 28 19:04 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.77 2005-09-27 13:37:19 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.78 2005-09-29 13:21:58 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -101,8 +101,13 @@ typedef enum {
   ZMAP_WINDOW_LIST_COL_STRAND,              /*!< feature strand  */
   ZMAP_WINDOW_LIST_COL_START,               /*!< feature start */
   ZMAP_WINDOW_LIST_COL_END,                 /*!< feature end  */
+  ZMAP_WINDOW_LIST_COL_PHASE,               /*!< feature phase  */
+  ZMAP_WINDOW_LIST_COL_SCORE,               /*!< feature score  */
   ZMAP_WINDOW_LIST_COL_FEATURE_TYPE,        /*!< feature method  */
   ZMAP_WINDOW_LIST_COL_FEATURE_ITEM,        /*!< foocanvas item  */
+  ZMAP_WINDOW_LIST_COL_SORT_TYPE,
+  ZMAP_WINDOW_LIST_COL_SORT_STRAND,
+  ZMAP_WINDOW_LIST_COL_SORT_PHASE,
   ZMAP_WINDOW_LIST_COL_NUMBER               /*!< number of columns  */
 } zmapWindowFeatureListColumn;
 
@@ -423,11 +428,12 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(void);
 GtkWidget    *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
                                               zmapWindowFeatureListCallbacks callbacks,
                                               gpointer user_data);
-void zmapWindowFeatureListPopulateStore(GtkTreeModel *treeModel,
-                                        ZMapWindow window,
-                                        ZMapStrand strand,
-                                        GData *featureSet
-                                        );
+void zmapWindowFeatureListPopulateStoreDataList(GtkTreeModel *treeModel,
+                                                ZMapWindow window,
+                                                ZMapStrand strand,
+                                                GData *featureSet);
+void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel,
+                                            GList *list);
 
 
 /* ================= in zmapWindowZoomControl.c ========================= */
