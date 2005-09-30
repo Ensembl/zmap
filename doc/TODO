@@ -57,6 +57,16 @@ Down = Not_Urgent
 Text = We need a pucker install package for zmap \
 we need to sort -rpath stuff on alpha....
 
+[Change reverse strand code to always create foocanvas items]
+Across = Important
+Down = Urgent
+Text = We should always create items whether they are shown or not, \
+but then just hide them. This would require the hash table to "know" whether \
+things were hidden or not for purposes of filtering returned items. \
+BUT, this may not be a good idea BECAUSE it would mean mapping potentially thousands \
+of homols on the reverse strand....
+
+
 [A wish list from James (needs rationalising)]
 Across = Important
 Down = Urgent
