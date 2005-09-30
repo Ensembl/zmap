@@ -28,15 +28,17 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 22 13:23 2005 (edgrif)
+ * Last edited: Sep 27 17:05 2005 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.1 2005-09-22 12:39:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.2 2005-09-30 07:26:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
+
+/* Used for holding state while bumping columns. */
 typedef struct
 {
   double offset ;
@@ -46,128 +48,214 @@ typedef struct
 } BumpColStruct, *BumpCol ;
 
 
+/* Used to identify unambiguously which part of a zmapWindowContainer group a particular
+ * foo canvas group or item represents. */
+typedef enum {CONTAINER_INVALID,
+	      CONTAINER_ROOT, CONTAINER_PARENT,
+	      CONTAINER_FEATURES, CONTAINER_BACKGROUND} ContainerType ;
+
+
 static void bumpColCB(gpointer data, gpointer user_data) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void doCol(gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+static void valueDestroyCB(gpointer data) ;
 
 static void repositionGroups(FooCanvasGroup *changed_group, double group_spacing) ;
 
 static gint horizPosCompare(gconstpointer a, gconstpointer b) ;
 
 
-
-static gboolean keysEqualCB(gconstpointer a, gconstpointer b) ;
-static void keyDestroyCB(gpointer data) ;
-static void valueDestroyCB(gpointer data) ;
-
+static void doprint(FooCanvasGroup *container_parent, int indent) ;
+static void printItem(FooCanvasItem *item, int indent, char *prefix) ;
+static void listCB(gpointer data, gpointer user_data) ;
 
 
 
-/* Creates a foocanvas group and a rectangle to be used as a background for that group a
- * children of parent, returns the child group. The background a fill and border colour.
- * Note that we rely on the order in which the group and background item are added, if this
- * changes then the accessor functions for getting them need to change. */
+
+/* Creates a "container" for our sequence features which consists of: 
+ * 
+ *                parent_group
+ *                  /      \
+ *                 /        \
+ *                /          \
+ *           background    sub_group of
+ *             item        feature items
+ *
+ * The background item is used both as a visible background for the items but also
+ * more importantly to catch events _anywhere_ in the space (e.g. column) where
+ * the items might be drawn.
+ * This arrangement also means that code that has to process all items can do so
+ * simply by processing all members of the item list of the sub_group as they
+ * are guaranteed to all be feature items and it is trivial to perform such operations
+ * as taking the size of all items in a group.
+ * 
+ * Our canvas is guaranteed to have a tree hierachy of these structures from a column
+ * up to the ultimate alignment parent. If the parent is not a container_features
+ * group then we make a container root, i.e. the top of the container tree.
+ * 
+ * Returns the container_parent.
+ * 
+ */
 FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  GdkColor *background_fill_colour,
 					  GdkColor *background_border_colour)
 {
-  FooCanvasGroup *group ;
-  FooCanvasItem *background_item ;
+  FooCanvasGroup *container_parent = NULL, *container_features ;
+  FooCanvasItem *container_background ;
   double x1, y1, x2, y2 ;
+  ContainerType parent_type = CONTAINER_INVALID, container_type ;
 
-  /* Must be a group with _no_ existing children. */
-  zMapAssert(FOO_IS_CANVAS_GROUP(parent) && !parent->item_list) ;
 
-  group = FOO_CANVAS_GROUP(foo_canvas_item_new(parent,
-					       foo_canvas_group_get_type(),
-					       NULL)) ;
+  /* Parent has to be a group. */
+  zMapAssert(FOO_IS_CANVAS_GROUP(parent)) ;
 
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(parent), &x1, &y1, &x2, &y2) ;
 
-  background_item = zMapDrawSolidBox(FOO_CANVAS_ITEM(parent),
-				     x1, y1, x2, y2, background_fill_colour) ;
+  /* Is the parent a container itself, if not then make this the root container. */
+  parent_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(parent), "container_type")) ;
+  zMapAssert(parent_type == CONTAINER_INVALID || parent_type == CONTAINER_FEATURES) ;
+  if (parent_type == CONTAINER_FEATURES)
+    container_type = CONTAINER_PARENT ;
+  else
+    container_type = CONTAINER_ROOT ;
 
-  foo_canvas_item_lower_to_bottom(background_item) ; 
 
-  return group ;
+  container_parent = FOO_CANVAS_GROUP(foo_canvas_item_new(parent,
+							  foo_canvas_group_get_type(),
+							  NULL)) ;
+  g_object_set_data(G_OBJECT(container_parent), "container_type",
+		    GINT_TO_POINTER(container_type)) ;
+
+  container_features = FOO_CANVAS_GROUP(foo_canvas_item_new(container_parent,
+							    foo_canvas_group_get_type(),
+							    NULL)) ;
+  g_object_set_data(G_OBJECT(container_features), "container_type",
+		    GINT_TO_POINTER(CONTAINER_FEATURES)) ;
+
+  /* We don't use the border colour at the moment but we may wish to later.... */
+  container_background = zMapDrawSolidBox(FOO_CANVAS_ITEM(container_parent),
+					  0.0, 0.0, 0.0, 0.0, background_fill_colour) ;
+  g_object_set_data(G_OBJECT(container_background), "container_type",
+		    GINT_TO_POINTER(CONTAINER_BACKGROUND)) ;
+
+ /* Note that we rely on the background being first in parent groups item list which we
+  * we achieve with this lower command. This is both so that the background appears _behind_
+  * the objects that are children of the subgroup and so that we can return the background
+  * and subgroup items correctly. */
+  foo_canvas_item_lower_to_bottom(container_background) ; 
+
+  return container_parent ;
 }
 
 
-FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *child)
+
+/* Given either child of the container, return the container_parent. */
+FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *unknown_child)
 {
-  FooCanvasGroup *parent_group ;
+  FooCanvasGroup *container_parent = NULL ;
+  ContainerType type = CONTAINER_INVALID ;
 
-  parent_group = FOO_CANVAS_GROUP(child->parent) ;
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(unknown_child), "container_type")) ;
 
-  zMapAssert(FOO_IS_CANVAS_GROUP(parent_group) && g_list_length(parent_group->item_list) == 2) ;
+  switch(type)
+    {
+    case CONTAINER_FEATURES:
+    case CONTAINER_BACKGROUND:
+      container_parent = FOO_CANVAS_GROUP(unknown_child->parent) ;
+      break ;
+    default:
+      zMapAssert("bad coding, unrecognised container type.") ;
+    }
 
-  return parent_group ;
+  return container_parent ;
 }
 
 
-FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *parent)
+/* Given a container parent, return the container parent above that, if the container
+ * is the root then the container itself is returned. */
+FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_parent)
 {
-  FooCanvasGroup *super_group ;
+  FooCanvasGroup *super_container = NULL ;
+  ContainerType type = CONTAINER_INVALID ;
 
-  zMapAssert(FOO_IS_CANVAS_GROUP(parent) && g_list_length(parent->item_list) == 2) ;
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), "container_type")) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
-  super_group = zmapWindowContainerGetParent(parent->item.parent) ;
+  if (type == CONTAINER_ROOT)
+    super_container = container_parent ;
+  else
+    super_container = FOO_CANVAS_GROUP(FOO_CANVAS_ITEM(container_parent)->parent->parent) ;
 
-  return super_group ;
+  return super_container ;
 }
 
 
-
-FooCanvasGroup *zmapWindowContainerGetGroup(FooCanvasGroup *parent)
+/* Return the sub group of the container that contains all of the "features" where
+ * features might be columns, column sets, blocks etc. */
+FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent)
 {
-  FooCanvasGroup *container_group ;
+  FooCanvasGroup *container_features ;
+  ContainerType type = CONTAINER_INVALID ;
 
-  zMapAssert(FOO_IS_CANVAS_GROUP(parent) && g_list_length(parent->item_list) == 2) ;
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), "container_type")) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
-  container_group = FOO_CANVAS_GROUP((g_list_nth(parent->item_list, 1))->data) ;
+  container_features = FOO_CANVAS_GROUP((g_list_nth(container_parent->item_list, 1))->data) ;
 
-  return container_group ;
+  return container_features ;
 }
 
-
-FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *parent)
+/* Return the background of the container which is used both to give colour to the
+ * container and to allow event interception across the complete bounding rectangle
+ * of the container. */
+FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent)
 {
-  FooCanvasItem *background ;
+  FooCanvasItem *container_background ;
+  ContainerType type = CONTAINER_INVALID ;
 
-  zMapAssert(FOO_IS_CANVAS_GROUP(parent) && g_list_length(parent->item_list) == 2) ;
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), "container_type")) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
-  background = FOO_CANVAS_ITEM((g_list_nth(parent->item_list, 0))->data) ;
+  container_background = FOO_CANVAS_ITEM((g_list_nth(container_parent->item_list, 0))->data) ;
 
-  return background ;
+  return container_background ;
 }
 
 
-/* Do we want the background to be the size of the parent group or the size of the
- * subgroup...the subgroup I think ??  The depth (y dimension) of the background can
- * be given, if depth is 0.0 then the depth of the child group is used.
+/* Setting the background size is not completely straight forward because we always
+ * want the hieght of the background to be the full height of the group (e.g. column)
+ * but we want the width to be set from the horizontal extent of the features.
+ *
+ * The height (y dimension) of the background can be given, if height is 0.0 then
+ * the height of the child group is used.
  */
-void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *parent_group, double depth)
+void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, double height)
 {
-  FooCanvasGroup *child_group ;
-  FooCanvasItem *background ;
+  FooCanvasGroup *container_features ;
+  FooCanvasItem *container_background ;
   double x1, y1, x2, y2 ;
+  ContainerType type = CONTAINER_INVALID ;
 
-  zMapAssert(FOO_IS_CANVAS_GROUP(parent_group) && g_list_length(parent_group->item_list) == 2) ;
-  zMapAssert(depth >= 0.0) ;
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), "container_type")) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
-  child_group = zmapWindowContainerGetGroup(parent_group) ;
-  background = zmapWindowContainerGetBackground(parent_group) ;
+  zMapAssert(height >= 0.0) ;
+
+  container_features = zmapWindowContainerGetFeatures(container_parent) ;
+  container_background = zmapWindowContainerGetBackground(container_parent) ;
 
   /* Get the height from the main group */
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(parent_group), NULL, &y1, NULL, &y2) ;
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_parent), NULL, &y1, NULL, &y2) ;
 
   /* Get the width from the child group */
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(child_group), &x1, NULL, &x2, NULL) ;
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features), &x1, NULL, &x2, NULL) ;
 
-  if (depth != 0.0)
-    y2 = y2 + depth ;
+  if (height != 0.0)
+    y2 = y2 + height ;
 
-  foo_canvas_item_set(background,
+  foo_canvas_item_set(container_background,
 		      "x1", x1,
 		      "y1", y1,
 		      "x2", x2,
@@ -176,6 +264,25 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *parent_group, double d
 
   return ;
 }
+
+
+
+void zmapWindowContainerPrint(FooCanvasGroup *container_parent)
+{
+  int indent = 0 ;
+  ContainerType type = CONTAINER_INVALID ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), "container_type")) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+
+  doprint(container_parent, indent) ;
+
+  return ;
+}
+
+
+
 
 
 
@@ -198,11 +305,8 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapWindowBumpType bump_
 {
   BumpColStruct bump_data = {0.0} ;
   FooCanvasGroup *column_features ;
-  FooCanvasItem *background ;
 
-  zMapAssert(FOO_IS_CANVAS_GROUP(column_group)) ;
-
-  column_features = zmapWindowContainerGetGroup(column_group) ;
+  column_features = zmapWindowContainerGetFeatures(column_group) ;
 
   bump_data.bump_type = bump_type ;
 
@@ -217,15 +321,8 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapWindowBumpType bump_
     case ZMAP_WINDOW_BUMP_POSITION:
       bump_data.incr = 20.0 ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      bump_data.pos_hash = g_hash_table_new_full(NULL, keysEqualCB, /* NULL => use direct hash */
-						 keyDestroyCB, valueDestroyCB) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
 						 NULL, valueDestroyCB) ;
-
-
       break ;
     default:
       zMapAssert("Coding error, unrecognised ZMapWindowItemFeatureType") ;
@@ -240,7 +337,6 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapWindowBumpType bump_
     g_hash_table_destroy(bump_data.pos_hash) ;
 
   /* Make the parent groups bounding box as large as the group.... */
-  background = zmapWindowContainerGetBackground(column_group) ;
   zmapWindowContainerSetBackgroundSize(column_group, 0.0) ;
 
   /* Now make sure all the columns are positioned correctly. */
@@ -256,25 +352,44 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapWindowBumpType bump_
 void zmapWindowColumnReposition(FooCanvasGroup *column)
 {
   double x1, y1, x2, y2, bound_x1, bound_x2 ;
-  FooCanvasGroup *column_parent, *block, *align ;
-
-  zMapAssert(FOO_IS_CANVAS_GROUP(column)) ;
+  FooCanvasGroup *column_set, *block, *align, *root ;
 
 
-  column_parent = zmapWindowContainerGetSuperGroup(column) ;
+  column_set = zmapWindowContainerGetSuperGroup(column) ;
 
-  block = zmapWindowContainerGetSuperGroup(column_parent) ;	/* We don't use this as we don't
+  block = zmapWindowContainerGetSuperGroup(column_set) ;	/* We don't use this as we don't
 								   need to actually move the blocks. */
   align = zmapWindowContainerGetSuperGroup(block) ;
+
+  root = zmapWindowContainerGetSuperGroup(align) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zmapWindowContainerPrint(root) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   /* Move all the columns in the current group that need to be moved. */
   repositionGroups(column, COLUMN_SPACING) ;
 
   /* Move all the column groups in the containing block that need to be moved. */
-  repositionGroups(column_parent, STRAND_SPACING) ;
+  repositionGroups(column_set, STRAND_SPACING) ;
 
-  /* Move all the alignment groups in the canvas that need to be moved. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Move all the block groups in the canvas that need to be moved. */
   repositionGroups(block, ALIGN_SPACING) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  {
+    /* Actually blocks have to be looked at differently, we should be looking to see
+     * the maximum block size and then changing the background to fit that.... */
+
+    FooCanvasGroup *parent_container ;
+
+    parent_container = zmapWindowContainerGetSuperGroup(block) ;
+    zmapWindowContainerSetBackgroundSize(parent_container, 0.0) ;
+  }
 
   /* Move all the alignment groups in the canvas that need to be moved. */
   repositionGroups(align, ALIGN_SPACING) ;
@@ -285,7 +400,11 @@ void zmapWindowColumnReposition(FooCanvasGroup *column)
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(column->item.canvas)),
 			     &bound_x1, NULL, &bound_x2, NULL) ;
 
+  /* I think its a mistake to reset the x1 as we have the scroll bar there.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   foo_canvas_set_scroll_region(column->item.canvas, bound_x1, y1, bound_x2, y2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  foo_canvas_set_scroll_region(column->item.canvas, x1, y1, bound_x2, y2) ;
 
 
   return ;
@@ -300,23 +419,8 @@ void zmapWindowColumnReposition(FooCanvasGroup *column)
  *                Internal routines.
  */
 
-static gboolean keysEqualCB(gconstpointer a, gconstpointer b)
-{
-  gboolean keys_equal = FALSE ;
 
-  if (*(double *)a == *(double *)b)
-    keys_equal = TRUE ;
-
-  return keys_equal ;
-}
-
-static void keyDestroyCB(gpointer data)
-{
-  g_free(data) ;
-
-  return ;
-}
-
+/* GDestroyNotify() function for freeing the data part of a hash association. */
 static void valueDestroyCB(gpointer data)
 {
   g_free(data) ;
@@ -335,16 +439,14 @@ static void valueDestroyCB(gpointer data)
 static void repositionGroups(FooCanvasGroup *changed_group, double group_spacing)
 {
   double x1, y1, x2, y2 ;
-  FooCanvasGroup *group_parent ;
+  FooCanvasGroup *parent_container, *all_groups ;
   FooCanvasItem *background ;
   GList *curr_child ;
   double curr_bound ;
 
-  zMapAssert(FOO_IS_CANVAS_GROUP(changed_group)) ;
+  parent_container = zmapWindowContainerGetSuperGroup(changed_group) ;
 
-
-  group_parent = FOO_CANVAS_GROUP(changed_group->item.parent) ;
-
+  all_groups = zmapWindowContainerGetFeatures(parent_container) ;
 
   /* Get the position of the changed group within its parent. */
   x1 = y1 = x2 = y2 = 0.0 ; 
@@ -355,7 +457,7 @@ static void repositionGroups(FooCanvasGroup *changed_group, double group_spacing
   /* Now move all the groups to the right of this one over so they are positioned properly,
    * N.B. this might mean moving them in either direction depending on whether the changed
    * group got bigger or smaller. */
-  curr_child = g_list_find(group_parent->item_list, changed_group) ;
+  curr_child = g_list_find(all_groups->item_list, changed_group) ;
   while ((curr_child = g_list_next(curr_child)))	    /* n.b. start with next group to the right. */
     {
       FooCanvasGroup *curr_group = FOO_CANVAS_GROUP(curr_child->data) ;
@@ -376,7 +478,7 @@ static void repositionGroups(FooCanvasGroup *changed_group, double group_spacing
 
 
   /* Make the parent groups bounding box as large as the group.... */
-  zmapWindowContainerSetBackgroundSize(changed_group, 0.0) ;
+  zmapWindowContainerSetBackgroundSize(parent_container, 0.0) ;
 
 
   return ;
@@ -441,6 +543,8 @@ static void bumpColCB(gpointer data, gpointer user_data)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void doCol(gpointer data, gpointer user_data)
 {
   FooCanvasGroup *group = (FooCanvasGroup *)data ;
@@ -462,6 +566,8 @@ static void doCol(gpointer data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* MAY NEED TO INGNORE BACKGROUND BOXES....WHICH WILL BE ITEMS.... */
@@ -487,4 +593,77 @@ static gint horizPosCompare(gconstpointer a, gconstpointer b)
     }
 
   return result ;
+}
+
+
+static void doprint(FooCanvasGroup *container_parent, int indent)
+{
+  int i ;
+  FooCanvasGroup *container_features ;
+  FooCanvasItem *container_background ;
+  ContainerType type = CONTAINER_INVALID ;
+
+  for (i = 0 ; i < indent ; i++)
+    {
+      printf("  ") ;
+    }
+  printf("Level %d:\n", indent) ;
+
+  
+  printItem(FOO_CANVAS_ITEM(container_parent),
+	    indent, "    parent:") ;
+
+  printItem(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(container_parent)),
+	    indent, "  features:") ;
+
+  printItem(zmapWindowContainerGetBackground(container_parent),
+	    indent, "background:") ;
+
+  container_features = zmapWindowContainerGetFeatures(container_parent) ;
+
+  if (container_features->item_list)
+    {
+      type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_features->item_list->data),
+					       "container_type")) ;
+      if (type == CONTAINER_PARENT)
+	{
+	  g_list_foreach(container_features->item_list, listCB, GINT_TO_POINTER(indent + 1)) ;
+	}
+    }
+
+  return ;
+}
+
+
+static void listCB(gpointer data, gpointer user_data)
+{
+  FooCanvasGroup *container_parent = FOO_CANVAS_GROUP(data) ;
+  int indent = GPOINTER_TO_INT(user_data) ;
+
+  doprint(container_parent, indent) ;
+
+  return ;
+}
+
+
+static void printItem(FooCanvasItem *item, int indent, char *prefix)
+{
+  double x1, y1, x2, y2 ;
+  int i ;
+
+  for (i = 0 ; i < indent ; i++)
+    {
+      printf("  ") ;
+    }
+  printf("%s", prefix) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+  printf("%f, %f, %f, %f\n", x1, y1, x2, y2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  zmapWindowPrintItemCoords(item) ;
+
+
+  return ;
 }
