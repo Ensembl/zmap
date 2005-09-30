@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 28 19:04 2005 (rds)
+ * Last edited: Sep 30 07:58 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.78 2005-09-29 13:21:58 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.79 2005-09-30 07:25:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -133,9 +133,14 @@ typedef enum {
  * and children for features such as introns/exons. */
 typedef enum
   {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    /* this should be redundant now...... */
     ITEM_ALIGN,
     ITEM_BLOCK,
     ITEM_SET,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     ITEM_FEATURE_SIMPLE,				    /* Item is the whole feature. */
     ITEM_FEATURE_PARENT,				    /* Item is parent group of whole feature. */
     ITEM_FEATURE_CHILD,					    /* Item is child/subpart of feature. */
@@ -318,6 +323,8 @@ void zmapWindowShowItem(FooCanvasItem *item) ;
 
 void zmapWindowListWindowCreate(ZMapWindow window, FooCanvasItem *item, ZMapStrand strandMask) ;
 
+void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, ZMapFeatureAny feature_any) ;
+
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
 
@@ -415,10 +422,12 @@ void zmapWindowColumnReposition(FooCanvasGroup *column_group) ;
 FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  GdkColor *background_fill_colour,
 					  GdkColor *background_border_colour) ;
-FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *child) ;
-FooCanvasGroup *zmapWindowContainerGetGroup(FooCanvasGroup *parent) ;
-FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *parent) ;
-void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *parent_group, double y_extent) ;
+FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_parent) ;
+FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *any_container_child) ;
+FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent) ;
+FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent) ;
+void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, double y_extent) ;
+void zmapWindowContainerPrint(FooCanvasGroup *container_parent) ;
 
 
 void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout) ;
