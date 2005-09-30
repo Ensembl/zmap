@@ -27,12 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  8 18:53 2005 (rds)
+ * Last edited: Sep 28 14:40 2005 (edgrif)
  * Created: Wed Aug 31 15:58:38 2005 (rds)
- * CVS info:   $Id: das1meta.c,v 1.3 2005-09-08 18:12:57 rds Exp $
+ * CVS info:   $Id: das1meta.c,v 1.4 2005-09-30 07:19:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <stdio.h>
 #include <das1schema.h>
 #include <ZMap/zmapFeature.h>
 
