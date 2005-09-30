@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 28 09:49 2005 (rnc)
+ * Last edited: Sep 30 15:08 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.93 2005-07-28 09:15:41 rnc Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.94 2005-09-30 14:09:45 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -1380,20 +1380,23 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
     case GDK_MOTION_NOTIFY:
       {
 	GdkEventMotion *mot_event = (GdkEventMotion *)event ;
+        event_handled = FALSE ;
+
+        if(!(mot_event->state & GDK_BUTTON1_MASK))
+          break;
+
         /* work out the world of where we are */
         foo_canvas_window_to_world(window->canvas,
                                    mot_event->x, mot_event->y,
-                                   &wx, &wy
-                                   );
-        event_handled = FALSE ;
-        if(dragging && (mot_event->state & GDK_BUTTON1_MASK))
+                                   &wx, &wy);
+        if(dragging)
           {
             /* I wanted to change the cursor for this, 
              * but foo_canvas_item_grab/ungrab specifically the ungrab didn't work */
             zMapDrawRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
             event_handled = TRUE; /* We _ARE_ handling */
           }
-        else if(guide && mot_event->state & GDK_BUTTON1_MASK)
+        else if(guide)
           {
             int bp = 0;
             double y1, y2;
