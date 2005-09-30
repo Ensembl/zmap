@@ -27,12 +27,14 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 16 14:53 2005 (rds)
+ * Last edited: Sep 27 16:56 2005 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.1 2005-09-20 17:24:23 rds Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.2 2005-09-30 07:29:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
+#include <ZMap/zmapUtils.h>
 #include <zmapFeature_P.h>
 
 /* Type must equal something that the code understands. In GFF v1 this is unregulated and
