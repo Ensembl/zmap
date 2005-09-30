@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 27 14:30 2005 (rds)
+ * Last edited: Sep 28 15:21 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.85 2005-09-27 13:36:57 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.86 2005-09-30 07:27:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -221,35 +221,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
   zMapAssert(window && full_context && diff_context) ;
 
+
   /* Set up colours. */
   setColours(&canvas_data) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (debug)
-    {
-
-      /* OK, ALL THIS NEEDS TO BE IN THE RESOURCE FILE.... */
-
-      gdk_color_parse("red", &(canvas_data.colour_root)) ;
-      gdk_color_parse("orange", &canvas_data.colour_alignment) ;
-      gdk_color_parse("yellow", &canvas_data.colour_block) ;
-      gdk_color_parse("brown", &canvas_data.colour_mblock_for) ;
-      gdk_color_parse("wheat", &canvas_data.colour_mblock_rev) ;
-      gdk_color_parse("blue", &canvas_data.colour_qblock_for) ;
-      gdk_color_parse("light blue", &canvas_data.colour_qblock_rev) ;
-      gdk_color_parse("light green", &(canvas_data.colour_forward_col)) ;
-      gdk_color_parse("green", &(canvas_data.colour_reverse_col)) ;
-    }
-  else
-    {
-      gdk_color_parse(ZMAP_WINDOW_MBLOCK_F_BG, &canvas_data.colour_mblock_for) ;
-      gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &canvas_data.colour_mblock_rev) ;
-      gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &canvas_data.colour_qblock_for) ;
-      gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &canvas_data.colour_qblock_rev) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
   /* Must be reset each time because context will change as features get merged in. */
@@ -283,14 +257,13 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
   /* Add a background to the root window... */
-  root_group = FOO_CANVAS_GROUP(foo_canvas_item_new(foo_canvas_root(window->canvas),
-						    foo_canvas_group_get_type(),
-						    NULL)) ;
-
-  canvas_data.curr_root_group = zmapWindowContainerCreate(root_group,
-							  &(canvas_data.colour_root),
-							  &(window->canvas_border)) ;
+  root_group = zmapWindowContainerCreate(foo_canvas_root(window->canvas),
+					 &(canvas_data.colour_root), &(window->canvas_border)) ;
+  canvas_data.curr_root_group = zmapWindowContainerGetFeatures(root_group) ;
   zmapWindowLongItemCheck(window, zmapWindowContainerGetBackground(root_group), y1, y2) ;
+
+  /* There is a hole in the ftoi stuff in a way in that we don't have the context right at
+   * the top......... */
 
 
   /* 
@@ -353,7 +326,12 @@ void zmapWindowDrawFeatures(ZMapWindow window,
     zmapWindow_set_scroll_region(window, y1, y2);
   else
     zmapWindow_set_scroll_region(window, window->min_coord, window->max_coord);
-  
+
+
+  foo_canvas_item_request_redraw(FOO_CANVAS_ITEM(root_group));
+  zmapWindowContainerPrint(root_group) ;
+
+
 
   return ;
 }
@@ -410,26 +388,30 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
   canvas_data->curr_y_offset = 0.0 ;
 
 
-  align_parent = FOO_CANVAS_GROUP(foo_canvas_item_new(canvas_data->curr_root_group,
-						      foo_canvas_group_get_type(),
-						      "x", canvas_data->curr_x_offset,
-						      "y", canvas_data->curr_y_offset,
-						      NULL)) ;
-  g_object_set_data(G_OBJECT(align_parent), "item_feature_type",
-		    GINT_TO_POINTER(ITEM_ALIGN)) ;
-  g_object_set_data(G_OBJECT(align_parent), "item_feature_data", alignment) ;
-
-  status = zmapWindowFToIAddAlign(window->context_to_item, key_id, align_parent) ;
-
-
   /* Not needed anymore ??? */
   top = window->min_coord ;
   bottom = window->max_coord ;
   zmapWindowExt2Zero(&top, &bottom) ;
 
-  canvas_data->curr_align_group = zmapWindowContainerCreate(align_parent,
-							    &(canvas_data->colour_alignment),
-							    &(window->canvas_border)) ;
+  align_parent = zmapWindowContainerCreate(canvas_data->curr_root_group,
+					   &(canvas_data->colour_alignment),
+					   &(window->canvas_border)) ;
+  canvas_data->curr_align_group = zmapWindowContainerGetFeatures(align_parent) ;
+
+  foo_canvas_item_set(FOO_CANVAS_ITEM(align_parent),
+		      "x", canvas_data->curr_x_offset,
+		      "y", canvas_data->curr_y_offset,
+		      NULL) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  g_object_set_data(G_OBJECT(align_parent), "item_feature_type",
+		    GINT_TO_POINTER(ITEM_ALIGN)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  g_object_set_data(G_OBJECT(align_parent), "item_feature_data", alignment) ;
+
+  status = zmapWindowFToIAddAlign(window->context_to_item, key_id, align_parent) ;
+
 
   /* Do all the blocks within the alignment. */
   g_list_foreach(alignment->blocks, drawBlocks, canvas_data) ;
@@ -469,6 +451,12 @@ static void drawBlocks(gpointer data, gpointer user_data)
   FooCanvasGroup *block_parent, *forward_group, *reverse_group ;
 
 
+  /* not needed now...????? */
+  top = block->block_to_sequence.t1 ;
+  bottom = block->block_to_sequence.t2 ;
+  zmapWindowSeq2CanExtZero(&top, &bottom) ;
+
+
   canvas_data->curr_block = block ;
 
   /* Always set y offset to be top of current block. */
@@ -481,31 +469,30 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
 
   /* Add a group for the block and groups for the forward and reverse columns. */
-  block_parent = FOO_CANVAS_GROUP(foo_canvas_item_new(canvas_data->curr_align_group,
-						      foo_canvas_group_get_type(),
-						      "x", 0.0,
-						      "y", canvas_data->curr_y_offset,
-						      NULL)) ;
+  block_parent = zmapWindowContainerCreate(canvas_data->curr_align_group,
+					   &(canvas_data->colour_block),
+					   &(canvas_data->window->canvas_border)) ;
+  canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_parent) ;
+  zmapWindowLongItemCheck(canvas_data->window, zmapWindowContainerGetBackground(block_parent),
+			  top, bottom) ;
+
+  foo_canvas_item_set(FOO_CANVAS_ITEM(block_parent),
+		      "x", 0.0,
+		      "y", canvas_data->curr_y_offset,
+		      NULL) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_object_set_data(G_OBJECT(block_parent), "item_feature_type",
 		    GINT_TO_POINTER(ITEM_BLOCK)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   g_object_set_data(G_OBJECT(block_parent), "item_feature_data", block) ;
 
   /* Add this block to our hash for going from the feature context to its on screen item. */
   status = zmapWindowFToIAddBlock(canvas_data->window->context_to_item,
-				  block->parent_alignment->unique_id, block->unique_id,
+				  block->parent->unique_id, block->unique_id,
 				  block_parent) ;
 
-  /* not needed now...????? */
-  top = block->block_to_sequence.t1 ;
-  bottom = block->block_to_sequence.t2 ;
-  zmapWindowSeq2CanExtZero(&top, &bottom) ;
-
-
-  canvas_data->curr_block_group = zmapWindowContainerCreate(block_parent,
-							    &(canvas_data->colour_block),
-							    &(canvas_data->window->canvas_border)) ;
-  zmapWindowLongItemCheck(canvas_data->window, zmapWindowContainerGetBackground(block_parent),
-			  top, bottom) ;
 
 
   /* Add a background colouring for the align block.
@@ -522,25 +509,15 @@ static void drawBlocks(gpointer data, gpointer user_data)
       rev_bg_colour = &(canvas_data->colour_qblock_rev) ;
     }
 
-  forward_group = FOO_CANVAS_GROUP(foo_canvas_item_new(canvas_data->curr_block_group,
-						       foo_canvas_group_get_type(),
-						       NULL)) ;
-
-  canvas_data->curr_forward_group = zmapWindowContainerCreate(forward_group,
-							      for_bg_colour,
-							      &(canvas_data->window->canvas_border)) ;
+  forward_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
+					    for_bg_colour, &(canvas_data->window->canvas_border)) ;
+  canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
   zmapWindowLongItemCheck(canvas_data->window, zmapWindowContainerGetBackground(forward_group),
 			  top, bottom) ;
 
-
-
-  reverse_group = FOO_CANVAS_GROUP(foo_canvas_item_new(canvas_data->curr_block_group,
-						       foo_canvas_group_get_type(),
-						       NULL)) ;
-
-  canvas_data->curr_reverse_group = zmapWindowContainerCreate(reverse_group,
-							      rev_bg_colour,
-							      &(canvas_data->window->canvas_border)) ;
+  reverse_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
+					    rev_bg_colour, &(canvas_data->window->canvas_border)) ;
+  canvas_data->curr_reverse_group = zmapWindowContainerGetFeatures(reverse_group) ;
   zmapWindowLongItemCheck(canvas_data->window, zmapWindowContainerGetBackground(reverse_group),
 			  top, bottom) ;
 
@@ -651,7 +628,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
   zMapAssert(status) ;
 
 
-  canvas_data->curr_forward_col = zmapWindowContainerGetGroup(forward_col) ;
+  canvas_data->curr_forward_col = zmapWindowContainerGetFeatures(forward_col) ;
 
 
   /* We find out how big the forward block is as this encloses all current columns,
@@ -689,7 +666,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
 				    reverse_col) ;
       zMapAssert(status) ;
 
-      canvas_data->curr_reverse_col = zmapWindowContainerGetGroup(reverse_col) ;
+      canvas_data->curr_reverse_col = zmapWindowContainerGetFeatures(reverse_col) ;
 
 
       /* We find out how big the reverse group is as this encloses all current reverse columns,
@@ -721,37 +698,29 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   double left, right ;
   double x1, x2, y1, y2 ;
 
-  group = FOO_CANVAS_GROUP(foo_canvas_item_new(parent_group,
-					       foo_canvas_group_get_type(),
-					       "x", start,
-					       "y", 0.0,
-					       NULL)) ;
 
-  /* should use draw box.... */
-  /* To trap events anywhere on a column we need an item that covers the whole column (note
-   * that you can't do this by setting an event handler on the column group, the group handler
-   * will only be called if someone has clicked on an item in the group. The item is drawn
-   * first and in white to match the canvas background to make an 'invisible' box. */
+  group = zmapWindowContainerCreate(parent_group, colour, &(window->canvas_border)) ;
 
-  child_group = zmapWindowContainerCreate(group,
-					  colour,
-					  &(window->canvas_border)) ;
+  foo_canvas_item_set(FOO_CANVAS_ITEM(group),
+		      "x", start,
+		      "y", 0.0,
+		      NULL) ;
+
+  child_group = zmapWindowContainerGetFeatures(group) ;
 
   /* Make sure group covers whole span in y direction. */
   zmapWindowContainerSetBackgroundSize(group, zmapWindowExt(top, bot)) ;
 
   zmapWindowLongItemCheck(window, zmapWindowContainerGetBackground(group), top, bot) ;
 
-
   bounding_box = zmapWindowContainerGetBackground(group) ;
 
-
-  /* Hack for now...this is not the answer....we need some default behaviour...for when there is
-   * nothing in the column..... THIS DOESN'T WORK....WHY NOT.... */
+  /* Give columns a default width, this is not the way really, we should look for the style and
+   * get the width somehow.... */
   foo_canvas_item_get_bounds(bounding_box, &x1, &y1, &x2, &y2) ;
   if (x2 == 0)
     foo_canvas_item_set(bounding_box,
-			"x2", 10.0,
+			"x2", 5.0,
 			NULL) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -766,8 +735,12 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
    * This probably points to some muckiness in the code, problem is caused by us deciding
    * to display all columns whether they have features or not and so some columns may not
    * have feature sets. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_object_set_data(G_OBJECT(group), "item_feature_type",
 		    GINT_TO_POINTER(ITEM_SET)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   g_object_set_data(G_OBJECT(group), "item_feature_strand",
 		    GINT_TO_POINTER(strand)) ;
   g_object_set_data(G_OBJECT(group), "item_feature_style",
@@ -790,7 +763,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   GQuark type_quark ;
   double x1, y1, x2, y2 ;
   GList *types ;
-  ZMapFeatureBlock block = feature_set->parent_block ;
+  ZMapFeatureBlock block = (ZMapFeatureBlock)feature_set->parent ;
   FooCanvasItem *group ;
   double top, bottom ;
   gboolean status ;
@@ -824,7 +797,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-  canvas_data->curr_forward_col = zmapWindowContainerGetGroup(forward_col) ;
+  canvas_data->curr_forward_col = zmapWindowContainerGetFeatures(forward_col) ;
 
   canvas_data->curr_forward_col_id = zmapWindowFToIMakeSetID(feature_set->unique_id,
 							     ZMAPSTRAND_FORWARD) ;
@@ -846,7 +819,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-      canvas_data->curr_reverse_col = zmapWindowContainerGetGroup(reverse_col) ;
+      canvas_data->curr_reverse_col = zmapWindowContainerGetFeatures(reverse_col) ;
 
       canvas_data->curr_reverse_col_id = zmapWindowFToIMakeSetID(feature_set->unique_id,
 								 ZMAPSTRAND_REVERSE) ;
@@ -864,7 +837,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
   /* TRY RESIZING BACKGROUND NOW..... */
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(forward_col), &x1, &y1, &x2, &y2) ;
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetGroup(forward_col)),
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetBackground(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
@@ -872,7 +845,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   zmapWindowMaximiseRectangle(zmapWindowContainerGetBackground(forward_col)) ;
 
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(forward_col), &x1, &y1, &x2, &y2) ;
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetGroup(forward_col)),
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetBackground(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
@@ -1379,9 +1352,6 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpoint
 
   switch (item_feature_type)
     {
-    case ITEM_ALIGN:
-    case ITEM_BLOCK:
-    case ITEM_SET:
     case ITEM_FEATURE_SIMPLE:
     case ITEM_FEATURE_PARENT:
       {
@@ -1487,11 +1457,11 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
       {"Column Bump Simple", 3, itemMenuCB, NULL},
       {"Column Bump Position"  , 5, itemMenuCB, NULL},
       {"Column UnBump"    ,  4, itemMenuCB, NULL},
-      {NULL               , 0, NULL, NULL},
+      {"Search Window"    , 6, itemMenuCB, NULL},
       {NULL               , 0, NULL, NULL},
       {NULL               , 0, NULL, NULL}
     } ;
-  int free_menu_slot = 5 ;
+  int free_menu_slot = 6 ;
   ZMapWindowMenuItem menu_item ;
   ItemMenuCBData menu_data ;
   ZMapFeature feature ;
@@ -1602,6 +1572,10 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	zmapWindowColumnBump(getItemsColGroup(menu_data->item), bump_type) ;
 	break ;
       }
+    case 6:
+      zmapWindowCreateSearchWindow(menu_data->window, (ZMapFeatureAny)feature) ;
+      break ;
+
     default:
       zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
       break ;
@@ -1695,6 +1669,7 @@ static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
       {"Column Bump Simple"     , 2, columnMenuCB, NULL},
       {"Column Bump Position"   , 4, columnMenuCB, NULL},
       {"Column UnBump"   , 3, columnMenuCB, NULL},
+      {"Search Window"   , 5, columnMenuCB, NULL},
       {NULL,                0, NULL, NULL}
     } ;
   ZMapWindowMenuItem menu_item ;
@@ -1738,6 +1713,9 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
       break ;
     case 4:
       zmapWindowColumnBump(FOO_CANVAS_GROUP(menu_data->item), ZMAP_WINDOW_BUMP_POSITION) ;
+      break ;
+    case 5:
+      zmapWindowCreateSearchWindow(menu_data->window, (ZMapFeatureAny)(menu_data->feature_set)) ;
       break ;
     default:
       zMapAssert("Coding error, unrecognised menu item number.") ;
