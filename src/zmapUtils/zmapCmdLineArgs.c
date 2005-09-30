@@ -30,13 +30,14 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: Jul 19 13:59 2005 (edgrif)
+ * Last edited: Sep 28 14:12 2005 (edgrif)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.3 2005-07-19 13:32:27 edgrif Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.4 2005-09-30 07:22:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapCmdLineArgs_P.h>

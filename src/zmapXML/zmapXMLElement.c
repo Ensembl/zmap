@@ -27,12 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 12 16:36 2005 (rds)
+ * Last edited: Sep 28 14:14 2005 (edgrif)
  * Created: Fri Aug  5 14:33:49 2005 (rds)
- * CVS info:   $Id: zmapXMLElement.c,v 1.5 2005-09-20 17:18:11 rds Exp $
+ * CVS info:   $Id: zmapXMLElement.c,v 1.6 2005-09-30 07:23:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <zmapXML_P.h>
 
 static void freeElement(gpointer data, gpointer unused);
