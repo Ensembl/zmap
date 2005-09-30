@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 29 10:59 2005 (rds)
+ * Last edited: Sep 30 08:03 2005 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.39 2005-09-29 13:23:06 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.40 2005-09-30 07:24:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -133,66 +133,76 @@ static void populateStore(ZMapWindowList windowList, GtkTreeModel *treeModel)
   ZMapFeature feature        = NULL;
   ZMapFeatureSet feature_set = NULL;
   GData *feature_sets        = NULL;
+  ZMapFeatureAny feature_any ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapWindowItemFeatureType item_feature_type;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   item      = windowList->item;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* The foocanvas item we get passed may represent a feature or the column itself depending
    * where the user clicked. */
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  switch(item_feature_type)
+  if ((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(item), "item_feature_data"))))
     {
-    case ITEM_SET:
-      {
-        feature_set     = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
-        feature_sets    = feature_set->features ;
-        if(!windowList->strand)
-          windowList->strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-                                                                 "item_feature_strand")) ;
-      }
-      break;
-    case ITEM_FEATURE_SIMPLE:
-    case ITEM_FEATURE_PARENT:
-    case ITEM_FEATURE_CHILD:
-      {
-        /* Get hold of the feature corresponding to this item. */
-        feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
-        zMapAssert(feature);
+      switch (feature_any->struct_type)
+	{
+	case ZMAPFEATURE_STRUCT_FEATURESET:
+	  {
+	    feature_set     = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+	    feature_sets    = feature_set->features ;
+	    if(!windowList->strand)
+	      windowList->strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+								     "item_feature_strand")) ;
+	  }
+	  break;
+	case ZMAPFEATURE_STRUCT_FEATURE:
+	  {
+	    /* Get hold of the feature corresponding to this item. */
+	    feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
+	    zMapAssert(feature);
         
-        /* The item the user clicked on may have been a subpart of a feature, e.g. transcript, so
-         * we need to find the parent item for highlighting etc. */
-        parent_item = zmapWindowFToIFindFeatureItem(windowList->zmapWindow->context_to_item, feature) ;
-        zMapAssert(parent_item) ;
-
-        windowList->item = parent_item;
-        feature_sets = feature->parent_set->features ;
+	    /* The item the user clicked on may have been a subpart of a feature, e.g. transcript, so
+	     * we need to find the parent item for highlighting etc. */
+	    parent_item = zmapWindowFToIFindFeatureItem(windowList->zmapWindow->context_to_item, feature) ;
+	    zMapAssert(parent_item) ;
+	    
+	    windowList->item = parent_item;
+	    feature_sets = ((ZMapFeatureSet)(feature->parent))->features ;
 #ifdef COPLETELY_UNUSED        
-        double x1, y1, x2, y2;
-        foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);	    /* world coords */
-        /* I have no idea why this x coord is kept.... */
-        windowList->x_coord = x1;
+	    double x1, y1, x2, y2;
+	    foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);	    /* world coords */
+	    /* I have no idea why this x coord is kept.... */
+	    windowList->x_coord = x1;
 #endif
-        /* need to know whether the column is up or down strand, 
-         * so we load the right set of features */
-        if(!windowList->strand)
-          windowList->strand = feature->strand ;
-        feature_set        = zMapFeatureGetSet(feature) ;
-      }
-      break;
-    default:
-      windowList->title = "Error";
-      printf("Error here!\n");
-      break;
+	    /* need to know whether the column is up or down strand, 
+	     * so we load the right set of features */
+	    if(!windowList->strand)
+	      windowList->strand = feature->strand ;
+	    feature_set        = zMapFeatureGetSet(feature) ;
+	  }
+	  break;
+	default:
+	  windowList->title = "Error";
+	  printf("Error here!\n");
+	  break;
+	}
+
+      /* Build and populate the list of features */
+      if(feature_sets)
+	{
+	  /* This needs setting here so we can draw it later. */
+	  windowList->title = zMapFeatureSetGetName(feature_set) ;
+	  zmapWindowFeatureListPopulateStoreDataList(treeModel, windowList->zmapWindow,
+						     windowList->strand, feature_sets) ;
+	}
     }
 
-  /* Build and populate the list of features */
-  if(feature_sets)
-    {
-      /* This needs setting here so we can draw it later. */
-      windowList->title = zMapFeatureSetGetName(feature_set) ;
-      zmapWindowFeatureListPopulateStoreDataList(treeModel, windowList->zmapWindow, windowList->strand, feature_sets);
-    }
 
   return ;
 }

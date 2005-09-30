@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Sep 20 18:12 2005 (rds)
+ * Last edited: Sep 28 11:24 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.23 2005-09-20 17:19:02 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.24 2005-09-30 07:28:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -114,6 +114,7 @@ ZMapFeature zmapFeatureCreateEmpty(void)
   ZMapFeature feature ;
 
   feature = g_new0(ZMapFeatureStruct, 1) ;
+  feature->struct_type = ZMAPFEATURE_STRUCT_FEATURE ;
   feature->unique_id = ZMAPFEATURE_NULLQUARK ;
   feature->db_id = ZMAPFEATUREID_NULL ;
   feature->type = ZMAPFEATURE_INVALID ;
@@ -281,6 +282,7 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GDat
   ZMapFeatureSet feature_set ;
 
   feature_set = g_new0(ZMapFeatureSetStruct, 1) ;
+  feature_set->struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
   feature_set->unique_id = unique_id ;
   feature_set->original_id = original_id ;
 
@@ -300,7 +302,7 @@ void zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
 {
   zMapAssert(feature_set && feature && feature->unique_id != ZMAPFEATURE_NULLQUARK) ;
 
-  feature->parent_set = feature_set ;
+  feature->parent = (ZMapFeatureAny)feature_set ;
 
   g_datalist_id_set_data_full(&(feature_set->features), feature->unique_id, feature,
 			      destroyFeature) ;
@@ -337,6 +339,8 @@ ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean maste
 
   alignment = g_new0(ZMapFeatureAlignmentStruct, 1) ;
 
+  alignment->struct_type = ZMAPFEATURE_STRUCT_ALIGN ;
+
   if (master_alignment)
     unique_name = g_strdup_printf("%s_master", align_name) ;
   else
@@ -354,7 +358,7 @@ ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean maste
 
 void zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatureBlock block)
 {
-  block->parent_alignment = alignment ;
+  block->parent = (ZMapFeatureAny)alignment ;
 
   alignment->blocks = g_list_append(alignment->blocks, block) ;
 
@@ -386,6 +390,8 @@ ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
 
   new_block = g_new0(ZMapFeatureBlockStruct, 1) ;
 
+  new_block->struct_type = ZMAPFEATURE_STRUCT_BLOCK ;
+
   new_block->unique_id = zMapFeatureBlockCreateID(ref_start, ref_end, ref_strand,
                                                   non_start, non_end, non_strand
                                                   );
@@ -410,7 +416,7 @@ void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSe
 
   zMapAssert(feature_block && feature_set && feature_set->unique_id) ;
 
-  feature_set->parent_block = feature_block ;
+  feature_set->parent = (ZMapFeatureAny)feature_block ;
 
   g_datalist_id_set_data_full(&(feature_block->feature_sets), feature_set->unique_id, feature_set,
 			      destroyFeatureSet) ;
@@ -448,6 +454,8 @@ ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
 
   feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
 
+  feature_context->struct_type = ZMAPFEATURE_STRUCT_CONTEXT ;
+
   if (sequence && *sequence)
     {
       feature_context->unique_id = feature_context->original_id
@@ -470,7 +478,7 @@ void zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
 {
   zMapAssert(feature_context && alignment) ;
 
-  alignment->parent_context = feature_context ;
+  alignment->parent = (ZMapFeatureAny)feature_context ;
 
   g_datalist_id_set_data(&(feature_context->alignments), alignment->unique_id, alignment) ;
 

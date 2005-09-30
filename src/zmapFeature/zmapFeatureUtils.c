@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Aug  9 11:55 2005 (edgrif)
+ * Last edited: Sep 28 11:05 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.21 2005-08-09 10:55:30 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.22 2005-09-30 07:29:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -157,7 +157,7 @@ ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature)
 {
   ZMapFeatureSet feature_set ;
 
-  feature_set = feature->parent_set ;
+  feature_set = (ZMapFeatureSet)feature->parent ;
 
   return feature_set ;
 }
@@ -444,9 +444,9 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
   ZMapFeatureBlock block ;
   double feature_offset = 0.0 ;
 
-  zMapAssert(feature->parent_set && feature->parent_set->parent_block) ;
+  zMapAssert(feature->parent && feature->parent->parent) ;
 
-  block = feature->parent_set->parent_block ;
+  block = (ZMapFeatureBlock)feature->parent->parent ;
 
   feature_offset = block->block_to_sequence.t1 - block->block_to_sequence.q1 ;
   

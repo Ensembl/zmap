@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 27 20:34 2005 (rds)
+ * Last edited: Sep 30 07:55 2005 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.2 2005-09-28 08:09:24 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.3 2005-09-30 07:26:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -410,7 +410,7 @@ void zmapWindowPrintItemCoords(FooCanvasItem *item)
   my_foo_canvas_item_i2w(item, &x1, &y1) ;
   my_foo_canvas_item_i2w(item, &x2, &y2) ;
 
-  printf("item coords:\t%f,%f -> %f,%f\n", x1, y1, x2, y2) ;
+  printf("%f, %f, %f, %f\n", x1, y1, x2, y2) ;
 
 
   return ;
@@ -458,7 +458,7 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 
   if (FOO_IS_CANVAS_ITEM (item))
     {
-      offset = modFeature->parent_set->parent_block->block_to_sequence.q1;
+      offset = ((ZMapFeatureBlock)(modFeature->parent->parent))->block_to_sequence.q1;
       top = modFeature->x1;
       bottom = modFeature->x2;
       zmapWindowSeq2CanOffset(&top, &bottom, offset);
@@ -496,7 +496,7 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
   ZMapWindowItemFeature box_data, intron_data ;
 
 
-  offset = modifiedFeature->parent_set->parent_block->block_to_sequence.q1;
+  offset = ((ZMapFeatureBlock)(modifiedFeature->parent->parent))->block_to_sequence.q1;
   transcriptOrigin = modifiedFeature->x1;
   transcriptBottom = modifiedFeature->x2;
   zmapWindowSeq2CanOffset(&transcriptOrigin, &transcriptBottom, offset);

@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Jul 20 12:10 2005 (rnc)
+ * Last edited: Sep 28 11:06 2005 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.7 2005-07-21 12:49:25 rnc Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.8 2005-09-30 07:25:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -289,9 +289,9 @@ FooCanvasItem *zmapWindowFToIFindFeatureItem(GHashTable *feature_to_context_hash
   FooCanvasItem *item = NULL ;
 
   item = zmapWindowFToIFindItemFull(feature_to_context_hash,
-				    feature->parent_set->parent_block->parent_alignment->unique_id,
-				    feature->parent_set->parent_block->unique_id,
-				    feature->parent_set->unique_id,
+				    feature->parent->parent->parent->unique_id,
+				    feature->parent->parent->unique_id,
+				    feature->parent->unique_id,
 				    feature->strand,
 				    feature->unique_id) ;
 
@@ -305,8 +305,8 @@ FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
   FooCanvasItem *item = NULL ;
 
   item = zmapWindowFToIFindItemFull(feature_to_context_hash,
-				    feature_set->parent_block->parent_alignment->unique_id,
-				    feature_set->parent_block->unique_id,
+				    feature_set->parent->parent->unique_id,
+				    feature_set->parent->unique_id,
 				    feature_set->unique_id,
 				    strand,
 				    0) ;
@@ -728,43 +728,39 @@ static void searchItemHash(gpointer key, gpointer value, gpointer user_data)
 static void printGlist(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
-  gpointer feature_data ;
+  ZMapFeatureAny feature_any ;
+  char *feature_type =  NULL ;
   GQuark feature_id = 0 ;
-  char *feature_type ;
-  ZMapWindowItemFeatureType item_feature_type ;
 
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
-  feature_data = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
-
-  switch (item_feature_type)
+  if ((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(item), "item_feature_data"))))
     {
-    case ITEM_ALIGN:
-      feature_type = "Align" ;
-      feature_id = ((ZMapFeatureAlignment)feature_data)->unique_id ;
-      break ;
-    case ITEM_BLOCK:
-      feature_type = "Align" ;
-      feature_id = ((ZMapFeatureBlock)feature_data)->unique_id ;
-      break ;
-    case ITEM_SET:
-      feature_type = "Set" ;
-      if (feature_data)
-	feature_id = ((ZMapFeatureSet)feature_data)->unique_id ;
-      break ;
-    case ITEM_FEATURE_SIMPLE:
-    case ITEM_FEATURE_PARENT:
-      feature_type = "Feature" ;
-      feature_id = ((ZMapFeature)feature_data)->unique_id ;
-      break ;
-    default:
-      {
-	zMapLogFatal("Coding error, bad ZMapWindowItemFeatureType: %d", item_feature_type) ;
-	break ;
-      }
+      switch (feature_any->struct_type)
+	{
+	case ZMAPFEATURE_STRUCT_ALIGN:
+	  feature_type = "Align" ;
+	  break ;
+	case ZMAPFEATURE_STRUCT_BLOCK:
+	  feature_type = "Align" ;
+	  break ;
+	case ZMAPFEATURE_STRUCT_FEATURESET:
+	  feature_type = "Set" ;
+	  break ;
+	case ZMAPFEATURE_STRUCT_FEATURE:
+	  feature_type = "Feature" ;
+	  break ;
+	default:
+	  {
+	    zMapLogFatal("Coding error, bad ZMapWindowItemFeatureType: %d", feature_any->struct_type) ;
+	    break ;
+	  }
+	}
+
+      feature_id = feature_any->unique_id ;
     }
 
-  printf("%s:  %s\n", feature_type, 
-	 (feature_id ? g_quark_to_string(feature_id) : "no data")) ;
+  printf("%s:  %s\n",
+	 (feature_type ? feature_type : "<no feature data attached>"),
+	 (feature_id ? g_quark_to_string(feature_id) : "")) ;
 
   return ;
 }

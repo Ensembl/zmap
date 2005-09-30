@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep 25 12:43 2005 (rds)
+ * Last edited: Sep 28 10:32 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.41 2005-09-25 11:39:35 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.42 2005-09-30 07:30:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -57,9 +57,14 @@ typedef int Coord ;					    /* we do need this here.... */
 
 
 
+typedef enum {ZMAPFEATURE_STRUCT_INVALID = 0,
+	      ZMAPFEATURE_STRUCT_CONTEXT, ZMAPFEATURE_STRUCT_ALIGN, 
+	      ZMAPFEATURE_STRUCT_BLOCK, ZMAPFEATURE_STRUCT_FEATURESET,
+	      ZMAPFEATURE_STRUCT_FEATURE} ZMapFeatureStuctType ;
+
 
 /* used by zmapFeatureLookUpEnum() to translate enums into strings */
-typedef enum { TYPE_ENUM, STRAND_ENUM, PHASE_ENUM, HOMOLTYPE_ENUM } ZMapEnumType ;
+typedef enum {TYPE_ENUM, STRAND_ENUM, PHASE_ENUM, HOMOLTYPE_ENUM } ZMapEnumType ;
 
 
 /* Unsure about this....probably should be some sort of key...... */
@@ -147,17 +152,18 @@ typedef struct
 
 
 /* We need some forward declarations for pointers we include in some structs. */
+
 typedef struct ZMapFeatureAlignmentStruct_ *ZMapFeatureAlignment ;
 
 typedef struct ZMapFeatureTypeStyleStruct_ *ZMapFeatureTypeStyle ;
 
+typedef struct ZMapFeatureAnyStruct_ *ZMapFeatureAny ;
 
 /* WARNING: READ THIS BEFORE CHANGING ANY FEATURE STRUCTS:
  * 
  * This is the generalised feature struct which can be used to process any feature struct.
- * I'm not completely sure this is necessary at the moment but it may help with certain
- * kinds of processing, e.g. in the hash searching code. It relies on these fields being
- * common to all feature structs.
+ * It helps with certain kinds of processing, e.g. in the hash searching code which relies
+ * on these fields being common to all feature structs.
  * 
  * unique_id is used for the hash table that connects any feature struct to the canvas item
  * that represents it.
@@ -167,9 +173,12 @@ typedef struct ZMapFeatureTypeStyleStruct_ *ZMapFeatureTypeStyle ;
  *  */
 typedef struct ZMapFeatureAnyStruct_
 {
+  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureAny parent ;				    /* The parent struct of this one, NULL
+							     * if this is a feature context. */
   GQuark unique_id ;					    /* Unique id of this feature. */
   GQuark original_id ;					    /* Original id of this feature. */
-} ZMapFeatureAnyStruct, *ZMapFeatureAny ;
+} ZMapFeatureAnyStruct ;
 
 
 
@@ -181,8 +190,11 @@ typedef struct ZMapFeatureAnyStruct_
  */
 typedef struct ZMapFeatureContextStruct_
 {
+  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureAny parent ;				    /* Always NULL in a context. */
   GQuark unique_id ;					    /* Unique id of this feature. */
   GQuark original_id ;					    /* Sequence name. */
+
 
   GQuark sequence_name ;				    /* The sequence to be displayed. */
 
@@ -225,10 +237,11 @@ typedef struct ZMapFeatureContextStruct_
 
 typedef struct ZMapFeatureAlignmentStruct_
 {
+  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureAny parent ;				    /* Our parent context. */
   GQuark unique_id ;					    /* Unique id this alignment. */
   GQuark original_id ;					    /* Original id of this sequence. */
 
-  ZMapFeatureContext parent_context ;			    /* Our parent context. */
 
   GList *blocks ;					    /* A set of ZMapFeatureStruct. */
 
@@ -238,10 +251,11 @@ typedef struct ZMapFeatureAlignmentStruct_
 
 typedef struct ZMapFeatureBlockStruct_
 {
+  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureAny parent ;				    /* Our parent alignment. */
   GQuark unique_id ;					    /* Unique id for this block. */
   GQuark original_id ;					    /* Original id, probably not needed ? */
-  
-  ZMapFeatureAlignment parent_alignment ;		    /* Our parent alignment. */
+
 
   ZMapAlignBlockStruct block_to_sequence ;		    /* Shows how these features map to the
 							       sequence, n.b. this feature set may only
@@ -262,13 +276,14 @@ typedef struct ZMapFeatureBlockStruct_
  */
 typedef struct ZMapFeatureSetStruct_
 {
-  GQuark unique_id ;					    /*!< Unique id for feature set used by
-							     * ZMap. */
-  GQuark original_id ;					    /*!< Original name, e.g. "Genewise predictions" */
+  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureAny parent ;				    /* Our parent block. */
+  GQuark unique_id ;					    /* Unique id of this feature set. */
+  GQuark original_id ;					    /* Original name,
+							       e.g. "Genewise predictions" */
 
-  ZMapFeatureBlock parent_block ;			    /*!< Our parent block. */
 
-  GData *features ;					    /*!< A set of ZMapFeatureStruct. */
+  GData *features ;					    /* A set of ZMapFeatureStruct. */
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
 
@@ -313,13 +328,14 @@ typedef struct
  *  */
 typedef struct ZMapFeatureStruct_ 
 {
+  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureAny parent ;				    /* Our containing set. */
   GQuark unique_id ;					    /* Unique id for just this feature for
 							       use by ZMap. */
   GQuark original_id ;					    /* Original name, e.g. "bA404F10.4.mRNA" */
 
-  ZMapFeatureSet parent_set ;				    /* Our containing set. */
 
-  ZMapFeatureTypeStyle style ;				    /* style defining how this feature is
+  ZMapFeatureTypeStyle style ;				    /* Style defining how this feature is
 							       drawn. */
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
