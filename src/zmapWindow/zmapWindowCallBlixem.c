@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 22 17:44 2005 (edgrif)
+ * Last edited: Sep 28 11:38 2005 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.14 2005-09-22 16:51:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.15 2005-09-30 07:23:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -365,12 +365,15 @@ static gboolean writeExblxFile(blixemData blixem_data)
 
 	  if (blixem_data->oneType)
 	    {
-	      g_datalist_foreach(&feature->parent_set->features, writeExblxLine, blixem_data);
+	      ZMapFeatureSet feature_set = (ZMapFeatureSet)(feature->parent) ;
+
+	      g_datalist_foreach(&(feature_set->features), writeExblxLine, blixem_data) ;
 	    }
 	  else
 	    {
-	      g_datalist_foreach(&feature->parent_set->parent_block->feature_sets, 
-				 processFeatureSet, blixem_data);
+	      ZMapFeatureBlock feature_block = (ZMapFeatureBlock)(feature->parent->parent) ;
+
+	      g_datalist_foreach(&(feature_block->feature_sets), processFeatureSet, blixem_data) ;
 	    }
 	  /* if there are errors writing the data to the file, the first such
 	  ** error will be recorded in blixem_data->errorMsg. */

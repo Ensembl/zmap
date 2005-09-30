@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep  2 11:32 2005 (rds)
+ * Last edited: Sep 28 14:28 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.38 2005-09-02 10:33:18 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.39 2005-09-30 07:18:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -512,7 +512,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 
 
   /* Get any styles stored in the context. */
-  styles = feature_block->parent_alignment->parent_context->styles ;
+  styles = ((ZMapFeatureContext)(feature_block->parent->parent))->styles ;
 
 
   /* Did the user specify the styles completely via a styles file ? If so we will

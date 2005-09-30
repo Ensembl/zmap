@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Sep 20 18:14 2005 (rds)
+ * Last edited: Sep 28 14:30 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.15 2005-09-20 17:16:11 rds Exp $
+ * CVS info:   $Id: dasServer.c,v 1.16 2005-09-30 07:19:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -610,11 +610,12 @@ static size_t WriteMemoryCallback(void *xml, size_t size, size_t nmemb, void *ap
   return realsize ;
 }
 
-static size_t WriteHeaderCallback(void *hdr, size_t size, size_t nmemb, void *data)
+static size_t WriteHeaderCallback(void *hdr_in, size_t size, size_t nmemb, void *data)
 {
   int realsize     = size * nmemb;
   char *wantKey    = "X-DAS-Capabilities:";
   DasServer server = (DasServer)data ;
+  char *hdr = (char *)hdr_in ;
   
   if(server && server->hostAbilities == NULL)
     {
@@ -874,7 +875,7 @@ static gboolean fetchFeatures(DasServer server, ZMapFeatureBlock block)
   gboolean cont = TRUE;
   char *segStr = NULL, *query = NULL, *url = NULL;
   
-  if((segStr = makeCurrentSegmentString(server, block->parent_alignment->parent_context)) == NULL)
+  if((segStr = makeCurrentSegmentString(server, (ZMapFeatureContext)(block->parent->parent))) == NULL)
     {
       server->last_errmsg = "Failed to get current segment";
       cont = FALSE;

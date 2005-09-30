@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Sep 20 18:22 2005 (rds)
+ * Last edited: Sep 28 11:05 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.31 2005-09-20 17:22:56 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.32 2005-09-30 07:20:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -350,7 +350,7 @@ static void setBlock(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)user_data ;
 
-  feature_set->parent_block = feature_block ;
+  feature_set->parent = (ZMapFeatureAny)feature_block ;
 
   g_datalist_foreach(&(feature_set->features), setSet, feature_set) ;
 
@@ -362,7 +362,7 @@ static void setSet(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeature feature = (ZMapFeature)data ;
   ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data ;
 
-  feature->parent_set = feature_set ;
+  feature->parent = (ZMapFeatureAny)feature_set ;
 
   return ;
 }
