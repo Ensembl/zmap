@@ -30,12 +30,13 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Sep 28 11:06 2005 (edgrif)
+ * Last edited: Oct  5 11:49 2005 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.8 2005-09-30 07:25:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.9 2005-10-05 10:51:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
@@ -65,9 +66,35 @@ typedef struct
 
 
 
+/* forward declaration, needed for function prototype. */
+typedef struct ItemSearchStruct_ *ItemSearch ;
+
+
+/* Callback function that takes the given item and checks to see if it satisfies a particular
+ * predicate. */
+typedef gboolean (*ZMapWindowItemValidFunc)(FooCanvasItem *item, 
+					    ItemSearch curr_search, gpointer user_data) ;
+
+/* n.b. sometimes we will want the search thing to be a quark, sometimes a string,
+ * depending whether the given string is an exact name or a regexp...hmmmm
+ * may need to change this to allow both.... */
+/* This structure contains the id to be searched for + optionally a precedent function that
+ * will test the item for validity (e.g. strand). */
+typedef struct ItemSearchStruct_
+{
+  GQuark search_quark ;					    /* Specifies search string. */
+
+  ZMapWindowItemValidFunc valid_func ;			    /* Function to check items for validity. */
+
+  /* UGH not happy with this, rework this when there is time... */
+  GList **results ;					    /* result of search. */
+
+} ItemSearchStruct ;
+
+
 typedef struct
 {
-  GList *search ;					    /* List of quarks specifying search. */
+  GList *search ;					    /* List of ItemSearch specifying search. */
 
   GList **results ;					    /* result of search. */
 
@@ -77,17 +104,10 @@ typedef struct
 
 
 
-
 /* SOMETHING I NEED TO ADD HERE IS FORWARD/REVERSE COLUMN STUFF..... */
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean equalIDHash(gconstpointer a, gconstpointer b) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static void destroyIDHash(gpointer data) ;
-
 
 static void doHashSet(GHashTable *hash_table, GList *search, GList **result) ;
 static void searchItemHash(gpointer key, gpointer value, gpointer user_data) ;
@@ -96,6 +116,13 @@ static void addItem(gpointer key, gpointer value, gpointer user_data) ;
 static void childSearchCB(gpointer data, gpointer user_data) ;
 
 static void printGlist(gpointer data, gpointer user_data) ;
+
+
+gboolean filterOnForwardStrand(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data) ;
+gboolean filterOnReverseStrand(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data) ;
+gboolean filterOnStrand(FooCanvasItem *item, ZMapStrand strand) ;
+gboolean isRegExp(GQuark id) ;
+gboolean filterOnRegExp(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data) ;
 
 
 
@@ -316,9 +343,8 @@ FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
 
 
 
-
-/* Returns the Foo canvas item/group corresponding to the supplied ids or NULL
- * if the id(s) could not be found.
+/* Use this function to find the single Foo canvas item/group corresponding to
+ * the supplied ids, returns NULL if the any of the id(s) could not be found.
  * 
  * Which hash tables are searched is decided by the ids supplied:
  * 
@@ -412,9 +438,9 @@ FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
 
 
 
-
-/* Returns a GList of the Foo canvas item/groups corresponding to the supplied ids or NULL
- * if the id(s) could not be found.
+/* Use this function to find the _set_ of Foo canvas item/group corresponding to
+ * the supplied ids. Returns a GList of the Foo canvas item/groups or
+ * NULL if the id(s) could not be found.
  * 
  * Which hash tables are searched is decided by the ids supplied, "*" acts as the
  * the wild card and 0 acts as search limiter.
@@ -437,27 +463,103 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 				     ZMapStrand strand,
 				     GQuark feature_id)
 {
-  GList *item_list = NULL ;
+  GList *result = NULL ;
   GQuark wild_card ;
-  GList *search = NULL, *result = NULL ;
-
+  GQuark forward_set_id = 0, reverse_set_id = 0 ;
+  GList *search = NULL ;
+  ItemSearchStruct align_search = {0},
+    block_search = {0},
+      forward_set_search = {0}, reverse_set_search = {0},
+				 feature_search = {0}, terminal_search = {0} ;
+  
 
   /* Required for minimum query. */
   zMapAssert(feature_to_context_hash && align_id) ;
 
+  /* There is some muckiness here for strand stuff...strands cannot just be done as a filter
+   * because we need to be able to _find_ the reverse or forward groups in the hash tables and
+   * they cannot both be hashed to the same set_id...aaaaaaaaghhhhhhhh.......
+   * For now I am doing the hash stuff _twice_ if both strands are required.... */
+
+
+  /* A small problemeto is that the GQuark interface does not allow the removal of strings
+   * so our routine here will pile up strings in the quark hash table which is global, if
+   * this turns out to be a problem we could provide our own quark table implementation... */
+
+  align_search.search_quark = align_id ;
+  if (align_id && isRegExp(align_id))
+    align_search.valid_func = filterOnRegExp ;
+
+  block_search.search_quark = block_id ;
+  if (block_id && isRegExp(block_id))
+    block_search.valid_func = filterOnRegExp ;
+
+
   if (set_id)
-    set_id = zmapWindowFToIMakeSetID(set_id, strand) ;
+    {
+
+      /* HACK....REALLY WE NEED TO BE ABLE TO SAY "DO BOTH STRANDS" SO WE DO THIS FOR 
+       * STRAND NONE AT THE MOMENT....ALTHOUGH STRAND NONE FEATURES WILL ALWAYS BE IN THE
+       * FORWARD GROUP... */
+
+      if (strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_NONE)
+	{
+	  forward_set_id = zmapWindowFToIMakeSetID(set_id, ZMAPSTRAND_FORWARD) ;
+	  forward_set_search.search_quark = forward_set_id ;
+	  if (isRegExp(forward_set_id))
+	    forward_set_search.valid_func = filterOnRegExp ;
+	}
+
+      if (strand == ZMAPSTRAND_REVERSE || strand == ZMAPSTRAND_NONE)
+	{
+	  reverse_set_id = zmapWindowFToIMakeSetID(set_id, ZMAPSTRAND_REVERSE) ;
+	  reverse_set_search.search_quark = reverse_set_id ;
+	  if (isRegExp(reverse_set_id))
+	    reverse_set_search.valid_func = filterOnRegExp ;
+	}
+    }
+
+  feature_search.search_quark = feature_id ;
+  if (feature_id && isRegExp(feature_id))
+    feature_search.valid_func = filterOnRegExp ;
+
 
   /* build the search list (terminal stop is needed to halt the search if none of the given
    * parameters is a stop. */
-  search = g_list_append(search, GUINT_TO_POINTER(align_id)) ;
-  search = g_list_append(search, GUINT_TO_POINTER(block_id)) ;
-  search = g_list_append(search, GUINT_TO_POINTER(set_id)) ;
-  search = g_list_append(search, GUINT_TO_POINTER(feature_id)) ;
-  search = g_list_append(search, GUINT_TO_POINTER(0)) ;	    /* Terminal stop. */
+  if (strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_NONE)
+    {
+      search = NULL ;
 
-  /* Now do the recursive search */
-  doHashSet(feature_to_context_hash, search, &result) ;
+      search = g_list_append(search, &align_search) ;
+      search = g_list_append(search, &block_search) ;
+      search = g_list_append(search, &forward_set_search) ;
+      search = g_list_append(search, &feature_search) ;
+      search = g_list_append(search, &terminal_search) ;	    /* Terminal stop. */
+
+      /* Now do the recursive search */
+      doHashSet(feature_to_context_hash, search, &result) ;
+
+      g_list_free(search) ;
+      search = NULL ;
+    }
+
+  if (strand == ZMAPSTRAND_REVERSE || strand == ZMAPSTRAND_NONE)
+    {
+      search = NULL ;
+
+      search = g_list_append(search, &align_search) ;
+      search = g_list_append(search, &block_search) ;
+      search = g_list_append(search, &reverse_set_search) ;
+      search = g_list_append(search, &feature_search) ;
+      search = g_list_append(search, &terminal_search) ;	    /* Terminal stop. */
+
+      /* Now do the recursive search */
+      doHashSet(feature_to_context_hash, search, &result) ;
+
+      g_list_free(search) ;
+      search = NULL ;
+    }
+
 
   return result ;
 }
@@ -548,26 +650,6 @@ void zmapWindowFToIDestroy(GHashTable *feature_to_context_hash)
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* RUBBISH, NOT NEEDED..... */
-
-/* Compare function, called any time a new item is to be inserted into a table or to be
- * found in a table. */
-static gboolean equalIDHash(gconstpointer a, gconstpointer b)
-{
-  gboolean result = FALSE ;
-  ID2Canvas id_a = (ID2Canvas)a, id_b = (ID2Canvas)b ;
-
-  if (id_a.id == id_b.id)
-    result = TRUE ;
-
-  return result ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
 /* Is called for all entries in the hash table of feature set ids -> hash table of features. For
  * each one we need to destroy the feature hash table and then free the struct itself. */
@@ -627,42 +709,46 @@ static void childSearchCB(gpointer data, gpointer user_data)
  * operating on all items in the current hash table or just the requested item in
  * current hash.
  *  */
-static void doHashSet(GHashTable *hash_table, GList *search, GList **results_out)
+static void doHashSet(GHashTable *hash_table, GList *search, GList **results_inout)
 {
-  GQuark curr_search, next_search ;
+  ItemSearch curr_search, next_search ;
+  GQuark curr_search_id, next_search_id ;
   GQuark wild_card ;
   GQuark stop = 0 ;
-  GList *results = *results_out ;
+  GList *results = *results_inout ;
+  ID2Canvas item_id ;
 
   wild_card = g_quark_from_string("*") ;
 
-  curr_search = GPOINTER_TO_UINT(search->data) ; 
-  next_search = GPOINTER_TO_UINT(search->next->data) ;
+  curr_search = (ItemSearch)(search->data) ; 
+  next_search = (ItemSearch)(search->next->data) ;
 
+  curr_search_id = curr_search->search_quark ; 
+  next_search_id = next_search->search_quark ;
 
   /* I think this can't happen, we should stop recursing _before_ the current search becomes
    * stop. */
-  zMapAssert(curr_search != stop) ;
+  zMapAssert(curr_search_id != stop) ;
 
 
-  if (next_search == stop)
+  /* BAD LOGIC BELOW, NEED TO SORT OUT REGEXP VALIDATION FROM SAY POSITION VALIDATION... */
+
+  if (next_search_id == stop)
     {
       /* If we've reached the end it's time to actually add items to the list. */
 
-      if (curr_search == wild_card)
+      if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
+						    GUINT_TO_POINTER(curr_search_id))))
 	{
-	  g_hash_table_foreach(hash_table, addItem, (gpointer)&results) ;
+	  if (!curr_search->valid_func || curr_search->valid_func(item_id->item, curr_search, NULL))
+	    results = g_list_append(results, item_id->item) ;
 	}
-      else 
+      else if (curr_search_id == wild_card || curr_search->valid_func)
 	{
-	  ID2Canvas item_id ;
-	      
-	  if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
-							GUINT_TO_POINTER(curr_search))))
-	    {
-	      results = g_list_append(results, item_id->item) ;
-	    }
-	}	      
+	  curr_search->results = &results ;
+
+	  g_hash_table_foreach(hash_table, addItem, (gpointer)curr_search) ;
+	}
     }
   else
     {
@@ -675,25 +761,18 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_out
       search_data.search = search ;
       search_data.results = &results ;
 
-      if (curr_search == wild_card)
+      if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
+						    GUINT_TO_POINTER(curr_search_id))))
+	{
+	  doHashSet(item_id->hash_table, search_data.search, search_data.results) ;
+	}
+      else
 	{
 	  g_hash_table_foreach(hash_table, searchItemHash, (gpointer)&search_data) ;
 	}
-      else 
-	{
-	  ID2Canvas item_id ;
-	      
-	  if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
-							GUINT_TO_POINTER(curr_search))))
-	    {
-	      doHashSet(item_id->hash_table, search_data.search, search_data.results) ;
-	    }
-	      
-	}
     }
 
-
-  *results_out = results ;
+  *results_inout = results ;
 
   return ;
 }
@@ -704,9 +783,11 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_out
 static void addItem(gpointer key, gpointer value, gpointer user_data)
 {
   ID2Canvas hash_item = (ID2Canvas)value ;
-  GList **results = (GList **)user_data ;
+  ItemSearch curr_search = (ItemSearch)user_data ;
+  GList **results = curr_search->results ;
 
-  *results = g_list_append(*results, hash_item->item) ;
+  if (!curr_search->valid_func || curr_search->valid_func(hash_item->item, curr_search, NULL))
+    *results = g_list_append(*results, hash_item->item) ;
 
   return ;
 }
@@ -766,3 +847,72 @@ static void printGlist(gpointer data, gpointer user_data)
 }
 
 
+
+gboolean filterOnForwardStrand(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data)
+{
+  gboolean result ;
+
+  result = filterOnStrand(item, ZMAPSTRAND_FORWARD) ;
+
+  return result ;
+}
+
+
+gboolean filterOnReverseStrand(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data)
+{
+  gboolean result ;
+
+  result = filterOnStrand(item, ZMAPSTRAND_REVERSE) ;
+
+  return result ;
+}
+
+gboolean filterOnStrand(FooCanvasItem *item, ZMapStrand strand)
+{
+  gboolean result = FALSE ;
+  ZMapFeature feature ;
+
+  feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  zMapAssert(feature) ;
+
+  if (feature->strand == strand)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+/* Check to see if the string represented by the quark id contains regexp chars,
+ * currently this means "*" or "?". */
+gboolean isRegExp(GQuark id)
+{
+  gboolean result= FALSE ;
+  char *str ;
+
+  str = (char *)g_quark_to_string(id) ;
+
+  if (strstr(str, "*") || strstr(str, "?"))
+    result = TRUE ;
+
+  return result ;
+}
+
+
+/* We will need a user_data param to hold the compiled string for efficiency.... */
+gboolean filterOnRegExp(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data)
+{
+  gboolean result = FALSE ;
+  ZMapFeature feature ;
+  char *pattern, *string ;
+
+  feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  zMapAssert(feature) ;
+
+  pattern = (char *)g_quark_to_string(curr_search->search_quark) ;
+  string = (char *)g_quark_to_string(feature->unique_id) ;
+
+  if (g_pattern_match_simple(pattern, string))
+    result = TRUE ;
+
+  return result ;
+}
