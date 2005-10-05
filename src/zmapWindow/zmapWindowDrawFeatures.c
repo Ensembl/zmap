@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct  5 08:28 2005 (edgrif)
+ * Last edited: Oct  5 14:59 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.87 2005-10-05 10:48:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.88 2005-10-05 14:00:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1554,9 +1554,20 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
   switch (menu_item_id)
     {
     case 1:
-      /* display a list of the features in this column so the user
-       * can select one and have the display scroll to it. */
-      zmapWindowListWindowCreate(menu_data->window, menu_data->item, 0) ;
+      {
+        ZMapFeature feature = NULL;
+        GList *list = NULL;
+        feature = g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data");
+        list    = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
+                                                feature->parent->parent->parent->unique_id,
+                                                feature->parent->parent->unique_id,
+                                                feature->parent->unique_id,
+                                                feature->strand,
+                                                g_quark_from_string("*"));
+        zmapWindowListWindowCreate(menu_data->window, list, 
+                                   (char *)g_quark_to_string(feature->parent->original_id), 
+                                   menu_data->item) ;
+      }
       break ;
     case 2:
       zmapWindowEditorCreate(menu_data->window, menu_data->item) ;
@@ -1705,9 +1716,21 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
   switch (menu_item_id)
     {
     case 1:
-      /* display a list of the features in this column so the user
-       * can select one and have the display scroll to it. */
-      zmapWindowListWindowCreate(menu_data->window, menu_data->item, 0) ;
+      {
+        ZMapFeatureAny feature = NULL;
+        GList *list = NULL;
+        feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data");
+#warning FIX THIS STRAND INFO WHEN FILTERS ARE WRITTEN
+        list    = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
+                                                feature->parent->parent->unique_id,
+                                                feature->parent->unique_id,
+                                                feature->unique_id,
+                                                ZMAPSTRAND_FORWARD,
+                                                g_quark_from_string("*"));
+        zmapWindowListWindowCreate(menu_data->window, list, 
+                                   (char *)g_quark_to_string(feature->original_id), 
+                                   NULL);
+      }
       break ;
     case 2:
       zmapWindowColumnBump(FOO_CANVAS_GROUP(menu_data->item), ZMAP_WINDOW_BUMP_SIMPLE) ;

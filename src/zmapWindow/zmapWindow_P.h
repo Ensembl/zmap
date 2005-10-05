@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 30 07:58 2005 (edgrif)
+ * Last edited: Oct  5 14:56 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.79 2005-09-30 07:25:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.80 2005-10-05 13:57:12 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -110,6 +110,7 @@ typedef enum {
   ZMAP_WINDOW_LIST_COL_SORT_PHASE,
   ZMAP_WINDOW_LIST_COL_NUMBER               /*!< number of columns  */
 } zmapWindowFeatureListColumn;
+#define ZMAP_WINDOW_FEATURE_LIST_COL_NUMBER_KEY "column_number_data"
 
 /* Default colours. */
 
@@ -126,7 +127,6 @@ typedef enum {
 /* Default colours for features. */
 #define ZMAP_WINDOW_ITEM_FILL_COLOUR "white"
 #define ZMAP_WINDOW_ITEM_BORDER_COLOUR "black"
-
 
 /* Item features are the canvas items that represent sequence features, they can be of various
  * types, in particular compound features such as transcripts require a parent, a bounding box
@@ -321,7 +321,11 @@ void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item) ;
 
 void zmapWindowShowItem(FooCanvasItem *item) ;
 
-void zmapWindowListWindowCreate(ZMapWindow window, FooCanvasItem *item, ZMapStrand strandMask) ;
+//void zmapWindowListWindowCreate(ZMapWindow window, FooCanvasItem *item, ZMapStrand strandMask) ;
+void zmapWindowListWindowCreate(ZMapWindow zmapWindow, 
+                                GList *itemList,
+                                char *title,
+                                FooCanvasItem *currentItem);
 
 void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, ZMapFeatureAny feature_any) ;
 
@@ -433,17 +437,14 @@ void zmapWindowContainerPrint(FooCanvasGroup *container_parent) ;
 void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout) ;
 
 
-GtkTreeModel *zmapWindowFeatureListCreateStore(void);
+GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store);
 GtkWidget    *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
+                                              GtkCellRenderer *renderer,
                                               zmapWindowFeatureListCallbacks callbacks,
                                               gpointer user_data);
-void zmapWindowFeatureListPopulateStoreDataList(GtkTreeModel *treeModel,
-                                                ZMapWindow window,
-                                                ZMapStrand strand,
-                                                GData *featureSet);
 void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel,
                                             GList *list);
-
+gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
@@ -452,7 +453,6 @@ gboolean zmapWindowZoomControlZoomByFactor(ZMapWindow window, double factor);
 void zmapWindowZoomControlHandleResize(ZMapWindow window);
 double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2) ;
 void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new) ;
-
 
 
 /* 
