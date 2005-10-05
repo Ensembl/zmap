@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 28 15:21 2005 (edgrif)
+ * Last edited: Oct  5 08:28 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.86 2005-09-30 07:27:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.87 2005-10-05 10:48:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1458,6 +1458,10 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
       {"Column Bump Position"  , 5, itemMenuCB, NULL},
       {"Column UnBump"    ,  4, itemMenuCB, NULL},
       {"Search Window"    , 6, itemMenuCB, NULL},
+      {NULL               , 0, NULL, NULL},
+      {NULL               , 0, NULL, NULL},
+      {NULL               , 0, NULL, NULL},
+      {NULL               , 0, NULL, NULL},
       {NULL               , 0, NULL, NULL},
       {NULL               , 0, NULL, NULL}
     } ;
