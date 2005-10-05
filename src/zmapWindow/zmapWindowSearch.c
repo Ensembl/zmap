@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 30 12:06 2005 (edgrif)
+ * Last edited: Oct  5 14:53 2005 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.2 2005-10-05 10:54:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.3 2005-10-05 13:53:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -452,14 +452,22 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   printf("Search parameters -    align: %s   block: %s  strand: %s  set: %s  feature: %s\n",
 	 align_txt, block_txt, strand_txt, set_txt, feature_txt) ;
 
-
   if ((search_result = zmapWindowFToIFindItemSetFull(search_data->window->context_to_item,
 						     align_id, block_id, set_id,
 						     strand, feature_id)))
     {
       /* Here we want a more generalised list window... */
-
+      zmapWindowListWindowCreate(search_data->window, search_result, 
+                                 g_strdup_printf("Results '%s'", feature_txt), 
+                                 NULL);
       displayResult(search_result) ;
+    }
+  else
+    {
+      zMapMessage("No Results for feature '%s', on strand '%s' in set '%s'", 
+                  feature_txt, 
+                  strand_txt,
+                  set_txt);
     }
 
   return ;
