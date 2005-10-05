@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 22 17:11 2005 (rds)
+ * Last edited: Oct  5 14:22 2005 (rds)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.14 2005-09-25 11:42:09 rds Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.15 2005-10-05 13:55:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,16 +75,15 @@ typedef enum {
   LAST
 } fieldType;
 
-enum {COL1, COL2, COL3, COL4, N_COLS};  /* columns to display arrays */
 enum {
-  EDIT_COL_NAME, 
-  EDIT_COL_TYPE, 
-  EDIT_COL_START,
-  EDIT_COL_END,
-  EDIT_COL_STRAND,
-  EDIT_COL_PHASE,
-  EDIT_COL_SCORE,
-  EDIT_COL_NUMBER
+  EDIT_COL_NAME,                /*!< feature name column  */
+  EDIT_COL_TYPE,                /*!< feature type column  */
+  EDIT_COL_START,               /*!< feature start  */
+  EDIT_COL_END,                 /*!< feature end  */
+  EDIT_COL_STRAND,              /*!< feature strand  */
+  EDIT_COL_PHASE,               /*!< feature phase  */
+  EDIT_COL_SCORE,               /*!< feature score  */
+  EDIT_COL_NUMBER               /*!< number of columns  */
 };
 static char *column_titles[EDIT_COL_NUMBER] = {"Name", "Type", "Start", "End", "Strand", "Phase", "Score"};
 
@@ -127,6 +126,7 @@ typedef struct _zmapWindowEditorDataStruct
   GtkWidget     *hbox;        /* exon & intron arrays stacked side by side. */
 
   GtkTreeStore  *store;
+  GtkWidget *view;
 
   mainTable      table;
 
@@ -155,7 +155,7 @@ static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapF
 //static void parseField(mainTable table, ZMapFeature feature);
 static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_type);
 
-static void createEditWindow(ZMapWindowEditor editor_data);
+static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeModel);
 static void closeWindowCB(GtkWidget *widget, gpointer data);
 static void closeButtonCB(GtkWidget *widget, gpointer data);
 static void undoChangesCB(GtkWidget *widget, gpointer data);
@@ -193,7 +193,7 @@ static gboolean selectionFunc(GtkTreeSelection *selection,
 static void cellEditedCB(GtkCellRendererText *renderer, 
                          char *path, char *new_text, 
                          gpointer user_data);
-static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor, int colNumber);
+static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor);
 
 /* function code *******************************************/
 /* This is the create function!
@@ -231,47 +231,19 @@ ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *it
   editor->editable       = TRUE;
   parseFeature(editor->table, editor->origFeature, editor->wcopyFeature);
 
-  createEditWindow(editor);
+  {
+    GtkTreeModel *treeModel = NULL;
+    GList *itemList         = NULL;
+    treeModel = zmapWindowFeatureListCreateStore(TRUE);
+    itemList  = g_list_append(itemList, item);
+    zmapWindowFeatureListPopulateStoreList(treeModel, itemList);
 
-  if(lazy == TRUE)
-    zmapWindowEditorDraw(editor);
+    createEditWindow(editor, treeModel);
+  }
 
-  return editor;
-}
-
-
-void zmapWindowEditorDraw(ZMapWindowEditor editor)
-{
-  /* More needs to go here, like actually clearing the vbox or something... */
-  //  addFields(editor);
-  /* This all should go in a separate function called resetTreeView(ZMapWindowEditor editor, ZMapFeature feature) */
-#define PUT_IN_SEP_FUNC
-#ifdef PUT_IN_SEP_FUNC
-  GtkTreeIter rootIter, childIter;
-  ZMapFeature feature = NULL;
-  /* For now this is here, but will call resetTreeView(editor, editor->origFeature); */
-  feature             = editor->origFeature;
-
-  gtk_tree_store_append(editor->store, &rootIter, NULL);
-  gtk_tree_store_set(editor->store, &rootIter,
-                     EDIT_COL_NAME, g_quark_to_string(feature->original_id),
-                     EDIT_COL_TYPE, myFeatureLookupEnum(feature->type, TYPE_ENUM),
-                     EDIT_COL_START, feature->x1,
-                     EDIT_COL_END, feature->x2,
-                     EDIT_COL_STRAND, myFeatureLookupEnum(feature->strand, STRAND_ENUM),
-                     EDIT_COL_PHASE, myFeatureLookupEnum(feature->phase, PHASE_ENUM),
-                     -1);
-  /* Foreach sub feature go through from adding more and more sub features */
-  gtk_tree_store_append(editor->store, &childIter, &rootIter);
-  gtk_tree_store_set(editor->store, &childIter,
-                     EDIT_COL_NAME, g_quark_to_string(feature->original_id),
-                     EDIT_COL_TYPE, myFeatureLookupEnum(feature->type, TYPE_ENUM),
-                     -1);
-#endif
-  
   gtk_widget_show_all(editor->window);
 
-  return ;
+  return editor;
 }
 
 
@@ -469,7 +441,7 @@ static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_t
   ZMapSpanStruct span;
   ZMapAlignBlockStruct align;
   GtkTreeIter iter;
-
+#ifdef RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRr
   table->value.listStore = gtk_list_store_new(N_COLS, 
 					      G_TYPE_INT,
 					      G_TYPE_INT,
@@ -501,24 +473,23 @@ static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_t
 			      -1);
 	}
     }
-  
+#endif
   return;
 }
 
 
 
 /* Hide this away to make the exposed function smaller... */
-static void createEditWindow(ZMapWindowEditor editor_data)
+static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeModel)
 {
-  GtkWidget *buttonHBox;
-  GtkWidget *subFrame;
-  GtkWidget *mainVBox;
-  GtkWidget *treeView;
+  GtkWidget *buttonHBox, *subFrame, *mainVBox;
+  GtkWidget *treeView, *mainHBox;
   GtkTreeStore *treeStore;
   GtkTreeViewColumn *column;
   GtkTreeSelection *selection;
   int colNo;                    /* the for loop iterator */
   char *title;
+  zmapWindowFeatureListCallbacksStruct windowCallbacks = { NULL, NULL, NULL };
 
   /* Set the Title of the Window */
   title = g_strdup_printf("%s - Feature Editor",
@@ -533,49 +504,57 @@ static void createEditWindow(ZMapWindowEditor editor_data)
 		    G_CALLBACK (closeWindowCB), editor_data);
   gtk_container_set_border_width (GTK_CONTAINER (editor_data->window), 10);
 
+  mainHBox = gtk_hbox_new(FALSE, 0);
+  gtk_box_set_spacing(GTK_BOX(mainHBox), 5);
+  gtk_container_add(GTK_CONTAINER(editor_data->window), mainHBox);
+
   /* Create a Vertical Box and add to Window */
   mainVBox = gtk_vbox_new(FALSE, 0);
-  gtk_container_add(GTK_CONTAINER(editor_data->window), mainVBox);
+  gtk_container_add(GTK_CONTAINER(mainHBox), mainVBox);
 
   /* This is where we'll put stuff */
   subFrame = gtk_frame_new(g_quark_to_string(editor_data->origFeature->original_id));
   gtk_container_add(GTK_CONTAINER(mainVBox), subFrame);
+  //#define GRAPHICAL_DISPLAY
+#ifdef GRAPHICAL_DISPLAY
+  {
+    GdkColor bgcolor;
+    GtkWidget *scrolledWindow, *canvas;
 
+    subFrame = gtk_frame_new("Editor graphical display...");
+    gtk_container_add(GTK_CONTAINER(mainHBox), subFrame);
 
+    scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow),
+				 GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
+    gtk_container_add(GTK_CONTAINER(subFrame), GTK_WIDGET(scrolledWindow));
 
-  /* Sort out the treeStore and view... */
-  editor_data->store = treeStore = 
-    gtk_tree_store_new(EDIT_COL_NUMBER,
-                       G_TYPE_STRING, G_TYPE_STRING,
-                       G_TYPE_INT,    G_TYPE_INT,
-                       G_TYPE_STRING, G_TYPE_STRING,
-                       G_TYPE_FLOAT);
+    canvas = foo_canvas_new();
+    foo_canvas_set_pixels_per_unit_xy(FOO_CANVAS(canvas), 1.0, 1.0);
+  
+    gdk_color_parse("white", &bgcolor);
+    gtk_widget_modify_bg(GTK_WIDGET(canvas), GTK_STATE_NORMAL, &(bgcolor));
 
-  treeView = gtk_tree_view_new_with_model(GTK_TREE_MODEL(treeStore));
-  gtk_tree_view_set_expander_column(GTK_TREE_VIEW(treeView), NULL);
+    foo_canvas_item_new(FOO_CANVAS_GROUP(foo_canvas_root(FOO_CANVAS(canvas))),
+                        foo_canvas_rect_get_type(),
+                        "x1", 10.0, "x2", 20.0,
+                        "y1", 10.0, "y2", 20.0,
+                        NULL);
+
+    gtk_container_add(GTK_CONTAINER(scrolledWindow), canvas);
+  }
+#endif
+
+  windowCallbacks.selectionFuncCB = selectionFunc;
+  editor_data->view = 
+    treeView = zmapWindowFeatureListCreateView(treeModel, 
+                                               getColRenderer(editor_data),
+                                               &windowCallbacks, 
+                                               editor_data);
+
   subFrame = gtk_frame_new("Details...");
   gtk_container_add(GTK_CONTAINER(mainVBox), subFrame);
   gtk_container_add(GTK_CONTAINER(subFrame), GTK_WIDGET(treeView));
-
-  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(treeView));
-  gtk_tree_selection_set_select_function(selection, selectionFunc, (gpointer)editor_data, NULL);
-
-  /* Setup the columns */
-  for(colNo = EDIT_COL_NAME; colNo < EDIT_COL_NUMBER; colNo++)
-    {
-      /* As part of the new cleverness we need to do something with
-       * the lookup object here. I'm not sure if we need new renderers
-       * everytime. I guess so. getColRenderer(editor, colNo);*/
-      GtkCellRenderer *colRenderer = NULL;
-      colRenderer = getColRenderer(editor_data, colNo);
-      column 
-        = gtk_tree_view_column_new_with_attributes(column_titles[colNo], 
-                                                   colRenderer,
-                                                   "text",
-                                                   colNo,
-                                                   NULL);
-      gtk_tree_view_append_column(GTK_TREE_VIEW (treeView), column);
-    }
 
   /* Sort out the buttons frame */
   subFrame   = gtk_frame_new("buttons");
@@ -789,12 +768,12 @@ static void addCheckButton(GtkWidget *vbox, mainTable table)
 
 
 
-
 static void addArray(gpointer data, ZMapWindowEditor editor_data)
 {
   mainTable table = (mainTable)data;
   GtkWidget *treeView, *frame, *scrolledWindow;
   char *frameLabel;
+#ifdef AAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
   colInfoStruct colInfo[] = {{"Start", COL1},
 			     {"End"  , COL2},
 			     {"Start", COL3},
@@ -839,9 +818,9 @@ static void addArray(gpointer data, ZMapWindowEditor editor_data)
   gtk_container_add(GTK_CONTAINER(frame), scrolledWindow);
   gtk_container_add(GTK_CONTAINER(scrolledWindow), treeView);
 
+#endif
   return;
 }
-
 
 
 /* Build a column in the GtkTreeView */
@@ -890,36 +869,43 @@ static void cellEditedCB(GtkCellRendererText *renderer,
                          char *path, char *new_text, 
                          gpointer user_data)
 {
-  ZMapWindowEditor editor = (ZMapWindowEditor)user_data;
-  char *saved_data = NULL;
-  int colNumber    = EDIT_COL_NUMBER;
+  ZMapWindowEditor editor   = (ZMapWindowEditor)user_data;
+  int colNumber             = EDIT_COL_NUMBER;
+  GtkTreePath *cursor_path  = NULL;
+  GtkTreeViewColumn *column = NULL;
+  GtkTreeModel *treeModel   = NULL;
+  GtkTreeIter iter;
+  GType colType;
 
-  saved_data = (char *)g_object_get_data(G_OBJECT(renderer), EDITOR_COL_DATA_KEY);
-  colNumber  = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(renderer), EDITOR_COL_NUMBER_KEY));
+  /* Get the model, we need this to set the value */
+  treeModel = gtk_tree_view_get_model(GTK_TREE_VIEW(editor->view));
+  /* Find where we are. bizarrely enough we don't actually know yet. */
+  gtk_tree_view_get_cursor(GTK_TREE_VIEW(editor->view), &cursor_path, &column);
+  gtk_tree_model_get_iter(GTK_TREE_MODEL(treeModel), &iter, cursor_path);
+  gtk_tree_path_free(cursor_path); /* We need to free this, do it now */
+  /* zmapWindowFeatureListGetColNumberFromTVC(column) would work too. */
+  colNumber  = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column), 
+                                                 ZMAP_WINDOW_FEATURE_LIST_COL_NUMBER_KEY));
+  colType    = gtk_tree_model_get_column_type(GTK_TREE_MODEL(treeModel), colNumber);
 
-  if (colNumber < EDIT_COL_NUMBER)
+  printf("Cell Edited: column '%d', new text = '%s'\n", colNumber, new_text);
+  /* We have to do some validation???? */
+  switch(colType)
     {
-      GtkTreeIter iter;
-      gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(editor->store), &iter, path);
-      gtk_tree_store_set(editor->store, &iter, 
+    case G_TYPE_INT:
+      gtk_tree_store_set(GTK_TREE_STORE(treeModel), &iter, 
+                         colNumber, atoi(new_text), 
+                         -1);
+      break;
+    case G_TYPE_STRING:
+      gtk_tree_store_set(GTK_TREE_STORE(treeModel), &iter, 
                          colNumber, new_text, 
                          -1);
-
-      printf("Cell Edited: column '%d', new text = '%s', decoding data was '%s'. CHANGE THIS \n", 
-             colNumber, new_text, saved_data);
+      break;
+    default:
+      break;
     }
-  /* What to do here? */
-  /* We MUST store the new_text in the model */
-  /* We're also going to set the text in the rest of the display */
-  
 
-  /* First though we must validate the data . */
-  /* get callback (from table [modified version]) and if !NULL call it
-   * with new_text.  It must return the validated text or NULL */
-#ifdef WHEN_COMPLETE
-  if((validated = (*validateCB)(new_text)) != NULL)
-    updateModel(validated);
-#endif
   return ;
 }
 
@@ -943,11 +929,12 @@ static gboolean arrayEditedCB(GtkCellRendererText *renderer,
   /* What is this doing, we've already changed the data!?! */
   while (valid)
     {
+#ifdef TTTTTTTTTTTTTTT
       gtk_tree_model_get (GTK_TREE_MODEL(listStore), &iter, 
 			  COL1, &span.x1,
 			  COL2, &span.x2,
 			  -1);
-      
+#endif
       valid = gtk_tree_model_iter_next (GTK_TREE_MODEL(listStore), &iter);
     }
  
@@ -1462,12 +1449,13 @@ static void updateArray(mainTable table, GArray *array)
       while (valid)
 	{
 	  /* GtkListStore enforces integers here */
+#ifdef TTTTTTTTTTTTTt
 	  gtk_tree_model_get (GTK_TREE_MODEL(table->value.listStore), &iter, 
 			      COL1, &span.x1,
 			      COL2, &span.x2,
 			      -1);
 	  g_array_append_val(array, span);
-	  
+#endif	  
 	  valid = gtk_tree_model_iter_next (GTK_TREE_MODEL(table->value.listStore), &iter);
 	}
     }
@@ -1531,7 +1519,7 @@ static gboolean selectionFunc(GtkTreeSelection *selection,
   
   return TRUE;
 }
-static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor, int colNumber)
+static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor)
 {
   GtkCellRenderer *renderer = NULL;
   GList *list = NULL;
@@ -1548,19 +1536,8 @@ static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor, int colNumber)
                 "editable", editor->editable,
                 NULL);
 
-  if(colNumber < EDIT_COL_NUMBER)
-    {
-#warning fix the freeing of this user data RDS
-      char *decoder = "Ha ha ha ha.";
-      g_object_set_data_full(G_OBJECT(renderer),
-                             EDITOR_COL_DATA_KEY, decoder,
-                             NULL); /* Needs to be freed */
-      g_object_set_data_full(G_OBJECT(renderer),
-                             EDITOR_COL_NUMBER_KEY, GINT_TO_POINTER(colNumber),
-                             NULL);
-      g_signal_connect (G_OBJECT (renderer), "edited",
-                        G_CALLBACK(cellEditedCB), editor);
-    }
+  g_signal_connect (G_OBJECT (renderer), "edited",
+                    G_CALLBACK(cellEditedCB), editor);
 
   return renderer;
 }
