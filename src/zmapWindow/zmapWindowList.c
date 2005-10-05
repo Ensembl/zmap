@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 30 08:03 2005 (edgrif)
+ * Last edited: Oct  5 10:55 2005 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.40 2005-09-30 07:24:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.41 2005-10-05 13:54:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,9 +44,8 @@
  */
 typedef struct _ZMapWindowListStruct
 {
-  ZMapWindow  zmapWindow; /*!< pointer to the zmapWindow that created us. We shouldn't depend on this....  */
+  ZMapWindow  zmapWindow; /*!< pointer to the zmapWindow that created us.   */
   FooCanvasItem *item  ;  /*!< hold ptr to the original item. DO NOT FREE!  */
-  ZMapStrand    strand ;  /*!< up or down strand (enum). */
   char          *title ;  /*!< Title for the window  */
   GtkWidget     *view  ;  /*!< The treeView so we can get store, selection ... */
 } ZMapWindowListStruct, *ZMapWindowList ; /*!< pointer to ZMapWindowListStruct. */
@@ -92,8 +91,9 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
  * 
  */
 void zmapWindowListWindowCreate(ZMapWindow zmapWindow, 
-                                FooCanvasItem *item, 
-                                ZMapStrand strandMask)
+                                GList *itemList,
+                                char *title,
+                                FooCanvasItem *currentItem)
 {
   ZMapWindowList windowList = NULL;
   GtkTreeModel *treeModel   = NULL;
@@ -101,111 +101,22 @@ void zmapWindowListWindowCreate(ZMapWindow zmapWindow,
   windowList = g_new0(ZMapWindowListStruct, 1) ;
 
   windowList->zmapWindow = zmapWindow ;
-  windowList->item       = item;
-  if(strandMask)
-    windowList->strand   = strandMask;
+  windowList->item       = currentItem;
+  windowList->title      = title;
 
-  treeModel = zmapWindowFeatureListCreateStore();
+  treeModel = zmapWindowFeatureListCreateStore(FALSE);
 
-  populateStore(windowList, treeModel);
+  zmapWindowFeatureListPopulateStoreList(treeModel, itemList);
 
   drawListWindow(windowList, treeModel);
 
-  /* finished with list now. Are we sure? */
-#ifdef ISSUE111111111111111
-  g_object_unref(G_OBJECT(winList->store));
-  g_free(winList) ;
-#endif
+  g_object_unref(G_OBJECT(treeModel));
 
   return;
 }
 
 
 /***************** Internal functions ************************************/
-
-
-/* Just a roundabout function to get the feature sets. Important bit
- * is the g_datalist_foreach @ the bottom */
-static void populateStore(ZMapWindowList windowList, GtkTreeModel *treeModel)
-{
-  FooCanvasItem *item        = NULL;
-  FooCanvasItem *parent_item = NULL;
-  ZMapFeature feature        = NULL;
-  ZMapFeatureSet feature_set = NULL;
-  GData *feature_sets        = NULL;
-  ZMapFeatureAny feature_any ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapWindowItemFeatureType item_feature_type;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  item      = windowList->item;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* The foocanvas item we get passed may represent a feature or the column itself depending
-   * where the user clicked. */
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  if ((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(item), "item_feature_data"))))
-    {
-      switch (feature_any->struct_type)
-	{
-	case ZMAPFEATURE_STRUCT_FEATURESET:
-	  {
-	    feature_set     = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
-	    feature_sets    = feature_set->features ;
-	    if(!windowList->strand)
-	      windowList->strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-								     "item_feature_strand")) ;
-	  }
-	  break;
-	case ZMAPFEATURE_STRUCT_FEATURE:
-	  {
-	    /* Get hold of the feature corresponding to this item. */
-	    feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
-	    zMapAssert(feature);
-        
-	    /* The item the user clicked on may have been a subpart of a feature, e.g. transcript, so
-	     * we need to find the parent item for highlighting etc. */
-	    parent_item = zmapWindowFToIFindFeatureItem(windowList->zmapWindow->context_to_item, feature) ;
-	    zMapAssert(parent_item) ;
-	    
-	    windowList->item = parent_item;
-	    feature_sets = ((ZMapFeatureSet)(feature->parent))->features ;
-#ifdef COPLETELY_UNUSED        
-	    double x1, y1, x2, y2;
-	    foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);	    /* world coords */
-	    /* I have no idea why this x coord is kept.... */
-	    windowList->x_coord = x1;
-#endif
-	    /* need to know whether the column is up or down strand, 
-	     * so we load the right set of features */
-	    if(!windowList->strand)
-	      windowList->strand = feature->strand ;
-	    feature_set        = zMapFeatureGetSet(feature) ;
-	  }
-	  break;
-	default:
-	  windowList->title = "Error";
-	  printf("Error here!\n");
-	  break;
-	}
-
-      /* Build and populate the list of features */
-      if(feature_sets)
-	{
-	  /* This needs setting here so we can draw it later. */
-	  windowList->title = zMapFeatureSetGetName(feature_set) ;
-	  zmapWindowFeatureListPopulateStoreDataList(treeModel, windowList->zmapWindow,
-						     windowList->strand, feature_sets) ;
-	}
-    }
-
-
-  return ;
-}
 
 static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel)
 {
@@ -253,9 +164,10 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel)
   windowCallbacks.columnClickedCB = G_CALLBACK(columnClickedCB);
   windowCallbacks.rowActivatedCB  = G_CALLBACK(view_RowActivatedCB);
   windowCallbacks.selectionFuncCB = selectionFuncCB;
-  windowList->view = zmapWindowFeatureListCreateView(treeModel, &windowCallbacks, windowList);
+  windowList->view = zmapWindowFeatureListCreateView(treeModel, NULL, &windowCallbacks, windowList);
 
-  selectItemInView(GTK_TREE_VIEW(windowList->view), windowList->item);
+  if(windowList->item)
+    selectItemInView(GTK_TREE_VIEW(windowList->view), windowList->item);
 
   gtk_container_add(GTK_CONTAINER(scrolledWindow), windowList->view);
 
