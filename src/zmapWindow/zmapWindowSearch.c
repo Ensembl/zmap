@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 30 09:56 2005 (edgrif)
+ * Last edited: Sep 30 12:06 2005 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.1 2005-09-30 09:16:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.2 2005-10-05 10:54:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,12 +68,17 @@ typedef struct
 
 
 
+static GtkWidget *makeMenuBar(SearchData search_data) ;
 static GtkWidget *makeFieldsPanel(SearchData search_data) ;
 static GtkWidget *makeFiltersPanel(SearchData search_data) ;
 
-static void quitListCB(GtkWidget *widget, gpointer data) ;
-static void searchCB(GtkWidget *widget, gpointer cb_data) ;
 
+
+static void quitMenuCB(gpointer data, guint callback_action, GtkWidget *widget) ;
+static void noHelpCB(gpointer data, guint callback_action, GtkWidget *w) ;
+
+static void quitCB(GtkWidget *widget, gpointer cb_data) ;
+static void searchCB(GtkWidget *widget, gpointer cb_data) ;
 static void displayResult(GList *search_result) ;
 static void printListDataCB(gpointer data, gpointer user_data) ;
 static void setFieldDefaults(SearchData search_data) ;
@@ -81,10 +86,24 @@ static void setFilterDefaults(SearchData search_data) ;
 
 
 
+
+static GtkItemFactoryEntry menu_items_G[] = {
+ { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
+ { "/File/Quit",       "<control>Q",  quitMenuCB,    0, NULL,            NULL},
+ { "/_Help",           NULL,          NULL,          0, "<LastBranch>",  NULL},
+ { "/Help/One",        NULL,          noHelpCB,      0, NULL,            NULL}
+};
+
+
+
+
+
+
 void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
 {
   FooCanvasItem *parent_item = NULL ;
-  GtkWidget *toplevel, *vbox, *hbox, *closeButton, *search_button, *scrolledWindow, *fields, *filters ;
+  GtkWidget *toplevel, *vbox, *menubar, *hbox, *frame,
+    *search_button, *scrolledWindow, *fields, *filters ;
   SearchData search_data ;
 
   search_data = g_new0(SearchDataStruct, 1) ;
@@ -95,7 +114,7 @@ void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
   /* set up the top level window */
   search_data->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   g_signal_connect(GTK_OBJECT(toplevel), "destroy",
-		   GTK_SIGNAL_FUNC(quitListCB), (gpointer)search_data) ;
+		   GTK_SIGNAL_FUNC(quitCB), (gpointer)search_data) ;
 
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   gtk_window_set_title(GTK_WINDOW(toplevel), "Feature Search") ;
@@ -104,13 +123,15 @@ void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
 
-  hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+  menubar = makeMenuBar(search_data) ;
+  gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
 
-  closeButton = gtk_button_new_with_label("Close") ;
-  gtk_box_pack_start(GTK_BOX(hbox), closeButton, FALSE, FALSE, 0) ;
-  g_signal_connect(GTK_OBJECT(closeButton), "clicked",
-		   GTK_SIGNAL_FUNC(quitListCB), (gpointer)search_data) ;
+  frame = gtk_frame_new(NULL) ;
+  gtk_container_border_width(GTK_CONTAINER(frame), 5);
+  gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0) ;
+
+  hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_container_add(GTK_CONTAINER(frame), hbox) ;
 
   search_button = gtk_button_new_with_label("Search") ;
   gtk_box_pack_start(GTK_BOX(hbox), search_button, FALSE, FALSE, 0) ;
@@ -142,6 +163,26 @@ void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
  *                 Internal functions
  */
 
+
+GtkWidget *makeMenuBar(SearchData search_data)
+{
+  GtkAccelGroup *accel_group;
+  GtkItemFactory *item_factory;
+  GtkWidget *menubar ;
+  gint nmenu_items = sizeof (menu_items_G) / sizeof (menu_items_G[0]);
+
+  accel_group = gtk_accel_group_new ();
+
+  item_factory = gtk_item_factory_new (GTK_TYPE_MENU_BAR, "<main>", accel_group );
+
+  gtk_item_factory_create_items(item_factory, nmenu_items, menu_items_G, (gpointer)search_data) ;
+
+  gtk_window_add_accel_group(GTK_WINDOW(search_data->toplevel), accel_group) ;
+
+  menubar = gtk_item_factory_get_widget(item_factory, "<main>");
+
+  return menubar ;
+}
 
 
 static GtkWidget *makeFieldsPanel(SearchData search_data)
@@ -279,14 +320,34 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
 
 
 
-static void quitListCB(GtkWidget *widget, gpointer cb_data)
+static void quitMenuCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 {
-  SearchData search_data = (SearchData)cb_data ;
 
-  gtk_widget_destroy(GTK_WIDGET(search_data->toplevel)) ;
+  /* To avoid lots of destroys we call our other quit routine. */
+  quitCB(widget, cb_data) ;
 
   return ;
 }
+
+
+static void noHelpCB(gpointer data, guint callback_action, GtkWidget *w)
+{
+
+  printf("sorry, no help\n") ;
+
+  return ;
+}
+
+
+static void quitCB(GtkWidget *widget, gpointer cb_data)
+{
+  SearchData search_data = (SearchData)cb_data ;
+
+  gtk_widget_destroy(search_data->toplevel) ;
+
+  return ;
+}
+
 
 
 /* some of this function needs to go into the FTOI package so that we have standard code
@@ -553,6 +614,10 @@ static void setFilterDefaults(SearchData search_data)
 
   return ;
 }
+
+
+
+
 
 
 
