@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  7 10:59 2005 (rds)
+ * Last edited: Oct  7 16:15 2005 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.4 2005-10-07 10:54:15 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.5 2005-10-07 15:16:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -410,10 +410,12 @@ void zmapWindowPrintItemCoords(FooCanvasItem *item)
   /* Gets bounding box in parents coord system. */
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
 
+  printf("P %f, %f, %f, %f -> ", x1, y1, x2, y2) ;
+
   my_foo_canvas_item_i2w(item, &x1, &y1) ;
   my_foo_canvas_item_i2w(item, &x2, &y2) ;
 
-  printf("%f, %f, %f, %f\n", x1, y1, x2, y2) ;
+  printf("W %f, %f, %f, %f\n", x1, y1, x2, y2) ;
 
 
   return ;
