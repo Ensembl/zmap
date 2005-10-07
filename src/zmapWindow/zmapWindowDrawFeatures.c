@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct  5 21:49 2005 (rds)
+ * Last edited: Oct  7 16:15 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.89 2005-10-07 10:55:19 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.90 2005-10-07 15:17:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -218,9 +218,10 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   FooCanvasGroup *root_group ;
   FooCanvasItem *background_item ;
   gboolean debug = TRUE ;
+  double x, y ;
+
 
   zMapAssert(window && full_context && diff_context) ;
-
 
   /* Set up colours. */
   setColours(&canvas_data) ;
@@ -262,8 +263,20 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   canvas_data.curr_root_group = zmapWindowContainerGetFeatures(root_group) ;
   zmapWindowLongItemCheck(window, zmapWindowContainerGetBackground(root_group), y1, y2) ;
 
-  /* There is a hole in the ftoi stuff in a way in that we don't have the context right at
-   * the top......... */
+  g_object_set_data(G_OBJECT(root_group), "item_feature_data", full_context) ;
+
+
+  /* Set root group to start where sequence starts... */
+  x = canvas_data.curr_x_offset ;
+  y = full_context->sequence_to_parent.c1 ;
+  foo_canvas_item_w2i(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x, &y) ;
+
+  foo_canvas_item_set(FOO_CANVAS_ITEM(root_group),
+		      "y", y,
+		      NULL) ;
+
+
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(root_group), &x1, &y1, &x2, &y2) ;
 
 
   /* 
@@ -375,7 +388,7 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
   ZMapCanvasData canvas_data = (ZMapCanvasData)user_data ;
   ZMapWindow window = canvas_data->window ;
   double x1, y1, x2, y2 ;
-  double top, bottom ;
+  double x, y ;
   double position ;
   gboolean status ;
   FooCanvasGroup *align_parent ;
@@ -384,14 +397,19 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
 
   canvas_data->curr_alignment = alignment ;
 
+
+  /* THIS MUST GO.... */
   /* Always reset the aligns to start at y = 0. */
   canvas_data->curr_y_offset = 0.0 ;
 
 
-  /* Not needed anymore ??? */
-  top = window->min_coord ;
-  bottom = window->max_coord ;
-  zmapWindowExt2Zero(&top, &bottom) ;
+  x = canvas_data->curr_x_offset ;
+  y = canvas_data->full_context->sequence_to_parent.c1 ;
+  foo_canvas_item_w2i(canvas_data->curr_root_group, &x, &y) ;
+
+  x = canvas_data->curr_x_offset ;
+  y = canvas_data->full_context->sequence_to_parent.c1 ;
+  my_foo_canvas_item_w2i(canvas_data->curr_root_group, &x, &y) ;
 
   align_parent = zmapWindowContainerCreate(canvas_data->curr_root_group,
 					   &(canvas_data->colour_alignment),
@@ -399,14 +417,9 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
   canvas_data->curr_align_group = zmapWindowContainerGetFeatures(align_parent) ;
 
   foo_canvas_item_set(FOO_CANVAS_ITEM(align_parent),
-		      "x", canvas_data->curr_x_offset,
-		      "y", canvas_data->curr_y_offset,
+		      "x", x,
+		      "y", y,
 		      NULL) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_object_set_data(G_OBJECT(align_parent), "item_feature_type",
-		    GINT_TO_POINTER(ITEM_ALIGN)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   g_object_set_data(G_OBJECT(align_parent), "item_feature_data", alignment) ;
 
@@ -449,9 +462,9 @@ static void drawBlocks(gpointer data, gpointer user_data)
   GdkColor *for_bg_colour, *rev_bg_colour ;
   double top, bottom ;
   FooCanvasGroup *block_parent, *forward_group, *reverse_group ;
+  double x, y ;
 
-
-  /* not needed now...????? */
+  /* not needed now...????? I think these can go now.... */
   top = block->block_to_sequence.t1 ;
   bottom = block->block_to_sequence.t2 ;
   zmapWindowSeq2CanExtZero(&top, &bottom) ;
@@ -462,13 +475,18 @@ static void drawBlocks(gpointer data, gpointer user_data)
   /* Always set y offset to be top of current block. */
   canvas_data->curr_y_offset = block->block_to_sequence.t1 ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowPrintI2W(FOO_CANVAS_ITEM(canvas_data->curr_align_group),
-		     "block offset", 0.0, canvas_data->curr_y_offset) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   /* Add a group for the block and groups for the forward and reverse columns. */
+  x = 0.0 ;
+  y = block->block_to_sequence.t1 ;
+  foo_canvas_item_w2i(canvas_data->curr_align_group, &x, &y) ;
+
+
+  x = 0.0 ;
+  y = block->block_to_sequence.t1 ;
+  my_foo_canvas_item_w2i(canvas_data->curr_align_group, &x, &y) ;
+
+
   block_parent = zmapWindowContainerCreate(canvas_data->curr_align_group,
 					   &(canvas_data->colour_block),
 					   &(canvas_data->window->canvas_border)) ;
@@ -477,14 +495,8 @@ static void drawBlocks(gpointer data, gpointer user_data)
 			  top, bottom) ;
 
   foo_canvas_item_set(FOO_CANVAS_ITEM(block_parent),
-		      "x", 0.0,
-		      "y", canvas_data->curr_y_offset,
+		      "y", y,
 		      NULL) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_object_set_data(G_OBJECT(block_parent), "item_feature_type",
-		    GINT_TO_POINTER(ITEM_BLOCK)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   g_object_set_data(G_OBJECT(block_parent), "item_feature_data", block) ;
 
@@ -608,6 +620,18 @@ static void createSetColumn(gpointer data, gpointer user_data)
   zmapWindowSeq2CanExtZero(&top, &bottom) ;
 
 
+
+  {
+    double x = canvas_data->curr_block->block_to_sequence.t1,
+      y = canvas_data->curr_block->block_to_sequence.t2 ;
+
+    foo_canvas_item_w2i(canvas_data->curr_root_group, &x, &y) ;
+    my_foo_canvas_item_w2i(canvas_data->curr_root_group, &x, &y) ;
+
+    printf("\n") ;
+  }
+
+
   forward_col = createColumn(FOO_CANVAS_GROUP(canvas_data->curr_forward_group),
 			     window,
 			     feature_set_id,
@@ -709,7 +733,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   child_group = zmapWindowContainerGetFeatures(group) ;
 
   /* Make sure group covers whole span in y direction. */
-  zmapWindowContainerSetBackgroundSize(group, zmapWindowExt(top, bot)) ;
+  zmapWindowContainerSetBackgroundSize(group, bot) ;
 
   zmapWindowLongItemCheck(window, zmapWindowContainerGetBackground(group), top, bot) ;
 
@@ -735,12 +759,6 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
    * This probably points to some muckiness in the code, problem is caused by us deciding
    * to display all columns whether they have features or not and so some columns may not
    * have feature sets. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_object_set_data(G_OBJECT(group), "item_feature_type",
-		    GINT_TO_POINTER(ITEM_SET)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   g_object_set_data(G_OBJECT(group), "item_feature_strand",
 		    GINT_TO_POINTER(strand)) ;
   g_object_set_data(G_OBJECT(group), "item_feature_style",
@@ -787,14 +805,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   zMapAssert(forward_col) ;
 
   /* Now we have the feature set, make sure it is set for the column. */
-
   g_object_set_data(G_OBJECT(forward_col), "item_feature_data", feature_set) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_object_set_data(G_OBJECT(zmapWindowContainerGetBackground(forward_col)),
-		    "item_feature_data", feature_set) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   canvas_data->curr_forward_col = zmapWindowContainerGetFeatures(forward_col) ;
@@ -807,17 +818,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 								feature_set, ZMAPSTRAND_REVERSE))))
     {
       /* Now we have the feature set, make sure it is set for the column. */
-
-
       g_object_set_data(G_OBJECT(reverse_col), "item_feature_data", feature_set) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      g_object_set_data(G_OBJECT(zmapWindowContainerGetBackground(reverse_col)),
-			"item_feature_data", feature_set) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
       canvas_data->curr_reverse_col = zmapWindowContainerGetFeatures(reverse_col) ;
 
@@ -830,8 +831,10 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   canvas_data->bump_for = canvas_data->bump_rev = 0.0 ;
 
 
+
   /* Now draw all the features in the column. */
   g_datalist_foreach(&(feature_set->features), ProcessFeature, canvas_data) ;
+
 
 
 
@@ -849,13 +852,9 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 			     &x1, &y1, &x2, &y2) ;
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetBackground(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
-
-
   
   if (reverse_col)
     zmapWindowMaximiseRectangle(zmapWindowContainerGetBackground(reverse_col)) ;
-
-
 
   return ;
 }
@@ -873,7 +872,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
   FooCanvasGroup *column_group ;
   GQuark column_id ;
   FooCanvasItem *top_feature_item = NULL ;
-  double feature_top, feature_bottom, feature_offset ;
+  double feature_offset, unused = 0.0 ;
   GdkColor *background ;
   double x = 0.0, y = 0.0 ;				    /* for testing... */
   double start_x, end_x ;
@@ -916,8 +915,18 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
   /* Start/end of feature within alignment block.
    * Feature position on screen is determined the relative offset of the features coordinates within
    * its align block added to the alignment block _query_ coords. You can't just use the
-   * features own coordinates as these will its coordinates in its original sequence. */
+   * features own coordinates as these will be its coordinates in its original sequence. */
+
   feature_offset = canvas_data->curr_block->block_to_sequence.q1 ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I FEEL LIKE WE SHOULD BE USING THIS HERE BUT IT IS NOT STRAIGHT FORWARD...BECAUSE OF THE
+   * QUERY BLOCK ALIGNMENT ETC ETC...SO MORE WORK TO DO HERE... */
+
+  foo_canvas_item_w2i(column_group, &unused, &feature_offset) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* NOTE THAT ONCE WE SUPPORT HOMOLOGIES MORE FULLY WE WILL WANT SEPARATE BOXES
