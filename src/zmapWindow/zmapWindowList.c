@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct  5 10:55 2005 (rds)
+ * Last edited: Oct  6 17:50 2005 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.41 2005-10-05 13:54:33 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.42 2005-10-07 10:56:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,9 +48,24 @@ typedef struct _ZMapWindowListStruct
   FooCanvasItem *item  ;  /*!< hold ptr to the original item. DO NOT FREE!  */
   char          *title ;  /*!< Title for the window  */
   GtkWidget     *view  ;  /*!< The treeView so we can get store, selection ... */
+  GtkWidget     *toplevel;
 } ZMapWindowListStruct, *ZMapWindowList ; /*!< pointer to ZMapWindowListStruct. */
+/* For the menu */
+enum {
+  WINLISTGFF,
+  WINLISTXFF,
+  WINLISTUNK,
 
+  WINLIST_RESULTS_SHOW,
+  WINLIST_RESULTS_HIDE,
+  WINLIST_SELECTION_SHOW,
+  WINLIST_SELECTION_HIDE,
 
+  WINLISTHELP,
+  WINLISTABOUT,
+  /* Space to add more */
+  WINLIST_NONE
+};
 /* function prototypes ***************************************************/
 /* Functions to move into zmapWindow_P.h */
 
@@ -58,8 +73,8 @@ typedef struct _ZMapWindowListStruct
 /* PRIVATE FUNCTIONS TO THIS IMPLEMENTATION */
 
 /* creator functions ... */
-static void populateStore        (ZMapWindowList windowList, GtkTreeModel *treeModel);
-static void drawListWindow       (ZMapWindowList windowList, GtkTreeModel *treeModel);
+static void drawListWindow   (ZMapWindowList windowList, GtkTreeModel *treeModel);
+static GtkWidget *makeMenuBar(ZMapWindowList wlist);
 
 static void selectItemInView(GtkTreeView *treeView, FooCanvasItem *item);
 
@@ -78,10 +93,63 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
                                 gboolean          path_currently_selected,
                                 gpointer          user_data);
 
+static gboolean operateTreeModelForeachFunc(GtkTreeModel *model,
+                                            GtkTreePath *path,
+                                            GtkTreeIter *iter,
+                                            gpointer data);
+static void operateSelectionForeachFunc(GtkTreeModel *model,
+                                        GtkTreePath *path,
+                                        GtkTreeIter *iter,
+                                        gpointer data);
+
+/* callbacks for the menu */
+static void quitMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
+static void exportCB  (gpointer data, guint cb_action, GtkWidget *widget);
+static void orderByCB (gpointer data, guint cb_action, GtkWidget *widget);
+static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget);
+static void operateCB (gpointer data, guint cb_action, GtkWidget *widget);
+static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 /* functions *************************************************************/
 
+/* menu GLOBAL! */
+static GtkItemFactoryEntry menu_items_G[] = {
+ /* File */
+ { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
+ { "/File/Search",        NULL,         searchCB,   0,          NULL,       NULL},
+ { "/File/Export",        NULL,         NULL,       0,          "<Branch>", NULL},
+ { "/File/Export/GFF ->", NULL,         exportCB,   WINLISTGFF, NULL,       NULL},
+ { "/File/Export/XFF ->", NULL,         exportCB,   WINLISTXFF, NULL,       NULL},
+ { "/File/Export/... ->", NULL,         exportCB,   WINLISTUNK, NULL,       NULL},
+ { "/File/Quit",          "<control>Q", quitMenuCB, 0,          NULL,       NULL},
+ /* View */
+ { "/_View",                 NULL, NULL,      0,                                 "<Branch>",    NULL},
+ { "/View/Order By",         NULL, NULL,      0,                                 "<Branch>",    NULL},
+ { "/View/Order By/Name",    NULL, orderByCB, ZMAP_WINDOW_LIST_COL_NAME,         NULL,          NULL},
+ { "/View/Order By/Type",    NULL, orderByCB, ZMAP_WINDOW_LIST_COL_TYPE,         NULL,          NULL},
+ { "/View/Order By/Start",   NULL, orderByCB, ZMAP_WINDOW_LIST_COL_START,        NULL,          NULL},
+ { "/View/Order By/End",     NULL, orderByCB, ZMAP_WINDOW_LIST_COL_END,          NULL,          NULL},
+ { "/View/Order By/Strand",  NULL, orderByCB, ZMAP_WINDOW_LIST_COL_STRAND,       NULL,          NULL},
+ { "/View/Order By/Phase",   NULL, orderByCB, ZMAP_WINDOW_LIST_COL_PHASE,        NULL,          NULL},
+ { "/View/Order By/Score",   NULL, orderByCB, ZMAP_WINDOW_LIST_COL_SCORE,        NULL,          NULL},
+ { "/View/Order By/Method",  NULL, orderByCB, ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, NULL,          NULL},
+ { "/View/Order By/1------", NULL, NULL,      0,                                 "<Separator>", NULL},
+ { "/View/Order By/Reverse", NULL, orderByCB, ZMAP_WINDOW_LIST_COL_NUMBER,       NULL,          NULL},
+ /* Operate */
+ { "/_Operate",                  NULL, NULL,      0,                      "<Branch>",                   NULL},
+ { "/Operate/On Results",        NULL, NULL,      0,                      "<Branch>",                   NULL},
+ { "/Operate/On Results/Show",   NULL, operateCB, WINLIST_RESULTS_SHOW,   "<RadioItem>",                NULL},
+ { "/Operate/On Results/Hide",   NULL, operateCB, WINLIST_RESULTS_HIDE,   "/Operate/On Results/Show",   NULL},
+ { "/Operate/On Selection",      NULL, NULL,      0,                      "<Branch>",                   NULL},
+ { "/Operate/On Selection/Show", NULL, operateCB, WINLIST_SELECTION_SHOW, "<RadioItem>",                NULL},
+ { "/Operate/On Selection/Hide", NULL, operateCB, WINLIST_SELECTION_HIDE, "/Operate/On Selection/Show", NULL},
+ /* Help */
+ { "/_Help",             NULL, NULL,       0,            "<LastBranch>", NULL},
+ { "/Help/Feature List", NULL, helpMenuCB, WINLISTHELP,  NULL,           NULL},
+ { "/Help/1-----------", NULL, NULL,       0,            "<Separator>",  NULL},
+ { "/Help/About",        NULL, helpMenuCB, WINLISTABOUT, NULL,           NULL}
+};
 
-
+/* CODE ------------------------------------------------------------------ */
 
 /* Displays a list of selectable features
  *
@@ -126,7 +194,8 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel)
   char *frame_label = NULL;
 
   /* Create window top level */
-  window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  windowList->toplevel =
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
   /* Set it up graphically nice */
   gtk_window_set_title(GTK_WINDOW(window), windowList->title) ;
@@ -141,18 +210,20 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel)
 
   /* And a destroy function */
   g_signal_connect(GTK_OBJECT(window), "destroy",
-                   GTK_SIGNAL_FUNC(destroyListWindowCB), window);
+                   GTK_SIGNAL_FUNC(destroyListWindowCB), windowList);
 
   /* Start drawing things in it. */
   vBox = gtk_vbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(window), vBox);
 
+  gtk_box_pack_start(GTK_BOX(vBox), makeMenuBar(windowList), FALSE, FALSE, 0);
+
   frame_label = g_strdup_printf("Feature set %s", windowList->title);
-  subFrame = gtk_frame_new(frame_label);
+  subFrame = gtk_frame_new(NULL);
   if(frame_label)
     g_free(frame_label);
 
-  gtk_frame_set_shadow_type(GTK_FRAME(subFrame), GTK_SHADOW_NONE);
+  gtk_frame_set_shadow_type(GTK_FRAME(subFrame), GTK_SHADOW_ETCHED_IN);
   gtk_box_pack_start(GTK_BOX(vBox), subFrame, TRUE, TRUE, 0);
 
   scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
@@ -161,7 +232,7 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel)
   gtk_container_add(GTK_CONTAINER(subFrame), GTK_WIDGET(scrolledWindow));
 
   /* Get our treeView */
-  windowCallbacks.columnClickedCB = G_CALLBACK(columnClickedCB);
+  windowCallbacks.columnClickedCB = NULL; /* G_CALLBACK(columnClickedCB); */
   windowCallbacks.rowActivatedCB  = G_CALLBACK(view_RowActivatedCB);
   windowCallbacks.selectionFuncCB = selectionFuncCB;
   windowList->view = zmapWindowFeatureListCreateView(treeModel, NULL, &windowCallbacks, windowList);
@@ -172,8 +243,8 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel)
   gtk_container_add(GTK_CONTAINER(scrolledWindow), windowList->view);
 
   /* Our Button(s) */
-  subFrame = gtk_frame_new(NULL);
-  gtk_frame_set_shadow_type(GTK_FRAME(subFrame), GTK_SHADOW_ETCHED_IN);
+  subFrame = gtk_frame_new("");
+  //  gtk_frame_set_shadow_type(GTK_FRAME(subFrame), GTK_SHADOW_IN);
   gtk_box_pack_start(GTK_BOX(vBox), subFrame, FALSE, FALSE, 0);
 
   buttonBox = gtk_hbutton_box_new();
@@ -185,7 +256,7 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel)
 
   button = gtk_button_new_with_label("Close");
   gtk_signal_connect(GTK_OBJECT(button), "clicked",
-                     GTK_SIGNAL_FUNC(closeButtonCB), (gpointer)(window));
+                     GTK_SIGNAL_FUNC(closeButtonCB), (gpointer)(windowList));
   GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT); 
   
   gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
@@ -204,6 +275,31 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel)
   return ;
 }
 
+/** \Brief make the menu from the global defined above!
+ */
+GtkWidget *makeMenuBar(ZMapWindowList wlist)
+{
+  GtkAccelGroup *accel_group;
+  GtkItemFactory *item_factory;
+  GtkWidget *menubar ;
+  gint nmenu_items = sizeof (menu_items_G) / sizeof (menu_items_G[0]);
+
+  accel_group = gtk_accel_group_new ();
+
+  item_factory = gtk_item_factory_new (GTK_TYPE_MENU_BAR, "<main>", accel_group );
+
+  gtk_item_factory_create_items(item_factory, nmenu_items, menu_items_G, (gpointer)wlist) ;
+
+  gtk_window_add_accel_group(GTK_WINDOW(wlist->toplevel), accel_group) ;
+
+  menubar = gtk_item_factory_get_widget(item_factory, "<main>");
+
+  return menubar ;
+}
+
+
+/* GUI Callbacks -------------------------------------------------- */
+
 /** \Brief Extracts the selected feature from the list.
  *
  * Once the selected feature has been determined, calls 
@@ -216,9 +312,11 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
                                 gpointer          user_data)
 {
   ZMapWindowList windowList = (ZMapWindowList)user_data;
+  gint rows_selected = 0;
   GtkTreeIter iter;
-
-  if(gtk_tree_model_get_iter(model, &iter, path))
+  
+  if(((rows_selected = zmapWindowFeatureListCountSelected(selection)) < 1) 
+     && gtk_tree_model_get_iter(model, &iter, path))
     {
       GtkTreeView *treeView = NULL;
       FooCanvasItem *item ;
@@ -233,7 +331,7 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
           zMapWindowScrollToItem(windowList->zmapWindow, item);
         }
     }
-
+  
   return TRUE ;
 }
 
@@ -267,8 +365,8 @@ static void columnClickedCB(GtkTreeViewColumn *col, gpointer user_data)
  */
 static void closeButtonCB(GtkWidget *widget, gpointer user_data)
 {
-  GtkWidget *window = (GtkWidget *)user_data;
-  g_signal_emit_by_name(window, "destroy", NULL, NULL);
+  ZMapWindowList wList = (ZMapWindowList)user_data;
+  g_signal_emit_by_name(GTK_WIDGET(wList->toplevel), "destroy", NULL, NULL);
   return ;
 }
 
@@ -279,23 +377,21 @@ static void closeButtonCB(GtkWidget *widget, gpointer user_data)
  */
 static void destroyListWindowCB(GtkWidget *widget, gpointer user_data)
 {
-  GtkWidget *window = (GtkWidget*)user_data;
-  ZMapWindowList windowList = NULL;
-
-  windowList = g_object_get_data(G_OBJECT(window), ZMAP_WINDOW_LIST_OBJ_KEY);
+  ZMapWindowList windowList = (ZMapWindowList)user_data;
 
   if(windowList != NULL)
     {
       ZMapWindow zmapWindow = NULL;
       zmapWindow = windowList->zmapWindow;
       if(zmapWindow != NULL)
-        g_ptr_array_remove(zmapWindow->featureListWindows, (gpointer)window);
+        g_ptr_array_remove(zmapWindow->featureListWindows, (gpointer)windowList->toplevel);
     }
 
-  gtk_widget_destroy(GTK_WIDGET(window));
+  gtk_widget_destroy(GTK_WIDGET(windowList->toplevel));
 
   return;
 }
+
 /** \Brief handles the row double click event
  * When a user double clicks on a row of the feature list 
  * the feature editor window pops up. This sorts that out.
@@ -324,6 +420,239 @@ static void view_RowActivatedCB(GtkTreeView       *treeView,
   return ;
 }
 
+static gboolean operateTreeModelForeachFunc(GtkTreeModel *model,
+                                            GtkTreePath  *path,
+                                            GtkTreeIter  *iter,
+                                            gpointer      data)
+{
+  gboolean stop = FALSE;
+  FooCanvasItem *listItem = NULL;
+  gint *action = 0;
+
+  action = (gint *)data;
+
+  gtk_tree_model_get(model, iter, 
+                     ZMAP_WINDOW_LIST_COL_FEATURE_ITEM, &listItem,
+                     -1) ;
+  if(!listItem)
+    return stop;                /* no good without 1 */
+
+  switch(*action)
+    {
+    case WINLIST_SELECTION_HIDE:
+    case WINLIST_RESULTS_HIDE:
+      foo_canvas_item_hide(listItem);
+      break;
+    case WINLIST_SELECTION_SHOW:
+    case WINLIST_RESULTS_SHOW:
+      foo_canvas_item_show(listItem);
+      break;
+    default:
+      break;
+    }
+  return stop;
+}
+
+static void operateSelectionForeachFunc(GtkTreeModel *model,
+                                        GtkTreePath  *path,
+                                        GtkTreeIter  *iter,
+                                        gpointer      data)
+{
+  /* we ignore the return as we can't duck out of a selectionForeach
+   * :( */
+  operateTreeModelForeachFunc(model, path, 
+                              iter, data);
+  return ;
+}
+
+/* Menu Callbacks ---------------------------------------- */
+
+/** \Brief Ends up calling destroyListWindowCB via g_signal "destroy"
+ * Just for the close button.
+ */
+static void quitMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
+{
+  ZMapWindowList wList = (ZMapWindowList)data;
+  g_signal_emit_by_name(GTK_WIDGET(wList->toplevel), "destroy", NULL, NULL);
+  return ;
+}
+/** \Brief Will allow user to export the list as a file of specified type 
+ * Err nothing happens yet.
+ */
+static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
+{
+  ZMapWindowList wList = (ZMapWindowList)data;
+  GtkWidget *window    = NULL;
+  window = wList->toplevel;
+  switch(cb_action)
+    {
+    case WINLISTUNK:
+    case WINLISTXFF:
+    case WINLISTGFF:
+    default:
+      printf("No way to do this yet.\n");
+      break;
+    }
+  return ;
+}
+/** \Brief Another way to order the list.  
+ * Menu select sorts on that column ascending, except "Reverse" 
+ * which reverses the current sort.
+ */
+static void orderByCB(gpointer data, guint cb_action, GtkWidget *widget)
+{
+  ZMapWindowList wList    = (ZMapWindowList)data;
+  GtkTreeView *treeView   = NULL;
+  GtkTreeModel *treeModel = NULL;
+  GtkTreeViewColumn *col  = NULL;
+  GtkTreePath *path       = NULL;
+  int sortable_id = 0, column_id = 0;
+  GtkSortType order = 0, neworder;
+
+  treeView  = GTK_TREE_VIEW(wList->view);
+  treeModel = gtk_tree_view_get_model(GTK_TREE_VIEW(treeView));
+
+  gtk_tree_view_get_cursor(GTK_TREE_VIEW(treeView), &path, &col);  
+  if(path)
+    gtk_tree_path_free(path);
+  if(!col)
+    return ;
+  column_id = gtk_tree_view_column_get_sort_column_id(col);
+  gtk_tree_sortable_get_sort_column_id(GTK_TREE_SORTABLE(treeModel), 
+                                       &sortable_id, &order);
+
+  neworder = (order == GTK_SORT_ASCENDING) ? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
+
+  switch(cb_action)
+    {
+    case ZMAP_WINDOW_LIST_COL_NAME:
+    case ZMAP_WINDOW_LIST_COL_TYPE:
+    case ZMAP_WINDOW_LIST_COL_START:
+    case ZMAP_WINDOW_LIST_COL_END:
+    case ZMAP_WINDOW_LIST_COL_STRAND:
+    case ZMAP_WINDOW_LIST_COL_PHASE:
+    case ZMAP_WINDOW_LIST_COL_SCORE:
+    case ZMAP_WINDOW_LIST_COL_FEATURE_TYPE:
+      gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(treeModel), 
+                                           cb_action, 
+                                           GTK_SORT_ASCENDING);
+      break;
+    case ZMAP_WINDOW_LIST_COL_NUMBER:
+      gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(treeModel), 
+                                           sortable_id, 
+                                           neworder);
+      break;
+    default:
+      break;
+    }
+  return ;
+}
+/** \Brief Will allow user get some help
+ * Err nothing happens yet.
+ */
+static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
+{
+  ZMapWindowList wList = (ZMapWindowList)data;
+  GtkWidget *window    = NULL;
+  window = wList->toplevel;
+  switch(cb_action)
+    {
+    case WINLISTHELP:
+    case WINLISTABOUT:
+    default:
+      printf("No help yet.\n");
+      break;
+    }
+  return ;
+}
+/** \Brief Will allow user to open the search window
+ * Either uses the currently selected row as a feature input to the
+ * searchWindow or the first item in the list.  The searchWindow
+ * requires a ZMapFeatureAny as input so this is what we give it.
+ *
+ */
+static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget)
+{
+  ZMapWindowList wList = (ZMapWindowList)data;
+  GtkTreeView *treeView   = NULL;
+  GtkTreeModel *treeModel = NULL;
+  GtkTreeViewColumn *col  = NULL;
+  GtkTreePath *path       = NULL;
+  ZMapFeatureAny feature  = NULL;
+  FooCanvasItem *listItem = NULL;
+  GtkTreeIter iter;
+
+  treeView  = GTK_TREE_VIEW(wList->view);
+  treeModel = gtk_tree_view_get_model(GTK_TREE_VIEW(treeView));
+
+  gtk_tree_view_get_cursor(GTK_TREE_VIEW(treeView), &path, &col);  
+  if(!path)
+    {
+      if(!(gtk_tree_model_get_iter_first(treeModel, &iter)))
+         return ;               /* We can't continue if the list is empty */
+    }
+  else
+    {
+      gtk_tree_model_get_iter(GTK_TREE_MODEL(treeModel), &iter, path);
+      gtk_tree_path_free(path);
+    }
+
+  gtk_tree_model_get(treeModel, &iter, 
+                     ZMAP_WINDOW_LIST_COL_FEATURE_ITEM, &listItem,
+                     -1) ;
+  if(listItem)
+    feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(listItem), "item_feature_data");
+
+  if(feature)
+    zmapWindowCreateSearchWindow(wList->zmapWindow, feature);
+
+  return ;
+}
+
+static void operateCB (gpointer data, guint cb_action, GtkWidget *widget)
+{
+  ZMapWindowList wList    = (ZMapWindowList)data;
+  GtkTreeView *treeView   = NULL;
+  GtkTreeModel *treeModel = NULL;
+
+  treeView  = GTK_TREE_VIEW(wList->view);
+  treeModel = gtk_tree_view_get_model(GTK_TREE_VIEW(treeView));
+
+  /* take advantage of the model and selection foreach
+   * functions. Although they do not have the same prototypes 
+   * they take the same arguments allowing one to call the 
+   * other...The user data will likely need to be changed if 
+   * we do anything more complicated in them though.
+   */
+  switch(cb_action)
+    {
+    case WINLIST_SELECTION_SHOW:
+    case WINLIST_SELECTION_HIDE:
+      {
+        GtkTreeSelection *selection = NULL;
+        selection = gtk_tree_view_get_selection(GTK_TREE_VIEW (treeView));
+        gtk_tree_selection_selected_foreach(selection, 
+                                            operateSelectionForeachFunc, 
+                                            &cb_action);
+      }
+      break;
+    case WINLIST_RESULTS_SHOW:
+    case WINLIST_RESULTS_HIDE:
+      gtk_tree_model_foreach(treeModel, 
+                             operateTreeModelForeachFunc,
+                             &cb_action);
+      break;
+    default:
+      break;
+    }
+}
+
+/** \Brief Select/Highlight the row with the item 
+ * This has the side effect of zooming to the item on the canvas (selectFuncCB). 
+ * While this isn't necessarily a good/bad thing it does take time.  
+ * We can't really attach the callback after doing this, which would stop this,
+ * as it's done in the createView function.  Merits of this, is it a feature??
+ */
 static void selectItemInView(GtkTreeView *treeView, FooCanvasItem *item)
 {
   GtkTreeModel *treeModel = NULL;
