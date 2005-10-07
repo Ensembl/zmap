@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 27 19:58 2005 (rds)
+ * Last edited: Oct  7 17:56 2005 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.20 2005-09-28 08:07:45 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.21 2005-10-07 17:18:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -245,8 +245,9 @@ void zmapWindowLongItemCheck(ZMapWindow window, FooCanvasItem *item, double star
   double length ;
   double zoom;
 
-  zoom   = zMapWindowGetZoomFactor(window);
-  length = zmapWindowExt(start, end) * zoom;
+  zoom = zMapWindowGetZoomMax(window) ;
+
+  length = zmapWindowExt(start, end) * zoom ;
 
   /* Only add the item if it can exceed the windows limit. */
   if (length > ZMAP_WINDOW_MAX_WINDOW)
