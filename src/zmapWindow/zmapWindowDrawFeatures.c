@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct  5 14:59 2005 (rds)
+ * Last edited: Oct  5 21:49 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.88 2005-10-05 14:00:22 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.89 2005-10-07 10:55:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -746,8 +746,8 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   g_object_set_data(G_OBJECT(group), "item_feature_style",
 		    GINT_TO_POINTER(feature_set_name)) ;
 
-  g_signal_connect(GTK_OBJECT(group), "event",
-		   GTK_SIGNAL_FUNC(columnBoundingBoxEventCB), (gpointer)window) ;
+  g_signal_connect(G_OBJECT(group), "event",
+		   G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
 
   return group ;
 }
@@ -1570,7 +1570,19 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       }
       break ;
     case 2:
-      zmapWindowEditorCreate(menu_data->window, menu_data->item) ;
+      {
+        ZMapFeature feature = NULL;
+        GList *list = NULL;
+        feature = g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data");
+        list    = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
+                                                feature->parent->parent->parent->unique_id,
+                                                feature->parent->parent->unique_id,
+                                                feature->parent->unique_id,
+                                                feature->strand,
+                                                feature->unique_id);
+        zmapWindowEditorCreate(menu_data->window, list->data) ;
+        
+      }
       break ;
     case 3:
     case 4:
