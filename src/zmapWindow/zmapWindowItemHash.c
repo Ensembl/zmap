@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Oct  5 11:49 2005 (edgrif)
+ * Last edited: Oct  7 09:35 2005 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.9 2005-10-05 10:51:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.10 2005-10-07 08:36:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -497,7 +497,6 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 
   if (set_id)
     {
-
       /* HACK....REALLY WE NEED TO BE ABLE TO SAY "DO BOTH STRANDS" SO WE DO THIS FOR 
        * STRAND NONE AT THE MOMENT....ALTHOUGH STRAND NONE FEATURES WILL ALWAYS BE IN THE
        * FORWARD GROUP... */
@@ -506,15 +505,15 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 	{
 	  forward_set_id = zmapWindowFToIMakeSetID(set_id, ZMAPSTRAND_FORWARD) ;
 	  forward_set_search.search_quark = forward_set_id ;
-	  if (isRegExp(forward_set_id))
-	    forward_set_search.valid_func = filterOnRegExp ;
+	  if (isRegExp(set_id))
+	    forward_set_search.valid_func = filterOnRegExp ;	      
 	}
 
       if (strand == ZMAPSTRAND_REVERSE || strand == ZMAPSTRAND_NONE)
 	{
 	  reverse_set_id = zmapWindowFToIMakeSetID(set_id, ZMAPSTRAND_REVERSE) ;
 	  reverse_set_search.search_quark = reverse_set_id ;
-	  if (isRegExp(reverse_set_id))
+	  if (isRegExp(set_id))
 	    reverse_set_search.valid_func = filterOnRegExp ;
 	}
     }
@@ -543,7 +542,9 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
       search = NULL ;
     }
 
-  if (strand == ZMAPSTRAND_REVERSE || strand == ZMAPSTRAND_NONE)
+  /* No point in doing a second search unless we are going to search as far down as the reverse
+   * strand sets. */
+  if (strand == ZMAPSTRAND_REVERSE || (set_id && strand == ZMAPSTRAND_NONE))
     {
       search = NULL ;
 
@@ -559,7 +560,6 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
       g_list_free(search) ;
       search = NULL ;
     }
-
 
   return result ;
 }
@@ -786,7 +786,7 @@ static void addItem(gpointer key, gpointer value, gpointer user_data)
   ItemSearch curr_search = (ItemSearch)user_data ;
   GList **results = curr_search->results ;
 
-  if (!curr_search->valid_func || curr_search->valid_func(hash_item->item, curr_search, NULL))
+  if (!curr_search->valid_func || curr_search->valid_func(hash_item->item, curr_search, key))
     *results = g_list_append(*results, hash_item->item) ;
 
   return ;
@@ -898,20 +898,35 @@ gboolean isRegExp(GQuark id)
 }
 
 
-/* We will need a user_data param to hold the compiled string for efficiency.... */
+/* We will need a user_data param to hold the compiled string for efficiency....
+ * 
+ * OK, I think we need to filter on the string that was used to hash this item,
+ * _not_ the unique id of the item. This is because some items are hashed using
+ * a string _constructed_ from their unique id, e.g. most obviously strand specific
+ * stuff.
+ * 
+ *  */
 gboolean filterOnRegExp(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data)
 {
   gboolean result = FALSE ;
   ZMapFeature feature ;
-  char *pattern, *string ;
+  char *pattern, *string, *key_string ;
+  GQuark key_id = GPOINTER_TO_INT(user_data) ;
 
+  key_string = (char *)g_quark_to_string(key_id) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Not needed for this compare but will be in other filter callbacks... */
   feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), "item_feature_data") ;
   zMapAssert(feature) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   pattern = (char *)g_quark_to_string(curr_search->search_quark) ;
-  string = (char *)g_quark_to_string(feature->unique_id) ;
 
-  if (g_pattern_match_simple(pattern, string))
+  /* Compare pattern to hash key string, _not_ features unique_id string. */
+  if (g_pattern_match_simple(pattern, key_string))
     result = TRUE ;
 
   return result ;
