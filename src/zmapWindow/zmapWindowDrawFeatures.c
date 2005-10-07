@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct  7 16:15 2005 (edgrif)
+ * Last edited: Oct  7 18:07 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.90 2005-10-07 15:17:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.91 2005-10-07 17:19:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -261,10 +261,10 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   root_group = zmapWindowContainerCreate(foo_canvas_root(window->canvas),
 					 &(canvas_data.colour_root), &(window->canvas_border)) ;
   canvas_data.curr_root_group = zmapWindowContainerGetFeatures(root_group) ;
-  zmapWindowLongItemCheck(window, zmapWindowContainerGetBackground(root_group), y1, y2) ;
-
   g_object_set_data(G_OBJECT(root_group), "item_feature_data", full_context) ;
 
+  zmapWindowLongItemCheck(window, zmapWindowContainerGetBackground(root_group),
+			  window->seq_start, window->seq_end) ;
 
   /* Set root group to start where sequence starts... */
   x = canvas_data.curr_x_offset ;
@@ -274,7 +274,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   foo_canvas_item_set(FOO_CANVAS_ITEM(root_group),
 		      "y", y,
 		      NULL) ;
-
 
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(root_group), &x1, &y1, &x2, &y2) ;
 
@@ -323,9 +322,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-  zmapWindowLongItemCrop(window) ;
-
-
   /* Expand the scroll region to include everything, note the hard-coded zero start, this is
    * because the actual visible window may not change when the scrolled region changes if its
    * still visible so we can end up with the visible window starting where the alignment box.
@@ -341,9 +337,12 @@ void zmapWindowDrawFeatures(ZMapWindow window,
     zmapWindow_set_scroll_region(window, window->min_coord, window->max_coord);
 
 
+  zmapWindowLongItemCrop(window) ;
+
+
+  /* debugging.... */
   foo_canvas_item_request_redraw(FOO_CANVAS_ITEM(root_group));
   zmapWindowContainerPrint(root_group) ;
-
 
 
   return ;
