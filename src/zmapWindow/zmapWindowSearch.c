@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  5 14:53 2005 (rds)
+ * Last edited: Oct  6 16:45 2005 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.3 2005-10-05 13:53:49 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.4 2005-10-07 08:37:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -152,6 +152,10 @@ void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
   filters = makeFiltersPanel(search_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), filters, TRUE, TRUE, 0) ;
 
+  /* set search button as default. */
+  GTK_WIDGET_SET_FLAGS(search_button, GTK_CAN_DEFAULT) ;
+  gtk_window_set_default(GTK_WINDOW(toplevel), search_button) ;
+
 
   gtk_widget_show_all(toplevel) ;
 
@@ -255,12 +259,6 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* set create button as default. */
-  GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
-  gtk_window_set_default(GTK_WINDOW(app_context->app_widg), create_button) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return frame ;
 }
@@ -305,14 +303,6 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->strand_txt) ;
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* set create button as default. */
-  GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
-  gtk_window_set_default(GTK_WINDOW(app_context->app_widg), create_button) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return frame ;
 }
@@ -375,11 +365,14 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   /* we can use g_strstrip() to get rid of leading/trailing space as in inplace operation
    * on the string...but we should probably copy the strings from the widget first.... */
 
+
   align_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->align_entry)) ;
   if (align_txt && strlen(align_txt) == 0)
     {
       align_id = search_data->align_id ;
     }
+  else if (strcmp(align_txt, "0") == 0)
+    align_id = 0 ;
   else
     {
       /* We could do a g_quark_try_string() to see if the id exists which would be some help... */
@@ -396,6 +389,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	{
 	  block_id = search_data->block_id ;
 	}
+      else if (strcmp(block_txt, "0") == 0)
+	block_id = 0 ;
       else
 	{
 	  /* We could do a g_quark_try_string() to see if the id exists which would be some help... */
@@ -408,23 +403,14 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   if (block_id)
     {
-      /* For Strand "*" means no strand or both strands. */
-      strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->strand_entry)) ;
-      if (strand_txt && strlen(strand_txt) == 0)
-	strand = ZMAPSTRAND_NONE ;
-      else if (strstr(strand_txt, "+"))
-	strand = ZMAPSTRAND_FORWARD ;
-      else if (strstr(strand_txt, "-"))
-	strand = ZMAPSTRAND_REVERSE ;
-      else
-	strand = ZMAPSTRAND_NONE ;
-
       set_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->set_entry)) ;
       if (set_txt && strlen(set_txt) == 0)
 	{
 	  set_id = search_data->set_id ;
 	}
-      else
+      else if (strcmp(set_txt, "0") == 0)
+	set_id = 0 ;
+     else
 	{
 	  /* We could do a g_quark_try_string() to see if the id exists which would be some help... */
 	  set_id = g_quark_from_string(set_txt) ;
@@ -440,6 +426,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	{
 	  feature_id = search_data->feature_id ;
 	}
+      else if (strcmp(feature_txt, "0") == 0)
+	feature_id = 0 ;
       else
 	{
 	  feature_id = g_quark_from_string(feature_txt) ;
@@ -449,17 +437,41 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     }
 
 
+
+  /* For Strand "*" means no strand or both strands. */
+  strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->strand_entry)) ;
+  if (strand_txt && strlen(strand_txt) == 0)
+    strand = ZMAPSTRAND_NONE ;
+  else if (strstr(strand_txt, "+"))
+    strand = ZMAPSTRAND_FORWARD ;
+  else if (strstr(strand_txt, "-"))
+    strand = ZMAPSTRAND_REVERSE ;
+  else
+    strand = ZMAPSTRAND_NONE ;
+
+
   printf("Search parameters -    align: %s   block: %s  strand: %s  set: %s  feature: %s\n",
 	 align_txt, block_txt, strand_txt, set_txt, feature_txt) ;
+
+
+
+
 
   if ((search_result = zmapWindowFToIFindItemSetFull(search_data->window->context_to_item,
 						     align_id, block_id, set_id,
 						     strand, feature_id)))
     {
-      /* Here we want a more generalised list window... */
-      zmapWindowListWindowCreate(search_data->window, search_result, 
-                                 g_strdup_printf("Results '%s'", feature_txt), 
-                                 NULL);
+      ZMapFeatureAny any_feature ;
+
+      any_feature = (ZMapFeatureAny)(search_result->data) ;
+
+      if (any_feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+	{
+	  zmapWindowListWindowCreate(search_data->window, search_result, 
+				     g_strdup_printf("Results '%s'", feature_txt), 
+				     NULL) ;
+	}
+
       displayResult(search_result) ;
     }
   else
