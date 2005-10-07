@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  7 11:34 2005 (rds)
+ * Last edited: Oct  7 16:14 2005 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.3 2005-10-07 10:54:31 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.4 2005-10-07 15:16:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -247,10 +247,10 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, doub
   container_background = zmapWindowContainerGetBackground(container_parent) ;
 
   /* Get the height from the main group */
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_parent), NULL, &y1, NULL, &y2) ;
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_parent), &x1, &y1, &x2, &y2) ;
 
   /* Get the width from the child group */
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features), &x1, NULL, &x2, NULL) ;
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features), &x1, &y1, &x2, &y2) ;
 
   if (height != 0.0)
     y2 = y2 + height ;
@@ -605,22 +605,51 @@ static void doprint(FooCanvasGroup *container_parent, int indent)
   FooCanvasGroup *container_features ;
   FooCanvasItem *container_background ;
   ContainerType type = CONTAINER_INVALID ;
+  ZMapFeatureAny any_feature ;
+  char *feature_type = NULL ;
+
+  any_feature = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(container_parent), "item_feature_data")) ;
+
+  if (any_feature)
+    {
+      switch (any_feature->struct_type)
+	{
+	case ZMAPFEATURE_STRUCT_CONTEXT:
+	  feature_type = "Context" ;
+	  break ;
+	case ZMAPFEATURE_STRUCT_ALIGN:
+	  feature_type = "Align" ;
+	  break ;
+	case ZMAPFEATURE_STRUCT_BLOCK:
+	  feature_type = "Block" ;
+	  break ;
+	case ZMAPFEATURE_STRUCT_FEATURESET:
+	  feature_type = "Set" ;
+	  break ;
+	case ZMAPFEATURE_STRUCT_FEATURE:
+	  feature_type = "Feature" ;
+	  break ;
+	}
+    }
+  else
+    feature_type = "Colgroup" ;
+
 
   for (i = 0 ; i < indent ; i++)
     {
       printf("  ") ;
     }
-  printf("Level %d:\n", indent) ;
+  printf("%s:\n", feature_type) ;
 
-  
+
   printItem(FOO_CANVAS_ITEM(container_parent),
-	    indent, "    parent:") ;
+	    indent, "       parent:  ") ;
 
   printItem(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(container_parent)),
-	    indent, "  features:") ;
+	    indent, "     features:  ") ;
 
   printItem(zmapWindowContainerGetBackground(container_parent),
-	    indent, "background:") ;
+	    indent, "   background:  ") ;
 
   container_features = zmapWindowContainerGetFeatures(container_parent) ;
 
