@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  5 11:20 2005 (rds)
+ * Last edited: Oct  6 16:15 2005 (rds)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.3 2005-10-05 13:55:13 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.4 2005-10-07 10:56:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -175,7 +175,7 @@ GtkWidget *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
 
   /* Setup the selection handler */
   selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (treeView));
-  gtk_tree_selection_set_mode (selection, GTK_SELECTION_SINGLE);
+  gtk_tree_selection_set_mode (selection, GTK_SELECTION_MULTIPLE);
   if(callbacks->selectionFuncCB)
     gtk_tree_selection_set_select_function(selection, 
                                            callbacks->selectionFuncCB, 
@@ -208,8 +208,25 @@ void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel,
     }
   return ;
 }
+static void selection_counter(GtkTreeModel *model,
+                              GtkTreePath  *path,
+                              GtkTreeIter  *iter,
+                              gpointer      userdata)
+{
+  gint *p_count = (gint*) userdata;
+  g_assert (p_count != NULL);
+  (*p_count)++;
+  return ;
+}
 
-
+gint zmapWindowFeatureListCountSelected(GtkTreeSelection *selection)
+{
+  gint count = 0;
+  gtk_tree_selection_selected_foreach(selection, 
+                                      selection_counter, 
+                                      &count);
+  return count;
+}
 /* Returns column number or -1 if not found or on error */
 
 gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col)
