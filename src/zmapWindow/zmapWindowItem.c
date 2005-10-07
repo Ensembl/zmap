@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 30 07:55 2005 (edgrif)
+ * Last edited: Oct  7 10:59 2005 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.3 2005-09-30 07:26:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.4 2005-10-07 10:54:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -282,6 +282,9 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
   ZMapFeature feature;
 
   zMapAssert(window && item) ;
+
+  if(!(result = zmapWindowItemIsVisible(item)))
+    return result;
 
   feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
   zMapAssert(feature) ;         /* this should never fail. */
@@ -859,3 +862,15 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
 }
 
 
+gboolean zmapWindowItemIsVisible(FooCanvasItem *item)
+{
+  gboolean visible = FALSE;
+
+  zMapAssert(item != NULL);
+
+  g_object_get(G_OBJECT(item), 
+               "visible", &visible,
+               NULL);
+
+  return visible;
+}
