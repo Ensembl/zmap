@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 27 17:05 2005 (edgrif)
+ * Last edited: Oct  7 11:34 2005 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.2 2005-09-30 07:26:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.3 2005-10-07 10:54:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -489,12 +489,15 @@ static void repositionGroups(FooCanvasGroup *changed_group, double group_spacing
 static void bumpColCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
-  BumpCol bump_data = (BumpCol)user_data ;
+  BumpCol bump_data   = (BumpCol)user_data ;
   ZMapWindowItemFeatureType item_feature_type ;
   double y1 = 0.0 ;
   gpointer y1_ptr = 0 ;
   gpointer key = NULL, value = NULL ;
   double offset = 0.0 ;
+
+  if(!(zmapWindowItemIsVisible(item)))
+    return ;
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
 
