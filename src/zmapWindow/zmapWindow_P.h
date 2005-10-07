@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Oct  5 14:56 2005 (rds)
+ * Last edited: Oct  7 10:27 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.80 2005-10-05 13:57:12 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.81 2005-10-07 10:57:51 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -38,6 +38,7 @@
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapFeature.h>
+/* #include <libfoocanvas/libfoocanvas.h> */
 
 /* Names of config stanzas. */
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
@@ -105,9 +106,9 @@ typedef enum {
   ZMAP_WINDOW_LIST_COL_SCORE,               /*!< feature score  */
   ZMAP_WINDOW_LIST_COL_FEATURE_TYPE,        /*!< feature method  */
   ZMAP_WINDOW_LIST_COL_FEATURE_ITEM,        /*!< foocanvas item  */
-  ZMAP_WINDOW_LIST_COL_SORT_TYPE,
-  ZMAP_WINDOW_LIST_COL_SORT_STRAND,
-  ZMAP_WINDOW_LIST_COL_SORT_PHASE,
+  ZMAP_WINDOW_LIST_COL_SORT_TYPE,           /*!< \                          */
+  ZMAP_WINDOW_LIST_COL_SORT_STRAND,         /*!< -- sort on integer columns */
+  ZMAP_WINDOW_LIST_COL_SORT_PHASE,          /*!< /                          */
   ZMAP_WINDOW_LIST_COL_NUMBER               /*!< number of columns  */
 } zmapWindowFeatureListColumn;
 #define ZMAP_WINDOW_FEATURE_LIST_COL_NUMBER_KEY "column_number_data"
@@ -444,6 +445,7 @@ GtkWidget    *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
                                               gpointer user_data);
 void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel,
                                             GList *list);
+gint zmapWindowFeatureListCountSelected(GtkTreeSelection *selection);
 gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
 
 /* ================= in zmapWindowZoomControl.c ========================= */
