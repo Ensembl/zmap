@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct  5 14:22 2005 (rds)
+ * Last edited: Oct  6 17:58 2005 (rds)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.15 2005-10-05 13:55:42 rds Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.16 2005-10-07 10:55:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -228,7 +228,20 @@ ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *it
   editor->table        = g_new0(mainTableStruct, 16);
   editor->appliedChanges = NULL;
   editor->wcopyFeature   = zMapFeatureCopy(editor->origFeature);
-  editor->editable       = TRUE;
+
+  switch(editor->origFeature->type)
+    {
+    case ZMAPFEATURE_HOMOL:
+      editor->editable = FALSE;      
+      break;
+    case ZMAPFEATURE_TRANSCRIPT:
+      editor->editable = TRUE;
+      break;
+    default:
+      editor->editable = FALSE;      
+      break;
+    }
+
   parseFeature(editor->table, editor->origFeature, editor->wcopyFeature);
 
   {
@@ -881,6 +894,8 @@ static void cellEditedCB(GtkCellRendererText *renderer,
   treeModel = gtk_tree_view_get_model(GTK_TREE_VIEW(editor->view));
   /* Find where we are. bizarrely enough we don't actually know yet. */
   gtk_tree_view_get_cursor(GTK_TREE_VIEW(editor->view), &cursor_path, &column);
+  if(!cursor_path || !column)
+    return ;                    /* We can't continue without these */
   gtk_tree_model_get_iter(GTK_TREE_MODEL(treeModel), &iter, cursor_path);
   gtk_tree_path_free(cursor_path); /* We need to free this, do it now */
   /* zmapWindowFeatureListGetColNumberFromTVC(column) would work too. */
@@ -902,7 +917,17 @@ static void cellEditedCB(GtkCellRendererText *renderer,
                          colNumber, new_text, 
                          -1);
       break;
+    case G_TYPE_FLOAT:
+      {
+        double value = 0.0;
+        if((zMapStr2Double(new_text, &value)))
+          gtk_tree_store_set(GTK_TREE_STORE(treeModel), &iter,
+                             colNumber, value,
+                             -1);
+      }
+      break;
     default:
+      printf("Don't know how to edit this kind of column\n");
       break;
     }
 
