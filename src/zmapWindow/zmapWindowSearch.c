@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  6 16:45 2005 (edgrif)
+ * Last edited: Oct  7 11:41 2005 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.4 2005-10-07 08:37:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.5 2005-10-07 10:57:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -103,7 +103,7 @@ void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
 {
   FooCanvasItem *parent_item = NULL ;
   GtkWidget *toplevel, *vbox, *menubar, *hbox, *frame,
-    *search_button, *scrolledWindow, *fields, *filters ;
+    *search_button, *scrolledWindow, *fields, *filters, *buttonBox ;
   SearchData search_data ;
 
   search_data = g_new0(SearchDataStruct, 1) ;
@@ -126,17 +126,7 @@ void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
   menubar = makeMenuBar(search_data) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
 
-  frame = gtk_frame_new(NULL) ;
-  gtk_container_border_width(GTK_CONTAINER(frame), 5);
-  gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0) ;
-
   hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_add(GTK_CONTAINER(frame), hbox) ;
-
-  search_button = gtk_button_new_with_label("Search") ;
-  gtk_box_pack_start(GTK_BOX(hbox), search_button, FALSE, FALSE, 0) ;
-  gtk_signal_connect(GTK_OBJECT(search_button), "clicked",
-		     GTK_SIGNAL_FUNC(searchCB), (gpointer)search_data) ;
 
   /* Make the main search boxes for Align, Block etc. */
   hbox = gtk_hbox_new(FALSE, 0) ;
@@ -152,10 +142,27 @@ void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
   filters = makeFiltersPanel(search_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), filters, TRUE, TRUE, 0) ;
 
+  buttonBox = gtk_hbutton_box_new();
+  gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
+  gtk_box_set_spacing (GTK_BOX(buttonBox), 
+                       ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
+  gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 
+                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+
+  search_button = gtk_button_new_with_label("Search") ;
+  gtk_container_add(GTK_CONTAINER(buttonBox), search_button) ;
+  gtk_signal_connect(GTK_OBJECT(search_button), "clicked",
+		     GTK_SIGNAL_FUNC(searchCB), (gpointer)search_data) ;
   /* set search button as default. */
   GTK_WIDGET_SET_FLAGS(search_button, GTK_CAN_DEFAULT) ;
   gtk_window_set_default(GTK_WINDOW(toplevel), search_button) ;
 
+  frame = gtk_frame_new("") ;
+  gtk_container_set_border_width(GTK_CONTAINER(frame), 
+                                 ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+  gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0) ;
+
+  gtk_container_add(GTK_CONTAINER(frame), buttonBox);
 
   gtk_widget_show_all(toplevel) ;
 
@@ -241,21 +248,25 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
 
   search_data->align_entry = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->align_txt) ;
+  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
 
   search_data->block_entry = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->block_txt) ;
+  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
   search_data->set_entry = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->set_txt) ;
+  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
   search_data->feature_entry = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->feature_txt) ;
+  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
@@ -301,6 +312,7 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
 
   search_data->strand_entry = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->strand_txt) ;
+  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
