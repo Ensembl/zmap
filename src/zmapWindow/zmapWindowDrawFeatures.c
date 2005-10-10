@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 10 09:21 2005 (edgrif)
+ * Last edited: Oct 10 18:45 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.92 2005-10-10 10:32:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.93 2005-10-10 17:45:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -219,6 +219,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   FooCanvasItem *background_item ;
   gboolean debug = TRUE ;
   double x, y ;
+  double start, end ;
 
 
   zMapAssert(window && full_context && diff_context) ;
@@ -248,6 +249,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
   /* Draw the scale bar. */
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
   foo_canvas_get_scroll_region(window->canvas, NULL, &y1, NULL, &y2);
   zmapWindowDrawScaleBar(window, y1, y2);
 
@@ -257,14 +259,17 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   window->alignment_start = x2 + COLUMN_SPACING ;
 
 
-  /* Add a background to the root window... */
+  /* Add a background to the root window, must be as long as entire sequence... */
   root_group = zmapWindowContainerCreate(foo_canvas_root(window->canvas),
 					 &(canvas_data.colour_root), &(window->canvas_border)) ;
   canvas_data.curr_root_group = zmapWindowContainerGetFeatures(root_group) ;
   g_object_set_data(G_OBJECT(root_group), "item_feature_data", full_context) ;
 
+  start = window->seq_start ;
+  end = window->seq_end ;
+  zmapWindowSeq2CanExtZero(&start, &end) ;
   zmapWindowLongItemCheck(window, zmapWindowContainerGetBackground(root_group),
-			  window->seq_start, window->seq_end) ;
+			  start, end) ;
 
   /* Set root group to start where sequence starts... */
   x = canvas_data.curr_x_offset ;
@@ -275,6 +280,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 		      "y", y,
 		      NULL) ;
 
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(root_group), &x1, &y1, &x2, &y2) ;
 
 
@@ -337,11 +343,12 @@ void zmapWindowDrawFeatures(ZMapWindow window,
     zmapWindow_set_scroll_region(window, window->min_coord, window->max_coord);
 
 
+  /* Now crop any items that are too long, actually we shouldn't need to do this here
+   * because we should be showing the entire sequence... */
   zmapWindowLongItemCrop(window) ;
 
 
   /* debugging.... */
-  foo_canvas_item_request_redraw(FOO_CANVAS_ITEM(root_group));
   zmapWindowContainerPrint(root_group) ;
 
 
@@ -617,19 +624,6 @@ static void createSetColumn(gpointer data, gpointer user_data)
   top = canvas_data->curr_block->block_to_sequence.t1 ;
   bottom = canvas_data->curr_block->block_to_sequence.t2 ;
   zmapWindowSeq2CanExtZero(&top, &bottom) ;
-
-
-
-  {
-    double x = canvas_data->curr_block->block_to_sequence.t1,
-      y = canvas_data->curr_block->block_to_sequence.t2 ;
-
-    foo_canvas_item_w2i(canvas_data->curr_root_group, &x, &y) ;
-    my_foo_canvas_item_w2i(canvas_data->curr_root_group, &x, &y) ;
-
-    printf("\n") ;
-  }
-
 
   forward_col = createColumn(FOO_CANVAS_GROUP(canvas_data->curr_forward_group),
 			     window,
