@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  7 16:14 2005 (edgrif)
+ * Last edited: Oct 10 09:21 2005 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.4 2005-10-07 15:16:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.5 2005-10-10 10:32:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -246,14 +246,36 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, doub
   container_features = zmapWindowContainerGetFeatures(container_parent) ;
   container_background = zmapWindowContainerGetBackground(container_parent) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Get the height from the main group */
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_parent), &x1, &y1, &x2, &y2) ;
 
   /* Get the width from the child group */
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features), &x1, &y1, &x2, &y2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+  /* Either the caller sets the height or we get the height from the main group.
+   * We do this because features may cover only part of the range of the group, e.g. transcripts
+   * in a column, and we need the background to cover the whole range to allow us to get
+   * mouse clicks etc. */
   if (height != 0.0)
-    y2 = y2 + height ;
+    {
+      y1 = 0 ;
+      y2 = height ;
+    }
+  else
+    {
+      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_parent), NULL, &y1, NULL, &y2) ;
+
+      zmapWindowExt2Zero(&y1, &y2) ;
+    }
+
+
+  /* Get the width from the child group */
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features), &x1, NULL, &x2, NULL) ;
+
 
   foo_canvas_item_set(container_background,
 		      "x1", x1,
@@ -324,6 +346,12 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapWindowBumpType bump_
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
 						 NULL, valueDestroyCB) ;
       break ;
+    case ZMAP_WINDOW_BUMP_NAME:
+      bump_data.incr = 20.0 ;
+
+      bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
+						 NULL, valueDestroyCB) ;
+      break ;
     default:
       zMapAssert("Coding error, unrecognised ZMapWindowItemFeatureType") ;
       break ;
@@ -333,7 +361,7 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapWindowBumpType bump_
   g_list_foreach(column_features->item_list, bumpColCB, (gpointer)&bump_data) ;
 
 
-  if (bump_type == ZMAP_WINDOW_BUMP_POSITION)
+  if (bump_type == ZMAP_WINDOW_BUMP_POSITION || bump_type == ZMAP_WINDOW_BUMP_NAME)
     g_hash_table_destroy(bump_data.pos_hash) ;
 
   /* Make the parent groups bounding box as large as the group.... */
@@ -523,6 +551,31 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	    *(double *)value = offset ;
 	    
 	    g_hash_table_insert(bump_data->pos_hash, y1_ptr, value) ;
+	  }
+	
+	break ;
+      }
+    case ZMAP_WINDOW_BUMP_NAME:
+      {
+	ZMapFeature feature ;
+
+	feature = (ZMapFeature)(g_object_get_data(G_OBJECT(item), "item_feature_data")) ;
+
+	if (g_hash_table_lookup_extended(bump_data->pos_hash,
+					 GINT_TO_POINTER(feature->original_id), &key, &value))
+	  {
+	    offset = *(double *)value ;
+	  }
+	else
+	  {
+	    offset = bump_data->offset ;
+
+	    value = g_new(double, 1) ;
+	    *(double *)value = offset ;
+	    
+	    g_hash_table_insert(bump_data->pos_hash, GINT_TO_POINTER(feature->original_id), value) ;
+
+	    bump_data->offset += bump_data->incr ;
 	  }
 	
 	break ;
