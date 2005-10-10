@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  7 16:15 2005 (edgrif)
+ * Last edited: Oct 10 18:40 2005 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.5 2005-10-07 15:16:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.6 2005-10-10 17:40:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -412,11 +412,10 @@ void zmapWindowPrintItemCoords(FooCanvasItem *item)
 
   printf("P %f, %f, %f, %f -> ", x1, y1, x2, y2) ;
 
-  my_foo_canvas_item_i2w(item, &x1, &y1) ;
-  my_foo_canvas_item_i2w(item, &x2, &y2) ;
+  foo_canvas_item_i2w(item, &x1, &y1) ;
+  foo_canvas_item_i2w(item, &x2, &y2) ;
 
   printf("W %f, %f, %f, %f\n", x1, y1, x2, y2) ;
-
 
   return ;
 }

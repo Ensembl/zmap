@@ -26,17 +26,15 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct  7 17:56 2005 (edgrif)
+ * Last edited: Oct 10 18:38 2005 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.21 2005-10-07 17:18:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.22 2005-10-10 17:39:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
-
-
 
 
 
@@ -354,13 +352,6 @@ void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
 
 
 
-
-
-
-
-
-
-
 /* 
  *                  Internal routines.
  */
@@ -387,14 +378,6 @@ static void cropLongItem(gpointer data, gpointer user_data)
 
   foo_canvas_get_scroll_region(window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("\nScroll region: %f -> %f\n", scroll_y1, scroll_y2) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
   /* Reset to original coords because we may be zooming out, you could be more clever
    * about this but is it worth the convoluted code ? */
   if (FOO_IS_CANVAS_LINE(long_item->item))
@@ -420,9 +403,9 @@ static void cropLongItem(gpointer data, gpointer user_data)
 
 
   dummy_x = 0 ;
-  my_foo_canvas_item_i2w(long_item->item, &dummy_x, &start) ;
-  my_foo_canvas_item_i2w(long_item->item, &dummy_x, &end) ;
 
+  foo_canvas_item_i2w(long_item->item, &dummy_x, &start) ;
+  foo_canvas_item_i2w(long_item->item, &dummy_x, &end) ;
 
   /* Now clip anything that overlaps the boundaries of the scrolled region. */
   if (!(end < scroll_y1) && !(start > scroll_y2)
@@ -434,21 +417,8 @@ static void cropLongItem(gpointer data, gpointer user_data)
       if (end > scroll_y2)
 	end = scroll_y2 ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("item global/local: %f -> %f  ", start, end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      my_foo_canvas_item_w2i(long_item->item, &dummy_x, &start) ;
-      my_foo_canvas_item_w2i(long_item->item, &dummy_x, &end) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("     %f -> %f\n", start, end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+      foo_canvas_item_w2i(long_item->item, &dummy_x, &start) ;
+      foo_canvas_item_w2i(long_item->item, &dummy_x, &end) ;
 
       if (FOO_IS_CANVAS_LINE(long_item->item))
 	{
