@@ -26,6 +26,8 @@ case $opsys in
     # and so does not work....not sure why....
     popt=~acedb/ZMap/prefix/ALPHA
     cc_args='CC=cc'
+
+    # N.B. level5 messages just produces too much output for everyday use....
     cflags_args="CFLAGS=-I$popt/include -msg_enable level4"
     ld_args="LDFLAGS=-rpath /usr/local/gtk2/lib:$popt/lib"
 
