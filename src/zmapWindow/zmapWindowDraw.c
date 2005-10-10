@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 10 09:21 2005 (edgrif)
+ * Last edited: Oct 10 13:54 2005 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.5 2005-10-10 10:32:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.6 2005-10-10 17:41:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -742,13 +742,7 @@ static void printItem(FooCanvasItem *item, int indent, char *prefix)
     }
   printf("%s", prefix) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
-  printf("%f, %f, %f, %f\n", x1, y1, x2, y2) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   zmapWindowPrintItemCoords(item) ;
-
 
   return ;
 }
