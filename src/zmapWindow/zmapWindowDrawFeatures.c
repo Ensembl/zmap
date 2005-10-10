@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct  7 18:07 2005 (edgrif)
+ * Last edited: Oct 10 09:21 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.91 2005-10-07 17:19:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.92 2005-10-10 10:32:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -746,14 +746,6 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
 			"x2", 5.0,
 			NULL) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* NB I HAVE CHANGED THIS TO BE ON THE GROUP NOW....SO HAD BETTER IMPLEMENT IT.... */
-
-  /* We should just do this on the group, not this bounding box but one step at a time....
-   * and when we do we should swop to using ITEM_SET for the type but this will require
-   * changes to the code that finds the feature item from its parent but button clicks etc. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   /* We can't set the "item_feature_data" as we don't have the feature set at this point.
    * This probably points to some muckiness in the code, problem is caused by us deciding
    * to display all columns whether they have features or not and so some columns may not
@@ -1464,6 +1456,7 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
       {"Edit Details"     ,  2, itemMenuCB, NULL},
       {"Column Bump Simple", 3, itemMenuCB, NULL},
       {"Column Bump Position"  , 5, itemMenuCB, NULL},
+      {"Column Bump Name"  , 7, itemMenuCB, NULL},
       {"Column UnBump"    ,  4, itemMenuCB, NULL},
       {"Search Window"    , 6, itemMenuCB, NULL},
       {NULL               , 0, NULL, NULL},
@@ -1595,6 +1588,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
     case 3:
     case 4:
     case 5:
+    case 7:
       {
 	ZMapWindowBumpType bump_type ;
 
@@ -1602,6 +1596,8 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	  bump_type = ZMAP_WINDOW_BUMP_SIMPLE ;
 	else if (menu_item_id == 4)
 	  bump_type = ZMAP_WINDOW_BUMP_NONE ;
+	else if (menu_item_id == 7)
+	  bump_type = ZMAP_WINDOW_BUMP_NAME ;
 	else
 	  bump_type = ZMAP_WINDOW_BUMP_POSITION ;
 	zmapWindowColumnBump(getItemsColGroup(menu_data->item), bump_type) ;
@@ -1703,6 +1699,7 @@ static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
       {"Show Feature List", 1, columnMenuCB, NULL},
       {"Column Bump Simple"     , 2, columnMenuCB, NULL},
       {"Column Bump Position"   , 4, columnMenuCB, NULL},
+      {"Column Bump Name"   , 6, columnMenuCB, NULL},
       {"Column UnBump"   , 3, columnMenuCB, NULL},
       {"Search Window"   , 5, columnMenuCB, NULL},
       {NULL,                0, NULL, NULL}
@@ -1760,6 +1757,9 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
       break ;
     case 4:
       zmapWindowColumnBump(FOO_CANVAS_GROUP(menu_data->item), ZMAP_WINDOW_BUMP_POSITION) ;
+      break ;
+    case 6:
+      zmapWindowColumnBump(FOO_CANVAS_GROUP(menu_data->item), ZMAP_WINDOW_BUMP_NAME) ;
       break ;
     case 5:
       zmapWindowCreateSearchWindow(menu_data->window, (ZMapFeatureAny)(menu_data->feature_set)) ;
