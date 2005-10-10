@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Oct  7 10:27 2005 (rds)
+ * Last edited: Oct 10 08:44 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.81 2005-10-07 10:57:51 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.82 2005-10-10 10:31:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -180,7 +180,8 @@ typedef enum
   {
     ZMAP_WINDOW_BUMP_NONE,				    /* i.e. reset to no bumping. */
     ZMAP_WINDOW_BUMP_SIMPLE,				    /* only for testing really... */
-    ZMAP_WINDOW_BUMP_POSITION				    /* bump on y position */
+    ZMAP_WINDOW_BUMP_POSITION,				    /* bump on y position */
+    ZMAP_WINDOW_BUMP_NAME				    /* bump on feature name */
   } ZMapWindowBumpType ;
 
 
@@ -466,6 +467,9 @@ void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 
 
 void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end) ;
+
+
+gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
 
 
 #endif /* !ZMAP_WINDOW_P_H */
