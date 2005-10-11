@@ -47,7 +47,10 @@ DEFAULT_INC="-I ."
 # clean up first
 # xargs: I've removed the -r because not all platforms have it.
 # rm: I've added -r to deal with directories and taken away the -f so we can see any errors.
-cat .cvsignore | xargs -t rm -r
+# I've changed from just cat'ing the root dir .cvsignore to all of them and then grep'ing them
+# replacing .cvsignore: in the output from grep and removing the file! Ha ha.
+#cat .cvsignore | xargs -t rm -r
+find ./ -name '.cvsignore' | xargs grep '.' | sed -e 's/.cvsignore://' | xargs -t rm -r
 
 # Run the autoprogs
 echo "Running ${ACLOCAL}..."
