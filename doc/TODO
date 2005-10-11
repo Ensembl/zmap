@@ -149,6 +149,15 @@ Text = we should alllow external programs to \
 supplying a list of objects from an external source rather like the current feature list \
 - would enable user/lace/whatever to select their own sets of features
 
+[empty columns]
+Across = Important
+Down = Not_Urgent
+Text = Currently we can show columns even if empty, this may be good for multiple alignments \
+because otherwise the alignment blocks are likely to be all sorts of different widths. \
+The problem is that this makes the code more complicated which is not great. \
+Perhaps we should think about this again.
+
+
 [stacking of features in a single column]
 Across = Important
 Down = Urgent
