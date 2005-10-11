@@ -92,10 +92,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowItem.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDraw.c \
 	$(top_srcdir)/zmapWindow/zmapWindowZoomControl.c \
-	$(top_srcdir)/zmapWindow/zmapWindowZoomControl_P.h \
-	$(top_srcdir)/zmapWindow/zmapWindowBump_P.h \
-	$(top_srcdir)/zmapWindow/zmapWindowBump.h \
-	$(top_srcdir)/zmapWindow/zmapWindowBump.c
+	$(top_srcdir)/zmapWindow/zmapWindowZoomControl_P.h
 
 libZMapThr_a_SOURCES = $(top_srcdir)/zmapServer/zmapServer.c \
 	$(top_srcdir)/zmapServer/zmapServerProtocolHandler.c \
