@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Oct  7 09:35 2005 (edgrif)
+ * Last edited: Oct 12 11:55 2005 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.10 2005-10-07 08:36:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.11 2005-10-13 13:34:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,9 +40,6 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
-
-/* The plan is to expand the functions here to provide a kind of querying service so that
- * we can look for all features in a column for instance. */
 
 
 /* Used to hold coord information + return a result the child search callback function. */
@@ -108,11 +105,9 @@ typedef struct
 
 
 static void destroyIDHash(gpointer data) ;
-
 static void doHashSet(GHashTable *hash_table, GList *search, GList **result) ;
 static void searchItemHash(gpointer key, gpointer value, gpointer user_data) ;
 static void addItem(gpointer key, gpointer value, gpointer user_data) ;
-
 static void childSearchCB(gpointer data, gpointer user_data) ;
 
 static void printGlist(gpointer data, gpointer user_data) ;
@@ -307,6 +302,57 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 
   return result ;
 }
+
+
+/* Remove functions...not quite as simple as they seem, because removing an item may imply
+ * removing its hash table and the hash table below that and the hash table below that.... */
+
+
+
+/* Remove a hash for the given feature set.
+ * The set may already exist if we are merging more data from another server,
+ * if so then no action is taken otherwise we would lose all our existing feature hashes !
+ * Returns FALSE if the set_id cannot be found, otherwise it returns TRUE and removes
+ * the set_id and its hash tables. */
+gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
+				 GQuark align_id, GQuark block_id, GQuark set_id,
+				 ZMapStrand set_strand)
+{
+  gboolean result = FALSE ;
+  ID2Canvas align ;
+  ID2Canvas block ;
+  ID2Canvas set ;
+
+  /* We need special quarks that incorporate strand indication as the hashes are per column. */
+  set_id = zmapWindowFToIMakeSetID(set_id, set_strand) ;
+
+  if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
+					      GUINT_TO_POINTER(align_id)))
+      && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
+						 GUINT_TO_POINTER(block_id)))
+      && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
+					       GUINT_TO_POINTER(set_id))))
+    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* I DON'T THINK THIS IS NEEDED, GETS TRIGGERED BY THE REMOVE BELOW...BUT I BET THIS
+       * DOESN'T WORK IF YOU DO IT UP AT SAY THE ALIGN LEVEL, I DON'T THINK IT WILL CASCADE
+       * DOWN PROPERLY....PERHAPS TIME FOR A TEST.... */
+      if (set->hash_table)
+	g_hash_table_destroy(set->hash_table) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      result = g_hash_table_remove(block->hash_table, GUINT_TO_POINTER(set_id)) ;
+      zMapAssert(result == TRUE) ;
+    }
+
+  return result ;
+}
+
+
+
+
 
 
 /* RENAME TO FINDFEATUREITEM.... */
