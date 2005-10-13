@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 10 13:54 2005 (edgrif)
+ * Last edited: Oct 11 16:31 2005 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.6 2005-10-10 17:41:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.7 2005-10-13 13:33:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -219,13 +219,14 @@ FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent
   zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
   container_background = FOO_CANVAS_ITEM((g_list_nth(container_parent->item_list, 0))->data) ;
+  zMapAssert(FOO_IS_CANVAS_RE(container_background)) ;
 
   return container_background ;
 }
 
 
 /* Setting the background size is not completely straight forward because we always
- * want the hieght of the background to be the full height of the group (e.g. column)
+ * want the height of the background to be the full height of the group (e.g. column)
  * but we want the width to be set from the horizontal extent of the features.
  *
  * The height (y dimension) of the background can be given, if height is 0.0 then
@@ -245,15 +246,6 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, doub
 
   container_features = zmapWindowContainerGetFeatures(container_parent) ;
   container_background = zmapWindowContainerGetBackground(container_parent) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Get the height from the main group */
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_parent), &x1, &y1, &x2, &y2) ;
-
-  /* Get the width from the child group */
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features), &x1, &y1, &x2, &y2) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* Either the caller sets the height or we get the height from the main group.
@@ -288,6 +280,54 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, doub
 }
 
 
+/* Much like zmapWindowContainerSetBackgroundSize() but sets the background as big as the
+ * parent in width _and_ height. */
+void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent)
+{
+  FooCanvasItem *container_background ;
+  double x1, y1, x2, y2 ;
+  ContainerType type = CONTAINER_INVALID ;
+
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), "container_type")) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  container_background = zmapWindowContainerGetBackground(container_parent) ;
+
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_parent), &x1, &y1, &x2, &y2) ;
+
+  zmapWindowExt2Zero(&x1, &x2) ;
+  zmapWindowExt2Zero(&y1, &y2) ;
+
+  foo_canvas_item_set(container_background,
+		      "x1", x1,
+		      "y1", y1,
+		      "x2", x2,
+		      "y2", y2,
+		      NULL) ;
+
+  return ;
+}
+
+
+/* Does the container contain any child features ? */
+gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent)
+{
+  gboolean result = FALSE ;
+  FooCanvasGroup *container_features ;
+  ContainerType type = CONTAINER_INVALID ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), "container_type")) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  container_features = zmapWindowContainerGetFeatures(container_parent) ;
+
+  if (container_features->item_list)
+    result = TRUE ;
+
+  return result ;
+}
+
 
 void zmapWindowContainerPrint(FooCanvasGroup *container_parent)
 {
@@ -304,6 +344,23 @@ void zmapWindowContainerPrint(FooCanvasGroup *container_parent)
 }
 
 
+/* WARNING, this is a DUMB destroy, it just literally destroys all the canvas items starting
+ * with the container_parent so if you haven't registered destroy callbacks then you may be in
+ * trouble with dangling/inaccessible data. */
+void zmapWindowContainerDestroy(FooCanvasGroup *container_parent)
+{
+  int indent = 0 ;
+  ContainerType type = CONTAINER_INVALID ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), "container_type")) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  /* The FooCanvas seems to use GTK_OBJECTs but I don't know if this will automatically destroy
+   * all children, I think it must do. */
+  gtk_object_destroy(GTK_OBJECT(container_parent)) ;
+
+  return ;
+}
 
 
 
