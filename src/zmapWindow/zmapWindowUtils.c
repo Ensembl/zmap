@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 10 18:38 2005 (edgrif)
+ * Last edited: Oct 12 15:15 2005 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.22 2005-10-10 17:39:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.23 2005-10-13 13:31:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +40,7 @@
 
 static void cropLongItem(gpointer data, gpointer user_data) ;
 static void freeLongItem(gpointer data, gpointer user_data_unused) ;
+gint findLongItemCB(gconstpointer data, gconstpointer user_data) ;
 
 static void moveExonsIntrons(ZMapWindow window, 
 			     ZMapFeature origFeature,
@@ -204,34 +205,6 @@ ZMapWindowClampType zmapWindowClampSpan(ZMapWindow window, double *top_inout, do
 }
 
 
-/* Make a rectangle as big as its parent group, good for when you have one as a background
- * to items in a group. */
-void zmapWindowMaximiseRectangle(FooCanvasItem *rectangle)
-{
-  FooCanvasGroup *parent_group ;
-  double x1, y1, x2, y2 ;
-
-  zMapAssert(FOO_IS_CANVAS_RE(rectangle)) ;
-
-  parent_group = FOO_CANVAS_GROUP(rectangle->parent) ;
-
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(parent_group), &x1, &y1, &x2, &y2) ;
-
-  zmapWindowExt2Zero(&x1, &x2) ;
-  zmapWindowExt2Zero(&y1, &y2) ;
-  foo_canvas_item_set(rectangle,
-		      "x1", x1,
-		      "y1", y1,
-		      "x2", x2,
-		      "y2", y2,
-		      NULL) ;
-
-  return ;
-}
-
-
-
-
 /* The zmapWindowLongItemXXXXX() functions manage the cropping of canvas items that
  * can exceed the X Windows size limit of 32k for graphical items. We have to do this
  * because the foocanvas does not handle this. */
@@ -291,6 +264,28 @@ void zmapWindowLongItemCrop(ZMapWindow window)
 
   return ;
 }
+
+/* Returns TRUE if the item was removed, FALSE if the item could not be
+ * found in the list. */
+gboolean zmapWindowLongItemRemove(GList **long_items, FooCanvasItem *item)
+{
+  gboolean result = FALSE ;
+  GList *list_item ;
+
+  if ((list_item = g_list_find_custom(*long_items, item, findLongItemCB)))
+    {
+      gpointer data = list_item->data ;
+
+      *long_items = g_list_remove(*long_items, list_item->data) ;
+
+      freeLongItem(data, NULL) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
 
 
 /* Free all the long items by freeing individual structs then the list itself. */
@@ -445,4 +440,19 @@ static void cropLongItem(gpointer data, gpointer user_data)
     }
 
   return ;
+}
+
+
+/* Compares canvas item supplied via user_data with canvas item held in data of list item
+ * and returns 0 if they are the same. */
+gint findLongItemCB(gconstpointer data, gconstpointer user_data)
+{
+  gint result = -1 ;
+  FooCanvasItem *list_item = ((ZMapWindowLongItem)data)->item ;
+  FooCanvasItem *item = (FooCanvasItem *)user_data ;
+
+  if (list_item == item)
+    result = 0 ;
+
+  return result ;
 }
