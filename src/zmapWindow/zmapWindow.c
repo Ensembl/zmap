@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 30 15:08 2005 (rds)
+ * Last edited: Oct 13 14:24 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.94 2005-09-30 14:09:45 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.95 2005-10-13 13:29:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -1215,10 +1215,11 @@ static gboolean getConfiguration(ZMapWindow window)
   ZMapConfigStanza window_stanza ;
   char *window_stanza_name = ZMAP_WINDOW_CONFIG ;
   ZMapConfigStanzaElementStruct window_elements[] = {{"canvas_maxsize", ZMAPCONFIG_INT, {NULL}},
+						     {"keep_empty_columns", ZMAPCONFIG_BOOL, {NULL}},
 						     {NULL, -1, {NULL}}} ;
 
-  /* Set default values in stanza, keep this in synch with initialisation of window_elements array. */
-  window_elements[0].data.i = ZMAP_WINDOW_MAX_WINDOW ;
+  zMapConfigGetStructInt(window_elements, "canvas_maxsize") = ZMAP_WINDOW_MAX_WINDOW ;
+  zMapConfigGetStructBool(window_elements, "keep_empty_columns") = FALSE ;
 
   if ((config = zMapConfigCreate()))
     {
@@ -1232,6 +1233,9 @@ static gboolean getConfiguration(ZMapWindow window)
 	  next_window = zMapConfigGetNextStanza(window_list, NULL) ;
 	  
 	  window->canvas_maxwin_size = zMapConfigGetElementInt(next_window, "canvas_maxsize") ;
+
+	  window->keep_empty_cols = zMapConfigGetElementBool(next_window, "keep_empty_columns") ;
+
 	  
 	  zMapConfigDeleteStanzaSet(window_list) ;		    /* Not needed anymore. */
 	}
