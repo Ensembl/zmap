@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep 28 10:32 2005 (edgrif)
+ * Last edited: Oct 11 15:31 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.42 2005-09-30 07:30:20 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.43 2005-10-13 13:43:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -381,6 +381,12 @@ typedef struct ZMapFeatureTypeStyleStruct_
 
   char *description ;					    /* Description of what this style
 							       represents. */
+
+  /* I'm not sure this will work...how will we know ?? if there no features then we can't get
+   * the style...but lets leave this as a place holder.... */
+  gboolean show_when_empty ;				    /* If TRUE, features column is
+							       displayed even if there are no features. */
+
 
   GdkColor  outline ;					    /* Surround/line colour. */
   GdkColor  foreground ;				    /* Overlaid on background. */
