@@ -65,7 +65,7 @@ ZBmsgAndExit ()
 
   if [ -n "$ZBmailOnExit" ]
   then
-    ZBmsgMail "$errmsg"
+    ZBmsgMail "$errmsg" 'Failed'
   fi
 
   echo "$errmsg"
@@ -80,23 +80,28 @@ ZBmsgInfo ()
 
   if [ -n "$ZBmailOnExit" ]
   then
-    ZBmsgMail "$msg"
+    ZBmsgMail "$msg" 'OK'
   fi
 
   echo "$msg"
 }
 
+
+# Function requires two arguments:
+#
+#    ZBmsgMail "error message" 'mail subject suffix'
+#
+#    ZBmsgMail "Rubbish coding by Ed" 'OK'
+#
 # mailx is used because there are complications on the Alphas with what
 # flags are supported by the basic mail program.
 #
 ZBmsgMail ()
 {
-  if [ -n "$ZBmailOnExit" ]
-  then
-    echo "Message:
+    echo "Build Message:
   
-$1" | mailx -s "ZMap Build System Message" zmap
-  fi
+$1" | mailx -s "ZMap Build - $2" zmap
+
 }
 
 
