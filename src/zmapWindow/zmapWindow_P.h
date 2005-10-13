@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Oct 10 08:44 2005 (edgrif)
+ * Last edited: Oct 13 11:25 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.82 2005-10-10 10:31:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.83 2005-10-13 13:30:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -236,6 +236,10 @@ typedef struct _ZMapWindowStruct
   double column_gap ;					    /* horizontal gap between columns. */
 
 
+  gboolean keep_empty_cols ;				    /* If TRUE then columns are displayed
+							       even if they have no features. */
+
+
   GtkWidget     *text ;
   GdkAtom        zmap_atom ;
   void          *app_data ;
@@ -336,6 +340,7 @@ void   zmapWindowSetPageIncr    (ZMapWindow window);
 
 void zmapWindowLongItemCheck(ZMapWindow window, FooCanvasItem *item, double start, double end) ;
 void zmapWindowLongItemCrop(ZMapWindow window) ;
+gboolean zmapWindowLongItemRemove(GList **long_items, FooCanvasItem *item) ;
 void zmapWindowLongItemFree(GList *long_items) ;
 
 void zmapWindowDrawFeatures(ZMapWindow window, 
@@ -381,23 +386,24 @@ FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
 FooCanvasItem *zmapWindowFToIFindFeatureItem(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash, ZMapFeature feature,
 					   int child_start, int child_end) ;
+gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
+				 GQuark align_id, GQuark block_id, GQuark set_id,
+				 ZMapStrand set_strand) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
-void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 
+
+void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 void my_foo_canvas_item_w2i(FooCanvasItem *item, double *x, double *y) ;
 void my_foo_canvas_item_i2w(FooCanvasItem *item, double *x, double *y) ;
 void my_foo_canvas_item_goto(FooCanvasItem *item, double *x, double *y) ;
-
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
 void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 
 gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType);
 
-/* Window Editor functions */
 ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item); 
 void zmapWindowEditorDraw(ZMapWindowEditor editor);
-/* End of Window Editor functions */
 
 void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a);
 
@@ -407,8 +413,6 @@ ZMapWindowClampType zmapWindowClampSpan(ZMapWindow window,
 ZMapWindowClampType zmapWindowClampStartEnd(ZMapWindow window, 
                                             double *top_inout, 
                                             double *bot_inout) ;
-
-void zmapWindowMaximiseRectangle(FooCanvasItem *rectangle) ;
 
 void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 			ZMapFeature modFeature,  FooCanvasItem *item);
@@ -432,9 +436,11 @@ FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_paren
 FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *any_container_child) ;
 FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent) ;
 FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent) ;
+gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, double y_extent) ;
+void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerPrint(FooCanvasGroup *container_parent) ;
-
+void zmapWindowContainerDestroy(FooCanvasGroup *container_parent) ;
 
 void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout) ;
 
