@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct  6 17:58 2005 (rds)
+ * Last edited: Oct 11 10:03 2005 (rds)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.16 2005-10-07 10:55:52 rds Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.17 2005-10-21 19:23:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,7 +85,6 @@ enum {
   EDIT_COL_SCORE,               /*!< feature score  */
   EDIT_COL_NUMBER               /*!< number of columns  */
 };
-static char *column_titles[EDIT_COL_NUMBER] = {"Name", "Type", "Start", "End", "Strand", "Phase", "Score"};
 
 typedef enum {
   VIEW_ONLY   = 1 << 1, /*!< Only ever view the properties */
