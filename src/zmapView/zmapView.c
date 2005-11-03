@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep  7 13:58 2005 (rds)
+ * Last edited: Nov  3 15:48 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.63 2005-09-08 17:48:50 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.64 2005-11-03 16:11:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -799,6 +799,7 @@ static void selectCB(ZMapWindow window, void *caller_data, void *window_data)
 	  view_window = list_item->data ;
 
 	  item = zMapWindowFindFeatureItemByItem(view_window->window, select_item->item) ;
+	  zMapAssert(item) ;
 	    
 	  zMapWindowHighlightObject(view_window->window, item) ;
 	}
