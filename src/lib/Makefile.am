@@ -63,6 +63,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapUtils/zmapConfigDir.c \
 	$(top_srcdir)/zmapUtils/zmapConfigDir_P.h \
 	$(top_srcdir)/zmapUtils/zmapFileUtils.c \
+	$(top_srcdir)/zmapUtils/zmapDNAUtils.c \
 	$(top_srcdir)/zmapUtils/zmapGUIutils.c \
 	$(top_srcdir)/zmapUtils/zmapGLibUtils.c \
 	$(top_srcdir)/zmapUtils/zmapLogging.c \
