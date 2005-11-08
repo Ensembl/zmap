@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov  8 17:10 2005 (edgrif)
+ * Last edited: Nov  8 17:34 2005 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.25 2005-11-08 17:11:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.26 2005-11-08 17:38:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -119,13 +119,13 @@ gboolean zmapFeatureContextDNA(ZMapFeatureContext context,
 {
   gboolean result = FALSE ;
 
-  zMapAssert(context && seq_len && seq_name) ;
+  zMapAssert(context && seq_len_out && seq_name_out) ;
 
   if (context->sequence.sequence)
     {
-      *seq_name = (char *)g_quark_to_string(context->sequence_name) ;
-      *seq_len = context->sequence.length ;
-      *sequence = context->sequence.sequence ;
+      *seq_name_out = (char *)g_quark_to_string(context->sequence_name) ;
+      *seq_len_out  = context->sequence.length ;
+      *sequence_out = context->sequence.sequence ;
       result = TRUE ;
     }
 
