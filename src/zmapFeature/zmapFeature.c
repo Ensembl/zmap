@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Sep 28 11:24 2005 (edgrif)
+ * Last edited: Nov  8 17:10 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.24 2005-09-30 07:28:36 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.25 2005-11-08 17:11:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -101,6 +101,38 @@ static void removeNotFreeFeatureSet(GQuark key_id, gpointer data, gpointer user_
  * GFF). If there is a requirement for the two bundled then it should be implemented
  * via a simple new "create and add" function that merely calls both the create and
  * add functions from below. */
+
+
+
+
+/*!
+ * Returns TRUE if feature context has DNA, FALSE otherwise.
+ * If the context has DNA then the name, length and sequence are returned.
+ * 
+ * @param   seq_name_out  The name of the sequence (e.g. a clone name).
+ * @param   seq_len_out   The length of the sequence in bases.
+ * @param   sequence_out  The actual dna sequence as a C string.
+ * @return  gboolean      TRUE if context contained a sequence.
+ *  */
+gboolean zmapFeatureContextDNA(ZMapFeatureContext context,
+			       char **seq_name_out, int *seq_len_out, char **sequence_out)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(context && seq_len && seq_name) ;
+
+  if (context->sequence.sequence)
+    {
+      *seq_name = (char *)g_quark_to_string(context->sequence_name) ;
+      *seq_len = context->sequence.length ;
+      *sequence = context->sequence.sequence ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
 
 
 /*!

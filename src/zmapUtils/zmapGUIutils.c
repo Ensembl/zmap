@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 12 10:20 2004 (rnc)
+ * Last edited: Nov  8 12:17 2005 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.3 2004-11-12 10:23:01 rnc Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.4 2005-11-08 17:11:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,8 +43,21 @@ typedef struct
 
 
 
-
 static void clickButton(GtkWidget *widget, zmapDialogCB cb_data) ;
+
+
+
+/* ONLY NEEDED FOR OLD STYLE FILE SELECTOR, REMOVE WHEN WE CAN USE THE NEW CODE... */
+typedef struct
+{
+  GtkWidget *file_selector ;
+  char *file_path_out ;
+} FileDialogCBStruct, *FileDialogCB ;
+static void store_filename(GtkWidget *widget, gpointer user_data) ;
+static void killFileDialog(GtkWidget *widget, gpointer user_data) ;
+
+
+
 
 /* LIFT MY CODE FROM ACEDB THAT ALLOWED YOU TO CLICK TO CUT/PASTE MESSAGE CONTENTS....
  * ALSO ADD CODE FOR BLOCKING/NON-BLOCKING MESSAGES..... */
@@ -124,3 +137,131 @@ static void clickButton(GtkWidget *widget, zmapDialogCB cb_data)
 
   return ;
 }
+
+
+
+/* THERE IS SOME ARCHAIC CODE HERE, FORCED ON US BY OUR BACK LEVEL OF INSTALLATION OF GTK... */
+
+
+/* THIS IS THE OLD CODE..... */
+
+
+/* Returns path of file chosen by user which can be used directly to open the file,
+ * it is the callers responsibility to free the returned filepath using g_free().
+ * Caller can optionally specify a title and a default directory for the dialog. */
+char *zmapGUIFileChooser(GtkWidget *toplevel, char *title, char *directory_in)
+{
+  char *file_path = NULL ;
+  GtkWidget *file_selector;
+  FileDialogCBStruct cb_data = {NULL} ;
+
+  zMapAssert(toplevel) ;
+
+  /* Create the selector */
+  if (!title)
+    title = "Please give a file name:" ;
+
+  cb_data.file_selector = file_selector = gtk_file_selection_new (title) ;
+
+  gtk_file_selection_hide_fileop_buttons(GTK_FILE_SELECTION(file_selector)) ;
+
+  /* this appears just not to work at all, sigh............ */
+  if (directory_in)
+    {
+      char *directory = NULL ;
+
+      directory = g_strdup_printf("%s/",  directory_in) ;
+      gtk_file_selection_set_filename(GTK_FILE_SELECTION(file_selector), directory) ;
+      g_free(directory) ;
+    }
+
+  g_signal_connect (GTK_FILE_SELECTION(file_selector)->ok_button,
+		    "clicked",
+		    G_CALLBACK (store_filename),
+		    &cb_data) ;
+   			   
+  /* Ensure that the dialog box is destroyed when the user clicks a button. */
+  g_signal_connect(GTK_FILE_SELECTION(file_selector)->ok_button,
+		   "clicked",
+		   G_CALLBACK(killFileDialog), 
+		   &cb_data);
+
+  g_signal_connect(GTK_FILE_SELECTION(file_selector)->cancel_button,
+		   "clicked",
+		   G_CALLBACK(killFileDialog),
+		   &cb_data); 
+   
+
+  /* Display the file dialog and block until we get an action from the user. */
+  gtk_widget_show (file_selector);
+  gtk_main() ;
+
+  file_path = cb_data.file_path_out ;
+
+  return file_path ;
+}
+
+
+
+/* The file selection widget and the string to store the chosen filename */
+
+static void store_filename(GtkWidget *widget, gpointer user_data)
+{
+  FileDialogCB cb_data = (FileDialogCB)user_data ;
+  char *file_path = NULL ;
+
+  file_path = (char *)gtk_file_selection_get_filename(GTK_FILE_SELECTION(cb_data->file_selector)) ;
+
+  cb_data->file_path_out = g_strdup(file_path) ;
+
+  return ;
+}
+
+static void killFileDialog(GtkWidget *widget, gpointer user_data)
+{
+  FileDialogCB cb_data = (FileDialogCB)user_data ;
+
+  gtk_widget_destroy(cb_data->file_selector) ;
+
+  gtk_main_quit() ;
+
+  return ;
+}
+
+
+
+
+
+/* THIS IS THE NEW CODE THAT WE WOULD LIKE TO USE.... */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Returns path of file chosen by user which can be used directly to open the file,
+ * it is the callers responsibility to free the filepath using g_free().
+ * Caller can optionally specify a default directory. */
+char *zmapGUIFileChooser(GtkWidget *toplevel, char *directory)
+{
+  char *file_path ;
+  GtkWidget *dialog;
+
+  zMapAssert(toplevel) ;
+
+  dialog = gtk_file_chooser_dialog_new ("Open File",
+					toplevel,
+					GTK_FILE_CHOOSER_ACTION_OPEN,
+					GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+					GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+					NULL) ;
+
+  if (directory)
+    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), directory) ;
+
+  if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+    file_path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER (dialog)) ;
+
+  gtk_widget_destroy (dialog);
+
+  return file_path ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

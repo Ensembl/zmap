@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Feb 10 14:56 2005 (edgrif)
+ * Last edited: Nov  8 14:31 2005 (edgrif)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.4 2005-02-10 16:40:20 edgrif Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.5 2005-11-08 17:11:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -173,6 +173,7 @@ gboolean zMapFileEmpty(char *filepath)
 
   return result ;
 }
+
 
 
 
