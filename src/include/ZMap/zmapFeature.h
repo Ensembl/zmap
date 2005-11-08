@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Oct 11 15:31 2005 (edgrif)
+ * Last edited: Nov  8 14:53 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.43 2005-10-13 13:43:29 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.44 2005-11-08 17:08:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -281,8 +281,10 @@ typedef struct ZMapFeatureSetStruct_
   GQuark unique_id ;					    /* Unique id of this feature set. */
   GQuark original_id ;					    /* Original name,
 							       e.g. "Genewise predictions" */
-
-
+  ZMapFeatureTypeStyle style ;				    /* Style defining how this set is
+							       drawn, this applies only to the set
+							       * itself, _not_ the features within
+							       * the set. */
   GData *features ;					    /* A set of ZMapFeatureStruct. */
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
@@ -413,6 +415,9 @@ typedef struct ZMapFeatureTypeStyleStruct_
 } ZMapFeatureTypeStyleStruct ;
 
 
+
+gboolean zmapFeatureContextDNA(ZMapFeatureContext context,
+			       char **seq_name, int *seq_len, char **sequence) ;
 
 
 
