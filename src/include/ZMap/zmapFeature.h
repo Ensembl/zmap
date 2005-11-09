@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov  8 14:53 2005 (edgrif)
+ * Last edited: Nov  9 14:55 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.44 2005-11-08 17:08:02 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.45 2005-11-09 14:56:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -80,8 +80,7 @@ typedef enum {ZMAPFEATURE_INVALID = -1,
 	      ZMAPFEATURE_TRANSCRIPT, ZMAPFEATURE_VARIATION,
 	      ZMAPFEATURE_BOUNDARY, ZMAPFEATURE_SEQUENCE} ZMapFeatureType ;
 
-typedef enum {ZMAPSTRAND_NONE = 0,
-	      ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
+typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
 
 typedef enum {ZMAPPHASE_NONE = 0,
 	      ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPhase ;
@@ -452,7 +451,8 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext *diff_context_out) ;
 void zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
 				    ZMapFeatureAlignment alignment, gboolean master) ;
-void zMapFeatureDump(ZMapFeatureContext feature_context, char *file) ;
+gboolean zMapFeatureContextDump(GIOChannel *file,
+				ZMapFeatureContext feature_context, GError **error_out) ;
 void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
 ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;

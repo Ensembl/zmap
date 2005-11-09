@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 28 11:05 2005 (edgrif)
+ * Last edited: Nov  9 10:35 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.22 2005-09-30 07:29:28 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.23 2005-11-09 14:56:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,16 +42,17 @@ typedef struct
 {
   gboolean status ;
   GIOChannel *channel ;
+  GError **error_out ;
 } DumpFeaturesStruct, *DumpFeatures ;
 
 
-
-static void printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures feature_dump) ;
+static gboolean printLine(DumpFeatures dump, gchar *line) ;
+static gboolean printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures feature_dump) ;
 static void printFeatureAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
 static void printFeatureBlock(gpointer data, gpointer user_data) ;
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
-static gboolean printLine(GIOChannel *channel, gchar *line) ;
+
 static gint findStyle(gconstpointer list_data, gconstpointer user_data) ;
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
 static void addTypeQuark(gpointer data, gpointer user_data) ;
@@ -288,81 +289,23 @@ GData *zMapFeatureFindSetInBlock(ZMapFeatureBlock feature_block, GQuark set_id)
 }
 
 
-/* Dump out a feature context, if file is NULL then goes to stdout. */
-void zMapFeatureDump(ZMapFeatureContext feature_context, char *file)
+
+/* Dump out a feature context. */
+gboolean zMapFeatureContextDump(GIOChannel *file,
+				ZMapFeatureContext feature_context, GError **error_out)
 {
+  gboolean result = FALSE ;
   DumpFeaturesStruct dump_features ;
-  GIOChannel *channel ;
-  GError *channel_error = NULL ;
-  char *filepath = NULL ;
 
-
-  zMapAssert(feature_context) ;
-
+  zMapAssert(file && feature_context && error_out) ;
   
-  /* open output file */
-  if (!file)
-    {
-      filepath = g_strdup("stdout") ;
+  dump_features.status = TRUE ;
+  dump_features.channel = file ;
+  dump_features.error_out = error_out ;
 
-      channel = g_io_channel_unix_new(STDOUT_FILENO) ;
-    }
-  else
-    {
-      if (g_path_is_absolute(file))
-	filepath = g_strdup(file) ;
-      else
-	{
-	  gchar *curr_dir = g_get_current_dir() ;
+  result = printFeatureContext(feature_context, &dump_features) ;
 
-	  filepath = g_build_path("/", curr_dir, file, NULL) ;
-
-	  g_free(curr_dir) ;
-	}
-
-      channel = g_io_channel_new_file(filepath, "w", &channel_error) ;
-    }
-
-  if (!channel)
-    {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zMapShowMsg(ZMAP_MSG_WARNING, "Can't open output file \"%s\": %s",
-		  filepath, channel_error->message) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      g_error_free(channel_error) ;
-    }
-  else
-    {
-      dump_features.status = TRUE ;
-      dump_features.channel = channel ;
-
-      /* dump out the data */
-      printFeatureContext(feature_context, &dump_features) ;
-
-      /* close output file */
-      if (g_io_channel_shutdown(channel, TRUE, &channel_error) != G_IO_STATUS_NORMAL)
-	{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMapShowMsg(ZMAP_MSG_WARNING, "Error closing output file \"%s\": %s",
-		      filepath, channel_error->message) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  g_error_free(channel_error) ;
-	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      else 
-	zMapShowMsg(ZMAP_MSG_INFORMATION, "Feature Context dumped to \"%s\"", filepath) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    }
-
-  g_free(filepath) ;
-
-  return ;
+  return result ;
 }
 
 
@@ -531,8 +474,25 @@ ZMapFeature zMapFeatureCopy(ZMapFeature feature)
  */
 
 
-static void printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures dump_features)
+/* Should have a prefix level ?? */
+static gboolean printLine(DumpFeatures dump, gchar *line)
 {
+  gboolean status = TRUE ;
+  gsize bytes_written ;
+
+  if (g_io_channel_write_chars(dump->channel,
+			       line, -1, &bytes_written, dump->error_out) != G_IO_STATUS_NORMAL)
+    {
+      dump->status = status = FALSE ;
+    }
+
+  return status ;
+}
+
+
+static gboolean printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures dump)
+{
+  gboolean result = FALSE ;
   char *line ;
 
   line = g_strdup_printf("Feature Context:\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n", 
@@ -547,34 +507,37 @@ static void printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures
 			 feature_context->sequence_to_parent.c1,
 			 feature_context->sequence_to_parent.c2) ;
 
-  /* Only proceed if there's no problem printing the line */
-  if ((dump_features->status = printLine(dump_features->channel, line)))
-    g_datalist_foreach(&(feature_context->alignments), printFeatureAlignment, dump_features) ;
+  if ((result = printLine(dump, line)))
+    {
+      g_datalist_foreach(&(feature_context->alignments), printFeatureAlignment, dump) ;
+    }
 
   g_free(line) ;
 
-  return ;
+  return result ;
 }
 
 
+/* NOTE in all the below callback routines that there is no way to stop the callback being
+ * called if an error has occurred so we just have to take no action. */
+
 static void printFeatureAlignment(GQuark key_id, gpointer data, gpointer user_data)
 {
-  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
-  DumpFeatures dump_features = (DumpFeatures)user_data ;
-  char *line ;
+  DumpFeatures dump = (DumpFeatures)user_data ;
 
-  /* Once we have failed then we stop printing, note that there is no way to stop this routine
-   * being called which is a shame.... */
-  if (!dump_features->status)
-    return ;
+  if (dump->status)
+    {
+      ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
+      char *line ;
 
-  line = g_strdup_printf("\tAlignment:\t%s\n", g_quark_to_string(alignment->unique_id)) ;
+      line = g_strdup_printf("\tAlignment:\t%s\n", g_quark_to_string(alignment->unique_id)) ;
 
-  /* Only proceed if there's no problem printing the line */
-  if ((dump_features->status = printLine(dump_features->channel, line)))
-    g_list_foreach(alignment->blocks, printFeatureBlock, (gpointer)dump_features) ;
-
-  g_free(line) ;
+      /* Only proceed if there's no problem printing the line */
+      if (printLine(dump, line))
+	g_list_foreach(alignment->blocks, printFeatureBlock, (gpointer)dump) ;
+      
+      g_free(line) ;
+    }
 
   return ;
 }
@@ -583,29 +546,24 @@ static void printFeatureAlignment(GQuark key_id, gpointer data, gpointer user_da
 
 static void printFeatureBlock(gpointer data, gpointer user_data)
 {
-  ZMapFeatureBlock block = (ZMapFeatureBlock)data ;
-  DumpFeatures dump_features = (DumpFeatures)user_data ;
-  char *line ;
+  DumpFeatures dump = (DumpFeatures)user_data ;
 
-  line = g_strdup_printf("\tBlock:\t%s\t%d\t%d\t%d\t%d\n", g_quark_to_string(block->unique_id),
-			 block->block_to_sequence.t1,
-			 block->block_to_sequence.t2,
-			 block->block_to_sequence.q1,
-			 block->block_to_sequence.q2) ;
+  if (dump->status)
+    {
+      ZMapFeatureBlock block = (ZMapFeatureBlock)data ;
+      char *line ;
 
+      line = g_strdup_printf("\tBlock:\t%s\t%d\t%d\t%d\t%d\n", g_quark_to_string(block->unique_id),
+			     block->block_to_sequence.t1,
+			     block->block_to_sequence.t2,
+			     block->block_to_sequence.q1,
+			     block->block_to_sequence.q2) ;
 
-  /* Only proceed if there's no problem printing the line */
+      if (printLine(dump, line))
+	g_datalist_foreach(&(block->feature_sets), printFeatureSet, dump) ;
 
-  /* JUST FOR NOW.... */
-  dump_features->status = printLine(dump_features->channel, line) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if ((dump_features->status = printLine(dump_features->channel, line)))
-    g_datalist_foreach(&(block->feature_sets), printFeatureSet, dump_features) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  g_free(line) ;
+      g_free(line) ;
+    }
 
   return ;
 }
@@ -613,24 +571,25 @@ static void printFeatureBlock(gpointer data, gpointer user_data)
 
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 {
-  ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
-  DumpFeatures dump_features = (DumpFeatures)user_data ;
-  char *line ;
+  DumpFeatures dump = (DumpFeatures)user_data ;
 
   /* Once we have failed then we stop printing, note that there is no way to stop this routine
    * being called which is a shame.... */
-  if (!dump_features->status)
-    return ;
+  if (dump->status)
+    {
+      ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
+      char *line ;
 
-  line = g_strdup_printf("\tFeature Set:\t%s\t%s\n",
-			 g_quark_to_string(feature_set->unique_id),
-			 (char *)g_quark_to_string(feature_set->original_id)) ;
+      line = g_strdup_printf("\tFeature Set:\t%s\t%s\n",
+			     g_quark_to_string(feature_set->unique_id),
+			     (char *)g_quark_to_string(feature_set->original_id)) ;
 
-  /* Only proceed if there's no problem printing the line */
-  if ((dump_features->status = printLine(dump_features->channel, line)))
-    g_datalist_foreach(&(feature_set->features), printFeature, dump_features) ;
+      /* Only proceed if there's no problem printing the line */
+      if (printLine(dump, line))
+	g_datalist_foreach(&(feature_set->features), printFeature, dump) ;
     
-  g_free(line) ;
+      g_free(line) ;
+    }
 
   return ;
 }
@@ -638,113 +597,90 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
 static void printFeature(GQuark key_id, gpointer data, gpointer user_data)
 {
-  ZMapFeature feature = (ZMapFeature)data ;
-  DumpFeatures dump_features = (DumpFeatures)user_data ;
-  char *type, *strand, *phase ;
-  GString *line ;
-  gboolean unused ;
+  DumpFeatures dump = (DumpFeatures)user_data ;
 
-
-  /* Once we have failed then we stop printing, note that there is no way to stop this routine
-   * being called which is a shame.... */
-  if (!dump_features->status)
-    return ;
-
-
-  line = g_string_sized_new(150);
-  type   = zmapFeatureLookUpEnum(feature->type, TYPE_ENUM);
-  strand = zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM);
-  phase  = zmapFeatureLookUpEnum(feature->phase, PHASE_ENUM);
-  
-  g_string_printf(line, "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%f", 
-		  (char *)g_quark_to_string(key_id),
-		  feature->db_id,
-		  (char *)g_quark_to_string(feature->original_id),
-		  type,
-		  feature->x1,
-		  feature->x2,
-		  strand,
-		  phase,
-		  feature->score) ;
-  if (feature->text)
+  if (dump->status)
     {
-      g_string_append_c(line, '\t');
-      g_string_append(line, feature->text);
+      ZMapFeature feature = (ZMapFeature)data ;
+      char *type, *strand, *phase ;
+      GString *line ;
+
+      line = g_string_sized_new(1000) ;
+      type   = zmapFeatureLookUpEnum(feature->type, TYPE_ENUM) ;
+      strand = zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM) ;
+      phase  = zmapFeatureLookUpEnum(feature->phase, PHASE_ENUM) ;
+  
+      g_string_printf(line, "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%f", 
+		      (char *)g_quark_to_string(key_id),
+		      feature->db_id,
+		      (char *)g_quark_to_string(feature->original_id),
+		      type,
+		      feature->x1,
+		      feature->x2,
+		      strand,
+		      phase,
+		      feature->score) ;
+      if (feature->text)
+	{
+	  g_string_append_c(line, '\t');
+	  g_string_append(line, feature->text) ;
+	}
+
+      /* all these extra fields not required for now.
+       *if (feature->type == ZMAPFEATURE_HOMOL)
+       *{
+       * line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d\t%f\t", line,
+       *			 feature->feature.homol.type,
+       *			 feature->feature.homol.y1,
+       *			 feature->feature.homol.y2,
+       *			 feature->feature.homol.target_strand,
+       *			 feature->feature.homol.target_phase,
+       *			 feature->feature.homol.score
+       *			 );   
+       * for (i = 0; i < feature->feature.homol.align->len; i++)
+       *   {
+       *     align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
+       *     line = g_strdup_printf("%s\t%d\t%d\t%d\t%d", line,
+       *			     align->q1,
+       *			     align->q2,
+       *		     align->t1,
+       *			     align->t2
+       *			     );
+       *   }
+       *
+       *else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+       *{
+       *  line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d", line,
+       *			 feature->feature.transcript.cdsStart,
+       *			 feature->feature.transcript.cdsEnd,
+       *			 feature->feature.transcript.start_not_found,
+       *			 feature->feature.transcript.cds_phase,
+       *			 feature->feature.transcript.endNotFound
+       *			 );   
+       *  for (i = 0; i < feature->feature.transcript.exons->len; i++)
+       *    {
+       *      exon = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
+       *      line = g_strdup_printf("%s\t%d\t%d", line,
+       *			     exon->x1,
+       *			     exon->x2
+       *			     );
+       *    }
+       *}
+       */
+
+      g_string_append_c(line, '\n') ;
+
+      printLine(dump, line->str) ;
+
+      g_string_free(line, TRUE) ;
     }
-
-  /* all these extra fields not required for now.
-   *if (feature->type == ZMAPFEATURE_HOMOL)
-   *{
-   * line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d\t%f\t", line,
-   *			 feature->feature.homol.type,
-   *			 feature->feature.homol.y1,
-   *			 feature->feature.homol.y2,
-   *			 feature->feature.homol.target_strand,
-   *			 feature->feature.homol.target_phase,
-   *			 feature->feature.homol.score
-   *			 );   
-   * for (i = 0; i < feature->feature.homol.align->len; i++)
-   *   {
-   *     align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
-   *     line = g_strdup_printf("%s\t%d\t%d\t%d\t%d", line,
-   *			     align->q1,
-   *			     align->q2,
-   *		     align->t1,
-   *			     align->t2
-   *			     );
-   *   }
-   *
-   *else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-   *{
-   *  line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d", line,
-   *			 feature->feature.transcript.cdsStart,
-   *			 feature->feature.transcript.cdsEnd,
-   *			 feature->feature.transcript.start_not_found,
-   *			 feature->feature.transcript.cds_phase,
-   *			 feature->feature.transcript.endNotFound
-   *			 );   
-   *  for (i = 0; i < feature->feature.transcript.exons->len; i++)
-   *    {
-   *      exon = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
-   *      line = g_strdup_printf("%s\t%d\t%d", line,
-   *			     exon->x1,
-   *			     exon->x2
-   *			     );
-   *    }
-   *}
-   */
-
-  g_string_append_c(line, '\n');
-
-  dump_features->status = printLine(dump_features->channel, line->str) ;
-
-  g_string_free(line, TRUE) ;
 
   return ;
 }
 
 
-/* Should have a prefix level ?? */
-static gboolean printLine(GIOChannel *channel, gchar *line)
-{
-  gboolean status = TRUE ;
-  gsize bytes_written ;
-  GError *channel_error = NULL ;
 
-  if (g_io_channel_write_chars(channel, line, -1, &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
-    {
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zMapShowMsg(ZMAP_MSG_WARNING, "Error writing to output file: %50s... : %s",
-		  line, channel_error->message) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      g_error_free(channel_error) ;
-      status = FALSE ;
-    }
-
-  return status ;
-}
 
 
 /* GCompareFunc function, called for each member of a list of styles to see if the supplied 
