@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  7 11:41 2005 (rds)
+ * Last edited: Nov  9 14:13 2005 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.5 2005-10-07 10:57:24 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.6 2005-11-09 15:00:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -359,7 +359,13 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   SearchData search_data = (SearchData)cb_data ;
   char *align_txt, *block_txt, *strand_txt, *set_txt, *feature_txt  ;
   GQuark align_id, block_id, set_id, feature_id ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapStrand strand ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  char *strand_spec ;
+
   GList *search_result ;
 
 
@@ -450,28 +456,26 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
 
 
-  /* For Strand "*" means no strand or both strands. */
+  /* For strand, "." is ZMAPSTRAND_NONE which means search forward strand columns,
+   * "*" means search forward and reverse columns. */
   strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->strand_entry)) ;
   if (strand_txt && strlen(strand_txt) == 0)
-    strand = ZMAPSTRAND_NONE ;
+    strand_spec = "." ;
   else if (strstr(strand_txt, "+"))
-    strand = ZMAPSTRAND_FORWARD ;
+    strand_spec = "+" ;
   else if (strstr(strand_txt, "-"))
-    strand = ZMAPSTRAND_REVERSE ;
+    strand_spec = "-" ;
   else
-    strand = ZMAPSTRAND_NONE ;
+    strand_spec = "*" ;
 
 
   printf("Search parameters -    align: %s   block: %s  strand: %s  set: %s  feature: %s\n",
 	 align_txt, block_txt, strand_txt, set_txt, feature_txt) ;
 
 
-
-
-
   if ((search_result = zmapWindowFToIFindItemSetFull(search_data->window->context_to_item,
 						     align_id, block_id, set_id,
-						     strand, feature_id)))
+						     strand_spec, feature_id)))
     {
       ZMapFeatureAny any_feature ;
 
@@ -616,7 +620,7 @@ static void setFilterDefaults(SearchData search_data)
 	    if (feature->strand == ZMAPSTRAND_REVERSE)
 	      search_data->strand_txt = "-" ;
 	    else
-	      search_data->strand_txt = "*" ;
+	      search_data->strand_txt = "." ;
 	    break ;
 	  }
 	case ZMAPFEATURE_STRUCT_FEATURESET:
