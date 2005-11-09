@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Oct 12 11:55 2005 (edgrif)
+ * Last edited: Nov  9 14:53 2005 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.11 2005-10-13 13:34:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.12 2005-11-09 14:59:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -502,31 +502,42 @@ FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
  * etc.
  * 
  * Warning, may return null so result MUST BE TESTED by caller.
- *
+ * 
+ * NOTE that strand_spec is restricted to the values:
+ * 
+ *                 "."  =  ZMAPSTRAND_NONE
+ *                 "+"  =  ZMAPSTRAND_FORWARD
+ *                 "-"  =  ZMAPSTRAND_REVERSE
+ *                 "*"  =  <ZMAPSTRAND_FORWARD && ZMAPSTRAND_REVERSE>
+ * 
  *  */
 GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark set_id,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 				     ZMapStrand strand,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+				     char *strand_spec,
+
 				     GQuark feature_id)
 {
   GList *result = NULL ;
-  GQuark wild_card ;
+  GQuark strand_id, strand_none, strand_forward, strand_reverse, strand_both ;
   GQuark forward_set_id = 0, reverse_set_id = 0 ;
   GList *search = NULL ;
-  ItemSearchStruct align_search = {0},
-    block_search = {0},
-      forward_set_search = {0}, reverse_set_search = {0},
-				 feature_search = {0}, terminal_search = {0} ;
-  
+  ItemSearchStruct align_search = {0}, block_search = {0},
+	 forward_set_search = {0}, reverse_set_search = {0},
+         feature_search = {0}, terminal_search = {0} ;
 
   /* Required for minimum query. */
   zMapAssert(feature_to_context_hash && align_id) ;
+
 
   /* There is some muckiness here for strand stuff...strands cannot just be done as a filter
    * because we need to be able to _find_ the reverse or forward groups in the hash tables and
    * they cannot both be hashed to the same set_id...aaaaaaaaghhhhhhhh.......
    * For now I am doing the hash stuff _twice_ if both strands are required.... */
-
 
   /* A small problemeto is that the GQuark interface does not allow the removal of strings
    * so our routine here will pile up strings in the quark hash table which is global, if
@@ -543,11 +554,21 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 
   if (set_id)
     {
-      /* HACK....REALLY WE NEED TO BE ABLE TO SAY "DO BOTH STRANDS" SO WE DO THIS FOR 
-       * STRAND NONE AT THE MOMENT....ALTHOUGH STRAND NONE FEATURES WILL ALWAYS BE IN THE
-       * FORWARD GROUP... */
+      /* convert strand spec to something useful. */
+      strand_id = 0 ;
+      if (strand_spec)
+	{
+	  strand_none = g_quark_from_string(".") ;
+	  strand_forward = g_quark_from_string("+") ;
+	  strand_reverse = g_quark_from_string("-") ;
+	  strand_both = g_quark_from_string("*") ;
+	  
+	  strand_id = g_quark_from_string(strand_spec) ;
+	  zMapAssert(strand_id == strand_none || strand_id == strand_forward
+		     || strand_id == strand_reverse || strand_id == strand_both) ;
+	}
 
-      if (strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_NONE)
+      if (strand_id == strand_none || strand_id == strand_forward || strand_id == strand_both)
 	{
 	  forward_set_id = zmapWindowFToIMakeSetID(set_id, ZMAPSTRAND_FORWARD) ;
 	  forward_set_search.search_quark = forward_set_id ;
@@ -555,7 +576,7 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 	    forward_set_search.valid_func = filterOnRegExp ;	      
 	}
 
-      if (strand == ZMAPSTRAND_REVERSE || strand == ZMAPSTRAND_NONE)
+      if (strand_id == strand_reverse || strand_id == strand_both)
 	{
 	  reverse_set_id = zmapWindowFToIMakeSetID(set_id, ZMAPSTRAND_REVERSE) ;
 	  reverse_set_search.search_quark = reverse_set_id ;
@@ -571,7 +592,8 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 
   /* build the search list (terminal stop is needed to halt the search if none of the given
    * parameters is a stop. */
-  if (strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_NONE)
+  if (!set_id
+      || (strand_id == strand_none || strand_id == strand_forward || strand_id == strand_both))
     {
       search = NULL ;
 
@@ -590,7 +612,7 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 
   /* No point in doing a second search unless we are going to search as far down as the reverse
    * strand sets. */
-  if (strand == ZMAPSTRAND_REVERSE || (set_id && strand == ZMAPSTRAND_NONE))
+  if (set_id && (strand_id == strand_reverse || strand_id == strand_both))
     {
       search = NULL ;
 
@@ -812,10 +834,18 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
 	{
 	  doHashSet(item_id->hash_table, search_data.search, search_data.results) ;
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+      /* I THINK THIS PROBABLY JUST SHOULDN'T BE HERE....IF WE DON'T FIND SOMETHING WE SHOULD STOP
+       * this is probably left over from when I was just experimenting.... */
+
       else
 	{
 	  g_hash_table_foreach(hash_table, searchItemHash, (gpointer)&search_data) ;
 	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   *results_inout = results ;

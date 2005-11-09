@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Oct 13 11:25 2005 (edgrif)
+ * Last edited: Nov  9 13:46 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.83 2005-10-13 13:30:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.84 2005-11-09 14:59:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -379,7 +379,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
 					  GQuark feature_id) ;
 GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark set_id,
-				     ZMapStrand strand,
+				     char *strand_spec,
 				     GQuark feature_id) ;
 FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
 					 ZMapFeatureSet feature_set, ZMapStrand strand) ;
