@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Sep 28 11:05 2005 (edgrif)
+ * Last edited: Nov  9 11:50 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.32 2005-09-30 07:20:10 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.33 2005-11-09 14:58:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -865,15 +865,33 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0 ;
   GQuark column_id = 0 ;
+  ZMapFeatureTypeStyle set_style = NULL ;
 
+
+  /* Set up the name/style for the current feature set....
+   * Need to look for a zmap specific attribute field which specifies a column group independently of
+   * the required "source" (aka method) field. */
   feature_set_name = source ;
 
-  /* Look for a zmap specific attribute field which specifies a column group independently of
-   * the required "source" (aka method) field. */
   if ((column_id = getColumnGroup(attributes)))
+    feature_set_name = (char *)g_quark_to_string(column_id) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* This stuff ALL BREAKS COLUMN/FEATURE PLACEMENT ETC...NEEDS MUCH MORE WORK... */
+  else
+    column_id = g_quark_from_string(feature_set_name) ;
+
+
+
+  if (!(set_style = zMapFindStyle(parser->sources, column_id)))
     {
-      feature_set_name = (char *)g_quark_to_string(column_id) ;
+      result = FALSE ;
+      return result ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* We require additional information from the attributes for some types. */
