@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  8 16:45 2005 (edgrif)
+ * Last edited: Nov  9 13:59 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.95 2005-11-08 17:13:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.96 2005-11-09 15:01:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -183,6 +183,7 @@ static FooCanvasGroup *getItemsColGroup(FooCanvasItem *item) ;
 static void setColours(ZMapCanvasData canvas_data) ;
 
 static void dumpFASTA(ZMapWindow window) ;
+static void dumpContext(ZMapWindow window) ;
 
 
 
@@ -1494,6 +1495,7 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
       {"Column UnBump"    ,  4, itemMenuCB, NULL},
       {"Search Window"     , 6, itemMenuCB, NULL},
       {"Dump DNA"          , 8, itemMenuCB, NULL},
+      {"Dump Context"      , 9, itemMenuCB, NULL},
       {NULL               , 0, NULL, NULL},
       {NULL               , 0, NULL, NULL},
       {NULL               , 0, NULL, NULL},
@@ -1501,7 +1503,7 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
       {NULL               , 0, NULL, NULL},
       {NULL               , 0, NULL, NULL}
     } ;
-  int free_menu_slot = 8 ;
+  int free_menu_slot = 9 ;
   ZMapWindowMenuItem menu_item ;
   ItemMenuCBData menu_data ;
   ZMapFeature feature ;
@@ -1598,7 +1600,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 					     feature->parent->parent->parent->unique_id,
 					     feature->parent->parent->unique_id,
 					     feature->parent->unique_id,
-					     feature->strand,
+					     zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
 					     g_quark_from_string("*")) ;
 
         zmapWindowListWindowCreate(menu_data->window, list, 
@@ -1615,7 +1617,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
                                                 feature->parent->parent->parent->unique_id,
                                                 feature->parent->parent->unique_id,
                                                 feature->parent->unique_id,
-                                                feature->strand,
+                                                zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
                                                 feature->unique_id);
         zmapWindowEditorCreate(menu_data->window, list->data) ;
         
@@ -1642,13 +1644,19 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
     case 6:
       zmapWindowCreateSearchWindow(menu_data->window, (ZMapFeatureAny)feature) ;
       break ;
-
     case 8:
       {
 	dumpFASTA(menu_data->window) ;
 
 	break ;
       }
+    case 9:
+      {
+	dumpContext(menu_data->window) ;
+
+	break ;
+      }
+
     default:
       zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
       break ;
@@ -1787,7 +1795,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 					     feature->parent->parent->unique_id,
 					     feature->parent->unique_id,
 					     feature->unique_id,
-					     strand,
+					     zmapFeatureLookUpEnum(strand, STRAND_ENUM),
 					     g_quark_from_string("*")) ;
 	
         zmapWindowListWindowCreate(menu_data->window, list, 
@@ -1983,6 +1991,7 @@ static void dumpFASTA(ZMapWindow window)
   char *seq_name = NULL ;
   int seq_len = 0 ;
   char *sequence = NULL ;
+  char *error_prefix = "FASTA DNA dump failed:" ;
 
   if (!(dna = zmapFeatureContextDNA(window->feature_context, &seq_name, &seq_len, &sequence))
       || !(filepath = zmapGUIFileChooser(window->toplevel, "FASTA filename ?", NULL))
@@ -1993,12 +2002,12 @@ static void dumpFASTA(ZMapWindow window)
 
       /* N.B. if there is no filepath it means user cancelled so take no action... */
       if (!dna)
-	err_msg = "Sorry, there is no DNA to dump." ;
+	err_msg = "there is no DNA to dump." ;
       else if (error)
 	err_msg = error->message ;
 
       if (err_msg)
-	zMapShowMsg(ZMAP_MSG_WARNING, "%s", err_msg) ;
+	zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, err_msg) ;
 
       if (error)
 	g_error_free(error) ;
@@ -2011,7 +2020,49 @@ static void dumpFASTA(ZMapWindow window)
 
       if ((status = g_io_channel_shutdown(file, TRUE, &error)) != G_IO_STATUS_NORMAL)
 	{
-	  zMapShowMsg(ZMAP_MSG_WARNING, "%s", error->message) ;
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+	  g_error_free(error) ;
+	}
+    }
+
+
+  return ;
+}
+
+
+static void dumpContext(ZMapWindow window)
+{
+  char *filepath = NULL ;
+  GIOChannel *file = NULL ;
+  GError *error = NULL ;
+  char *seq_name = NULL ;
+  int seq_len = 0 ;
+  char *sequence = NULL ;
+  char *error_prefix = "Feature context dump failed:" ;
+
+  if (!(filepath = zmapGUIFileChooser(window->toplevel, "Context Dump filename ?", NULL))
+      || !(file = g_io_channel_new_file(filepath, "w", &error))
+      || !zMapFeatureContextDump(file, window->feature_context, &error))
+    {
+      /* N.B. if there is no filepath it means user cancelled so take no action...,
+       * otherwise we output the error message. */
+      if (error)
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+	  g_error_free(error) ;
+	}
+    }
+
+
+  if (file)
+    {
+      GIOStatus status ;
+
+      if ((status = g_io_channel_shutdown(file, TRUE, &error)) != G_IO_STATUS_NORMAL)
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
 
 	  g_error_free(error) ;
 	}
