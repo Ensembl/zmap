@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 14:53 2005 (edgrif)
+ * Last edited: Nov  9 19:19 2005 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.12 2005-11-09 14:59:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.13 2005-11-09 19:21:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,6 +109,7 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **result) ;
 static void searchItemHash(gpointer key, gpointer value, gpointer user_data) ;
 static void addItem(gpointer key, gpointer value, gpointer user_data) ;
 static void childSearchCB(gpointer data, gpointer user_data) ;
+static GQuark rootCanvasID(void);
 
 static void printGlist(gpointer data, gpointer user_data) ;
 
@@ -121,7 +122,7 @@ gboolean filterOnRegExp(FooCanvasItem *item, ItemSearch curr_search, gpointer us
 
 
 
-
+ 
 /* Create the table that hashes feature set ids to hash tables of features.
  * NOTE that the glib hash stuff does not store anything except the pointers to the
  * keys and values which is a pain if you are only hashing on ints....as I am.
@@ -162,9 +163,27 @@ GQuark zmapWindowFToIMakeSetID(GQuark set_id, ZMapStrand strand)
   return strand_set_id ;
 }
 
+gboolean zmapWindowFToIAddRoot(GHashTable *feature_to_context_hash,
+                               FooCanvasGroup *root_group)
+{
+  gboolean result = TRUE ;
+  GQuark root_id  = 0;
 
+  root_id = rootCanvasID();
 
+  if (!(g_hash_table_lookup(feature_to_context_hash, GUINT_TO_POINTER(root_id))))
+    {
+      ID2Canvas root ;
 
+      root = g_new0(ID2CanvasStruct, 1) ;
+      root->item = FOO_CANVAS_ITEM(root_group) ;
+      root->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+
+      g_hash_table_insert(feature_to_context_hash, GUINT_TO_POINTER(root_id), root) ;
+    }
+
+  return result ;
+}
 
 /* Add a hash for the given alignment. The alignment may already exist if we are merging
  * more data from another server, if so then no action is taken otherwise we would lose
@@ -410,17 +429,18 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
 					  GQuark feature_id)
 {
   FooCanvasItem *item = NULL ;
+  ID2Canvas root ;
   ID2Canvas align ;
   ID2Canvas block ;
   ID2Canvas set ;
   ID2Canvas feature ;
 
   /* Required for minimum query. */
-  zMapAssert(feature_to_context_hash && align_id) ;
+  zMapAssert(feature_to_context_hash) ; /* && align_id */
 
   /* Cascade down through the hashes until we reach the point the caller wants to stop at. */
-  if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
-					      GUINT_TO_POINTER(align_id))))
+  if (align_id && (align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
+                                                          GUINT_TO_POINTER(align_id))))
     {
       if (!block_id)
 	item = FOO_CANVAS_ITEM(align->item) ;
@@ -444,6 +464,16 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
 		}
 	    }
 	}
+    }
+  else
+    {
+      /* We just want the root_group of our columns. Not the canvas
+       * root_group, get that by foo_canvas_root(canvas)! */
+      /* The best check that we are actually asking for the root. */
+      zMapAssert(!block_id && !set_id && !feature_id); // "Warning: You are asking for the root_group.\n"
+      if((root = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
+                                                GUINT_TO_POINTER(rootCanvasID()))))
+        item = FOO_CANVAS_ITEM(root->item); /* This is actually a group. */
     }
 
   return item ;
@@ -1006,4 +1036,9 @@ gboolean filterOnRegExp(FooCanvasItem *item, ItemSearch curr_search, gpointer us
     result = TRUE ;
 
   return result ;
+}
+
+static GQuark rootCanvasID(void)
+{
+  return g_quark_from_string("this should be completely random and unique and nowhere else in the hash");
 }
