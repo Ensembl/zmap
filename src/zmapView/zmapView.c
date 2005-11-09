@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov  3 15:48 2005 (edgrif)
+ * Last edited: Nov  9 10:08 2005 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.64 2005-11-03 16:11:00 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.65 2005-11-09 14:57:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -659,7 +659,12 @@ ZMapView zMapViewGetView(ZMapViewWindow view_window)
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapFeatureDump(view_window->parent_view->features, file) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  printf("reimplement.......\n") ;
 
   return;
 }
