@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Jul 11 12:52 2005 (rnc)
+ * Last edited: Nov 10 10:49 2005 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.11 2005-07-11 11:55:41 rnc Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.12 2005-11-11 12:08:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -210,7 +210,7 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
   va_end(args) ;
 
 
-  zmapGUIShowMsg(msg_type, msg_string) ;
+  zMapGUIShowMsg(msg_type, msg_string) ;
   
   g_free(msg_string) ;
 
