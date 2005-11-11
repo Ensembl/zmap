@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 19 16:45 2005 (rds)
+ * Last edited: Nov 10 11:28 2005 (edgrif)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
- * CVS info:   $Id: zmapUtils_P.h,v 1.8 2005-07-19 17:03:55 rds Exp $
+ * CVS info:   $Id: zmapUtils_P.h,v 1.9 2005-11-11 12:08:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_P_H
@@ -77,20 +77,8 @@ TITLE " - " ZMAP_MAKE_VERSION_STRING(VERSION, RELEASE, UPDATE)
 "@(#) \n"
 
 
-
-
-
-
 #define ZMAP_SEPARATOR "/"				    /* WE SHOULD BE ABLE TO CALL A FUNC
 							       FOR THIS..... */
-
-typedef struct _ZMapWindowStruct *ZMapWindow;
-
-
-
-
-
-void zmapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
 
 
 #endif /* !ZMAP_UTILS_P_H */
