@@ -26,12 +26,13 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  9 13:59 2005 (edgrif)
+ * Last edited: Nov 11 11:44 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.96 2005-11-09 15:01:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.97 2005-11-11 12:09:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
@@ -184,7 +185,7 @@ static void setColours(ZMapCanvasData canvas_data) ;
 
 static void dumpFASTA(ZMapWindow window) ;
 static void dumpContext(ZMapWindow window) ;
-
+static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 
 
 /* Drawing coordinates: PLEASE READ THIS BEFORE YOU START MESSING ABOUT WITH ANYTHING...
@@ -1496,6 +1497,10 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
       {"Search Window"     , 6, itemMenuCB, NULL},
       {"Dump DNA"          , 8, itemMenuCB, NULL},
       {"Dump Context"      , 9, itemMenuCB, NULL},
+      {"Pfetch this sequence", 10, itemMenuCB, NULL},
+      {NULL               , 0, NULL, NULL},
+      {NULL               , 0, NULL, NULL},
+      {NULL               , 0, NULL, NULL},
       {NULL               , 0, NULL, NULL},
       {NULL               , 0, NULL, NULL},
       {NULL               , 0, NULL, NULL},
@@ -1503,7 +1508,7 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
       {NULL               , 0, NULL, NULL},
       {NULL               , 0, NULL, NULL}
     } ;
-  int free_menu_slot = 9 ;
+  int free_menu_slot = 10 ;
   ZMapWindowMenuItem menu_item ;
   ItemMenuCBData menu_data ;
   ZMapFeature feature ;
@@ -1653,6 +1658,12 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
     case 9:
       {
 	dumpContext(menu_data->window) ;
+
+	break ;
+      }
+    case 10:
+      {
+	pfetchEntry(menu_data->window, (char *)g_quark_to_string(feature->original_id)) ;
 
 	break ;
       }
@@ -2068,6 +2079,68 @@ static void dumpContext(ZMapWindow window)
 	}
     }
 
+
+  return ;
+}
+
+
+
+
+static void pfetchEntry(ZMapWindow window, char *sequence_name)
+{
+  char *error_prefix = "PFetch failed:" ;
+  gboolean result ;
+  gchar *command_line ;
+  gchar *standard_output = NULL, *standard_error = NULL ;
+  gint exit_status = 0 ;
+  GError *error = NULL ;
+
+  command_line = g_strdup_printf("pfetch -F '%s'", sequence_name) ;
+
+  if (!(result = g_spawn_command_line_sync(command_line,
+					   &standard_output, &standard_error,
+					   &exit_status, &error)))
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+      g_error_free(error) ;
+    }
+  else if (!*standard_output)
+    {
+      /* some versions of pfetch erroneously return nothing if they fail to find an entry. */
+
+      zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, "no output returned !") ;
+    }
+  else
+    {
+      *(standard_output + ((int)(strlen(standard_output)) - 1)) = '\0' ;	/* Get rid of annoying newline */
+
+      if (g_ascii_strcasecmp(standard_output, "no match") == 0)
+	{
+	  zMapShowMsg(ZMAP_MSG_INFORMATION, "%s  %s", error_prefix, standard_output) ;
+	}
+      else
+	{
+	  char *title ;
+	  
+	  title = g_strdup_printf("pfetch: \"%s\"", sequence_name) ;
+
+	  zMapGUIShowText(title, standard_output, FALSE) ;
+
+	  g_free(title) ;
+	}
+    }
+
+  /* Clear up, note that we have to do this because currently they are returned as buffers
+   * from g_strings (not documented in the interface) and so should always be freed. I include
+   * the conditional freeing in case the implementation changes anytime. */
+  if (standard_output)
+    g_free(standard_output) ;
+  if (standard_error)
+    g_free(standard_error) ;
+
+
+  g_free(command_line) ;
 
   return ;
 }
