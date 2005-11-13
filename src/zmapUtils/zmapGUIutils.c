@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 11 12:05 2005 (edgrif)
+ * Last edited: Nov 11 12:34 2005 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.5 2005-11-11 12:10:05 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.6 2005-11-13 16:45:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -503,7 +503,7 @@ void zMapGUIGetFontWidth(PangoFont *font, int *width_out)
  * @param y_out          Y pixels
  * @return               nothing
  */
-void zMapGUIGetPixelsPerUnit(int conv_type, GtkWidget *widget, double *x_out, double *y_out)
+void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, double *x_out, double *y_out)
 {
   GdkScreen *screen ;
   double width, height, width_mm, height_mm ;
