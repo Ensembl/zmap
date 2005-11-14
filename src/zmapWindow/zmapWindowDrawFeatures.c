@@ -19,16 +19,17 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk and
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk and
  *
  * Description: Draws genomic features in the data display window.
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 11 11:44 2005 (edgrif)
+ * Last edited: Nov 14 11:10 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.97 2005-11-11 12:09:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.98 2005-11-14 11:18:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,21 +43,17 @@
 
 
 
-/* Used to pass data back to column menu callbacks. */
-typedef struct
-{
-  GdkEventButton *button_event ;
-  ZMapWindow window ;
-  FooCanvasItem *item ;
-  ZMapFeatureSet feature_set ;
-} ColumnMenuCBDataStruct, *ColumnMenuCBData ;
-
 
 /* Used to pass data to canvas item menu callbacks. */
 typedef struct
 {
+  gboolean item_cb ;					    /* TRUE => item callback,
+							       FALSE => column callback. */
+
   ZMapWindow window ;
   FooCanvasItem *item ;
+
+  ZMapFeatureSet feature_set ;				    /* Only used in column callbacks... */
 } ItemMenuCBDataStruct, *ItemMenuCBData ;
 
 
@@ -156,13 +153,46 @@ static void removeEmptyColumnCB(gpointer data, gpointer user_data) ;
 static void positionColumns(ZMapCanvasData canvas_data) ;
 static void positionColumnCB(gpointer data, gpointer user_data) ;
 
+
+
+static ZMapWindowMenuItem makeMenuFeatureOps(int *start_index_inout,
+					     ZMapWindowMenuItemCallbackFunc callback_func,
+					     gpointer callback_data) ;
+static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
+static ZMapWindowMenuItem makeMenuBump(int *start_index_inout,
+				       ZMapWindowMenuItemCallbackFunc callback_func,
+				       gpointer callback_data) ;
+static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
+static ZMapWindowMenuItem makeMenuDumpOps(int *start_index_inout,
+					  ZMapWindowMenuItemCallbackFunc callback_func,
+					  gpointer callback_data) ;
+static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
+static ZMapWindowMenuItem makeMenuDNAHomol(int *start_index_inout,
+					   ZMapWindowMenuItemCallbackFunc callback_func,
+					   gpointer callback_data) ;
+static ZMapWindowMenuItem makeMenuProteinHomol(int *start_index_inout,
+					   ZMapWindowMenuItemCallbackFunc callback_func,
+					       gpointer callback_data) ;
+static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
+
+static void populateMenu(ZMapWindowMenuItem menu,
+			 int *start_index_inout,
+			 ZMapWindowMenuItemCallbackFunc callback_func,
+			 gpointer callback_data) ;
+
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
 			 FooCanvasItem *item) ;
 static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
-static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
+
+
+
 static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 			   FooCanvasItem *item, ZMapFeatureSet feature_set) ;
+
+static ZMapWindowMenuItem makeMenuColumnOps(int *start_index_inout,
+					    ZMapWindowMenuItemCallbackFunc callback_func,
+					    gpointer callback_data) ;
 static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feature,
@@ -1376,6 +1406,13 @@ static void positionColumnCB(gpointer data, gpointer user_data)
 
 
 
+
+
+/* 
+ *                           Event handlers
+ */
+
+
 /* Callback for destroy of items... */
 static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
@@ -1483,202 +1520,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 }
 
 
-static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
-{
-  char *menu_title = "Item menu" ;
-  ZMapWindowMenuItemStruct menu[] =
-    {
-      {"Show Feature List",  1, itemMenuCB, NULL},
-      {"Edit Details"     ,  2, itemMenuCB, NULL},
-      {"Column Bump Simple", 3, itemMenuCB, NULL},
-      {"Column Bump Position"  , 5, itemMenuCB, NULL},
-      {"Column Bump Name"  , 7, itemMenuCB, NULL},
-      {"Column UnBump"    ,  4, itemMenuCB, NULL},
-      {"Search Window"     , 6, itemMenuCB, NULL},
-      {"Dump DNA"          , 8, itemMenuCB, NULL},
-      {"Dump Context"      , 9, itemMenuCB, NULL},
-      {"Pfetch this sequence", 10, itemMenuCB, NULL},
-      {NULL               , 0, NULL, NULL},
-      {NULL               , 0, NULL, NULL},
-      {NULL               , 0, NULL, NULL},
-      {NULL               , 0, NULL, NULL},
-      {NULL               , 0, NULL, NULL},
-      {NULL               , 0, NULL, NULL},
-      {NULL               , 0, NULL, NULL},
-      {NULL               , 0, NULL, NULL},
-      {NULL               , 0, NULL, NULL}
-    } ;
-  int free_menu_slot = 10 ;
-  ZMapWindowMenuItem menu_item ;
-  ItemMenuCBData menu_data ;
-  ZMapFeature feature ;
-
-
-  /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
-  zMapAssert(feature) ;
-  
-  if (feature->type == ZMAPFEATURE_HOMOL)
-    {
-      if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
-	{
-	  menu[free_menu_slot].name = "Show multiple protein alignment in Blixem";
-	  menu[free_menu_slot + 1].name = "Show multiple protein alignment for just this type of homology";
-	}
-      else
-	{
-	  menu[free_menu_slot].name = "Show multiple dna alignment";      
-	  menu[free_menu_slot + 1].name = "Show multiple dna alignment for just this type of homology";      
-	}
-
-      /* We use id to distinguish between when user selects showing just one type of homology
-       * and all homologies. */
-      menu[free_menu_slot].callback_func = menu[free_menu_slot + 1].callback_func = blixemMenuCB ;
-      menu[free_menu_slot].id = 1 ;
-      menu[free_menu_slot + 1].id = 2 ;
-    }
-
-  menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
-  menu_data->window = window ;
-  menu_data->item = item ;
-
-  menu_item = menu ;
-  while (menu_item->name != NULL)
-    {
-      menu_item->callback_data = menu_data ;
-      menu_item++ ;
-    }
-
-  zMapWindowMakeMenu(menu_title, menu, button_event) ;
-
-  return ;
-}
-
-
-/* call blixem either for a single type of homology or for all homologies. */
-static void blixemMenuCB(int menu_item_id, gpointer callback_data)
-{
-  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  gboolean single_homol_type = FALSE ;
-  gboolean status ;
-
-  switch (menu_item_id)
-    {
-    case 1:
-      single_homol_type = FALSE ;
-      break ;
-    case 2:
-      single_homol_type = TRUE ;
-      break ;
-    default:
-      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
-      break ;
-    }
-
-  status = zmapWindowCallBlixem(menu_data->window, menu_data->item, single_homol_type) ;
-  
-  g_free(menu_data) ;
-
-  return ;
-}
-
-
-
-
-static void itemMenuCB(int menu_item_id, gpointer callback_data)
-{
-  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapFeature feature ;
-
-  /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data") ;
-  zMapAssert(feature) ;
-
-  switch (menu_item_id)
-    {
-    case 1:
-      {
-        ZMapFeature feature = NULL;
-        GList *list = NULL;
-        feature = g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data");
-        list = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
-					     feature->parent->parent->parent->unique_id,
-					     feature->parent->parent->unique_id,
-					     feature->parent->unique_id,
-					     zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
-					     g_quark_from_string("*")) ;
-
-        zmapWindowListWindowCreate(menu_data->window, list, 
-                                   (char *)g_quark_to_string(feature->parent->original_id), 
-                                   menu_data->item) ;
-      }
-      break ;
-    case 2:
-      {
-        ZMapFeature feature = NULL;
-        GList *list = NULL;
-        feature = g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data");
-        list    = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
-                                                feature->parent->parent->parent->unique_id,
-                                                feature->parent->parent->unique_id,
-                                                feature->parent->unique_id,
-                                                zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
-                                                feature->unique_id);
-        zmapWindowEditorCreate(menu_data->window, list->data) ;
-        
-      }
-      break ;
-    case 3:
-    case 4:
-    case 5:
-    case 7:
-      {
-	ZMapWindowBumpType bump_type ;
-
-	if (menu_item_id == 3)
-	  bump_type = ZMAP_WINDOW_BUMP_SIMPLE ;
-	else if (menu_item_id == 4)
-	  bump_type = ZMAP_WINDOW_BUMP_NONE ;
-	else if (menu_item_id == 7)
-	  bump_type = ZMAP_WINDOW_BUMP_NAME ;
-	else
-	  bump_type = ZMAP_WINDOW_BUMP_POSITION ;
-	zmapWindowColumnBump(getItemsColGroup(menu_data->item), bump_type) ;
-	break ;
-      }
-    case 6:
-      zmapWindowCreateSearchWindow(menu_data->window, (ZMapFeatureAny)feature) ;
-      break ;
-    case 8:
-      {
-	dumpFASTA(menu_data->window) ;
-
-	break ;
-      }
-    case 9:
-      {
-	dumpContext(menu_data->window) ;
-
-	break ;
-      }
-    case 10:
-      {
-	pfetchEntry(menu_data->window, (char *)g_quark_to_string(feature->original_id)) ;
-
-	break ;
-      }
-
-    default:
-      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
-      break ;
-    }
-
-  g_free(menu_data) ;
-
-  return ;
-}
-
-
 
 
 static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
@@ -1751,45 +1592,209 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 }
 
 
-static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
-			   FooCanvasItem *item, ZMapFeatureSet feature_set)
+
+
+
+/* 
+ *                       Menu functions.
+ */
+
+
+
+/* Build the menu for a feature item. */
+static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
 {
-  char *menu_title = "Column menu" ;
-  ZMapWindowMenuItemStruct menu[] =
-    {
-      {"Show Feature List", 1, columnMenuCB, NULL},
-      {"Column Bump Simple"     , 2, columnMenuCB, NULL},
-      {"Column Bump Position"   , 4, columnMenuCB, NULL},
-      {"Column Bump Name"   , 6, columnMenuCB, NULL},
-      {"Column UnBump"   , 3, columnMenuCB, NULL},
-      {"Search Window"   , 5, columnMenuCB, NULL},
-      {NULL,                0, NULL, NULL}
-    } ;
+  char *menu_title = "Item menu" ;
+  GList *menu_sets = NULL ;
   ZMapWindowMenuItem menu_item ;
-  ColumnMenuCBData cbdata ;
+  ItemMenuCBData menu_data ;
+  ZMapFeature feature ;
 
-  cbdata = g_new0(ColumnMenuCBDataStruct, 1) ;
-  cbdata->button_event = button_event ;
-  cbdata->window = window ;
-  cbdata->item = item ;
-  cbdata->feature_set = feature_set ;
 
-  menu_item = menu ;
-  while (menu_item->name != NULL)
+  /* Some parts of the menu are feature type specific so retrieve the feature item info
+   * from the canvas item. */
+  feature = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  zMapAssert(feature) ;
+
+  /* Call back stuff.... */
+  menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
+  menu_data->item_cb = TRUE ;
+  menu_data->window = window ;
+  menu_data->item = item ;
+
+  /* Make up the menu. */
+  menu_sets = g_list_append(menu_sets, makeMenuFeatureOps(NULL, NULL, menu_data)) ;
+
+  menu_sets = g_list_append(menu_sets, makeMenuBump(NULL, NULL, menu_data)) ;
+
+  if (feature->type == ZMAPFEATURE_HOMOL)
     {
-      menu_item->callback_data = cbdata ;
-      menu_item++ ;
+      if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+	menu_sets = g_list_append(menu_sets, makeMenuProteinHomol(NULL, NULL, menu_data)) ;
+      else
+	menu_sets = g_list_append(menu_sets, makeMenuDNAHomol(NULL, NULL, menu_data)) ;
     }
 
-  zMapWindowMakeMenu(menu_title, menu, button_event) ;
+  menu_sets = g_list_append(menu_sets, makeMenuDumpOps(NULL, NULL, menu_data)) ;
+
+  zMapWindowMakeMenu(menu_title, menu_sets, button_event) ;
 
   return ;
 }
 
 
+
+/* Build the background menu for a column. */
+static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
+			   FooCanvasItem *item, ZMapFeatureSet feature_set)
+{
+  char *menu_title = "Column menu" ;
+  GList *menu_sets = NULL ;
+  ZMapWindowMenuItem menu_item ;
+  ItemMenuCBData cbdata ;
+
+  cbdata = g_new0(ItemMenuCBDataStruct, 1) ;
+  cbdata->item_cb = FALSE ;
+  cbdata->window = window ;
+  cbdata->item = item ;
+  cbdata->feature_set = feature_set ;
+
+  /* Make up the menu. */
+  menu_sets = g_list_append(menu_sets, makeMenuColumnOps(NULL, NULL, cbdata)) ;
+
+  menu_sets = g_list_append(menu_sets, makeMenuBump(NULL, NULL, cbdata)) ;
+
+  menu_sets = g_list_append(menu_sets, makeMenuDumpOps(NULL, NULL, cbdata)) ;
+
+  zMapWindowMakeMenu(menu_title, menu_sets, button_event) ;
+
+  return ;
+}
+
+
+
+
+/* Set of makeMenuXXXX functions to create common subsections of menus. If you add to this
+ * you should make sure you understand how to specify menu paths in the item factory style.
+ * If you get it wrong then the menus will be scr*wed up.....
+ * 
+ * The functions are defined in pairs: one to define the menu, one to handle the callback
+ * actions, this is to emphasise that their indexes must be kept in step !
+ * 
+ * NOTE HOW THE MENUS ARE DECLARED STATIC IN THE VARIOUS ROUTINES TO MAKE SURE THEY STAY
+ * AROUND...OTHERWISE WE WILL HAVE TO KEEP ALLOCATING/DEALLOCATING THEM.....
+ */
+
+
+
+/* this is in the general menu and needs to be handled separately perhaps as the index is a global
+ * one shared amongst all general menu functions... */
+static ZMapWindowMenuItem makeMenuFeatureOps(int *start_index_inout,
+					     ZMapWindowMenuItemCallbackFunc callback_func,
+					     gpointer callback_data)
+{
+  static ZMapWindowMenuItemStruct menu[] =
+    {
+      {"Show Feature List",      1, itemMenuCB, NULL},
+      {"Edit Feature Details",   2, itemMenuCB, NULL},
+      {"Feature Search Window",  3, itemMenuCB, NULL},
+      {"Pfetch this feature",    4, itemMenuCB, NULL},
+      {NULL,                     0, NULL,       NULL}
+    } ;
+
+  populateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+static void itemMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapFeature feature ;
+
+  /* Retrieve the feature item info from the canvas item. */
+  feature = g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data") ;
+  zMapAssert(feature) ;
+
+  switch (menu_item_id)
+    {
+    case 1:
+      {
+        ZMapFeature feature = NULL;
+        GList *list = NULL;
+        feature = g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data");
+        list = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
+					     feature->parent->parent->parent->unique_id,
+					     feature->parent->parent->unique_id,
+					     feature->parent->unique_id,
+					     zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
+					     g_quark_from_string("*")) ;
+
+        zmapWindowListWindowCreate(menu_data->window, list, 
+                                   (char *)g_quark_to_string(feature->parent->original_id), 
+                                   menu_data->item) ;
+	break ;
+      }
+    case 2:
+      {
+        ZMapFeature feature = NULL;
+        GList *list = NULL;
+        feature = g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data");
+        list    = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
+                                                feature->parent->parent->parent->unique_id,
+                                                feature->parent->parent->unique_id,
+                                                feature->parent->unique_id,
+                                                zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
+                                                feature->unique_id);
+        zmapWindowEditorCreate(menu_data->window, list->data) ;
+        
+	break ;
+      }
+    case 3:
+      zmapWindowCreateSearchWindow(menu_data->window, (ZMapFeatureAny)feature) ;
+      break ;
+    case 4:
+      pfetchEntry(menu_data->window, (char *)g_quark_to_string(feature->original_id)) ;
+      break ;
+
+    default:
+      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
+      break ;
+    }
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
+
+
+/* this is in the general menu and needs to be handled separately perhaps as the index is a global
+ * one shared amongst all general menu functions... */
+static ZMapWindowMenuItem makeMenuColumnOps(int *start_index_inout,
+					    ZMapWindowMenuItemCallbackFunc callback_func,
+					    gpointer callback_data)
+{
+  static ZMapWindowMenuItemStruct menu[] =
+    {
+      {"Show Feature List",      1, columnMenuCB, NULL},
+      {"Feature Search Window",  2, columnMenuCB, NULL},
+      {NULL,                     0, NULL,       NULL}
+    } ;
+
+  populateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+
+
 static void columnMenuCB(int menu_item_id, gpointer callback_data)
 {
-  ColumnMenuCBData menu_data = (ColumnMenuCBData)callback_data ;
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
   switch (menu_item_id)
     {
@@ -1816,18 +1821,6 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 	break ;
       }
     case 2:
-      zmapWindowColumnBump(FOO_CANVAS_GROUP(menu_data->item), ZMAP_WINDOW_BUMP_SIMPLE) ;
-      break ;
-    case 3:
-      zmapWindowColumnBump(FOO_CANVAS_GROUP(menu_data->item), ZMAP_WINDOW_BUMP_NONE) ;
-      break ;
-    case 4:
-      zmapWindowColumnBump(FOO_CANVAS_GROUP(menu_data->item), ZMAP_WINDOW_BUMP_POSITION) ;
-      break ;
-    case 6:
-      zmapWindowColumnBump(FOO_CANVAS_GROUP(menu_data->item), ZMAP_WINDOW_BUMP_NAME) ;
-      break ;
-    case 5:
       zmapWindowCreateSearchWindow(menu_data->window, (ZMapFeatureAny)(menu_data->feature_set)) ;
       break ;
     default:
@@ -1839,6 +1832,216 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 
   return ;
 }
+
+
+
+
+
+/* Probably it would be wise to pass in the callback function, the start index for the item
+ * identifier and perhaps the callback data...... */
+static ZMapWindowMenuItem makeMenuBump(int *start_index_inout,
+				       ZMapWindowMenuItemCallbackFunc callback_func,
+				       gpointer callback_data)
+{
+
+  /* Really we want the code to do the work for us here of constructing strings etc...
+   * but one step at a time perhaps.... */
+
+  static ZMapWindowMenuItemStruct menu[] =
+    {
+      {"_Bump",                  0, NULL,       NULL},
+      {"Bump/Column Bump Simple",     1, bumpMenuCB, NULL},
+      {"Bump/Column Bump Position",   2, bumpMenuCB, NULL},
+      {"Bump/Column Bump Name",       3, bumpMenuCB, NULL},
+      {"Bump/Column UnBump",          4, bumpMenuCB, NULL},
+      {NULL,                     0, NULL,       NULL}
+    } ;
+
+  populateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+static void bumpMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapWindowBumpType bump_type ;
+
+  switch (menu_item_id)
+    {
+    case 1:
+      bump_type = ZMAP_WINDOW_BUMP_SIMPLE ;
+      break ;
+    case 2:
+      bump_type = ZMAP_WINDOW_BUMP_POSITION ;
+      break ;
+    case 3:
+      bump_type = ZMAP_WINDOW_BUMP_NAME ;
+      break ;
+    case 4:
+      bump_type = ZMAP_WINDOW_BUMP_NONE ;
+      break ;
+    default:
+      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
+      break ;
+    }
+
+
+  if (menu_data->item_cb)
+    zmapWindowColumnBump(getItemsColGroup(menu_data->item), bump_type) ;
+  else
+    zmapWindowColumnBump(FOO_CANVAS_GROUP(menu_data->item), bump_type) ;
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
+static ZMapWindowMenuItem makeMenuDumpOps(int *start_index_inout,
+					  ZMapWindowMenuItemCallbackFunc callback_func,
+					  gpointer callback_data)
+{
+  static ZMapWindowMenuItemStruct menu[] =
+    {
+      {"_Dump",                  0, NULL,       NULL},
+      {"Dump/Dump DNA"          , 1, dumpMenuCB, NULL},
+      {"Dump/Dump Context"      , 2, dumpMenuCB, NULL},
+      {NULL               , 0, NULL, NULL}
+    } ;
+
+  populateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+static void dumpMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  switch (menu_item_id)
+    {
+    case 1:
+      {
+	dumpFASTA(menu_data->window) ;
+
+	break ;
+      }
+    case 2:
+      {
+	dumpContext(menu_data->window) ;
+
+	break ;
+      }
+    default:
+      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
+      break ;
+    }
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
+static ZMapWindowMenuItem makeMenuDNAHomol(int *start_index_inout,
+					   ZMapWindowMenuItemCallbackFunc callback_func,
+					   gpointer callback_data)
+{
+  static ZMapWindowMenuItemStruct menu[] =
+    {
+      {"_Blixem",      0, NULL, NULL},
+      {"Blixem/Show multiple dna alignment",                                 1, blixemMenuCB, NULL},
+      {"Blixem/Show multiple dna alignment for just this type of homology",  2, blixemMenuCB, NULL},
+      {NULL,                                                          0, NULL,         NULL}
+    } ;
+
+  populateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+static ZMapWindowMenuItem makeMenuProteinHomol(int *start_index_inout,
+					       ZMapWindowMenuItemCallbackFunc callback_func,
+					       gpointer callback_data)
+{
+  static ZMapWindowMenuItemStruct menu[] =
+    {
+      {"_Blixem",      0, NULL, NULL},
+      {"Blixem/Show multiple protein alignment",                                 1, blixemMenuCB, NULL},
+      {"Blixem/Show multiple protein alignment for just this type of homology",  2, blixemMenuCB, NULL},
+      {NULL,                                                              0, NULL,         NULL}
+    } ;
+
+  populateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+/* call blixem either for a single type of homology or for all homologies. */
+static void blixemMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  gboolean single_homol_type = FALSE ;
+  gboolean status ;
+
+  switch (menu_item_id)
+    {
+    case 1:
+      single_homol_type = FALSE ;
+      break ;
+    case 2:
+      single_homol_type = TRUE ;
+      break ;
+    default:
+      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
+      break ;
+    }
+
+  status = zmapWindowCallBlixem(menu_data->window, menu_data->item, single_homol_type) ;
+  
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
+
+/* Overrides settings in menu with supplied data. */
+static void populateMenu(ZMapWindowMenuItem menu,
+			 int *start_index_inout,
+			 ZMapWindowMenuItemCallbackFunc callback_func,
+			 gpointer callback_data)
+{
+  ZMapWindowMenuItem menu_item ;
+  int index ;
+
+  zMapAssert(menu) ;
+
+  if (start_index_inout)
+    index = *start_index_inout ;
+
+  menu_item = menu ;
+  while (menu_item->name != NULL)
+    {
+      if (start_index_inout)
+	menu_item->id = index ;
+      if (callback_func)
+	menu_item->callback_func = callback_func ;
+      if (callback_data)
+	menu_item->callback_data = callback_data ;
+
+      menu_item++ ;
+    }
+
+  if (start_index_inout)
+    *start_index_inout = index ;
+
+  return ;
+}
+
 
 
 
