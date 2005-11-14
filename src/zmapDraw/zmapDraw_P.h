@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 18 09:21 2005 (rds)
+ * Last edited: Nov 14 10:41 2005 (rds)
  * Created: Mon Jul 18 09:14:38 2005 (rds)
- * CVS info:   $Id: zmapDraw_P.h,v 1.1 2005-07-18 10:52:12 rds Exp $
+ * CVS info:   $Id: zmapDraw_P.h,v 1.2 2005-11-14 12:04:55 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_P_H
@@ -42,6 +42,20 @@
 
 #define ZMAP_SCALE_MINORS_PER_MAJOR 10
 #define ZMAP_FORCE_FIVES TRUE
+#define MAX_TEXT_COLUMN_WIDTH (300.0)
+#define ZMAP_DRAW_TEXT_ROW_DATA_KEY "text_row_data"
+
+enum {
+  REGION_ROW_LEFT,
+  REGION_ROW_TOP,
+  REGION_ROW_RIGHT,
+  REGION_ROW_BOTTOM,
+  REGION_ROW_EXTENSION_LEFT,
+  REGION_ROW_EXTENSION_RIGHT,
+  REGION_ROW_JOIN_TOP,
+  REGION_ROW_JOIN_BOTTOM,
+  REGION_LAST_LINE
+};
 
 /* Just a collection of ints, boring but makes it easier */
 typedef struct _ZMapScaleBarStruct
@@ -62,7 +76,7 @@ typedef struct _ZMapScaleBarStruct
 
 
 static ZMapScaleBar createScaleBar_start_end_zoom_height(double start, double end, double zoom, double line);
-static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group);
+static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group, PangoFontDescription *font);
 static void destroyScaleBar(ZMapScaleBar scaleBar);
 
 

@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Oct 10 17:04 2005 (edgrif)
+ * Last edited: Nov 14 10:58 2005 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.36 2005-10-10 17:37:52 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.37 2005-11-14 12:04:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,6 +48,7 @@ FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 			     FOO_TYPE_CANVAS_TEXT,
 			     "x", x, "y", y,
 			     "text", text,
+                             "font", "Lucida Console",
 			     "fill_color", colour,
 			     NULL);
 
@@ -160,12 +161,14 @@ FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
 
 /* This function NEEDS Seq2CanExt output coords i.e. seqstart -> seqend + 1 */
 FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
+                             PangoFontDescription *font,
 			     double zoom_factor, 
-			     double start, double end)
+			     double start, 
+                             double end,
+                             double height)
 {
   FooCanvasItem *group = NULL ;
   ZMapScaleBar scaleBar = NULL;
-  double height ;
 
   group = foo_canvas_item_new(foo_canvas_root(canvas),
 			      foo_canvas_group_get_type(),
@@ -173,11 +176,9 @@ FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
 			      "y", 0.0,
 			      NULL) ;
 
-  zMapDrawGetTextDimensions(FOO_CANVAS_GROUP(group), NULL, &height);
-
   scaleBar = createScaleBar_start_end_zoom_height(start, end, zoom_factor, height);
 
-  drawScaleBar(scaleBar, FOO_CANVAS_GROUP(group));
+  drawScaleBar(scaleBar, FOO_CANVAS_GROUP(group), font);
 
   destroyScaleBar(scaleBar);
 
@@ -259,48 +260,6 @@ void zMapDrawHorizonReposition(FooCanvasItem *line, double current_y)
   return ;
 }
 
-/* Find out the text size for a group. */
-void zMapDrawGetTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out)
-{
-  double width = -1.0, height = -1.0 ;
-  FooCanvasItem *item ;
-
-  item = foo_canvas_item_new(group,
-			     FOO_TYPE_CANVAS_TEXT,
-			     "x", -400.0, "y", 0.0, "text", "dummy",
-			     NULL);
-
-  g_object_get(GTK_OBJECT(item),
-	       "FooCanvasText::text_width", &width,
-	       "FooCanvasText::text_height", &height,
-	       NULL) ;
-
-  gtk_object_destroy(GTK_OBJECT(item));
-
-  if (width_out)
-    *width_out = width ;
-  if (height_out)
-    *height_out = height ;
-
-  return ;
-}
-
-int zMapDrawBorderSize(FooCanvasGroup *group)
-{
-  int size = 0;
-  double height, zoom;
-
-  zMapDrawGetTextDimensions(group, NULL, &height);
-
-  g_object_get(GTK_OBJECT(group),
-	       "FooCanvas::pixels_per_unit", &zoom,
-	       NULL) ;
-
-  size = ceil(height / zoom) + 1;
-
-  return size;
-}
-
 FooCanvasGroup *zMapDrawToolTipCreate(FooCanvas *canvas)
 {
   FooCanvasGroup *tooltip;
@@ -327,11 +286,12 @@ FooCanvasGroup *zMapDrawToolTipCreate(FooCanvas *canvas)
   g_object_set_data(G_OBJECT(tooltip), "tooltip_box", box);
   /* Create the item for the text of the tip */
   tip = foo_canvas_item_new(tooltip,
-			     FOO_TYPE_CANVAS_TEXT,
-			     "x", 0.0, "y", 0.0,
-			     "text", "",
-			     "fill_color", "black",
-			     NULL);
+                            FOO_TYPE_CANVAS_TEXT,
+                            "x", 0.0, "y", 0.0,
+                            "text", "",
+                            "font", "Lucida Console",
+                            "fill_color", "black",
+                            NULL);
   g_object_set_data(G_OBJECT(tooltip), "tooltip_tip", tip);
 
   /* Hide the naked tooltip. */
@@ -400,6 +360,294 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
   
   return ;
 }
+
+
+/* *grp must be an empty group or one containing 8 line items at the
+ * beginning.
+ *
+ * To make a multicolour highlight box just #define ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+ */
+void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,                                  
+                                 int y1Idx,
+                                 int y2Idx,
+                                 int full_str_length,
+                                 int drawn_str_length,
+                                 int offset,
+                                 double column_width)
+{
+  FooCanvasPoints *points = NULL;
+  GList *lines = NULL;
+  GdkColor color;
+  double offsetX1, offsetX2, offsetY1, offsetY2;
+  double minX, maxX, dlength, chrWidth;
+  int i, y1mod, y2mod;
+
+  gdk_color_parse("red", &color);
+
+  lines    = grp->item_list;
+  points   = foo_canvas_points_new(2);
+
+  y1mod    = (y1Idx - offset) % full_str_length;
+  y2mod    = (y2Idx - offset) % full_str_length;
+
+  dlength  = (double)full_str_length;
+  chrWidth = column_width / drawn_str_length;
+
+  minX     = chrWidth / 4;    /* Also used to get half way between characters */
+  maxX     = column_width;      /* -/+ minX ?? */
+
+  offsetX1 = ((double)y1mod) * chrWidth + minX;
+  offsetX2 = ((double)y2mod) * chrWidth + minX;
+
+  offsetY1 = (double)(y1Idx - y1mod);
+  offsetY2 = (double)(y2Idx - y2mod);
+
+  for(i = 0; i < REGION_LAST_LINE; i++)
+    {
+      switch(i){
+      case REGION_ROW_LEFT:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("red", &color);
+#endif
+        points->coords[0] = MIN(offsetX1, maxX);
+        points->coords[1] = offsetY1;
+        points->coords[2] = MIN(offsetX1, maxX) ;
+        points->coords[3] = offsetY1 + dlength;
+        break;
+      case REGION_ROW_TOP:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("orange", &color);
+#endif
+        points->coords[0] = MIN(offsetX1, maxX);
+        points->coords[1] = offsetY1;
+        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? maxX : MIN(offsetX2, maxX));
+        points->coords[3] = offsetY1;
+        break;  
+      case REGION_ROW_RIGHT:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("yellow", &color);
+#endif
+        points->coords[0] = MIN(offsetX2, maxX);
+        points->coords[1] = offsetY2;
+        points->coords[2] = MIN(offsetX2, maxX);
+        points->coords[3] = offsetY2 + dlength;
+        break;
+      case REGION_ROW_BOTTOM:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("green", &color);
+#endif
+        points->coords[0] = MIN(offsetX2, maxX);
+        points->coords[1] = offsetY2 + dlength;
+        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
+        points->coords[3] = offsetY2 + dlength;
+        break;
+      case REGION_ROW_EXTENSION_LEFT:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("blue", &color);
+#endif
+        points->coords[0] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
+        points->coords[1] = offsetY1 + dlength;
+        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
+        points->coords[3] = offsetY2 + dlength;
+        break;
+      case REGION_ROW_EXTENSION_RIGHT:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("violet", &color);
+#endif
+        points->coords[0] = (offsetY2 - offsetY1  >= dlength ? maxX : offsetX2);
+        points->coords[1] = offsetY1;
+        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? maxX : offsetX2);
+        points->coords[3] = offsetY2;
+        break;
+      case REGION_ROW_JOIN_TOP:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("brown", &color);
+#endif
+        points->coords[0] = MIN(offsetX1, maxX);
+        points->coords[1] = offsetY1 + dlength;
+        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);;
+        points->coords[3] = offsetY1 + dlength;
+        break;
+      case REGION_ROW_JOIN_BOTTOM:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("wheat", &color);
+        gdk_color_parse("blue", &color);
+#endif
+        points->coords[0] = MIN(offsetX2, maxX);
+        points->coords[1] = offsetY2;
+        points->coords[2] = (offsetY2 - offsetY1 >= dlength ? maxX : MIN(offsetX2, maxX));
+        points->coords[3] = offsetY2;
+        break;
+      default:
+        printf("Error\n");
+        break;
+      }
+      
+      if(!lines)
+        foo_canvas_item_new(grp,
+                            foo_canvas_line_get_type(),
+                            "points", points,
+                            "line_style", GDK_LINE_ON_OFF_DASH,
+                            "fill_color_gdk", &color,
+                            "width_units", 1.0,
+                            NULL);
+      else
+        {
+          if(FOO_IS_CANVAS_LINE(FOO_CANVAS_ITEM(lines->data)))
+            foo_canvas_item_set(FOO_CANVAS_ITEM(lines->data),
+                                "points", points,
+                                NULL);
+          lines = lines->next;
+        }        
+    }
+  foo_canvas_item_show(FOO_CANVAS_ITEM(grp));
+  foo_canvas_points_free(points);
+
+  return ;
+}
+
+static void textRowDestroy(gpointer data)
+{
+  ZMapDrawTextRowData trd = (ZMapDrawTextRowData)data;
+
+  if(trd)
+    g_free(trd);
+
+  return ;
+}
+
+#ifdef PREFIX_DNA_WITH_NUMBERS
+static void drawRowBounds(FooCanvasItem *item)
+{
+  double x1, x2, y1, y2;
+  FooCanvasItem *line;
+  FooCanvasPoints *points;
+  GdkColor color;
+
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
+  points   = foo_canvas_points_new(2);
+  points->coords[0] = x1;
+  points->coords[1] = y1;
+  points->coords[2] = x2;
+  points->coords[3] = y1;
+  line = foo_canvas_item_new(FOO_CANVAS_GROUP( item->parent ),
+                             foo_canvas_line_get_type(),
+                             "points", points,
+                             NULL);
+  points->coords[1] = y2;
+  points->coords[3] = y2;
+  gdk_color_parse("red", &color);
+  line = foo_canvas_item_new(FOO_CANVAS_GROUP( item->parent ),
+                             foo_canvas_line_get_type(),
+                             "points", points,
+                             "fill_color_gdk", &color,
+                             NULL);
+  foo_canvas_points_free(points);
+  return ;
+}
+#endif
+
+ZMapDrawTextRowData zMapDrawGetTextItemData(FooCanvasItem *item)
+{
+  ZMapDrawTextRowData trd = NULL;
+
+  if(item && FOO_IS_CANVAS_TEXT(item))
+    trd = (ZMapDrawTextRowData)g_object_get_data(G_OBJECT(item),
+                                                 ZMAP_DRAW_TEXT_ROW_DATA_KEY);
+
+  return trd;
+}
+
+FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
+                                 PangoFontDescription *fixed_font,
+                                 char *fullText, 
+                                 ZMapDrawTextIterator iterator)
+{
+  FooCanvasItem *item = NULL;
+  char *item_text = NULL;
+  ZMapDrawTextRowData trd = NULL;
+  int char_count, max_chars, text_width = 8;
+  
+  /* Make a ZMapDrawTextRowData object to attach to the text */
+  trd = g_new0(ZMapDrawTextRowDataStruct, 1);
+
+  iterator->y  = iterator->iteration * iterator->text_height;
+  iterator->y += iterator->offset;
+
+  iterator->seq_start  = iterator->iteration * iterator->cols;
+  iterator->seq_start += iterator->offset;
+
+  trd->textWriteOffset = iterator->seq_start;
+  trd->fullStrLength   = iterator->cols;
+  trd->sequenceOffset  = iterator->offset;
+
+  max_chars  = floor(MAX_TEXT_COLUMN_WIDTH / text_width) - 3; /* we add 3 dots (...) */
+  char_count = MIN(iterator->cols, max_chars);
+
+  if(fullText[iterator->seq_start])
+    {
+      trd->drawnStrLength = (char_count >= iterator->cols ? iterator->cols : char_count + 3);
+      if(char_count >= iterator->cols)
+        item_text = g_strndup(&(fullText[iterator->seq_start]), iterator->cols);
+      else
+        item_text = g_strdup_printf("%s...",
+                                  g_strndup(&(fullText[iterator->seq_start]), char_count)
+                                  );
+    }
+
+
+  if(item_text)
+    {
+      double a, b, c, d;
+#ifdef PREFIX_DNA_WITH_NUMBERS
+      char * item_text2 = NULL;
+
+      item_text2 = g_strdup_printf(iterator->format, 
+                                 ++(iterator->seq_start), 
+                                 item_text);
+#endif
+
+      item = foo_canvas_item_new(group,
+                                 foo_canvas_text_get_type(),
+                                 "x",          iterator->x,
+                                 "y",          iterator->y,
+#ifdef PREFIX_DNA_WITH_NUMBERS
+                                 "text",       item_text2,
+#else
+                                 "text",       item_text,
+#endif
+                                 "anchor",     GTK_ANCHOR_NW,
+                                 "font_desc",  fixed_font,
+                                 "fill_color", "black",
+                                 NULL);
+      foo_canvas_item_get_bounds(item, &a, &b, &c, &d);
+      trd->columnWidth = c - a + 1.0;
+      g_object_set_data_full(G_OBJECT(item), 
+                             ZMAP_DRAW_TEXT_ROW_DATA_KEY, 
+                             trd,
+                             textRowDestroy);
+      foo_canvas_item_set(item,
+                          "clip",        TRUE,
+                          "clip_width",  trd->columnWidth,
+                          "clip_height", (double)iterator->line_height,
+                          NULL
+                          );
+      g_free(item_text);
+
+#ifdef  PREFIX_DNA_WITH_NUMBERS
+      drawRowBounds(item);
+      g_free(item_text2);
+#endif
+    }
+
+  //  iterator->x = ZMAP_WINDOW_TEXT_BORDER; /* reset this */
+
+  return item;
+}
+
+
+
+
 /* ========================================================================== */
 /* INTERNAL */
 /* ========================================================================== */
@@ -453,6 +701,7 @@ static ZMapScaleBar createScaleBar_start_end_zoom_height(double start, double en
   basesBetween = floor((lineheight >= absolute_min ?
                         lineheight : absolute_min) * basesPerPixel);
   /* Now we know we can put a major tick every basesBetween pixels */
+  /*  printf("diff %d, bpp %f\n", diff, basesPerPixel); */
 
   for(i = 0, iter = majorUnits; *iter != 0; iter++, i++){
     int mod;
@@ -463,7 +712,7 @@ static ZMapScaleBar createScaleBar_start_end_zoom_height(double start, double en
     else if (basesBetween > majorUnits[i] && !mod)
       unitIndex = i;
   }
-
+  /*  */
   /* Now we think we know what the major should be */
   majorSize  = majorUnits[unitIndex];
   scaleBar->base = majorSize;
@@ -507,7 +756,7 @@ static ZMapScaleBar createScaleBar_start_end_zoom_height(double start, double en
   return scaleBar;
 }
 
-static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group)
+static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group, PangoFontDescription *font)
 {
   int i, n, width = 0;
   GdkColor black, white, yellow ;
@@ -585,11 +834,16 @@ static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group)
       /* =========================================================== */
       if(digitUnit)
         {
+          FooCanvasItem *item = NULL;
           width = strlen(digitUnit);
-          zMapDisplayText(FOO_CANVAS_GROUP(group), 
-                          digitUnit, "black", 
-                          ((scale_left) - (5.0 * (double)width)), 
-                          (i_d < (double)scaleBar->start ? (double)scaleBar->start : i_d)); 
+          item = foo_canvas_item_new(group,
+                                     foo_canvas_text_get_type(),
+                                     "x",          ((scale_left) - (5.0 * (double)width)), 
+                                     "y",          (i_d < (double)scaleBar->start ? (double)scaleBar->start : i_d),
+                                     "text",       digitUnit,
+                                     "font_desc",  font,
+                                     "fill_color", "black",
+                                     NULL);
           g_free(digitUnit);
         }
 
