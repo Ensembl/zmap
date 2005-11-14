@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 09:26 2005 (edgrif)
+ * Last edited: Nov 14 12:58 2005 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.7 2005-11-14 11:14:02 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.8 2005-11-14 13:00:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,8 @@ static void killFileDialog(GtkWidget *widget, gpointer user_data) ;
 /* ONLY NEEDED FOR OLD STYLE FILE SELECTOR, REMOVE WHEN WE CAN USE THE NEW CODE... */
 
 
+static void butClick(GtkButton *button, gpointer user_data) ;
+
 
 /*! @defgroup zmapguiutils   zMapGUI: set of utility functions for use in a GUI.
  * @{
@@ -60,11 +62,6 @@ static void killFileDialog(GtkWidget *widget, gpointer user_data) ;
  *  */
 
 
-
-
-
-
-/* LIFT MY CODE FROM ACEDB THAT ALLOWED YOU TO CLICK TO CUT/PASTE MESSAGE CONTENTS....*/
 
 
 /*!
@@ -99,7 +96,7 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
  *  */
 void zMapGUIShowMsgOnTop(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
 {
-  GtkWidget *dialog, *label ;
+  GtkWidget *dialog, *button, *label ;
   char *title = NULL ;
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
   gboolean modal = FALSE ;
@@ -138,10 +135,17 @@ void zMapGUIShowMsgOnTop(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
   gtk_container_set_border_width( GTK_CONTAINER(dialog), 5 );
 
 
-  label = gtk_label_new(msg) ;
+  /* Set up the message text in a button widget so that it can put in the primary
+   * selection buffer for cut/paste when user clicks on it. */
+  button = gtk_button_new_with_label(msg) ;
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), button, TRUE, TRUE, 20);
+  gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE) ;
+  label = gtk_bin_get_child(GTK_BIN(button)) ;		    /* Center + wrap long lines. */
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_CENTER) ;
   gtk_label_set_line_wrap(GTK_LABEL(label), TRUE) ;
-  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), label, TRUE, TRUE, 20);
+
+  gtk_signal_connect(GTK_OBJECT(button), "clicked",
+		     GTK_SIGNAL_FUNC(butClick), button) ;
 
 
   gtk_widget_show_all(dialog) ;
@@ -183,6 +187,24 @@ void zMapGUIShowMsgOnTop(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
 
   return ;
 }
+
+
+
+/* When user clicks on the message itself, we put the message text in the cut buffer. */
+static void butClick(GtkButton *button, gpointer user_data)
+{
+  char *label_text ;
+  GtkClipboard* clip_board ;
+
+  label_text = gtk_button_get_label(button) ;
+
+  clip_board = gtk_clipboard_get(GDK_SELECTION_PRIMARY) ;
+
+  gtk_clipboard_set_text(clip_board, label_text, -1) ;
+
+  return ;
+}
+
 
 
 /*!
