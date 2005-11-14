@@ -19,16 +19,15 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 11 12:34 2005 (rds)
+ * Last edited: Nov 14 09:26 2005 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.6 2005-11-13 16:45:10 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.7 2005-11-14 11:14:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -405,7 +404,7 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 
   pango_context_list_families(context, &families, &n_families) ;
 
-  for (i = 0 ; (i < n_families && found == FALSE) ; i++)
+  for (i = 0 ; (i < n_families && !found) ; i++)
     {
       const gchar *name ;
       GList *pref ;
@@ -427,6 +426,7 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 	    {
 	      found = TRUE ;
 	      match_family = families[i] ;
+	      break ;
 	    }
 	  
 	  pref = g_list_next(pref) ;
