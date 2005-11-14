@@ -26,15 +26,41 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Sep 22 13:22 2005 (edgrif)
+ * Last edited: Nov 14 11:01 2005 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.21 2005-09-22 12:34:17 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.22 2005-11-14 12:01:30 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
 #define ZMAP_DRAW_H
 
 #include <libfoocanvas/libfoocanvas.h>
+
+typedef struct _ZMapDrawTextIteratorStruct
+{
+  int iteration;
+  double x;
+  double y;
+  int offset;
+  int line_height;
+  int seq_start;
+  int seq_length;
+  int drawable_seq_length;
+  int rows;
+  int cols;
+  char *format;
+  double text_height;
+} ZMapDrawTextIteratorStruct, *ZMapDrawTextIterator;
+
+typedef struct ZMapDrawTextRowDataStruct_
+{
+  int sequenceOffset;
+  int textWriteOffset;          /* should be the y coord of where the text is drawn */
+  int fullStrLength;            /* the string might get clipped. */
+  int drawnStrLength;           /* this is the length of the string drawn */
+  double columnWidth;
+  /* text's char width is columnWidth / drawnStrLength */
+} ZMapDrawTextRowDataStruct, *ZMapDrawTextRowData;
 
 //#define MINVAL(x, y) ((x) < (y) ? (x) : (y))
 //#define MAXVAL(x, y) ((x) > (y) ? (x) : (y))
@@ -53,8 +79,10 @@ FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 			       double x, double y) ;
 
 FooCanvasItem *zMapDrawScale(FooCanvas *canvas, 
+                             PangoFontDescription *font,
                              double zoom_factor, 
-                             double start, double end);
+                             double start, double end,
+                             double height);
 
 
 /* This needs to be a bit cleverer, so you can't actually move the origin */
@@ -70,9 +98,22 @@ FooCanvasItem *zMapDrawHorizonCreate(FooCanvas *canvas);
 void zMapDrawHorizonReposition(FooCanvasItem *line, double current_x);
 
 void zMapDrawGetTextDimensions(FooCanvasGroup *group, double *width_out, double *height_out) ;
-int zMapDrawBorderSize(FooCanvasGroup *group);
 
 FooCanvasGroup *zMapDrawToolTipCreate(FooCanvas *canvas);
 void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, char *text);
+
+/* For drawing/highlighting text on the canvas e.g. dna & 3 frame trans.*/
+void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,                                  
+                                 int y1Idx,
+                                 int y2Idx,
+                                 int full_str_length,
+                                 int drawn_str_length,
+                                 int offset,
+                                 double column_width);
+FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
+                                 PangoFontDescription *fixed_font,
+                                 char *fullText, 
+                                 ZMapDrawTextIterator iterator);
+ZMapDrawTextRowData zMapDrawGetTextItemData(FooCanvasItem *item);
 
 #endif /* ZMAP_DRAW_H */
