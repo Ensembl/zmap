@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Oct 10 08:51 2005 (edgrif)
+ * Last edited: Nov 11 15:36 2005 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.42 2005-10-10 10:30:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.43 2005-11-14 11:17:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -186,8 +186,9 @@ void zMapWindowUnlock(ZMapWindow window) ;
 
 void zMapWindowDestroy(ZMapWindow window) ;
 
+
 /* this may be better in a utils directory...not sure.... */
-void zMapWindowMakeMenu(char *menu_title, ZMapWindowMenuItemStruct menu_items[],
+void zMapWindowMakeMenu(char *menu_title, GList *menu_sets,
 			GdkEventButton *button_event) ;
 
 

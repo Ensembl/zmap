@@ -20,22 +20,25 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Code implementing the menus for sequence display.
  *
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jun 27 22:49 2005 (rds)
+ * Last edited: Nov 14 11:16 2005 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.4 2005-06-27 21:49:26 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.5 2005-11-14 11:17:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
+
+
+/* REALLY THIS SHOULD GO IN THE GUI UTILS CODE IN THE UTILS DIRECTORY.... */
 
 
 /* READ THIS:
@@ -65,8 +68,8 @@
  *   gchar *path;
  *   gchar *accelerator;
  *   GtkItemFactoryCallback callback;
- *   guint			 callback_action;
- *   gchar		 *item_type;
+ *   guint callback_action;
+ *   gchar *item_type;
  *   gconstpointer extra_data;
  * } GtkItemFactoryEntry;
  *
@@ -89,7 +92,8 @@ typedef struct
 
 
 static char *makeMenuItemName(char *string) ;
-static ZMapWindowMenuItem copyMenu(ZMapWindowMenuItem old_menu, int *menu_size) ;
+static ZMapWindowMenuItem makeSingleMenu(GList *menu_item_sets, int *menu_items_out) ;
+static ZMapWindowMenuItem copyMenu2NewMenu(ZMapWindowMenuItem new_menu, ZMapWindowMenuItem old_menu) ;
 static void destroyMenu(ZMapWindowMenuItem menu) ;
 static int itemsInMenu(ZMapWindowMenuItem menu) ;
 
@@ -125,22 +129,22 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
  * @param button_event  The button event that triggered the menu to be popped up.
  * @return              <nothing>
  *  */
-void zMapWindowMakeMenu(char *menu_title, ZMapWindowMenuItemStruct menu_items[],
+void zMapWindowMakeMenu(char *menu_title, GList *menu_item_sets,
 			GdkEventButton *button_event)
 {
   int num_menu_items, num_factory_items, i, menu_size ;
-  ZMapWindowMenuItem menu_copy ;
+  ZMapWindowMenuItem menu_items, menu_copy ;
   GtkItemFactoryEntry *factory_items, *item ;
   GtkItemFactory *item_factory ;
   CallbackData our_cb_data ;
 
 
+  /* Make a single menu item list out of the supplied menu_item sets. */
+  menu_items = makeSingleMenu(menu_item_sets, &num_menu_items) ;
+
   /* Set up our callback data, we use this to call our callers callback. */
   our_cb_data = g_new0(CallbackDataStruct, 1) ;
-
-
-  /* Make a copy of the callers menu for use in our callback. */
-  our_cb_data->callers_menu_copy = menu_copy = copyMenu(menu_items, &num_menu_items) ;
+  our_cb_data->callers_menu_copy = menu_items ;
 
 
   /*
@@ -168,6 +172,14 @@ void zMapWindowMakeMenu(char *menu_title, ZMapWindowMenuItemStruct menu_items[],
       item->path = makeMenuItemName(menu_items[i].name) ;
       item->callback = ourCB ;
       item->callback_action = i ;
+
+      /* This is not great, I need to add some types etc. to deal with submenus vs. other things. */
+      if (*(menu_items[i].name) == '_')
+	{
+	  item->item_type = "<Branch>" ;
+	  item->callback = NULL ;
+	}
+
       item++ ;
     }
 
@@ -246,17 +258,63 @@ static char *makeMenuItemName(char *string)
 
 
 
-/* Returns copy of menu and size of menu _NOT_ including the final terminating null entry. */
-static ZMapWindowMenuItem copyMenu(ZMapWindowMenuItem old_menu, int *menu_items_out)
+static ZMapWindowMenuItem makeSingleMenu(GList *menu_item_sets, int *menu_items_out)
 {
-  ZMapWindowMenuItem new_menu, old_item, new_item ;
+  ZMapWindowMenuItem new_menu, curr_menu ;
+  GList *curr_set ;
+  int num_menu_items ;
+
+  num_menu_items = 0 ;
+  curr_set = g_list_first(menu_item_sets) ;
+  while (curr_set)
+    {
+      ZMapWindowMenuItem sub_menu ;
+
+      sub_menu = (ZMapWindowMenuItem)curr_set->data ;
+
+      num_menu_items += itemsInMenu(sub_menu) ;
+
+      curr_set = g_list_next(curr_set) ;
+    }
+
+
+  /* Allocate memory for new menu. */
+  new_menu = g_new0(ZMapWindowMenuItemStruct, (num_menu_items + 1)) ;
+
+  /* Here we want to call a modified version of copy menu..... */
+  curr_set = g_list_first(menu_item_sets) ;
+  curr_menu = new_menu ;
+  while (curr_set)
+    {
+      ZMapWindowMenuItem sub_menu ;
+
+      sub_menu = (ZMapWindowMenuItem)curr_set->data ;
+
+      curr_menu = copyMenu2NewMenu(curr_menu, sub_menu) ;
+
+      curr_set = g_list_next(curr_set) ;
+    }
+
+
+  if (menu_items_out)
+    *menu_items_out = num_menu_items ;
+
+  return new_menu ;
+}
+
+
+/* Returns pointer to next free menu item. */
+static ZMapWindowMenuItem copyMenu2NewMenu(ZMapWindowMenuItem new_menu, ZMapWindowMenuItem old_menu)
+{
+  ZMapWindowMenuItem next_menu = NULL ;
+  ZMapWindowMenuItem old_item, new_item ;
   int i, num_menu_items, menu_size  ;
 
-  num_menu_items = itemsInMenu(old_menu) ;
 
-  /* Make a copy of the callers menu for use in our callback (remember null item on the end. */
-  menu_size = sizeof(ZMapWindowMenuItemStruct) * (num_menu_items + 1) ;
-  new_menu = g_memdup(old_menu, menu_size) ;
+  /* Copy over menu items from old to new. */
+  num_menu_items = itemsInMenu(old_menu) ;
+  menu_size = sizeof(ZMapWindowMenuItemStruct) * num_menu_items ;
+  g_memmove(new_menu, old_menu, menu_size) ;
 
   /* Remember to copy the strings in the old menu. */
   for (i = 0, old_item = old_menu, new_item = new_menu ;
@@ -265,10 +323,9 @@ static ZMapWindowMenuItem copyMenu(ZMapWindowMenuItem old_menu, int *menu_items_
       new_item->name = g_strdup(old_item->name) ;
     }
 
-  if (menu_items_out)
-    *menu_items_out = num_menu_items ;
+  next_menu = new_menu + num_menu_items ;
 
-  return new_menu ;
+  return next_menu ;
 }
 
 
