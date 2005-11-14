@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Nov 10 10:49 2005 (edgrif)
+ * Last edited: Nov 11 15:23 2005 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.12 2005-11-11 12:08:11 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.13 2005-11-14 11:13:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,6 +44,7 @@
 
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+#include <ZMap/zmapUtilsGUI.h>
 #include <zmapUtils_P.h>
 
 

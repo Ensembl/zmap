@@ -25,16 +25,16 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Nov 11 11:49 2005 (edgrif)
+ * Last edited: Nov 11 15:33 2005 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.2 2005-11-11 12:10:05 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.3 2005-11-14 11:12:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
 #define ZMAP_UTILS_GUI_H
 
 #include <gtk/gtk.h>
-
+#include <ZMap/zmapUtilsMesg.h>
 
 typedef enum {ZMAPGUI_PIXELS_PER_CM, ZMAPGUI_PIXELS_PER_INCH,
 	      ZMAPGUI_PIXELS_PER_POINT} ZMapGUIPixelConvType ;
