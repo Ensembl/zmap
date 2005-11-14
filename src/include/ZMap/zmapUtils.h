@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Jul  6 13:34 2005 (edgrif)
+ * Last edited: Oct 12 13:42 2005 (rds)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.16 2005-07-12 10:06:33 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.17 2005-11-14 12:02:22 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -71,7 +71,7 @@ typedef struct  _ZMapLogStruct *ZMapLog ;
 
 
 
-/* ZMagMagicPtr_t : the type that all magic symbols are declared of.
+/* ZMapMagicPtr_t : the type that all magic symbols are declared of.
    They become magic (i.e. unique) by using the pointer
    to that unique symbol, which has been placed somewhere
    in the address space by the compiler.
@@ -82,7 +82,7 @@ typedef struct  _ZMapLogStruct *ZMapLog ;
    The address of the string is then used as the unique 
    identifier (as type->magic or graphAssXxx-code), and the
    string can be used during debugging */
-typedef char* ZMagMagic ;
+typedef char* ZMapMagic ;
 
 
 
