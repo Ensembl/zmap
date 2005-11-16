@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 12 15:15 2005 (edgrif)
+ * Last edited: Nov 15 09:24 2005 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.23 2005-10-13 13:31:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.24 2005-11-16 10:43:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,14 +42,19 @@ static void cropLongItem(gpointer data, gpointer user_data) ;
 static void freeLongItem(gpointer data, gpointer user_data_unused) ;
 gint findLongItemCB(gconstpointer data, gconstpointer user_data) ;
 
+#ifdef NOTDEFINEDHERE
 static void moveExonsIntrons(ZMapWindow window, 
 			     ZMapFeature origFeature,
 			     GArray *origArray, 
 			     GArray *modArray,
 			     int transcriptOrigin,
 			     gboolean isExon);
-
-
+#endif
+typedef struct windowScrollRegionStruct_
+{
+  ZMapWindow window;
+  double x1, x2, y1, y2;
+}windowScrollRegionStruct, *windowScrollRegion;
 
 /* A couple of simple coord calculation routines, if these prove too expensive they
  * can be replaced with macros. */
@@ -153,9 +158,11 @@ ZMapWindowClampType zmapWindowClampStartEnd(ZMapWindow window, double *top_inout
       top    = window->min_coord ;
       clamp |= ZMAP_WINDOW_CLAMP_START;
     }
-
-  if (bot >= window->max_coord)
+#warning THIS IS VERY WRONG ROY!!!! SORT IT OUT!
+  if (bot >= (window->max_coord - 1))
     {
+      if(bot - window->max_coord > window->max_coord - window->min_coord)
+        printf("*** BIG DIFFERENCE BETWEEN bottom and end of sequence ***\n");
       bot    = window->max_coord ;
       clamp |= ZMAP_WINDOW_CLAMP_END;
     }
@@ -257,11 +264,20 @@ void zmapWindowLongItemCheck(ZMapWindow window, FooCanvasItem *item, double star
   return ;
 }
 
-void zmapWindowLongItemCrop(ZMapWindow window)
+void zmapWindowLongItemCrop(ZMapWindow window, 
+                            double x1, double y1,
+                            double x2, double y2)
 {
   if (window->long_items)
-    g_list_foreach(window->long_items, cropLongItem, window) ;
-
+    {
+      windowScrollRegionStruct func_data = {NULL, 0.0, 0.0, 0.0, 0.0};
+      func_data.window = window;
+      func_data.x1     = x1;
+      func_data.x2     = x2;
+      func_data.y1     = y1;
+      func_data.y2     = y2;
+      g_list_foreach(window->long_items, cropLongItem, &func_data) ;
+    }
   return ;
 }
 
@@ -320,6 +336,7 @@ void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
 {
   double c_start = start;
   double c_end   = end;        /* Canvas start and end */
+  double height  = 0.0;
   ZMapWindowClampType clmp;
 
   if (window->scaleBarGroup && (FOO_IS_CANVAS_ITEM( (window->scaleBarGroup) )))
@@ -327,20 +344,19 @@ void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
 
   /* This isn't very good, but won't be needed when in separate canvas/window/pane */
   if(start <= 0.0 )
-    
-    //      zmapWindowSeq2CanExt(&c_start, &c_end);
-    //else
     {
       c_start = window->min_coord;
       c_end   = window->max_coord;
     }
   /* SHOULD NOT NEED TO BE THIS!!!!!! */
   clmp = zmapWindowClampStartEnd(window, &c_start, &c_end);
-
+  zmapWindowGetBorderSize(window, &height);
   window->scaleBarGroup = zMapDrawScale(window->canvas, 
+                                        zMapWindowGetFixedWidthFontDescription(window),
                                         zMapWindowGetZoomFactor(window),
                                         c_start,
-                                        c_end);
+                                        c_end,
+                                        height);
   return ;
 }
 
@@ -365,14 +381,18 @@ static void freeLongItem(gpointer data, gpointer user_data_unused)
 static void cropLongItem(gpointer data, gpointer user_data)
 {
   ZMapWindowLongItem long_item = (ZMapWindowLongItem)data ;
-  ZMapWindow window = (ZMapWindow)user_data ;
+  windowScrollRegion func_data = (windowScrollRegion)user_data;
+  ZMapWindow window = NULL;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
   double start, end, dummy_x ;
 
   zMapAssert(FOO_IS_CANVAS_ITEM(long_item->item)) ;
-
-  foo_canvas_get_scroll_region(window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
-
+  window = func_data->window;
+  //  foo_canvas_get_scroll_region(window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
+  scroll_x1 = func_data->x1;
+  scroll_x2 = func_data->x2;
+  scroll_y1 = func_data->y1;
+  scroll_y2 = func_data->y2;
   /* Reset to original coords because we may be zooming out, you could be more clever
    * about this but is it worth the convoluted code ? */
   if (FOO_IS_CANVAS_LINE(long_item->item))

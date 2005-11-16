@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 28 11:38 2005 (edgrif)
+ * Last edited: Oct 17 16:38 2005 (rds)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.15 2005-09-30 07:23:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.16 2005-11-16 10:42:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,7 +89,7 @@ gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean o
   char *err_msg = "error in zmapWindowCallBlixem()" ;
 
   /* We need the dna sequence to send to blixem....so can't do anything without it... */
-  if (window->feature_context->sequence.type == ZMAPSEQUENCE_NONE)
+  if (window->feature_context->sequence->type == ZMAPSEQUENCE_NONE)
     {
       status = FALSE ;
       err_msg = "No DNA in feature context so cannot call blixem." ;
@@ -638,9 +638,9 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	  lines      = (blixem_data->window->feature_context->length - blixem_data->offset) / FASTA_CHARS ;
 	  chars_left = (blixem_data->window->feature_context->length - blixem_data->offset) % FASTA_CHARS ;
 	  if (blixem_data->min > 0)
-	    cp = blixem_data->window->feature_context->sequence.sequence + blixem_data->offset;
+	    cp = blixem_data->window->feature_context->sequence->sequence + blixem_data->offset;
 	  else
-	    cp = blixem_data->window->feature_context->sequence.sequence;
+	    cp = blixem_data->window->feature_context->sequence->sequence;
 
 	  /* Do the full length lines.                                           */
 	  if (lines > 0)

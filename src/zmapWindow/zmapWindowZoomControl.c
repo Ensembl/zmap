@@ -27,21 +27,29 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  7 16:38 2005 (edgrif)
+ * Last edited: Nov 16 10:25 2005 (rds)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.4 2005-10-07 17:17:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.5 2005-11-16 10:43:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmapUtils.h>
-#include <zmapWindow_P.h>
 #include <zmapWindowZoomControl_P.h>
+
 
 static double getMinZoom(ZMapWindow window);
 static void setZoomStatus(ZMapWindowZoomControl control);
 static gboolean canZoomByFactor(ZMapWindowZoomControl control, double factor);
 static ZMapWindowZoomControl controlFromWindow(ZMapWindow window);
 static void printControl(ZMapWindowZoomControl control);
+static void textDimensionsOfFont(FooCanvasGroup *group, 
+                                 PangoFontDescription *font,
+                                 double *width_out, 
+                                 double *height_out);
+static gboolean getFixedWidthFont(ZMapWindow window, 
+                                  PangoFont **font_out,
+                                  GList *prefFamilies,
+                                  gint points,
+                                  PangoWeight weight);
 
 /* =========================================================================== */
 /*                                   PUBLIC                                    */
@@ -91,9 +99,23 @@ double zMapWindowGetZoomMagnification(ZMapWindow window)
   
   return mag;
 }
+
+PangoFont *zMapWindowGetFixedWidthFont(ZMapWindow window)
+{
+  ZMapWindowZoomControl control = NULL;
+  control = controlFromWindow(window);
+  return control->font;
+}
+/* Not sure this is right, copy with pango_font_description_copy and merge??? */
+PangoFontDescription *zMapWindowGetFixedWidthFontDescription(ZMapWindow window)
+{
+  return pango_font_describe( zMapWindowGetFixedWidthFont(window) );
+}
+
 /* =========================================================================== */
 /*                                  PRIVATE                                    */
 /* =========================================================================== */
+
 /* Create the Controller... */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) 
 {
@@ -102,18 +124,27 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window)
   int x_windows_limit = (2 >> 15) - 1;
   int user_set_limit  = (2 >> 15) - 1;  /* possibly a parameter later?!? */
   int max_window_size = 0;
+  PangoFontDescription *font = NULL;
+
   num_cruncher = g_new0(ZMapWindowZoomControlStruct, 1);
+  num_cruncher->magic = &zoom_magic_G;
+
+  /* We need to set up / have already set up our font we draw on the canvas with */
+  getFixedWidthFont(window, &(num_cruncher->font), 
+                    g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY),
+                    ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL);
+  font = pango_font_describe (num_cruncher->font);
 
   /* Make sure this is the 1:1 text_height 14 on my machine*/
   foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, 1.0);
-  zMapDrawGetTextDimensions(foo_canvas_root(window->canvas), NULL, &text_height) ;
+  textDimensionsOfFont(foo_canvas_root(window->canvas), font, NULL, &text_height) ;
 
-  num_cruncher->maxZF      = text_height + (double)(ZMAP_WINDOW_TEXT_BORDER * 2);
-  num_cruncher->border     = text_height; /* This should _NOT_ be changed */
+  num_cruncher->maxZF      = text_height + (double)(ZMAP_WINDOW_TEXT_BORDER);
+  num_cruncher->border     = num_cruncher->maxZF; /* This should _NOT_ be changed */
   num_cruncher->status     = ZMAP_ZOOM_INIT;
-
-  //  max_window_size = (user_set_limit ? user_set_limit : x_windows_limit) 
-  //    - ((num_cruncher->border * 2) * num_cruncher->maxZF);
+  
+  //  num_cruncher->max_window_size = (user_set_limit ? user_set_limit : x_windows_limit) 
+  //  - ((num_cruncher->border * 2) * num_cruncher->maxZF);
   
   return num_cruncher;
 }
@@ -187,27 +218,100 @@ gboolean zmapWindowZoomControlZoomByFactor(ZMapWindow window, double factor)
   return did_zoom;
 }
 
-double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2)
+static void centeringLimitSpan2MaxOrDefaultAtZoom(double  max_pixels, 
+                                                  double  def, 
+                                                  double  zoom, 
+                                                  double *pointA, 
+                                                  double *pointB)
 {
-  ZMapWindowZoomControl control;
-  double max_span, seq_span, new_span;
-  double canv_span;
+  double max_span, seq_span, new_span, canv_span, start, end, halfway;
+  zMapAssert(max_pixels && def && pointA && pointB);
 
-  control   = controlFromWindow(window);
-
-  max_span  = (double)(window->canvas_maxwin_size);
-  seq_span  = window->seqLength * control->zF;
-
-  new_span  = y2 - y1 + 1 ;
-  new_span *= control->zF ;
+  start     = *pointA;
+  end       = *pointB;
+  max_span  = max_pixels;
+  seq_span  = def * zoom;
+  new_span  = end - start + 1;  
+  halfway   = start + (new_span / 2);
+  new_span *= zoom;
 
   new_span  = (new_span >= max_span ? 
                max_span : (seq_span > max_span ? 
                            max_span
                            : seq_span)) ;
+
+  canv_span = new_span / zoom;
   
-  canv_span = new_span / control->zF;
+  /* Need to centre on the new zoom, quick bit of math */
+
+  *pointA = (halfway - (canv_span / 2));
+  *pointB = (halfway + (canv_span / 2));
+
+  return ;
+}
+
+void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
+                                          double *x1_out, double *y1_out, 
+                                          double *x2_out, double *y2_out)
+{
+  ZMapWindowZoomControl control;
+  double x1, x2, y1, y2;
+
+  control = controlFromWindow(window);
+  x1 = x2 = y1 = y2 = 0.0;
+  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+  //zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
+
+  if(x1_out && x2_out)
+    {
+      *x1_out = x1;
+      *x2_out = x2;
+      centeringLimitSpan2MaxOrDefaultAtZoom((double)(window->canvas_maxwin_size),
+                                            (x2 - x1 + 1),
+                                            1.0,
+                                            x1_out, x2_out);
+    }
+  if(y1_out && y2_out)
+    {
+      *y1_out = y1;
+      *y2_out = y2;
+      centeringLimitSpan2MaxOrDefaultAtZoom((double)(window->canvas_maxwin_size),
+                                            window->seqLength,
+                                            control->zF,
+                                            y1_out, y2_out);
+      zmapWindowClampSpan(window, y1_out, y2_out);
+    }
+
+  return ;
+}
+double zmapWindowZoomControlLimitSpan(ZMapWindow window,
+                                      double y1_inout, double y2_inout)
+{
+  ZMapWindowZoomControl control;
+  double max_span, seq_span, new_span, canv_span;
+  double x1, x2, y1, y2;
+
+  control   = controlFromWindow(window);
+
+
+  if(y1_inout && y2_inout)
+    {
+      y1        = y1_inout;
+      y2        = y2_inout;
+      max_span  = (double)(window->canvas_maxwin_size);
+      seq_span  = window->seqLength * control->zF;
+
+      new_span  = y2 - y1 + 1 ;
+      new_span *= control->zF ;
+
+      new_span  = (new_span >= max_span ? 
+                   max_span : (seq_span > max_span ? 
+                               max_span
+                               : seq_span)) ;
   
+      canv_span = new_span / control->zF;
+    }
+
   return canv_span;
 }
 #ifdef NOW_IN_UTILS_RDS
@@ -323,6 +427,8 @@ static double getMinZoom(ZMapWindow window)
  */
 static void setZoomStatus(ZMapWindowZoomControl control)
 {
+  zMapAssert(control && (control->magic == &zoom_magic_G));
+
   /* This needs to handle ZMAP_ZOOM_FIXED too!! */
   if (control->minZF >= control->maxZF)
     {
@@ -343,6 +449,9 @@ static void setZoomStatus(ZMapWindowZoomControl control)
 static gboolean canZoomByFactor(ZMapWindowZoomControl control, double factor)
 {
   gboolean can_zoom = TRUE;
+  
+  zMapAssert(control && (control->magic == &zoom_magic_G));
+
   if (control->status == ZMAP_ZOOM_FIXED
       || (factor > 1.0 && control->status == ZMAP_ZOOM_MAX)
       || (factor < 1.0 && control->status == ZMAP_ZOOM_MIN))
@@ -351,21 +460,123 @@ static gboolean canZoomByFactor(ZMapWindowZoomControl control, double factor)
     }
   return can_zoom;
 }
+
 /* This is here incase window struct changes name of control; */
 static ZMapWindowZoomControl controlFromWindow(ZMapWindow window)
 {
   ZMapWindowZoomControl control = NULL;
 
-  zMapAssert(window->zoom);
+  zMapAssert(window && window->zoom);
 
   control = window->zoom;
+
+  zMapAssert(control->magic == &zoom_magic_G);
 
   return control;
 }
 
+static gboolean getFixedWidthFont(ZMapWindow window, 
+                                  PangoFont **font_out,
+                                  GList *prefFamilies,
+                                  gint points,
+                                  PangoWeight weight)
+{
+  PangoFontFamily **families;
+  PangoFontFamily *match_family = NULL;
+  PangoContext *context         = NULL;
+  gint n_families, i;
+  PangoFont *font = NULL;
+  gboolean found  = FALSE, 
+    havePreferred = FALSE;
+
+  context = gtk_widget_get_pango_context(GTK_WIDGET (window->toplevel));
+
+  pango_context_list_families(context,
+                              &families, &n_families);
+
+  for (i=0; i<n_families; i++)
+    {
+      const gchar *name = pango_font_family_get_name (families[i]);
+      if(!havePreferred && (found = TRUE))
+        {                       /* pango_font_family_is_monospace(families[i]) */
+          GList *pref = g_list_first(prefFamilies);
+          //printf("Found monospace family %s\n", name);
+          while(pref)
+            {
+              if(!g_ascii_strcasecmp(name, (char *)pref->data))
+                havePreferred = TRUE;
+              pref = g_list_next(pref);
+            }
+          match_family = families[i];
+        }
+    }
+
+
+  if(font_out && found)
+    {
+      PangoFontDescription *desc = NULL;
+      const gchar *name = pango_font_family_get_name (match_family);
+      
+      desc = pango_font_description_from_string(name);
+      pango_font_description_set_family(desc, name);
+      pango_font_description_set_size  (desc, points * PANGO_SCALE);
+      pango_font_description_set_weight(desc, weight);
+      font = pango_context_load_font(context, desc);
+
+      zMapAssert(font);
+      *font_out = font;
+    }
+  
+  return found;
+}
+
+
+/* Find out the text size for a group. */
+static void textDimensionsOfFont(FooCanvasGroup *group, 
+                                 PangoFontDescription *font,
+                                 double *width_out, 
+                                 double *height_out)
+{
+  double width = -1.0, height = -1.0 ;
+  int iwidth = -1, iheight = -1;
+  FooCanvasItem *item ;
+  PangoLayout *playout;
+
+  item = foo_canvas_item_new(group,
+			     FOO_TYPE_CANVAS_TEXT,
+			     "x",         0.0, 
+                             "y",         0.0, 
+                             "text",      "X",
+                             "font_desc", font,
+			     NULL);
+  playout = FOO_CANVAS_TEXT(item)->layout;
+  
+  g_object_get(GTK_OBJECT(item),
+	       "FooCanvasText::text_width", &width,
+	       "FooCanvasText::text_height", &height,
+	       NULL) ;
+
+  pango_layout_get_pixel_size( playout , &iwidth, &iheight );
+
+  width = (double)iwidth;
+  height = (double)iheight;
+
+  gtk_object_destroy(GTK_OBJECT(item));
+
+  if (width_out)
+    *width_out = width ;
+  if (height_out)
+    *height_out = height ;
+
+  return ;
+}
+
+
 #ifdef BLAH_BLAH_BLAH
 static void printControl(ZMapWindowZoomControl control)
 {
+  zMapAssert(control && (control->magic == &zoom_magic_G));
+
   printf("Control:\n"
          " factor %f\n"
          " min %f\n"
@@ -379,3 +590,100 @@ static void printControl(ZMapWindowZoomControl control)
   return ;
 }
 #endif /* BLAH_BLAH_BLAH */
+
+
+#ifdef WINDOW_STUFF_________________________
+
+typedef struct ZMapWindowZoomControlWindowStruct_
+{
+  ZMapWindow zmapwindow;
+  GtkLayout *layout;
+} ZMapWindowZoomControlWindowStruct, *ZMapWindowZoomControlWindow;
+
+static void destroyZoomWindowCB(GtkWidget *window, gpointer user_data);
+void zmapWindowZoomControlWindowCreate(ZMapWindow zmapwindow);
+
+void zmapWindowZoomControlWindowCreate(ZMapWindow zmapwindow)
+{
+  ZMapWindowZoomControlWindow win = NULL;
+  GtkWidget *window, *subFrame, *darea, *image;
+  GdkPixbuf *thumb1, *thumb2;
+
+  win = g_new0(ZMapWindowZoomControlWindowStruct, 1);
+  win->zmapwindow = zmapwindow;
+
+  window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+
+  gtk_window_set_title(GTK_WINDOW(window), "view browser");
+  gtk_window_set_default_size(GTK_WINDOW(window), 215, 175);
+  gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+  gtk_container_border_width(GTK_CONTAINER(window), 5);
+
+  /* And a destroy function */
+  g_signal_connect(GTK_OBJECT(window), "destroy",
+                   GTK_SIGNAL_FUNC(destroyZoomWindowCB), window);
+
+  /* Start drawing things in it. */
+  subFrame = gtk_frame_new(NULL);
+  gtk_container_add(GTK_CONTAINER(window), subFrame);
+
+  {
+    GdkPixbuf *copy, *scaled;
+    GtkWidget *image;
+    GtkLayout *layout;
+    int src_x = 0, src_y = 0, dest_x = 0, dest_y = 0, width, height;
+    double dx1, dx2, dy1, dy2;
+    foo_canvas_get_scroll_region(FOO_CANVAS(zmapwindow->canvas), &dx1, &dy1, &dx2, &dy2);
+    foo_canvas_w2c(FOO_CANVAS(zmapwindow->canvas), dx2, dy2, &width, &height);
+    width  = zmapwindow->canvas->layout.hadjustment->upper;
+    height = zmapwindow->canvas->layout.vadjustment->upper;
+
+    layout = GTK_LAYOUT(&(zmapwindow->canvas->layout));
+    gdk_window_raise(layout->bin_window);
+    if((copy = gdk_pixbuf_get_from_drawable(NULL, GDK_DRAWABLE(layout->bin_window),
+                                            NULL, src_x, src_y, dest_x, dest_y,
+                                            width, height)) != NULL)
+      {
+        /* This will almost certainly need to be in an expose handler! */
+        scaled = gdk_pixbuf_scale_simple(copy,
+                                         ZMAP_WINDOW_BROWSER_WIDTH, ZMAP_WINDOW_BROWSER_HEIGHT,
+                                         GDK_INTERP_BILINEAR);
+        /* we should now have it scaled ready for drawing into  */
+        image =  gtk_image_new_from_pixbuf(scaled); 
+        gtk_container_add(GTK_CONTAINER(subFrame), image);
+      }
+    else
+      {
+        darea = gtk_drawing_area_new();
+        gtk_widget_modify_bg(GTK_WIDGET(darea), GTK_STATE_NORMAL, &(zmapwindow->canvas_background)) ;
+        gtk_container_add(GTK_CONTAINER(subFrame), darea);
+      }
+  }
+
+  //  
+  //gtk_image_new(); // possible alternative
+  //gtk_widget_set_size_request(darea, 200, 160);
+  // we don't need to redraw the pixmap, just the navigation box corners.
+  // we will need a list of pixmaps though, one per view.
+  //  g_signal_connect (G_OBJECT (darea), "expose_event",  
+  //                G_CALLBACK (redraw_after_canvas_change__), NULL);
+
+  // 
+
+  /* Now show everything. */
+  gtk_widget_show_all(window) ;
+
+  return ;
+}
+
+static void destroyZoomWindowCB(GtkWidget *window, gpointer user_data)
+{
+
+  gtk_widget_destroy(GTK_WIDGET(window));
+
+  return ;
+}
+
+
+
+#endif

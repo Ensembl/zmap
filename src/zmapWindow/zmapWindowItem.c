@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 10 18:40 2005 (edgrif)
+ * Last edited: Nov 14 14:49 2005 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.6 2005-10-10 17:40:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.7 2005-11-16 10:43:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -267,7 +267,111 @@ FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
 
   return item ;
 }
+/* if(!zmapWindowItemRegionIsVisible(window, item))
+ *   zmapWindowItemCentreOnItem(window, item, changeRegionSize, boundarySize);
+ */
+gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
+{
+  gboolean visible = FALSE;
+  double wx1, wx2, wy1, wy2;
+  double ix1, ix2, iy1, iy2;
+  double dummy_x = 0.0;
+  double feature_x1 = 0.0, feature_x2 = 0.0 ;
+  ZMapFeature feature;
 
+  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2);
+  foo_canvas_item_i2w(item, &dummy_x, &iy1);
+  foo_canvas_item_i2w(item, &dummy_x, &iy2);
+
+  feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
+  zMapAssert(feature) ;         /* this should never fail. */
+  
+  /* Get the features canvas coords (may be very different for align block features... */
+  zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2);
+
+  wx1 = wx2 = wy1 = wy2 = 0.0;
+  zmapWindowScrollRegionTool(window, &wx1, &wy1, &wx2, &wy2);
+  wx2 = feature_x2 + 1;
+  if(feature_x1 >= wx1 && feature_x2 <= wx2  &&
+     iy1 >= wy1 && iy2 <= wy2)
+    {
+      visible = TRUE;
+    }
+
+  return visible;
+}
+
+void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
+                                gboolean alterScrollRegionSize,
+                                double boundaryAroundItem)
+{
+  double ix1, ix2, iy1, iy2;
+  int    cx1, cx2, cy1, cy2;
+
+  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2);
+
+  /* Fix the numbers to make sense. */
+  foo_canvas_item_i2w(item, &ix1, &iy1);
+  foo_canvas_item_i2w(item, &ix2, &iy2);
+
+  if(boundaryAroundItem > 0.0)
+    {
+      ix1 -= boundaryAroundItem;
+      iy1 -= boundaryAroundItem;
+      ix2 += boundaryAroundItem;
+      iy2 += boundaryAroundItem;
+    }
+
+  if(alterScrollRegionSize)
+    {
+      ix1 = ix2;
+      zmapWindowScrollRegionTool(window, &ix1, &iy1, &ix2, &iy2);
+    }
+  else
+    {
+      if(!zmapWindowItemRegionIsVisible(window, item))
+        {
+          double wx1, wx2, wy1, wy2, nwy1, nwy2, tmpidiff, tmpwdiff;
+          wx1 = wx2 = wy1 = wy2 = 0.0;
+          zmapWindowScrollRegionTool(window, &wx1, &wy1, &wx2, &wy2);
+          nwy1  = wy1; nwy2 = wy2;
+          tmpwdiff = ((wy2 - wy1 + 1) / 2);
+          tmpidiff = ( iy1 + ((iy2 - iy1 + 1) / 2));
+          nwy1 -= (wy1 - tmpidiff) + (tmpwdiff);
+          nwy2 -= (wy1 - tmpidiff) + (tmpwdiff);
+          zMapWindowMove(window, nwy1, nwy2);
+          /* zmapWindowScrollRegionTool(window, &wx1, &nwy1, &wx2, &nwy2);
+           * zmapWindowLongItemCrop(window, wx1, nwy1, wx2, nwy2);*/
+        }
+     }
+  foo_canvas_w2c(item->canvas, ix1, iy1, &cx1, &cy1); 
+  foo_canvas_w2c(item->canvas, ix2, iy2, &cx2, &cy2); 
+  printf("ix1, ix2, iy1, iy2 %f %f %f %f\n", ix1, ix2, iy1, iy2);
+  printf("cx1, cx2, cy1, cy2 %d %d %d %d\n", cx1, cx2, cy1, cy2);
+  {
+    int cx, cy, tmpx, tmpy, cheight, cwidth;
+    tmpx = cx2 - cx1; tmpy = cy2 - cy1;
+    if(tmpx & 1)
+      tmpx += 1;
+    if(tmpy & 1)
+      tmpy += 1;
+    cx = cx1 + (tmpx / 2);
+    cy = cy1 + (tmpy / 2);
+    tmpx = GTK_WIDGET(window->canvas)->allocation.width;
+    tmpy = GTK_WIDGET(window->canvas)->allocation.height;
+    if(tmpx & 1)
+      tmpx -= 1;
+    if(tmpy & 1)
+      tmpy -= 1;
+    cwidth = tmpx / 2; cheight = tmpy / 2;
+    printf("cwidth, cheight %d %d\n", cwidth, cheight);
+    cx -= cwidth; cy -= cheight;
+    printf("canvas x, y %d %d\n", cx, cy);
+    foo_canvas_scroll_to(window->canvas, cx, cy);
+  }
+
+  return ;
+}
 
 /* Scroll to the specified item.
  * If necessary, recalculate the scroll region, then scroll to the item
@@ -283,8 +387,25 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
   zMapAssert(window && item) ;
 
-  if(!(result = zmapWindowItemIsVisible(item)))
+  if(!(result = zmapWindowItemIsShown(item)))
     return result;
+
+  zmapWindowItemCentreOnItem(window, item, FALSE, 100.0);
+
+  /* highlight the item, which also does raise_to_top! */
+  zMapWindowHighlightObject(window, item) ;
+  
+  /* Report the selected object to the layer above us. */
+  if(window->caller_cbs->select != NULL)
+    {
+      ZMapWindowSelectStruct select = {NULL} ;
+      /* Really we should create some text here as well.... */
+      select.item = item ;
+      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+    }
+
+
+  return TRUE;
 
   feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
   zMapAssert(feature) ;         /* this should never fail. */
@@ -292,7 +413,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
   /* Get the features canvas coords (may be very different for align block features... */
   zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2);
   /* May need to move scroll region if object is outside it. */
-  checkScrollRegion(window, feature_x1, feature_x2) ;
+  //  checkScrollRegion(window, feature_x1, feature_x2) ;
   
   /* scroll up or down to user's selection. */
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2); /* world coords */
@@ -354,7 +475,6 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 void zmapWindowShowItem(FooCanvasItem *item)
 {
   ZMapFeature feature ;
-  ZMapFeatureTypeStyle type ;
   ZMapWindowItemFeatureType item_feature_type ;
   ZMapWindowItemFeature item_subfeature_data ;
 
@@ -694,7 +814,11 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
 {
   double x1, y1, x2, y2 ;
 
-
+  x1 = x2 = 0.0;
+  y1 = start;
+  y2 = end;
+  zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
+  return ;
   /* NOTE THAT THIS ROUTINE NEEDS TO CALL THE VISIBILITY CHANGE CALLBACK IF WE MOVE
    * THE SCROLL REGION TO MAKE SURE THAT ZMAPCONTROL UPDATES ITS SCROLLBARS.... */
 
@@ -733,7 +857,7 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
 
       /* agh, this seems to be here because we move the scroll region...we need a function
        * to do this all....... */
-      zmapWindowLongItemCrop(window) ;
+      //      zmapWindowLongItemCrop(window) ;
 
       /* Call the visibility change callback to notify our caller that our zoom/position has
        * changed. */
@@ -867,6 +991,29 @@ gboolean zmapWindowItemIsVisible(FooCanvasItem *item)
 {
   gboolean visible = FALSE;
 
+  visible = zmapWindowItemIsShown(item);
+
+  /* we need to check out our parents :( */
+  /* we would like not to do this */
+  if(visible)
+    {
+      FooCanvasGroup *parent = NULL;
+      parent = FOO_CANVAS_GROUP(item->parent);
+      while(visible && parent)
+        {
+          visible = zmapWindowItemIsShown(FOO_CANVAS_ITEM(parent));
+          /* how many parents we got? */
+          parent  = FOO_CANVAS_GROUP(FOO_CANVAS_ITEM(parent)->parent); 
+        }
+    }
+
+  return visible;
+}
+
+gboolean zmapWindowItemIsShown(FooCanvasItem *item)
+{
+  gboolean visible = FALSE;
+  
   zMapAssert(item != NULL);
 
   g_object_get(G_OBJECT(item), 

@@ -27,23 +27,46 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 14 14:35 2005 (rds)
+ * Last edited: Oct 17 12:17 2005 (rds)
  * Created: Tue Jul 12 16:02:52 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.1 2005-07-14 15:23:09 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.2 2005-11-16 10:43:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAPWINDOWZOOMCONTROL_P_H
 #define ZMAPWINDOWZOOMCONTROL_P_H
 
+#include <ZMap/zmapUtils.h>
+#include <zmapWindow_P.h>
+
+
+#define ZMAP_ZOOM_FONT_FAMILY "Lucida Console"
+#define ZMAP_ZOOM_FONT_FAMILY "Monospace"
+#define ZMAP_ZOOM_FONT_SIZE (10)
+
+static ZMapMagic zoom_magic_G = "ZMAP_ZOOM_MAGIC_VALUE";
+
+enum {
+  ZMAP_WINDOW_BROWSER_HEIGHT = 160,
+  ZMAP_WINDOW_BROWSER_WIDTH  = 200
+};
+
 typedef struct _ZMapWindowZoomControlStruct
 {
+  ZMapMagic *magic;
   double zF;
   double minZF;
   double maxZF;
   double lineHeight;
-  
+  double max_window_size;
+
   int border;
+
+  PangoFont *font; /* This needs to be a fixed
+                                          * width font. We use it to
+                                          * display the DNA which
+                                          * absolutely requires
+                                          * that. */
 
   ZMapWindowZoomStatus status;
 } ZMapWindowZoomControlStruct;

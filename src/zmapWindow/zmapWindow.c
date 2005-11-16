@@ -1,7 +1,6 @@
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
- *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -27,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 13 14:24 2005 (edgrif)
+ * Last edited: Nov  3 11:01 2005 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.95 2005-10-13 13:29:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.96 2005-11-16 10:42:59 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -512,6 +511,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
   double max_win_span, seq_span, new_win_span, new_canvas_span ;
   double top, bot ;
   ZMapWindowVisibilityChangeStruct vis_change ;
+  FooCanvasGroup *super_root = NULL;
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
@@ -531,38 +531,53 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
        * we may want to revisit this decision. */
       return ;
     }
+  else
+    {
+      /* Calculate the extent of the new span, new span must not exceed maximum X window size
+       * but we must display as much of the sequence as we can for zooming out. */
+      foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+      new_canvas_span = zmapWindowZoomControlLimitSpan(window, y1, y2);
+      
+      y1 = curr_pos - (new_canvas_span / 2) ;
+      y2 = curr_pos + (new_canvas_span / 2) ;
+      
+      zmapWindowClampSpan(window, &y1, &y2);
+      
+      /* Set the new scroll_region and the new zoom. N.B. may need to do a "freeze" of the canvas here
+       * to avoid a double redraw....but that might never happen actually, depends how much there is
+       * in the Xlib buffer so not lets worry about it. */
+      
+      //  foo_canvas_set_scroll_region(window->canvas, x1, top, x2, bot) ;
+      //  zmapWindow_set_scroll_region(window, top, bot);
+      foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, zMapWindowGetZoomFactor(window)) ;
+      
+      //zmapWindowZoomControlGetScrollRegion(window, &x1, &y1, &x2, &y2);
+        
+      /* Set the scroll region. */
+      zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
 
-  /* Calculate the extent of the new span, new span must not exceed maximum X window size
-   * but we must display as much of the sequence as we can for zooming out. */
-  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
-  new_canvas_span = zmapWindowZoomControlLimitSpan(window, y1, y2);
+      /* Now we've actually done the zoom on the canvas we can
+       * redraw/show/hide everything that's zoom dependent.
+       * E.G. Text, which is separated differently @ different zooms otherwise.
+       *      zoom dependent features, magnification dependent columns 
+       */
 
-  top = curr_pos - (new_canvas_span / 2) ;
-  bot = curr_pos + (new_canvas_span / 2) ;
+      /* Firstly the scale bar, which will be changed soon. */
+      zmapWindowDrawScaleBar(window, y1, y2);
 
-  zmapWindowClampSpan(window, &top, &bot);
-
-  /* Set the new scroll_region and the new zoom. N.B. may need to do a "freeze" of the canvas here
-   * to avoid a double redraw....but that might never happen actually, depends how much there is
-   * in the Xlib buffer so not lets worry about it. */
-
-  //  foo_canvas_set_scroll_region(window->canvas, x1, top, x2, bot) ;
-  zmapWindow_set_scroll_region(window, top, bot);
-
-  foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, zMapWindowGetZoomFactor(window)) ;
-
+      /* Get the root, so that we can notify the columns that the zoom has occurred */
+      if((super_root = zmapWindowFToIFindItemFull(window->context_to_item, 0,0,0,0,0)))
+        zmapWindowContainerZoomEvent(super_root, window);
+      
+      zmapWindowLongItemCrop(window, x1, y1, x2, y2); /* Call this again because of backgrounds :( */
+    }
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
       foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
       foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
     }
-
-  zmapWindowDrawScaleBar(window, top, bot);
-
-  /* May need to crop very long canvas items. */
-  zmapWindowLongItemCrop(window) ;
-
+  
   return ;
 }
 
@@ -591,42 +606,26 @@ void zMapWindowMove(ZMapWindow window, double start, double end)
  * is needed to reach parts of the canvas not currently mapped. */
 static void myWindowMove(ZMapWindow window, double start, double end)
 {
-  double x1, y1, x2, y2 ;
-  ZMapWindowVisibilityChangeStruct vis_change ;
-
+  FooCanvasGroup *super_root = NULL;
+  double x1, x2;
+  x1 = x2 = 0.0;
   /* Clamp the start/end. */
   if (start < window->min_coord)
     start = window->min_coord ;
   if (end > window->max_coord)
     end = window->max_coord ;
 
-  /* We don't need the y1/y2 probably, but we do need the x1, x2.... */
-  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+  zmapWindowScrollRegionTool(window, &x1, &start, &x2, &end);
 
-  /* The test here is almost not worth doing as these are doubles. */
-  if (start != y1 && end != y2)
-    {
-      //foo_canvas_set_scroll_region(window->canvas, x1, start, x2, end) ;
-      zmapWindow_set_scroll_region(window, start, end);
-    }
-
+  if((super_root = zmapWindowFToIFindItemFull(window->context_to_item, 0,0,0,0,0)))
+    zmapWindowContainerMoveEvent(super_root, window);
 
   /* need to redo some of the large objects.... */
-  zmapWindowLongItemCrop(window) ;
+  zmapWindowLongItemCrop(window, x1, start, x2, end);
 
   zmapWindowDrawScaleBar(window, start, end);
-
   foo_canvas_update_now(window->canvas) ;
 
-#ifdef RDS_SET_SCROLL_REGION_CALLS_THIS_NOW
-  /* Call the visibility change callback to notify our caller that our zoom/position has
-   * changed, note there is some redundancy here if the call to this routine came as a.
-   * result of the user interaction then there may be no need to do this....think about this. */
-  vis_change.zoom_status = zMapWindowGetZoomStatus(window) ;
-  vis_change.scrollable_top = start ;
-  vis_change.scrollable_bot = end ;
-  (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
-#endif /* RDS_SET_SCROLL_REGION_CALLS_THIS_NOW */
   return ;
 }
 
@@ -756,7 +755,123 @@ void zMapWindowDestroy(ZMapWindow window)
 
 /*! @} end of zmapwindow docs. */
 
+/* 
+ *
+ * The whole idea of this function is to hide the border from the
+ * user. In this way {s,g}etting the scroll region using this function
+ * always returns the sequence coords and not the actual scroll region.
+ * This is important when calling as 
+ * zmapWindowScrollRegionTool(window, 
+ *                            NULL, &(window->min_coord),
+ *                            NULL, &(window->max_coord));
+ * and trying to find reliably which part of the sequence we're showing
+ * e.g.
+ * x1 = x2 = y1 = y2 = 0.0;
+ * zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
+ * y1 and y2 now have the displayed sequence start and end respectively.
+ * useful for the scalebar and dna.
+ *
+ *
+ *
+ * call as zmapWindowScrollRegionTool(window, NULL, NULL, NULL, NULL)
+ * will needlessly get and set the scroll region to exactly what it is now.
 
+ * call as zmapWindowScrollRegionTool(window, NULL, -90000.00, NULL, 9000000000.00)
+ * will, depending on zoom do eveything you expect!
+ * i.e. do a get_scroll_region, filling in the NULLs with current values
+ * and clamp the region within the seq or the 32K limit, whichever is
+ * smaller in terms of pixels.
+
+ * x1 = x2 = y1 = y2 = 0.0
+ * call as zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2)
+ * same as zmapWindowScrollRegionTool(window, NULL, NULL, NULL, NULL), 
+ * but acts more like just a get_scroll_region to the caller!
+ */
+
+void zmapWindowScrollRegionTool(ZMapWindow window,
+                                double *x1_inout, double *y1_inout,
+                                double *x2_inout, double *y2_inout)
+{
+  ZMapWindowClampType clamp = ZMAP_WINDOW_CLAMP_INIT;
+  double  x1,  x2,  y1,  y2;    /* New region coordinates */
+  double wx1, wx2, wy1, wy2;    /* Current world coordinates */
+
+  foo_canvas_get_scroll_region(FOO_CANVAS(window->canvas), /* OK */
+                               &wx1, &wy1, &wx2, &wy2);
+  /* Read the input */
+  x1 = (x1_inout ? *x1_inout : wx1);
+  x2 = (x2_inout ? *x2_inout : wx2);
+  y1 = (y1_inout ? *y1_inout : wy1);
+  y2 = (y2_inout ? *y2_inout : wy2);
+
+  /* Catch this special case */
+  if(x1 == 0.0 && x1 == x2 && x1 == y1 && x1 == y2)
+    { 
+      /* I think this is right. The return coords want to be sequence
+       * coords, not actual world coords which will likely include a
+       * border or two. */
+      clamp = zmapWindowClampStartEnd(window, &wy1, &wy2); 
+      x1 = wx1; x2 = wx2; y1 = wy1; y2 = wy2; 
+    }
+  else if(x1 == wx1 && x2 == wx2 && y1 == wy1 && y2 == wy2)
+    {
+      printf("Nothing's changed... returning ...\n");
+      return;
+    }
+  else
+    {
+      /* BEGIN: main part of the setting of the scroll region */
+      ZMapWindowVisibilityChangeStruct vis_change ;
+      double zoom, border, tmp_top, tmp_bot;
+
+      /* If the user called us with identical pairs of x or y coords
+       * they will just get the current region coords for those pairs
+       * back.  This is a bit hokey I guess*/
+      if(x1 == x2){ x1 = wx1; x2 = wx2; }
+      if(y1 == y2){ y1 = wy1; y2 = wy2; }
+
+      zoom = zMapWindowGetZoomStatus(window) ;
+      zmapWindowGetBorderSize(window, &border);
+
+      zmapWindowLongItemCrop(window, x1, y1, x2, y2);
+
+      clamp = zmapWindowClampStartEnd(window, &y1, &y2);
+      y1   -= (tmp_top = ((clamp & ZMAP_WINDOW_CLAMP_START) ? border : 0.0));
+      y2   += (tmp_bot = ((clamp & ZMAP_WINDOW_CLAMP_END)   ? border : 0.0));
+
+      if(clamp ^ (ZMAP_WINDOW_CLAMP_END | ZMAP_WINDOW_CLAMP_START))
+        {
+          /* We've now broken the 32K/canvas_max_size limit. Need to check long items... */
+          /*          printf("Broken 32K limit! ... Cropping Long Items.\n"); */
+          /* We can't just do this as we need to check on zoom out! */
+        }
+
+      
+      /* -----> and finally set the scroll region */
+      foo_canvas_set_scroll_region(FOO_CANVAS(window->canvas), /* OK */
+                                   x1, y1, x2, y2);
+
+      /* -----> letting the window creator know what's going on */
+      vis_change.zoom_status    = zoom;
+      vis_change.scrollable_top = (y1 += tmp_top); /* should these be sequence clamped */
+      vis_change.scrollable_bot = (y2 -= tmp_bot); /* or include the border? (SEQUENCE CLAMPED ATM) */
+      (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
+      /*   END: main part of the setting of the scroll region */
+    }
+
+  /* Set the output */
+  if(x1_inout)
+    *x1_inout = x1;
+  if(x2_inout)
+    *x2_inout = x2;
+  if(y1_inout)
+    *y1_inout = y1;
+  if(y2_inout)
+    *y2_inout = y2;
+  return ;
+}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
 {
   ZMapWindowZoomControl control;
@@ -781,7 +896,7 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
   top = (y1a - ((clamp & ZMAP_WINDOW_CLAMP_START) ? border : 0));
   bot = (y2a + ((clamp & ZMAP_WINDOW_CLAMP_END)   ? border : 0));
 
-  foo_canvas_set_scroll_region(window->canvas,
+  foo_canvas_set_scroll_region(window->canvas, /* OLD, so OK */
 #ifdef RDS_THIS_SHOULD_BE_THIS
                                x1, top,
 #else  /* NOT THIS HARD CODED 0.0  */
@@ -798,7 +913,7 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
     
   return ;
 }
-
+#endif
 
 
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item)
@@ -953,7 +1068,9 @@ static void changeRegion(ZMapWindow window, guint keyval)
   double window_size ;
   ZMapWindowVisibilityChangeStruct vis_change ;
 
-  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+  /* THIS FUNCTION NEEDS REFACTORING SLIGHTLY */
+  foo_canvas_get_scroll_region(window->canvas, /* ARRRRRRRRRRRRGH!!!! */
+                               &x1, &y1, &x2, &y2);
 
   /* There is no sense in trying to scroll the region if we already showing all of it already. */
   if (y1 > window->min_coord || y2 < window->max_coord)
@@ -1019,16 +1136,10 @@ static void changeRegion(ZMapWindow window, guint keyval)
 	}
 
       //      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2) ;
-      zmapWindow_set_scroll_region(window, y1, y2);
-#ifdef RDS_SET_SCROLL_REGION_CALLS_THIS_NOW
-      /* Call the visibility change callback to notify our caller that our zoom/position has
-       * changed, note there is some redundancy here if the call to this routine came as a
-       * result of the user interaction then there may be no need to do this....think about this. */
-      vis_change.zoom_status = zMapWindowGetZoomStatus(window) ;
-      vis_change.scrollable_top = y1 ;
-      vis_change.scrollable_bot = y2 ;
-      (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
-#endif /* RDS_SET_SCROLL_REGION_CALLS_THIS_NOW */
+      //zmapWindow_set_scroll_region(window, y1, y2);
+
+      zmapWindowScrollRegionTool(window, NULL, &y1, NULL, &y2);
+      
     }
 
   return ;
@@ -1404,8 +1515,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
           {
             int bp = 0;
             double y1, y2;
-            foo_canvas_get_scroll_region(window->canvas, NULL, &y1, NULL, &y2);
-            zmapWindowClampStartEnd(window, &y1, &y2);
+            foo_canvas_get_scroll_region(window->canvas, /* ok, but like to change */
+                                         NULL, &y1, NULL, &y2);
+            zmapWindowClampStartEnd(window, &y1, &y2); /* errrr. I think ScrollRegionTool does this */
             zMapDrawHorizonReposition(window->horizon_guide_line, wy);
             /* We floor the value here as it works with the way we draw our bases. */
             /* This test is FLAWED ATM it needs to test for displayed seq start & end */
@@ -1503,7 +1615,7 @@ static void zoomToRubberBandArea(ZMapWindow window)
    * If we have then we need to move there first, otherwise scroll_to
    * doesn't do anything.
    */
-  foo_canvas_get_scroll_region(window->canvas, &wx1, &wy1, &wx2, &wy2);
+  foo_canvas_get_scroll_region(window->canvas, &wx1, &wy1, &wx2, &wy2); /* ok, but can we refactor? */
   if(rooty1 > wy1 && rooty2 < wy2)
     {                           /* We're still in the same area, */
       foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
@@ -1544,9 +1656,7 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
     case GDK_BUTTON_PRESS:
       {
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	printf("ROOT group event handler - CLICK\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

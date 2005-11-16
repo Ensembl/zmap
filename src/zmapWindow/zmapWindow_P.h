@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov  9 13:46 2005 (edgrif)
+ * Last edited: Nov 16 09:28 2005 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.84 2005-11-09 14:59:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.85 2005-11-16 10:43:00 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -315,6 +315,23 @@ typedef struct _zmapWindowFeatureListCallbacksStruct
   GtkTreeSelectionFunc selectionFuncCB;
 } zmapWindowFeatureListCallbacksStruct, *zmapWindowFeatureListCallbacks;
 
+/* text group selection stuff for the highlighting of dna, etc... */
+typedef struct textGroupSelectionStruct_
+{
+  gboolean need_update;
+  GList *originItemListMember;
+  FooCanvasGroup *tooltip, *highlight;
+  double buttonCurrentX;
+  double buttonCurrentY;
+  int originIdx;
+  int seqFirstIdx, seqLastIdx;
+  ZMapWindow window;
+} textGroupSelectionStruct, *textGroupSelection;
+
+
+typedef void (*zmapWindowContainerZoomChangedCallback)(FooCanvasGroup *container, 
+                                                       double new_zoom, 
+                                                       gpointer user_data);
 
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
@@ -339,7 +356,7 @@ double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
 
 void zmapWindowLongItemCheck(ZMapWindow window, FooCanvasItem *item, double start, double end) ;
-void zmapWindowLongItemCrop(ZMapWindow window) ;
+void zmapWindowLongItemCrop(ZMapWindow window, double x1, double y1, double x2, double y2) ;
 gboolean zmapWindowLongItemRemove(GList **long_items, FooCanvasItem *item) ;
 void zmapWindowLongItemFree(GList *long_items) ;
 
@@ -360,6 +377,8 @@ void zmapHideUnhideColumns(ZMapWindow window) ;
 
 GHashTable *zmapWindowFToICreate(void) ;
 GQuark zmapWindowFToIMakeSetID(GQuark set_id, ZMapStrand strand) ;
+gboolean zmapWindowFToIAddRoot(GHashTable *feature_to_context_hash,
+                               FooCanvasGroup *root_group);
 gboolean zmapWindowFToIAddAlign(GHashTable *feature_to_context_hash,
 				GQuark align_id,
 				FooCanvasGroup *align_group) ;
@@ -406,6 +425,9 @@ ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *it
 void zmapWindowEditorDraw(ZMapWindowEditor editor);
 
 void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a);
+void zmapWindowScrollRegionTool(ZMapWindow window,
+                                double *x1_inout, double *y1_inout,
+                                double *x2_inout, double *y2_inout);
 
 ZMapWindowClampType zmapWindowClampSpan(ZMapWindow window, 
                                         double *top_inout, 
@@ -428,21 +450,32 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvas
 
 void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapWindowBumpType bump_type) ;
 void zmapWindowColumnReposition(FooCanvasGroup *column_group) ;
+void zmapWindowColumnWriteDNA(ZMapWindow window,
+                              FooCanvasGroup *column_parent);
 
 FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  GdkColor *background_fill_colour,
 					  GdkColor *background_border_colour) ;
+FooCanvasGroup *zmapWindowContainerAddTextChild(FooCanvasGroup *container_parent, 
+                                                zmapWindowContainerZoomChangedCallback redrawCB,
+                                                gpointer user_data);
 FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_parent) ;
 FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *any_container_child) ;
 FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent) ;
 FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent) ;
+FooCanvasGroup *zmapWindowContainerGetText(FooCanvasGroup *container_parent);
 gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
+gboolean zmapWindowContainerHasText(FooCanvasGroup *container_parent);
 void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, double y_extent) ;
 void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerPrint(FooCanvasGroup *container_parent) ;
+void zmapWindowContainerPurge(FooCanvasGroup *unknown_child);
 void zmapWindowContainerDestroy(FooCanvasGroup *container_parent) ;
 
 void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout) ;
+void zmapWindowContainerGetAllColumns(FooCanvasGroup *super_root, GList **list);
+void zmapWindowContainerZoomEvent(FooCanvasGroup *super_root, ZMapWindow window);
+void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window);
 
 
 GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store);
@@ -463,6 +496,10 @@ void zmapWindowZoomControlHandleResize(ZMapWindow window);
 double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2) ;
 void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new) ;
 
+void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
+                                          double *x1_out, double *y1_out, 
+                                          double *x2_out, double *y2_out);
+
 
 /* 
 void zmapWindowzoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
@@ -474,8 +511,18 @@ void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 
 void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end) ;
 
-
+/*!-------------------------------------------------------------------!
+ *| Checks to see if the item really is visible.  In order to do this |
+ *| all the item's parent groups need to be examined.                 |  
+ *!-------------------------------------------------------------------!*/
 gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
+/*!-------------------------------------------------------------------!
+ *| Checks to see if the item is shown.  An item may still not be     |
+ *| visible as any one of its parents might be hidden. If this        |
+ *| definitive answer is required, use zmapWindowItemIsVisible        |
+ *| instead.                                                          |
+ *!-------------------------------------------------------------------!*/
+gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
 
 
 #endif /* !ZMAP_WINDOW_P_H */
