@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Nov 14 11:01 2005 (rds)
+ * Last edited: Nov 15 16:05 2005 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.22 2005-11-14 12:01:30 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.23 2005-11-16 10:31:11 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -39,28 +39,35 @@
 typedef struct _ZMapDrawTextIteratorStruct
 {
   int iteration;
-  double x;
-  double y;
-  int offset;
-  int line_height;
-  int seq_start;
-  int seq_length;
-  int drawable_seq_length;
-  int rows;
-  int cols;
+
+  double x, y;
+  double seq_start, seq_end;
+  int offset_start, offset_end;
+
+  int shownSeqLength;
+  int length2draw;
+  int n_bases;
+
+  int rows, cols;
+
   char *format;
-  double text_height;
+  gboolean numbered;
+
 } ZMapDrawTextIteratorStruct, *ZMapDrawTextIterator;
 
 typedef struct ZMapDrawTextRowDataStruct_
 {
-  int sequenceOffset;
-  int textWriteOffset;          /* should be the y coord of where the text is drawn */
+  int sequenceOffset;           /* This is the offset of the scroll region in characters */
+
+  int rowOffset;                /* The offset of the character */
+
   int fullStrLength;            /* the string might get clipped. */
   int drawnStrLength;           /* this is the length of the string drawn */
-  double columnWidth;
+
+  double columnWidth;           /* This is the width of the column */
   /* text's char width is columnWidth / drawnStrLength */
 } ZMapDrawTextRowDataStruct, *ZMapDrawTextRowData;
+
 
 //#define MINVAL(x, y) ((x) < (y) ? (x) : (y))
 //#define MAXVAL(x, y) ((x) > (y) ? (x) : (y))
@@ -106,10 +113,7 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
 void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,                                  
                                  int y1Idx,
                                  int y2Idx,
-                                 int full_str_length,
-                                 int drawn_str_length,
-                                 int offset,
-                                 double column_width);
+                                 FooCanvasItem *textItem);
 FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
                                  PangoFontDescription *fixed_font,
                                  char *fullText, 

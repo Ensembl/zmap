@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov  9 14:55 2005 (edgrif)
+ * Last edited: Nov  9 19:18 2005 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.45 2005-11-09 14:56:59 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.46 2005-11-16 10:31:11 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -78,7 +78,8 @@ typedef enum {ZMAPFEATURE_INVALID = -1,
 	      ZMAPFEATURE_BASIC = 0, ZMAPFEATURE_HOMOL,
               ZMAPFEATURE_EXON, ZMAPFEATURE_INTRON, 
 	      ZMAPFEATURE_TRANSCRIPT, ZMAPFEATURE_VARIATION,
-	      ZMAPFEATURE_BOUNDARY, ZMAPFEATURE_SEQUENCE} ZMapFeatureType ;
+	      ZMAPFEATURE_BOUNDARY, ZMAPFEATURE_SEQUENCE,
+              ZMAPFEATURE_RAW_SEQUENCE} ZMapFeatureType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
 
@@ -202,7 +203,7 @@ typedef struct ZMapFeatureContextStruct_
 
   int length ;						    /* total length of sequence. */
 
-  ZMapSequenceStruct sequence ;				    /* The dna sequence. */
+  ZMapSequence sequence ;				    /* The dna sequence. NB NOW A POINTER! */
 
   /* Mapping for the target sequence, this shows where this section of sequence fits in to its
    * overall assembly, e.g. where a clone is located on a chromosome. */
@@ -358,6 +359,7 @@ typedef struct ZMapFeatureStruct_
   {
     ZMapHomolStruct homol ;
     ZMapTranscriptStruct transcript ;
+    ZMapSequenceStruct sequence; 
     ZMapSingleExonStruct exon ;				    /* What is this needed for ? */
   } feature ;
 
