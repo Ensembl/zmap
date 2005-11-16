@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Nov 14 10:58 2005 (rds)
+ * Last edited: Nov 16 10:32 2005 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.37 2005-11-14 12:04:31 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.38 2005-11-16 10:32:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -367,13 +367,9 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
  *
  * To make a multicolour highlight box just #define ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
  */
-void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,                                  
-                                 int y1Idx,
-                                 int y2Idx,
-                                 int full_str_length,
-                                 int drawn_str_length,
-                                 int offset,
-                                 double column_width)
+void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
+                                 int y1Idx, int y2Idx,
+                                 FooCanvasItem *textItem)
 {
   FooCanvasPoints *points = NULL;
   GList *lines = NULL;
@@ -381,20 +377,23 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
   double offsetX1, offsetX2, offsetY1, offsetY2;
   double minX, maxX, dlength, chrWidth;
   int i, y1mod, y2mod;
+  ZMapDrawTextRowData trd = NULL;
+
+  zMapAssert(textItem && (trd = zMapDrawGetTextItemData(textItem)));
 
   gdk_color_parse("red", &color);
 
   lines    = grp->item_list;
   points   = foo_canvas_points_new(2);
 
-  y1mod    = (y1Idx - offset) % full_str_length;
-  y2mod    = (y2Idx - offset) % full_str_length;
+  y1mod    = (y1Idx - trd->sequenceOffset) % trd->fullStrLength;
+  y2mod    = (y2Idx - trd->sequenceOffset) % trd->fullStrLength;
 
-  dlength  = (double)full_str_length;
-  chrWidth = column_width / drawn_str_length;
+  dlength  = (double)trd->fullStrLength;
+  chrWidth = trd->columnWidth / trd->drawnStrLength;
 
   minX     = chrWidth / 4;    /* Also used to get half way between characters */
-  maxX     = column_width;      /* -/+ minX ?? */
+  maxX     = trd->columnWidth;      /* -/+ minX ?? */
 
   offsetX1 = ((double)y1mod) * chrWidth + minX;
   offsetX2 = ((double)y2mod) * chrWidth + minX;
@@ -557,7 +556,6 @@ ZMapDrawTextRowData zMapDrawGetTextItemData(FooCanvasItem *item)
 
   return trd;
 }
-
 FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
                                  PangoFontDescription *fixed_font,
                                  char *fullText, 
@@ -566,32 +564,31 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
   FooCanvasItem *item = NULL;
   char *item_text = NULL;
   ZMapDrawTextRowData trd = NULL;
-  int char_count, max_chars, text_width = 8;
+  int char_count, max_chars, text_width = 8, curr_idx;
   
   /* Make a ZMapDrawTextRowData object to attach to the text */
   trd = g_new0(ZMapDrawTextRowDataStruct, 1);
 
-  iterator->y  = iterator->iteration * iterator->text_height;
-  iterator->y += iterator->offset;
+  curr_idx  = iterator->iteration * iterator->cols;
+  curr_idx += iterator->offset_start;
 
-  iterator->seq_start  = iterator->iteration * iterator->cols;
-  iterator->seq_start += iterator->offset;
+  iterator->y = (double)curr_idx;
 
-  trd->textWriteOffset = iterator->seq_start;
-  trd->fullStrLength   = iterator->cols;
-  trd->sequenceOffset  = iterator->offset;
+  trd->rowOffset      = curr_idx;// + iterator->seq_start - 1;
+  trd->fullStrLength  = iterator->cols;
+  trd->sequenceOffset = iterator->offset_start;
 
   max_chars  = floor(MAX_TEXT_COLUMN_WIDTH / text_width) - 3; /* we add 3 dots (...) */
   char_count = MIN(iterator->cols, max_chars);
 
-  if(fullText[iterator->seq_start])
+  if(fullText[curr_idx])
     {
       trd->drawnStrLength = (char_count >= iterator->cols ? iterator->cols : char_count + 3);
       if(char_count >= iterator->cols)
-        item_text = g_strndup(&(fullText[iterator->seq_start]), iterator->cols);
+        item_text = g_strndup(&(fullText[curr_idx]), iterator->cols);
       else
         item_text = g_strdup_printf("%s...",
-                                  g_strndup(&(fullText[iterator->seq_start]), char_count)
+                                  g_strndup(&(fullText[curr_idx]), char_count)
                                   );
     }
 
@@ -629,15 +626,19 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
       foo_canvas_item_set(item,
                           "clip",        TRUE,
                           "clip_width",  trd->columnWidth,
-                          "clip_height", (double)iterator->line_height,
+                          "clip_height", (double)iterator->n_bases,
                           NULL
                           );
+
+      foo_canvas_item_raise_to_top(item);
+
       g_free(item_text);
 
 #ifdef  PREFIX_DNA_WITH_NUMBERS
       drawRowBounds(item);
       g_free(item_text2);
 #endif
+
     }
 
   //  iterator->x = ZMAP_WINDOW_TEXT_BORDER; /* reset this */

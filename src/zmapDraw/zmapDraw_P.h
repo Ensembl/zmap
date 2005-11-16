@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 10:41 2005 (rds)
+ * Last edited: Nov 15 14:47 2005 (rds)
  * Created: Mon Jul 18 09:14:38 2005 (rds)
- * CVS info:   $Id: zmapDraw_P.h,v 1.2 2005-11-14 12:04:55 rds Exp $
+ * CVS info:   $Id: zmapDraw_P.h,v 1.3 2005-11-16 10:32:45 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_P_H
@@ -39,6 +39,7 @@
 #include <glib.h>
 #include <math.h>
 #include <ZMap/zmapDraw.h>
+#include <ZMap/zmapUtils.h>
 
 #define ZMAP_SCALE_MINORS_PER_MAJOR 10
 #define ZMAP_FORCE_FIVES TRUE
@@ -74,10 +75,10 @@ typedef struct _ZMapScaleBarStruct
   double bottom;
 } ZMapScaleBarStruct, *ZMapScaleBar;
 
-
 static ZMapScaleBar createScaleBar_start_end_zoom_height(double start, double end, double zoom, double line);
 static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group, PangoFontDescription *font);
 static void destroyScaleBar(ZMapScaleBar scaleBar);
+
 
 
 #endif /* ZMAP_DRAW_P_H */
