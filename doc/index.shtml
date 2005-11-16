@@ -27,6 +27,7 @@
   <li><b>GTK</b>
       <ul>
 	<li><A HREF="gdk_events.txt">GDK raw events</A>
+        <li><a href="http://developer.gnome.org/doc/API/2.0/gtk/checklist-modifiers.html">Test for modifier keys correctly</li>
       </ul>
 </ul>
 

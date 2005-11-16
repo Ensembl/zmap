@@ -57,7 +57,8 @@ use File::Basename;
 sub cvs_status_get_tags{
     my ($path) = @_;
     chdir($path);
-    my $cmd = "cvs status -v";
+    my $cmd = "cvs status -v 2>.error";
+    print STDERR "running command '$cmd'\n";
     open(my $fh, "$cmd |") or die "Can't open pipe to $cmd\n";
     local $/ = "===================================================================";
     my $tagHash = {};
