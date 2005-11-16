@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 28 14:28 2005 (edgrif)
+ * Last edited: Nov 16 10:34 2005 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.39 2005-09-30 07:18:39 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.40 2005-11-16 10:34:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -720,8 +720,7 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
-
-
+  
   /* Because the acedb "dna" command works on the current keyset, we have to find the sequence
    * first before we can get its dna. A bit poor really but otherwise
    * we will have to add a new code to acedb to do the dna for a named key. */
@@ -747,9 +746,42 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
 	    }
 	  else
 	    {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      feature_context->sequence.type = ZMAPSEQUENCE_DNA ;
 	      feature_context->sequence.length = feature_context->length ;
 	      feature_context->sequence.sequence = reply ;
+#endif
+              /* This is possibly a _little_ hacked ATM */
+              ZMapFeature feature = NULL;
+              ZMapFeatureSet feature_set = NULL;
+              ZMapSequenceStruct seq = {};
+              ZMapFeatureTypeStyle style = NULL;
+
+              /* Create the feature set */
+              feature_set = zMapFeatureSetCreate("dna", NULL);
+              /* Create the feature and add sequence to it. */
+              feature      = zmapFeatureCreateEmpty();
+              seq.type     = ZMAPSEQUENCE_DNA ;
+              seq.length   = feature_context->length ;
+              seq.sequence = reply ;
+              feature->feature.sequence = seq;
+              style = zMapFindStyle(feature_context->styles, g_quark_from_string("dna"));
+
+              /* need to augment data too... FOR NOW just dna*/
+              zMapFeatureAugmentData(feature, "dna", "dna", "b0250",
+                                     ZMAPFEATURE_RAW_SEQUENCE, style,
+                                     0,0,0.0, ZMAPSTRAND_FORWARD,
+                                     ZMAPPHASE_NONE, 0, 0, 0, NULL);
+              /* Make the link so that getting the sequence is EASY. */
+              feature_context->sequence = &(feature->feature.sequence);
+              
+              /* Add the feature to the master_align's, block's list of featuresets. */
+              /* First to our feature set */
+              zMapFeatureSetAddFeature(feature_set, feature);
+              zMapFeatureBlockAddFeatureSet((ZMapFeatureBlock)(feature_context->master_align->blocks->data), 
+                                            feature_set);
+
+              /* everything should now be done, result is true */
 	      result = TRUE ;
 	    }
 	}
