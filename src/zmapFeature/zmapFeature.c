@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov  8 17:34 2005 (rds)
+ * Last edited: Nov  8 17:57 2005 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.26 2005-11-08 17:38:08 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.27 2005-11-16 10:33:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,11 +121,11 @@ gboolean zmapFeatureContextDNA(ZMapFeatureContext context,
 
   zMapAssert(context && seq_len_out && seq_name_out) ;
 
-  if (context->sequence.sequence)
+  if (context->sequence && context->sequence->sequence)
     {
       *seq_name_out = (char *)g_quark_to_string(context->sequence_name) ;
-      *seq_len_out  = context->sequence.length ;
-      *sequence_out = context->sequence.sequence ;
+      *seq_len_out  = context->sequence->length ;
+      *sequence_out = context->sequence->sequence ;
       result = TRUE ;
     }
 
@@ -770,15 +770,12 @@ static void destroyFeatureSet(gpointer data)
  * without removing the corresponding Feature data. */
 static void removeNotFreeFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapFeatureContext feature_context = (ZMapFeatureContext)user_data ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* need to call funcs to free blocks etc. here.... */
-
   g_datalist_id_remove_no_notify(&(feature_context->feature_sets), key_id) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
@@ -1048,7 +1045,7 @@ static void doNewFeatures(GQuark key_id, gpointer data, gpointer user_data)
   GData *diff_features = *diff_result ;
   GData **new_result = sets->new_features ;
   GData *new_features = *new_result ;
-  ZMapFeature current_feature, diff_feature ;
+  ZMapFeature current_feature;
 
 
   zMapAssert(key_id == new_feature->unique_id) ;
