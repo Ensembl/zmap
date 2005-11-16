@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 16 10:24 2005 (rds)
+ * Last edited: Nov 16 15:10 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.99 2005-11-16 10:42:59 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.100 2005-11-16 15:13:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -254,7 +254,7 @@ void zmapWindowColumnWriteDNA(ZMapWindow window,
   zmapWindowGetBorderSize(window, &text_height);
 
   iterator = getIterator(window->min_coord, window->max_coord,
-                         y1, y2, text_height, FALSE);
+                         y1, y2, text_height, TRUE);
   
   for(i = 0; i < iterator->rows; i++)
     {
@@ -269,8 +269,7 @@ void zmapWindowColumnWriteDNA(ZMapWindow window,
                          G_CALLBACK(dnaItemEventCB), (gpointer)window);      
     }
 
-  g_free(iterator->format);
-  g_free(iterator);
+  destroyIterator(iterator);
 
   return ;
 }
@@ -1512,7 +1511,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
   textGroupSelection txtSelect = NULL;
 
   txtGroup  = FOO_CANVAS_GROUP(item->parent);
-  txtSelect = getTextGroupData(txtGroup); /* This will initialise for us if it's not there. */
+  txtSelect = getTextGroupData(txtGroup, (ZMapWindow)data); /* This will initialise for us if it's not there. */
   zMapAssert(txtSelect);
 
   switch (event->type)
@@ -1558,7 +1557,6 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                   }
               }
             txtSelect->seqFirstIdx = txtSelect->seqLastIdx = -1;
-            txtSelect->window = (ZMapWindow)data;
             updateInfoGivenCoords(txtSelect, event->button.x, event->button.y);
           }
       }
@@ -2361,7 +2359,8 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
 }
 
 
-static textGroupSelection getTextGroupData(FooCanvasGroup *txtGroup)
+static textGroupSelection getTextGroupData(FooCanvasGroup *txtGroup,
+                                           ZMapWindow window)
 {
   textGroupSelection txtSelect = NULL;
   if(!(txtSelect = (textGroupSelection)g_object_get_data(G_OBJECT(txtGroup), 
@@ -2378,7 +2377,7 @@ static textGroupSelection getTextGroupData(FooCanvasGroup *txtGroup)
       txtSelect->highlight = FOO_CANVAS_GROUP(foo_canvas_item_new(featGroup,
                                                                   foo_canvas_group_get_type(),
                                                                   NULL));
-
+      txtSelect->window = window;
       g_object_set_data(G_OBJECT(txtGroup), "HIGHLIGHT_INFO", (gpointer)txtSelect);
 
     }
@@ -2497,7 +2496,7 @@ static void dna_redraw_callback(FooCanvasGroup *text_grp,
 #endif
 
       /* We should hide these so they don't look odd */
-      select = getTextGroupData(text_grp);
+      select = getTextGroupData(text_grp, window);
       foo_canvas_item_hide(FOO_CANVAS_ITEM(select->tooltip));
       foo_canvas_item_hide(FOO_CANVAS_ITEM(select->highlight));
 
@@ -2549,7 +2548,7 @@ ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
   if((iterator->numbered = numbered))
     {
       double dtmp;
-      int i;
+      int i = 0;
       dtmp = (double)iterator->length2draw;
       while(++i && ((dtmp = dtmp / 10) > 1.0)){ /* Get the int's string length for the format. */ }  
       iterator->format = g_strdup_printf("%%%dd: %%s...", i);
@@ -2558,6 +2557,16 @@ ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
     iterator->format = "%s...";
   
   return iterator;
+}
+
+static void destroyIterator(ZMapDrawTextIterator iterator)
+{
+  zMapAssert(iterator);
+  if(iterator->numbered && iterator->format)
+    g_free(iterator->format);
+  g_free(iterator);
+
+  return ;
 }
 
 /****************** end of file ************************************/

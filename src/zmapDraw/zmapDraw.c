@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Nov 16 10:32 2005 (rds)
+ * Last edited: Nov 16 14:54 2005 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.38 2005-11-16 10:32:45 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.39 2005-11-16 15:14:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -586,33 +586,25 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
       trd->drawnStrLength = (char_count >= iterator->cols ? iterator->cols : char_count + 3);
       if(char_count >= iterator->cols)
         item_text = g_strndup(&(fullText[curr_idx]), iterator->cols);
+      else if(iterator->numbered)
+        item_text = g_strdup_printf(iterator->format,
+                                    curr_idx,
+                                    g_strndup(&(fullText[curr_idx]), char_count));
       else
-        item_text = g_strdup_printf("%s...",
-                                  g_strndup(&(fullText[curr_idx]), char_count)
-                                  );
+        item_text = g_strdup_printf(iterator->format,
+                                    g_strndup(&(fullText[curr_idx]), char_count));
     }
 
 
   if(item_text)
     {
       double a, b, c, d;
-#ifdef PREFIX_DNA_WITH_NUMBERS
-      char * item_text2 = NULL;
-
-      item_text2 = g_strdup_printf(iterator->format, 
-                                 ++(iterator->seq_start), 
-                                 item_text);
-#endif
 
       item = foo_canvas_item_new(group,
                                  foo_canvas_text_get_type(),
                                  "x",          iterator->x,
                                  "y",          iterator->y,
-#ifdef PREFIX_DNA_WITH_NUMBERS
-                                 "text",       item_text2,
-#else
                                  "text",       item_text,
-#endif
                                  "anchor",     GTK_ANCHOR_NW,
                                  "font_desc",  fixed_font,
                                  "fill_color", "black",
@@ -636,7 +628,6 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
 
 #ifdef  PREFIX_DNA_WITH_NUMBERS
       drawRowBounds(item);
-      g_free(item_text2);
 #endif
 
     }

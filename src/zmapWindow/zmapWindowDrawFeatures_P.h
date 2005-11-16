@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 16 10:12 2005 (rds)
+ * Last edited: Nov 16 14:43 2005 (rds)
  * Created: Wed Nov 16 08:40:50 2005 (rds)
- * CVS info:   $Id: zmapWindowDrawFeatures_P.h,v 1.1 2005-11-16 10:43:00 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures_P.h,v 1.2 2005-11-16 15:13:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -232,9 +232,10 @@ static void updateInfoGivenCoords(textGroupSelection select,
                                   double worldCurrentX,
                                   double worldCurrentY);
 static void pointerIsOverItem(gpointer data, gpointer user_data);
-static textGroupSelection getTextGroupData(FooCanvasGroup *txtGroup);
-ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
-                                 double offset_start,  double offset_end,
-                                 double text_height, gboolean numbered);
-
+static textGroupSelection getTextGroupData(FooCanvasGroup *txtGroup,
+                                           ZMapWindow window);
+static ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
+                                        double offset_start,  double offset_end,
+                                        double text_height, gboolean numbered);
+static void destroyIterator(ZMapDrawTextIterator iterator);
 #endif
