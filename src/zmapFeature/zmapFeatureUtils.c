@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov  9 10:35 2005 (edgrif)
+ * Last edited: Nov 17 11:39 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.23 2005-11-09 14:56:59 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.24 2005-11-18 11:07:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,6 +46,19 @@ typedef struct
 } DumpFeaturesStruct, *DumpFeatures ;
 
 
+/* My new general purpose dumper function.... */
+typedef struct
+{
+  gboolean status ;
+  GIOChannel *file ;
+  GError **error_out ;
+  ZMapFeatureDumpFeatureCallbackFunc dump_func ;
+  gpointer user_data ;
+} NewDumpFeaturesStruct, *NewDumpFeatures ;
+
+
+
+
 static gboolean printLine(DumpFeatures dump, gchar *line) ;
 static gboolean printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures feature_dump) ;
 static void printFeatureAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
@@ -56,6 +69,99 @@ static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 static gint findStyle(gconstpointer list_data, gconstpointer user_data) ;
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
 static void addTypeQuark(gpointer data, gpointer user_data) ;
+
+
+
+
+
+static void doAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
+static void doBlock(gpointer data, gpointer user_data) ;
+static void doFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
+static void doFeature(GQuark key_id, gpointer data, gpointer user_data) ;
+
+
+
+
+
+/* Generalised dumping function, caller supplies a callback function that does the actual
+ * output and a pointer to somewhere in the feature hierachy (alignment, block, set etc)
+ * and this code calls the callback to do the output of the feature in the appropriate
+ * form. */
+gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
+				 ZMapFeatureDumpFeatureCallbackFunc dump_func,
+				 gpointer user_data,
+				 GError **error_out)
+{
+  gboolean result = FALSE ;
+  NewDumpFeaturesStruct dump_data ;
+  GDataForeachFunc dataset_start_func = NULL ;
+  GData **dataset = NULL ;
+  GFunc list_start_func = NULL ;
+  GList *list = NULL ;
+  ZMapFeature feature = NULL ;
+
+
+  zMapAssert(file && dump_set && dump_func && error_out) ;
+  zMapAssert(dump_set->struct_type == ZMAPFEATURE_STRUCT_CONTEXT
+	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_ALIGN
+	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_BLOCK
+	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
+	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+
+
+  dump_data.status = TRUE ;
+  dump_data.file = file ;
+  dump_data.error_out = error_out ;
+  dump_data.dump_func = dump_func ;
+  dump_data.user_data = user_data ;
+
+  /* NOTES: I cocked up in that the blocks are a GList, everything else is a GData, that needs
+   * changing then GData could become part of the structAny struct to allow more generalised
+   * handling....
+   * Also, this is simple minded in that it just ends up dumping features, not any other data
+   * about the context.... */
+  switch(dump_set->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+      dataset_start_func = doAlignment ;
+      dataset = &(((ZMapFeatureContext)dump_set)->alignments) ;
+      break ;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      dataset_start_func = doFeatureSet ;
+      dataset = &(((ZMapFeatureBlock)dump_set)->feature_sets) ;
+      break ;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      dataset_start_func = doFeature ;
+      dataset = &(((ZMapFeatureSet)dump_set)->features) ;
+      break ;
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      list_start_func = doBlock ;
+      list = ((ZMapFeatureAlignment)dump_set)->blocks ;
+      break ;
+    case ZMAPFEATURE_STRUCT_FEATURE:			    /* pathological case... */
+      feature = (ZMapFeature)dump_set ;
+      break ;
+    }
+
+  /* Call the appropriate function.... */
+  if (dataset_start_func)
+    g_datalist_foreach(dataset, dataset_start_func, &dump_data) ;
+  else if (list_start_func)
+    g_list_foreach(list, list_start_func, &dump_data) ;
+  else
+    doFeature(feature->unique_id, feature, &dump_data) ;
+
+  result = dump_data.status ;
+
+
+  return result ;
+}
+
+
+
+
+
+
 
 
 /* This function creates a unique id for a feature. This is essential if we are to use the
@@ -69,7 +175,7 @@ char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature,
 
   zMapAssert(feature_type >= 0 && feature && start >= 1 && start <= end) ;
 
-  if (feature_type == ZMAPFEATURE_HOMOL)
+  if (feature_type == ZMAPFEATURE_ALIGNMENT)
     feature_name = g_strdup_printf("%s_%d.%d_%d.%d", feature,
 				   start, end, query_start, query_end) ;
   else
@@ -410,7 +516,7 @@ ZMapFeature zMapFeatureCopy(ZMapFeature feature)
   int i;
   ZMapFeature newFeature = (ZMapFeature)g_memdup(feature, sizeof(ZMapFeatureStruct));
 
-  if (feature->type == ZMAPFEATURE_HOMOL)
+  if (feature->type == ZMAPFEATURE_ALIGNMENT)
     {
       ZMapAlignBlockStruct align;
       if (feature->feature.homol.align != NULL
@@ -717,4 +823,87 @@ static gint findStyleName(gconstpointer list_data, gconstpointer user_data)
   return result ;
 }
 
+
+
+
+/* 
+ *             Set of callbacks for processing features in a context.
+ * 
+ * These functions are simply skeletons that plough down the context until they
+ * reach the features level when they call the supplied callback routine to do
+ * the processing.
+ * 
+ */
+
+static void doAlignment(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
+  NewDumpFeatures dump_data = (NewDumpFeatures)user_data ;
+
+
+  /* Do all the blocks within the alignment. */
+  if (dump_data->status)
+    g_list_foreach(alignment->blocks, doBlock, dump_data) ;
+
+
+  return ;
+}
+
+static void doBlock(gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock block = (ZMapFeatureBlock)data ;
+  NewDumpFeatures dump_data = (NewDumpFeatures)user_data ;
+
+  if (dump_data->status)
+    g_datalist_foreach(&(block->feature_sets), doFeatureSet, dump_data) ;
+
+
+  return ;
+}
+
+
+static void doFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
+  NewDumpFeatures dump_data = (NewDumpFeatures)user_data ;
+
+  if (dump_data->status)
+    g_datalist_foreach(&(feature_set->features), doFeature, dump_data) ;
+
+
+  return ;
+}
+
+static void doFeature(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeature feature = (ZMapFeature)data ; 
+  NewDumpFeatures dump_data = (NewDumpFeatures)user_data ;
+  char *parent_name ;
+  char *feature_name ;
+  char *source_name ;
+  int start, end ;
+
+  /* Fields are: <seqname> <source> <feature> <start> <end> <score> <strand> <frame> */
+
+  parent_name = (char *)g_quark_to_string(feature->parent->parent->parent->original_id) ;
+
+		    
+  if (dump_data->status)
+    dump_data->status = (*(dump_data->dump_func))(dump_data->file,
+						  dump_data->user_data,
+						  parent_name,
+						  (char *)g_quark_to_string(feature->original_id),
+						  (char *)g_quark_to_string(feature->style->original_id),
+						  (char *)g_quark_to_string(feature->ontology),
+						  feature->x1, feature->x2,
+						  feature->flags.has_score,
+						  feature->score,
+						  feature->strand,
+						  feature->phase,
+						  feature->type,
+						  (gpointer)&(feature->feature),
+						  dump_data->error_out) ;
+
+  return ;
+}
 
