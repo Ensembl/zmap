@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Oct 12 13:42 2005 (rds)
+ * Last edited: Nov 17 15:12 2005 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.17 2005-11-14 12:02:22 rds Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.18 2005-11-18 10:55:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -69,20 +69,30 @@
  * Represents a ZMap logging object which will log messages, open/close the log etc. */
 typedef struct  _ZMapLogStruct *ZMapLog ;
 
-
-
-/* ZMapMagicPtr_t : the type that all magic symbols are declared of.
-   They become magic (i.e. unique) by using the pointer
-   to that unique symbol, which has been placed somewhere
-   in the address space by the compiler.
-   Type-magics should be defined like this:
-
-   magic_t MYTYPE_MAGIC = "MYTYPE";
-
-   The address of the string is then used as the unique 
-   identifier (as type->magic or graphAssXxx-code), and the
-   string can be used during debugging */
+/*!
+ * ZMagMagicPtr_t : the type that all magic symbols are declared of.
+ * They become magic (i.e. unique) by using the pointer
+ * to that unique symbol, which has been placed somewhere
+ * in the address space by the compiler.
+ * Type-magics should be defined like this:
+ *
+ * magic_t MYTYPE_MAGIC = "MYTYPE";
+ *
+ * The address of the string is then used as the unique 
+ * identifier (as type->magic or graphAssXxx-code), and the
+ * string can be used during debugging */
 typedef char* ZMapMagic ;
+
+
+
+/*!
+ * Types of date formats that can be returned by zMapGetTimeString(). */
+typedef enum
+  {
+    ZMAPTIME_STANDARD,					    /*!< "Thu Sep 30 10:05:27 2004" */
+    ZMAPTIME_YMD,					    /*!< "1997-11-08" */
+    ZMAPTIME_USERFORMAT					    /*!< Users provides format string. */
+  } ZMapTimeFormat ;
 
 
 
@@ -126,7 +136,7 @@ void zMapExit(int exit_code) ;
 
 gboolean zMapUtilsConfigDebug(char *debug_flag, gboolean *value) ;
 
-char *zMapGetTimeString(void) ;
+char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in) ;
 
 gboolean zMapStr2Int(char *str, int *int_out) ;
 gboolean zMapStr2LongInt(char *str, long int *long_int_out) ;

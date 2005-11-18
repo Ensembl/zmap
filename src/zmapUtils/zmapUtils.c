@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Nov 11 15:23 2005 (edgrif)
+ * Last edited: Nov 17 10:40 2005 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.13 2005-11-14 11:13:21 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.14 2005-11-18 10:55:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -220,32 +220,59 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
 
 
 /*!
- * Returns a string representing the current time in the format "Thu Sep 30 10:05:27 2004",
- * returns NULL if the call fails. The caller should free the string with g_free() when not
- * needed any more.
+ * Returns a string representing a format of the current time or NULL on error.
+ * The returned string should be free'd with g_free() when no longer needed.
+ *
+ * If  format == ZMAPTIME_USERFORMAT  then time is formatted according to format_str.
+ * Current formats are standard (i.e. as for 'date' command), astromonomical day form
+ * or custom formatted.
  *
  * (N.B. just gets the current time, but could be altered to more generally get any time
  * and the time now by default.)
  *
- * @param       None.
- * @return      The current time as a string.
+ * @param   format    ZMAPTIME_STANDARD || ZMAPTIME_YMD || ZMAPTIME_USERFORMAT
+ * @param   format_str  Format string in strftime() time format or NULL.
+ * @return  Time according to format parameter or NULL on error.
  *  */
-char *zMapGetTimeString(void)
+char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
 {
+  enum {MAX_TIMESTRING = 1024} ;
   char *time_str = NULL ;
   time_t now ;
+  struct tm *time_struct ;
+  char *format_str ;
+  char buffer[MAX_TIMESTRING] = {0} ;
+  size_t buf_size = MAX_TIMESTRING, bytes_written ;
   char *chartime = NULL ;
 
+
+  zMapAssert(format == ZMAPTIME_STANDARD || format == ZMAPTIME_YMD
+	     || (format == ZMAPTIME_USERFORMAT && format_str_in && *format_str_in)) ;
+
+
+  /* Get time ready for formatting. */
   now = time((time_t *)NULL) ;
-  chartime = ctime(&now) ;
+  time_struct = localtime(&now) ;
 
-  /* ctime() returns time with a newline on the end..sigh, we remove the newline. */
-  if (chartime)
+  switch(format)
     {
-      time_str = g_strdup(chartime) ;
-
-      *(time_str + strlen(time_str) - 1) = '\0' ;
+    case ZMAPTIME_STANDARD:
+      format_str = "%a %b %d %X %Y" ;
+      break ;
+    case ZMAPTIME_YMD:
+      format_str = "%Y-%m-%d" ;
+      break ;
+    case ZMAPTIME_USERFORMAT:
+      format_str = format_str_in ;
+      break ;
     }
+
+
+  if ((bytes_written = strftime(&(buffer[0]), buf_size, format_str, time_struct)) > 0)
+    {
+      time_str = g_strdup(&(buffer[0])) ;
+    }
+
 
   return time_str ;
 }
