@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov  9 19:18 2005 (rds)
+ * Last edited: Nov 18 10:12 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.46 2005-11-16 10:31:11 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.47 2005-11-18 11:04:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -72,14 +72,16 @@ typedef int methodID ;
 
 
 /* NB if you add to these enums, make sure any corresponding arrays in
-** zmapFeatureLookUpEnum() are kept in synch. */
+ * zmapFeatureLookUpEnum() are kept in synch. */
 /* What about "sequence", atg, and allele as basic feature types ?           */
+
+
+/* ZMAPFEATURE_RAW_SEQUENCE is temporary.... */
 typedef enum {ZMAPFEATURE_INVALID = -1,
-	      ZMAPFEATURE_BASIC = 0, ZMAPFEATURE_HOMOL,
-              ZMAPFEATURE_EXON, ZMAPFEATURE_INTRON, 
-	      ZMAPFEATURE_TRANSCRIPT, ZMAPFEATURE_VARIATION,
-	      ZMAPFEATURE_BOUNDARY, ZMAPFEATURE_SEQUENCE,
-              ZMAPFEATURE_RAW_SEQUENCE} ZMapFeatureType ;
+	      ZMAPFEATURE_BASIC = 0, ZMAPFEATURE_ALIGNMENT, ZMAPFEATURE_TRANSCRIPT,
+	      ZMAPFEATURE_RAW_SEQUENCE} ZMapFeatureType ;
+
+
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
 
@@ -87,7 +89,8 @@ typedef enum {ZMAPPHASE_NONE = 0,
 	      ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPhase ;
 
 /* as in BLAST*, i.e. target is DNA, Protein, DNA translated */
-typedef enum {ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
+typedef enum {ZMAPHOMOL_NONE, 
+	      ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
 
 typedef enum {ZMAPBOUNDARY_CLONE_END, ZMAPBOUNDARY_5_SPLICE, ZMAPBOUNDARY_3_SPLICE } ZMapBoundaryType ;
 
@@ -203,7 +206,13 @@ typedef struct ZMapFeatureContextStruct_
 
   int length ;						    /* total length of sequence. */
 
+
+  /* OK THIS IS WRONG...WE SHOULDN'T HAVE A POINTER TO DNA HERE AT ALL, THE BLOCKS SHOULD HAVE
+   * IT...CHECK USAGE OF THIS FIELD....  */
   ZMapSequence sequence ;				    /* The dna sequence. NB NOW A POINTER! */
+
+
+
 
   /* Mapping for the target sequence, this shows where this section of sequence fits in to its
    * overall assembly, e.g. where a clone is located on a chromosome. */
@@ -228,7 +237,7 @@ typedef struct ZMapFeatureContextStruct_
   ZMapFeatureAlignment master_align ;			    /* The target/master alignment out of
 							       the below set. */
 
-  GData *alignments ;					    /* All the alignements for this zmap
+  GData *alignments ;					    /* All the alignments for this zmap
 							       as a set of ZMapFeatureAlignment. */
 
 } ZMapFeatureContextStruct, *ZMapFeatureContext ;
@@ -242,6 +251,8 @@ typedef struct ZMapFeatureAlignmentStruct_
   GQuark unique_id ;					    /* Unique id this alignment. */
   GQuark original_id ;					    /* Original id of this sequence. */
 
+
+  /* Can we change this to be a gdata ? then we would have consistency..... */
 
   GList *blocks ;					    /* A set of ZMapFeatureStruct. */
 
@@ -260,6 +271,10 @@ typedef struct ZMapFeatureBlockStruct_
   ZMapAlignBlockStruct block_to_sequence ;		    /* Shows how these features map to the
 							       sequence, n.b. this feature set may only
 							       span part of the sequence. */
+
+  ZMapSequenceStruct sequence ;				    /* DNA sequence for this block,
+							       n.b. there may not be any dna. */
+
 
   GData *feature_sets ;					    /* The features for this block as a
 							       set of ZMapFeatureSetStruct. */
@@ -305,23 +320,17 @@ typedef struct
 
 typedef struct
 {
-  Coord cdsStart, cdsEnd ;
-  gboolean start_not_found ;
-  ZMapPhase cds_phase ;					    /* none if not a coding transcript ? */
-  gboolean endNotFound ;
-  GArray *exons ;
-  GArray *introns ;					    /* experiment...should we have
-							       explicit introns ? */
+  struct
+  {
+    unsigned int cds : 1 ;
+    unsigned int start_not_found : 1 ;
+    unsigned int end_not_found : 1 ;
+  } flags ;
+  Coord cds_start, cds_end ;
+  ZMapPhase start_phase ;
+  GArray *exons ;					    /* Of ZMapSpanStruct. */
+  GArray *introns ;					    /* Of ZMapSpanStruct. */
 } ZMapTranscriptStruct, *ZMapTranscript ;
-
-
-
-/* I don't know what this struct is for, I would guess that its to allow a floating exon to
- * be linked to some sort of feature ? */
-typedef struct
-{
-  ZMapFeatureID *id ;					    /* backpointer */
-} ZMapSingleExonStruct, *ZMapSingleExon ;
 
 
 
@@ -330,6 +339,7 @@ typedef struct
  *  */
 typedef struct ZMapFeatureStruct_ 
 {
+  /* We could embed a structany here... */
   ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our containing set. */
   GQuark unique_id ;					    /* Unique id for just this feature for
@@ -337,13 +347,27 @@ typedef struct ZMapFeatureStruct_
   GQuark original_id ;					    /* Original name, e.g. "bA404F10.4.mRNA" */
 
 
+  /* flags field holds extra information about various aspects of the feature. */
+  /* I'm going to try the bitfields syntax here.... */
+  struct
+  {
+    unsigned int has_score : 1 ;
+  } flags ;
+
+  ZMapFeatureType type ;				    /* Basic, transcript, alignment. */
+
+  GQuark ontology ;					    /* Basically a detailed name for this
+							       feature such as
+							       "trans_splice_acceptor_site", this
+							       might be recognised SO term or not. */
+
   ZMapFeatureTypeStyle style ;				    /* Style defining how this feature is
 							       drawn. */
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */
 
-  ZMapFeatureType type ;				    /* e.g. intron, homol etc. */
+
 
   Coord x1, x2 ;					    /* start, end of feature in absolute coords. */
 
@@ -359,11 +383,21 @@ typedef struct ZMapFeatureStruct_
   {
     ZMapHomolStruct homol ;
     ZMapTranscriptStruct transcript ;
+
+    /* I think this is _not_ the correct place for this..... */
     ZMapSequenceStruct sequence; 
-    ZMapSingleExonStruct exon ;				    /* What is this needed for ? */
   } feature ;
 
 } ZMapFeatureStruct, *ZMapFeature ;
+
+
+
+
+
+
+
+
+
 
 
 
@@ -417,6 +451,26 @@ typedef struct ZMapFeatureTypeStyleStruct_
 
 
 
+
+/* Callback function for calls to zMapFeatureDumpFeatures(), caller can use this function to
+ * format features in any way they want. */
+typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
+						       gpointer user_data,
+						       char *parent_name,
+						       char *feature_name,
+						       char *style_name,
+						       char *ontology,
+						       int x1, int x2,
+						       gboolean has_score, float score,
+						       ZMapStrand strand,
+						       ZMapPhase phase,
+						       ZMapFeatureType feature_type,
+						       gpointer feature_data,
+						       GError **error_out) ;
+
+
+
+
 gboolean zmapFeatureContextDNA(ZMapFeatureContext context,
 			       char **seq_name, int *seq_len, char **sequence) ;
 
@@ -453,8 +507,15 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext *diff_context_out) ;
 void zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
 				    ZMapFeatureAlignment alignment, gboolean master) ;
+
+/* Probably should be merged at some time.... */
 gboolean zMapFeatureContextDump(GIOChannel *file,
 				ZMapFeatureContext feature_context, GError **error_out) ;
+gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
+				 ZMapFeatureDumpFeatureCallbackFunc dump_func,
+				 gpointer user_data,
+				 GError **error) ;
+
 void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
 ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;
@@ -469,9 +530,12 @@ void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;
 
 ZMapFeature zmapFeatureCreateEmpty(void) ;
 gboolean zMapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
-				char *sequence,
+				char *sequence, char *ontology,
 				ZMapFeatureType feature_type,  ZMapFeatureTypeStyle style,
-				int start, int end, double score, ZMapStrand strand, ZMapPhase phase,
+				int start, int end,
+				gboolean has_score, double score,
+				ZMapStrand strand, ZMapPhase phase,
+				ZMapSpanStruct *exon, ZMapSpanStruct *intron,
 				ZMapHomolType homol_type_out, int start_out, int end_out,
 				GArray *gaps) ;
 
@@ -529,7 +593,7 @@ gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase);
 
 gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
                                char *feature_type, ZMapFeatureType *type_out);
-gboolean zMapFeatureFormatScore(char *score_str, gdouble *score_out);
+gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *score_out);
 gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out);
 gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out);
 
