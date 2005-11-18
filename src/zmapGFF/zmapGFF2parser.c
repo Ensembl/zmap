@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov  9 11:50 2005 (edgrif)
+ * Last edited: Nov 17 09:58 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.33 2005-11-09 14:58:53 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.34 2005-11-18 11:02:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,10 +53,12 @@ static void setSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static gboolean parseHeaderLine(ZMapGFFParser parser, char *line) ;
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line) ;
 
-static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *source,
+static gboolean makeNewFeature(ZMapGFFParser parser,
+			       char *sequence, char *source, char *ontology,
 			       ZMapFeatureType feature_type, ZMapFeatureTypeStyle curr_style,
-			       int start, int end, double score, ZMapStrand strand,
-			       ZMapPhase phase, char *attributes, GArray *gaps) ;
+			       int start, int end,
+			       gboolean has_score, double score,
+			       ZMapStrand strand, ZMapPhase phase, char *attributes, GArray *gaps) ;
 static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
@@ -743,6 +745,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
       ZMapFeatureType type ;
       ZMapStrand strand ;
       ZMapPhase phase ;
+      gboolean has_score = FALSE ;
       char *err_text = NULL ;
 
       /* I'm afraid I'm not doing assembly stuff at the moment, its not worth it....if I need
@@ -754,6 +757,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	  return TRUE ;
 	}
 
+
       /* Check we could get the basic GFF fields.... */
       if (strlen(sequence) == GFF_MAX_FREETEXT_CHARS)
 	err_text = g_strdup_printf("sequence name too long: %s", sequence) ;
@@ -761,9 +765,10 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	err_text = g_strdup_printf("source name too long: %s", source) ;
       else if (strlen(feature_type) == GFF_MAX_FREETEXT_CHARS)
 	err_text = g_strdup_printf("feature_type name too long: %s", feature_type) ;
-      else if (!zMapFeatureFormatType(parser->SO_compliant, parser->default_to_basic, feature_type, &type))
+      else if (!zMapFeatureFormatType(parser->SO_compliant, parser->default_to_basic,
+				      feature_type, &type))
 	err_text = g_strdup_printf("feature_type not recognised: %s", feature_type) ;
-      else if (!zMapFeatureFormatScore(score_str, &score))
+      else if (!zMapFeatureFormatScore(score_str, &has_score, &score))
 	err_text = g_strdup_printf("score format not recognised: %s", score_str) ;
       else if (!zMapFeatureFormatStrand(strand_str, &strand))
 	err_text = g_strdup_printf("strand format not recognised: %s", strand_str) ;
@@ -827,8 +832,8 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 	  if (include_feature)
 	    {
-	      result = makeNewFeature(parser, sequence, source, type, curr_style,
-				      start, end, score, strand, phase,
+	      result = makeNewFeature(parser, sequence, source, feature_type, type, curr_style,
+				      start, end, has_score, score, strand, phase,
 				      attributes, gaps) ;
 	    }
 	}
@@ -849,10 +854,13 @@ static void printSource(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
-static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *source,
+static gboolean makeNewFeature(ZMapGFFParser parser,
+			       char *sequence, char *source, char *ontology,
 			       ZMapFeatureType feature_type, ZMapFeatureTypeStyle curr_style,
-			       int start, int end, double score, ZMapStrand strand,
-			       ZMapPhase phase, char *attributes, GArray *gaps)
+			       int start, int end,
+			       gboolean has_score, double score,
+			       ZMapStrand strand, ZMapPhase phase,
+			       char *attributes, GArray *gaps)
 {
   gboolean result = FALSE ;
   char *feature_name_id = NULL, *feature_name = NULL ;
@@ -866,6 +874,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
   int query_start = 0, query_end = 0 ;
   GQuark column_id = 0 ;
   ZMapFeatureTypeStyle set_style = NULL ;
+  ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
 
 
   /* Set up the name/style for the current feature set....
@@ -895,7 +904,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
 
 
   /* We require additional information from the attributes for some types. */
-  if (feature_type == ZMAPFEATURE_HOMOL)
+  if (feature_type == ZMAPFEATURE_ALIGNMENT)
     {
       /* if this fails, what do we do...should just log the error I think..... */
       result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end) ;
@@ -968,17 +977,35 @@ static gboolean makeNewFeature(ZMapGFFParser parser, char *sequence, char *sourc
        * that do not have their own feature_name  _cannot_  be multiline features as such features
        * can _only_ be identified if they do have their own name. */
       if (feature_has_name
-	  && (feature_type == ZMAPFEATURE_SEQUENCE || feature_type == ZMAPFEATURE_TRANSCRIPT
-	      || feature_type == ZMAPFEATURE_EXON || feature_type == ZMAPFEATURE_INTRON))
+	  && (feature_type == ZMAPFEATURE_TRANSCRIPT))
 	{
 	  g_datalist_set_data(&(feature_set->multiline_features), feature_name_id, feature) ;
 	}
     }
 
 
-  result = zMapFeatureAugmentData(feature, feature_name_id, feature_name, sequence,
+  /* Note that exons/introns are given one per line in GFF which is quite annoying.....it is
+   * out of sync with how homols with gaps are given.... */
+  if (g_ascii_strcasecmp(ontology, "coding_exon") == 0
+      || g_ascii_strcasecmp(ontology, "exon") == 0)
+    {
+      exon.x1 = start ;
+      exon.x2 = end ;
+      exon_ptr = &exon ;
+    }
+  else if (g_ascii_strcasecmp(ontology, "intron") == 0)
+    {
+      intron.x1 = start ;
+      intron.x2 = end ;
+      intron_ptr = &intron ;
+    }
+
+  result = zMapFeatureAugmentData(feature, feature_name_id, feature_name,
+				  sequence, ontology,
 				  feature_type, curr_style,
-				  start, end, score, strand, phase,
+				  start, end,
+				  has_score, score, strand, phase,
+				  exon_ptr, intron_ptr,
 				  homol_type, query_start, query_end, gaps) ;
 
   g_free(feature_name) ;
@@ -1064,8 +1091,7 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
   /* Probably we should do some checking to make sure start/end are in correct order....and
    * that other fields are correct.... */
 
-  if (feature_type == ZMAPFEATURE_SEQUENCE || feature_type == ZMAPFEATURE_TRANSCRIPT
-      || feature_type == ZMAPFEATURE_EXON || feature_type == ZMAPFEATURE_INTRON)
+  if (feature_type == ZMAPFEATURE_TRANSCRIPT)
     {
       /* Named feature such as a gene. */
       int attr_fields ;
@@ -1081,7 +1107,7 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 	  *feature_name_id = g_strdup(*feature_name) ;
         }
     }
-  else if (feature_type == ZMAPFEATURE_HOMOL)
+  else if (feature_type == ZMAPFEATURE_ALIGNMENT)
     {
       /* This needs amalgamating with the gethomols routine..... */
       char *tag_pos ;
