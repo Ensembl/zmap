@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 12:58 2005 (edgrif)
+ * Last edited: Nov 16 15:08 2005 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.8 2005-11-14 13:00:35 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.9 2005-11-18 10:55:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,6 +41,7 @@ typedef struct
 {
   GtkWidget *file_selector ;
   char *file_path_out ;
+  char *suffix ;
 } FileDialogCBStruct, *FileDialogCB ;
 static void store_filename(GtkWidget *widget, gpointer user_data) ;
 static void killFileDialog(GtkWidget *widget, gpointer user_data) ;
@@ -193,7 +194,7 @@ void zMapGUIShowMsgOnTop(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
 /* When user clicks on the message itself, we put the message text in the cut buffer. */
 static void butClick(GtkButton *button, gpointer user_data)
 {
-  char *label_text ;
+  const char *label_text ;
   GtkClipboard* clip_board ;
 
   label_text = gtk_button_get_label(button) ;
@@ -307,9 +308,12 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
  * @param title        Window title or NULL.
  * @param directory_in Default directory for file chooser (CWD is default) or NULL. NOTE
  *                     currently this seems not to work...bug in GTK ?
+ * @param file_suffix  Specify a suffix that will be added to the filename if the user does
+ *                     not supply it.
  * @return             nothing
  */
-char *zmapGUIFileChooser(GtkWidget *toplevel, char *title, char *directory_in)
+char *zmapGUIFileChooser(GtkWidget *toplevel, char *title,
+			 char *directory_in, char *file_suffix)
 {
   char *file_path = NULL ;
   GtkWidget *file_selector;
@@ -317,15 +321,17 @@ char *zmapGUIFileChooser(GtkWidget *toplevel, char *title, char *directory_in)
 
   zMapAssert(toplevel) ;
 
+  if (file_suffix)
+    cb_data.suffix = g_strdup(file_suffix) ;
+
   /* Create the selector */
   if (!title)
     title = "Please give a file name:" ;
-
-  cb_data.file_selector = file_selector = gtk_file_selection_new (title) ;
+  cb_data.file_selector = file_selector = gtk_file_selection_new(title) ;
 
   gtk_file_selection_hide_fileop_buttons(GTK_FILE_SELECTION(file_selector)) ;
 
-  /* this appears just not to work at all, sigh............ */
+  /* this appears just not to work at all so we can't set the directory or suffix... sigh............ */
   if (directory_in)
     {
       char *directory = NULL ;
@@ -583,10 +589,17 @@ static void store_filename(GtkWidget *widget, gpointer user_data)
 {
   FileDialogCB cb_data = (FileDialogCB)user_data ;
   char *file_path = NULL ;
+  gboolean has_suffix ;
 
   file_path = (char *)gtk_file_selection_get_filename(GTK_FILE_SELECTION(cb_data->file_selector)) ;
 
-  cb_data->file_path_out = g_strdup(file_path) ;
+  if (cb_data->suffix)
+    has_suffix = g_str_has_suffix(file_path, cb_data->suffix) ;
+
+  cb_data->file_path_out = g_strdup_printf("%s%s%s",
+					   file_path,
+					   has_suffix ? "" : ".",
+					   has_suffix ? "" : cb_data->suffix) ;
 
   return ;
 }
