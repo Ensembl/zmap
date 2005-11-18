@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 17 16:38 2005 (rds)
+ * Last edited: Nov 17 14:49 2005 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.16 2005-11-16 10:42:59 rds Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.17 2005-11-18 10:58:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -470,7 +470,7 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 	  
 	  switch (feature->type)
 	    {
-	    case ZMAPFEATURE_HOMOL:
+	    case ZMAPFEATURE_ALIGNMENT:
 	      
 	      sname  = g_strdup(g_quark_to_string(feature->original_id));
 	      
