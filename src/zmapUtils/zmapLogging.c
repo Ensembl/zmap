@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Feb 10 14:18 2005 (edgrif)
+ * Last edited: Nov 15 14:04 2005 (edgrif)
  * Created: Thu Apr 29 14:59:37 2004 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.8 2005-02-10 16:40:45 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.9 2005-11-18 10:56:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -482,7 +482,7 @@ static void writeStartOrStopMessage(gboolean start)
 {
   char *time_str ;
 
-  time_str = zMapGetTimeString() ;
+  time_str = zMapGetTimeString(ZMAPTIME_STANDARD, NULL) ;
 
   zMapLogMessage("****  Logging %s at: %s  ****", (start ? "started" : "stopped"), time_str) ;
   
