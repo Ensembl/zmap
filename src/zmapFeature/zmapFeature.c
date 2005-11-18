@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov  8 17:57 2005 (rds)
+ * Last edited: Nov 17 14:49 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.27 2005-11-16 10:33:13 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.28 2005-11-18 11:05:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -164,10 +164,12 @@ ZMapFeature zmapFeatureCreateEmpty(void)
  * are different for different features.
  *  */
 gboolean zMapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
-				char *sequence,
+				char *sequence, char *ontology,
 				ZMapFeatureType feature_type, ZMapFeatureTypeStyle style,
-				int start, int end, double score, ZMapStrand strand,
-				ZMapPhase phase,
+				int start, int end,
+				gboolean has_score, double score,
+				ZMapStrand strand, ZMapPhase phase,
+				ZMapSpanStruct *exon, ZMapSpanStruct *intron,
 				ZMapHomolType homol_type, int query_start, int query_end,
 				GArray *gaps)
 {
@@ -181,78 +183,56 @@ gboolean zMapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char
       feature->unique_id = g_quark_from_string(feature_name_id) ;
       feature->original_id = g_quark_from_string(name) ;
       feature->type = feature_type ;
+      feature->ontology = g_quark_from_string(ontology) ;
       feature->style = style ;
       feature->x1 = start ;
       feature->x2 = end ;
       feature->strand = strand ;
       feature->phase = phase ;
-      feature->score = score ;
+      if (has_score)
+	{
+	  feature->flags.has_score = 1 ;
+	  feature->score = score ;
+	}
 
       result = TRUE ;
     }
 
 
-  /* There is going to have to be some hacky code here to decide when something goes from being
-   * a single exon to being part of a transcript..... */
-
-  if (feature_type == ZMAPFEATURE_EXON)
+  /* Processing transcripts is more tricky...its all muddled I think this routine should just be
+   * passed the introns/exons as array elements which it should then add to an existing array... */
+  if (feature_type == ZMAPFEATURE_TRANSCRIPT)
     {
-      ZMapSpanStruct exon ;
+      if (exon)
+	{
+	  if (!feature->feature.transcript.exons)
+	    feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
+								  sizeof(ZMapSpanStruct), 30) ;
 
-      exon.x1 = start ;
-      exon.x2 = end ;
+	  g_array_append_val(feature->feature.transcript.exons, *exon) ;
 
-      /* This is still not correct I think ??? we shouldn't be using the transcript field but
-       * instead the lone exon field. */
+	  result = TRUE ;
+	}
+      else if (intron)
+	{
+	  if (!feature->feature.transcript.introns)
+	    feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
+								    sizeof(ZMapSpanStruct), 30) ;
 
-      if (!feature->feature.transcript.exons)
-	feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
-							      sizeof(ZMapSpanStruct), 30) ;
+	  g_array_append_val(feature->feature.transcript.introns, *intron) ;
 
-      g_array_append_val(feature->feature.transcript.exons, exon) ;
-
-      /* If this is _not_ single exon we make it into a transcript.
-       * This is a bit adhoc but so is GFF v2. */
-      if (feature->type != ZMAPFEATURE_EXON
-	  || feature->feature.transcript.exons->len > 1)
-	feature->type = ZMAPFEATURE_TRANSCRIPT ;
-
-      result = TRUE ;
+	  result = TRUE ;
+	}
     }
-  else if (feature_type == ZMAPFEATURE_INTRON)
-    {
-      ZMapSpanStruct intron ;
-
-      intron.x1 = start ;
-      intron.x2 = end ;
-
-      if (!feature->feature.transcript.introns)
-	feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
-							      sizeof(ZMapSpanStruct), 30) ;
-
-      g_array_append_val(feature->feature.transcript.introns, intron) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* I DON'T THINK WE WANT TO DO THIS BECAUSE WE MAY JUST HAVE A SET OF CONFIRMED INTRONS
-       * THAT DO NOT ACTUALLY REPRESENT A TRANSCRIPT YET..... */
-
-
-      /* If we have more than one intron then we are going to force the type to be
-       * transcript. */
-      if (feature->type != ZMAPFEATURE_TRANSCRIPT
-	  && feature->feature.transcript.introns->len > 1)
-	feature->type = ZMAPFEATURE_TRANSCRIPT ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      result = TRUE ;
-    }
-  else if (feature_type == ZMAPFEATURE_HOMOL)
+  else if (feature_type == ZMAPFEATURE_ALIGNMENT)
     {
       feature->feature.homol.type = homol_type ;
       feature->feature.homol.y1 = query_start ;
       feature->feature.homol.y2 = query_end ;
       feature->feature.homol.score = score ;
       feature->feature.homol.align = gaps;
+	  
+      result = TRUE ;
     }
 
   return result ;
@@ -277,7 +257,7 @@ void zmapFeatureDestroy(ZMapFeature feature)
       if (feature->feature.transcript.introns)
 	g_array_free(feature->feature.transcript.introns, TRUE) ;
     }
-  else if (feature->type == ZMAPFEATURE_HOMOL)
+  else if (feature->type == ZMAPFEATURE_ALIGNMENT)
     {
       if (feature->feature.homol.align)
 	g_array_free(feature->feature.homol.align, TRUE) ;
