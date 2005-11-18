@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov 16 10:34 2005 (rds)
+ * Last edited: Nov 17 15:44 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.40 2005-11-16 10:34:49 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.41 2005-11-18 10:57:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -754,7 +754,7 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
               /* This is possibly a _little_ hacked ATM */
               ZMapFeature feature = NULL;
               ZMapFeatureSet feature_set = NULL;
-              ZMapSequenceStruct seq = {};
+              ZMapSequenceStruct seq = {ZMAPSEQUENCE_NONE} ;
               ZMapFeatureTypeStyle style = NULL;
 
               /* Create the feature set */
@@ -768,10 +768,14 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
               style = zMapFindStyle(feature_context->styles, g_quark_from_string("dna"));
 
               /* need to augment data too... FOR NOW just dna*/
-              zMapFeatureAugmentData(feature, "dna", "dna", "b0250",
+              zMapFeatureAugmentData(feature, "dna", "dna", "b0250", "sequence", 
                                      ZMAPFEATURE_RAW_SEQUENCE, style,
-                                     0,0,0.0, ZMAPSTRAND_FORWARD,
-                                     ZMAPPHASE_NONE, 0, 0, 0, NULL);
+                                     0, 0,
+				     FALSE, 0.0,
+				     ZMAPSTRAND_FORWARD, ZMAPPHASE_NONE,
+				     NULL, NULL,
+				     ZMAPHOMOL_NONE, 0, 0,
+				     NULL);
               /* Make the link so that getting the sequence is EASY. */
               feature_context->sequence = &(feature->feature.sequence);
               
