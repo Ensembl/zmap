@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 11 10:03 2005 (rds)
+ * Last edited: Nov 18 10:33 2005 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.17 2005-10-21 19:23:59 rds Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.18 2005-11-18 11:00:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -230,7 +230,7 @@ ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *it
 
   switch(editor->origFeature->type)
     {
-    case ZMAPFEATURE_HOMOL:
+    case ZMAPFEATURE_ALIGNMENT:
       editor->editable = FALSE;      
       break;
     case ZMAPFEATURE_TRANSCRIPT:
@@ -345,13 +345,13 @@ static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapF
   i++;
   table[i] = fx1Init;
   table[i].fieldPtr = &feature->x1;
-  if (feature->type == ZMAPFEATURE_HOMOL)
+  if (feature->type == ZMAPFEATURE_ALIGNMENT)
     table[i].editable = FALSE;
   
   i++;
   table[i] = fx2Init;
   table[i].fieldPtr = &feature->x2;
-  if (feature->type == ZMAPFEATURE_HOMOL)
+  if (feature->type == ZMAPFEATURE_ALIGNMENT)
     table[i].editable = FALSE;
   
   i++;
@@ -370,7 +370,7 @@ static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapF
   table[i] = blankInit;
   table[i].value.entry = " ";
   
-  if (feature->type == ZMAPFEATURE_HOMOL)
+  if (feature->type == ZMAPFEATURE_ALIGNMENT)
     {
       i++;
       table[i] = htypeInit;
@@ -406,23 +406,29 @@ static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapF
     {
       i++;
       table[i] = tx1Init;
-      table[i].fieldPtr = &feature->feature.transcript.cdsStart;
+      table[i].fieldPtr = &feature->feature.transcript.cds_start;
       
       i++;
       table[i] = tx2Init;
-      table[i].fieldPtr = &feature->feature.transcript.cdsEnd;
+      table[i].fieldPtr = &feature->feature.transcript.cds_end ;
 
       i++;
       table[i] = tphaseInit;
-      table[i].fieldPtr = &feature->feature.transcript.cds_phase;
+      table[i].fieldPtr = &feature->feature.transcript.start_phase ;
       
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+      /* Commented out for now as these are bitfields which do not have an address... */
       i++;
       table[i] = tsnfInit;
-      table[i].fieldPtr = &feature->feature.transcript.start_not_found;
+      table[i].fieldPtr = &feature->feature.transcript.start_not_found ;
       
       i++;
       table[i] = tenfInit;
-      table[i].fieldPtr = &feature->feature.transcript.endNotFound;
+      table[i].fieldPtr = &feature->feature.transcript.end_not_found ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       
       i++;
       table[i] = texonInit;
@@ -474,7 +480,7 @@ static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_t
 			      COL4, NULL,
 			      -1);
 	}
-      else if (feature_type == ZMAPFEATURE_HOMOL)
+      else if (feature_type == ZMAPFEATURE_ALIGNMENT)
 	{
 	  align = g_array_index(array, ZMapAlignBlockStruct, i);
 	  gtk_list_store_set (table->value.listStore, &iter,
@@ -982,7 +988,7 @@ static void undoChangesCB(GtkWidget *widget, gpointer data)
       editor_data->applyPressed = FALSE;
     }
 
-  if (editor_data->origFeature->type != ZMAPFEATURE_HOMOL)
+  if (editor_data->origFeature->type != ZMAPFEATURE_ALIGNMENT)
     {
       zMapWindowMoveItem(editor_data->zmapWindow, editor_data->wcopyFeature,
 			 editor_data->origFeature, editor_data->item);
@@ -1154,6 +1160,12 @@ static gboolean applyChangesCB(GtkWidget *widget, gpointer data)
 	    {
 	    case CHECK:
 	      checked = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(table[i].widget));
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      /* Commented out for now as these are now bitfields.... */
+
 	      if (checked == TRUE)
 		{
 		  table[i].value.entry = "True";
@@ -1172,6 +1184,10 @@ static gboolean applyChangesCB(GtkWidget *widget, gpointer data)
 		  else
 		    feature->feature.transcript.endNotFound = FALSE;
 		}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 	      break;
 	      
 	      /* homology alignments are not editable.  Note that this
@@ -1198,7 +1214,7 @@ static gboolean applyChangesCB(GtkWidget *widget, gpointer data)
   if (valid == TRUE)
     valid = validateArray(editor_data);
 
-  if (valid == TRUE && editor_data->origFeature->type != ZMAPFEATURE_HOMOL)
+  if (valid == TRUE && editor_data->origFeature->type != ZMAPFEATURE_ALIGNMENT)
     {
       ZMapFeature origFeature;
 
