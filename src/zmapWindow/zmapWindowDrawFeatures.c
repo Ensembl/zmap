@@ -27,13 +27,226 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 16 15:10 2005 (rds)
+ * Last edited: Nov 18 10:21 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.100 2005-11-16 15:13:47 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.101 2005-11-18 11:10:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <zmapWindowDrawFeatures_P.h>
+#include <string.h>
+#include <math.h>
+#include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h>
+#include <ZMap/zmapUtilsGUI.h>
+#include <ZMap/zmapUtilsDNA.h>
+#include <ZMap/zmapConfig.h>
+#include <ZMap/zmapGFF.h>
+#include <zmapWindow_P.h>
+
+
+/* Used to pass data to canvas item menu callbacks. */
+typedef struct
+{
+  gboolean item_cb ;					    /* TRUE => item callback,
+							       FALSE => column callback. */
+
+  ZMapWindow window ;
+  FooCanvasItem *item ;
+
+  ZMapFeatureSet feature_set ;				    /* Only used in column callbacks... */
+} ItemMenuCBDataStruct, *ItemMenuCBData ;
+
+
+
+
+/* these will go when scale is in separate window. */
+#define SCALEBAR_OFFSET   0.0
+#define SCALEBAR_WIDTH   50.0
+
+
+
+/* parameters passed between the various functions drawing the features on the canvas, it's
+ * simplest to cache the current stuff as we go otherwise the code becomes convoluted by having
+ * to look up stuff all the time. */
+typedef struct _ZMapCanvasDataStruct
+{
+  ZMapWindow window ;
+  FooCanvas *canvas ;
+
+  /* Records which alignment, block, set, type we are processing. */
+  ZMapFeatureContext full_context ;
+  ZMapFeatureAlignment curr_alignment ;
+  ZMapFeatureBlock curr_block ;
+  ZMapFeatureSet curr_set ;
+
+  GQuark curr_set_name ;
+
+  GQuark curr_forward_col_id ;
+  GQuark curr_reverse_col_id ;
+
+  /* Records current positional information. */
+  double curr_x_offset ;
+  double curr_y_offset ;
+
+  /* Records current canvas item groups, these are the direct parent groups of the display
+   * types they contain, e.g. curr_root_group is the parent of the align */
+  FooCanvasGroup *curr_root_group ;
+  FooCanvasGroup *curr_align_group ;
+  FooCanvasGroup *curr_block_group ;
+  FooCanvasGroup *curr_forward_group ;
+  FooCanvasGroup *curr_reverse_group ;
+  FooCanvasGroup *curr_forward_col ;
+  FooCanvasGroup *curr_reverse_col ;
+
+  GdkColor colour_root ;
+  GdkColor colour_alignment ;
+  GdkColor colour_block ;
+  GdkColor colour_mblock_for ;
+  GdkColor colour_mblock_rev ;
+  GdkColor colour_qblock_for ;
+  GdkColor colour_qblock_rev ;
+  GdkColor colour_mforward_col ;
+  GdkColor colour_mreverse_col ;
+  GdkColor colour_qforward_col ;
+  GdkColor colour_qreverse_col ;
+
+  double bump_for, bump_rev ;
+
+} ZMapCanvasDataStruct, *ZMapCanvasData ;
+
+
+
+/* Used to pass data to removeEmptyColumn function. */
+typedef struct
+{
+  ZMapCanvasData canvas_data ;
+  ZMapStrand strand ;
+} RemoveEmptyColumnStruct, *RemoveEmptyColumn ;
+
+
+
+typedef struct
+{
+  double offset ;				    /* I think we do need these... */
+} PositionColumnStruct, *PositionColumn ;
+
+
+
+static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+
+
+static void drawZMap(ZMapCanvasData canvas_data, ZMapFeatureContext diff_context) ;
+static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data) ;
+static void drawBlocks(gpointer data, gpointer user_data) ;
+static void createSetColumn(gpointer data, gpointer user_data) ;
+static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
+				    ZMapWindow window,
+				    GQuark feature_set_id,
+				    ZMapStrand strand,
+				    double width,
+				    double top, double bot, GdkColor *colour) ;
+static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
+static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data) ;
+static void removeEmptyColumns(ZMapCanvasData canvas_data) ;
+static void removeEmptyColumnCB(gpointer data, gpointer user_data) ;
+static void positionColumns(ZMapCanvasData canvas_data) ;
+static void positionColumnCB(gpointer data, gpointer user_data) ;
+
+
+
+static ZMapWindowMenuItem makeMenuFeatureOps(int *start_index_inout,
+					     ZMapWindowMenuItemCallbackFunc callback_func,
+					     gpointer callback_data) ;
+static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
+static ZMapWindowMenuItem makeMenuBump(int *start_index_inout,
+				       ZMapWindowMenuItemCallbackFunc callback_func,
+				       gpointer callback_data) ;
+static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
+static ZMapWindowMenuItem makeMenuDumpOps(int *start_index_inout,
+					  ZMapWindowMenuItemCallbackFunc callback_func,
+					  gpointer callback_data) ;
+static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
+static ZMapWindowMenuItem makeMenuDNAHomol(int *start_index_inout,
+					   ZMapWindowMenuItemCallbackFunc callback_func,
+					   gpointer callback_data) ;
+static ZMapWindowMenuItem makeMenuProteinHomol(int *start_index_inout,
+					   ZMapWindowMenuItemCallbackFunc callback_func,
+					       gpointer callback_data) ;
+static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
+
+static void populateMenu(ZMapWindowMenuItem menu,
+			 int *start_index_inout,
+			 ZMapWindowMenuItemCallbackFunc callback_func,
+			 gpointer callback_data) ;
+
+static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
+			 FooCanvasItem *item) ;
+static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
+static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+
+
+static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
+			   FooCanvasItem *item, ZMapFeatureSet feature_set) ;
+
+static ZMapWindowMenuItem makeMenuColumnOps(int *start_index_inout,
+					    ZMapWindowMenuItemCallbackFunc callback_func,
+					    gpointer callback_data) ;
+static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
+
+
+
+static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feature,
+					double feature_offset,
+					double x1, double y1, double x2, double y2,
+					GdkColor *outline, GdkColor *background,
+					ZMapWindow window) ;
+static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature feature,
+					    double feature_offset,
+					    double x1, double feature_top,
+					    double x2, double feature_bottom,
+					    GdkColor *outline, GdkColor *background,
+					    GdkColor *block_background,
+					    ZMapWindow window) ;
+static FooCanvasItem *drawSequenceFeature(FooCanvasGroup *parent, ZMapFeature feature,
+                                          double feature_offset,
+                                          double feature_zero,      double feature_top,
+                                          double feature_thickness, double feature_bottom,
+                                          GdkColor *outline, GdkColor *background,
+                                          ZMapWindow window) ;
+
+
+static FooCanvasItem *getBoundingBoxChild(FooCanvasGroup *parent_group) ;
+static FooCanvasGroup *getItemsColGroup(FooCanvasItem *item) ;
+
+static void setColours(ZMapCanvasData canvas_data) ;
+
+static void dumpFASTA(ZMapWindow window) ;
+static void dumpFeatures(ZMapWindow window, ZMapFeatureAny feature) ;
+static void dumpContext(ZMapWindow window) ;
+static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
+
+
+static void dna_redraw_callback(FooCanvasGroup *text_grp,
+                                double zoom,
+                                gpointer user_data);
+
+static void dna_redraw_callback(FooCanvasGroup *text_grp,
+                                double zoom,
+                                gpointer user_data);
+static void updateInfoGivenCoords(textGroupSelection select, 
+                                  double worldCurrentX,
+                                  double worldCurrentY);
+static void pointerIsOverItem(gpointer data, gpointer user_data);
+static textGroupSelection getTextGroupData(FooCanvasGroup *txtGroup,
+                                           ZMapWindow window);
+static ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
+                                        double offset_start,  double offset_end,
+                                        double text_height, gboolean numbered);
+static void destroyIterator(ZMapDrawTextIterator iterator);
+
+
 
 
 /* Drawing coordinates: PLEASE READ THIS BEFORE YOU START MESSING ABOUT WITH ANYTHING...
@@ -718,13 +931,16 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   zMapAssert(type_quark == key_id) ;			    /* sanity check. */
 
 
-  /* UM, I THINK I SHOULD REVISIT THIS...SEEMS BAD TO CODE STUFF LIKE THIS IN.... */
+  /* UM, I THINK I SHOULD REVISIT THIS...SEEMS BAD TO HARD CODE THAT WE SHOULD ALWAYS HAVE A
+   * FORWARD COLUMN........ */
   /* Get hold of the current column and set up canvas_data to do the right thing,
    * remember that there must always be a forward column but that there might
    * not be a reverse column ! */
   forward_col = FOO_CANVAS_GROUP(zmapWindowFToIFindSetItem(window->context_to_item,
 							   feature_set, ZMAPSTRAND_FORWARD)) ;
   zMapAssert(forward_col) ;
+
+
 
   /* Now we have the feature set, make sure it is set for the column. */
   g_object_set_data(G_OBJECT(forward_col), "item_feature_data", feature_set) ;
@@ -753,11 +969,8 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   canvas_data->bump_for = canvas_data->bump_rev = 0.0 ;
 
 
-
   /* Now draw all the features in the column. */
   g_datalist_foreach(&(feature_set->features), ProcessFeature, canvas_data) ;
-
-
 
 
   /* TRY RESIZING BACKGROUND NOW..... */
@@ -780,38 +993,6 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
   return ;
 }
-
-static FooCanvasItem *drawSequenceFeature(FooCanvasGroup *parent, ZMapFeature feature,
-                                          double feature_offset,
-                                          double feature_zero,      double feature_top,
-                                          double feature_thickness, double feature_bottom,
-                                          GdkColor *outline, GdkColor *background,
-                                          ZMapWindow window)
-{
-  if(!feature->feature.sequence.sequence)
-    return drawSimpleFeature(parent, 
-                             feature, 
-                             feature_offset, 
-                             feature_zero, 
-                             feature_top, 
-                             feature_thickness, 
-                             feature_bottom,
-                             outline,
-                             background,
-                             window);
-  else
-    {
-      FooCanvasGroup *text_grp = NULL, *column_parent = NULL;
-
-      column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(parent));
-      text_grp      = zmapWindowContainerAddTextChild(column_parent, dna_redraw_callback, (gpointer)window);
-
-      zmapWindowColumnWriteDNA(window, text_grp);
-
-    }
-  return NULL;
-}
-
 
 /* Called for each individual feature. */
 static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
@@ -885,7 +1066,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
   /* NOTE THAT ONCE WE SUPPORT HOMOLOGIES MORE FULLY WE WILL WANT SEPARATE BOXES
    * FOR BLOCKS WITHIN A SINGLE ALIGNMENT, this will mean a change to "item_feature_type"
    * in line with how its done for transcripts. */
-  if (feature->type == ZMAPFEATURE_HOMOL && style->bump)
+  if (feature->type == ZMAPFEATURE_ALIGNMENT && style->bump)
     {
       double bump ;
 
@@ -913,9 +1094,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 
   switch (feature->type)
     {
-    case ZMAPFEATURE_BASIC: case ZMAPFEATURE_HOMOL:
-    case ZMAPFEATURE_VARIATION:
-    case ZMAPFEATURE_BOUNDARY: case ZMAPFEATURE_SEQUENCE:
+    case ZMAPFEATURE_BASIC: case ZMAPFEATURE_ALIGNMENT:
       {
 	top_feature_item = drawSimpleFeature(column_group, feature,
 					     feature_offset,
@@ -1068,6 +1247,39 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
 }
 
 
+static FooCanvasItem *drawSequenceFeature(FooCanvasGroup *parent, ZMapFeature feature,
+                                          double feature_offset,
+                                          double feature_zero,      double feature_top,
+                                          double feature_thickness, double feature_bottom,
+                                          GdkColor *outline, GdkColor *background,
+                                          ZMapWindow window)
+{
+  if(!feature->feature.sequence.sequence)
+    return drawSimpleFeature(parent, 
+                             feature, 
+                             feature_offset, 
+                             feature_zero, 
+                             feature_top, 
+                             feature_thickness, 
+                             feature_bottom,
+                             outline,
+                             background,
+                             window);
+  else
+    {
+      FooCanvasGroup *text_grp = NULL, *column_parent = NULL;
+
+      column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(parent));
+      text_grp      = zmapWindowContainerAddTextChild(column_parent, dna_redraw_callback, (gpointer)window);
+
+      zmapWindowColumnWriteDNA(window, text_grp);
+
+    }
+  return NULL;
+}
+
+
+
 	/* Note that for transcripts the boxes and lines are contained in a canvas group
 	 * and that therefore their coords are relative to the start of the group which
 	 * is the start of the transcript, i.e. feature->x1. */
@@ -1087,170 +1299,182 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
   double offset ;
 
 
-  zmapWindowSeq2CanOffset(&feature_top, &feature_bottom, feature_offset) ;
+  /* If there are no exons/introns then just draw a simple box. Can happen for putative
+   * transcripts or perhaps where user has a single exon object but does not give an exon,
+   * only an overall extent. */
+  if (!feature->feature.transcript.introns && !feature->feature.transcript.exons)
+    {
+      feature_item = drawSimpleFeature(parent, feature, feature_offset,
+				       x1, feature_top, x2, feature_bottom,
+				       outline, background, window) ;
+    }
+  else
+    {
+      zmapWindowSeq2CanOffset(&feature_top, &feature_bottom, feature_offset) ;
 
 
-  /* allocate a points array for drawing the intron lines, we need three points to draw the
-   * two lines that make the familiar  /\  shape between exons. */
-  points = foo_canvas_points_new(ZMAP_WINDOW_INTRON_POINTS) ;
+      /* allocate a points array for drawing the intron lines, we need three points to draw the
+       * two lines that make the familiar  /\  shape between exons. */
+      points = foo_canvas_points_new(ZMAP_WINDOW_INTRON_POINTS) ;
 
-  /* this group is the parent of the entire transcript. */
-  feature_group = foo_canvas_item_new(FOO_CANVAS_GROUP(parent),
-				      foo_canvas_group_get_type(),
-				      "y", feature_top,
-				      NULL) ;
+      /* this group is the parent of the entire transcript. */
+      feature_group = foo_canvas_item_new(FOO_CANVAS_GROUP(parent),
+					  foo_canvas_group_get_type(),
+					  "y", feature_top,
+					  NULL) ;
       
-  feature_item = FOO_CANVAS_ITEM(feature_group) ;
+      feature_item = FOO_CANVAS_ITEM(feature_group) ;
 
-  /* we probably need to set this I think, it means we will go to the group when we
-   * navigate or whatever.... */
-  g_object_set_data(G_OBJECT(feature_item), "item_feature_type",
-		    GINT_TO_POINTER(ITEM_FEATURE_PARENT)) ;
-  g_object_set_data(G_OBJECT(feature_item), "item_feature_data", feature) ;
+      /* we probably need to set this I think, it means we will go to the group when we
+       * navigate or whatever.... */
+      g_object_set_data(G_OBJECT(feature_item), "item_feature_type",
+			GINT_TO_POINTER(ITEM_FEATURE_PARENT)) ;
+      g_object_set_data(G_OBJECT(feature_item), "item_feature_data", feature) ;
 
 
 
-  /* Calculate total offset for for subparts of the feature. */
-  offset = feature_top + feature_offset ;
+      /* Calculate total offset for for subparts of the feature. */
+      offset = feature_top + feature_offset ;
 
-  /* first we draw the introns, then the exons.  Introns will have an invisible
-   * box around them to allow the user to click there and get a reaction.
-   * It's a bit hacky but the bounding box has the same coords stored on it as
-   * the intron...this needs tidying up because its error prone, better if they
-   * had a surrounding group.....e.g. what happens when we free ?? */
-  if (feature->feature.transcript.introns)
-    {
-      float line_width  = 1.5 ;
-
-      for (i = 0 ; i < feature->feature.transcript.introns->len ; i++)  
+      /* first we draw the introns, then the exons.  Introns will have an invisible
+       * box around them to allow the user to click there and get a reaction.
+       * It's a bit hacky but the bounding box has the same coords stored on it as
+       * the intron...this needs tidying up because its error prone, better if they
+       * had a surrounding group.....e.g. what happens when we free ?? */
+      if (feature->feature.transcript.introns)
 	{
-	  ZMapSpan intron_span ;
-	  FooCanvasItem *intron_box, *intron_line ;
-	  double left, right, top, middle, bottom ;
-	  ZMapWindowItemFeature box_data, intron_data ;
+	  float line_width  = 1.5 ;
 
-	  intron_span = &g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i) ;
+	  for (i = 0 ; i < feature->feature.transcript.introns->len ; i++)  
+	    {
+	      ZMapSpan intron_span ;
+	      FooCanvasItem *intron_box, *intron_line ;
+	      double left, right, top, middle, bottom ;
+	      ZMapWindowItemFeature box_data, intron_data ;
 
-	  box_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-	  box_data->start = intron_span->x1 ;
-	  box_data->end = intron_span->x2 ;
+	      intron_span = &g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i) ;
 
-	  /* Need to remember that group coords start at zero, need to encapsulate this
-	   * in some kind of macro/function that uses the group coords etc. to set
-	   * positions. */
-	  left = x2 / 2 ;
-	  right = x2 ;
+	      box_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+	      box_data->start = intron_span->x1 ;
+	      box_data->end = intron_span->x2 ;
 
-	  top = intron_span->x1 ;
-	  bottom = intron_span->x2 ;
-	  zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
+	      /* Need to remember that group coords start at zero, need to encapsulate this
+	       * in some kind of macro/function that uses the group coords etc. to set
+	       * positions. */
+	      left = x2 / 2 ;
+	      right = x2 ;
 
-
-	  middle = top + ((bottom - top + 1) / 2) ;
-
-	  intron_box = zMapDrawBox(feature_group,
-				   x1, top,
-				   right, bottom,
-				   block_background,
-				   block_background) ;
-	  zmapWindowLongItemCheck(window, intron_box, top, bottom) ;
-
-	  g_object_set_data(G_OBJECT(intron_box), "item_feature_type",
-			    GINT_TO_POINTER(ITEM_FEATURE_BOUNDING_BOX)) ;
-	  g_object_set_data(G_OBJECT(intron_box), "item_feature_data", feature) ;
-	  g_object_set_data(G_OBJECT(intron_box), "item_subfeature_data",
-			    box_data) ;
-
-	  g_signal_connect(GTK_OBJECT(intron_box), "event",
-			   GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
-	  g_signal_connect(GTK_OBJECT(intron_box), "destroy",
-			   GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
+	      top = intron_span->x1 ;
+	      bottom = intron_span->x2 ;
+	      zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
 
 
+	      middle = top + ((bottom - top + 1) / 2) ;
 
-	  intron_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-	  intron_data->start = intron_span->x1 ;
-	  intron_data->end = intron_span->x2 ;
+	      intron_box = zMapDrawBox(feature_group,
+				       x1, top,
+				       right, bottom,
+				       block_background,
+				       block_background) ;
+	      zmapWindowLongItemCheck(window, intron_box, top, bottom) ;
 
-	  /* fill out the points */
-	  points->coords[0] = left ;
-	  points->coords[1] = top ;
-	  points->coords[2] = right ;
-	  points->coords[3] = middle ;
-	  points->coords[4] = left ;
-	  points->coords[5] = bottom ;
+	      g_object_set_data(G_OBJECT(intron_box), "item_feature_type",
+				GINT_TO_POINTER(ITEM_FEATURE_BOUNDING_BOX)) ;
+	      g_object_set_data(G_OBJECT(intron_box), "item_feature_data", feature) ;
+	      g_object_set_data(G_OBJECT(intron_box), "item_subfeature_data",
+				box_data) ;
 
-	  intron_line = zMapDrawPolyLine(FOO_CANVAS_GROUP(feature_group),
-					 points,
-					 background,
-					 line_width) ;
-	  zmapWindowLongItemCheck(window, intron_line, top, bottom) ;
-
-	  g_object_set_data(G_OBJECT(intron_line), "item_feature_type",
-			    GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
-	  g_object_set_data(G_OBJECT(intron_line), "item_feature_data", feature) ;
-	  g_object_set_data(G_OBJECT(intron_line), "item_subfeature_data",
-			    intron_data) ;
-
-	  g_signal_connect(GTK_OBJECT(intron_line), "event",
-			   GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
-	  g_signal_connect(GTK_OBJECT(intron_line), "destroy",
-			   GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
+	      g_signal_connect(GTK_OBJECT(intron_box), "event",
+			       GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
+	      g_signal_connect(GTK_OBJECT(intron_box), "destroy",
+			       GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
 
 
-	  /* Now we can get at either twinned item from the other item. */
-	  box_data->twin_item = intron_line ;
-	  intron_data->twin_item = intron_box ;
+
+	      intron_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+	      intron_data->start = intron_span->x1 ;
+	      intron_data->end = intron_span->x2 ;
+
+	      /* fill out the points */
+	      points->coords[0] = left ;
+	      points->coords[1] = top ;
+	      points->coords[2] = right ;
+	      points->coords[3] = middle ;
+	      points->coords[4] = left ;
+	      points->coords[5] = bottom ;
+
+	      intron_line = zMapDrawPolyLine(FOO_CANVAS_GROUP(feature_group),
+					     points,
+					     background,
+					     line_width) ;
+	      zmapWindowLongItemCheck(window, intron_line, top, bottom) ;
+
+	      g_object_set_data(G_OBJECT(intron_line), "item_feature_type",
+				GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
+	      g_object_set_data(G_OBJECT(intron_line), "item_feature_data", feature) ;
+	      g_object_set_data(G_OBJECT(intron_line), "item_subfeature_data",
+				intron_data) ;
+
+	      g_signal_connect(GTK_OBJECT(intron_line), "event",
+			       GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
+	      g_signal_connect(GTK_OBJECT(intron_line), "destroy",
+			       GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
+
+
+	      /* Now we can get at either twinned item from the other item. */
+	      box_data->twin_item = intron_line ;
+	      intron_data->twin_item = intron_box ;
+	    }
 	}
+
+
+      if (feature->feature.transcript.exons)
+	{
+	  for (i = 0; i < feature->feature.transcript.exons->len; i++)
+	    {
+	      ZMapSpan exon_span ;
+	      FooCanvasItem *exon_box ;
+	      ZMapWindowItemFeature feature_data ;
+	      double top, bottom ;
+
+
+	      exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
+
+	      top = exon_span->x1 ;
+	      bottom = exon_span->x2 ;
+	      zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
+
+
+	      feature_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+	      feature_data->start = exon_span->x1 ;
+	      feature_data->end = exon_span->x2 ;
+
+	      exon_box = zMapDrawBox(feature_group, 
+				     x1,
+				     top,
+				     x2,
+				     bottom,
+				     outline, 
+				     background) ;
+	      zmapWindowLongItemCheck(window, exon_box, top, bottom) ;
+
+	      g_object_set_data(G_OBJECT(exon_box), "item_feature_type",
+				GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
+	      g_object_set_data(G_OBJECT(exon_box), "item_feature_data", feature) ;
+	      g_object_set_data(G_OBJECT(exon_box), "item_subfeature_data",
+				feature_data) ;
+
+	      g_signal_connect(GTK_OBJECT(exon_box), "event",
+			       GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
+	      g_signal_connect(GTK_OBJECT(exon_box), "destroy",
+			       GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
+
+	    }
+	}
+
+      /* tidy up. */
+      foo_canvas_points_free(points) ;
     }
-
-
-  /* We assume there are exons....I think we should check this actually.... */
-  for (i = 0; i < feature->feature.transcript.exons->len; i++)
-    {
-      ZMapSpan exon_span ;
-      FooCanvasItem *exon_box ;
-      ZMapWindowItemFeature feature_data ;
-      double top, bottom ;
-
-
-      exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
-
-      top = exon_span->x1 ;
-      bottom = exon_span->x2 ;
-      zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
-
-
-      feature_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-      feature_data->start = exon_span->x1 ;
-      feature_data->end = exon_span->x2 ;
-
-      exon_box = zMapDrawBox(feature_group, 
-			     x1,
-			     top,
-			     x2,
-			     bottom,
-			     outline, 
-			     background) ;
-      zmapWindowLongItemCheck(window, exon_box, top, bottom) ;
-
-      g_object_set_data(G_OBJECT(exon_box), "item_feature_type",
-			GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
-      g_object_set_data(G_OBJECT(exon_box), "item_feature_data", feature) ;
-      g_object_set_data(G_OBJECT(exon_box), "item_subfeature_data",
-			feature_data) ;
-
-      g_signal_connect(GTK_OBJECT(exon_box), "event",
-		       GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
-      g_signal_connect(GTK_OBJECT(exon_box), "destroy",
-		       GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
-
-    }
-
-
-  /* tidy up. */
-  foo_canvas_points_free(points) ;
-
 
   return feature_item ;
 }
@@ -1634,7 +1858,7 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
 
   menu_sets = g_list_append(menu_sets, makeMenuBump(NULL, NULL, menu_data)) ;
 
-  if (feature->type == ZMAPFEATURE_HOMOL)
+  if (feature->type == ZMAPFEATURE_ALIGNMENT)
     {
       if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
 	menu_sets = g_list_append(menu_sets, makeMenuProteinHomol(NULL, NULL, menu_data)) ;
@@ -1915,7 +2139,8 @@ static ZMapWindowMenuItem makeMenuDumpOps(int *start_index_inout,
     {
       {"_Dump",                  0, NULL,       NULL},
       {"Dump/Dump DNA"          , 1, dumpMenuCB, NULL},
-      {"Dump/Dump Context"      , 2, dumpMenuCB, NULL},
+      {"Dump/Dump Features"     , 2, dumpMenuCB, NULL},
+      {"Dump/Dump Context"      , 3, dumpMenuCB, NULL},
       {NULL               , 0, NULL, NULL}
     } ;
 
@@ -1927,6 +2152,9 @@ static ZMapWindowMenuItem makeMenuDumpOps(int *start_index_inout,
 static void dumpMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapFeatureAny feature ;
+
+  feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data") ;
 
   switch (menu_item_id)
     {
@@ -1937,6 +2165,12 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data)
 	break ;
       }
     case 2:
+      {
+	dumpFeatures(menu_data->window, feature) ;
+
+	break ;
+      }
+    case 3:
       {
 	dumpContext(menu_data->window) ;
 
@@ -2216,7 +2450,7 @@ static void dumpFASTA(ZMapWindow window)
   char *error_prefix = "FASTA DNA dump failed:" ;
 
   if (!(dna = zmapFeatureContextDNA(window->feature_context, &seq_name, &seq_len, &sequence))
-      || !(filepath = zmapGUIFileChooser(window->toplevel, "FASTA filename ?", NULL))
+      || !(filepath = zmapGUIFileChooser(window->toplevel, "FASTA filename ?", NULL, NULL))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
       || !zmapDNADumpFASTA(file, seq_name, seq_len, sequence, &error))
     {
@@ -2253,21 +2487,28 @@ static void dumpFASTA(ZMapWindow window)
 }
 
 
-static void dumpContext(ZMapWindow window)
+static void dumpFeatures(ZMapWindow window, ZMapFeatureAny feature)
 {
   char *filepath = NULL ;
   GIOChannel *file = NULL ;
   GError *error = NULL ;
-#ifdef RDS_DONT_INCLUDE
-  char *seq_name = NULL ;
-  int seq_len = 0 ;
-  char *sequence = NULL ;
-#endif
-  char *error_prefix = "Feature context dump failed:" ;
+  char *error_prefix = "Features dump failed:" ;
+  ZMapFeatureBlock feature_block ;
 
-  if (!(filepath = zmapGUIFileChooser(window->toplevel, "Context Dump filename ?", NULL))
+  /* Should extend this any type.... */
+  zMapAssert(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
+	     || feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+
+  /* Find the block from whatever pointer we are sent...  */
+  if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+    feature_block = (ZMapFeatureBlock)(feature->parent) ;
+  else
+    feature_block = (ZMapFeatureBlock)(feature->parent->parent) ;
+
+
+  if (!(filepath = zmapGUIFileChooser(window->toplevel, "Feature Dump filename ?", NULL, "gff"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapFeatureContextDump(file, window->feature_context, &error))
+      || !zMapGFFDump(file, feature_block, &error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
@@ -2297,6 +2538,50 @@ static void dumpContext(ZMapWindow window)
 }
 
 
+
+
+static void dumpContext(ZMapWindow window)
+{
+  char *filepath = NULL ;
+  GIOChannel *file = NULL ;
+  GError *error = NULL ;
+#ifdef RDS_DONT_INCLUDE
+  char *seq_name = NULL ;
+  int seq_len = 0 ;
+  char *sequence = NULL ;
+#endif
+  char *error_prefix = "Feature context dump failed:" ;
+
+  if (!(filepath = zmapGUIFileChooser(window->toplevel, "Context Dump filename ?", NULL, "zmap"))
+      || !(file = g_io_channel_new_file(filepath, "w", &error))
+      || !zMapFeatureContextDump(file, window->feature_context, &error))
+    {
+      /* N.B. if there is no filepath it means user cancelled so take no action...,
+       * otherwise we output the error message. */
+      if (error)
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+	  g_error_free(error) ;
+	}
+    }
+
+
+  if (file)
+    {
+      GIOStatus status ;
+
+      if ((status = g_io_channel_shutdown(file, TRUE, &error)) != G_IO_STATUS_NORMAL)
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+	  g_error_free(error) ;
+	}
+    }
+
+
+  return ;
+}
 
 
 static void pfetchEntry(ZMapWindow window, char *sequence_name)
