@@ -26,13 +26,36 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Nov 14 11:48 2005 (rds)
+ * Last edited: Nov 18 11:39 2005 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.2 2005-11-16 10:37:10 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.3 2005-11-18 11:41:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapGLibUtils.h>
+
+/* Needed to get at private array struct. */
+typedef struct _GRealArray  GRealArray;
+
+struct _GRealArray
+{
+  guint8 *data;
+  guint   len;
+  guint   alloc;
+  guint   elt_size;
+  guint   zero_terminated : 1;
+  guint   clear : 1;
+};
+
+#define g_array_elt_len(array,i) ((array)->elt_size * (i))
+#define g_array_elt_pos(array,i) ((array)->data + g_array_elt_len((array),(i)))
+
+
+
+/* 
+ *                Additions to GList 
+ */
+
 
 #ifdef UTILISE_SINGLE_FUNCTION
 /* Go through a list in reverse calling the supplied GFunc.
@@ -81,4 +104,38 @@ void zMap_g_list_foreach_directional(GList   *list,
     }
   return ;
 }
+
+
+
+
+
+/* 
+ *                Additions to GArray
+ */
+
+
+/* My new routine for returning a pointer to an element in the array, the array will be
+ * expanded to include the requested element if necessary. If "clear" was not set when
+ * the array was created then the element may contain random junk instead of zeros. */
+GArray* 
+zMap_g_array_element (GArray *farray,
+		      guint index,
+		      gpointer *element_out)
+{
+  GRealArray *array = (GRealArray*) farray;
+  gint length;
+
+  length = (index + 1) - array->len;
+
+  if (length > 0)
+    {
+      farray = g_array_set_size (farray, length);
+    }
+
+  *element_out = g_array_elt_pos (array, index);
+
+  return farray;
+}
+
+
 
