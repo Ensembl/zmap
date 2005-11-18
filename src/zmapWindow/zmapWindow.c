@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  3 11:01 2005 (rds)
+ * Last edited: Nov 17 15:34 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.96 2005-11-16 10:42:59 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.97 2005-11-18 10:59:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -566,7 +566,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
       zmapWindowDrawScaleBar(window, y1, y2);
 
       /* Get the root, so that we can notify the columns that the zoom has occurred */
-      if((super_root = zmapWindowFToIFindItemFull(window->context_to_item, 0,0,0,0,0)))
+      if((super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item, 0,0,0,0,0))))
         zmapWindowContainerZoomEvent(super_root, window);
       
       zmapWindowLongItemCrop(window, x1, y1, x2, y2); /* Call this again because of backgrounds :( */
@@ -617,7 +617,7 @@ static void myWindowMove(ZMapWindow window, double start, double end)
 
   zmapWindowScrollRegionTool(window, &x1, &start, &x2, &end);
 
-  if((super_root = zmapWindowFToIFindItemFull(window->context_to_item, 0,0,0,0,0)))
+  if((super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item, 0,0,0,0,0))))
     zmapWindowContainerMoveEvent(super_root, window);
 
   /* need to redo some of the large objects.... */
