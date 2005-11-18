@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 16 11:11 2005 (rds)
+ * Last edited: Nov 16 15:02 2005 (edgrif)
  * Created: Wed Aug 31 18:37:38 2005 (rds)
- * CVS info:   $Id: das1features.c,v 1.3 2005-09-20 17:16:11 rds Exp $
+ * CVS info:   $Id: das1features.c,v 1.4 2005-11-18 10:57:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,6 +72,11 @@ typedef struct _dasOneFeatureStruct
   GQuark label;
   int start;
   int stop;
+
+  struct
+  {
+    unsigned int has_score : 1 ;
+  } flags ;
   double score;
 
   ZMapStrand orientation;
@@ -127,10 +132,14 @@ void dasOneFeature_setProperties(dasOneFeature feature,
                                  char *score, char *orientation,
                                  char *phase)
 {
+  gboolean has_score = FALSE ;
+
   feature->start = start;
   feature->stop  = stop;
 
-  zMapFeatureFormatScore(score, &(feature->score));
+  if (zMapFeatureFormatScore(score, &has_score, &(feature->score)))
+    feature->flags.has_score = has_score ;
+
   zMapFeatureFormatStrand(orientation, &(feature->orientation));
   zMapFeatureFormatPhase(phase, &(feature->phase));
 
