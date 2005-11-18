@@ -57,6 +57,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureFormatInput.c \
 	$(top_srcdir)/zmapFeature/zmapFeature_P.h \
 	$(top_srcdir)/zmapGFF/zmapGFF2parser.c \
+	$(top_srcdir)/zmapGFF/zmapGFF2Dumper.c \
 	$(top_srcdir)/zmapGFF/zmapGFF_P.h \
 	$(top_srcdir)/zmapUtils/zmapCmdLineArgs.c \
 	$(top_srcdir)/zmapUtils/zmapCmdLineArgs_P.h \
