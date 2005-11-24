@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 11 14:46 2005 (edgrif)
+ * Last edited: Nov 23 11:56 2005 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.8 2005-07-12 10:06:33 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.9 2005-11-24 15:49:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,6 +112,22 @@ void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 
   return ;
 }
+
+void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_feature)
+{
+  zMapAssert(style) ;
+
+  if (gff_source && *gff_source)
+    style->gff_source = g_quark_from_string(gff_source) ;
+
+  if (gff_feature && *gff_feature)
+    style->gff_feature = g_quark_from_string(gff_feature) ;
+
+  return ;
+}
+
+
+
 
 void zMapStyleSetBump(ZMapFeatureTypeStyle type, gboolean bump)
 {
