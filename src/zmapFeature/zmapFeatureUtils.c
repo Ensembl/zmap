@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 17 11:39 2005 (edgrif)
+ * Last edited: Nov 23 11:54 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.24 2005-11-18 11:07:22 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.25 2005-11-24 15:49:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -419,8 +419,7 @@ gboolean zMapFeatureContextDump(GIOChannel *file,
 char *zmapFeatureLookUpEnum(int id, int enumType)
 {
   /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
-  static char *types[]   = {"BASIC", "HOMOL", "EXON", "INTRON", "TRANSCRIPT",
-			    "VARIATION", "BOUNDARY", "SEQUENCE"} ;
+  static char *types[]   = {"Basic", "Alignment", "Transcript", "Sequence"} ;
   static char *strands[] = {".", "+", "-" } ;
   static char *phases[]  = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" } ;
   static char *homolTypes[] = {"ZMAPHOMOL_N_HOMOL", "ZMAPHOMOL_X_HOMOL", "ZMAPHOMOL_TX_HOMOL"} ;
@@ -883,14 +882,12 @@ static void doFeature(GQuark key_id, gpointer data, gpointer user_data)
   char *source_name ;
   int start, end ;
 
-  /* Fields are: <seqname> <source> <feature> <start> <end> <score> <strand> <frame> */
-
   parent_name = (char *)g_quark_to_string(feature->parent->parent->parent->original_id) ;
 
-		    
   if (dump_data->status)
     dump_data->status = (*(dump_data->dump_func))(dump_data->file,
 						  dump_data->user_data,
+						  feature->style,
 						  parent_name,
 						  (char *)g_quark_to_string(feature->original_id),
 						  (char *)g_quark_to_string(feature->style->original_id),
