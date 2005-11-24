@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 17 14:49 2005 (edgrif)
+ * Last edited: Nov 22 11:48 2005 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.17 2005-11-18 10:58:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.18 2005-11-24 15:48:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -493,7 +493,7 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 
 	      adjustCoords(blixem_data, &sstart, &send, &qstart, &qend);
 
-	      score = feature->feature.homol.score + 0.5;  /* round up to integer */
+	      score = feature->score + 0.5;		    /* round up to integer */
 	      
 	      if (score)
 		{
