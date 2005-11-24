@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 17 10:16 2005 (edgrif)
+ * Last edited: Nov 23 15:33 2005 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.3 2005-11-18 11:06:28 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.4 2005-11-24 15:52:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,6 +75,9 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
       || g_ascii_strcasecmp(feature_type, "expressed_sequence_match") == 0
       || g_ascii_strcasecmp(feature_type, "EST_match") == 0
       || g_ascii_strcasecmp(feature_type, "cDNA_match") == 0
+      || g_ascii_strcasecmp(feature_type, "repeat_region") == 0
+      || g_ascii_strcasecmp(feature_type, "inverted_repeat") == 0
+      || g_ascii_strcasecmp(feature_type, "tandem_repeat") == 0
       || g_ascii_strcasecmp(feature_type, "translated_nucleotide_match") == 0
       || g_ascii_strcasecmp(feature_type, "protein_match") == 0)
     {
@@ -108,9 +111,6 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	   || g_ascii_strcasecmp(feature_type, "operon") == 0
 	   || g_ascii_strcasecmp(feature_type, "experimental_result_region") == 0
 	   || g_ascii_strcasecmp(feature_type, "chromosomal_structural_element") == 0
-	   || g_ascii_strcasecmp(feature_type, "repeat_region") == 0
-	   || g_ascii_strcasecmp(feature_type, "inverted_repeat") == 0
-	   || g_ascii_strcasecmp(feature_type, "tandem_repeat") == 0
 	   || g_ascii_strcasecmp(feature_type, "transposable_element") == 0
 	   || g_ascii_strcasecmp(feature_type, "SNP") == 0
 	   || g_ascii_strcasecmp(feature_type, "sequence_variant") == 0
@@ -141,11 +141,13 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	  type = ZMAPFEATURE_TRANSCRIPT ;
 	}
       else if (g_ascii_strcasecmp(feature_type, "similarity") == 0
+	       || g_ascii_strcasecmp(feature_type, "repeat") == 0
 	       || g_ascii_strcasecmp(feature_type, "transcription") == 0)
 	{
 	  type = ZMAPFEATURE_ALIGNMENT ;
 	}
       else if (g_ascii_strcasecmp(feature_type, "Clone") == 0
+	       || g_ascii_strcasecmp(feature_type, "Sequence") == 0
 	       || g_ascii_strcasecmp(feature_type, "Clone_left_end") == 0
 	       || g_ascii_strcasecmp(feature_type, "Clone_right_end") == 0
 	       || g_ascii_strcasecmp(feature_type, "SL1_acceptor_site") == 0
@@ -153,7 +155,6 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	       || g_ascii_strcasecmp(feature_type, "utr") == 0
 	       || g_ascii_strcasecmp(feature_type, "experimental") == 0
 	       || g_ascii_strcasecmp(feature_type, "reagent") == 0
-	       || g_ascii_strcasecmp(feature_type, "repeat") == 0
 	       || g_ascii_strcasecmp(feature_type, "structural") == 0
 	       || g_ascii_strcasecmp(feature_type, "contig") == 0
 	       || g_ascii_strcasecmp(feature_type, "supercontig") == 0
@@ -164,13 +165,6 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	{
 	  type = ZMAPFEATURE_BASIC ;
 	}
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* I don't know what to do about this.... */
-      /*      else if (g_ascii_strcasecmp(feature_type, "Sequence") == 0)
-	      {
-	      type = ZMAPFEATURE_SEQUENCE ;
-	      } */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       else if (default_to_basic)
 	{
 	  /* If we allow defaulting of unrecognised features, the default is a "basic" feature. */
