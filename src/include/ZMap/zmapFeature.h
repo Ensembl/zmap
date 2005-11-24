@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov 18 10:12 2005 (edgrif)
+ * Last edited: Nov 23 11:55 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.47 2005-11-18 11:04:56 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.48 2005-11-24 15:52:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -310,10 +310,9 @@ typedef struct ZMapFeatureSetStruct_
 typedef struct
 {
   ZMapHomolType type ;					    /* as in Blast* */
-  int y1, y2 ;						    /* target start/end */
+  int y1, y2 ;						    /* Query start/end */
   ZMapStrand target_strand ;
   ZMapPhase target_phase ;				    /* for tx_homol */
-  float score ;
   GArray *align ;					    /* of AlignBlock, if null, align is ungapped. */
 } ZMapHomolStruct, *ZMapHomol ;
 
@@ -366,7 +365,6 @@ typedef struct ZMapFeatureStruct_
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */
-
 
 
   Coord x1, x2 ;					    /* start, end of feature in absolute coords. */
@@ -447,6 +445,12 @@ typedef struct ZMapFeatureTypeStyleStruct_
   gboolean  frame_specific ;
   gboolean  show_rev_strand ;
 
+
+  /* GFF feature dumping, allows specifying of source/feature types independently of feature
+   * attributes. */
+  GQuark gff_source ;
+  GQuark gff_feature ;
+
 } ZMapFeatureTypeStyleStruct ;
 
 
@@ -456,6 +460,7 @@ typedef struct ZMapFeatureTypeStyleStruct_
  * format features in any way they want. */
 typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
 						       gpointer user_data,
+						       ZMapFeatureTypeStyle style,
 						       char *parent_name,
 						       char *feature_name,
 						       char *style_name,
@@ -529,24 +534,27 @@ void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSe
 void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;
 
 ZMapFeature zmapFeatureCreateEmpty(void) ;
-gboolean zMapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
-				char *sequence, char *ontology,
-				ZMapFeatureType feature_type,  ZMapFeatureTypeStyle style,
-				int start, int end,
-				gboolean has_score, double score,
-				ZMapStrand strand, ZMapPhase phase,
-				ZMapSpanStruct *exon, ZMapSpanStruct *intron,
-				ZMapHomolType homol_type_out, int start_out, int end_out,
-				GArray *gaps) ;
-
-GList *zMapStylesGetNames(GList *styles) ;
-
-
+ZMapFeature zMapFeatureCopy(ZMapFeature feature) ;
+gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
+				    char *sequence, char *ontology,
+				    ZMapFeatureType feature_type, ZMapFeatureTypeStyle style,
+				    int start, int end,
+				    gboolean has_score, double score,
+				    ZMapStrand strand, ZMapPhase phase) ;
+gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
+				      gboolean cds, Coord cds_start, Coord cds_end,
+				      gboolean start_not_found, ZMapPhase start_phase,
+				      gboolean end_not_found,
+				      GArray *exons, GArray *introns) ;
+gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
+					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
+gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
+				     ZMapHomolType homol_type,
+				     ZMapStrand target_strand, ZMapPhase target_phase,
+				     int query_start, int query_end,
+				     GArray *gaps) ;
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature) ;
-
 ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature) ;
-
-
 void zmapFeatureDestroy(ZMapFeature feature) ;
 
 
@@ -561,17 +569,17 @@ char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 
 void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 
+
+GList *zMapStylesGetNames(GList *styles) ;
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 					   char *outline, char *foreground, char *background,
 					   double width, double min_mag) ;
 void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean strand_specific, gboolean frame_specific,
 			     gboolean show_rev_strand) ;
-
 void zMapStyleSetBump(ZMapFeatureTypeStyle type, gboolean bump) ;
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
-
 char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
 ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id) ;
 gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
@@ -581,7 +589,7 @@ GList *zMapFeatureTypeGetFromFile(char *types_file) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
 
-ZMapFeature zMapFeatureCopy  (ZMapFeature feature);
+
 
 gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);
 gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase);

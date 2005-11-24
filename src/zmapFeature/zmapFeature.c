@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov 17 14:49 2005 (edgrif)
+ * Last edited: Nov 22 11:41 2005 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.28 2005-11-18 11:05:44 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.29 2005-11-24 15:53:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -157,27 +157,20 @@ ZMapFeature zmapFeatureCreateEmpty(void)
 
 
 /*!
- * Adds data to a feature which may be "NULL" or may already have partial features,
- * e.g. transcript that does not yet have all its exons.
- * 
- * NOTE that really we need this to be a polymorphic function so that the arguments
- * are different for different features.
+ * Adds the standard data fields to an empty feature.
  *  */
-gboolean zMapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char *name,
-				char *sequence, char *ontology,
-				ZMapFeatureType feature_type, ZMapFeatureTypeStyle style,
-				int start, int end,
-				gboolean has_score, double score,
-				ZMapStrand strand, ZMapPhase phase,
-				ZMapSpanStruct *exon, ZMapSpanStruct *intron,
-				ZMapHomolType homol_type, int query_start, int query_end,
-				GArray *gaps)
+gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
+				    char *sequence, char *ontology,
+				    ZMapFeatureType feature_type, ZMapFeatureTypeStyle style,
+				    int start, int end,
+				    gboolean has_score, double score,
+				    ZMapStrand strand, ZMapPhase phase)
 {
   gboolean result = FALSE ;
 
+  /* Currently we don't overwrite features, they must be empty. */
   zMapAssert(feature) ;
 
-  /* If its an empty feature then initialise... */
   if (feature->unique_id == ZMAPFEATURE_NULLQUARK)
     {
       feature->unique_id = g_quark_from_string(feature_name_id) ;
@@ -194,49 +187,126 @@ gboolean zMapFeatureAugmentData(ZMapFeature feature, char *feature_name_id, char
 	  feature->flags.has_score = 1 ;
 	  feature->score = score ;
 	}
+    }
+
+  result = TRUE ;
+
+  return result ;
+}
+
+
+
+
+/*!
+ * Adds data to a feature which may be empty or may already have partial features,
+ * e.g. transcript that does not yet have all its exons.
+ * 
+ * NOTE that really we need this to be a polymorphic function so that the arguments
+ * are different for different features.
+ *  */
+gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
+				      gboolean cds, Coord cds_start, Coord cds_end,
+				      gboolean start_not_found, ZMapPhase start_phase,
+				      gboolean end_not_found,
+				      GArray *exons, GArray *introns)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(feature && feature->type == ZMAPFEATURE_TRANSCRIPT) ;
+
+  if (cds)
+    {
+      feature->feature.transcript.flags.cds = 1 ;
+      feature->feature.transcript.cds_start = cds_start ;
+      feature->feature.transcript.cds_end = cds_end ;
+    }
+
+  if (start_not_found)
+    {
+      feature->feature.transcript.flags.start_not_found = 1 ;
+      feature->feature.transcript.start_phase = start_phase ;
+    }
+
+  if (end_not_found)
+    feature->feature.transcript.flags.end_not_found = 1 ;
+
+  if (exons)
+    feature->feature.transcript.exons = exons ;
+
+  if (introns)
+    feature->feature.transcript.introns = introns ;
+
+  result = TRUE ;
+
+  return result ;
+}
+
+/*!
+ * Adds a single exon and/or intron to a feature which may be empty or may already have
+ * some exons/introns.
+ *  */
+gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
+					    ZMapSpanStruct *exon, ZMapSpanStruct *intron)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(feature && feature->type == ZMAPFEATURE_TRANSCRIPT) ;
+
+  if (exon)
+    {
+      if (!feature->feature.transcript.exons)
+	feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
+							      sizeof(ZMapSpanStruct), 30) ;
+
+      g_array_append_val(feature->feature.transcript.exons, *exon) ;
 
       result = TRUE ;
     }
-
-
-  /* Processing transcripts is more tricky...its all muddled I think this routine should just be
-   * passed the introns/exons as array elements which it should then add to an existing array... */
-  if (feature_type == ZMAPFEATURE_TRANSCRIPT)
+  else if (intron)
     {
-      if (exon)
-	{
-	  if (!feature->feature.transcript.exons)
-	    feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
-								  sizeof(ZMapSpanStruct), 30) ;
+      if (!feature->feature.transcript.introns)
+	feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
+								sizeof(ZMapSpanStruct), 30) ;
 
-	  g_array_append_val(feature->feature.transcript.exons, *exon) ;
+      g_array_append_val(feature->feature.transcript.introns, *intron) ;
 
-	  result = TRUE ;
-	}
-      else if (intron)
-	{
-	  if (!feature->feature.transcript.introns)
-	    feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
-								    sizeof(ZMapSpanStruct), 30) ;
-
-	  g_array_append_val(feature->feature.transcript.introns, *intron) ;
-
-	  result = TRUE ;
-	}
-    }
-  else if (feature_type == ZMAPFEATURE_ALIGNMENT)
-    {
-      feature->feature.homol.type = homol_type ;
-      feature->feature.homol.y1 = query_start ;
-      feature->feature.homol.y2 = query_end ;
-      feature->feature.homol.score = score ;
-      feature->feature.homol.align = gaps;
-	  
       result = TRUE ;
     }
 
   return result ;
 }
+
+
+
+
+/*!
+ * Adds homology data to a feature which may be empty or may already have partial features.
+ *  */
+gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
+				     ZMapHomolType homol_type,
+				     ZMapStrand target_strand, ZMapPhase target_phase,
+				     int query_start, int query_end,
+				     GArray *gaps)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(feature && feature->type == ZMAPFEATURE_ALIGNMENT) ;
+
+  feature->feature.homol.type = homol_type ;
+  feature->feature.homol.target_strand = target_strand ;
+  feature->feature.homol.target_phase = target_phase ;
+  feature->feature.homol.y1 = query_start ;
+  feature->feature.homol.y2 = query_end ;
+
+  if (gaps)
+    feature->feature.homol.align = gaps ;
+	  
+  result = TRUE ;
+
+  return result ;
+}
+
+
 
 
 /*!
@@ -694,7 +764,7 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
 }
 
 
-
+/*! @} end of zmapfeatures docs. */
 
 
 
@@ -1066,5 +1136,5 @@ static void doNewFeatures(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
-/*! @} end of zmapfeatures docs. */
+
 
