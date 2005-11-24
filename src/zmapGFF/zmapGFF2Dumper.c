@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov 17 14:38 2005 (edgrif)
+ * Last edited: Nov 23 15:23 2005 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.1 2005-11-18 11:03:11 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.2 2005-11-24 15:56:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +50,7 @@ static gboolean dumpSeqHeaders(GIOChannel *file, ZMapFeatureAny any_feature, GEr
 static void doAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
 static void doBlock(gpointer data, gpointer user_data) ;
 static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
+			    ZMapFeatureTypeStyle style,
 			    char *parent_name,
 			    char *feature_name,
 			    char *style_name,
@@ -62,10 +63,10 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
 			    gpointer feature_data,
 			    GError **error_out) ;
 static gboolean printTranscriptSubpart(GIOChannel *file, GString *buffer,
-				       GArray *subparts,
-				       char *parent_name, char *style_name, char *ontology,
+				       GArray *subparts, gboolean coding,
+				       char *parent_name, char *feature_name,
+				       char *style_name, char *ontology,
 				       ZMapStrand strand,
-				       ZMapPhase phase,
 				       GError **error_out) ;
 static char strand2Char(ZMapStrand strand) ;
 static char phase2Char(ZMapPhase phase) ;
@@ -261,6 +262,7 @@ static void doBlock(gpointer data, gpointer user_data)
 
 
 static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
+			    ZMapFeatureTypeStyle style,
 			    char *parent_name,
 			    char *feature_name,
 			    char *style_name,
@@ -277,16 +279,29 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
   GIOStatus status ;
   gsize bytes_written ;
   GString *buffer = (GString *)user_data ;
-  
+  const char *gff_source = NULL, *gff_feature = NULL ;
+
+
+  /* Don't dump some features...this will go when dna is not longer a feature... */
+  if (g_ascii_strcasecmp(feature_name, "dna") == 0)
+    return TRUE ;
+
+
+  /* Set up GFF output specials from style. */
+  if (style->gff_source)
+    gff_source = g_quark_to_string(style->gff_source) ;
+  if (style->gff_feature)
+    gff_feature = g_quark_to_string(style->gff_feature) ;
 
   /* Fields are: <seqname> <source> <feature> <start> <end> <score> <strand> <frame> */
 
-
   /* Output a record for the whole feature. */
+
+  /* Obligatory fields. */
   g_string_append_printf(buffer, "%s\t%s\t%s\t%d\t%d",
 			 parent_name,
-			 style_name,
-			 ontology,
+			 (gff_source ? gff_source : style_name),
+			 (gff_feature ? gff_feature : ontology),
 			 x1, x2) ;
 
   if (has_score)
@@ -294,10 +309,22 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
   else
     g_string_append_printf(buffer, "\t%c", '.') ;
 
-  g_string_append_printf(buffer, "\t%c\t%c\n",
+  g_string_append_printf(buffer, "\t%c\t%c",
 			 strand2Char(strand),
 			 phase2Char(phase)) ;
 
+  /* Attribute fields. */
+  g_string_append_printf(buffer, "\t\"%s\"", feature_name) ;
+
+
+  if (feature_type == ZMAPFEATURE_ALIGNMENT && feature_data)
+    {
+      ZMapHomol homol_data = (ZMapHomol)feature_data ;
+
+      g_string_append_printf(buffer, " %d %d", homol_data->y1, homol_data->y2) ;
+    }
+
+  g_string_append_printf(buffer, "\n") ;
 
   if ((status = g_io_channel_write_chars(file, buffer->str, -1, &bytes_written, error_out))
       != G_IO_STATUS_NORMAL)
@@ -307,7 +334,8 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
 
 
 
-  /* If the feature has sub-parts (e.g. exons) then output them. */
+
+  /* If the feature has sub-parts (e.g. exons) then output them one per line. */
   if (result)
     {
       if (feature_type == ZMAPFEATURE_TRANSCRIPT && feature_data)
@@ -317,21 +345,35 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
 	  /* Here we need to output some SO terms for exons etc.... */
 	  if (transcript->exons)
 	    {
-	      result = printTranscriptSubpart(file, buffer, transcript->exons,
-					      parent_name, style_name, "exon",
+	      result = printTranscriptSubpart(file, buffer,
+					      transcript->exons, FALSE,
+					      parent_name, feature_name, 
+					      (char *)(gff_source ? gff_source : style_name),
+					      "exon",
 					      strand,
-					      phase,
 					      error_out) ;
 	    }
 
 	  /* when we define CDS we should also print out "coding_exon" as for exon.... */
+	  if (transcript->flags.cds)
+	    {
+	      result = printTranscriptSubpart(file, buffer,
+					      transcript->exons, TRUE,
+					      parent_name, feature_name,
+					      (char *)(gff_source ? gff_source : style_name),
+					      "coding_exon",
+					      strand,
+					      error_out) ;
+	    }
 
 	  if (result && transcript->introns)
 	    {
-	      result = printTranscriptSubpart(file, buffer, transcript->introns,
-					      parent_name, style_name, "intron",
+	      result = printTranscriptSubpart(file, buffer,
+					      transcript->introns, FALSE,
+					      parent_name, feature_name,
+					      (char *)(gff_source ? gff_source : style_name),
+					      "intron",
 					      strand,
-					      phase,
 					      error_out) ;
 	    }
 
@@ -354,24 +396,24 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
 
 /* Dump either a set of exons or introns, ontology gives a string identifying which it is. */
 static gboolean printTranscriptSubpart(GIOChannel *file, GString *buffer,
-				       GArray *subparts,
-				       char *parent_name, char *style_name, char *ontology,
+				       GArray *subparts, gboolean coding,
+				       char *parent_name, char *feature_name,
+				       char *style_name, char *ontology,
 				       ZMapStrand strand,
-				       ZMapPhase phase,
 				       GError **error_out)
 {
   gboolean result = TRUE ;
   int i ;
   GIOStatus status ;
   gsize bytes_written ;
-
+  ZMapPhase phase = ZMAPPHASE_NONE ;
+  int cds_length = 0 ;
 
   for (i = 0 ; i < subparts->len && result ; i++)
     {
       ZMapSpanStruct span = g_array_index(subparts, ZMapSpanStruct, i) ;
 
-      /* Phase needs fixing up here..... */
-
+      /* Obligatory fields. */
       g_string_append_printf(buffer, "%s\t%s\t%s\t%d\t%d\t%c",
 			     parent_name,
 			     style_name,
@@ -379,9 +421,25 @@ static gboolean printTranscriptSubpart(GIOChannel *file, GString *buffer,
 			     span.x1, span.x2,
 			     '.') ;
 
-      g_string_append_printf(buffer, "\t%c\t%c\n",
+      if (coding)
+	{
+	  int phase_num = 0 ;
+
+	  cds_length += span.x2 - span.x1 + 1 ;
+
+	  phase_num = (cds_length % 3) ;
+
+	  phase = (ZMapPhase)(phase_num + 1) ;		    /* convert to enum... */
+	}
+
+      g_string_append_printf(buffer, "\t%c\t%c",
 			     strand2Char(strand),
 			     phase2Char(phase)) ;
+
+
+      /* Attribute fields. */
+      g_string_append_printf(buffer, "\t\"%s\"\n", feature_name) ;
+
 
 
       if ((status = g_io_channel_write_chars(file, buffer->str, -1, &bytes_written, error_out))
