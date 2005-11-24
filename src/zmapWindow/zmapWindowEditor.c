@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 18 10:33 2005 (edgrif)
+ * Last edited: Nov 22 11:47 2005 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.18 2005-11-18 11:00:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.19 2005-11-24 15:48:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -394,7 +394,7 @@ static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapF
       
       i++;
       table[i] = hscoreInit;
-      table[i].fieldPtr = &feature->feature.homol.score;
+      table[i].fieldPtr = &feature->score ;
       
       i++;
       table[i] = halignInit;
