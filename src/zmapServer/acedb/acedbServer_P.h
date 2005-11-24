@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Aug  5 18:04 2005 (edgrif)
+ * Last edited: Nov 24 13:39 2005 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.8 2005-08-09 11:00:12 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.9 2005-11-24 15:47:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -39,6 +39,14 @@
 
 
 #define ACEDB_PROTOCOL_STR "Acedb"			    /* For error messages. */
+
+
+/* Acedb handling of widths is quite complex: some methods do not have a width and there is
+ * more than one default width (!). To complicate matters further, acedb screen units are
+ * larger than zmap (foocanvas) units. We copy the default width most commonly used by
+ * acedb and apply a magnification factor to make columns look similar in width. */
+#define ACEDB_DEFAULT_WIDTH 2.0
+#define ACEDB_MAG_FACTOR 4.0
 
 
 /* Holds all the state we need to manage the acedb connection. */

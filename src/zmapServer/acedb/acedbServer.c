@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov 17 15:44 2005 (edgrif)
+ * Last edited: Nov 24 13:15 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.41 2005-11-18 10:57:47 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.42 2005-11-24 15:47:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -218,9 +218,6 @@ static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, 
   if (parseTypes(server, requested_types, types_out))
     {
       result = ZMAP_SERVERRESPONSE_OK ;
-
-      /* Construct a string for getting the requested methods.... */
-
     }
   else
     {
@@ -228,6 +225,35 @@ static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, 
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
 		     "Could not get types from server because: %s", server->last_err_msg) ;
     }
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Sadly not all types of data (e.g. Allele, clone_end etc.) in acedb have a method, many
+   * are hard-coded which makes our job v. much harder. These types must be added to the
+   * requested_types and types_out as appropriate. */
+  if (result == ZMAP_SERVERRESPONSE_OK)
+    {
+      if (requested_types)
+	{
+
+
+
+
+	}
+
+      if (types_out)
+	{
+
+
+
+
+
+	}
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   return result ;
 }
@@ -509,6 +535,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
   int reply_len = 0 ;
   char *methods = "" ;
   GList *styles ;
+  gboolean no_clip = TRUE ;
 
 
   /* Get any styles stored in the context. */
@@ -540,11 +567,12 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
    * the parent sequence if it is not required, this is actually quite fiddly to do in the acedb
    * code in a way that won't break zmap so we do it here. */
 
-  acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s ; "
+  acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s %s ; "
 				   "seqfeatures -rawmethods -zmap %s",
 				   g_quark_to_string(feature_block->original_id),
 				   feature_block->block_to_sequence.q1,
 				   feature_block->block_to_sequence.q2,
+				   no_clip ? "-noclip" : "",
 				   methods,
 				   methods) ;
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
@@ -768,14 +796,12 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
               style = zMapFindStyle(feature_context->styles, g_quark_from_string("dna"));
 
               /* need to augment data too... FOR NOW just dna*/
-              zMapFeatureAugmentData(feature, "dna", "dna", "b0250", "sequence", 
-                                     ZMAPFEATURE_RAW_SEQUENCE, style,
-                                     0, 0,
-				     FALSE, 0.0,
-				     ZMAPSTRAND_FORWARD, ZMAPPHASE_NONE,
-				     NULL, NULL,
-				     ZMAPHOMOL_NONE, 0, 0,
-				     NULL);
+              zMapFeatureAddStandardData(feature, "dna", "dna", "b0250", "sequence", 
+					 ZMAPFEATURE_RAW_SEQUENCE, style,
+					 0, 0,
+					 FALSE, 0.0,
+					 ZMAPSTRAND_FORWARD, ZMAPPHASE_NONE) ;
+
               /* Make the link so that getting the sequence is EASY. */
               feature_context->sequence = &(feature->feature.sequence);
               
@@ -1358,8 +1384,8 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
   char *scan_text = NULL ;
   char *next_line = method_str ;
   char *name = NULL, *colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL,
-    *gff_type = NULL, *column_group = NULL ;
-  double width = 0 ;
+    *gff_source = NULL, *gff_feature = NULL, *column_group = NULL ;
+  double width = ACEDB_DEFAULT_WIDTH ;
   gboolean strand_specific = FALSE, frame_specific = FALSE, show_up_strand = FALSE ;
   double min_mag = 0 ;
   gboolean status = TRUE ;
@@ -1385,9 +1411,13 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	{
 	  colour = g_strdup(strtok_r(NULL, " ", &line_pos)) ;
 	}
+      else if (g_ascii_strcasecmp(tag, "GFF_source") == 0)
+	{
+	  gff_source = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
+	}
       else if (g_ascii_strcasecmp(tag, "GFF_feature") == 0)
 	{
-	  gff_type = g_strdup(strtok_r(NULL, " ", &line_pos)) ;
+	  gff_feature = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
 	}
       else if (g_ascii_strcasecmp(tag, "Width") == 0)
 	{
@@ -1400,8 +1430,12 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	      zMapLogWarning("No value for \"Width\" specified in method: %s", name) ;
 	      break ;
 	    }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  else if (width < 10)
 	    width = 10 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	}
       else if (g_ascii_strcasecmp(tag, "Strand_sensitive") == 0)
@@ -1463,6 +1497,11 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
   /* Set some final method stuff and create the ZMap style. */
   if (status)
     {
+
+      /* acedb widths are wider on the screen than zmaps, so scale them up. */
+      width = width * ACEDB_MAG_FACTOR ;
+
+
       /* In acedb methods the colour is interpreted differently according to the type of the
        * feature which we have to intuit here from the GFF type. */
       if (colour)
@@ -1488,6 +1527,9 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 				    width, min_mag) ;
       
       zMapStyleSetStrandAttrs(style, strand_specific, frame_specific, show_up_strand) ;
+
+      if (gff_source || gff_feature)
+	zMapStyleSetGFF(style, gff_source, gff_feature) ;
     }
 
 
@@ -1498,6 +1540,12 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
     g_free(colour) ;
   if (column_group)
     g_free(column_group) ;
+
+  if (gff_source)
+    g_free(gff_source) ;
+
+  if (gff_feature)
+    g_free(gff_feature) ;
 
   return style ;
 }
