@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov 17 09:58 2005 (edgrif)
+ * Last edited: Nov 23 16:12 2005 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.34 2005-11-18 11:02:43 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.35 2005-11-24 15:54:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,13 +65,9 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 static GQuark getColumnGroup(char *attributes) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
-#ifdef NOW_IN_ZMAPFEATUREFORMATINPUT_C
-static gboolean formatType(gboolean SO_compliant, gboolean default_to_basic,
-			   char *feature_type, ZMapFeatureType *type_out) ;
-static gboolean formatScore(char *score_str, gdouble *score_out) ;
-static gboolean formatStrand(char *strand_str, ZMapStrand *strand_out) ;
-static gboolean formatPhase(char *phase_str, ZMapPhase *phase_out) ;
-#endif /* NOW_IN_ZMAPFEATUREFORMATINPUT_C */
+static gboolean getCDSAttrs(char *attributes,
+			    gboolean *start_not_found_out, int *start_phase_out,
+			    gboolean *end_not_found_out) ;
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
 static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
@@ -101,7 +97,11 @@ ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only)
   parser->line_count = 0 ;
   parser->SO_compliant = FALSE ;
   parser->default_to_basic = FALSE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   parser->clip_mode = GFF_CLIP_OVERLAP ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  parser->clip_mode = GFF_CLIP_NONE ;
   parser->clip_start = parser->clip_end = 0 ;
 
   parser->done_header = FALSE ;
@@ -942,7 +942,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
     }
   else if (!feature)
     {
-      /* If we haven't got a feature then create one, then add the feature to its feature_set_name
+      /* If we haven't got an existing feature then fill one in and add it to its feature_set_name
        * if that exists, otherwise we have to create a list for the feature_set_name and then
        * add that to the list of sources...ugh.  */
 
@@ -1000,13 +1000,43 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
       intron_ptr = &intron ;
     }
 
-  result = zMapFeatureAugmentData(feature, feature_name_id, feature_name,
-				  sequence, ontology,
-				  feature_type, curr_style,
-				  start, end,
-				  has_score, score, strand, phase,
-				  exon_ptr, intron_ptr,
-				  homol_type, query_start, query_end, gaps) ;
+ if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
+					  sequence, ontology,
+					  feature_type, curr_style,
+					  start, end,
+					  has_score, score, strand, phase)))
+   {
+     if (feature_type == ZMAPFEATURE_TRANSCRIPT)
+       {
+	 if (g_ascii_strcasecmp(ontology, "CDS") == 0)
+	   {
+	     gboolean start_not_found = FALSE, end_not_found = FALSE ;
+	     int start_phase = 0 ;
+
+	     if ((result = getCDSAttrs(attributes,
+				       &start_not_found, &start_phase,
+				       &end_not_found)))
+	       result = zMapFeatureAddTranscriptData(feature,
+						     TRUE, start, end,
+						     start_not_found, start_phase,
+						     end_not_found,
+						     NULL, NULL) ;
+	   }
+
+	 if (result && (exon_ptr || intron_ptr))
+	   result = zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr) ;
+       }
+     else if (feature_type == ZMAPFEATURE_ALIGNMENT)
+       {
+	 /* I am not sure if we ever have target_strand, target_phase from GFF output.... */
+	 result = zMapFeatureAddAlignmentData(feature,
+					      homol_type,
+					      ZMAPSTRAND_NONE, ZMAPPHASE_0,
+					      query_start, query_end,
+					      gaps) ;
+       }
+   }
+
 
   g_free(feature_name) ;
   g_free(feature_name_id) ;
@@ -1091,28 +1121,20 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
   /* Probably we should do some checking to make sure start/end are in correct order....and
    * that other fields are correct.... */
 
-  if (feature_type == ZMAPFEATURE_TRANSCRIPT)
-    {
-      /* Named feature such as a gene. */
-      int attr_fields ;
-      char *attr_format_str = "%50s %*[\"]%50[^\"]%*[\"]%*s" ;
-      char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
-
-      attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0]) ;
-
-      if (attr_fields == 2)
-	{
-	  has_name         = TRUE ;
-	  *feature_name    = g_strdup(name) ;
-	  *feature_name_id = g_strdup(*feature_name) ;
-        }
-    }
-  else if (feature_type == ZMAPFEATURE_ALIGNMENT)
+  if (feature_type == ZMAPFEATURE_ALIGNMENT)
     {
       /* This needs amalgamating with the gethomols routine..... */
       char *tag_pos ;
 
-      if ((tag_pos = strstr(attributes, "Target")))
+      /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
+       * clarity in the GFFv2 spec....needs some attention.... */
+      if (g_str_has_prefix(attributes, "Note"))
+	{
+	  *feature_name = g_strdup(sequence) ;
+	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						   start, end, query_start, query_end) ;
+	}
+      else if ((tag_pos = strstr(attributes, "Target")))
 	{
 	  /* In acedb output at least, homologies all have the same format. */
 	  int attr_fields ;
@@ -1130,6 +1152,42 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 	    }
 	}
     }
+  else /* if (feature_type == ZMAPFEATURE_TRANSCRIPT) */
+    {
+      has_name = FALSE ;
+
+      /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
+       * clarity in the GFFv2 spec....needs some attention.... */
+      if (g_str_has_prefix(attributes, "Note"))
+	{
+	  *feature_name = g_strdup(sequence) ;
+	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						   start, end, query_start, query_end) ;
+	}
+      else
+	{
+	  /* Named feature such as a gene. */
+	  int attr_fields ;
+	  char *attr_format_str = "%50s %*[\"]%50[^\"]%*[\"]%*s" ;
+	  char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+	  attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0]) ;
+
+	  if (attr_fields == 2)
+	    {
+	      has_name         = TRUE ;
+	      *feature_name    = g_strdup(name) ;
+	      *feature_name_id = g_strdup(*feature_name) ;
+	    }
+	  else
+	    {
+	      *feature_name = g_strdup(sequence) ;
+	      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						       start, end, query_start, query_end) ;
+	    }
+	}
+    }
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   else
     {
       /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
@@ -1144,6 +1202,8 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 					       start, end, query_start, query_end) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1178,7 +1238,6 @@ static GQuark getColumnGroup(char *attributes)
 
   return column_id ;
 }
-
 
 
 /* 
@@ -1217,6 +1276,60 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	  result = TRUE ;
 	}
     }
+
+  return result ;
+}
+
+
+
+
+/* 
+ * 
+ * Format of CDS attribute section is:
+ * 
+ *          class "obj_name" [; start_not_found phase] [; end_not_found]
+ * 
+ * Format string extracts   phase for start_not_found
+ * 
+ *  */
+static gboolean getCDSAttrs(char *attributes,
+			    gboolean *start_not_found_out, int *start_phase_out,
+			    gboolean *end_not_found_out)
+{
+  gboolean result = TRUE ;
+  char *target ;
+  gboolean start_not_found = FALSE, end_not_found = FALSE ;
+
+  if ((target = strstr(attributes, "start_not_found")))
+    {
+      gboolean start_not_found = FALSE ;
+      int attr_fields ;
+      char *attr_format_str = "%*s %d %*s" ;
+      int start_phase = 0 ;
+
+      start_not_found =  TRUE ;
+
+      attr_fields = sscanf(target, attr_format_str, &start_phase) ;
+
+      if (attr_fields == 1)
+	{
+	  start_phase-- ;				    /* Convert from 1-based to 0-based. */
+
+	  if (start_phase < 0 || start_phase > 2)
+	    result = FALSE ;
+	}
+
+      if (result)
+	{
+	  *start_not_found_out = start_not_found ;
+
+	  *start_phase_out = start_phase ;
+	}
+    }
+
+
+  if (result && (target = strstr(attributes, "end_not_found")))
+    *end_not_found_out = TRUE ;
 
   return result ;
 }
