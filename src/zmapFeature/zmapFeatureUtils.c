@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 23 11:54 2005 (edgrif)
+ * Last edited: Nov 25 07:52 2005 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.25 2005-11-24 15:49:49 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.26 2005-11-25 14:01:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -173,7 +173,7 @@ char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature,
 {
   char *feature_name = NULL ;
 
-  zMapAssert(feature_type >= 0 && feature && start >= 1 && start <= end) ;
+  zMapAssert(feature_type && feature) ;
 
   if (feature_type == ZMAPFEATURE_ALIGNMENT)
     feature_name = g_strdup_printf("%s_%d.%d_%d.%d", feature,
