@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 18 10:21 2005 (edgrif)
+ * Last edited: Nov 25 09:13 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.101 2005-11-18 11:10:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.102 2005-11-25 14:02:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -817,7 +817,7 @@ IS HIDDEN OR NOT...
    * THE STYLE SAYS... */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (style->show_rev_strand == FALSE)
+  if (style->strand_specific && style->show_rev_strand == FALSE)
     {
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -1010,8 +1010,10 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
   double start_x, end_x ;
 
 
-  /* Users will often not want to see what is on the reverse strand. */
-  if (feature->strand == ZMAPSTRAND_REVERSE && style->show_rev_strand == FALSE)
+  /* Users will often not want to see what is on the reverse strand, style specifies what should
+   * be shown. */
+  if (style->strand_specific
+      && (feature->strand == ZMAPSTRAND_REVERSE && style->show_rev_strand == FALSE))
     {
       return ;
     }
