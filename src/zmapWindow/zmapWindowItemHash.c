@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 19:19 2005 (rds)
+ * Last edited: Nov 25 09:46 2005 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.13 2005-11-09 19:21:49 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.14 2005-11-25 14:01:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -443,19 +443,25 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
                                                           GUINT_TO_POINTER(align_id))))
     {
       if (!block_id)
-	item = FOO_CANVAS_ITEM(align->item) ;
+	{
+	  item = FOO_CANVAS_ITEM(align->item) ;
+	}
       else if ((block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
 						       GUINT_TO_POINTER(block_id))))
 	{
-	  set_id = zmapWindowFToIMakeSetID(set_id, strand) ;
+	  GQuark tmp_set_id = zmapWindowFToIMakeSetID(set_id, strand) ;
 
 	  if (!set_id)
-	    item = FOO_CANVAS_ITEM(block->item) ;
+	    {
+	      item = FOO_CANVAS_ITEM(block->item) ;
+	    }
 	  else if ((set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
-							 GUINT_TO_POINTER(set_id))))
+							 GUINT_TO_POINTER(tmp_set_id))))
 	    {
 	      if (!feature_id)
-		item = FOO_CANVAS_ITEM(set->item) ;
+		{
+		  item = FOO_CANVAS_ITEM(set->item) ;
+		}
 	      else
 		{
 		  feature = (ID2Canvas)g_hash_table_lookup(set->hash_table,
@@ -471,6 +477,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
        * root_group, get that by foo_canvas_root(canvas)! */
       /* The best check that we are actually asking for the root. */
       zMapAssert(!block_id && !set_id && !feature_id); // "Warning: You are asking for the root_group.\n"
+
       if((root = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
                                                 GUINT_TO_POINTER(rootCanvasID()))))
         item = FOO_CANVAS_ITEM(root->item); /* This is actually a group. */
