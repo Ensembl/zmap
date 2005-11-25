@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov 23 11:55 2005 (edgrif)
+ * Last edited: Nov 25 13:59 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.48 2005-11-24 15:52:57 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.49 2005-11-25 14:00:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -77,8 +77,8 @@ typedef int methodID ;
 
 
 /* ZMAPFEATURE_RAW_SEQUENCE is temporary.... */
-typedef enum {ZMAPFEATURE_INVALID = -1,
-	      ZMAPFEATURE_BASIC = 0, ZMAPFEATURE_ALIGNMENT, ZMAPFEATURE_TRANSCRIPT,
+typedef enum {ZMAPFEATURE_INVALID = 0,
+	      ZMAPFEATURE_BASIC, ZMAPFEATURE_ALIGNMENT, ZMAPFEATURE_TRANSCRIPT,
 	      ZMAPFEATURE_RAW_SEQUENCE} ZMapFeatureType ;
 
 
@@ -89,7 +89,7 @@ typedef enum {ZMAPPHASE_NONE = 0,
 	      ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPhase ;
 
 /* as in BLAST*, i.e. target is DNA, Protein, DNA translated */
-typedef enum {ZMAPHOMOL_NONE, 
+typedef enum {ZMAPHOMOL_NONE = 0, 
 	      ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
 
 typedef enum {ZMAPBOUNDARY_CLONE_END, ZMAPBOUNDARY_5_SPLICE, ZMAPBOUNDARY_3_SPLICE } ZMapBoundaryType ;
@@ -392,17 +392,13 @@ typedef struct ZMapFeatureStruct_
 
 
 
-
-
-
-
-
-
-
-/* Styles: specifies how a feature should be drawn/processed. */
+/* 
+ *      Styles: specifies how a feature should be drawn/processed.
+ */
 
 
 typedef enum {ZMAPCALCWIDTH_WIDTH, ZMAPCALCWIDTH_OFFSET, ZMAPCALCWIDTH_HISTOGRAM } ZMapFeatureWidthStyle ;
+
 typedef enum {ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_BUMP, ZMAPOVERLAP_CLUSTER } ZMapFeatureOverlapStyle ;
 
 
@@ -427,12 +423,13 @@ typedef struct ZMapFeatureTypeStyleStruct_
   GdkColor  foreground ;				    /* Overlaid on background. */
   GdkColor  background ;				    /* Fill colour. */
 
-  float     right_priority ;
   ZMapFeatureWidthStyle width_style ;
   ZMapFeatureOverlapStyle overlap_style ;
+
   double    width ;					    /* column width */
   double    min_mag, max_mag ;                              /* bases per line */
   double    min_score, max_score ;
+
   gboolean  showText ;
 
   gboolean bump ;					    /* Should homols etc. be displayed in
