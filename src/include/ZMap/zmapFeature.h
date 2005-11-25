@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov 25 13:59 2005 (edgrif)
+ * Last edited: Nov 25 16:24 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.49 2005-11-25 14:00:20 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.50 2005-11-25 17:20:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -555,15 +555,10 @@ ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature) ;
 void zmapFeatureDestroy(ZMapFeature feature) ;
 
 
-
-
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
-
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GData *features) ;
 void zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
-
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
-
 void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 
 
@@ -585,7 +580,7 @@ void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
 GList *zMapFeatureTypeGetFromFile(char *types_file) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
-
+gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
 
 gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);

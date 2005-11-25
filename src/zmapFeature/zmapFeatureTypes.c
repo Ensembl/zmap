@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 23 11:56 2005 (edgrif)
+ * Last edited: Nov 25 17:03 2005 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.9 2005-11-24 15:49:05 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.10 2005-11-25 17:20:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,9 +43,19 @@
 #define ZMAPFEATURE_DEFAULT_WIDTH 10.0			    /* of features being displayed */
 
 
+typedef struct
+{
+  GList **names ;
+  GList **styles ;
+  gboolean any_style_found ;
+} CheckSetListStruct, *CheckSetList ;
+
+
 static void doTypeSets(GQuark key_id, gpointer data, gpointer user_data) ;
 static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data) ;
 
+static void checkListName(gpointer data, gpointer user_data) ;
+static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data) ;
 
 
 /* Create a new type for displaying features. */
@@ -235,6 +245,25 @@ gboolean zMapFeatureTypeSetAugment(GData **current, GData **new)
 }
 
 
+/* Check that every name has a style, if the style can't be found, remove the name from the list. */
+gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles)
+{
+  gboolean result = FALSE ;
+  CheckSetListStruct check_list ;
+
+  check_list.names = feature_set_names ;
+  check_list.styles = styles ;
+  check_list.any_style_found = FALSE ;
+
+  g_list_foreach(*feature_set_names, checkListName, (gpointer)&check_list) ;
+
+  if (check_list.any_style_found)
+    result = TRUE ;
+
+  return result ;
+}
+
+
 
 /* Read the type/method/source (call it what you will) information from the given file
  * which currently must reside in the users $HOME/.ZMap directory. */
@@ -394,5 +423,42 @@ static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data)
 
   return ;
 }
+
+
+/* A GFunc() called from zMapSetListEqualStyles() to check that a given feature_set name
+ * has a corresponding style. */
+static void checkListName(gpointer data, gpointer user_data)
+{
+  CheckSetList check_list = (CheckSetList)user_data ;
+  GList *style_item ;
+  ZMapFeatureTypeStyle style ;
+
+  if ((style_item = g_list_find_custom(*(check_list->styles), data, compareNameToStyle)))
+    {
+      style = (ZMapFeatureTypeStyle)(style_item->data) ;
+      check_list->any_style_found = TRUE ;
+    }
+  else
+    *(check_list->names) = g_list_remove(*(check_list->names), data) ;
+
+  return ;
+}
+
+
+/* GCompareFunc () calling the given function which should return 0 when the desired element is found. 
+   The function takes two gconstpointer arguments, the GList element's data and the given user data.*/
+static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data)
+{
+  gint result = -1 ;
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)glist_data ;
+  GQuark set_name = GPOINTER_TO_INT(user_data) ;  
+
+  if (set_name == style->unique_id)
+    result = 0 ;
+
+  return result ;
+}
+
+
 
 
