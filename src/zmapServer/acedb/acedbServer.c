@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov 24 13:15 2005 (edgrif)
+ * Last edited: Nov 25 13:53 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.42 2005-11-24 15:47:13 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.43 2005-11-25 14:03:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,6 +54,13 @@ typedef struct
   ZMapServerResponseType result ;
   AcedbServer server ;
 } GetFeaturesStruct, *GetFeatures ;
+
+
+typedef struct
+{
+  char *name ;
+  char *spec ;
+} AcedbColourSpecStruct, *AcedbColourSpec ;
 
 
 /* These provide the interface functions for an acedb server implementation, i.e. you
@@ -96,6 +103,8 @@ int getFoundObj(char *text) ;
 
 static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
 static void eachBlock(gpointer data, gpointer user_data) ;
+
+static char *getAcedbColourSpec(char *acedb_colour_name) ;
 
 
 
@@ -1409,7 +1418,16 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	}
       else if (g_ascii_strcasecmp(tag, "Colour") == 0)
 	{
-	  colour = g_strdup(strtok_r(NULL, " ", &line_pos)) ;
+	  char *tmp_colour ;
+
+	  tmp_colour = strtok_r(NULL, " ", &line_pos) ;
+
+	  /* Is colour one of the standard acedb colours ? It's really an acedb bug if it
+	   * isn't.... */
+	  if (!(colour = getAcedbColourSpec(tmp_colour)))
+	    colour = tmp_colour ;
+	  
+	  colour = g_strdup(colour) ;
 	}
       else if (g_ascii_strcasecmp(tag, "GFF_source") == 0)
 	{
@@ -1503,10 +1521,10 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 
 
       /* In acedb methods the colour is interpreted differently according to the type of the
-       * feature which we have to intuit here from the GFF type. */
+       * feature which we have to intuit here from the GFF type. acedb also has colour names
+       * that don't exist in X Windows. */
       if (colour)
 	{
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  /* this doesn't work because it messes up the rev. video.... */
 	  if (gff_type && (g_ascii_strcasecmp(gff_type, "\"similarity\"") == 0
@@ -1644,4 +1662,68 @@ static void eachBlock(gpointer data, gpointer user_data)
     }
 
   return ;
+}
+
+
+/* This table is derived from acedb/w2/graphcolour.c, since acedb colours have not changed
+ * in a long time it is unlikely to need updating very often.
+ * 
+ * The reason for having this function is that acedb colour names do not ALL match the standard
+ * colour names in the X11 colour database and so cannot be used as input to the gdk colour
+ * functions. I tried to use a proper Xcms colour spec but stupid gdk_color_parse() does
+ * not understand these colours so have used the now deprecated "#RRGGBB" format below.
+ *  */
+static char *getAcedbColourSpec(char *acedb_colour_name)
+{
+  char *colour_spec = NULL ;
+  static AcedbColourSpecStruct colours[] =
+    {
+      {"WHITE", "#ffffff"},
+      {"BLACK", "#000000"},
+      {"LIGHTGRAY", "#c8c8c8"},
+      {"DARKGRAY", "#646464"},
+      {"RED", "#ff0000"},
+      {"GREEN", "#00ff00"},
+      {"BLUE", "#0000ff"},
+      {"YELLOW", "#ffff00"},
+      {"CYAN", "#00ffff"},
+      {"MAGENTA", "#ff00ff"},
+      {"LIGHTRED", "#ffa0a0"},
+      {"LIGHTGREEN", "#a0ffa0"},
+      {"LIGHTBLUE", "#a0c8ff"},
+      {"DARKRED", "#af0000"},
+      {"DARKGREEN", "#00af00"},
+      {"DARKBLUE", "#0000af"},
+      {"PALERED", "#ffe6d2"},
+      {"PALEGREEN", "#d2ffd2"},
+      {"PALEBLUE", "#d2ebff"},
+      {"PALEYELLOW", "#ffffc8"},
+      {"PALECYAN", "#c8ffff"},
+      {"PALEMAGENTA", "#ffc8ff"},
+      {"BROWN", "#a05000"},
+      {"ORANGE", "#ff8000"},
+      {"PALEORANGE", "#ffdc6e"},
+      {"PURPLE", "#c000ff"},
+      {"VIOLET", "#c8aaff"},
+      {"PALEVIOLET", "#ebd7ff"},
+      {"GRAY", "#969696"},
+      {"PALEGRAY", "#ebebeb"},
+      {"CERISE", "#ff0080"},
+      {"MIDBLUE", "#56b2de"},
+    } ;
+  AcedbColourSpec colour ;
+
+  colour = &(colours[0]) ;
+  while (colour->name)
+    {
+      if (g_ascii_strcasecmp(colour->name, acedb_colour_name) == 0)
+	{
+	  colour_spec = colour->spec ;
+	  break ;
+	}
+
+      colour++ ;
+    }
+
+  return colour_spec ;
 }
