@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 15 09:24 2005 (rds)
+ * Last edited: Nov 29 08:08 2005 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.24 2005-11-16 10:43:00 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.25 2005-11-29 08:09:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -236,7 +236,7 @@ void zmapWindowLongItemCheck(ZMapWindow window, FooCanvasItem *item, double star
 
       long_item->item = item ;
 
-      if (FOO_IS_CANVAS_LINE(long_item->item))
+      if (FOO_IS_CANVAS_LINE(long_item->item) || FOO_IS_CANVAS_POLYGON(long_item->item))
 	{
 	  FooCanvasPoints *item_points ;
 
@@ -385,25 +385,49 @@ static void cropLongItem(gpointer data, gpointer user_data)
   ZMapWindow window = NULL;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
   double start, end, dummy_x ;
+  gboolean start_xing, end_xing;
 
   zMapAssert(FOO_IS_CANVAS_ITEM(long_item->item)) ;
   window = func_data->window;
-  //  foo_canvas_get_scroll_region(window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
+
   scroll_x1 = func_data->x1;
   scroll_x2 = func_data->x2;
   scroll_y1 = func_data->y1;
   scroll_y2 = func_data->y2;
+
   /* Reset to original coords because we may be zooming out, you could be more clever
    * about this but is it worth the convoluted code ? */
   if (FOO_IS_CANVAS_LINE(long_item->item))
     {
-
       foo_canvas_item_set(long_item->item,
 			  "points", long_item->pos.points,
 			  NULL) ;
-
       start = long_item->pos.points->coords[1] ;
-      end = long_item->pos.points->coords[((long_item->pos.points->num_points * 2) - 1)] ;
+      end   = long_item->pos.points->coords[((long_item->pos.points->num_points * 2) - 1)] ;
+    }
+  else if (FOO_IS_CANVAS_POLYGON(long_item->item))
+    {
+      int ptidx = (((long_item->pos.points->num_points - 1) * 2) - 1);
+      foo_canvas_item_set(long_item->item,
+			  "points", long_item->pos.points,
+			  NULL) ;
+      /* Watch out here the first and last polygon points not being in order!
+       * i.e first < last is not always true.
+
+       * This method probably isn't fool proof, also slow! I'm also
+       * guessing we should have a convention where first and last
+       * point should be start and end respectively. i.e. the above
+       * should _always_ be true.  This won't work with polygons
+       * though as first and last are the same point, so I'm using
+       * first and penultimate.  There are likely to be times when
+       * these are not the extremes of the extent of an item though,
+       * and as for discussion on whether first < penultimate, that
+       * probably needs to happen....
+
+       */
+      start = MIN(long_item->pos.points->coords[1], long_item->pos.points->coords[ptidx]);
+      end   = MAX(long_item->pos.points->coords[1], long_item->pos.points->coords[ptidx]);
+      
     }
   else
     {
@@ -413,7 +437,7 @@ static void cropLongItem(gpointer data, gpointer user_data)
 			  NULL) ;
 
       start = long_item->pos.box.start ;
-      end  = long_item->pos.box.end ;
+      end   = long_item->pos.box.end ;
     }
 
 
@@ -424,7 +448,7 @@ static void cropLongItem(gpointer data, gpointer user_data)
 
   /* Now clip anything that overlaps the boundaries of the scrolled region. */
   if (!(end < scroll_y1) && !(start > scroll_y2)
-      && ((start < scroll_y1) || (end > scroll_y2)))
+      && ((start_xing = start < scroll_y1) || (end_xing = end > scroll_y2)))
     {
       if (start < scroll_y1)
 	start = scroll_y1 ;
@@ -435,21 +459,28 @@ static void cropLongItem(gpointer data, gpointer user_data)
       foo_canvas_item_w2i(long_item->item, &dummy_x, &start) ;
       foo_canvas_item_w2i(long_item->item, &dummy_x, &end) ;
 
-      if (FOO_IS_CANVAS_LINE(long_item->item))
-	{
-	  FooCanvasPoints *item_points ;
-
+      if(FOO_IS_CANVAS_POLYGON(long_item->item) ||
+         FOO_IS_CANVAS_LINE(long_item->item))
+        {
+          FooCanvasPoints *item_points ;
+          int i, ptidx;
+          double tmpy;
 	  g_object_get(G_OBJECT(long_item->item),
 		       "points", &item_points,
 		       NULL) ;
-
-	  item_points->coords[1] = start ;
-	  item_points->coords[((item_points->num_points * 2) - 1)] = end ;
-	  
+          ptidx = item_points->num_points * 2;
+          for(i = 1; i < ptidx; i+=2) /* ONLY Y COORDS!!! */
+            {
+              tmpy = item_points->coords[i];
+              if(tmpy < start)
+                item_points->coords[i] = start;
+              if(tmpy > end)
+                item_points->coords[i] = end;
+            }
 	  foo_canvas_item_set(long_item->item,
 			      "points", item_points,
-			      NULL) ;
-	}
+			      NULL);
+        }
       else
 	{
 	  foo_canvas_item_set(long_item->item,
