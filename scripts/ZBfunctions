@@ -89,9 +89,9 @@ ZBmsgInfo ()
 
 # Function requires two arguments:
 #
-#    ZBmsgMail "error message" 'mail subject suffix'
+#       ZBmsgMail "error message" 'mail subject suffix'
 #
-#    ZBmsgMail "Rubbish coding by Ed" 'OK'
+# e.g.  ZBmsgMail "Rubbish coding by Ed" 'OK'
 #
 # mailx is used because there are complications on the Alphas with what
 # flags are supported by the basic mail program.
@@ -100,7 +100,7 @@ ZBmsgMail ()
 {
     echo "Build Message:
   
-$1" | mailx -s "ZMap Build - $2" zmap
+$1" | mailx -s "ZMap Build - $2" zmapdev
 
 }
 
