@@ -85,7 +85,13 @@ AC_ARG_ENABLE(debug,
         AC_HELP_STRING([--enable-debug], [enable debug info compilation (no)]),
         deb=$enableval, deb=no)
 
-if test "x$deb" = "xyes"; then
+AC_ARG_ENABLE(profile,
+        AC_HELP_STRING([--enable-profile], [enable profiling debug info compilation (no)]),
+        prof=$enableval, prof=no)
+
+if test "x$prof" = "xyes"; then
+   CFLAGS="$CFLAGS -pg -g";
+elif test "x$deb" = "xyes"; then
    CFLAGS="$CFLAGS -g";
 else
    CFLAGS="$CFLAGS -O2";
