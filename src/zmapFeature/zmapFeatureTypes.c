@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 25 17:03 2005 (edgrif)
+ * Last edited: Dec  2 12:48 2005 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.10 2005-11-25 17:20:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.11 2005-12-02 14:08:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -138,12 +138,26 @@ void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_fea
 
 
 
-
-void zMapStyleSetBump(ZMapFeatureTypeStyle type, gboolean bump)
+/* If caller specifies nothing or rubbish then style defaults to complete overlap. */
+void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
 {
-  zMapAssert(type) ;
+  ZMapStyleOverlapMode bump = ZMAPOVERLAP_COMPLETE ;
 
-  type->bump = bump ;
+  zMapAssert(style) ;
+
+  if (bump_str && *bump_str)
+    {
+      if (g_ascii_strcasecmp(bump_str, "overlap") == 0)
+	bump = ZMAPOVERLAP_OVERLAP ;
+      else if (g_ascii_strcasecmp(bump_str, "position") == 0)
+	bump = ZMAPOVERLAP_POSITION ;
+      else if (g_ascii_strcasecmp(bump_str, "name") == 0)
+	bump = ZMAPOVERLAP_NAME ;
+      else if (g_ascii_strcasecmp(bump_str, "simple") == 0)
+	bump = ZMAPOVERLAP_SIMPLE ;
+    }
+
+  style->overlap_mode = bump ;
 
   return ;
 }
@@ -287,8 +301,8 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	   {"show_reverse", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"strand_specific", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"frame_specific", ZMAPCONFIG_BOOL  , {NULL}},
-	   {"minmag"      , ZMAPCONFIG_INT   , {NULL}},
-	   {"bump"      , ZMAPCONFIG_BOOL   , {NULL}},
+	   {"minmag"      , ZMAPCONFIG_INT, {NULL}},
+	   {"bump"      , ZMAPCONFIG_STRING, {NULL}},
 	   {NULL, -1, {NULL}}} ;
 
       /* Init fields that cannot default to string NULL. */
@@ -337,7 +351,7 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 				      zMapConfigGetElementBool(next_types, "frame_specific"),
 				      zMapConfigGetElementBool(next_types, "show_reverse")) ;
 
-	      zMapStyleSetBump(new_type, zMapConfigGetElementBool(next_types, "bump")) ;
+	      zMapStyleSetBump(new_type, zMapConfigGetElementString(next_types, "bump")) ;
 
 	      types = g_list_append(types, new_type) ;
 

@@ -1,3 +1,4 @@
+
 /*  File: zmapFeature.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -25,19 +26,15 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov 25 16:24 2005 (edgrif)
+ * Last edited: Dec  2 13:21 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.50 2005-11-25 17:20:33 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.51 2005-12-02 14:08:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
 
 #include <gdk/gdkcolor.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <libfoocanvas/libfoocanvas.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -397,9 +394,24 @@ typedef struct ZMapFeatureStruct_
  */
 
 
-typedef enum {ZMAPCALCWIDTH_WIDTH, ZMAPCALCWIDTH_OFFSET, ZMAPCALCWIDTH_HISTOGRAM } ZMapFeatureWidthStyle ;
+typedef enum
+  {
+    ZMAPSCORE_WIDTH,					    /* Use column width only - default. */
+    ZMAPSCORE_OFFSET,
+    ZMAPSCORE_HISTOGRAM,
+    ZMAPSCORE_BOUNDS,
+    ZMAPSCORE_PERCENT
+  } ZMapStyleScoreMode ;
 
-typedef enum {ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_BUMP, ZMAPOVERLAP_CLUSTER } ZMapFeatureOverlapStyle ;
+typedef enum
+  {
+    ZMAPOVERLAP_COMPLETE,				    /* draw on top - default */
+    ZMAPOVERLAP_OVERLAP,				    /* bump if feature coords overlap. */
+    ZMAPOVERLAP_POSITION,				    /* bump if features start at same coord. */
+    ZMAPOVERLAP_NAME,					    /* one column per homol target */
+    ZMAPOVERLAP_SIMPLE					    /* one column per feature, for testing... */
+  } ZMapStyleOverlapMode ;
+
 
 
 /* Lets change all these names to just be zmapFeatureStyle, i.e. lose the type bit.....
@@ -417,24 +429,24 @@ typedef struct ZMapFeatureTypeStyleStruct_
    * the style...but lets leave this as a place holder.... */
   gboolean show_when_empty ;				    /* If TRUE, features column is
 							       displayed even if there are no features. */
-
-
-  GdkColor  outline ;					    /* Surround/line colour. */
   GdkColor  foreground ;				    /* Overlaid on background. */
   GdkColor  background ;				    /* Fill colour. */
+  GdkColor  outline ;					    /* Surround/line colour. */
 
-  ZMapFeatureWidthStyle width_style ;
-  ZMapFeatureOverlapStyle overlap_style ;
+  ZMapStyleScoreMode   score_mode ;			    /* Controls width of features that
+							       have scores. */
+  ZMapStyleOverlapMode overlap_mode ;			    /* Controls how features are grouped
+							       into sub columns within a column. */
 
   double    width ;					    /* column width */
   double    min_mag, max_mag ;                              /* bases per line */
   double    min_score, max_score ;
 
-  gboolean  showText ;
+  gboolean  showText ;					    /* Should feature text be displayed. */
 
-  gboolean bump ;					    /* Should homols etc. be displayed in
-							       an offset way across the column. */
-
+  gboolean  align_gaps ;				    /* TRUE: gaps within alignment are
+							       displayed, FALSE: alignment is
+							       displayed as a single block. */
 
   /* These are all linked, if strand_specific is FALSE, then so are frame_specific
    * and show_rev_strand. */
@@ -569,7 +581,7 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean strand_specific, gboolean frame_specific,
 			     gboolean show_rev_strand) ;
-void zMapStyleSetBump(ZMapFeatureTypeStyle type, gboolean bump) ;
+void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
 char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
