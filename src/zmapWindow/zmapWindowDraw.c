@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 16 09:29 2005 (rds)
+ * Last edited: Dec  2 13:24 2005 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.8 2005-11-16 10:42:59 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.9 2005-12-02 14:11:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,9 +47,24 @@ typedef struct
 {
   double offset ;
   double incr ;
-  ZMapWindowBumpType bump_type ;
+  ZMapStyleOverlapMode bump_mode ;
   GHashTable *pos_hash ;
 } BumpColStruct, *BumpCol ;
+
+
+typedef struct
+{
+  double y1, y2 ;
+  double offset ;
+} BumpColRangeStruct, *BumpColRange ;
+
+
+typedef struct
+{
+  BumpColRange curr ;
+  BumpColRange new ;
+} TempStruct, *Temp ;
+
 
 
 /* Used to identify unambiguously which part of a zmapWindowContainer group a particular
@@ -79,13 +94,18 @@ typedef struct execOnChildrenStruct_
   gboolean               resize;
 } execOnChildrenStruct, *execOnChildren;
 
+
 static void bumpColCB(gpointer data, gpointer user_data) ;
+static void valueDestroyCB(gpointer data) ;
+static gboolean compareOverlapCB(gpointer key, gpointer value, gpointer user_data) ;
+
+static void tempCompareOverlapCB(gpointer key, gpointer value, gpointer user_data) ;
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void doCol(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static void valueDestroyCB(gpointer data) ;
 static void itemDestroyCB(gpointer data, gpointer user_data);
 
 static void repositionGroups(FooCanvasGroup *changed_group, double group_spacing) ;
@@ -108,6 +128,11 @@ static void executeOnContainerChildren(FooCanvasGroup        *parent,
                                        GFunc                  final_children_foreach,
                                        gpointer               final_children_data,
                                        gboolean               need_resize);
+
+
+
+
+
 /* Creates a "container" for our sequence features which consists of: 
  * 
  *                parent_group
@@ -298,6 +323,28 @@ FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent
   return container_background ;
 }
 
+
+/* Get the style for this columns features. AGH, problem here...bumping will need to cope with
+ * several different types of features.... */
+ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group)
+{
+  ZMapFeatureTypeStyle style = NULL ;
+  FooCanvasGroup *column_features ;
+  GList *list_item ;
+  FooCanvasItem *feature_item ;
+  ZMapFeature feature ;
+
+  /* Crikey.... */
+  column_features = zmapWindowContainerGetFeatures(column_group) ;
+  list_item = g_list_first(column_features->item_list) ;
+  feature_item = (FooCanvasItem *)list_item->data ;
+  feature = (ZMapFeature)(g_object_get_data(G_OBJECT(feature_item), "item_feature_data")) ;
+  style = feature->style ;
+
+  return style ;
+}
+
+
 /* Return the text of the container.  This may return NULL, caller MUST check this! */
 FooCanvasGroup *zmapWindowContainerGetText(FooCanvasGroup *container_parent)
 {
@@ -319,10 +366,14 @@ FooCanvasGroup *zmapWindowContainerGetText(FooCanvasGroup *container_parent)
  * want the height of the background to be the full height of the group (e.g. column)
  * but we want the width to be set from the horizontal extent of the features.
  *
- * The height (y dimension) of the background can be given, if height is 0.0 then
- * the height of the child group is used.
+ * The width/height of the background can be given, if either is 0.0 then the width/height
+ * is taken from the child group.
  */
-void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, double height)
+
+/* THIS NEEDS TO DO A BORDER WIDTH AS WELL.... */
+
+void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
+					  double height)
 {
   FooCanvasGroup *container_features ;
   FooCanvasGroup *container_text  = NULL;
@@ -522,32 +573,40 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
 }
 
 
-void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapWindowBumpType bump_type)
+
+/* NOTE: this function bumps an individual column but it DOES NOT move any other columns,
+ * to do that you need to use zmapWindowColumnReposition(). The split is made because
+ * we don't always want to reposition all the columns following a bump, e.g. when we
+ * are creating a zmap window. */
+void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapStyleOverlapMode bump_mode)
 {
   BumpColStruct bump_data = {0.0} ;
   FooCanvasGroup *column_features ;
+  ZMapFeatureTypeStyle style ;
 
   column_features = zmapWindowContainerGetFeatures(column_group) ;
 
-  bump_data.bump_type = bump_type ;
+  style = zmapWindowContainerGetStyle(column_group) ;
 
-  switch (bump_type)
+  bump_data.bump_mode = bump_mode ;
+  bump_data.incr = style->width + BUMP_SPACING ;
+
+  switch (bump_mode)
     {
-    case ZMAP_WINDOW_BUMP_NONE:
+    case ZMAPOVERLAP_COMPLETE:
       bump_data.incr = 0.0 ;
       break ;
-    case ZMAP_WINDOW_BUMP_SIMPLE:
-      bump_data.incr = 20.0 ;
+    case ZMAPOVERLAP_SIMPLE:
       break ;
-    case ZMAP_WINDOW_BUMP_POSITION:
-      bump_data.incr = 20.0 ;
-
+    case ZMAPOVERLAP_POSITION:
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
 						 NULL, valueDestroyCB) ;
       break ;
-    case ZMAP_WINDOW_BUMP_NAME:
-      bump_data.incr = 20.0 ;
-
+      case ZMAPOVERLAP_OVERLAP:
+      bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
+						 NULL, valueDestroyCB) ;
+      break ;
+    case ZMAPOVERLAP_NAME:
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
 						 NULL, valueDestroyCB) ;
       break ;
@@ -559,15 +618,12 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapWindowBumpType bump_
   /* bump all the features. */
   g_list_foreach(column_features->item_list, bumpColCB, (gpointer)&bump_data) ;
 
-
-  if (bump_type == ZMAP_WINDOW_BUMP_POSITION || bump_type == ZMAP_WINDOW_BUMP_NAME)
+  if (bump_mode == ZMAPOVERLAP_POSITION || bump_mode == ZMAPOVERLAP_OVERLAP
+      || bump_mode == ZMAPOVERLAP_NAME)
     g_hash_table_destroy(bump_data.pos_hash) ;
 
   /* Make the parent groups bounding box as large as the group.... */
   zmapWindowContainerSetBackgroundSize(column_group, 0.0) ;
-
-  /* Now make sure all the columns are positioned correctly. */
-  zmapWindowColumnReposition(column_group) ;
 
   return ;
 }
@@ -788,7 +844,11 @@ void zmapWindowContainerZoomEvent(FooCanvasGroup *super_root, ZMapWindow window)
 
   zoom = zMapWindowGetZoomFactor(window);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   gtk_layout_freeze(GTK_LAYOUT(FOO_CANVAS_ITEM(super_root)->canvas));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   executeOnContainerChildren(FOO_CANVAS_GROUP(super_root),
                              ZMAPCONTAINER_FEATURESET_LEVEL,
@@ -797,7 +857,11 @@ void zmapWindowContainerZoomEvent(FooCanvasGroup *super_root, ZMapWindow window)
                              NULL,
                              NULL,
                              TRUE);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   gtk_layout_thaw(GTK_LAYOUT(FOO_CANVAS_ITEM(super_root)->canvas));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   return ;
 }
 
@@ -807,13 +871,6 @@ void zmapWindowContainerZoomEvent(FooCanvasGroup *super_root, ZMapWindow window)
  */
 
 
-/* GDestroyNotify() function for freeing the data part of a hash association. */
-static void valueDestroyCB(gpointer data)
-{
-  g_free(data) ;
-
-  return ;
-}
 
 /*! g_list_foreach function to remove items */
 static void itemDestroyCB(gpointer data, gpointer user_data)
@@ -882,10 +939,12 @@ static void bumpColCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   BumpCol bump_data   = (BumpCol)user_data ;
   ZMapWindowItemFeatureType item_feature_type ;
-  double y1 = 0.0 ;
+  double y1 = 0.0, y2 = 0.0 ;
   gpointer y1_ptr = 0 ;
   gpointer key = NULL, value = NULL ;
   double offset = 0.0 ;
+  BumpColRange range ;
+
 
   if(!(zmapWindowItemIsShown(item)))
     return ;
@@ -894,9 +953,9 @@ static void bumpColCB(gpointer data, gpointer user_data)
 
   zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
 
-  switch (bump_data->bump_type)
+  switch (bump_data->bump_mode)
     {
-    case ZMAP_WINDOW_BUMP_POSITION:
+    case ZMAPOVERLAP_POSITION:
       {
 	foo_canvas_item_get_bounds(item, NULL, &y1, NULL, NULL) ;
 
@@ -918,7 +977,55 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	
 	break ;
       }
-    case ZMAP_WINDOW_BUMP_NAME:
+    case ZMAPOVERLAP_OVERLAP:
+      {
+	BumpColRangeStruct new_range ;
+	BumpColRange curr_range ;
+
+	/* TEMP CODE UNTIL 2.6 */
+#warning "temp 2.2 code...agh"
+	TempStruct callback_data = {NULL} ;
+	
+
+	foo_canvas_item_get_bounds(item, NULL, &y1, NULL, &y2) ;
+
+	new_range.y1 = y1 ;
+	new_range.y2 = y2 ;
+	new_range.offset = 0.0 ;
+
+
+	callback_data.new = &new_range ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	/* THIS FUNCTION IS NOT AVAILABLE IN GLIB 2.2 leaving me to go quietly spare.... */
+
+	/* if ((curr_range = g_hash_table_find(bump_data->pos_hash, compareOverlap, &new_range))) */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	g_hash_table_foreach(bump_data->pos_hash, tempCompareOverlapCB, &callback_data) ;
+	if ((curr_range = callback_data.curr))
+
+	  {
+	    if (new_range.y1 < curr_range->y1)
+	      curr_range->y1 = new_range.y1 ;
+
+	    if (new_range.y2 > curr_range->y2)
+	      curr_range->y2 = new_range.y2 ;
+
+	    curr_range->offset += bump_data->incr ;
+	  }
+	else
+	  {
+	    curr_range = g_memdup(&new_range, sizeof(BumpColRangeStruct)) ;
+
+	    g_hash_table_insert(bump_data->pos_hash, curr_range, curr_range) ;
+	  }
+
+	offset = curr_range->offset ;
+	
+	break ;
+      }
+    case ZMAPOVERLAP_NAME:
       {
 	ZMapFeature feature ;
 
@@ -943,8 +1050,8 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	
 	break ;
       }
-    case ZMAP_WINDOW_BUMP_NONE:
-    case ZMAP_WINDOW_BUMP_SIMPLE:
+    case ZMAPOVERLAP_COMPLETE:
+    case ZMAPOVERLAP_SIMPLE:
       {
 	offset = bump_data->offset ;
 	bump_data->offset += bump_data->incr ;
@@ -957,6 +1064,48 @@ static void bumpColCB(gpointer data, gpointer user_data)
     }
 
   my_foo_canvas_item_goto(item, &(offset), NULL) ; 
+
+  return ;
+}
+
+
+/* GDestroyNotify() function for freeing the data part of a hash association. */
+static void valueDestroyCB(gpointer data)
+{
+  g_free(data) ;
+
+  return ;
+}
+
+/* GHRFunc callback func, called from g_hash_table_find() to test whether current
+ * element matches supplied overlap coords. */
+static gboolean compareOverlapCB(gpointer key, gpointer value, gpointer user_data)
+{
+  gboolean result = TRUE ;
+  BumpColRange curr_range = (BumpColRange)value, new_range = (BumpColRange)user_data ;
+
+  /* Easier to test no overlap. */
+  if (new_range->y1 > curr_range->y2 || new_range->y2 < curr_range->y1)
+    result = FALSE ;
+
+  return result ;
+}
+
+
+/* this is temporary code until we move completely to glib 2.6, it does the same as
+ * compareOverlapCB but badly..., it can be deleted when we move to 2.6... */
+static void tempCompareOverlapCB(gpointer key, gpointer value, gpointer user_data)
+{
+  BumpColRange curr_range = (BumpColRange)value ;
+  Temp callback_data = (Temp)user_data ;
+
+  if (!callback_data->curr)
+    {
+      if (callback_data->new->y1 > curr_range->y2 || callback_data->new->y2 < curr_range->y1)
+	callback_data->curr = NULL ;
+      else
+	callback_data->curr = curr_range ;
+    }
 
   return ;
 }
@@ -1186,4 +1335,5 @@ static void printlevel(gpointer data, gpointer user_data)
 
   return ;
 }
+
 
