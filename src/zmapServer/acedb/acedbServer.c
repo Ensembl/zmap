@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov 25 13:53 2005 (edgrif)
+ * Last edited: Dec  2 14:09 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.43 2005-11-25 14:03:28 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.44 2005-12-02 14:10:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -592,6 +592,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
       gboolean inplace = TRUE ;
       char *first_error = NULL ;
 
+
       line_reader = zMapReadLineCreate((char *)reply, inplace) ;
 
       /* Look for "##gff-version" at start of line which signals start of GFF, as detailed above
@@ -738,6 +739,9 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 							       same as reply which is freed later.*/
 
       g_free(reply) ;
+
+      printf("Finished parse features\n") ;
+
     }
 
   g_free(acedb_request) ;
@@ -1393,7 +1397,7 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
   char *scan_text = NULL ;
   char *next_line = method_str ;
   char *name = NULL, *colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL,
-    *gff_source = NULL, *gff_feature = NULL, *column_group = NULL ;
+    *gff_source = NULL, *gff_feature = NULL, *column_group = NULL, *overlap = NULL ;
   double width = ACEDB_DEFAULT_WIDTH ;
   gboolean strand_specific = FALSE, frame_specific = FALSE, show_up_strand = FALSE ;
   double min_mag = 0 ;
@@ -1414,7 +1418,10 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 
       if (g_ascii_strcasecmp(tag, "Method") == 0)
 	{
-	  name = g_strdup(strtok_r(NULL, ": \"", &line_pos)) ; /* Skip ': "' */
+	  /* Line format:    Method : "possibly very long method name"  */
+
+	  name = strtok_r(NULL, "\"", &line_pos) ;
+	  name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 	}
       else if (g_ascii_strcasecmp(tag, "Colour") == 0)
 	{
@@ -1428,6 +1435,31 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	    colour = tmp_colour ;
 	  
 	  colour = g_strdup(colour) ;
+	}
+      else if (g_ascii_strcasecmp(tag, "CDS_colour") == 0)
+	{
+	  char *tmp_colour ;
+
+	  tmp_colour = strtok_r(NULL, " ", &line_pos) ;
+
+	  /* Is colour one of the standard acedb colours ? It's really an acedb bug if it
+	   * isn't.... */
+	  if (!(foreground = getAcedbColourSpec(tmp_colour)))
+	    foreground = tmp_colour ;
+	  
+	  foreground = g_strdup(foreground) ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Overlap") == 0)
+	{
+	  overlap = g_strdup("complete") ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Bumpable") == 0)
+	{
+	  overlap = g_strdup("overlap") ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Cluster") == 0)
+	{
+	  overlap = g_strdup("name") ;
 	}
       else if (g_ascii_strcasecmp(tag, "GFF_source") == 0)
 	{
@@ -1448,13 +1480,6 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	      zMapLogWarning("No value for \"Width\" specified in method: %s", name) ;
 	      break ;
 	    }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  else if (width < 10)
-	    width = 10 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 	}
       else if (g_ascii_strcasecmp(tag, "Strand_sensitive") == 0)
 	strand_specific = TRUE ;
@@ -1546,24 +1571,21 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
       
       zMapStyleSetStrandAttrs(style, strand_specific, frame_specific, show_up_strand) ;
 
+      zMapStyleSetBump(style, overlap) ;
+
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
     }
 
 
-  /* Clean up, note only name and outline are currently allcoated. */
-  if (name)
-    g_free(name) ;
-  if (colour)
-    g_free(colour) ;
-  if (column_group)
-    g_free(column_group) ;
-
-  if (gff_source)
-    g_free(gff_source) ;
-
-  if (gff_feature)
-    g_free(gff_feature) ;
+  /* Clean up, note g_free() does nothing if given NULL. */
+  g_free(name) ;
+  g_free(colour) ;
+  g_free(foreground) ;
+  g_free(column_group) ;
+  g_free(overlap) ;
+  g_free(gff_source) ;
+  g_free(gff_feature) ;
 
   return style ;
 }

@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Nov 24 13:39 2005 (edgrif)
+ * Last edited: Dec  2 09:43 2005 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.9 2005-11-24 15:47:14 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.10 2005-12-02 14:10:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -46,7 +46,7 @@
  * larger than zmap (foocanvas) units. We copy the default width most commonly used by
  * acedb and apply a magnification factor to make columns look similar in width. */
 #define ACEDB_DEFAULT_WIDTH 2.0
-#define ACEDB_MAG_FACTOR 4.0
+#define ACEDB_MAG_FACTOR 8.0
 
 
 /* Holds all the state we need to manage the acedb connection. */
