@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 16 09:28 2005 (rds)
+ * Last edited: Dec  2 13:33 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.85 2005-11-16 10:43:00 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.86 2005-12-02 14:12:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -45,10 +45,15 @@
 
 
 /* default spacings...will be tailorable one day ? */
-#define ALIGN_SPACING    30.0
-#define STRAND_SPACING   20.0
-#define COLUMN_SPACING    5.0
+#define ALIGN_SPACING        30.0
+#define STRAND_SPACING        5.0
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#define COLUMN_START_OFFSET   1.0
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#define COLUMN_SPACING        1.0
+#define BUMP_SPACING          3.0
 
 
 /* X Windows has some limits that are part of the protocol, this means they cannot
@@ -117,9 +122,12 @@ typedef enum {
 
 #define ZMAP_WINDOW_BACKGROUND_COLOUR "white"		    /* main canvas background */
 
+#define ZMAP_WINDOW_STRAND_DIVIDE_COLOUR "yellow"	    /* Marks boundary of forward/reverse
+							       strands. */
+
 /* Colours for master alignment block (forward and reverse). */
 #define ZMAP_WINDOW_MBLOCK_F_BG "white"
-#define ZMAP_WINDOW_MBLOCK_R_BG "light gray"
+#define ZMAP_WINDOW_MBLOCK_R_BG "white"
 
 /* Colours for query alignment block (forward and reverse). */
 #define ZMAP_WINDOW_QBLOCK_F_BG "light pink"
@@ -134,14 +142,6 @@ typedef enum {
  * and children for features such as introns/exons. */
 typedef enum
   {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    /* this should be redundant now...... */
-    ITEM_ALIGN,
-    ITEM_BLOCK,
-    ITEM_SET,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     ITEM_FEATURE_SIMPLE,				    /* Item is the whole feature. */
     ITEM_FEATURE_PARENT,				    /* Item is parent group of whole feature. */
     ITEM_FEATURE_CHILD,					    /* Item is child/subpart of feature. */
@@ -173,17 +173,6 @@ typedef struct
 							       bounding box for sensible user
 							       interaction. */
 } ZMapWindowItemFeatureStruct, *ZMapWindowItemFeature ;
-
-
-/* Bump type for columns. */
-typedef enum
-  {
-    ZMAP_WINDOW_BUMP_NONE,				    /* i.e. reset to no bumping. */
-    ZMAP_WINDOW_BUMP_SIMPLE,				    /* only for testing really... */
-    ZMAP_WINDOW_BUMP_POSITION,				    /* bump on y position */
-    ZMAP_WINDOW_BUMP_NAME				    /* bump on feature name */
-  } ZMapWindowBumpType ;
-
 
 
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
@@ -448,7 +437,7 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item);
 
 
-void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapWindowBumpType bump_type) ;
+void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapStyleOverlapMode bump_mode) ;
 void zmapWindowColumnReposition(FooCanvasGroup *column_group) ;
 void zmapWindowColumnWriteDNA(ZMapWindow window,
                               FooCanvasGroup *column_parent);
@@ -463,6 +452,7 @@ FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_paren
 FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *any_container_child) ;
 FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent) ;
 FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent) ;
+ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group) ;
 FooCanvasGroup *zmapWindowContainerGetText(FooCanvasGroup *container_parent);
 gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
 gboolean zmapWindowContainerHasText(FooCanvasGroup *container_parent);

@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 25 09:13 2005 (edgrif)
+ * Last edited: Dec  2 14:12 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.102 2005-11-25 14:02:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.103 2005-12-02 14:12:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,6 +55,8 @@ typedef struct
 
   ZMapFeatureSet feature_set ;				    /* Only used in column callbacks... */
 } ItemMenuCBDataStruct, *ItemMenuCBData ;
+
+
 
 
 
@@ -109,8 +111,6 @@ typedef struct _ZMapCanvasDataStruct
   GdkColor colour_mreverse_col ;
   GdkColor colour_qforward_col ;
   GdkColor colour_qreverse_col ;
-
-  double bump_for, bump_rev ;
 
 } ZMapCanvasDataStruct, *ZMapCanvasData ;
 
@@ -313,6 +313,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
   zMapAssert(window && full_context && diff_context) ;
 
+
   /* Set up colours. */
   setColours(&canvas_data) ;
 
@@ -439,7 +440,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
   /* debugging.... */
   zmapWindowContainerPrint(root_group) ;
-
 
   return ;
 }
@@ -708,7 +708,6 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
 
   /* Set the size of background for the block now everything is positioned. */
-
   zmapWindowContainerSetBackgroundSize(block_parent, 0.0) ;
 
   /* Sort lists of children in block and column groups by their position.... */
@@ -965,10 +964,6 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
     }
 
 
-  /* testing.... */
-  canvas_data->bump_for = canvas_data->bump_rev = 0.0 ;
-
-
   /* Now draw all the features in the column. */
   g_datalist_foreach(&(feature_set->features), ProcessFeature, canvas_data) ;
 
@@ -1055,7 +1050,6 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 
   feature_offset = canvas_data->curr_block->block_to_sequence.q1 ;
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* I FEEL LIKE WE SHOULD BE USING THIS HERE BUT IT IS NOT STRAIGHT FORWARD...BECAUSE OF THE
    * QUERY BLOCK ALIGNMENT ETC ETC...SO MORE WORK TO DO HERE... */
@@ -1064,35 +1058,8 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
-  /* NOTE THAT ONCE WE SUPPORT HOMOLOGIES MORE FULLY WE WILL WANT SEPARATE BOXES
-   * FOR BLOCKS WITHIN A SINGLE ALIGNMENT, this will mean a change to "item_feature_type"
-   * in line with how its done for transcripts. */
-  if (feature->type == ZMAPFEATURE_ALIGNMENT && style->bump)
-    {
-      double bump ;
-
-      if (feature->strand == ZMAPSTRAND_FORWARD)
-	bump = canvas_data->bump_for ;
-      else
-	bump = canvas_data->bump_rev ;
-	    
-
-      start_x = bump ;
-      end_x = bump + style->width ;
-
-      if (feature->strand == ZMAPSTRAND_FORWARD)
-	canvas_data->bump_for += 2.0 ;
-      else
-	canvas_data->bump_rev += 2.0 ;
-
-    }
-  else
-    {
-      start_x = 0.0 ;
-      end_x = style->width ;
-    }
-
+  start_x = 0.0 ;
+  end_x = style->width ;
 
   switch (feature->type)
     {
@@ -1507,6 +1474,14 @@ static void positionColumnCB(gpointer data, gpointer user_data)
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
   PositionColumn pos_data  = (PositionColumn)user_data ;
   double x1, y1, x2, y2 ;
+  ZMapFeatureTypeStyle style ;
+
+
+  style = zmapWindowContainerGetStyle(container) ;
+
+  /* Bump columns that need to be bumped. */
+  if (style->overlap_mode != ZMAPOVERLAP_COMPLETE)
+    zmapWindowColumnBump(container, style->overlap_mode) ;
 
 
   /* Set its x position. */
@@ -2078,18 +2053,15 @@ static ZMapWindowMenuItem makeMenuBump(int *start_index_inout,
 				       ZMapWindowMenuItemCallbackFunc callback_func,
 				       gpointer callback_data)
 {
-
-  /* Really we want the code to do the work for us here of constructing strings etc...
-   * but one step at a time perhaps.... */
-
   static ZMapWindowMenuItemStruct menu[] =
     {
-      {"_Bump",                  0, NULL,       NULL},
-      {"Bump/Column Bump Simple",     1, bumpMenuCB, NULL},
-      {"Bump/Column Bump Position",   2, bumpMenuCB, NULL},
-      {"Bump/Column Bump Name",       3, bumpMenuCB, NULL},
-      {"Bump/Column UnBump",          4, bumpMenuCB, NULL},
-      {NULL,                     0, NULL,       NULL}
+      {"_Bump", 0, NULL, NULL},
+      {"Bump/Column UnBump",        ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
+      {"Bump/Column Bump Position", ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
+      {"Bump/Column Bump Overlap",  ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
+      {"Bump/Column Bump Name",     ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
+      {"Bump/Column Bump Simple",   ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
+      {NULL, 0, NULL, NULL}
     } ;
 
   populateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -2097,35 +2069,20 @@ static ZMapWindowMenuItem makeMenuBump(int *start_index_inout,
   return menu ;
 }
 
+/* Bump a column and reposition the other columns. */
 static void bumpMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapWindowBumpType bump_type ;
-
-  switch (menu_item_id)
-    {
-    case 1:
-      bump_type = ZMAP_WINDOW_BUMP_SIMPLE ;
-      break ;
-    case 2:
-      bump_type = ZMAP_WINDOW_BUMP_POSITION ;
-      break ;
-    case 3:
-      bump_type = ZMAP_WINDOW_BUMP_NAME ;
-      break ;
-    case 4:
-      bump_type = ZMAP_WINDOW_BUMP_NONE ;
-      break ;
-    default:
-      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
-      break ;
-    }
-
+  ZMapStyleOverlapMode bump_type = (ZMapStyleOverlapMode)menu_item_id  ;
+  FooCanvasGroup *column_group ;
 
   if (menu_data->item_cb)
-    zmapWindowColumnBump(getItemsColGroup(menu_data->item), bump_type) ;
+    column_group = getItemsColGroup(menu_data->item) ;
   else
-    zmapWindowColumnBump(FOO_CANVAS_GROUP(menu_data->item), bump_type) ;
+    column_group = FOO_CANVAS_GROUP(menu_data->item) ;
+
+  zmapWindowColumnBump(column_group, bump_type) ;
+  zmapWindowColumnReposition(column_group) ;
 
   g_free(menu_data) ;
 
@@ -2419,7 +2376,7 @@ static void setColours(ZMapCanvasData canvas_data)
 	{
 	  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(canvas_data->colour_root)) ;
 	  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &canvas_data->colour_alignment) ;
-	  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &canvas_data->colour_block) ;
+	  gdk_color_parse(ZMAP_WINDOW_STRAND_DIVIDE_COLOUR, &canvas_data->colour_block) ;
 	  gdk_color_parse(ZMAP_WINDOW_MBLOCK_F_BG, &canvas_data->colour_mblock_for) ;
 	  gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &canvas_data->colour_mblock_rev) ;
 	  gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &canvas_data->colour_qblock_for) ;
