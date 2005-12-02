@@ -31,13 +31,14 @@
  *
  * Exported functions: See ZMap/zMapMemoryHandle.h
  * HISTORY:
- * Last edited: Nov 29 15:28 2005 (edgrif)
+ * Last edited: Nov 29 15:54 2005 (edgrif)
  * Created: Tue Nov 29 15:27:32 2005 (edgrif)
- * CVS info:   $Id: zmapHandle.c,v 1.1 2005-11-29 15:33:49 edgrif Exp $
+ * CVS info:   $Id: zmapHandle.c,v 1.2 2005-12-02 14:07:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zMapMemoryHandle.h>
+#include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsHandle.h>
 
 
 typedef struct _ZMapMemoryBlockStruct
@@ -56,6 +57,7 @@ typedef struct _ZMapMemoryHandleStruct
 
 
 static void defaultMemoryFree(gpointer memory, gpointer unused_user_data) ;
+static void handleDestroy(gpointer memory, gpointer unused_user_data) ;
 static void freeBlockCB(gpointer data, gpointer user_data) ;
 
 
@@ -105,7 +107,7 @@ ZMapMemoryHandle zMapMemoryHandleCreate(void)
  * @param memory_handle      The handle on which the new handle should be allocated.
  * @return Returns a pointer to memory handle.
  *  */
-ZMapMemoryHandle zMapMemoryHandleCreateOnHandle(ZMapMemoryHandle *memory_handle)
+ZMapMemoryHandle zMapMemoryHandleCreateOnHandle(ZMapMemoryHandle memory_handle)
 {
   ZMapMemoryHandle new_handle = NULL ;
 
@@ -113,7 +115,7 @@ ZMapMemoryHandle zMapMemoryHandleCreateOnHandle(ZMapMemoryHandle *memory_handle)
 
   if (memory_handle)
     zMapMemoryHandleAdd(memory_handle,
-			new_handle, handleDestroy, new_handle)
+			new_handle, handleDestroy, new_handle) ;
 
   return new_handle ;
 }
@@ -135,8 +137,8 @@ ZMapMemoryHandle zMapMemoryHandleCreateOnHandle(ZMapMemoryHandle *memory_handle)
  * @param user_data          Optional data to pass to the memory_free_func.
  * @return   <nothing>
  *  */
-void zMapMemoryHandleAdd(ZMapMemoryHandle *memory_handle,
-			 gpointer memory, GMemHandleFreeFunc memory_free_func, gpointer user_data)
+void zMapMemoryHandleAdd(ZMapMemoryHandle memory_handle,
+			 gpointer memory, ZMapMemoryHandleFreeFunc memory_free_func, gpointer user_data)
 {
   ZMapMemoryBlock block ;
 
@@ -166,7 +168,7 @@ void zMapMemoryHandleAdd(ZMapMemoryHandle *memory_handle,
  * @param free_mem       If TRUE then memory block is freed as well.
  * @return  TRUE if memory block was found and removed, FALSE otherwise.
  *  */
-gboolean zMapMemoryHandleRemove(ZMapMemoryHandle *memory_handle, gpointer memory, gboolean free_mem)
+gboolean zMapMemoryHandleRemove(ZMapMemoryHandle memory_handle, gpointer memory, gboolean free_mem)
 {
   gboolean result = FALSE ;
   GList *item ;
@@ -192,7 +194,7 @@ gboolean zMapMemoryHandleRemove(ZMapMemoryHandle *memory_handle, gpointer memory
  * @param memory_handle  The handle to destroy.
  * @return  <nothing>
  *  */
-void zMapMemoryHandleDestroy(ZMapMemoryHandle *memory_handle)
+void zMapMemoryHandleDestroy(ZMapMemoryHandle memory_handle)
 {
 
   zMapAssert(memory_handle) ;

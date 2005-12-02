@@ -27,9 +27,9 @@
  *              like calling destructors in C++...but only a bit like it.
  *
  * HISTORY:
- * Last edited: Nov 29 15:32 2005 (edgrif)
+ * Last edited: Nov 29 15:55 2005 (edgrif)
  * Created: Tue Nov 29 15:29:43 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsHandle.h,v 1.1 2005-11-29 15:32:44 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsHandle.h,v 1.2 2005-12-02 14:07:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_MEMHANDLE_H
@@ -60,11 +60,11 @@ typedef void (*ZMapMemoryHandleFreeFunc)(gpointer memory, gpointer user_data) ;
 
 
 ZMapMemoryHandle zMapMemoryHandleCreate(void) ;
-ZMapMemoryHandle zMapMemoryHandleCreateOnHandle(ZMapMemoryHandle *memory_handle) ;
-void zMapMemoryHandleAdd(ZMapMemoryHandle *memory_handle, gpointer memory,
-			 GMemHandleFreeFunc memory_free_func, gpointer user_data) ;
-void zMapMemoryHandleRemove(ZMapMemoryHandle *memory_handle, gpointer memory) ;
-void zMapMemoryHandleDestroy(ZMapMemoryHandle *memory_handle) ;
+ZMapMemoryHandle zMapMemoryHandleCreateOnHandle(ZMapMemoryHandle memory_handle) ;
+void zMapMemoryHandleAdd(ZMapMemoryHandle memory_handle, gpointer memory,
+			 ZMapMemoryHandleFreeFunc memory_free_func, gpointer user_data) ;
+gboolean zMapMemoryHandleRemove(ZMapMemoryHandle memory_handle, gpointer memory, gboolean free_mem) ;
+void zMapMemoryHandleDestroy(ZMapMemoryHandle memory_handle) ;
 
 
 #endif /* !ZMAP_MEMHANDLE_H */
