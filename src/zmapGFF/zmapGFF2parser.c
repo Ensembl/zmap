@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov 23 16:12 2005 (edgrif)
+ * Last edited: Dec  3 16:26 2005 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.35 2005-11-24 15:54:57 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.36 2005-12-03 16:28:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 			       ZMapFeatureType feature_type, ZMapFeatureTypeStyle curr_style,
 			       int start, int end,
 			       gboolean has_score, double score,
-			       ZMapStrand strand, ZMapPhase phase, char *attributes, GArray *gaps) ;
+			       ZMapStrand strand, ZMapPhase phase, char *attributes) ;
 static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
@@ -693,42 +693,20 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   int start = 0, end = 0 ;
   double score = 0 ;
   char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %1000[^#] %1000c" ; 
-  char *format_str_gaps = "%50s%50s%50s%d%d%50s%50s%50s %n" ; 
+  /* char *format_str_gaps = "%50s%50s%50s%d%d%50s%50s%50s %n" ; */
   int fields, charsRead, attsLen ;
   char *attsPos, *gapsPos ;
-  GArray *gaps = NULL ;
   ZMapFeatureTypeStyle curr_style = NULL ;
 
 
   /* this is not really a good test as Gaps could occur anywhere and may be preceded by a tab
    * and not a space...better to parse the line once, look for gaps in the attributes and
    * then parse the attributes, I don't understand why it wasn't done like this.... */
-  gapsPos = strstr(line, " Gaps ");
 
-  if (gapsPos == NULL)
-    {
-      fields = sscanf(line, format_str,
-		      &sequence[0], &source[0], &feature_type[0],
-		      &start, &end, &score_str[0], &strand_str[0], &phase_str[0],
-		      &attributes[0], &comments[0]);
-    }
-  else
-    {
-      fields = sscanf(line, format_str_gaps,
-		      &sequence[0], &source[0], &feature_type[0],
-		      &start, &end, &score_str[0], &strand_str[0], &phase_str[0],
-		      &charsRead);
-
-      /* The hard bit here is to distinguish the attributes field from any following
-       * gaps pairs, so for now I'm just saying copy from where the sscanf ended
-       * up to the Gaps tag, then go and do the gaps. */
-      gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
-      attsPos = line + charsRead;
-      attsLen = gapsPos - attsPos;
-      strncpy(attributes, attsPos, attsLen);
-      
-      result = loadGaps(gapsPos, gaps);
-    }
+  fields = sscanf(line, format_str,
+                  &sequence[0], &source[0], &feature_type[0],
+                  &start, &end, &score_str[0], &strand_str[0], &phase_str[0],
+                  &attributes[0], &comments[0]);
 
   if (result == TRUE 
       && (fields < GFF_MANDATORY_FIELDS
@@ -834,7 +812,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	    {
 	      result = makeNewFeature(parser, sequence, source, feature_type, type, curr_style,
 				      start, end, has_score, score, strand, phase,
-				      attributes, gaps) ;
+				      attributes) ;
 	    }
 	}
     }
@@ -851,16 +829,13 @@ static void printSource(GQuark key_id, gpointer data, gpointer user_data)
   return ;
 }
 
-
-
-
 static gboolean makeNewFeature(ZMapGFFParser parser,
 			       char *sequence, char *source, char *ontology,
 			       ZMapFeatureType feature_type, ZMapFeatureTypeStyle curr_style,
 			       int start, int end,
 			       gboolean has_score, double score,
 			       ZMapStrand strand, ZMapPhase phase,
-			       char *attributes, GArray *gaps)
+			       char *attributes)
 {
   gboolean result = FALSE ;
   char *feature_name_id = NULL, *feature_name = NULL ;
@@ -875,7 +850,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   GQuark column_id = 0 ;
   ZMapFeatureTypeStyle set_style = NULL ;
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
-
+  GArray *gaps = NULL;
+  char *gaps_onwards = NULL;
+  gboolean parse_gaps = TRUE;
 
   /* Set up the name/style for the current feature set....
    * Need to look for a zmap specific attribute field which specifies a column group independently of
@@ -885,7 +862,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   if ((column_id = getColumnGroup(attributes)))
     feature_set_name = (char *)g_quark_to_string(column_id) ;
 
-
+  if(parse_gaps && 
+     ((gaps_onwards = strstr(attributes, " Gaps ")) != NULL)) 
+    {
+      gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
+      gaps_onwards += 7;  /* skip over Gaps tag */
+      loadGaps(gaps_onwards, gaps);
+    }
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
   /* This stuff ALL BREAKS COLUMN/FEATURE PLACEMENT ETC...NEEDS MUCH MORE WORK... */
@@ -1068,8 +1051,6 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
   char *gaps_format_str = "%d%d%d%d," ; 
   int fields, i ;
   gboolean status = TRUE ;
-
-  gapsPos += 7;  /* skip over Gaps tag */
 
   while (status == TRUE && valid == TRUE)
     {
