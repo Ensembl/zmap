@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Dec  3 16:26 2005 (rds)
+ * Last edited: Dec  5 11:49 2005 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.36 2005-12-03 16:28:28 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.37 2005-12-05 11:53:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,6 +73,7 @@ static void destroyFeatureArray(gpointer data) ;
 static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
 
 static gboolean loadGaps(char *currentPos, GArray *gaps);
+static int sortGapsByTarget(gconstpointer a, gconstpointer b);
 
 
 /* types is the list of methods/types, call it what you will that we want to see
@@ -698,11 +699,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   char *attsPos, *gapsPos ;
   ZMapFeatureTypeStyle curr_style = NULL ;
 
-
-  /* this is not really a good test as Gaps could occur anywhere and may be preceded by a tab
-   * and not a space...better to parse the line once, look for gaps in the attributes and
-   * then parse the attributes, I don't understand why it wasn't done like this.... */
-
   fields = sscanf(line, format_str,
                   &sequence[0], &source[0], &feature_type[0],
                   &start, &end, &score_str[0], &strand_str[0], &phase_str[0],
@@ -852,7 +848,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
-  gboolean parse_gaps = TRUE;
+  gboolean parse_gaps = TRUE;   /* parameterize this from the styles file. */
 
   /* Set up the name/style for the current feature set....
    * Need to look for a zmap specific attribute field which specifies a column group independently of
@@ -866,7 +862,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
      ((gaps_onwards = strstr(attributes, " Gaps ")) != NULL)) 
     {
       gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
-      gaps_onwards += 7;  /* skip over Gaps tag */
+      gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not terminated */
       loadGaps(gaps_onwards, gaps);
     }
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1035,8 +1031,20 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 }
 
 
-
-
+/* *************************************************************
+ * Not entirely sure of the wisdom of this (mainly performance
+ * concerns), but everywhere else we have start < end!.  previously
+ * loadGaps didn't even fill in the strand or apply the start < end 
+ * idiom and gaps array required a test when iterating through 
+ * it (the GArray). The GArray will now be ordered as it almost
+ * certainly should be to fit with the start < end idiom.  RDS 
+ */
+static int sortGapsByTarget(gconstpointer a, gconstpointer b)
+{
+  ZMapAlignBlock alignA = (ZMapAlignBlock)a, 
+    alignB = (ZMapAlignBlock)b;
+  return (alignA->t1 == alignB->t1 ? 0 : (alignA->t1 > alignB->t1 ? 1 : -1));
+}
 /* This reads any gaps which are present on the gff line.
  * They are preceded by a Gaps tag, and are presented as
  * space-delimited groups of 4, consecutive groups being
@@ -1044,32 +1052,52 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
  * and is set to NULL when strstr can't find another comma.
  * fields must be 4 for a gap so either way we drop out
  * of the loop at the end. */
+/* i.e. gapPos should equal something like this (incl "")
+ *  "531 544 34799 34758,545 550 34751 34734" */
 static gboolean loadGaps(char *gapsPos, GArray *gaps)
 {
-  gboolean valid = TRUE ;
-  ZMapAlignBlockStruct gap;
-  char *gaps_format_str = "%d%d%d%d," ; 
-  int fields, i ;
-  gboolean status = TRUE ;
+  gboolean valid = TRUE, avoidFirst_strstr = TRUE ;
+  ZMapAlignBlockStruct gap = { 0 };
+  char *gaps_format_str = "%d%d%d%d" ; 
+  int fields;
 
-  while (status == TRUE && valid == TRUE)
+  while (avoidFirst_strstr == TRUE || ((gapsPos = strstr(gapsPos, ",")) != NULL))
     {
-      fields = sscanf(gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2);
+      avoidFirst_strstr = FALSE; /* Only to get here to start with */
+      /* ++gapsPos to skip the '"' or the ',' */
+      fields = sscanf(++gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2);
+      gap.q_strand = ZMAPSTRAND_FORWARD;
+      gap.t_strand = ZMAPSTRAND_FORWARD;
       if (fields == 4)
 	{
+          int tmp;
+          if (gap.q1 > gap.q2)
+            {
+              tmp = gap.q2;
+              gap.q2 = gap.q1;
+              gap.q1 = tmp;
+              gap.q_strand = ZMAPSTRAND_REVERSE;
+            }
+          if (gap.t1 > gap.t2)
+            {
+              tmp = gap.t2;
+              gap.t2 = gap.t1;
+              gap.t1 = tmp;
+              gap.t_strand = ZMAPSTRAND_REVERSE;
+            }
 	  gaps = g_array_append_val(gaps, gap);
-	  if ((gapsPos = strstr(gapsPos, ",")) != NULL)
-	    gapsPos++;
-	  else
-	    status = FALSE;    /* no more commas means we're at the end */
 	}
       else
-	valid = FALSE;  /* anything other than 4 is not a gap */
+        {
+          valid = FALSE;
+          break;  /* anything other than 4 is not a gap */
+        }
     }
+  /* Sort the array of gaps. performance hit? */
+  g_array_sort(gaps, sortGapsByTarget);
 
   return valid ;
 }
-
 
 
 /* This routine attempts to find the features name from its attributes field, in output from
