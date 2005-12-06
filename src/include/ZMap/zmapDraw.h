@@ -26,15 +26,79 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Nov 15 16:05 2005 (rds)
+ * Last edited: Dec  4 16:11 2005 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.23 2005-11-16 10:31:11 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.24 2005-12-06 10:50:09 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
 #define ZMAP_DRAW_H
 
 #include <libfoocanvas/libfoocanvas.h>
+
+typedef enum
+  {
+    ZMAP_MIN_POINTS  = 3,
+
+    ZMAP_FOUR_POINTS,
+    ZMAP_FIVE_POINTS,
+    ZMAP_SIX_POINTS,
+
+    ZMAP_MAX_POINTS
+  } ZMapExonPoints;
+
+/* Simple diagrams missing horizontal lines to make polygon.
+ * They will also be rotated to vertical (clockwise) in zmap.
+
+ * Without checking too much I've used terms port and starboard to
+ * identify the left and right side of the feature in a direction
+ * dependent way. Internally this is true as well with the addition
+ * of bow and stern to describe the "front" and "back" of a feature.
+ * ZMAP_POLYGON_POINTING probably illustrates this best!
+
+ */
+typedef enum
+  {
+    ZMAP_POLYGON_NONE,            /* NOT A POLYGON Nothing will be drawn */
+    ZMAP_POLYGON_SQUARE,          /* |  | */
+    ZMAP_POLYGON_POINTING,        /* <  | */
+    ZMAP_POLYGON_DOUBLE_POINTING, /* <  < */
+    ZMAP_POLYGON_TRAPEZOID_PORT,  /* /  \ possibly /\ (It will point to port) */
+    ZMAP_POLYGON_TRIANGLE_PORT,   /* /  \ possibly /\ (It will point to port) */
+    ZMAP_POLYGON_TRAPEZOID_STAR,  /* \  / possibly \/ (It will point to starboard) */
+    ZMAP_POLYGON_TRIANGLE_STAR,   /* \  / possibly \/ (It will point to starboard) */
+    ZMAP_POLYGON_STAR_PORT,
+    ZMAP_POLYGON_STAR_STAR,
+    ZMAP_POLYGON_DIAMOND          /* <  > possibly <> i.e. diamond */
+  } ZMapPolygonForm;
+
+/* Warning most of the below aren't written yet */
+typedef enum
+  {
+    ZMAP_ANNOTATE_NONE,         /* NOT AN ANNOTATION Nothing will be drawn */
+    ZMAP_ANNOTATE_INTRON,       /* These always point right in vertical orientation */
+    ZMAP_ANNOTATE_GAP,          /* draws a line between bow and stern centered between port and starboard */
+    ZMAP_ANNOTATE_BOW_ARROW,    /* draws a centered arrow (line) towards bow */
+    ZMAP_ANNOTATE_STERN_ARROW,    /* draws a centered arrow (line) towards bow */
+    ZMAP_ANNOTATE_BOW_BOUNDARY,     /* draws a line on top of the bow */
+    ZMAP_ANNOTATE_BOW_BOUNDARY_REGION, /* draws a polygon on top of original one from point dimension to bow */
+    ZMAP_ANNOTATE_STERN_BOUNDARY,     /* draws a line on top of the stern */
+    ZMAP_ANNOTATE_STERN_BOUNDARY_REGION, /* draws a polygon on top of original one from point dimension to stern */
+    ZMAP_ANNOTATE_TRIANGLE_PORT, /* draws a centered triangle pointing 2 port */
+    ZMAP_ANNOTATE_TRIANGLE_STAR, /* draws a centered triangle pointing 2 starboard */
+    ZMAP_ANNOTATE_UTR,          /* Resizes original polygon and butts up another at point dimension */
+    ZMAP_ANNOTATE_EXTEND_ALIGN
+  } ZMapAnnotateForm;
+
+typedef enum
+  {
+    ZMAP_POINT_START_NORTHWEST = 0,
+    ZMAP_POINT_START_NORTH,
+    ZMAP_POINT_START_NORTHEAST,
+    ZMAP_POINT_END_SOUTHEAST,
+    ZMAP_POINT_END_SOUTH,
+    ZMAP_POINT_END_SOUTHWEST
+  } ZMapExonCompassPoints;
 
 typedef struct _ZMapDrawTextIteratorStruct
 {
@@ -84,6 +148,17 @@ FooCanvasItem *zMapDrawSolidBox(FooCanvasItem *group,
 				GdkColor *fill_colour) ;
 FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 			       double x, double y) ;
+
+FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
+                                 double x1, double y1, double x2, double y2, 
+                                 GdkColor *border, GdkColor *fill, int zmapStrand);
+
+FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon, 
+                                       ZMapAnnotateForm form,
+                                       GdkColor *border,
+                                       GdkColor *fill,
+                                       double thickness,
+                                       int zmapStrand);
 
 FooCanvasItem *zMapDrawScale(FooCanvas *canvas, 
                              PangoFontDescription *font,
