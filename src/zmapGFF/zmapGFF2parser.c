@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Dec  5 11:49 2005 (rds)
+ * Last edited: Dec  6 12:09 2005 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.37 2005-12-05 11:53:18 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.38 2005-12-06 12:12:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,6 +75,7 @@ static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
 static gboolean loadGaps(char *currentPos, GArray *gaps);
 static int sortGapsByTarget(gconstpointer a, gconstpointer b);
 
+static void initSources(GData **datalist, GList *sources);
 
 /* types is the list of methods/types, call it what you will that we want to see
  * in the output, we may need to filter the incoming data stream to get this.
@@ -114,7 +115,8 @@ ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only)
   parser->sequence_name = NULL ;
   parser->features_start = parser->features_end = 0 ;
 
-  parser->sources = sources ;
+  //  parser->sources = sources ;
+  initSources(&(parser->sources), sources);
 
   if (!parser->parse_only)
     {
@@ -505,6 +507,9 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
   if (!parser->parse_only && parser->feature_sets)
     g_datalist_clear(&(parser->feature_sets)) ;
 
+  if(parser->sources)
+    g_datalist_clear(&(parser->sources));
+
   g_free(parser) ;
 
   return ;
@@ -759,7 +764,10 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 	  source_id = zMapStyleCreateID(source) ;
 
-	  if (parser->sources && !(curr_style = zMapFindStyle(parser->sources, source_id)))
+	  if (parser->sources && 
+              !(curr_style = zMapFindStyle(g_datalist_id_get_data(&(parser->sources), 
+                                                                  source_id), 
+                                           source_id)))
 	    err_text = g_strdup_printf("this feature has source \"%s\", features with this source "
 				       "were not requested.",
 				       source) ;
@@ -1065,12 +1073,11 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
     {
       avoidFirst_strstr = FALSE; /* Only to get here to start with */
       /* ++gapsPos to skip the '"' or the ',' */
-      fields = sscanf(++gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2);
-      gap.q_strand = ZMAPSTRAND_FORWARD;
-      gap.t_strand = ZMAPSTRAND_FORWARD;
-      if (fields == 4)
-	{
+      if((fields = sscanf(++gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2)) == 4)
+        {
           int tmp;
+          gap.q_strand = ZMAPSTRAND_FORWARD;
+          gap.t_strand = ZMAPSTRAND_FORWARD;
           if (gap.q1 > gap.q2)
             {
               tmp = gap.q2;
@@ -1219,6 +1226,27 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 
   return has_name ;
 }
+
+/* This should speed things up a little as the look up will be quicker.
+ * We store the actual list item at the moment.  This is deliberate so
+ * we can use the zMapFindStyle function with the list that we get
+ * from our g_dataset_id_get lookup...
+ */
+static void initSources(GData **datalist, GList *sources)
+{
+  GList *list = NULL;
+  list = g_list_first( sources );
+  g_datalist_init(datalist);
+  while(list){
+    g_datalist_id_set_data_full(datalist, 
+                                ((ZMapFeatureTypeStyle)list->data)->unique_id, 
+                                list,
+                                NULL); /* MUST NOT Destroy when g_dataset_clear called */
+    list = list->next;
+  }
+  return ;
+}
+
 
 
 /* Format of column group attribute section is:

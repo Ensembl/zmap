@@ -25,9 +25,9 @@
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
  * HISTORY:
- * Last edited: Nov  3 15:40 2005 (edgrif)
+ * Last edited: Dec  5 14:27 2005 (rds)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.11 2005-11-08 17:11:32 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.12 2005-12-06 12:12:58 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -125,7 +125,7 @@ typedef struct ZMapGFFParserStruct_
   char *sequence_name ;
   int features_start, features_end ;
 
-  GList *sources ;					    /* If present, only make features from
+  GData *sources ;					    /* If present, only make features from
 							       GFF records with a source from this
 							       list. */
 
