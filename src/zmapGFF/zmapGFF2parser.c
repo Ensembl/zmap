@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Dec  6 12:09 2005 (rds)
+ * Last edited: Dec  6 16:12 2005 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.38 2005-12-06 12:12:58 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.39 2005-12-06 16:31:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -744,6 +744,8 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	err_text = g_strdup_printf("source name too long: %s", source) ;
       else if (strlen(feature_type) == GFF_MAX_FREETEXT_CHARS)
 	err_text = g_strdup_printf("feature_type name too long: %s", feature_type) ;
+      else if (strlen(attributes) == GFF_MAX_FREETEXT_CHARS)
+	err_text = g_strdup_printf("attributes too long: %s", attributes) ;
       else if (!zMapFeatureFormatType(parser->SO_compliant, parser->default_to_basic,
 				      feature_type, &type))
 	err_text = g_strdup_printf("feature_type not recognised: %s", feature_type) ;
