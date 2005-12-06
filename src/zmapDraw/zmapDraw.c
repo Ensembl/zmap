@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Nov 16 14:54 2005 (rds)
+ * Last edited: Dec  6 10:41 2005 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.39 2005-11-16 15:14:25 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.40 2005-12-06 10:47:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,6 +79,448 @@ FooCanvasItem *zMapDrawBox(FooCanvasItem *group,
   return item;                                                                       
 }
 
+/* **********************************************************************
+ * dimension is either a line width when form translates to creating a
+ * line.  It can refer to a position though, see utr form.  We might
+ * need another one, but if any more are required a rewrite/alternate
+ * function might well be better
+ */
+FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon, 
+                                       ZMapAnnotateForm form,
+                                       GdkColor *border,
+                                       GdkColor *fill,
+                                       double dimension, /* we might need another one */
+                                       int zmapStrand)
+{
+  FooCanvasItem   *item = NULL;
+  FooCanvasPoints *bow  = NULL,
+    *stern = NULL, 
+    *final = NULL,
+    *tmp   = NULL;
+  GType annItemType = 0; /* So we can draw a line or polygon with points */
+  double x1, x2, y1, y2;
+  int i;
+  zMapAssert( FOO_IS_CANVAS_POLYGON(polygon) );
+
+  g_object_get(G_OBJECT(polygon),
+               "points", &tmp,
+               NULL);
+  zMapAssert(tmp);
+
+  x1 = x2 = tmp->coords[0];
+  y1 = y2 = tmp->coords[1];
+
+  /* we need to find the bounds of the polygon.
+   * foo_canvas_item_get_bounds could do this, but we already have the
+   * info and saving a number of function calls here. */
+  for(i = 0; i < tmp->num_points * 2; i++)
+    {
+      if(i % 2)                 /* odd = y */
+        {
+          y1 = MIN(y1, tmp->coords[i]);
+          y2 = MAX(y2, tmp->coords[i]);
+        }
+      else                      /* even = x*/
+        {
+          x1 = MIN(x1, tmp->coords[i]);
+          x2 = MAX(x2, tmp->coords[i]);
+        }
+    }
+
+  switch(form)
+    {
+    case ZMAP_ANNOTATE_INTRON:
+      {
+        double y_halfway = 0.0;
+        /* Here we want halfway Y between bow + stern and bow bow and stern stern points */
+        y_halfway = y1 + ((y2 - y1) / 2);
+        annItemType = foo_canvas_line_get_type();
+
+        final = foo_canvas_points_new(3); /* We need three points, this is defined somewhere */
+        final->coords[0] = tmp->coords[2];
+        final->coords[1] = tmp->coords[3];
+        final->coords[2] = x2;
+        final->coords[3] = y_halfway;
+        final->coords[4] = tmp->coords[8];
+        final->coords[5] = tmp->coords[9];
+      }
+      break;
+    case ZMAP_ANNOTATE_GAP:
+      annItemType = foo_canvas_line_get_type();
+      final = foo_canvas_points_new(2);
+      final->coords[0] = tmp->coords[2];
+      final->coords[1] = y1;
+      final->coords[2] = tmp->coords[2];
+      final->coords[3] = y2;
+      break;
+    case ZMAP_ANNOTATE_UTR:
+      annItemType = foo_canvas_polygon_get_type(); /* We'll make a polygon */
+      /* final = foo_canvas_points_new(6); */
+      /* steal the tmp points we need to use, utilise
+       * (double)dimension to work out where to cut up the exon */
+      /* We'll alter the (FooCanvasPoints)tmp and then
+       * foo_canvas_item_set(polygon, "points", tmp, NULL) */
+      break;
+    case ZMAP_ANNOTATE_EXTEND_ALIGN:
+      annItemType = foo_canvas_line_get_type(); /* We draw a line at the original place */
+      final = foo_canvas_points_new(2); /* just a line */
+      final->coords[0] = x1 + 1;
+      final->coords[2] = x2 - 1; /* cap style issues */
+      switch(zmapStrand)
+        {
+        case ZMAPSTRAND_REVERSE:
+          final->coords[1] = y1;
+          final->coords[3] = y1;
+          break;
+        case ZMAPSTRAND_FORWARD:
+        default:
+          final->coords[1] = y2;
+          final->coords[3] = y2;
+          break;
+        }
+      tmp->coords[1]  = dimension;
+      tmp->coords[3]  = dimension;
+      tmp->coords[5]  = dimension;
+      tmp->coords[13] = dimension;
+      foo_canvas_item_set(polygon, "points", tmp, NULL);
+      dimension = 1.0;
+      break;
+    default:
+      annItemType = foo_canvas_line_get_type();
+      switch(zmapStrand)
+        {
+        case ZMAPSTRAND_REVERSE:
+          final = stern;
+          break;
+        case ZMAPSTRAND_FORWARD:
+        default:
+          final = bow;
+          break;
+        }
+      break;
+    }
+
+  zMapAssert(final != NULL && annItemType);
+
+  if(annItemType == foo_canvas_line_get_type())
+    item = foo_canvas_item_new(FOO_CANVAS_GROUP(polygon->parent),
+                               annItemType,
+                               "points", final,
+                               "fill_color_gdk", fill,
+                               "width_units", dimension,
+                               "join_style", GDK_JOIN_BEVEL,
+                               "cap_style", GDK_CAP_ROUND,
+                               NULL);
+  else if(annItemType == foo_canvas_polygon_get_type())
+    item = foo_canvas_item_new(FOO_CANVAS_GROUP(polygon->parent),
+                               annItemType,
+                               "points", final,
+                               "outline_color_gdk", border,
+                               "fill_color_gdk", fill,
+                               NULL);
+  return item;
+}
+
+/* zMapDrawSSPolygon = draw a Strand Sensitive Polygon */
+/* We don't close the polygon, the foocanvas does that for us.
+ * this means that we end up with POINT_MAX points!
+ */
+
+/* A Feature has a length and a width.  So we draw from feature length
+ * start to feature length end and the feature ends up feature width A
+ * to feature width B wide.  Whether this is vertical or horizontal
+ * _shouldn't_ really matter. */
+FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
+                                 double fwidthA, double fwidthB, 
+                                 double fstart, double fend, 
+                                 GdkColor *border, GdkColor *fill, int zmapStrand)
+{
+  FooCanvasItem   *item   = NULL;
+  FooCanvasPoints *points = NULL;
+  int i = 0, strand = 0;
+  double x1, x2, y1, y2;
+  /* For now */
+  x1 = fwidthA; x2 = fwidthB; y1 = fstart; y2 = fend;
+  
+  /* I want to do the following here! */
+#ifdef NOT_JUST_YET________________________________________________
+  zmapWindowSeq2CanOffset(&x1, &x2, (FOO_CANVAS_GROUP(grp)->xpos) + 1);
+  zmapWindowSeq2CanOffset(&y1, &y2, (FOO_CANVAS_GROUP(grp)->ypos) + 1);
+#endif
+
+  points = foo_canvas_points_new(POINT_MAX - 1);
+
+  switch(zmapStrand)
+    {
+    case ZMAPSTRAND_REVERSE:
+      strand = -1;
+    case ZMAPSTRAND_FORWARD:
+    case ZMAPSTRAND_NONE:
+    default:
+      strand = 1;
+      break;
+    }
+
+  zMapAssert(strand == -1 || strand == 1);
+
+  for(i = BOW_PORT; i < POINT_MAX; i++)
+    {
+      int x_coord, y_coord, curr_p;
+      curr_p  = (i + VERTICAL) * strand;
+      x_coord = (i - 1) * 2;    /* these are just indices */
+      y_coord = x_coord + 1;
+      /* This is really long I know, but ... faster than function
+       * calls and probably more terse than many functions! Unless
+       * some commonality is apparent. */
+      switch(curr_p)
+        {
+          /* FORWARD POINTS */
+        case POINT_BOW_PORT_FORWARD:
+          points->coords[x_coord] = x2;
+          switch(form)
+            {
+            case ZMAP_POLYGON_DIAMOND:
+            case ZMAP_POLYGON_DOUBLE_POINTING:
+            case ZMAP_POLYGON_POINTING:
+            case ZMAP_POLYGON_TRIANGLE_PORT:
+            case ZMAP_POLYGON_TRAPEZOID_PORT:
+              points->coords[y_coord] = y2 - ZMAP_EXON_POINT_SIZE;          
+              break;
+            case ZMAP_POLYGON_SQUARE: /* etc... */
+            default:
+              points->coords[y_coord] = y2;          
+              break;
+            }
+          break;
+        case POINT_BOW_BOW_FORWARD:
+          points->coords[y_coord] = y2;
+          switch(form)
+            {
+            case ZMAP_POLYGON_TRIANGLE_PORT:
+            case ZMAP_POLYGON_TRAPEZOID_PORT:
+              points->coords[x_coord] = x1;
+              break;
+            case ZMAP_POLYGON_TRIANGLE_STAR:
+            case ZMAP_POLYGON_TRAPEZOID_STAR:
+              points->coords[x_coord] = x2;
+              break;
+            case ZMAP_POLYGON_SQUARE:
+            case ZMAP_POLYGON_POINTING:
+            case ZMAP_POLYGON_DOUBLE_POINTING:
+            case ZMAP_POLYGON_DIAMOND:
+            default:
+              points->coords[x_coord] = x1 + ((x2 - x1) / 2);
+              break;
+            }
+          break;
+        case POINT_BOW_STARBOARD_FORWARD:
+          points->coords[x_coord] = x1;
+          switch(form)
+            {
+            case ZMAP_POLYGON_DIAMOND:
+            case ZMAP_POLYGON_DOUBLE_POINTING:
+            case ZMAP_POLYGON_POINTING:
+            case ZMAP_POLYGON_TRIANGLE_STAR:
+            case ZMAP_POLYGON_TRAPEZOID_STAR:
+              points->coords[y_coord] = y2 - ZMAP_EXON_POINT_SIZE;
+              break;
+            case ZMAP_POLYGON_SQUARE:
+            default:
+              points->coords[y_coord] = y2;
+              break;
+            }
+          break;
+        case POINT_STERN_STARBOARD_FORWARD:
+          points->coords[x_coord] = x1;
+          switch(form)
+            {
+            case ZMAP_POLYGON_TRAPEZOID_STAR:
+            case ZMAP_POLYGON_TRIANGLE_STAR:
+              points->coords[y_coord] = y1 + ZMAP_EXON_POINT_SIZE;
+              break;
+            default:
+              points->coords[y_coord] = y1;
+              break;
+            }
+          break;
+        case POINT_STERN_STERN_FORWARD:
+          switch(form)
+            {
+            case ZMAP_POLYGON_DIAMOND:
+              points->coords[x_coord] = x1 + ((x2 - x1) / 2);
+              points->coords[y_coord] = y1 - ZMAP_EXON_POINT_SIZE;
+              break;
+            case ZMAP_POLYGON_DOUBLE_POINTING:
+              points->coords[x_coord] = x1 + ((x2 - x1) / 2);
+              points->coords[y_coord] = y1 + ZMAP_EXON_POINT_SIZE;
+              break;
+            case ZMAP_POLYGON_TRIANGLE_PORT:
+            case ZMAP_POLYGON_TRAPEZOID_PORT:
+              points->coords[x_coord] = x1;
+              points->coords[y_coord] = y1;
+              break;
+            case ZMAP_POLYGON_TRIANGLE_STAR:
+            case ZMAP_POLYGON_TRAPEZOID_STAR:
+              points->coords[x_coord] = x2;
+              points->coords[y_coord] = y1;
+              break;
+            case ZMAP_POLYGON_SQUARE:
+            case ZMAP_POLYGON_POINTING:
+            default:
+              points->coords[x_coord] = x1 + ((x2 - x1) / 2);
+              points->coords[y_coord] = y1;
+              break;
+            }
+          break;
+        case POINT_STERN_PORT_FORWARD:
+          points->coords[x_coord] = x2;
+          switch(form)
+            {
+            case ZMAP_POLYGON_TRAPEZOID_PORT:
+            case ZMAP_POLYGON_TRIANGLE_PORT:
+              points->coords[y_coord] = y1 + ZMAP_EXON_POINT_SIZE;
+              break;
+            default:
+              points->coords[y_coord] = y1;
+              break;
+            }
+          break;
+          /* REVERSE POINTS */
+        case POINT_BOW_PORT_REVERSE:
+          points->coords[x_coord] = x1;
+          switch(form)
+            {
+            case ZMAP_POLYGON_DIAMOND:
+            case ZMAP_POLYGON_DOUBLE_POINTING:
+            case ZMAP_POLYGON_POINTING:
+            case ZMAP_POLYGON_TRIANGLE_PORT:
+            case ZMAP_POLYGON_TRAPEZOID_PORT:
+              points->coords[y_coord] = y1 + ZMAP_EXON_POINT_SIZE;
+              break;
+            case ZMAP_POLYGON_SQUARE:
+            default:
+              points->coords[y_coord] = y1;
+              break;
+            }
+          break;
+        case POINT_BOW_BOW_REVERSE:
+          points->coords[y_coord] = y1;
+          switch(form)
+            {
+            case ZMAP_POLYGON_TRIANGLE_PORT:
+            case ZMAP_POLYGON_TRAPEZOID_PORT:
+              points->coords[x_coord] = x2;
+              break;
+            case ZMAP_POLYGON_TRIANGLE_STAR:
+            case ZMAP_POLYGON_TRAPEZOID_STAR:
+              points->coords[x_coord] = x1;
+              break;
+            case ZMAP_POLYGON_SQUARE:
+            case ZMAP_POLYGON_POINTING:
+            case ZMAP_POLYGON_DOUBLE_POINTING:
+            case ZMAP_POLYGON_DIAMOND:
+            default:
+              points->coords[x_coord] = x1 + ((x2 - x1) / 2);
+              break;
+            }
+          break;
+        case POINT_BOW_STARBOARD_REVERSE:
+          points->coords[x_coord] = x2;
+          switch(form)
+            {
+            case ZMAP_POLYGON_DIAMOND:
+            case ZMAP_POLYGON_DOUBLE_POINTING:
+            case ZMAP_POLYGON_POINTING:
+            case ZMAP_POLYGON_TRIANGLE_STAR:
+            case ZMAP_POLYGON_TRAPEZOID_STAR:
+              points->coords[y_coord] = y1 + ZMAP_EXON_POINT_SIZE;
+              break;
+            case ZMAP_POLYGON_SQUARE:
+            default:
+              points->coords[y_coord] = y1;
+              break;
+            }
+          break;
+        case POINT_STERN_STARBOARD_REVERSE:
+          points->coords[x_coord] = x2;
+          switch(form)
+            {
+            case ZMAP_POLYGON_TRAPEZOID_STAR:
+            case ZMAP_POLYGON_TRIANGLE_STAR:
+              points->coords[y_coord] = y2 - ZMAP_EXON_POINT_SIZE;
+              break;
+            default:
+              points->coords[y_coord] = y2;
+              break;
+            }
+          break;
+        case POINT_STERN_STERN_REVERSE:
+          switch(form)
+            {
+            case ZMAP_POLYGON_DIAMOND:
+              points->coords[x_coord] = x1 + ((x2 - x1) / 2);
+              points->coords[y_coord] = y2 + ZMAP_EXON_POINT_SIZE;
+              break;
+            case ZMAP_POLYGON_DOUBLE_POINTING:
+              points->coords[x_coord] = x1 + ((x2 - x1) / 2);
+              points->coords[y_coord] = y2 - ZMAP_EXON_POINT_SIZE;
+              break;
+            case ZMAP_POLYGON_TRIANGLE_PORT:
+            case ZMAP_POLYGON_TRAPEZOID_PORT:
+              points->coords[x_coord] = x2;
+              points->coords[y_coord] = y2;
+              break;
+            case ZMAP_POLYGON_TRIANGLE_STAR:
+            case ZMAP_POLYGON_TRAPEZOID_STAR:
+              points->coords[x_coord] = x1;
+              points->coords[y_coord] = y2;
+              break;
+            case ZMAP_POLYGON_SQUARE:
+            case ZMAP_POLYGON_POINTING:
+            default:
+              points->coords[x_coord] = x1 + ((x2 - x1) / 2);
+              points->coords[y_coord] = y2;
+              break;
+            }
+          break;
+        case POINT_STERN_PORT_REVERSE:
+          points->coords[x_coord] = x1;
+          switch(form)
+            {
+            case ZMAP_POLYGON_TRAPEZOID_PORT:
+            case ZMAP_POLYGON_TRIANGLE_PORT:
+              points->coords[y_coord] = y2 - ZMAP_EXON_POINT_SIZE;
+              break;
+            default:
+              points->coords[y_coord] = y2;
+              break;
+            }
+          break;
+          /* Unknown and defaults are errors */
+        case POINT_UNKNOWN_FORWARD:
+        default:
+          zMapAssert("Error: Unknown point type." == 0);
+          break;
+          
+        }
+    }
+
+  item = foo_canvas_item_new(FOO_CANVAS_GROUP(grp),
+			     foo_canvas_polygon_get_type(),
+                             "points", points,
+			     "outline_color_gdk", border,
+			     "fill_color_gdk", fill,
+			     NULL) ;
+  /* We Should be doing the long item check here! but we don't get access to that :( */
+  /* Mainly cos we know the longest distance here and don't want to pass it elsewhere */
+  foo_canvas_points_free(points);
+
+#ifdef NOT_JUST_YET________________________________________________
+  *fwidthA = x1; *fwidthB = x2; *fstart = y1; *fend = y2;
+#endif
+
+  return item;
+}
 
 /* As above but we do not set outline.... */
 FooCanvasItem *zMapDrawSolidBox(FooCanvasItem *group, 

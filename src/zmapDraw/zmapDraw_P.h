@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 15 14:47 2005 (rds)
+ * Last edited: Nov 24 09:11 2005 (rds)
  * Created: Mon Jul 18 09:14:38 2005 (rds)
- * CVS info:   $Id: zmapDraw_P.h,v 1.3 2005-11-16 10:32:45 rds Exp $
+ * CVS info:   $Id: zmapDraw_P.h,v 1.4 2005-12-06 10:47:59 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_P_H
@@ -40,11 +40,13 @@
 #include <math.h>
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapFeature.h>
 
 #define ZMAP_SCALE_MINORS_PER_MAJOR 10
 #define ZMAP_FORCE_FIVES TRUE
 #define MAX_TEXT_COLUMN_WIDTH (300.0)
 #define ZMAP_DRAW_TEXT_ROW_DATA_KEY "text_row_data"
+#define ZMAP_EXON_POINT_SIZE (0.5)
 
 enum {
   REGION_ROW_LEFT,
@@ -57,6 +59,53 @@ enum {
   REGION_ROW_JOIN_BOTTOM,
   REGION_LAST_LINE
 };
+
+/* some nautical points to remove confusion */
+typedef enum 
+  {
+    BOW_PORT = 1,
+    BOW_BOW,
+    BOW_STARBOARD,
+    STERN_STARBOARD,
+    STERN_STERN,
+    STERN_PORT,
+
+    POINT_MAX
+  } basicPoints;
+
+typedef enum
+  {
+    REVERSE_STRANDED = -1,
+    FORWARD_STRANDED = 1
+  } strand;
+
+typedef enum
+  {
+    VERTICAL   = 16,
+    HORIZONTAL = 32
+  } orientation;
+
+typedef enum
+  {
+    POINT_BOW_PORT_REVERSE        = (BOW_PORT        + VERTICAL) * REVERSE_STRANDED,
+    POINT_BOW_BOW_REVERSE         = (BOW_BOW         + VERTICAL) * REVERSE_STRANDED,
+    POINT_BOW_STARBOARD_REVERSE   = (BOW_STARBOARD   + VERTICAL) * REVERSE_STRANDED,
+    POINT_STERN_STARBOARD_REVERSE = (STERN_STARBOARD + VERTICAL) * REVERSE_STRANDED,
+    POINT_STERN_STERN_REVERSE     = (STERN_STERN     + VERTICAL) * REVERSE_STRANDED,
+    POINT_STERN_PORT_REVERSE      = (STERN_PORT      + VERTICAL) * REVERSE_STRANDED,
+
+    POINT_UNKNOWN = 0,          /* Error point. */
+
+    POINT_BOW_PORT_FORWARD        = (BOW_PORT        + VERTICAL) * FORWARD_STRANDED,
+    POINT_BOW_BOW_FORWARD         = (BOW_BOW         + VERTICAL) * FORWARD_STRANDED,
+    POINT_BOW_STARBOARD_FORWARD   = (BOW_STARBOARD   + VERTICAL) * FORWARD_STRANDED,
+    POINT_STERN_STARBOARD_FORWARD = (STERN_STARBOARD + VERTICAL) * FORWARD_STRANDED,
+    POINT_STERN_STERN_FORWARD     = (STERN_STERN     + VERTICAL) * FORWARD_STRANDED,
+    POINT_STERN_PORT_FORWARD      = (STERN_PORT      + VERTICAL) * FORWARD_STRANDED,
+
+    POINT_UNKNOWN_FORWARD
+  } ZMapBoxPointPosition;
+
 
 /* Just a collection of ints, boring but makes it easier */
 typedef struct _ZMapScaleBarStruct
