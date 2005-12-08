@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Dec  6 16:12 2005 (rds)
+ * Last edited: Dec  8 19:23 2005 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.39 2005-12-06 16:31:40 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.40 2005-12-08 19:27:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -868,13 +868,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   if ((column_id = getColumnGroup(attributes)))
     feature_set_name = (char *)g_quark_to_string(column_id) ;
 
-  if(parse_gaps && 
-     ((gaps_onwards = strstr(attributes, " Gaps ")) != NULL)) 
-    {
-      gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
-      gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not terminated */
-      loadGaps(gaps_onwards, gaps);
-    }
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
   /* This stuff ALL BREAKS COLUMN/FEATURE PLACEMENT ETC...NEEDS MUCH MORE WORK... */
@@ -1018,6 +1011,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
      else if (feature_type == ZMAPFEATURE_ALIGNMENT)
        {
 	 /* I am not sure if we ever have target_strand, target_phase from GFF output.... */
+         if(parse_gaps && 
+            ((gaps_onwards = strstr(attributes, " Gaps ")) != NULL)) 
+           {
+             gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
+             gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not terminated */
+             loadGaps(gaps_onwards, gaps);
+           }
 	 result = zMapFeatureAddAlignmentData(feature,
 					      homol_type,
 					      ZMAPSTRAND_NONE, ZMAPPHASE_0,
