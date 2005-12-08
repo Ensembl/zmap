@@ -66,68 +66,91 @@ things were hidden or not for purposes of filtering returned items. \
 BUT, this may not be a good idea BECAUSE it would mean mapping potentially thousands \
 of homols on the reverse strand....
 
-
-[A wish list from James (needs rationalising)]
+[column ordering]
 Across = Important
 Down = Urgent
-Text = Better system than current right_priority system for the ordering of                       \
-columns. (Maybe user defined zones like "transcripts",                                     \
-"similarity_features", and named columns are put into a zone or                            \
-left/right of other named columns, or simply in order of appearance if                     \
-the named column doesn't exist or isn't specified. Can have "default"                      \
-zone which is right of all the other zones to contain any columns which                    \
-don't have a zone defined.)  WE DON'T HAVE THIS, SO TALK TO JAMES...                                                              \
-                                                                                           \
-Ability for user to change the order of columns by dragging to new                         \
-position. This preference is sticky between sessions.                                      \
-                                                                                           \
-If multiple different methods are drawn in the same column, it can be                      \
-chosen whether they are drawn on top of each other, or stack. Could                        \
-have different types of transcript appearing in the same column (saves                     \
-screen space), and draw symbols signifying polyA signals and sites on                      \
-top of the transcripts.  DON'T HAVE THIS BUT COULD DO....                                                                  \
-                                                                                           \
-Zoom in to a particular region by dragging a lasso.                                        \
-                                                                                           \
-Can choose custom colours for fill and outline for boxes, and different                    \
-ones for CDS regions of transcripts. Colours can be chosen using the                       \
-standard X colour definitions. WE DON'T USE THIS INFORMATION AND I THINK \
-CURRENTLY ITS NOT DUMPED AS GFF SO WOULD NEED TO ADD TO ACEDB....                                                            \
-                                                                                           \
-Can change the shade of a colour of a feature according to its score.                      \
-Maybe a gradient from one colour to another? Maybe a 256bit look up                        \
-table? COULD BE PART OF THE STYLE...ALSO USE WIDTH OF BLOCK...(LOG SCALE)                                                                                    \
-                                                                                           \
-Can choose a variety of symbols (circles, triangles, stars) for                            \
-features in a columns. NOT DONE...                                                                     \
-                                                                                           \
-Feature boxes can have arrow heads/tails at either or both ends.                           \
-                                   \
- \
-HOMOLS SHOULD USE GAPS ARRAY \
-                                                         \
-Can change the symbol used to draw a feature depending upon the zoom                       \
-level. (Not necessary? Could just have features drawn in the same                          \
-column that are visible at different zoom levels.) ALLELE LIKE THING \
-                                         \
-                                                                                           \
-Can have labels attached to features, and labels that appear on                            \
-mouse-over. Labels repel each other so that they don't get drawn on top                    \
-of each other. ACEDB TEXT COLUMN....WE NEED THIS SOON....                                                                            \
-                                                                                           \
-A graph column type, for displaying properties such as GC content. GC                      \
-content could be calculated on-the-fly by zMap. Graphs could be                            \
-histogram, line, or varying shade of a colour (maybe a gradient?).                         \
-                                                                                           \
-Have the basepair distance scale permanently on the edge of the window                     \
-like a ruler in a drawing application.                                                     \
-                                                                                           \
-All columns, including the default ones, can easily be hidden and                          \
+Text = Better system than current right_priority system for the ordering of    \
+columns. (Maybe user defined zones like "transcripts",                         \
+"similarity_features", and named columns are put into a zone or                \
+left/right of other named columns, or simply in order of appearance if         \
+the named column doesn't exist or isn't specified. Can have "default"          \
+zone which is right of all the other zones to contain any columns which        \
+don't have a zone defined.)  WE DON'T HAVE THIS, SO TALK TO JAMES...          
+
+[column control]
+Across = Important
+Down = Not_Urgent
+Text = All columns, including the default ones, can easily be hidden and \
 revealed by the user.                                                                     
 
+[drag and drop column positions]
+Across = Important
+Down = Urgent
+Text = Ability for user to change the order of columns by dragging to new      \
+position. This preference is sticky between sessions.                         
 
+[multiple methods per column]
+Across = Important
+Down = Urgent
+Text = If multiple different methods are drawn in the same column, it can be   \
+chosen whether they are drawn on top of each other, or stack. Could            \
+have different types of transcript appearing in the same column (saves         \
+screen space), and draw symbols signifying polyA signals and sites on          \
+top of the transcripts.  DON'T HAVE THIS BUT COULD DO....                     
 
+[cds colours]
+Across = Important
+Down = Urgent
+Text = Can choose custom colours for fill and outline for boxes, and different \
+ones for CDS regions of transcripts. Colours can be chosen using the           \
+standard X colour definitions. WE DON'T USE THIS INFORMATION AND I THINK       \
+CURRENTLY ITS NOT DUMPED AS GFF SO WOULD NEED TO ADD TO ACEDB....              
 
+[colour by score]
+Across = Important
+Down = Not_Urgent
+Text = Can change the shade of a colour of a feature according to its score.  \
+Maybe a gradient from one colour to another? Maybe a 256bit look up           \
+table? COULD BE PART OF THE STYLE...ALSO USE WIDTH OF BLOCK...(LOG SCALE)
+
+[better symbols]
+Across = Important
+Down = Urgent
+Text = Can choose a variety of symbols (circles, triangles, stars) for     \
+features in a columns. NOT DONE...                                         \
+Feature boxes can have arrow heads/tails at either or both ends.         
+
+[better symbols 2]
+Across = Important
+Down = Not_Urgent
+Text = Can change the symbol used to draw a feature depending upon the zoom \
+level. (Not necessary? Could just have features drawn in the same           \
+column that are visible at different zoom levels.) ALLELE LIKE THING
+
+[HOMOLS SHOULD USE GAPS ARRAY]
+Across = Important
+Down = Urgent
+Text = HOMOLS SHOULD USE GAPS ARRAY
+
+[text column]
+Across = Important
+Down = Not_Urgent
+Text = Can have labels attached to features, and labels that appear on  \
+mouse-over. Labels repel each other so that they don't get drawn on top \
+of each other. ACEDB TEXT COLUMN....WE NEED THIS SOON....              
+
+[alternate column types]
+Across = Important
+Down = Not_Urgent
+Text = A graph column type, for displaying properties such as GC content. GC   \
+content could be calculated on-the-fly by zMap. Graphs could be         \
+histogram, line, or varying shade of a colour (maybe a gradient?).      \
+
+[scale]
+Across = Important
+Down = Not_Urgent
+Text = Have the basepair distance scale permanently on the edge of the window  \
+like a ruler in a drawing application.                                         \
 
 [focus window red border + user specified border]
 Across = Important
@@ -135,7 +158,6 @@ Down = Not_Urgent
 Text = Currently canvas windows are surrounded by a frame, while this can be \
 coloured red it cannot be made wider and so is almost invisible. Users also \
 want to be able to colour borders separately to show which window is which.
-
 
 [feature search window]
 Across = Important
