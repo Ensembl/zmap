@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Dec 12 16:01 2005 (rds)
+ * Last edited: Dec 12 16:50 2005 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.41 2005-12-12 16:03:35 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.42 2005-12-12 16:50:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -850,7 +850,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0 ;
   GQuark column_id = 0 ;
-  ZMapFeatureTypeStyle set_style = NULL ;
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
@@ -1239,7 +1238,7 @@ static void initSources(GData **datalist, GList *sources)
  *  */
 static GQuark getColumnGroup(char *attributes)
 {
-  GQuark column_id = NULL ;
+  GQuark column_id = 0 ;
   char *tag_pos ;
 
   if ((tag_pos = strstr(attributes, "Column_group")))
@@ -1320,7 +1319,7 @@ static gboolean getCDSAttrs(char *attributes,
 
   if ((target = strstr(attributes, "start_not_found")))
     {
-      gboolean start_not_found = FALSE ;
+      start_not_found = FALSE ;
       int attr_fields ;
       char *attr_format_str = "%*s %d %*s" ;
       int start_phase = 0 ;
@@ -1347,7 +1346,7 @@ static gboolean getCDSAttrs(char *attributes,
 
 
   if (result && (target = strstr(attributes, "end_not_found")))
-    *end_not_found_out = TRUE ;
+    *end_not_found_out = end_not_found = TRUE ;
 
   return result ;
 }
