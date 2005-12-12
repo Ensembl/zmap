@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Dec  8 19:23 2005 (rds)
+ * Last edited: Dec 12 16:01 2005 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.40 2005-12-08 19:27:25 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.41 2005-12-12 16:03:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -696,12 +696,9 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
     score_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, strand_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
     phase_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
     attributes[GFF_MAX_FREETEXT_CHARS + 1] = {'\0'}, comments[GFF_MAX_FREETEXT_CHARS + 1] = {'\0'} ;
-  int start = 0, end = 0 ;
+  int start = 0, end = 0, fields = 0 ;
   double score = 0 ;
   char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %1000[^#] %1000c" ; 
-  /* char *format_str_gaps = "%50s%50s%50s%d%d%50s%50s%50s %n" ; */
-  int fields, charsRead, attsLen ;
-  char *attsPos, *gapsPos ;
   ZMapFeatureTypeStyle curr_style = NULL ;
 
   fields = sscanf(line, format_str,
@@ -849,7 +846,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   ZMapGFFParserFeatureSet feature_set = NULL ; 
   char *feature_set_name = NULL ;
   gboolean feature_has_name ;
-  GQuark style_id ;
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0 ;
@@ -867,23 +863,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 
   if ((column_id = getColumnGroup(attributes)))
     feature_set_name = (char *)g_quark_to_string(column_id) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* This stuff ALL BREAKS COLUMN/FEATURE PLACEMENT ETC...NEEDS MUCH MORE WORK... */
-  else
-    column_id = g_quark_from_string(feature_set_name) ;
-
-
-
-  if (!(set_style = zMapFindStyle(parser->sources, column_id)))
-    {
-      result = FALSE ;
-      return result ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   /* We require additional information from the attributes for some types. */
   if (feature_type == ZMAPFEATURE_ALIGNMENT)
@@ -966,22 +945,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
     }
 
 
-  /* Note that exons/introns are given one per line in GFF which is quite annoying.....it is
-   * out of sync with how homols with gaps are given.... */
-  if (g_ascii_strcasecmp(ontology, "coding_exon") == 0
-      || g_ascii_strcasecmp(ontology, "exon") == 0)
-    {
-      exon.x1 = start ;
-      exon.x2 = end ;
-      exon_ptr = &exon ;
-    }
-  else if (g_ascii_strcasecmp(ontology, "intron") == 0)
-    {
-      intron.x1 = start ;
-      intron.x2 = end ;
-      intron_ptr = &intron ;
-    }
-
  if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
 					  sequence, ontology,
 					  feature_type, curr_style,
@@ -990,6 +953,22 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
    {
      if (feature_type == ZMAPFEATURE_TRANSCRIPT)
        {
+         /* Note that exons/introns are given one per line in GFF which is quite annoying.....it is
+          * out of sync with how homols with gaps are given.... */
+         if (g_ascii_strcasecmp(ontology, "coding_exon") == 0
+             || g_ascii_strcasecmp(ontology, "exon") == 0)
+           {
+             exon.x1 = start ;
+             exon.x2 = end ;
+             exon_ptr = &exon ;
+           }
+         else if (g_ascii_strcasecmp(ontology, "intron") == 0)
+           {
+             intron.x1 = start ;
+             intron.x2 = end ;
+             intron_ptr = &intron ;
+           }
+
 	 if (g_ascii_strcasecmp(ontology, "CDS") == 0)
 	   {
 	     gboolean start_not_found = FALSE, end_not_found = FALSE ;
