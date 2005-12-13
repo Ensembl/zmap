@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec 13 11:51 2005 (rds)
+ * Last edited: Dec 13 12:15 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.105 2005-12-13 11:53:51 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.106 2005-12-13 12:16:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1494,9 +1494,13 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
   else
     {
       double feature_start, feature_end;
+      double cds_start = 0.0, cds_end = 0.0; /* cds_start < cds_end */
+      GdkColor *cds_bg = background;
       FooCanvasGroup *feature_group ;
+
       feature_start = feature->x1;
       feature_end   = feature->x2; /* I want this function to find these values */
+      
       zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
 
       feature_item = zmapWindowDrawFeatureParent(parent, feature, feature_start);
@@ -1505,6 +1509,15 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
       /* We could look @ foo_canavs_group->ypos, but locks us 2 the vertical! */
       offset = feature_start + feature_offset ;
 
+      if(feature->feature.transcript.flags.cds)
+        {
+          cds_start = feature->feature.transcript.cds_start;
+          cds_end   = feature->feature.transcript.cds_end;
+          zMapAssert(cds_start < cds_end);
+          cds_start -= offset;
+          cds_end   -= offset;
+        }
+      
       /* first we draw the introns, then the exons.  Introns will have an invisible
        * box around them to allow the user to click there and get a reaction.
        * It's a bit hacky but the bounding box has the same coords stored on it as
@@ -1547,11 +1560,18 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
               
               attachDataToItem(intron_box, window, feature, ITEM_FEATURE_BOUNDING_BOX, box_data);
               zmapWindowLongItemCheck(window, intron_box, top, bottom);
+
+              if(!feature->feature.transcript.flags.cds || 
+                 (feature->feature.transcript.flags.cds &&
+                 (cds_start > bottom)))
+                cds_bg = background;  /* probably a reverse & cds_end thing here too! */
+              else
+                cds_bg = foreground;
               
               intron_line = zMapDrawAnnotatePolygon(intron_box,
                                                     ZMAP_ANNOTATE_INTRON, 
                                                     NULL,
-                                                    background,
+                                                    cds_bg,
                                                     line_width,
                                                     feature->strand);
               attachDataToItem(intron_line, window, feature, ITEM_FEATURE_CHILD, intron_data);
@@ -1566,16 +1586,6 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 
       if (feature->feature.transcript.exons)
 	{
-          double cds_start = 0.0, cds_end = 0.0; /* cds_start < cds_end */
-          GdkColor *cds_bg = background, *cds_bg_tmp = foreground;
-          if(feature->feature.transcript.flags.cds)
-            {
-              cds_start = feature->feature.transcript.cds_start;
-              cds_end   = feature->feature.transcript.cds_end;
-              zMapAssert(cds_start < cds_end);
-              cds_start -= offset;
-              cds_end   -= offset;
-            }
 	  for (i = 0; i < feature->feature.transcript.exons->len; i++)
 	    {
 	      ZMapSpan exon_span ;
@@ -1596,11 +1606,12 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
               exon_data->end   = exon_span->x2;
 
               zmapWindowSeq2CanOffset(&top, &bottom, offset);
-              if(feature->feature.transcript.flags.cds && 
-                 (cds_start > bottom))
-                cds_bg = cds_bg_tmp;  /* probably a reverse & cds_end thing here too! */
+              if(!feature->feature.transcript.flags.cds || 
+                 (feature->feature.transcript.flags.cds &&
+                 (cds_start > bottom)))
+                cds_bg = background;  /* probably a reverse & cds_end thing here too! */
               else
-                cds_bg = background;
+                cds_bg = foreground;
 
               exon_box = zMapDrawSSPolygon(feature_item, 
                                            ZMAP_POLYGON_POINTING, 
@@ -1619,7 +1630,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
                                           (feature->strand == ZMAPSTRAND_REVERSE ? 
                                            ZMAP_ANNOTATE_UTR_LAST : ZMAP_ANNOTATE_UTR_FIRST),
                                           outline,
-                                          foreground,
+                                          background,
                                           cds_start,
                                           feature->strand);
                 }
@@ -1630,7 +1641,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
                                           (feature->strand == ZMAPSTRAND_REVERSE ? 
                                            ZMAP_ANNOTATE_UTR_FIRST : ZMAP_ANNOTATE_UTR_LAST),
                                           outline,
-                                          foreground,
+                                          background,
                                           cds_end,
                                           feature->strand);
                 }
