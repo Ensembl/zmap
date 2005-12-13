@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec  6 10:40 2005 (rds)
+ * Last edited: Dec 13 11:51 2005 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.104 2005-12-06 10:49:54 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.105 2005-12-13 11:53:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -199,19 +199,25 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					double feature_offset,
 					double x1, double y1, double x2, double y2,
-					GdkColor *outline, GdkColor *background,
+					GdkColor *outline,
+                                        GdkColor *foreground,
+                                        GdkColor *background,
 					ZMapWindow window) ;
 static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					    double feature_offset,
 					    double x1, double feature_top,
 					    double x2, double feature_bottom,
-					    GdkColor *outline, GdkColor *background,
+					    GdkColor *outline, 
+                                            GdkColor *foreground,
+                                            GdkColor *background,
 					    ZMapWindow window) ;
 static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature feature,
                                            double feature_offset,
                                            double x1, double feature_top,
                                            double x2, double feature_bottom,
-                                           GdkColor *outline, GdkColor *background,
+                                           GdkColor *outline, 
+                                           GdkColor *foreground,
+                                           GdkColor *background,
                                            ZMapWindow window) ;
 static FooCanvasItem *drawSequenceFeature(FooCanvasGroup *parent, ZMapFeature feature,
                                           double feature_offset,
@@ -450,7 +456,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
   /* debugging.... */
+#ifdef RDS_DONT_INCLUDE
   zmapWindowContainerPrint(root_group) ;
+#endif
 
   return ;
 }
@@ -1079,18 +1087,29 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 					     feature_offset,
 					     start_x, feature->x1, end_x, feature->x2,
 					     &style->outline,
+                                             &style->foreground,
 					     &style->background,
 					     window) ;
 	break ;
       }
     case ZMAPFEATURE_ALIGNMENT:
       {
-        top_feature_item = drawAlignmentFeature(column_group, feature,
-                                                feature_offset,
-                                                start_x, feature->x1, end_x, feature->x2,
-                                                &style->outline,
-                                                &style->background,
-                                                window);
+        if(style->align_gaps)
+          top_feature_item = drawAlignmentFeature(column_group, feature,
+                                                  feature_offset,
+                                                  start_x, feature->x1, end_x, feature->x2,
+                                                  &style->outline,
+                                                  &style->foreground,
+                                                  &style->background,
+                                                  window);
+        else
+          top_feature_item = drawSimpleFeature(column_group, feature,
+                                               feature_offset,
+                                               start_x, feature->x1, end_x, feature->x2,
+                                               &style->outline,
+                                               &style->foreground,
+                                               &style->background,
+                                               window) ;
         break;
       }
     case ZMAPFEATURE_RAW_SEQUENCE:
@@ -1109,6 +1128,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 						 feature_offset,
 						 start_x, 0.0, end_x, 0.0,
 						 &style->outline,
+                                                 &style->foreground,
 						 &style->background,
 						 window) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1129,7 +1149,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
   if (top_feature_item)
     {
       gboolean status ;
-
+      
       status = zmapWindowFToIAddFeature(window->context_to_item,
 					canvas_data->curr_alignment->unique_id,
 					canvas_data->curr_block->unique_id, 
@@ -1228,7 +1248,9 @@ FooCanvasItem *zmapWindowDrawFeatureParent(FooCanvasGroup *parent,
 static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					double feature_offset,
 					double x1, double y1, double x2, double y2,
-					GdkColor *outline, GdkColor *background,
+					GdkColor *outline, 
+                                        GdkColor *foreground,
+                                        GdkColor *background,
 					ZMapWindow window)
 {
   FooCanvasItem *feature_item ;
@@ -1263,6 +1285,7 @@ static FooCanvasItem *drawSequenceFeature(FooCanvasGroup *parent, ZMapFeature fe
                              feature_thickness, 
                              feature_bottom,
                              outline,
+                             NULL, /* THIS IS WRONG ATM, but this will all change anyway!!! RDS */
                              background,
                              window);
   else
@@ -1282,18 +1305,19 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                            double feature_offset,
                                            double x1, double feature_top,
                                            double x2, double feature_bottom,
-                                           GdkColor *outline, GdkColor *background,
+                                           GdkColor *outline, 
+                                           GdkColor *foreground,
+                                           GdkColor *background,
                                            ZMapWindow window) 
 {
   FooCanvasItem *feature_item ;
-  gboolean show_gapped = TRUE;  /* Needs to be parameteized from style! */
   double offset ;
   int i ;
 
-  if (!feature->feature.homol.align || !show_gapped)
+  if (!feature->feature.homol.align)
     feature_item = drawSimpleFeature(parent, feature, feature_offset,
                                      x1, feature_top, x2, feature_bottom,
-                                     outline, background, window) ;
+                                     outline, foreground, background, window) ;
   else if(feature->feature.homol.align)
     {
       float line_width  = 1.5 ;
@@ -1301,9 +1325,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
       FooCanvasItem *lastBoxWeDrew   = NULL;
       FooCanvasGroup *feature_group  = NULL;
       ZMapAlignBlock prev_align_span = NULL;
-      GdkColor insert_line;
 
-      gdk_color_parse("brown", &insert_line);
       feature_start = feature->x1;
       feature_end   = feature->x2; /* I want this function to find these values */
       zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
@@ -1312,8 +1334,6 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
 
       /* Calculate total offset for for subparts of the feature. */
       offset = feature_start + feature_offset ;
-
-      zMapAssert(offset == (feature_group->ypos + 1));
 
       for (i = 0 ; i < feature->feature.homol.align->len ; i++)  
         {
@@ -1338,14 +1358,38 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
           if(prev_align_span)
             {
               int q_indel, t_indel;
-              q_indel = align_span->q1 - prev_align_span->q2;
               t_indel = align_span->t1 - prev_align_span->t2;
+              /* For query the current and previous can be reversed
+               * wrt target which is _always_ consecutive. */
+              if((align_span->t_strand == ZMAPSTRAND_REVERSE && 
+                  align_span->q_strand == ZMAPSTRAND_FORWARD) || 
+                 (align_span->t_strand == ZMAPSTRAND_FORWARD &&
+                  align_span->q_strand == ZMAPSTRAND_REVERSE))
+                q_indel = prev_align_span->q1 - align_span->q2;
+              else
+                q_indel = align_span->q1 - prev_align_span->q2;
+              
+#ifdef RDS_THESE_NEED_A_LITTLE_BIT_OF_CHECKING
+              /* I'm not 100% sure on some of this. */
+                {
+                  if(align_span->q_strand == ZMAPSTRAND_REVERSE)
+                    printf("QR TF Find %s\n", g_quark_to_string(feature->unique_id));
+                  else
+                    printf("QF TR Find %s\n", g_quark_to_string(feature->unique_id));
+                }
+                {               /* Especially REVERSE REVERSE. */
+                  if(align_span->t_strand == ZMAPSTRAND_REVERSE &&
+                     align_span->q_strand == ZMAPSTRAND_REVERSE)
+                    printf("QR TR Find %s\n", g_quark_to_string(feature->unique_id));
+                }
+#endif /* RDS_THESE_NEED_A_LITTLE_BIT_OF_CHECKING */
+
               if(q_indel >= t_indel) /* insertion in query, expand align and annotate the insertion */
                 {
                   zMapDrawAnnotatePolygon(lastBoxWeDrew,
                                           ZMAP_ANNOTATE_EXTEND_ALIGN, 
                                           NULL,
-                                          &insert_line,
+                                          foreground,
                                           bottom,
                                           feature->strand);
                   /* we need to check here that the item hasn't been
@@ -1353,7 +1397,9 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                    * updating the rather than inserting as the check
                    * code currently does */
                   /* Really I want to display the correct width in the target here.
-                   * Not sure on it's effect re the cap/join style....
+                   * Not sure on it's effect re the cap/join style.... 
+                   * t_indel may always be 1, but possible that this is not the case, 
+                   * code allows it not to be.
                    */
                 }
               else
@@ -1412,10 +1458,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
             }
           prev_align_span = align_span;
         }
-#ifdef RDS_DONT_INCLUDE_AS_THIS_CRUDE
-      if(((feature_end - feature_start + 1) * zMapWindowGetZoomFactor(window)) < 5)
-        foo_canvas_item_hide(feature_item);
-#endif
+
     }
     
   return feature_item ;
@@ -1430,7 +1473,9 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 					    double feature_offset,
 					    double x1, double feature_top,
 					    double x2, double feature_bottom,
-					    GdkColor *outline, GdkColor *background,
+					    GdkColor *outline, 
+                                            GdkColor *foreground,
+                                            GdkColor *background,
 					    ZMapWindow window)
 {
   FooCanvasItem *feature_item ;
@@ -1444,7 +1489,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
     {
       feature_item = drawSimpleFeature(parent, feature, feature_offset,
 				       x1, feature_top, x2, feature_bottom,
-				       outline, background, window) ;
+				       outline, foreground, background, window) ;
     }
   else
     {
@@ -1459,7 +1504,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
       /* Calculate total offset for for subparts of the feature. */
       /* We could look @ foo_canavs_group->ypos, but locks us 2 the vertical! */
       offset = feature_start + feature_offset ;
-      zMapAssert(offset == (feature_group->ypos + 1));
+
       /* first we draw the introns, then the exons.  Introns will have an invisible
        * box around them to allow the user to click there and get a reaction.
        * It's a bit hacky but the bounding box has the same coords stored on it as
@@ -1521,6 +1566,16 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 
       if (feature->feature.transcript.exons)
 	{
+          double cds_start = 0.0, cds_end = 0.0; /* cds_start < cds_end */
+          GdkColor *cds_bg = background, *cds_bg_tmp = foreground;
+          if(feature->feature.transcript.flags.cds)
+            {
+              cds_start = feature->feature.transcript.cds_start;
+              cds_end   = feature->feature.transcript.cds_end;
+              zMapAssert(cds_start < cds_end);
+              cds_start -= offset;
+              cds_end   -= offset;
+            }
 	  for (i = 0; i < feature->feature.transcript.exons->len; i++)
 	    {
 	      ZMapSpan exon_span ;
@@ -1541,18 +1596,48 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
               exon_data->end   = exon_span->x2;
 
               zmapWindowSeq2CanOffset(&top, &bottom, offset);
+              if(feature->feature.transcript.flags.cds && 
+                 (cds_start > bottom))
+                cds_bg = cds_bg_tmp;  /* probably a reverse & cds_end thing here too! */
+              else
+                cds_bg = background;
+
               exon_box = zMapDrawSSPolygon(feature_item, 
-                                           ZMAP_POLYGON_SQUARE, 
+                                           ZMAP_POLYGON_POINTING, 
                                            x1, x2,
                                            top, bottom,
-                                           outline, background,
+                                           outline, cds_bg,
                                            feature->strand);
-              
+                
               attachDataToItem(exon_box, window, feature, ITEM_FEATURE_CHILD, exon_data);
               zmapWindowLongItemCheck(window, exon_box, top, bottom);
-            }
-	}
 
+              if(feature->feature.transcript.flags.cds && 
+                 (cds_start > top) && (cds_start < bottom))
+                {
+                  zMapDrawAnnotatePolygon(exon_box,
+                                          (feature->strand == ZMAPSTRAND_REVERSE ? 
+                                           ZMAP_ANNOTATE_UTR_LAST : ZMAP_ANNOTATE_UTR_FIRST),
+                                          outline,
+                                          foreground,
+                                          cds_start,
+                                          feature->strand);
+                }
+              if(feature->feature.transcript.flags.cds && 
+                 (cds_end > top) && (cds_end < bottom))
+                {
+                  zMapDrawAnnotatePolygon(exon_box,
+                                          (feature->strand == ZMAPSTRAND_REVERSE ? 
+                                           ZMAP_ANNOTATE_UTR_FIRST : ZMAP_ANNOTATE_UTR_LAST),
+                                          outline,
+                                          foreground,
+                                          cds_end,
+                                          feature->strand);
+                }
+
+            }
+
+	}
     }
 
   return feature_item ;
