@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Dec  6 10:41 2005 (rds)
+ * Last edited: Dec 12 21:38 2005 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.40 2005-12-06 10:47:59 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.41 2005-12-13 10:25:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,11 +92,8 @@ FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon,
                                        double dimension, /* we might need another one */
                                        int zmapStrand)
 {
-  FooCanvasItem   *item = NULL;
-  FooCanvasPoints *bow  = NULL,
-    *stern = NULL, 
-    *final = NULL,
-    *tmp   = NULL;
+  FooCanvasItem   *item  = NULL;
+  FooCanvasPoints *final = NULL, *tmp   = NULL;
   GType annItemType = 0; /* So we can draw a line or polygon with points */
   double x1, x2, y1, y2;
   int i;
@@ -153,48 +150,82 @@ FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon,
       final->coords[2] = tmp->coords[2];
       final->coords[3] = y2;
       break;
-    case ZMAP_ANNOTATE_UTR:
+    case ZMAP_ANNOTATE_UTR_LAST:
       annItemType = foo_canvas_polygon_get_type(); /* We'll make a polygon */
-      /* final = foo_canvas_points_new(6); */
-      /* steal the tmp points we need to use, utilise
-       * (double)dimension to work out where to cut up the exon */
-      /* We'll alter the (FooCanvasPoints)tmp and then
-       * foo_canvas_item_set(polygon, "points", tmp, NULL) */
-      break;
-    case ZMAP_ANNOTATE_EXTEND_ALIGN:
-      annItemType = foo_canvas_line_get_type(); /* We draw a line at the original place */
-      final = foo_canvas_points_new(2); /* just a line */
-      final->coords[0] = x1 + 1;
-      final->coords[2] = x2 - 1; /* cap style issues */
-      switch(zmapStrand)
-        {
-        case ZMAPSTRAND_REVERSE:
-          final->coords[1] = y1;
-          final->coords[3] = y1;
-          break;
-        case ZMAPSTRAND_FORWARD:
-        default:
-          final->coords[1] = y2;
-          final->coords[3] = y2;
-          break;
-        }
+      final = foo_canvas_points_new((int)(tmp->num_points));
+
+      memcpy(&(final->coords[0]),
+             &(tmp->coords[0]),
+             ((tmp->num_points * 2) * sizeof(double))) ;
+      /* Now we only need to change some */
+      final->coords[7]  = dimension;
+      final->coords[9]  = dimension;
+      final->coords[11] = dimension;
+      final->coords[11] = dimension;
       tmp->coords[1]  = dimension;
       tmp->coords[3]  = dimension;
       tmp->coords[5]  = dimension;
       tmp->coords[13] = dimension;
+
       foo_canvas_item_set(polygon, "points", tmp, NULL);
-      dimension = 1.0;
+      break;
+    case ZMAP_ANNOTATE_UTR_FIRST:
+      annItemType = foo_canvas_polygon_get_type(); /* We'll make a polygon */
+      final = foo_canvas_points_new((int)(tmp->num_points));
+      /* we change the stern here! */
+
+      memcpy(&(final->coords[0]),
+             &(tmp->coords[0]),
+             ((tmp->num_points * 2) * sizeof(double))) ;
+      /* Now we only need to change some */
+      final->coords[1]  = dimension;
+      final->coords[3]  = dimension;
+      final->coords[5]  = dimension;
+      final->coords[13] = dimension;
+      tmp->coords[7]  = dimension;
+      tmp->coords[9]  = dimension;
+      tmp->coords[11] = dimension;
+      tmp->coords[11] = dimension;
+
+      foo_canvas_item_set(polygon, "points", tmp, NULL);
+      break;
+    case ZMAP_ANNOTATE_EXTEND_ALIGN:
+      {
+        double diff = dimension - y2;
+        annItemType = foo_canvas_line_get_type(); /* We draw a line at the original place */
+        final = foo_canvas_points_new(2); /* just a line */
+        final->coords[0] = x1 + 1;
+        final->coords[1] = y2;
+        final->coords[2] = x2 - 1; /* cap style issues */
+        final->coords[3] = y2;
+        switch(zmapStrand)
+          {
+          case ZMAPSTRAND_REVERSE:
+            tmp->coords[7]  += diff;
+            tmp->coords[9]  += diff;
+            tmp->coords[11] += diff;
+            break;
+          case ZMAPSTRAND_FORWARD:
+          default:
+            tmp->coords[1] += diff;
+            tmp->coords[3] += diff;
+            tmp->coords[5] += diff;
+            tmp->coords[13] += diff;
+            break;
+          }
+        foo_canvas_item_set(polygon, "points", tmp, NULL);
+        dimension = 1.0;
+      }
       break;
     default:
-      annItemType = foo_canvas_line_get_type();
+      annItemType = foo_canvas_text_get_type();
+      final = foo_canvas_points_new(2); /* just a line */      
       switch(zmapStrand)
         {
         case ZMAPSTRAND_REVERSE:
-          final = stern;
           break;
         case ZMAPSTRAND_FORWARD:
         default:
-          final = bow;
           break;
         }
       break;
@@ -254,6 +285,7 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
     {
     case ZMAPSTRAND_REVERSE:
       strand = -1;
+      break;
     case ZMAPSTRAND_FORWARD:
     case ZMAPSTRAND_NONE:
     default:
