@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Dec  4 16:11 2005 (rds)
+ * Last edited: Dec  7 13:59 2005 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.24 2005-12-06 10:50:09 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.25 2005-12-13 10:23:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -86,7 +86,8 @@ typedef enum
     ZMAP_ANNOTATE_STERN_BOUNDARY_REGION, /* draws a polygon on top of original one from point dimension to stern */
     ZMAP_ANNOTATE_TRIANGLE_PORT, /* draws a centered triangle pointing 2 port */
     ZMAP_ANNOTATE_TRIANGLE_STAR, /* draws a centered triangle pointing 2 starboard */
-    ZMAP_ANNOTATE_UTR,          /* Resizes original polygon and butts up another at point dimension */
+    ZMAP_ANNOTATE_UTR_FIRST,     /* Resizes original polygon and butts up another at point dimension */
+    ZMAP_ANNOTATE_UTR_LAST,      /* Resizes original polygon and butts up another at point dimension */
     ZMAP_ANNOTATE_EXTEND_ALIGN
   } ZMapAnnotateForm;
 
