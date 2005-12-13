@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Dec  2 12:48 2005 (edgrif)
+ * Last edited: Dec 13 10:49 2005 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.11 2005-12-02 14:08:43 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.12 2005-12-13 11:50:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -162,7 +162,15 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
   return ;
 }
 
-
+void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, 
+                              gboolean show_gaps,
+                              gboolean parse_gaps)
+{
+  zMapAssert(style);
+  style->align_gaps = show_gaps;
+  style->parse_gaps = parse_gaps;
+  return ;
+}
 
 /* Pretty brain dead but we need some way to deal with the situation where a style may differ in
  * case only betweens servers...perhaps we should not be merging....???
@@ -302,7 +310,9 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	   {"strand_specific", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"frame_specific", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"minmag"      , ZMAPCONFIG_INT, {NULL}},
-	   {"bump"      , ZMAPCONFIG_STRING, {NULL}},
+	   {"bump"        , ZMAPCONFIG_STRING, {NULL}},
+	   {"gapped_align", ZMAPCONFIG_BOOL, {NULL}},
+	   {"read_gaps"   , ZMAPCONFIG_BOOL, {NULL}},
 	   {NULL, -1, {NULL}}} ;
 
       /* Init fields that cannot default to string NULL. */
@@ -337,7 +347,6 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	  if ((name = zMapConfigGetElementString(next_types, "name")))
 	    {
 	      ZMapFeatureTypeStyle new_type ;
-	      gboolean strand_specific, frame_specific, show_rev_strand ;
 
 	      new_type = zMapFeatureTypeCreate(name,
 					       zMapConfigGetElementString(next_types, "outline"),
@@ -352,6 +361,11 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 				      zMapConfigGetElementBool(next_types, "show_reverse")) ;
 
 	      zMapStyleSetBump(new_type, zMapConfigGetElementString(next_types, "bump")) ;
+
+              /* Not good to hard code the TRUE here, but I guess blixem requires the gaps array. */
+              zMapStyleSetGappedAligns(new_type, 
+                                       zMapConfigGetElementString(next_types, "gapped_align"),
+                                       TRUE);
 
 	      types = g_list_append(types, new_type) ;
 
