@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Dec 12 16:50 2005 (rds)
+ * Last edited: Dec 12 17:27 2005 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.42 2005-12-12 16:50:59 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.43 2005-12-13 10:28:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -853,7 +853,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
-  gboolean parse_gaps = TRUE;   /* parameterize this from the styles file. */
 
   /* Set up the name/style for the current feature set....
    * Need to look for a zmap specific attribute field which specifies a column group independently of
@@ -989,7 +988,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
      else if (feature_type == ZMAPFEATURE_ALIGNMENT)
        {
 	 /* I am not sure if we ever have target_strand, target_phase from GFF output.... */
-         if(parse_gaps && 
+         if(curr_style->parse_gaps && 
             ((gaps_onwards = strstr(attributes, " Gaps ")) != NULL)) 
            {
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
