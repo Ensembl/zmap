@@ -28,19 +28,17 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec  2 13:24 2005 (edgrif)
+ * Last edited: Dec 20 13:37 2005 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.9 2005-12-02 14:11:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.10 2005-12-20 15:32:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
+#include <zmapWindowContainer.h>
 
-/* because roy can't spell container_type more than once */
-#define CONTAINER_TYPE_KEY        "container_type"
-#define CONTAINER_REDRAW_CALLBACK "container_callback"
-#define CONTAINER_REDRAW_DATA     "container_data"
+
 
 /* Used for holding state while bumping columns. */
 typedef struct
@@ -67,6 +65,10 @@ typedef struct
 
 
 
+
+/* Container package stuff...container things need to go in a separate file VERY SOON... */
+
+
 /* Used to identify unambiguously which part of a zmapWindowContainer group a particular
  * foo canvas group or item represents. */
 typedef enum {CONTAINER_INVALID,
@@ -74,25 +76,60 @@ typedef enum {CONTAINER_INVALID,
 	      CONTAINER_FEATURES, CONTAINER_BACKGROUND,
               CONTAINER_TEXT} ContainerType ;
 
-typedef enum{ZMAPCONTAINER_ROOT_LEVEL       = ZMAPFEATURE_STRUCT_CONTEXT,
-             ZMAPCONTAINER_ALIGN_LEVEL      = ZMAPFEATURE_STRUCT_ALIGN,
-             ZMAPCONTAINER_BLOCK_LEVEL      = ZMAPFEATURE_STRUCT_BLOCK,
-             ZMAPCONTAINER_FEATURESET_LEVEL = ZMAPFEATURE_STRUCT_FEATURESET,
-             ZMAPCONTAINER_FEATURE_LEVEL    = ZMAPFEATURE_STRUCT_FEATURE,
-             ZMAPCONTAINER_STRAND_LEVEL} ZMapContainerLevelType;
+
+/* because roy can't spell container_type more than once */
+#define CONTAINER_TYPE_KEY        "container_type"
+
+
+/* these must go in the end... */
+
+#define CONTAINER_REDRAW_CALLBACK "container_callback"
+#define CONTAINER_REDRAW_DATA     "container_data"
+
+
+
+/* I think most of the above will be replaced by this... */
+#define CONTAINER_DATA "container_data"
+
+typedef struct
+{
+  ZMapContainerLevelType level ;
+
+  /* A optimisation because we don't want to attach this information to every single feature.... */
+  gboolean child_redraw_required ;
+
+  /* I'd like to add a border here too..... */
+  double child_spacing ;
+
+} ContainerDataStruct, *ContainerData ;
+
+
 
 typedef void (*ZMapContainerCallback)(FooCanvasGroup *parent, gpointer user_data);
 
+
+
+typedef struct
+{
+  ZMapWindow window ;
+  double zoom ;
+
+} ZoomDataStruct, *ZoomData ;
+
+
+
+
 typedef struct execOnChildrenStruct_
 {
-  ZMapContainerLevelType stop;
-  GFunc                  each_parent_cb;
-  gpointer               each_parent_data;
-  /* We can possibly prune these two */
-  GFunc                  final_children_foreach;
-  gpointer               final_children_data;
-  gboolean               resize;
-} execOnChildrenStruct, *execOnChildren;
+  ZMapContainerLevelType stop ;
+
+  GFunc                  down_func_cb ;
+  gpointer               down_func_data ;
+
+  GFunc                  up_func_cb ;
+  gpointer               up_func_data ;
+
+} execOnChildrenStruct, *execOnChildren ;
 
 
 static void bumpColCB(gpointer data, gpointer user_data) ;
@@ -117,18 +154,40 @@ static void printlevel(gpointer data, gpointer user_data);
 static void printItem(FooCanvasItem *item, int indent, char *prefix) ;
 
 /* Trying this out. */
-static void defaultZoomChangedCB(FooCanvasGroup *container, double new_zoom, gpointer user_data);
-static void zmapWindowContainerZoomChanged(gpointer data, gpointer user_data);
-static void addToList(gpointer data, gpointer user_data);
-static void eachContainerParent(gpointer data, gpointer user_data);
-static void executeOnContainerChildren(FooCanvasGroup        *parent, 
-                                       ZMapContainerLevelType stop_at_type,
-                                       GFunc                  each_parent_cb,
-                                       gpointer               each_parent_data,
-                                       GFunc                  final_children_foreach,
-                                       gpointer               final_children_data,
-                                       gboolean               need_resize);
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void defaultZoomChangedCB(FooCanvasGroup *container, double new_zoom, gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+static void addToList(gpointer data, gpointer user_data);
+
+
+static void reAlignGroups(FooCanvasGroup *container, gpointer user_data) ;
+
+
+static void executeoncontainer(FooCanvasGroup        *parent, 
+			       ZMapContainerLevelType stop_at_type,
+			       GFunc                  down_func_cb,
+			       gpointer               down_func_data,
+			       GFunc                  up_func_cb,
+			       gpointer               up_func_data) ;
+static void eachContainer(gpointer data, gpointer user_data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void eachContainerChild(gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void zmapWindowContainerZoomChanged(gpointer data, gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+static void preZoomCB(gpointer data, gpointer user_data) ;
+static void postZoomCB(gpointer data, gpointer user_data) ;
+static void columnZoomChanged(FooCanvasGroup *container, double new_zoom, ZMapWindow window) ;
 
 
 
@@ -165,21 +224,23 @@ static void executeOnContainerChildren(FooCanvasGroup        *parent,
  * 
  */
 FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
+					  ZMapContainerLevelType level,
+					  double child_spacing,
 					  GdkColor *background_fill_colour,
 					  GdkColor *background_border_colour)
 {
   FooCanvasGroup *container_parent = NULL, *container_features ;
   FooCanvasItem *container_background ;
   ContainerType parent_type = CONTAINER_INVALID, container_type ;
-
+  ContainerData container_data ;
 
   /* Parent has to be a group. */
   zMapAssert(FOO_IS_CANVAS_GROUP(parent)) ;
 
-
-  /* Is the parent a container itself, if not then make this the root container. */
   parent_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(parent), CONTAINER_TYPE_KEY)) ;
   zMapAssert(parent_type == CONTAINER_INVALID || parent_type == CONTAINER_FEATURES) ;
+
+  /* Is the parent a container itself, if not then make this the root container. */
   if (parent_type == CONTAINER_FEATURES)
     container_type = CONTAINER_PARENT ;
   else
@@ -189,15 +250,26 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
   container_parent = FOO_CANVAS_GROUP(foo_canvas_item_new(parent,
 							  foo_canvas_group_get_type(),
 							  NULL)) ;
+
+  container_data = g_new0(ContainerDataStruct, 1) ;
+  g_object_set_data(G_OBJECT(container_parent), CONTAINER_DATA, container_data) ;
+
+  container_data->level = level ;
+
+  container_data->child_spacing = child_spacing ;
+
+  /* Default is that we always redraw the next level down. */
+  container_data->child_redraw_required = TRUE ;
+
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY,
 		    GINT_TO_POINTER(container_type)) ;
 
-  g_object_set_data(G_OBJECT(container_parent), CONTAINER_REDRAW_CALLBACK,
-                    defaultZoomChangedCB);
 
   container_features = FOO_CANVAS_GROUP(foo_canvas_item_new(container_parent,
 							    foo_canvas_group_get_type(),
 							    NULL)) ;
+
+
   g_object_set_data(G_OBJECT(container_features), CONTAINER_TYPE_KEY,
 		    GINT_TO_POINTER(CONTAINER_FEATURES)) ;
 
@@ -213,9 +285,35 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
   * and subgroup items correctly. */
   foo_canvas_item_lower_to_bottom(container_background) ; 
 
+
   return container_parent ;
 }
 
+
+
+
+void zmapWindowContainerSetChildRedrawRequired(FooCanvasGroup *container_parent,
+					       gboolean redraw_required)
+{
+
+  ContainerType type = CONTAINER_INVALID ;
+  ContainerData container_data ;
+
+  zMapAssert(container_parent) ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT) ;
+
+  container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA) ;
+
+  container_data->child_redraw_required = redraw_required ;
+
+  return ;
+}
+
+
+
+/* THIS MUST BECOME PART OF THE GENERAL FEATURES STUFF..... */
 /* In general this part does not exist..., but when it does
  *  - allows addition of text to any column.
  *  - text can be bumped left or right of the features with ease.
@@ -249,6 +347,9 @@ FooCanvasGroup *zmapWindowContainerAddTextChild(FooCanvasGroup *container_parent
   return text_child;
 }
 
+
+
+
 /* Given either child of the container, return the container_parent. */
 FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *unknown_child)
 {
@@ -270,6 +371,7 @@ FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *unknown_child)
 
   return container_parent ;
 }
+
 
 
 /* Given a container parent, return the container parent above that, if the container
@@ -503,17 +605,10 @@ void zmapWindowContainerPrint(FooCanvasGroup *container_parent)
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
-  executeOnContainerChildren(container_parent,
-                             ZMAPCONTAINER_FEATURESET_LEVEL,
-                             printlevel,
-                             NULL,
-#ifdef ZMAP_CONTAINER_PRINT_ALL_FEATURES
-                             printlevel,
-#else
-                             NULL,
-#endif
-                             NULL,
-                             FALSE);
+  executeoncontainer(container_parent,
+		     ZMAPCONTAINER_LEVEL_FEATURESET,
+		     printlevel, NULL,
+		     NULL, NULL) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   doprint(container_parent, indent) ;
@@ -574,6 +669,36 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
 
 
 
+
+
+
+
+
+/* Set the hidden status of a column group, currently this depends on the mag setting in the
+ * style for the column but we could allow the user to switch this on and off as well. */
+void zmapWindowColumnSetMagState(ZMapWindow window,
+				 FooCanvasGroup *col_group, ZMapFeatureTypeStyle style)
+{
+
+  zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group) && style) ;
+
+  if (style->min_mag || style->max_mag)
+    {
+      double curr_zoom ;
+
+      curr_zoom = zMapWindowGetZoomMagnification(window) ;
+
+      if ((style->min_mag && curr_zoom < style->min_mag)
+	  || (style->max_mag && curr_zoom > style->max_mag))
+	foo_canvas_item_hide(FOO_CANVAS_ITEM(col_group)) ;
+      else
+	foo_canvas_item_show(FOO_CANVAS_ITEM(col_group)) ;
+    }
+
+  return ;
+}
+
+
 /* NOTE: this function bumps an individual column but it DOES NOT move any other columns,
  * to do that you need to use zmapWindowColumnReposition(). The split is made because
  * we don't always want to reposition all the columns following a bump, e.g. when we
@@ -627,6 +752,87 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapStyleOverlapMode bum
 
   return ;
 }
+
+
+
+
+/* this needs to be more generalised....as it will be used from a number of places... */
+static void reAlignGroups(FooCanvasGroup *container, gpointer user_data)
+{
+  gpointer cb_data = NULL ;
+  ContainerType type = CONTAINER_INVALID ;
+  ZMapFeatureAny feature ;
+  double spacing = 0.0 ;
+
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container), CONTAINER_TYPE_KEY)) ;
+  
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Need to set feature spacing here..... */
+  switch(feature->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+      spacing = 0.0 ;
+      break ;
+
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      spacing = 0.0 ;
+      break ;
+
+
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      spacing = 0.0 ;
+      break ;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      spacing = COLUMN_SPACING ;
+      break ;
+
+      /* Not sure we should even get here..... */
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      spacing = 0.0 ;
+      break ;
+
+    default:
+      zMapAssert(!"bad coding, unrecognised container type.") ;
+      break ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  switch(type)
+    {
+    case CONTAINER_ROOT:
+    case CONTAINER_PARENT:    
+      {
+        FooCanvasGroup *text = NULL;
+        if((text = zmapWindowContainerGetText(container)))
+          zmapWindowContainerRegionChanged(text, NULL);
+      }
+      break;
+    case CONTAINER_TEXT:
+      if(callback)
+        (callback)(container, 0.0, cb_data);
+      break;
+    case CONTAINER_FEATURES:
+    case CONTAINER_BACKGROUND:
+      break;
+    default:
+      zMapAssert(0 && "bad coding, unrecognised container type.") ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  repositionGroups(container, spacing) ;
+
+
+  return ;
+}
+
+
+
+
 
 
 /* We assume that the columns have been added sequentially in the order they are displayed in,
@@ -683,7 +889,8 @@ void zmapWindowColumnReposition(FooCanvasGroup *column)
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(column->item.canvas)),
 			     &bound_x1, NULL, &bound_x2, NULL) ;
 
-  /* I think its a mistake to reset the x1 as we have the scroll bar there.... */
+  /* I think its a mistake to reset the x1 as we have the scale bar there, but when that 
+   * goes we will need to move the x1 as well.... */
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   foo_canvas_set_scroll_region(column->item.canvas, bound_x1, y1, bound_x2, y2) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -693,6 +900,10 @@ void zmapWindowColumnReposition(FooCanvasGroup *column)
   return ;
 }
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* GFunc to call on potentially all container groups.
  * This is still a little creased, get out the ironing board... 
  * Issues include:
@@ -760,6 +971,9 @@ static void zmapWindowContainerZoomChanged(gpointer data,
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 static void zmapWindowContainerRegionChanged(gpointer data, 
                                              gpointer user_data)
@@ -806,13 +1020,11 @@ void zmapWindowContainerGetAllColumns(FooCanvasGroup *super_root, GList **list)
   
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(super_root), CONTAINER_TYPE_KEY)) ;
 
-  executeOnContainerChildren(super_root,
-                             ZMAPCONTAINER_STRAND_LEVEL,
-                             NULL,
-                             NULL,
-                             addToList,
-                             list,
-                             FALSE);
+  executeoncontainer(super_root,
+		     ZMAPCONTAINER_LEVEL_STRAND,
+		     addToList,
+		     list,
+		     NULL, NULL) ;
   
   return ;
 }
@@ -820,50 +1032,95 @@ void zmapWindowContainerGetAllColumns(FooCanvasGroup *super_root, GList **list)
 void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window)
 {
   ContainerType type = CONTAINER_INVALID ;
+
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(super_root), CONTAINER_TYPE_KEY)) ;
-  
   zMapAssert(type = CONTAINER_ROOT);
 
-  executeOnContainerChildren(FOO_CANVAS_GROUP(super_root),
-                             ZMAPCONTAINER_FEATURESET_LEVEL,
-                             zmapWindowContainerRegionChanged,
-                             NULL,
-                             NULL,
-                             NULL,
-                             TRUE);
+  executeoncontainer(FOO_CANVAS_GROUP(super_root),
+		     ZMAPCONTAINER_LEVEL_FEATURESET,
+		     zmapWindowContainerRegionChanged, NULL,
+		     NULL, NULL) ;
   return ;
 }
 
-void zmapWindowContainerZoomEvent(FooCanvasGroup *super_root, ZMapWindow window)
+
+
+
+
+
+/* Makes sure all the things that need to be redrawn for zooming get redrawn. */
+void zmapWindowDrawZoom(ZMapWindow window)
 {
+  FooCanvasGroup *super_root ;
   ContainerType type = CONTAINER_INVALID ;
-  double zoom = 0.0;
+  ZoomDataStruct zoom_data = {NULL} ;
+
+  super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item, 0,0,0,0,0)) ;
+  zMapAssert(super_root) ;
+
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(super_root), CONTAINER_TYPE_KEY)) ;
-  
-  zMapAssert(type = CONTAINER_ROOT);
+  zMapAssert(type = CONTAINER_ROOT) ;
 
-  zoom = zMapWindowGetZoomFactor(window);
+  zoom_data.window = window ;
+  zoom_data.zoom = zMapWindowGetZoomFactor(window) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_layout_freeze(GTK_LAYOUT(FOO_CANVAS_ITEM(super_root)->canvas));
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  executeOnContainerChildren(FOO_CANVAS_GROUP(super_root),
-                             ZMAPCONTAINER_FEATURESET_LEVEL,
-                             zmapWindowContainerZoomChanged,
-                             &zoom,
-                             NULL,
-                             NULL,
-                             TRUE);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_layout_thaw(GTK_LAYOUT(FOO_CANVAS_ITEM(super_root)->canvas));
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  executeoncontainer(FOO_CANVAS_GROUP(super_root),
+		     ZMAPCONTAINER_LEVEL_FEATURESET,
+		     preZoomCB,
+		     &zoom_data,
+		     postZoomCB,
+		     &zoom_data) ;
 
   return ;
 }
+
+
+
+
+
+
+/* For James all methods that mention score have:
+ *
+ * Score_by_width	
+ * Score_bounds	 70.000000 130.000000
+ *
+ * (the bounds are different for different data sources...)
+ *
+ * x1 will be used and reset, x2 is not looked at but just reset...
+ * 
+ * 
+ */
+double zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
+				 double *curr_x1_inout, double *curr_x2_out)
+{
+  double width ;
+  double dx ;
+  double numerator, denominator ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMapAssert(!(!style->max_score && !style->min_score)) ;
+
+  numerator = score - style->min_score ;
+  denominator = style->max_score - style->min_score ;
+
+  dx = 0.25 + ((0.75 * numerator) / denominator) ;
+
+  if (dx < 0.25)
+    dx = 0.25 ;
+  else if (dx > 1)
+    dx = 1 ;
+
+  *curr_x_inout1 = *curr_x1 + (0.5 * style->width * (xoff - dx)) ;
+  *curr_x2_inout = *curr_x1 + (0.5 * style->width * (xoff + dx)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return width ;
+}
+
+
+
 
 
 /* 
@@ -872,14 +1129,20 @@ void zmapWindowContainerZoomEvent(FooCanvasGroup *super_root, ZMapWindow window)
 
 
 
+
 /*! g_list_foreach function to remove items */
 static void itemDestroyCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
+
   gtk_object_destroy(GTK_OBJECT(item));
+
   return ;
 }
 
+
+
+/* THIS SHOULD BE MERGED SOMEHOW WITH THE REALIGN FUNCTION....ITS ALL THE SAME REALLY.... */
 /* The changed group is found in its parents list of items and then all items to the right
  * of the changed group are repositioned with respect to the changed group.
  * 
@@ -1077,6 +1340,7 @@ static void valueDestroyCB(gpointer data)
   return ;
 }
 
+
 /* GHRFunc callback func, called from g_hash_table_find() to test whether current
  * element matches supplied overlap coords. */
 static gboolean compareOverlapCB(gpointer key, gpointer value, gpointer user_data)
@@ -1109,6 +1373,7 @@ static void tempCompareOverlapCB(gpointer key, gpointer value, gpointer user_dat
 
   return ;
 }
+
 
 
 /* MAY NEED TO INGNORE BACKGROUND BOXES....WHICH WILL BE ITEMS.... */
@@ -1151,6 +1416,8 @@ static void printItem(FooCanvasItem *item, int indent, char *prefix)
   return ;
 }
 
+
+
 static void addToList(gpointer data, gpointer user_data)
 {
   FooCanvasGroup *grp = FOO_CANVAS_GROUP(data);
@@ -1159,114 +1426,74 @@ static void addToList(gpointer data, gpointer user_data)
   return ;
 }
 
-static void defaultZoomChangedCB(FooCanvasGroup *container, double new_zoom, gpointer user_data)
-{
-  ZMapFeatureTypeStyle column_style = NULL;
-  double zoom_limit = 0.02;
-  return;
-  printf("In default container 'zoom' callback. ");
 
-  column_style = NULL;          /* Get column_style */
 
-  if(new_zoom < zoom_limit)
-    printf(" zoom < %f\n", zoom_limit);
-    //    foo_canvas_item_hide(FOO_CANVAS_ITEM(container));
-  else
-    printf(" zoom > %f\n", zoom_limit);
-    //foo_canvas_item_show(FOO_CANVAS_ITEM(container));
-
-  return ;
-}
 
 /* unified way to descend and do things to ALL and every or just some */
 /* Something I'm just trying out! */
-
-
-static void eachContainerParent(gpointer data, gpointer user_data)
-{
-  FooCanvasGroup *parent      = (FooCanvasGroup *)data, *sub_parents = NULL;
-  execOnChildren  all_data    = (execOnChildren)user_data;
-  ZMapFeatureAny  any_feature = NULL;
-  gboolean        no_descend  = FALSE;
-
-  if(all_data->each_parent_cb)
-    (all_data->each_parent_cb)(parent, all_data->each_parent_data);
-
-  any_feature = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(parent), "item_feature_data")) ;
-
-  if (any_feature)
-    {
-      switch (any_feature->struct_type)
-	{
-	case ZMAPFEATURE_STRUCT_CONTEXT:
-	case ZMAPFEATURE_STRUCT_ALIGN:
-	case ZMAPFEATURE_STRUCT_BLOCK:
-	case ZMAPFEATURE_STRUCT_FEATURESET:
-          sub_parents = zmapWindowContainerGetFeatures(parent);
-          if(any_feature->struct_type == all_data->stop)
-            no_descend = TRUE;
-	  break ;
-	case ZMAPFEATURE_STRUCT_FEATURE:
-          no_descend = TRUE;
-          break;
-        default :
-          zMapAssert(0 && "UNKNOWN ZMAPFEATURE_STRUCT TYPE.\n");
-          break;
-	}
-    }
-  else
-    {
-      /* This only works because there's just one level where no
-       * feature_data exists! we really need a level id on the group*/
-      sub_parents = zmapWindowContainerGetFeatures(parent);
-      if(all_data->stop == ZMAPCONTAINER_STRAND_LEVEL)
-        no_descend = TRUE;
-    }
-
-  /* will usually descend, unless no_descend is true! */
-  if(!no_descend)
-    g_list_foreach(sub_parents->item_list, eachContainerParent, user_data);
-  else
-    {
-      if(all_data->final_children_foreach && sub_parents)
-        g_list_foreach(sub_parents->item_list, 
-                       all_data->final_children_foreach, 
-                       all_data->final_children_data);
-    }
-
-  if(all_data->resize)
-    zmapWindowContainerSetBackgroundSize(parent, 0.0);
-
-  return ;
-}
-
-static void executeOnContainerChildren(FooCanvasGroup        *parent, 
-                                       ZMapContainerLevelType stop_at_type,
-                                       GFunc                  each_parent_cb,
-                                       gpointer               each_parent_data,
-                                       GFunc                  final_children_foreach,
-                                       gpointer               final_children_data,
-                                       gboolean               need_resize)
+static void executeoncontainer(FooCanvasGroup        *parent, 
+			       ZMapContainerLevelType stop_at_type,
+			       GFunc                  down_func_cb,
+			       gpointer               down_func_data,
+			       GFunc                  up_func_cb,
+			       gpointer               up_func_data)
 {
   execOnChildrenStruct exe  = {0,NULL};
   ContainerType        type = CONTAINER_INVALID ;
-  GList               *list = NULL;
+  GList               *list = NULL ;
+
+  zMapAssert(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT
+	     || stop_at_type <= ZMAPCONTAINER_LEVEL_FEATURESET) ;
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(parent), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_ROOT || type == CONTAINER_PARENT);
 
   exe.stop                   = stop_at_type;
-  exe.each_parent_cb         = each_parent_cb;
-  exe.each_parent_data       = each_parent_data;
-  exe.final_children_foreach = final_children_foreach;
-  exe.final_children_data    = final_children_data;
-  exe.resize                 = need_resize;
 
-  list = g_list_append(list, parent);
-  g_list_foreach(list, eachContainerParent, &exe);
+  exe.down_func_cb         = down_func_cb;
+  exe.down_func_data       = down_func_data;
+  exe.up_func_cb         = up_func_cb;
+  exe.up_func_data       = up_func_data;
+
+  eachContainer((gpointer)parent, &exe) ;
 
   return ;
 }
+
+
+/* Called for every container while descending.... */
+static void eachContainer(gpointer data, gpointer user_data)
+{
+  FooCanvasGroup *container = (FooCanvasGroup *)data ;
+  execOnChildren all_data = (execOnChildren)user_data ;
+  ContainerData container_data ;
+
+  /* Execute pre-recursion function. */
+  if (all_data->down_func_cb)
+    (all_data->down_func_cb)(container, all_data->down_func_data);
+
+
+  /* Recurse ? */
+  container_data = g_object_get_data(G_OBJECT(container), CONTAINER_DATA) ;
+  if (all_data->stop != container_data->level)
+    {
+      FooCanvasGroup *sub_parents ;
+      
+      if ((sub_parents = zmapWindowContainerGetFeatures(container)))
+	{
+	  g_list_foreach(sub_parents->item_list, eachContainer, user_data) ;
+	}
+    }
+
+
+  /* Execute post-recursion function. */
+  if (all_data->up_func_cb)
+    (all_data->up_func_cb)(container, all_data->up_func_data) ;
+
+  return ;
+}
+
+
 
 static void printlevel(gpointer data, gpointer user_data)
 {
@@ -1336,4 +1563,135 @@ static void printlevel(gpointer data, gpointer user_data)
   return ;
 }
 
+
+
+/* We need the window in here.... */
+/* GFunc to call on potentially all container groups.
+ */
+static void preZoomCB(gpointer data, gpointer user_data)
+{
+  FooCanvasGroup *container = (FooCanvasGroup *)data ;
+  ZoomData zoom_data = (ZoomData)user_data ;
+  ContainerData container_data ;
+
+  container_data = g_object_get_data(G_OBJECT(container), CONTAINER_DATA) ;
+
+  switch(container_data->level)
+    {
+    case ZMAPCONTAINER_LEVEL_FEATURESET:
+      columnZoomChanged(container, zoom_data->zoom, zoom_data->window) ;
+      break ;
+    default:
+      break ;
+    }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Maybe this should only happen for featurs...also we should check to see if the column
+   * is hidden, not much point in redrawing if hidden ? Think about this..... */
+
+  if (container_data->child_redraw_required)
+    {
+      /* This function must go through child list of container getting the redraw
+       * callback from each child and calling the redraw.... */
+      redrawChildren() ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return ;
+}
+
+
+
+static void postZoomCB(gpointer data, gpointer user_data)
+{
+  FooCanvasGroup *container = (FooCanvasGroup *)data ;
+  ZoomData zoom_data = (ZoomData)user_data ;
+  ContainerData container_data ;
+
+
+  container_data = g_object_get_data(G_OBJECT(container), CONTAINER_DATA) ;
+
+  if (container_data->level != ZMAPCONTAINER_LEVEL_FEATURESET)
+    repositionContainer(container) ;
+
+  /* Correct for the stupid scale bar.... */
+  if (container_data->level == ZMAPCONTAINER_LEVEL_ROOT)
+    my_foo_canvas_item_goto(FOO_CANVAS_ITEM(container), &(zoom_data->window->alignment_start), NULL) ; 
+
+
+  return ;
+}
+
+
+
+
+
+static void columnZoomChanged(FooCanvasGroup *container, double new_zoom, ZMapWindow window)
+{
+  ZMapFeatureTypeStyle style = NULL;
+
+  style = g_object_get_data(G_OBJECT(container), "item_feature_style") ;
+  zMapAssert(style) ;
+
+  zmapWindowColumnSetMagState(window, container, style) ;
+
+  return ;
+}
+
+
+
+/* NOTE THAT THIS NEEDS TO BE ALMALGAMATED WITH repositionGroups() */
+
+/* Repositions all the children of a group and makes sure they are correctly aligned
+ * and that the background is the right size. */
+static void repositionContainer(FooCanvasGroup *container)
+{
+  ContainerData container_data ;
+  FooCanvasGroup *all_groups ;
+  double x1, y1, x2, y2 ;
+  GList *curr_child ;
+  double curr_bound ;
+
+  container_data = g_object_get_data(G_OBJECT(container), CONTAINER_DATA) ;
+
+  all_groups = zmapWindowContainerGetFeatures(container) ;
+
+
+  /* Now move all the groups over so they are positioned properly,
+   * N.B. this might mean moving them in either direction depending on whether the changed
+   * group got bigger or smaller. */
+  curr_child = g_list_first(all_groups->item_list) ;
+
+  /* Get the position of the first group within its parent. */
+  x1 = y1 = x2 = y2 = 0.0 ; 
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(curr_child->data), &x1, &y1, &x2, &y2) ;
+  curr_bound = x2 + container_data->child_spacing ;
+
+  do
+    {
+      FooCanvasGroup *curr_group = FOO_CANVAS_GROUP(curr_child->data) ;
+      double dx = 0.0 ;
+
+      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(curr_group), &x1, &y1, &x2, &y2) ;
+
+      dx = curr_bound - x1 ;				    /* can be +ve or -ve */
+
+      if (dx != 0.0)
+	{
+	  curr_bound = x2 + dx + container_data->child_spacing ;
+
+	  foo_canvas_item_move(FOO_CANVAS_ITEM(curr_group), dx, 0.0) ;
+							    /* N.B. we only shift in x, not in y. */
+	}
+    }
+  while ((curr_child = g_list_next(curr_child))) ;
+
+  /* Make the parent groups bounding box as large as the group.... */
+  zmapWindowContainerSetBackgroundSize(container, 0.0) ;
+
+
+  return ;
+}
 
