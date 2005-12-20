@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Dec  2 13:33 2005 (edgrif)
+ * Last edited: Dec 13 13:17 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.86 2005-12-02 14:12:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.87 2005-12-20 15:34:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -175,6 +175,8 @@ typedef struct
 } ZMapWindowItemFeatureStruct, *ZMapWindowItemFeature ;
 
 
+
+
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
 /* Represents a single sequence display window with its scrollbars, canvas and feature
@@ -207,6 +209,7 @@ typedef struct _ZMapWindowStruct
   ZMapWindowLockType curr_locking ;			    /* Orientation of current locking. */
   GHashTable *sibling_locked_windows ;			    /* windows this window is locked with. */
 
+
   /* Some default colours, good for hiding boxes/lines. */
   GdkColor canvas_fill ;
   GdkColor canvas_border ;
@@ -215,7 +218,12 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowZoomControl zoom;
 
-  int            canvas_maxwin_size ;			    /* 30,000 is the maximum (default). */
+  /* Max canvas window size can either be set in pixels or in DNA bases, the latter overrides the
+   * former. In either case the window cannot be more than 30,000 pixels (32k is the actual 
+   * X windows limit. */
+  int canvas_maxwin_size ;
+  int canvas_maxwin_bases ;
+
 
   /* I'm trying these out as using the sequence start/end is not correct for window stuff. */
   double min_coord ;					    /* min/max canvas coords */
@@ -241,13 +249,14 @@ typedef struct _ZMapWindowStruct
 							       the canvas groups/items that
 							       represent those parts. */
 
-  GPtrArray     *featureListWindows ;			    /* popup windows showing lists of
-							       column features. */
-
   /* The stupid foocanvas can generate graphics items that are greater than the X Windows 32k
    * limit, so we have to keep a list of the canvas items that can generate graphics greater
    * than this limit as we zoom in and crop them ourselves. */
   GList         *long_items ;				    
+
+
+  GPtrArray     *featureListWindows ;			    /* popup windows showing lists of
+							       column features. */
 
   /* This all needs to move and for scale to be in a separate window..... */
   FooCanvasItem *scaleBarGroup;           /* canvas item in which we build the scalebar */
@@ -318,9 +327,6 @@ typedef struct textGroupSelectionStruct_
 } textGroupSelectionStruct, *textGroupSelection;
 
 
-typedef void (*zmapWindowContainerZoomChangedCallback)(FooCanvasGroup *container, 
-                                                       double new_zoom, 
-                                                       gpointer user_data);
 
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
@@ -437,35 +443,22 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item);
 
 
+void zmapWindowDrawZoom(ZMapWindow window) ;
+
+
 void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapStyleOverlapMode bump_mode) ;
 void zmapWindowColumnReposition(FooCanvasGroup *column_group) ;
 void zmapWindowColumnWriteDNA(ZMapWindow window,
                               FooCanvasGroup *column_parent);
 
-FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
-					  GdkColor *background_fill_colour,
-					  GdkColor *background_border_colour) ;
-FooCanvasGroup *zmapWindowContainerAddTextChild(FooCanvasGroup *container_parent, 
-                                                zmapWindowContainerZoomChangedCallback redrawCB,
-                                                gpointer user_data);
-FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_parent) ;
-FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *any_container_child) ;
-FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent) ;
-FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent) ;
-ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group) ;
-FooCanvasGroup *zmapWindowContainerGetText(FooCanvasGroup *container_parent);
-gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
-gboolean zmapWindowContainerHasText(FooCanvasGroup *container_parent);
-void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, double y_extent) ;
-void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent) ;
-void zmapWindowContainerPrint(FooCanvasGroup *container_parent) ;
-void zmapWindowContainerPurge(FooCanvasGroup *unknown_child);
-void zmapWindowContainerDestroy(FooCanvasGroup *container_parent) ;
+void zmapWindowColumnSetMagState(ZMapWindow window,
+				 FooCanvasGroup *col_group, ZMapFeatureTypeStyle style) ;
 
-void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout) ;
-void zmapWindowContainerGetAllColumns(FooCanvasGroup *super_root, GList **list);
-void zmapWindowContainerZoomEvent(FooCanvasGroup *super_root, ZMapWindow window);
-void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window);
+
+
+double zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
+				 double *curr_x1_inout, double *curr_x2_out) ;
+
 
 
 GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store);
