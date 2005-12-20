@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Dec 13 10:49 2005 (rds)
+ * Last edited: Dec 16 09:51 2005 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.12 2005-12-13 11:50:27 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.13 2005-12-20 15:29:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,16 +61,16 @@ static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data
 /* Create a new type for displaying features. */
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 					   char *outline, char *foreground, char *background,
-					   double width, double min_mag)
+					   double width)
 {
   ZMapFeatureTypeStyle new_type = NULL ;
   char *name_lower ;
 
   /* I am unsure if this is a good thing to do here, I'm attempting to make sure the type is
    * "sane" but no more than that. */
-  zMapAssert(name && *name && width >= 0.0 && min_mag >= 0) ;
+  zMapAssert(name && *name && width >= 0.0) ;
 
-
+  /* Is this overridden by acedb stuff ?? Should rationalise all this..... */
   if (width == 0)
     width = 5 ;
 
@@ -94,10 +94,25 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
   gdk_color_parse(background, &new_type->background) ;
 
   new_type->width = width ;
-  new_type->min_mag = min_mag ;
 
   return new_type ;
 }
+
+
+/* Set magnification limits for displaying columns. */
+void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag)
+{
+  zMapAssert(style) ;
+
+  if (min_mag && min_mag > 0.0)
+    style->min_mag = min_mag ;
+
+  if (max_mag && max_mag > 0.0)
+    style->max_mag = max_mag ;
+
+  return ;
+}
+
 
 
 
@@ -162,6 +177,45 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
   return ;
 }
 
+
+
+/* Score stuff is all quite interdependent, hence this function to set it all up. */
+void zMapStyleSetScore(ZMapFeatureTypeStyle style, char *score_str,
+		       double min_score, double max_score)
+{
+  ZMapStyleScoreMode score = ZMAPSCORE_WIDTH ;
+
+  zMapAssert(style) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* WE ONLY SCORE BY WIDTH AT THE MOMENT..... */
+  if (bump_str && *bump_str)
+    {
+      if (g_ascii_strcasecmp(bump_str, "overlap") == 0)
+	bump = ZMAPOVERLAP_OVERLAP ;
+      else if (g_ascii_strcasecmp(bump_str, "position") == 0)
+	bump = ZMAPOVERLAP_POSITION ;
+      else if (g_ascii_strcasecmp(bump_str, "name") == 0)
+	bump = ZMAPOVERLAP_NAME ;
+      else if (g_ascii_strcasecmp(bump_str, "simple") == 0)
+	bump = ZMAPOVERLAP_SIMPLE ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  style->score_mode = score ;
+
+  /* Make sure we have some kind of score. */
+  if (style->max_score == style->min_score)
+    style->max_score = style->min_score + 1 ;
+
+  /* Make sure we have kind of width. */
+  if (!(style->width))
+    style->width = 2.0 ;
+
+  return ;
+}
+
+
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, 
                               gboolean show_gaps,
                               gboolean parse_gaps)
@@ -171,6 +225,7 @@ void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style,
   style->parse_gaps = parse_gaps;
   return ;
 }
+
 
 /* Pretty brain dead but we need some way to deal with the situation where a style may differ in
  * case only betweens servers...perhaps we should not be merging....???
@@ -310,7 +365,8 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	   {"strand_specific", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"frame_specific", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"minmag"      , ZMAPCONFIG_INT, {NULL}},
-	   {"bump"        , ZMAPCONFIG_STRING, {NULL}},
+	   {"maxmag"      , ZMAPCONFIG_INT, {NULL}},
+	   {"bump"      , ZMAPCONFIG_STRING, {NULL}},
 	   {"gapped_align", ZMAPCONFIG_BOOL, {NULL}},
 	   {"read_gaps"   , ZMAPCONFIG_BOOL, {NULL}},
 	   {NULL, -1, {NULL}}} ;
@@ -347,13 +403,18 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	  if ((name = zMapConfigGetElementString(next_types, "name")))
 	    {
 	      ZMapFeatureTypeStyle new_type ;
+	      gboolean strand_specific, frame_specific, show_rev_strand ;
+	      int min_mag, max_mag ;
 
 	      new_type = zMapFeatureTypeCreate(name,
 					       zMapConfigGetElementString(next_types, "outline"),
 					       zMapConfigGetElementString(next_types, "foreground"),
 					       zMapConfigGetElementString(next_types, "background"),
-					       zMapConfigGetElementFloat(next_types, "width"),
-					       zMapConfigGetElementInt(next_types, "minmag")) ;
+					       zMapConfigGetElementFloat(next_types, "width")) ;
+
+	      zMapStyleSetMag(new_type,
+			      zMapConfigGetElementInt(next_types, "minmag"),
+			      zMapConfigGetElementInt(next_types, "maxmag")) ;
 
 	      zMapStyleSetStrandAttrs(new_type,
 				      zMapConfigGetElementBool(next_types, "strand_specific"),

@@ -26,9 +26,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Dec 12 17:39 2005 (rds)
+ * Last edited: Dec 16 09:49 2005 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.52 2005-12-13 10:24:23 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.53 2005-12-20 15:29:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -399,7 +399,6 @@ typedef enum
     ZMAPSCORE_WIDTH,					    /* Use column width only - default. */
     ZMAPSCORE_OFFSET,
     ZMAPSCORE_HISTOGRAM,
-    ZMAPSCORE_BOUNDS,
     ZMAPSCORE_PERCENT
   } ZMapStyleScoreMode ;
 
@@ -433,14 +432,18 @@ typedef struct ZMapFeatureTypeStyleStruct_
   GdkColor  background ;				    /* Fill colour. */
   GdkColor  outline ;					    /* Surround/line colour. */
 
-  ZMapStyleScoreMode   score_mode ;			    /* Controls width of features that
-							       have scores. */
   ZMapStyleOverlapMode overlap_mode ;			    /* Controls how features are grouped
 							       into sub columns within a column. */
 
+  double min_mag ;					    /* Don't display if fewer bases/line */
+  double max_mag ;					    /* Don't display if more bases/line */
+
   double    width ;					    /* column width */
-  double    min_mag, max_mag ;                              /* bases per line */
-  double    min_score, max_score ;
+
+  ZMapStyleScoreMode   score_mode ;			    /* Controls width of features that
+							       have scores. */
+  double    min_score, max_score ;			    /* Min/max for score width calc. */
+
 
   gboolean  showText ;					    /* Should feature text be displayed. */
 
@@ -578,7 +581,8 @@ void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 GList *zMapStylesGetNames(GList *styles) ;
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
 					   char *outline, char *foreground, char *background,
-					   double width, double min_mag) ;
+					   double width) ;
+void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;
 void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean strand_specific, gboolean frame_specific,
 			     gboolean show_rev_strand) ;

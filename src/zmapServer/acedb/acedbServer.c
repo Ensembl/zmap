@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Dec  2 14:09 2005 (edgrif)
+ * Last edited: Dec  8 14:16 2005 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.44 2005-12-02 14:10:18 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.45 2005-12-20 15:30:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1400,7 +1400,7 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
     *gff_source = NULL, *gff_feature = NULL, *column_group = NULL, *overlap = NULL ;
   double width = ACEDB_DEFAULT_WIDTH ;
   gboolean strand_specific = FALSE, frame_specific = FALSE, show_up_strand = FALSE ;
-  double min_mag = 0 ;
+  double min_mag = 0.0, max_mag = 0.0 ;
   gboolean status = TRUE ;
 
 
@@ -1501,7 +1501,20 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 
 	  if (!(status = zMapStr2Double(value, &min_mag)))
 	    {
-	      zMapLogWarning("No value for \"Min_mag\" specified in method: %s", name) ;
+	      zMapLogWarning("Bad value for \"Min_mag\" specified in method: %s", name) ;
+	      
+	      break ;
+	    }
+	}
+      else if (g_ascii_strcasecmp(tag, "Max_mag") == 0)
+	{
+	  char *value ;
+
+	  value = strtok_r(NULL, " ", &line_pos) ;
+
+	  if (!(status = zMapStr2Double(value, &max_mag)))
+	    {
+	      zMapLogWarning("Bad value for \"Max_mag\" specified in method: %s", name) ;
 	      
 	      break ;
 	    }
@@ -1567,7 +1580,10 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
        * names are independent of method names, they may or may not be the same. */
       style = zMapFeatureTypeCreate(name, 
 				    outline, foreground, background,
-				    width, min_mag) ;
+				    width) ;
+
+      if (min_mag || max_mag)
+	zMapStyleSetMag(style, min_mag, max_mag) ;
       
       zMapStyleSetStrandAttrs(style, strand_specific, frame_specific, show_up_strand) ;
 
