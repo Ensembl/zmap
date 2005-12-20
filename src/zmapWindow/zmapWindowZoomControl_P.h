@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 17 12:17 2005 (rds)
+ * Last edited: Dec 20 15:35 2005 (edgrif)
  * Created: Tue Jul 12 16:02:52 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.2 2005-11-16 10:43:00 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.3 2005-12-20 15:36:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,7 @@
 #include <zmapWindow_P.h>
 
 
-#define ZMAP_ZOOM_FONT_FAMILY "Lucida Console"
+
 #define ZMAP_ZOOM_FONT_FAMILY "Monospace"
 #define ZMAP_ZOOM_FONT_SIZE (10)
 
