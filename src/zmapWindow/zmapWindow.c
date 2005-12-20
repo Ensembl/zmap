@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 17 15:34 2005 (edgrif)
+ * Last edited: Dec 20 14:54 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.97 2005-11-18 10:59:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.98 2005-12-20 15:31:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -533,6 +533,8 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
     }
   else
     {
+      FooCanvasGroup *canvas_root_group ;
+
       /* Calculate the extent of the new span, new span must not exceed maximum X window size
        * but we must display as much of the sequence as we can for zooming out. */
       foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
@@ -567,9 +569,22 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
       /* Get the root, so that we can notify the columns that the zoom has occurred */
       if((super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item, 0,0,0,0,0))))
-        zmapWindowContainerZoomEvent(super_root, window);
+        zmapWindowDrawZoom(window);
       
-      zmapWindowLongItemCrop(window, x1, y1, x2, y2); /* Call this again because of backgrounds :( */
+      zmapWindowLongItemCrop(window, x1, y1, x2, y2); /* Call this again because of backgrounds :(
+							 */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Try doing this again here to get width correct.... */
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      canvas_root_group = foo_canvas_root (window->canvas) ;
+      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(canvas_root_group), &x1, NULL, &x2, NULL) ;
+      zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2) ;
+
+
     }
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
@@ -1326,6 +1341,7 @@ static gboolean getConfiguration(ZMapWindow window)
   ZMapConfigStanza window_stanza ;
   char *window_stanza_name = ZMAP_WINDOW_CONFIG ;
   ZMapConfigStanzaElementStruct window_elements[] = {{"canvas_maxsize", ZMAPCONFIG_INT, {NULL}},
+						     {"canvas_maxbases", ZMAPCONFIG_INT, {NULL}},
 						     {"keep_empty_columns", ZMAPCONFIG_BOOL, {NULL}},
 						     {NULL, -1, {NULL}}} ;
 
@@ -1344,6 +1360,8 @@ static gboolean getConfiguration(ZMapWindow window)
 	  next_window = zMapConfigGetNextStanza(window_list, NULL) ;
 	  
 	  window->canvas_maxwin_size = zMapConfigGetElementInt(next_window, "canvas_maxsize") ;
+
+	  window->canvas_maxwin_bases = zMapConfigGetElementInt(next_window, "canvas_maxbases") ;
 
 	  window->keep_empty_cols = zMapConfigGetElementBool(next_window, "keep_empty_columns") ;
 
