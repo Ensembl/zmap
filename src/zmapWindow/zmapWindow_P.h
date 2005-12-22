@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Dec 13 13:17 2005 (edgrif)
+ * Last edited: Dec 21 12:17 2005 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.87 2005-12-20 15:34:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.88 2005-12-22 10:06:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -47,13 +47,8 @@
 /* default spacings...will be tailorable one day ? */
 #define ALIGN_SPACING        30.0
 #define STRAND_SPACING        5.0
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#define COLUMN_START_OFFSET   1.0
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#define COLUMN_SPACING        1.0
-#define BUMP_SPACING          3.0
+#define COLUMN_SPACING        2.0
+#define BUMP_SPACING          1.0
 
 
 /* X Windows has some limits that are part of the protocol, this means they cannot
