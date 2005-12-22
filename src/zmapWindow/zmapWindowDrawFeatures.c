@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec 20 15:21 2005 (edgrif)
+ * Last edited: Dec 21 16:38 2005 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.107 2005-12-20 15:33:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.108 2005-12-22 10:05:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -486,8 +486,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 }
 
 
-void zmapWindowColumnWriteDNA(ZMapWindow window,
-                              FooCanvasGroup *column_txt_grp) /* the column_txt_grp need to exist before calling this! */
+
+/* the column_txt_grp need to exist before calling this! */
+void zmapWindowColumnWriteDNA(ZMapWindow window, FooCanvasGroup *column_txt_grp)
 {
   ZMapFeatureContext full_context = NULL;
   ZMapDrawTextIterator iterator   = NULL;
@@ -1026,20 +1027,20 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   return ;
 }
 
-/* Called for each individual feature. */
+
+/* Called to draw each individual feature. */
 static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ; 
   ZMapFeatureTypeStyle style = feature->style ;
   ZMapCanvasData canvas_data  = (ZMapCanvasDataStruct*)user_data ;
   ZMapWindow window = canvas_data->window ;
-  FooCanvasGroup *column_group ;
+  FooCanvasGroup *column_parent, *column_group ;
   GQuark column_id ;
   FooCanvasItem *top_feature_item = NULL ;
   double feature_offset;
   GdkColor *background ;
   double start_x, end_x ;
-
 
 
   /* Users will often not want to see what is on the reverse strand, style specifies what should
@@ -1096,16 +1097,6 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* WHEN WE HAVE CODE IN HERE THAT NEEDS REDRAWING ON ZOOM WE WILL HAVE TO PUT SOME CODE LIKE
-   * THIS IN ......in the dna drawing code for instance */
-  FooCanvasGroup *test ;
-
-  test = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(canvas_data->curr_forward_col)) ;
-  zmapWindowContainerSetRedrawChildren(test, TRUE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   start_x = 0.0 ;
   end_x   = style->width ;
 
@@ -1144,13 +1135,21 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
       }
     case ZMAPFEATURE_RAW_SEQUENCE:
       {
-	top_feature_item = drawSequenceFeature(column_group, feature,
+	/* Surely this must be true.... */
+	zMapAssert(feature->feature.sequence.sequence) ;
+
+	/* Flag our parent container that it has children that need redrawing on zoom. */
+	column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(column_group)) ;
+	zmapWindowContainerSetChildRedrawRequired(column_parent, TRUE) ;
+
+	top_feature_item = drawSequenceFeature(column_parent, feature,
                                                feature_offset,
                                                start_x, feature->x1, end_x, feature->x2,
                                                &style->outline,
                                                &style->background,
                                                window) ;
-        break;
+
+        break ;
       }
     case ZMAPFEATURE_TRANSCRIPT:
       {
@@ -1305,30 +1304,24 @@ static FooCanvasItem *drawSequenceFeature(FooCanvasGroup *parent, ZMapFeature fe
                                           GdkColor *outline, GdkColor *background,
                                           ZMapWindow window)
 {
-  if(!feature->feature.sequence.sequence)
-    return drawSimpleFeature(parent, 
-                             feature, 
-                             feature_offset, 
-                             feature_zero, 
-                             feature_top, 
-                             feature_thickness, 
-                             feature_bottom,
-                             outline,
-                             NULL, /* THIS IS WRONG ATM, but this will all change anyway!!! RDS */
-                             background,
-                             window);
-  else
-    {
-      FooCanvasGroup *text_grp = NULL, *column_parent = NULL;
+  FooCanvasItem *text_feature ;
 
-      column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(parent));
-      text_grp      = zmapWindowContainerAddTextChild(column_parent, dna_redraw_callback, (gpointer)window);
+  /* I WOULD HAVE THOUGHT THAT WE NEEDED TO BE MAKING MORE USE OF COLOURS ETC HERE.... */
 
-      zmapWindowColumnWriteDNA(window, text_grp);
+  text_feature = foo_canvas_item_new(parent,
+				     foo_canvas_group_get_type(),
+				     NULL) ;
 
-    }
-  return NULL;
+  g_object_set_data(G_OBJECT(text_feature), CONTAINER_REDRAW_CALLBACK,
+		    dna_redraw_callback) ;
+  g_object_set_data(G_OBJECT(text_feature), CONTAINER_REDRAW_DATA,
+		    (gpointer)window) ;
+
+  zmapWindowColumnWriteDNA(window, FOO_CANVAS_GROUP(text_feature)) ;
+
+  return text_feature ;
 }
+
 
 static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature feature,
                                            double feature_offset,
