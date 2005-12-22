@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec 20 14:54 2005 (edgrif)
+ * Last edited: Dec 22 10:02 2005 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.98 2005-12-20 15:31:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.99 2005-12-22 10:02:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -511,7 +511,6 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
   double max_win_span, seq_span, new_win_span, new_canvas_span ;
   double top, bot ;
   ZMapWindowVisibilityChangeStruct vis_change ;
-  FooCanvasGroup *super_root = NULL;
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
@@ -567,24 +566,16 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
       /* Firstly the scale bar, which will be changed soon. */
       zmapWindowDrawScaleBar(window, y1, y2);
 
-      /* Get the root, so that we can notify the columns that the zoom has occurred */
-      if((super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item, 0,0,0,0,0))))
-        zmapWindowDrawZoom(window);
+      zmapWindowDrawZoom(window);
       
       zmapWindowLongItemCrop(window, x1, y1, x2, y2); /* Call this again because of backgrounds :(
-							 */
+						       */
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Try doing this again here to get width correct.... */
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+      /* THIS IS A HACK....AS WE DO IT ABOVE ALSO, THE CALL ABOVE SHOULD GET US THE SIZE
+       * WITHOUT CHANGING THE CANVAS STATE OTHERWISE WE REDRAW THE CANVAS TWICE.... */
       canvas_root_group = foo_canvas_root (window->canvas) ;
       foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(canvas_root_group), &x1, NULL, &x2, NULL) ;
       zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2) ;
-
-
     }
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
