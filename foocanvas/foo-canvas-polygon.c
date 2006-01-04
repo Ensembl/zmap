@@ -1,4 +1,4 @@
-/*  Last edited: Feb 11 16:45 2005 (rds) */
+/*  Last edited: Jan  4 10:58 2006 (rds) */
 /*
  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
  * All rights reserved.
@@ -596,15 +596,12 @@ foo_canvas_polygon_set_property (GObject              *object,
 static void
 get_color_value (FooCanvasPolygon *poly, gulong pixel, GValue *value)
 {
-	GdkColor *color;
+	GdkColor  color;
 	GdkColormap *colormap;
 
-	color = g_new (GdkColor, 1);
-	color->pixel = pixel;
-
-	colormap = gtk_widget_get_colormap (GTK_WIDGET (poly));
-	gdk_rgb_find_color (colormap, color);
-	g_value_set_boxed (value, color);
+	colormap = gtk_widget_get_colormap (GTK_WIDGET (FOO_CANVAS_ITEM(poly)->canvas));
+	gdk_colormap_query_color(colormap, pixel, &color);
+	g_value_set_boxed (value, &color);
 }
 
 static void
