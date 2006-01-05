@@ -20,16 +20,15 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Package for handling canvas items that represent the
  *              feature context.
  *
  * HISTORY:
- * Last edited: Dec 21 16:09 2005 (edgrif)
+ * Last edited: Jan  5 13:41 2006 (edgrif)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.1 2005-12-22 10:04:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.2 2006-01-05 14:31:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -39,10 +38,8 @@
 
 /* Used to identify unambiguously which part of a zmapWindowContainer group a particular
  * foo canvas group or item represents. */
-typedef enum {CONTAINER_INVALID,
-	      CONTAINER_ROOT, CONTAINER_PARENT,
-	      CONTAINER_FEATURES, CONTAINER_BACKGROUND,
-              CONTAINER_TEXT} ContainerType ;
+typedef enum {CONTAINER_INVALID, CONTAINER_ROOT,
+	      CONTAINER_PARENT, CONTAINER_FEATURES, CONTAINER_BACKGROUND} ContainerType ;
 
 
 /* Probably I would like these not to be exposed in the end ?? */
@@ -53,20 +50,13 @@ typedef enum {CONTAINER_INVALID,
 #define CONTAINER_TYPE_KEY        "container_type"
 
 
-
-
-
+/* I don't really like having to do this...seems clumsy...these represent the level in the
+ * feature context hierachy...forced on us by the lack of a "strand" level in the actual
+ * feature context but we need it for the canvas item hierachy.... */
 typedef enum {ZMAPCONTAINER_LEVEL_INVALID,
 	      ZMAPCONTAINER_LEVEL_ROOT, ZMAPCONTAINER_LEVEL_ALIGN,
 	      ZMAPCONTAINER_LEVEL_BLOCK, ZMAPCONTAINER_LEVEL_STRAND,
-	      ZMAPCONTAINER_LEVEL_FEATURESET
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-, ZMAPCONTAINER_LEVEL_FEATURE
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-} ZMapContainerLevelType ;
+	      ZMAPCONTAINER_LEVEL_FEATURESET} ZMapContainerLevelType ;
 
 
 typedef void (*zmapWindowContainerZoomChangedCallback)(FooCanvasItem *container, 
@@ -80,9 +70,6 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  GdkColor *background_border_colour) ;
 void zmapWindowContainerSetChildRedrawRequired(FooCanvasGroup *container_parent,
 					       gboolean redraw_required) ;
-FooCanvasGroup *zmapWindowContainerAddTextChild(FooCanvasGroup *container_parent, 
-                                                zmapWindowContainerZoomChangedCallback redrawCB,
-                                                gpointer user_data);
 FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_parent) ;
 FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *any_container_child) ;
 FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent) ;
@@ -90,28 +77,22 @@ FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent
 ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_parent) ;
 ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group) ;
 void zmapWindowContainerReposition(FooCanvasGroup *container) ;
-FooCanvasGroup *zmapWindowContainerGetText(FooCanvasGroup *container_parent);
 gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
-gboolean zmapWindowContainerHasText(FooCanvasGroup *container_parent);
 void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, double y_extent) ;
 void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerPrint(FooCanvasGroup *container_parent) ;
-
 void zmapWindowContainerExecute(FooCanvasGroup        *parent, 
 				ZMapContainerLevelType stop_at_type,
 				GFunc                  down_func_cb,
 				gpointer               down_func_data,
 				GFunc                  up_func_cb,
 				gpointer               up_func_data) ;
-
-
 void zmapWindowContainerGetAllColumns(FooCanvasGroup *super_root, GList **list);
 void zmapWindowContainerZoomEvent(FooCanvasGroup *super_root, ZMapWindow window);
 void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window);
 
 void zmapWindowContainerPurge(FooCanvasGroup *unknown_child);
 void zmapWindowContainerDestroy(FooCanvasGroup *container_parent) ;
-
 
 
 /* this should be somewhere else I think.... */

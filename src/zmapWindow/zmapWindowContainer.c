@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) Sanger Institute, 2006
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Package for handling our structures that represent
  *              different levels in the feature context hierachy.
@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Dec 21 16:01 2005 (edgrif)
+ * Last edited: Jan  5 13:37 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.1 2005-12-22 10:04:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.2 2006-01-05 14:31:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,14 +53,6 @@ typedef struct
   double child_spacing ;
 
 } ContainerDataStruct, *ContainerData ;
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-typedef void (*ZMapContainerCallback)(FooCanvasGroup *parent, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 typedef struct execOnChildrenStruct_
@@ -95,8 +87,10 @@ static void redrawChildrenCB(gpointer data, gpointer user_data) ;
  *           background    sub_group of
  *             item     |  feature items
  *
+ *
+ *    THIS IS NOT USED CURRENTLY, MAY USE IN FUTURE FOR OVERLAYS OF TEXT.
  *                      |
- *                Optional text
+ *                Optional text  
  *                    group (dotted line)
  *
  * should change so parent - group of all sub_group features - sub_group feature items (including Optional text group!)
@@ -220,42 +214,6 @@ ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_par
 }
 
 
-/* THIS MUST BECOME PART OF THE GENERAL FEATURES STUFF..... */
-/* In general this part does not exist..., but when it does
- *  - allows addition of text to any column.
- *  - text can be bumped left or right of the features with ease.
- *  - text may be ellipsed???? later!
- *  - auto size column????
- */
-FooCanvasGroup *zmapWindowContainerAddTextChild(FooCanvasGroup *container_parent, 
-                                                zmapWindowContainerZoomChangedCallback redrawCB,
-                                                gpointer user_data)
-{
-  FooCanvasGroup *text_child = NULL;
-  FooCanvasGroup *has_text_child = NULL;
-
-  if((has_text_child = zmapWindowContainerGetText(container_parent)) == NULL)
-    {
-      text_child = FOO_CANVAS_GROUP(foo_canvas_item_new(container_parent,
-                                                        foo_canvas_group_get_type(),
-                                                        NULL)) ;
-      g_object_set_data(G_OBJECT(text_child), CONTAINER_TYPE_KEY,
-                        GINT_TO_POINTER(CONTAINER_TEXT)) ;
-      if(redrawCB)
-        {
-          g_object_set_data(G_OBJECT(text_child), CONTAINER_REDRAW_CALLBACK,
-                            redrawCB);
-          g_object_set_data(G_OBJECT(text_child), CONTAINER_REDRAW_DATA,
-                            user_data);
-        }
-      foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(text_child));
-    }
-  
-  return text_child;
-}
-
-
-
 
 /* Given either child of the container, return the container_parent. */
 FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *unknown_child)
@@ -269,7 +227,6 @@ FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *unknown_child)
     {
     case CONTAINER_FEATURES:
     case CONTAINER_BACKGROUND:
-    case CONTAINER_TEXT:
       container_parent = FOO_CANVAS_GROUP(unknown_child->parent) ;
       break ;
     default:
@@ -334,7 +291,11 @@ FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent
 
 
 /* Get the style for this columns features. AGH, problem here...bumping will need to cope with
- * several different types of features.... */
+ * several different types of features....
+ * 
+ * Note that each column has a style but then the features within it may have
+ * their own styles...
+ *  */
 ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group)
 {
   ZMapFeatureTypeStyle style = NULL ;
@@ -343,32 +304,22 @@ ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group)
   FooCanvasItem *feature_item ;
   ZMapFeature feature ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Crikey.... */
   column_features = zmapWindowContainerGetFeatures(column_group) ;
   list_item = g_list_first(column_features->item_list) ;
   feature_item = (FooCanvasItem *)list_item->data ;
   feature = (ZMapFeature)(g_object_get_data(G_OBJECT(feature_item), "item_feature_data")) ;
   style = feature->style ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  style = g_object_get_data(G_OBJECT(column_group), "item_feature_style") ;
+
 
   return style ;
 }
 
-
-/* Return the text of the container.  This may return NULL, caller MUST check this! */
-FooCanvasGroup *zmapWindowContainerGetText(FooCanvasGroup *container_parent)
-{
-  FooCanvasGroup *container_text = NULL;
-  GList *nth = NULL;
-  ContainerType type = CONTAINER_INVALID ;
-
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
-  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
-
-  if((nth = g_list_nth(container_parent->item_list, 2)) != NULL)
-    container_text = FOO_CANVAS_GROUP(nth->data) ;
-
-  return container_text ;
-}
 
 
 /* Setting the background size is not completely straight forward because we always
@@ -396,8 +347,14 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
   zMapAssert(height >= 0.0) ;
 
   container_features   = zmapWindowContainerGetFeatures(container_parent) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   container_text       = zmapWindowContainerGetText(container_parent) ;  
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   container_background = zmapWindowContainerGetBackground(container_parent) ;
+
+
 
 
   /* Either the caller sets the height or we get the height from the main group.
@@ -488,22 +445,6 @@ gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent)
   return result ;
 }
 
-/* Does the container contain any child text ? */
-gboolean zmapWindowContainerHasText(FooCanvasGroup *container_parent)
-{
-  gboolean result = FALSE ;
-  FooCanvasGroup *container_text = NULL;
-  ContainerType type = CONTAINER_INVALID ;
-
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
-  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
-
-  if(((container_text = zmapWindowContainerGetText(container_parent)) != NULL) 
-     && container_text->item_list)
-    result = TRUE ;
-
-  return result ;
-}
 
 void zmapWindowContainerPrint(FooCanvasGroup *container_parent)
 {
@@ -670,7 +611,6 @@ void zmapWindowContainerPurge(FooCanvasGroup *unknown_child)
   switch(type)
     {
     case CONTAINER_FEATURES:
-    case CONTAINER_TEXT:
       g_list_foreach(unknown_child->item_list, itemDestroyCB, NULL);
       break ;
     default:
@@ -703,6 +643,24 @@ static void eachContainer(gpointer data, gpointer user_data)
   /* Execute pre-recursion function. */
   if (all_data->down_func_cb)
     (all_data->down_func_cb)(container, all_data->down_func_data);
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  {
+    if (container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET)
+      {
+	ZMapFeatureTypeStyle style ;
+
+	style = g_object_get_data(G_OBJECT(container), "item_feature_style") ;
+
+	if (g_ascii_strcasecmp("dna", g_quark_to_string(style->original_id)) == 0)
+	  printf("found it\n") ;
+	else
+	  printf("col: %s\n", g_quark_to_string(style->original_id)) ;
+      }
+  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* Optimisation: if the features need redrawing then we do them as a special...
@@ -803,10 +761,6 @@ static void printlevel(gpointer data, gpointer user_data)
 
   printItem(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(container_parent)),
 	    indent, "     features:  ") ;
-  
-  if(zmapWindowContainerGetText(container_parent))
-    printItem(FOO_CANVAS_ITEM(zmapWindowContainerGetText(container_parent)),
-              indent, "         text:  ") ;
   
   printItem(zmapWindowContainerGetBackground(container_parent),
 	    indent, "   background:  ") ;
