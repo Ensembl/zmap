@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 14 14:49 2005 (rds)
+ * Last edited: Jan  5 11:01 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.7 2005-11-16 10:43:00 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.8 2006-01-05 11:09:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,10 +43,10 @@ typedef struct
 } HighlightStruct, *Highlight ;
 
 
-
-static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean rev_video) ;
-static void highlightFuncCB(gpointer data, gpointer user_data) ;
-static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_video) ;
+static void highlightItem(ZMapWindow window, FooCanvasItem *item);
+static void highlightFuncCB(gpointer data, gpointer user_data);
+static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item);
+static void setItemColourOriginal(ZMapWindow window, FooCanvasItem *item);
 
 static void checkScrollRegion(ZMapWindow window, double start, double end) ;
 
@@ -121,10 +121,10 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 
   /* If any other feature is currently in focus, revert it to its std colours */
   if (window->focus_item)
-    highlightItem(window, window->focus_item, FALSE) ;
+    highlightItem(window, window->focus_item) ;
 
   /* Highlight the new item. */
-  highlightItem(window, item, TRUE) ;
+  highlightItem(window, item) ;
  
   /* Make this item the new focus item. */
   window->focus_item = item ;
@@ -872,8 +872,8 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
   return ;
 }
 
-
-static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean rev_video)
+/* Do the right thing with groups and items */
+static void highlightItem(ZMapWindow window, FooCanvasItem *item)
 {
   if (FOO_IS_CANVAS_GROUP(item))
     {
@@ -881,8 +881,8 @@ static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
       FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
 
       highlight.window = window ;
-      highlight.rev_video = rev_video ;
-
+      /* highlight.rev_video = rev_video ; */
+      
       g_list_foreach(group->item_list, highlightFuncCB, (void *)&highlight) ;
     }
   else
@@ -899,10 +899,11 @@ static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean rev_v
 	  item_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data") ;
 
 	  if (item_data->twin_item)
-	    setItemColour(window, item_data->twin_item, rev_video) ;
+	    setItemColourRevVideo(window, item_data->twin_item) ;
 	}
 
-      setItemColour(window, item, rev_video) ;
+      setItemColourRevVideo(window, item);
+
     }
 
   return ;
@@ -915,74 +916,87 @@ static void highlightFuncCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   Highlight highlight = (Highlight)user_data ;
 
-  setItemColour(highlight->window, item, highlight->rev_video) ;
+  setItemColourRevVideo(highlight->window, item) ;
 
   return ;
 }
 
-
-static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean rev_video)
+static void setItemColourOriginal(ZMapWindow window, FooCanvasItem *item)
 {
+  ZMapFeature feature ;
+  GdkColor *fill_colour = NULL;
   ZMapWindowItemFeatureType item_feature_type ;
+  ZMapFeatureTypeStyle style ;
+  
+  /* Retrieve the feature from the canvas item. */
+  feature = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  zMapAssert(feature) ;
+  style = zMapFeatureGetStyle(feature) ;
+  zMapAssert(style) ;
+  
+  g_object_get(G_OBJECT(item), 
+               "fill_color_gdk", &fill_colour,
+               NULL);
 
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
-
-  if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
+  if(fill_colour)
     {
-      
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      GdkColor *colour ;
-
-      /* I'm disabling this for now.... */
-      if (rev_video)
-	colour = &(window->canvas_border) ;
+      GdkColor *bg, *fg;
+      bg = &(style->background);
+      fg = &(style->foreground);
+      /* currently we only need to check foreground and background */
+      if(fill_colour->red   == (65535 - bg->red) &&
+         fill_colour->green == (65535 - bg->green) &&
+         fill_colour->blue  == (65535 - bg->blue))
+        {
+          setItemColourRevVideo(window, item);
+        }
+      else if(fill_colour->red   == (65535 - fg->red) &&
+              fill_colour->green == (65535 - fg->green) &&
+              fill_colour->blue  == (65535 - fg->blue))
+        {
+          setItemColourRevVideo(window, item);
+        }
+      else if((fill_colour->red   == bg->red &&
+               fill_colour->green == bg->green &&
+               fill_colour->blue  == bg->blue) ||
+              (fill_colour->red   == fg->red &&
+               fill_colour->green == fg->green &&
+               fill_colour->blue  == fg->blue))
+        {
+          printf("Original colour, no need to do anything.\n");
+        }
       else
-	colour = &(window->canvas_background) ;
-
-      foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-			  "outline_color_gdk", colour,
-			  NULL) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+        {
+          printf("Some kind of issue here colour is neither"
+                 " original nor rev video of either foreground"
+                 " of background colour.\n");
+        }
     }
-  else
+  
+  return ;  
+}
+
+static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
+{
+  GdkColor *fill_colour = NULL;
+  
+  g_object_get(G_OBJECT(item), 
+               "fill_color_gdk", &fill_colour,
+               NULL);
+  /* there is a problem here with rev. video stuff, some features are drawn with
+   * background, some not. */
+  /* If fill_colour == NULL then it's transparent! */
+  if(fill_colour != NULL)
     {
-      ZMapFeature feature ;
-      ZMapFeatureTypeStyle style ;
-      GdkColor rev_video_colour ;
-      GdkColor *fill_colour ;
-
-      /* Retrieve the feature from the canvas item. */
-      feature = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
-      zMapAssert(feature) ;
-
-      style = zMapFeatureGetStyle(feature) ;
-      zMapAssert(style) ;
-
-      /* there is a problem here with rev. video stuff, some features are drawn with
-       * background, some not. */
-
-      if (rev_video)
-	{
-	  /* set foreground GdkColor to be the inverse of current settings */
-	  rev_video_colour.red   = (65535 - style->background.red) ;
-	  rev_video_colour.green = (65535 - style->background.green) ;
-	  rev_video_colour.blue  = (65535 - style->background.blue) ;
-	  
-	  fill_colour = &rev_video_colour ;
-	}
-      else
-	{
-	  fill_colour = &(style->background) ;
-	}
+      fill_colour->red   = (65535 - fill_colour->red) ;
+      fill_colour->green = (65535 - fill_colour->green) ;
+      fill_colour->blue  = (65535 - fill_colour->blue) ;
       
-
       foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-			  "fill_color_gdk", fill_colour,
-			  NULL) ;
+                          "fill_color_gdk", fill_colour,
+                          NULL); 
     }
-
-
+  
   return ;
 }
 
