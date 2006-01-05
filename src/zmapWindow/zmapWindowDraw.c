@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 22 09:44 2005 (edgrif)
+ * Last edited: Jan  5 13:42 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.11 2005-12-22 10:04:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.12 2006-01-05 14:31:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -239,8 +239,6 @@ void zmapWindowColumnReposition(FooCanvasGroup *column)
   zmapWindowContainerPrint(root) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-
   /* Move all the columns in the current group that need to be moved. */
   repositionGroups(column, COLUMN_SPACING) ;
 
@@ -379,17 +377,27 @@ static void zmapWindowContainerRegionChanged(gpointer data,
     case CONTAINER_ROOT:
     case CONTAINER_PARENT:    
       {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
         FooCanvasGroup *text = NULL;
         if((text = zmapWindowContainerGetText(container)))
           zmapWindowContainerRegionChanged(text, NULL);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       }
       break;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case CONTAINER_TEXT:
       if(callback)
         (callback)(FOO_CANVAS_ITEM(container), 0.0, cb_data);
       break;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     case CONTAINER_FEATURES:
     case CONTAINER_BACKGROUND:
+      if(callback)
+        (callback)(FOO_CANVAS_ITEM(container), 0.0, cb_data);
       break;
     default:
       zMapAssert(0 && "bad coding, unrecognised container type.") ;

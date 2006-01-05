@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec 21 16:38 2005 (edgrif)
+ * Last edited: Jan  5 14:26 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.108 2005-12-22 10:05:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.109 2006-01-05 14:31:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,9 +56,6 @@ typedef struct
 
   ZMapFeatureSet feature_set ;				    /* Only used in column callbacks... */
 } ItemMenuCBDataStruct, *ItemMenuCBData ;
-
-
-
 
 
 
@@ -250,9 +247,7 @@ static void dumpContext(ZMapWindow window) ;
 static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 
 
-static void dna_redraw_callback(FooCanvasGroup *text_grp,
-                                double zoom,
-                                gpointer user_data);
+
 
 static void dna_redraw_callback(FooCanvasGroup *text_grp,
                                 double zoom,
@@ -1142,7 +1137,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 	column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(column_group)) ;
 	zmapWindowContainerSetChildRedrawRequired(column_parent, TRUE) ;
 
-	top_feature_item = drawSequenceFeature(column_parent, feature,
+	top_feature_item = drawSequenceFeature(column_group, feature,
                                                feature_offset,
                                                start_x, feature->x1, end_x, feature->x2,
                                                &style->outline,
@@ -1219,7 +1214,8 @@ static void removeEmptyColumnCB(gpointer data, gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
 
-  if (!zmapWindowContainerHasFeatures(container) && !zmapWindowContainerHasText(container))
+
+  if (!zmapWindowContainerHasFeatures(container))
     {
       RemoveEmptyColumn remove_data = (RemoveEmptyColumn)user_data ;
       ZMapCanvasData canvas_data = remove_data->canvas_data ;
@@ -1308,16 +1304,20 @@ static FooCanvasItem *drawSequenceFeature(FooCanvasGroup *parent, ZMapFeature fe
 
   /* I WOULD HAVE THOUGHT THAT WE NEEDED TO BE MAKING MORE USE OF COLOURS ETC HERE.... */
 
+
+  /* Note that the sequence item is different in that there is a single group child for the
+   * entire dna rows of text.... */
+
   text_feature = foo_canvas_item_new(parent,
 				     foo_canvas_group_get_type(),
 				     NULL) ;
-
   g_object_set_data(G_OBJECT(text_feature), CONTAINER_REDRAW_CALLBACK,
 		    dna_redraw_callback) ;
   g_object_set_data(G_OBJECT(text_feature), CONTAINER_REDRAW_DATA,
 		    (gpointer)window) ;
 
   zmapWindowColumnWriteDNA(window, FOO_CANVAS_GROUP(text_feature)) ;
+
 
   return text_feature ;
 }
@@ -1770,6 +1770,7 @@ static void positionColumnCB(gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style ;
 
   style = zmapWindowContainerGetStyle(container) ;
+  zMapAssert(style) ;
 
   /* Bump columns that need to be bumped. */
   if (style->overlap_mode != ZMAPOVERLAP_COMPLETE)
@@ -1983,7 +1984,8 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
   FooCanvasGroup *txtGroup = NULL;
   textGroupSelection txtSelect = NULL;
 
-  txtGroup  = FOO_CANVAS_GROUP(item->parent);
+  txtGroup  = FOO_CANVAS_GROUP(item->parent) ;
+
   txtSelect = getTextGroupData(txtGroup, (ZMapWindow)data); /* This will initialise for us if it's not there. */
   zMapAssert(txtSelect);
 
@@ -2839,29 +2841,25 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
 }
 
 
-static textGroupSelection getTextGroupData(FooCanvasGroup *txtGroup,
-                                           ZMapWindow window)
+static textGroupSelection getTextGroupData(FooCanvasGroup *txtGroup, ZMapWindow window)
 {
   textGroupSelection txtSelect = NULL;
-  if(!(txtSelect = (textGroupSelection)g_object_get_data(G_OBJECT(txtGroup), 
-                                                         "HIGHLIGHT_INFO")))
+
+  if(!(txtSelect = (textGroupSelection)g_object_get_data(G_OBJECT(txtGroup), "HIGHLIGHT_INFO")))
     {
-      FooCanvasGroup *featGroup = NULL;
       txtSelect  = (textGroupSelection)g_new0(textGroupSelectionStruct, 1);
       txtSelect->tooltip = zMapDrawToolTipCreate(FOO_CANVAS_ITEM(txtGroup)->canvas);
       foo_canvas_item_hide(FOO_CANVAS_ITEM( txtSelect->tooltip ));
 
-      featGroup = 
-        zmapWindowContainerGetFeatures(zmapWindowContainerGetParent(FOO_CANVAS_ITEM( txtGroup )));
-
-      txtSelect->highlight = FOO_CANVAS_GROUP(foo_canvas_item_new(featGroup,
+      txtSelect->highlight = FOO_CANVAS_GROUP(foo_canvas_item_new(txtGroup,
                                                                   foo_canvas_group_get_type(),
                                                                   NULL));
       txtSelect->window = window;
       g_object_set_data(G_OBJECT(txtGroup), "HIGHLIGHT_INFO", (gpointer)txtSelect);
 
     }
-  return txtSelect;
+
+  return txtSelect ;
 }
 
 static void pointerIsOverItem(gpointer data, gpointer user_data)
@@ -2974,13 +2972,26 @@ static void dna_redraw_callback(FooCanvasGroup *text_grp,
       FooCanvasItem *txt_item = NULL;
       ZMapDrawTextRowData   trd = NULL;
 #endif
+      FooCanvasGroup *container ;
+
+      container = zmapWindowContainerGetParent(grp_item->parent) ;
 
       /* We should hide these so they don't look odd */
       select = getTextGroupData(text_grp, window);
       foo_canvas_item_hide(FOO_CANVAS_ITEM(select->tooltip));
       foo_canvas_item_hide(FOO_CANVAS_ITEM(select->highlight));
 
-      zmapWindowContainerPurge(text_grp);
+      /* gets rid of text_grp !!!!... so we must create it again.... */
+      zmapWindowContainerPurge(FOO_CANVAS_GROUP(grp_item->parent)) ;
+
+      text_grp = FOO_CANVAS_GROUP(foo_canvas_item_new(zmapWindowContainerGetFeatures(container),
+						      foo_canvas_group_get_type(),
+						      NULL)) ;
+      g_object_set_data(G_OBJECT(text_grp), CONTAINER_REDRAW_CALLBACK,
+			dna_redraw_callback) ;
+      g_object_set_data(G_OBJECT(text_grp), CONTAINER_REDRAW_DATA,
+			(gpointer)window) ;
+
       zmapWindowColumnWriteDNA(window, text_grp);
       
 #ifdef RDS_DONT_INCLUDE
