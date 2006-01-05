@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  5 11:01 2006 (rds)
+ * Last edited: Jan  5 14:13 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.8 2006-01-05 11:09:14 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.9 2006-01-05 14:21:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -979,24 +979,32 @@ static void setItemColourOriginal(ZMapWindow window, FooCanvasItem *item)
 static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
 {
   GdkColor *fill_colour = NULL;
+  ZMapWindowItemFeatureType item_feature_type ;
   
-  g_object_get(G_OBJECT(item), 
-               "fill_color_gdk", &fill_colour,
-               NULL);
-  /* there is a problem here with rev. video stuff, some features are drawn with
-   * background, some not. */
-  /* If fill_colour == NULL then it's transparent! */
-  if(fill_colour != NULL)
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+  
+  if (item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
     {
-      fill_colour->red   = (65535 - fill_colour->red) ;
-      fill_colour->green = (65535 - fill_colour->green) ;
-      fill_colour->blue  = (65535 - fill_colour->blue) ;
-      
-      foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-                          "fill_color_gdk", fill_colour,
-                          NULL); 
-    }
   
+      g_object_get(G_OBJECT(item), 
+                   "fill_color_gdk", &fill_colour,
+                   NULL);
+      /* there is a problem here with rev. video stuff, some features are drawn with
+       * background, some not. */
+      /* If fill_colour == NULL then it's transparent! This isn't as
+       * true as I thought! The pixel has the colour of the item below
+       * it! */
+      if(fill_colour != NULL)
+        {
+          fill_colour->red   = (65535 - fill_colour->red) ;
+          fill_colour->green = (65535 - fill_colour->green) ;
+          fill_colour->blue  = (65535 - fill_colour->blue) ;
+          
+          foo_canvas_item_set(FOO_CANVAS_ITEM(item),
+                              "fill_color_gdk", fill_colour,
+                              NULL); 
+        }
+    }
   return ;
 }
 
