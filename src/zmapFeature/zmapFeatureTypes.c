@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Dec 16 09:51 2005 (edgrif)
+ * Last edited: Jan  5 16:35 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.13 2005-12-20 15:29:48 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.14 2006-01-06 16:11:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -116,6 +116,68 @@ void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag)
 
 
 
+/* Set score bounds for displaying column with width related to score. */
+void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score)
+{
+  zMapAssert(style) ;
+
+  style->min_score = min_score ;
+
+  style->max_score = max_score ;
+
+  return ;
+}
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* NOT USING THIS CURRENTLY, WILL BE NEEDED IN FUTURE... */
+
+/* Score stuff is all quite interdependent, hence this function to set it all up. */
+void zMapStyleSetScore(ZMapFeatureTypeStyle style, char *score_str,
+		       double min_score, double max_score)
+{
+  ZMapStyleScoreMode score = ZMAPSCORE_WIDTH ;
+
+  zMapAssert(style) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* WE ONLY SCORE BY WIDTH AT THE MOMENT..... */
+  if (bump_str && *bump_str)
+    {
+      if (g_ascii_strcasecmp(bump_str, "overlap") == 0)
+	bump = ZMAPOVERLAP_OVERLAP ;
+      else if (g_ascii_strcasecmp(bump_str, "position") == 0)
+	bump = ZMAPOVERLAP_POSITION ;
+      else if (g_ascii_strcasecmp(bump_str, "name") == 0)
+	bump = ZMAPOVERLAP_NAME ;
+      else if (g_ascii_strcasecmp(bump_str, "simple") == 0)
+	bump = ZMAPOVERLAP_SIMPLE ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  style->score_mode = score ;
+
+  /* Make sure we have some kind of score. */
+  if (style->max_score == style->min_score)
+    style->max_score = style->min_score + 1 ;
+
+  /* Make sure we have kind of width. */
+  if (!(style->width))
+    style->width = 2.0 ;
+
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+
+
+
 /* These attributes are not needed for many features and are not independent,
  * hence we set them in a special routine, none of this is very good as we don't have
  * a good way of enforcing stuff...so its all a bit heuristic. */
@@ -177,43 +239,6 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
   return ;
 }
 
-
-
-/* Score stuff is all quite interdependent, hence this function to set it all up. */
-void zMapStyleSetScore(ZMapFeatureTypeStyle style, char *score_str,
-		       double min_score, double max_score)
-{
-  ZMapStyleScoreMode score = ZMAPSCORE_WIDTH ;
-
-  zMapAssert(style) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* WE ONLY SCORE BY WIDTH AT THE MOMENT..... */
-  if (bump_str && *bump_str)
-    {
-      if (g_ascii_strcasecmp(bump_str, "overlap") == 0)
-	bump = ZMAPOVERLAP_OVERLAP ;
-      else if (g_ascii_strcasecmp(bump_str, "position") == 0)
-	bump = ZMAPOVERLAP_POSITION ;
-      else if (g_ascii_strcasecmp(bump_str, "name") == 0)
-	bump = ZMAPOVERLAP_NAME ;
-      else if (g_ascii_strcasecmp(bump_str, "simple") == 0)
-	bump = ZMAPOVERLAP_SIMPLE ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  style->score_mode = score ;
-
-  /* Make sure we have some kind of score. */
-  if (style->max_score == style->min_score)
-    style->max_score = style->min_score + 1 ;
-
-  /* Make sure we have kind of width. */
-  if (!(style->width))
-    style->width = 2.0 ;
-
-  return ;
-}
 
 
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, 
