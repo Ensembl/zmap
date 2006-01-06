@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan  5 14:26 2006 (edgrif)
+ * Last edited: Jan  6 16:16 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.109 2006-01-05 14:31:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.110 2006-01-06 16:17:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1091,9 +1091,10 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
+  /* Note: for object to _span_ "width" units, we start at zero and end at "width". */
   start_x = 0.0 ;
-  end_x   = style->width ;
+  end_x = style->width ;
+
 
   switch (feature->type)
     {
@@ -1110,6 +1111,8 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
       }
     case ZMAPFEATURE_ALIGNMENT:
       {
+	zmapWindowGetPosFromScore(style, feature->score, &start_x, &end_x) ;
+
         if(style->align_gaps)
           top_feature_item = drawAlignmentFeature(column_group, feature,
                                                   feature_offset,
@@ -1548,6 +1551,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
       if (feature->feature.transcript.introns)
 	{
           float line_width = 1.5 ;
+
 	  for (i = 0 ; i < feature->feature.transcript.introns->len ; i++)  
 	    {
 	      FooCanvasItem *intron_box, *intron_line ;
@@ -1558,7 +1562,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 	      intron_span = &g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i) ;
 
 	      left   = x1;
-	      right  = x2;
+	      right  = x2 - line_width ;
               top    = intron_span->x1;
               bottom = intron_span->x2;
 
@@ -1604,7 +1608,6 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
               
             }
 	}
-
 
       if (feature->feature.transcript.exons)
 	{
@@ -1671,6 +1674,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
             }
 
 	}
+
     }
 
   return feature_item ;
