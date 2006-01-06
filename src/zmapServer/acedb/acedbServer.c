@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Dec  8 14:16 2005 (edgrif)
+ * Last edited: Jan  5 16:36 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.45 2005-12-20 15:30:58 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.46 2006-01-06 16:11:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1401,6 +1401,7 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
   double width = ACEDB_DEFAULT_WIDTH ;
   gboolean strand_specific = FALSE, frame_specific = FALSE, show_up_strand = FALSE ;
   double min_mag = 0.0, max_mag = 0.0 ;
+  double min_score = 0.0, max_score = 0.0 ;
   gboolean status = TRUE ;
 
 
@@ -1519,6 +1520,30 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	      break ;
 	    }
 	}
+      else if (g_ascii_strcasecmp(tag, "Score_bounds") == 0)
+	{
+	  char *value ;
+
+	  value = strtok_r(NULL, " ", &line_pos) ;
+
+	  if (!(status = zMapStr2Double(value, &min_score)))
+	    {
+	      zMapLogWarning("Bad value for \"Score_bounds\" specified in method: %s", name) ;
+	      
+	      break ;
+	    }
+	  else
+	    {
+	      value = strtok_r(NULL, " ", &line_pos) ;
+
+	      if (!(status = zMapStr2Double(value, &max_score)))
+		{
+		  zMapLogWarning("Bad value for \"Score_bounds\" specified in method: %s", name) ;
+		  
+		  break ;
+		}
+	    }
+	}
        else if (g_ascii_strcasecmp(tag, "Column_group") == 0)
 	{
 	  /* Format for this tag:   Column_group "eds_column" "wublastx_fly" */
@@ -1585,6 +1610,9 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
       if (min_mag || max_mag)
 	zMapStyleSetMag(style, min_mag, max_mag) ;
       
+      if (min_score && max_score)
+	zMapStyleSetScore(style, min_score, max_score) ;
+
       zMapStyleSetStrandAttrs(style, strand_specific, frame_specific, show_up_strand) ;
 
       zMapStyleSetBump(style, overlap) ;
