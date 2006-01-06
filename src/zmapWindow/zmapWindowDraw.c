@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  5 13:42 2006 (edgrif)
+ * Last edited: Jan  6 16:14 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.12 2006-01-05 14:31:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.13 2006-01-06 16:15:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -470,44 +470,67 @@ void zmapWindowDrawZoom(ZMapWindow window)
 }
 
 
-/* For James all methods that mention score have:
+/* Some features have different widths according to their score, this helps annotators
+ * gage whether something like an alignment is worth taking notice of.
+ * 
+ * Currently we only implement the algorithm given by acedb's Score_by_width but it maybe
+ * that we will need to do others to support their display.
+ *
+ * I've done this because for James Havana DBs all methods that mention score have:
  *
  * Score_by_width	
  * Score_bounds	 70.000000 130.000000
  *
  * (the bounds are different for different data sources...)
- *
- * x1 will be used and reset, x2 is not looked at but just reset...
  * 
+ * The interface is slightly tricky here in that we use the style->width to calculate
+ * width, not (x2 - x1), hence x2 is only used to return result.
  * 
  */
-double zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
-				 double *curr_x1_inout, double *curr_x2_out)
+void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, 
+			       double score,
+			       double *curr_x1_inout, double *curr_x2_out)
 {
   double width ;
-  double dx ;
+  double dx = 0.0 ;
   double numerator, denominator ;
 
+  zMapAssert(style && curr_x1_inout && curr_x2_out) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMapAssert(!(!style->max_score && !style->min_score)) ;
+  /* We only do stuff if there are both min and max scores to work with.... */
+  if (style->max_score && style->min_score)
+    {
+      double start = *curr_x1_inout ;
+      double half_width, mid_way ;
 
-  numerator = score - style->min_score ;
-  denominator = style->max_score - style->min_score ;
+      half_width = style->width / 2 ;
+      mid_way = start + half_width ;
 
-  dx = 0.25 + ((0.75 * numerator) / denominator) ;
+      numerator = score - style->min_score ;
+      denominator = style->max_score - style->min_score ;
 
-  if (dx < 0.25)
-    dx = 0.25 ;
-  else if (dx > 1)
-    dx = 1 ;
+      if (denominator == 0)				    /* catch div by zero */
+	{
+	  if (numerator < 0)
+	    dx = 0.25 ;
+	  else if (numerator > 0)
+	    dx = 1 ;
+	}
+      else
+	{
+	  dx = 0.25 + (0.75 * (numerator / denominator)) ;
+	}
 
-  *curr_x_inout1 = *curr_x1 + (0.5 * style->width * (xoff - dx)) ;
-  *curr_x2_inout = *curr_x1 + (0.5 * style->width * (xoff + dx)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      if (dx < 0.25)
+	dx = 0.25 ;
+      else if (dx > 1)
+	dx = 1 ;
+      
+      *curr_x1_inout = mid_way - (half_width * dx) ;
+      *curr_x2_out = mid_way + (half_width * dx) ;
+    }
 
-
-  return width ;
+  return ;
 }
 
 
@@ -593,10 +616,11 @@ static void bumpColCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   BumpCol bump_data   = (BumpCol)user_data ;
   ZMapWindowItemFeatureType item_feature_type ;
-  double y1 = 0.0, y2 = 0.0 ;
+  ZMapFeature feature ;
+  double x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0 ;
   gpointer y1_ptr = 0 ;
   gpointer key = NULL, value = NULL ;
-  double offset = 0.0 ;
+  double offset = 0.0, dx = 0.0 ;
   BumpColRange range ;
 
 
@@ -604,15 +628,20 @@ static void bumpColCB(gpointer data, gpointer user_data)
     return ;
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
-
   zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
+
+  feature = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  zMapAssert(feature) ;
+
+
+  /* x1, x2 always needed so might as well get y coords as well because foocanvas will have
+   * calculated them anyway. */
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
 
   switch (bump_data->bump_mode)
     {
     case ZMAPOVERLAP_POSITION:
       {
-	foo_canvas_item_get_bounds(item, NULL, &y1, NULL, NULL) ;
-
 	y1_ptr = GINT_TO_POINTER((int)y1) ;
 
 	if (g_hash_table_lookup_extended(bump_data->pos_hash, y1_ptr, &key, &value))
@@ -640,8 +669,6 @@ static void bumpColCB(gpointer data, gpointer user_data)
 #warning "temp 2.2 code...agh"
 	TempStruct callback_data = {NULL} ;
 	
-
-	foo_canvas_item_get_bounds(item, NULL, &y1, NULL, &y2) ;
 
 	new_range.y1 = y1 ;
 	new_range.y2 = y2 ;
@@ -716,6 +743,13 @@ static void bumpColCB(gpointer data, gpointer user_data)
       zMapAssert(0 && "Coding error, unrecognised bump type.") ;
       break ;
     }
+
+
+  /* Some features are drawn with different widths to indicate things like score. In this case
+   * their offset needs to be corrected to place them centrally. (We always do this which
+   * seems inefficient but its a toss up whether it would be quicker to test (dx == 0). */
+  dx = (feature->style->width - (x2 - x1)) / 2 ;
+  offset += dx ;
 
   my_foo_canvas_item_goto(item, &(offset), NULL) ; 
 
