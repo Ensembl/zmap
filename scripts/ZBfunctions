@@ -100,7 +100,7 @@ ZBmsgMail ()
 {
     echo "Build Message:
   
-$1" | mailx -s "ZMap Build - $2" zmapdev
+$1" | mailx -s "ZMap Build on $ZBHostname - $2" zmapdev
 
 }
 
