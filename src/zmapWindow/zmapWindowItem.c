@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  5 14:13 2006 (rds)
+ * Last edited: Jan  9 10:24 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.9 2006-01-05 14:21:18 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.10 2006-01-13 18:52:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -797,6 +797,46 @@ void my_foo_canvas_item_goto(FooCanvasItem *item, double *x, double *y)
 }
 
 
+gboolean zmapWindowItemIsVisible(FooCanvasItem *item)
+{
+  gboolean visible = FALSE;
+
+  visible = zmapWindowItemIsShown(item);
+
+  /* we need to check out our parents :( */
+  /* we would like not to do this */
+  if(visible)
+    {
+      FooCanvasGroup *parent = NULL;
+      parent = FOO_CANVAS_GROUP(item->parent);
+      while(visible && parent)
+        {
+          visible = zmapWindowItemIsShown(FOO_CANVAS_ITEM(parent));
+          /* how many parents we got? */
+          parent  = FOO_CANVAS_GROUP(FOO_CANVAS_ITEM(parent)->parent); 
+        }
+    }
+
+  return visible;
+}
+
+gboolean zmapWindowItemIsShown(FooCanvasItem *item)
+{
+  gboolean visible = FALSE;
+  
+  zMapAssert(item != NULL);
+
+  g_object_get(G_OBJECT(item), 
+               "visible", &visible,
+               NULL);
+
+  return visible;
+}
+
+
+
+
+
 /* 
  *                  Internal routines.
  */
@@ -1009,38 +1049,3 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
 }
 
 
-gboolean zmapWindowItemIsVisible(FooCanvasItem *item)
-{
-  gboolean visible = FALSE;
-
-  visible = zmapWindowItemIsShown(item);
-
-  /* we need to check out our parents :( */
-  /* we would like not to do this */
-  if(visible)
-    {
-      FooCanvasGroup *parent = NULL;
-      parent = FOO_CANVAS_GROUP(item->parent);
-      while(visible && parent)
-        {
-          visible = zmapWindowItemIsShown(FOO_CANVAS_ITEM(parent));
-          /* how many parents we got? */
-          parent  = FOO_CANVAS_GROUP(FOO_CANVAS_ITEM(parent)->parent); 
-        }
-    }
-
-  return visible;
-}
-
-gboolean zmapWindowItemIsShown(FooCanvasItem *item)
-{
-  gboolean visible = FALSE;
-  
-  zMapAssert(item != NULL);
-
-  g_object_get(G_OBJECT(item), 
-               "visible", &visible,
-               NULL);
-
-  return visible;
-}
