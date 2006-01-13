@@ -26,19 +26,23 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan  5 15:58 2006 (edgrif)
+ * Last edited: Jan 13 18:35 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.89 2006-01-06 16:17:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.90 2006-01-13 18:58:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
 #define ZMAP_WINDOW_P_H
 
 #include <gtk/gtk.h>
+#include <ZMap/zmapUtilsGUI.h>
+#include <ZMap/zmapFeature.h>
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapWindow.h>
-#include <ZMap/zmapFeature.h>
-/* #include <libfoocanvas/libfoocanvas.h> */
+
+
+
+
 
 /* Names of config stanzas. */
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
@@ -154,6 +158,21 @@ typedef enum
   } ZMapWindowClampType;
 
 
+
+/* Used to pass data to canvas item menu callbacks, whether columns or feature items. */
+typedef struct
+{
+  gboolean item_cb ;					    /* TRUE => item callback,
+							       FALSE => column callback. */
+
+  ZMapWindow window ;
+  FooCanvasItem *item ;
+
+  ZMapFeatureSet feature_set ;				    /* Only used in column callbacks... */
+} ItemMenuCBDataStruct, *ItemMenuCBData ;
+
+
+
 /* Probably will need to expand this to be a union as we come across more features that need
  * different information recording about them.
  * The intent of this structure is to hold information for items that are subparts of features,
@@ -210,6 +229,22 @@ typedef struct _ZMapWindowStruct
   GdkColor canvas_border ;
   GdkColor canvas_background ;
   GdkColor align_background ;
+
+
+  /* Detailed colours (NOTE...NEED MERGING WITH THE ABOVE.... */
+  GdkColor colour_root ;
+  GdkColor colour_alignment ;
+  GdkColor colour_block ;
+  GdkColor colour_mblock_for ;
+  GdkColor colour_mblock_rev ;
+  GdkColor colour_qblock_for ;
+  GdkColor colour_qblock_rev ;
+  GdkColor colour_mforward_col ;
+  GdkColor colour_mreverse_col ;
+  GdkColor colour_qforward_col ;
+  GdkColor colour_qreverse_col ;
+
+
 
   ZMapWindowZoomControl zoom;
 
@@ -398,6 +433,9 @@ FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash, 
 gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 				 GQuark align_id, GQuark block_id, GQuark set_id,
 				 ZMapStrand set_strand) ;
+gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash,
+				     GQuark align_id, GQuark block_id, GQuark set_id,
+				     ZMapStrand set_strand, GQuark feature_id) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
 
@@ -466,6 +504,21 @@ void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel,
 gint zmapWindowFeatureListCountSelected(GtkTreeSelection *selection);
 gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
 
+ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
+				       ZMapGUIMenuItemCallbackFunc callback_func,
+				       gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
+					   ZMapGUIMenuItemCallbackFunc callback_func,
+					   gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
+					       ZMapGUIMenuItemCallbackFunc callback_func,
+					       gpointer callback_data) ;
+
+
+
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
 void zmapWindowZoomControlInitialise(ZMapWindow window) ;
@@ -477,6 +530,16 @@ void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomContr
 void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
                                           double *x1_out, double *y1_out, 
                                           double *x2_out, double *y2_out);
+
+
+/* Add, modify, draw, remove features from the canvas. */
+gboolean zmapWindowFeatureAdd(ZMapWindow window,
+			      ZMapFeatureSet feature_set, ZMapFeature feature) ;
+gboolean zmapWindowFeatureModify(ZMapWindow zmap_window,
+				 ZMapFeatureSet feature_set, ZMapFeature feature) ;
+gboolean zmapWindowFeatureRemove(ZMapWindow zmap_window,
+				 ZMapFeatureSet feature_set, ZMapFeature feature) ;
+void zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature) ;
 
 
 /* 
