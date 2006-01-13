@@ -66,6 +66,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapUtils/zmapFileUtils.c \
 	$(top_srcdir)/zmapUtils/zmapDNAUtils.c \
 	$(top_srcdir)/zmapUtils/zmapGUIutils.c \
+	$(top_srcdir)/zmapUtils/zmapGUImenus.c \
 	$(top_srcdir)/zmapUtils/zmapGLibUtils.c \
 	$(top_srcdir)/zmapUtils/zmapHandle.c \
 	$(top_srcdir)/zmapUtils/zmapLogging.c \
@@ -90,6 +91,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFrame.c \
 	$(top_srcdir)/zmapWindow/zmapWindowItemHash.c \
 	$(top_srcdir)/zmapWindow/zmapWindowList.c \
+	$(top_srcdir)/zmapWindow/zmapWindowFeature.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFeatureList.c \
 	$(top_srcdir)/zmapWindow/zmapWindowSearch.c \
 	$(top_srcdir)/zmapWindow/zmapWindowMenus.c \
