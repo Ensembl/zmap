@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Nov 16 10:29 2005 (rds)
+ * Last edited: Jan 12 13:07 2006 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.44 2005-11-16 10:31:12 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.45 2006-01-13 18:51:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -105,22 +105,6 @@ typedef struct _ZMapWindowCallbacksStruct
 
 
 
-/*! Callback function for menu items. The id indicates which menu_item was selected
- *  resulting in the call to this callback. */
-typedef void (*ZMapWindowMenuItemCallbackFunc)(int menu_item_id, gpointer callback_data) ;
-
-/*!
- * Defines a menu item. */
-typedef struct
-{
-  char *name ;						    /*!< Title string of menu item. */
-  int id ;						    /*!< Number uniquely identifying this
-							      menu item within a menu. */
-  ZMapWindowMenuItemCallbackFunc callback_func ;	    /*!< Function to call when this item
-							      is selected.  */
-  gpointer callback_data ;				    /*!< Data to pass to callback function. */
-} ZMapWindowMenuItemStruct, *ZMapWindowMenuItem ;
-
 
 typedef struct _ZMapWindowFeatureQueryStruct
 {
@@ -188,12 +172,6 @@ void zMapWindowDestroyLists(ZMapWindow window) ;
 void zMapWindowUnlock(ZMapWindow window) ;
 
 void zMapWindowDestroy(ZMapWindow window) ;
-
-
-/* this may be better in a utils directory...not sure.... */
-void zMapWindowMakeMenu(char *menu_title, GList *menu_sets,
-			GdkEventButton *button_event) ;
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
