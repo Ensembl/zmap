@@ -27,18 +27,395 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Nov 14 11:16 2005 (edgrif)
+ * Last edited: Jan 12 15:29 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.5 2005-11-14 11:17:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.6 2006-01-13 18:54:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsDNA.h>
+#include <ZMap/zmapGFF.h>
 #include <zmapWindow_P.h>
+#include <zmapWindowContainer.h>
 
 
-/* REALLY THIS SHOULD GO IN THE GUI UTILS CODE IN THE UTILS DIRECTORY.... */
+
+static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
+static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
+static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
+
+static FooCanvasGroup *getItemsColGroup(FooCanvasItem *item) ;
+
+static void dumpFASTA(ZMapWindow window) ;
+static void dumpFeatures(ZMapWindow window, ZMapFeatureAny feature) ;
+static void dumpContext(ZMapWindow window) ;
+
+
+
+
+
+/* Set of makeMenuXXXX functions to create common subsections of menus. If you add to this
+ * you should make sure you understand how to specify menu paths in the item factory style.
+ * If you get it wrong then the menus will be scr*wed up.....
+ * 
+ * The functions are defined in pairs: one to define the menu, one to handle the callback
+ * actions, this is to emphasise that their indexes must be kept in step !
+ * 
+ * NOTE HOW THE MENUS ARE DECLARED STATIC IN THE VARIOUS ROUTINES TO MAKE SURE THEY STAY
+ * AROUND...OTHERWISE WE WILL HAVE TO KEEP ALLOCATING/DEALLOCATING THEM.....
+ */
+
+
+/* Probably it would be wise to pass in the callback function, the start index for the item
+ * identifier and perhaps the callback data...... */
+ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
+				       ZMapGUIMenuItemCallbackFunc callback_func,
+				       gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {"_Bump", 0, NULL, NULL},
+      {"Bump/Column UnBump",        ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
+      {"Bump/Column Bump Position", ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
+      {"Bump/Column Bump Overlap",  ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
+      {"Bump/Column Bump Name",     ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
+      {"Bump/Column Bump Simple",   ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
+      {NULL, 0, NULL, NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+/* Bump a column and reposition the other columns. */
+static void bumpMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapStyleOverlapMode bump_type = (ZMapStyleOverlapMode)menu_item_id  ;
+  FooCanvasGroup *column_group ;
+
+  if (menu_data->item_cb)
+    column_group = getItemsColGroup(menu_data->item) ;
+  else
+    column_group = FOO_CANVAS_GROUP(menu_data->item) ;
+
+  zmapWindowColumnBump(column_group, bump_type) ;
+  zmapWindowColumnReposition(column_group) ;
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
+ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {"_Dump",                  0, NULL,       NULL},
+      {"Dump/Dump DNA"          , 1, dumpMenuCB, NULL},
+      {"Dump/Dump Features"     , 2, dumpMenuCB, NULL},
+      {"Dump/Dump Context"      , 3, dumpMenuCB, NULL},
+      {NULL               , 0, NULL, NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+static void dumpMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapFeatureAny feature ;
+
+  feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data") ;
+
+  switch (menu_item_id)
+    {
+    case 1:
+      {
+	dumpFASTA(menu_data->window) ;
+
+	break ;
+      }
+    case 2:
+      {
+	dumpFeatures(menu_data->window, feature) ;
+
+	break ;
+      }
+    case 3:
+      {
+	dumpContext(menu_data->window) ;
+
+	break ;
+      }
+    default:
+      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
+      break ;
+    }
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
+ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
+					   ZMapGUIMenuItemCallbackFunc callback_func,
+					   gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {"_Blixem",      0, NULL, NULL},
+      {"Blixem/Show multiple dna alignment",                                 1, blixemMenuCB, NULL},
+      {"Blixem/Show multiple dna alignment for just this type of homology",  2, blixemMenuCB, NULL},
+      {NULL,                                                          0, NULL,         NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
+					       ZMapGUIMenuItemCallbackFunc callback_func,
+					       gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {"_Blixem",      0, NULL, NULL},
+      {"Blixem/Show multiple protein alignment",                                 1, blixemMenuCB, NULL},
+      {"Blixem/Show multiple protein alignment for just this type of homology",  2, blixemMenuCB, NULL},
+      {NULL,                                                              0, NULL,         NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+/* call blixem either for a single type of homology or for all homologies. */
+static void blixemMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  gboolean single_homol_type = FALSE ;
+  gboolean status ;
+
+  switch (menu_item_id)
+    {
+    case 1:
+      single_homol_type = FALSE ;
+      break ;
+    case 2:
+      single_homol_type = TRUE ;
+      break ;
+    default:
+      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
+      break ;
+    }
+
+  status = zmapWindowCallBlixem(menu_data->window, menu_data->item, single_homol_type) ;
+  
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
+
+
+
+/* this needs to be a general function... */
+static FooCanvasGroup *getItemsColGroup(FooCanvasItem *item)
+{
+  FooCanvasGroup *group = NULL ;
+  ZMapWindowItemFeatureType item_feature_type ;
+
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+							"item_feature_type")) ;
+
+  switch (item_feature_type)
+    {
+    case ITEM_FEATURE_SIMPLE:
+    case ITEM_FEATURE_PARENT:
+      group = zmapWindowContainerGetParent(item->parent) ;
+      break ;
+    case ITEM_FEATURE_CHILD:
+    case ITEM_FEATURE_BOUNDING_BOX:
+      group = zmapWindowContainerGetParent(item->parent->parent) ;
+      break ;
+    default:
+      zMapAssert("Coding error, unrecognised menu item number.") ;
+      break ;
+    }
+
+  return group ;
+}
+
+
+
+
+
+static void dumpFASTA(ZMapWindow window)
+{
+  gboolean dna = TRUE ;
+  char *filepath = NULL ;
+  GIOChannel *file = NULL ;
+  GError *error = NULL ;
+  char *seq_name = NULL ;
+  int seq_len = 0 ;
+  char *sequence = NULL ;
+  char *error_prefix = "FASTA DNA dump failed:" ;
+
+  if (!(dna = zmapFeatureContextDNA(window->feature_context, &seq_name, &seq_len, &sequence))
+      || !(filepath = zmapGUIFileChooser(window->toplevel, "FASTA filename ?", NULL, NULL))
+      || !(file = g_io_channel_new_file(filepath, "w", &error))
+      || !zmapDNADumpFASTA(file, seq_name, seq_len, sequence, &error))
+    {
+      char *err_msg = NULL ;
+
+      /* N.B. if there is no filepath it means user cancelled so take no action... */
+      if (!dna)
+	err_msg = "there is no DNA to dump." ;
+      else if (error)
+	err_msg = error->message ;
+
+      if (err_msg)
+	zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, err_msg) ;
+
+      if (error)
+	g_error_free(error) ;
+    }
+
+
+  if (file)
+    {
+      GIOStatus status ;
+
+      if ((status = g_io_channel_shutdown(file, TRUE, &error)) != G_IO_STATUS_NORMAL)
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+	  g_error_free(error) ;
+	}
+    }
+
+
+  return ;
+}
+
+
+static void dumpFeatures(ZMapWindow window, ZMapFeatureAny feature)
+{
+  char *filepath = NULL ;
+  GIOChannel *file = NULL ;
+  GError *error = NULL ;
+  char *error_prefix = "Features dump failed:" ;
+  ZMapFeatureBlock feature_block ;
+
+  /* Should extend this any type.... */
+  zMapAssert(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
+	     || feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+
+  /* Find the block from whatever pointer we are sent...  */
+  if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+    feature_block = (ZMapFeatureBlock)(feature->parent) ;
+  else
+    feature_block = (ZMapFeatureBlock)(feature->parent->parent) ;
+
+
+  if (!(filepath = zmapGUIFileChooser(window->toplevel, "Feature Dump filename ?", NULL, "gff"))
+      || !(file = g_io_channel_new_file(filepath, "w", &error))
+      || !zMapGFFDump(file, feature_block, &error))
+    {
+      /* N.B. if there is no filepath it means user cancelled so take no action...,
+       * otherwise we output the error message. */
+      if (error)
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+	  g_error_free(error) ;
+	}
+    }
+
+
+  if (file)
+    {
+      GIOStatus status ;
+
+      if ((status = g_io_channel_shutdown(file, TRUE, &error)) != G_IO_STATUS_NORMAL)
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+	  g_error_free(error) ;
+	}
+    }
+
+
+  return ;
+}
+
+
+
+
+static void dumpContext(ZMapWindow window)
+{
+  char *filepath = NULL ;
+  GIOChannel *file = NULL ;
+  GError *error = NULL ;
+#ifdef RDS_DONT_INCLUDE
+  char *seq_name = NULL ;
+  int seq_len = 0 ;
+  char *sequence = NULL ;
+#endif
+  char *error_prefix = "Feature context dump failed:" ;
+
+  if (!(filepath = zmapGUIFileChooser(window->toplevel, "Context Dump filename ?", NULL, "zmap"))
+      || !(file = g_io_channel_new_file(filepath, "w", &error))
+      || !zMapFeatureContextDump(file, window->feature_context, &error))
+    {
+      /* N.B. if there is no filepath it means user cancelled so take no action...,
+       * otherwise we output the error message. */
+      if (error)
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+	  g_error_free(error) ;
+	}
+    }
+
+
+  if (file)
+    {
+      GIOStatus status ;
+
+      if ((status = g_io_channel_shutdown(file, TRUE, &error)) != G_IO_STATUS_NORMAL)
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+
+	  g_error_free(error) ;
+	}
+    }
+
+
+  return ;
+}
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
 
 /* READ THIS:
@@ -75,6 +452,7 @@
  *
  *
  */
+
 
 
 /* Used for all item factories. */
@@ -361,5 +739,7 @@ static int itemsInMenu(ZMapWindowMenuItem menu)
 
   return num_menu_items ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
