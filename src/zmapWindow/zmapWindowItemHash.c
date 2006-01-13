@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Nov 25 09:46 2005 (edgrif)
+ * Last edited: Jan 13 12:07 2006 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.14 2005-11-25 14:01:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.15 2006-01-13 18:53:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -370,6 +370,39 @@ gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 }
 
 
+
+/* Remove a hash for the given feature.
+ * Returns FALSE if the feature_id cannot be found, otherwise it returns TRUE and removes
+ * the feature_id. */
+gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash,
+				     GQuark align_id, GQuark block_id, GQuark set_id,
+				     ZMapStrand set_strand, GQuark feature_id)
+{
+  gboolean result = FALSE ;
+  ID2Canvas align ;
+  ID2Canvas block ;
+  ID2Canvas set ;
+  ID2Canvas feature ;
+
+
+  /* We need special quarks that incorporate strand indication as the hashes are per column. */
+  set_id = zmapWindowFToIMakeSetID(set_id, set_strand) ;
+
+  if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
+					      GUINT_TO_POINTER(align_id)))
+      && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
+						 GUINT_TO_POINTER(block_id)))
+      && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
+					       GUINT_TO_POINTER(set_id)))
+      && (feature = (ID2Canvas)g_hash_table_lookup(set->hash_table,
+						   GUINT_TO_POINTER(feature_id))))
+    {
+      result = g_hash_table_remove(set->hash_table, GUINT_TO_POINTER(feature_id)) ;
+      zMapAssert(result == TRUE) ;
+    }
+
+  return result ;
+}
 
 
 
