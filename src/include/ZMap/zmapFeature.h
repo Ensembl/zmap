@@ -1,4 +1,3 @@
-
 /*  File: zmapFeature.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2004
@@ -26,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jan  5 16:36 2006 (edgrif)
+ * Last edited: Jan 13 14:52 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.54 2006-01-06 16:19:31 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.55 2006-01-13 18:46:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -424,10 +423,13 @@ typedef struct ZMapFeatureTypeStyleStruct_
   char *description ;					    /* Description of what this style
 							       represents. */
 
-  /* I'm not sure this will work...how will we know ?? if there no features then we can't get
-   * the style...but lets leave this as a place holder.... */
+  /* I don't want a general show/hide flag here because we should get that dynamically from the
+   * state of the column canvas item. */
+  gboolean hide_initially ;				    /* Is the column hidden initially ? */
+
   gboolean show_when_empty ;				    /* If TRUE, features column is
 							       displayed even if there are no features. */
+
   GdkColor  foreground ;				    /* Overlaid on background. */
   GdkColor  background ;				    /* Fill colour. */
   GdkColor  outline ;					    /* Surround/line colour. */
@@ -518,6 +520,13 @@ ZMapFeature zMapFeatureFindFeatureInSet(ZMapFeatureSet feature_set, GQuark featu
 GData *zMapFeatureFindSetInContext(ZMapFeatureContext feature_context, GQuark set_id) ;
 
 
+gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
+gboolean zMapFeatureTypeIsValid(ZMapFeatureStuctType group_type) ;
+ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStuctType group_type) ;
+
+
+
+
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
 					    GList *styles, GList *feature_set_names) ;
 gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
@@ -570,13 +579,20 @@ ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature) ;
 ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature) ;
 void zmapFeatureDestroy(ZMapFeature feature) ;
 
-
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GData *features) ;
-void zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
+gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
+gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
+gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 
+
+ZMapFeatureAny zMapFeatureGetGroup(ZMapFeatureAny any_feature, ZMapFeatureStuctType group_type) ;
+
+
+
+/* Style functions. */
 
 GList *zMapStylesGetNames(GList *styles) ;
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov 22 11:41 2005 (edgrif)
+ * Last edited: Jan 13 18:45 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.29 2005-11-24 15:53:29 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.30 2006-01-13 18:46:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -104,6 +104,80 @@ static void removeNotFreeFeatureSet(GQuark key_id, gpointer data, gpointer user_
 
 
 
+/*!
+ * Function to do some validity checking on a ZMapFeatureAny struct. Always more you
+ * could do but this is better than nothing.
+ * 
+ * Returns TRUE if the struct is OK, FALSE otherwise.
+ * 
+ * @param   any_feature    The feature to validate.
+ * @return  gboolean       TRUE if feature is valid, FALSE otherwise.
+ *  */
+gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
+{
+  gboolean result = FALSE ;
+
+  if (any_feature
+      && zMapFeatureTypeIsValid(any_feature->struct_type)
+      && any_feature->unique_id != ZMAPFEATURE_NULLQUARK
+      && any_feature->original_id != ZMAPFEATURE_NULLQUARK)
+    result = TRUE ;
+
+  return result ;
+}
+
+gboolean zMapFeatureTypeIsValid(ZMapFeatureStuctType group_type)
+{
+  gboolean result = FALSE ;
+
+  if (group_type >= ZMAPFEATURE_STRUCT_CONTEXT
+      && group_type <= ZMAPFEATURE_STRUCT_FEATURE)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+
+/*!
+ * Function to return the _parent_ group of group_type of the feature any_feature.
+ * This is a generalised function to stop all the poking about through the context
+ * hierachy that is otherwise required. Note you can only go _UP_ the tree with
+ * this function because going down is a one-to-many mapping.
+ * 
+ * Returns the feature group or NULL if there is no parent group or there is some problem
+ * with the arguments like asking for a group at or below the level of any_feature.
+ * 
+ * @param   any_feature    The feature for which you wish to find the parent group.
+ * @param   group_type     The type/level of the parent group you want to find.
+ * @return  ZMapFeatureAny The parent group or NULL.
+ *  */
+ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStuctType group_type)
+{
+  ZMapFeatureAny result = NULL ;
+
+  zMapAssert(zMapFeatureIsValid(any_feature)
+	     && group_type >= ZMAPFEATURE_STRUCT_CONTEXT
+	     && group_type <= ZMAPFEATURE_STRUCT_FEATURE) ;
+
+  if (any_feature->struct_type > group_type)
+    {
+      ZMapFeatureAny group = any_feature ;
+
+      while (group->struct_type > group_type)
+	{
+	  group = group->parent ;
+	}
+
+      result = group ;
+    }
+
+  return result ;
+}
+
+
+
+
 
 /*!
  * Returns TRUE if feature context has DNA, FALSE otherwise.
@@ -153,6 +227,11 @@ ZMapFeature zmapFeatureCreateEmpty(void)
 
   return feature ;
 }
+
+
+
+
+
 
 
 
@@ -307,8 +386,6 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 }
 
 
-
-
 /*!
  * Destroys a feature, freeing up all of its resources.
  * 
@@ -378,20 +455,64 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GDat
 }
 
 
-/* Features must not be null to be added we need at least the feature id and probably should.
- * check for more. */
-void zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
+/* Feature must not be null to be added we need at least the feature id and probably should.
+ * check for more.
+ * 
+ * Returns FALSE if feature is already in set.
+ *  */
+gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
 {
+  gboolean result = FALSE ;
+
   zMapAssert(feature_set && feature && feature->unique_id != ZMAPFEATURE_NULLQUARK) ;
 
-  feature->parent = (ZMapFeatureAny)feature_set ;
+  if (!zMapFeatureSetFindFeature(feature_set, feature))
+    {
+      feature->parent = (ZMapFeatureAny)feature_set ;
 
-  g_datalist_id_set_data_full(&(feature_set->features), feature->unique_id, feature,
-			      destroyFeature) ;
+      g_datalist_id_set_data_full(&(feature_set->features), feature->unique_id, feature,
+				  destroyFeature) ;
 
-  return ;
+      result = TRUE ;
+    }
+
+  return result ;
 }
 
+
+/* Returns TRUE if the feature could be found in the feature_set, FALSE otherwise. */
+gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(feature_set && feature) ;
+
+  if (g_datalist_id_get_data(&(feature_set->features), feature->unique_id))
+    result = TRUE ;
+
+  return result ;
+}
+
+
+/* Feature must exist in set to be removed.
+ * 
+ * Returns FALSE if feature is not in set.
+ *  */
+gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(feature_set && feature && feature->unique_id != ZMAPFEATURE_NULLQUARK) ;
+
+  if (zMapFeatureSetFindFeature(feature_set, feature))
+    {
+      g_datalist_id_remove_data(&(feature_set->features), feature->unique_id) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
 
 
 void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
