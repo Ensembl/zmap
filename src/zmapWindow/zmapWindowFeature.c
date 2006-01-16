@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 13 18:27 2006 (edgrif)
+ * Last edited: Jan 16 14:18 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.1 2006-01-13 18:55:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.2 2006-01-16 14:19:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -116,9 +116,11 @@ static void destroyIterator(ZMapDrawTextIterator iterator) ;
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 
-
 static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 
+
+static void removeFeatureLongItems(GList **long_items, FooCanvasItem *feature_item) ;
+static void removeLongItemCB(gpointer data, gpointer user_data) ;
 
 
 
@@ -133,14 +135,35 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
  *  */
 
 
-/* Add a new feature to the given feature_set within the feature context.
+/* 
+ * NOTE TO ROY: I've written the functions so that when you get the xml from James, you can
+ * get the align/block/set information and then 
+ * use the hash calls to get the foocanvasgroup that is the column you want to add/modify the feature
+ * in. The you can just call these routines with the group and the feature.
  * 
- * Returns FALSE if the feature is already in the feature_set. */
-gboolean zmapWindowFeatureAdd(ZMapWindow window, ZMapFeatureSet feature_set, ZMapFeature feature)
-{
-  gboolean result = FALSE ;
+ * This way if there are errors in the xml and you can't find the right align/block/set then
+ * you can easily report back to lace what the error was....
+ *  */
 
-  zMapAssert(window && feature_set && feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+
+/* Add a new feature to the feature_set given by the set canvas item.
+ * 
+ * Returns the new canvas feature item or NULL if there is some problem, e.g. the feature already
+ * exists in the feature_set.
+ *  */
+FooCanvasItem *zmapWindowFeatureAdd(ZMapWindow window,
+				    FooCanvasGroup *feature_group, ZMapFeature feature)
+{
+  FooCanvasItem *new_feature = NULL ;
+  ZMapFeatureSet feature_set ;
+
+  zMapAssert(window && feature_group && feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+
+  feature_set = g_object_get_data(G_OBJECT(feature_group), "item_feature_data") ;
+  zMapAssert(feature_set) ;
+
 
   /* Check the feature does not already exist in the feature_set. */
   if (!zMapFeatureSetFindFeature(feature_set, feature))
@@ -148,21 +171,12 @@ gboolean zmapWindowFeatureAdd(ZMapWindow window, ZMapFeatureSet feature_set, ZMa
       /* Add it to the feature set. */
       if (zMapFeatureSetAddFeature(feature_set, feature))
 	{
-	  FooCanvasItem *set_item ;
-
-	  /* Find the canvas group for this set and draw the feature into it. */
-	  if ((set_item = zmapWindowFToIFindSetItem(window->context_to_item,
-						    feature_set, feature->strand)))
-	    {
-	      /* This function will add the new feature to the hash. */
-	      zmapWindowFeatureDraw(window, FOO_CANVAS_GROUP(set_item), feature) ;
-	      result = TRUE ;
-	    }
-
+	  /* This function will add the new feature to the hash. */
+	  new_feature = zmapWindowFeatureDraw(window, FOO_CANVAS_GROUP(feature_group), feature) ;
 	}
     }
 
-  return result ;
+  return new_feature ;
 }
 
 
@@ -177,25 +191,31 @@ gboolean zmapWindowFeatureAdd(ZMapWindow window, ZMapFeatureSet feature_set, ZMa
  * a feature currently.
  * 
  * Returns FALSE if the feature does not exist. */
-gboolean zmapWindowFeatureReplace(ZMapWindow zmap_window,
-				  ZMapFeatureSet feature_set,
-				  ZMapFeature curr_feature, ZMapFeature new_feature)
+FooCanvasItem *zmapWindowFeatureReplace(ZMapWindow zmap_window,
+					FooCanvasItem *curr_feature_item, ZMapFeature new_feature)
 {
-  gboolean result = FALSE ;
-  
+  FooCanvasItem *replaced_feature = NULL ;
+  ZMapFeatureSet feature_set ;
+  ZMapFeature curr_feature ;
+
 
   /* CHECK WHAT ROY SAYS ABOUT GROUPS NOT SHRINKING...DO A TEST....THERE MAY BE A FOOCANVAS
    * RECALCULATE FUNCTION TO GET THE GROUP TO RESIZE..... */
 
-  zMapAssert(zmap_window && feature_set
-	     && curr_feature && zMapFeatureIsValid((ZMapFeatureAny)curr_feature)
+  zMapAssert(zmap_window && curr_feature_item
 	     && new_feature && zMapFeatureIsValid((ZMapFeatureAny)new_feature)) ;
+
+
+  curr_feature = g_object_get_data(G_OBJECT(curr_feature_item), "item_feature_data") ;
+  zMapAssert(curr_feature && zMapFeatureIsValid((ZMapFeatureAny)curr_feature)) ;
+
+  feature_set = (ZMapFeatureSet)(curr_feature->parent) ;
 
   /* Check the feature exists in the feature_set. */
   if (zMapFeatureSetFindFeature(feature_set, curr_feature))
     {
       /* Remove it completely. */
-      if (zmapWindowFeatureRemove(zmap_window, feature_set, curr_feature))
+      if (zmapWindowFeatureRemove(zmap_window, curr_feature_item))
 	{
 	  FooCanvasItem *set_item ;
 
@@ -203,47 +223,55 @@ gboolean zmapWindowFeatureReplace(ZMapWindow zmap_window,
 	  if ((set_item = zmapWindowFToIFindSetItem(zmap_window->context_to_item,
 						    feature_set, new_feature->strand)))
 	    {
-	      zmapWindowFeatureDraw(zmap_window, FOO_CANVAS_GROUP(set_item), new_feature) ;
-	      result = TRUE ;
+	      replaced_feature = zmapWindowFeatureAdd(zmap_window,
+						      FOO_CANVAS_GROUP(set_item), new_feature) ;
 	    }
 	}
     }
 
-  return result ;
+  return replaced_feature ;
 }
 
 
 /* Remove an existing feature from the displayed feature context.
  * 
  * Returns FALSE if the feature does not exist. */
-gboolean zmapWindowFeatureRemove(ZMapWindow zmap_window,
-				 ZMapFeatureSet feature_set, ZMapFeature feature)
+gboolean zmapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item)
 {
   gboolean result = FALSE ;
-  FooCanvasItem *feature_item ;
+  ZMapFeature feature ;
+  ZMapFeatureSet feature_set ;
+
+
+  /* Check to see if there is an entry in long items for this feature.... */
+  removeFeatureLongItems(&(zmap_window->long_items), feature_item) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (zmapWindowLongItemRemove(&(menu_data->window->long_items), menu_data->item))
+    printf("found a long item\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+  feature = g_object_get_data(G_OBJECT(feature_item), "item_feature_data") ;
+  zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+  feature_set = (ZMapFeatureSet)(feature->parent) ;
 
   /* Need to delete the feature from the feature set and from the hash and destroy the
    * canvas item....NOTE this is very order dependent. */
-  if ((feature_item = zmapWindowFToIFindFeatureItem(zmap_window->context_to_item, feature))
-      && zmapWindowFToIRemoveFeature(zmap_window->context_to_item,
-				     feature->parent->parent->parent->unique_id,
-				     feature->parent->parent->unique_id,
-				     feature->parent->unique_id,
-				     feature->strand,
-				     feature->unique_id)
+  if (zmapWindowFToIRemoveFeature(zmap_window->context_to_item,
+				  feature->parent->parent->parent->unique_id,
+				  feature->parent->parent->unique_id,
+				  feature->parent->unique_id,
+				  feature->strand,
+				  feature->unique_id)
       && zMapFeatureSetRemoveFeature(feature_set, feature))
     {
       /* destroy the canvas item... */
       gtk_object_destroy(GTK_OBJECT(feature_item)) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* This may be necessary but I'm not sure.... */
-
-      foo_canvas_update_now(zmap_window->canvas) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+      
       result = TRUE ;
     }
 
@@ -255,8 +283,9 @@ gboolean zmapWindowFeatureRemove(ZMapWindow zmap_window,
 
 /* Called to draw each individual feature. */
 
-void zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature)
+FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature)
 {
+  FooCanvasItem *new_feature = NULL ;
   ZMapFeatureTypeStyle style = feature->style ;
   ZMapFeatureContext context ;
   ZMapFeatureAlignment alignment ;
@@ -278,8 +307,10 @@ void zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFea
   if (style->strand_specific
       && (feature->strand == ZMAPSTRAND_REVERSE && style->show_rev_strand == FALSE))
     {
-      return ;
+      return NULL ;
     }
+
+
 
   set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET) ;
   block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set, ZMAPFEATURE_STRUCT_BLOCK) ;
@@ -416,10 +447,12 @@ void zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFea
 					column_id,
 					feature->unique_id, top_feature_item) ;
       zMapAssert(status) ;
+
+      new_feature = top_feature_item ;
     }
 
 
-  return ;
+  return new_feature ;
 }
 
 
@@ -1378,56 +1411,52 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
   switch (menu_item_id)
     {
+
+
+      /* Items 0 to -2 are test code only.... */
     case 0:
       {
-	gboolean result ;
 	ZMapFeature feature_copy ;
+	FooCanvasItem *set_item, *new_feature_item ;
 
-	feature_copy = zMapFeatureCopy(feature) ;
-
+	set_item = zmapWindowFToIFindSetItem(menu_data->window->context_to_item,
+					     (ZMapFeatureSet)(feature->parent), feature->strand) ;
 
 	/* Hack for now..... to make a new feature id.... */
+	feature_copy = zMapFeatureCopy(feature) ;
 	feature_copy->x1 -= 1000 ;
 	feature_copy->x2 -= 1000 ;
 	feature_copy->unique_id = zMapFeatureCreateID(feature_copy->type,
-						      g_quark_to_string(feature_copy->original_id),
+						      (char *)g_quark_to_string(feature_copy->original_id),
 						      feature_copy->strand,
 						      feature_copy->x1, feature_copy->x2,
 						      0, 0) ;
 
-	result = zmapWindowFeatureAdd(menu_data->window,
-				      (ZMapFeatureSet)(feature_copy->parent), feature_copy) ;
+	new_feature_item = zmapWindowFeatureAdd(menu_data->window,
+						FOO_CANVAS_GROUP(set_item), feature_copy) ;
 
 	break ;
       }
     case -1:
       {
-	gboolean result ;
 	ZMapFeature feature_copy ;
 	FooCanvasItem *new_item ;
 
 	if (menu_data->window->focus_item == menu_data->item)
 	  menu_data->window->focus_item = NULL ;
 
-	if (zmapWindowLongItemRemove(&(menu_data->window->long_items), menu_data->item))
-	  printf("found a long item\n") ;
-
 	feature_copy = zMapFeatureCopy(feature) ;
 	feature_copy->x1 -= 1000 ;
 	feature_copy->x2 -= 1000 ;
 	feature_copy->unique_id = zMapFeatureCreateID(feature_copy->type,
-						      g_quark_to_string(feature_copy->original_id),
+						      (char *)g_quark_to_string(feature_copy->original_id),
 						      feature_copy->strand,
 						      feature_copy->x1, feature_copy->x2,
 						      0, 0) ;
 
-	result = zmapWindowFeatureReplace(menu_data->window,
-					  (ZMapFeatureSet)(feature_copy->parent),
-					  feature, feature_copy) ;
-
-	if ((new_item = zmapWindowFToIFindFeatureItem(menu_data->window->context_to_item,
-						      feature_copy)))
-	  zMapWindowHighlightObject(menu_data->window, new_item) ;
+	new_item = zmapWindowFeatureReplace(menu_data->window,
+					    menu_data->item, feature_copy) ;
+	zMapWindowHighlightObject(menu_data->window, new_item) ;
 
 
 	break ;
@@ -1439,12 +1468,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	if (menu_data->window->focus_item == menu_data->item)
 	  menu_data->window->focus_item = NULL ;
 
-	if (zmapWindowLongItemRemove(&(menu_data->window->long_items), menu_data->item))
-	  printf("found a long item\n") ;
-
-	result = zmapWindowFeatureRemove(menu_data->window,
-					 (ZMapFeatureSet)(feature->parent),
-					 feature) ;
+	result = zmapWindowFeatureRemove(menu_data->window, menu_data->item) ;
 
 	break ;
       }
@@ -1688,4 +1712,50 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
 }
 
 
+/* We may wish to make this public some time but as the rest of the long item calls for features
+ * are in this file then there is no need for it to be exposed.
+ * 
+ * Deals with removing all the items contained in a compound object from the longitem list.
+ * 
+ *  */
+static void removeFeatureLongItems(GList **long_items, FooCanvasItem *feature_item)
+{
+  ZMapWindowItemFeatureType type ;
+
+  zMapAssert(long_items && feature_item) ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), "item_feature_type")) ;
+  zMapAssert(type == ITEM_FEATURE_SIMPLE
+	     || type == ITEM_FEATURE_PARENT || type == ITEM_FEATURE_CHILD) ;
+
+  /* If item is part of a compound featuret then get the parent. */
+  if (type == ITEM_FEATURE_CHILD)
+    feature_item = feature_item->parent ;
+
+  /* Test for long items according to whether feature is simple or compound. */
+  if (type == ITEM_FEATURE_SIMPLE)
+    {
+      zmapWindowLongItemRemove(long_items, feature_item) ;  /* Ignore boolean result. */
+    }
+  else
+    {
+      FooCanvasGroup *feature_group = FOO_CANVAS_GROUP(feature_item) ;
+
+      g_list_foreach(feature_group->item_list, removeLongItemCB, long_items) ;
+    }
+
+  return ;
+}
+
+
+/* GFunc callback for removing long items. */
+static void removeLongItemCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  GList **long_items = (GList **)user_data ;
+
+  zmapWindowLongItemRemove(long_items, item) ;		    /* Ignore boolean result. */
+
+  return ;
+}
 
