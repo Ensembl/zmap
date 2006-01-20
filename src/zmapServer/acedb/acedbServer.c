@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jan  5 16:36 2006 (edgrif)
+ * Last edited: Jan 19 10:35 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.46 2006-01-06 16:11:41 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.47 2006-01-20 14:38:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -808,12 +808,15 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
               feature->feature.sequence = seq;
               style = zMapFindStyle(feature_context->styles, g_quark_from_string("dna"));
 
-              /* need to augment data too... FOR NOW just dna*/
+              /* need to augment data too... FOR NOW just dna
+	       * 
+	       * NOTE that we give it a strand of NONE because we want it to stay on the forward
+	       * strand always... */
               zMapFeatureAddStandardData(feature, "dna", "dna", "b0250", "sequence", 
 					 ZMAPFEATURE_RAW_SEQUENCE, style,
 					 0, 0,
 					 FALSE, 0.0,
-					 ZMAPSTRAND_FORWARD, ZMAPPHASE_NONE) ;
+					 ZMAPSTRAND_NONE, ZMAPPHASE_NONE) ;
 
               /* Make the link so that getting the sequence is EASY. */
               feature_context->sequence = &(feature->feature.sequence);
