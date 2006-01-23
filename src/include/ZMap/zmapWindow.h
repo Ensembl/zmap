@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jan 12 13:07 2006 (edgrif)
+ * Last edited: Jan 23 09:40 2006 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.45 2006-01-13 18:51:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.46 2006-01-23 14:21:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -140,8 +140,10 @@ void zMapWindowDisplayData(ZMapWindow window,
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 void zMapWindowMove(ZMapWindow window, double start, double end) ;
 void zMapWindowReset(ZMapWindow window) ;
+void zMapWindowRedraw(ZMapWindow window) ;
+void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
+			     gboolean reversed) ;
 GtkWidget *zMapWindowGetWidget(ZMapWindow window);
-
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
 double zMapWindowGetZoomFactor(ZMapWindow window);
 double zMapWindowGetZoomMax(ZMapWindow window) ;
