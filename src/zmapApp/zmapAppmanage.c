@@ -26,9 +26,9 @@
  *              
  * Exported functions: None, all functions internal to zmapApp.
  * HISTORY:
- * Last edited: Jun 24 08:37 2005 (edgrif)
+ * Last edited: Jan 23 15:14 2006 (rds)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.12 2005-06-24 13:12:27 edgrif Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.13 2006-01-23 15:17:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,8 +41,6 @@
 static void stopThreadCB(GtkWidget *widget, gpointer cb_data) ;
 static void killThreadCB(GtkWidget *widget, gpointer data) ;
 static void checkThreadCB(GtkWidget *widget, gpointer cb_data) ;
-
-static char *column_titles[ZMAP_NUM_COLS] = {"ZMap", "Sequence", "Status", "Last Request"} ;
 
 static gboolean view_onButtonPressed (GtkWidget *treeview, GdkEventButton *event, gpointer userdata);
 static void view_popup_menu(GtkWidget *treeview, GdkEventButton *event, gpointer userdata);
@@ -63,7 +61,7 @@ static void view_onDoubleClick (GtkTreeView        *treeview,
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
 {
   GtkWidget *frame, *treeView ;
-  GtkWidget *vbox, *scrwin, *clist, *hbox, *stop_button, *kill_button, *check_button ;
+  GtkWidget *vbox, *scrwin, *hbox, *stop_button, *kill_button, *check_button ;
   GtkTreeStore *treeStore;
   GtkTreeViewColumn *column;
   GtkCellRenderer *renderer;
@@ -164,7 +162,6 @@ static void view_onDoubleClick (GtkTreeView        *treeview,
 {
   ZMapAppContext app_context = (ZMapAppContext)userdata ;
   GtkTreeModel *model;
-  GtkTreeIter   iter;
 
   /* probably will need to change later, but for now, seems
      reasonable. */
@@ -221,19 +218,21 @@ static void view_popup_menu(GtkWidget *treeview, GdkEventButton *event, gpointer
 
 static void view_popup_menu_onDoSomething (GtkWidget *menuitem, gpointer userdata)
 {
+#ifdef RDS_DONT_INCLUDE
   ZMapAppContext app_context = (ZMapAppContext)userdata ;
   //  zMapManagerRaise(app_context->selected_zmap);
   g_print ("Do something!\n");
+#endif /* remove compiler warnings */
 }
 
 static void stopThreadCB(GtkWidget *widget, gpointer cb_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
   printf("not implemented yet\n") ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (app_context->selected_zmap)
     {
       zMapManagerReset(app_context->selected_zmap) ;
@@ -262,10 +261,11 @@ static void killThreadCB(GtkWidget *widget, gpointer cb_data)
 /* Does not work yet... */
 static void checkThreadCB(GtkWidget *widget, gpointer cb_data)
 {
+#ifdef RDS_DONT_INCLUDE
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
   printf("not implemented yet\n") ;
-
+#endif /* remove compiler warning */
   return ;
 }
 
