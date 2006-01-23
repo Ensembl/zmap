@@ -25,9 +25,9 @@
  * Description: Internals for zmapFeature routines.
  *
  * HISTORY:
- * Last edited: Nov 24 11:02 2004 (edgrif)
+ * Last edited: Jan 23 13:48 2006 (edgrif)
  * Created: Wed Nov 24 11:01:24 2004 (edgrif)
- * CVS info:   $Id: zmapFeature_P.h,v 1.1 2005-02-02 15:03:51 edgrif Exp $
+ * CVS info:   $Id: zmapFeature_P.h,v 1.2 2006-01-23 14:10:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_P_H
@@ -35,6 +35,21 @@
 
 #include <ZMap/zmapFeature.h>
 
+
+#define zmapFeatureSwop(TYPE, FIRST, SECOND)   \
+  { TYPE tmp = (FIRST) ; (FIRST) = (SECOND) ; (SECOND) = tmp ; }
+
+
+#define zmapFeatureInvert(COORD, SEQ_END)	\
+  (COORD) = (SEQ_END) - (COORD) + 1
+
+
+#define zmapFeatureRevComp(TYPE, SEQ_END, COORD_1, COORD_2)  \
+  {                                                        \
+    zmapFeatureSwop(TYPE, COORD_1, COORD_2) ;	           \
+    zmapFeatureInvert(COORD_1, SEQ_END) ;                    \
+    zmapFeatureInvert(COORD_2, SEQ_END) ;                    \
+  }
 
 
 void zmapPrintFeatureContext(ZMapFeatureContext context) ;
