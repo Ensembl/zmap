@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 12 11:09 2005 (rds)
+ * Last edited: Jan 23 13:34 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.30 2005-07-14 15:24:23 rds Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.31 2006-01-23 14:14:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,13 +40,18 @@
 
 
 static void newCB(GtkWidget *widget, gpointer cb_data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void loadCB(GtkWidget *widget, gpointer cb_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void stopCB(GtkWidget *widget, gpointer cb_data) ;
 static void zoomInCB(GtkWindow *widget, gpointer cb_data) ;
 static void zoomOutCB(GtkWindow *widget, gpointer cb_data) ;
 static void vertSplitPaneCB(GtkWidget *widget, gpointer data) ;
 static void horizSplitPaneCB(GtkWidget *widget, gpointer data) ;
 static void unlockCB(GtkWidget *widget, gpointer data) ;
+static void revcompCB(GtkWidget *widget, gpointer data) ;
 static void closeWindowCB(GtkWidget *widget, gpointer data) ;
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 
@@ -72,7 +77,8 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *load_button,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     *stop_button, *quit_button,
-    *hsplit_button, *vsplit_button, *zoomin_button, *zoomout_button, *unlock_button,
+    *hsplit_button, *vsplit_button, *zoomin_button, *zoomout_button,
+    *unlock_button, *revcomp_button,
     *close_button ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
@@ -121,6 +127,11 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_signal_connect(GTK_OBJECT(unlock_button), "clicked",
 		     GTK_SIGNAL_FUNC(unlockCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), unlock_button, FALSE, FALSE, 0) ;
+
+  zmap->revcomp_but = revcomp_button = gtk_button_new_with_label("Revcomp");
+  gtk_signal_connect(GTK_OBJECT(revcomp_button), "clicked",
+		     GTK_SIGNAL_FUNC(revcompCB), (gpointer)zmap);
+  gtk_box_pack_start(GTK_BOX(hbox), revcomp_button, FALSE, FALSE, 0) ;
 
   zmap->close_but = close_button = gtk_button_new_with_label("Close") ;
   gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
@@ -211,6 +222,8 @@ void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status
  */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* These callbacks simply make calls to routines in zmapControl.c, this is because I want all
  * the state handling etc. to be in one file so that its easier to work on. */
 static void loadCB(GtkWidget *widget, gpointer cb_data)
@@ -221,6 +234,8 @@ static void loadCB(GtkWidget *widget, gpointer cb_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void stopCB(GtkWidget *widget, gpointer cb_data)
 {
@@ -244,10 +259,6 @@ static void newCB(GtkWidget *widget, gpointer cb_data)
 
   return ;
 }
-
-
-
-
 
 
 static void quitCB(GtkWidget *widget, gpointer cb_data)
@@ -309,6 +320,17 @@ static void unlockCB(GtkWidget *widget, gpointer data)
 
   return ;
 }
+
+
+static void revcompCB(GtkWidget *widget, gpointer data)
+{
+  ZMap zmap = (ZMap)data ;
+
+  zMapViewReverseComplement(zMapViewGetView(zmap->focus_viewwindow)) ;
+  
+  return ;
+}
+
 
 static void closeWindowCB(GtkWidget *widget, gpointer data)
 {

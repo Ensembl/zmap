@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 18 13:23 2005 (edgrif)
+ * Last edited: Jan 23 13:12 2006 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.7 2005-03-23 07:57:37 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.8 2006-01-23 14:14:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,9 +40,9 @@
 
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void featureDumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
 static void handle_option( gpointer data, guint callback_action, GtkWidget *w ) ;
-static void DestroyNotifyFunc( gpointer data ) ;
 
 
 GtkItemFactory *item_factory;
@@ -62,6 +62,7 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Edit/Cu_t",     "<control>X", print_hello, 0, NULL },
  { "/Edit/_Copy",    "<control>C", print_hello, 0, NULL },
  { "/Edit/_Paste",    "<control>V", print_hello, 0, NULL },
+ { "/Edit/_Redraw",  NULL, redrawCB, 0, NULL },
  { "/_Options",      NULL,         NULL, 0, "<Branch>" },
  { "/Options/Option1",  NULL,      handle_option, 1, "<CheckItem>" },
  { "/Options/Option2",  NULL,      handle_option, 2, "<ToggleItem>" },
@@ -111,6 +112,20 @@ static void featureDumpCB(gpointer cb_data, guint callback_action, GtkWidget *wi
 }
 
 
+
+/* Causes currently focussed zmap window to redraw itself. */
+static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  ZMap zmap = (ZMap)cb_data ;
+
+  zMapViewRedraw(zmap->focus_viewwindow) ;
+
+  return ;
+}
+
+
+
+
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = (ZMap)cb_data ;
@@ -144,15 +159,6 @@ static void handle_option( gpointer data, guint callback_action, GtkWidget *w )
 
 	printf( "widget is %x data is %s\n", w, data );
 	g_message ("Hello, World!\n");
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-}
-
-static void DestroyNotifyFunc( gpointer data )
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	printf( "data is %x\n", data );	
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 }
