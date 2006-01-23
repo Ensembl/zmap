@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov  9 10:08 2005 (edgrif)
+ * Last edited: Jan 23 13:27 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.65 2005-11-09 14:57:28 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.66 2006-01-23 14:13:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -302,6 +302,32 @@ void zMapViewRemoveWindow(ZMapViewWindow view_window)
 
 
 
+/* Force a redraw of all the windows in a view, may be reuqired if it looks like
+ * drawing has got out of whack due to an overloaded network etc etc. */
+void zMapViewRedraw(ZMapViewWindow view_window)
+{
+  ZMapView view ;
+  GList* list_item ;
+
+  view = zMapViewGetView(view_window) ;
+  zMapAssert(view) ;
+
+  list_item = g_list_first(view->window_list) ;
+  do
+    {
+      ZMapViewWindow view_window ;
+
+      view_window = list_item->data ;
+
+      zMapWindowRedraw(view_window->window) ;
+    }
+  while ((list_item = g_list_next(list_item))) ;
+
+  return ;
+}
+
+
+
 /* Connect a View to its databases via threads, at this point the View is blank and waiting
  * to be called to load some data. */
 gboolean zMapViewConnect(ZMapView zmap_view)
@@ -318,7 +344,6 @@ gboolean zMapViewConnect(ZMapView zmap_view)
   else
     {
       ZMapConfig config ;
-      ZMapCmdLineArgsType value ;
       char *config_file = NULL ;
 
       zmapViewBusy(zmap_view, TRUE) ;
@@ -497,6 +522,49 @@ gboolean zMapViewLoad(ZMapView zmap_view)
     }
 
   return result ;
+}
+
+
+/* Reverse complement a view, this call will:
+ * 
+ *    - leave the View window(s) displayed and hold onto user information such as machine/port
+ *      sequence etc so user does not have to add the data again.
+ *    - reverse complement the sequence context.
+ *    - display the reversed context.
+ * 
+ *  */
+gboolean zMapViewReverseComplement(ZMapView zmap_view)
+{
+  gboolean result = TRUE ;
+
+  if (zmap_view->state != ZMAPVIEW_RUNNING)
+    result = FALSE ;
+  else
+    {
+      GList* list_item ;
+
+      zmapViewBusy(zmap_view, TRUE) ;
+
+      /* Call the feature code that will do the revcomp. */
+      zMapFeatureReverseComplement(zmap_view->features) ;
+
+      list_item = g_list_first(zmap_view->window_list) ;
+      do
+	{
+	  ZMapViewWindow view_window ;
+
+	  view_window = list_item->data ;
+
+	  zMapWindowFeatureRedraw(view_window->window, zmap_view->features, TRUE) ;
+	}
+      while ((list_item = g_list_next(list_item))) ;
+
+      /* Not sure if we need to do this or not.... */
+      /* signal our caller that we have data. */
+      (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
+    }
+
+  return TRUE ;
 }
 
 
@@ -729,7 +797,11 @@ static gint zmapIdleCB(gpointer cb_data)
 
 static void enterCB(ZMapWindow window, void *caller_data, void *window_data)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -746,7 +818,11 @@ static void enterCB(ZMapWindow window, void *caller_data, void *window_data)
 
 static void leaveCB(ZMapWindow window, void *caller_data, void *window_data)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Not currently used because we are doing "click to focus" at the moment. */
@@ -761,7 +837,11 @@ static void leaveCB(ZMapWindow window, void *caller_data, void *window_data)
 
 static void scrollCB(ZMapWindow window, void *caller_data, void *window_data)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   printf("In View, in window scroll callback\n") ;
 
@@ -781,6 +861,7 @@ static void focusCB(ZMapWindow window, void *caller_data, void *window_data)
   return ;
 }
 
+
 /* Called when some sequence window feature (e.g. column, actual feature etc.)
  * has been selected. */
 static void selectCB(ZMapWindow window, void *caller_data, void *window_data)
@@ -793,7 +874,8 @@ static void selectCB(ZMapWindow window, void *caller_data, void *window_data)
     {
       GList* list_item ;
 
-      /* Highlight the feature in all windows. */
+      /* Highlight the feature in all windows, BUT note that we may not find it in some
+       * windows, e.g. if a window has been reverse complemented the item may be hidden. */
       list_item = g_list_first(view_window->parent_view->window_list) ;
 
       do
@@ -803,10 +885,8 @@ static void selectCB(ZMapWindow window, void *caller_data, void *window_data)
 
 	  view_window = list_item->data ;
 
-	  item = zMapWindowFindFeatureItemByItem(view_window->window, select_item->item) ;
-	  zMapAssert(item) ;
-	    
-	  zMapWindowHighlightObject(view_window->window, item) ;
+	  if ((item = zMapWindowFindFeatureItemByItem(view_window->window, select_item->item)))
+	    zMapWindowHighlightObject(view_window->window, item) ;
 	}
       while ((list_item = g_list_next(list_item))) ;
     }
@@ -823,7 +903,11 @@ static void selectCB(ZMapWindow window, void *caller_data, void *window_data)
 /* Called when an underlying window is destroyed. */
 static void destroyCB(ZMapWindow window, void *caller_data, void *window_data)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   printf("In View, in window destroyed callback\n") ;
 
@@ -896,6 +980,8 @@ static void startStateConnectionChecking(ZMapView zmap_view)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* I think that probably I won't need this most of the time, it could be used to remove the idle
  * function in a kind of unilateral way as a last resort, otherwise the idle function needs
  * to cancel itself.... */
@@ -905,6 +991,8 @@ static void stopStateConnectionChecking(ZMapView zmap_view)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1199,6 +1287,8 @@ static void loadDataConnections(ZMapView zmap_view)
 
 /* SOME ORDER ISSUES NEED TO BE ATTENDED TO HERE...WHEN SHOULD THE IDLE ROUTINE BE REMOVED ? */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* destroys the window if this has not happened yet and then destroys the slave threads
  * if there are any.
  */
@@ -1229,6 +1319,8 @@ static void killZMapView(ZMapView zmap_view)
 		  
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* Calls the control window callback to remove any reference to the zmap and then destroys
@@ -1286,7 +1378,6 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
    * according to the feature set name list if specified. */
   if (styles_file)
     {
-      char *directory ;
       char *filepath ;
 
       if (!(filepath = zMapConfigDirFindFile(styles_file))
@@ -1373,9 +1464,7 @@ static void destroyConnection(ZMapViewConnection *view_conn_ptr)
 }
 
 
-
-
-/* set all the windows attached to this view to blank. */
+/* set all the windows attached to this view so that they contain nothing. */
 static void resetWindows(ZMapView zmap_view)
 {
   GList* list_item ;
@@ -1480,11 +1569,8 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
     zMapLogCritical("%s", "Cannot merge feature data from....") ;
   else
     {
-
-
       /* We should free the new_features context here....actually better
        * would to have a "free" flag on the above merge call. */
-
 
       /* Signal the ZMap that there is work to be done. */
       displayDataWindows(zmap_view, zmap_view->features, diff_context) ;
@@ -1528,7 +1614,11 @@ static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_d
 
 static void setZoomStatus(gpointer data, gpointer user_data)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapViewWindow view_window = (ZMapViewWindow)data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
@@ -1578,7 +1668,6 @@ static ZMapFeatureContext createContext(char *sequence, int start, int end,
 					GList* types, GList *feature_set_names)
 {
   ZMapFeatureContext context = NULL ;
-  GData *list = NULL ;
   gboolean master = TRUE ;
   ZMapFeatureAlignment alignment ;
   ZMapFeatureBlock block ;
