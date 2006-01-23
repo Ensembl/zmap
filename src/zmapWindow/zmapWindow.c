@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec 22 10:02 2005 (edgrif)
+ * Last edited: Jan 23 13:24 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.99 2005-12-22 10:02:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.100 2006-01-23 14:23:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -39,7 +39,7 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapConfig.h>
 #include <zmapWindow_P.h>
-
+#include <zmapWindowContainer.h>
  
 /* Local struct to hold current features and new_features obtained from a server and
  * relevant types. */
@@ -85,6 +85,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 
+static void resetCanvas(ZMapWindow window) ;
 static gboolean getConfiguration(ZMapWindow window) ;
 static void sendClientEvent(ZMapWindow window, FeatureSets) ;
 
@@ -244,7 +245,10 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
    * otherwise keyboard input (i.e. short cuts) will be delivered to some other widget. */
   GTK_WIDGET_SET_FLAGS(canvas, GTK_CAN_FOCUS) ;
 
+
   window->zoom = zmapWindowZoomControlCreate(window);
+
+
   /* This is a general handler that does stuff like handle "click to focus", it gets run
    * _BEFORE_ any canvas item handlers (there seems to be no way with the current
    * foocanvas/gtk to get an event run _after_ the canvas handlers, you cannot for instance
@@ -412,16 +416,120 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_feature
 }
 
 
+/* completely reset window. */
 void zMapWindowReset(ZMapWindow window)
 {
 
-  /* Dummy code, need code to blank the window..... */
+  resetCanvas(window) ;
 
-  zMapDebug("%s", "GUI: in window reset...\n") ;
+  /* Need to reset feature context pointer and any other things..... */
+
+  return ;
+}
+
+
+
+/* Force a canvas redraw via a circuitous route....
+ * 
+ * You should note that it is not possible to do this via the foocanvas function
+ * foo_canvas_update_now() even if you set the need_update flag to TRUE, this
+ * would only work if you set the update flag for every group/item to TRUE as well !
+ * 
+ * Instead we in effect send an expose event (via dk_window_invalidate_rect()) to
+ * the canvas window. Note that this is not straightforward as there are two
+ * windows: layout->bin_window which equates to the scroll_region of the canvas
+ * and widget->window which is the window you actually see. To get the redraw
+ * we invalidate the latter.
+ * 
+ *  */
+void zMapWindowRedraw(ZMapWindow window)
+{
+  GdkRectangle expose_area ;
+  GtkAllocation *allocation ;
+
+  /* Get the size of the canvas's on screen window, i.e. the section of canvas you
+   * can actually see. */
+  allocation = &(GTK_WIDGET(&(window->canvas->layout))->allocation) ;
+
+  /* Set up the area of this window to be invalidated (i.e. to be redrawn). */
+  expose_area.x = expose_area.y = 0 ;
+  expose_area.width = allocation->width - 1 ;
+  expose_area.height = allocation->height - 1 ;
+
+  /* Invalidate the displayed canvas window causing to be redrawn. */
+  gdk_window_invalidate_rect(GTK_WIDGET(&(window->canvas->layout))->window, &expose_area, TRUE) ;
+
+  return ;
+}
+
+
+
+/* OK, OK, THE 'REVERSED' PARAMETER IS A HACK...NEED TO THINK UP SOME BETTER WAY OF GETTING
+ * A WINDOW TO MAINTAIN ITS POSITION AFTER REVCOMP...BUT IT ACTUALLY IS NOT THAT STRAIGHT
+ * FORWARD..... */
+/* Draw the window with new features. */
+void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
+			     gboolean reversed)
+{
+  int x, y ;
+  double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
+
+
+  if (reversed)
+    {
+      double tmp ;
+      GtkAdjustment *adjust ;
+      int new_y ;
+
+      adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
+      foo_canvas_get_scroll_offsets(window->canvas, &x, &y) ;
+
+      new_y = adjust->upper - (y + adjust->page_size) ;
+
+      y = new_y ;
+
+
+      /* We need to get the current position, translate it to world coords, reverse it
+       * and then scroll to that....needs some thought....  */
+
+      /* Probably we should reverse the x position as well.... */
+
+      foo_canvas_get_scroll_region(window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
+
+      scroll_y1 = window->seqLength - scroll_y1 ;
+      scroll_y2 = window->seqLength - scroll_y2 ;
+
+      tmp = scroll_y1 ;
+      scroll_y1 = scroll_y2 ;
+      scroll_y2 = tmp ;
+    }
+
+
+  resetCanvas(window) ;					    /* Resets scrolled region.... */
+
+  if (reversed)
+    foo_canvas_set_scroll_region(window->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
+
+
+  /* You cannot just draw the features here as the canvas needs to be realised so we send
+   * an event to get the data drawn which means that the canvas is guaranteed to be
+   * realised by the time we draw into it. */
+  zMapWindowDisplayData(window, feature_context, feature_context) ;
+
+
+  if (reversed)
+    {
+      foo_canvas_scroll_to(window->canvas, x, y) ;
+    }
 
 
   return ;
 }
+
+
+
+
 
 /* Unlock this window so it is not zoomed/scrolled with other windows in its group. */
 void zMapWindowUnlock(ZMapWindow window)
@@ -503,14 +611,10 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
  *  */
 static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 {
-  ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
   GtkAdjustment *adjust;
   int x, y ;
-  double new_zoom, canvas_zoom ;
   double x1, y1, x2, y2, width ;
-  double max_win_span, seq_span, new_win_span, new_canvas_span ;
-  double top, bot ;
-  ZMapWindowVisibilityChangeStruct vis_change ;
+  double new_canvas_span ;
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
@@ -802,13 +906,16 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
   double  x1,  x2,  y1,  y2;    /* New region coordinates */
   double wx1, wx2, wy1, wy2;    /* Current world coordinates */
 
+
   foo_canvas_get_scroll_region(FOO_CANVAS(window->canvas), /* OK */
                                &wx1, &wy1, &wx2, &wy2);
+
   /* Read the input */
   x1 = (x1_inout ? *x1_inout : wx1);
   x2 = (x2_inout ? *x2_inout : wx2);
   y1 = (y1_inout ? *y1_inout : wy1);
   y2 = (y2_inout ? *y2_inout : wy2);
+
 
   /* Catch this special case */
   if(x1 == 0.0 && x1 == x2 && x1 == y1 && x1 == y2)
@@ -819,7 +926,7 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
       clamp = zmapWindowClampStartEnd(window, &wy1, &wy2); 
       x1 = wx1; x2 = wx2; y1 = wy1; y2 = wy2; 
     }
-  else if(x1 == wx1 && x2 == wx2 && y1 == wy1 && y2 == wy2)
+  else if (x1 == wx1 && x2 == wx2 && y1 == wy1 && y2 == wy2)
     {
       printf("Nothing's changed... returning ...\n");
       return;
@@ -874,6 +981,7 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
     *y1_inout = y1;
   if(y2_inout)
     *y2_inout = y2;
+
   return ;
 }
 
@@ -948,6 +1056,53 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvas
  *  ------------------- Internal functions -------------------
  */
 
+
+
+/* This function resets the canvas to be empty, all of the canvas items we drew
+ * are destroyed and all the associated resources free'd.
+ * 
+ * NOTE that this does not touch the feature context. */
+static void resetCanvas(ZMapWindow window)
+{
+  double x1, y1, x2, y2 ;
+  FooCanvasGroup *root_group ;
+  zMapAssert(window) ;
+
+
+  root_group = foo_canvas_root(window->canvas) ;
+
+
+  zmapWindowLongItemFree(window->long_items) ;
+  window->long_items = NULL ;
+
+
+  zmapWindowContainerDestroy(window->feature_root_group) ;
+  window->feature_root_group = NULL ;
+
+  gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
+  window->scaleBarGroup = NULL ;
+
+  foo_canvas_set_scroll_region(window->canvas, 0.0, 0.0, 100.0, 100.0) ;
+							    /* Seems to be default size....?? */
+
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
+
+  zmapWindowFToIDestroy(window->context_to_item) ;
+  window->context_to_item = zmapWindowFToICreate() ;
+
+  /*
+    featureListWindows ;	in theory this should go if it uses items to find stuff, either that or it
+    needs recalculating...
+
+    Remember if we remove this we must recreate the array....
+
+  */
+
+  window->focus_item = NULL ;
+  window->alignment_start = 0 ;
+
+  return ; 
+}
 
 
 
