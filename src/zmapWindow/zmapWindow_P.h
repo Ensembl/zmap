@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 16 10:17 2006 (edgrif)
+ * Last edited: Jan 20 14:08 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.91 2006-01-16 14:19:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.92 2006-01-23 14:24:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -232,6 +232,7 @@ typedef struct _ZMapWindowStruct
 
 
   /* Detailed colours (NOTE...NEED MERGING WITH THE ABOVE.... */
+  gboolean done_colours ;
   GdkColor colour_root ;
   GdkColor colour_alignment ;
   GdkColor colour_block ;
@@ -271,7 +272,9 @@ typedef struct _ZMapWindowStruct
   GdkAtom        zmap_atom ;
   void          *app_data ;
   gulong         exposeHandlerCB ;
+ 
 
+  FooCanvasGroup *feature_root_group ;			    /* the root of our features. */
 
   ZMapFeatureContext feature_context ;			    /* Currently displayed features. */
 
