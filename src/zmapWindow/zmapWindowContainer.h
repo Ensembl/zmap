@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Jan  5 13:41 2006 (edgrif)
+ * Last edited: Jan 23 13:23 2006 (edgrif)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.2 2006-01-05 14:31:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.3 2006-01-23 14:17:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -80,6 +80,7 @@ void zmapWindowContainerReposition(FooCanvasGroup *container) ;
 gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, double y_extent) ;
 void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent) ;
+void zmapWindowContainerMoveEvent(FooCanvasGroup *container_parent, ZMapWindow window) ;
 void zmapWindowContainerPrint(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerExecute(FooCanvasGroup        *parent, 
 				ZMapContainerLevelType stop_at_type,

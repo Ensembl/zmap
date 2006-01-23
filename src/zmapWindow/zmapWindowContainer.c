@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jan  5 13:37 2006 (edgrif)
+ * Last edited: Jan 23 13:27 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.2 2006-01-05 14:31:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.3 2006-01-23 14:17:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,6 +67,7 @@ typedef struct execOnChildrenStruct_
 
 } execOnChildrenStruct, *execOnChildren ;
 
+static void containerDestroyCB(GtkObject *object, gpointer user_data) ;
 
 static void eachContainer(gpointer data, gpointer user_data) ;
 
@@ -140,23 +141,18 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 							  NULL)) ;
 
   container_data = g_new0(ContainerDataStruct, 1) ;
-  g_object_set_data(G_OBJECT(container_parent), CONTAINER_DATA, container_data) ;
-
   container_data->level = level ;
-
   container_data->child_spacing = child_spacing ;
-
-  /* Default is that we always redraw the next level down. */
   container_data->child_redraw_required = FALSE ;
 
+  g_object_set_data(G_OBJECT(container_parent), CONTAINER_DATA, container_data) ;
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY,
 		    GINT_TO_POINTER(container_type)) ;
-
+  g_signal_connect(G_OBJECT(container_parent), "destroy", G_CALLBACK(containerDestroyCB), NULL) ;
 
   container_features = FOO_CANVAS_GROUP(foo_canvas_item_new(container_parent,
 							    foo_canvas_group_get_type(),
 							    NULL)) ;
-
 
   g_object_set_data(G_OBJECT(container_features), CONTAINER_TYPE_KEY,
 		    GINT_TO_POINTER(CONTAINER_FEATURES)) ;
@@ -299,23 +295,8 @@ FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent
 ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group)
 {
   ZMapFeatureTypeStyle style = NULL ;
-  FooCanvasGroup *column_features ;
-  GList *list_item ;
-  FooCanvasItem *feature_item ;
-  ZMapFeature feature ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Crikey.... */
-  column_features = zmapWindowContainerGetFeatures(column_group) ;
-  list_item = g_list_first(column_features->item_list) ;
-  feature_item = (FooCanvasItem *)list_item->data ;
-  feature = (ZMapFeature)(g_object_get_data(G_OBJECT(feature_item), "item_feature_data")) ;
-  style = feature->style ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   style = g_object_get_data(G_OBJECT(column_group), "item_feature_style") ;
-
 
   return style ;
 }
@@ -477,7 +458,6 @@ void zmapWindowContainerExecute(FooCanvasGroup        *parent,
 {
   execOnChildrenStruct exe  = {0,NULL};
   ContainerType        type = CONTAINER_INVALID ;
-  GList               *list = NULL ;
 
   zMapAssert(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT
 	     || stop_at_type <= ZMAPCONTAINER_LEVEL_FEATURESET) ;
@@ -625,6 +605,19 @@ void zmapWindowContainerPurge(FooCanvasGroup *unknown_child)
 /* 
  *                Internal routines.
  */
+
+
+
+static void containerDestroyCB(GtkObject *object, gpointer user_data)
+{
+  ContainerData container_data ;
+
+  container_data = g_object_get_data(G_OBJECT(object), CONTAINER_DATA) ;
+  g_free(container_data) ;
+
+  return ;
+}
+
 
 
 
