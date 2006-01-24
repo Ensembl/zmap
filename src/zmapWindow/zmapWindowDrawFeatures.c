@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 20 14:32 2006 (edgrif)
+ * Last edited: Jan 24 10:39 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.112 2006-01-23 14:20:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.113 2006-01-24 14:23:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -207,6 +207,11 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
   zMapAssert(window && full_context && diff_context) ;
+
+
+  /* First time features have been displayed so must be "FORWARD". */
+  if (window->context_strand == ZMAPSTRAND_NONE)
+    window->context_strand = ZMAPSTRAND_FORWARD ;
 
 
   /* See if there is an existing scroll_region that we should keep...test is a bit hokey

@@ -26,15 +26,20 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jan 23 09:40 2006 (edgrif)
+ * Last edited: Jan 24 10:47 2006 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.46 2006-01-23 14:21:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.47 2006-01-24 14:22:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
 #define ZMAP_WINDOW_H
 
 #include <glib.h>
+
+
+/* I think the canvas and features headers should not be in here...they need to be removed
+ * in time.... */
+
 /* SHOULD CANVAS BE HERE...MAYBE, MAYBE NOT...... */
 #include <libfoocanvas/libfoocanvas.h>
 
@@ -63,7 +68,6 @@ typedef enum {ZMAP_ZOOM_INIT, ZMAP_ZOOM_MIN, ZMAP_ZOOM_MID, ZMAP_ZOOM_MAX,
 typedef enum {ZMAP_WINLOCK_NONE, ZMAP_WINLOCK_VERTICAL, ZMAP_WINLOCK_HORIZONTAL} ZMapWindowLockType ;
 
 
-
 /* Data returned to the visibilityChange callback routine. */
 typedef struct
 {
@@ -73,10 +77,11 @@ typedef struct
   double scrollable_top ;
   double scrollable_bot ;
 
+  ZMapStrand strand ;					    /* Context orientation. */
 } ZMapWindowVisibilityChangeStruct, *ZMapWindowVisibilityChange ;
 
 
-/* Data returned to the visibilityChange callback routine. */
+/* Data returned to the focus callback routine. */
 typedef struct
 {
   char *text ;						    /* Describes selected item. */

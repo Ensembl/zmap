@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 24 10:30 2006 (rds)
+ * Last edited: Jan 24 14:18 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.101 2006-01-24 10:38:08 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.102 2006-01-24 14:23:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -205,6 +205,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
 
   /* Some things for window can be specified in the configuration file. */
   getConfiguration(window) ;
+
+  window->context_strand = ZMAPSTRAND_NONE ;
 
   /* Add a hash table to map features to their canvas items. */
   window->context_to_item = zmapWindowFToICreate() ;
@@ -466,7 +468,8 @@ void zMapWindowRedraw(ZMapWindow window)
 
 /* OK, OK, THE 'REVERSED' PARAMETER IS A HACK...NEED TO THINK UP SOME BETTER WAY OF GETTING
  * A WINDOW TO MAINTAIN ITS POSITION AFTER REVCOMP...BUT IT ACTUALLY IS NOT THAT STRAIGHT
- * FORWARD..... */
+ * FORWARD.....ur and we also need to keep a record for the annotator of whether we are reversed
+ * or not....UGH..... */
 /* Draw the window with new features. */
 void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
 			     gboolean reversed)
@@ -474,6 +477,12 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   int x, y ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
 
+  zMapAssert(window->context_strand == ZMAPSTRAND_FORWARD
+	     || window->context_strand == ZMAPSTRAND_REVERSE) ;
+  if (window->context_strand == ZMAPSTRAND_FORWARD)
+    window->context_strand = ZMAPSTRAND_REVERSE ;
+  else
+    window->context_strand = ZMAPSTRAND_FORWARD ;
 
   if (reversed)
     {
@@ -968,6 +977,9 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
       vis_change.zoom_status    = zoom;
       vis_change.scrollable_top = (y1 += tmp_top); /* should these be sequence clamped */
       vis_change.scrollable_bot = (y2 -= tmp_bot); /* or include the border? (SEQUENCE CLAMPED ATM) */
+
+      vis_change.strand = window->context_strand ;
+
       (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
       /*   END: main part of the setting of the scroll region */
     }
@@ -1023,6 +1035,8 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
   vis_change.zoom_status = zMapWindowGetZoomStatus(window) ;
   vis_change.scrollable_top = top ;
   vis_change.scrollable_bot = bot ;
+  vis_change.strand = window->context_strand ;
+
   (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
     
   return ;
@@ -1915,6 +1929,7 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
       vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
       vis_change.scrollable_top = start ;
       vis_change.scrollable_bot = end ;
+      vis_change.strand = window->context_strand ;
       (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
     }
 

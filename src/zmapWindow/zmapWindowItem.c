@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  9 10:24 2006 (edgrif)
+ * Last edited: Jan 24 10:52 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.10 2006-01-13 18:52:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.11 2006-01-24 14:23:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -904,6 +904,7 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
       vis_change.zoom_status = zMapWindowGetZoomStatus(window) ;
       vis_change.scrollable_top = y1 ;
       vis_change.scrollable_bot = y2 ;
+      vis_change.strand = window->context_strand ;
       (*(window->caller_cbs->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
 
     }

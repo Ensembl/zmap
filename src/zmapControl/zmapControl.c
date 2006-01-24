@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul  1 14:10 2005 (rds)
+ * Last edited: Jan 24 10:52 2006 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.54 2005-07-04 16:31:01 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.55 2006-01-24 14:22:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -288,6 +288,20 @@ unsigned long zMapGetXID(ZMap zmap)
  */
 
 
+/* This function sets the button status and other bits of the GUI for a particular view/window. */
+void zmapControlSetGUIState(ZMap zmap, ZMapWindowVisibilityChange vis_change)
+{
+
+  zmapControlWindowSetZoomButtons(zmap, vis_change->zoom_status) ;
+
+  zmapControlWindowSetStatus(zmap, vis_change->strand) ;
+
+  zMapNavigatorSetWindowPos(zmap->navigator,
+			    vis_change->scrollable_top, vis_change->scrollable_bot) ;
+
+}
+
+
 
 /* Called when the user kills the toplevel window of the ZMap either by clicking the "quit"
  * button or by using the window manager frame menu to kill the window. */
@@ -532,36 +546,31 @@ static void visibilityChangeCB(ZMapViewWindow view_window, void *app_data, void 
   ZMap zmap = (ZMap)app_data ;
   ZMapWindowVisibilityChange vis_change = (ZMapWindowVisibilityChange)view_data ;
 
-  zmapControlWindowSetZoomButtons(zmap, vis_change->zoom_status) ;
-
-  zMapNavigatorSetWindowPos(zmap->navigator,
-			    vis_change->scrollable_top, vis_change->scrollable_bot) ;
+  zmapControlSetGUIState(zmap, vis_change) ;
 
   return ;
 }
 
+
+
 static void enterCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMap zmap = (ZMap)app_data ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapControlSetWindowFocus(zmap, view_window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
 
 static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMap zmap = (ZMap)app_data ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapControlUnSetWindowFocus(zmap, view_window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }

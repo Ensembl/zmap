@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: May  6 18:42 2005 (rds)
+ * Last edited: Jan 24 14:04 2006 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.16 2005-05-07 18:12:28 rds Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.17 2006-01-24 14:23:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,7 @@ static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 gboolean zmapControlWindowCreate(ZMap zmap)
 {
   gboolean result = TRUE ;
-  GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box ;
+  GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *info_box ;
 
   zmap->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
@@ -75,8 +75,14 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   button_box = zmapControlWindowMakeButtons(zmap) ;
   gtk_box_pack_start(GTK_BOX(controls_box), button_box, FALSE, TRUE, 0);
 
-  zmap->info_panel = gtk_entry_new();
-  gtk_box_pack_start(GTK_BOX(controls_box), zmap->info_panel, FALSE, TRUE, 0);
+  info_box = gtk_hbox_new(FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(controls_box), info_box, FALSE, TRUE, 0);
+
+  zmap->info_panel = gtk_entry_new() ;
+  gtk_box_pack_start(GTK_BOX(info_box), zmap->info_panel, TRUE, TRUE, 0) ;
+
+  zmap->status_panel = gtk_label_new("") ;
+  gtk_box_pack_start(GTK_BOX(info_box), zmap->status_panel, FALSE, FALSE, 0) ;
 
   zmap->navview_frame = zmapControlWindowMakeFrame(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), zmap->navview_frame, TRUE, TRUE, 0);
@@ -98,6 +104,23 @@ void zmapControlWindowDestroy(ZMap zmap)
   gtk_signal_disconnect_by_data(GTK_OBJECT(zmap->toplevel), (gpointer)zmap) ;
 
   gtk_widget_destroy(zmap->toplevel) ;
+
+  return ;
+}
+
+
+
+/* Currently only sets forward/revcomp status. */
+void zmapControlWindowSetStatus(ZMap zmap, ZMapStrand strand)
+{
+  char *direction ;
+
+  if (strand == ZMAPSTRAND_FORWARD)
+    direction = "FORWARD" ;
+  else
+    /*  */direction = "REVERSE" ;
+
+  gtk_label_set_text(GTK_LABEL(zmap->status_panel), direction) ;
 
   return ;
 }
