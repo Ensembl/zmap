@@ -26,14 +26,14 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Dec 12 17:27 2005 (rds)
+ * Last edited: Jan 24 10:15 2006 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.43 2005-12-13 10:28:48 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.44 2006-01-24 10:18:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include <errno.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
