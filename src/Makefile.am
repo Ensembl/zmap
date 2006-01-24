@@ -42,7 +42,7 @@ pkgconfig_DATA = zmap.pc
 ################################################################################
 ################################################################################
 
-bin_PROGRAMS = zmap
+bin_PROGRAMS = zmap gffparser
 
 # should this be zmap_OBJECTS ??????
 zmap_SOURCES = $(top_srcdir)/zmapApp/zmapApp_P.h 
@@ -68,6 +68,18 @@ zmap_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 zmap_DEPENDENCIES = $(LIBS_ZMAP) src-copy
 
 # DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
+
+gffparser_SOURCES = $(top_srcdir)/zmapGFF/gffparser.c
+gffparser_LDFLAGS = -L$(top_builddir)/lib \
+	@GTK_LIBS@ \
+	@FOOCANVAS_LIBS@ \
+	@LIBCURL@ \
+	@X_PRE_LIBS@ \
+        @X_LIBS@ \
+	$(NULL)
+gffparser_LDADD        = -lZMap
+gffparser_DEPENDENCIES = $(LIBS_ZMAP)
+gffparser_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 
 ################################################################################
