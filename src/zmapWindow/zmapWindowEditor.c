@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 22 11:47 2005 (edgrif)
+ * Last edited: Jan 24 10:33 2006 (rds)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.19 2005-11-24 15:48:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.20 2006-01-24 10:38:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -206,7 +206,6 @@ static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor);
 ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item)
 {
   ZMapWindowEditor editor = NULL;
-  gboolean lazy           = TRUE;
   int type                = 0;
   editor = g_new0(zmapWindowEditorDataStruct, 1);
 
@@ -455,11 +454,11 @@ static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapF
  * a GtkTreeView in a scrolled window. */
 static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_type)
 {
+#ifdef RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRr
   int i;
   ZMapSpanStruct span;
   ZMapAlignBlockStruct align;
   GtkTreeIter iter;
-#ifdef RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRr
   table->value.listStore = gtk_list_store_new(N_COLS, 
 					      G_TYPE_INT,
 					      G_TYPE_INT,
@@ -502,10 +501,12 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
 {
   GtkWidget *buttonHBox, *subFrame, *mainVBox;
   GtkWidget *treeView, *mainHBox;
+#ifdef RDS_DONT_INCLUDE
   GtkTreeStore *treeStore;
   GtkTreeViewColumn *column;
   GtkTreeSelection *selection;
   int colNo;                    /* the for loop iterator */
+#endif
   char *title;
   zmapWindowFeatureListCallbacksStruct windowCallbacks = { NULL, NULL, NULL };
 
@@ -788,10 +789,10 @@ static void addCheckButton(GtkWidget *vbox, mainTable table)
 
 static void addArray(gpointer data, ZMapWindowEditor editor_data)
 {
+#ifdef AAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
   mainTable table = (mainTable)data;
   GtkWidget *treeView, *frame, *scrolledWindow;
   char *frameLabel;
-#ifdef AAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
   colInfoStruct colInfo[] = {{"Start", COL1},
 			     {"End"  , COL2},
 			     {"Start", COL3},
@@ -949,7 +950,6 @@ static gboolean arrayEditedCB(GtkCellRendererText *renderer,
   GtkTreeIter iter;
   guint colNo;
   gboolean valid = FALSE;
-  ZMapSpanStruct span;
 
   colNo = GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(renderer), "ColNo"));
   gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(listStore), &iter, path);
@@ -959,12 +959,13 @@ static gboolean arrayEditedCB(GtkCellRendererText *renderer,
   /* What is this doing, we've already changed the data!?! */
   while (valid)
     {
-#ifdef TTTTTTTTTTTTTTT
+#ifdef RDS_DONT_INCLUDE
+      ZMapSpanStruct span;
       gtk_tree_model_get (GTK_TREE_MODEL(listStore), &iter, 
 			  COL1, &span.x1,
 			  COL2, &span.x2,
 			  -1);
-#endif
+#endif /* RDS_DONT_INCLUDE */
       valid = gtk_tree_model_iter_next (GTK_TREE_MODEL(listStore), &iter);
     }
  
@@ -1470,7 +1471,6 @@ static int findNextElement(GArray *array, int start)
 /* Update the appropriate array in the feature with data from the screen */
 static void updateArray(mainTable table, GArray *array)
 {
-  ZMapSpanStruct span;
   GtkTreeIter iter;
   gboolean valid = FALSE;
   
@@ -1489,13 +1489,14 @@ static void updateArray(mainTable table, GArray *array)
       while (valid)
 	{
 	  /* GtkListStore enforces integers here */
-#ifdef TTTTTTTTTTTTTt
+#ifdef RDS_DONT_INCLUDE
+          ZMapSpanStruct span;
 	  gtk_tree_model_get (GTK_TREE_MODEL(table->value.listStore), &iter, 
 			      COL1, &span.x1,
 			      COL2, &span.x2,
 			      -1);
 	  g_array_append_val(array, span);
-#endif	  
+#endif /* RDS_DONT_INCLUDE */
 	  valid = gtk_tree_model_iter_next (GTK_TREE_MODEL(table->value.listStore), &iter);
 	}
     }
@@ -1562,7 +1563,6 @@ static gboolean selectionFunc(GtkTreeSelection *selection,
 static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor)
 {
   GtkCellRenderer *renderer = NULL;
-  GList *list = NULL;
   GdkColor background;
 
   gdk_color_parse("WhiteSmoke", &background);

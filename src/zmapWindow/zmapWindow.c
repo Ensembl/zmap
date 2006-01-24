@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 23 13:24 2006 (edgrif)
+ * Last edited: Jan 24 10:30 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.100 2006-01-23 14:23:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.101 2006-01-24 10:38:08 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -1227,8 +1227,9 @@ static void changeRegion(ZMapWindow window, guint keyval)
   double x1, y1, x2, y2 ;
   double incr ;
   double window_size ;
+#ifdef RDS_DONT_INCLUDE
   ZMapWindowVisibilityChangeStruct vis_change ;
-
+#endif /* RDS_DONT_INCLUDE */
   /* THIS FUNCTION NEEDS REFACTORING SLIGHTLY */
   foo_canvas_get_scroll_region(window->canvas, /* ARRRRRRRRRRRRGH!!!! */
                                &x1, &y1, &x2, &y2);
@@ -1412,8 +1413,9 @@ static void sendClientEvent(ZMapWindow window, FeatureSets feature_sets)
 static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_data)
 {
   gboolean event_handled = FALSE ;
+#ifdef RDS_DONT_INCLUDE
   ZMapWindow window = (ZMapWindow)cb_data ;
-
+#endif
   if (event->type != GDK_CLIENT_EVENT)
     zMapLogFatal("%s", "dataEventCB() received non-GdkEventClient event") ;
   
@@ -1809,9 +1811,9 @@ static void zoomToRubberBandArea(ZMapWindow window)
 static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapWindow window = (ZMapWindow)data ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("ROOT canvas event handler\n") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 

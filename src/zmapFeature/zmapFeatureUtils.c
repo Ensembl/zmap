@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 25 07:52 2005 (edgrif)
+ * Last edited: Jan 24 10:17 2006 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.26 2005-11-25 14:01:05 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.27 2006-01-24 10:37:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -878,10 +878,11 @@ static void doFeature(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeature feature = (ZMapFeature)data ; 
   NewDumpFeatures dump_data = (NewDumpFeatures)user_data ;
   char *parent_name ;
+#ifdef RDS_DONT_INCLUDE
   char *feature_name ;
   char *source_name ;
   int start, end ;
-
+#endif
   parent_name = (char *)g_quark_to_string(feature->parent->parent->parent->original_id) ;
 
   if (dump_data->status)

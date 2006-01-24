@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 14:13 2005 (edgrif)
+ * Last edited: Jan 24 10:28 2006 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.6 2005-11-09 15:00:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.7 2006-01-24 10:38:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -101,9 +101,8 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
 {
-  FooCanvasItem *parent_item = NULL ;
   GtkWidget *toplevel, *vbox, *menubar, *hbox, *frame,
-    *search_button, *scrolledWindow, *fields, *filters, *buttonBox ;
+    *search_button, *fields, *filters, *buttonBox ;
   SearchData search_data ;
 
   search_data = g_new0(SearchDataStruct, 1) ;
@@ -198,10 +197,8 @@ GtkWidget *makeMenuBar(SearchData search_data)
 
 static GtkWidget *makeFieldsPanel(SearchData search_data)
 {
-  ZMapFeatureAny feature_any = search_data->feature_any ;
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
-  char *align_txt = "*", *block_txt = "*", *set_txt = "*", *feature_txt = "*" ;
 
 
   /* Need to set up the default values for the text using feature_any, we should
@@ -277,10 +274,8 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
 
 static GtkWidget *makeFiltersPanel(SearchData search_data)
 {
-  ZMapFeatureAny feature_any = search_data->feature_any ;
   GtkWidget *frame ;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label, *create_button ;
-  char *strand_txt = "+" ;
+  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label;
 
   setFilterDefaults(search_data) ;
 
@@ -625,21 +620,26 @@ static void setFilterDefaults(SearchData search_data)
 	  }
 	case ZMAPFEATURE_STRUCT_FEATURESET:
 	  {
+#ifdef RDS_DONT_INCLUDE
 	    ZMapFeatureSet set = (ZMapFeatureSet)feature_any ;
-
+#endif /* RDS_DONT_INCLUDE */
 	    /* We should be able to tell strand from this but we can't at the moment.... */
 
 	    break ;
 	  }
 	case ZMAPFEATURE_STRUCT_BLOCK:
 	  {
+#ifdef RDS_DONT_INCLUDE
 	    ZMapFeatureBlock block = (ZMapFeatureBlock)feature_any ;
+#endif /* RDS_DONT_INCLUDE */
 
 	    break ;
 	  }
 	case ZMAPFEATURE_STRUCT_ALIGN:
 	  {
+#ifdef RDS_DONT_INCLUDE
 	    ZMapFeatureAlignment align = (ZMapFeatureAlignment)feature_any ;
+#endif /* RDS_DONT_INCLUDE */
 
 	    break ;
 	  }

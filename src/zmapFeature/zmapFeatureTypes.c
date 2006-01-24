@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan  5 16:35 2006 (edgrif)
+ * Last edited: Jan 24 10:16 2006 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.14 2006-01-06 16:11:01 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.15 2006-01-24 10:37:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -428,8 +428,10 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	  if ((name = zMapConfigGetElementString(next_types, "name")))
 	    {
 	      ZMapFeatureTypeStyle new_type ;
+#ifdef RDS_DONT_INCLUDE
 	      gboolean strand_specific, frame_specific, show_rev_strand ;
 	      int min_mag, max_mag ;
+#endif /* RDS_DONT_INCLUDE */
 
 	      new_type = zMapFeatureTypeCreate(name,
 					       zMapConfigGetElementString(next_types, "outline"),
