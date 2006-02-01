@@ -18,7 +18,6 @@
 #
 
 ZBbuildOSDir=""
-ZBHostname=`hostname`
 ZBDebug=""
 
 if [ "$1" = "unset" ]; then
@@ -61,7 +60,7 @@ ZBGotoDir ()
 # to the zmap developers before exitting.
 ZBmsgAndExit ()
 {
-  errmsg="$ZBscript ($ZBHostname) - Fatal Error: $1"
+  errmsg="$ZBscript - Fatal Error: $1"
 
   if [ -n "$ZBmailOnExit" ]
   then
@@ -76,7 +75,7 @@ ZBmsgAndExit ()
 
 ZBmsgInfo ()
 {
-  msg="$ZBscript ($ZBHostname) - Info: $1"
+  msg="$ZBscript - Info: $1"
 
   if [ -n "$ZBmailOnExit" ]
   then
@@ -100,7 +99,7 @@ ZBmsgMail ()
 {
     echo "Build Message:
   
-$1" | mailx -s "ZMap Build on $ZBHostname - $2" zmapdev
+$1" | mailx -s "ZMap Build - $2" zmapdev
 
 }
 
@@ -108,7 +107,7 @@ $1" | mailx -s "ZMap Build on $ZBHostname - $2" zmapdev
 ZBlogmsg ()
 {
   echo
-  echo "----- $ZBscript ($ZBHostname `date`): $1 -----"
+  echo "----- $ZBscript (`date`): $1 -----"
   echo
 }
 
