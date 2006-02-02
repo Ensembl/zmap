@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jan 17 16:56 2006 (edgrif)
+ * Last edited: Feb  2 11:19 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.56 2006-01-23 14:12:05 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.57 2006-02-02 11:19:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -210,6 +210,8 @@ typedef struct ZMapFeatureContextStruct_
 
 
 
+
+  /* I think we should remove this as in fact our code will break IF  (start != 1)  !!!!!!!  */
   /* Mapping for the target sequence, this shows where this section of sequence fits in to its
    * overall assembly, e.g. where a clone is located on a chromosome. */
   ZMapSpanStruct parent_span ;				    /* Start/end of parent, usually we
@@ -321,7 +323,10 @@ typedef struct
     unsigned int start_not_found : 1 ;
     unsigned int end_not_found : 1 ;
   } flags ;
+
+  /* If cds == TRUE, then these must show the position of the cds in sequence coords... */
   Coord cds_start, cds_end ;
+
   ZMapPhase start_phase ;
   GArray *exons ;					    /* Of ZMapSpanStruct. */
   GArray *introns ;					    /* Of ZMapSpanStruct. */
