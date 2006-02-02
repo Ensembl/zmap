@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan 24 10:16 2006 (rds)
+ * Last edited: Jan 25 16:47 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.15 2006-01-24 10:37:24 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.16 2006-02-02 11:21:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,6 +94,10 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
   gdk_color_parse(background, &new_type->background) ;
 
   new_type->width = width ;
+
+  /* By default we always parse homology gaps, important for stuff like passing this
+   * information to blixem. */
+  new_type->parse_gaps = TRUE ;
 
   return new_type ;
 }
@@ -246,8 +250,10 @@ void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style,
                               gboolean parse_gaps)
 {
   zMapAssert(style);
-  style->align_gaps = show_gaps;
-  style->parse_gaps = parse_gaps;
+
+  style->align_gaps = show_gaps ;
+  style->parse_gaps = parse_gaps ;
+
   return ;
 }
 
