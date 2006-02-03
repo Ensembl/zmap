@@ -58,7 +58,8 @@ case $opsys in
     # The compile of AceConn using the make as setup didn't run ranlib!
     # Simply run ranlib /sw/lib/libAceConn.a && ranlib /sw/lib/libmd5.a
     # foocanvas is currently installed in below location...
-    PKG_CONFIG_PATH=/Users/home/edgrif/foocanvas/lib/pkgconfig:/usr/local/gtk2/lib/pkgconfig
+    ZMAP_PREFIX=/Users/zmap/prefix
+    PKG_CONFIG_PATH=$ZMAP_PREFIX/lib/pkgconfig:/usr/local/gtk2/lib/pkgconfig
 
     cc_args='CXXFLAGS=-g CFLAGS=-g'
     cflags_args=''
@@ -66,7 +67,19 @@ case $opsys in
 
     linkCMD=linkZMap
     echo '#/bin/sh' > $linkCMD
-    echo gcc  -g -L/usr/X11R6/lib -L/Users/home/edgrif/foocanvas/lib -L/sw/lib -lfoocanvas -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgdk_pixbuf-2.0 -lm -lpangoxft-1.0 -lpangox-1.0 -lpango-1.0 -lgobject-2.0 -lgmodule-2.0 -lglib-2.0 -lintl -liconv   -L/Users/edgrif/packages/AceConn/Ace-Conn/bin.MAC_OSX_THR/ -lAceConn -lmd5 -o zmap -L./lib -lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lexpat -lpopt -L/Users/edgrif/packages/AceConn/Ace-Conn/bin.MAC_OSX_THR/ -lAceConn -lmd5 -L/sw/lib -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgdk_pixbuf-2.0 -lm -lpangoxft-1.0 -lpangox-1.0 -lpango-1.0 -lgobject-2.0 -lgmodule-2.0 -lgthread-2.0 -lglib-2.0 -lintl -liconv   -L/Users/home/edgrif/foocanvas/lib -L/sw/lib -lfoocanvas -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgdk_pixbuf-2.0 -lm -lpangoxft-1.0 -lpangox-1.0 -lpango-1.0 -lgobject-2.0 -lgmodule-2.0 -lglib-2.0 -lintl -liconv   -L/sw/lib -lcurl -no-undefined -L/sw/lib -lz  -lX11 -lexpat  -lAceConn >> $linkCMD
+    echo gcc  -g -L/usr/X11R6/lib -L$ZMAP_PREFIX/lib -L/sw/lib -lfoocanvas             \
+-lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgdk_pixbuf-2.0 -lm -lpangoxft-1.0 -lpangox-1.0 \
+-lpango-1.0 -lgobject-2.0 -lgmodule-2.0 -lglib-2.0 -lintl -liconv                      \
+-L/Users/edgrif/packages/AceConn/Ace-Conn/bin.MAC_OSX_THR/ -lAceConn -lmd5 -o zmap     \
+-L./lib -lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lexpat -lpopt                     \
+-L/Users/edgrif/packages/AceConn/Ace-Conn/bin.MAC_OSX_THR/ -lAceConn -lmd5 -L/sw/lib   \
+-lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgdk_pixbuf-2.0 -lm -lpangoxft-1.0 -lpangox-1.0 \
+-lpango-1.0 -lgobject-2.0 -lgmodule-2.0 -lgthread-2.0 -lglib-2.0 -lintl -liconv        \
+-L$ZMAP_PREFIX/lib -L/sw/lib -lfoocanvas -lgtk-x11-2.0 -lgdk-x11-2.0                   \
+-latk-1.0 -lgdk_pixbuf-2.0 -lm -lpangoxft-1.0 -lpangox-1.0 -lpango-1.0 -lgobject-2.0   \
+-lgmodule-2.0 -lglib-2.0 -lintl -liconv   -L/sw/lib -lcurl -no-undefined -L/sw/lib -lz \
+-lX11 -lexpat  -lAceConn >> $linkCMD
+
     chmod 700 $linkCMD
     echo "See notes in $0 about Mac Builds" >&2
     echo You will need to run ./$linkCMD after make >&2
