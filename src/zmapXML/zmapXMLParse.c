@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 12 16:45 2005 (rds)
+ * Last edited: Feb  6 16:52 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.5 2005-09-20 17:18:11 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.6 2006-02-07 09:11:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,12 @@
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapXML_P.h>
+
+typedef struct _tagHandlerItemStruct
+{
+  GQuark id;
+  ZMapXMLMarkupObjectHandler handler;
+} tagHandlerItemStruct, *tagHandlerItem;
 
 static void setupExpat(zmapXMLParser parser);
 static void freeUpTheQueue(zmapXMLParser parser);
@@ -54,7 +60,29 @@ static void xmldecl_handler(void* data,
                             XML_Char const* version, 
                             XML_Char const* encoding,
                             int standalone);
+static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
+                                                GList *tagHandlerItemList);
 /* End of Expat handlers */
+
+/* So what does this do?
+ * ---------------------
+
+ * A zmapXMLParser wraps an expat parser so all the settings for the
+ * parser are in the one place making it simpler to create, hold on
+ * to, destroy an expat parser with the associated start and end
+ * handlers in multiple instances.  There is also some extra leverage
+ * in the way we parse.  Rather than creating custom objects straight
+ * off we create zmapXMLElements which also have an interface.  This
+ * obviously uses more RAMs but hopefully the shepherding is of good 
+ * quality.  There's also a start and end "Markup Object" handlers to
+ * be set which are called from the expat start/end handlers we 
+ * register here.  With these it's possible to step through the 
+ * zmapXMLElements which will likely just be sub trees of the document.
+ * You can of course not register these extra handlers and wait until
+ * the complete zmapXMLdocument has been parsed and iterate through the 
+ * zmapXMLElements yourself.
+
+ */
 
 zmapXMLParser zMapXMLParser_create(void *user_data, gboolean validating, gboolean debug)
 {
@@ -153,14 +181,46 @@ gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser,
 }
 
 void zMapXMLParser_setMarkupObjectHandler(zmapXMLParser parser, 
-                                          zmapXML_StartMarkupObjectHandler start,
-                                          zmapXML_EndMarkupObjectHandler   end)
+                                          ZMapXMLMarkupObjectHandler start,
+                                          ZMapXMLMarkupObjectHandler end)
 {
   parser->startMOHandler = start ;
   parser->endMOHandler   = end   ;
   return ;
 }
 
+void zMapXMLParser_setMarkupObjectTagHandlers(zmapXMLParser parser,
+                                              ZMapXMLObjTagFunctions starts,
+                                              ZMapXMLObjTagFunctions ends)
+{
+  ZMapXMLObjTagFunctions p = NULL;
+
+  zMapAssert(starts || ends);
+
+  p = starts;
+  while(p && p->element_name != NULL)
+    {
+      tagHandlerItem item = g_new0(tagHandlerItemStruct, 1);
+      item->id      = g_quark_from_string(p->element_name);
+      item->handler = p->handler;
+      parser->startTagHandlers = g_list_prepend(parser->startTagHandlers, item);
+      p++;
+    }
+
+  p = ends;
+  while(p && p->element_name != NULL)
+    {
+      tagHandlerItem item = g_new0(tagHandlerItemStruct, 1);
+      item->id      = g_quark_from_string(p->element_name);
+      item->handler = p->handler;
+      parser->endTagHandlers = g_list_prepend(parser->endTagHandlers, item);
+      p++;
+    }
+
+  return ;
+}
+
+#ifdef RDS_CLOSED_FACTORY
 void zMapXMLParser_useFactory(zmapXMLParser parser,
                               zmapXMLFactory factory)
 {
@@ -175,7 +235,7 @@ void zMapXMLParser_useFactory(zmapXMLParser parser,
                                        zmapXML_FactoryEndHandler);
   return ;
 }
-
+#endif
 char *zMapXMLParser_lastErrorMsg(zmapXMLParser parser)
 {
   return parser->last_errmsg;
@@ -256,6 +316,7 @@ static void freeUpTheQueue(zmapXMLParser parser)
 	}
     }
   g_queue_free(parser->elementStack) ;
+  parser->elementStack = NULL;
   /* Queue has gone */
 
   return ;
@@ -274,7 +335,7 @@ static void start_handler(void *userData,
 {
   zmapXMLParser parser = (zmapXMLParser)userData ;
   zmapXMLElement current_ele = NULL ;
-  zmapXML_StartMarkupObjectHandler handler = NULL;
+  ZMapXMLMarkupObjectHandler handler = NULL;
   int depth, i;
 
 #ifdef ZMAP_XML_PARSE_USE_DEPTH
@@ -325,8 +386,9 @@ static void start_handler(void *userData,
   (parser->depth)++;
 #endif
 
-  if((handler = parser->startMOHandler) != NULL)
-    (*handler)((void *)parser->user_data, current_ele, parser);
+  if(((handler = parser->startMOHandler) != NULL) || 
+     ((handler = getObjHandler(current_ele, parser->startTagHandlers)) != NULL))
+     (*handler)((void *)parser->user_data, current_ele, parser);
 
   return ;
 }
@@ -338,7 +400,7 @@ static void end_handler(void *userData,
   zmapXMLParser parser = (zmapXMLParser)userData ;
   zmapXMLElement current_ele ;
   gpointer dummy ;
-  zmapXML_EndMarkupObjectHandler handler = NULL;
+  ZMapXMLMarkupObjectHandler handler = NULL;
   int i ;
 
   /* Now get rid of head element. */
@@ -360,7 +422,8 @@ static void end_handler(void *userData,
 #ifdef ZMAP_XML_PARSE_USE_DEPTH
   (parser->depth)--;
 #endif
-  if((handler = parser->endMOHandler) != NULL)
+  if(((handler = parser->endMOHandler) != NULL) || 
+     ((handler = getObjHandler(current_ele, parser->endTagHandlers)) != NULL))
     {
       if(((*handler)((void *)parser->user_data, current_ele, parser)) == TRUE)
         {
@@ -412,6 +475,26 @@ static void xmldecl_handler(void* data,
     return ;
 }
 
+static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
+                                                GList *tagHandlerItemList)
+{
+  ZMapXMLMarkupObjectHandler handler = NULL;
+  GList *list = NULL;
+  GQuark id = 0;
+  id   = element->name;
+  list = tagHandlerItemList;
+
+  while(list){
+    tagHandlerItem item = (tagHandlerItem)(list->data);
+    if(id == item->id){
+      handler = item->handler;
+      break;
+    }
+    list = list->next;
+  }
+
+  return handler;
+}
 
 
 

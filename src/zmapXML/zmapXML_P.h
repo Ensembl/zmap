@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 14 13:23 2005 (rds)
+ * Last edited: Feb  7 09:04 2006 (rds)
  * Created: Fri Aug  5 12:50:44 2005 (rds)
- * CVS info:   $Id: zmapXML_P.h,v 1.2 2005-09-20 17:18:11 rds Exp $
+ * CVS info:   $Id: zmapXML_P.h,v 1.3 2006-02-07 09:10:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,14 +38,6 @@
 
 #include <ZMap/zmapXML.h>
 
-/*
-  typedef enum {SAXPARSE_NOWHERE, 
-                SAXPARSE_STARTDOC,
-                SAXPARSE_START, 
-                SAXPARSE_INSIDE, 
-                SAXPARSE_END, 
-                SAXPARSE_ENDDOC} SaxParseState ;
-*/
 /* For an XML tag holds the element name and attributes, i.e.   <element_name attributes>
  * Used to track which tag we are processing. */
 
@@ -82,39 +74,13 @@ typedef struct _zmapXMLParserStruct
   char *last_errmsg ;
   void *user_data ;       /* Caller stores any data they need here. */
 
-  zmapXML_StartMarkupObjectHandler startMOHandler;
-  zmapXML_EndMarkupObjectHandler   endMOHandler;
+  ZMapXMLMarkupObjectHandler startMOHandler;
+  ZMapXMLMarkupObjectHandler   endMOHandler;
+
+  /* Hopefully these will replace the two above! */
+  GList *startTagHandlers, *endTagHandlers;
 
 } zmapXMLParserStruct ;
-
-
-typedef struct _zmapXMLFactoryStruct
-{
-  GHashTable *hash;
-  gboolean isLite;
-  gpointer userData;            /* pointer to the user's data */
-}zmapXMLFactoryStruct;
-
-typedef struct _zmapXMLFactoryLiteItemStruct
-{
-  int    tag_type;
-  GList *list;
-}zmapXMLFactoryLiteItemStruct;
-
-typedef struct _zmapXMLFactoryItemStruct
-{
-  zmapXMLFactory parent;       /* pointer to the hash that holds us */
-
-  zmapXMLFactoryFunc begin;
-  zmapXMLFactoryFunc end;
-
-  zmapXMLFactoryStorageType datatype; /* What's in the below */
-  union{
-    GList *list;
-    GData *datalist;
-  } storage;
-
-}zmapXMLFactoryItemStruct;
 
 
 /* ATTRIBUTES */
@@ -138,32 +104,5 @@ void zmapXMLElement_freeAttrList(zmapXMLElement ele);
 
 /* PARSER */
 
-
-/* FACTORY */
-
-gboolean zmapXML_FactoryEndHandler(void *userData,
-                                  zmapXMLElement element,
-                                  zmapXMLParser parser);
-gboolean zmapXML_FactoryStartHandler(void *userData,
-                                    zmapXMLElement element,
-                                    zmapXMLParser parser);
-
-
 #endif /* !ZMAP_XML_P_H */
 
-
-
-
-
-
-
-#ifdef NEWFACTORYINTERFACE
-/* Lite Items */
-
-void zmapXMLFactoryDataAddItem(zmapXMLFactoryItem item, 
-                               gpointer output,
-                               GQuark key);
-void zmapXMLFactoryListAddItem(zmapXMLFactoryItem item, 
-                               gpointer output);
-
-#endif
