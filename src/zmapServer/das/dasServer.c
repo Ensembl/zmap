@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Sep 28 14:30 2005 (edgrif)
+ * Last edited: Feb  7 09:22 2006 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.16 2005-09-30 07:19:38 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.17 2006-02-07 09:24:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,6 +71,7 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
 static gboolean searchAssembly(DasServer server, dasOneDSN dsn);
 static char *makeCurrentSegmentString(DasServer das, ZMapFeatureContext fc);
 
+static void initialiseParser(DasServer server);
 
 static void getFeatures4Aligns(GQuark key,
                                gpointer data,
@@ -82,7 +83,6 @@ static gboolean fetchFeatures(DasServer server, ZMapFeatureBlock block);
 static size_t WriteHeaderCallback(void *ptr, size_t size, size_t nmemb, void *data) ;
 static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data) ;
 
-static zmapXMLFactory buildFactory(DasServer server);
 /* helpers */
 static char *dsnFullURL(DasServer server, 
                         char *query);
@@ -163,7 +163,7 @@ static gboolean createConnection(void **server_out,
   server->chunks = 0 ;
   server->debug  = debug;
 
-  server->parser = zMapXMLParser_create(NULL, FALSE, server->debug);
+  initialiseParser(server);
   
   server->last_errmsg = NULL ;
   server->curl_error  = CURLE_OK ;
@@ -238,12 +238,8 @@ static gboolean createConnection(void **server_out,
     {
       result = FALSE;
     }
+
   if(result)
-    {
-      server->factory = buildFactory(server);
-      zMapXMLParser_useFactory(server->parser, server->factory);
-    }
-  if (result)
     *server_out = (void *)server ;
 
   return result ;
@@ -318,8 +314,6 @@ static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, 
   url = dsnFullURL(server, "types");
 
   requestAndParseOverHTTP(server, url, ZMAP_DASONE_TYPES);
-
-  /*  *types = (GList *)server->data; */
 
   return result;
 }
@@ -458,8 +452,8 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
       ep    = dasOneEntryPoint_create1(g_quark_from_string(urlep), g_quark_from_string("1.0"));
       dasOneDSN_entryPoint(dsn, ep);
       requestAndParseOverHTTP(server, urlep, ZMAP_DASONE_ENTRY_POINTS);
-      list = zMapXMLFactory_listFetchOutput(server->factory, 
-                                            g_quark_from_string("segment"));
+      printf("FIX ME NOW!\n");
+
       while(list)
         {
           dasOneSegment current_segment = (dasOneSegment)list->data;
@@ -506,8 +500,9 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
             {
               GData *datalist = NULL;
               dasOneFeature feature = NULL;
-              datalist = zMapXMLFactory_dataFetchOutput(server->factory, 
-                                                        g_quark_from_string("feature"));
+              printf("FIX ME NOW!!\n");
+              //datalist = zMapXMLFactory_dataFetchOutput(server->factory, 
+              //                                          g_quark_from_string("feature"));
               result = FALSE;   /* unless we find the sequence and we
                                    get it's location correctly */
               if((feature = (dasOneFeature)g_datalist_id_get_data(&(datalist), feature_context->sequence_name)) != NULL)
@@ -653,40 +648,24 @@ static gboolean requestAndParseOverHTTP(DasServer server, char *url, dasDataType
   server->type = type;
 
   /* Set up the correct parsing handlers */
-  switch(server->type){
-  case ZMAP_DASONE_DSN:
-  case ZMAP_DASONE_DNA:
-  case ZMAP_DASONE_SEQUENCE:
-  case ZMAP_DASONE_ENTRY_POINTS:
-  case ZMAP_DASONE_TYPES:
-  case ZMAP_DASONE_INTERNALFEATURES:
-  case ZMAP_DASONE_FEATURES:
-  case ZMAP_DASONE_LINK:
-  case ZMAP_DASONE_STYLESHEET:
-#ifdef FINISHED
-    zMapXMLParser_setMarkupObjectHandler(server->parser, dsnStart, dsnEnd);
-    break ;
-    zMapXMLParser_setMarkupObjectHandler(server->parser, epStart, epEnd);
-    break ;
-    zMapXMLParser_setMarkupObjectHandler(server->parser, seqStart, seqEnd);
-    break ;
-    zMapXMLParser_setMarkupObjectHandler(server->parser, typesStart, typesEnd);
-    break ;
-    zMapXMLParser_setMarkupObjectHandler(server->parser, internalDasStart, internalDasEnd);
-    break ;
-    zMapXMLParser_setMarkupObjectHandler(server->parser, zmapFeaturesStart, zmapFeaturesEnd);
-    break ;
-    zMapXMLParser_setMarkupObjectHandler(server->parser, linkStart, linkEnd);
-    break ;
-    zMapXMLParser_setMarkupObjectHandler(server->parser, styleStart, styleEnd);
-#endif /* FINISHED */
-    break ;
-  default:
-    server->last_errmsg = g_strdup_printf("Unknown Das type %d",  server->type);
-    server->type        = ZMAP_DAS_UNKNOWN;
-    result = FALSE;
-    break ;
-  }
+  switch(server->type)
+    {
+    case ZMAP_DASONE_DSN:
+    case ZMAP_DASONE_DNA:
+    case ZMAP_DASONE_SEQUENCE:
+    case ZMAP_DASONE_ENTRY_POINTS:
+    case ZMAP_DASONE_TYPES:
+    case ZMAP_DASONE_INTERNALFEATURES:
+    case ZMAP_DASONE_FEATURES:
+    case ZMAP_DASONE_LINK:
+    case ZMAP_DASONE_STYLESHEET:
+      break ;
+    default:
+      server->last_errmsg = g_strdup_printf("Unknown Das type %d",  server->type);
+      server->type        = ZMAP_DAS_UNKNOWN;
+      result = FALSE;
+      break ;
+    }
 
   if(result && !(url && *url))
     {
@@ -922,39 +901,6 @@ static gboolean fetchFeatures(DasServer server, ZMapFeatureBlock block)
 
  * Hence we need to map the AL10102.3.1.123123 to chr3 coords.
  */
-#ifdef NONEEDED_ANYMORE
-static char *getSegmentString(DasServer das, ZMapFeatureContext feature_context)
-{
-  char *segStr = NULL;
-  dasOneSegment segment = NULL;
-  /* *******************************************************
-   * Does the segment listed in the feature context exist?
-   * What are the bounds of the segment?
-   * Are the bounds in feature_context
-   * Are the bounds in feature_context contained by segment.
-   * *******************************************************
-   */
-  if((segment = das->current_segment))
-    {
-      int start, end;
-      dasOneSegment_getBounds(segment, &start, &end);
-      if((feature_context->sequence_to_parent.c1 >= start) &&
-         (feature_context->sequence_to_parent.c2 >  feature_context->sequence_to_parent.c1) && 
-         (feature_context->sequence_to_parent.c2 <= end))
-        segStr = g_strdup_printf(ZMAP_DAS_FORMAT_SEGMENT, 
-                                 g_quark_to_string(feature_context->original_id),
-                                 feature_context->sequence_to_parent.c1,
-                                 feature_context->sequence_to_parent.c2);
-      else
-        segStr = g_strdup_printf(ZMAP_DAS_FORMAT_SEGMENT, 
-                                 g_quark_to_string(feature_context->original_id),
-                                 start,
-                                 end);        
-    }
-
-  return segStr;
-}
-#endif
 
 static char *makeCurrentSegmentString(DasServer das, ZMapFeatureContext fc)
 {
@@ -996,37 +942,6 @@ static char *dsnFullURL(DasServer server, char *query)
   return url;
 }
 
-
-static zmapXMLFactory buildFactory(DasServer server)
-{
-  zmapXMLFactory factory = NULL;
-
-  factory = zMapXMLFactory_create(FALSE);
-  zMapXMLFactory_setUserData(factory, server);
-
-  zMapXMLFactory_createItemInsert(factory, "dsn",     dsnStart,  dsnEnd,  ZMAP_XML_FACTORY_LIST);
-  zMapXMLFactory_createItemInsert(factory, "segment", segStart,  segEnd,  ZMAP_XML_FACTORY_LIST);
-  zMapXMLFactory_createItemInsert(factory, "feature", featStart, featEnd, ZMAP_XML_FACTORY_DATALIST);
-
-#ifdef FINISHED
-  zMapXMLFactory_createItemInsert(factory, "type",    typeStart, typeEnd, ZMAP_XML_FACTORY_LIST);
-
-  zMapXMLFactory_createItemInsert(factory, "errorsegment", NULL, errEnd,  ZMAP_XML_FACTORY_LIST); 
-#endif /* FINISHED */
-
-
-  zMapXMLFactory_createItemInsert(factory, "dasdsn",  NULL,  cleanUpDoc,  ZMAP_XML_FACTORY_NONE);
-  zMapXMLFactory_createItemInsert(factory, "dasep",   NULL,  cleanUpDoc,  ZMAP_XML_FACTORY_NONE);
-  zMapXMLFactory_createItemInsert(factory, "dasdna",  NULL,  cleanUpDoc,  ZMAP_XML_FACTORY_NONE);
-  zMapXMLFactory_createItemInsert(factory, "dastypes",NULL,  cleanUpDoc,  ZMAP_XML_FACTORY_NONE);
-  zMapXMLFactory_createItemInsert(factory, "dasgff",  NULL,  cleanUpDoc,  ZMAP_XML_FACTORY_NONE);
-  zMapXMLFactory_createItemInsert(factory, "dasstyle",NULL,  cleanUpDoc,  ZMAP_XML_FACTORY_NONE);
-  zMapXMLFactory_createItemInsert(factory, "dassequence",NULL,cleanUpDoc, ZMAP_XML_FACTORY_NONE);
-
-  return factory;
-}
-
-
 gboolean serverHasCapabilityLevel(DasServer server, char *capability, double minimum)
 {
   GList *list = NULL;
@@ -1047,3 +962,24 @@ gboolean serverHasCapabilityLevel(DasServer server, char *capability, double min
   return hasLevel;
 }
 
+static void initialiseParser(DasServer server)
+{  
+  ZMapXMLObjTagFunctionsStruct starts[] = {
+    { "dsn",        dsnStart },
+    { "segment",    segStart },
+    { "client",     NULL },
+    { NULL, NULL }
+  };
+  ZMapXMLObjTagFunctionsStruct ends[] = {
+    { "dsn",        dsnEnd  },
+    { "segment",    segEnd  },
+    { "dasdsn",     cleanUpDoc },
+    { NULL, NULL }
+  };
+
+  server->parser = zMapXMLParser_create((void *)server, FALSE, server->debug);
+  /*  zMapXMLParser_setMarkupObjectHandler(parser, start, end); */
+  zMapXMLParser_setMarkupObjectTagHandlers(server->parser, &starts[0], &ends[0]);
+
+  return ;
+}

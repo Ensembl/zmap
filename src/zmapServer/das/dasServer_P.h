@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep 14 16:20 2005 (rds)
+ * Last edited: Feb  7 09:02 2006 (rds)
  * Created: Thu Mar 18 12:02:52 2004 (edgrif)
- * CVS info:   $Id: dasServer_P.h,v 1.5 2005-09-20 17:16:11 rds Exp $
+ * CVS info:   $Id: dasServer_P.h,v 1.6 2006-02-07 09:24:20 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef DAS_SERVER_P_H
@@ -87,7 +87,7 @@ typedef struct _DasServerStruct
   int chunks ;						    /* for debugging at the moment... */
 
   zmapXMLParser parser;
-  zmapXMLFactory factory;
+
   gboolean debug;
 
   /* error stuff... */
@@ -114,81 +114,27 @@ gboolean checkDSNExists(DasServer das,
                         dasOneDSN *dsn);
 
 
-
-gpointer dsnStart(void *userData,
+gboolean dsnStart(void *userData,
                   zmapXMLElement element,
-                  gpointer storage,
-                  zmapXMLFactoryDetail detail);
-gpointer dsnEnd(void *userData,
-                zmapXMLElement element,
-                gpointer storage,
-                zmapXMLFactoryDetail detail);
-gpointer segStart(void *userData,
-                  zmapXMLElement element,
-                  gpointer storage,
-                  zmapXMLFactoryDetail detail);
-
-gpointer segEnd(void *userData,
-                zmapXMLElement element,
-                gpointer storage,
-                zmapXMLFactoryDetail detail);
-gpointer featStart(void *userData,
-                    zmapXMLElement element,
-                    gpointer storage,
-                   zmapXMLFactoryDetail detail);
-gpointer featEnd(void *userData,
-                 zmapXMLElement element,
-                 gpointer storage,
-                 zmapXMLFactoryDetail detail);
-gpointer cleanUpDoc(void *userData,
-                    zmapXMLElement element,
-                    gpointer storage,
-                    zmapXMLFactoryDetail detail);
-#ifdef OLDVERSION
-/* Parsing handlers (see das1handlers.c) */
-/* There is a pair of handlers for each DAS document type 
- * E.G one for DASDSN formatted xml (http://www.biodas.org/dtd/dasdsn.dtd)
- * userData is a ..... struct
- */
-/* DSN handlers */
-gboolean dsnStart(void *userData, 
-                  zmapXMLElement element, 
                   zmapXMLParser parser);
-gboolean dsnEnd(void *userData, 
-                zmapXMLElement element, 
+gboolean dsnEnd(void *userData,
+                zmapXMLElement element,
                 zmapXMLParser parser);
-/* Entry_Point handlers */
-gboolean epStart(void *userData, 
-                 zmapXMLElement element, 
-                 zmapXMLParser parser);
-gboolean epEnd(void *userData, 
-               zmapXMLElement element, 
-               zmapXMLParser parser);
-
-/* Types Handlers */
-gboolean typesStart(void *userData, 
-                    zmapXMLElement element, 
-                    zmapXMLParser parser);
-gboolean typesEnd(void *userData, 
-                  zmapXMLElement element, 
+gboolean segStart(void *userData,
+                  zmapXMLElement element,
                   zmapXMLParser parser);
 
-gboolean zmapFeaturesStart(void *userData, 
-                           zmapXMLElement element, 
-                           zmapXMLParser parser);
-gboolean zmapFeaturesEnd(void *userData, 
-                         zmapXMLElement element, 
-                         zmapXMLParser parser);
-
-
-/* Internal DAS Features Handlers */
-gboolean internalDasStart(void *userData, 
-                          zmapXMLElement element, 
-                          zmapXMLParser parser);
-gboolean internalDasEnd(void *userData, 
-                        zmapXMLElement element, 
-                        zmapXMLParser parser);
-
-#endif /* OLDVERSION */
+gboolean segEnd(void *userData,
+                zmapXMLElement element,
+                zmapXMLParser parser);
+gboolean featStart(void *userData,
+                   zmapXMLElement element,
+                   zmapXMLParser parser);
+gboolean featEnd(void *userData,
+                 zmapXMLElement element,
+                 zmapXMLParser parser);
+gboolean cleanUpDoc(void *userData,
+                    zmapXMLElement element,
+                    zmapXMLParser parser);
 
 #endif /* !DAS_SERVER_P_H */

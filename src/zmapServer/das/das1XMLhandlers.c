@@ -27,54 +27,49 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 16 14:44 2005 (rds)
+ * Last edited: Feb  7 08:53 2006 (rds)
  * Created: Thu Sep  1 14:44:07 2005 (rds)
- * CVS info:   $Id: das1XMLhandlers.c,v 1.6 2005-09-20 17:16:10 rds Exp $
+ * CVS info:   $Id: das1XMLhandlers.c,v 1.7 2006-02-07 09:24:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <dasServer_P.h>
 
-static void remFeaturesFromFactory(gpointer listData, gpointer myData);
 static void setCurrentSegment(DasServer server, zmapXMLElement segElement);
 static ZMapFeatureSet makeZmapFeatureFromElement(zmapXMLElement element,
                                                  GList *list);
-static void rmInternalDasFeature(gpointer data);
 
-gpointer dsnStart(void *userData,
+gboolean dsnStart(void *userData,
                   zmapXMLElement element,
-                  gpointer storage,
-                  zmapXMLFactoryDetail detail)
+                  zmapXMLParser parser)
 {
-  detail->result = FALSE;
-  return NULL;
+  return TRUE;
 }
-gpointer dsnEnd(void *userData,
+gboolean dsnEnd(void *userData,
                 zmapXMLElement element,
-                gpointer storage,
-                zmapXMLFactoryDetail detail)
+                zmapXMLParser parser)
 {
   DasServer server = (DasServer)userData;
   dasOneDSN dsn    = NULL;
-  zmapXMLElement srcEle, mapEle, descEle; 
-  zmapXMLAttribute idAttr, versionAttr;
+  zmapXMLElement sub_element = NULL;
+  zmapXMLAttribute attribute = NULL;
   GQuark id = 0, version = 0, name = 0, map = 0, desc = 0;
-  gboolean handled = FALSE; 
+  gboolean handled = TRUE; 
   
-  if((srcEle = zMapXMLElement_getChildByName(element, "source")) != NULL)
+  if((sub_element = zMapXMLElement_getChildByName(element, "source")) != NULL)
     {
-      if((idAttr = zMapXMLElement_getAttributeByName(srcEle, "id")) != NULL)
-        id = zMapXMLAttribute_getValue(idAttr);
-      if((versionAttr = zMapXMLElement_getAttributeByName(srcEle, "version")) != NULL)
-        version = zMapXMLAttribute_getValue(versionAttr);
-      name = g_quark_from_string(srcEle->contents->str);
+      if((attribute = zMapXMLElement_getAttributeByName(sub_element, "id")) != NULL)
+        id = zMapXMLAttribute_getValue(attribute);
+      if((attribute = zMapXMLElement_getAttributeByName(sub_element, "version")) != NULL)
+        version = zMapXMLAttribute_getValue(attribute);
+      name = g_quark_from_string(sub_element->contents->str);
     }
   
-  if((mapEle = zMapXMLElement_getChildByName(element, "mapmaster")) != NULL)
-    map = g_quark_from_string(mapEle->contents->str);
+  if((sub_element = zMapXMLElement_getChildByName(element, "mapmaster")) != NULL)
+    map = g_quark_from_string(sub_element->contents->str);
   
-  if((descEle = zMapXMLElement_getChildByName(element, "description")) != NULL)
-    desc = g_quark_from_string(descEle->contents->str);
+  if((sub_element = zMapXMLElement_getChildByName(sub_element, "description")) != NULL)
+    desc = g_quark_from_string(sub_element->contents->str);
   
   if((dsn = dasOneDSN_create1(id, version, name)) != NULL)
     {
@@ -85,17 +80,13 @@ gpointer dsnEnd(void *userData,
   else
     printf("Warning this needs to be written\n");
   
-  
-  detail->result = handled;
-
-  return NULL;
+  return handled;
 }
 
 
-gpointer segStart(void *userData,
+gboolean segStart(void *userData,
                   zmapXMLElement element,
-                  gpointer storage,
-                  zmapXMLFactoryDetail detail)
+                  zmapXMLParser parser)
 {
   gboolean handled = FALSE;
   dasOneSegment seg = NULL;
@@ -135,18 +126,16 @@ gpointer segStart(void *userData,
       dasOneSegment_refProperties(seg, ref, sub, TRUE);
     }
   
-
-  detail->result = handled;
-  return seg;
+  return TRUE;
 }
-gpointer segEnd(void *userData,
+
+gboolean segEnd(void *userData,
                 zmapXMLElement element,
-                gpointer storage,
-                zmapXMLFactoryDetail detail)
+                zmapXMLParser parser)
 {
   DasServer server = (DasServer)userData;
   gboolean handled = FALSE;
-
+#ifdef RDS_DONT_INCLUDE
   switch(server->type)
     {
     case ZMAP_DASONE_ENTRY_POINTS:
@@ -167,35 +156,29 @@ gpointer segEnd(void *userData,
           GQuark seq  = server->req_context->sequence_name;
           GData *datalist    = NULL;
           dasOneFeature feat = NULL;
-          datalist = zMapXMLFactory_dataFetchOutput(server->factory, g_quark_from_string("feature"));
+          printf("FIX  ME  NOW\n");
 
           if((feat = g_datalist_id_get_data(&(datalist), seq)) != NULL)
-            {
-              setCurrentSegment(server, element);              
-            }
+            setCurrentSegment(server, element);              
           else
-            {
-              zmapXMLFactoryItem item = NULL;
-              item = zMapXMLFactory_decodeNameQuark(server->factory, g_quark_from_string("feature"));
-              zMapXMLFactoryItem_dataListClear(item);
-            }
+            printf("F I X  M E  N O W\n");
+
         }
       handled = TRUE;
     default:
       break;
     }
-
-  detail->result = handled;
-  return (gpointer)NULL;
+#endif
+  return handled;
 }
 
-gpointer featStart(void *userData,
+gboolean featStart(void *userData,
                    zmapXMLElement element,
-                   gpointer storage,
-                   zmapXMLFactoryDetail detail)
+                   zmapXMLParser parser)
 {
   DasServer server = (DasServer)userData;
   gboolean handled = FALSE;
+#ifdef RDS_DONT_INCLUDE
   dasOneFeature feat    = NULL;
   zmapXMLAttribute attr = NULL;
   GQuark id = 0, label  = 0;
@@ -209,8 +192,8 @@ gpointer featStart(void *userData,
         label = zMapXMLAttribute_getValue(attr);
 
       feat = dasOneFeature_create1(id, label);
-      detail->key    = id;
-      detail->notify = rmInternalDasFeature;
+      //detail->key    = id;
+      //detail->notify = rmInternalDasFeature;
       handled = TRUE;
     case ZMAP_DASONE_FEATURES:
       /* Don't think we actually need to do anything here... */
@@ -228,20 +211,18 @@ gpointer featStart(void *userData,
     default:
       break;
     }
-
-  detail->result = handled;
-
-  return feat;
+#endif
+  return handled;
 }
 
-gpointer featEnd(void *userData,
+gboolean featEnd(void *userData,
                  zmapXMLElement element,
-                 gpointer storage,
-                 zmapXMLFactoryDetail detail)
+                 zmapXMLParser parser)
 {
   DasServer server = (DasServer)userData;
   gpointer output  = NULL;
   gboolean handled = FALSE;
+#ifdef RDS_DONT_INCLUDE
   /* now we need to munge through the feature element */
   dasOneType type     = NULL;
   dasOneMethod method = NULL;
@@ -408,9 +389,8 @@ gpointer featEnd(void *userData,
         }
       
     }
-
-  detail->result = handled;
-  return output;
+#endif
+  return TRUE;
 }
 
 
@@ -418,13 +398,11 @@ gpointer featEnd(void *userData,
 
 /* if this is set as the root elements end handler the document of
    elements will get cleaned up */
-gpointer cleanUpDoc(void *userData,
+gboolean cleanUpDoc(void *userData,
                     zmapXMLElement element,
-                    gpointer storage,
-                    zmapXMLFactoryDetail detail)
+                    zmapXMLParser parser)
 {
-  detail->result = TRUE;
-  return (gpointer)NULL;
+  return TRUE;
 }
 
 
@@ -433,14 +411,6 @@ gpointer cleanUpDoc(void *userData,
 /*                         INTERNALS                                 */
 /* ================================================================= */
 /* ================================================================= */
-
-static void remFeaturesFromFactory(gpointer listData, gpointer myData)
-{
-  dasOneFeature_free((dasOneFeature)listData);
-  listData = NULL;
-  return ;
-}
-
 
 static void setCurrentSegment(DasServer server, zmapXMLElement segElement)
 {
@@ -466,7 +436,7 @@ static void setCurrentSegment(DasServer server, zmapXMLElement segElement)
 }
 
 static ZMapFeatureSet makeZmapFeatureFromElement(zmapXMLElement element,
-                                           GList *list)
+                                                 GList *list)
 {
   ZMapFeatureSet feature_set = NULL;
   zmapXMLElement ele  = NULL; /* temp 2 hold subelements */
@@ -526,11 +496,6 @@ static ZMapFeatureSet makeZmapFeatureFromElement(zmapXMLElement element,
   return feature_set;
 }
 
-static void rmInternalDasFeature(gpointer data)
-{
-  dasOneFeature feature = (dasOneFeature)data;
 
-  dasOneFeature_free(feature);
 
-  return ;
-}
+
