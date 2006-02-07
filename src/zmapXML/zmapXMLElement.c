@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 28 14:14 2005 (edgrif)
+ * Last edited: Feb  6 21:17 2006 (rds)
  * Created: Fri Aug  5 14:33:49 2005 (rds)
- * CVS info:   $Id: zmapXMLElement.c,v 1.6 2005-09-30 07:23:21 edgrif Exp $
+ * CVS info:   $Id: zmapXMLElement.c,v 1.7 2006-02-07 09:19:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -262,7 +262,9 @@ void zmapXMLElement_free(zmapXMLElement ele)
   /* I might want a handler here, but not sure 
    * (childFreedHandler)(ele->parent, ele);
    */
-  ele->parent = NULL;
+  ele->parent   = NULL;
+  ele->children = NULL;
+  ele->contents = NULL;
 
   /* Finally empty the ele. */
   g_free(ele);
