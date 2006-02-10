@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Sep 20 12:27 2005 (rds)
+ * Last edited: Jan 25 12:02 2006 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.12 2005-09-20 17:21:38 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.13 2006-02-10 08:34:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,7 +60,6 @@ typedef struct
   GQuark source;
 } appRemoteAllStruct, *appRemoteAll;
 
-static zmapXMLFactory openFactory(void);
 static gboolean start(void *userData, 
                       zmapXMLElement element, 
                       zmapXMLParser parser);
@@ -144,18 +143,25 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
   gboolean cmd_debug   = FALSE;
   gboolean parse_ok    = FALSE;
   GList *list          = NULL;
-  zmapXMLFactory factory = NULL;
+  
+  ZMapXMLObjTagFunctionsStruct startH[] = {
+    {"zmap", start},
+    {NULL, NULL}
+  };
+  ZMapXMLObjTagFunctionsStruct endH[] = {
+    {"zmap", end},
+    {NULL, NULL}
+  };
 
   g_clear_error(&(app->info));
 
-  factory = openFactory();
-  parser  = zMapXMLParser_create(factory, FALSE, cmd_debug);
-  zMapXMLParser_setMarkupObjectHandler(parser, start, end);
+  parser  = zMapXMLParser_create(&list, FALSE, cmd_debug);
+  zMapXMLParser_setMarkupObjectTagHandlers(parser, startH, endH);
+
   parse_ok = zMapXMLParser_parseBuffer(parser, command_text, strlen(command_text));
 
   if(parse_ok && 
-     zMapXMLFactoryLite_decodeNameQuark(factory, g_quark_from_string("zmap"), &list) > 0 
-     && !(list == NULL))
+     (list != NULL))
     {
       appRemoteAll appOpen = (appRemoteAll)(list->data);
 
@@ -289,12 +295,11 @@ static gboolean start(void *userData,
                       zmapXMLElement element, 
                       zmapXMLParser parser)
 {
-  zmapXMLFactory factory = (zmapXMLFactory)userData;
+  GList **list = NULL;
   gboolean handled  = FALSE;
   appObjType type;
 
-  type  = (appObjType)zMapXMLFactoryLite_decodeElement(factory, element, NULL);
-
+  type  = ZMAP_APP_REMOTE_ALL;
   switch(type){
   case ZMAP_APP_REMOTE_ALL:
     {
@@ -309,7 +314,8 @@ static gboolean start(void *userData,
             objAll->action = ZMAP_APP_REMOTE_CLOSE_ZMAP;
         }
       /* Add obj to list */
-      zMapXMLFactoryLite_addOutput(factory, element, objAll);
+      **list = *((GList *)userData);
+      *list  = g_list_append(*list, objAll);
     }
     break;
   default:
@@ -317,21 +323,22 @@ static gboolean start(void *userData,
   }
   return handled;
 }
+
 static gboolean end(void *userData, 
                     zmapXMLElement element, 
                     zmapXMLParser parser)
 {
-  zmapXMLFactory factory = (zmapXMLFactory)userData;
-  GList *list      = NULL;
+  GList **list     = NULL;
   gboolean handled = FALSE;
-  appObjType type  = (appObjType)zMapXMLFactoryLite_decodeElement(factory, 
-                                                                 element, 
-                                                                 &list);
+  appObjType type  = ZMAP_APP_REMOTE_ALL;
+
+  **list  = *((GList *)userData);
+
   switch(type){
   case ZMAP_APP_REMOTE_ALL:
     {
       zmapXMLElement child = NULL;
-      appRemoteAll appOpen = (appRemoteAll)(list->data);
+      appRemoteAll appOpen = (appRemoteAll)((*list)->data);
       if((child = zMapXMLElement_getChildByName(element, "segment")) != NULL)
         {
           zmapXMLAttribute attr = NULL;
@@ -357,6 +364,7 @@ static gboolean end(void *userData,
   return handled;
 }
 
+#ifdef RDS_CLOSED_FACTORY
 static zmapXMLFactory openFactory(void)
 {
   zmapXMLFactory factory = NULL;
@@ -369,3 +377,4 @@ static zmapXMLFactory openFactory(void)
 
   return factory;
 }
+#endif
