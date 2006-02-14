@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  7 09:04 2006 (rds)
+ * Last edited: Feb  8 13:37 2006 (rds)
  * Created: Fri Aug  5 12:50:44 2005 (rds)
- * CVS info:   $Id: zmapXML_P.h,v 1.3 2006-02-07 09:10:50 rds Exp $
+ * CVS info:   $Id: zmapXML_P.h,v 1.4 2006-02-14 14:09:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,9 +38,10 @@
 
 #include <ZMap/zmapXML.h>
 
+#define ZMAP_XML_BASE_ATTR "xml:base"
+
 /* For an XML tag holds the element name and attributes, i.e.   <element_name attributes>
  * Used to track which tag we are processing. */
-
 
 typedef struct _zmapXMLDocumentStruct
 {
@@ -59,7 +60,7 @@ typedef struct _zmapXMLAttributeStruct
 typedef struct _zmapXMLParserStruct
 {
   XML_Parser expat ; 
-  gboolean debug, validating;
+  gboolean debug, validating, useXMLBase;
 
   GQueue *elementStack ;        /* Stack of zmapXMLElementStructs */
 #if GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION < 4
@@ -80,6 +81,8 @@ typedef struct _zmapXMLParserStruct
   /* Hopefully these will replace the two above! */
   GList *startTagHandlers, *endTagHandlers;
 
+  GList *xmlBaseHandlers, *xmlBaseStack;
+  GQuark xmlbase;
 } zmapXMLParserStruct ;
 
 
