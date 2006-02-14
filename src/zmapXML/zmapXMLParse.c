@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  6 16:52 2006 (rds)
+ * Last edited: Feb 10 13:56 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.6 2006-02-07 09:11:12 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.7 2006-02-14 14:07:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,13 @@ typedef struct _tagHandlerItemStruct
 
 static void setupExpat(zmapXMLParser parser);
 static void freeUpTheQueue(zmapXMLParser parser);
+
+static void pushXMLBase(zmapXMLParser parser, const char *xmlBase);
+/* A "user" level ZMapXMLMarkupObjectHandler to handle removing xml bases. */
+static gboolean popXMLBase(void *userData, 
+                           zmapXMLElement element, 
+                           zmapXMLParser parser);
+
 /* Expat handlers we set */
 static void start_handler(void *userData, 
                           const char *el, 
@@ -60,6 +67,7 @@ static void xmldecl_handler(void* data,
                             XML_Char const* version, 
                             XML_Char const* encoding,
                             int standalone);
+
 static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
                                                 GList *tagHandlerItemList);
 /* End of Expat handlers */
@@ -109,6 +117,8 @@ zmapXMLParser zMapXMLParser_create(void *user_data, gboolean validating, gboolea
   parser->startMOHandler = NULL;
   parser->endMOHandler   = NULL;
 
+  parser->xmlbase = g_quark_from_string(ZMAP_XML_BASE_ATTR);
+
   return parser ;
 }
 
@@ -120,6 +130,39 @@ zmapXMLElement zMapXMLParser_getRoot(zmapXMLParser parser)
   return root;
 }
 
+char *zMapXMLParserGetBase(zmapXMLParser parser)
+{
+  char *base = NULL;
+  if(parser->expat != NULL)
+    base = (char *)XML_GetBase(parser->expat);
+  return base;
+}
+long zMapXMLParserGetCurrentByteIndex(zmapXMLParser parser)
+{
+  long index = 0;
+  if(parser->expat != NULL)
+    index = XML_GetCurrentByteIndex(parser->expat);
+  return index;
+}
+/* If return is non null it needs freeing sometime in the future! */
+char *zMapXMLParserGetFullXMLTwig(zmapXMLParser parser, int offset)
+{
+  char *copy = NULL, *tmp1 = NULL;
+  const char *tmp = NULL;
+  int current = 0, size = 0, byteCount = 0, twigSize = 0;
+  if((tmp = XML_GetInputContext(parser->expat, &current, &size)) != NULL)
+    {
+      byteCount = XML_GetCurrentByteCount(parser->expat);
+      if(byteCount && current && size &&
+         (twigSize = (int)((byteCount + current) - offset + 1)) <= size)
+        {
+          tmp1 = tmp + offset;
+          copy = g_strndup(tmp1, twigSize);
+        }
+    }
+
+  return copy;                  /* PLEASE free me later */
+}
 #define BUFFER_SIZE 200
 gboolean zMapXMLParser_parseFile(zmapXMLParser parser,
                                   FILE *file)
@@ -322,6 +365,35 @@ static void freeUpTheQueue(zmapXMLParser parser)
   return ;
 }
 
+static void pushXMLBase(zmapXMLParser parser, const char *xmlBase)
+{
+  /* Add to internal list of stuff */
+  parser->xmlBaseStack = g_list_append(parser->xmlBaseStack, (char *)xmlBase);
+
+  XML_SetBase(parser->expat, xmlBase);
+
+  return ;
+}
+
+static gboolean popXMLBase(void *userData, 
+                           zmapXMLElement element, 
+                           zmapXMLParser parser)
+{
+  char *previousXMLBase = NULL, *current = NULL;
+
+  /* Remove from list.  Is this correct? */
+  if((current = zMapXMLParserGetBase(parser)) != NULL)
+    {
+      g_list_remove(parser->xmlBaseStack, current);
+      
+      previousXMLBase = (char *)((g_list_last(parser->xmlBaseStack))->data);
+    }
+
+  XML_SetBase(parser->expat, previousXMLBase);
+
+  return FALSE;                   /* Ignored anyway! */
+}
+
 /* HANDLERS */
 
 /* Set handlers for start and end tags. Attributes are passed to the start handler
@@ -335,8 +407,10 @@ static void start_handler(void *userData,
 {
   zmapXMLParser parser = (zmapXMLParser)userData ;
   zmapXMLElement current_ele = NULL ;
+  zmapXMLAttribute attribute = NULL ;
   ZMapXMLMarkupObjectHandler handler = NULL;
   int depth, i;
+  gboolean currentHasXMLBase = FALSE;
 
 #ifdef ZMAP_XML_PARSE_USE_DEPTH
   depth = parser->depth;
@@ -361,10 +435,11 @@ static void start_handler(void *userData,
   current_ele = zmapXMLElement_create(el);
 
   for(i = 0; attr[i]; i+=2){
-    zmapXMLAttribute attribute = zmapXMLAttribute_create(attr[i], attr[i + 1]);
+    attribute = zmapXMLAttribute_create(attr[i], attr[i + 1]);
     zmapXMLElement_addAttribute(current_ele, attribute);
+    if(attribute->name == parser->xmlbase)
+      parser->useXMLBase = currentHasXMLBase = TRUE;
   }
-
 
   if(!depth)
     {
@@ -385,6 +460,16 @@ static void start_handler(void *userData,
 #ifdef ZMAP_XML_PARSE_USE_DEPTH
   (parser->depth)++;
 #endif
+
+  if(parser->useXMLBase && currentHasXMLBase &&
+     ((attribute = zMapXMLElement_getAttributeByName(current_ele, ZMAP_XML_BASE_ATTR)) != NULL))
+    {
+      tagHandlerItem item = g_new0(tagHandlerItemStruct, 1);
+      item->id      = current_ele->name;
+      item->handler = popXMLBase;
+      pushXMLBase(parser, g_quark_to_string(zMapXMLAttribute_getValue(attribute)));
+      parser->xmlBaseHandlers = g_list_prepend(parser->xmlBaseHandlers, item);      
+    }
 
   if(((handler = parser->startMOHandler) != NULL) || 
      ((handler = getObjHandler(current_ele, parser->startTagHandlers)) != NULL))
@@ -434,6 +519,11 @@ static void end_handler(void *userData,
           zmapXMLElement_free(current_ele);
         }
     }
+
+  if(parser->useXMLBase &&
+     ((handler = getObjHandler(current_ele, parser->xmlBaseHandlers)) != NULL))
+    (*handler)((void *)parser->user_data, current_ele, parser);
+
   return ;
 }
 
