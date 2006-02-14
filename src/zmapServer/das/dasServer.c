@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb  7 09:22 2006 (rds)
+ * Last edited: Feb  7 14:45 2006 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.17 2006-02-07 09:24:20 rds Exp $
+ * CVS info:   $Id: dasServer.c,v 1.18 2006-02-14 14:32:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,7 +86,7 @@ static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *da
 /* helpers */
 static char *dsnFullURL(DasServer server, 
                         char *query);
-gboolean serverHasCapabilityLevel(DasServer server, 
+static gboolean serverHasCapabilityLevel(DasServer server, 
                                   char *capability, 
                                   double minimum);
 
@@ -942,7 +942,7 @@ static char *dsnFullURL(DasServer server, char *query)
   return url;
 }
 
-gboolean serverHasCapabilityLevel(DasServer server, char *capability, double minimum)
+static gboolean serverHasCapabilityLevel(DasServer server, char *capability, double minimum)
 {
   GList *list = NULL;
   GQuark want = 0;
