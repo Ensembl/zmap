@@ -27,15 +27,17 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  6 21:17 2006 (rds)
+ * Last edited: Feb 15 16:53 2006 (rds)
  * Created: Fri Aug  5 14:33:49 2005 (rds)
- * CVS info:   $Id: zmapXMLElement.c,v 1.7 2006-02-07 09:19:36 rds Exp $
+ * CVS info:   $Id: zmapXMLElement.c,v 1.8 2006-02-15 17:09:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <zmapXML_P.h>
 
+static void markElementDirty(gpointer data, gpointer unused);
+static void markAttributeDirty(gpointer item, gpointer data);
 static void freeElement(gpointer data, gpointer unused);
 static void freeAttributeListItems(gpointer item, gpointer data);
 
@@ -272,6 +274,45 @@ void zmapXMLElement_free(zmapXMLElement ele)
   return ;
 }
 
+void zmapXMLElementMarkDirty(zmapXMLElement ele)
+{
+  if(ele == NULL)
+    return ;
+
+  /* Free all my children */
+  g_list_foreach(ele->children, markElementDirty, NULL);
+  g_list_free(ele->children);
+
+  /* And free myself... First the contents */
+  if(ele->contents)
+    g_string_free(ele->contents, TRUE);
+  
+  /* Now the attributes */
+  zmapXMLElementMarkAttributesDirty(ele);
+  
+  /* my parent, doesn't need 2 b freed so set to null! */
+  /* I might want a handler here, but not sure 
+   * (childFreedHandler)(ele->parent, ele);
+   */
+  ele->parent   = NULL;
+  ele->children = NULL;
+  ele->contents = NULL;
+
+  return ;
+}
+
+void zmapXMLElementMarkAttributesDirty(zmapXMLElement ele)
+{
+  GList *list = NULL;
+  list = ele->attributes;
+
+  g_list_foreach(list, markAttributeDirty, NULL);
+  g_list_free(list);
+
+  ele->attributes = NULL;
+
+  return ;
+}
 void zmapXMLElement_freeAttrList(zmapXMLElement ele)
 {
   GList *list = NULL;
@@ -296,7 +337,6 @@ static void freeElement(gpointer data, gpointer unused)
   zmapXMLElement_free(ele);
   return ;
 }
-
 static void freeAttributeListItems(gpointer item, gpointer data)
 {
   zmapXMLAttribute attr = (zmapXMLAttribute)item; 
@@ -305,3 +345,20 @@ static void freeAttributeListItems(gpointer item, gpointer data)
 
   return ;
 }
+
+static void markElementDirty(gpointer data, gpointer unused)
+{
+  zmapXMLElement ele = (zmapXMLElement)data;
+  zmapXMLElementMarkDirty(ele);
+  return ;
+}
+
+static void markAttributeDirty(gpointer item, gpointer data)
+{
+  zmapXMLAttribute attr = (zmapXMLAttribute)item; 
+
+  zmapXMLAttributeMarkDirty(attr);
+
+  return ;
+}
+

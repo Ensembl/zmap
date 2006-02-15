@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  9 12:41 2005 (rds)
+ * Last edited: Feb 15 16:51 2006 (rds)
  * Created: Fri Aug  5 14:20:13 2005 (rds)
- * CVS info:   $Id: zmapXMLAttribute.c,v 1.2 2005-09-20 17:18:11 rds Exp $
+ * CVS info:   $Id: zmapXMLAttribute.c,v 1.3 2006-02-15 17:08:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,5 +64,10 @@ GQuark zMapXMLAttribute_getValue(zmapXMLAttribute attr)
   return attr->value;
 }
 
+void zmapXMLAttributeMarkDirty(zmapXMLAttribute attr)
+{
+  attr->dirty = TRUE;
+  return ;
+}
 
 /* Internal ! */

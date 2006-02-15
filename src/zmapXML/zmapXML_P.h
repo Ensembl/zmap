@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  8 13:37 2006 (rds)
+ * Last edited: Feb 15 16:51 2006 (rds)
  * Created: Fri Aug  5 12:50:44 2005 (rds)
- * CVS info:   $Id: zmapXML_P.h,v 1.4 2006-02-14 14:09:08 rds Exp $
+ * CVS info:   $Id: zmapXML_P.h,v 1.5 2006-02-15 17:09:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,6 +53,7 @@ typedef struct _zmapXMLDocumentStruct
 
 typedef struct _zmapXMLAttributeStruct
 {
+  gboolean dirty;
   GQuark name;
   GQuark value;
 } zmapXMLAttributeStruct;
@@ -75,6 +76,9 @@ typedef struct _zmapXMLParserStruct
   char *last_errmsg ;
   void *user_data ;       /* Caller stores any data they need here. */
 
+  GArray *elements, *attributes;
+  int max_size;
+
   ZMapXMLMarkupObjectHandler startMOHandler;
   ZMapXMLMarkupObjectHandler   endMOHandler;
 
@@ -89,6 +93,7 @@ typedef struct _zmapXMLParserStruct
 /* ATTRIBUTES */
 zmapXMLAttribute zmapXMLAttribute_create(const XML_Char *name,
                                          const XML_Char *value);
+void zmapXMLAttributeMarkDirty(zmapXMLAttribute attr);
 void zmapXMLAttribute_free(zmapXMLAttribute attr);
 
 /* ELEMENTS */
@@ -102,6 +107,7 @@ void zmapXMLElement_addContent(zmapXMLElement ele,
                                int len);
 void zmapXMLElement_addChild(zmapXMLElement parent, zmapXMLElement child);
 gboolean zmapXMLElement_signalParentChildFree(zmapXMLElement child);
+void zmapXMLElementMarkDirty(zmapXMLElement ele);
 void zmapXMLElement_free(zmapXMLElement ele);
 void zmapXMLElement_freeAttrList(zmapXMLElement ele);
 
