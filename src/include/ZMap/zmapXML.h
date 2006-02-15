@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 10 08:08 2006 (rds)
+ * Last edited: Feb 15 13:40 2006 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.6 2006-02-10 08:09:18 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.7 2006-02-15 17:11:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,6 +44,7 @@
 typedef struct _zmapXMLElementStruct   *zmapXMLElement;
 typedef struct _zmapXMLElementStruct 
 {
+  gboolean dirty;
   GQuark   name;
   GString *contents; 
   GList   *attributes;
@@ -128,10 +129,16 @@ char *zMapXMLParser_lastErrorMsg(zmapXMLParser parser);
 
 zmapXMLElement zMapXMLParser_getRoot(zmapXMLParser parser);
 
-char *zMapXMLParserGetBase(zmapXMLParser parser);
-
 gboolean zMapXMLParser_reset(zmapXMLParser parser);
 void zMapXMLParser_destroy(zmapXMLParser parser);
+
+
+/* Expat stuff we need to be able to get hold of given a zmapXMLParser
+ * when that type is opaque. e.g. in handlers */
+char *zMapXMLParserGetBase(zmapXMLParser parser);
+long zMapXMLParserGetCurrentByteIndex(zmapXMLParser parser);
+/* Return needs freeing */
+char *zMapXMLParserGetFullXMLTwig(zmapXMLParser parser, int offset);
 
 #endif /* ZMAP_XML_H */
 
