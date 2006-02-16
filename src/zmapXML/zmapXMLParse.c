@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 11:50 2006 (rds)
+ * Last edited: Feb 16 18:16 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.9 2006-02-16 12:04:27 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.10 2006-02-16 18:21:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,10 +73,10 @@ static void xmldecl_handler(void* data,
                             XML_Char const* version, 
                             XML_Char const* encoding,
                             int standalone);
+/* End of Expat handlers */
 
 static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
                                                 GList *tagHandlerItemList);
-/* End of Expat handlers */
 
 /* So what does this do?
  * ---------------------
@@ -94,7 +94,8 @@ static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
  * zmapXMLElements which will likely just be sub trees of the document.
  * You can of course not register these extra handlers and wait until
  * the complete zmapXMLdocument has been parsed and iterate through the 
- * zmapXMLElements yourself.
+ * zmapXMLElements yourself. Recommended ONLY if document is small 
+ * (< 100 elements, < 200 attributes).
 
  */
 
@@ -173,13 +174,14 @@ char *zMapXMLParserGetFullXMLTwig(zmapXMLParser parser, int offset)
       if(byteCount && current && size &&
          (twigSize = (int)((byteCount + current) - offset + 1)) <= size)
         {
-          tmp1 = tmp + offset;
+          tmp1 = (char *)(tmp + offset);
           copy = g_strndup(tmp1, twigSize);
         }
     }
 
   return copy;                  /* PLEASE free me later */
 }
+
 #define BUFFER_SIZE 200
 gboolean zMapXMLParser_parseFile(zmapXMLParser parser,
                                   FILE *file)
@@ -446,12 +448,16 @@ static void start_handler(void *userData,
   current_ele = parserFetchNewElement(parser, el);
 #endif
 
+  zMapAssert(current_ele);
+
   for(i = 0; attr[i]; i+=2){
 #ifndef RDS_NOT_SURE_ON_THIS_YET
     attribute = zmapXMLAttribute_create(attr[i], attr[i + 1]);
 #else
     attribute = parserFetchNewAttribute(parser, attr[i], attr[i+1]);
 #endif
+    zMapAssert(attribute);
+
     zmapXMLElement_addAttribute(current_ele, attribute);
     if(attribute->name == parser->xmlbase)
       parser->useXMLBase = currentHasXMLBase = TRUE;
@@ -623,9 +629,8 @@ static zmapXMLAttribute parserFetchNewAttribute(zmapXMLParser parser,
   for(i = 0; i < parser->attributes->len; i++)
   {
     /* This is hideous. Ed has a written a zMap_g_array_index, but it auto expands  */
-    if((save == -1) && 
-       ((&(g_array_index(parser->attributes, zmapXMLAttributeStruct, i))))->dirty == TRUE)
-      save = i;
+    if(((&(g_array_index(parser->attributes, zmapXMLAttributeStruct, i))))->dirty == TRUE)
+      { save = i; break; }
   }
 
   if((save != -1) && (attr = &(g_array_index(parser->attributes, zmapXMLAttributeStruct, save))) != NULL)
@@ -649,16 +654,15 @@ static zmapXMLElement parserFetchNewElement(zmapXMLParser parser,
   for(i = 0; i < parser->elements->len; i++)
   {
     /* This is hideous. Ed has a written a zMap_g_array_index, but it auto expands  */
-    if((save == -1) && 
-       ((zmapXMLElement)(&(g_array_index(parser->elements, zmapXMLElementStruct, i))))->dirty == TRUE)
-      save = i;
+    if(((&(g_array_index(parser->elements, zmapXMLElementStruct, i))))->dirty == TRUE)
+      { save = i; break; }
   }
 
   if((save != -1) && (element = &(g_array_index(parser->elements, zmapXMLElementStruct, save))) != NULL)
     {
-      element->dirty = FALSE;
-      element->name = g_quark_from_string(g_ascii_strdown((char *)name, -1));
-      element->contents   = g_string_sized_new(100);
+      element->dirty    = FALSE;
+      element->name     = g_quark_from_string(g_ascii_strdown((char *)name, -1));
+      element->contents = g_string_sized_new(100);
     }
 
   return element;
