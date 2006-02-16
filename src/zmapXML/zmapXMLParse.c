@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 15 17:41 2006 (rds)
+ * Last edited: Feb 16 11:50 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.8 2006-02-15 17:42:05 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.9 2006-02-16 12:04:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,6 +51,9 @@ static void initAttributes(GArray *array);
 static void freeUpTheQueue(zmapXMLParser parser);
 static zmapXMLElement parserFetchNewElement(zmapXMLParser parser, 
                                             const XML_Char *name);
+static zmapXMLAttribute parserFetchNewAttribute(zmapXMLParser parser,
+                                                const XML_Char *name,
+                                                const XML_Char *value);
 static void pushXMLBase(zmapXMLParser parser, const char *xmlBase);
 /* A "user" level ZMapXMLMarkupObjectHandler to handle removing xml bases. */
 static gboolean popXMLBase(void *userData, 
@@ -444,7 +447,11 @@ static void start_handler(void *userData,
 #endif
 
   for(i = 0; attr[i]; i+=2){
+#ifndef RDS_NOT_SURE_ON_THIS_YET
     attribute = zmapXMLAttribute_create(attr[i], attr[i + 1]);
+#else
+    attribute = parserFetchNewAttribute(parser, attr[i], attr[i+1]);
+#endif
     zmapXMLElement_addAttribute(current_ele, attribute);
     if(attribute->name == parser->xmlbase)
       parser->useXMLBase = currentHasXMLBase = TRUE;
@@ -603,6 +610,32 @@ static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
   }
 
   return handler;
+}
+static zmapXMLAttribute parserFetchNewAttribute(zmapXMLParser parser,
+                                                const XML_Char *name,
+                                                const XML_Char *value)
+{
+  zmapXMLAttribute attr = NULL;
+  int i = 0, save = -1;
+
+  zMapAssert(parser->attributes);
+
+  for(i = 0; i < parser->attributes->len; i++)
+  {
+    /* This is hideous. Ed has a written a zMap_g_array_index, but it auto expands  */
+    if((save == -1) && 
+       ((&(g_array_index(parser->attributes, zmapXMLAttributeStruct, i))))->dirty == TRUE)
+      save = i;
+  }
+
+  if((save != -1) && (attr = &(g_array_index(parser->attributes, zmapXMLAttributeStruct, save))) != NULL)
+    {
+      attr->dirty = FALSE;
+      attr->name  = g_quark_from_string(g_ascii_strdown((char *)name, -1));
+      attr->value = g_quark_from_string((char *)value);
+    }
+
+  return attr;
 }
 
 static zmapXMLElement parserFetchNewElement(zmapXMLParser parser, 
