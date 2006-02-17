@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 24 14:18 2006 (edgrif)
+ * Last edited: Feb 14 15:31 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.102 2006-01-24 14:23:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.103 2006-02-17 13:49:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -205,8 +205,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
 
   /* Some things for window can be specified in the configuration file. */
   getConfiguration(window) ;
-
-  window->context_strand = ZMAPSTRAND_NONE ;
 
   /* Add a hash table to map features to their canvas items. */
   window->context_to_item = zmapWindowFToICreate() ;
@@ -477,13 +475,6 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   int x, y ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
 
-  zMapAssert(window->context_strand == ZMAPSTRAND_FORWARD
-	     || window->context_strand == ZMAPSTRAND_REVERSE) ;
-  if (window->context_strand == ZMAPSTRAND_FORWARD)
-    window->context_strand = ZMAPSTRAND_REVERSE ;
-  else
-    window->context_strand = ZMAPSTRAND_FORWARD ;
-
   if (reversed)
     {
       double tmp ;
@@ -537,6 +528,11 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 }
 
 
+/* Returns TRUE if this window is locked with another window for its zooming/scrolling. */
+gboolean zMapWindowIsLocked(ZMapWindow window)
+{
+  return window->locked_display  ;
+}
 
 
 
@@ -547,6 +543,9 @@ void zMapWindowUnlock(ZMapWindow window)
 
   return ;
 }
+
+
+
 
 /* ugh, get rid of this.......... */
 GtkWidget *zMapWindowGetWidget(ZMapWindow window)
@@ -862,10 +861,11 @@ void zMapWindowDestroy(ZMapWindow window)
       g_ptr_array_free(window->featureListWindows, FALSE);
     }
   
-  
   zmapWindowFToIDestroy(window->context_to_item) ;
 
   zmapWindowLongItemFree(window->long_items) ;
+
+  gtk_widget_destroy(window->toplevel) ;
 
   g_free(window) ;
   
@@ -978,8 +978,6 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
       vis_change.scrollable_top = (y1 += tmp_top); /* should these be sequence clamped */
       vis_change.scrollable_bot = (y2 -= tmp_bot); /* or include the border? (SEQUENCE CLAMPED ATM) */
 
-      vis_change.strand = window->context_strand ;
-
       (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
       /*   END: main part of the setting of the scroll region */
     }
@@ -1046,19 +1044,36 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
 
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item)
 {
+  ZMapWindowItemFeatureType type ;
+  ZMapWindowItemFeature item_data ;
+  char *subpart_text = NULL ;
   ZMapWindowSelectStruct select = {NULL} ;
 
-  select.text = g_strdup_printf("%s   %s   %d   %d   %s   %s", 
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+
+  if (type == ITEM_FEATURE_CHILD)
+    {
+      item_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data") ;
+      zMapAssert(item_data) ;
+
+      subpart_text = g_strdup_printf("  (%d %d)", item_data->start, item_data->end) ;
+    }
+
+  select.text = g_strdup_printf("%s : %s : %s   %s %d %d%s", 
+				zMapFeatureType2Str(feature->type),
+				zMapStyleGetName(zMapFeatureGetStyle(feature)),
 				(char *)g_quark_to_string(feature->original_id),
-				zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM),
+				zMapFeatureStrand2Str(feature->strand),
 				feature->x1,
 				feature->x2,
-				zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
-				zMapStyleGetName(zMapFeatureGetStyle(feature))) ;
+				(subpart_text ? subpart_text : "")) ;
+
   select.item = item ;
   
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-  
+
+  if (subpart_text)
+    g_free(subpart_text) ;
   g_free(select.text) ;
 
   return;
@@ -1078,40 +1093,55 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvas
  * NOTE that this does not touch the feature context. */
 static void resetCanvas(ZMapWindow window)
 {
-  double x1, y1, x2, y2 ;
-  FooCanvasGroup *root_group ;
+  int i ;
+
+
   zMapAssert(window) ;
 
 
-  root_group = foo_canvas_root(window->canvas) ;
+  /* There is code here that should be shared with zmapwindowdestroy.... */
+
+  
+  if (window->long_items)
+    {
+      zmapWindowLongItemFree(window->long_items) ;
+      window->long_items = NULL ;
+    }
+
+  if (window->feature_root_group)
+    {
+      zmapWindowContainerDestroy(window->feature_root_group) ;
+      window->feature_root_group = NULL ;
+    }
+
+  if (window->scaleBarGroup)
+    {
+      gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
+      window->scaleBarGroup = NULL ;
+    }
 
 
-  zmapWindowLongItemFree(window->long_items) ;
-  window->long_items = NULL ;
-
-
-  zmapWindowContainerDestroy(window->feature_root_group) ;
-  window->feature_root_group = NULL ;
-
-  gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
-  window->scaleBarGroup = NULL ;
-
-  foo_canvas_set_scroll_region(window->canvas, 0.0, 0.0, 100.0, 100.0) ;
+  if (window->canvas)
+    foo_canvas_set_scroll_region(window->canvas, 0.0, 0.0, 100.0, 100.0) ;
 							    /* Seems to be default size....?? */
-
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
 
   zmapWindowFToIDestroy(window->context_to_item) ;
   window->context_to_item = zmapWindowFToICreate() ;
 
-  /*
-    featureListWindows ;	in theory this should go if it uses items to find stuff, either that or it
-    needs recalculating...
+  /* free the array of featureListWindows and the windows themselves */
+  if (window->featureListWindows)
+    {
+      GtkWidget *widget ;
 
-    Remember if we remove this we must recreate the array....
-
-  */
-
+      for (i = 0; i < window->featureListWindows->len; i++)
+	{
+	  widget = g_ptr_array_index(window->featureListWindows, i);
+	  if (GTK_IS_WIDGET(widget))
+	    gtk_widget_destroy(widget);
+	}
+      g_ptr_array_free(window->featureListWindows, FALSE);
+    }
+  
   window->focus_item = NULL ;
   window->alignment_start = 0 ;
 
@@ -1929,7 +1959,6 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
       vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
       vis_change.scrollable_top = start ;
       vis_change.scrollable_bot = end ;
-      vis_change.strand = window->context_strand ;
       (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
     }
 
