@@ -24,21 +24,42 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: May 27 10:21 2005 (rds)
+ * Last edited: Feb 17 10:56 2006 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapManager.h,v 1.6 2005-06-01 13:09:31 rds Exp $
+ * CVS info:   $Id: zmapManager.h,v 1.7 2006-02-17 14:02:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_MANAGER_H
 #define ZMAP_MANAGER_H
 
-#include <ZMap/zmapSys.h>
 #include <ZMap/zmapControl.h>
 
-/* Opaque type, contains list of current ZMaps. */
+
+/* Opaque type, controls interaction with all current ZMap windows. */
 typedef struct _ZMapManagerStruct *ZMapManager ;
 
-ZMapManager zMapManagerCreate(ZMapAppCallbacks zmap_gui_funcs, void *gui_data) ;
+
+/* Callers can specify callback functions which get called with ZMapView which made the call
+ * and the applications own data pointer. If the callback is to made for a window event
+ * then the ZMapViewWindow where the event took place will be returned as the first
+ * parameter. If the callback is for an event that involves the whole view (e.g. destroy)
+ * then the ZMapView where the event took place is returned. */
+typedef void (*ZMapManagerCallbackFunc)(void *app_data, void * zmap) ;
+
+
+/* Set of callback routines that allow the caller to be notified when events happen
+ * to manager. */
+typedef struct
+{
+  ZMapManagerCallbackFunc zmap_deleted_func ;
+  ZMapManagerCallbackFunc zmap_set_info_func ;
+  ZMapManagerCallbackFunc exit_func ;
+} ZMapManagerCallbacksStruct, *ZMapManagerCallbacks ;
+
+
+
+void zMapManagerInit(ZMapManagerCallbacks callbacks) ;
+ZMapManager zMapManagerCreate(void *gui_data) ;
 gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, ZMap *zmap_out) ;
 gboolean zMapManagerReset(ZMap zmap) ;
 gboolean zMapManagerRaise(ZMap zmap) ;
