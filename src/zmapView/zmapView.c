@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb 14 16:29 2006 (edgrif)
+ * Last edited: Feb 17 15:10 2006 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.67 2006-02-17 14:05:40 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.68 2006-02-17 17:53:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -228,7 +228,7 @@ ZMapViewWindow zMapViewMakeWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 
 /* Connect a View to its databases via threads, at this point the View is blank and waiting
  * to be called to load some data. */
-gboolean zMapViewConnect(ZMapView zmap_view)
+gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 {
   gboolean result = TRUE ;
   ZMapConfigStanzaSet server_list = NULL ;
@@ -247,7 +247,8 @@ gboolean zMapViewConnect(ZMapView zmap_view)
       zmapViewBusy(zmap_view, TRUE) ;
 
       config_file = zMapConfigDirGetFile() ;
-      if ((config = zMapConfigCreateFromFile(config_file)))
+      if ((config_str != NULL && (config = zMapConfigCreateFromBuffer(config_str))) || 
+          (config_str == NULL && (config = zMapConfigCreateFromFile(config_file))))
 	{
 	  ZMapConfigStanza server_stanza ;
 	  ZMapConfigStanzaElementStruct server_elements[] = {{"url", ZMAPCONFIG_STRING, {NULL}},

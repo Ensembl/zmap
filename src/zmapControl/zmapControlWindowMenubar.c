@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 17 10:02 2006 (edgrif)
+ * Last edited: Feb 17 16:27 2006 (rds)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.9 2006-02-17 14:13:55 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.10 2006-02-17 17:53:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -217,7 +217,7 @@ static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   if ((new_sequence = getSequenceName()))
     {
       if ((view = zmapControlAddView(zmap, new_sequence, start, end)))
-	zMapViewConnect(view) ;				    /* return code ???? */
+	zMapViewConnect(view, NULL) ;				    /* return code ???? */
     }
 
   return ;
