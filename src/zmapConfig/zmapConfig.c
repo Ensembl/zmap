@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Feb 10 16:01 2005 (edgrif)
+ * Last edited: Feb 17 12:47 2006 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.14 2005-02-10 16:36:22 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.15 2006-02-17 13:01:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -351,6 +351,26 @@ ZMapConfig zMapConfigCreateFromFile(char *config_file)
 	  destroyConfig(config) ;
 	  config = NULL ;
 	}
+    }
+
+  return config ;
+}
+
+ZMapConfig zMapConfigCreateFromBuffer(char *buffer)
+{
+  ZMapConfig config = NULL ;
+  gboolean status = TRUE ;
+
+  zMapAssert(buffer && *buffer) ;
+
+  config = createConfig() ;
+  status = zmapGetComputedConfig(config, buffer) ;
+
+  /* Clean up if we have failed. */
+  if (!status)
+    {
+      destroyConfig(config) ;
+      config = NULL ;
     }
 
   return config ;

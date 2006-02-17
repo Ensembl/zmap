@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: Jul 19 15:58 2004 (edgrif)
+ * Last edited: Feb 17 12:59 2006 (rds)
  * Created: Thu Apr  1 14:33:04 2004 (edgrif)
- * CVS info:   $Id: zmapConfigRead.c,v 1.4 2004-07-19 15:19:02 edgrif Exp $
+ * CVS info:   $Id: zmapConfigRead.c,v 1.5 2006-02-17 13:02:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -81,6 +81,39 @@ static symbolStruct symbols[] =
 
 
 static gboolean parsefile(ZMapConfig config, GScanner *scanner) ;
+
+
+/* Read configuration information from a computed buffer string. */
+gboolean zmapGetComputedConfig(ZMapConfig config, char *buffer)
+{
+  gboolean result = FALSE ;
+  GScanner *scanner ;
+  symbolStruct *symbol_p = symbols ;
+
+  if (buffer != NULL)
+    {
+      scanner = g_scanner_new(NULL) ;
+
+      while (symbol_p->symbol_name)
+	{
+	  g_scanner_add_symbol(scanner,
+			       symbol_p->symbol_name,
+			       GINT_TO_POINTER (symbol_p->symbol_token)) ;
+	  symbol_p++ ;
+	}
+      
+
+      g_scanner_input_text(scanner, buffer, strlen(buffer)) ;
+
+      result = parsefile(config, scanner) ;
+
+      g_scanner_destroy(scanner) ;
+
+    }
+
+  return result ;
+}
+
 
 
 /* Read configuration information from the user configuration file. */

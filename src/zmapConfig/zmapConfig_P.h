@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 10 13:45 2005 (edgrif)
+ * Last edited: Feb 17 12:47 2006 (rds)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapConfig_P.h,v 1.6 2005-02-10 16:36:46 edgrif Exp $
+ * CVS info:   $Id: zmapConfig_P.h,v 1.7 2006-02-17 13:02:11 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_P_H
@@ -66,6 +66,7 @@ typedef struct _ZMapConfigStruct
 
 /* These functions are internal to zmapConfig and should not be used outside of this package. */
 gboolean zmapGetUserConfig(ZMapConfig config) ;
+gboolean zmapGetComputedConfig(ZMapConfig config, char *buffer) ;
 gboolean zmapMakeUserConfig(ZMapConfig config) ;
 
 gboolean zmapGetConfigStanzas(ZMapConfig config,
