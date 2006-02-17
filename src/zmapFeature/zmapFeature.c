@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jan 13 18:45 2006 (edgrif)
+ * Last edited: Jan 31 13:17 2006 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.30 2006-01-13 18:46:31 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.31 2006-02-17 17:59:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -215,7 +215,7 @@ gboolean zmapFeatureContextDNA(ZMapFeatureContext context,
  * @param   void  None.
  * @return  ZMapFeature  A pointer to the new ZMapFeature.
  *  */
-ZMapFeature zmapFeatureCreateEmpty(void)
+ZMapFeature zMapFeatureCreateEmpty(void)
 {
   ZMapFeature feature ;
 
@@ -229,8 +229,47 @@ ZMapFeature zmapFeatureCreateEmpty(void)
 }
 
 
+/* ==================================================================
+ * Because the contents of this are quite a lot of work. Useful for
+ * creating single features, but be warned that usually you will need
+ * to keep track of uniqueness, so for large parser the GFF style of
+ * doing things is better (assuming we get a fix for g_datalist!).
+ * ==================================================================
+ */
+ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
+                                              ZMapFeatureType feature_type, 
+                                              ZMapFeatureTypeStyle style,
+                                              int start, int end,
+                                              gboolean has_score, double score,
+                                              ZMapStrand strand, ZMapPhase phase)
+{
+  ZMapFeature feature = NULL;
+  gboolean       good = FALSE;
 
+  if((feature = zMapFeatureCreateEmpty()))
+    {
+      char *feature_name_id = NULL;
+      if((feature_name_id = zMapFeatureCreateName(feature_type, name, strand,
+                                                  start, end, 0, 0)) != NULL)
+        {
+          if((good = zMapFeatureAddStandardData(feature, feature_name_id, 
+                                                name, sequence, ontology,
+                                                feature_type, style,
+                                                start, end, has_score, score,
+                                                strand, phase)))
+            {
+              /* Check I'm valid. Really worth it?? */
+              if(!(good = zMapFeatureIsValid(feature)))
+                {
+                  zmapFeatureDestroy(feature);
+                  feature = NULL;
+                }
+            }
+        }
+    }
 
+  return feature;
+}
 
 
 
@@ -484,10 +523,10 @@ gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature featur
 gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
 {
   gboolean result = FALSE ;
-
+  gpointer stored = NULL ;
   zMapAssert(feature_set && feature) ;
 
-  if (g_datalist_id_get_data(&(feature_set->features), feature->unique_id))
+  if ((stored = g_datalist_id_get_data(&(feature_set->features), feature->unique_id)) != NULL)
     result = TRUE ;
 
   return result ;
