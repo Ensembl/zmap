@@ -25,9 +25,9 @@
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
  * HISTORY:
- * Last edited: Dec  5 14:27 2005 (rds)
+ * Last edited: Feb  8 12:33 2006 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.12 2005-12-06 12:12:58 rds Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.13 2006-02-17 13:36:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -38,7 +38,7 @@
 
 
 /* Some defines for parsing stuff....may need v2 and v3 versions of these. */
-enum {GFF_MANDATORY_FIELDS = 8, GFF_MAX_FIELD_CHARS = 50, GFF_MAX_FREETEXT_CHARS = 1000} ;
+enum {GFF_MANDATORY_FIELDS = 8, GFF_MAX_FIELD_CHARS = 50, GFF_MAX_FREETEXT_CHARS = 5000} ;
 
 
 
