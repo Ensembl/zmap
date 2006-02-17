@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  6 16:14 2006 (edgrif)
+ * Last edited: Feb  2 15:05 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.13 2006-01-06 16:15:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.14 2006-02-17 13:49:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -491,7 +491,6 @@ void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style,
 			       double score,
 			       double *curr_x1_inout, double *curr_x2_out)
 {
-  double width ;
   double dx = 0.0 ;
   double numerator, denominator ;
 
@@ -621,7 +620,6 @@ static void bumpColCB(gpointer data, gpointer user_data)
   gpointer y1_ptr = 0 ;
   gpointer key = NULL, value = NULL ;
   double offset = 0.0, dx = 0.0 ;
-  BumpColRange range ;
 
 
   if(!(zmapWindowItemIsShown(item)))
