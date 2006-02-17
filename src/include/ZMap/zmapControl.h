@@ -25,9 +25,9 @@
  * Description: Interface for creating, controlling and destroying ZMaps.
  *              
  * HISTORY:
- * Last edited: May 31 14:01 2005 (rds)
+ * Last edited: Feb 14 16:56 2006 (edgrif)
  * Created: Mon Nov 17 08:04:32 2003 (edgrif)
- * CVS info:   $Id: zmapControl.h,v 1.12 2005-05-31 13:02:23 rds Exp $
+ * CVS info:   $Id: zmapControl.h,v 1.13 2006-02-17 14:07:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_H
@@ -54,9 +54,10 @@ typedef void (*ZMapCallbackFunc)(ZMap zmap, void *app_data) ;
  * to a ZMap. */
 typedef struct _ZMapCallbacksStruct
 {
-  ZMapCallbackFunc destroy ;
+  ZMapCallbackFunc destroy ;				    /* Reports that this zmap instance has
+							       been destroyed. */
+  ZMapCallbackFunc exit ;				    /* Requests application termination. */
 } ZMapCallbacksStruct, *ZMapCallbacks ;
-
 
 
 
