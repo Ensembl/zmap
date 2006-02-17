@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jan 24 10:47 2006 (edgrif)
+ * Last edited: Feb 17 14:03 2006 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.47 2006-01-24 14:22:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.48 2006-02-17 14:04:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -43,7 +43,6 @@
 /* SHOULD CANVAS BE HERE...MAYBE, MAYBE NOT...... */
 #include <libfoocanvas/libfoocanvas.h>
 
-#include <ZMap/zmapSys.h>		       /* For callback funcs... */
 #include <ZMap/zmapFeature.h>
 
 
@@ -76,8 +75,6 @@ typedef struct
   /* Top/bottom coords for section of sequence that can be scrolled currently in window. */
   double scrollable_top ;
   double scrollable_bot ;
-
-  ZMapStrand strand ;					    /* Context orientation. */
 } ZMapWindowVisibilityChangeStruct, *ZMapWindowVisibilityChange ;
 
 
@@ -153,9 +150,13 @@ ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
 double zMapWindowGetZoomFactor(ZMapWindow window);
 double zMapWindowGetZoomMax(ZMapWindow window) ;
 double zMapWindowGetZoomMagnification(ZMapWindow window);
+gboolean zMapWindowIsLocked(ZMapWindow window) ;
+
 /* Remove this to use Ed's version */
 PangoFont *zMapWindowGetFixedWidthFont(ZMapWindow window);
 PangoFontDescription *zMapWindowGetFixedWidthFontDescription(ZMapWindow window);
+
+
 
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
 
