@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Jan 23 13:11 2006 (edgrif)
+ * Last edited: Feb 14 15:31 2006 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.21 2006-01-23 14:13:25 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.22 2006-02-17 14:07:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -77,13 +77,26 @@ typedef struct _ZMapViewCallbacksStruct
 /* DOES THIS STATE NEED TO BE EXPOSED LIKE THIS...REVISIT.... */
 /* The overall state of the zmapView, we need this because both the zmap window and the its threads
  * will die asynchronously so we need to block further operations while they are in this state. */
+
+
+/* AGH muckiness here....if last window is deleted, what state are we in ??? */
+
 typedef enum {
   ZMAPVIEW_INIT,					    /* No window(s) and no threads. */
-  ZMAPVIEW_NOT_CONNECTED,				    /* Window(s) with no threads. */
-  ZMAPVIEW_RUNNING,					    /* Window(S) with threads in normal state. */
-  ZMAPVIEW_RESETTING,					    /* Window(S) that is closing its threads
-							       and returning to INIT state. */
-  ZMAPVIEW_DYING					    /* ZMap is dying for some reason,
+  ZMAPVIEW_NOT_CONNECTED,				    /* Window(s), but no threads. */
+
+  /* AGH, I think I don't like this....can happen if all view windows get closed.... */
+  ZMAPVIEW_NO_WINDOW,					    /* Threads but no windows. */
+
+  ZMAPVIEW_CONNECTING,					    /* Connecting threads. */
+  ZMAPVIEW_CONNECTED,					    /* Threads but no data. */
+
+  ZMAPVIEW_LOADING,					    /* Loading data. */
+  ZMAPVIEW_LOADED,					    /* Full view. */
+
+  ZMAPVIEW_RESETTING,					    /* Returning to ZMAPVIEW_NOT_CONNECTED. */
+
+  ZMAPVIEW_DYING					    /* View is dying for some reason,
 							       cannot do anything in this state. */
 } ZMapViewState ;
 
@@ -123,11 +136,12 @@ ZMapViewWindow zMapViewMakeWindow(ZMapView zmap_view, GtkWidget *parent_widget) 
 ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
 void zMapViewRedraw(ZMapViewWindow view_window) ;
-void zMapViewRemoveWindow(ZMapViewWindow view_window) ;
+void zMapViewRemoveWindow(ZMapViewWindow view_window, gboolean *no_windows_left) ;
 gboolean zMapViewConnect(ZMapView zmap_view) ;
 gboolean zMapViewLoad (ZMapView zmap_view) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
+ZMapStrand zMapViewGetRevCompStatus(ZMapView zmap_view) ;
 void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom) ;
 char *zMapViewGetSequence(ZMapView zmap_view) ;
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
