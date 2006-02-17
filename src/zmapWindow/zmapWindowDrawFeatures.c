@@ -27,18 +27,13 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 24 10:39 2006 (edgrif)
+ * Last edited: Feb 17 13:50 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.113 2006-01-24 14:23:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.114 2006-02-17 13:50:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <math.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
@@ -207,11 +202,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
   zMapAssert(window && full_context && diff_context) ;
-
-
-  /* First time features have been displayed so must be "FORWARD". */
-  if (window->context_strand == ZMAPSTRAND_NONE)
-    window->context_strand = ZMAPSTRAND_FORWARD ;
 
 
   /* See if there is an existing scroll_region that we should keep...test is a bit hokey
@@ -874,7 +864,6 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
       column_group = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(canvas_data->curr_reverse_col)) ;
     }
 
-
   zmapWindowFeatureDraw(window, column_group, feature) ;
 
   return ;
@@ -1146,7 +1135,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 					     feature->parent->parent->unique_id,
 					     feature->parent->unique_id,
 					     feature->unique_id,
-					     zmapFeatureLookUpEnum(strand, STRAND_ENUM),
+					     zMapFeatureStrand2Str(strand),
 					     g_quark_from_string("*")) ;
 	
         zmapWindowListWindowCreate(menu_data->window, list, 
