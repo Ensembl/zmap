@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Jan 12 14:18 2006 (edgrif)
+ * Last edited: Feb  3 09:15 2006 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.5 2006-01-13 18:47:54 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.6 2006-02-17 13:45:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -70,7 +70,7 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 				  PangoFont **font_out, PangoFontDescription **desc_out) ;
 void zMapGUIGetFontWidth(PangoFont *font, int *width_out) ;
 void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, double *x, double *y) ;
-
+char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
 void zMapGUIShowMsgOnTop(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
 void zMapGUIShowText(char *title, char *text, gboolean edittable) ;
