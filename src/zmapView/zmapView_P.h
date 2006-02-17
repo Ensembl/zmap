@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jun 24 08:27 2005 (edgrif)
+ * Last edited: Feb 14 16:30 2006 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.17 2005-06-24 13:19:01 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.18 2006-02-17 14:05:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -85,10 +85,13 @@ typedef struct _ZMapViewStruct
   void *app_data ;					    /* Passed back to caller from view
 							       callbacks. */
 
+
+  /* NOTE TO EG....DO WE NEED THESE HERE ANY MORE ???? */
   /* This specifies the "context" of the view, i.e. which section of virtual sequence we are
    * interested in. */
   gchar *sequence ;
   int start, end ;
+
 
   guint idle_handle ;
 
@@ -99,8 +102,16 @@ typedef struct _ZMapViewStruct
 							       sequence from. */
   ZMapViewConnection writeback_server ;			    /* Which connection to send edits to. */
 
+
+  /* I'm trying this here...we need to be able to find out if the user has done a revcomp...
+   * NOTE that the only two sensible values are FORWARD for the initial view and REVERSE
+   * if revcomp'd...this is purely a display record to show if the user did a reverse
+   * complement, it is NOT some overall strand for the feature context.... */
+  ZMapStrand revcomp_strand ;
+
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;
+
 
   /* In DAS2 terminology methods are types...easy to change if we don't like the name.
    * These are the stylesheets in effect for the feature sets, this set is a merge of all the
@@ -113,6 +124,6 @@ typedef struct _ZMapViewStruct
 
 void zmapViewBusy(ZMapView zmap_view, gboolean busy) ;
 gboolean zmapAnyConnBusy(GList *connection_list) ;
-
+char *zmapViewGetStatusAsStr(ZMapViewState state) ;
 
 #endif /* !ZMAP_VIEW_P_H */
