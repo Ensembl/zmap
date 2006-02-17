@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jan 24 10:15 2006 (rds)
+ * Last edited: Jan 24 13:54 2006 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.44 2006-01-24 10:18:42 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.45 2006-02-17 17:59:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -888,7 +888,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 
   if (parser->parse_only || !feature)
     {
-      new_feature = zmapFeatureCreateEmpty() ;
+      new_feature = zMapFeatureCreateEmpty() ;
     }
 
 

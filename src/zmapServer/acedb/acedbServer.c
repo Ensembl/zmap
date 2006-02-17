@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jan 19 10:35 2006 (edgrif)
+ * Last edited: Jan 30 14:57 2006 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.47 2006-01-20 14:38:27 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.48 2006-02-17 17:59:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -801,7 +801,7 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
               /* Create the feature set */
               feature_set = zMapFeatureSetCreate("dna", NULL);
               /* Create the feature and add sequence to it. */
-              feature      = zmapFeatureCreateEmpty();
+              feature      = zMapFeatureCreateEmpty();
               seq.type     = ZMAPSEQUENCE_DNA ;
               seq.length   = feature_context->length ;
               seq.sequence = reply ;
