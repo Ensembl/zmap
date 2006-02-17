@@ -25,26 +25,61 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: May 27 10:40 2005 (rds)
+ * Last edited: Feb 17 10:35 2006 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.15 2005-06-01 13:14:10 rds Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.16 2006-02-17 10:45:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmapUtils.h>
 #include <zmapManager_P.h>
 
-static void zmapDestroyedCB(ZMap zmap, void *cb_data) ;
+
+
+static void destroyedCB(ZMap zmap, void *cb_data) ;
+static void exitCB(ZMap zmap, void *cb_data) ;
 static void removeZmapEntry(ZMapManager zmaps, ZMap zmap) ;
 
 
-/* Do we want a full callback struct for callbacks here ? Might be overkill.... */
-
-/* ZMap callbacks passed to zMapInit() */
-ZMapCallbacksStruct zmap_cbs_G = {zmapDestroyedCB} ;
+/* Holds callbacks the level above us has asked to be called back on. */
+static ZMapManagerCallbacks manager_cbs_G = NULL ;
 
 
 
-ZMapManager zMapManagerCreate(ZMapAppCallbacks zmap_gui_funcs, void *gui_data)
+/* Holds callbacks we set in the level below us (ZMap window) to be called back on. */
+ZMapCallbacksStruct zmap_cbs_G = {destroyedCB, exitCB} ;
+
+
+
+/* This routine must be called just once before any other zmaps routine, it is a fatal error
+ * if the caller calls this routine more than once. The caller must supply all of the callback
+ * routines.
+ * 
+ * Note that since this routine is called once per application we do not bother freeing it
+ * via some kind of zmaps terminate routine. */
+void zMapManagerInit(ZMapManagerCallbacks callbacks)
+{
+  zMapAssert(!manager_cbs_G) ;
+
+  zMapAssert(callbacks && callbacks->zmap_deleted_func && callbacks->zmap_set_info_func
+	     && callbacks->exit_func) ;
+
+  manager_cbs_G = g_new0(ZMapManagerCallbacksStruct, 1) ;
+
+  manager_cbs_G->zmap_deleted_func  = callbacks->zmap_deleted_func ; /* called when zmaps close */
+  manager_cbs_G->zmap_set_info_func = callbacks->zmap_set_info_func ;
+							    /* called when zmap does something that gui needs to know about (remote calls) */
+  manager_cbs_G->exit_func = callbacks->exit_func ;		    /* called when zmap app must exit. */
+
+
+  /* Init control callbacks.... */
+  zMapInit(&zmap_cbs_G) ;
+
+  return ;
+}
+
+
+ZMapManager zMapManagerCreate(void *gui_data)
 {
   ZMapManager manager ;
 
@@ -52,11 +87,7 @@ ZMapManager zMapManagerCreate(ZMapAppCallbacks zmap_gui_funcs, void *gui_data)
 
   manager->zmap_list = NULL ;
 
-  manager->gui_zmap_deleted_func  = zmap_gui_funcs->zmap_deleted_func ; /* called when zmaps close */
-  manager->gui_zmap_set_info_func = zmap_gui_funcs->zmap_set_info_func ; /* called when zmap does something that gui needs to know about (remote calls) */
   manager->gui_data = gui_data ;
-
-  zMapInit(&zmap_cbs_G) ;
 
   return manager ;
 }
@@ -82,8 +113,9 @@ gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, Z
 	      && ((view = zMapAddView(zmap, sequence, start, end)))
 	      && ((zMapConnectView(zmap, view)))))
 	result = TRUE ;
+
       /* Either way we should have a zmap now, fill in the info */
-      (*(zmaps->gui_zmap_set_info_func))(zmaps->gui_data, zmap) ;      
+      (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;      
     }
 
   return result ;
@@ -146,10 +178,14 @@ gboolean zMapManagerDestroy(ZMapManager zmaps)
     {
       GList *next_zmap ;
 
-      while ((next_zmap = g_list_next(zmaps->zmap_list)))
+      /* The "while" seems counterintuitive but the kill removes zmaps from the list
+       * so we keep fetching the new head of the list. */
+      next_zmap = g_list_first(zmaps->zmap_list) ;
+      do
 	{
-	  removeZmapEntry(zmaps, (ZMap)(next_zmap->data)) ;
+	  zMapManagerKill(zmaps, (ZMap)(next_zmap->data)) ;
 	}
+      while ((next_zmap = g_list_first(zmaps->zmap_list))) ;
     }
 
   g_free(zmaps) ;
@@ -160,9 +196,14 @@ gboolean zMapManagerDestroy(ZMapManager zmaps)
 
 
 
+/*
+ *  ------------------- Internal functions -------------------
+ */
+
+
 /* Gets called when ZMap quits from "under our feet" as a result of user interaction,
  * we then make sure we clean up. */
-static void zmapDestroyedCB(ZMap zmap, void *cb_data)
+static void destroyedCB(ZMap zmap, void *cb_data)
 {
   ZMapManager zmaps = (ZMapManager)cb_data ;
 
@@ -173,16 +214,24 @@ static void zmapDestroyedCB(ZMap zmap, void *cb_data)
 
 
 
-/*
- *  ------------------- Internal functions -------------------
- */
+/* Gets called when ZMap requests that the application "quits" as a result of user interaction,
+ * we then make sure we clean up. */
+static void exitCB(ZMap zmap, void *cb_data)
+{
+  ZMapManager zmaps = (ZMapManager)cb_data ;
+
+  (*(manager_cbs_G->exit_func))(zmaps->gui_data, zmap) ;
+
+  return ;
+}
+
 
 
 static void removeZmapEntry(ZMapManager zmaps, ZMap zmap)
 {
   zmaps->zmap_list = g_list_remove(zmaps->zmap_list, zmap) ;
 
-  (*(zmaps->gui_zmap_deleted_func))(zmaps->gui_data, zmap) ;
+  (*(manager_cbs_G->zmap_deleted_func))(zmaps->gui_data, zmap) ;
 
   return ;
 }

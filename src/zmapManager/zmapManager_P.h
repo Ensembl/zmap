@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 27 10:08 2005 (rds)
+ * Last edited: Feb 17 09:48 2006 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapManager_P.h,v 1.5 2005-06-01 13:14:10 rds Exp $
+ * CVS info:   $Id: zmapManager_P.h,v 1.6 2006-02-17 10:45:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_MANAGER_P_H
@@ -43,10 +43,7 @@ typedef struct _ZMapManagerStruct
 {
   GList *zmap_list ;
 
-  zmapAppCallbackFunc gui_zmap_deleted_func ;
-  zmapAppCallbackFunc gui_zmap_set_info_func ;
   void *gui_data ;
-
 } ZMapManagerStruct ;
 
 
