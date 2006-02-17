@@ -12,7 +12,6 @@ ZMap/zmapNavigator.h \
 ZMap/zmapReadLine.h \
 ZMap/zmapServer.h \
 ZMap/zmapServerProtocol.h \
-ZMap/zmapSys.h \
 ZMap/zmapThreads.h \
 ZMap/zmapUtilsCheck.h \
 ZMap/zmapUtilsDebug.h \
