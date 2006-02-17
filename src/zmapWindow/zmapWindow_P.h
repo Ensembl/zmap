@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 24 10:31 2006 (edgrif)
+ * Last edited: Feb 17 14:00 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.93 2006-01-24 14:23:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.94 2006-02-17 14:02:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -141,8 +141,9 @@ typedef enum {
  * and children for features such as introns/exons. */
 typedef enum
   {
+    ITEM_FEATURE_INVALID,
     ITEM_FEATURE_SIMPLE,				    /* Item is the whole feature. */
-    ITEM_FEATURE_PARENT,				    /* Item is parent group of whole feature. */
+    ITEM_FEATURE_PARENT,				    /* Item is parent group of compound feature. */
     ITEM_FEATURE_CHILD,					    /* Item is child/subpart of feature. */
     ITEM_FEATURE_BOUNDING_BOX				    /* Item is invisible bounding box of
 							       feature or subpart of feature.  */
@@ -180,12 +181,19 @@ typedef struct
  * canvas item. */
 typedef struct
 {
-  int start, end ;					    /* start/end of feature in sequence coords. */
+
+  /* I'm not completely sure this is a good idea but somehow we do need to be able to find out
+   * whether something is in intron/exon or whatever.... */
+  ZMapFeatureSubpartType subpart ;			    /* Exon, Intron etc. */
+
+  int start, end ;					    /* start/end of subpart in sequence coords. */
+
   FooCanvasItem *twin_item ;				    /* Some features need to be drawn with
 							       two canvas items, an example is
 							       introns which need an invisible
 							       bounding box for sensible user
 							       interaction. */
+
 } ZMapWindowItemFeatureStruct, *ZMapWindowItemFeature ;
 
 
@@ -272,9 +280,6 @@ typedef struct _ZMapWindowStruct
   GdkAtom        zmap_atom ;
   void          *app_data ;
   gulong         exposeHandlerCB ;
-
-  ZMapStrand context_strand ;				    /* We need to know if the context has
-							       been reverse complemented. */
 
   FooCanvasGroup *feature_root_group ;			    /* the root of our features. */
 
