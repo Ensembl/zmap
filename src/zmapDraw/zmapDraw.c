@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Dec 12 21:38 2005 (rds)
+ * Last edited: Feb 17 13:38 2006 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.41 2005-12-13 10:25:04 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.42 2006-02-17 13:39:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -240,7 +240,7 @@ FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon,
                                "fill_color_gdk", fill,
                                "width_units", dimension,
                                "join_style", GDK_JOIN_BEVEL,
-                               "cap_style", GDK_CAP_ROUND,
+                               "cap_style", GDK_CAP_BUTT,
                                NULL);
   else if(annItemType == foo_canvas_polygon_get_type())
     item = foo_canvas_item_new(FOO_CANVAS_GROUP(polygon->parent),
