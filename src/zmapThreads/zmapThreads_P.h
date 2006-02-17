@@ -25,9 +25,9 @@
  * Description: Internals for the thread control code.
  *              
  * HISTORY:
- * Last edited: Apr 15 17:43 2005 (edgrif)
+ * Last edited: Feb 17 13:36 2006 (edgrif)
  * Created: Thu Jan 27 11:18:44 2005 (edgrif)
- * CVS info:   $Id: zmapThreads_P.h,v 1.4 2005-04-15 18:08:52 edgrif Exp $
+ * CVS info:   $Id: zmapThreads_P.h,v 1.5 2006-02-17 13:36:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_PRIV_H
@@ -36,7 +36,7 @@
 #include <config.h>
 #include <pthread.h>
 #include <glib.h>
-#include <ZMap/zmapSys.h>
+
 #include <ZMap/zmapThreads.h>
 
 
