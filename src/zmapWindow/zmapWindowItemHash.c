@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Jan 13 12:07 2006 (edgrif)
+ * Last edited: Feb 17 13:58 2006 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.15 2006-01-13 18:53:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.16 2006-02-17 14:00:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -583,13 +583,7 @@ FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
  *  */
 GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark set_id,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-				     ZMapStrand strand,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 				     char *strand_spec,
-
 				     GQuark feature_id)
 {
   GList *result = NULL ;
@@ -1055,8 +1049,12 @@ gboolean isRegExp(GQuark id)
 gboolean filterOnRegExp(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data)
 {
   gboolean result = FALSE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapFeature feature ;
-  char *pattern, *string, *key_string ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  char *pattern, *key_string ;
   GQuark key_id = GPOINTER_TO_INT(user_data) ;
 
   key_string = (char *)g_quark_to_string(key_id) ;
