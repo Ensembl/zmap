@@ -25,16 +25,16 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jan 24 09:23 2006 (edgrif)
+ * Last edited: Feb 17 14:09 2006 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.38 2006-01-24 14:23:55 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.39 2006-02-17 14:10:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
 #define ZMAP_CONTROL_P_H
 
 #include <gtk/gtk.h>
-#include <ZMap/zmapSys.h>
+
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapNavigator.h>
 #include <ZMap/zmapControl.h>
@@ -42,12 +42,15 @@
 
 
 /* The overall state of the zmap, we need this because both the zmap window and the its threads
- * will die asynchronously so we need to block further operations while they are in this state.
- * Note that after a window is "reset" it goes back to the init state. */
+ * will die asynchronously so we need to block further operations while they are in this state. */
 typedef enum {
-  ZMAP_INIT,						    /* Created, display but no views. */
-  ZMAP_VIEWS,						    /* Display with views in normal state. */
+  ZMAP_INIT,						    /* ZMap with no views. */
+  ZMAP_VIEWS,						    /* ZMap with at least one view. */
+
+  /* I think this must be redundant now....its the view that is reset, not the control zmap... */
   ZMAP_RESETTING,					    /* Display being reset. */
+
+
   ZMAP_DYING						    /* ZMap is dying for some reason,
 							       cannot do anything in this state. */
 } ZmapState ;
@@ -59,6 +62,8 @@ typedef enum {
  * this top level window there will be one or more zmap "Views". */
 typedef struct _ZMapStruct
 {
+  ZMapCallbacks zmap_cbs_G ;				    /* Callbacks to our creator. */
+
   gchar           *zmap_id ;				    /* unique for each zmap.... */
 
   ZmapState        state ;
@@ -73,15 +78,24 @@ typedef struct _ZMapStruct
 
   GtkWidget       *info_panel;                              /* show details of object clicked on */
 
-  GtkWidget       *status_panel;			    /* show status of focus context/window. */
+
+  /* Show status of focus view as:  <strand> <seq_coords> <zmap/view status> */
+  GtkWidget       *status_revcomp ;
+  GtkWidget       *status_coords ;
+  GtkWidget       *status_entry ;
+
 
   GtkWidget       *navview_frame ;			    /* Holds all the navigator/view stuff. */
 
   GtkWidget       *hpane ;				    /* Holds the navigator and the view(s). */
 
 
-  /* buttons etc. */
-  GtkWidget *zoomin_but, *zoomout_but, *close_but, *revcomp_but, *unlock_but ;
+  /* Main control buttons. */
+  GtkWidget *stop_button, *load_button, *new_button,
+    *hsplit_button, *vsplit_button,
+    *zoomin_but, *zoomout_but,
+    *unlock_but, *revcomp_but,
+    *close_but, *quit_button ;
 
   /* The navigator. */
   ZMapNavigator    navigator ;
@@ -120,6 +134,8 @@ void       zmapControlWindowDestroy    (ZMap zmap) ;
 void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation orientation) ;
 void zmapControlRemoveWindow(ZMap zmap) ;
 
+ZMapView zmapControlAddView(ZMap zmap, char *sequence, int start, int end) ;
+
 /* these may not need to be exposed.... */
 GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
 				GtkOrientation orientation, char *view_title) ;
@@ -133,7 +149,6 @@ void zmapControlUnSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow) ;
 void zmapControlTopLevelKillCB(ZMap zmap) ;
 void zmapControlLoadCB        (ZMap zmap) ;
 void zmapControlResetCB       (ZMap zmap) ;
-void zmapControlNewViewCB(ZMap zmap, char *new_sequence) ;
 
 void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap);
 void zmapControlWriteWindowIdFile(Window id, char *window_name);
@@ -141,5 +156,9 @@ void zmapControlWriteWindowIdFile(Window id, char *window_name);
 void zmapControlInfoOverwrite(void *data, int code, char *format, ...);
 void zmapControlInfoSet(void *data, int code, char *format, ...);
 
+
+void zmapControlWindowSetStatus(ZMap zmap) ;
+void zmapControlWindowSetGUIState(ZMap zmap) ;
+void zmapControlWindowSetButtonState(ZMap zmap) ;
 
 #endif /* !ZMAP_CONTROL_P_H */
