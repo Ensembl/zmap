@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 24 10:33 2006 (rds)
+ * Last edited: Feb  3 18:15 2006 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.20 2006-01-24 10:38:15 rds Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.21 2006-02-17 14:06:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -145,6 +145,16 @@ typedef struct _zmapWindowEditorDataStruct
 
 
 
+typedef struct
+{
+  GtkWidget *scrolled_window ;
+  GtkWidget *tree_view ;
+  int init_width, init_height ;
+  int curr_width, curr_height ;
+} TreeViewSizeCBDataStruct, *TreeViewSizeCBData ;
+
+
+
 /* function prototypes ************************************/
 //static gboolean arrayClickedCB(GObject *gobject,
 //			GParamSpec *arg1,
@@ -183,7 +193,11 @@ static gboolean arrayEditedCB(GtkCellRendererText *renderer,
 			  char *path, char *new_text, gpointer user_data);
 
 /* My new methods*/
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static char *myFeatureLookupEnum(int id, int enumType);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static gboolean selectionFunc(GtkTreeSelection *selection, 
                               GtkTreeModel     *model,
                               GtkTreePath      *path, 
@@ -193,6 +207,17 @@ static void cellEditedCB(GtkCellRendererText *renderer,
                          char *path, char *new_text, 
                          gpointer user_data);
 static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor);
+
+
+static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
+static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
+
+static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
+static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
+
+
+
+
 
 /* function code *******************************************/
 /* This is the create function!
@@ -205,8 +230,10 @@ static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor);
  * creator as well, it'll be set before draw. */
 ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item)
 {
-  ZMapWindowEditor editor = NULL;
-  int type                = 0;
+  ZMapWindowEditor editor = NULL ;
+  int type = 0 ;
+
+
   editor = g_new0(zmapWindowEditorDataStruct, 1);
 
   editor->origFeature  = g_object_get_data(G_OBJECT(item), "item_feature_data");
@@ -258,6 +285,8 @@ ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *it
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static char *myFeatureLookupEnum(int id, int enumType)
 {
   /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
@@ -294,6 +323,8 @@ static char *myFeatureLookupEnum(int id, int enumType)
   
   return enum_str ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* I see what's going on here, but it doesn't feel dynamic enough to
@@ -309,8 +340,8 @@ static char *myFeatureLookupEnum(int id, int enumType)
 static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapFeature feature)
 {
   int i = 0;
-  /*                          fieldtype          label                fieldPtr     value       validateCB
-   *                                   datatype                    pair      widget     editable   */
+  /*                            fieldtype         label               fieldPtr      value         validateCB
+   *                                     datatype                  pair      widget       editable   */
   mainTableStruct ftypeInit   = { ENTRY , FTYPE , "Type"           , 0, NULL, NULL, {NULL}, FALSE, NULL },
                   fx1Init     = { ENTRY , INT   , "Start"          , 0, NULL, NULL, {NULL}, TRUE , validateEntryCB  },
                   fx2Init     = { ENTRY , INT   , "End"            ,-1, NULL, NULL, {NULL}, TRUE , validateEntryCB  },
@@ -499,8 +530,9 @@ static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_t
 /* Hide this away to make the exposed function smaller... */
 static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeModel)
 {
-  GtkWidget *buttonHBox, *subFrame, *mainVBox;
-  GtkWidget *treeView, *mainHBox;
+  GtkWidget *vbox ;
+  GtkWidget *buttonHBox, *subFrame ;
+  GtkWidget *scrolled_window, *treeView ;
 #ifdef RDS_DONT_INCLUDE
   GtkTreeStore *treeStore;
   GtkTreeViewColumn *column;
@@ -509,77 +541,77 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
 #endif
   char *title;
   zmapWindowFeatureListCallbacksStruct windowCallbacks = { NULL, NULL, NULL };
+  TreeViewSizeCBData size_data ;
 
-  /* Set the Title of the Window */
-  title = g_strdup_printf("%s - Feature Editor",
-			  g_quark_to_string(editor_data->origFeature->original_id));
-  editor_data->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-  gtk_window_set_title (GTK_WINDOW (editor_data->window), title);
-  g_free(title);
-  /* Finished setting title */
 
-  /* Set a few properties ... */
-  g_signal_connect (G_OBJECT (editor_data->window), "destroy",
-		    G_CALLBACK (closeWindowCB), editor_data);
-  gtk_container_set_border_width (GTK_CONTAINER (editor_data->window), 10);
+  size_data = g_new0(TreeViewSizeCBDataStruct, 1) ;
 
-  mainHBox = gtk_hbox_new(FALSE, 0);
-  gtk_box_set_spacing(GTK_BOX(mainHBox), 5);
-  gtk_container_add(GTK_CONTAINER(editor_data->window), mainHBox);
+  /* Create the edit window. */
+  editor_data->window = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+  title = zMapGUIMakeTitleString("Feature Editor",
+				 (char *)g_quark_to_string(editor_data->origFeature->original_id)) ;
+  gtk_window_set_title(GTK_WINDOW(editor_data->window), title) ;
+  g_free(title) ;
+  gtk_container_set_border_width(GTK_CONTAINER (editor_data->window), 10);
+  g_signal_connect(G_OBJECT (editor_data->window), "destroy",
+		   G_CALLBACK (closeWindowCB), editor_data);
 
-  /* Create a Vertical Box and add to Window */
-  mainVBox = gtk_vbox_new(FALSE, 0);
-  gtk_container_add(GTK_CONTAINER(mainHBox), mainVBox);
 
-  /* This is where we'll put stuff */
-  subFrame = gtk_frame_new(g_quark_to_string(editor_data->origFeature->original_id));
-  gtk_container_add(GTK_CONTAINER(mainVBox), subFrame);
-  //#define GRAPHICAL_DISPLAY
-#ifdef GRAPHICAL_DISPLAY
-  {
-    GdkColor bgcolor;
-    GtkWidget *scrolledWindow, *canvas;
 
-    subFrame = gtk_frame_new("Editor graphical display...");
-    gtk_container_add(GTK_CONTAINER(mainHBox), subFrame);
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* THIS FUNCTION IS DEPRECATED BUT WITHOUT WE CAN'T GET GTK TO BEHAVE AS WE WANT...SIGH... */
+  gtk_window_set_policy(GTK_WINDOW(editor_data->window), TRUE, TRUE, TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-    scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow),
-				 GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
-    gtk_container_add(GTK_CONTAINER(subFrame), GTK_WIDGET(scrolledWindow));
 
-    canvas = foo_canvas_new();
-    foo_canvas_set_pixels_per_unit_xy(FOO_CANVAS(canvas), 1.0, 1.0);
-  
-    gdk_color_parse("white", &bgcolor);
-    gtk_widget_modify_bg(GTK_WIDGET(canvas), GTK_STATE_NORMAL, &(bgcolor));
 
-    foo_canvas_item_new(FOO_CANVAS_GROUP(foo_canvas_root(FOO_CANVAS(canvas))),
-                        foo_canvas_rect_get_type(),
-                        "x1", 10.0, "x2", 20.0,
-                        "y1", 10.0, "y2", 20.0,
-                        NULL);
+  vbox = gtk_vbox_new(FALSE, 0) ;
+  gtk_box_set_spacing(GTK_BOX(vbox), 5) ;
+  gtk_container_add(GTK_CONTAINER(editor_data->window), vbox) ;
 
-    gtk_container_add(GTK_CONTAINER(scrolledWindow), canvas);
-  }
-#endif
+  /* Make the feature subparts window. */
+  /* Treeview needs to be in scrolled window otherwise the window can get too big.... */
+  subFrame = gtk_frame_new(g_quark_to_string(editor_data->origFeature->original_id)) ;
+  gtk_box_pack_start(GTK_BOX(vbox), subFrame, TRUE, TRUE, 0) ;
+
+
+  size_data->scrolled_window = scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
+
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+				 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
+  gtk_container_add(GTK_CONTAINER(subFrame), scrolled_window) ;
+  g_signal_connect(GTK_OBJECT(scrolled_window), "size-allocate",
+		   GTK_SIGNAL_FUNC(ScrsizeAllocateCB), size_data) ;
+  g_signal_connect(GTK_OBJECT(scrolled_window), "size-request",
+		   GTK_SIGNAL_FUNC(ScrsizeRequestCB), size_data) ;
+
 
   windowCallbacks.selectionFuncCB = selectionFunc;
-  editor_data->view = 
-    treeView = zmapWindowFeatureListCreateView(treeModel, 
-                                               getColRenderer(editor_data),
-                                               &windowCallbacks, 
-                                               editor_data);
+  size_data->tree_view = editor_data->view
+    = treeView = zmapWindowFeatureListCreateView(treeModel, 
+						 getColRenderer(editor_data),
+						 &windowCallbacks, 
+						 editor_data);
+  gtk_container_add(GTK_CONTAINER(scrolled_window), treeView) ;
+  g_signal_connect(GTK_OBJECT(treeView), "size-allocate",
+		   GTK_SIGNAL_FUNC(sizeAllocateCB), size_data) ;
+  g_signal_connect(GTK_OBJECT(treeView), "size-request",
+		   GTK_SIGNAL_FUNC(sizeRequestCB), size_data) ;
 
-  subFrame = gtk_frame_new("Details...");
-  gtk_container_add(GTK_CONTAINER(mainVBox), subFrame);
-  gtk_container_add(GTK_CONTAINER(subFrame), GTK_WIDGET(treeView));
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  gtk_container_add(GTK_CONTAINER(subFrame), treeView) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   /* Sort out the buttons frame */
-  subFrame   = gtk_frame_new("buttons");
+  subFrame = gtk_frame_new(NULL);
+  gtk_box_pack_start(GTK_BOX(vbox), subFrame, FALSE, FALSE, 0) ;
+
   buttonHBox = gtk_hbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(subFrame), buttonHBox);
-  gtk_box_pack_start(GTK_BOX(mainVBox), subFrame, FALSE, FALSE, 0);
+
 
   if(1)
     {
@@ -606,6 +638,7 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
       /* Add them to the Hbox */
       gtk_box_pack_start(GTK_BOX(buttonHBox), buttonBox, TRUE, TRUE, 0) ;
 
+
       /* These on the right */
       buttonBox = gtk_hbutton_box_new();
       gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
@@ -626,6 +659,39 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
       /* Add them to the Hbox */
       gtk_box_pack_start(GTK_BOX(buttonHBox), buttonBox, TRUE, TRUE, 0) ;      
     }
+
+
+  /* There was this code to do a graphical display of the feature but we don't use it
+   * currently.... */
+  //#define GRAPHICAL_DISPLAY
+#ifdef GRAPHICAL_DISPLAY
+  {
+    GdkColor bgcolor;
+    GtkWidget *scrolledWindow, *canvas;
+
+    subFrame = gtk_frame_new("Editor graphical display...");
+    gtk_container_add(GTK_CONTAINER(vbox), subFrame);
+
+    scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow),
+				 GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
+    gtk_container_add(GTK_CONTAINER(subFrame), GTK_WIDGET(scrolledWindow));
+
+    canvas = foo_canvas_new();
+    foo_canvas_set_pixels_per_unit_xy(FOO_CANVAS(canvas), 1.0, 1.0);
+  
+    gdk_color_parse("white", &bgcolor);
+    gtk_widget_modify_bg(GTK_WIDGET(canvas), GTK_STATE_NORMAL, &(bgcolor));
+
+    foo_canvas_item_new(FOO_CANVAS_GROUP(foo_canvas_root(FOO_CANVAS(canvas))),
+                        foo_canvas_rect_get_type(),
+                        "x1", 10.0, "x2", 20.0,
+                        "y1", 10.0, "y2", 20.0,
+                        NULL);
+
+    gtk_container_add(GTK_CONTAINER(scrolledWindow), canvas);
+  }
+#endif
 
 
   return;
@@ -709,7 +775,7 @@ static void addEntry(GtkWidget *vbox, mainTable table)
     {
     case FTYPE:
       gtk_entry_set_text(GTK_ENTRY(table->widget), 
-			 zmapFeatureLookUpEnum(*((int *)table->fieldPtr), TYPE_ENUM));
+			 zMapFeatureType2Str(*((int *)table->fieldPtr)));
       break;
 
     case INT: case PHASE:  
@@ -1581,5 +1647,155 @@ static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor)
 
   return renderer;
 }
+
+
+
+/* widget is the treeview */
+static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data_unused)
+{
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (GTK_WIDGET_REALIZED(widget)
+    {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      printf("TreeView: sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
+	     alloc->x, alloc->y, alloc->height, alloc->width); 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  return ;
+}
+
+/* widget is the treeview */
+static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data_unused)
+{
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (GTK_WIDGET_REALIZED(widget)
+    {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      printf("ScrWin: sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
+	     alloc->x, alloc->y, alloc->height, alloc->width); 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  return ;
+}
+
+
+
+/* widget is the treeview */
+static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data)
+{
+  enum {SCROLL_BAR_WIDTH = 20} ;			    /* Hack... */
+  GtkWidget *scrwin ;
+  TreeViewSizeCBData size_data = (TreeViewSizeCBData)user_data ;
+  int width, height ;
+
+
+  printf("TreeView: sizeRequestCB:  height: %d, width: %d\n", 
+	 requisition->height, requisition->width); 
+
+
+  if (!size_data->init_width)
+    {
+      size_data->curr_width = size_data->init_width = requisition->width + SCROLL_BAR_WIDTH ;
+      size_data->curr_height = size_data->init_height = requisition->height ;
+
+      width = size_data->curr_width ;
+      height = size_data->curr_height ;
+    }
+  else
+    {
+      width = height = -1 ;
+
+      if (requisition->width != size_data->curr_width)
+	{
+	  if (requisition->width < size_data->init_width)
+	    width = size_data->init_width ;
+	  else
+	    width = requisition->width ;
+	}
+
+      if (width != -1)
+	size_data->curr_width = width ;
+
+      if (requisition->height != size_data->curr_height)
+	{
+	  if (requisition->height < size_data->init_height)
+	    height = size_data->init_height ;
+	  else
+	    {
+	      /* If we haven't yet been realised then we clamp our height as stupid
+	       * scrolled window wants to make us too big by the height of its horizontal
+	       * scroll bar...sigh... */
+	      if (!GTK_WIDGET_REALIZED(widget))
+		height = size_data->init_height ;
+	      else
+		height = requisition->height ;
+	    }
+
+	  if (height > 800)
+	    height = 800 ;
+	}
+
+      if (height != -1)
+	size_data->curr_height = height ;
+    }
+
+  if (!(width == -1 && height == -1))
+    {
+      scrwin = gtk_widget_get_parent(widget) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      gtk_widget_set_size_request(widget, width, height) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      gtk_widget_set_size_request(scrwin, width, height) ;
+    }
+
+  return ;
+}
+
+
+/* widget is the treeview */
+static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data_unused)
+{
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (GTK_WIDGET_REALIZED(widget)
+    {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      printf("ScrWin: sizeRequestCB:  height: %d, width: %d\n", 
+	     requisition->height, requisition->width); 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  return ;
+}
+
+
 
 /********************* end of file ********************************/
