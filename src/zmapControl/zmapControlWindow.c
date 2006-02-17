@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Jan 24 14:04 2006 (edgrif)
+ * Last edited: Feb 14 16:45 2006 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.17 2006-01-24 14:23:25 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.18 2006-02-17 14:13:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,14 +36,14 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapControl_P.h>
 
-
+static GtkWidget *makeStatusPanel(ZMap zmap) ;
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 
 
 gboolean zmapControlWindowCreate(ZMap zmap)
 {
   gboolean result = TRUE ;
-  GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *info_box ;
+  GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *status_box, *info_box ;
 
   zmap->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
@@ -72,17 +72,17 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   controls_box = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(frame), controls_box) ;
 
-  button_box = zmapControlWindowMakeButtons(zmap) ;
-  gtk_box_pack_start(GTK_BOX(controls_box), button_box, FALSE, TRUE, 0);
-
   info_box = gtk_hbox_new(FALSE, 0) ;
   gtk_box_pack_start(GTK_BOX(controls_box), info_box, FALSE, TRUE, 0);
 
-  zmap->info_panel = gtk_entry_new() ;
-  gtk_box_pack_start(GTK_BOX(info_box), zmap->info_panel, TRUE, TRUE, 0) ;
+  button_box = zmapControlWindowMakeButtons(zmap) ;
+  gtk_box_pack_start(GTK_BOX(info_box), button_box, FALSE, TRUE, 0);
 
-  zmap->status_panel = gtk_label_new("") ;
-  gtk_box_pack_start(GTK_BOX(info_box), zmap->status_panel, FALSE, FALSE, 0) ;
+  status_box = makeStatusPanel(zmap) ;
+  gtk_box_pack_start(GTK_BOX(info_box), status_box, FALSE, FALSE, 0) ;
+
+  zmap->info_panel = gtk_entry_new() ;
+  gtk_box_pack_start(GTK_BOX(controls_box), zmap->info_panel, TRUE, TRUE, 0) ;
 
   zmap->navview_frame = zmapControlWindowMakeFrame(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), zmap->navview_frame, TRUE, TRUE, 0);
@@ -111,16 +111,53 @@ void zmapControlWindowDestroy(ZMap zmap)
 
 
 /* Currently only sets forward/revcomp status. */
-void zmapControlWindowSetStatus(ZMap zmap, ZMapStrand strand)
+void zmapControlWindowSetStatus(ZMap zmap)
 {
-  char *direction ;
+  char *status_text ;
 
-  if (strand == ZMAPSTRAND_FORWARD)
-    direction = "FORWARD" ;
-  else
-    /*  */direction = "REVERSE" ;
 
-  gtk_label_set_text(GTK_LABEL(zmap->status_panel), direction) ;
+  switch(zmap->state)
+    {
+    case ZMAP_DYING:
+      {
+	status_text = "Dying..." ;
+	break ;
+      }
+    case ZMAP_VIEWS:
+      {
+	ZMapView view ;
+	ZMapViewState view_state ;
+	ZMapStrand revcomp_strand ;
+	char *strand_txt ;
+	char *coord_txt = "0 10000" ;
+
+	zMapAssert(zmap->focus_viewwindow) ;
+
+	view = zMapViewGetView(zmap->focus_viewwindow) ;
+
+	revcomp_strand = zMapViewGetRevCompStatus(view) ;
+	if (revcomp_strand == ZMAPSTRAND_FORWARD)
+	  strand_txt = "+" ;
+	else
+	  strand_txt = "-" ;
+	gtk_label_set_text(GTK_LABEL(zmap->status_revcomp), strand_txt) ;
+
+	gtk_label_set_text(GTK_LABEL(zmap->status_coords), coord_txt) ;
+
+	view_state = zMapViewGetStatus(view) ;
+	status_text = zMapViewGetStatusStr(view_state) ;
+
+	break ;
+      }
+    case ZMAP_INIT:
+    default:
+      {
+	status_text = "" ;
+	break ;
+      }
+    }
+
+  gtk_entry_set_text(GTK_ENTRY(zmap->status_entry), status_text) ;
 
   return ;
 }
@@ -133,6 +170,32 @@ void zmapControlWindowSetStatus(ZMap zmap, ZMapStrand strand)
 /*
  *  ------------------- Internal functions -------------------
  */
+
+
+static GtkWidget *makeStatusPanel(ZMap zmap)
+{
+  GtkWidget *status_box, *frame ;
+
+  status_box = gtk_hbox_new(FALSE, 0) ;
+
+  frame = gtk_frame_new(NULL);
+  gtk_box_pack_start(GTK_BOX(status_box), frame, TRUE, TRUE, 0) ;
+  zmap->status_revcomp = gtk_label_new(NULL) ;
+  gtk_container_add(GTK_CONTAINER(frame), zmap->status_revcomp) ;
+
+  frame = gtk_frame_new(NULL);
+  gtk_box_pack_start(GTK_BOX(status_box), frame, TRUE, TRUE, 0) ;
+  zmap->status_coords = gtk_label_new(NULL) ;
+  gtk_container_add(GTK_CONTAINER(frame), zmap->status_coords) ;
+
+  frame = gtk_frame_new(NULL);
+  gtk_box_pack_start(GTK_BOX(status_box), frame, TRUE, TRUE, 0) ;
+  zmap->status_entry = gtk_entry_new() ;
+  gtk_container_add(GTK_CONTAINER(frame), zmap->status_entry) ;
+
+  return status_box ;
+}
+
 
 
 static void quitCB(GtkWidget *widget, gpointer cb_data)
@@ -148,12 +211,4 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 
   return ;
 }
-
-
-
-
-
-	      
- 
-
 
