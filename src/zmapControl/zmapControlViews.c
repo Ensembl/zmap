@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Apr 13 15:18 2005 (edgrif)
+ * Last edited: Feb 14 15:19 2006 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.7 2005-04-14 10:08:58 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.8 2006-02-17 14:11:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -147,43 +147,65 @@ void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation o
   /* We'll need to update the display..... */
   gtk_widget_show_all(zmap->toplevel) ;
 
+  zmapControlWindowSetGUIState(zmap) ;
+
   return ;
 }
 
 
-
+/* You need to remember that there may be more than one view in a zmap. This means that
+ * while a particular view may have lost all its windows and need closing, there might
+ * be other views that have windows that can be focussed on. */
 void zmapControlRemoveWindow(ZMap zmap)
 {
   GtkWidget *close_container ;
   ZMapViewWindow view_window, remaining_view ;
+  ZMapView view ;
   gboolean remove ;
+  gboolean no_windows_left ;
 
-  /* We shouldn't get called if there are no windows. */
+
+  /* We shouldn't get called if there are no views. */
   zMapAssert((g_list_length(zmap->view_list) >= 1) && zmap->focus_viewwindow) ;
 
-  view_window = zmap->focus_viewwindow ;		    /* focus_viewwindow gets reset so hang
-							       on view_window.*/
+  /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
+  view_window = zmap->focus_viewwindow ;
+  view = zMapViewGetView(view_window) ;
+
 
   close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
 
-  zMapViewRemoveWindow(view_window) ;
+  zMapViewRemoveWindow(view_window, &no_windows_left) ;
 
-  /* this needs to remove the pane.....AND  set a new focuspane.... */
+
+  /* We are making a policy decision here to get rid of views that have lost their last
+   * window.... */
+  if (no_windows_left)
+    zMapDeleteView(zmap, view) ;
+
+
+  /* this needs to remove the pane.....AND  set a new focuspane....if there is one.... */
   remaining_view = closeWindow(zmap, close_container) ;
+
 
   /* Remove from hash of viewwindows to frames */
   remove = g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
   zMapAssert(remove) ;
 
+
   /* Make sure we reset focus because we just removed the view it points to ! */
   zmap->focus_viewwindow = NULL ;
+
 
   /* Having removed one window we need to refocus on another, if there is one....... */
   if (remaining_view)
     zmapControlSetWindowFocus(zmap, remaining_view) ;
 
+
   /* We'll need to update the display..... */
   gtk_widget_show_all(zmap->toplevel) ;
+
+  zmapControlWindowSetGUIState(zmap) ;
 
   return ;
 }
@@ -466,7 +488,6 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
   GtkWidget *viewwindow_frame ;
   ZMapView view ;
   ZMapWindow window ;
-  ZMapWindowZoomStatus zoom_status ;
   GdkColor color ;
   double top, bottom ;
 
@@ -498,9 +519,9 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
       gtk_widget_modify_bg(GTK_WIDGET(viewwindow_frame), GTK_STATE_NORMAL, &color);
       gtk_widget_modify_fg(GTK_WIDGET(viewwindow_frame), GTK_STATE_NORMAL, &color);
 
-      /* make sure the zoom buttons are appropriately sensitised for this window. */
-      zoom_status = zMapWindowGetZoomStatus(window) ;
-      zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
+      /* make sure zoom buttons etc. appropriately sensitised for this window. */
+      zmapControlWindowSetGUIState(zmap) ;
+
 
       /* NOTE HOW NONE OF THE NAVIGATOR STUFF IS SET HERE....BUT NEEDS TO BE.... */
       zMapWindowGetVisible(window, &top, &bottom) ;
