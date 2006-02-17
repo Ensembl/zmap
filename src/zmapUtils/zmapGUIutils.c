@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 16 15:08 2005 (edgrif)
+ * Last edited: Feb  3 09:16 2006 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.9 2005-11-18 10:55:02 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.10 2006-02-17 10:42:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,6 +63,39 @@ static void butClick(GtkButton *button, gpointer user_data) ;
  *  */
 
 
+
+/*!
+ * Returns a title string in standard form to be used for the window manager title
+ * bar in zmap windows.
+ *
+ * Currently the format is:
+ * 
+ *             "ZMap (version) <window_type> - <text>"
+ * 
+ * Either the window_type or the text can be NULL but not both.
+ * 
+ * The returned string should be free'd by the caller using g_free() when no longer required.
+ * 
+ *
+ * @param window_type  The sort of window it is, e.g. "feature editor"
+ * @param message      Very short text, e.g. "Please Reply" or a feature name or....
+ * @return             the title string.
+ *  */
+char *zMapGUIMakeTitleString(char *window_type, char *message)
+{
+  char *title = NULL ;
+
+  zMapAssert(!(window_type == NULL && message == NULL)) ;
+
+  title = g_strdup_printf("ZMap (%s)%s%s%s%s",
+			  zMapGetVersionString(),
+			  (window_type ? " " : ""),
+			  (window_type ? window_type : ""),
+			  (message ? " - " : ""),
+			  (message ? message : "")) ;
+
+  return title ;
+}
 
 
 /*!
@@ -223,7 +256,7 @@ static void butClick(GtkButton *button, gpointer user_data)
 void zMapGUIShowText(char *title, char *text, gboolean edittable)
 {
   enum {TEXT_X_BORDERS = 32, TEXT_Y_BORDERS = 50} ;
-  GtkWidget *dialog, *scrwin, *view, *button ;
+  GtkWidget *dialog, *scrwin, *view ;
   GtkTextBuffer *buffer ;
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
   PangoFont *font ;
@@ -231,7 +264,6 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
   int width ;
   double x, y ;
   int text_width, text_height ;
-  char *font_text ;
 
   zMapAssert(title && *title && text && *text) ;
 
