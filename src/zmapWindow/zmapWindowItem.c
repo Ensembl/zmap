@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 17 13:57 2006 (edgrif)
+ * Last edited: Feb 17 16:20 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.12 2006-02-17 13:57:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.13 2006-02-17 18:03:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,8 +49,6 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item);
 static void setItemColourOriginal(ZMapWindow window, FooCanvasItem *item);
 
 static void checkScrollRegion(ZMapWindow window, double start, double end) ;
-
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
@@ -229,44 +227,6 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
 }
 
 
-
-/* this is going to need align name, block name and much else besides.... */
-
-FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
-					       ZMapFeatureType feature_type, char *feature,
-					       ZMapStrand strand, int start, int end,
-					       int query_start, int query_end)
-{
-  FooCanvasItem *item = NULL ;
-  char *feature_name ;
-  GQuark feature_id ;
-  char *style_name ;
-  GQuark style_id ;
-
-  zMapAssert(window && style && feature_type && feature && start >= 1 && start <= end) ;
-
-  /* Make a string name and see if the system knows about it, if not then forget it. */
-  if ((feature_name = zMapFeatureCreateName(feature_type, feature, strand, start, end,
-					    query_start, query_end))
-      && (feature_id = g_quark_try_string(feature_name))
-      && (style_name = zMapStyleCreateName(style))
-      && (style_id = g_quark_try_string(style_name)))
-    {
-
-      /* NEEDS TO BE REDONE TO USE NEW HASH FUNCTION...PROBABLY A NEW HASH FUNCTION
-       * WILL NEED TO BE WRITTEN.... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      item = zmapWindowFToIFindFeatureItem(window->feature_to_item, style_id, feature_id) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      printf("function needs recoding\n") ;
-
-    }
-
-  return item ;
-}
 /* if(!zmapWindowItemRegionIsVisible(window, item))
  *   zmapWindowItemCentreOnItem(window, item, changeRegionSize, boundarySize);
  */
