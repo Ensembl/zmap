@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  6 16:15 2005 (rds)
+ * Last edited: Feb 17 13:55 2006 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.4 2005-10-07 10:56:16 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.5 2006-02-17 13:56:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,7 +53,7 @@ static gint sortByFunc (GtkTreeModel *model,
                         GtkTreeIter  *a,
                         GtkTreeIter  *b,
                         gpointer      userdata);
-static char *featureLookUpEnum(int id, int enumType);
+
 
 static void addFeatureItemToStore(GtkTreeModel *treeModel, 
                                   ZMapFeature feature, 
@@ -278,16 +278,20 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
         case ITEM_FEATURE_PARENT: 
           gtk_tree_store_append(store, &append, parent);
           appended = TRUE;
+
           gtk_tree_store_set(store, &append, 
                              ZMAP_WINDOW_LIST_COL_NAME,   (char *)g_quark_to_string(feature->original_id),
                              ZMAP_WINDOW_LIST_COL_START,  feature->x1,
                              ZMAP_WINDOW_LIST_COL_END,    feature->x2,
                              ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
+			     ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
                              -1);
+
           if(descend && FOO_IS_CANVAS_GROUP(item))
             {
               GList *children     = NULL;
               FooCanvasGroup *grp = FOO_CANVAS_GROUP(item);
+
               children = grp->item_list;
               while (children)
                 {
@@ -300,13 +304,16 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
         case ITEM_FEATURE_CHILD: 
           {
             ZMapWindowItemFeature subfeature;
+
             subfeature = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
                                                                   "item_subfeature_data") ;
             gtk_tree_store_append(store, &append, parent);
             appended = TRUE;
+
             gtk_tree_store_set(store, &append,
                                ZMAP_WINDOW_LIST_COL_START, subfeature->start,
-                               ZMAP_WINDOW_LIST_COL_END,   subfeature->end,
+                               ZMAP_WINDOW_LIST_COL_END, subfeature->end,
+			       ZMAP_WINDOW_LIST_COL_TYPE, zMapFeatureSubPart2Str(subfeature->subpart),
                                -1);
           }
           break;
@@ -317,9 +324,8 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
       
       if(appended)
         gtk_tree_store_set(store, &append, 
-                           ZMAP_WINDOW_LIST_COL_STRAND, featureLookUpEnum(feature->strand, STRAND_ENUM),
-                           ZMAP_WINDOW_LIST_COL_TYPE,   featureLookUpEnum(feature->type, TYPE_ENUM),
-                           ZMAP_WINDOW_LIST_COL_PHASE,  featureLookUpEnum(feature->phase, PHASE_ENUM),
+                           ZMAP_WINDOW_LIST_COL_STRAND, zMapFeatureStrand2Str(feature->strand),
+                           ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
                            ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
                            ZMAP_WINDOW_LIST_COL_FEATURE_ITEM, item,
                            -1) ;
@@ -333,11 +339,11 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
       gtk_list_store_append(store, &append);
       gtk_list_store_set(store, &append, 
                          ZMAP_WINDOW_LIST_COL_NAME,   (char *)g_quark_to_string(feature->original_id),
-                         ZMAP_WINDOW_LIST_COL_STRAND, featureLookUpEnum(feature->strand, STRAND_ENUM),
+                         ZMAP_WINDOW_LIST_COL_STRAND, zMapFeatureStrand2Str(feature->strand),
                          ZMAP_WINDOW_LIST_COL_START,  feature->x1,
                          ZMAP_WINDOW_LIST_COL_END,    feature->x2,
-                         ZMAP_WINDOW_LIST_COL_TYPE,   featureLookUpEnum(feature->type, TYPE_ENUM),
-                         ZMAP_WINDOW_LIST_COL_PHASE,  featureLookUpEnum(feature->phase, PHASE_ENUM),
+                         ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
+                         ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
                          ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
                          ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
                          ZMAP_WINDOW_LIST_COL_FEATURE_ITEM, item,
@@ -346,8 +352,11 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                          ZMAP_WINDOW_LIST_COL_SORT_STRAND,  feature->strand,
                          -1) ;
     }
+
   return ;
 }
+
+
 /** \Brief To sort the column  
  */
 static gint sortByFunc (GtkTreeModel *model,
@@ -418,39 +427,3 @@ static gint sortByFunc (GtkTreeModel *model,
   return answer;
 }
 
-static char *featureLookUpEnum(int id, int enumType)
-{
-  /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
-  static char *types[]   = {"Basic", "Homology", "Exon", "Intron", "Transcript",
-			    "Variation", "Boundary", "Sequence"} ;
-  static char *strands[] = {".", "Forward", "Reverse" } ;
-  static char *phases[]  = {"NONE", "0", "1", "2" } ;
-  static char *homolTypes[] = {"dna", "protein", "translated"} ;
-  char *enum_str = NULL ;
-
-  zMapAssert(enumType == TYPE_ENUM || enumType == STRAND_ENUM 
-	     || enumType == PHASE_ENUM || enumType == HOMOLTYPE_ENUM) ;
-
-  switch (enumType)
-    {
-    case TYPE_ENUM:
-      enum_str = types[id];
-      break;
-      
-    case STRAND_ENUM:
-      enum_str = strands[id];
-      break;
-      
-    case PHASE_ENUM:
-      enum_str = phases[id];
-      break;
-
-    case HOMOLTYPE_ENUM:
-      enum_str = homolTypes[id];
-      break;
-    default:
-      break;
-    }
-  
-  return enum_str ;
-}

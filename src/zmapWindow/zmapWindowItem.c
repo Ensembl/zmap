@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 24 10:52 2006 (edgrif)
+ * Last edited: Feb 17 13:57 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.11 2006-01-24 14:23:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.12 2006-02-17 13:57:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -472,6 +472,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 }
 
 
+
 void zmapWindowShowItem(FooCanvasItem *item)
 {
   ZMapFeature feature ;
@@ -492,7 +493,7 @@ void zmapWindowShowItem(FooCanvasItem *item)
 	 "Name: %s, type: %s,  style: %s,  x1: %d,  x2: %d,  "
 	 "item_x1: %d,  item_x1: %d\n",
 	 (char *)g_quark_to_string(feature->original_id),
-	 zmapFeatureLookUpEnum(feature->type, TYPE_ENUM),
+	 zMapFeatureType2Str(feature->type),
 	 zMapStyleGetName(zMapFeatureGetStyle(feature)),
 	 feature->x1,
 	 feature->x2,
@@ -904,7 +905,6 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
       vis_change.zoom_status = zMapWindowGetZoomStatus(window) ;
       vis_change.scrollable_top = y1 ;
       vis_change.scrollable_bot = y2 ;
-      vis_change.strand = window->context_strand ;
       (*(window->caller_cbs->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
 
     }
