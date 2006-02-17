@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 19 14:16 2005 (edgrif)
+ * Last edited: Feb 17 09:52 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.22 2005-07-19 13:32:27 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.23 2006-02-17 10:44:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,11 +57,12 @@ static void checkConfigDir(void) ;
 static gboolean removeZmapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
 
+void exitCB(void *app_data, void *zmap_data_unused) ;
+static void appExit(ZMapAppContext app_context) ;
 
-ZMapAppCallbacksStruct app_window_cbs_G = {
-  removeZmapRow,
-  infoSetCB
-};
+
+
+ZMapManagerCallbacksStruct app_window_cbs_G = {removeZmapRow, infoSetCB, exitCB} ;
 
 int test_global = 10 ;
 int test_overlap = 0 ;
@@ -113,6 +114,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Set up configuration directory/files, this function exits if the directory/files can't be
    * accessed. */
   checkConfigDir() ;
+
+
+  /* Init manager, just happen just once in application. */
+  zMapManagerInit(&app_window_cbs_G) ;
 
 
   app_context = createAppContext() ;
@@ -237,7 +242,7 @@ static ZMapAppContext createAppContext(void)
   app_context->app_widg = app_context->sequence_widg = NULL ;
   app_context->tree_store_widg = NULL ;
 
-  app_context->zmap_manager = zMapManagerCreate(&app_window_cbs_G, (void *)app_context) ;
+  app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
   app_context->selected_zmap = NULL ;
 
   app_context->logger = NULL ;
@@ -250,9 +255,7 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  zMapManagerDestroy(app_context->zmap_manager) ;
-
-  zmapAppExit(app_context) ;				    /* Does not return. */
+  appExit(app_context) ;
 
   return ;
 }
@@ -413,4 +416,25 @@ static void infoSetCB(void *app_data, void *zmap)
                 zMapGetXID(info_zmap)
                 );
 
+}
+
+
+
+void exitCB(void *app_data, void *zmap_data_unused)
+{
+  ZMapAppContext app_context = (ZMapAppContext)app_data ;
+
+  appExit(app_context) ;
+
+  return ;
+}
+
+
+static void appExit(ZMapAppContext app_context)
+{
+  zMapManagerDestroy(app_context->zmap_manager) ;
+
+  zmapAppExit(app_context) ;				    /* Does not return. */
+
+  return ;
 }
