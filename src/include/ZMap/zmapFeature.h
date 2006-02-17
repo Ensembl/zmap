@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb  2 11:19 2006 (edgrif)
+ * Last edited: Feb 17 13:43 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.57 2006-02-02 11:19:46 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.58 2006-02-17 13:44:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -77,7 +77,9 @@ typedef enum {ZMAPFEATURE_INVALID = 0,
 	      ZMAPFEATURE_BASIC, ZMAPFEATURE_ALIGNMENT, ZMAPFEATURE_TRANSCRIPT,
 	      ZMAPFEATURE_RAW_SEQUENCE} ZMapFeatureType ;
 
-
+typedef enum {ZMAPFEATURE_SUBPART_INVALID,
+	      ZMAPFEATURE_SUBPART_INTRON, ZMAPFEATURE_SUBPART_EXON,
+	      ZMAPFEATURE_SUBPART_GAP, ZMAPFEATURE_SUBPART_MATCH} ZMapFeatureSubpartType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
 
@@ -513,8 +515,6 @@ GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
 			   int query_start, int query_end) ;
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
-
-char *zmapFeatureLookUpEnum (int id, int enumType) ;
 void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
 
 ZMapFeature zMapFeatureFindFeatureInContext(ZMapFeatureContext feature_context,
@@ -625,9 +625,6 @@ void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
 
-gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);
-gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase);
-
 
 /* ================================================================= */
 /* functions in zmapFeatureFormatInput.c */
@@ -635,8 +632,18 @@ gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase);
 
 gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
                                char *feature_type, ZMapFeatureType *type_out);
-gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *score_out);
+char *zMapFeatureType2Str(ZMapFeatureType type) ;
+char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart) ;
 gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out);
+gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);
+char *zMapFeatureStrand2Str(ZMapStrand strand) ;
 gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out);
+gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase);
+char *zMapFeaturePhase2Str(ZMapPhase phase) ;
+char *zMapFeatureHomol2Str(ZMapHomolType homol) ;
+gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *score_out);
+
+
+
 
 #endif /* ZMAP_FEATURE_H */

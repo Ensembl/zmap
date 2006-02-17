@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 23 15:33 2005 (edgrif)
+ * Last edited: Feb 17 13:42 2006 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.4 2005-11-24 15:52:10 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.5 2006-02-17 13:43:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -127,6 +127,11 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	  || g_ascii_strcasecmp(feature_type, "protein-coding_primary_transcript") == 0
 	  /* N.B. "protein-coding_primary_transcript" is a typo in wormDB currently, should
 	   * be all underscores. */
+
+	  /* I'm trying this here because it is the first record for a transcript in acedb
+	   * output.... */
+	  || g_ascii_strcasecmp(feature_type, "Sequence") == 0
+
 	  || g_ascii_strcasecmp(feature_type, "protein_coding_primary_transcript") == 0
 	  || g_ascii_strcasecmp(feature_type, "miRNA_primary_transcript") == 0
 	  || g_ascii_strcasecmp(feature_type, "snRNA_primary_transcript") == 0
@@ -147,7 +152,12 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	  type = ZMAPFEATURE_ALIGNMENT ;
 	}
       else if (g_ascii_strcasecmp(feature_type, "Clone") == 0
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	       /* Problem here is that this is used for overall transcript record... */
 	       || g_ascii_strcasecmp(feature_type, "Sequence") == 0
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	       || g_ascii_strcasecmp(feature_type, "Clone_left_end") == 0
 	       || g_ascii_strcasecmp(feature_type, "Clone_right_end") == 0
 	       || g_ascii_strcasecmp(feature_type, "SL1_acceptor_site") == 0
@@ -183,34 +193,39 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 }
 
 
-/* Score must either be the char '.' or a valid floating point number.
- * Returns TRUE if the score is '.' or a valid floating point number, FALSE otherwise.
- * If the score is '.' then we return has_score = FALSE and score_out is not set,
- * otherwise has_score = TRUE and score_out contains the score. */
-gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *score_out)
+
+char *zMapFeatureType2Str(ZMapFeatureType type)
 {
-  gboolean result = FALSE ;
+  static char *types[] = {".", "Basic", "Alignment", "Transcript", "Sequence"} ;
+  char *type_str ;
 
-  if (strlen(score_str) == 1 && strcmp(score_str, ".") == 0)
-    {
-      result = TRUE ;
-      *has_score = FALSE ;
-    }
-  else
-    {
-      gdouble score ;
+  zMapAssert(type == ZMAPFEATURE_INVALID || type == ZMAPFEATURE_BASIC
+	     || type == ZMAPFEATURE_ALIGNMENT || type == ZMAPFEATURE_TRANSCRIPT
+	     || type == ZMAPFEATURE_RAW_SEQUENCE) ;
 
-      if ((result = zMapStr2Double(score_str, &score)))
-	{
-	  *has_score = TRUE ;
-	  *score_out = score ;
-	}
-    }
+  type_str = types[type] ;
 
-  return result ;
+  return type_str ;
 }
 
-	
+
+
+
+char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart)
+{
+  static char *subparts[] = {".", "Intron", "Exon", "Gap", "Match"} ;
+  char *subpart_str ;
+
+  zMapAssert(subpart == ZMAPFEATURE_SUBPART_INVALID
+	     || subpart == ZMAPFEATURE_SUBPART_INTRON || subpart == ZMAPFEATURE_SUBPART_EXON
+	     || subpart == ZMAPFEATURE_SUBPART_GAP || subpart == ZMAPFEATURE_SUBPART_MATCH) ;
+
+  subpart_str = subparts[subpart] ;
+
+  return subpart_str ;
+}
+
+
 
 /* Strand must be one of the chars '+', '-' or '.'. */
 gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out)
@@ -239,6 +254,40 @@ gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out)
   return result ;
 }
 	
+
+
+gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand)
+{
+  gboolean status = TRUE;
+
+  if (g_ascii_strcasecmp(string, "forward") == 0)
+    *strand = ZMAPSTRAND_FORWARD;
+  else if (g_ascii_strcasecmp(string, "reverse") == 0)
+    *strand = ZMAPSTRAND_REVERSE;
+  else if (g_ascii_strcasecmp(string, "none") == 0)
+    *strand = ZMAPSTRAND_NONE;
+  else
+    status = FALSE;
+
+  return status;
+}
+
+
+char *zMapFeatureStrand2Str(ZMapStrand strand)
+{
+  static char *strands[] = {".", "+", "-" } ;
+  char *strand_str ;
+
+  zMapAssert(strand == ZMAPSTRAND_NONE
+	     || strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_REVERSE) ;
+
+  strand_str = strands[strand] ;
+
+  return strand_str ;
+}
+
+
+
 
 /* Phase must either be the char '.' or 0, 1 or 2. */
 gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out)
@@ -270,3 +319,85 @@ gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out)
 
   return result ;
 }
+
+
+gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase)
+{
+  gboolean status = FALSE ;
+  int phase_num ;
+
+  if (zMapStr2Int(value, &phase_num)
+      && ((ZMapPhase)phase_num >= ZMAPPHASE_NONE || (ZMapPhase)phase_num <= ZMAPPHASE_2))
+    {
+      *phase = (ZMapPhase)phase_num ;
+      status = TRUE ;
+    }
+
+  return status ;
+}
+
+
+char *zMapFeaturePhase2Str(ZMapPhase phase)
+{
+  static char *phases[] = {".", "0", "1", "2"} ;
+  char *phase_str ;
+
+  zMapAssert(phase == ZMAPPHASE_NONE || phase == ZMAPPHASE_0
+	     || phase == ZMAPPHASE_1 || phase == ZMAPPHASE_2) ;
+
+  phase_str = phases[phase] ;
+
+  return phase_str ;
+}
+
+
+
+
+char *zMapFeatureHomol2Str(ZMapHomolType homol)
+{
+  static char *homols[] = {".", "dna", "protein", "translated"} ;
+  char *homol_str ;
+
+  zMapAssert(homol == ZMAPHOMOL_NONE || homol == ZMAPHOMOL_N_HOMOL
+	     || homol == ZMAPHOMOL_X_HOMOL || homol == ZMAPHOMOL_TX_HOMOL) ;
+
+  homol_str = homols[homol] ;
+
+  return homol_str ;
+}
+
+
+
+
+
+
+
+
+/* Score must either be the char '.' or a valid floating point number.
+ * Returns TRUE if the score is '.' or a valid floating point number, FALSE otherwise.
+ * If the score is '.' then we return has_score = FALSE and score_out is not set,
+ * otherwise has_score = TRUE and score_out contains the score. */
+gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *score_out)
+{
+  gboolean result = FALSE ;
+
+  if (strlen(score_str) == 1 && strcmp(score_str, ".") == 0)
+    {
+      result = TRUE ;
+      *has_score = FALSE ;
+    }
+  else
+    {
+      gdouble score ;
+
+      if ((result = zMapStr2Double(score_str, &score)))
+	{
+	  *has_score = TRUE ;
+	  *score_out = score ;
+	}
+    }
+
+  return result ;
+}
+
+

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan 24 10:17 2006 (rds)
+ * Last edited: Feb  2 15:11 2006 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.27 2006-01-24 10:37:24 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.28 2006-02-17 13:43:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -416,73 +416,6 @@ gboolean zMapFeatureContextDump(GIOChannel *file,
 
 
 
-char *zmapFeatureLookUpEnum(int id, int enumType)
-{
-  /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
-  static char *types[]   = {"Basic", "Alignment", "Transcript", "Sequence"} ;
-  static char *strands[] = {".", "+", "-" } ;
-  static char *phases[]  = {"ZMAPPHASE_NONE", "ZMAPPHASE_0", "ZMAPPHASE_1", "ZMAPPHASE_2" } ;
-  static char *homolTypes[] = {"ZMAPHOMOL_N_HOMOL", "ZMAPHOMOL_X_HOMOL", "ZMAPHOMOL_TX_HOMOL"} ;
-  char *enum_str = NULL ;
-
-  zMapAssert(enumType == TYPE_ENUM || enumType == STRAND_ENUM 
-	     || enumType == PHASE_ENUM || enumType == HOMOLTYPE_ENUM) ;
-
-  switch (enumType)
-    {
-    case TYPE_ENUM:
-      enum_str = types[id];
-      break;
-      
-    case STRAND_ENUM:
-      enum_str = strands[id];
-      break;
-      
-    case PHASE_ENUM:
-      enum_str = phases[id];
-      break;
-
-    case HOMOLTYPE_ENUM:
-      enum_str = homolTypes[id];
-      break;
-    }
-  
-  return enum_str ;
-}
-
-
-gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand)
-{
-  gboolean status = TRUE;
-
-  if (g_ascii_strcasecmp(string, "forward") == 0)
-    *strand = ZMAPSTRAND_FORWARD;
-  else if (g_ascii_strcasecmp(string, "reverse") == 0)
-    *strand = ZMAPSTRAND_REVERSE;
-  else if (g_ascii_strcasecmp(string, "none") == 0)
-    *strand = ZMAPSTRAND_NONE;
-  else
-    status = FALSE;
-
-  return status;
-}
-
-
-
-gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase)
-{
-  gboolean status = TRUE ;
-
-  *phase = ZMAPPHASE_NONE ;
-
-  if (zMapStr2Int(value, phase) != TRUE || *phase < 0 || *phase > 3)
-    status = FALSE ;
-
-  return status ;
-}
-
-
-
 /* For blocks within alignments other than the master alignment, it is not possible to simply
  * use the x1,x2 positions in the feature struct as these are the positions in the original
  * feature. We need to know the coordinates in the master alignment. */
@@ -711,9 +644,9 @@ static void printFeature(GQuark key_id, gpointer data, gpointer user_data)
       GString *line ;
 
       line = g_string_sized_new(1000) ;
-      type   = zmapFeatureLookUpEnum(feature->type, TYPE_ENUM) ;
-      strand = zmapFeatureLookUpEnum(feature->strand, STRAND_ENUM) ;
-      phase  = zmapFeatureLookUpEnum(feature->phase, PHASE_ENUM) ;
+      type   = zMapFeatureType2Str(feature->type) ;
+      strand = zMapFeatureStrand2Str(feature->strand) ;
+      phase  = zMapFeaturePhase2Str(feature->phase) ;
   
       g_string_printf(line, "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%f", 
 		      (char *)g_quark_to_string(key_id),
