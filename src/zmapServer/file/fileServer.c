@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Aug 31 13:47 2005 (rds)
+ * Last edited: Feb  2 15:05 2006 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.18 2005-09-02 10:32:14 rds Exp $
+ * CVS info:   $Id: fileServer.c,v 1.19 2006-02-17 10:46:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -515,7 +515,7 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
   gboolean result = FALSE ;
   GIOStatus status ;
   gsize terminator_pos = 0 ;
-  gboolean free_on_destroy = FALSE, parse_only = FALSE ;
+  gboolean free_on_destroy = FALSE ;
   GError *gff_file_err = NULL ;
 
 
