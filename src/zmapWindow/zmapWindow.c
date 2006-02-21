@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 14 15:31 2006 (edgrif)
+ * Last edited: Feb 21 14:43 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.104 2006-02-21 10:47:09 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.105 2006-02-21 15:12:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -860,6 +860,7 @@ void zMapWindowDestroy(ZMapWindow window)
 	}
       g_ptr_array_free(window->featureListWindows, FALSE);
     }
+  window->featureListWindows = NULL ;
   
   zmapWindowFToIDestroy(window->context_to_item) ;
 
@@ -1128,6 +1129,7 @@ static void resetCanvas(ZMapWindow window)
   zmapWindowFToIDestroy(window->context_to_item) ;
   window->context_to_item = zmapWindowFToICreate() ;
 
+
   /* free the array of featureListWindows and the windows themselves */
   if (window->featureListWindows)
     {
@@ -1141,6 +1143,7 @@ static void resetCanvas(ZMapWindow window)
 	}
       g_ptr_array_free(window->featureListWindows, FALSE);
     }
+  window->featureListWindows = NULL ;
   
   window->focus_item = NULL ;
   window->alignment_start = 0 ;
