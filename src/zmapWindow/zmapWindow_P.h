@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb 17 14:00 2006 (edgrif)
+ * Last edited: Feb 20 18:34 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.94 2006-02-17 14:02:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.95 2006-02-21 10:43:02 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -41,6 +41,10 @@
 #include <ZMap/zmapWindow.h>
 
 
+/* Names for keys in G_OBJECTS */
+#define ITEM_FEATURE_DATA    "item_feature_data"
+#define ITEM_FEATURE_TYPE    "item_feature_type"
+#define ITEM_SUBFEATURE_DATA "item_subfeature_data"
 
 
 
@@ -542,12 +546,6 @@ void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
                                           double *x2_out, double *y2_out);
 
 
-/* Add, modify, draw, remove features from the canvas. */
-FooCanvasItem *zmapWindowFeatureAdd(ZMapWindow window,
-			      FooCanvasGroup *feature_group, ZMapFeature feature) ;
-FooCanvasItem *zmapWindowFeatureModify(ZMapWindow zmap_window,
-				 FooCanvasItem *curr_feature_item, ZMapFeature new_feature) ;
-gboolean zmapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item) ;
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature) ;
 
 
