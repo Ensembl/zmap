@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Feb 17 13:58 2006 (edgrif)
+ * Last edited: Feb 21 10:53 2006 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.16 2006-02-17 14:00:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.17 2006-02-21 10:53:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -701,50 +701,6 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 FooCanvasItem *zMapWindowFindFeatureItemByQuery(ZMapWindow window, ZMapWindowFeatureQuery ftq)
 {
   FooCanvasItem *item  = NULL;
-  GQuark feature_id ;
-
-  /* Do a (hash, '.', '.', 'style', 'feature') lookup */
-  /* Check we won't fail any Asserts!!!!
-   * type >= 0 (!= ZMAPFEATURE_INVALID)
-   * feature name != NULL
-   * start >= 1
-   * start <= end
-   */
-  if(ftq->ft_name && ftq->type != ZMAPFEATURE_INVALID
-     && ftq->strand_set  && ftq->start >= 1
-     && ftq->start <= ftq->end
-     )
-    {
-      GQuark style_id ;
-
-      style_id = zMapStyleCreateID(ftq->style) ;
-
-
-      feature_id = zMapFeatureCreateID(ftq->type, ftq->ft_name, ftq->strand, 
-                                       ftq->start, ftq->end,
-                                       ftq->query_start, ftq->query_end
-                                       );
-      if(!ftq->alignment)
-        ftq->alignment = g_strdup_printf("%s_master", window->sequence);
-
-      if(!ftq->block)
-        {
-          int start, end;
-          start = window->seq_start;
-          end   = (window->seq_end == window->seqLength ? 0 : window->seq_end);
-          /* This next bit is backward in coming forward... */
-          ftq->block = g_strdup(g_quark_to_string(zMapFeatureBlockCreateID(start, end, ZMAPSTRAND_FORWARD,
-                                                                           start, end, ZMAPSTRAND_FORWARD)));
-        }
-
-      item = zmapWindowFToIFindItemFull(window->context_to_item,
-                                        g_quark_from_string(ftq->alignment),
-                                        g_quark_from_string(ftq->block),
-                                        style_id,
-					ftq->strand,
-                                        feature_id);
-      /* MUST CHECK item != NULL users send rubbish! */
-    }
 
   return item;
 }
@@ -810,13 +766,13 @@ static void childSearchCB(gpointer data, gpointer user_data)
   if (!(child_search->child_item))
     {
       item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							    "item_feature_type")) ;
+							    ITEM_FEATURE_TYPE)) ;
       if (item_feature_type == ITEM_FEATURE_CHILD)
 	{
 	  ZMapWindowItemFeature item_subfeature_data ;
 
 	  item_subfeature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
-									  "item_subfeature_data") ;
+									  ITEM_SUBFEATURE_DATA) ;
 
 	  if (item_subfeature_data->start == child_search->child_start
 	      && item_subfeature_data->end == child_search->child_end)
@@ -953,7 +909,7 @@ static void printGlist(gpointer data, gpointer user_data)
   char *feature_type =  NULL ;
   GQuark feature_id = 0 ;
 
-  if ((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(item), "item_feature_data"))))
+  if ((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA))))
     {
       switch (feature_any->struct_type)
 	{
@@ -1012,7 +968,7 @@ gboolean filterOnStrand(FooCanvasItem *item, ZMapStrand strand)
   gboolean result = FALSE ;
   ZMapFeature feature ;
 
-  feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
 
   if (feature->strand == strand)
@@ -1062,7 +1018,7 @@ gboolean filterOnRegExp(FooCanvasItem *item, ItemSearch curr_search, gpointer us
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Not needed for this compare but will be in other filter callbacks... */
-  feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
