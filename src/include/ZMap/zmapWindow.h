@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Feb 17 14:03 2006 (edgrif)
+ * Last edited: Feb 20 17:39 2006 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.48 2006-02-17 14:04:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.49 2006-02-21 10:45:23 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -106,25 +106,55 @@ typedef struct _ZMapWindowCallbacksStruct
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 
 
+typedef enum
+  {
+    ZMAP_FTOI_QUERY_INVALID = 0,
+    ZMAP_FTOI_QUERY_ALIGN_ITEM, /* Get the align group item */
+    ZMAP_FTOI_QUERY_BLOCK_ITEM, /* Get the block group item */
+    ZMAP_FTOI_QUERY_SET_ITEM,   /* Get the column group item (strand sensitive) */
+    ZMAP_FTOI_QUERY_FEATURE_ITEM,
 
+    ZMAP_FTOI_QUERY_ALIGN_LIST, /* Get the align group item */
+    ZMAP_FTOI_QUERY_BLOCK_LIST, /* Get the block group item */
+    ZMAP_FTOI_QUERY_SET_LIST,   /* Get the column group item (strand sensitive) */
+    ZMAP_FTOI_QUERY_FEATURE_LIST,
+
+    ZMAP_FTOI_QUERY_FEATURE_REGEXP
+  } ZMapFToIQueryType;
+
+typedef enum
+  {
+    ZMAP_FTOI_RETURN_ERROR = 0,
+    ZMAP_FTOI_RETURN_LIST,
+    ZMAP_FTOI_RETURN_ITEM
+  } ZMapFToIReturnType;
 
 typedef struct _ZMapWindowFeatureQueryStruct
 {
-  char *ft_name;                /* Feature name */
-  char *alignment;              /* Alignment */
-  char *block;                  /* Block string */
+  GQuark alignId,               /* alignment string as quark */
+    blockId,                    /* block string as id */
+    originalId,                 /* feature original id */
+    suId,                       /* session unique id */
+    columnId,                   /* column id e.g. columnGeneNEvidence */
+    styleId;                    /* style id e.g. curated This should
+                                 * be a valid style name i.e. created
+                                 * by zMapStyleCreateID(style_name); */
 
-  int query_start, query_end;   /* Query start and end (optional ZMAPFEATURE_HOMOL)*/
   int start, end;               /* [Target] start and end */
+  int query_start, query_end;   /* Query start and end (optional ZMAPFEATURE_HOMOL)*/
 
   ZMapFeatureType type;         /* Feature type */
   ZMapStrand strand;            /* Feature strand */
-  char *style;                  /* Feature style */
 
-  /* Whether these have been set */
-  gboolean alignment_set;
-  gboolean style_set;          
-  gboolean strand_set;
+  ZMapFToIQueryType  query_type;
+  ZMapFToIReturnType return_type;
+
+  union
+  {
+    GList         *list_answer;
+    FooCanvasItem *item_answer;
+  } ans;                        /* The answer */
+
 } ZMapWindowFeatureQueryStruct, *ZMapWindowFeatureQuery;
 
 
@@ -160,13 +190,20 @@ PangoFontDescription *zMapWindowGetFixedWidthFontDescription(ZMapWindow window);
 
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
 
-FooCanvasItem *zMapWindowFindFeatureItemByName(ZMapWindow window, char *style,
-					       ZMapFeatureType feature_type, char *feature_name,
-					       ZMapStrand strand, int start, int end,
-					       int query_start, int query_end) ;
-FooCanvasItem *zMapWindowFindFeatureItemByQuery(ZMapWindow window, ZMapWindowFeatureQuery ft_q);
+ZMapWindowFeatureQuery zMapWindowFeatureItemNewQuery(void);
+
+FooCanvasItem *zMapWindowFindFeatureItemByQuery(ZMapWindow window, ZMapWindowFeatureQuery query);
 
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
+GList *zMapWindowFeatureAllStyles(ZMapWindow window);
+
+/* Add, modify, draw, remove features from the canvas. */
+FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
+			      FooCanvasGroup *feature_group, ZMapFeature feature) ;
+FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
+				 FooCanvasItem *curr_feature_item, ZMapFeature new_feature) ;
+gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item) ;
+
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
 
