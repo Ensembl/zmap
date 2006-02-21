@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Feb 17 15:09 2006 (rds)
+ * Last edited: Feb 20 17:30 2006 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.57 2006-02-17 17:53:12 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.58 2006-02-21 15:13:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,6 +36,7 @@
 #include <gtk/gtk.h>
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsGUI.h>
 #include <zmapControl_P.h>
 
 
@@ -55,6 +56,7 @@ static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void visibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data) ;
 static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
 
 
@@ -68,7 +70,7 @@ static ZMapCallbacks zmap_cbs_G = NULL ;
 /* Holds callbacks we set in the level below us to be called back on. */
 ZMapViewCallbacksStruct view_cbs_G = {enterCB, leaveCB,
 				      dataLoadCB, focusCB, selectCB,
-				      visibilityChangeCB, viewKilledCB} ;
+				      visibilityChangeCB, viewStateChangeCB, viewKilledCB} ;
 
 
 
@@ -302,10 +304,56 @@ unsigned long zMapGetXID(ZMap zmap)
 
 
 /*
- * These functions are internal to zmapControl and get called as a result of user interaction
- * with the gui.
+ * These functions are internal to zmapControl.
  * 
  */
+
+
+/* This function encapsulates logic about how to handle closing the last view or the last
+ * window in a view, we give the user the choice about whether to do this. */
+void zmapControlClose(ZMap zmap)
+{
+  int num_views, num_windows ;
+  ZMapViewWindow view_window ;
+  ZMapView view ;
+
+  num_views = zmapControlNumViews(zmap) ;
+
+  /* We shouldn't get called if there are no views. */
+  zMapAssert(num_views && zmap->focus_viewwindow) ;
+
+
+  /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
+  view_window = zmap->focus_viewwindow ;
+  view = zMapViewGetView(view_window) ;
+
+  num_windows = zMapViewNumWindows(view_window) ;
+
+  /* If there is just one view or just window of a view then we warn the user. */
+  if (num_views == 1 && num_windows == 1)
+    {
+      if (zMapGUIShowChoice(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING,
+			    "Closing this window will close this zmap, "
+			    "do you really want to do this ?"))
+	killZMap(zmap) ;
+    }
+  else if (num_windows == 1)
+    {
+      if (zMapGUIShowChoice(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING,
+			    "Closing this window will remove this view, "
+			    "do you really want to do this ?"))
+	zMapDeleteView(zmap, view) ;
+    }
+  else
+    {
+      zmapControlRemoveWindow(zmap) ;
+    }
+
+
+  return ;
+}
+
+
 
 
 void zmapControlWindowSetGUIState(ZMap zmap)
@@ -372,7 +420,6 @@ void zmapControlLoadCB(ZMap zmap)
       /* for now we are just doing the current view but this will need to change to allow a kind
        * of global load of all views if there is no current selected view, or perhaps be an error 
        * if no view is selected....perhaps there should always be a selected view. */
-
       zMapAssert(zmap->focus_viewwindow) ;
 
       curr_view = zMapViewGetView(zmap->focus_viewwindow) ;
@@ -380,8 +427,12 @@ void zmapControlLoadCB(ZMap zmap)
       if (zMapViewGetStatus(curr_view) == ZMAPVIEW_INIT)
 	status = zMapViewConnect(curr_view, NULL) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if (status && zMapViewGetStatus(curr_view) == ZMAPVIEW_CONNECTED)
 	zMapViewLoad(curr_view) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   return ;
@@ -403,17 +454,10 @@ void zmapControlResetCB(ZMap zmap)
       /* for now we are just doing the current view but this will need to change to allow a kind
        * of global load of all views if there is no current selected view, or perhaps be an error 
        * if no view is selected....perhaps there should always be a selected view. */
-      if (view_state == ZMAPVIEW_CONNECTED || view_state == ZMAPVIEW_LOADED)
-	{
-	  zMapViewReset(curr_view) ;
-	}
+      zMapViewReset(curr_view) ;
+
+      zmapControlWindowSetGUIState(zmap) ;
     }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* this is not right, we may not need the resetting state at top level at all in fact..... */
-  zmap->state = ZMAP_RESETTING ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
@@ -425,16 +469,10 @@ ZMapView zmapControlAddView(ZMap zmap, char *sequence, int start, int end)
 {
   ZMapView view = NULL ;
 
-  /* this is a bit clutzy, it is irrelevant for the first window.... */
-  GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;
-
-
-  if ((view = zMapViewCreate(sequence, start, end, (void *)zmap)))
+  if ((view = zmapControlNewWindow(zmap, sequence, start, end)))
     {
       /* add to list of views.... */
       zmap->view_list = g_list_append(zmap->view_list, view) ;
-
-      zmapControlSplitInsertWindow(zmap, view, orientation) ;
 
       zmap->state = ZMAP_VIEWS ;
     }
@@ -573,11 +611,6 @@ static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data
   ZMap zmap = (ZMap)app_data ;
   char *text = (char *)view_data ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapView view = zMapViewGetView(view_window) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   /* If there is text then display it in info. box of zmap. (There may be no text if
    * user clicked on blank background.) */
   if (text)
@@ -621,6 +654,22 @@ static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data)
   return ;
 }
 
+
+
+/* Gets called when a ZMapView resets, this is asynchronous because the view has to kill threads
+ * and wait for them to die.
+ *  */
+static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
+{
+  ZMap zmap = (ZMap)app_data ;
+
+  /* We should test to see if the view is still in the list of views.... */
+
+  zmapControlWindowSetGUIState(zmap) ;
+
+
+  return ;
+}
 
 
 /* Gets called when a ZMapView dies, this is asynchronous because the view has to kill threads
