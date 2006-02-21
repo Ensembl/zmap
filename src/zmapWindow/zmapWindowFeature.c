@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 21 10:30 2006 (rds)
+ * Last edited: Feb 21 18:05 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.4 2006-02-21 10:43:48 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.5 2006-02-21 18:45:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -253,6 +253,8 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 
   /* Check to see if there is an entry in long items for this feature.... */
   removeFeatureLongItems(&(zmap_window->long_items), feature_item) ;
+
+  zmapWindowItemRemoveFocusItem(zmap_window, feature_item);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (zmapWindowLongItemRemove(&(menu_data->window->long_items), menu_data->item))
@@ -1226,12 +1228,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	 * the root handler. */
 	if (but_event->button == 1 || but_event->button == 3)
 	  {
-#ifdef RDS_DONT_INCLUDE
-	    /* Highlight the object the user clicked on and pass information about
-	     * about it back to layer above. */
-	    ZMapWindowSelectStruct select = {NULL} ;
-	    double x = 0.0, y = 0.0 ;
-#endif
 	    /* Pass information about the object clicked on back to the application. */
 	    zMapWindowUpdateInfoPanel(window, feature, real_item) ;
 
@@ -1521,10 +1517,10 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       {
 	ZMapFeature feature_copy ;
 	FooCanvasItem *new_item ;
-
+#ifdef RDS_DONT_INCLUDE
 	if (menu_data->window->focus_item == menu_data->item)
 	  menu_data->window->focus_item = NULL ;
-
+#endif /* RDS_DONT_INCLUDE */
 	feature_copy = zMapFeatureCopy(feature) ;
 	feature_copy->x1 -= 1000 ;
 	feature_copy->x2 -= 1000 ;
@@ -1544,10 +1540,10 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
     case -2:
       {
 	gboolean result ;
-
+#ifdef RDS_DONT_INCLUDE
 	if (menu_data->window->focus_item == menu_data->item)
 	  menu_data->window->focus_item = NULL ;
-
+#endif /* RDS_DONT_INCLUDE */
         if(GPOINTER_TO_INT(g_object_get_data(G_OBJECT(menu_data->item), 
                                              ITEM_FEATURE_TYPE)) == ITEM_FEATURE_CHILD)
           result = zMapWindowFeatureRemove(menu_data->window, menu_data->item->parent) ;

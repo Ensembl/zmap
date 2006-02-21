@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 20 18:25 2006 (rds)
+ * Last edited: Feb 21 17:56 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.14 2006-02-21 10:47:55 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.15 2006-02-21 18:45:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -116,34 +116,38 @@ void checkCoords(gpointer data, gpointer user_data)
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 {                                               
   ZMapWindowItemFeatureType item_feature_type ;
+  FooCanvasItem *fresh_focus_item = NULL;
 
   /* If any other feature is currently in focus, revert it to its std colours */
-  if (window->focus_item)
-    highlightItem(window, window->focus_item) ;
+  if ((fresh_focus_item = zmapWindowItemHotFocusItem(window)))
+    {
+      highlightItem(window, fresh_focus_item) ;
+      zmapWindowItemRemoveFocusItem(window, fresh_focus_item);
+    }
 
   /* Highlight the new item. */
   highlightItem(window, item) ;
- 
+
   /* Make this item the new focus item. */
-  window->focus_item = item ;
+  zmapWindowItemAddFocusItem(window, item);
 
 
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window->focus_item),
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
 							ITEM_FEATURE_TYPE)) ;
 
   /* Only raise this item to the top if it is the whole feature. */
   if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
-    foo_canvas_item_raise_to_top(window->focus_item) ;
+    foo_canvas_item_raise_to_top(item) ;
   else if (item_feature_type == ITEM_FEATURE_CHILD)
     {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* I'D LIKE TO RAISE THE WHOLE GROUP BUT THIS DOESN'T WORK SO WE JUST RAISE THE
        * CHILD ITEM...I DON'T LIKE THE FEEL OF THIS...DOES IT REALLY WORK.... */
-      foo_canvas_item_raise_to_top(window->focus_item->parent) ;
+      foo_canvas_item_raise_to_top(item->parent) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      foo_canvas_item_raise_to_top(window->focus_item) ;
+      foo_canvas_item_raise_to_top(item) ;
     }
 
   /* Make sure the canvas gets redisplayed immediately. */
@@ -433,6 +437,47 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 }
 
 
+gboolean zmapWindowItemAddFocusItem(ZMapWindow window, FooCanvasItem *item)
+{
+  gboolean unique = TRUE;
+  GList *list = NULL;
+
+  if((list = g_list_find(window->focusItemSet, item)) != NULL)
+    unique = FALSE;
+
+  if(unique)
+    window->focusItemSet = g_list_append(window->focusItemSet, item);
+  else
+    {
+      printf("I think the item should be moved to the last position");
+      /* -- EASY METHOD?? --
+       * zmapWindowItemRemoveFocusItem(window, item);
+       * zmapWindowItemAddFocusItem(window, item);
+       */
+    }
+
+
+  return unique;
+}
+
+FooCanvasItem *zmapWindowItemHotFocusItem(ZMapWindow window)
+{
+  FooCanvasItem *fresh = NULL;
+  GList *last = NULL;
+
+  if((last = g_list_last(window->focusItemSet)))
+    fresh = (FooCanvasItem *)(last->data);
+
+  return fresh;
+}
+
+
+/* I think this is incapable of failing. */
+void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item)
+{
+  window->focusItemSet = g_list_remove(window->focusItemSet, item);
+  return ;
+}
 
 void zmapWindowShowItem(FooCanvasItem *item)
 {

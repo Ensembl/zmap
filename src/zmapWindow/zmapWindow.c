@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 21 14:43 2006 (edgrif)
+ * Last edited: Feb 21 18:34 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.105 2006-02-21 15:12:14 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.106 2006-02-21 18:45:01 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -510,6 +510,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 
   if (reversed)
     foo_canvas_set_scroll_region(window->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
+
 
 
   /* You cannot just draw the features here as the canvas needs to be realised so we send
@@ -1043,14 +1044,18 @@ void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a)
 #endif
 
 
-void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item)
+void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCanvasItem *item)
 {
   ZMapWindowItemFeatureType type ;
   ZMapWindowItemFeature item_data ;
+  ZMapFeature feature = NULL;
   char *subpart_text = NULL ;
   ZMapWindowSelectStruct select = {NULL} ;
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+
+  zMapAssert(feature_arg == feature);
 
   if (type == ITEM_FEATURE_CHILD)
     {
@@ -1145,7 +1150,8 @@ static void resetCanvas(ZMapWindow window)
     }
   window->featureListWindows = NULL ;
   
-  window->focus_item = NULL ;
+  g_list_free(window->focusItemSet);  
+  window->focusItemSet = NULL ;
   window->alignment_start = 0 ;
 
   return ; 

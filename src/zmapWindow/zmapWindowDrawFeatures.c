@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb 17 13:50 2006 (edgrif)
+ * Last edited: Feb 21 17:55 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.115 2006-02-21 10:47:23 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.116 2006-02-21 18:45:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -194,6 +194,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   double x1, y1, x2, y2 ;
   double scr_x1, scr_y1, scr_x2, scr_y2 ;
   FooCanvasGroup *root_group ;
+  FooCanvasItem *fresh_focus_item = NULL;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   gboolean debug = TRUE ;
 #endif
@@ -325,9 +326,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   /* There may be a focus item if this routine is called as a result of splitting a window
    * or adding more features, make sure we scroll to the same point as we were
    * at in the previously. */
-  if (window->focus_item)
+  if ((fresh_focus_item = zmapWindowItemHotFocusItem(window)))
     {
-      zMapWindowScrollToItem(window, window->focus_item) ;
+      zMapWindowScrollToItem(window, fresh_focus_item) ;
     }
 
 

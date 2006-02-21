@@ -26,13 +26,13 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb 20 18:34 2006 (rds)
+ * Last edited: Feb 21 18:23 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.95 2006-02-21 10:43:02 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.96 2006-02-21 18:45:01 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
-#define ZMAP_WINDOW_P_H
+#define ZMAP_WINDOW_P_H "zmapWindow_P."
 
 #include <gtk/gtk.h>
 #include <ZMap/zmapUtilsGUI.h>
@@ -42,9 +42,9 @@
 
 
 /* Names for keys in G_OBJECTS */
-#define ITEM_FEATURE_DATA    "item_feature_data"
-#define ITEM_FEATURE_TYPE    "item_feature_type"
-#define ITEM_SUBFEATURE_DATA "item_subfeature_data"
+#define ITEM_FEATURE_DATA    ZMAP_WINDOW_P_H "item_feature_data"
+#define ITEM_FEATURE_TYPE    ZMAP_WINDOW_P_H "item_feature_type"
+#define ITEM_SUBFEATURE_DATA ZMAP_WINDOW_P_H "item_subfeature_data"
 
 
 
@@ -311,7 +311,11 @@ typedef struct _ZMapWindowStruct
   double         seq_start ;
   double         seq_end ;
 
+#ifdef RDS_DONT_INCLUDE
   FooCanvasItem       *focus_item ;			    /* the item which has focus */
+#endif /* RDS_DONT_INCLUDE */
+
+  GList               *focusItemSet; /* the selected/focused items. Interesting operations on these should be possible... */
 
   /* THIS FIELD IS TEMPORARY UNTIL ALL THE SCALE/RULER IS SORTED OUT, DO NOT USE... */
   double alignment_start ;
@@ -571,6 +575,21 @@ gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
  *| instead.                                                          |
  *!-------------------------------------------------------------------!*/
 gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
+
+
+
+/*!-------------------------------------------------------------------!
+ *| The following functions maintain the list of focus items          |
+ *| (window->focusItemSet). Just to explain this list should be the   |
+ *| highlighted items (rev-video) on the canvas.  This seems          |
+ *| simple. We also need to know which item is the current or most    |
+ *| recent item.  In order to support this I'm assuming that the last |
+ *| item in the list is the most recent.  I call this the "hot" item, |
+ *| like a hot potato.                                                |
+ *!-------------------------------------------------------------------!*/
+gboolean zmapWindowItemAddFocusItem(ZMapWindow window, FooCanvasItem *item);
+void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item);
+FooCanvasItem *zmapWindowItemHotFocusItem(ZMapWindow window);
 
 
 #endif /* !ZMAP_WINDOW_P_H */
