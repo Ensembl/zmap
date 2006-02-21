@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 10 08:24 2006 (rds)
+ * Last edited: Feb 21 11:22 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.19 2006-02-10 08:33:28 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.20 2006-02-21 18:46:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,6 +60,8 @@ typedef enum {
   ZMAP_CONTROL_ACTION_UNHIGHLIGHT_FEATURE,
   ZMAP_CONTROL_ACTION_REGISTER_CLIENT,
 
+  ZMAP_CONTROL_ACTION_ADD_DATASOURCE,
+
   ZMAP_CONTROL_ACTION_UNKNOWN
 } zmapControlAction;
 
@@ -71,7 +73,7 @@ typedef struct {
 
 typedef struct
 {
-  ZMapWindowFeatureQuery query;
+  ZMapWindowFToIQuery query;
   ZMapFeature feature;
 } controlFeatureQueryStruct, *controlFeatureQuery;
 
@@ -80,11 +82,18 @@ typedef struct {
   ZMapWindow window;
 
   controlClientObj  client;
-  ZMapWindowFeatureQuery set;   /* The current featureset */
+  ZMapWindowFToIQuery set;   /* The current featureset */
   /* queries.... */
   GList *featureQueries_first;
   GList *featureQueries_last;
 } xmlObjectsDataStruct, *xmlObjectsData;
+
+typedef struct
+{
+  ZMap zmap;
+  int  code;
+  gboolean persist;
+} responseCodeZMapStruct, *responseCodeZMap;
 
 /* ZMAPXREMOTE_CALLBACK and destroy internals for zmapControlRemoteInstaller */
 static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCode);
@@ -97,6 +106,7 @@ static zmapXMLParser setupControlRemoteXMLParser(void *data);
 static void drawNewFeature(gpointer data, gpointer userdata);
 static void alterFeature(gpointer data, gpointer userdata);
 static void deleteFeature(gpointer data, gpointer userdata);
+static gboolean fillInFeature(controlFeatureQuery fq, ZMapWindow win);
 /* xml handlers */
 static gboolean zmapStrtHndlr(gpointer userdata, 
                               zmapXMLElement zmap_element,
@@ -206,20 +216,95 @@ static zmapXMLParser setupControlRemoteXMLParser(void *data)
 
   return parser;
 }
-static void alterFeature(gpointer data, gpointer userdata){  return ; }
-static void deleteFeature(gpointer data, gpointer userdata){ return ; }
+static void alterFeature(gpointer data, gpointer userdata)
+{
+  
+}
+static void deleteFeature(gpointer data, gpointer userdata)
+{ 
+  FooCanvasItem *ftitm = NULL;
+  ZMapFeature  feature = NULL;
+  gboolean        good = TRUE, error_recorded = FALSE;
+  ZMapWindowFToIQuery query = NULL;
+  controlFeatureQuery  fq = (controlFeatureQuery)data;
+  responseCodeZMap common = (responseCodeZMap)userdata;
+  ZMap      zmap = NULL;
+  ZMapWindow win = NULL;
+
+  if(!common->persist)
+    return ;
+  zmap = common->zmap;
+  win  = zMapViewGetWindow(zmap->focus_viewwindow);
+
+  if((feature = fq->feature) == NULL)
+    good = FALSE;
+  if((query = fq->query) == NULL)
+    good = FALSE;
+
+  if(!good)
+    {
+      common->code = 412;
+      zmapControlInfoSet(zmap, common->code,
+                         "[CHANGE THIS] XML Data Error. Not enough information");
+      error_recorded = TRUE;
+    }
+
+  if(good)
+    {
+      gboolean found = FALSE;
+
+      query->query_type = ZMAP_FTOI_QUERY_FEATURE_ITEM;
+
+      if(found = zMapWindowFToIFetchByQuery(win, query) &&
+         query->return_type == ZMAP_FTOI_RETURN_ITEM)
+         ftitm = query->ans.item_answer;
+      else if(!found)
+        good = found;
+      else
+        good = FALSE;
+    }
+
+  if(good)
+    good = zMapWindowFeatureRemove(win, ftitm);
+  else if(!error_recorded)
+    {
+      common->code = 404;
+      zmapControlInfoSet(zmap, common->code,
+                         "[CHANGE THIS] Failed to find feature '%s'",
+                         (char *)g_quark_to_string(query->originalId));
+      error_recorded = TRUE;
+    }
+  
+  if(!good && !error_recorded)
+    {
+      common->code = 404;
+      zmapControlInfoSet(zmap, common->code,
+                         "[CHANGE THIS] Failed to remove feature '%s'",
+                         (char *)g_quark_to_string(query->originalId));
+      error_recorded = TRUE;
+    }
+
+  common->persist = !error_recorded;
+
+  return ; 
+}
 static void drawNewFeature(gpointer data, gpointer userdata)
 {
   FooCanvasItem   *itm = NULL;
   FooCanvasGroup  *grp = NULL;
   ZMapFeature  feature = NULL;
   gboolean        good = TRUE, error_recorded = FALSE;
-  ZMapWindowFeatureQuery query = NULL;
-  controlFeatureQuery fq = (controlFeatureQuery)data;
-  ZMap      zmap = (ZMap)userdata;
+  ZMapWindowFToIQuery query = NULL;
+  controlFeatureQuery  fq = (controlFeatureQuery)data;
+  responseCodeZMap common = (responseCodeZMap)userdata;
+  ZMap      zmap = NULL;
   ZMapWindow win = NULL;
-#ifdef RDS_DONT_INCLUDE
-  win = zMapViewGetWindow(zmap->focus_viewwindow);
+
+  if(!common->persist)
+    return ;
+
+  zmap = common->zmap;
+  win  = zMapViewGetWindow(zmap->focus_viewwindow);
 
   if((feature = fq->feature) == NULL)
     good = FALSE;
@@ -253,7 +338,8 @@ static void drawNewFeature(gpointer data, gpointer userdata)
 
   if(!good)
     {
-      zmapControlInfoSet(zmap, 412,
+      common->code = 412;
+      zmapControlInfoSet(zmap, common->code,
                          "[CHANGE THIS] XML Data Error. Not enough information");
       error_recorded = TRUE;
     }
@@ -280,7 +366,8 @@ static void drawNewFeature(gpointer data, gpointer userdata)
     }
   else if(!error_recorded)
     {
-      zmapControlInfoSet(zmap, 412,
+      common->code = 412;
+      zmapControlInfoSet(zmap, common->code,
                          "[CHANGE THIS] Failed to find column for feature '%s'",
                          (char *)g_quark_to_string(query->originalId));
       error_recorded = TRUE;
@@ -288,12 +375,15 @@ static void drawNewFeature(gpointer data, gpointer userdata)
 
   if(!good && !error_recorded)
     {
-      zmapControlInfoSet(zmap, 412,
+      common->code = 412;
+      zmapControlInfoSet(zmap, common->code,
                          "[CHANGE THIS] Failed to draw feature '%s'",
                          (char *)g_quark_to_string(query->originalId));
       error_recorded = TRUE;
     }
-#endif
+
+  common->persist = !error_recorded;
+
   return ;
 }
 
@@ -306,6 +396,7 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
   char *xml_reply = NULL ;
   int code        = ZMAPXREMOTE_INTERNAL;
   xmlObjectsDataStruct objdata = {0, NULL};
+  responseCodeZMapStruct listExecData = {};
   zmapXMLParser parser = NULL;
   gboolean parse_ok    = FALSE;
 
@@ -347,21 +438,27 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
          * To start with I'll assume just the one column
          * BUT it needs to do it for each query really!
          */
-        g_list_foreach(objdata.featureQueries_first, drawNewFeature, (gpointer)zmap);
-        code = ZMAPXREMOTE_OK;
-        zmapControlInfoSet(zmap, code, "%s",
+        listExecData.code = ZMAPXREMOTE_OK;
+        listExecData.zmap = zmap;
+        listExecData.persist = TRUE;
+        g_list_foreach(objdata.featureQueries_first, drawNewFeature, &listExecData);
+        zmapControlInfoSet(zmap, listExecData.code, "%s",
                            "Looks like I drew some features.");
         break;
       case ZMAP_CONTROL_ACTION_ALTER_FEATURE:
-        g_list_foreach(objdata.featureQueries_first, alterFeature, (gpointer)zmap);
-        code = ZMAPXREMOTE_OK;
-        zmapControlInfoSet(zmap, code, "%s",
+        listExecData.code = ZMAPXREMOTE_OK;
+        listExecData.zmap = zmap;
+        listExecData.persist = TRUE;
+        g_list_foreach(objdata.featureQueries_first, alterFeature, &listExecData);
+        zmapControlInfoSet(zmap, listExecData.code, "%s",
                            "Looks like I modified some features.");
         break;
       case ZMAP_CONTROL_ACTION_DELETE_FEATURE:
-        g_list_foreach(objdata.featureQueries_first, deleteFeature, (gpointer)zmap);
-        code = ZMAPXREMOTE_OK;
-        zmapControlInfoSet(zmap, code, "%s",
+        listExecData.code = ZMAPXREMOTE_OK;
+        listExecData.zmap = zmap;
+        listExecData.persist = TRUE;
+        g_list_foreach(objdata.featureQueries_first, deleteFeature, &listExecData);
+        zmapControlInfoSet(zmap, listExecData.code, "%s",
                            "Looks like I deleted some features.");
         break;
       case ZMAP_CONTROL_ACTION_HIGHLIGHT_FEATURE:
@@ -517,11 +614,11 @@ static gboolean featuresetStrtHndlr(gpointer userdata,
                                     zmapXMLElement set_element,
                                     zmapXMLParser parser)
 {
-  ZMapWindowFeatureQuery query = NULL;
+  ZMapWindowFToIQuery query = NULL;
   zmapXMLAttribute       attr  = NULL;
-#ifdef RDS_DONT_INCLUDE
+
   if(!(query = ((xmlObjectsData)userdata)->set))
-    query = ((xmlObjectsData)userdata)->set = zMapWindowFeatureItemNewQuery();
+    query = ((xmlObjectsData)userdata)->set = zMapWindowFToINewQuery();
 
   /* Isn't this fun... */
   if((attr = zMapXMLElement_getAttributeByName(set_element, "align")))
@@ -536,7 +633,7 @@ static gboolean featuresetStrtHndlr(gpointer userdata,
     {
       query->columnId = zMapXMLAttribute_getValue(attr);
     }
-#endif
+
   return FALSE;
 }
 
@@ -547,10 +644,10 @@ static gboolean featureStrtHndlr(gpointer userdata,
   xmlObjectsData    data = (xmlObjectsData)userdata;
   zmapXMLAttribute attr  = NULL;
   controlFeatureQuery fq = g_new0(controlFeatureQueryStruct, 1);
-  ZMapWindowFeatureQuery new_query = NULL, query;
-#ifdef RDS_DONT_INCLUDE
+  ZMapWindowFToIQuery new_query = NULL, query;
+
   query     = data->set;        /* Get current one */  
-  new_query = zMapWindowFeatureItemNewQuery(); 
+  new_query = zMapWindowFToINewQuery(); 
   /* Make a new one for this feature. */
   /* copy stuff accross that gets set in featuresetStrtHndlr */
   /* so it inherits data from parent */
@@ -594,40 +691,50 @@ static gboolean featureStrtHndlr(gpointer userdata,
   fq->query   = new_query;
 
   /* Put this in a function like it was! And clean it up. */
-  {
-    ZMapFeatureType       type = ZMAPFEATURE_TRANSCRIPT;
-    ZMapFeatureTypeStyle style = NULL;
-    ZMapPhase            phase = 0;
-
-    if((new_query->styleId != 0) && 
-       ((style = zMapFindStyle(zMapWindowFeatureAllStyles(data->window), 
-                               new_query->styleId)) != NULL))
-      {
-        char *original_name = NULL;
-        original_name = g_quark_to_string(new_query->originalId);
-        fq->feature = zMapFeatureCreateFromStandardData(original_name,
-                                                        "",
-                                                        "",
-                                                        type, 
-                                                        style,
-                                                        new_query->start, new_query->end,
-                                                        FALSE, 0.0,
-                                                        new_query->strand, phase);
-      }
-  }
-
-  if(data->featureQueries_first == NULL)
+  if(fillInFeature(fq, data->window))
     {
-      data->featureQueries_first = g_list_append(data->featureQueries_first, fq);
-      data->featureQueries_last  = data->featureQueries_first;
+      if(data->featureQueries_first == NULL)
+        {
+          data->featureQueries_first = g_list_append(data->featureQueries_first, fq);
+          data->featureQueries_last  = data->featureQueries_first;
+        }
+      else
+        data->featureQueries_last = (g_list_append(data->featureQueries_last, fq))->next;
     }
-  else
-    data->featureQueries_last = (g_list_append(data->featureQueries_last, fq))->next;
-  
-#endif
+
   return FALSE;
 }
 
+static gboolean fillInFeature(controlFeatureQuery fq, ZMapWindow win)
+{
+  ZMapWindowFToIQuery query = NULL;
+  ZMapFeatureTypeStyle   style = NULL;
+  /* These are hardcoded ATM :( */
+  ZMapFeatureType         type = ZMAPFEATURE_TRANSCRIPT;
+  ZMapPhase              phase = 0;
+  gboolean                good = FALSE;
+  query = fq->query;
+
+  if((query->styleId != 0) && 
+     ((style = zMapFindStyle(zMapWindowFeatureAllStyles(win), 
+                             query->styleId)) != NULL))
+    {
+      char *original_name = NULL;
+      original_name = (char *)g_quark_to_string(query->originalId);
+      query->type = type;
+      fq->feature = zMapFeatureCreateFromStandardData(original_name,
+                                                      "",
+                                                      "",
+                                                      query->type, 
+                                                      style,
+                                                      query->start, query->end,
+                                                      FALSE, 0.0,
+                                                      query->strand, phase);
+      good = TRUE;
+    }
+
+  return good;
+}
 static gboolean featureEndHndlr(void *userData, 
                                 zmapXMLElement sub_element, 
                                 zmapXMLParser parser)
