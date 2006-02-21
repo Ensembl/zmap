@@ -31,15 +31,16 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 17 16:27 2006 (rds)
+ * Last edited: Feb 20 12:04 2006 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.10 2006-02-17 17:53:16 rds Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.11 2006-02-21 15:17:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <ZMap/zmapUtilsGUI.h>
 #include <zmapControl_P.h>
 
 
@@ -65,6 +66,7 @@ static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void featureDumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
 static void handle_option( gpointer data, guint callback_action, GtkWidget *w ) ;
 
@@ -86,14 +88,14 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Edit/_Paste",   "<control>V", print_hello, 0, NULL },
  { "/Edit/_Redraw",  NULL,         redrawCB, 0, NULL },
  { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
- { "/Help/One",      NULL,            NULL, 0, NULL },
- { "/Help/Two",      NULL,            NULL, 0, "<Branch>" },
- { "/Help/Two/A",    NULL,          NULL, 0, "<RadioItem>" },
- { "/Help/Two/B",    NULL,          NULL, 0, "/Help/Two/A" },
- { "/Help/Two/C",    NULL,          NULL, 0, "/Help/Two/A" },
- { "/Help/Two/D",    NULL,          NULL, 0, "/Help/Two/A" },
- { "/Help/Two/E",    NULL,          NULL, 0, "/Help/Two/A" },
- { "/Help/Three",    NULL,          NULL, 0, NULL },
+ { "/Help/About",    NULL,         aboutCB, 0, NULL },
+ { "/Help/Two",      NULL,         NULL, 0, "<Branch>" },
+ { "/Help/Two/A",    NULL,         NULL, 0, "<RadioItem>" },
+ { "/Help/Two/B",    NULL,         NULL, 0, "/Help/Two/A" },
+ { "/Help/Two/C",    NULL,         NULL, 0, "/Help/Two/A" },
+ { "/Help/Two/D",    NULL,         NULL, 0, "/Help/Two/A" },
+ { "/Help/Two/E",    NULL,         NULL, 0, "/Help/Two/A" },
+ { "/Help/Three",    NULL,         NULL, 0, NULL },
 };
 
 
@@ -139,6 +141,17 @@ static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   ZMap zmap = (ZMap)cb_data ;
 
   zMapViewRedraw(zmap->focus_viewwindow) ;
+
+  return ;
+}
+
+
+
+/* Show the usual tedious "About" dialog. */
+static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+
+  zMapGUIShowAbout() ;
 
   return ;
 }
