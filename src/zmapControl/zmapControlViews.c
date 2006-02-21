@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Feb 14 15:19 2006 (edgrif)
+ * Last edited: Feb 20 12:04 2006 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.8 2006-02-17 14:11:25 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.9 2006-02-21 15:14:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -73,14 +73,62 @@ static ZMapViewWindow closeWindow(ZMap zmap, GtkWidget *close_container) ;
 
 
 
+/* New func for brand new view windows.... */
+ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
+{
+  ZMapView zmap_view = NULL ;
+  GtkWidget *curr_container, *view_container ;
+  ZMapViewWindow view_window ;
+  char *view_title ;
+  GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;   /* arbitrary for first window. */
+
+
+  /* If there is a focus window then that will be the one we split and we need to find out
+   * the container parent of that canvas. */
+  if (zmap->focus_viewwindow)
+    curr_container = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
+  else
+    curr_container = NULL ;
+
+
+  view_title = sequence ;
+
+  /* Add a new container that will hold the new view window. */
+  view_container = zmapControlAddWindow(zmap, curr_container, orientation, view_title) ;
+
+  view_window = zMapViewCreate(view_container, sequence, start, end, (void *)zmap) ;
+  zmap_view = zMapViewGetView(view_window) ;
+
+
+  /* Add to hash of viewwindows to frames */
+  g_hash_table_insert(zmap->viewwindow_2_parent, view_window, view_container) ;
+
+
+  /* If there is no current focus window we need to make this new one the focus,
+   * if we don't of code will fail because it relies on having a focus window and
+   * the user will not get visual feedback that a window is the focus window. */
+  if (!zmap->focus_viewwindow)
+    zmapControlSetWindowFocus(zmap, view_window) ;
+
+  /* We'll need to update the display..... */
+  gtk_widget_show_all(zmap->toplevel) ;
+
+  zmapControlWindowSetGUIState(zmap) ;
+
+
+  return zmap_view ;
+}
+
+
 /* Not a great name as it may not split and orientation may be ignored..... */
-void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation orientation)
+void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation)
 {
   GtkWidget *curr_container, *view_container ;
   ZMapViewWindow view_window ;
   ZMapView zmap_view ;
   ZMapWindow zmap_window ;
   char *view_title ;
+  ZMapWindowLockType window_locking = ZMAP_WINLOCK_NONE ;
 
   /* If there is a focus window then that will be the one we split and we need to find out
    * the container parent of that canvas. */
@@ -93,46 +141,33 @@ void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation o
    * an existing view then if it has a window we need to split that, otherwise we need to add
    * the first window to that view. */
   zmap_window = NULL ;
-  if (new_view)
+
+  if (zmap->focus_viewwindow)
     {
-      zmap_view = new_view ;
+      zmap_view = zMapViewGetView(zmap->focus_viewwindow) ;
+      zmap_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
     }
   else
     {
-      if (zmap->focus_viewwindow)
-	{
-	  zmap_view = zMapViewGetView(zmap->focus_viewwindow) ;
-	  zmap_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
-	}
-      else
-	{
-	  /* UGH, I don't like this, seems a bit addhoc to just grab the only view.... */
-	  zMapAssert((g_list_length(zmap->view_list) == 1)) ;
-	  zmap_view = (ZMapView)(g_list_first(zmap->view_list)->data) ;
-	}
+      /* UGH, I don't like this, seems a bit addhoc to just grab the only view.... */
+      zMapAssert((g_list_length(zmap->view_list) == 1)) ;
+      zmap_view = (ZMapView)(g_list_first(zmap->view_list)->data) ;
     }
 
   view_title = zMapViewGetSequence(zmap_view) ;
 
-
   /* Add a new container that will hold the new view window. */
   view_container = zmapControlAddWindow(zmap, curr_container, orientation, view_title) ;
 
-  /* Either add a completely new view window to the container or copy an existing view
-   * window into it. */
-  if (!zmap_window)
-    view_window = zMapViewMakeWindow(zmap_view, view_container) ;
-  else
-    {
-      ZMapWindowLockType window_locking = ZMAP_WINLOCK_NONE ;
 
-      if (orientation == GTK_ORIENTATION_HORIZONTAL)
-	window_locking = ZMAP_WINLOCK_HORIZONTAL ;
-      else if (orientation == GTK_ORIENTATION_VERTICAL)
-	window_locking = ZMAP_WINLOCK_VERTICAL ;
+  /* Copy the focus view window. */
+  if (orientation == GTK_ORIENTATION_HORIZONTAL)
+    window_locking = ZMAP_WINLOCK_HORIZONTAL ;
+  else if (orientation == GTK_ORIENTATION_VERTICAL)
+    window_locking = ZMAP_WINLOCK_VERTICAL ;
 
-      view_window = zMapViewCopyWindow(zmap_view, view_container, zmap_window, window_locking) ;
-    }
+  view_window = zMapViewCopyWindow(zmap_view, view_container, zmap_window, window_locking) ;
+
 
   /* Add to hash of viewwindows to frames */
   g_hash_table_insert(zmap->viewwindow_2_parent, view_window, view_container) ;
@@ -153,6 +188,20 @@ void zmapControlSplitInsertWindow(ZMap zmap, ZMapView new_view, GtkOrientation o
 }
 
 
+
+/* Utility function to return number of views left. */
+int zmapControlNumViews(ZMap zmap)
+{
+  int num_views = 0 ;
+
+  if (zmap->view_list)
+    num_views = g_list_length(zmap->view_list) ;
+
+  return num_views ;
+}
+
+
+
 /* You need to remember that there may be more than one view in a zmap. This means that
  * while a particular view may have lost all its windows and need closing, there might
  * be other views that have windows that can be focussed on. */
@@ -162,11 +211,16 @@ void zmapControlRemoveWindow(ZMap zmap)
   ZMapViewWindow view_window, remaining_view ;
   ZMapView view ;
   gboolean remove ;
-  gboolean no_windows_left ;
+  int num_views ;
 
 
-  /* We shouldn't get called if there are no views. */
-  zMapAssert((g_list_length(zmap->view_list) >= 1) && zmap->focus_viewwindow) ;
+  num_views = zmapControlNumViews(zmap) ;
+
+
+  /* We shouldn't get called if there are no views or if a view has one window left. */
+  zMapAssert(num_views && zmap->focus_viewwindow
+	     && (zMapViewNumWindows(zmap->focus_viewwindow) > 1)) ;
+
 
   /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
   view_window = zmap->focus_viewwindow ;
@@ -175,13 +229,8 @@ void zmapControlRemoveWindow(ZMap zmap)
 
   close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
 
-  zMapViewRemoveWindow(view_window, &no_windows_left) ;
 
-
-  /* We are making a policy decision here to get rid of views that have lost their last
-   * window.... */
-  if (no_windows_left)
-    zMapDeleteView(zmap, view) ;
+  zMapViewRemoveWindow(view_window) ;
 
 
   /* this needs to remove the pane.....AND  set a new focuspane....if there is one.... */
