@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 13 11:25 2006 (edgrif)
+ * Last edited: Feb 20 15:43 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.32 2006-02-17 14:12:03 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.33 2006-02-21 15:15:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,11 +57,10 @@ static void closeWindowCB(GtkWidget *widget, gpointer data) ;
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 {
   GtkWidget *hbox,
-    *reload_button,
-    *stop_button,
-    *hsplit_button, *vsplit_button, *zoomin_button, *zoomout_button,
-    *unlock_button, *revcomp_button,
-    *close_button ;
+    *reload_button, *stop_button,
+    *hsplit_button, *vsplit_button,
+    *zoomin_button, *zoomout_button,
+    *unlock_button, *revcomp_button, *close_button ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -120,13 +119,13 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 
 
 
-/* THE STATE OF SOME BUTTONS REQUIRES THE VIEW STATE TO BE SORTED OUT COMPLETELY.... */
+/* Set button state according to the overall ZMap state and the current view state. */
 void zmapControlWindowSetButtonState(ZMap zmap)
 {
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
-  gboolean locked = FALSE ;
-  gboolean stop = FALSE, load = FALSE ;
-  gboolean general = FALSE ;
+  gboolean general, close, unlock, stop, reload ;
+
+  general = close = unlock = stop = reload = FALSE ;
 
   switch(zmap->state)
     {
@@ -141,22 +140,40 @@ void zmapControlWindowSetButtonState(ZMap zmap)
 
 	zMapAssert(zmap->focus_viewwindow) ;
 
+	/* Get focus view status. */
 	view = zMapViewGetView(zmap->focus_viewwindow) ;
-
+	window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 	view_state = zMapViewGetStatus(view) ;
 
-	if (view_state == ZMAPVIEW_CONNECTED)
+	switch(view_state)
 	  {
+	  case ZMAPVIEW_INIT:
+	    reload = TRUE ;
+	    break ;
+	  case ZMAPVIEW_CONNECTING:
+	  case ZMAPVIEW_CONNECTED:
+	  case ZMAPVIEW_LOADING:
 	    stop = TRUE ;
-	    general = FALSE ;
+	    break ;
+	  case ZMAPVIEW_LOADED:
+	    general = TRUE ;
+
+	    /* If we are down to the last view and that view has a single window then
+	     * disable close button, stops user accidentally closing whole window. */
+	    if ((zmapControlNumViews(zmap) > 1) || (zMapViewNumWindows(zmap->focus_viewwindow) > 1))
+	      close = TRUE ;
+
+	    zoom_status = zMapWindowGetZoomStatus(window) ;
+	    unlock = zMapWindowIsLocked(window) ;
+	    break ;
+	  case ZMAPVIEW_RESETTING:
+	    /* Nothing to do. */
+	    break ;
+	  case ZMAPVIEW_DYING:
+	    /* Nothing to do. */
+	    break ;
 	  }
-	else
-	  general = TRUE ;
 
-	window = zMapViewGetWindow(zmap->focus_viewwindow) ;
-
-	zoom_status = zMapWindowGetZoomStatus(window) ;
-	locked = zMapWindowIsLocked(window) ;
       }
     default:
       {
@@ -164,16 +181,14 @@ void zmapControlWindowSetButtonState(ZMap zmap)
       }
     }
 
-  load = !stop ;
-
   gtk_widget_set_sensitive(zmap->stop_button, stop) ;
-  gtk_widget_set_sensitive(zmap->load_button, load) ;
+  gtk_widget_set_sensitive(zmap->load_button, reload) ;
   gtk_widget_set_sensitive(zmap->hsplit_button, general) ;
   gtk_widget_set_sensitive(zmap->vsplit_button, general) ;
   zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
-  gtk_widget_set_sensitive(zmap->unlock_but, locked) ;
+  gtk_widget_set_sensitive(zmap->unlock_but, unlock) ;
   gtk_widget_set_sensitive(zmap->revcomp_but, general) ;
-  gtk_widget_set_sensitive(zmap->close_but, general) ;
+  gtk_widget_set_sensitive(zmap->close_but, close) ;
 
   return ;
 }
@@ -263,8 +278,6 @@ static void stopCB(GtkWidget *widget, gpointer cb_data)
 
   zmapControlResetCB(zmap) ;
 
-  zmapControlWindowSetGUIState(zmap) ;
-
   return ;
 }
 
@@ -294,7 +307,7 @@ static void vertSplitPaneCB(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = (ZMap)data ;
 
-  zmapControlSplitInsertWindow(zmap, NULL, GTK_ORIENTATION_VERTICAL) ;
+  zmapControlSplitWindow(zmap, GTK_ORIENTATION_VERTICAL) ;
 
   return ;
 }
@@ -304,7 +317,7 @@ static void horizSplitPaneCB(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = (ZMap)data ;
 
-  zmapControlSplitInsertWindow(zmap, NULL, GTK_ORIENTATION_HORIZONTAL) ;
+  zmapControlSplitWindow(zmap, GTK_ORIENTATION_HORIZONTAL) ;
 
   return ;
 }
@@ -336,10 +349,7 @@ static void closeWindowCB(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = (ZMap)data ;
 
-
-  /* Should warn if this is last window for a view.... */
-  zmapControlRemoveWindow(zmap) ;
-
+  zmapControlClose(zmap) ;
 
   return ;
 }
