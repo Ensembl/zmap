@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 21 11:22 2006 (rds)
+ * Last edited: Feb 21 18:48 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.20 2006-02-21 18:46:47 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.21 2006-02-21 18:48:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -255,7 +255,7 @@ static void deleteFeature(gpointer data, gpointer userdata)
 
       query->query_type = ZMAP_FTOI_QUERY_FEATURE_ITEM;
 
-      if(found = zMapWindowFToIFetchByQuery(win, query) &&
+      if((found = zMapWindowFToIFetchByQuery(win, query)) &&
          query->return_type == ZMAP_FTOI_RETURN_ITEM)
          ftitm = query->ans.item_answer;
       else if(!found)
@@ -350,7 +350,7 @@ static void drawNewFeature(gpointer data, gpointer userdata)
 
       query->query_type = ZMAP_FTOI_QUERY_SET_ITEM;
 
-      if(found = zMapWindowFToIFetchByQuery(win, query) &&
+      if((found = zMapWindowFToIFetchByQuery(win, query)) &&
          query->return_type == ZMAP_FTOI_RETURN_ITEM)
          grp = (FooCanvasGroup *)query->ans.item_answer;
       else if(!found)
