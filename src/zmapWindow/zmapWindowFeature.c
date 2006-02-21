@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 17 13:53 2006 (edgrif)
+ * Last edited: Feb 21 10:30 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.3 2006-02-17 13:54:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.4 2006-02-21 10:43:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,7 +123,15 @@ static void removeFeatureLongItems(GList **long_items, FooCanvasItem *feature_it
 static void removeLongItemCB(gpointer data, gpointer user_data) ;
 
 
+GList *zMapWindowFeatureAllStyles(ZMapWindow window)
+{
+  zMapAssert(window && window->feature_context);
+  return window->feature_context->styles;
+}
+
+
 static void printItem(gpointer data, gpointer user_data) ;
+
 
 
 
@@ -157,7 +165,7 @@ static void printItem(gpointer data, gpointer user_data) ;
  * Returns the new canvas feature item or NULL if there is some problem, e.g. the feature already
  * exists in the feature_set.
  *  */
-FooCanvasItem *zmapWindowFeatureAdd(ZMapWindow window,
+FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
 				    FooCanvasGroup *feature_group, ZMapFeature feature)
 {
   FooCanvasItem *new_feature = NULL ;
@@ -166,7 +174,7 @@ FooCanvasItem *zmapWindowFeatureAdd(ZMapWindow window,
   zMapAssert(window && feature_group && feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
 
-  feature_set = g_object_get_data(G_OBJECT(feature_group), "item_feature_data") ;
+  feature_set = g_object_get_data(G_OBJECT(feature_group), ITEM_FEATURE_DATA) ;
   zMapAssert(feature_set) ;
 
 
@@ -196,22 +204,17 @@ FooCanvasItem *zmapWindowFeatureAdd(ZMapWindow window,
  * a feature currently.
  * 
  * Returns FALSE if the feature does not exist. */
-FooCanvasItem *zmapWindowFeatureReplace(ZMapWindow zmap_window,
+FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 					FooCanvasItem *curr_feature_item, ZMapFeature new_feature)
 {
   FooCanvasItem *replaced_feature = NULL ;
   ZMapFeatureSet feature_set ;
   ZMapFeature curr_feature ;
 
-
-  /* CHECK WHAT ROY SAYS ABOUT GROUPS NOT SHRINKING...DO A TEST....THERE MAY BE A FOOCANVAS
-   * RECALCULATE FUNCTION TO GET THE GROUP TO RESIZE..... */
-
   zMapAssert(zmap_window && curr_feature_item
 	     && new_feature && zMapFeatureIsValid((ZMapFeatureAny)new_feature)) ;
 
-
-  curr_feature = g_object_get_data(G_OBJECT(curr_feature_item), "item_feature_data") ;
+  curr_feature = g_object_get_data(G_OBJECT(curr_feature_item), ITEM_FEATURE_DATA) ;
   zMapAssert(curr_feature && zMapFeatureIsValid((ZMapFeatureAny)curr_feature)) ;
 
   feature_set = (ZMapFeatureSet)(curr_feature->parent) ;
@@ -220,7 +223,7 @@ FooCanvasItem *zmapWindowFeatureReplace(ZMapWindow zmap_window,
   if (zMapFeatureSetFindFeature(feature_set, curr_feature))
     {
       /* Remove it completely. */
-      if (zmapWindowFeatureRemove(zmap_window, curr_feature_item))
+      if (zMapWindowFeatureRemove(zmap_window, curr_feature_item))
 	{
 	  FooCanvasItem *set_item ;
 
@@ -228,7 +231,7 @@ FooCanvasItem *zmapWindowFeatureReplace(ZMapWindow zmap_window,
 	  if ((set_item = zmapWindowFToIFindSetItem(zmap_window->context_to_item,
 						    feature_set, new_feature->strand)))
 	    {
-	      replaced_feature = zmapWindowFeatureAdd(zmap_window,
+	      replaced_feature = zMapWindowFeatureAdd(zmap_window,
 						      FOO_CANVAS_GROUP(set_item), new_feature) ;
 	    }
 	}
@@ -241,7 +244,7 @@ FooCanvasItem *zmapWindowFeatureReplace(ZMapWindow zmap_window,
 /* Remove an existing feature from the displayed feature context.
  * 
  * Returns FALSE if the feature does not exist. */
-gboolean zmapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item)
+gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item)
 {
   gboolean result = FALSE ;
   ZMapFeature feature ;
@@ -259,7 +262,7 @@ gboolean zmapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 
 
 
-  feature = g_object_get_data(G_OBJECT(feature_item), "item_feature_data") ;
+  feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
   feature_set = (ZMapFeatureSet)(feature->parent) ;
@@ -300,7 +303,9 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   GQuark column_id ;
   FooCanvasItem *top_feature_item = NULL ;
   double feature_offset;
+#ifdef RDS_DONT_INCLUDE_UNUSED
   GdkColor *background ;
+#endif
   double start_x, end_x ;
 
 
@@ -317,11 +322,12 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 
 
 
-  set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET) ;
-  block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set, ZMAPFEATURE_STRUCT_BLOCK) ;
+  set       = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET) ;
+  block     = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set, ZMAPFEATURE_STRUCT_BLOCK) ;
   alignment = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_ALIGN) ;
-  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)alignment, ZMAPFEATURE_STRUCT_CONTEXT) ;
+  context   = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)alignment, ZMAPFEATURE_STRUCT_CONTEXT) ;
 
+#ifdef RDS_DONT_INCLUDE_UNUSED
   /* Set colours... */
   if (alignment == context->master_align)
     {
@@ -337,7 +343,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
       else
 	background = &(window->colour_qblock_for) ;
     }
-
+#endif
 
   /* Retrieve the parent col. group/id. */
   column_group = zmapWindowContainerGetFeatures(set_group) ;
@@ -467,7 +473,7 @@ static void printItem(gpointer data, gpointer user_data)
   ZMapWindowItemFeatureType type ;
   
 
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
 
   if (type == ITEM_FEATURE_SIMPLE)
     printf("found feature simple\n") ;
@@ -548,9 +554,9 @@ static FooCanvasItem *drawparentfeature(FooCanvasGroup *parent,
 
   /* we probably need to set this I think, it means we will go to the group when we
    * navigate or whatever.... */
-  g_object_set_data(G_OBJECT(grp), "item_feature_type",
+  g_object_set_data(G_OBJECT(grp), ITEM_FEATURE_TYPE,
                     GINT_TO_POINTER(ITEM_FEATURE_PARENT)) ;
-  g_object_set_data(G_OBJECT(grp), "item_feature_data", feature) ;
+  g_object_set_data(G_OBJECT(grp), ITEM_FEATURE_DATA, feature) ;
 
   return grp ;
 }
@@ -802,7 +808,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
   if (!feature->feature.transcript.introns && !feature->feature.transcript.exons)
     {
       feature_item = drawSimpleFeature(parent, feature, feature_offset,
-				       x1, feature_top, x2, feature_bottom,
+				       x1, feature->x1, x2, feature->x2,
 				       outline, foreground, background, window) ;
     }
   else
@@ -1008,6 +1014,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 			}
 		    }
 		}
+
             }
 	}
 
@@ -1066,11 +1073,11 @@ static void attachDataToItem(FooCanvasItem *feature_item,
 {
   zMapAssert(feature_item && window && feature);
 
-  g_object_set_data(G_OBJECT(feature_item), "item_feature_type",
+  g_object_set_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE,
                     GINT_TO_POINTER(type)) ;
-  g_object_set_data(G_OBJECT(feature_item), "item_feature_data", feature) ;
+  g_object_set_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA, feature) ;
   if(subFeatureData != NULL)
-    g_object_set_data(G_OBJECT(feature_item), "item_subfeature_data",
+    g_object_set_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA,
                       subFeatureData);
 
   g_signal_connect(GTK_OBJECT(feature_item), "event",
@@ -1149,7 +1156,7 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpoint
   ZMapWindow  window = (ZMapWindowStruct*)data ;
 #endif
 
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
 
   switch (item_feature_type)
     {
@@ -1165,7 +1172,7 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpoint
       {
 	ZMapWindowItemFeature item_data ;
 
-	item_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data") ;
+	item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
 	g_free(item_data) ;
 	break ;
       }
@@ -1200,7 +1207,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	FooCanvasItem *real_item ;
 
 	item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							      "item_feature_type")) ;
+							      ITEM_FEATURE_TYPE)) ;
 	zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE
 		   || item_feature_type == ITEM_FEATURE_CHILD
 		   || item_feature_type == ITEM_FEATURE_BOUNDING_BOX) ;
@@ -1212,7 +1219,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	  real_item = item ;
 
 	/* Retrieve the feature item info from the canvas item. */
-	feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), "item_feature_data");  
+	feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
 	zMapAssert(feature) ;
 
 	/* Button 1 and 3 are handled, 2 is left for a general handler which could be
@@ -1443,7 +1450,7 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
 
   /* Call back stuff.... */
@@ -1479,7 +1486,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
   ZMapFeature feature ;
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data") ;
+  feature = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
 
   switch (menu_item_id)
@@ -1505,7 +1512,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 						      feature_copy->x1, feature_copy->x2,
 						      0, 0) ;
 
-	new_feature_item = zmapWindowFeatureAdd(menu_data->window,
+	new_feature_item = zMapWindowFeatureAdd(menu_data->window,
 						FOO_CANVAS_GROUP(set_item), feature_copy) ;
 
 	break ;
@@ -1527,7 +1534,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 						      feature_copy->x1, feature_copy->x2,
 						      0, 0) ;
 
-	new_item = zmapWindowFeatureReplace(menu_data->window,
+	new_item = zMapWindowFeatureReplace(menu_data->window,
 					    menu_data->item, feature_copy) ;
 	zMapWindowHighlightObject(menu_data->window, new_item) ;
 
@@ -1541,8 +1548,11 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	if (menu_data->window->focus_item == menu_data->item)
 	  menu_data->window->focus_item = NULL ;
 
-	result = zmapWindowFeatureRemove(menu_data->window, menu_data->item) ;
-
+        if(GPOINTER_TO_INT(g_object_get_data(G_OBJECT(menu_data->item), 
+                                             ITEM_FEATURE_TYPE)) == ITEM_FEATURE_CHILD)
+          result = zMapWindowFeatureRemove(menu_data->window, menu_data->item->parent) ;
+        else
+          result = zMapWindowFeatureRemove(menu_data->window, menu_data->item) ;
 	break ;
       }
     case 1:
@@ -1797,7 +1807,7 @@ static void removeFeatureLongItems(GList **long_items, FooCanvasItem *feature_it
 
   zMapAssert(long_items && feature_item) ;
 
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), "item_feature_type")) ;
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
   zMapAssert(type == ITEM_FEATURE_SIMPLE
 	     || type == ITEM_FEATURE_PARENT || type == ITEM_FEATURE_CHILD) ;
 
