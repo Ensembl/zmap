@@ -23,11 +23,11 @@
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Feb  3 09:16 2006 (edgrif)
+ * Last edited: Feb 20 12:04 2006 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.10 2006-02-17 10:42:50 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.11 2006-02-21 15:06:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -95,6 +95,44 @@ char *zMapGUIMakeTitleString(char *window_type, char *message)
 			  (message ? message : "")) ;
 
   return title ;
+}
+
+
+
+/*!
+ * Shows the usual "About" window.
+ *
+ *
+ * @param window_type  The sort of window it is, e.g. "feature editor"
+ * @param message      Very short text, e.g. "Please Reply" or a feature name or....
+ * @return             nothing
+ *  */
+void zMapGUIShowAbout(void)
+{
+  GtkWidget *about_dialog ;
+  gchar *authors[] = {"Ed Griffiths", "Roy Storey", NULL} ;
+
+  about_dialog = gtk_about_dialog_new() ;
+
+  gtk_about_dialog_set_name(GTK_ABOUT_DIALOG(about_dialog), zMapGetAppName()) ;
+
+  gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about_dialog), zMapGetVersionString()) ;
+
+  gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about_dialog), zMapGetCopyrightString()) ;
+
+  gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(about_dialog), zMapGetCommentsString()) ;
+
+  gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(about_dialog), zMapGetLicenseString()) ;
+
+  gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about_dialog), "(website coming soon)") ;
+
+  gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(about_dialog), (&(authors[0]))) ;
+
+
+  gtk_widget_show_all(about_dialog) ;
+
+
+  return ;
 }
 
 
@@ -221,6 +259,135 @@ void zMapGUIShowMsgOnTop(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
 
   return ;
 }
+
+
+
+/*!
+ * 
+ * WARNING: THIS NEEDS MERGING WITH THE ROUTINE ABOVE.....
+ * 
+ * 
+ * Display a short message in a pop-up dialog box, the behaviour of the dialog depends on
+ * the message type:
+ *
+ *     ZMAP_MSG_INFORMATION, ZMAP_MSG_WARNING - non-blocking, non-modal
+ *              ZMAP_MSG_EXIT, ZMAP_MSG_CRASH - blocking and modal
+ *
+ * If parent is non-NULL then the dialog will be kept on top of that window, essential for
+ * modal dialogs in particular. I think parent should be the application window that the message
+ * applies to probably, or perhaps the application main window.
+ *
+ * @param parent       Widget that message should be kept on top of or NULL.
+ * @param msg_type     ZMAP_MSG_INFORMATION | ZMAP_MSG_WARNING | ZMAP_MSG_EXIT | ZMAP_MSG_CRASH
+ * @param msg          Message to be displayed in dialog.
+ * @return             nothing
+ *  */
+gboolean zMapGUIShowChoice(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
+{
+  gboolean accept = FALSE ;
+  GtkWidget *dialog, *button, *label ;
+  char *title = NULL ;
+  GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
+  gboolean modal = FALSE ;
+
+
+  /* relies on order of ZMapMsgType enum.... */
+  zMapAssert((msg_type >= ZMAP_MSG_INFORMATION || msg_type <= ZMAP_MSG_CRASH)
+	     && (msg && *msg)) ;
+
+  switch(msg_type)
+    {
+    case ZMAP_MSG_INFORMATION:
+      title = "ZMAP - Information" ;
+      break ;
+    case ZMAP_MSG_WARNING:
+      title = "ZMAP - Warning!" ;
+      break;
+    case ZMAP_MSG_EXIT:
+      title = "ZMAP - Error!" ;
+      break;
+    case ZMAP_MSG_CRASH:
+      title = "ZMAP - Crash!" ;
+      break;
+    }
+
+  /* Some times of dialog should be modal. */
+  if (msg_type == ZMAP_MSG_EXIT || msg_type == ZMAP_MSG_CRASH)
+    modal = TRUE ;
+
+
+  /* Force this for now... */
+  modal = TRUE ;
+
+
+  if (modal)
+    flags |= GTK_DIALOG_MODAL ;
+
+  dialog = gtk_dialog_new_with_buttons(title, parent, flags,
+				       GTK_STOCK_OK,
+				       GTK_RESPONSE_ACCEPT,
+				       GTK_STOCK_CANCEL,
+				       GTK_RESPONSE_REJECT,
+				       NULL) ;
+  gtk_container_set_border_width( GTK_CONTAINER(dialog), 5 );
+
+
+  /* Set up the message text in a button widget so that it can put in the primary
+   * selection buffer for cut/paste when user clicks on it. */
+  button = gtk_button_new_with_label(msg) ;
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), button, TRUE, TRUE, 20);
+  gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE) ;
+  label = gtk_bin_get_child(GTK_BIN(button)) ;		    /* Center + wrap long lines. */
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_CENTER) ;
+  gtk_label_set_line_wrap(GTK_LABEL(label), TRUE) ;
+
+  gtk_signal_connect(GTK_OBJECT(button), "clicked",
+		     GTK_SIGNAL_FUNC(butClick), button) ;
+
+
+  gtk_widget_show_all(dialog) ;
+
+
+  /* For modal messages we block waiting for a response otherwise we return and gtk will
+   * clear up for us when the user quits.... */
+  if (modal)
+    {
+      gint result ;
+
+      /* block waiting for user to answer dialog. */
+      result = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+
+      /* currently we don't need to monitor the response...but if we did... */
+      switch (result)
+	{
+	case GTK_RESPONSE_ACCEPT:
+	  accept = TRUE ;
+	  break;
+	default:
+	  accept = FALSE ;
+	  break;
+	}
+
+      gtk_widget_destroy(dialog) ;
+    }
+  else
+    {
+      /* Ensure that the dialog box is destroyed when the user responds. */
+      g_signal_connect_swapped(dialog,
+			       "response", 
+			       G_CALLBACK(gtk_widget_destroy),
+			       dialog) ;
+    }
+
+
+  return accept ;
+}
+
+
+
+
+
+
 
 
 
