@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Nov 17 10:40 2005 (edgrif)
+ * Last edited: Feb 20 11:15 2006 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.14 2005-11-18 10:55:49 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.15 2006-02-21 15:05:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -187,7 +187,29 @@ char *zMapGetAppTitle(void)
  *  */
 char *zMapGetCopyrightString(void)
 {
-  return ZMAP_COPYRIGHT_STRING(ZMAP_TITLE, ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE, ZMAP_DESCRIPTION) ;
+  return ZMAP_COPYRIGHT_STRING() ;
+}
+
+/*!
+ * Returns a comments string for the ZMap application.
+ *
+ * @param void  None.
+ * @return      The comments as a string.
+ *  */
+char *zMapGetCommentsString(void)
+{
+  return ZMAP_COMMENTS_STRING(ZMAP_TITLE, ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
+}
+
+/*!
+ * Returns a license string for the ZMap application.
+ *
+ * @param void  None.
+ * @return      The license as a string.
+ *  */
+char *zMapGetLicenseString(void)
+{
+  return ZMAP_LICENSE_STRING() ;
 }
 
 
