@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Feb 14 16:45 2006 (edgrif)
+ * Last edited: Feb 21 15:16 2006 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.18 2006-02-17 14:13:20 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.19 2006-02-21 15:16:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -129,7 +129,8 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	ZMapViewState view_state ;
 	ZMapStrand revcomp_strand ;
 	char *strand_txt ;
-	char *coord_txt = "0 10000" ;
+	int start = 0, end = 0 ;
+	char *coord_txt = "" ;
 
 	zMapAssert(zmap->focus_viewwindow) ;
 
@@ -137,12 +138,17 @@ void zmapControlWindowSetStatus(ZMap zmap)
 
 	revcomp_strand = zMapViewGetRevCompStatus(view) ;
 	if (revcomp_strand == ZMAPSTRAND_FORWARD)
-	  strand_txt = "+" ;
+	  strand_txt = " + " ;
 	else
-	  strand_txt = "-" ;
+	  strand_txt = " - " ;
 	gtk_label_set_text(GTK_LABEL(zmap->status_revcomp), strand_txt) ;
 
-	gtk_label_set_text(GTK_LABEL(zmap->status_coords), coord_txt) ;
+	if (zMapViewGetFeaturesSpan(view, &start, &end))
+	  {
+	    coord_txt = g_strdup_printf(" %d  %d ", start, end) ;
+	    gtk_label_set_text(GTK_LABEL(zmap->status_coords), coord_txt) ;
+	    g_free(coord_txt) ;
+	  }
 
 	view_state = zMapViewGetStatus(view) ;
 	status_text = zMapViewGetStatusStr(view_state) ;
