@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 23 13:27 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.3 2006-01-23 14:17:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.4 2006-02-21 10:47:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -705,7 +705,7 @@ static void printlevel(gpointer data, gpointer user_data)
   char *feature_type = NULL ;
   int i, indent ;
 
-  any_feature = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(container_parent), "item_feature_data")) ;
+  any_feature = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_DATA)) ;
 
   if (any_feature)
     {

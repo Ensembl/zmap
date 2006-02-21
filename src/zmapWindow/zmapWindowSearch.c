@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Jan 24 10:28 2006 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.7 2006-01-24 10:38:44 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.8 2006-02-21 10:48:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -512,7 +512,7 @@ static void printListDataCB(gpointer data, gpointer user_data_unused)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   ZMapFeature feature ;
 
-  feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), "item_feature_data");  
+  feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature) ;
 
   printf("%s\n", g_quark_to_string(feature->unique_id)) ;

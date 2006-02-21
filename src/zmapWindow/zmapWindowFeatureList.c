@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 17 13:55 2006 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.5 2006-02-17 13:56:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.6 2006-02-21 10:47:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -200,7 +200,7 @@ void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel,
 
       item    = (FooCanvasItem *)list->data;
       /* do we need some kind of type check on feature here? */
-      feature = g_object_get_data(G_OBJECT(item), "item_feature_data");
+      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
 
       addFeatureItemToStore(treeModel, feature, item, NULL);
 
@@ -270,7 +270,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
       ZMapWindowItemFeatureType type;
 
       store = GTK_TREE_STORE(treeModel);
-      type  = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type"));
+      type  = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE));
 
       switch(type)
         { 
@@ -306,7 +306,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
             ZMapWindowItemFeature subfeature;
 
             subfeature = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
-                                                                  "item_subfeature_data") ;
+                                                                  ITEM_SUBFEATURE_DATA) ;
             gtk_tree_store_append(store, &append, parent);
             appended = TRUE;
 

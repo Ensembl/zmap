@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 17 13:50 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.114 2006-02-17 13:50:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.115 2006-02-21 10:47:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -286,7 +286,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 					 ALIGN_SPACING,
 					 &(window->colour_root), &(window->canvas_border)) ;
   canvas_data.curr_root_group = zmapWindowContainerGetFeatures(root_group) ;
-  g_object_set_data(G_OBJECT(root_group), "item_feature_data", full_context) ;
+  g_object_set_data(G_OBJECT(root_group), ITEM_FEATURE_DATA, full_context) ;
   zmapWindowFToIAddRoot(window->context_to_item, root_group);
   window->feature_root_group = root_group ;
 
@@ -441,7 +441,7 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
 		      "y", y,
 		      NULL) ;
 
-  g_object_set_data(G_OBJECT(align_parent), "item_feature_data", alignment) ;
+  g_object_set_data(G_OBJECT(align_parent), ITEM_FEATURE_DATA, alignment) ;
 
   status = zmapWindowFToIAddAlign(window->context_to_item, key_id, align_parent) ;
 
@@ -520,7 +520,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
 		      "y", y,
 		      NULL) ;
 
-  g_object_set_data(G_OBJECT(block_parent), "item_feature_data", block) ;
+  g_object_set_data(G_OBJECT(block_parent), ITEM_FEATURE_DATA, block) ;
 
 
   /* Add this block to our hash for going from the feature context to its on screen item. */
@@ -750,7 +750,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
 			NULL) ;
 
 
-  /* We can't set the "item_feature_data" as we don't have the feature set at this point.
+  /* We can't set the ITEM_FEATURE_DATA as we don't have the feature set at this point.
    * This probably points to some muckiness in the code, problem is caused by us deciding
    * to display all columns whether they have features or not and so some columns may not
    * have feature sets. */
@@ -796,7 +796,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   zMapAssert(forward_col) ;
 
   /* Now we have the feature set, make sure it is set for the column. */
-  g_object_set_data(G_OBJECT(forward_col), "item_feature_data", feature_set) ;
+  g_object_set_data(G_OBJECT(forward_col), ITEM_FEATURE_DATA, feature_set) ;
 
 
   canvas_data->curr_forward_col = zmapWindowContainerGetFeatures(forward_col) ;
@@ -809,7 +809,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 								feature_set, ZMAPSTRAND_REVERSE))))
     {
       /* Now we have the feature set, make sure it is set for the column. */
-      g_object_set_data(G_OBJECT(reverse_col), "item_feature_data", feature_set) ;
+      g_object_set_data(G_OBJECT(reverse_col), ITEM_FEATURE_DATA, feature_set) ;
 
       canvas_data->curr_reverse_col = zmapWindowContainerGetFeatures(reverse_col) ;
 
@@ -1000,7 +1000,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
 	/* If a column is empty it will not have a feature set but it will have a style from which we
 	 * can display the column id. */
-	feature_set = (ZMapFeatureSet)g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+	feature_set = (ZMapFeatureSet)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
 	style = g_object_get_data(G_OBJECT(item), "item_feature_style") ;
 	zMapAssert(feature_set || style) ;
 
@@ -1128,7 +1128,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 	ZMapStrand strand ;
         GList *list ;
 	
-        feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data") ;
+        feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
 	strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(menu_data->item), "item_feature_strand")) ;
 				 
 	list = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 

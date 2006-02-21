@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Feb  2 11:12 2006 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.19 2006-02-02 11:22:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.20 2006-02-21 10:47:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -296,7 +296,7 @@ static char *buildParamString(blixemData blixem_data)
   if (blixem_data->Scope > 0)
     scope = blixem_data->Scope ;
 
-  feature = g_object_get_data(G_OBJECT(blixem_data->item), "item_feature_data");
+  feature = g_object_get_data(G_OBJECT(blixem_data->item), ITEM_FEATURE_DATA);
   zMapAssert(feature) ;					    /* something badly wrong if no feature. */
   blixem_data->feature = feature ;
   

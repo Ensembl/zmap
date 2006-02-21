@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 12 15:29 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.6 2006-01-13 18:54:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.7 2006-02-21 10:48:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -134,7 +134,7 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeatureAny feature ;
 
-  feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), "item_feature_data") ;
+  feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
 
   switch (menu_item_id)
     {
@@ -242,7 +242,7 @@ static FooCanvasGroup *getItemsColGroup(FooCanvasItem *item)
 
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							"item_feature_type")) ;
+							ITEM_FEATURE_TYPE)) ;
 
   switch (item_feature_type)
     {

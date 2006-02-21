@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Feb 14 15:31 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.103 2006-02-17 13:49:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.104 2006-02-21 10:47:09 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -1049,11 +1049,11 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvas
   char *subpart_text = NULL ;
   ZMapWindowSelectStruct select = {NULL} ;
 
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
 
   if (type == ITEM_FEATURE_CHILD)
     {
-      item_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data") ;
+      item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
       zMapAssert(item_data) ;
 
       subpart_text = g_strdup_printf("  (%d %d)", item_data->start, item_data->end) ;

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct  6 17:50 2005 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.42 2005-10-07 10:56:49 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.43 2006-02-21 10:47:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -601,7 +601,7 @@ static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget)
                      ZMAP_WINDOW_LIST_COL_FEATURE_ITEM, &listItem,
                      -1) ;
   if(listItem)
-    feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(listItem), "item_feature_data");
+    feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(listItem), ITEM_FEATURE_DATA);
 
   if(feature)
     zmapWindowCreateSearchWindow(wList->zmapWindow, feature);

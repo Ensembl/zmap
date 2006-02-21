@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb  3 18:15 2006 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.21 2006-02-17 14:06:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.22 2006-02-21 10:47:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -236,8 +236,8 @@ ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *it
 
   editor = g_new0(zmapWindowEditorDataStruct, 1);
 
-  editor->origFeature  = g_object_get_data(G_OBJECT(item), "item_feature_data");
-  type = GPOINTER_TO_INT( g_object_get_data(G_OBJECT(item), "item_feature_type") );
+  editor->origFeature  = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+  type = GPOINTER_TO_INT( g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE) );
   zMapAssert(editor->origFeature && ((type == ITEM_FEATURE_SIMPLE) || 
                                      (type == ITEM_FEATURE_PARENT) || 
                                      (type == ITEM_FEATURE_CHILD)
@@ -1121,7 +1121,7 @@ static void saveChangesCB(GtkWidget *widget, gpointer data)
 
       editor_data->origFeature = zMapFeatureCopy(editor_data->wcopyFeature);
 
-      g_object_set_data(G_OBJECT(editor_data->item), "item_feature_data", editor_data->origFeature);
+      g_object_set_data(G_OBJECT(editor_data->item), ITEM_FEATURE_DATA, editor_data->origFeature);
 
       editor_data->savePressed = TRUE;
       editor_data->applyPressed = FALSE;

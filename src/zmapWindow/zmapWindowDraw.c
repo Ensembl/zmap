@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb  2 15:05 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.14 2006-02-17 13:49:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.15 2006-02-21 10:47:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -625,10 +625,10 @@ static void bumpColCB(gpointer data, gpointer user_data)
   if(!(zmapWindowItemIsShown(item)))
     return ;
 
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
   zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
 
-  feature = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
 
 
@@ -708,7 +708,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
       {
 	ZMapFeature feature ;
 
-	feature = (ZMapFeature)(g_object_get_data(G_OBJECT(item), "item_feature_data")) ;
+	feature = (ZMapFeature)(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)) ;
 
 	if (g_hash_table_lookup_extended(bump_data->pos_hash,
 					 GINT_TO_POINTER(feature->original_id), &key, &value))

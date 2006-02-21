@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 17 16:20 2006 (rds)
+ * Last edited: Feb 20 18:25 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.13 2006-02-17 18:03:40 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.14 2006-02-21 10:47:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -129,7 +129,7 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window->focus_item),
-							"item_feature_type")) ;
+							ITEM_FEATURE_TYPE)) ;
 
   /* Only raise this item to the top if it is the whole feature. */
   if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
@@ -165,22 +165,23 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature) ;
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							"item_feature_type")) ;
+							ITEM_FEATURE_TYPE)) ;
 
   if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
     {
       matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item, feature) ;
+      zMapAssert(matching_item);
     }
   else
     {
       ZMapWindowItemFeature item_subfeature_data ;
 
       item_subfeature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
-								      "item_subfeature_data") ;
+								      ITEM_SUBFEATURE_DATA) ;
 
       matching_item = zmapWindowFToIFindItemChild(window->context_to_item, feature,
 						  item_subfeature_data->start,
@@ -205,7 +206,7 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
 
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature) ;
 
   /* Find the item that matches */
@@ -243,7 +244,7 @@ gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
   foo_canvas_item_i2w(item, &dummy_x, &iy1);
   foo_canvas_item_i2w(item, &dummy_x, &iy2);
 
-  feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature) ;         /* this should never fail. */
   
   /* Get the features canvas coords (may be very different for align block features... */
@@ -367,7 +368,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
   return TRUE;
 
-  feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature) ;         /* this should never fail. */
   
   /* Get the features canvas coords (may be very different for align block features... */
@@ -440,13 +441,13 @@ void zmapWindowShowItem(FooCanvasItem *item)
   ZMapWindowItemFeature item_subfeature_data ;
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), "item_feature_data");  
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature) ;
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							"item_feature_type")) ;
+							ITEM_FEATURE_TYPE)) ;
 
-  item_subfeature_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data") ;
+  item_subfeature_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
 
 
   printf("\nItem:\n"
@@ -603,19 +604,19 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 	{
 	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
 	  
-	  box_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data");
+	  box_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA);
 	  box_data->start = top + transcriptOrigin;
 	  box_data->end = bottom + transcriptOrigin;
 	}
       else
 	{
-	  itemFeatureType = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type"));
+	  itemFeatureType = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE));
 
 	  if (itemFeatureType == ITEM_FEATURE_BOUNDING_BOX)
 	    {
 	      intron_box = item;
 	      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-	      box_data = g_object_get_data(G_OBJECT(intron_box), "item_subfeature_data");
+	      box_data = g_object_get_data(G_OBJECT(intron_box), ITEM_SUBFEATURE_DATA);
 	      intron = box_data->twin_item;
 	      
 	      box_data->start = top + transcriptOrigin;
@@ -624,7 +625,7 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 	  else
 	    {
 	      intron = item;
-	      intron_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data");
+	      intron_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA);
 	      intron_box = intron_data->twin_item;
 	      foo_canvas_item_get_bounds(intron_box, &x1, &y1, &x2, &y2);
 	      
@@ -890,14 +891,14 @@ static void highlightItem(ZMapWindow window, FooCanvasItem *item)
     {
       ZMapWindowItemFeatureType item_feature_type ;
 
-      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
 
       if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX
 	  || item_feature_type == ITEM_FEATURE_CHILD)
 	{
 	  ZMapWindowItemFeature item_data ;
 
-	  item_data = g_object_get_data(G_OBJECT(item), "item_subfeature_data") ;
+	  item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
 
 	  if (item_data->twin_item)
 	    setItemColourRevVideo(window, item_data->twin_item) ;
@@ -930,7 +931,7 @@ static void setItemColourOriginal(ZMapWindow window, FooCanvasItem *item)
   ZMapFeatureTypeStyle style ;
   
   /* Retrieve the feature from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), "item_feature_data") ;
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
   style = zMapFeatureGetStyle(feature) ;
   zMapAssert(style) ;
@@ -982,7 +983,7 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
   GdkColor *fill_colour = NULL;
   ZMapWindowItemFeatureType item_feature_type ;
   
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "item_feature_type")) ;
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
   
   if (item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
     {
