@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Feb 14 16:30 2006 (edgrif)
+ * Last edited: Feb 20 17:36 2006 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.18 2006-02-17 14:05:40 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.19 2006-02-21 15:11:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -92,11 +92,12 @@ typedef struct _ZMapViewStruct
   gchar *sequence ;
   int start, end ;
 
-
   guint idle_handle ;
 
   GList *window_list ;					    /* Of ZMapViewWindow. */
 
+  int connections_loaded ;				    /* Record of number of connections
+							     * loaded so for each reload. */
   GList *connection_list ;				    /* Of ZMapViewConnection. */
   ZMapViewConnection sequence_server ;			    /* Which connection to get raw
 							       sequence from. */

@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Feb 17 15:04 2006 (rds)
+ * Last edited: Feb 20 18:05 2006 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.23 2006-02-17 17:53:05 rds Exp $
+ * CVS info:   $Id: zmapView.h,v 1.24 2006-02-21 15:11:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -68,28 +68,22 @@ typedef struct _ZMapViewCallbacksStruct
   ZMapViewWindowCallbackFunc focus ;
   ZMapViewWindowCallbackFunc select ;
   ZMapViewWindowCallbackFunc visibility_change ;
+  ZMapViewCallbackFunc state_change ;
   ZMapViewCallbackFunc destroy ;
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 
 
 
 
-/* DOES THIS STATE NEED TO BE EXPOSED LIKE THIS...REVISIT.... */
 /* The overall state of the zmapView, we need this because both the zmap window and the its threads
  * will die asynchronously so we need to block further operations while they are in this state. */
-
-
-/* AGH muckiness here....if last window is deleted, what state are we in ??? */
-
 typedef enum {
-  ZMAPVIEW_INIT,					    /* No window(s) and no threads. */
-  ZMAPVIEW_NOT_CONNECTED,				    /* Window(s), but no threads. */
 
-  /* AGH, I think I don't like this....can happen if all view windows get closed.... */
-  ZMAPVIEW_NO_WINDOW,					    /* Threads but no windows. */
+  /* do we need both of these...check.... */
+  ZMAPVIEW_INIT,					    /* Window(s), but no threads. */
 
   ZMAPVIEW_CONNECTING,					    /* Connecting threads. */
-  ZMAPVIEW_CONNECTED,					    /* Threads but no data. */
+  ZMAPVIEW_CONNECTED,					    /* Threads connected, no data yet. */
 
   ZMAPVIEW_LOADING,					    /* Loading data. */
   ZMAPVIEW_LOADED,					    /* Full view. */
@@ -102,43 +96,18 @@ typedef enum {
 
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* I THINK WE MAY NEED SOMETHING MORE LIKE THIS.... */
-typedef enum {
-  ZMAPVIEW_INIT,					    /* No window(s) and no threads. */
-
-  ZMAPVIEW_NOT_CONNECTED,				    /* Window(s) with no threads. */
-  ZMAPVIEW_CONNECTING,
-
-  ZMAPVIEW_WAITING,					    /* Window(s) + thread(s) in normal
-							       state. */
-  ZMAPVIEW_DOING_REQUEST,
-
-
-  ZMAPVIEW_RESETTING,					    /* Window(s) that is closing its threads
-							       and returning to INIT state. */
-
-
-
-  ZMAPVIEW_DYING,					    /* ZMap is dying for some reason,
-							       cannot do anything in this state. */
-  ZMAPVIEW_DEAD						    /* DON'T KNOW IF WE NEED THIS.... */
-} ZMapViewState ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 void zMapViewInit(ZMapViewCallbacks callbacks) ;
-ZMapView zMapViewCreate(char *sequence,	int start, int end, void *app_data) ;
+ZMapViewWindow zMapViewCreate(GtkWidget *parent_widget,
+			      char *sequence, int start, int end,
+			      void *app_data) ;
 
-ZMapViewWindow zMapViewMakeWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
-void zMapViewRedraw(ZMapViewWindow view_window) ;
-void zMapViewRemoveWindow(ZMapViewWindow view_window, gboolean *no_windows_left) ;
-gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
+void zMapViewRemoveWindow(ZMapViewWindow view_window) ;
 
+void zMapViewRedraw(ZMapViewWindow view_window) ;
+
+gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
 gboolean zMapViewLoad (ZMapView zmap_view) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
@@ -149,16 +118,17 @@ ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
 void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom) ;
 ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
 char *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
+gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
 ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
+int zMapViewNumWindows(ZMapViewWindow view_window) ;
+
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
 
 gboolean zMapViewDestroy(ZMapView zmap_view) ;
-
-
 
 
 #endif /* !ZMAPVIEW_H */
