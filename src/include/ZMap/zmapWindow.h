@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Feb 20 17:39 2006 (rds)
+ * Last edited: Feb 21 11:21 2006 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.49 2006-02-21 10:45:23 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.50 2006-02-21 18:40:02 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -129,7 +129,7 @@ typedef enum
     ZMAP_FTOI_RETURN_ITEM
   } ZMapFToIReturnType;
 
-typedef struct _ZMapWindowFeatureQueryStruct
+typedef struct _ZMapWindowFToIQueryStruct
 {
   GQuark alignId,               /* alignment string as quark */
     blockId,                    /* block string as id */
@@ -155,7 +155,7 @@ typedef struct _ZMapWindowFeatureQueryStruct
     FooCanvasItem *item_answer;
   } ans;                        /* The answer */
 
-} ZMapWindowFeatureQueryStruct, *ZMapWindowFeatureQuery;
+} ZMapWindowFToIQueryStruct, *ZMapWindowFToIQuery;
 
 
 /*! @} end of zmapwindow docs. */
@@ -190,9 +190,9 @@ PangoFontDescription *zMapWindowGetFixedWidthFontDescription(ZMapWindow window);
 
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
 
-ZMapWindowFeatureQuery zMapWindowFeatureItemNewQuery(void);
-
-FooCanvasItem *zMapWindowFindFeatureItemByQuery(ZMapWindow window, ZMapWindowFeatureQuery query);
+ZMapWindowFToIQuery zMapWindowFToINewQuery(void);
+gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query);
+void zMapWindowFToIDestroyQuery(ZMapWindowFToIQuery query);
 
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 GList *zMapWindowFeatureAllStyles(ZMapWindow window);
