@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 27 11:16 2005 (rds)
+ * Last edited: Feb 22 15:23 2006 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.11 2005-06-01 13:11:18 rds Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.12 2006-02-22 15:57:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -65,6 +65,11 @@ typedef struct _ZMapAppContextStruct
   ZMapLog logger ;
 
   zMapXRemoteNotifyData propertyNotifyData;
+
+  gboolean show_mainwindow ;				    /* Should main window be displayed. */
+
+  char *default_sequence ;				    /* Was a default sequence specified in
+							       the config. file.*/
 
 } ZMapAppContextStruct, *ZMapAppContext ;
 

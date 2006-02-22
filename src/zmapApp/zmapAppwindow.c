@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 17 09:52 2006 (edgrif)
+ * Last edited: Feb 22 15:48 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.23 2006-02-17 10:44:32 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.24 2006-02-22 15:57:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,6 +41,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
+#include <ZMap/zmapConfig.h>
 #include <ZMap/zmapControl.h> 
 #include <zmapApp_P.h>
 
@@ -59,7 +60,7 @@ static gboolean removeZmapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
 
 void exitCB(void *app_data, void *zmap_data_unused) ;
 static void appExit(ZMapAppContext app_context) ;
-
+static gboolean getConfiguration(ZMapAppContext app_context) ;
 
 
 ZMapManagerCallbacksStruct app_window_cbs_G = {removeZmapRow, infoSetCB, exitCB} ;
@@ -68,27 +69,29 @@ int test_global = 10 ;
 int test_overlap = 0 ;
 
 
+#define ZMAP_APP_CONFIG "ZMap"
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Place a copyright notice in the executable. */
+char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
+						  ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE,
+						  ZMAP_DESCRIPTION) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 int zmapMainMakeAppWindow(int argc, char *argv[])
 {
   ZMapAppContext app_context ;
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
   GtkWidget *quit_button ;
-
   char *sequence ;
   int start, end ;
 
-  /* this all needs revving up sometime.... */
-  if (argc > 1)
-    test_global = atoi(argv[1]) ;
 
-  if (argc > 2)
-    test_overlap = 1 ;
-
-
-  /* 
-   *       Application initialisation. 
-   */
-
+  /*       Application initialisation.        */
 
   /* Since thread support is crucial we do compile and run time checks that its all intialised.
    * the function calls look obscure but its what's recommended in the glib docs. */
@@ -110,7 +113,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   checkForCmdLineVersionArg(argc, argv) ;
 
 
-
   /* Set up configuration directory/files, this function exits if the directory/files can't be
    * accessed. */
   checkConfigDir() ;
@@ -127,11 +129,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context->logger = zMapLogCreate(NULL) ;
 
 
+  getConfiguration(app_context) ;
 
 
-  /* 
-   *             GTK initialisation 
-   */
+  /*             GTK initialisation              */
 
   initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
 
@@ -162,26 +163,31 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(vbox), quit_button, FALSE, FALSE, 0) ;
 
+  /* Always create the widget. */
   gtk_widget_show_all(toplevel) ;
 
+  /* We don't always want to show this window, for lace users it is useless.... */
+  if (!(app_context->show_mainwindow))
+    gtk_widget_unmap(toplevel) ;
 
-  /* Did user specify a sequence on the command line. */
-  sequence = NULL ;
+
+  /* If user specifyed a sequence in the config. file or on the command line then
+   * display it straight away. */
+  sequence = app_context->default_sequence ;
   start = 1 ;
   end = 0 ;
-  checkForCmdLineSequenceArgs(argc, argv, &sequence, &start, &end) ; /* May exit if bad cmdline args. */
+
+  if (!sequence)
+    checkForCmdLineSequenceArgs(argc, argv, &sequence, &start, &end) ;
+							    /* May exit if bad cmdline args. */
   if (sequence)
     {
       zmapAppCreateZMap(app_context, sequence, start, end) ;
     }
 
 
-  /* 
-   *       Start the GUI. 
-   */
-
+  /*             Start the GUI.                */
   gtk_main() ;
-
 
 
   zMapExit(EXIT_SUCCESS) ;				    /* exits.... */
@@ -438,3 +444,55 @@ static void appExit(ZMapAppContext app_context)
 
   return ;
 }
+
+
+
+
+
+/* Read ZMap application defaults. */
+static gboolean getConfiguration(ZMapAppContext app_context)
+{
+  gboolean result = FALSE ;
+  ZMapConfig config ;
+  ZMapConfigStanzaSet zmap_list = NULL ;
+  ZMapConfigStanza zmap_stanza ;
+  char *zmap_stanza_name = ZMAP_APP_CONFIG ;
+  ZMapConfigStanzaElementStruct zmap_elements[] = {{"show_mainwindow", ZMAPCONFIG_BOOL, {NULL}},
+						   {"default_sequence", ZMAPCONFIG_STRING, {NULL}},
+						   {NULL, -1, {NULL}}} ;
+
+
+  zMapConfigGetStructBool(zmap_elements, "show_mainwindow") = TRUE ; /* By default show main window. */
+
+
+  if ((config = zMapConfigCreate()))
+    {
+      zmap_stanza = zMapConfigMakeStanza(zmap_stanza_name, zmap_elements) ;
+
+      if (zMapConfigFindStanzas(config, zmap_stanza, &zmap_list))
+	{
+	  ZMapConfigStanza next_zmap ;
+	  
+	  /* Get the first zmap stanza found, we will ignore any others. */
+	  next_zmap = zMapConfigGetNextStanza(zmap_list, NULL) ;
+	  
+	  app_context->show_mainwindow = zMapConfigGetElementBool(next_zmap, "show_mainwindow") ;
+	  if ((app_context->default_sequence
+	       = zMapConfigGetElementString(next_zmap, "default_sequence")))
+	    app_context->default_sequence = g_strdup_printf(app_context->default_sequence) ;
+	  
+	  zMapConfigDeleteStanzaSet(zmap_list) ;		    /* Not needed anymore. */
+	}
+      
+      zMapConfigDestroyStanza(zmap_stanza) ;
+      
+      zMapConfigDestroy(config) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
