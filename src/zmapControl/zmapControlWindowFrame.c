@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 20 16:23 2005 (edgrif)
+ * Last edited: Feb 21 15:43 2006 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.16 2005-01-24 11:34:44 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.17 2006-02-22 15:02:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,6 +80,11 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 
   gtk_paned_pack2(GTK_PANED(zmap->hpane), 
 		  zmap->pane_vbox, TRUE, TRUE);
+
+
+  /* Set left hand (sliders) pane closed by default. */
+  gtk_paned_set_position(GTK_PANED(zmap->hpane), 0) ;
+
 
   gtk_widget_show_all(zmap->hpane);
 

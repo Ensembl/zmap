@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Feb 20 17:30 2006 (edgrif)
+ * Last edited: Feb 22 14:49 2006 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.58 2006-02-21 15:13:14 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.59 2006-02-22 15:02:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -355,7 +355,6 @@ void zmapControlClose(ZMap zmap)
 
 
 
-
 void zmapControlWindowSetGUIState(ZMap zmap)
 {
 
@@ -372,19 +371,23 @@ void zmapControlWindowSetGUIState(ZMap zmap)
 /* This function sets the button status and other bits of the GUI for a particular view/window. */
 void zmapControlSetGUIVisChange(ZMap zmap, ZMapWindowVisibilityChange vis_change)
 {
+  int pane_width ;
 
   /* There is replication here so need to deal with that.... */
   zmapControlWindowSetButtonState(zmap) ;
 
   zmapControlWindowSetZoomButtons(zmap, vis_change->zoom_status) ;
 
-
   zmapControlWindowSetStatus(zmap) ;
 
+  /* If the user has zoomed in so far that we cannot show the whole sequence in one window
+   * then open the pane that shows the window navigator scroll bar. */
+  pane_width = zMapNavigatorSetWindowPos(zmap->navigator,
+					 vis_change->scrollable_top, vis_change->scrollable_bot) ;
+  gtk_paned_set_position(GTK_PANED(zmap->hpane), pane_width) ;
 
-  zMapNavigatorSetWindowPos(zmap->navigator,
-			    vis_change->scrollable_top, vis_change->scrollable_bot) ;
 
+  return ;
 }
 
 

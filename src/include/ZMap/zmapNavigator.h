@@ -25,9 +25,9 @@
  * Description: External interface to the Navigator for sequence views.
  *              
  * HISTORY:
- * Last edited: Jan 20 16:58 2005 (edgrif)
+ * Last edited: Feb 22 13:44 2006 (edgrif)
  * Created: Fri Jan  7 14:38:22 2005 (edgrif)
- * CVS info:   $Id: zmapNavigator.h,v 1.2 2005-01-24 11:27:03 edgrif Exp $
+ * CVS info:   $Id: zmapNavigator.h,v 1.3 2006-02-22 15:02:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_NAVIGATOR_H
@@ -45,7 +45,7 @@ typedef void (*ZMapNavigatorScrollValue)(void *user_data, double start, double e
 ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out) ;
 void zMapNavigatorSetWindowCallback(ZMapNavigator navigator,
 					   ZMapNavigatorScrollValue cb_func, void *user_data) ;
-void zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos) ;
+int zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos) ;
 void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 			  double top, double bottom) ;
 void zMapNavigatorDestroy(ZMapNavigator navigator) ;

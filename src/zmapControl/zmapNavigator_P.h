@@ -26,9 +26,9 @@
  *              positional information for sequences.
  *              
  * HISTORY:
- * Last edited: Jan 20 16:35 2005 (edgrif)
+ * Last edited: Feb 22 13:42 2006 (edgrif)
  * Created: Fri Jan  7 13:50:33 2005 (edgrif)
- * CVS info:   $Id: zmapNavigator_P.h,v 1.1 2005-02-02 14:51:07 edgrif Exp $
+ * CVS info:   $Id: zmapNavigator_P.h,v 1.2 2006-02-22 15:02:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_NAVIGATOR_P_H
@@ -46,6 +46,7 @@ typedef struct _ZMapNavStruct
 
   /* The region locator showing the position/extent of this sequence region
    * within the total sequence. */
+  GtkWidget *pane ;
   GtkWidget *navVBox ;
   GtkWidget *navVScroll ;
   GtkWidget *topLabel ;

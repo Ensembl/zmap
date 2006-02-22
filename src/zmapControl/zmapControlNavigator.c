@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb  1 09:38 2005 (edgrif)
+ * Last edited: Feb 22 14:48 2006 (edgrif)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.23 2005-02-02 11:03:49 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.24 2006-02-22 15:02:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,8 +61,11 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out)
 
   navigator = g_new0(ZMapNavStruct, 1);
 
-  pane = gtk_hpaned_new() ;
+  navigator->pane = pane = gtk_hpaned_new() ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   gtk_widget_set_size_request(pane, 100, -1) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* Construct the region locator. */
@@ -140,18 +143,40 @@ void zMapNavigatorSetWindowCallback(ZMapNavigator navigator,
 }
 
 
-void zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos)
+/* Set the window adjuster to match the Max Window size of the underlying canvas. This is needed
+ * because with a long sequence it is not possible to zoom the whole sequence down to the level
+ * of bases without exceeding the maximum window size of X Windows.
+ * We need to watch for when the scroll bar shrinks and at this point open the window
+ * slider so the user sees it.....then they can use this to navigate when we can't show the whole
+ * sequence in one window.
+ * Returns an integer which is the width in pixels of the window scrollbar. */
+int zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos)
 {
-  GtkObject *window_adjuster ;
+  int pane_width = 0 ;
+  GtkAdjustment *window_adjuster ;
+  enum {PANED_WINDOW_GUTTER_SIZE = 10} ;		    /* There is no simple way to get this. */
 
-  window_adjuster = (GtkObject *)gtk_range_get_adjustment(GTK_RANGE(navigator->wind_scroll)) ;
+  /* Set the new scrollbar size. */
+  window_adjuster = (GtkAdjustment *)gtk_range_get_adjustment(GTK_RANGE(navigator->wind_scroll)) ;
 
-  GTK_ADJUSTMENT(window_adjuster)->value = top_pos ;
-  GTK_ADJUSTMENT(window_adjuster)->page_size = (gdouble)(fabs(bot_pos - top_pos) + 1) ;
+  window_adjuster->value = top_pos ;
+  window_adjuster->page_size = (gdouble)(fabs(bot_pos - top_pos) + 1) ;
 
-  gtk_adjustment_changed(GTK_ADJUSTMENT(window_adjuster)) ;
+  gtk_adjustment_changed(window_adjuster) ;
 
-  return ;
+
+  /* find out if page_size is smaller than max pane size....if so then return width of window
+     navigator box, otherwise return 0 so the window navigator will not be visible. */
+  if (window_adjuster->page_size < (window_adjuster->upper - window_adjuster->lower + 1))
+    {
+      GtkRequisition box_size ;
+
+      gtk_widget_size_request(GTK_WIDGET(navigator->wind_vbox), &box_size) ;
+
+      pane_width = box_size.width + PANED_WINDOW_GUTTER_SIZE ;
+    }
+
+  return pane_width ;
 }
 
 
