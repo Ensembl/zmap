@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Feb 22 14:49 2006 (edgrif)
+ * Last edited: Feb 23 16:10 2006 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.59 2006-02-22 15:02:03 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.60 2006-02-23 16:13:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -202,8 +202,6 @@ gboolean zMapDeleteView(ZMap zmap, ZMapView view)
   if (!zmap->view_list)
     zmap->state = ZMAP_INIT ;
 
-  zmapControlWindowSetGUIState(zmap) ;
-
   return result ;
 }
 
@@ -327,26 +325,28 @@ void zmapControlClose(ZMap zmap)
   view_window = zmap->focus_viewwindow ;
   view = zMapViewGetView(view_window) ;
 
-  num_windows = zMapViewNumWindows(view_window) ;
 
-  /* If there is just one view or just window of a view then we warn the user. */
+  /* If there is just one view or just one window left in a view then we warn the user. */
+  num_windows = zMapViewNumWindows(view_window) ;
   if (num_views == 1 && num_windows == 1)
     {
       if (zMapGUIShowChoice(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING,
-			    "Closing this window will close this zmap, "
+			    "Closing this window will close this zmap window, "
 			    "do you really want to do this ?"))
 	killZMap(zmap) ;
     }
-  else if (num_windows == 1)
-    {
-      if (zMapGUIShowChoice(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING,
-			    "Closing this window will remove this view, "
-			    "do you really want to do this ?"))
-	zMapDeleteView(zmap, view) ;
-    }
   else
     {
-      zmapControlRemoveWindow(zmap) ;
+      char *msg ;
+
+      msg = g_strdup_printf("Closing this window will remove view \"%s\", "
+			    "do you really want to do this ?", zMapViewGetSequence(view)) ;
+
+      if (num_windows > 1
+	  || zMapGUIShowChoice(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING, msg))
+	zmapControlRemoveWindow(zmap) ;
+
+      g_free(msg) ;
     }
 
 
@@ -690,6 +690,10 @@ static void viewKilledCB(ZMapView view, void *app_data, void *view_data)
   if (findViewInZMap(zmap, view))
     {
       zMapDeleteView(zmap, view) ;
+
+      /* do we need to update the focus window here ??? */
+
+
     }
   else
     {

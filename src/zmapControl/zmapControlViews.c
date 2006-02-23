@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Feb 20 12:04 2006 (edgrif)
+ * Last edited: Feb 23 15:24 2006 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.9 2006-02-21 15:14:38 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.10 2006-02-23 16:13:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -211,15 +211,15 @@ void zmapControlRemoveWindow(ZMap zmap)
   ZMapViewWindow view_window, remaining_view ;
   ZMapView view ;
   gboolean remove ;
-  int num_views ;
+  int num_views, num_windows ;
 
 
   num_views = zmapControlNumViews(zmap) ;
+  num_windows = zMapViewNumWindows(zmap->focus_viewwindow) ;
 
-
-  /* We shouldn't get called if there are no views or if a view has one window left. */
+  /* We shouldn't get called if there are no views or if there is one view with one window left. */
   zMapAssert(num_views && zmap->focus_viewwindow
-	     && (zMapViewNumWindows(zmap->focus_viewwindow) > 1)) ;
+	     && !(num_views == 1 && num_windows == 1)) ;
 
 
   /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
@@ -229,8 +229,13 @@ void zmapControlRemoveWindow(ZMap zmap)
 
   close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
 
+  /* Make sure we reset focus because we are removing the view it points to ! */
+  zmap->focus_viewwindow = NULL ;
 
-  zMapViewRemoveWindow(view_window) ;
+  if (num_windows > 1)
+    zMapViewRemoveWindow(view_window) ;
+  else
+    zMapDeleteView(zmap, view) ;
 
 
   /* this needs to remove the pane.....AND  set a new focuspane....if there is one.... */
@@ -240,10 +245,6 @@ void zmapControlRemoveWindow(ZMap zmap)
   /* Remove from hash of viewwindows to frames */
   remove = g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
   zMapAssert(remove) ;
-
-
-  /* Make sure we reset focus because we just removed the view it points to ! */
-  zmap->focus_viewwindow = NULL ;
 
 
   /* Having removed one window we need to refocus on another, if there is one....... */
@@ -334,6 +335,7 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame, GtkOrientation
 
   return new_frame ;
 }
+
 
 
 /* Returns the viewWindow left in the other half of the pane, but note when its
