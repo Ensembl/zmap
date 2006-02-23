@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 22 15:48 2006 (edgrif)
+ * Last edited: Feb 23 16:33 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.24 2006-02-22 15:57:05 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.25 2006-02-23 16:37:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -462,8 +462,10 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 						   {NULL, -1, {NULL}}} ;
 
 
-  zMapConfigGetStructBool(zmap_elements, "show_mainwindow") = TRUE ; /* By default show main window. */
 
+  app_context->show_mainwindow
+    = zMapConfigGetStructBool(zmap_elements, "show_mainwindow") = TRUE ;
+							    /* By default show main window. */
 
   if ((config = zMapConfigCreate()))
     {
