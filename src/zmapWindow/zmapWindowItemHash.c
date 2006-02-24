@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Feb 21 18:41 2006 (rds)
+ * Last edited: Feb 24 15:02 2006 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.18 2006-02-21 18:45:01 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.19 2006-02-24 15:04:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -708,6 +708,19 @@ ZMapWindowFToIQuery zMapWindowFToINewQuery(void)
 }
 
 /* =====================
+ * So this is what the public can call of the FToI stuff.
+
+ * Things to note:
+ * - Set query->query_type 
+ * - Check query->return_type
+ * - query->alignId && query->blockId default to the master
+ *   alignment and the first block of that alignment.
+ *   This means obtaining our root group is impossible with 
+ *   this function.  Not such a bad thing
+ * - No need to worry about setting too much info in your
+ *   query only what is needed will be passed to the internals
+ *   
+
  * I want this to do have the following interface:
  * query = zMapWindowFToINewQuery();
  * query->... = ...;
@@ -727,6 +740,9 @@ gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query
   gboolean query_valid = TRUE, found = FALSE, use_style = FALSE;
   GQuark align_id, block_id, set_id, feature_id, valid_style, wild_card;
   ZMapStrand zmap_strand; char *strand_txt = "*";
+  ZMapFeatureAlignment master_alignment = NULL;
+
+  zMapAssert(window->feature_context);
 
   /* Zero/Invalidate everything temporary */
   query->return_type  = ZMAP_FTOI_RETURN_ERROR;
@@ -740,6 +756,9 @@ gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query
      query->strand == ZMAPSTRAND_NONE)
     strand_txt = zMapFeatureStrand2Str(query->strand);
 
+  if(!(master_alignment = window->feature_context->master_align))
+    query_valid = FALSE;
+
   if(query_valid)
     {    
       /* check we have the absolute minimum in the query */
@@ -748,12 +767,15 @@ gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query
 
       /* Always need alignment for queries! */
       if(query_valid && query->alignId == 0)
-        query_valid = FALSE; 
+        {
+          if(!(query->alignId = master_alignment->unique_id))
+            query_valid = FALSE; 
+        }
 
       if(query->query_type == ZMAP_FTOI_QUERY_ALIGN_ITEM || 
-          query->query_type == ZMAP_FTOI_QUERY_BLOCK_ITEM || 
-          query->query_type == ZMAP_FTOI_QUERY_SET_ITEM   || 
-          query->query_type == ZMAP_FTOI_QUERY_FEATURE_ITEM) 
+         query->query_type == ZMAP_FTOI_QUERY_BLOCK_ITEM || 
+         query->query_type == ZMAP_FTOI_QUERY_SET_ITEM   || 
+         query->query_type == ZMAP_FTOI_QUERY_FEATURE_ITEM) 
         query_valid = TRUE; 
 
     }
@@ -765,6 +787,15 @@ gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query
       set_id   = query->columnId;
       zmap_strand = query->strand;
       feature_id  = 0;
+
+      if(query->blockId == 0)
+        {
+          ZMapFeatureBlock first_block = NULL;
+          if(master_alignment &&
+             master_alignment->blocks &&
+             (first_block    = (ZMapFeatureBlock)(master_alignment->blocks->data)))
+            block_id = query->blockId = first_block->unique_id;
+        }
 
       switch(query->query_type)
         {
@@ -899,12 +930,11 @@ gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query
           break;
         }
     }
+
   if(!found)
     {
       query->return_type = ZMAP_FTOI_RETURN_ERROR;
       query->ans.list_answer = NULL; query->ans.item_answer = NULL;
-      zMapAssert(align_id && block_id && set_id && feature_id);
-      zMapAssert(strand_txt);
     }
 #ifdef RDS_DONT_INCLUDE
   else
