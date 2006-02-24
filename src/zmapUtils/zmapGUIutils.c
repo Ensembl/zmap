@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Feb 20 12:04 2006 (edgrif)
+ * Last edited: Feb 24 11:06 2006 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.11 2006-02-21 15:06:55 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.12 2006-02-24 11:22:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,6 +109,7 @@ char *zMapGUIMakeTitleString(char *window_type, char *message)
  *  */
 void zMapGUIShowAbout(void)
 {
+#if GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION >= 6
   GtkWidget *about_dialog ;
   gchar *authors[] = {"Ed Griffiths", "Roy Storey", NULL} ;
 
@@ -131,7 +132,7 @@ void zMapGUIShowAbout(void)
 
   gtk_widget_show_all(about_dialog) ;
 
-
+#endif
   return ;
 }
 
