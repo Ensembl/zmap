@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jan 25 12:02 2006 (rds)
+ * Last edited: Feb 22 14:28 2006 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.13 2006-02-10 08:34:08 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.14 2006-02-24 12:34:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -314,8 +314,8 @@ static gboolean start(void *userData,
             objAll->action = ZMAP_APP_REMOTE_CLOSE_ZMAP;
         }
       /* Add obj to list */
-      **list = *((GList *)userData);
-      *list  = g_list_append(*list, objAll);
+      list = ((GList **)userData);
+      *list = g_list_append(*list, objAll);
     }
     break;
   default:
@@ -332,7 +332,7 @@ static gboolean end(void *userData,
   gboolean handled = FALSE;
   appObjType type  = ZMAP_APP_REMOTE_ALL;
 
-  **list  = *((GList *)userData);
+  list  = ((GList **)userData);
 
   switch(type){
   case ZMAP_APP_REMOTE_ALL:
