@@ -42,14 +42,10 @@
   <xsd:attribute name="strand" type="strandType" />   <!-- +, -, .  -->
   <xsd:attribute name="suid"   type="xsd:string" />   <!-- session unique id -->
 
-  <!-- This is flattened to avoid recursion as there
-       doesn't seem to be a way to limit the depth. 
-       Also there's no need for suid
-    -->
-  <xsd:element name="edit" minOccurs="0" maxOccurs="1">
+  <xsd:element   name="subfeature" minOccurs="0" maxOccurs="1">
     <xsd:complexType>
       <xsd:attribute name="name"  type="xsd:string" />   <!-- b0250.1 -->
-      <xsd:attribute name="style" type="xsd:string" />   <!-- fgenesh -->
+      <xsd:attribute name="class" type="xsd:string" />   <!-- exon, intron, cds, match, indel -->
       <xsd:attribute name="start" type="xsd:decimal" />  <!-- 102533  -->
       <xsd:attribute name="end"   type="xsd:decimal" />  <!-- 102601  -->
     </xsd:complexType>
@@ -57,12 +53,7 @@
 
 </xsd:complexType>
 
-<!-- A list of linked features.  This should be used to "group" 
-     exons, ORF, Splice sites, poly A sites/signals into genes!
-     This should also be extensible to group homologies... (although VERY verbosely)
-  -->
 <xsd:complexType name="FeatureListType">
-  <xsd:attribute name="suid"     type="xsd:string" />   <!-- session unique id -->
   <xsd:attribute name="align"    type="xsd:string" />   <!-- align id where the feature is -->
   <xsd:attribute name="block"    type="xsd:string" />   <!-- block id where the feature is -->
   <xsd:attribute name="set"      type="xsd:string" />   <!-- column name in which to display -->
@@ -104,7 +95,6 @@
 
     <!-- takes feature construct(s) -->
     <xsd:enumeration value="create_feature" />
-    <xsd:enumeration value="alter_feature"  />
     <xsd:enumeration value="delete_feature" />
     <xsd:enumeration value="find_feature"   />
     <xsd:enumeration value="highlight_feature"   />
