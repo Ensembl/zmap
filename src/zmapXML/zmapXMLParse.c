@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 18:16 2006 (rds)
+ * Last edited: Feb 28 15:39 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.10 2006-02-16 18:21:13 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.11 2006-03-01 14:10:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,7 @@ static void setupExpat(zmapXMLParser parser);
 static void initElements(GArray *array);
 static void initAttributes(GArray *array);
 static void freeUpTheQueue(zmapXMLParser parser);
+static char *getOffendingXML(zmapXMLParser parser, int context);
 static zmapXMLElement parserFetchNewElement(zmapXMLParser parser, 
                                             const XML_Char *name);
 static zmapXMLAttribute parserFetchNewAttribute(zmapXMLParser parser,
@@ -227,12 +228,19 @@ gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser,
 
   if (XML_Parse(parser->expat, (char *)data, size, isFinal) != XML_STATUS_OK)
     {
+      char *offend = NULL;
       if (parser->last_errmsg)
         g_free(parser->last_errmsg) ;
       
-      parser->last_errmsg = g_strdup_printf("zmapXMLParse - Parse error (line %d): %s\n",
+      offend = getOffendingXML(parser, ZMAP_XML_ERROR_CONTEXT_SIZE);
+      parser->last_errmsg = g_strdup_printf("[zmapXMLParse] Parse error line %d column %d: %s\n"
+                                            "[zmapXMLParse] XML near error <!-- >>>>%s<<<< -->\n",
                                             XML_GetCurrentLineNumber(parser->expat),
-                                            XML_ErrorString(XML_GetErrorCode(parser->expat))) ;
+                                            XML_GetCurrentColumnNumber(parser->expat),
+                                            XML_ErrorString(XML_GetErrorCode(parser->expat)),
+                                            offend) ;
+      if(offend)
+        g_free(offend);
       result = FALSE ;
     }
   /* Because XML_ParsingStatus XML_GetParsingStatus aren't on alphas! */
@@ -695,4 +703,51 @@ static void initAttributes(GArray *array)
   return ;
 }
 
+/* getOffendingXML - parser, context - Returns a string (free it!)
+
+ * This returns a string from the current input context which will
+ * roughly be 1 tag or context bytes either side of the current
+ * position.  
+
+ * e.g. getOffendingXML(parser, 10) context = <alpha><beta><gamma>...
+ * will return <alpha><beta><gamma> if current position is start beta
+ */
+/* If return is non null it needs freeing sometime in the future! */
+static char *getOffendingXML(zmapXMLParser parser, int context)
+{
+  char *bad_xml = NULL;
+  const char *tmpCntxt = NULL;
+  char *tmp = NULL, *end = NULL;
+  int curr = 0, size = 0, byte = 0;
+
+  if((tmpCntxt = XML_GetInputContext(parser->expat, &curr, &size)) != NULL)
+    {
+      byte  = XML_GetCurrentColumnNumber(parser->expat);
+      if(byte > 0 && curr && size)
+        {
+          if(byte + context < size)
+            {
+              tmp = tmpCntxt + byte + context;
+              while(*tmp != '\0' && *tmp != '>'){ tmp++; }
+              end = tmp;
+            }
+          else
+            end = tmpCntxt + size - 1;
+
+          if(byte > context)
+            {
+              tmp = tmpCntxt + byte - context;
+              while(*tmp != '<'){ tmp--; }
+            }
+          else
+            tmp = tmpCntxt;
+
+          bad_xml = g_strndup(tmp, end - tmp + 1);
+        }
+      else                      /* There's not much we can do here */
+        bad_xml = g_strndup(tmpCntxt, context);
+    }
+
+  return bad_xml;               /* PLEASE free me later */
+}
 

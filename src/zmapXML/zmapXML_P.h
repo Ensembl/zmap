@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 15 16:51 2006 (rds)
+ * Last edited: Feb 28 14:14 2006 (rds)
  * Created: Fri Aug  5 12:50:44 2005 (rds)
- * CVS info:   $Id: zmapXML_P.h,v 1.5 2006-02-15 17:09:38 rds Exp $
+ * CVS info:   $Id: zmapXML_P.h,v 1.6 2006-03-01 14:11:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,7 @@
 #include <ZMap/zmapXML.h>
 
 #define ZMAP_XML_BASE_ATTR "xml:base"
+#define ZMAP_XML_ERROR_CONTEXT_SIZE 10
 
 /* For an XML tag holds the element name and attributes, i.e.   <element_name attributes>
  * Used to track which tag we are processing. */
