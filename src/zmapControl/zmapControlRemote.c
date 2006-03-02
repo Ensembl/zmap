@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 21 18:48 2006 (rds)
+ * Last edited: Mar  1 19:28 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.21 2006-02-21 18:48:56 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.22 2006-03-02 09:10:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,6 +86,10 @@ typedef struct {
   /* queries.... */
   GList *featureQueries_first;
   GList *featureQueries_last;
+
+  GList *styles;                /* These should be ZMapFeatureTypeStyle */
+  GList *locations;             /* This is just a list of ZMapSpan Structs */
+
 } xmlObjectsDataStruct, *xmlObjectsData;
 
 typedef struct
@@ -123,6 +127,12 @@ static gboolean featureEndHndlr(void *userData,
 static gboolean clientStrtHndlr(gpointer userdata, 
                                 zmapXMLElement client_element,
                                 zmapXMLParser parser);
+static gboolean locationEndHndlr(gpointer userdata, 
+                             zmapXMLElement zmap_element,
+                             zmapXMLParser parser);
+static gboolean styleEndHndlr(gpointer userdata, 
+                             zmapXMLElement zmap_element,
+                             zmapXMLParser parser);
 static gboolean zmapEndHndlr(gpointer userdata, 
                              zmapXMLElement zmap_element,
                              zmapXMLParser parser);
@@ -203,8 +213,10 @@ static zmapXMLParser setupControlRemoteXMLParser(void *data)
     { NULL, NULL }
   };
   ZMapXMLObjTagFunctionsStruct ends[] = {
-    { "zmap",       zmapEndHndlr },
-    { "subfeature", featureEndHndlr },
+    { "zmap",       zmapEndHndlr     },
+    { "subfeature", featureEndHndlr  },
+    { "location",   locationEndHndlr },
+    { "style",      styleEndHndlr    },
     { NULL, NULL }
   };
 
@@ -216,10 +228,12 @@ static zmapXMLParser setupControlRemoteXMLParser(void *data)
 
   return parser;
 }
+
 static void alterFeature(gpointer data, gpointer userdata)
 {
   
 }
+
 static void deleteFeature(gpointer data, gpointer userdata)
 { 
   FooCanvasItem *ftitm = NULL;
@@ -533,8 +547,10 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
       }
     }
 
-  xml_reply = g_strdup(zmap->info->message);
+  xml_reply   = g_strdup(zmap->info->message);
   *statusCode = zmap->info->code; /* use the code from the info (GError) */
+
+  zMapXMLParser_destroy(parser);
   
   return xml_reply;
 }
@@ -595,8 +611,11 @@ static gboolean zmapStrtHndlr(gpointer userdata,
         obj->action = ZMAP_CONTROL_ACTION_FIND_FEATURE;
       else if(action == g_quark_from_string("create_feature"))
         obj->action = ZMAP_CONTROL_ACTION_CREATE_FEATURE;
-      else if(action == g_quark_from_string("alter_feature"))
-        obj->action = ZMAP_CONTROL_ACTION_ALTER_FEATURE;
+      /********************************************************
+       * delete and create will have to do
+       * else if(action == g_quark_from_string("alter_feature"))
+       * obj->action = ZMAP_CONTROL_ACTION_ALTER_FEATURE;
+       *******************************************************/
       else if(action == g_quark_from_string("delete_feature"))
         obj->action = ZMAP_CONTROL_ACTION_DELETE_FEATURE;
       else if(action == g_quark_from_string("highlight_feature"))
@@ -804,6 +823,47 @@ static gboolean clientStrtHndlr(gpointer userdata,
 
   return FALSE;
 }
+
+static gboolean locationEndHndlr(gpointer userdata, 
+                                 zmapXMLElement zmap_element,
+                                 zmapXMLParser parser)
+{
+  /* we only allow one of these objects???? */
+  return TRUE;
+}
+static gboolean styleEndHndlr(gpointer userdata, 
+                              zmapXMLElement element,
+                              zmapXMLParser parser)
+{
+  ZMapFeatureTypeStyle style = NULL;
+  zmapXMLAttribute      attr = NULL;
+  xmlObjectsData        data = (xmlObjectsData)userdata;
+  GQuark id = 0, everything_else = 0;
+
+  if((attr = zMapXMLElement_getAttributeByName(element, "id")))
+    id = zMapXMLAttribute_getValue(attr);
+
+  if(id && (style = zMapFindStyle(zMapWindowFeatureAllStyles(data->window), 
+                                  id)) != NULL)
+    {
+#ifdef PARSINGCOLOURS
+      if((attr = zMapXMLElement_getAttributeByName(element, "foreground")))
+        gdk_color_parse(g_quark_to_string(zMapXMLAttribute_getValue(attr)),
+                        &(style->foreground));
+      if((attr = zMapXMLElement_getAttributeByName(element, "background")))
+        gdk_color_parse(g_quark_to_string(zMapXMLAttribute_getValue(attr)),
+                        &(style->background));
+      if((attr = zMapXMLElement_getAttributeByName(element, "outline")))
+        gdk_color_parse(g_quark_to_string(zMapXMLAttribute_getValue(attr)),
+                        &(style->outline));
+#endif
+      if((attr = zMapXMLElement_getAttributeByName(element, "description")))
+        style->description = g_quark_to_string( zMapXMLAttribute_getValue(attr) );
+      
+    }
+  return TRUE;
+}
+
 
 static gboolean zmapEndHndlr(void *userData, 
                              zmapXMLElement element, 
