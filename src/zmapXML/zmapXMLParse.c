@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 28 15:39 2006 (rds)
+ * Last edited: Mar  2 14:27 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.11 2006-03-01 14:10:49 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.12 2006-03-02 14:29:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +50,7 @@ static void initElements(GArray *array);
 static void initAttributes(GArray *array);
 static void freeUpTheQueue(zmapXMLParser parser);
 static char *getOffendingXML(zmapXMLParser parser, int context);
+static void abortParsing(zmapXMLParser parser, char *reason, ...);
 static zmapXMLElement parserFetchNewElement(zmapXMLParser parser, 
                                             const XML_Char *name);
 static zmapXMLAttribute parserFetchNewAttribute(zmapXMLParser parser,
@@ -125,6 +126,7 @@ zmapXMLParser zMapXMLParser_create(void *user_data, gboolean validating, gboolea
   parser->startMOHandler = NULL;
   parser->endMOHandler   = NULL;
 
+  /* This should probably be done with a NS parser */
   parser->xmlbase = g_quark_from_string(ZMAP_XML_BASE_ATTR);
 
   parser->max_size   = 100;
@@ -215,10 +217,11 @@ gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser,
                                     int size)
 {
   gboolean result = TRUE ;
-  int isFinal ;
+  int isFinal, processing_status, error;
   isFinal = (size ? 0 : 1);
 
-#ifdef NEW_FEATURE_NOT_ON_ALPHAS
+#define ZMAP_USING_EXPAT_1_95_8_OR_ABOVE
+#ifdef ZMAP_USING_EXPAT_1_95_8_OR_ABOVE
   XML_ParsingStatus status;
   XML_GetParsingStatus(parser->expat, &status);
 
@@ -226,26 +229,51 @@ gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser,
     zMapXMLParserReset(parser);
 #endif
 
-  if (XML_Parse(parser->expat, (char *)data, size, isFinal) != XML_STATUS_OK)
+  if ((processing_status = XML_Parse(parser->expat, (char *)data, size, isFinal)) != XML_STATUS_OK)
     {
       char *offend = NULL;
+
       if (parser->last_errmsg)
-        g_free(parser->last_errmsg) ;
+        g_free(parser->last_errmsg);
+
+      error = XML_GetErrorCode(parser->expat);
       
-      offend = getOffendingXML(parser, ZMAP_XML_ERROR_CONTEXT_SIZE);
-      parser->last_errmsg = g_strdup_printf("[zmapXMLParse] Parse error line %d column %d: %s\n"
-                                            "[zmapXMLParse] XML near error <!-- >>>>%s<<<< -->\n",
-                                            XML_GetCurrentLineNumber(parser->expat),
-                                            XML_GetCurrentColumnNumber(parser->expat),
-                                            XML_ErrorString(XML_GetErrorCode(parser->expat)),
-                                            offend) ;
+      if(processing_status == XML_STATUS_SUSPENDED)
+        XML_ResumeParser(parser->expat);
+      else
+        {                       /* processing_status == XML_STATUS_ERROR */
+          offend = getOffendingXML(parser, ZMAP_XML_ERROR_CONTEXT_SIZE);
+          switch(error)
+            {
+            case XML_ERROR_ABORTED:
+              parser->last_errmsg = g_strdup_printf("[zmapXMLParse] Parse error line %d column %d\n"
+                                                    "[zmapXMLParse] Aborted: %s\n",
+                                                    XML_GetCurrentLineNumber(parser->expat),
+                                                    XML_GetCurrentColumnNumber(parser->expat),
+                                                    parser->aborted_msg);
+              break;
+            default:
+              parser->last_errmsg = g_strdup_printf("[zmapXMLParse] Parse error line %d column %d\n"
+                                                    "[zmapXMLParse] Expat reports: %s\n"
+                                                    "[zmapXMLParse] XML near error <!-- >>>>%s<<<< -->\n",
+                                                    XML_GetCurrentLineNumber(parser->expat),
+                                                    XML_GetCurrentColumnNumber(parser->expat),
+                                                    XML_ErrorString(error),
+                                                    offend) ;
+              break;
+            }
+        }
+
       if(offend)
         g_free(offend);
       result = FALSE ;
     }
+
+#ifndef ZMAP_USING_EXPAT_1_95_8_OR_ABOVE
   /* Because XML_ParsingStatus XML_GetParsingStatus aren't on alphas! */
   if(isFinal)
     result = zMapXMLParserReset(parser);
+#endif
 
   return result ;
 }
@@ -315,7 +343,7 @@ gboolean zMapXMLParserReset(zmapXMLParser parser)
   if((result = XML_ParserReset(parser->expat, NULL))) /* encoding as it was created */
     setupExpat(parser);
   else
-    parser->last_errmsg = "Failed Resetting the parser.";
+    parser->last_errmsg = "[zmapXMLParse] Failed Resetting the parser.";
 
   /* The expat parser doesn't clean up the userdata it gets sent.
    * That's us anyway, so that's good, and we don't need to do anything here!
@@ -339,10 +367,15 @@ void zMapXMLParser_destroy(zmapXMLParser parser)
 
   if (parser->last_errmsg)
     g_free(parser->last_errmsg) ;
+  if (parser->aborted_msg)
+    g_free(parser->aborted_msg) ;
 
   parser->user_data = NULL;
 
   /* We need to free the GArrays here!!! */
+
+  g_array_free(parser->attributes, TRUE);
+  g_array_free(parser->elements,   TRUE);
 
   g_free(parser) ;
 
@@ -368,10 +401,10 @@ static void freeUpTheQueue(zmapXMLParser parser)
   if (!g_queue_is_empty(parser->elementStack))
     {
       gpointer dummy ;
-
+      /* elements are allocated/deallocated elsewhere now. */
       while ((dummy = g_queue_pop_head(parser->elementStack)))
 	{
-	  g_free(dummy) ;
+          /* g_free(dummy) ; */
 	}
     }
   g_queue_free(parser->elementStack) ;
@@ -427,7 +460,7 @@ static void start_handler(void *userData,
   zmapXMLAttribute attribute = NULL ;
   ZMapXMLMarkupObjectHandler handler = NULL;
   int depth, i;
-  gboolean currentHasXMLBase = FALSE;
+  gboolean currentHasXMLBase = FALSE, good = TRUE;
 
 #ifdef ZMAP_XML_PARSE_USE_DEPTH
   depth = parser->depth;
@@ -439,37 +472,38 @@ static void start_handler(void *userData,
     {
       for (i = 0; i < depth; i++)
 	printf("  ");
-      
       printf("<%s ", el) ;
-
       for (i = 0; attr[i]; i += 2)
         printf(" %s='%s'", attr[i], attr[i + 1]);
-
       printf(">\n");
     }
 
-#define RDS_NOT_SURE_ON_THIS_YET
-  /* Push the current tag on to our stack of tags. */
-#ifndef RDS_NOT_SURE_ON_THIS_YET
+#ifdef RDS_DONT_INCLUDE
   current_ele = zmapXMLElement_create(el);
-#else
-  current_ele = parserFetchNewElement(parser, el);
 #endif
-
-  zMapAssert(current_ele);
-
-  for(i = 0; attr[i]; i+=2){
-#ifndef RDS_NOT_SURE_ON_THIS_YET
-    attribute = zmapXMLAttribute_create(attr[i], attr[i + 1]);
-#else
-    attribute = parserFetchNewAttribute(parser, attr[i], attr[i+1]);
+  
+  if((current_ele = parserFetchNewElement(parser, el)) == NULL)
+    good = FALSE;
+  else
+    {
+      for(i = 0; attr[i]; i+=2){
+#ifdef RDS_DONT_INCLUDE
+        attribute = zmapXMLAttribute_create(attr[i], attr[i + 1]);
 #endif
-    zMapAssert(attribute);
+        if(good && (attribute = parserFetchNewAttribute(parser, attr[i], attr[i+1])) != NULL)
+          {
+            zmapXMLElement_addAttribute(current_ele, attribute);
+            if(attribute->name == parser->xmlbase)
+              parser->useXMLBase = currentHasXMLBase = TRUE;
+          }
+        else{ good = FALSE; break; }
+      }
+    }
 
-    zmapXMLElement_addAttribute(current_ele, attribute);
-    if(attribute->name == parser->xmlbase)
-      parser->useXMLBase = currentHasXMLBase = TRUE;
-  }
+  /* We've likely run out of elements or attributes. Parser will stop too! */
+  if(!good)                     
+    return ;                    /* Good to breakpoint this line */
+  /* ^^^ *** EARLY RETURN *** */
 
   if(!depth)
     {
@@ -551,11 +585,10 @@ static void end_handler(void *userData,
           /* First we need to tell the parent that its child is being freed. */
           if(!(zmapXMLElement_signalParentChildFree(current_ele)))
              printf("Empty'ing document... this might cure memory leak...\n ");
-#ifndef RDS_NOT_SURE_ON_THIS_YET          
+#ifdef RDS_DONT_INCLUDE
           zmapXMLElement_free(current_ele); 
-#else
-          zmapXMLElementMarkDirty(current_ele);
 #endif
+          zmapXMLElementMarkDirty(current_ele);
         }
     }
 
@@ -648,6 +681,9 @@ static zmapXMLAttribute parserFetchNewAttribute(zmapXMLParser parser,
       attr->value = g_quark_from_string((char *)value);
     }
 
+  if(attr == NULL)
+    abortParsing(parser, "Exhausted allocated (%d) attributes.", parser->attributes->len);
+
   return attr;
 }
 
@@ -672,6 +708,9 @@ static zmapXMLElement parserFetchNewElement(zmapXMLParser parser,
       element->name     = g_quark_from_string(g_ascii_strdown((char *)name, -1));
       element->contents = g_string_sized_new(100);
     }
+
+  if(element == NULL)
+    abortParsing(parser, "Exhausted allocated (%d) elements.", parser->elements->len);
 
   return element;
 }
@@ -751,3 +790,27 @@ static char *getOffendingXML(zmapXMLParser parser, int context)
   return bad_xml;               /* PLEASE free me later */
 }
 
+static void abortParsing(zmapXMLParser parser, char *reason, ...)
+{
+  va_list args;
+  char *error;
+#ifdef ZMAP_USING_EXPAT_1_95_8_OR_ABOVE
+  XML_ParsingStatus status;
+
+  XML_GetParsingStatus(parser->expat, &status);
+
+  /* We can only Stop if we're parsing! */
+  if(status.parsing == XML_PARSING)
+#endif 
+    XML_StopParser(parser->expat, FALSE);
+
+  va_start(args, reason);
+  error = g_strdup_vprintf(reason, args);
+  va_end(args);
+
+  parser->aborted_msg = g_strdup( error );
+  
+  g_free(error);
+
+  return ;
+}
