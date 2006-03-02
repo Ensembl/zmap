@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 28 14:14 2006 (rds)
+ * Last edited: Mar  1 19:02 2006 (rds)
  * Created: Fri Aug  5 12:50:44 2005 (rds)
- * CVS info:   $Id: zmapXML_P.h,v 1.6 2006-03-01 14:11:01 rds Exp $
+ * CVS info:   $Id: zmapXML_P.h,v 1.7 2006-03-02 14:24:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,7 +74,7 @@ typedef struct _zmapXMLParserStruct
 #endif
   zmapXMLDocument document;
 
-  char *last_errmsg ;
+  char *last_errmsg, *aborted_msg ;
   void *user_data ;       /* Caller stores any data they need here. */
 
   GArray *elements, *attributes;
