@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Feb 21 11:21 2006 (rds)
+ * Last edited: Mar  3 08:10 2006 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.50 2006-02-21 18:40:02 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.51 2006-03-03 08:11:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -186,16 +186,14 @@ gboolean zMapWindowIsLocked(ZMapWindow window) ;
 PangoFont *zMapWindowGetFixedWidthFont(ZMapWindow window);
 PangoFontDescription *zMapWindowGetFixedWidthFontDescription(ZMapWindow window);
 
-
-
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
 
 ZMapWindowFToIQuery zMapWindowFToINewQuery(void);
 gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query);
 void zMapWindowFToIDestroyQuery(ZMapWindowFToIQuery query);
 
-FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 GList *zMapWindowFeatureAllStyles(ZMapWindow window);
+
 
 /* Add, modify, draw, remove features from the canvas. */
 FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
@@ -206,23 +204,14 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
-
 gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) ;
-
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature) ;
-
 
 void zMapWindowDestroyLists(ZMapWindow window) ;
 
 void zMapWindowUnlock(ZMapWindow window) ;
 
 void zMapWindowDestroy(ZMapWindow window) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* TEST SCAFFOLDING............... */
-ZMapFeatureContext testGetGFF(void) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 #endif /* !ZMAP_WINDOW_H */
