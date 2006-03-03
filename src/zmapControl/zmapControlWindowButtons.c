@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 20 15:43 2006 (edgrif)
+ * Last edited: Mar  1 18:06 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.33 2006-02-21 15:15:22 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.34 2006-03-03 08:15:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,7 +46,7 @@ static void vertSplitPaneCB(GtkWidget *widget, gpointer data) ;
 static void horizSplitPaneCB(GtkWidget *widget, gpointer data) ;
 static void unlockCB(GtkWidget *widget, gpointer data) ;
 static void revcompCB(GtkWidget *widget, gpointer data) ;
-static void closeWindowCB(GtkWidget *widget, gpointer data) ;
+static void unsplitWindowCB(GtkWidget *widget, gpointer data) ;
 
 
 
@@ -60,7 +60,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *reload_button, *stop_button,
     *hsplit_button, *vsplit_button,
     *zoomin_button, *zoomout_button,
-    *unlock_button, *revcomp_button, *close_button ;
+    *unlock_button, *revcomp_button, *unsplit_button ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -85,6 +85,16 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(vertSplitPaneCB), (gpointer)zmap) ;
   gtk_box_pack_start(GTK_BOX(hbox), vsplit_button, FALSE, FALSE, 0) ;
                                                                                            
+  zmap->unsplit_but = unsplit_button = gtk_button_new_with_label("Unsplit") ;
+  gtk_signal_connect(GTK_OBJECT(unsplit_button), "clicked",
+		     GTK_SIGNAL_FUNC(unsplitWindowCB), (gpointer)zmap) ;
+  gtk_box_pack_start(GTK_BOX(hbox), unsplit_button, FALSE, FALSE, 0) ;
+
+  zmap->unlock_but = unlock_button = gtk_button_new_with_label("Unlock");
+  gtk_signal_connect(GTK_OBJECT(unlock_button), "clicked",
+		     GTK_SIGNAL_FUNC(unlockCB), (gpointer)zmap);
+  gtk_box_pack_start(GTK_BOX(hbox), unlock_button, FALSE, FALSE, 0) ;
+
   zmap->zoomin_but = zoomin_button = gtk_button_new_with_label("Zoom In");
   gtk_signal_connect(GTK_OBJECT(zoomin_button), "clicked",
 		     GTK_SIGNAL_FUNC(zoomInCB), (gpointer)zmap);
@@ -95,27 +105,65 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
 
-  zmap->unlock_but = unlock_button = gtk_button_new_with_label("Unlock");
-  gtk_signal_connect(GTK_OBJECT(unlock_button), "clicked",
-		     GTK_SIGNAL_FUNC(unlockCB), (gpointer)zmap);
-  gtk_box_pack_start(GTK_BOX(hbox), unlock_button, FALSE, FALSE, 0) ;
-
   zmap->revcomp_but = revcomp_button = gtk_button_new_with_label("Revcomp");
   gtk_signal_connect(GTK_OBJECT(revcomp_button), "clicked",
 		     GTK_SIGNAL_FUNC(revcompCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), revcomp_button, FALSE, FALSE, 0) ;
 
-  zmap->close_but = close_button = gtk_button_new_with_label("Close") ;
-  gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
-		     GTK_SIGNAL_FUNC(closeWindowCB), (gpointer)zmap) ;
-  gtk_box_pack_start(GTK_BOX(hbox), close_button, FALSE, FALSE, 0) ;
-
   /* Make Close button the default, its probably what user wants to do mostly. */
-  GTK_WIDGET_SET_FLAGS(close_button, GTK_CAN_DEFAULT) ;
-  gtk_window_set_default(GTK_WINDOW(zmap->toplevel), close_button) ;
+  GTK_WIDGET_SET_FLAGS(zoomin_button, GTK_CAN_DEFAULT) ;
+  gtk_window_set_default(GTK_WINDOW(zmap->toplevel), zoomin_button) ;
 
   return hbox ;
 }
+
+
+/* Add tooltips to main zmap buttons. */
+void *zmapControlButtonTooltips(ZMap zmap)
+{
+
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->stop_button,
+		       "Stop loading of data, reset zmap",
+		       "ZMap data loading is carried out by a separate thread "
+		       "which can be halted and reset by clicking this button.") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->load_button,
+		       "Reload data after a reset.",
+		       "If zmap fails to load, either because you clicked the \"Stop\" "
+		       "button or the loading failed, then you ran attempt to reload "
+		       "by clicking this button.") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->hsplit_button,
+		       "Split window horizontally",
+		       "") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->vsplit_button,
+		       "Split window vertically",
+		       "") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->zoomin_but,
+		       "Zoom in 2x",
+		       "") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->zoomout_but,
+		       "Zoom out 2x",
+		       "") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->unlock_but,
+		       "Unlock zoom/scroll from sibling window",
+		       "") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->revcomp_but,
+		       "Reverse complement sequence view",
+		       "") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->unsplit_but,
+		       "Unsplit selected window",
+		       "") ;
+
+  return ;
+}
+
 
 
 
@@ -123,9 +171,9 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 void zmapControlWindowSetButtonState(ZMap zmap)
 {
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
-  gboolean general, close, unlock, stop, reload ;
+  gboolean general, unsplit, unlock, stop, reload ;
 
-  general = close = unlock = stop = reload = FALSE ;
+  general = unsplit = unlock = stop = reload = FALSE ;
 
   switch(zmap->state)
     {
@@ -159,9 +207,9 @@ void zmapControlWindowSetButtonState(ZMap zmap)
 	    general = TRUE ;
 
 	    /* If we are down to the last view and that view has a single window then
-	     * disable close button, stops user accidentally closing whole window. */
+	     * disable unsplit button, stops user accidentally closing whole window. */
 	    if ((zmapControlNumViews(zmap) > 1) || (zMapViewNumWindows(zmap->focus_viewwindow) > 1))
-	      close = TRUE ;
+	      unsplit = TRUE ;
 
 	    zoom_status = zMapWindowGetZoomStatus(window) ;
 	    unlock = zMapWindowIsLocked(window) ;
@@ -188,7 +236,7 @@ void zmapControlWindowSetButtonState(ZMap zmap)
   zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
   gtk_widget_set_sensitive(zmap->unlock_but, unlock) ;
   gtk_widget_set_sensitive(zmap->revcomp_but, general) ;
-  gtk_widget_set_sensitive(zmap->close_but, close) ;
+  gtk_widget_set_sensitive(zmap->unsplit_but, unsplit) ;
 
   return ;
 }
@@ -345,7 +393,7 @@ static void revcompCB(GtkWidget *widget, gpointer data)
 }
 
 
-static void closeWindowCB(GtkWidget *widget, gpointer data)
+static void unsplitWindowCB(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = (ZMap)data ;
 
