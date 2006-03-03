@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Mar  1 10:43 2006 (edgrif)
+ * Last edited: Mar  3 17:08 2006 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.61 2006-03-03 08:13:45 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.62 2006-03-03 17:16:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -622,11 +622,18 @@ static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data
 {
   ZMap zmap = (ZMap)app_data ;
   char *text = (char *)view_data ;
+  GtkClipboard* clip = NULL;
 
   /* If there is text then display it in info. box of zmap. (There may be no text if
    * user clicked on blank background.) */
   if (text)
-    gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), text) ;
+    {
+      gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), text) ;
+      /* We also set this to the primary X selection */
+      if((clip = gtk_widget_get_clipboard(GTK_WIDGET(zmap->toplevel), 
+                                          GDK_SELECTION_PRIMARY)) != NULL)
+          gtk_clipboard_set_text(clip, text, -1);
+    }
 
   return ;
 }
