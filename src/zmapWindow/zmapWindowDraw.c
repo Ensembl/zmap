@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  2 15:05 2006 (edgrif)
+ * Last edited: Mar  2 15:44 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.15 2006-02-21 10:47:18 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.16 2006-03-03 08:21:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -155,6 +155,7 @@ void zmapWindowColumnSetMagState(ZMapWindow window,
 }
 
 
+
 /* NOTE: this function bumps an individual column but it DOES NOT move any other columns,
  * to do that you need to use zmapWindowColumnReposition(). The split is made because
  * we don't always want to reposition all the columns following a bump, e.g. when we
@@ -216,6 +217,8 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapStyleOverlapMode bum
 /* NOTE: THIS ROUTINE NEEDS TO BE MERGED WITH THE CODE IN THE CONTAINER PACKAGE AS THEY
  * DO THE SAME THING... */
 
+
+/* WARNING, THIS CODE IS BUGGED, COLUMNS TO THE LEFT OF THE SUPPLIED GROUP DISAPPEAR ! */
 
 /* We assume that the columns have been added sequentially in the order they are displayed in,
  * if this changes then this function will need to be rewritten to look at the position/size
@@ -441,6 +444,28 @@ void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window)
 
 
 
+/* Makes sure all the things that need to be redrawn when the canvas needs redrawing. */
+void zmapWindowNewReposition(ZMapWindow window)
+{
+  FooCanvasGroup *super_root ;
+  ContainerType type = CONTAINER_INVALID ;
+
+  super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item, 0,0,0,0,0)) ;
+  zMapAssert(super_root) ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(super_root), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type = CONTAINER_ROOT) ;
+
+  zmapWindowContainerExecute(FOO_CANVAS_GROUP(super_root),
+			     ZMAPCONTAINER_LEVEL_FEATURESET,
+			     NULL,
+			     NULL,
+			     postZoomCB,
+			     window) ;
+
+  return ;
+}
+
 /* Makes sure all the things that need to be redrawn for zooming get redrawn. */
 void zmapWindowDrawZoom(ZMapWindow window)
 {
@@ -464,7 +489,7 @@ void zmapWindowDrawZoom(ZMapWindow window)
 			     preZoomCB,
 			     &zoom_data,
 			     postZoomCB,
-			     &zoom_data) ;
+			     window) ;
 
   return ;
 }
@@ -874,11 +899,11 @@ static void preZoomCB(gpointer data, gpointer user_data)
 }
 
 
-
+/* Called post zoom but actually does for other things...rename later... */
 static void postZoomCB(gpointer data, gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
-  ZoomData zoom_data = (ZoomData)user_data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
   ZMapContainerLevelType level ;
 
   level = zmapWindowContainerGetLevel(container) ;
@@ -889,7 +914,7 @@ static void postZoomCB(gpointer data, gpointer user_data)
   /* Correct for the stupid scale bar.... */
   if (level == ZMAPCONTAINER_LEVEL_ROOT)
     my_foo_canvas_item_goto(FOO_CANVAS_ITEM(container),
-			    &(zoom_data->window->alignment_start), NULL) ; 
+			    &(window->alignment_start), NULL) ; 
 
 
   return ;
