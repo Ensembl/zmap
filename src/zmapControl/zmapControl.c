@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Feb 23 16:10 2006 (edgrif)
+ * Last edited: Mar  1 10:43 2006 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.60 2006-02-23 16:13:36 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.61 2006-03-03 08:13:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -499,6 +499,7 @@ ZMapView zmapControlAddView(ZMap zmap, char *sequence, int start, int end)
 static ZMap createZMap(void *app_data)
 {
   ZMap zmap = NULL ;
+  GdkScreen *screen ;
 
   /* GROSS HACK FOR NOW, NEED SOMETHING BETTER LATER, JUST A TACKY ID...... */
   static int zmap_num = 0 ;
@@ -514,6 +515,14 @@ static ZMap createZMap(void *app_data)
 
   /* Use default hashing functions, but THINK ABOUT THIS, MAY NEED TO ATTACH DESTROY FUNCTIONS. */
   zmap->viewwindow_2_parent = g_hash_table_new(NULL, NULL) ;
+
+
+  /* Set up some screen stuff, we make zmap 2/3rd height of the screen by default.
+   * If someone displays a really short piece of dna this will make the window
+   * too big so really we should readjust the window size to fit the sequence
+   * but this will be rare. */
+  screen = gdk_screen_get_default() ;
+  zmap->window_height = (int)((float)(gdk_screen_get_height(screen)) * 0.67) ;
 
   return zmap ;
 }
