@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jan 23 13:27 2006 (edgrif)
+ * Last edited: Mar  2 16:36 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.4 2006-02-21 10:47:15 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.5 2006-03-03 08:20:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -226,7 +226,7 @@ FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *unknown_child)
       container_parent = FOO_CANVAS_GROUP(unknown_child->parent) ;
       break ;
     default:
-      zMapAssert("bad coding, unrecognised container type.") ;
+      zMapAssertNotReached() ;
     }
 
   return container_parent ;
@@ -594,7 +594,7 @@ void zmapWindowContainerPurge(FooCanvasGroup *unknown_child)
       g_list_foreach(unknown_child->item_list, itemDestroyCB, NULL);
       break ;
     default:
-      zMapAssert("bad coding, unrecognised container type.") ;
+      zMapAssertNotReached() ;
     }
   
   return ;
