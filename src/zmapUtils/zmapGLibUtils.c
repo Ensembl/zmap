@@ -26,13 +26,30 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Nov 18 11:39 2005 (edgrif)
+ * Last edited: Mar  1 14:56 2006 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.3 2005-11-18 11:41:51 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.4 2006-03-03 08:07:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
+
+
+
+
+
+
+/* Holds a single quark set. */
+typedef struct _ZMapQuarkSetStruct
+{
+  gint block_size ;
+  GHashTable *g_quark_ht;
+  gchar **g_quarks ;
+  GQuark g_quark_seq_id ;
+} ZMapQuarkSetStruct ;
+
+
 
 /* Needed to get at private array struct. */
 typedef struct _GRealArray  GRealArray;
@@ -49,6 +66,28 @@ struct _GRealArray
 
 #define g_array_elt_len(array,i) ((array)->elt_size * (i))
 #define g_array_elt_pos(array,i) ((array)->data + g_array_elt_len((array),(i)))
+
+
+static inline GQuark g_quark_new(ZMapQuarkSet quark_set, gchar *string) ;
+
+
+
+
+
+/*! @defgroup zmapGLibutils   zMapGLibUtils: glib-derived utilities for ZMap
+ * @{
+ * 
+ * \brief  Glib-derived utilities for ZMap.
+ * 
+ *
+ * These routines are derived from the glib code available from www.gtk.org
+ *
+ * zMapUtils routines provide services such as debugging, testing and logging,
+ * string handling, file utilities and GUI functions. They are general routines
+ * used by all of ZMap.
+ *
+ *  */
+
 
 
 
@@ -136,6 +175,173 @@ zMap_g_array_element (GArray *farray,
 
   return farray;
 }
+
+
+
+
+/*! 
+ *                Additions to GQuark
+ * 
+ * We need quarks that are allocated in sets that we can throw away as zmap can
+ * have many thousands of quarks for each zmap displayed.
+ * 
+ * The following routines create, manipulate and destroy a set of quarks.
+ * 
+ */
+
+
+/*!
+ * Create the quark set.
+ * 
+ * The block size allows control over the number of string
+ * pointers allocated at one go, this may be a good optimisation where there are
+ * large numbers of quarks to be allocated. If block size is 0 it defaults to 512
+ * which is the glib default.
+ * The function returns a new quark set which should only be destroyed with a call
+ * to zMap_g_quark_destroy_set().
+ * 
+ * @param block_size             0 for success, anything else for failure.
+ * @return                       ZMapQuarkSet quark set.
+ *  */
+ZMapQuarkSet zMap_g_quark_create_set(guint block_size)
+{
+  ZMapQuarkSet quark_set = NULL ;
+
+  quark_set = g_new0(ZMapQuarkSetStruct, 1) ;
+
+  if (block_size == 0)
+    block_size = 512 ;
+  quark_set->block_size = block_size ;
+
+  quark_set->g_quark_ht = g_hash_table_new(g_str_hash, g_str_equal) ;
+
+  quark_set->g_quarks = NULL ;
+
+  quark_set->g_quark_seq_id = 0 ;
+
+  return quark_set ;
+}
+
+/*!
+ * Look for a string in the quark set, if the string is not found no quark is
+ * created and 0 is returned.
+ * 
+ * @param quark_set              A valid quark set.
+ * @param string                 The string to look for in the set.
+ * @return                       GQuark for the string or 0 if string not found.
+ *  */
+GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string)
+{
+  GQuark quark = 0 ;
+
+  zMapAssert(quark_set && string) ;
+
+  quark = GPOINTER_TO_UINT(g_hash_table_lookup(quark_set->g_quark_ht, string)) ;
+
+  return quark ;
+}
+
+
+/*!
+ * Return a quark for a given string, if the string is not found, the string
+ * is added to the set and its quark returned.
+ * 
+ * @param quark_set              A valid quark set.
+ * @param string                 The string to look for in the set.
+ * @return                       GQuark for the string or 0 if string not found.
+ *  */
+GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string)
+{
+  GQuark quark ;
+  
+  /* May be too draconian to insist on *string...just remove if so. */
+  zMapAssert(quark_set && string && *string) ;
+
+  if (!(quark = (gulong) g_hash_table_lookup(quark_set->g_quark_ht, string)))
+    quark = g_quark_new(quark_set, g_strdup (string));
+
+  return quark;
+}
+
+/*!
+ * Return the string for a given quark, if the quark cannot be found in the set
+ * NULL is returned.
+ * 
+ * @param quark_set              A valid quark set.
+ * @param quark                  The quark for which the string should be returned.
+ * @return                       A string or NULL.
+ *  */
+gchar *zMap_g_quark_to_string(ZMapQuarkSet quark_set, GQuark quark)
+{
+  gchar* result = NULL;
+
+  zMapAssert(quark_set && quark) ;
+
+  if (quark > 0 && quark <= quark_set->g_quark_seq_id)
+    result = quark_set->g_quarks[quark - 1] ;
+
+  return result;
+}
+
+
+/*!
+ * Destroy a quark_set, freeing all of its resources <B>including</B> the strings
+ * it holds (i.e. you should make copies of any strings you need after the set
+ * has been destroyed.
+ * 
+ * @param quark_set              A valid quark set.
+ * @return                       nothing
+ *  */
+void zMap_g_quark_destroy_set(ZMapQuarkSet quark_set)
+{
+  int i ;
+
+  g_hash_table_destroy(quark_set->g_quark_ht) ;
+
+  /* Free the individual strings and then the string table itself. */
+  for (i = 0 ; i < quark_set->g_quark_seq_id ; i++)
+    {
+      g_free(quark_set->g_quarks[i]) ;
+    }
+  g_free(quark_set->g_quarks) ;
+
+  g_free(quark_set) ;
+
+  return ;
+}
+
+
+/*! @} end of zmapGLibutils docs. */
+
+
+
+
+
+/* 
+ *                 Internal functions. 
+ */
+
+
+/* HOLDS: g_quark_global_lock */
+static inline GQuark g_quark_new (ZMapQuarkSet quark_set, gchar *string)
+{
+  GQuark quark;
+
+  /* Allocate another block of quark string pointers if needed. */
+  if (quark_set->g_quark_seq_id % quark_set->block_size == 0)
+    quark_set->g_quarks = g_renew(gchar*, quark_set->g_quarks,
+				  quark_set->g_quark_seq_id + quark_set->block_size) ;
+  
+  quark_set->g_quarks[quark_set->g_quark_seq_id] = string ;
+  quark_set->g_quark_seq_id++ ;
+  quark = quark_set->g_quark_seq_id ;
+
+  g_hash_table_insert(quark_set->g_quark_ht, string, GUINT_TO_POINTER(quark)) ;
+
+  return quark ;
+}
+
+
 
 
 

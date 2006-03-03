@@ -26,9 +26,9 @@
  *              glib but not included with their distribution.
  *
  * HISTORY:
- * Last edited: Nov 18 11:25 2005 (edgrif)
+ * Last edited: Mar  1 14:55 2006 (edgrif)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.3 2005-11-18 11:41:51 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.4 2006-03-03 08:07:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -36,11 +36,29 @@
 
 #include <glib.h>
 
+
+
+
+/*! @addtogroup zmapGLibutils
+ * @{
+ *  */
+
+/*!
+ * Represents a quark set. */
+typedef struct _ZMapQuarkSetStruct *ZMapQuarkSet ;
+
+
+
 typedef enum
   {
     ZMAP_GLIST_FORWARD,
     ZMAP_GLIST_REVERSE
   } ZMapGListDirection;
+
+
+/*! @} end of zmapGLibutils docs. */
+
+
 
 void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data);
 void zMap_g_list_foreach_directional(GList   *list, 
@@ -59,6 +77,16 @@ GArray *zMap_g_array_element(GArray           *array,
 			     gpointer *element
 			     );
 
+
+/* This is our version of the Glib Quark code (see www.gtk.org for more information).
+ * Our version allows you to throw away the quark table which is important for us
+ * as may have thousands of quarks.
+ */
+ZMapQuarkSet zMap_g_quark_create_set(guint block_size) ;
+GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string);
+GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string);
+gchar *zMap_g_quark_to_string(ZMapQuarkSet quark_set, GQuark quark) ;
+void zMap_g_quark_destroy_set(ZMapQuarkSet quark_set) ;
 
 
 #endif /* !ZMAP_GLIBUTILS_H */
