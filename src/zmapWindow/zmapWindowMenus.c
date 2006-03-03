@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jan 12 15:29 2006 (edgrif)
+ * Last edited: Mar  3 08:22 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.7 2006-02-21 10:48:02 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.8 2006-03-03 08:23:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,7 @@
 #include <zmapWindowContainer.h>
 
 
-
+static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
@@ -68,6 +68,7 @@ static void dumpContext(ZMapWindow window) ;
  */
 
 
+
 /* Probably it would be wise to pass in the callback function, the start index for the item
  * identifier and perhaps the callback data...... */
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
@@ -76,19 +77,46 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"_Bump", 0, NULL, NULL},
-      {"Bump/Column UnBump",        ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
-      {"Bump/Column Bump Position", ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
-      {"Bump/Column Bump Overlap",  ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
-      {"Bump/Column Bump Name",     ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
-      {"Bump/Column Bump Simple",   ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
+      {"_Column", 0, NULL, NULL},
+      {"Column/Hide",                ZMAPWWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
+      {"_Column/_Bump", 0, NULL, NULL},
+      {"Column/Bump/UnBump",         ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
+      {"Column/Bump/Position",       ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
+      {"Column/Bump/Overlap",        ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
+      {"Column/Bump/Name",           ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
+      {"Column/Bump/Simple",         ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
+      {"Column/Configure",           ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
+      {"Column/Configure All",       ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
       {NULL, 0, NULL, NULL}
     } ;
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
   return menu ;
 }
+
+
+/* Configure a column, may mean repositioning the other columns. */
+static void configureMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapWindowColConfigureMode configure_mode = (ZMapWindowColConfigureMode)menu_item_id  ;
+  FooCanvasGroup *column_group ;
+
+  /* did user click on an item or on the column background ? */
+  if (menu_data->item_cb)
+    column_group = getItemsColGroup(menu_data->item) ;
+  else
+    column_group = FOO_CANVAS_GROUP(menu_data->item) ;
+
+  zmapWindowColumnConfigure(menu_data->window, column_group, configure_mode) ;
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
 
 /* Bump a column and reposition the other columns. */
 static void bumpMenuCB(int menu_item_id, gpointer callback_data)
@@ -103,12 +131,14 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
     column_group = FOO_CANVAS_GROUP(menu_data->item) ;
 
   zmapWindowColumnBump(column_group, bump_type) ;
-  zmapWindowColumnReposition(column_group) ;
+
+  zmapWindowNewReposition(menu_data->window) ;
 
   g_free(menu_data) ;
 
   return ;
 }
+
 
 
 ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
