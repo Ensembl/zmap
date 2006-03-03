@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb 21 18:23 2006 (rds)
+ * Last edited: Mar  3 08:24 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.96 2006-02-21 18:45:01 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.97 2006-03-03 08:24:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -103,6 +103,16 @@ enum
   {
     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH = 5
   };
+
+/* Controls column configuration menu actions. */
+typedef enum
+  {
+    ZMAPWWINDOWCOLUMN_HIDE, ZMAPWWINDOWCOLUMN_SHOW,
+    ZMAPWWINDOWCOLUMN_CONFIGURE, ZMAPWWINDOWCOLUMN_CONFIGURE_ALL
+  } ZMapWindowColConfigureMode ;
+
+
+
 
 typedef enum { 
   ZMAP_WINDOW_LIST_COL_NAME,                /*!< feature name column  */
@@ -493,10 +503,10 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item);
 
-
 void zmapWindowDrawZoom(ZMapWindow window) ;
 
-
+void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
+			       ZMapWindowColConfigureMode configure_mode) ;
 void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapStyleOverlapMode bump_mode) ;
 void zmapWindowColumnReposition(FooCanvasGroup *column_group) ;
 void zmapWindowColumnWriteDNA(ZMapWindow window,
@@ -510,9 +520,7 @@ void zmapWindowColumnSetMagState(ZMapWindow window,
 void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
 			       double *curr_x1_inout, double *curr_x2_out) ;
 
-
-
-GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store);
+GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store) ;
 GtkWidget    *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
                                               GtkCellRenderer *renderer,
                                               zmapWindowFeatureListCallbacks callbacks,
@@ -522,6 +530,9 @@ void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel,
 gint zmapWindowFeatureListCountSelected(GtkTreeSelection *selection);
 gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
 
+ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
+				       ZMapGUIMenuItemCallbackFunc callback_func,
+				       gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
 				       gpointer callback_data) ;
