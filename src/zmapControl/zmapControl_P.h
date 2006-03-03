@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Feb 20 09:44 2006 (edgrif)
+ * Last edited: Mar  1 18:05 2006 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.40 2006-02-21 15:14:01 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.41 2006-03-03 08:14:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -73,7 +73,11 @@ typedef struct _ZMapStruct
   void            *app_data ;				    /* Data passed back to all callbacks
 							       registered for this ZMap. */
 
+  int window_height ;					    /* Overall height of zmap window. */
+
   /* Widget stuff for the Zmap. */
+  GtkTooltips     *tooltips ;
+
   GtkWidget       *toplevel ;				    /* top level widget of zmap window. */
 
   GtkWidget       *info_panel;                              /* show details of object clicked on */
@@ -91,11 +95,11 @@ typedef struct _ZMapStruct
 
 
   /* Main control buttons. */
-  GtkWidget *stop_button, *load_button, *new_button,
-    *hsplit_button, *vsplit_button,
+  GtkWidget *stop_button, *load_button,
+    *hsplit_button, *vsplit_button, *unlock_but, *unsplit_but,
     *zoomin_but, *zoomout_but,
-    *unlock_but, *revcomp_but,
-    *close_but, *quit_button ;
+    *revcomp_but,
+    *quit_button ;
 
   /* The navigator. */
   ZMapNavigator    navigator ;
@@ -130,6 +134,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeFrame  (ZMap zmap) ;
 void       zmapControlWindowDestroy    (ZMap zmap) ;
 
+void *zmapControlButtonTooltips(ZMap zmap) ;
 
 ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end) ;
 void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation) ;
