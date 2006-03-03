@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Feb 24 12:14 2006 (rds)
+ * Last edited: Mar  3 08:12 2006 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.21 2006-02-24 12:16:09 rds Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.22 2006-03-03 08:16:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,14 +36,23 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapControl_P.h>
 
+static void setTooltips(ZMap zmap) ;
+static void makeStatusTooltips(ZMap zmap) ;
 static GtkWidget *makeStatusPanel(ZMap zmap) ;
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 
 
+/* Makes the toplevel window and control panels for an individual zmap. */
 gboolean zmapControlWindowCreate(ZMap zmap)
 {
   gboolean result = TRUE ;
   GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *status_box, *info_box ;
+
+
+  /* Make a tooltips group for the main zmap controls. */
+  zmap->tooltips = gtk_tooltips_new() ;
+
+
 
   zmap->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
@@ -51,8 +60,9 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
 
 
-  /* this should be in a config file.... */
-  gtk_window_set_default_size(GTK_WINDOW(zmap->toplevel), 800, 800);
+  /* We can leave width to default sensibly but height does not because zmap is in a scrolled
+   * window. */
+  gtk_window_set_default_size(GTK_WINDOW(zmap->toplevel), -1, zmap->window_height) ;
 
 
   g_signal_connect(G_OBJECT(toplevel), "realize",
@@ -82,7 +92,7 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   gtk_box_pack_start(GTK_BOX(info_box), button_box, FALSE, TRUE, 0);
 
   status_box = makeStatusPanel(zmap) ;
-  gtk_box_pack_start(GTK_BOX(info_box), status_box, FALSE, FALSE, 0) ;
+  gtk_box_pack_end(GTK_BOX(info_box), status_box, FALSE, TRUE, 0) ;
 
   zmap->info_panel = gtk_entry_new() ;
   gtk_box_pack_start(GTK_BOX(controls_box), zmap->info_panel, TRUE, TRUE, 0) ;
@@ -90,7 +100,12 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   zmap->navview_frame = zmapControlWindowMakeFrame(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), zmap->navview_frame, TRUE, TRUE, 0);
 
+
   gtk_widget_show_all(toplevel) ;
+
+  /* Tooltips can only be added to widgets after the widgets have been "shown". */
+  setTooltips(zmap) ;
+  gtk_tooltips_enable(zmap->tooltips) ;
 
 
   return result ;
@@ -107,6 +122,8 @@ void zmapControlWindowDestroy(ZMap zmap)
   gtk_signal_disconnect_by_data(GTK_OBJECT(zmap->toplevel), (gpointer)zmap) ;
 
   gtk_widget_destroy(zmap->toplevel) ;
+
+  gtk_object_destroy(GTK_OBJECT(zmap->tooltips)) ;
 
   return ;
 }
@@ -181,23 +198,33 @@ void zmapControlWindowSetStatus(ZMap zmap)
  */
 
 
+/* this panel displays revcomp, sequence coord and status information for
+ * the selected view.
+ * 
+ * Note that the labels have to be parented by an event box because we want
+ * them to have tooltips which require a window in order to work and this
+ * is provided by the event box. */
 static GtkWidget *makeStatusPanel(ZMap zmap)
 {
-  GtkWidget *status_box, *frame ;
+  GtkWidget *status_box, *frame, *event_box ;
 
   status_box = gtk_hbox_new(FALSE, 0) ;
 
-  frame = gtk_frame_new(NULL);
+  frame = gtk_frame_new(NULL) ;
   gtk_box_pack_start(GTK_BOX(status_box), frame, TRUE, TRUE, 0) ;
+  event_box = gtk_event_box_new() ;
+  gtk_container_add(GTK_CONTAINER(frame), event_box) ;
   zmap->status_revcomp = gtk_label_new(NULL) ;
-  gtk_container_add(GTK_CONTAINER(frame), zmap->status_revcomp) ;
+  gtk_container_add(GTK_CONTAINER(event_box), zmap->status_revcomp) ;
 
-  frame = gtk_frame_new(NULL);
+  frame = gtk_frame_new(NULL) ;
   gtk_box_pack_start(GTK_BOX(status_box), frame, TRUE, TRUE, 0) ;
+  event_box = gtk_event_box_new() ;
+  gtk_container_add(GTK_CONTAINER(frame), event_box) ;
   zmap->status_coords = gtk_label_new(NULL) ;
-  gtk_container_add(GTK_CONTAINER(frame), zmap->status_coords) ;
+  gtk_container_add(GTK_CONTAINER(event_box), zmap->status_coords) ;
 
-  frame = gtk_frame_new(NULL);
+  frame = gtk_frame_new(NULL) ;
   gtk_box_pack_start(GTK_BOX(status_box), frame, TRUE, TRUE, 0) ;
   zmap->status_entry = gtk_entry_new() ;
   gtk_container_add(GTK_CONTAINER(frame), zmap->status_entry) ;
@@ -233,4 +260,45 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 
   return ;
 }
+
+
+
+/* Note that tool tips cannot be set on a widget until that widget has a window,
+ * so this routine gets called after the various widgets have been realised.
+ * This is a bit of pity as it means we end up splitting creation of widgets from
+ * creation of their tooltips. */
+static void setTooltips(ZMap zmap)
+{
+
+  zmapControlButtonTooltips(zmap) ;
+
+  makeStatusTooltips(zmap) ;
+
+
+  return ;
+}
+
+
+
+static void makeStatusTooltips(ZMap zmap)
+{
+
+  if (GTK_WIDGET_NO_WINDOW(zmap->status_revcomp))
+    printf("no window for revcomp\n") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, gtk_widget_get_parent(zmap->status_revcomp),
+		       "\"+\" = forward complement,\n \"-\" = reverse complement",
+		       "") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, gtk_widget_get_parent(zmap->status_coords),
+		       "start/end coords of displayed sequence",
+		       "") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry,
+		       "Status of selected view",
+		       "") ;
+
+  return ;
+}
+
 
