@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Mar  3 08:12 2006 (edgrif)
+ * Last edited: Mar  3 19:18 2006 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.22 2006-03-03 08:16:54 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.23 2006-03-06 11:45:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -283,11 +283,8 @@ static void setTooltips(ZMap zmap)
 static void makeStatusTooltips(ZMap zmap)
 {
 
-  if (GTK_WIDGET_NO_WINDOW(zmap->status_revcomp))
-    printf("no window for revcomp\n") ;
-
   gtk_tooltips_set_tip(zmap->tooltips, gtk_widget_get_parent(zmap->status_revcomp),
-		       "\"+\" = forward complement,\n \"-\" = reverse complement",
+		       "\"+\" = forward complement,\n \"-\"  = reverse complement",
 		       "") ;
 
   gtk_tooltips_set_tip(zmap->tooltips, gtk_widget_get_parent(zmap->status_coords),
