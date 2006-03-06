@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb 20 18:31 2006 (edgrif)
+ * Last edited: Mar  6 10:16 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.69 2006-02-21 15:11:14 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.70 2006-03-06 11:46:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1111,6 +1111,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 {
   gboolean call_again = TRUE ;				    /* Normally we want to called continuously. */
   GList* list_item ;
+  gboolean state_change = TRUE ;			    /* Records whehter state of view has changed. */
   gboolean threads_have_died = FALSE ;			    /* Records if any threads have died. */
 
 
@@ -1165,7 +1166,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	      
 	      if (reply == ZMAPTHREAD_REPLY_WAIT)
 		{
-		  ;					    /* nothing to do. */
+		  state_change = FALSE ;
 		}
 	      else if (reply == ZMAPTHREAD_REPLY_GOTDATA)
 		{
@@ -1294,8 +1295,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
    * depending on whether we are dying or threads have died or whatever.... */
   if (zmap_view->connection_list)
     {
-      /* Signal layer above us because view has probably changed state. */
-      (*(view_cbs_G->state_change))(zmap_view, zmap_view->app_data, NULL) ;
+      /* Signal layer above us if view has changed state. */
+      if (state_change)
+	(*(view_cbs_G->state_change))(zmap_view, zmap_view->app_data, NULL) ;
     }
   else
     {
