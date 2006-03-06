@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 21 17:56 2006 (rds)
+ * Last edited: Mar  6 09:51 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.15 2006-02-21 18:45:01 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.16 2006-03-06 11:48:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -160,7 +160,12 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 
 
 /* Finds the feature item in a window corresponding to the supplied feature item..which is
- * usually one from a different window.... */
+ * usually one from a different window....
+ * 
+ * This routine can return NULL if the user has two different sequences displayed and hence
+ * there will be items in one window that are not present in another.
+ * 
+ *  */
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item)
 {
   FooCanvasItem *matching_item = NULL ;
@@ -178,7 +183,6 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
     {
       matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item, feature) ;
-      zMapAssert(matching_item);
     }
   else
     {
@@ -972,7 +976,6 @@ static void setItemColourOriginal(ZMapWindow window, FooCanvasItem *item)
 {
   ZMapFeature feature ;
   GdkColor *fill_colour = NULL;
-  ZMapWindowItemFeatureType item_feature_type ;
   ZMapFeatureTypeStyle style ;
   
   /* Retrieve the feature from the canvas item. */
