@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Mar  3 17:08 2006 (rds)
+ * Last edited: Mar  6 11:34 2006 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.62 2006-03-03 17:16:29 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.63 2006-03-06 11:45:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -639,12 +639,16 @@ static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data
 }
 
 
+
+/* Called when a view needs to tell us it has changed. Note that we only need to change
+ * anything if the view in question is the focus view. */
 static void visibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
   ZMapWindowVisibilityChange vis_change = (ZMapWindowVisibilityChange)view_data ;
 
-  zmapControlSetGUIVisChange(zmap, vis_change) ;
+  if (view_window == zmap->focus_viewwindow)
+    zmapControlSetGUIVisChange(zmap, vis_change) ;
 
   return ;
 }
