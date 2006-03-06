@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  2 15:44 2006 (edgrif)
+ * Last edited: Mar  3 18:57 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.16 2006-03-03 08:21:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.17 2006-03-06 11:47:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -101,7 +101,7 @@ static void addToList(gpointer data, gpointer user_data);
 
 
 static void preZoomCB(gpointer data, gpointer user_data) ;
-static void postZoomCB(gpointer data, gpointer user_data) ;
+static void positionCB(gpointer data, gpointer user_data) ;
 static void columnZoomChanged(FooCanvasGroup *container, double new_zoom, ZMapWindow window) ;
 
 
@@ -460,7 +460,7 @@ void zmapWindowNewReposition(ZMapWindow window)
 			     ZMAPCONTAINER_LEVEL_FEATURESET,
 			     NULL,
 			     NULL,
-			     postZoomCB,
+			     positionCB,
 			     window) ;
 
   return ;
@@ -488,7 +488,7 @@ void zmapWindowDrawZoom(ZMapWindow window)
 			     ZMAPCONTAINER_LEVEL_FEATURESET,
 			     preZoomCB,
 			     &zoom_data,
-			     postZoomCB,
+			     positionCB,
 			     window) ;
 
   return ;
@@ -899,8 +899,8 @@ static void preZoomCB(gpointer data, gpointer user_data)
 }
 
 
-/* Called post zoom but actually does for other things...rename later... */
-static void postZoomCB(gpointer data, gpointer user_data)
+/* Called by zoom and also reposition functions, since all these need repositioning. */
+static void positionCB(gpointer data, gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
   ZMapWindow window = (ZMapWindow)user_data ;
@@ -915,7 +915,6 @@ static void postZoomCB(gpointer data, gpointer user_data)
   if (level == ZMAPCONTAINER_LEVEL_ROOT)
     my_foo_canvas_item_goto(FOO_CANVAS_ITEM(container),
 			    &(window->alignment_start), NULL) ; 
-
 
   return ;
 }
