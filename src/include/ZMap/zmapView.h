@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Feb 20 18:05 2006 (edgrif)
+ * Last edited: Mar  7 14:23 2006 (rds)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.24 2006-02-21 15:11:14 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.25 2006-03-07 15:09:46 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -73,6 +73,12 @@ typedef struct _ZMapViewCallbacksStruct
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 
 
+typedef struct _ZMapViewSelectStruct
+{
+  /* I can't think of better names just at the moment */
+  char *primary_text;
+  char *secondary_text;
+}ZMapViewSelectStruct, *ZMapViewSelect;
 
 
 /* The overall state of the zmapView, we need this because both the zmap window and the its threads
