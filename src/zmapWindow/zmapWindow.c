@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  3 08:19 2006 (edgrif)
+ * Last edited: Mar  7 14:48 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.107 2006-03-03 08:19:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.108 2006-03-07 15:11:56 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -774,7 +774,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
       subpart_text = g_strdup_printf("  (%d %d)", item_data->start, item_data->end) ;
     }
 
-  select.text = g_strdup_printf("%s : %s : %s   %s %d %d%s", 
+  /* It would be nice for a user to be able to specify the format of this string. */
+  select.primary_text = g_strdup_printf("%s : %s : %s   %s %d %d%s", 
 				zMapFeatureType2Str(feature->type),
 				zMapStyleGetName(zMapFeatureGetStyle(feature)),
 				(char *)g_quark_to_string(feature->original_id),
@@ -783,13 +784,14 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 				feature->x2,
 				(subpart_text ? subpart_text : "")) ;
 
+  select.secondary_text = select.primary_text;
   select.item = item ;
   
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
   if (subpart_text)
     g_free(subpart_text) ;
-  g_free(select.text) ;
+  g_free(select.primary_text) ;
 
   return;
 }

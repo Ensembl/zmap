@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Mar  3 08:10 2006 (edgrif)
+ * Last edited: Mar  7 14:23 2006 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.51 2006-03-03 08:11:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.52 2006-03-07 15:10:28 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -81,8 +81,8 @@ typedef struct
 /* Data returned to the focus callback routine. */
 typedef struct
 {
-  char *text ;						    /* Describes selected item. */
-
+  char *primary_text ;          /* Describes selected item. */
+  char *secondary_text ;
   FooCanvasItem *item ;					    /* The feature selected, may be null
 							       if a column was selected. */
 

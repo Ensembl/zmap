@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb 21 17:55 2006 (rds)
+ * Last edited: Mar  7 14:49 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.116 2006-02-21 18:45:01 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.117 2006-03-07 15:12:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1014,10 +1014,10 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	      ZMapWindowSelectStruct select = {NULL} ;
 
 	      if (feature_set)
-		select.text = (char *)g_quark_to_string(feature_set->original_id) ;
+		select.primary_text = (char *)g_quark_to_string(feature_set->original_id) ;
 	      else
-		select.text = (char *)g_quark_to_string(style->original_id) ;
-
+		select.primary_text = (char *)g_quark_to_string(style->original_id) ;
+              select.secondary_text = select.primary_text;
 	      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
 	      event_handled = TRUE ;
