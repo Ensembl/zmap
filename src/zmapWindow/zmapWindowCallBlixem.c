@@ -1,3 +1,4 @@
+
 /*  File: zmapWindowCallBlixem.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2005
@@ -31,9 +32,9 @@
  *
  * Exported functions: see zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  2 11:12 2006 (edgrif)
+ * Last edited: Mar  8 13:53 2006 (rds)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.20 2006-02-21 10:47:13 rds Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.21 2006-03-08 13:58:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -114,11 +115,17 @@ gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean o
   blixem_data.item    = item;
   blixem_data.oneType = oneType;
 
+  if(!(window && window->feature_context && window->feature_context->sequence))
+    {
+      status = FALSE;
+      err_msg = "No DNA in feature context so cannot call blixem." ;
+    }
+
   /* We need the dna sequence to send to blixem....so can't do anything without it... */
-  if (window->feature_context->sequence->type == ZMAPSEQUENCE_NONE)
+  if (status && window->feature_context->sequence->type == ZMAPSEQUENCE_NONE)
     {
       status = FALSE ;
-      err_msg = "No DNA in feature context so cannot call blixem." ;
+      err_msg = "feature context contains no DNA so cannot call blixem." ;
     }
 
   if (status)
