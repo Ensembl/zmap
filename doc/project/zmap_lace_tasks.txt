@@ -30,8 +30,7 @@ Configuration
 Transcript operations
 ---------------------
 
-**
-
+** EG doing this.
 - contextual menu on gene object:
      + show CDS translation in zmap
      + show CDS translation (including *stopcodon) in separate (copy-pastable)
