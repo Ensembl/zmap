@@ -125,12 +125,12 @@ inspector" window (like tree display in fmap). Possibly super-user (but not
 user!) configurable
 
 
-***
+*** RDS_DOING_THIS
 - put the scale by the yellow strand separator
 
 
 
-***
+*** RDS_DOING_THIS
 - cut displayed DNA direct into the cut buffer for access from other 
 applications.
 - when dna seq is shown in zmap, select a stretch of sequence -> contextual
@@ -144,12 +144,12 @@ menu item "copy" or it could happen automatically
 EG acedb does this by steam and we could pinch the code.
 
 
-***
+*** RDS_DOING_THIS
 - clicking on a column will turn the background of that column to light grey
 to emphasise that it has been selected.
 - trial of subtly highlighting entire column background when left-clicking on
 the column background
-
+<DONE>
 
 ***
 - each sub window of a zmap should contain more information in the title which
