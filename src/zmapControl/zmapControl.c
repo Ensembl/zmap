@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Mar  6 11:34 2006 (edgrif)
+ * Last edited: Mar  8 13:57 2006 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.63 2006-03-06 11:45:20 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.64 2006-03-09 12:18:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -621,18 +621,20 @@ static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data_
 static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
-  char *text = (char *)view_data ;
+  ZMapViewSelect vselect = (ZMapViewSelect)view_data ;
   GtkClipboard* clip = NULL;
 
   /* If there is text then display it in info. box of zmap. (There may be no text if
    * user clicked on blank background.) */
-  if (text)
+  if (vselect->primary_text)
+    gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), vselect->primary_text) ;
+
+  /* We also set this to the primary X selection to the secondary_text, confused? */
+  if(vselect->secondary_text)
     {
-      gtk_entry_set_text(GTK_ENTRY(zmap->info_panel), text) ;
-      /* We also set this to the primary X selection */
       if((clip = gtk_widget_get_clipboard(GTK_WIDGET(zmap->toplevel), 
                                           GDK_SELECTION_PRIMARY)) != NULL)
-          gtk_clipboard_set_text(clip, text, -1);
+        gtk_clipboard_set_text(clip, vselect->secondary_text, -1);
     }
 
   return ;
