@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  7 14:48 2006 (rds)
+ * Last edited: Mar  9 11:29 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.108 2006-03-07 15:11:56 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.109 2006-03-09 11:29:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -104,6 +104,11 @@ static void unlockWindow(ZMapWindow window) ;
 static GtkAdjustment *copyAdjustmentObj(GtkAdjustment *orig_adj) ;
 
 static void zoomToRubberBandArea(ZMapWindow window);
+
+static void printWindowSizeDebug(char *prefix, ZMapWindow window,
+				 GtkWidget *widget, GtkAllocation *allocation) ;
+
+
 
 /* Callbacks we make back to the level above us. This structure is static
  * because the callback routines are set just once for the lifetime of the
@@ -201,10 +206,6 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   
   /* A new window will have new canvas items so we need a new hash. */
   new_window->context_to_item = zmapWindowFToICreate() ;
-
-  /* Should we do this...I think so.... */
-  new_window->width = original_window->width ;
-  new_window->height = original_window->height ;
 
   new_window->canvas_maxwin_size = original_window->canvas_maxwin_size ;
   new_window->min_coord = original_window->min_coord ;
@@ -1929,71 +1930,61 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
   return event_handled ;
 }
 
-/* This routine only gets called when the canvas widgets parent requests a resize, not when
- * the canvas changes its own size through zooming. We need to take different action according
- * to whether parent requests we get bigger or smaller:
+/* NOTE: This routine only gets called when the canvas widgets parent requests a resize, not when
+ * the canvas changes its own size through zooming.
  * 
- *      Parent requests bigger size: we need to recalculate with a larger zoom factor so features
- *                                   fill the window.
+ * We need to take action whether the canvas window changes size OR the underlying bin_window
+ * where all the features get drawn to, changes size. In either case there are changes that
+ * must be made to zoomControl and to the user interface, e.g. if the canvas window gets smaller
+ * then we need to allow the user to be able to zoom out more.
  * 
- *     Parent requests smaller size: do nothing, the canvas will maintain its current size
- *                                   and our parent scrolled window will adjust its scroll bars
- *                                   accordingly (i.e. the canvas will reset its width/height
- *                                   to its size before the parent request).
- * 
+ * Notes:
  * This is essentially a time when visibility may have changed or need to be
  * changed. zmapZoomControlHandleResize below works out whether the
  * zoom factor needs changing based on the window height.  Currently
- * this calls zMapWindowZoom (if required) which natively has a
- * visibility change cb call, so no need to call again here. Otherwise if 
- * smaller size call visibility cb from here.
+ * this calls zMapWindowZoom (if required).
  *
- * As far a I can tell the sizes in the allocation struct passed in match those in the canvas
- * widget...always ???
  */
 static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data ;
+  FooCanvas *canvas = FOO_CANVAS(widget) ;
+  GtkLayout *layout = &(canvas->layout) ;
 
-  if (window->width == 0 && window->height == 0)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* to debug insert calls before after the below code like this: */
+  printWindowSizeDebug("PRE", window, widget, allocation) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  if (window->window_height != widget->allocation.height
+      || window->canvas_height != layout->height)
     {
-      /* First time through we just record the new size. 
-       * Something I think we should always do? */
-      window->width  = widget->allocation.width ;
-      window->height = widget->allocation.height ;
+      if (window->canvas_width != 0 && window->canvas_height != 0)
+	{
+	  ZMapWindowVisibilityChangeStruct vis_change ;
+	  double start, end;
+
+	  zmapWindowZoomControlHandleResize(window);
+
+	  foo_canvas_get_scroll_region(window->canvas, NULL, &start, NULL, &end);
+	  vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
+	  vis_change.scrollable_top = start ;
+	  vis_change.scrollable_bot = end ;
+	  (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
+	}
+
+      window->window_width  = widget->allocation.width ;
+      window->window_height = widget->allocation.height ;
+      window->canvas_width  = layout->width ;
+      window->canvas_height = layout->height ;
     }
-  else if (widget->allocation.width > window->width || widget->allocation.height > window->height)
-    {
-      /* parent widget has requested canvas size to increase. */
-
-      /* Note how actually we only zoom the height so this is redundant. This may need to be
-       * revisited some time... */
-      if (widget->allocation.width > window->width)
-	window->width = widget->allocation.width ;
-
-      if (widget->allocation.height > window->height)
-        zmapWindowZoomControlHandleResize(window);
-
-    }
-  else if (widget->allocation.height < window->height)
-    {                           /* May need to revisit as above... */
-      ZMapWindowVisibilityChangeStruct vis_change ;
-      double start, end;
-
-      foo_canvas_get_scroll_region(window->canvas, NULL, &start, NULL, &end);
-      vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
-      vis_change.scrollable_top = start ;
-      vis_change.scrollable_bot = end ;
-      (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
-    }
-
-#ifdef RDS_DONT_INCLUDE
-  window->width  = widget->allocation.width ;
-  window->height = widget->allocation.height ;
-#endif
 
   return ;
 }
+
+
+
 
 /*
  *   A set of routines for handling locking/unlocking of scrolling/zooming between several windows.
@@ -2149,3 +2140,28 @@ static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data)
 
 
 
+static void printWindowSizeDebug(char *prefix, ZMapWindow window,
+				 GtkWidget *widget, GtkAllocation *allocation)
+{
+  FooCanvas *canvas = FOO_CANVAS(widget) ;
+  GtkLayout *layout = &(canvas->layout) ;
+
+  printf("%s ----\n", prefix) ;
+
+  printf("alloc_req: %d, %d\tallocation_widg: %d, %d\twindow: %d, %d\n",
+	 allocation->width, allocation->height,
+	 widget->allocation.width, widget->allocation.height,
+	 window->window_width, window->window_height) ;
+
+  printf("layout: %d, %d\tcanvas: %d, %d\n",
+	 layout->width, layout->height,
+	 window->canvas_width, window->canvas_height) ;
+
+  printf("scroll: %f, %f, %f, %f\t\t%f, %f\n\n",
+	 canvas->scroll_x1, canvas->scroll_y1,
+	 canvas->scroll_x2, canvas->scroll_y2,
+	 floor ((canvas->scroll_x2 - canvas->scroll_x1) * canvas->pixels_per_unit_x + 0.5),
+	 floor ((canvas->scroll_y2 - canvas->scroll_y1) * canvas->pixels_per_unit_y + 0.5)) ;
+
+  return ;
+}
