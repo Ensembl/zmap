@@ -118,11 +118,11 @@ column contextual menu)
 columns etc.)
 
 
-*** EG DOING THIS
 - double clicking on an object should display the "properties" window.
 - double click (proper double click !!!) on a feature and get a "property
 inspector" window (like tree display in fmap). Possibly super-user (but not
 user!) configurable
+<DONE>
 
 
 *** RDS_DOING_THIS
