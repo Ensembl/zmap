@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  9 11:29 2006 (edgrif)
+ * Last edited: Mar  9 12:20 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.109 2006-03-09 11:29:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.110 2006-03-09 13:32:32 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -784,8 +784,14 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 				feature->x1,
 				feature->x2,
 				(subpart_text ? subpart_text : "")) ;
+  /* Need to replicate this ... */
+  /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
 
-  select.secondary_text = select.primary_text;
+  select.secondary_text = g_strdup_printf("\"%s\"    %d %d (%d)",
+                                          (char *)g_quark_to_string(feature->original_id),
+                                          feature->x1,
+                                          feature->x2,
+                                          feature->x2 - feature->x1 + 1);
   select.item = item ;
   
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
@@ -793,6 +799,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   if (subpart_text)
     g_free(subpart_text) ;
   g_free(select.primary_text) ;
+  g_free(select.secondary_text) ;
 
   return;
 }
