@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar  8 10:28 2006 (edgrif)
+ * Last edited: Mar  9 13:48 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.98 2006-03-09 11:29:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.99 2006-03-09 14:11:12 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -327,7 +327,7 @@ typedef struct _ZMapWindowStruct
 #endif /* RDS_DONT_INCLUDE */
 
   GList               *focusItemSet; /* the selected/focused items. Interesting operations on these should be possible... */
-
+  FooCanvasItem       *focusColumn ; /* I wanted the focusItemSet to hold this, but that involves a lot of code, which I need to think about */
   /* THIS FIELD IS TEMPORARY UNTIL ALL THE SCALE/RULER IS SORTED OUT, DO NOT USE... */
   double alignment_start ;
 

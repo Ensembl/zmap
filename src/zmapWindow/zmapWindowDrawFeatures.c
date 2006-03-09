@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar  7 14:49 2006 (rds)
+ * Last edited: Mar  9 13:47 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.117 2006-03-07 15:12:07 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.118 2006-03-09 14:11:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -985,6 +985,27 @@ static void positionColumnCB(gpointer data, gpointer user_data)
  *                           Event handlers
  */
 
+/* This should use the window->focusItemSet list.
+ * The items will have a TYPE which anything manipulating the items 
+ * will filter on.
+ */
+static void hackAHighlightColumn(ZMapWindow window, FooCanvasItem *column)
+{
+  GdkColor color;
+  if(window->focusColumn)
+    {
+      gdk_color_parse("white", &color);
+      foo_canvas_item_set(window->focusColumn,
+                          "fill_color_gdk", &color,
+                          NULL);
+    }
+  window->focusColumn = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(column)) ;
+  gdk_color_parse("grey", &color);
+  foo_canvas_item_set(window->focusColumn,
+                      "fill_color_gdk", &color,
+                      NULL);
+  return ;
+}
 
 static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
@@ -1005,6 +1026,8 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	style = g_object_get_data(G_OBJECT(item), "item_feature_style") ;
 	zMapAssert(feature_set || style) ;
 
+        hackAHighlightColumn(window, item);
+        
 	/* Button 1 and 3 are handled, 2 is passed on to a general handler which could be
 	 * the root handler. */
 	switch (but_event->button)
