@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Feb  3 10:34 2005 (edgrif)
+ * Last edited: Mar 10 08:27 2006 (rds)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.24 2005-02-03 15:02:37 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.25 2006-03-10 08:27:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,6 +96,9 @@ void *zmapNewThread(void *thread_args)
   zMapConnSetReply(thread, ZMAPTHREAD_REPLY_WAIT) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  /* Next two calls added to fix MACOSX pthread issues */
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+  pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
 
   while (1)
     {
@@ -112,6 +115,9 @@ void *zmapNewThread(void *thread_args)
 
       ZMAPTHREAD_DEBUG(("%lu: finished condvar wait, state = %s\n", thread->thread_id,
 			zMapThreadGetRequestString(signalled_state))) ;
+
+      /* pthread_testcancel fix for MACOSX */
+      pthread_testcancel();
 
       if (signalled_state == ZMAPTHREAD_REQUEST_TIMED_OUT)
 	{
@@ -197,6 +203,9 @@ void *zmapNewThread(void *thread_args)
 	      }
 	    }
 	}
+      /* pthread_testcancel fix for MACOSX */
+      pthread_testcancel();
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       else
