@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Feb 17 13:38 2006 (edgrif)
+ * Last edited: Mar 13 16:02 2006 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.42 2006-02-17 13:39:02 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.43 2006-03-13 16:04:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1226,13 +1226,31 @@ static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group, PangoFont
 {
   int i, n, width = 0;
   GdkColor black, white, yellow ;
-  double scale_left, scale_right, scale_mid;
+  double scale_maj, scale_line, scale_min;
   FooCanvasPoints *points ;
+  FooCanvasGroup *lines = NULL, *text = NULL;
+  gboolean text_left = FALSE;
+  double scale_over = 70.0;
 
-
-  scale_left  = 60.0;
-  scale_right = scale_left + 10.0;
-  scale_mid   = scale_left + ((scale_right - scale_left) / 2);
+  lines = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
+                                               foo_canvas_group_get_type(),
+                                               NULL));
+  text  = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
+                                               foo_canvas_group_get_type(),
+                                               NULL));
+  if(text_left)
+    {
+      scale_line = scale_over;
+      scale_maj  = scale_over - 10.0;
+      scale_min  = scale_over - 5.0;
+    }
+  else
+    {
+      scale_over = 4.0;
+      scale_line = scale_over;
+      scale_min  = scale_over + 5.0;
+      scale_maj  = scale_line + 10.0;       
+    }
 
   gdk_color_parse("black", &black) ;
   gdk_color_parse("white", &white) ;
@@ -1266,32 +1284,32 @@ static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group, PangoFont
       if (n % ZMAP_SCALE_MINORS_PER_MAJOR) /* Minors */
         {
           if (i < scaleBar->start)
-            zMapDrawLine(FOO_CANVAS_GROUP(group), 
-                         scale_mid, (double)scaleBar->start, 
-                         scale_right, (double)scaleBar->start, 
+            zMapDrawLine(lines, 
+                         scale_min, (double)scaleBar->start, 
+                         scale_line, (double)scaleBar->start, 
                          &black, 1.0) ;
           else if (i == scaleBar->start && n < 5)
             {                   /* n < 5 to stop overlap of digitUnit at some zooms */
               digitUnit = g_strdup_printf("%d", scaleBar->start);
-              zMapDrawLine(FOO_CANVAS_GROUP(group), scale_mid, i_d, scale_right, i_d, &black, 1.0) ;
+              zMapDrawLine(lines, scale_min, i_d, scale_line, i_d, &black, 1.0) ;
             }
           else
-            zMapDrawLine(FOO_CANVAS_GROUP(group), scale_mid, i_d, scale_right, i_d, &black, 1.0) ;
+            zMapDrawLine(lines, scale_min, i_d, scale_line, i_d, &black, 1.0) ;
         }
       else                      /* Majors */
         {
           if(i && i >= scaleBar->start)
             {
-              zMapDrawLine(FOO_CANVAS_GROUP(group), scale_left, i_d, scale_right, i_d, &black, 1.0);
+              zMapDrawLine(lines, scale_maj, i_d, scale_line, i_d, &black, 1.0);
               digitUnit = g_strdup_printf("%d%s", 
                                           (i / scaleBar->base), 
                                           scaleBar->unit);
             }
           else
             {
-              zMapDrawLine(FOO_CANVAS_GROUP(group), 
-                           scale_mid, (double)scaleBar->start, 
-                           scale_right, (double)scaleBar->start, 
+              zMapDrawLine(lines, 
+                           scale_min, (double)scaleBar->start, 
+                           scale_line, (double)scaleBar->start, 
                            &black, 1.0);
               digitUnit = g_strdup_printf("%d", scaleBar->start);
             }
@@ -1301,14 +1319,20 @@ static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group, PangoFont
       if(digitUnit)
         {
           FooCanvasItem *item = NULL;
+          double x = 0.0;
           width = strlen(digitUnit);
-          item = foo_canvas_item_new(group,
+
+          if(text_left)
+            x = ((scale_maj) - (5.0 * (double)width));
+
+          item = foo_canvas_item_new(text,
                                      foo_canvas_text_get_type(),
-                                     "x",          ((scale_left) - (5.0 * (double)width)), 
+                                     "x",          x,
                                      "y",          (i_d < (double)scaleBar->start ? (double)scaleBar->start : i_d),
                                      "text",       digitUnit,
                                      "font_desc",  font,
                                      "fill_color", "black",
+                                     "anchor",     (text_left ? GTK_ANCHOR_CENTER : GTK_ANCHOR_W ),
                                      NULL);
           g_free(digitUnit);
         }
@@ -1321,13 +1345,13 @@ static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group, PangoFont
   points = foo_canvas_points_new(2) ;
 				                                            
   /* fill out the points */
-  points->coords[0] = scale_right ;
+  points->coords[0] = scale_line ;
   points->coords[1] = scaleBar->top ;
-  points->coords[2] = scale_right ;
+  points->coords[2] = scale_line ;
   points->coords[3] = scaleBar->bottom ;
 
   /* draw the line, unfortunately we need to use GDK_CAP_PROJECTING here to make it work */
-  foo_canvas_item_new(group,
+  foo_canvas_item_new(lines,
                       foo_canvas_line_get_type(),
                       "points", points,
                       "fill_color_gdk", &black,
@@ -1337,6 +1361,23 @@ static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group, PangoFont
 
   /* free the points array */
   foo_canvas_points_free(points) ;
+
+  {
+    /* Arrange groups to remove overlapping */
+    double x1, x2, y1, y2;
+    if(text_left)
+      {
+        foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(text),
+                                   &x1, &y1, &x2, &y2);
+        my_foo_canvas_item_goto(FOO_CANVAS_ITEM(lines), &x2, NULL);
+      }
+    else
+      {
+        foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(lines),
+                                   &x1, &y1, &x2, &y2);
+        my_foo_canvas_item_goto(FOO_CANVAS_ITEM(text), &x2, NULL);
+      }
+  }
 
   return ;
 }
