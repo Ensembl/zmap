@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 16 10:25 2005 (rds)
+ * Last edited: Mar 15 18:07 2006 (rds)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.5 2005-11-16 10:43:00 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.6 2006-03-15 18:08:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,10 +130,11 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window)
   num_cruncher->magic = &zoom_magic_G;
 
   /* We need to set up / have already set up our font we draw on the canvas with */
-  getFixedWidthFont(window, &(num_cruncher->font), 
-                    g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY),
-                    ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL);
-  font = pango_font_describe (num_cruncher->font);
+  if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(window->toplevel), 
+                               g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY),
+                               ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
+                               &(num_cruncher->font), &font))
+    printf("zoom failed to get fixed width font \n");
 
   /* Make sure this is the 1:1 text_height 14 on my machine*/
   foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, 1.0);
