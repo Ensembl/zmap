@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Mar  2 16:36 2006 (edgrif)
+ * Last edited: Mar 17 12:35 2006 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.5 2006-03-03 08:20:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.6 2006-03-17 12:40:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -377,6 +377,29 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
 
   return ;
 }
+void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_parent,
+                                                    double height, 
+                                                    double border)
+{
+  FooCanvasItem *container_background = NULL;
+  double x1, x2;
+
+  zmapWindowContainerSetBackgroundSize(container_parent, height);
+
+  container_background = zmapWindowContainerGetBackground(container_parent) ;
+
+  foo_canvas_item_get_bounds(container_background, &x1, NULL, &x2, NULL) ;
+
+  foo_canvas_item_set(container_background,
+                      "x1", x1,
+                      "x2", x2 + (border * 2.0),
+                      NULL) ;
+  border *= -1.0;
+
+  my_foo_canvas_item_goto(container_background, &border, NULL);
+  
+  return ;
+}
 
 
 /* Much like zmapWindowContainerSetBackgroundSize() but sets the background as big as the
@@ -485,17 +508,16 @@ void zmapWindowContainerExecute(FooCanvasGroup        *parent,
 void zmapWindowContainerReposition(FooCanvasGroup *container)
 {
   ContainerData container_data ;
+  ZMapContainerLevelType type;
   FooCanvasGroup *all_groups ;
   double x1, y1, x2, y2 ;
   GList *curr_child ;
   double curr_bound ;
 
   container_data = g_object_get_data(G_OBJECT(container), CONTAINER_DATA) ;
-
-  all_groups = zmapWindowContainerGetFeatures(container) ;
-
-
-
+  type           = container_data->level;
+  all_groups     = zmapWindowContainerGetFeatures(container) ;
+  
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Now move all the groups over so they are positioned properly,
    * N.B. this might mean moving them in either direction depending on whether the changed
@@ -556,11 +578,17 @@ void zmapWindowContainerReposition(FooCanvasGroup *container)
     }
   while ((curr_child = g_list_next(curr_child))) ;
 
-
   /* Make the parent groups bounding box as large as the group.... */
-  zmapWindowContainerSetBackgroundSize(container, 0.0) ;
-
-
+  /* We need to check for strand level to add the border so that 
+   * we don't end up flush with the edge of the window and "strand separator"
+   * A better model would be to have a separate group for the strand separator
+   * rather than rely on the background of the group below.
+   */
+  if(type == ZMAPCONTAINER_LEVEL_STRAND)
+      zmapWindowContainerSetBackgroundSizePlusBorder(container, 0.0, COLUMN_SPACING);
+  else
+    zmapWindowContainerSetBackgroundSize(container, 0.0) ;
+  
   return ;
 }
 
