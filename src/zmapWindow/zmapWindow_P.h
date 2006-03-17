@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 17 17:06 2006 (edgrif)
+ * Last edited: Mar 17 17:18 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.102 2006-03-17 17:06:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.103 2006-03-17 17:19:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -631,8 +631,8 @@ void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
                                GtkWidget *paned,
                                GtkAdjustment *vadjustment);
 void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double y2);
+void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas obj);
 void zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double x, double y, gboolean force);
-/* void zmapWindowRulerCanvasZoom(ZMapWindowRulerCanvas obj, double x, double y); */
 void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
 void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,

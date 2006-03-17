@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 17 13:10 2006 (rds)
+ * Last edited: Mar 17 17:04 2006 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.2 2006-03-17 13:16:53 rds Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.3 2006-03-17 17:19:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,9 +43,11 @@
 #define ZMAP_FORCE_FIVES TRUE
 #define ZMAP_SCALE_BAR_GROUP_TYPE_KEY "scale_group_type"
 
-//#define VERBOSE_1
-//#define VERBOSE_2
-//#define VERBOSE_3
+/* For printing lots to the terminal and debugging
+#define VERBOSE_1
+#define VERBOSE_2
+#define VERBOSE_3
+*/
 
 /* Privatise  */
 typedef struct _ZMapWindowRulerCanvasStruct
@@ -107,6 +109,7 @@ static FooCanvasItem *rulerCanvasDrawScale(FooCanvas *canvas,
 static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right);
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
 static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data);
+static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data);
 static void freeze_notify(ZMapWindowRulerCanvas obj);
 static void thaw_notify(ZMapWindowRulerCanvas obj);
 
@@ -177,6 +180,28 @@ void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
   return ;
 }
 
+void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas obj)
+{
+  int open = 10;
+
+  /* If there's one set, disconnect it */
+  if(obj->visibilityHandlerCB)
+    g_signal_handler_disconnect(G_OBJECT(obj->canvas), obj->visibilityHandlerCB);
+
+  /* Reconnect the maximising one... */
+  obj->visibilityHandlerCB = 
+    g_signal_connect(G_OBJECT(obj->canvas),
+                     "visibility-notify-event", 
+                     G_CALLBACK(rulerMaxVisibilityHandlerCB), 
+                     (gpointer)obj);
+  
+  if(obj->callbacks->paneResize &&
+     obj->callbacks->user_data)
+    (*(obj->callbacks->paneResize))(&open, obj->callbacks->user_data);
+
+  return ;
+}
+
 void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double y2)
 {
   double x2, max_x2,
@@ -195,12 +220,11 @@ void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double 
         foo_canvas_get_scroll_region(FOO_CANVAS(obj->canvas),
                                      NULL, NULL, &x2, NULL);
 #ifdef VERBOSE_1        
-      printf("rulercanvasMaximise: %f %f - %f %f %f %f\n", x2, max_x2, ix1, x2, iy1, iy2);
+      printf("rulerCanvasMaximise: %f %f - %f %f %f %f\n", x2, max_x2, ix1, x2, iy1, iy2);
 #endif /* VERBOSE_1 */
       foo_canvas_set_scroll_region(FOO_CANVAS(obj->canvas),
                                    ix1, iy1, max_x2, iy2);
       
-
       if(max_x2 != 0.0 && 
          obj->callbacks->paneResize &&
          obj->callbacks->user_data)
@@ -417,6 +441,18 @@ static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expo
   return handled;
 }
 
+/* And a version which WILL maximise after calling the other one. */
+static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
+{
+  ZMapWindowRulerCanvas obj = (ZMapWindowRulerCanvas)user_data;
+  gboolean handled = FALSE;
+
+  handled = rulerVisibilityHandlerCB(widget, expose, user_data);
+
+  zmapWindowRulerCanvasMaximise(obj, 0.0, 0.0);
+
+  return handled;
+}
 
 
 static void freeze_notify(ZMapWindowRulerCanvas obj)

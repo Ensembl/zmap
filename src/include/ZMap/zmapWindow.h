@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Mar  7 14:23 2006 (rds)
+ * Last edited: Mar 17 17:23 2006 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.52 2006-03-07 15:10:28 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.53 2006-03-17 17:23:46 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -181,6 +181,9 @@ double zMapWindowGetZoomFactor(ZMapWindow window);
 double zMapWindowGetZoomMax(ZMapWindow window) ;
 double zMapWindowGetZoomMagnification(ZMapWindow window);
 gboolean zMapWindowIsLocked(ZMapWindow window) ;
+
+/* For when a window in the same view has a child removed */
+void zMapWindowSiblingWasRemoved(ZMapWindow window);
 
 /* Remove this to use Ed's version */
 PangoFont *zMapWindowGetFixedWidthFont(ZMapWindow window);

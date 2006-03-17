@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Feb 23 15:24 2006 (edgrif)
+ * Last edited: Mar 17 17:23 2006 (rds)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.10 2006-02-23 16:13:36 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.11 2006-03-17 17:23:53 rds Exp $
  *-------------------------------------------------------------------
  */
  
@@ -249,8 +249,10 @@ void zmapControlRemoveWindow(ZMap zmap)
 
   /* Having removed one window we need to refocus on another, if there is one....... */
   if (remaining_view)
-    zmapControlSetWindowFocus(zmap, remaining_view) ;
-
+    {
+      zmapControlSetWindowFocus(zmap, remaining_view) ;
+      zMapWindowSiblingWasRemoved(zMapViewGetWindow(remaining_view));
+    }
 
   /* We'll need to update the display..... */
   gtk_widget_show_all(zmap->toplevel) ;

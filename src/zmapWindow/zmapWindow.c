@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 17 12:10 2006 (rds)
+ * Last edited: Mar 17 17:23 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.111 2006-03-17 12:59:55 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.112 2006-03-17 17:24:05 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -770,6 +770,15 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   g_free(select.secondary_text) ;
 
   return;
+}
+
+/* I'm not convinced of this. */
+void zMapWindowSiblingWasRemoved(ZMapWindow window)
+{
+  /* Currently this is all we do here. */
+  zmapWindowRulerCanvasOpenAndMaximise(window->ruler);
+  
+  return ;
 }
 
 
@@ -2064,7 +2073,6 @@ static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window)
   return ;
 }
 
-
 static void unlockWindow(ZMapWindow window)
 {
   gboolean removed ;
@@ -2100,7 +2108,6 @@ static void unlockWindow(ZMapWindow window)
           gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
           /* Need to set the scalebar one too if vertical locked */
           zmapWindowRulerCanvasSetVAdjustment(window->ruler, adjuster);
-          /* maximise here???? */
         }
     }
 
