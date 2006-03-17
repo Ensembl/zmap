@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  3 18:57 2006 (edgrif)
+ * Last edited: Mar 17 12:18 2006 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.17 2006-03-06 11:47:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.18 2006-03-17 12:19:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -910,11 +910,13 @@ static void positionCB(gpointer data, gpointer user_data)
 
   if (level != ZMAPCONTAINER_LEVEL_FEATURESET)
     zmapWindowContainerReposition(container) ;
-
-  /* Correct for the stupid scale bar.... */
+  
+#ifdef RDS_DONT_INCLUDE
+  /* Correct for the stupid scale bar.... */  
   if (level == ZMAPCONTAINER_LEVEL_ROOT)
     my_foo_canvas_item_goto(FOO_CANVAS_ITEM(container),
 			    &(window->alignment_start), NULL) ; 
+#endif
 
   return ;
 }
