@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 17 12:21 2006 (rds)
+ * Last edited: Mar 17 17:06 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.101 2006-03-17 12:41:54 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.102 2006-03-17 17:06:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -550,9 +550,15 @@ gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
 				       gpointer callback_data) ;
-ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
-				       ZMapGUIMenuItemCallbackFunc callback_func,
-				       gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAny(int *start_index_inout,
+						ZMapGUIMenuItemCallbackFunc callback_func,
+						gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuDNATranscript(int *start_index_inout,
+						ZMapGUIMenuItemCallbackFunc callback_func,
+						gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data) ;

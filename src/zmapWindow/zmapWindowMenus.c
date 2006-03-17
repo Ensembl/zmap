@@ -27,22 +27,29 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Mar  3 08:22 2006 (edgrif)
+ * Last edited: Mar 17 16:37 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.8 2006-03-03 08:23:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.9 2006-03-17 17:05:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapUtilsDNA.h>
+#include <ZMap/zmapFASTA.h>
 #include <ZMap/zmapGFF.h>
+#include <ZMap/zmapPeptide.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
 
 
+enum {ZMAPCDS, ZMAPTRANSCRIPT, ZMAPUNSPLICED} ;
+
+
+
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
+static void dnaMenuCB(int menu_item_id, gpointer callback_data) ;
+static void peptideMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
 
@@ -95,6 +102,208 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 
   return menu ;
 }
+
+
+/* Probably it would be wise to pass in the callback function, the start index for the item
+ * identifier and perhaps the callback data...... */
+ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAny(int *start_index_inout,
+						ZMapGUIMenuItemCallbackFunc callback_func,
+						gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {"DNA",               ZMAPUNSPLICED,     dnaMenuCB, NULL},
+      {NULL, 0, NULL, NULL}
+    } ;
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+/* Probably it would be wise to pass in the callback function, the start index for the item
+ * identifier and perhaps the callback data...... */
+ZMapGUIMenuItem zmapWindowMakeMenuDNATranscript(int *start_index_inout,
+						ZMapGUIMenuItemCallbackFunc callback_func,
+						gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {"_DNA", 0, NULL, NULL},
+      {"DNA/CDS",                    ZMAPCDS,           dnaMenuCB, NULL},
+      {"DNA/transcript",             ZMAPTRANSCRIPT,    dnaMenuCB, NULL},
+      {"DNA/unspliced",              ZMAPUNSPLICED,     dnaMenuCB, NULL},
+      {NULL, 0, NULL, NULL}
+    } ;
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+static void dnaMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapFeature feature ;
+  gboolean spliced, cds ;
+  char *dna, *dna_fasta ;
+  ZMapFeatureContext context ;
+  char *seq_name, *molecule_type = NULL, *gene_name = NULL ;
+  int seq_len ;
+  char *title ;
+
+  feature = (ZMapFeature)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+
+  context = menu_data->window->feature_context ;
+
+  seq_name = (char *)g_quark_to_string(context->original_id) ;
+
+  spliced = cds = FALSE ;
+  switch (menu_item_id)
+    {
+    case ZMAPCDS:
+      {
+	spliced = cds = TRUE ;
+
+	break ;
+      }
+    case ZMAPTRANSCRIPT:
+      {
+	spliced = TRUE ;
+
+	break ;
+      }
+    case ZMAPUNSPLICED:
+      {
+	break ;
+      }
+    default:
+      zMapAssertNotReached() ;				    /* exits... */
+      break ;
+    }
+
+  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+    {
+      molecule_type = "DNA" ;
+      gene_name = (char *)g_quark_to_string(feature->original_id) ;
+
+      dna = zMapFeatureGetTranscriptDNA(context, feature, spliced, cds) ;
+    }
+  else
+    {
+      dna = zMapFeatureGetFeatureDNA(context, feature) ;
+    }
+
+  /* Would be better to have the dna functions calculate and return this.... */
+  seq_len = strlen(dna) ;
+
+  dna_fasta = zMapFASTAString(seq_name, molecule_type, gene_name, seq_len, dna) ;
+
+  title = g_strdup_printf("%s%s%s",
+			  seq_name,
+			  gene_name ? ":" : "",
+			  gene_name ? gene_name : "") ;
+
+  zMapGUIShowText(title, dna_fasta, FALSE) ;
+
+  g_free(title) ;
+
+  g_free(dna_fasta) ;
+  g_free(dna) ;
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+/* Probably it would be wise to pass in the callback function, the start index for the item
+ * identifier and perhaps the callback data...... */
+ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {"_Peptide", 0, NULL, NULL},
+      {"Peptide/CDS",                    ZMAPCDS,           peptideMenuCB, NULL},
+      {"Peptide/transcript",             ZMAPTRANSCRIPT,    peptideMenuCB, NULL},
+      {NULL, 0, NULL, NULL}
+    } ;
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+static void peptideMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapFeature feature ;
+  gboolean spliced, cds ;
+  char *dna ;
+  ZMapPeptide peptide ;
+  char *peptide_fasta ;
+  ZMapFeatureContext context ;
+  char *seq_name, *molecule_type = NULL, *gene_name = NULL ;
+  char *title ;
+
+  feature = (ZMapFeature)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+
+  context = menu_data->window->feature_context ;
+
+  seq_name = (char *)g_quark_to_string(context->original_id) ;
+
+  spliced = cds = FALSE ;
+  switch (menu_item_id)
+    {
+    case ZMAPCDS:
+      {
+	spliced = cds = TRUE ;
+
+	break ;
+      }
+    case ZMAPTRANSCRIPT:
+      {
+	spliced = TRUE ;
+
+	break ;
+      }
+    default:
+      zMapAssertNotReached() ;				    /* exits... */
+      break ;
+    }
+
+  molecule_type = "Protein" ;
+  gene_name = (char *)g_quark_to_string(feature->original_id) ;
+
+  dna = zMapFeatureGetTranscriptDNA(menu_data->window->feature_context, feature, spliced, cds) ;
+
+  peptide = zMapPeptideCreate(seq_name, gene_name, dna, NULL, TRUE) ;
+
+  peptide_fasta = zMapFASTAString(seq_name, molecule_type, gene_name,
+				  zMapPeptideLength(peptide),
+				  zMapPeptideSequence(peptide)) ;
+
+  title = g_strdup_printf("%s%s%s",
+			  seq_name,
+			  gene_name ? ":" : "",
+			  gene_name ? gene_name : "") ;
+  zMapGUIShowText(title, peptide_fasta, FALSE) ;
+  g_free(title) ;
+
+  g_free(peptide_fasta) ;
+  zMapPeptideDestroy(peptide) ;
+  g_free(dna) ;
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
 
 
 /* Configure a column, may mean repositioning the other columns. */
@@ -310,7 +519,7 @@ static void dumpFASTA(ZMapWindow window)
   if (!(dna = zmapFeatureContextDNA(window->feature_context, &seq_name, &seq_len, &sequence))
       || !(filepath = zmapGUIFileChooser(window->toplevel, "FASTA filename ?", NULL, NULL))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zmapDNADumpFASTA(file, seq_name, seq_len, sequence, &error))
+      || !zMapFASTAFile(file, seq_name, seq_len, sequence, &error))
     {
       char *err_msg = NULL ;
 
