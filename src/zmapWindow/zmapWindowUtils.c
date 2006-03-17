@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 29 08:08 2005 (rds)
+ * Last edited: Mar 17 12:20 2006 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.25 2005-11-29 08:09:55 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.26 2006-03-17 12:20:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -327,41 +327,6 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
 
   return ;
 }
-
-
-/* Either wants SeqCoords (start, end) _or_ (0.0, 0.0) in which case it'll use
- * window->min_coord, window->max_coord
- */
-void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end)
-{
-  double c_start = start;
-  double c_end   = end;        /* Canvas start and end */
-  double height  = 0.0;
-  ZMapWindowClampType clmp;
-
-  if (window->scaleBarGroup && (FOO_IS_CANVAS_ITEM( (window->scaleBarGroup) )))
-    gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup));
-
-  /* This isn't very good, but won't be needed when in separate canvas/window/pane */
-  if(start <= 0.0 )
-    {
-      c_start = window->min_coord;
-      c_end   = window->max_coord;
-    }
-  /* SHOULD NOT NEED TO BE THIS!!!!!! */
-  clmp = zmapWindowClampStartEnd(window, &c_start, &c_end);
-  zmapWindowGetBorderSize(window, &height);
-  window->scaleBarGroup = zMapDrawScale(window->canvas, 
-                                        zMapWindowGetFixedWidthFontDescription(window),
-                                        zMapWindowGetZoomFactor(window),
-                                        c_start,
-                                        c_end,
-                                        height);
-  return ;
-}
-
-
-
 
 /* 
  *                  Internal routines.
