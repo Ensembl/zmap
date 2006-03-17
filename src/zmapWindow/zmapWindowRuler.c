@@ -27,14 +27,15 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 17 11:47 2006 (rds)
+ * Last edited: Mar 17 13:10 2006 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.1 2006-03-17 12:16:42 rds Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.2 2006-03-17 13:16:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindow_P.h>
 #include <ZMap/zmapUtils.h>
+#include <string.h>
 #include <math.h>
 
 #define DEFAULT_PANE_POSITION 100
@@ -182,7 +183,6 @@ void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double 
     ix1 = 0.0,
     iy1 = y1, 
     iy2 = y2;
-  int current_position;
 
   if(obj->scaleParent)
     { 
@@ -228,7 +228,6 @@ void zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double start, double e
   if((force && obj->line_height >= at_least) || 
      (!force && !obj->scaleParent && obj->line_height >= at_least))
     {
-      double test = 0.0;
 #ifdef VERBOSE_2
       printf("Draw: drawing call\n");
 #endif /* VERBOSE_2 */
@@ -240,6 +239,7 @@ void zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double start, double e
                                               obj->text_left);
       
       /* We either need to do this check or 
+       * double test = 0.0;
        * foo_canvas_item_get_bounds((FOO_CANVAS_ITEM(obj->scaleParent)), NULL, NULL, &test, NULL);
        * if(test == 0.0)
        *   g_signal_connect(...);
@@ -322,10 +322,7 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
   if(cancel)
     {
       int position, 
-        max = obj->default_position, 
-        cx, 
-        cy, 
-        handle = 5;
+        max = obj->default_position;
       double x2 = 100.0;
 
       foo_canvas_item_get_bounds(scale, 
@@ -375,9 +372,9 @@ static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right)
 
 static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
 {
-  FooCanvasGroup *root = NULL;
   ZMapWindowRulerCanvas obj = (ZMapWindowRulerCanvas)user_data;
   gboolean handled  = FALSE; 
+
 #ifdef VERBOSE_1
   printf("rulerVisibilityHandlerCB: enter\n");
 #endif /* VERBOSE_1 */
@@ -673,10 +670,12 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
         {
           FooCanvasItem *item = NULL;
           double x = 0.0;
-          width = strlen(digitUnit);
 
           if(text_left)
-            x = ((scale_maj) - (5.0 * (double)width));
+            {
+              width = strlen(digitUnit);
+              x = ((scale_maj) - (5.0 * (double)width));
+            }
 
           item = foo_canvas_item_new(text,
                                      foo_canvas_text_get_type(),
@@ -715,30 +714,28 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
   /* free the points array */
   foo_canvas_points_free(points) ;
 
-  {
-    /* Arrange groups to remove overlapping */
-    double x1, x2, y1, y2;
-    if(text_left)
-      {
-        g_object_set_data(G_OBJECT(text), 
-                          ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
-                          GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_LEFT));
-        g_object_set_data(G_OBJECT(lines), 
-                          ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
-                          GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_RIGHT));
-        positionLeftRight(text, lines);
-      }
-    else
-      {
-        g_object_set_data(G_OBJECT(lines), 
-                          ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
-                          GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_LEFT));
-        g_object_set_data(G_OBJECT(text), 
-                          ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
-                          GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_RIGHT));
-        positionLeftRight(lines, text);
-      }
-  }
+  /* Arrange groups to remove overlapping */
+  if(text_left)
+    {
+      g_object_set_data(G_OBJECT(text), 
+                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
+                        GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_LEFT));
+      g_object_set_data(G_OBJECT(lines), 
+                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
+                        GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_RIGHT));
+      positionLeftRight(text, lines);
+    }
+  else
+    {
+      g_object_set_data(G_OBJECT(lines), 
+                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
+                        GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_LEFT));
+      g_object_set_data(G_OBJECT(text), 
+                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY, 
+                        GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_RIGHT));
+      positionLeftRight(lines, text);
+      
+    }
 
   return ;
 }
