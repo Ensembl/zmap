@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 15 18:07 2006 (rds)
+ * Last edited: Mar 15 18:51 2006 (rds)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.6 2006-03-15 18:08:22 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.7 2006-03-17 12:20:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -359,7 +359,8 @@ void zmapWindowGetBorderSize(ZMapWindow window, double *border)
 
   control = controlFromWindow(window);
 
-  b = control->border / control->zF;  
+  if(control->status != ZMAP_ZOOM_INIT)
+    b = control->border / control->zF;  
 
   *border = b;
 
