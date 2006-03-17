@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 24 09:11 2005 (rds)
+ * Last edited: Mar 17 13:13 2006 (rds)
  * Created: Mon Jul 18 09:14:38 2005 (rds)
- * CVS info:   $Id: zmapDraw_P.h,v 1.4 2005-12-06 10:47:59 rds Exp $
+ * CVS info:   $Id: zmapDraw_P.h,v 1.5 2006-03-17 13:16:20 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_P_H
@@ -105,29 +105,6 @@ typedef enum
 
     POINT_UNKNOWN_FORWARD
   } ZMapBoxPointPosition;
-
-
-/* Just a collection of ints, boring but makes it easier */
-typedef struct _ZMapScaleBarStruct
-{
-  int base;                     /* One of 1 1e3 1e6 1e9 1e12 1e15 */
-  int major;                    /* multiple of base */
-  int minor;                    /* major / ZMAP_SCALE_MINORS_PER_MAJOR */
-  char *unit;                   /* One of bp k M G T P */
-
-  gboolean force_multiples_of_five;
-  double zoom_factor;
-
-  int start;
-  int end;
-  double top;
-  double bottom;
-} ZMapScaleBarStruct, *ZMapScaleBar;
-
-static ZMapScaleBar createScaleBar_start_end_zoom_height(double start, double end, double zoom, double line);
-static void drawScaleBar(ZMapScaleBar scaleBar, FooCanvasGroup *group, PangoFontDescription *font);
-static void destroyScaleBar(ZMapScaleBar scaleBar);
-
 
 
 #endif /* ZMAP_DRAW_P_H */
