@@ -65,12 +65,13 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapUtils/zmapConfigDir.c \
 	$(top_srcdir)/zmapUtils/zmapConfigDir_P.h \
 	$(top_srcdir)/zmapUtils/zmapFileUtils.c \
-	$(top_srcdir)/zmapUtils/zmapDNAUtils.c \
+	$(top_srcdir)/zmapUtils/zmapFASTA.c \
 	$(top_srcdir)/zmapUtils/zmapGUIutils.c \
 	$(top_srcdir)/zmapUtils/zmapGUImenus.c \
 	$(top_srcdir)/zmapUtils/zmapGLibUtils.c \
 	$(top_srcdir)/zmapUtils/zmapHandle.c \
 	$(top_srcdir)/zmapUtils/zmapLogging.c \
+	$(top_srcdir)/zmapUtils/zmapPeptide.c \
 	$(top_srcdir)/zmapUtils/zmapReadLine.c \
 	$(top_srcdir)/zmapUtils/zmapReadLine_P.h \
 	$(top_srcdir)/zmapUtils/zmapUtils.c \

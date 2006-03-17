@@ -26,15 +26,15 @@
  *
  * Exported functions: See ZMap/zmapFASTA.h
  * HISTORY:
- * Last edited: Mar 17 16:25 2006 (edgrif)
+ * Last edited: Mar 17 16:36 2006 (edgrif)
  * Created: Fri Mar 17 16:24:30 2006 (edgrif)
- * CVS info:   $Id: zmapFASTA.c,v 1.1 2006-03-17 16:25:52 edgrif Exp $
+ * CVS info:   $Id: zmapFASTA.c,v 1.2 2006-03-17 17:00:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapUtilsDNA.h>
+#include <ZMap/zmapFASTA.h>
 
 
 /* THIS FILE WOULD BE BETTER NAMED zmapFASTAUtils.c....perhaps I will change it... */

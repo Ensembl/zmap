@@ -1,6 +1,6 @@
-/*  File: zmapUtilsDNA.h
+/*  File: zmapFASTA.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) Sanger Institute, 2006
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,15 +20,14 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Interface to FASTA routines.
  *
  * HISTORY:
- * Last edited: Mar 17 16:16 2006 (edgrif)
- * Created: Tue Nov  8 15:23:27 2005 (edgrif)
- * CVS info:   $Id: zmapFASTA.h,v 1.1 2006-03-17 16:19:07 edgrif Exp $
+ * Last edited: Mar 17 16:59 2006 (edgrif)
+ * Created: Fri Mar 17 16:59:08 2006 (edgrif)
+ * CVS info:   $Id: zmapFASTA.h,v 1.2 2006-03-17 17:00:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DNA_H

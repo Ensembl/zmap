@@ -9,6 +9,8 @@ ZMap/zmapFeature.h \
 ZMap/zmapGFF.h \
 ZMap/zmapManager.h \
 ZMap/zmapNavigator.h \
+ZMap/zmapPeptide.h \
+ZMap/zmapFASTA.h \
 ZMap/zmapReadLine.h \
 ZMap/zmapServer.h \
 ZMap/zmapServerProtocol.h \
