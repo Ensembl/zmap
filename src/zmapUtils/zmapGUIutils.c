@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Feb 24 11:06 2006 (rds)
+ * Last edited: Mar 17 13:16 2006 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.12 2006-02-24 11:22:35 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.13 2006-03-17 17:01:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -426,12 +426,14 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
   enum {TEXT_X_BORDERS = 32, TEXT_Y_BORDERS = 50} ;
   GtkWidget *dialog, *scrwin, *view ;
   GtkTextBuffer *buffer ;
+  GList *fixed_font_list = NULL ;
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
   PangoFont *font ;
   PangoFontDescription *font_desc ;
   int width ;
   double x, y ;
   int text_width, text_height ;
+
 
   zMapAssert(title && *title && text && *text) ;
 
@@ -456,10 +458,25 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
   gtk_text_buffer_set_text(buffer, text, -1) ;
 
 
+  /* Construct a list of possible fonts to use. */
+  fixed_font_list = g_list_append(fixed_font_list, "Monospace") ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I tried to give several alternative fonts but some of them, e.g. Cursor, do not display
+   * as monospace even though they apparently are...I don't know why... */
+  fixed_font_list = g_list_append(fixed_font_list, "fixed") ;
+  fixed_font_list = g_list_append(fixed_font_list, "Serif") ;
+  fixed_font_list = g_list_append(fixed_font_list, "Cursor") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
   /* Here we try to set a fixed width font in the text widget and set the size of the dialog
    * so that a sensible amount of text is displayed. */
   if (!zMapGUIGetFixedWidthFont(view,
-				g_list_append(NULL, "fixed"), 10, PANGO_WEIGHT_NORMAL,
+				fixed_font_list, 10, PANGO_WEIGHT_NORMAL,
 				&font, &font_desc))
     {
       zMapGUIShowMsg(ZMAP_MSG_WARNING, "Could not get fixed width font, "
@@ -484,6 +501,7 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
       gtk_window_set_default_size(GTK_WINDOW(dialog), text_width, text_height) ;
     }
 
+  g_list_free(fixed_font_list) ;
 
   gtk_widget_show_all(dialog) ;
 
@@ -642,15 +660,11 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
       pref = g_list_first(pref_families) ;
       while(pref)
 	{
-	  if(!g_ascii_strcasecmp(name, (char *)pref->data)
+	  char *pref_font = (char *)pref->data ;
 
-#warning "We need to put the monospace test in when we move to GTK 2.6"
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	     /* NEED GTK 2.6 FOR THIS.... */
-	     && pango_font_family_is_monospace(families[i])
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	     )
+	  if (g_ascii_strncasecmp(name, pref_font, strlen(pref_font)) == 0
+	      && pango_font_family_is_monospace(families[i])
+	      )
 	    {
 	      found = TRUE ;
 	      match_family = families[i] ;
