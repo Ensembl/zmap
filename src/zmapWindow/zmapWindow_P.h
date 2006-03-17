@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar  9 14:16 2006 (edgrif)
+ * Last edited: Mar 17 12:21 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.100 2006-03-09 14:16:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.101 2006-03-17 12:41:54 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -212,6 +212,19 @@ typedef struct
 
 
 
+typedef void (*ZMapWindowRulerCanvasCallback)(gpointer data,
+                                              gpointer user_data);
+
+typedef struct _ZMapWindowRulerCanvasCallbackListStruct
+{
+  ZMapWindowRulerCanvasCallback paneResize;
+  
+  gpointer user_data;           /* Goes to all! */
+} ZMapWindowRulerCanvasCallbackListStruct, *ZMapWindowRulerCanvasCallbackList;
+
+
+
+typedef struct _ZMapWindowRulerCanvasStruct *ZMapWindowRulerCanvas;
 
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
@@ -224,9 +237,9 @@ typedef struct _ZMapWindowStruct
   /* Widgets for displaying the data. */
   GtkWidget     *parent_widget ;
   GtkWidget     *toplevel ;
-  GtkWidget     *scrolled_window ;			    /* points to toplevel */
+  GtkWidget     *scrolled_window ;
+  GtkWidget     *pane;         /* points to toplevel */
   FooCanvas     *canvas ;				    /* where we paint the display */
-  FooCanvas     *ruler_canvas ;				    /* where we paint the display */
 
   FooCanvasItem *rubberband;
   FooCanvasItem *horizon_guide_line;
@@ -312,9 +325,13 @@ typedef struct _ZMapWindowStruct
 
   GPtrArray     *featureListWindows ;			    /* popup windows showing lists of
 							       column features. */
-
+#ifdef RDS_DONT_INCLUDE
   /* This all needs to move and for scale to be in a separate window..... */
   FooCanvasItem *scaleBarGroup;           /* canvas item in which we build the scalebar */
+  /* THIS FIELD IS TEMPORARY UNTIL ALL THE SCALE/RULER IS SORTED OUT, DO NOT USE... */
+  double alignment_start ;
+#endif 
+  ZMapWindowRulerCanvas ruler;
 
   /* The length, start and end of the segment of sequence to be shown, there will be _no_
    * features outside of the start/end. */
@@ -328,8 +345,6 @@ typedef struct _ZMapWindowStruct
 
   GList               *focusItemSet; /* the selected/focused items. Interesting operations on these should be possible... */
   FooCanvasItem       *focusColumn ; /* I wanted the focusItemSet to hold this, but that involves a lot of code, which I need to think about */
-  /* THIS FIELD IS TEMPORARY UNTIL ALL THE SCALE/RULER IS SORTED OUT, DO NOT USE... */
-  double alignment_start ;
 
 } ZMapWindowStruct ;
 
@@ -604,5 +619,18 @@ gboolean zmapWindowItemAddFocusItem(ZMapWindow window, FooCanvasItem *item);
 void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item);
 FooCanvasItem *zmapWindowItemHotFocusItem(ZMapWindow window);
 
+/* Ruler Functions */
+ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackList callbacks);
+void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
+                               GtkWidget *paned,
+                               GtkAdjustment *vadjustment);
+void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double y2);
+void zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double x, double y, gboolean force);
+/* void zmapWindowRulerCanvasZoom(ZMapWindowRulerCanvas obj, double x, double y); */
+void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustment *vadjustment);
+void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
+void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
+                                        double border);
+/* End Ruler Functions */
 
 #endif /* !ZMAP_WINDOW_P_H */
