@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan 23 14:00 2006 (edgrif)
+ * Last edited: Mar 17 16:40 2006 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.1 2006-01-23 14:10:55 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.2 2006-03-17 17:03:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,8 +44,8 @@ typedef struct
 } RevCompDataStruct, *RevCompData ;
 
 
-
-static void revcompDNA(ZMapSequence sequence) ;
+static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
+static void revcompDNA(char *sequence, int seq_length) ;
 static void revcompFeatures(ZMapFeatureContext context) ;
 static void doFeatureAnyCB(ZMapFeatureAny any_feature, gpointer user_data) ;
 static void datasetCB(GQuark key_id, gpointer data, gpointer user_data) ;
@@ -75,7 +75,88 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context)
 
 
 
+char *zMapFeatureGetDNA(ZMapFeatureContext context, int start, int end)
+{
+  char *dna = NULL ;
 
+  zMapAssert(context && (start > 0 && (end == 0 || end > start))) ;
+
+  if (end == 0)
+    end = context->sequence->length ;
+
+  dna = getDNA(context->sequence->sequence, start, end, FALSE) ;
+
+  return dna ;
+}
+
+
+/* Trivial function which just uses the features start/end coords, could be more intelligent
+ * and deal with transcripts/alignments more intelligently. */
+char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature)
+{
+  char *dna = NULL ;
+  gboolean revcomp = FALSE ;
+
+  /* should check that feature is in context.... */
+  zMapAssert(context && feature) ;
+
+  if (feature->strand == ZMAPSTRAND_REVERSE)
+    revcomp = TRUE ;
+
+  dna = getDNA(context->sequence->sequence, feature->x1, feature->x2, revcomp) ;
+
+  return dna ;
+}
+
+
+/* Get a transcripts DNA, this will probably mean extracting snipping out the dna for
+ * each exon. */
+char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transcript,
+				  gboolean spliced, gboolean CDS)
+{
+  char *dna = NULL ;
+  GArray *exons ;
+
+  /* should check that feature is in context.... */
+  zMapAssert(context && transcript && transcript->type == ZMAPFEATURE_TRANSCRIPT) ;
+
+  exons = transcript->feature.transcript.exons ;
+
+  if (!spliced || !exons)
+    dna = zMapFeatureGetFeatureDNA(context, transcript) ;
+  else
+    {
+      GString *dna_str ;
+      int i ;
+      int seq_length = 0 ;
+
+      dna_str = g_string_sized_new(1000) ;		    /* Average length of human proteins is
+							       apparently around 500 amino acids. */
+  
+      for (i = 0 ; i < exons->len ; i++)
+	{
+	  ZMapSpan exon_span ;
+	  int offset, length ;
+
+	  exon_span = &g_array_index(exons, ZMapSpanStruct, i) ;
+
+	  offset = exon_span->x1 - 1 ;
+	  length = exon_span->x2 - exon_span->x1 + 1 ;
+	  seq_length += length ;
+
+	  dna_str = g_string_append_len(dna_str, (context->sequence->sequence + offset), length) ;
+	}
+
+      dna = g_string_free(dna_str, FALSE) ;
+
+
+      if (transcript->strand == ZMAPSTRAND_REVERSE)
+	revcompDNA(dna, seq_length) ;
+    }
+
+
+  return dna ;
+}
 
 
 
@@ -85,6 +166,24 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context)
  */
 
 
+static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
+{
+  char *dna = NULL ;
+  int length ;
+
+  zMapAssert(dna_sequence && (start > 0 && end > start)) ;
+
+  length = end - start + 1 ;
+
+  dna = g_strndup((dna_sequence + start - 1), length) ;
+
+  if (revcomp)
+    revcompDNA(dna, length) ;
+
+  return dna ;
+}
+
+
 
 /* Reverse complement the DNA. This function is fast enough for now, if it proves too slow
  * then rewrite it !
@@ -92,13 +191,13 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context)
  * It works by starting at each end and swopping the bases and then complementing the bases
  * so that the whole thing is done in place.
  *  */
-static void revcompDNA(ZMapSequence sequence)
+static void revcompDNA(char *sequence, int length)
 {
   char *s, *e ;
   int i ;
 
-  for (s = sequence->sequence, e = (sequence->sequence + sequence->length - 1), i = 0 ;
-       i < sequence->length / 2 ;
+  for (s = sequence, e = (sequence + length - 1), i = 0 ;
+       i < length / 2 ;
        s++, e--, i++)
     {
       char tmp ;
@@ -203,7 +302,7 @@ static void doFeatureAnyCB(ZMapFeatureAny any_feature, gpointer user_data)
 
 	/* Revcomp the DNA if there is any. */
 	if (context->sequence)
-	  revcompDNA(context->sequence) ;
+	  revcompDNA(context->sequence->sequence, context->sequence->length) ;
 
 	dataset = &(context->alignments) ;
 	break ;
@@ -219,7 +318,7 @@ static void doFeatureAnyCB(ZMapFeatureAny any_feature, gpointer user_data)
 	/* DNA revcomp should happen here, but what if the block is the same as the context ?
 	 * SORT this out.... */
 	if (block->sequence.sequence)
-	  revcompDNA(&(block->sequence)) ;
+	  revcompDNA(block->sequence.sequence, block->sequence.length) ;
 
 
 	zmapFeatureRevComp(Coord, cb_data->end,

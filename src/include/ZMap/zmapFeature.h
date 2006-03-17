@@ -25,13 +25,14 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb 17 14:32 2006 (rds)
+ * Last edited: Mar 15 16:47 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.59 2006-02-17 17:59:21 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.60 2006-03-17 17:03:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
+
 
 #include <gdk/gdkcolor.h>
 
@@ -649,6 +650,13 @@ gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase);
 char *zMapFeaturePhase2Str(ZMapPhase phase) ;
 char *zMapFeatureHomol2Str(ZMapHomolType homol) ;
 gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *score_out);
+
+
+char *zMapFeatureGetDNA(ZMapFeatureContext context, int start, int end) ;
+char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature) ;
+char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transcript,
+				  gboolean spliced, gboolean CDS) ;
+
 
 
 
