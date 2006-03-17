@@ -28,15 +28,16 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  9 13:33 2006 (edgrif)
+ * Last edited: Mar 17 16:49 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.6 2006-03-09 14:17:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.7 2006-03-17 17:04:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <math.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapPeptide.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
@@ -1194,7 +1195,12 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpoint
 
 
 
-/* Callback for any events that happen on individual canvas items. */
+/* Callback for any events that happen on individual canvas items.
+ * 
+ * NOTE that we can use a static for the double click detection because the
+ * GUI runs in a single thread and because the user cannot double click on
+ * more than one window at a time....;-)
+ *  */
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
@@ -1485,7 +1491,15 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   /* Make up the menu. */
   menu_sets = g_list_append(menu_sets, makeMenuFeatureOps(NULL, NULL, menu_data)) ;
 
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBump(NULL, NULL, menu_data)) ;
+  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+    {
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNATranscript(NULL, NULL, menu_data)) ;
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuPeptide(NULL, NULL, menu_data)) ;
+    }
+  else
+    {
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAFeatureAny(NULL, NULL, menu_data)) ;
+    }
 
   if (feature->type == ZMAPFEATURE_ALIGNMENT)
     {
@@ -1494,6 +1508,8 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
       else
 	menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, menu_data)) ;
     }
+
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBump(NULL, NULL, menu_data)) ;
 
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDumpOps(NULL, NULL, menu_data)) ;
 
@@ -1514,70 +1530,6 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
   switch (menu_item_id)
     {
-
-
-      /* Items 0 to -2 are test code only.... */
-    case 0:
-      {
-	ZMapFeature feature_copy ;
-	FooCanvasItem *set_item, *new_feature_item ;
-
-	set_item = zmapWindowFToIFindSetItem(menu_data->window->context_to_item,
-					     (ZMapFeatureSet)(feature->parent), feature->strand) ;
-
-	/* Hack for now..... to make a new feature id.... */
-	feature_copy = zMapFeatureCopy(feature) ;
-	feature_copy->x1 -= 1000 ;
-	feature_copy->x2 -= 1000 ;
-	feature_copy->unique_id = zMapFeatureCreateID(feature_copy->type,
-						      (char *)g_quark_to_string(feature_copy->original_id),
-						      feature_copy->strand,
-						      feature_copy->x1, feature_copy->x2,
-						      0, 0) ;
-
-	new_feature_item = zMapWindowFeatureAdd(menu_data->window,
-						FOO_CANVAS_GROUP(set_item), feature_copy) ;
-
-	break ;
-      }
-    case -1:
-      {
-	ZMapFeature feature_copy ;
-	FooCanvasItem *new_item ;
-#ifdef RDS_DONT_INCLUDE
-	if (menu_data->window->focus_item == menu_data->item)
-	  menu_data->window->focus_item = NULL ;
-#endif /* RDS_DONT_INCLUDE */
-	feature_copy = zMapFeatureCopy(feature) ;
-	feature_copy->x1 -= 1000 ;
-	feature_copy->x2 -= 1000 ;
-	feature_copy->unique_id = zMapFeatureCreateID(feature_copy->type,
-						      (char *)g_quark_to_string(feature_copy->original_id),
-						      feature_copy->strand,
-						      feature_copy->x1, feature_copy->x2,
-						      0, 0) ;
-
-	new_item = zMapWindowFeatureReplace(menu_data->window,
-					    menu_data->item, feature_copy) ;
-	zMapWindowHighlightObject(menu_data->window, new_item) ;
-
-
-	break ;
-      }
-    case -2:
-      {
-	gboolean result ;
-#ifdef RDS_DONT_INCLUDE
-	if (menu_data->window->focus_item == menu_data->item)
-	  menu_data->window->focus_item = NULL ;
-#endif /* RDS_DONT_INCLUDE */
-        if(GPOINTER_TO_INT(g_object_get_data(G_OBJECT(menu_data->item), 
-                                             ITEM_FEATURE_TYPE)) == ITEM_FEATURE_CHILD)
-          result = zMapWindowFeatureRemove(menu_data->window, menu_data->item->parent) ;
-        else
-          result = zMapWindowFeatureRemove(menu_data->window, menu_data->item) ;
-	break ;
-      }
     case 1:
       {
         GList *list = NULL;
@@ -1611,7 +1563,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       break ;
 
     default:
-      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
+      zMapAssertNotReached() ;				    /* exits... */
       break ;
     }
 
@@ -1674,11 +1626,8 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"TEMP: copy this feature", 0, itemMenuCB, NULL},
-      {"TEMP: change this feature", -1, itemMenuCB, NULL},
-      {"TEMP: remove this feature", -2, itemMenuCB, NULL},
-      {"Show Feature List",      1, itemMenuCB, NULL},
-      {"Edit Feature Details",   2, itemMenuCB, NULL},
+      {"Show Feature",           2, itemMenuCB, NULL},
+      {"All Column Features",      1, itemMenuCB, NULL},
       {"Feature Search Window",  3, itemMenuCB, NULL},
       {"Pfetch this feature",    4, itemMenuCB, NULL},
       {NULL,                     0, NULL,       NULL}
