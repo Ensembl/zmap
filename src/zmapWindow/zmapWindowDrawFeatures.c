@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar  9 13:47 2006 (rds)
+ * Last edited: Mar 17 12:55 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.118 2006-03-09 14:11:24 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.119 2006-03-17 12:57:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -191,32 +191,15 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 {
   GtkAdjustment *h_adj;
   ZMapCanvasDataStruct canvas_data = {NULL} ;		    /* Rest of struct gets set to zero. */
-  double x1, y1, x2, y2 ;
-  double scr_x1, scr_y1, scr_x2, scr_y2 ;
   FooCanvasGroup *root_group ;
-  FooCanvasItem *fresh_focus_item = NULL;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gboolean debug = TRUE ;
-#endif
-  double x, y ;
-  double start, end ;
-
+  FooCanvasItem *fresh_focus_item = NULL, *tmp_item = NULL;
+  ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT;
+  gboolean debug_containers = FALSE, root_created = FALSE;
+  double x, y, start, end ;
+  double ix1, ix2, iy1, iy2;    /* initial root_group coords */
+  double fx1, fx2, fy1, fy2;    /* final root_group coords   */
 
   zMapAssert(window && full_context && diff_context) ;
-
-
-  /* See if there is an existing scroll_region that we should keep...test is a bit hokey
-   * as it relies on a gtk default size.... */
-  scr_x1 = scr_y1 = scr_x2 = scr_y2 = 0.0 ;
-  foo_canvas_get_scroll_region(FOO_CANVAS(window->canvas), &x1, &y1, &x2, &y2) ;
-  if (!(x1 == 0.0 && x2 == 100.0 && y1 == 0.0 && y2 == 100.0))
-    {
-      scr_x1 = x1 ;
-      scr_x2 = x2 ;
-      scr_y1 = y1 ;
-      scr_y2 = y2 ;
-    }
-
 
   /* Set up colours. */
   if (!window->done_colours)
@@ -233,67 +216,54 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   window->seq_end   = full_context->sequence_to_parent.c2 ;
   window->seqLength = zmapWindowExt(window->seq_start, window->seq_end) ;
 
-
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
-
-
 
   window->min_coord = window->seq_start ;
   window->max_coord = window->seq_end ;
   zmapWindowSeq2CanExt(&(window->min_coord), &(window->max_coord)) ;
-  zmapWindowScrollRegionTool(window, NULL, &(window->min_coord), NULL, &(window->max_coord));
-
 
   h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
   foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, zMapWindowGetZoomFactor(window)) ;
+  zmapWindowRulerCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window)) ;
+
+  {
+    double border_copy = 0.0;
+    zmapWindowGetBorderSize(window, &border_copy);
+    zmapWindowRulerCanvasSetLineHeight(window->ruler, border_copy * window->canvas->pixels_per_unit_y);
+  }
 
   canvas_data.window = window;
   canvas_data.canvas = window->canvas;
 
+  /* Get the current scroll region */
+  ix1 = ix2 = iy1 = iy2 = 0.0;
+  zmapWindowScrollRegionTool(window, &ix1, &iy1, &ix2, &iy2);
 
-
-  /* Draw the scale bar.
-   * 
-   * One day this will be in a separate window altogether.....
-   *  */
-  if (scr_y1 && scr_y2)
+  if((tmp_item = zmapWindowFToIFindItemFull(window->context_to_item, 
+                                            0, 0, 0, ZMAPSTRAND_NONE, 0)))
     {
-
-      /* THIS IS NOT CORRECT IN FACT BECAUSE IT DOESN'T TAKE INTO ACCOUNT ANY TOP/BOTTOM
-       * BORDER WHEN WE ARE RIGHT AT THE TOP OR BOTTOM OF THE WINDOW....WE NEED TO BE
-       * MORE SOPHISTICATED.....LOOK AT ROYS CODE FOR DOING THIS.... */
-
-      y1 = scr_y1 ;
-      y2 = scr_y2 ;
+      root_group = FOO_CANVAS_GROUP(tmp_item);
+      root_created = FALSE;
     }
   else
     {
-      y1 = window->min_coord ;
-      y2 = window->max_coord ;
+      /* Add a background to the root window, must be as long as entire sequence... */
+      root_group = zmapWindowContainerCreate(foo_canvas_root(window->canvas),
+                                             ZMAPCONTAINER_LEVEL_ROOT,
+                                             ALIGN_SPACING,
+                                             &(window->colour_root), 
+                                             &(window->canvas_border)) ;
+      root_created = TRUE;
     }
-  zmapWindowDrawScaleBar(window, y1, y2) ;
 
-
-
-  /* Make sure we start drawing alignments to the right of the scale bar. */
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
-  window->alignment_start = x2 + COLUMN_SPACING ;
-
-
-  /* Add a background to the root window, must be as long as entire sequence... */
-  root_group = zmapWindowContainerCreate(foo_canvas_root(window->canvas),
-					 ZMAPCONTAINER_LEVEL_ROOT,
-					 ALIGN_SPACING,
-					 &(window->colour_root), &(window->canvas_border)) ;
   canvas_data.curr_root_group = zmapWindowContainerGetFeatures(root_group) ;
   g_object_set_data(G_OBJECT(root_group), ITEM_FEATURE_DATA, full_context) ;
   zmapWindowFToIAddRoot(window->context_to_item, root_group);
   window->feature_root_group = root_group ;
 
-
   start = window->seq_start ;
-  end = window->seq_end ;
+  end   = window->seq_end ;
   zmapWindowSeq2CanExtZero(&start, &end) ;
   zmapWindowLongItemCheck(window, zmapWindowContainerGetBackground(root_group),
 			  start, end) ;
@@ -306,22 +276,15 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   foo_canvas_item_set(FOO_CANVAS_ITEM(root_group),
 		      "y", y,
 		      NULL) ;
-
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(root_group), &x1, &y1, &x2, &y2) ;
-
-
   /* 
    *     Draw all the features, so much in so few lines...sigh...
    */
-  canvas_data.curr_x_offset = window->alignment_start ;
+  canvas_data.curr_x_offset = 0.0;
   canvas_data.full_context = full_context ;
   drawZMap(&canvas_data, diff_context) ;
 
-
   /* Set the background object size now we have finished... */
   zmapWindowContainerSetBackgroundSize(root_group, 0.0) ;
-
 
   /* There may be a focus item if this routine is called as a result of splitting a window
    * or adding more features, make sure we scroll to the same point as we were
@@ -331,42 +294,28 @@ void zmapWindowDrawFeatures(ZMapWindow window,
       zMapWindowScrollToItem(window, fresh_focus_item) ;
     }
 
-
-  /* Expand the scroll region to include everything, note the hard-coded zero start, this is
-   * because the actual visible window may not change when the scrolled region changes if its
-   * still visible so we can end up with the visible window starting where the alignment box.
-   * starts...should go away when scale moves into separate window. */  
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x1, &y1, &x2, &y2) ;
-
-
-  if (!scr_y1 && !scr_y2)
+  /* We've probably added width to the root group during drawZMap.  If
+   * there was already a root group before this function we need to
+   * honour the scroll region height (canvas height limit). Grow the
+   * scroll region to the width of the root group */
+  fx1 = fx2 = fy1 = fy2 = 0.0;
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(root_group), &fx1, &fy1, &fx2, &fy2);
+  /* We should be using the x coords of the root group and the y
+   * coords of the previous scroll region Or the new root group
+   * if the scroll region wasn't set by us!
+   */
+  zoom_status = zMapWindowGetZoomStatus(window);
+  if(zoom_status == ZMAP_ZOOM_MID || 
+     zoom_status == ZMAP_ZOOM_MAX)
     {
-      /* Expand the scroll region to include everything again as we need to include the scale bar. */  
-      foo_canvas_get_scroll_region(window->canvas, NULL, &y1, NULL, &y2);
+      fy1 = iy1;
+      fy2 = iy2;
     }
-  else
-    {
-      y1 = scr_y1 ;
-      y2 = scr_y2 ;
-    }
+  
+  zmapWindowScrollRegionTool(window, &fx1, &fy1, &fx2, &fy2);
 
-
-  /* There's an issue here we always seem to be calling get or set scroll region. */
-  if(y1 && y2)
-    //zmapWindow_set_scroll_region(window, y1, y2);
-    zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
-  else
-    //zmapWindow_set_scroll_region(window, window->min_coord, window->max_coord);
-    zmapWindowScrollRegionTool(window, 
-                               &x1, &(window->min_coord), 
-                               &x2, &(window->max_coord));
-
-
-  /* debugging.... */
-#ifdef RDS_DONT_INCLUDE
-  zmapWindowContainerPrint(root_group) ;
-#endif
-
+  if(debug_containers)
+    zmapWindowContainerPrint(root_group) ;
 
   return ;
 }
@@ -550,7 +499,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
   canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
   zmapWindowLongItemCheck(canvas_data->window, zmapWindowContainerGetBackground(forward_group),
 			  top, bottom) ;
-
+  
   reverse_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
 					    ZMAPCONTAINER_LEVEL_STRAND,
 					    COLUMN_SPACING,
@@ -582,8 +531,8 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   /* Now we've positioned all the columns we can set the backgrounds for the forward and
    * reverse strand groups and also set their positions within the block. */
-  zmapWindowContainerSetBackgroundSize(forward_group, 0.0) ;
-  zmapWindowContainerSetBackgroundSize(reverse_group, 0.0) ;
+  zmapWindowContainerSetBackgroundSizePlusBorder(forward_group, 0.0, COLUMN_SPACING) ;
+  zmapWindowContainerSetBackgroundSizePlusBorder(reverse_group, 0.0, COLUMN_SPACING) ;
 
   /* Here we need to position the forward/reverse column groups by taking their size and
    * resetting their positions....should we have a reverse group if there are no reverse cols ? */
