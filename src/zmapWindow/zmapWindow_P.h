@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 17 17:18 2006 (rds)
+ * Last edited: Mar 20 18:16 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.103 2006-03-17 17:19:31 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.104 2006-03-20 18:17:26 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -497,7 +497,6 @@ gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean o
 ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item); 
 void zmapWindowEditorDraw(ZMapWindowEditor editor);
 
-void zmapWindow_set_scroll_region(ZMapWindow window, double y1a, double y2a);
 void zmapWindowScrollRegionTool(ZMapWindow window,
                                 double *x1_inout, double *y1_inout,
                                 double *x2_inout, double *y2_inout);
@@ -505,9 +504,9 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
 ZMapWindowClampType zmapWindowClampSpan(ZMapWindow window, 
                                         double *top_inout, 
                                         double *bot_inout) ;
-ZMapWindowClampType zmapWindowClampStartEnd(ZMapWindow window, 
-                                            double *top_inout, 
-                                            double *bot_inout) ;
+ZMapWindowClampType zmapWindowClampedAtStartEnd(ZMapWindow window, 
+                                                double *top_inout, 
+                                                double *bot_inout) ;
 
 void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 			ZMapFeature modFeature,  FooCanvasItem *item);
