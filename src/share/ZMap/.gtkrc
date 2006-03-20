@@ -1,0 +1,55 @@
+# The default/sample zmap gtkrc file
+# CVS info: $Id: .gtkrc,v 1.1 2006-03-20 18:48:09 rds Exp $
+
+
+###############################
+# frames are just lines and text painted
+# over the parent area. fg & bg apply only
+# to the line??? Hence the eventbox...
+style "zmap-focus-view-frame" {
+  bg[NORMAL] = "green"
+}
+widget "*.zmap-focus-view" style "zmap-focus-view-frame"
+
+
+##########################
+style "default-species" {
+  bg[NORMAL] = "green"
+}
+style "Hsapiens" {
+  bg[NORMAL] = "brown"
+}
+#widget "*.zmap-view-b0250" style "Hsapiens"
+#widget "*.zmap-view-b0252" style "default-species"
+
+
+###########################
+# remove arrows from ruler hscrollbar
+style "no-scroll" {
+  GtkScrollbar::has-backward-stepper = 0
+  GtkScrollbar::has-forward-stepper  = 0
+  GtkScrollbar::has-secondary-backward-stepper = 0
+  GtkScrollbar::has-secondary-forward-stepper  = 0
+}
+widget "*.zmap-ruler-hscrollbar" style:application "no-scroll"
+
+
+#############################
+# insensitive fg
+style "menu-titles" {
+  fg[INSENSITIVE]="blue"
+}
+# menu/button items have label widgets
+# class "GtkLabel" style "menu-titles"
+widget "*.zmap-menu-title.*" style "menu-titles"
+
+
+#############################
+# style on class
+#style "touch-screen-zmap" {
+#  GtkRange::trough_border = 0
+#  GtkRange::slider_width = 50
+#  GtkRange::stepper_size = 50
+#  GtkPaned::handle-size = 20
+#}
+#class "GtkWidget" style "touch-screen-zmap" 
