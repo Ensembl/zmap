@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Mar 17 17:23 2006 (rds)
+ * Last edited: Mar 20 18:33 2006 (rds)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.11 2006-03-17 17:23:53 rds Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.12 2006-03-20 18:36:24 rds Exp $
  *-------------------------------------------------------------------
  */
  
@@ -275,55 +275,8 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame, GtkOrientation
 {
   GtkWidget *new_frame ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* for trying to make the frame wider...sigh.... */
-  GtkRcStyle *mod_style ;
-  GtkStyle *style ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
   /* Supplying NULL will remove the title if its too big. */
   new_frame = gtk_frame_new(view_title) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* I've been trying to discover:
-   *     a) a way to make the frame shadow wider
-   * or  b) a way to use a different widget to get a wider border around the canvas
-   * 
-   * this is so I can do highlighting better, so far it all eludes me...sigh....
-   * certainly the styles stuff is not doing the job...
-   *  */
-  mod_style = gtk_widget_get_modifier_style(new_frame) ;
-
-  mod_style->xthickness = 10 ;
-  mod_style->ythickness = 10 ;
-
-  gtk_widget_modify_style(new_frame, mod_style) ;
-
-  mod_style = gtk_widget_get_modifier_style(new_frame) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Nope, this doesn't work either........... */
-  style = gtk_widget_get_style(new_frame) ;
-
-  style->xthickness = 10 ;
-  style->ythickness = 10 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Nor does this........... */
-  /* Making the border huge does _not_ make the red bit huge when we highlight so that's not
-   * much good.....this call DOES NOT set an internal border to the container as you might
-   * expect...it sets an external one in the containing window...agggghhhhh */
-
-  gtk_container_set_border_width(GTK_CONTAINER(new_frame), 30) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   /* If there is a parent then add this pane as child two of parent, otherwise it means
    * this is the first pane and it it just gets added to the zmap vbox. */
@@ -552,11 +505,10 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
       if (zmap->focus_viewwindow)
 	{
 	  GtkWidget *unfocus_frame ;
-
+          
 	  unfocus_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
-	  gtk_frame_set_shadow_type(GTK_FRAME(unfocus_frame), GTK_SHADOW_OUT) ;
-	  gtk_widget_modify_bg(GTK_WIDGET(unfocus_frame), GTK_STATE_NORMAL, NULL) ;
-	  gtk_widget_modify_fg(GTK_WIDGET(unfocus_frame), GTK_STATE_NORMAL, NULL) ;
+          gtk_frame_set_shadow_type(GTK_FRAME(unfocus_frame), GTK_SHADOW_OUT) ;
+          gtk_widget_set_name(GTK_WIDGET(unfocus_frame), "GtkFrame");
 	}
 
       /* focus the new one. */
@@ -565,12 +517,8 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
       window = zMapViewGetWindow(new_viewwindow) ;
 
       viewwindow_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
-
       gtk_frame_set_shadow_type(GTK_FRAME(viewwindow_frame), GTK_SHADOW_IN);
-
-      gdk_color_parse("red", &color);
-      gtk_widget_modify_bg(GTK_WIDGET(viewwindow_frame), GTK_STATE_NORMAL, &color);
-      gtk_widget_modify_fg(GTK_WIDGET(viewwindow_frame), GTK_STATE_NORMAL, &color);
+      gtk_widget_set_name(GTK_WIDGET(viewwindow_frame), "zmap-focus-view");
 
       /* make sure zoom buttons etc. appropriately sensitised for this window. */
       zmapControlWindowSetGUIState(zmap) ;
