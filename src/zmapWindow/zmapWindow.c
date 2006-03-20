@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 20 18:08 2006 (rds)
+ * Last edited: Mar 20 18:41 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.113 2006-03-20 18:13:02 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.114 2006-03-20 18:43:33 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -84,6 +84,7 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpoint
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
+static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 
 static void resetCanvas(ZMapWindow window) ;
 static gboolean getConfiguration(ZMapWindow window) ;
