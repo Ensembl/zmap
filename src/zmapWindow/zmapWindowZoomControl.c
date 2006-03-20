@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 15 18:51 2006 (rds)
+ * Last edited: Mar 20 18:15 2006 (rds)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.7 2006-03-17 12:20:42 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.8 2006-03-20 18:16:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -410,7 +410,8 @@ static double getMinZoom(ZMapWindow window)
   border_height = control->border * 2.0; 
   canvas_height = GTK_WIDGET(window->canvas)->allocation.height;
 
-  zMapAssert(canvas_height >= border_height);
+  zMapAssert(canvas_height > 0);
+  /* zMapAssert(canvas_height >= border_height); */
   /* rearrangement of
    *              canvas height
    * zf = ------------------------------
