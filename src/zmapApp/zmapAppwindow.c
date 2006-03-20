@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 23 16:33 2006 (edgrif)
+ * Last edited: Mar 18 18:17 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.25 2006-02-23 16:37:22 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.26 2006-03-20 18:29:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -222,8 +222,8 @@ void zmapAppExit(ZMapAppContext app_context)
 static void initGnomeGTK(int argc, char *argv[])
 {
   gchar *err_msg ;
-
-  gtk_set_locale() ;
+  gchar *rc_dir, *rc_file;
+  gtk_set_locale() ;            
 
   if ((err_msg = gtk_check_version(ZMAP_GTK_MAJOR, ZMAP_GTK_MINOR, ZMAP_GTK_MICRO)))
     {
@@ -231,6 +231,19 @@ static void initGnomeGTK(int argc, char *argv[])
       zMapExitMsg("%s\n", err_msg) ;
 
       gtk_exit(EXIT_FAILURE) ;
+    }
+
+  if(rc_dir = zMapConfigDirGetDir())
+    {
+      rc_file = g_strdup_printf("%s/%s", rc_dir, ".gtkrc");
+      /* This needs to be done before gtk_init()
+       * Call to gtk_set_locale() should make fetching locale specific rc
+       * files work too. For instance, if LANG is set to ja_JP.ujis, 
+       * when loading the default file rc_file then GTK+ looks for rc_file.ja_JP 
+       * and rc_file.ja, and parses the first of those that exists. 
+       */
+      gtk_rc_add_default_file(rc_file); 
+      g_free(rc_file);
     }
 
   gtk_init(&argc, &argv) ;
