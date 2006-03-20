@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 17 17:04 2006 (rds)
+ * Last edited: Mar 20 15:51 2006 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.3 2006-03-17 17:19:52 rds Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.4 2006-03-20 15:54:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,13 +123,13 @@ ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackL
   obj = g_new0(ZMapWindowRulerCanvasStruct, 1);
 
   /* Now we make the ruler canvas */
-  obj->canvas = FOO_CANVAS(foo_canvas_new());
+  obj->canvas    = FOO_CANVAS(foo_canvas_new());
   obj->callbacks = g_new0(ZMapWindowRulerCanvasCallbackListStruct, 1);
   obj->callbacks->paneResize = callbacks->paneResize;
   obj->callbacks->user_data  = callbacks->user_data;
 
   obj->default_position = DEFAULT_PANE_POSITION;
-  obj->text_left = FALSE;
+  obj->text_left        = FALSE;
 
   obj->visibilityHandlerCB = 0;
 
@@ -150,13 +150,18 @@ void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW( scrolled ), 
                                  GTK_POLICY_ALWAYS, GTK_POLICY_NEVER);
 
+  gtk_widget_set_sensitive(GTK_SCROLLED_WINDOW(scrolled)->hscrollbar, TRUE);
+  gtk_widget_set_name(GTK_WIDGET(GTK_SCROLLED_WINDOW(scrolled)->hscrollbar), "zmap-ruler-hscrollbar");
+
   gtk_container_add(GTK_CONTAINER(scrolled), GTK_WIDGET(obj->canvas)) ;
 
   gtk_paned_pack1(GTK_PANED(paned), scrolled, FALSE, TRUE);
 
+#ifdef RDS_DONT_DO_THIS_IT_CAUSES_FLICKER
   /* ... I think we actually want to set to zero! until draw occurs ... */
   if(obj->callbacks->paneResize && obj->callbacks->user_data)
     (*(obj->callbacks->paneResize))(&(obj->default_position), obj->callbacks->user_data);
+#endif
 
   g_object_connect(G_OBJECT(paned), 
                    "signal::notify::position", G_CALLBACK(paneNotifyPositionCB), (gpointer)obj,
@@ -169,10 +174,6 @@ void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
 
   
 #ifdef RDS_DONT_INCLUDE
-  g_object_connect(G_OBJECT(obj->canvas),
-                   "signal::expose-event", G_CALLBACK(rulerVisibilityHandlerCB), (gpointer)obj,
-                   NULL);
-
   gtk_widget_modify_bg(GTK_WIDGET(obj->canvas), 
                        GTK_STATE_NORMAL, &(window->canvas_background)) ;
 #endif
@@ -194,7 +195,8 @@ void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas obj)
                      "visibility-notify-event", 
                      G_CALLBACK(rulerMaxVisibilityHandlerCB), 
                      (gpointer)obj);
-  
+
+  /* Now open it, which will result in the above getting called... */
   if(obj->callbacks->paneResize &&
      obj->callbacks->user_data)
     (*(obj->callbacks->paneResize))(&open, obj->callbacks->user_data);
@@ -225,6 +227,8 @@ void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double 
       foo_canvas_set_scroll_region(FOO_CANVAS(obj->canvas),
                                    ix1, iy1, max_x2, iy2);
       
+      obj->default_position = max_x2;
+
       if(max_x2 != 0.0 && 
          obj->callbacks->paneResize &&
          obj->callbacks->user_data)
@@ -347,7 +351,7 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
     {
       int position, 
         max = obj->default_position;
-      double x2 = 100.0;
+      double x2 = 0.0;
 
       foo_canvas_item_get_bounds(scale, 
                                  NULL, NULL, &x2, NULL);
@@ -617,6 +621,9 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
   FooCanvasPoints *points ;
   FooCanvasGroup *lines = NULL, *text = NULL;
   double scale_over = 70.0;
+  GString *digitUnitStr = NULL;
+  /* 20 should be enough for anyone */
+  digitUnitStr = g_string_sized_new(20);
 
   lines = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
                                                foo_canvas_group_get_type(),
@@ -663,10 +670,10 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
   for( ; i < scaleBar->end; i+=scaleBar->minor, n++)
     {
       /* More conditionals than I intended here... */
-      char *digitUnit = NULL;
+      /* char *digitUnit = NULL; */
       double i_d = (double)i ;				    /* Save a lot of casting... */
 
-
+      
       if (n % ZMAP_SCALE_MINORS_PER_MAJOR) /* Minors */
         {
           if (i < scaleBar->start)
@@ -676,7 +683,8 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
                          &black, 1.0) ;
           else if (i == scaleBar->start && n < 5)
             {                   /* n < 5 to stop overlap of digitUnit at some zooms */
-              digitUnit = g_strdup_printf("%d", scaleBar->start);
+              /* digitUnit = g_strdup_printf("%d", scaleBar->start); */
+              g_string_printf(digitUnitStr, "%d", scaleBar->start);
               zMapDrawLine(lines, scale_min, i_d, scale_line, i_d, &black, 1.0) ;
             }
           else
@@ -687,9 +695,13 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
           if(i && i >= scaleBar->start)
             {
               zMapDrawLine(lines, scale_maj, i_d, scale_line, i_d, &black, 1.0);
-              digitUnit = g_strdup_printf("%d%s", 
+              /* digitUnit = g_strdup_printf("%d%s", 
                                           (i / scaleBar->base), 
-                                          scaleBar->unit);
+                                          scaleBar->unit); */
+              g_string_printf(digitUnitStr,
+                              "%d%s", 
+                              (i / scaleBar->base), 
+                              scaleBar->unit);
             }
           else
             {
@@ -697,19 +709,21 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
                            scale_min, (double)scaleBar->start, 
                            scale_line, (double)scaleBar->start, 
                            &black, 1.0);
-              digitUnit = g_strdup_printf("%d", scaleBar->start);
+              /* digitUnit = g_strdup_printf("%d", scaleBar->start); */
+              g_string_printf(digitUnitStr, "%d", scaleBar->start);
             }
         }
 
       /* =========================================================== */
-      if(digitUnit)
+      if(digitUnitStr->str)
         {
           FooCanvasItem *item = NULL;
           double x = 0.0;
 
           if(text_left)
             {
-              width = strlen(digitUnit);
+              /* width = strlen(digitUnit); */
+              width = digitUnitStr->len;
               x = ((scale_maj) - (5.0 * (double)width));
             }
 
@@ -717,16 +731,18 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
                                      foo_canvas_text_get_type(),
                                      "x",          x,
                                      "y",          (i_d < (double)scaleBar->start ? (double)scaleBar->start : i_d),
-                                     "text",       digitUnit,
+                                     "text",       digitUnitStr->str,
                                      "font_desc",  font,
                                      "fill_color", "black",
                                      "anchor",     (text_left ? GTK_ANCHOR_CENTER : GTK_ANCHOR_W ),
                                      NULL);
-          g_free(digitUnit);
+          g_string_truncate(digitUnitStr, 0);
+          /* g_free(digitUnit); */
         }
 
     }
 
+  g_string_free(digitUnitStr, TRUE);
 
   /* draw the vertical line of the scalebar. */
     /* allocate a new points array */
