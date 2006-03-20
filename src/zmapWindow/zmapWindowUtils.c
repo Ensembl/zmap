@@ -26,13 +26,14 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 17 12:20 2006 (rds)
+ * Last edited: Mar 20 18:14 2006 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.26 2006-03-17 12:20:25 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.27 2006-03-20 18:15:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
+#include <math.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
@@ -42,14 +43,6 @@ static void cropLongItem(gpointer data, gpointer user_data) ;
 static void freeLongItem(gpointer data, gpointer user_data_unused) ;
 gint findLongItemCB(gconstpointer data, gconstpointer user_data) ;
 
-#ifdef NOTDEFINEDHERE
-static void moveExonsIntrons(ZMapWindow window, 
-			     ZMapFeature origFeature,
-			     GArray *origArray, 
-			     GArray *modArray,
-			     int transcriptOrigin,
-			     gboolean isExon);
-#endif
 typedef struct windowScrollRegionStruct_
 {
   ZMapWindow window;
@@ -145,34 +138,35 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
   return ;
 }
 
-ZMapWindowClampType zmapWindowClampStartEnd(ZMapWindow window, double *top_inout, double *bot_inout)
+ZMapWindowClampType zmapWindowClampedAtStartEnd(ZMapWindow window, double *top_inout, double *bot_inout)
 {
   ZMapWindowClampType clamp = ZMAP_WINDOW_CLAMP_INIT;
-  double top, bot;
+  double top, bot, crc = 0.0;
 
   top = *top_inout;
   bot = *bot_inout;
 
-  if (top <= window->min_coord)
+  if (top < window->min_coord)
     {
       top    = window->min_coord ;
       clamp |= ZMAP_WINDOW_CLAMP_START;
     }
-#warning THIS IS VERY WRONG ROY!!!! SORT IT OUT!
-  if (bot >= (window->max_coord - 1))
+  else if (floor(top) == window->min_coord)
+    clamp |= ZMAP_WINDOW_CLAMP_START;
+
+  if (bot > window->max_coord)
     {
-      if(bot - window->max_coord > window->max_coord - window->min_coord)
-        printf("*** BIG DIFFERENCE BETWEEN bottom and end of sequence ***\n");
       bot    = window->max_coord ;
       clamp |= ZMAP_WINDOW_CLAMP_END;
     }
-
+  else if (ceil(bot) == window->max_coord)
+    clamp |= ZMAP_WINDOW_CLAMP_END;
+    
   *top_inout = top;
   *bot_inout = bot;
 
   return clamp;  
 }
-
 
 /* Clamps the span within the length of the sequence,
  * possibly shifting the span to keep it the same size. */
