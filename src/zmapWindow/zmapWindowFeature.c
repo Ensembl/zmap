@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 17 16:49 2006 (edgrif)
+ * Last edited: Mar 17 17:36 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.7 2006-03-17 17:04:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.8 2006-03-20 18:13:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -513,7 +513,7 @@ void zmapWindowColumnWriteDNA(ZMapWindow window, FooCanvasGroup *column_txt_grp)
   zmapWindowGetBorderSize(window, &text_height);
 
   iterator = getIterator(window->min_coord, window->max_coord,
-                         y1, y2, text_height, TRUE);
+                         y1, y2, text_height, FALSE);
   
   for(i = 0; i < iterator->rows; i++)
     {
