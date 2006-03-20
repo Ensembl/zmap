@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jan 12 14:25 2006 (edgrif)
+ * Last edited: Mar 19 17:43 2006 (rds)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.1 2006-01-13 18:47:54 edgrif Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.2 2006-03-20 18:37:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -192,7 +192,11 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets,
 
   gtk_item_factory_create_items(item_factory, num_factory_items, factory_items, our_cb_data) ;
 
-
+  {
+    GtkWidget *title = NULL;
+    title = gtk_item_factory_get_widget(item_factory, makeMenuItemName(menu_title));
+    gtk_widget_set_name(title, "zmap-menu-title");
+  }
   /* Note that we need the root window coords for the popup. */
   gtk_item_factory_popup(item_factory, (guint)button_event->x_root, (guint)button_event->y_root,
 			 button_event->button, button_event->time) ;
