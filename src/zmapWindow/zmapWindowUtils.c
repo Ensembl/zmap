@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 20 18:14 2006 (rds)
+ * Last edited: Mar 21 10:33 2006 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.27 2006-03-20 18:15:23 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.28 2006-03-21 14:11:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -204,6 +204,41 @@ ZMapWindowClampType zmapWindowClampSpan(ZMapWindow window, double *top_inout, do
 
   return clamp;
 }
+
+
+/* We have some arrays of additional windows that are popped up as a result of user interaction
+ * with the zmap, these need to cleaned up when the zmap goes away.
+ * 
+ * If window_array points to NULL then function just returns. */
+void zmapWindowFreeWindowArray(GPtrArray **window_array_inout)
+{
+  GPtrArray *window_array ;
+
+  zMapAssert(window_array_inout) ;
+
+  if ((window_array = *window_array_inout))
+    {
+      /* Slightly tricky here, when the list widget gets destroyed it removes itself
+       * from the array so the array shrinks by one, hence we just continue to access
+       * the first element until all elements are gone. */
+      while (window_array->len)
+	{
+	  GtkWidget *widget ;
+
+	  widget = g_ptr_array_index(window_array, 0) ;
+
+	  gtk_widget_destroy(widget) ;
+	}
+
+      g_ptr_array_free(window_array, FALSE) ;
+      *window_array_inout = NULL ;
+    }
+
+  return ;
+}
+
+
+
 
 
 /* The zmapWindowLongItemXXXXX() functions manage the cropping of canvas items that
