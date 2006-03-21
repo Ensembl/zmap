@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 18 18:17 2006 (rds)
+ * Last edited: Mar 21 09:21 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.26 2006-03-20 18:29:57 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.27 2006-03-21 14:10:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -233,7 +233,7 @@ static void initGnomeGTK(int argc, char *argv[])
       gtk_exit(EXIT_FAILURE) ;
     }
 
-  if(rc_dir = zMapConfigDirGetDir())
+  if ((rc_dir = zMapConfigDirGetDir()))
     {
       rc_file = g_strdup_printf("%s/%s", rc_dir, ".gtkrc");
       /* This needs to be done before gtk_init()
