@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 20 18:41 2006 (rds)
+ * Last edited: Mar 21 14:18 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.114 2006-03-20 18:43:33 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.115 2006-03-21 15:23:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -564,21 +564,13 @@ void zMapWindowDestroy(ZMapWindow window)
   if (window->locked_display)
     unlockWindow(window) ;
 
+  /* free the array of feature list windows and the windows themselves */
+  zmapWindowFreeWindowArray(&(window->featureListWindows)) ;
 
-  /* free the array of featureListWindows and the windows themselves */
-  if (window->featureListWindows)
-    {
-      while (window->featureListWindows->len)
-	{
-	  GtkWidget *widget;
+  /* free the array of search windows and the windows themselves */
+  zmapWindowFreeWindowArray(&(window->search_windows)) ;
 
-	  widget = g_ptr_array_index(window->featureListWindows, 0) ;
-	  gtk_widget_destroy(widget);
-	}
 
-      g_ptr_array_free(window->featureListWindows, FALSE);
-      window->featureListWindows = NULL ;
-    }
 
   zmapWindowFToIDestroy(window->context_to_item) ;
 
@@ -911,6 +903,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   window->context_to_item = zmapWindowFToICreate() ;
 
   window->featureListWindows = g_ptr_array_new();
+  window->search_windows = g_ptr_array_new();
 
 
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
@@ -1147,7 +1140,6 @@ static void resetCanvas(ZMapWindow window)
   /* There is code here that should be shared with zmapwindowdestroy....
    * BUT NOTE THAT SOME THINGS ARE NOT SHARED...e.g. RECREATION OF THE FEATURELISTWINDOWS
    * ARRAY.... */
-
   
   if (window->long_items)
     {
@@ -1170,20 +1162,13 @@ static void resetCanvas(ZMapWindow window)
 
 
   /* free the array of featureListWindows and the windows themselves */
-  if (window->featureListWindows)
-    {
-      /* Slightly tricky here, when the list widget gets destroyed it removes itself
-       * from the array so the array shrinks by one, hence we just continue to access
-       * the first element until all elements are gone. */
-      while (window->featureListWindows->len)
-	{
-	  GtkWidget *widget ;
+  zmapWindowFreeWindowArray(&(window->featureListWindows)) ;
 
-	  widget = g_ptr_array_index(window->featureListWindows, 0) ;
 
-	  gtk_widget_destroy(widget);
-	}
-    }
+  /* free the array of search windows and the windows themselves */
+  zmapWindowFreeWindowArray(&(window->search_windows)) ;
+
+
   
   g_list_free(window->focusItemSet);  
   window->focusItemSet = NULL ;

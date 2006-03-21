@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 20 18:16 2006 (rds)
+ * Last edited: Mar 21 10:43 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.104 2006-03-20 18:17:26 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.105 2006-03-21 15:23:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -325,6 +325,12 @@ typedef struct _ZMapWindowStruct
 
   GPtrArray     *featureListWindows ;			    /* popup windows showing lists of
 							       column features. */
+
+  GPtrArray     *search_windows ;			    /* popup search windows. */
+
+
+  /* Do we need to clean up feature edit windows as well....????? */
+
 #ifdef RDS_DONT_INCLUDE
   /* This all needs to move and for scale to be in a separate window..... */
   FooCanvasItem *scaleBarGroup;           /* canvas item in which we build the scalebar */
@@ -535,6 +541,8 @@ void zmapWindowColumnSetMagState(ZMapWindow window,
 
 void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
 			       double *curr_x1_inout, double *curr_x2_out) ;
+
+void zmapWindowFreeWindowArray(GPtrArray **window_array_inout) ;
 
 GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store) ;
 GtkWidget    *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
