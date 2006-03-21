@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Mar 17 12:35 2006 (rds)
+ * Last edited: Mar 21 16:43 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.6 2006-03-17 12:40:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.7 2006-03-21 16:44:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -503,6 +503,8 @@ void zmapWindowContainerExecute(FooCanvasGroup        *parent,
 
 /* NOTE THAT THIS NEEDS TO BE ALMALGAMATED WITH repositionGroups() */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Repositions all the children of a group and makes sure they are correctly aligned
  * and that the background is the right size. */
 void zmapWindowContainerReposition(FooCanvasGroup *container)
@@ -517,39 +519,8 @@ void zmapWindowContainerReposition(FooCanvasGroup *container)
   container_data = g_object_get_data(G_OBJECT(container), CONTAINER_DATA) ;
   type           = container_data->level;
   all_groups     = zmapWindowContainerGetFeatures(container) ;
+
   
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Now move all the groups over so they are positioned properly,
-   * N.B. this might mean moving them in either direction depending on whether the changed
-   * group got bigger or smaller. */
-  curr_child = g_list_first(all_groups->item_list) ;
-
-  /* Get the position of the first group within its parent. */
-  x1 = y1 = x2 = y2 = 0.0 ; 
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(curr_child->data), &x1, &y1, &x2, &y2) ;
-  curr_bound = x2 + container_data->child_spacing ;
-
-  do
-    {
-      FooCanvasGroup *curr_group = FOO_CANVAS_GROUP(curr_child->data) ;
-      double dx = 0.0 ;
-
-      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(curr_group), &x1, &y1, &x2, &y2) ;
-
-      dx = curr_bound - x1 ;				    /* can be +ve or -ve */
-
-      if (dx != 0.0)
-	{
-	  curr_bound = x2 + dx + container_data->child_spacing ;
-
-	  foo_canvas_item_move(FOO_CANVAS_ITEM(curr_group), dx, 0.0) ;
-							    /* N.B. we only shift in x, not in y. */
-	}
-    }
-  while ((curr_child = g_list_next(curr_child))) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   /* Now move all the groups over so they are positioned properly,
    * N.B. this might mean moving them in either direction depending on whether the changed
    * group got bigger or smaller. */
@@ -591,6 +562,77 @@ void zmapWindowContainerReposition(FooCanvasGroup *container)
   
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* Repositions all the children of a group and makes sure they are correctly aligned
+ * and that the background is the right size. */
+void zmapWindowContainerReposition(FooCanvasGroup *container)
+{
+  ContainerData container_data ;
+  ZMapContainerLevelType type;
+  FooCanvasGroup *all_groups ;
+  double x1, y1, x2, y2 ;
+  GList *curr_child ;
+  double curr_bound ;
+
+  container_data = g_object_get_data(G_OBJECT(container), CONTAINER_DATA) ;
+  type           = container_data->level;
+  all_groups     = zmapWindowContainerGetFeatures(container) ;
+
+
+  /* Now move all the groups over so they are positioned properly, but only if there
+   * are children, it's perfectly legal for there to be no columns on the reverse
+   * strand for instance.
+   * N.B. this might mean moving them in either direction depending on whether the changed
+   * group got bigger or smaller. */
+  if ((curr_child = g_list_first(all_groups->item_list)))
+    {
+      x1 = y1 = x2 = y2 = 0.0 ; 
+      curr_bound = 0.0 ;
+
+      /* We don't bump blocks within a single align, we want them to appear one above the other. */
+      if (type != ZMAPCONTAINER_LEVEL_ALIGN)
+	{
+	  do
+	    {
+	      FooCanvasGroup *curr_group = FOO_CANVAS_GROUP(curr_child->data) ;
+	      double dx = 0.0 ;
+
+	      if (FOO_CANVAS_ITEM(curr_group)->object.flags & FOO_CANVAS_ITEM_VISIBLE)
+		{
+		  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(curr_group), &x1, &y1, &x2, &y2) ;
+
+		  dx = curr_bound - x1 ;			    /* can be +ve or -ve */
+
+		  foo_canvas_item_move(FOO_CANVAS_ITEM(curr_group), dx, 0.0) ;
+		  /* N.B. we only shift in x, not in y. */
+
+		  curr_bound = x2 + dx + container_data->child_spacing ;
+
+		  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(curr_group), &x1, &y1, &x2, &y2) ;
+		}
+	    }
+	  while ((curr_child = g_list_next(curr_child))) ;
+	}
+
+
+      /* Make the parent groups bounding box as large as the group.... */
+      /* We need to check for strand level to add the border so that 
+       * we don't end up flush with the edge of the window and "strand separator"
+       * A better model would be to have a separate group for the strand separator
+       * rather than rely on the background of the group below.
+       */
+      if(type == ZMAPCONTAINER_LEVEL_STRAND)
+	zmapWindowContainerSetBackgroundSizePlusBorder(container, 0.0, COLUMN_SPACING);
+      else
+	zmapWindowContainerSetBackgroundSize(container, 0.0) ;
+    }
+  
+  return ;
+}
+
+
 
 
 /* WARNING, this is a DUMB destroy, it just literally destroys all the canvas items starting
