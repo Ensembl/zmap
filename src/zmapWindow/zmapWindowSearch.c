@@ -22,12 +22,15 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Implements a search window which allows a user to
+ *              specify align, block, set and feature patterns to
+ *              find sets of features.
+ *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 24 10:28 2006 (rds)
+ * Last edited: Mar 21 14:04 2006 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.8 2006-02-21 10:48:05 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.9 2006-03-21 15:28:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,12 +54,15 @@ typedef struct
   char *align_txt ;
   GQuark align_id ;
   GQuark align_original_id ;
+
   char *block_txt ;
   GQuark block_id ;
   GQuark block_original_id ;
+
   char *set_txt ;
   GQuark set_id ;
   GQuark set_original_id ;
+
   char *feature_txt ;
   GQuark feature_id ;
   GQuark feature_original_id ;
@@ -74,10 +80,10 @@ static GtkWidget *makeFiltersPanel(SearchData search_data) ;
 
 
 
-static void quitMenuCB(gpointer data, guint callback_action, GtkWidget *widget) ;
-static void noHelpCB(gpointer data, guint callback_action, GtkWidget *w) ;
+static void closeMenuCB(gpointer data, guint callback_action, GtkWidget *widget) ;
+static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 
-static void quitCB(GtkWidget *widget, gpointer cb_data) ;
+static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 static void searchCB(GtkWidget *widget, gpointer cb_data) ;
 static void displayResult(GList *search_result) ;
 static void printListDataCB(gpointer data, gpointer user_data) ;
@@ -89,9 +95,9 @@ static void setFilterDefaults(SearchData search_data) ;
 
 static GtkItemFactoryEntry menu_items_G[] = {
  { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
- { "/File/Quit",       "<control>Q",  quitMenuCB,    0, NULL,            NULL},
+ { "/File/Close",       "<control>W",  closeMenuCB,    0, NULL,            NULL},
  { "/_Help",           NULL,          NULL,          0, "<LastBranch>",  NULL},
- { "/Help/One",        NULL,          noHelpCB,      0, NULL,            NULL}
+ { "/Help/One",        NULL,          helpCB,      0, NULL,            NULL}
 };
 
 
@@ -113,11 +119,15 @@ void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
   /* set up the top level window */
   search_data->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   g_signal_connect(GTK_OBJECT(toplevel), "destroy",
-		   GTK_SIGNAL_FUNC(quitCB), (gpointer)search_data) ;
+		   GTK_SIGNAL_FUNC(closeCB), (gpointer)search_data) ;
 
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   gtk_window_set_title(GTK_WINDOW(toplevel), "Feature Search") ;
   gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
+
+  /* Add ptrs so parent knows about us */
+  g_ptr_array_add(window->search_windows, (gpointer)toplevel) ;
+
 
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
@@ -317,28 +327,42 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
 
 
 
-static void quitMenuCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
+static void closeMenuCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 {
 
-  /* To avoid lots of destroys we call our other quit routine. */
-  quitCB(widget, cb_data) ;
+  /* To avoid lots of destroys we call our other close routine. */
+  closeCB(widget, cb_data) ;
 
   return ;
 }
 
 
-static void noHelpCB(gpointer data, guint callback_action, GtkWidget *w)
+/* This is not the way to do help, we should really used html and have a set of help files. */
+static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
 {
+  char *title = "Feature Search Window" ;
+  char *help_text =
+    "The ZMap Search Window allows you to search for features using simple filtering.\n"
+    "When initially show the search window displays the names it has assigned to the\n"
+    "displayed alignment, block, set and the feature you clicked on. You can either\n"
+    "replace or augment these names with the \"*\" wild card to find sets of features,\n"
+    "e.g. if the feature name is \"B0250\" then changing it to \"B025*\" will find all\n"
+    "the features for the given align/block/set whose name begins with \"B025\". You can\n"
+    "add wild cards to any of the fields except the strand filter. The strand filter should be\n"
+    "set to one of  +, -, . or *, where * means both strands and . means both strands will be\n"
+    "shown if the feature is not strand sensitive, otherwise only the forward strand is shown." ;
 
-  printf("sorry, no help\n") ;
+  zMapGUIShowText(title, help_text, FALSE) ;
 
   return ;
 }
 
 
-static void quitCB(GtkWidget *widget, gpointer cb_data)
+static void closeCB(GtkWidget *widget, gpointer cb_data)
 {
   SearchData search_data = (SearchData)cb_data ;
+
+  g_ptr_array_remove(search_data->window->search_windows, (gpointer)search_data->toplevel);
 
   gtk_widget_destroy(search_data->toplevel) ;
 
@@ -354,13 +378,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   SearchData search_data = (SearchData)cb_data ;
   char *align_txt, *block_txt, *strand_txt, *set_txt, *feature_txt  ;
   GQuark align_id, block_id, set_id, feature_id ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapStrand strand ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   char *strand_spec ;
-
   GList *search_result ;
 
 
@@ -379,6 +397,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
    * on the string...but we should probably copy the strings from the widget first.... */
 
 
+  /* STOP ALL THIS DUPLICATION OF CODE... */
   align_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->align_entry)) ;
   if (align_txt && strlen(align_txt) == 0)
     {
@@ -464,17 +483,42 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     strand_spec = "*" ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Left for debugging.... */
   printf("Search parameters -    align: %s   block: %s  strand: %s  set: %s  feature: %s\n",
-	 align_txt, block_txt, strand_txt, set_txt, feature_txt) ;
+	 align_txt, block_txt, strand_spec, set_txt, feature_txt) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   if ((search_result = zmapWindowFToIFindItemSetFull(search_data->window->context_to_item,
 						     align_id, block_id, set_id,
 						     strand_spec, feature_id)))
     {
+
+      /* What the code is trying to trap here is the sort of item returned...
+       * the search function will simply return a list of items which could be blocks,
+       * aligns, columns or features, in practice we probably only want to handle
+       * features for now....for now we will just warn the user that we don't
+       * support items returned other than features.... */
+      GList *list_item ;
+      FooCanvasItem *item ;
       ZMapFeatureAny any_feature ;
 
-      any_feature = (ZMapFeatureAny)(search_result->data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* debugging.... */
+      displayResult(search_result) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+      /* Get hold of the first canvas item in the returned list.... */
+      list_item = g_list_first(search_result) ;
+      item = (FooCanvasItem *)list_item->data ;
+      any_feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+      zMapAssert(any_feature) ;
 
       if (any_feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	{
@@ -482,27 +526,38 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 				     g_strdup_printf("Results '%s'", feature_txt), 
 				     NULL) ;
 	}
+      else
+	{
+	  zMapMessage("Sorry, list windows of %ss within a feature context not currently supported.", 
+		      zMapFeatureStructType2Str(any_feature->struct_type)) ;
+	}
 
-      displayResult(search_result) ;
+      g_list_free(search_result) ;
+
     }
   else
     {
-      zMapMessage("No Results for feature '%s', on strand '%s' in set '%s'", 
-                  feature_txt, 
-                  strand_txt,
-                  set_txt);
+      char *msg = g_strdup_printf("No Results for:\n"
+		  "\n     align  =  \"%s\""
+		  "\n     block  =  \"%s\""
+		  "\n       set  =  \"%s\""
+		  "\n    strand  =  \"%s\""
+		  "\n   feature  =  \"%s\"",
+		  align_txt, block_txt, strand_spec, set_txt, feature_txt) ;
+
+      zMapGUIShowMsgFull(NULL, msg, ZMAP_MSG_INFORMATION, GTK_JUSTIFY_LEFT) ;
+							    /* Format msg for clarity. */
+      g_free(msg) ;
     }
 
   return ;
 }
 
 
+/* debugging aid, prints results to stdout. */
 static void displayResult(GList *search_result)
 {
-
   g_list_foreach(search_result, printListDataCB, NULL) ;
-
-  g_list_free(search_result) ;
 
   return ;
 }
@@ -542,13 +597,17 @@ static void setFieldDefaults(SearchData search_data)
    * in the hierachy depends on what level feature we get passed. */
   while (feature_any->parent)
     {
+
+      /* OK, I'm changing from showing the original_id to the unique_id here because
+       * wild card searches cannot work with original_id's as they are not in the hash... */
+
       switch (feature_any->struct_type)
 	{
 	case ZMAPFEATURE_STRUCT_FEATURE:
 	  {
 	    ZMapFeature feature = (ZMapFeature)feature_any ;
 
-	    search_data->feature_txt = (char *)g_quark_to_string(feature->original_id) ;
+	    search_data->feature_txt = (char *)g_quark_to_string(feature->unique_id) ;
 	    search_data->feature_id = feature->unique_id ;
 	    search_data->feature_original_id = feature->original_id ;
 	    break ;
@@ -557,7 +616,7 @@ static void setFieldDefaults(SearchData search_data)
 	  {
 	    ZMapFeatureSet set = (ZMapFeatureSet)feature_any ;
 
-	    search_data->set_txt = (char *)g_quark_to_string(set->original_id) ;
+	    search_data->set_txt = (char *)g_quark_to_string(set->unique_id) ;
 	    search_data->set_id = set->unique_id ;
 	    search_data->set_original_id = set->original_id ;
 	    break ;
@@ -566,7 +625,7 @@ static void setFieldDefaults(SearchData search_data)
 	  {
 	    ZMapFeatureBlock block = (ZMapFeatureBlock)feature_any ;
 
-	    search_data->block_txt = (char *)g_quark_to_string(block->original_id) ;
+	    search_data->block_txt = (char *)g_quark_to_string(block->unique_id) ;
 	    search_data->block_id = block->unique_id ;
 	    search_data->block_original_id = block->original_id ;
 	    break ;
@@ -575,7 +634,7 @@ static void setFieldDefaults(SearchData search_data)
 	  {
 	    ZMapFeatureAlignment align = (ZMapFeatureAlignment)feature_any ;
 
-	    search_data->align_txt = (char *)g_quark_to_string(align->original_id) ;
+	    search_data->align_txt = (char *)g_quark_to_string(align->unique_id) ;
 	    search_data->align_id = align->unique_id ;
 	    search_data->align_original_id = align->original_id ;
 	    break ;
