@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Mar 21 13:38 2006 (edgrif)
+ * Last edited: Mar 21 17:16 2006 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.14 2006-03-21 14:07:39 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.15 2006-03-21 17:17:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -462,12 +462,12 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
 
   /* Construct a list of possible fonts to use. */
   fixed_font_list = g_list_append(fixed_font_list, "Monospace") ;
+  fixed_font_list = g_list_append(fixed_font_list, "fixed") ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* I tried to give several alternative fonts but some of them, e.g. Cursor, do not display
    * as monospace even though they apparently are...I don't know why... */
-  fixed_font_list = g_list_append(fixed_font_list, "fixed") ;
   fixed_font_list = g_list_append(fixed_font_list, "Serif") ;
   fixed_font_list = g_list_append(fixed_font_list, "Cursor") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -626,7 +626,9 @@ char *zmapGUIFileChooser(GtkWidget *toplevel, char *directory)
 /*!
  * Tries to return a fixed font from the list given in pref_families, returns
  * TRUE if it succeeded in finding a matching font, FALSE otherwise.
- *
+ * The list of preferred fonts is treated with most preferred first and least
+ * preferred last.  The function will attempt to return the most preferred font
+ * it finds.
  *
  * @param widget         Needed to get a context, ideally should be the widget you want to
  *                       either set a font in or find out about a font for.
@@ -641,10 +643,10 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 				  GList *pref_families, gint points, PangoWeight weight,
 				  PangoFont **font_out, PangoFontDescription **desc_out)
 {
-  gboolean found = FALSE ;
+  gboolean found = FALSE, found_most_preferred = FALSE ;
   PangoContext *context ;
   PangoFontFamily **families;
-  gint n_families, i ;
+  gint n_families, i, most_preferred, current ;
   PangoFontFamily *match_family = NULL ;
   PangoFont *font = NULL;
 
@@ -652,27 +654,38 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 
   pango_context_list_families(context, &families, &n_families) ;
 
-  for (i = 0 ; (i < n_families && !found) ; i++)
+  most_preferred = g_list_length(pref_families);
+
+  for (i = 0 ; (i < n_families && !found_most_preferred) ; i++)
     {
       const gchar *name ;
       GList *pref ;
 
       name = pango_font_family_get_name(families[i]) ;
-
+      current = 0;
+      
       pref = g_list_first(pref_families) ;
-      while(pref)
+      while(pref && ++current)
 	{
 	  char *pref_font = (char *)pref->data ;
 
 	  if (g_ascii_strncasecmp(name, pref_font, strlen(pref_font)) == 0
+#if GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION >= 6
 	      && pango_font_family_is_monospace(families[i])
+#endif
 	      )
 	    {
 	      found = TRUE ;
-	      match_family = families[i] ;
+              if(current <= most_preferred)
+                {
+                  if((most_preferred = current) == 1)
+                    found_most_preferred = TRUE;
+                  match_family   = families[i] ;
+                }
+              match_family = families[i] ;
 	      break ;
 	    }
-	  
+
 	  pref = g_list_next(pref) ;
 	}
     }
