@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 17 17:36 2006 (rds)
+ * Last edited: Mar 21 09:20 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.8 2006-03-20 18:13:37 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.9 2006-03-21 15:25:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -611,13 +611,18 @@ static FooCanvasItem *drawSequenceFeature(FooCanvasGroup *parent, ZMapFeature fe
   text_feature = foo_canvas_item_new(parent,
 				     foo_canvas_group_get_type(),
 				     NULL) ;
+
   g_object_set_data(G_OBJECT(text_feature), CONTAINER_REDRAW_CALLBACK,
 		    dna_redraw_callback) ;
   g_object_set_data(G_OBJECT(text_feature), CONTAINER_REDRAW_DATA,
 		    (gpointer)window) ;
 
+  /* This sets an event handler which would need to be merged with the below.... */
   zmapWindowColumnWriteDNA(window, FOO_CANVAS_GROUP(text_feature)) ;
 
+
+  /* TRY THIS...EVENT HANDLER MAY INTERFERE THOUGH...SO MAY NEED TO REMOVE EVENT HANDLERS... */
+  attachDataToItem(text_feature, window, feature, ITEM_FEATURE_SIMPLE, NULL) ;
 
   return text_feature ;
 }
@@ -1097,6 +1102,8 @@ static void attachDataToItem(FooCanvasItem *feature_item,
 
 
 
+/* I'm not completely happy with all the hash removing/adding stuff....if we don't remember to
+ * do this properly then it will cause us to crash.... */
 static void dna_redraw_callback(FooCanvasGroup *text_grp,
                                 double zoom,
                                 gpointer user_data)
@@ -1112,6 +1119,25 @@ static void dna_redraw_callback(FooCanvasGroup *text_grp,
       ZMapDrawTextRowData   trd = NULL;
 #endif
       FooCanvasGroup *container ;
+      ZMapFeature feature ;
+      gboolean status ;
+      GQuark column_id ;
+
+
+      /* Grab this so we can reattach it to new text group. */
+      feature = (ZMapFeature)g_object_get_data(G_OBJECT(text_grp), ITEM_FEATURE_DATA) ;
+      zMapAssert(feature) ;
+
+
+      status = zmapWindowFToIRemoveFeature(window->context_to_item,
+					   feature->parent->parent->parent->unique_id,
+					   feature->parent->parent->unique_id,
+					   feature->parent->unique_id,
+					   feature->strand,
+					   feature->unique_id) ;
+      zMapAssert(status) ;
+
+
 
       container = zmapWindowContainerGetParent(grp_item->parent) ;
 
@@ -1131,8 +1157,35 @@ static void dna_redraw_callback(FooCanvasGroup *text_grp,
       g_object_set_data(G_OBJECT(text_grp), CONTAINER_REDRAW_DATA,
 			(gpointer)window) ;
 
+      /* This sets an event handler which would need to be merged with the below.... */
       zmapWindowColumnWriteDNA(window, text_grp);
-      
+
+
+      /* TRY THIS...EVENT HANDLER MAY INTERFERE THOUGH...SO MAY NEED TO REMOVE EVENT HANDLERS... */
+      attachDataToItem(FOO_CANVAS_ITEM(text_grp), window, feature, ITEM_FEATURE_SIMPLE, NULL) ;
+
+
+
+      /* AGGGGGGGGGGGGGGGHHHHHHHHHHHHHHHHHHH horrible...sort this out....should be automatic. */
+      if (feature->strand == ZMAPSTRAND_FORWARD || feature->strand == ZMAPSTRAND_NONE)
+	{
+	  column_id = zmapWindowFToIMakeSetID(feature->parent->unique_id, ZMAPSTRAND_FORWARD) ;
+	}
+      else
+	{
+	  column_id = zmapWindowFToIMakeSetID(feature->parent->unique_id, ZMAPSTRAND_REVERSE) ;
+	}
+
+      status = zmapWindowFToIAddFeature(window->context_to_item,
+					feature->parent->parent->parent->unique_id,
+					feature->parent->parent->unique_id,
+					column_id,
+					feature->unique_id,
+					FOO_CANVAS_ITEM(text_grp)) ;
+      zMapAssert(status) ;
+
+
+
 #ifdef RDS_DONT_INCLUDE
       /* We could probably redraw the highlight here! 
        * Not sure this is good. Although it sort of works
