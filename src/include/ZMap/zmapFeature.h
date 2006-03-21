@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Mar 15 16:47 2006 (edgrif)
+ * Last edited: Mar 18 08:49 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.60 2006-03-17 17:03:21 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.61 2006-03-21 14:09:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -57,7 +57,7 @@ typedef int Coord ;					    /* we do need this here.... */
 typedef enum {ZMAPFEATURE_STRUCT_INVALID = 0,
 	      ZMAPFEATURE_STRUCT_CONTEXT, ZMAPFEATURE_STRUCT_ALIGN, 
 	      ZMAPFEATURE_STRUCT_BLOCK, ZMAPFEATURE_STRUCT_FEATURESET,
-	      ZMAPFEATURE_STRUCT_FEATURE} ZMapFeatureStuctType ;
+	      ZMAPFEATURE_STRUCT_FEATURE} ZMapFeatureStructType ;
 
 
 /* used by zmapFeatureLookUpEnum() to translate enums into strings */
@@ -175,7 +175,7 @@ typedef struct ZMapFeatureAnyStruct_ *ZMapFeatureAny ;
  *  */
 typedef struct ZMapFeatureAnyStruct_
 {
-  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* The parent struct of this one, NULL
 							     * if this is a feature context. */
   GQuark unique_id ;					    /* Unique id of this feature. */
@@ -192,7 +192,7 @@ typedef struct ZMapFeatureAnyStruct_
  */
 typedef struct ZMapFeatureContextStruct_
 {
-  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Always NULL in a context. */
   GQuark unique_id ;					    /* Unique id of this feature. */
   GQuark original_id ;					    /* Sequence name. */
@@ -247,7 +247,7 @@ typedef struct ZMapFeatureContextStruct_
 
 typedef struct ZMapFeatureAlignmentStruct_
 {
-  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent context. */
   GQuark unique_id ;					    /* Unique id this alignment. */
   GQuark original_id ;					    /* Original id of this sequence. */
@@ -263,7 +263,7 @@ typedef struct ZMapFeatureAlignmentStruct_
 
 typedef struct ZMapFeatureBlockStruct_
 {
-  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent alignment. */
   GQuark unique_id ;					    /* Unique id for this block. */
   GQuark original_id ;					    /* Original id, probably not needed ? */
@@ -292,7 +292,7 @@ typedef struct ZMapFeatureBlockStruct_
  */
 typedef struct ZMapFeatureSetStruct_
 {
-  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent block. */
   GQuark unique_id ;					    /* Unique id of this feature set. */
   GQuark original_id ;					    /* Original name,
@@ -343,7 +343,7 @@ typedef struct
 typedef struct ZMapFeatureStruct_ 
 {
   /* We could embed a structany here... */
-  ZMapFeatureStuctType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our containing set. */
   GQuark unique_id ;					    /* Unique id for just this feature for
 							       use by ZMap. */
@@ -527,8 +527,8 @@ GData *zMapFeatureFindSetInContext(ZMapFeatureContext feature_context, GQuark se
 
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
-gboolean zMapFeatureTypeIsValid(ZMapFeatureStuctType group_type) ;
-ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStuctType group_type) ;
+gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type) ;
+ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
 
 
 
@@ -601,7 +601,7 @@ gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set, ZMapFeature featu
 void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 
 
-ZMapFeatureAny zMapFeatureGetGroup(ZMapFeatureAny any_feature, ZMapFeatureStuctType group_type) ;
+ZMapFeatureAny zMapFeatureGetGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
 
 
 
@@ -640,6 +640,7 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
 gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
                                char *feature_type, ZMapFeatureType *type_out);
+char *zMapFeatureStructType2Str(ZMapFeatureStructType type) ;
 char *zMapFeatureType2Str(ZMapFeatureType type) ;
 char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart) ;
 gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out);

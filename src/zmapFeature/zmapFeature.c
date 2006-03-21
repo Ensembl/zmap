@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jan 31 13:17 2006 (rds)
+ * Last edited: Mar 18 08:52 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.31 2006-02-17 17:59:32 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.32 2006-03-21 14:09:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -126,7 +126,7 @@ gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
   return result ;
 }
 
-gboolean zMapFeatureTypeIsValid(ZMapFeatureStuctType group_type)
+gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type)
 {
   gboolean result = FALSE ;
 
@@ -152,7 +152,7 @@ gboolean zMapFeatureTypeIsValid(ZMapFeatureStuctType group_type)
  * @param   group_type     The type/level of the parent group you want to find.
  * @return  ZMapFeatureAny The parent group or NULL.
  *  */
-ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStuctType group_type)
+ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type)
 {
   ZMapFeatureAny result = NULL ;
 
@@ -259,7 +259,7 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
                                                 strand, phase)))
             {
               /* Check I'm valid. Really worth it?? */
-              if(!(good = zMapFeatureIsValid(feature)))
+              if(!(good = zMapFeatureIsValid((ZMapFeatureAny)feature)))
                 {
                   zmapFeatureDestroy(feature);
                   feature = NULL;

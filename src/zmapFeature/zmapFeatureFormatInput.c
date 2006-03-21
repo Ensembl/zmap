@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb 17 13:42 2006 (edgrif)
+ * Last edited: Mar 18 08:46 2006 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.5 2006-02-17 13:43:03 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.6 2006-03-21 14:09:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -190,6 +190,21 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
     }
 
   return result ;
+}
+
+
+char *zMapFeatureStructType2Str(ZMapFeatureStructType type)
+{
+  static char *struct_types[] = {".", "Context", "Alignment", "Block", "FeatureSet", "Feature"} ;
+  char *type_str ;
+
+  zMapAssert(type == ZMAPFEATURE_STRUCT_INVALID || type == ZMAPFEATURE_STRUCT_CONTEXT
+	     || type == ZMAPFEATURE_STRUCT_ALIGN || type == ZMAPFEATURE_STRUCT_BLOCK
+	     || type ==  ZMAPFEATURE_STRUCT_FEATURESET || type == ZMAPFEATURE_STRUCT_FEATURE) ;
+
+  type_str = struct_types[type] ;
+
+  return type_str ;
 }
 
 
