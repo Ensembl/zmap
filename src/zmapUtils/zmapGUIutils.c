@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Mar 17 13:16 2006 (edgrif)
+ * Last edited: Mar 21 13:38 2006 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.13 2006-03-17 17:01:49 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.14 2006-03-21 14:07:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -144,7 +144,7 @@ void zMapGUIShowAbout(void)
  *  */
 void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
 {
-  zMapGUIShowMsgOnTop(NULL, msg_type, msg) ;
+  zMapGUIShowMsgFull(NULL, msg, msg_type, GTK_JUSTIFY_CENTER) ;
 
   return ;
 }
@@ -167,7 +167,9 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
  * @param msg          Message to be displayed in dialog.
  * @return             nothing
  *  */
-void zMapGUIShowMsgOnTop(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
+void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
+			ZMapMsgType msg_type,
+			GtkJustification justify)
 {
   GtkWidget *dialog, *button, *label ;
   char *title = NULL ;
@@ -214,7 +216,7 @@ void zMapGUIShowMsgOnTop(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), button, TRUE, TRUE, 20);
   gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE) ;
   label = gtk_bin_get_child(GTK_BIN(button)) ;		    /* Center + wrap long lines. */
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_CENTER) ;
+  gtk_label_set_justify(GTK_LABEL(label), justify) ;
   gtk_label_set_line_wrap(GTK_LABEL(label), TRUE) ;
 
   gtk_signal_connect(GTK_OBJECT(button), "clicked",
