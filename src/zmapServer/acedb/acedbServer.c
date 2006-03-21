@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jan 30 14:57 2006 (rds)
+ * Last edited: Mar 21 13:45 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.48 2006-02-17 17:59:47 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.49 2006-03-21 14:10:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -740,7 +740,11 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 
       g_free(reply) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       printf("Finished parse features\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
     }
 
