@@ -26,18 +26,15 @@
  *
  * Exported functions: See ZMap/zmapFASTA.h
  * HISTORY:
- * Last edited: Mar 17 16:36 2006 (edgrif)
+ * Last edited: Mar 22 09:48 2006 (edgrif)
  * Created: Fri Mar 17 16:24:30 2006 (edgrif)
- * CVS info:   $Id: zmapFASTA.c,v 1.2 2006-03-17 17:00:13 edgrif Exp $
+ * CVS info:   $Id: zmapFASTA.c,v 1.3 2006-03-22 10:21:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFASTA.h>
-
-
-/* THIS FILE WOULD BE BETTER NAMED zmapFASTAUtils.c....perhaps I will change it... */
 
 
 
@@ -47,11 +44,12 @@
 enum {FASTA_CHARS = 50} ;
 
 
-/* This code is lifted from the code that I wrote for acedb - EG
+/* This code is modified from acedb code (www.acedb.org)
+ * 
  * Given a sequence name and its dna sequence, will dump the data in FastA
- * format.
- * Routine could be extended to find the sequence length but tedious/trivial really. */
-gboolean zMapFASTAFile(GIOChannel *file, char *seq_name, int seq_len, char *dna, GError **error_out)
+ * format. */
+gboolean zMapFASTAFile(GIOChannel *file, char *seq_name, int seq_len, char *dna,
+		       char *molecule_type, char *gene_name, GError **error_out)
 {
   gboolean result = TRUE ;
   GIOStatus status ;
@@ -65,7 +63,7 @@ gboolean zMapFASTAFile(GIOChannel *file, char *seq_name, int seq_len, char *dna,
 
   zMapAssert(file && seq_name && seq_len > 0 && dna && error_out) ;
 
-  header = g_strdup_printf(">%s\n", seq_name) ;
+  header = zMapFASTATitle(seq_name, molecule_type, gene_name, seq_len) ;
 
   if ((status = g_io_channel_write_chars(file, header, -1, &bytes_written, error_out))
       != G_IO_STATUS_NORMAL)
@@ -113,16 +111,38 @@ gboolean zMapFASTAFile(GIOChannel *file, char *seq_name, int seq_len, char *dna,
 }
 
 
+/* Returns the "title" of a FASTA file, i.e. the text that forms the first line
+ * of a FASTA file (note that the string _does_ end with a newline).
+ * Result should be freed using g_free() by caller. */
+char *zMapFASTATitle(char *seq_name, char *molecule_type, char *gene_name,
+		     int sequence_length)
+{
+  char *title = NULL ;
+
+  zMapAssert(seq_name && *seq_name && sequence_length > 0) ;
+
+  /* We should add more info. really.... */
+  title = g_strdup_printf(">%s %s %s %d bp\n",
+			  seq_name,
+			  molecule_type ? molecule_type : "",
+			  gene_name ? gene_name : "",
+			  sequence_length) ;
+
+  return title ;
+}
 
 
 
 /* Given a sequence string, returns the corresponding FASTA format string.
- * Good for displaying in windows.
- * Routine could be extended to find the sequence length but tedious/trivial really. */
+ * Good for displaying in windows but costly in memory as duplicates the
+ * supplied sequence and adds to it....so not good for dumping a huge dna
+ * sequence to file, use zMapFASTAFile() instead.
+ */
 char *zMapFASTAString(char *seq_name, char *molecule_type, char *gene_name,
 		      int sequence_length, char *sequence)
 {
   char *fasta_string = NULL ;
+  char *title ;
   GString *str ;
   char buffer[FASTA_CHARS + 2] ;			    /* FastA chars + \n + \0 */
   int header_length ;
@@ -132,21 +152,23 @@ char *zMapFASTAString(char *seq_name, char *molecule_type, char *gene_name,
 
   zMapAssert(seq_name && sequence_length > 0 && sequence) ;
 
-  header_length = 1000 ;				    /* wild guess... */
+
+  /* We should add more info. really.... */
+  title = zMapFASTATitle(seq_name, molecule_type, gene_name, sequence_length) ;
+
+  header_length = strlen(title) + 1 ;			    /* + 1 for newline. */
   
   lines = sequence_length / FASTA_CHARS ;
   chars_left = sequence_length % FASTA_CHARS ;
 
   /* Make the string big enough to hold the whole of the FASTA formatted string, the + 10 is
-   * a fundge factor to avoid reallocation. */
+   * a fudge factor to avoid reallocation. */
   str = g_string_sized_new(header_length + sequence_length + (lines + 1) + 10) ;
 
-  /* We should add more info. really.... */
-  g_string_append_printf(str, ">%s %s %s %d bp\n",
-			 seq_name,
-			 molecule_type ? molecule_type : "",
-			 gene_name ? gene_name : "",
-			 sequence_length) ;
+
+  g_string_append_printf(str, "%s", title) ;
+  g_free(title) ;
+
 
   /* Do the full length lines.                                           */
   cp = sequence ;
