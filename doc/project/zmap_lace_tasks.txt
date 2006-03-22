@@ -30,7 +30,8 @@ Configuration
 Transcript operations
 ---------------------
 
-** EG doing this.
+
+** EG doing this. <DONE>
 - contextual menu on gene object:
      + show CDS translation in zmap
      + show CDS translation (including *stopcodon) in separate (copy-pastable)
@@ -51,9 +52,10 @@ Transcript operations
 EG acedb has translation code which handles different translation tables, I
 will pinch the code....
 
-
 I have a comment about showing the size of a protein translation, I think this
 might be in the status line if you click on the translation ?
+<DONE>
+
 
 
 **
@@ -107,7 +109,8 @@ background).
 - if dna seq is shown, highlight the extent of any box/feature user clicks on.
 
 
-*** EG DOING THIS
+*** EG THIS IS DONE APART FROM THE RESTORE DEFAULT BUTTON, THEY DIDN'T HAVE THIS
+IN ACEDB SO ITS NOT THAT GREAT A PRIORITY...
 - column configuration should be a main button in the zmap window, should be
 able to reset to defaults with single click....perhaps reset should reset the
 whole interface.
@@ -117,6 +120,7 @@ column contextual menu)
 columns etc.)
 
 
+<DONE>
 - double clicking on an object should display the "properties" window.
 - double click (proper double click !!!) on a feature and get a "property
 inspector" window (like tree display in fmap). Possibly super-user (but not
