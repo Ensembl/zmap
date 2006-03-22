@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 21 09:20 2006 (edgrif)
+ * Last edited: Mar 22 10:35 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.9 2006-03-21 15:25:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.10 2006-03-22 10:39:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1547,11 +1547,14 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   if (feature->type == ZMAPFEATURE_TRANSCRIPT)
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNATranscript(NULL, NULL, menu_data)) ;
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNATranscriptFile(NULL, NULL, menu_data)) ;
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuPeptide(NULL, NULL, menu_data)) ;
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuPeptideFile(NULL, NULL, menu_data)) ;
     }
   else
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAFeatureAny(NULL, NULL, menu_data)) ;
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAFeatureAnyFile(NULL, NULL, menu_data)) ;
     }
 
   if (feature->type == ZMAPFEATURE_ALIGNMENT)

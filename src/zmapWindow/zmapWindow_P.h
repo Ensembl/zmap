@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 21 10:43 2006 (edgrif)
+ * Last edited: Mar 22 10:35 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.105 2006-03-21 15:23:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.106 2006-03-22 10:39:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -427,6 +427,8 @@ void zmapWindowListWindowCreate(ZMapWindow zmapWindow,
 
 void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, ZMapFeatureAny feature_any) ;
 
+void zmapWindowNewReposition(ZMapWindow window) ;
+
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
 
@@ -560,12 +562,21 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAny(int *start_index_inout,
 						ZMapGUIMenuItemCallbackFunc callback_func,
 						gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAnyFile(int *start_index_inout,
+						    ZMapGUIMenuItemCallbackFunc callback_func,
+						    gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDNATranscript(int *start_index_inout,
 						ZMapGUIMenuItemCallbackFunc callback_func,
 						gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuDNATranscriptFile(int *start_index_inout,
+						    ZMapGUIMenuItemCallbackFunc callback_func,
+						    gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
+					      ZMapGUIMenuItemCallbackFunc callback_func,
+					      gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data) ;
