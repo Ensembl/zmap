@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar 22 14:18 2006 (rds)
+ * Last edited: Mar 22 17:16 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.35 2006-03-22 14:55:23 rds Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.36 2006-03-22 17:16:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,7 +47,7 @@ static void horizSplitPaneCB(GtkWidget *widget, gpointer data) ;
 static void unlockCB(GtkWidget *widget, gpointer data) ;
 static void revcompCB(GtkWidget *widget, gpointer data) ;
 static void unsplitWindowCB(GtkWidget *widget, gpointer data) ;
-
+static void columnConfigCB(GtkWidget *widget, gpointer data) ;
 static gboolean zoomInEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 static gboolean zoomOutEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 
@@ -58,7 +58,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *reload_button, *stop_button,
     *hsplit_button, *vsplit_button,
     *zoomin_button, *zoomout_button,
-    *unlock_button, *revcomp_button, *unsplit_button ;
+    *unlock_button, *revcomp_button, *unsplit_button, *column_button ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -112,16 +112,21 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(revcompCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), revcomp_button, FALSE, FALSE, 0) ;
 
-  /* Make Close button the default, its probably what user wants to do mostly. */
-  GTK_WIDGET_SET_FLAGS(zoomin_button, GTK_CAN_DEFAULT) ;
-  gtk_window_set_default(GTK_WINDOW(zmap->toplevel), zoomin_button) ;
+  zmap->column_but = column_button = gtk_button_new_with_label("Columns");
+  gtk_signal_connect(GTK_OBJECT(column_button), "clicked",
+		     GTK_SIGNAL_FUNC(columnConfigCB), (gpointer)zmap);
+  gtk_box_pack_start(GTK_BOX(hbox), column_button, FALSE, FALSE, 0) ;
+
+  /* Make Stop button the default, its the only thing the user can initially click ! */
+  GTK_WIDGET_SET_FLAGS(stop_button, GTK_CAN_DEFAULT) ;
+  gtk_window_set_default(GTK_WINDOW(zmap->toplevel), stop_button) ;
 
   return hbox ;
 }
 
 
 /* Add tooltips to main zmap buttons. */
-void *zmapControlButtonTooltips(ZMap zmap)
+void zmapControlButtonTooltips(ZMap zmap)
 {
 
   gtk_tooltips_set_tip(zmap->tooltips, zmap->stop_button,
@@ -161,6 +166,10 @@ void *zmapControlButtonTooltips(ZMap zmap)
 
   gtk_tooltips_set_tip(zmap->tooltips, zmap->unsplit_but,
 		       "Unsplit selected window",
+		       "") ;
+
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->column_but,
+		       "Column configuration",
 		       "") ;
 
   return ;
@@ -239,6 +248,7 @@ void zmapControlWindowSetButtonState(ZMap zmap)
   gtk_widget_set_sensitive(zmap->unlock_but, unlock) ;
   gtk_widget_set_sensitive(zmap->revcomp_but, general) ;
   gtk_widget_set_sensitive(zmap->unsplit_but, unsplit) ;
+  gtk_widget_set_sensitive(zmap->column_but, general) ;
 
   return ;
 }
@@ -251,8 +261,11 @@ gboolean zmapControlWindowDoTheZoom(ZMap zmap, double zoom)
 {
   ZMapWindow window = NULL;
   double factor;
+
   window = zMapViewGetWindow(zmap->focus_viewwindow);
+
   zMapWindowZoom(window, zoom) ;
+
   factor = 1.0;                 /* Fudge for now */
   zmapControlInfoOverwrite(zmap, 200,
                            "<magnification>%f</magnification>",
@@ -450,6 +463,26 @@ static void unsplitWindowCB(GtkWidget *widget, gpointer data)
   ZMap zmap = (ZMap)data ;
 
   zmapControlClose(zmap) ;
+
+  return ;
+}
+
+
+/* There is quite a question here...should column configuration apply to just the focus window,
+ * the focus window plus any windows locked to it or all the windows within the focus windows
+ * view.
+ * 
+ * Following the precedent of zooming and scrolling we apply it to the focus window plus
+ * any locked to it.
+ *  */
+static void columnConfigCB(GtkWidget *widget, gpointer data)
+{
+  ZMap zmap = (ZMap)data ;
+  ZMapWindow window ;
+
+  window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+
+  zMapWindowColumnConfigure(window) ;
 
   return ;
 }
