@@ -17,12 +17,12 @@ opsys=`uname`
 case $opsys in
 
   OSF1 )
-    locals=~acedb/ZMap/prefix/ALPHA/bin
+    locals=/nfs/team71/acedb/zmap/prefix/ALPHA/bin
     PATH="$locals:$PATH"
     export PATH ;;
 
   Linux )
-    locals=~acedb/ZMap/prefix/LINUX/bin
+    locals=/nfs/team71/acedb/zmap/prefix/LINUX/bin
     PATH="$locals:$PATH"
     export PATH ;;
 
@@ -36,7 +36,6 @@ case $opsys in
     msgAndExit "unsupported operating system: $opsys" ;;
 
 esac
-
 
 ./bootstrap || msgAndExit "bootstrap script failed"
 

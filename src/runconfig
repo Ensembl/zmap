@@ -18,25 +18,25 @@ opsys=`uname`
 case $opsys in
 
   OSF1 )
-    locals=~acedb/ZMap/prefix/ALPHA/bin
+    locals=/nfs/team71/acedb/zmap/prefix/ALPHA/bin
     PATH="$locals:/usr/local/gtk2/bin:$PATH"
     export PATH
 
     # NOTE that currently the LDFLAGS stuff does not get through the configure step
     # and so does not work....not sure why....
-    popt=~acedb/ZMap/prefix/ALPHA
+    popt=/nfs/team71/acedb/zmap/prefix/ALPHA
     cc_args='CC=cc'
 
     # N.B. level5 messages just produces too much output for everyday use....
     cflags_args="CFLAGS=-I$popt/include -msg_enable level4"
     ld_args="LDFLAGS=-rpath /usr/local/gtk2/lib:$popt/lib"
 
-    locals=~acedb/ZMap/prefix/ALPHA/lib/pkgconfig
+    locals=/nfs/team71/acedb/zmap/prefix/ALPHA/lib/pkgconfig
     PKG_CONFIG_PATH="$locals:/usr/local/gtk2/lib/pkgconfig"
     export PKG_CONFIG_PATH ;;
 
   Linux )
-    locals=~acedb/ZMap/prefix/LINUX
+    locals=/nfs/team71/acedb/zmap/prefix/LINUX
     PATH="$locals/bin:$PATH"
     export PATH
 
