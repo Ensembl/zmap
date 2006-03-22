@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 22 10:35 2006 (edgrif)
+ * Last edited: Mar 22 14:49 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.10 2006-03-22 10:39:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.11 2006-03-22 15:37:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -334,24 +334,6 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   alignment = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_ALIGN) ;
   context   = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)alignment, ZMAPFEATURE_STRUCT_CONTEXT) ;
 
-#ifdef RDS_DONT_INCLUDE_UNUSED
-  /* Set colours... */
-  if (alignment == context->master_align)
-    {
-      if (feature->strand == ZMAPSTRAND_REVERSE)
-	background = &(window->colour_mblock_rev) ;
-      else
-	background = &(window->colour_mblock_for) ;
-    }
-  else
-    {
-      if (feature->strand == ZMAPSTRAND_REVERSE)
-	background = &(window->colour_qblock_rev) ;
-      else
-	background = &(window->colour_qblock_for) ;
-    }
-#endif
-
   /* Retrieve the parent col. group/id. */
   column_group = zmapWindowContainerGetFeatures(set_group) ;
 
@@ -370,6 +352,9 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
    * its align block added to the alignment block _query_ coords. You can't just use the
    * features own coordinates as these will be its coordinates in its original sequence. */
 
+#ifdef RDS_DONT_INCLUDE
+  feature_offset = FOO_CANVAS_GROUP(column_group)->ypos;
+#endif
   feature_offset = block->block_to_sequence.q1 ;
 
 
@@ -813,7 +798,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
   FooCanvasItem *feature_item ;
   int i ;
   double offset ;
-  
+
   /* If there are no exons/introns then just draw a simple box. Can happen for putative
    * transcripts or perhaps where user has a single exon object but does not give an exon,
    * only an overall extent. */
@@ -851,9 +836,8 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 
 
 	  /* I think this is correct...???? */
-	  featureClipItemToDraw(feature, &cds_start, &cds_end) ;
-
-	  zmapWindowSeq2CanOffset(&cds_start, &cds_end, offset) ;
+	  if(!featureClipItemToDraw(feature, &cds_start, &cds_end))
+            zmapWindowSeq2CanOffset(&cds_start, &cds_end, offset) ;
         }
       
       /* first we draw the introns, then the exons.  Introns will have an invisible
@@ -1068,11 +1052,12 @@ static gboolean featureClipItemToDraw(ZMapFeature feature,
   if(start_end_crossing & 8 || 
      start_end_crossing & 16) /* everything is out of range don't display! */
     out_of_block = TRUE;        
-  
+
   if(start_end_crossing & 2)
     *start_inout = block_start;
   if(start_end_crossing & 4)
     *end_inout = block_end;
+
 
   return out_of_block ;
 }
