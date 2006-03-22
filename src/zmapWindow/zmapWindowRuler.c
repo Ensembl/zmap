@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 20 15:51 2006 (rds)
+ * Last edited: Mar 22 14:48 2006 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.4 2006-03-20 15:54:01 rds Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.5 2006-03-22 14:53:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,6 +54,7 @@ typedef struct _ZMapWindowRulerCanvasStruct
 {
   FooCanvas *canvas;            /* The Canvas */
   FooCanvasItem *scaleParent;  /* The group we draw into, without it we draw again */
+  FooCanvasItem *horizon;
   GtkWidget *scrolled_window;   /* The scrolled window */
 
   int default_position;
@@ -226,17 +227,19 @@ void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double 
 #endif /* VERBOSE_1 */
       foo_canvas_set_scroll_region(FOO_CANVAS(obj->canvas),
                                    ix1, iy1, max_x2, iy2);
-      
-      obj->default_position = max_x2;
 
-      if(max_x2 != 0.0 && 
-         obj->callbacks->paneResize &&
-         obj->callbacks->user_data)
+      if(max_x2 > 0.0)
         {
-          int floored = (int)max_x2;
-          freeze_notify(obj);
-          (*(obj->callbacks->paneResize))(&floored, obj->callbacks->user_data);
-          thaw_notify(obj);
+          obj->default_position = max_x2; 
+
+          if(obj->callbacks->paneResize &&
+             obj->callbacks->user_data)
+            {
+              int floored = (int)max_x2;
+              freeze_notify(obj);
+              (*(obj->callbacks->paneResize))(&floored, obj->callbacks->user_data);
+              thaw_notify(obj);
+            }
         }
     }
 
@@ -251,7 +254,10 @@ void zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double start, double e
   zMapAssert(obj && obj->canvas);
 
   if(force && obj->scaleParent)
-    gtk_object_destroy(GTK_OBJECT(obj->scaleParent)); /* Remove the current one */
+    {
+      gtk_object_destroy(GTK_OBJECT(obj->scaleParent)); /* Remove the current one */
+      obj->scaleParent = obj->horizon = NULL;
+    }
 
   if((force && obj->line_height >= at_least) || 
      (!force && !obj->scaleParent && obj->line_height >= at_least))
@@ -272,6 +278,12 @@ void zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double start, double e
        * if(test == 0.0)
        *   g_signal_connect(...);
        */
+      if(obj->visibilityHandlerCB != 0)
+        {
+          g_signal_handler_disconnect(G_OBJECT(obj->canvas), obj->visibilityHandlerCB);
+          obj->visibilityHandlerCB = 0;
+        }
+
       if(obj->visibilityHandlerCB == 0 &&
          !((FOO_CANVAS_ITEM(obj->scaleParent))->object.flags & (FOO_CANVAS_ITEM_REALIZED | FOO_CANVAS_ITEM_MAPPED)))
         obj->visibilityHandlerCB = 
@@ -325,6 +337,42 @@ void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
   return ;
 }
 
+void zmapWindowRulerCanvasRepositionHorizon(ZMapWindowRulerCanvas obj,
+                                            double y_position)
+{
+  double x1, x2;
+  FooCanvasPoints *points = NULL;
+
+  points = foo_canvas_points_new(2);
+  points->coords[0] = 0.0;
+  points->coords[1] = y_position;
+  points->coords[2] = obj->default_position - 2.0;
+  points->coords[3] = y_position;
+
+  if(!obj->horizon)
+    {
+      obj->horizon = foo_canvas_item_new(FOO_CANVAS_GROUP(obj->scaleParent),
+                                         foo_canvas_line_get_type(),
+                                         "fill_color", "red",
+                                         "width_pixels", 1,
+                                         "cap_style", GDK_CAP_NOT_LAST,
+                                         NULL);
+      foo_canvas_item_lower_to_bottom(obj->horizon);
+    }
+
+  foo_canvas_item_set(obj->horizon,
+                      "points", points,
+                      NULL);
+  foo_canvas_item_show(obj->horizon);
+  return ;
+}
+
+void zmapWindowRulerCanvasHideHorizon(ZMapWindowRulerCanvas obj)
+{
+  if(obj->horizon)
+    foo_canvas_item_hide(obj->horizon);
+  return ;
+}
 
 
 /* INTERNALS */
