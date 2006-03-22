@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  2 17:55 2006 (edgrif)
+ * Last edited: Mar 22 17:13 2006 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.1 2006-03-03 07:55:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.2 2006-03-22 17:19:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,10 +53,13 @@ typedef struct
 
 
 static GtkWidget *makeMenuBar(ColConfigure search_data) ;
-static GtkWidget *makeColsPanel(ColConfigure search_data, GList *column_groups) ;
-static GList *makeColList(FooCanvasGroup *column_group) ;
+static GtkWidget *makeColsPanel(ColConfigure search_data, char *frame_title, GList *column_groups) ;
+static void makeColList(ZMapWindow window, GList **forward_cols, GList **reverse_cols) ;
 static void getSetGroupCB(gpointer data, gpointer user_data) ;
-static void colConfigure(ZMapWindow window, GList *column_groups) ;
+static void colConfigure(ZMapWindow window, GList *forward_cols, GList *reverse_cols) ;
+void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode configure_mode,
+		     FooCanvasGroup *column_group) ;
+
 
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 static void applyCB(GtkWidget *widget, gpointer cb_data) ;
@@ -75,11 +78,16 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 
 
-/* NOTE: this function sets the hide/show status of columns column but it DOES NOT move
- * any columns,
- * to do that you need to use zmapWindowNewReposition(). The split is made because
- * we don't always want to reposition all the columns following every col. adjustment, e.g. when we
- * are creating a zmap window. */
+/* Trivial cover function, note subtle change of case in name from internal function... */
+void zMapWindowColumnConfigure(ZMapWindow window)
+{
+  zmapWindowColumnConfigure(window, NULL, ZMAPWWINDOWCOLUMN_CONFIGURE_ALL) ;
+
+  return ;
+}
+
+
+/* Note that column_group is not looked at for configuring all columns. */
 void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 			       ZMapWindowColConfigureMode configure_mode)
 {
@@ -87,29 +95,35 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
   switch (configure_mode)
     {
     case ZMAPWWINDOWCOLUMN_HIDE:
-      foo_canvas_item_hide(FOO_CANVAS_ITEM(column_group)) ;
-      break ;
     case ZMAPWWINDOWCOLUMN_SHOW:
-      foo_canvas_item_show(FOO_CANVAS_ITEM(column_group)) ;
+      simpleConfigure(window, configure_mode, column_group) ;
       break ;
     case ZMAPWWINDOWCOLUMN_CONFIGURE:
     case ZMAPWWINDOWCOLUMN_CONFIGURE_ALL:
       {
-	GList *columns = NULL ;
+	GList *forward_columns = NULL, *reverse_columns = NULL  ;
 
 	if (configure_mode == ZMAPWWINDOWCOLUMN_CONFIGURE)
 	  {
-	    columns = g_list_append(columns, column_group) ;
+	    ZMapStrand strand ;
+
+	    strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column_group), "item_feature_strand")) ;
+	    zMapAssert(strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_REVERSE) ;
+
+	    if (strand == ZMAPSTRAND_FORWARD)
+	      forward_columns = g_list_append(forward_columns, column_group) ;
+	    else
+	      reverse_columns = g_list_append(reverse_columns, column_group) ;
 	  }
 	else
 	  {
-	    columns = makeColList(column_group) ;
+	    makeColList(window, &forward_columns, &reverse_columns) ;
 	  }
 
+	colConfigure(window, forward_columns, reverse_columns) ;
 	
-	colConfigure(window, columns) ;
-	
-	g_list_free(columns) ; 
+	g_list_free(forward_columns) ;
+	g_list_free(reverse_columns) ;
 	
 	break ;
       }
@@ -126,8 +140,23 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 
 
 
+void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode configure_mode,
+		     FooCanvasGroup *column_group)
+{
 
-static void colConfigure(ZMapWindow window, GList *column_groups)
+  if (configure_mode == ZMAPWWINDOWCOLUMN_HIDE)
+    foo_canvas_item_hide(FOO_CANVAS_ITEM(column_group)) ;
+  else
+    foo_canvas_item_show(FOO_CANVAS_ITEM(column_group)) ;
+
+  zmapWindowNewReposition(window) ;
+
+  return ;
+}
+
+
+
+static void colConfigure(ZMapWindow window, GList *forward_cols, GList *reverse_cols)
 {
   GtkWidget *toplevel, *vbox, *menubar, *hbox, *cols, *frame,
     *apply_button, *fields, *filters, *buttonBox ;
@@ -157,8 +186,20 @@ static void colConfigure(ZMapWindow window, GList *column_groups)
   menubar = makeMenuBar(configure_data) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
 
-  cols = makeColsPanel(configure_data, column_groups) ;
-  gtk_box_pack_start(GTK_BOX(vbox), cols, TRUE, TRUE, 0) ;
+  if (forward_cols)
+    {
+      cols = makeColsPanel(configure_data, "Forward", forward_cols) ;
+      gtk_box_pack_start(GTK_BOX(vbox), cols, TRUE, TRUE, 0) ;
+    }
+  if (reverse_cols)
+    {
+      cols = makeColsPanel(configure_data, "Reverse", reverse_cols) ;
+      gtk_box_pack_start(GTK_BOX(vbox), cols, TRUE, TRUE, 0) ;
+    }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* We don't need this just yet.... */
 
   buttonBox = gtk_hbutton_box_new();
   gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
@@ -181,6 +222,8 @@ static void colConfigure(ZMapWindow window, GList *column_groups)
   gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0) ;
 
   gtk_container_add(GTK_CONTAINER(frame), buttonBox);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   gtk_widget_show_all(toplevel) ;
 
@@ -215,7 +258,7 @@ GtkWidget *makeMenuBar(ColConfigure configure_data)
 }
 
 
-GtkWidget *makeColsPanel(ColConfigure configure_data, GList *columns_list)
+GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *columns_list)
 {
   GtkWidget *cols_panel, *frame, *column_box ;
   ZMapWindow window = configure_data->window ;
@@ -223,7 +266,7 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, GList *columns_list)
   GList *column ;
 
 
-  cols_panel = frame = gtk_frame_new(NULL) ;
+  cols_panel = frame = gtk_frame_new(frame_title) ;
   gtk_container_set_border_width(GTK_CONTAINER(frame), 
                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
@@ -251,19 +294,23 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, GList *columns_list)
       gtk_box_pack_start(GTK_BOX(column_box), col_box, TRUE, TRUE, 0);
 
       col_visible = zmapWindowItemIsShown(FOO_CANVAS_ITEM(column_group)) ;
-
       button = gtk_check_button_new_with_label(g_quark_to_string(style->original_id)) ;
       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), col_visible) ;
-      gtk_box_pack_start(GTK_BOX(col_box), button, FALSE, FALSE, 0) ;
+      gtk_box_pack_start(GTK_BOX(col_box), button, TRUE, TRUE, 0) ;
       g_signal_connect(GTK_OBJECT(button), "toggled",
 		       GTK_SIGNAL_FUNC(showButCB), (gpointer)button_data) ;
       g_signal_connect(GTK_OBJECT(button), "destroy",
 		       GTK_SIGNAL_FUNC(killButCB), (gpointer)button_data) ;
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Not needed yet.... */
+
       /* This should be a button at the bottom of the window... */
       button = gtk_button_new_with_label("Advanced configuration") ;
       gtk_box_pack_end(GTK_BOX(col_box), button, FALSE, FALSE, 0) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
   while ((column = g_list_next(column))) ;
 
@@ -343,19 +390,58 @@ static void killButCB(GtkToggleButton *togglebutton, gpointer user_data)
 
 
 
-/* May want to make this into a container group function.... */
-static GList *makeColList(FooCanvasGroup *column_group)
+/* May want to make this into a container group function as it contains some quite awkward
+ * stuff.... */
+static void makeColList(ZMapWindow window, GList **forward_cols_out, GList **reverse_cols_out)
 {
-  GList *col_list = NULL ;
-  FooCanvasGroup *column_group_parent, *strand_parent ;
+  GList *forward_col_list = NULL, *reverse_col_list = NULL ;
+  FooCanvasGroup *curr_level ;
+  FooCanvasGroup *strands, *strand_parent ;
+  GList *strands_list ;
 
-  strand_parent = zmapWindowContainerGetSuperGroup(column_group) ;
+  /* Starting at root move down to the block level so we can get at the forward and reverse strands. */
+  curr_level = window->feature_root_group ;
+  while (zmapWindowContainerGetLevel(curr_level) != ZMAPCONTAINER_LEVEL_BLOCK)
+    {
+      FooCanvasGroup *child_group ;
+      GList *children ;
+
+      child_group = zmapWindowContainerGetFeatures(curr_level) ;
+
+      children = child_group->item_list ;
+
+      curr_level = children->data ;
+    }
+  strands = zmapWindowContainerGetFeatures(curr_level) ;
+  strands_list = strands->item_list ;
+
+
+  /* N.B. it would be possible to use zmapWindowContainerExecute() here to traverse the strands
+   * rather then doing it by steam, when my head is less tired I will do that. */
+
+  /* Get the reverse strand which will be the first group in the block level "features" */
+  strands_list = g_list_first(strands_list) ;
+
+  strand_parent = strands_list->data ;
 
   zmapWindowContainerExecute(strand_parent, ZMAPCONTAINER_LEVEL_FEATURESET,
-			     getSetGroupCB, &col_list,
+			     getSetGroupCB, &reverse_col_list,
 			     NULL, NULL) ;
 
-  return col_list ;
+  /* Get the forward strand which will be the first group in the block level "features" */
+  strands_list = g_list_next(strands_list) ;
+
+  strand_parent = strands_list->data ;
+
+  zmapWindowContainerExecute(strand_parent, ZMAPCONTAINER_LEVEL_FEATURESET,
+			     getSetGroupCB, &forward_col_list,
+			     NULL, NULL) ;
+
+  /* Return the column lists. */
+  *forward_cols_out = forward_col_list ;
+  *reverse_cols_out = reverse_col_list ;
+
+  return ;
 }
 
 
