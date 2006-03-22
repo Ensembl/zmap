@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar  1 18:06 2006 (edgrif)
+ * Last edited: Mar 22 14:18 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.34 2006-03-03 08:15:37 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.35 2006-03-22 14:55:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,10 +48,8 @@ static void unlockCB(GtkWidget *widget, gpointer data) ;
 static void revcompCB(GtkWidget *widget, gpointer data) ;
 static void unsplitWindowCB(GtkWidget *widget, gpointer data) ;
 
-
-
-
-
+static gboolean zoomInEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
+static gboolean zoomOutEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 
 
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
@@ -98,11 +96,15 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   zmap->zoomin_but = zoomin_button = gtk_button_new_with_label("Zoom In");
   gtk_signal_connect(GTK_OBJECT(zoomin_button), "clicked",
 		     GTK_SIGNAL_FUNC(zoomInCB), (gpointer)zmap);
+  g_signal_connect(G_OBJECT(zoomin_button), "event",
+                   G_CALLBACK(zoomInEventCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomin_button, FALSE, FALSE, 0) ;
                                                                                            
   zmap->zoomout_but = zoomout_button = gtk_button_new_with_label("Zoom Out");
   gtk_signal_connect(GTK_OBJECT(zoomout_button), "clicked",
 		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
+  g_signal_connect(G_OBJECT(zoomout_button), "event",
+                   G_CALLBACK(zoomOutEventCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
 
   zmap->revcomp_but = revcomp_button = gtk_button_new_with_label("Revcomp");
@@ -305,6 +307,56 @@ void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status
 /*
  *  ------------------- Internal functions -------------------
  */
+
+static gboolean zoomInEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
+{
+  gboolean handled = FALSE;
+  switch(event->type)
+    {
+    case GDK_BUTTON_PRESS:
+      {
+	GdkEventButton *button_ev = (GdkEventButton *)event ;
+        switch(button_ev->button)
+          {
+          case 3:
+            printf("zoomInEventCB (%x): Right click event capture works ...\n", data);
+            handled = TRUE;
+            break;
+          default:
+            break;
+          }
+      }
+      break;
+    default:
+      break;
+    }
+  return handled;
+}
+
+static gboolean zoomOutEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
+{
+  gboolean handled = FALSE;
+  switch(event->type)
+    {
+    case GDK_BUTTON_PRESS:
+      {
+	GdkEventButton *button_ev = (GdkEventButton *)event ;
+        switch(button_ev->button)
+          {
+          case 3:
+            printf("zoomOutEventCB (%x): Right click event capture works ...\n", data);
+            handled = TRUE;
+            break;
+          default:
+            break;
+          }
+      }
+      break;
+    default:
+      break;
+    }
+  return handled;
+}
 
 
 /* These callbacks simply make calls to routines in zmapControl.c, this is because I want all
