@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Mar 21 16:43 2006 (edgrif)
+ * Last edited: Mar 22 16:03 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.7 2006-03-21 16:44:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.8 2006-03-22 17:17:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -203,6 +203,7 @@ ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_par
   ZMapContainerLevelType level ;
 
   container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA) ;
+  zMapAssert(container_data) ;
 
   level = container_data->level ;
 
