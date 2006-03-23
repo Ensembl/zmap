@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 22 14:49 2006 (rds)
+ * Last edited: Mar 23 16:18 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.11 2006-03-22 15:37:40 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.12 2006-03-23 16:43:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1529,6 +1529,10 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   /* Make up the menu. */
   menu_sets = g_list_append(menu_sets, makeMenuFeatureOps(NULL, NULL, menu_data)) ;
 
+  if (feature->url)
+    menu_sets = g_list_append(menu_sets, makeMenuURL(NULL, NULL, menu_data)) ;
+
+
   if (feature->type == ZMAPFEATURE_TRANSCRIPT)
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNATranscript(NULL, NULL, menu_data)) ;
@@ -1603,6 +1607,20 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       pfetchEntry(menu_data->window, (char *)g_quark_to_string(feature->original_id)) ;
       break ;
 
+    case 6:
+      {
+	gboolean result ;
+	GError *error = NULL ;
+
+	if (!(result = zMapLaunchWebBrowser(feature->url, &error)))
+	  {
+	    zMapWarning("Error: %s\n", error->message) ;
+
+	    g_error_free(error) ;
+	  }
+	break ;
+      }
+
     default:
       zMapAssertNotReached() ;				    /* exits... */
       break ;
@@ -1671,6 +1689,22 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
       {"All Column Features",      1, itemMenuCB, NULL},
       {"Feature Search Window",  3, itemMenuCB, NULL},
       {"Pfetch this feature",    4, itemMenuCB, NULL},
+      {NULL,                     0, NULL,       NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
+				   ZMapGUIMenuItemCallbackFunc callback_func,
+				   gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {"URL",                    6, itemMenuCB, NULL},
       {NULL,                     0, NULL,       NULL}
     } ;
 
