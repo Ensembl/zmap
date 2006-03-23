@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 20 18:15 2006 (rds)
+ * Last edited: Mar 23 09:52 2006 (edgrif)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.8 2006-03-20 18:16:33 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.9 2006-03-23 11:05:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,6 +74,16 @@ double zMapWindowGetZoomFactor(ZMapWindow window)
   control = controlFromWindow(window);
 
   return control->zF;
+}
+
+
+double zMapWindowGetZoomMin(ZMapWindow window)
+{
+  ZMapWindowZoomControl control = NULL;
+
+  control = controlFromWindow(window);
+
+  return control->minZF ;
 }
 
 

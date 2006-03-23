@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Mar 22 15:18 2006 (edgrif)
+ * Last edited: Mar 23 10:49 2006 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.54 2006-03-22 17:19:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.55 2006-03-23 11:05:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -169,17 +169,20 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 			  ZMapFeatureContext features, ZMapWindowLockType window_locking) ;
 void zMapWindowDisplayData(ZMapWindow window,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features) ;
-void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 void zMapWindowMove(ZMapWindow window, double start, double end) ;
 void zMapWindowReset(ZMapWindow window) ;
 void zMapWindowRedraw(ZMapWindow window) ;
 void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
 			     gboolean reversed) ;
 GtkWidget *zMapWindowGetWidget(ZMapWindow window);
+
+void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
 double zMapWindowGetZoomFactor(ZMapWindow window);
+double zMapWindowGetZoomMin(ZMapWindow window) ;
 double zMapWindowGetZoomMax(ZMapWindow window) ;
 double zMapWindowGetZoomMagnification(ZMapWindow window);
+
 gboolean zMapWindowIsLocked(ZMapWindow window) ;
 
 /* For when a window in the same view has a child removed */
