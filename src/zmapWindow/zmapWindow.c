@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 21 14:18 2006 (edgrif)
+ * Last edited: Mar 23 17:29 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.115 2006-03-21 15:23:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.116 2006-03-23 18:21:24 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -40,6 +40,11 @@
 #include <ZMap/zmapConfig.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
+
+/* set a KNOWN initial size for the foo_canvas! 
+ * ... the same size as foo_canvas sets ...
+ */
+#define ZMAP_CANVAS_INIT_SIZE (100.0)
  
 /* Local struct to hold current features and new_features obtained from a server and
  * relevant types. */
@@ -558,9 +563,6 @@ void zMapWindowDestroy(ZMapWindow window)
 
   zMapDebug("%s", "GUI: in window destroy...\n") ;
 
-  if (window->sequence)
-    g_free(window->sequence) ;
-
   if (window->locked_display)
     unlockWindow(window) ;
 
@@ -570,13 +572,14 @@ void zMapWindowDestroy(ZMapWindow window)
   /* free the array of search windows and the windows themselves */
   zmapWindowFreeWindowArray(&(window->search_windows)) ;
 
-
-
-  zmapWindowFToIDestroy(window->context_to_item) ;
-
   zmapWindowLongItemFree(window->long_items) ;
 
   gtk_widget_destroy(window->toplevel) ;
+
+  zmapWindowFToIDestroy(window->context_to_item) ;
+
+  if (window->sequence)
+    g_free(window->sequence) ;
 
   g_free(window) ;
   
@@ -645,13 +648,21 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
        * border or two. */
       clamp = zmapWindowClampedAtStartEnd(window, &wy1, &wy2); 
       x1 = wx1; x2 = wx2; y1 = wy1; y2 = wy2; 
-      
+      /* This next bit handles maximising the scroll region when it's
+       * initially created.  The foo_canvas code specifically sets this
+       * */
+      if(wx2 == wy2 && wy2 == ZMAP_CANVAS_INIT_SIZE)
+        {
+          y1 = window->min_coord;
+          y2 = window->max_coord;
+          zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
+        }
     }
   else if (x1 == wx1 && x2 == wx2 && y1 == wy1 && y2 == wy2)
     {
-      /* Nothing changed for the scroll region but ruler might not
-       * have been drawn*/
-      zmapWindowRulerCanvasDraw(window->ruler, y1, y2, FALSE);
+      /* Nothing changed */
+      /* zmapWindowRulerCanvasDraw(window->ruler, y1, y2, FALSE); // Not sure on doing this... */
+      goto set_coords;
     }
   else
     {
@@ -930,6 +941,13 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
    * and set the background to be white. */
   canvas = foo_canvas_new() ;
   window->canvas = FOO_CANVAS(canvas);
+  /* Definitively set the canvas to have a scroll region size, that WE
+   * know and can test for.  If the foo_canvas default changes then
+   * later our might fail. */
+  foo_canvas_set_scroll_region(window->canvas, 
+                               0.0, 0.0, 
+                               ZMAP_CANVAS_INIT_SIZE, 
+                               ZMAP_CANVAS_INIT_SIZE);
 #ifdef RDS_DONT_INCLUDE
   gtk_widget_set_double_buffered(GTK_WIDGET(canvas), FALSE);
 #endif
