@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Mar 18 08:52 2006 (edgrif)
+ * Last edited: Mar 23 16:38 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.32 2006-03-21 14:09:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.33 2006-03-23 16:41:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -426,6 +426,22 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 
 
 /*!
+ * Adds a URL to the object, n.b. we add this as a string that must be freed, this.
+ * is because I don't want the global GQuark table to be expanded by these...
+ *  */
+gboolean zMapFeatureAddURL(ZMapFeature feature, char *url)
+{
+  gboolean result = TRUE ;				    /* We may add url checking sometime. */
+
+  zMapAssert(feature && url && *url) ;
+
+  feature->url = g_strdup_printf(url) ;
+
+  return result ;
+}
+
+
+/*!
  * Destroys a feature, freeing up all of its resources.
  * 
  * @param   feature      The feature to be destroyed.
@@ -434,6 +450,9 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 void zmapFeatureDestroy(ZMapFeature feature)
 {
   zMapAssert(feature) ;
+
+  if (feature->url)
+    g_free(feature->url) ;
 
   if (feature->type == ZMAPFEATURE_TRANSCRIPT)
     {
@@ -449,6 +468,7 @@ void zmapFeatureDestroy(ZMapFeature feature)
 	g_array_free(feature->feature.homol.align, TRUE) ;
     }
 
+  /* We could memset to zero the feature struct for safety here.... */
   g_free(feature) ;
 
   return ;

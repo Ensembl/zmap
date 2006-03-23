@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Mar 18 08:49 2006 (edgrif)
+ * Last edited: Mar 23 16:38 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.61 2006-03-21 14:09:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.62 2006-03-23 16:41:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -381,6 +381,11 @@ typedef struct ZMapFeatureStruct_
 
   char *text ;						    /* needed ????? */
 
+
+  char *url ;						    /* Could be a quark but we would need to
+							       to use our own table otherwise
+							       memory usage will be too high. */
+
   union
   {
     ZMapHomolStruct homol ;
@@ -590,6 +595,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GArray *gaps) ;
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature) ;
 ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature) ;
+gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 void zmapFeatureDestroy(ZMapFeature feature) ;
 
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
