@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 23 16:18 2006 (edgrif)
+ * Last edited: Mar 23 18:36 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.12 2006-03-23 16:43:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.13 2006-03-23 18:38:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1112,16 +1112,6 @@ static void dna_redraw_callback(FooCanvasGroup *text_grp,
       /* Grab this so we can reattach it to new text group. */
       feature = (ZMapFeature)g_object_get_data(G_OBJECT(text_grp), ITEM_FEATURE_DATA) ;
       zMapAssert(feature) ;
-
-
-      status = zmapWindowFToIRemoveFeature(window->context_to_item,
-					   feature->parent->parent->parent->unique_id,
-					   feature->parent->parent->unique_id,
-					   feature->parent->unique_id,
-					   feature->strand,
-					   feature->unique_id) ;
-      zMapAssert(status) ;
-
 
 
       container = zmapWindowContainerGetParent(grp_item->parent) ;
