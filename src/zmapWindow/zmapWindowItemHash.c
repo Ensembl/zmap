@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Mar 21 15:26 2006 (edgrif)
+ * Last edited: Mar 23 18:18 2006 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.20 2006-03-21 15:27:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.21 2006-03-23 18:30:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,6 +112,7 @@ static void searchItemHash(gpointer key, gpointer value, gpointer user_data) ;
 static void addItem(gpointer key, gpointer value, gpointer user_data) ;
 static void childSearchCB(gpointer data, gpointer user_data) ;
 static GQuark rootCanvasID(void);
+static gboolean itemInHashDestroyedCB(FooCanvasItem *item_in_hash, gpointer data);
 
 static void printGlist(gpointer data, gpointer user_data) ;
 
@@ -569,7 +570,6 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
   return result ;
 }
 
-
 /* Note that this routine is different in that the feature does not have a hash table associated
  * with it, the table pointer is set to NULL.
  * 
@@ -600,6 +600,16 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 	  feature->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
 
 	  g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), feature) ;
+
+          /* This will cleanup for us if an item on the canvas is destroyed 
+           * Other destroy handlers on the same item shouldn't be affected. 
+           * I did a test of this using the canvasItemEventCB in zmapWindowFeature.c 
+           * and both functions got called for the item.  Therefore this 
+           * shouldn't be overwritten at any point.
+           */
+          g_signal_connect(G_OBJECT(feature_item), "destroy",
+                           G_CALLBACK(itemInHashDestroyedCB), (gpointer)feature_to_context_hash);
+          
 	}
 
       result = TRUE ;
@@ -1313,4 +1323,43 @@ gboolean filterOnRegExp(FooCanvasItem *item, ItemSearch curr_search, gpointer us
 static GQuark rootCanvasID(void)
 {
   return g_quark_from_string("this should be completely random and unique and nowhere else in the hash");
+}
+
+/* Should this be a FooCanvasItem* of a gpointer GObject ??? The documentation is lacking here! 
+ * well it compiles.... The wonders of the G_CALLBACK macro. */
+static gboolean itemInHashDestroyedCB(FooCanvasItem *item_in_hash, gpointer data)
+{
+  ZMapWindowItemFeatureType item_feature_type ;
+  GHashTable *context_to_item = (GHashTable *)data;
+  ZMapFeature feature = NULL;
+  gboolean status = FALSE;
+
+  feature = (ZMapFeature)g_object_get_data(G_OBJECT(item_in_hash), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature) ;
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item_in_hash), ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type != ITEM_FEATURE_INVALID);
+
+  switch(item_feature_type)
+    {
+    case ITEM_FEATURE_SIMPLE:
+    case ITEM_FEATURE_PARENT:
+      {
+        status = zmapWindowFToIRemoveFeature(context_to_item,
+                                             feature->parent->parent->parent->unique_id,
+                                             feature->parent->parent->unique_id,
+                                             feature->parent->unique_id,
+                                             feature->strand,
+                                             feature->unique_id);
+        zMapAssert(status);
+      }
+      break;
+    case ITEM_FEATURE_CHILD:
+    case ITEM_FEATURE_BOUNDING_BOX:
+    default:
+      zMapLogFatal("FToI Coding error, unexpected ZMapWindowItemFeatureType: %d, expected simple or parent.", item_feature_type) ;
+      break ;
+    }
+
+  return FALSE;
 }
