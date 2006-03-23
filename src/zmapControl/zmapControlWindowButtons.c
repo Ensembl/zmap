@@ -25,18 +25,25 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar 22 17:16 2006 (edgrif)
+ * Last edited: Mar 23 11:06 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.36 2006-03-22 17:16:50 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.37 2006-03-23 11:07:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapWindow.h>
+#include <ZMap/zmapUtilsGUI.h>
 #include <zmapControl_P.h>
 
+typedef struct
+{
+  ZMapWindow window ;
+} ZoomMenuCBDataStruct, *ZoomMenuCBData ;
 
+
+enum {ZOOM_MAX, ZOOM_ALLDNA, ZOOM_10, ZOOM_1000, ZOOM_MIN} ;
 
 static void reloadCB(GtkWidget *widget, gpointer cb_data) ;
 static void stopCB(GtkWidget *widget, gpointer cb_data) ;
@@ -48,8 +55,15 @@ static void unlockCB(GtkWidget *widget, gpointer data) ;
 static void revcompCB(GtkWidget *widget, gpointer data) ;
 static void unsplitWindowCB(GtkWidget *widget, gpointer data) ;
 static void columnConfigCB(GtkWidget *widget, gpointer data) ;
-static gboolean zoomInEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
-static gboolean zoomOutEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
+static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
+
+
+static void makeZoomMenu(GdkEventButton *button_event, ZMapWindow window) ;
+static ZMapGUIMenuItem makeMenuZoomOps(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+				       gpointer callback_data) ;
+static void zoomMenuCB(int menu_item_id, gpointer callback_data) ;
+
 
 
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
@@ -97,14 +111,14 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_signal_connect(GTK_OBJECT(zoomin_button), "clicked",
 		     GTK_SIGNAL_FUNC(zoomInCB), (gpointer)zmap);
   g_signal_connect(G_OBJECT(zoomin_button), "event",
-                   G_CALLBACK(zoomInEventCB), (gpointer)zmap);
+                   G_CALLBACK(zoomEventCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomin_button, FALSE, FALSE, 0) ;
                                                                                            
   zmap->zoomout_but = zoomout_button = gtk_button_new_with_label("Zoom Out");
   gtk_signal_connect(GTK_OBJECT(zoomout_button), "clicked",
 		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
   g_signal_connect(G_OBJECT(zoomout_button), "event",
-                   G_CALLBACK(zoomOutEventCB), (gpointer)zmap);
+                   G_CALLBACK(zoomEventCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
 
   zmap->revcomp_but = revcomp_button = gtk_button_new_with_label("Revcomp");
@@ -149,11 +163,11 @@ void zmapControlButtonTooltips(ZMap zmap)
 		       "") ;
 
   gtk_tooltips_set_tip(zmap->tooltips, zmap->zoomin_but,
-		       "Zoom in 2x",
+		       "Zoom in 2x (right click gives more zoom options)",
 		       "") ;
 
   gtk_tooltips_set_tip(zmap->tooltips, zmap->zoomout_but,
-		       "Zoom out 2x",
+		       "Zoom out 2x (right click gives more zoom options)",
 		       "") ;
 
   gtk_tooltips_set_tip(zmap->tooltips, zmap->unlock_but,
@@ -321,43 +335,29 @@ void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status
  *  ------------------- Internal functions -------------------
  */
 
-static gboolean zoomInEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
+/* This function implements menus that can be reached by right clicking on either of the
+ * zoom main buttons, probably should generalise to handle all menus on buttons. */
+static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
 {
-  gboolean handled = FALSE;
-  switch(event->type)
-    {
-    case GDK_BUTTON_PRESS:
-      {
-	GdkEventButton *button_ev = (GdkEventButton *)event ;
-        switch(button_ev->button)
-          {
-          case 3:
-            printf("zoomInEventCB (%x): Right click event capture works ...\n", data);
-            handled = TRUE;
-            break;
-          default:
-            break;
-          }
-      }
-      break;
-    default:
-      break;
-    }
-  return handled;
-}
+  gboolean handled = FALSE ;
+  ZMap zmap = (ZMap)data ;
+  ZMapWindow window ;
 
-static gboolean zoomOutEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
-{
-  gboolean handled = FALSE;
+  zMapAssert(zmap->focus_viewwindow) ;
+
+  window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+
   switch(event->type)
     {
     case GDK_BUTTON_PRESS:
       {
 	GdkEventButton *button_ev = (GdkEventButton *)event ;
+
         switch(button_ev->button)
           {
           case 3:
-            printf("zoomOutEventCB (%x): Right click event capture works ...\n", data);
+	    makeZoomMenu(button_ev, window) ;
+
             handled = TRUE;
             break;
           default:
@@ -368,7 +368,8 @@ static gboolean zoomOutEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data
     default:
       break;
     }
-  return handled;
+
+  return handled ;
 }
 
 
@@ -487,6 +488,97 @@ static void columnConfigCB(GtkWidget *widget, gpointer data)
   return ;
 }
 
+
+
+
+
+/* Zoom menu stuff.... */
+static void makeZoomMenu(GdkEventButton *button_event, ZMapWindow window)
+{
+  char *menu_title = "Zoom menu" ;
+  GList *menu_sets = NULL ;
+  ZoomMenuCBData menu_data ;
+
+  /* Call back stuff.... */
+  menu_data = g_new0(ZoomMenuCBDataStruct, 1) ;
+  menu_data->window = window ;
+
+  /* Make up the menu. */
+  menu_sets = g_list_append(menu_sets, makeMenuZoomOps(NULL, NULL, menu_data)) ;
+
+  zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
+
+  return ;
+}
+
+
+/* NOTE HOW THE MENUS ARE DECLARED STATIC IN THE VARIOUS ROUTINES TO MAKE SURE THEY STAY
+ * AROUND...OTHERWISE WE WILL HAVE TO KEEP ALLOCATING/DEALLOCATING THEM.....
+ */
+static ZMapGUIMenuItem makeMenuZoomOps(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {"Max (1 bp line)",           ZOOM_MAX,     zoomMenuCB, NULL},
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      {"10 bp line",                ZOOM_10,      zoomMenuCB, NULL},
+      {"1000 bp line",              ZOOM_1000,    zoomMenuCB, NULL},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      {"All DNA",                   ZOOM_ALLDNA,  zoomMenuCB, NULL},
+
+      {"Min (whole sequence)",      ZOOM_MIN,     zoomMenuCB, NULL},
+      {NULL,                        0, NULL,       NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+static void zoomMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ZoomMenuCBData menu_data = (ZoomMenuCBData)callback_data ;
+  ZMapWindow window = menu_data->window ;
+  double zoom_factor = 0.0, curr_factor = 0.0 ;
+
+  curr_factor = zMapWindowGetZoomFactor(window) ;
+
+
+  switch (menu_item_id)
+    {
+    case ZOOM_MAX:
+      {
+	zoom_factor = zMapWindowGetZoomMax(window) ;
+	break ;
+      }
+    case ZOOM_ALLDNA:
+      {
+	zoom_factor = 0.97 ;
+	break ;
+      }
+    case ZOOM_MIN:
+      zoom_factor = zMapWindowGetZoomMin(window) ;
+      break ;
+
+    default:
+      zMapAssertNotReached() ;				    /* exits... */
+      break ;
+    }
+
+
+  zoom_factor = zoom_factor / curr_factor ;
+
+
+  zMapWindowZoom(window, zoom_factor) ;
+
+  g_free(menu_data) ;
+
+  return ;
+}
 
 
 
