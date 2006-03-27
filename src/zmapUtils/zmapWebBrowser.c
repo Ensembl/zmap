@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapUtils.h
  * HISTORY:
- * Last edited: Mar 23 16:27 2006 (edgrif)
+ * Last edited: Mar 27 13:08 2006 (edgrif)
  * Created: Thu Mar 23 13:35:10 2006 (edgrif)
- * CVS info:   $Id: zmapWebBrowser.c,v 1.1 2006-03-23 16:42:06 edgrif Exp $
+ * CVS info:   $Id: zmapWebBrowser.c,v 1.2 2006-03-27 12:15:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,23 +37,19 @@
 #include <ZMap/zmapUtils.h>
 
 
+
+/* Describes various browsers, crude at the moment, we will probably need more options later. */
 typedef struct
 {
-  char *name ;
-  char *open_command ;
-
+  char *system ;					    /* system name as in "uname -s" */
+  char *executable ;					    /* executable name or full path. */
+  char *open_command ;					    /* alternative command to start browser. */
 } BrowserConfigStruct, *BrowserConfig ;
 
 
-typedef struct
-{
-  char *system ;
-  char *browser ;
-} Sys2BrowserStruct, *Sys2Browser ;
-
-
-
-static char *findSys2Browser(GError **error) ;
+static BrowserConfig findSys2Browser(GError **error) ;
+static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url) ;
+static char *translateCommas(char *orig_link) ;
 
 
 /* Records information for running a specific browser. The intent here is to add enough
@@ -61,22 +57,24 @@ static char *findSys2Browser(GError **error) ;
  * url in an already running netscape if there is one, otherwise in a new netscape.
  * 
  * (see w2/graphgdkremote.c in acedb for some useful stuff.)
+ * 
+ * (See manpage for more options for "open" on the Mac, e.g. we could specify to always
+ * use Safari via the -a flag...which would also deal with badly specified urls...)
+ * 
+ * In the open_command the %U is substituted with the URL.
+ * 
+ * Note that if open_command is NULL then the executable name is simply combined with
+ * the URL in the expected way to form the command:    "executable  URL"
+ * 
+ * 
  *  */
+#define BROWSER_PATTERN "%U"
+
 static BrowserConfigStruct browsers_G[] =
   {
-    {"mozilla", NULL},
-    {"netscape", NULL},
-    {"safari", NULL},
-    {NULL, NULL}					    /* Terminator record. */
-  } ;
-
-
-/* Maps operating systems to the preferred browser for that operating system. */
-static Sys2BrowserStruct Sys2Browsers_G[] = 
-  {
-    {"OSF", "netscape"},
-    {"Linux", "mozilla"},
-    {"Mac", "safari"},
+    {"Linux",  "mozilla",  "mozilla -remote 'openurl(%U,new-window)' || mozilla %U"},
+    {"OSF",    "netscape", NULL},
+    {"Darwin", "/Applications/Safari.app/Contents/MacOS/Safari", "open %U"},
     {NULL, NULL}					    /* Terminator record. */
   } ;
 
@@ -116,28 +114,26 @@ static GQuark err_domain_G = 0 ;
 gboolean zMapLaunchWebBrowser(char *link, GError **error)
 {
   gboolean result = FALSE ;
-  char *best_browser, *browser ;
-  GQuark err_domain ;
-  char *sys_cmd ;
-  int sys_rc ;
+  BrowserConfig best_browser = NULL ;
+  char *browser = NULL ;
 
   zMapAssert(link && *link && error && !(*error)) ;
 
   if (!err_domain_G)
-    err_domain = g_quark_from_string(domain_G) ;
+    err_domain_G = g_quark_from_string(domain_G) ;
 
 
-  /* Get the best browser. */
+  /* Check we have a registered browser for this system. */
   best_browser = findSys2Browser(error) ;
 
 
-  /* Look for the browser in the path. */
+  /* Look for the browser in the users path. */
   if (best_browser)
     {
-      if (!(browser = g_find_program_in_path(best_browser)))
+      if (!(browser = g_find_program_in_path(best_browser->executable)))
 	{
 	  *error = g_error_new(err_domain_G, BROWSER_NOT_FOUND,
-			       "Browser %s not in $PATH or not executable.", best_browser) ;
+			       "Browser %s not in $PATH or not executable.", browser) ;
 	}
     }
 
@@ -145,21 +141,44 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
   /* Run the browser in a separate process. */
   if (browser)
     {
-      /* NOTE that the trailing "&" means we do not wait for the command to be executed and
-       * so therefore we cannot tell if the command actually worked, only that the shell
-       * got exec'd */
-      sys_cmd = g_strdup_printf("%s %s&", browser, link) ;
+      char *url ;
+      GString *sys_cmd ;
+      int sys_rc ;
 
-      /* We could much more to interpret what exactly failed here... */
-      if ((sys_rc = system(sys_cmd)) == EXIT_SUCCESS)
+
+      /* Translate any "," to "%2C" see translateCommas() for explanation. */
+      url = translateCommas(link) ;
+
+      sys_cmd = g_string_sized_new(1024) ;		    /* Should be long enough for most urls. */
+
+      if (best_browser->open_command)
+	{
+	  makeBrowserCmd(sys_cmd, best_browser, url) ;
+	}
+      else
+	{
+	  g_string_printf(sys_cmd, "%s %s", browser, url) ;
+	}
+
+      /* Make sure browser is run in background by the shell so we do not wait.
+       * NOTE that because we do not wait for the command to be executed,
+       * we cannot tell if the command actually worked, only that the shell
+       * got exec'd */
+      g_string_append(sys_cmd, " &") ;    
+
+      /* We could do much more to interpret what exactly failed here... */
+      if ((sys_rc = system(sys_cmd->str)) == EXIT_SUCCESS)
 	{
 	  result = TRUE ;
 	}
       else
 	{
 	  *error = g_error_new(err_domain_G, BROWSER_COMMAND_FAILED,
-			       "Failed to run command \"%s\".", sys_cmd) ;
+			       "Failed to run command \"%s\".", sys_cmd->str) ;
 	}
+
+      g_string_free(sys_cmd, TRUE) ;
+      g_free(url) ;
     }
 
 
@@ -183,9 +202,9 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
 
 /* Gets the system name and then finds the best browser for the system from our
  * our internal list, returns NULL on any failure. */
-static char *findSys2Browser(GError **error)
+static BrowserConfig findSys2Browser(GError **error)
 {
-  char *browser = NULL ;
+  BrowserConfig browser = NULL ;
   struct utsname unamebuf ;
 
   if (uname(&unamebuf) == -1)
@@ -195,16 +214,16 @@ static char *findSys2Browser(GError **error)
     }
   else
     {
-      Sys2Browser sys_browser = &(Sys2Browsers_G[0]) ;
+      BrowserConfig curr_browser = &(browsers_G[0]) ;
       
-      while (sys_browser->system != NULL)
+      while (curr_browser->system != NULL)
 	{
-	  if (g_ascii_strcasecmp(sys_browser->system, unamebuf.sysname) == 0)
+	  if (g_ascii_strcasecmp(curr_browser->system, unamebuf.sysname) == 0)
 	    {
-	      browser = sys_browser->browser ;
+	      browser = curr_browser ;
 	      break ;
 	    }
-	  sys_browser++ ;
+	  curr_browser++ ;
 	}
     }
 
@@ -214,6 +233,53 @@ static char *findSys2Browser(GError **error)
 			   "No browser registered for system %s", unamebuf.sysname) ;
     }
 
-
   return browser ;
 }
+
+
+static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url)
+{
+  gboolean found ;
+
+  cmd = g_string_append(cmd, best_browser->open_command) ;
+
+  found = zMap_g_string_replace(cmd, BROWSER_PATTERN, url) ;
+
+  zMapAssert(found) ;					    /* Must find at least one pattern. */
+
+  return ;
+}
+
+
+/* If we use the netscape or Mozilla "OpenURL" remote commands to display links, then sadly the
+ * syntax for this command is: "OpenURL(URL[,new-window])" and stupid   
+ * netscape will think that any "," in the url (i.e. lots of cgi links have
+ * "," to separate args !) is the "," for its OpenURL command and will then
+ * usually report a syntax error in the OpenURL command.                   
+ *                                                                         
+ * To get round this we translate any "," into "%2C" which is the standard 
+ * code for a "," in urls (thanks to Roger Pettet for this)....YUCH.
+ * 
+ * The returned string should be g_free'd when no longer needed.
+ */
+static char *translateCommas(char *orig_link)
+{
+  char *url = NULL ;
+  GString *link ;
+  char *target = "," ;
+  char *source = "%2C" ;
+
+  link = g_string_new(orig_link) ;
+
+  zMap_g_string_replace(link, target, source) ;
+
+  url = g_string_free(link, FALSE) ;
+
+  return url ;
+}
+
+
+
+
+
+
