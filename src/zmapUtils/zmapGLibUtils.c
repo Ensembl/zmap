@@ -26,12 +26,13 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Mar  1 14:56 2006 (edgrif)
+ * Last edited: Mar 27 12:42 2006 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.4 2006-03-03 08:07:20 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.5 2006-03-27 12:10:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 
@@ -156,10 +157,7 @@ void zMap_g_list_foreach_directional(GList   *list,
 /* My new routine for returning a pointer to an element in the array, the array will be
  * expanded to include the requested element if necessary. If "clear" was not set when
  * the array was created then the element may contain random junk instead of zeros. */
-GArray* 
-zMap_g_array_element (GArray *farray,
-		      guint index,
-		      gpointer *element_out)
+GArray* zMap_g_array_element (GArray *farray, guint index, gpointer *element_out)
 {
   GRealArray *array = (GRealArray*) farray;
   gint length;
@@ -175,6 +173,59 @@ zMap_g_array_element (GArray *farray,
 
   return farray;
 }
+
+
+
+
+/*! 
+ *                Additions to GString
+ * 
+ * GString is a very good package but there are some more operations it could usefully do.
+ * 
+ */
+
+
+/*!
+ * Substitute one string for another in a GString.
+ * 
+ * You should note that this routine simply uses the existing GString erase/insert
+ * functions and so may not be incredibly efficient. If the target string was not
+ * found the GString remains unaltered and FALSE is returned.
+ * 
+ * @param string                 A valid GString.
+ * @param target                 The string to be replaced.
+ * @param source                 The string to be inserted.
+ * @return                       TRUE if a string was replaced, FALSE otherwise.
+ *  */
+gboolean zMap_g_string_replace(GString *string, char *target, char *source)
+{
+  gboolean result = FALSE ;
+  int source_len ;
+  int target_len ;
+  int target_pos ;
+  char *template_ptr ;
+
+
+  target_len = strlen(target) ;
+  source_len = strlen(source) ;
+
+  template_ptr = string->str ;
+  while ((template_ptr = strstr(template_ptr, target)))
+    {
+      result = TRUE ;
+
+      target_pos = template_ptr - string->str ;
+  
+      string = g_string_erase(string, target_pos, target_len) ;
+
+      string = g_string_insert(string, target_pos, source) ;
+
+      template_ptr = string->str + target_pos + source_len ; /* Shouldn't go off the end. */
+    }
+
+  return result ;
+}
+
 
 
 

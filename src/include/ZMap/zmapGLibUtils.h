@@ -26,9 +26,9 @@
  *              glib but not included with their distribution.
  *
  * HISTORY:
- * Last edited: Mar  1 14:55 2006 (edgrif)
+ * Last edited: Mar 27 12:20 2006 (edgrif)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.4 2006-03-03 08:07:21 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.5 2006-03-27 12:10:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -65,6 +65,8 @@ void zMap_g_list_foreach_directional(GList   *list,
                                      GFunc    func,
                                      gpointer user_data,
                                      ZMapGListDirection forward);
+
+gboolean zMap_g_string_replace(GString *string, char *target, char *source) ;
 
 
 /* Returns a pointer to an element of the array instead of the element itself. */
