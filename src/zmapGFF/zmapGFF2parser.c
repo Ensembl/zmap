@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jan 24 13:54 2006 (rds)
+ * Last edited: Mar 24 14:29 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.45 2006-02-17 17:59:41 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.46 2006-03-27 12:14:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,6 +63,7 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
 static GQuark getColumnGroup(char *attributes) ;
+static char *getURL(char *attributes) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
 static gboolean getCDSAttrs(char *attributes,
@@ -851,6 +852,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   int query_start = 0, query_end = 0 ;
   GQuark column_id = 0 ;
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
+  char *url ;
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
 
@@ -868,6 +870,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
       /* if this fails, what do we do...should just log the error I think..... */
       result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end) ;
     }
+
+
+  /* Was there a url for the feature. */
+  url = getURL(attributes) ;
 
 
   /* Get the feature name which may not be unique and a feature "id" which _must_
@@ -947,8 +953,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 					  sequence, ontology,
 					  feature_type, curr_style,
 					  start, end,
-					  has_score, score, strand, phase)))
+					  has_score, score,
+					  strand, phase)))
    {
+     if (url)
+       zMapFeatureAddURL(feature, url) ;
+
+
      if (feature_type == ZMAPFEATURE_TRANSCRIPT)
        {
          /* Note that exons/introns are given one per line in GFF which is quite annoying.....it is
@@ -1006,6 +1017,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 
   g_free(feature_name) ;
   g_free(feature_name_id) ;
+  g_free(url) ;
 
 
   /* If we are only parsing then free any stuff allocated by addDataToFeature() */
@@ -1253,6 +1265,35 @@ static GQuark getColumnGroup(char *attributes)
     }
 
   return column_id ;
+}
+
+
+/* Format of URL attribute section is:
+ * 
+ *          URL "http://etc. etc." ;
+ * 
+ * Format string extracts url and returns it as a string that must be g_free'd when
+ * no longer required.
+ * 
+ *  */
+static char *getURL(char *attributes)
+{
+  char *url = NULL ;
+  char *tag_pos ;
+
+  if ((tag_pos = strstr(attributes, "URL")))
+    {
+      int attr_fields ;
+      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s[;]" ;
+      char url_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+      if ((attr_fields = sscanf(tag_pos, attr_format_str, &url_field[0])) == 1)
+	{
+	  url = g_strdup(&url_field[0]) ;
+	}
+    }
+
+  return url ;
 }
 
 
