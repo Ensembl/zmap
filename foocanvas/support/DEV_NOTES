@@ -20,7 +20,7 @@ $ cd foocanvas/libfoocanvas
 $ gcvs diff -u > ZMap/foocanvas/support/libfoocanvas-VERSION.patch
 
 
-store in ZMap cvs. Make sure '-ko' is used to STOP keyword substitution ($Id: DEV_NOTES,v 1.3 2005-02-25 16:29:27 rds Exp $).
+store in ZMap cvs. Make sure '-ko' is used to STOP keyword substitution ($Id: DEV_NOTES,v 1.4 2006-03-27 11:18:58 rds Exp $).
 
 $ cd ZMap/foocanvas/support/
 $ cvs add -ko -m'message' libfoocanvas-VERSION.patch
@@ -41,9 +41,21 @@ $ mv foocanvas libfoocanvas-VERSION
 
 now make all the autoconf stuff.  I had to do this first.
 $ export AUTOMAKE=~/bin/automake
+
+aclocal needs to be told where it's m4 files are.
+~zmap/prefix/LINUX/share/aclocal
+~zmap/prefix/LINUX/share/aclocal-1.9
+are good bets at the moment. glib-gettext.m4 seems to be a dependancy 
+which breaks everything silently....
+
 $ export ACLOCAL_FLAGS="-I ~/share/aclocal -I ~/share/aclocal-1.9"
 autogen.sh also requires gnome-common 
+
 $ gcvs co gnome-common; ./configure; make; make install
+
+For  the  last  build  (20060326)  I  had  to  modify  autogen.sh  and
+configure.in as per  build.patch. Unsure as to why,  possibly a broken
+autotools setup. 
 
 $ ./autogen.sh
 
