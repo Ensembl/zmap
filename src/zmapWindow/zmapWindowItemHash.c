@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Mar 28 12:57 2006 (rds)
+ * Last edited: Mar 28 13:39 2006 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.23 2006-03-28 12:35:08 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.24 2006-03-28 12:40:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1455,7 +1455,7 @@ static gboolean itemInHashDestroyedCB(FooCanvasItem *item_in_hash, gpointer data
 
   if ((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(item_in_hash), ITEM_FEATURE_DATA))))
     {
-      if((window = (ZMapWindow)(g_object_get_data(G_OBJECT(FOO_CANVAS(item_in_hash->canvas)), WINDOW_BP ))))
+      if((window = (ZMapWindow)(g_object_get_data(G_OBJECT(FOO_CANVAS(item_in_hash->canvas)), ZMAP_WINDOW_POINTER ))))
         {
           context_to_item = window->context_to_item;
           zMapAssert(context_to_item);
