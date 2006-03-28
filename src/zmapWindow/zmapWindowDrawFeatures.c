@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar 17 12:55 2006 (rds)
+ * Last edited: Mar 27 16:32 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.119 2006-03-17 12:57:40 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.120 2006-03-28 12:45:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -597,6 +597,12 @@ static void createSetColumn(gpointer data, gpointer user_data)
       rev_bg_colour = &(window->colour_qreverse_col) ;
     }
 
+  if(!(g_datalist_id_get_data(&(canvas_data->curr_block->feature_sets), feature_set_id)))
+    {
+      ZMapFeatureSet fs = zMapFeatureSetIDCreate(feature_set_id, feature_set_id, NULL);
+      zMapFeatureBlockAddFeatureSet(canvas_data->curr_block, fs);
+    }
+
 
   /* We need the background column object to span the entire bottom of the alignment block. */
   top = canvas_data->curr_block->block_to_sequence.t1 ;
@@ -858,14 +864,14 @@ static void removeEmptyColumnCB(gpointer data, gpointer user_data)
 
       /* Remove this item from the hash of features -> items */
       style = g_object_get_data(G_OBJECT(container), "item_feature_style") ;
-
+#ifdef RDS_DONT_INCLUDE
       status = zmapWindowFToIRemoveSet(canvas_data->window->context_to_item,
 				       canvas_data->curr_alignment->unique_id,
 				       canvas_data->curr_block->unique_id,
 				       style->unique_id,
 				       remove_data->strand) ;
       zMapAssert(status) ;
-
+#endif
       /* Now remove from Long Items (if it was there in the first place... */
       zmapWindowLongItemRemove(&(canvas_data->window->long_items),
 			       zmapWindowContainerGetBackground(container)) ;
