@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Mar 27 11:51 2006 (rds)
+ * Last edited: Mar 28 12:57 2006 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.22 2006-03-27 10:53:52 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.23 2006-03-28 12:35:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,7 @@ typedef struct
   FooCanvasItem *item ;					    /* could be group or item. */
 
   GHashTable *hash_table ;
+  guint destroyHandlerId;
 } ID2CanvasStruct, *ID2Canvas ;
 
 
@@ -111,11 +112,11 @@ static void searchItemHash(gpointer key, gpointer value, gpointer user_data) ;
 static void addItem(gpointer key, gpointer value, gpointer user_data) ;
 static void childSearchCB(gpointer data, gpointer user_data) ;
 static GQuark rootCanvasID(void);
-#ifdef DONT_INCLUDE_DESTROY_SIGNALS
 static gboolean itemInHashDestroyedCB(FooCanvasItem *item_in_hash, gpointer data);
 static gboolean removeBlock(GHashTable *feature_to_context_hash,
                             GQuark align_id, GQuark block_id);
-#endif
+
+static void printHashKeys(GQuark align, GQuark block, GQuark set, GQuark feature);
 static void printGlist(gpointer data, gpointer user_data) ;
 
 
@@ -493,6 +494,10 @@ gboolean zmapWindowFToIAddAlign(GHashTable *feature_to_context_hash,
       align->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
 
       g_hash_table_insert(feature_to_context_hash, GUINT_TO_POINTER(align_id), align) ;
+
+      align->destroyHandlerId = g_signal_connect(G_OBJECT(align->item), "destroy",
+                                                 G_CALLBACK(itemInHashDestroyedCB),
+                                                 NULL);
     }
 
   return result ;
@@ -523,6 +528,9 @@ gboolean zmapWindowFToIAddBlock(GHashTable *feature_to_context_hash,
 	  block->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
 
 	  g_hash_table_insert(align->hash_table, GUINT_TO_POINTER(block_id), block) ;
+          block->destroyHandlerId = g_signal_connect(G_OBJECT(block->item), "destroy",
+                                                     G_CALLBACK(itemInHashDestroyedCB),
+                                                     NULL);
 	}
 
       result = TRUE ;
@@ -549,7 +557,10 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
 
   /* We need special quarks that incorporate strand indication as the hashes are per column. */
   set_id = zmapWindowFToIMakeSetID(set_id, set_strand) ;
-
+#ifdef RDS_DONT_INCLUDE
+  printf("AddSet (%x): ", set_group);
+  printHashKeys(align_id, block_id, set_id, 0);
+#endif
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
 					      GUINT_TO_POINTER(align_id)))
       && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
@@ -564,11 +575,10 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
 	  set->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
 
 	  g_hash_table_insert(block->hash_table, GUINT_TO_POINTER(set_id), set) ;
-#ifdef DONT_INCLUDE_DESTROY_SIGNALS
-          g_signal_connect(G_OBJECT(set->item), "destroy",
-                           G_CALLBACK(itemInHashDestroyedCB), 
-                           GINT_TO_POINTER(set_strand));
-#endif
+
+          set->destroyHandlerId = g_signal_connect(G_OBJECT(set->item), "destroy",
+                                                   G_CALLBACK(itemInHashDestroyedCB), 
+                                                   GINT_TO_POINTER(set_strand));
 	}
 
       result = TRUE ;
@@ -576,6 +586,7 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
 
   return result ;
 }
+
 
 /* Note that this routine is different in that the feature does not have a hash table associated
  * with it, the table pointer is set to NULL.
@@ -590,49 +601,52 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
   ID2Canvas align = NULL ;
   ID2Canvas block = NULL ;
   ID2Canvas set = NULL ;
+  ZMapFeature item_feature_obj = NULL;
+  
+  /* We need special quarks that incorporate strand indication as the hashes are per column. */
+  if ((item_feature_obj = (ZMapFeature)(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA))))
+    set_id = zmapWindowFToIMakeSetID(set_id, item_feature_obj->strand) ;
+  else
+    set_id = set_id;   /* This will not succeed! */
+
+#ifdef RDS_DONT_INCLUDE
+  printf("AddFeature (%x): ", feature_item);
+  printHashKeys(align_id, block_id, stranded_set_id, feature_id);
+#endif /* RDS_DONT_INCLUDE */
 
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
-					      GUINT_TO_POINTER(align_id)))
+					      GUINT_TO_POINTER(align_id))) 
       && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
 						 GUINT_TO_POINTER(block_id)))
       && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
-					       GUINT_TO_POINTER(set_id))))
+                                                   GUINT_TO_POINTER(set_id))))
     {
       if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
-	{
-	  ID2Canvas feature ;
-
-	  feature = g_new0(ID2CanvasStruct, 1) ;
-	  feature->item = feature_item ;
-	  feature->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
-
-	  g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), feature) ;
-
-#ifdef DONT_INCLUDE_DESTROY_SIGNALS
+        {
+          ID2Canvas feature ;
+          
+          feature = g_new0(ID2CanvasStruct, 1) ;
+          feature->item = feature_item ;
+          feature->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+          
+          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), feature) ;
           /* This will cleanup for us if an item on the canvas is destroyed 
            * Other destroy handlers on the same item shouldn't be affected. 
            * I did a test of this using the canvasItemEventCB in zmapWindowFeature.c 
            * and both functions got called for the item.  Therefore this 
            * shouldn't be overwritten at any point.
            */
-          {
-            ZMapFeature item_feature_obj = NULL;
-            if ((item_feature_obj = (ZMapFeature)(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA))))
-              {
-                /* Hold on to the original strand for the destroy handler, 
-                 * in case the feature gets modified, as it contributes to 
-                 * the keys for the hash */
-                g_signal_connect(G_OBJECT(feature->item), "destroy",
-                                 G_CALLBACK(itemInHashDestroyedCB), 
-                                 GINT_TO_POINTER(item_feature_obj->strand));
-              }
-          }
-#endif
-	}
-
+          
+          /* Hold on to the original strand for the destroy handler, 
+           * in case the feature gets modified, as it contributes to 
+           * the keys for the hash. This is wrong, see RT:1589 */
+          feature->destroyHandlerId = g_signal_connect(G_OBJECT(feature->item), "destroy",
+                                                       G_CALLBACK(itemInHashDestroyedCB), 
+                                                       GINT_TO_POINTER(item_feature_obj->strand));
+        }
+      
       result = TRUE ;
     }
-
   return result ;
 }
 
@@ -658,7 +672,10 @@ gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 
   /* We need special quarks that incorporate strand indication as the hashes are per column. */
   set_id = zmapWindowFToIMakeSetID(set_id, set_strand) ;
-
+#ifdef RDS_DEBUG_ITEM_IN_HASH_DESTROY
+  printf("  |--- RemoveSet: ");
+  printHashKeys(align_id, block_id, set_id, 0);
+#endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
 					      GUINT_TO_POINTER(align_id)))
       && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
@@ -698,10 +715,12 @@ gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash,
   ID2Canvas set ;
   ID2Canvas feature ;
 
-
   /* We need special quarks that incorporate strand indication as the hashes are per column. */
   set_id = zmapWindowFToIMakeSetID(set_id, set_strand) ;
-
+#ifdef RDS_DEBUG_ITEM_IN_HASH_DESTROY
+  printf("  |--- RemoveFeature: ");
+  printHashKeys(align_id, block_id, set_id, feature_id);
+#endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
 					      GUINT_TO_POINTER(align_id)))
       && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
@@ -1051,7 +1070,15 @@ static void destroyIDHash(gpointer data)
 {
   ID2Canvas id = (ID2Canvas)data ;
 
-  g_hash_table_destroy(id->hash_table) ;
+  if(id->hash_table)            /* Feature ID2Canvas don't need hash_tables... */
+    g_hash_table_destroy(id->hash_table) ;
+
+  if(id->destroyHandlerId != 0)
+    g_signal_handler_disconnect(G_OBJECT(id->item), id->destroyHandlerId);
+
+#ifdef RDS_DEBUG_ITEM_IN_HASH_DESTROY
+  printf("     |--- destroyIDHash (%x): freeing id2canvas\n", id->item);
+#endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
 
   g_free(id) ;
 
@@ -1223,7 +1250,7 @@ static void printGlist(gpointer data, gpointer user_data)
 	  feature_type = "Align" ;
 	  break ;
 	case ZMAPFEATURE_STRUCT_BLOCK:
-	  feature_type = "Align" ;
+	  feature_type = "Block" ;
 	  break ;
 	case ZMAPFEATURE_STRUCT_FEATURESET:
 	  feature_type = "Set" ;
@@ -1343,9 +1370,9 @@ static GQuark rootCanvasID(void)
   return g_quark_from_string("this should be completely random and unique and nowhere else in the hash");
 }
 
-#ifdef DONT_INCLUDE_DESTROY_SIGNALS
 
-/* This doesn't work as planned, the plan was to attach a destroy
+/* RT:1589
+ * This doesn't work as planned, the plan was to attach a destroy
  * handler to the item which gets added to the hash.  When this gets
  * cleaned up by *any* means the destroy handler would get called and
  * remove the entry from the appropriate hash table.  This doesn't
@@ -1373,14 +1400,28 @@ static GQuark rootCanvasID(void)
  *
  */
 
+static void printHashKeys(GQuark align, GQuark block, GQuark set, GQuark feature)
+{
+  GQuark empty = 0;
+  empty = g_quark_from_string("<empty>");
+
+  printf("keys: %s %s %s %s\n", 
+         (char *)g_quark_to_string(align   ? align   : empty),
+         (char *)g_quark_to_string(block   ? block   : empty),
+         (char *)g_quark_to_string(set     ? set     : empty),
+         (char *)g_quark_to_string(feature ? feature : empty));
+
+  return ;
+}
+
 static gboolean removeBlock(GHashTable *feature_to_context_hash,
                             GQuark align_id, GQuark block_id)
 {
   gboolean result = FALSE;
   ID2Canvas align, block;
-
+#ifdef RDS_DONT_INCLUDE
   printf("removeBlock: Block id %s\n", (char *)g_quark_to_string(block_id));
-  
+#endif
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
                                               GUINT_TO_POINTER(align_id)))
       && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
@@ -1404,87 +1445,106 @@ static gboolean itemInHashDestroyedCB(FooCanvasItem *item_in_hash, gpointer data
   ZMapFeature feature = NULL;
   ZMapFeatureSet feature_set = NULL;
   ZMapFeatureBlock feature_block = NULL;
+  ZMapFeatureAlignment feature_align = NULL;
   ZMapStrand strand = (ZMapStrand)(GPOINTER_TO_INT(data));
   gboolean status = FALSE;
-  char *type = NULL;
 
-  if ((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(item_in_hash), ITEM_FEATURE_DATA))) &&
-      (window = (ZMapWindow)(g_object_get_data(G_OBJECT(FOO_CANVAS(item_in_hash->canvas)), WINDOW_BP ))))
+#ifdef RDS_DEBUG_ITEM_IN_HASH_DESTROY
+  printf("itemInHashDestroyedCB (%x): enter\n", item_in_hash);
+#endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
+
+  if ((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(item_in_hash), ITEM_FEATURE_DATA))))
     {
-      context_to_item = window->context_to_item;
-      switch (feature_any->struct_type)
-	{
-	case ZMAPFEATURE_STRUCT_ALIGN:
-          /* Nothing to do ?????????? */
-          type = "Align";
-	  break ;
-	case ZMAPFEATURE_STRUCT_BLOCK:
-          /* Nothing to do ?????????? */
-          feature_block = (ZMapFeatureBlock)feature_any;
-          status = removeBlock(context_to_item,
-                               feature_block->parent->unique_id,
-                               feature_block->unique_id);
-          type = "Block";
-	  break ;
-	case ZMAPFEATURE_STRUCT_FEATURESET:
-          feature_set = (ZMapFeatureSet)feature_any;
-          status = zmapWindowFToIRemoveSet(context_to_item,
-                                           feature_set->parent->parent->unique_id,
-                                           feature_set->parent->unique_id,
-                                           feature_set->unique_id,
-                                           strand);
-          printf("FeatureSet %s, %s, %s\n", 
-                 (char *)g_quark_to_string(feature_set->unique_id),
-                 (char *)g_quark_to_string(feature_set->parent->unique_id),
-                 (char *)g_quark_to_string(feature_set->parent->parent->unique_id));
-          type = "Set";
-	  break ;
-	case ZMAPFEATURE_STRUCT_FEATURE:
-          {
-            feature = (ZMapFeature)feature_any;
-            item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item_in_hash), 
-                                                                  ITEM_FEATURE_TYPE)) ;
-            switch(item_feature_type)
+      if((window = (ZMapWindow)(g_object_get_data(G_OBJECT(FOO_CANVAS(item_in_hash->canvas)), WINDOW_BP ))))
+        {
+          context_to_item = window->context_to_item;
+          zMapAssert(context_to_item);
+
+          switch (feature_any->struct_type)
+            {
+            case ZMAPFEATURE_STRUCT_ALIGN:
+              feature_align = (ZMapFeatureAlignment)feature_any;
+              status = g_hash_table_remove(context_to_item, GUINT_TO_POINTER(feature_align->unique_id)) ;
+              break ;
+            case ZMAPFEATURE_STRUCT_BLOCK:
+              feature_block = (ZMapFeatureBlock)feature_any;
+              status = removeBlock(context_to_item,
+                                   feature_block->parent->unique_id,
+                                   feature_block->unique_id);
+              break ;
+            case ZMAPFEATURE_STRUCT_FEATURESET:
+              feature_set = (ZMapFeatureSet)feature_any;
+              status = zmapWindowFToIRemoveSet(context_to_item,
+                                               feature_set->parent->parent->unique_id,
+                                               feature_set->parent->unique_id,
+                                               feature_set->unique_id,
+                                               strand);
+              break ;
+            case ZMAPFEATURE_STRUCT_FEATURE:
               {
-              case ITEM_FEATURE_SIMPLE:
-              case ITEM_FEATURE_PARENT:
-                {
-                  printf("Feature %s, %s, %s\n", 
-                         (char *)g_quark_to_string(feature->unique_id),
-                         (char *)g_quark_to_string(feature->parent->unique_id),
-                         (char *)g_quark_to_string(feature->parent->parent->unique_id));
-                  status = zmapWindowFToIRemoveFeature(context_to_item,
-                                                       feature->parent->parent->parent->unique_id,
-                                                       feature->parent->parent->unique_id,
-                                                       feature->parent->unique_id,
-                                                       strand,
-                                                       feature->unique_id);
-                }
-                break;
-              case ITEM_FEATURE_CHILD:
-              case ITEM_FEATURE_BOUNDING_BOX:
-              default:
-                zMapLogFatal("FToI Coding error,"
-                             " unexpected ZMapWindowItemFeatureType: %d,"
-                             " expected simple or parent.", item_feature_type) ;
+                feature = (ZMapFeature)feature_any;
+                item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item_in_hash), 
+                                                                      ITEM_FEATURE_TYPE)) ;
+                switch(item_feature_type)
+                  {
+                  case ITEM_FEATURE_SIMPLE:
+                  case ITEM_FEATURE_PARENT:
+                    {
+                      status = zmapWindowFToIRemoveFeature(context_to_item,
+                                                           feature->parent->parent->parent->unique_id,
+                                                           feature->parent->parent->unique_id,
+                                                           feature->parent->unique_id,
+                                                           strand,
+                                                           feature->unique_id);
+                    }
+                    break;
+                  case ITEM_FEATURE_CHILD:
+                  case ITEM_FEATURE_BOUNDING_BOX:
+                  default:
+                    zMapLogFatal("FToI Coding error,"
+                                 " unexpected ZMapWindowItemFeatureType: %d,"
+                                 " expected simple or parent.", item_feature_type) ;
+                    break ;
+                  }
+                /* printf("End of Feature\n"); */
+                break ;
+              } /* END ZMAPFEATURE_STRUCT_FEATURE SWITCH!! */
+              
+            default:
+              {
+                zMapLogFatal("Coding error, bad ZMapWindowItemFeatureType: %d", feature_any->struct_type) ;
                 break ;
               }
-            type = "Feature";
-
-            /* printf("End of Feature\n"); */
-            break ;
-          } /* END ZMAPFEATURE_STRUCT_FEATURE */
-
-        default:
-          {
-            zMapLogFatal("Coding error, bad ZMapWindowItemFeatureType: %d", feature_any->struct_type) ;
-            break ;
-          }
+            }
+#ifdef RDS_DEBUG_ITEM_IN_HASH_DESTROY
+          if(!status)
+            printf("itemInHashDestroyedCB (%x): remove failed\n", item_in_hash);
+#endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
+          zMapAssert(status);   /* This will let us know */
         }
-      printf("tried to remove a %s\n", type);
-      zMapAssert(status && type);
+      else
+        {
+          zMapLogFatal("Coding error, no ZMapWindow attached to item(%x)->canvas!", item_in_hash) ;
+#ifdef RDS_DEBUG_ITEM_IN_HASH_DESTROY
+          printf("itemInHashDestroyedCB (%x): no Window \n", item_in_hash);
+#endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
+        }
     }
-
+  else
+    {
+      /* ISSUE: I've hacked an empty FeatureSet create in DrawFeature
+       * createSetColumn/createColumn for styles without features */
+      zMapLogFatal("Coding error, no ITEM_FEATURE_DATA attached to item(%x)!", item_in_hash) ;
+#ifdef RDS_DEBUG_ITEM_IN_HASH_DESTROY
+      printf("itemInHashDestroyedCB (%x): no Feature Data\n", item_in_hash);
+#endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
+    }
+#ifdef RDS_DEBUG_ITEM_IN_HASH_DESTROY
+  printf("itemInHashDestroyedCB (%x): leave\n\n", item_in_hash);
+#endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
   return FALSE;
 }
-#endif /* DONT_INCLUDE_DESTROY_SIGNALS */
+
+
+
+
