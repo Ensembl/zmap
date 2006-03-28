@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 15 13:40 2006 (rds)
+ * Last edited: Mar  3 16:31 2006 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.7 2006-02-15 17:11:18 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.8 2006-03-28 12:37:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,10 +48,7 @@ typedef struct _zmapXMLElementStruct
   GQuark   name;
   GString *contents; 
   GList   *attributes;
-#ifdef USING_PRE_ORDERED_TREE_FOR_FREE
-  int left;
-  int right;
-#endif /* USING_PRE_ORDERED_TREE_FOR_FREE */
+
   zmapXMLElement parent;
   GList   *children;
 } zmapXMLElementStruct;
