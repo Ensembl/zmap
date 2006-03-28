@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 23 16:18 2006 (edgrif)
+ * Last edited: Mar 28 13:52 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.14 2006-03-27 10:20:52 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.15 2006-03-28 12:54:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -447,7 +447,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
       status = zmapWindowFToIAddFeature(window->context_to_item,
 					alignment->unique_id,
 					block->unique_id, 
-					column_id,
+					set->unique_id,
 					feature->unique_id, top_feature_item) ;
       zMapAssert(status) ;
 
@@ -1164,7 +1164,7 @@ static void dna_redraw_callback(FooCanvasGroup *text_grp,
       status = zmapWindowFToIAddFeature(window->context_to_item,
 					feature->parent->parent->parent->unique_id,
 					feature->parent->parent->unique_id,
-					column_id,
+					feature->parent->unique_id,
 					feature->unique_id,
 					FOO_CANVAS_ITEM(text_grp)) ;
       zMapAssert(status) ;
