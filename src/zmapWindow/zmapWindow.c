@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 23 17:29 2006 (rds)
+ * Last edited: Mar 28 13:30 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.116 2006-03-23 18:21:24 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.117 2006-03-28 12:33:27 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -389,7 +389,6 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       scroll_y1 = scroll_y2 ;
       scroll_y2 = tmp ;
     }
-
 
   resetCanvas(window) ;					    /* Resets scrolled region.... */
 
@@ -941,6 +940,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
    * and set the background to be white. */
   canvas = foo_canvas_new() ;
   window->canvas = FOO_CANVAS(canvas);
+  /* This will be removed when RT:1589 is resolved */
+  g_object_set_data(G_OBJECT(canvas), ZMAP_WINDOW_POINTER, window);
   /* Definitively set the canvas to have a scroll region size, that WE
    * know and can test for.  If the foo_canvas default changes then
    * later our might fail. */
@@ -1141,10 +1142,6 @@ static void myWindowMove(ZMapWindow window, double start, double end)
   return ;
 }
 
-
-
-
-
 /* This function resets the canvas to be empty, all of the canvas items we drew
  * are destroyed and all the associated resources free'd.
  * 
@@ -1172,8 +1169,10 @@ static void resetCanvas(ZMapWindow window)
     }
 
   if (window->canvas)
-    foo_canvas_set_scroll_region(window->canvas, 0.0, 0.0, 100.0, 100.0) ;
-							    /* Seems to be default size....?? */
+    foo_canvas_set_scroll_region(window->canvas, 
+                                 0.0, 0.0, 
+                                 ZMAP_CANVAS_INIT_SIZE, ZMAP_CANVAS_INIT_SIZE) ;
+  
 
   zmapWindowFToIDestroy(window->context_to_item) ;
   window->context_to_item = zmapWindowFToICreate() ;
