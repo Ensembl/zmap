@@ -26,15 +26,16 @@
  *
  * Exported functions: See zmapUtils.h
  * HISTORY:
- * Last edited: Mar 27 13:08 2006 (edgrif)
+ * Last edited: Mar 28 15:07 2006 (edgrif)
  * Created: Thu Mar 23 13:35:10 2006 (edgrif)
- * CVS info:   $Id: zmapWebBrowser.c,v 1.2 2006-03-27 12:15:44 edgrif Exp $
+ * CVS info:   $Id: zmapWebBrowser.c,v 1.3 2006-03-29 10:09:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <sys/utsname.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h>
 
 
 
@@ -65,6 +66,10 @@ static char *translateCommas(char *orig_link) ;
  * 
  * Note that if open_command is NULL then the executable name is simply combined with
  * the URL in the expected way to form the command:    "executable  URL"
+ * 
+ * 
+ * Here's one from gnome...this will start in a new window or start a new browser as required.
+ * /usr/bin/gnome-moz-remote --newwin www.acedb.org
  * 
  * 
  *  */
