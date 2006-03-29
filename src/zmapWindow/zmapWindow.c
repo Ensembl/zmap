@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 28 13:30 2006 (rds)
+ * Last edited: Mar 29 09:44 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.117 2006-03-28 12:33:27 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.118 2006-03-29 10:22:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -91,7 +91,7 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 
-static void resetCanvas(ZMapWindow window) ;
+static void resetCanvas(ZMapWindow window, gboolean free_child_windows) ;
 static gboolean getConfiguration(ZMapWindow window) ;
 static void sendClientEvent(ZMapWindow window, FeatureSets) ;
 
@@ -305,7 +305,7 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_feature
 void zMapWindowReset(ZMapWindow window)
 {
 
-  resetCanvas(window) ;
+  resetCanvas(window, TRUE) ;
 
   /* Need to reset feature context pointer and any other things..... */
 
@@ -349,6 +349,16 @@ void zMapWindowRedraw(ZMapWindow window)
 
 
 
+/* PART 2, ok the 'reversed' parameter is a hack and it would go away if we split this call
+ * into the following interface calls:
+ *    1) return a struct which is opaque but encapsulates the position information.
+ *    2) resets the window
+ *    3) redraws the window with the new context
+ *    4) repositions the window using the struct from 1)
+ *
+ * then the hackiness + the bug Roy found will disappear. */
+
+
 /* OK, OK, THE 'REVERSED' PARAMETER IS A HACK...NEED TO THINK UP SOME BETTER WAY OF GETTING
  * A WINDOW TO MAINTAIN ITS POSITION AFTER REVCOMP...BUT IT ACTUALLY IS NOT THAT STRAIGHT
  * FORWARD.....ur and we also need to keep a record for the annotator of whether we are reversed
@@ -390,7 +400,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       scroll_y2 = tmp ;
     }
 
-  resetCanvas(window) ;					    /* Resets scrolled region.... */
+  resetCanvas(window, FALSE) ;					    /* Resets scrolled region.... */
 
   if (reversed)
     foo_canvas_set_scroll_region(window->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
@@ -566,10 +576,10 @@ void zMapWindowDestroy(ZMapWindow window)
     unlockWindow(window) ;
 
   /* free the array of feature list windows and the windows themselves */
-  zmapWindowFreeWindowArray(&(window->featureListWindows)) ;
+  zmapWindowFreeWindowArray(&(window->featureListWindows), TRUE) ;
 
   /* free the array of search windows and the windows themselves */
-  zmapWindowFreeWindowArray(&(window->search_windows)) ;
+  zmapWindowFreeWindowArray(&(window->search_windows), TRUE) ;
 
   zmapWindowLongItemFree(window->long_items) ;
 
@@ -1142,11 +1152,12 @@ static void myWindowMove(ZMapWindow window, double start, double end)
   return ;
 }
 
+
 /* This function resets the canvas to be empty, all of the canvas items we drew
  * are destroyed and all the associated resources free'd.
  * 
- * NOTE that this does not touch the feature context. */
-static void resetCanvas(ZMapWindow window)
+ * NOTE that this _must_ not touch the feature context which belongs to the parent View. */
+static void resetCanvas(ZMapWindow window, gboolean free_child_windows)
 {
 
   zMapAssert(window) ;
@@ -1178,19 +1189,20 @@ static void resetCanvas(ZMapWindow window)
   window->context_to_item = zmapWindowFToICreate() ;
 
 
-  /* free the array of featureListWindows and the windows themselves */
-  zmapWindowFreeWindowArray(&(window->featureListWindows)) ;
+  if (free_child_windows)
+    {
+      /* free the array of featureListWindows and the windows themselves */
+      zmapWindowFreeWindowArray(&(window->featureListWindows), FALSE) ;
+
+      /* free the array of search windows and the windows themselves */
+      zmapWindowFreeWindowArray(&(window->search_windows), FALSE) ;
+    }
 
 
-  /* free the array of search windows and the windows themselves */
-  zmapWindowFreeWindowArray(&(window->search_windows)) ;
-
-
-  
   g_list_free(window->focusItemSet);  
   window->focusItemSet = NULL ;
   window->focusColumn  = NULL ;
-                                //  window->alignment_start = 0 ;
+
 
   return ; 
 }
