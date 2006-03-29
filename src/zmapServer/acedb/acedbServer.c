@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar 21 13:45 2006 (edgrif)
+ * Last edited: Mar 29 16:02 2006 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.49 2006-03-21 14:10:38 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.50 2006-03-29 15:02:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,7 +53,8 @@ typedef struct
 {
   ZMapServerResponseType result ;
   AcedbServer server ;
-} GetFeaturesStruct, *GetFeatures ;
+  GFunc eachBlock;
+} DoAllAlignBlocksStruct, *DoAllAlignBlocks ;
 
 
 typedef struct
@@ -85,7 +86,7 @@ static char *getMethodString(GList *styles_or_style_names,
 			     gboolean style_name_list, gboolean find_string) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
-static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_context) ;
+static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
 static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
 static gboolean getSMapping(AcedbServer server, char *class,
 			    char *sequence, int start, int end,
@@ -102,7 +103,9 @@ gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data) ;
 int getFoundObj(char *text) ;
 
 static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
-static void eachBlock(gpointer data, gpointer user_data) ;
+
+static void eachBlockSequenceRequest(gpointer data, gpointer user_data) ;
+static void eachBlockDNARequest(gpointer data, gpointer user_data);
 
 static char *getAcedbColourSpec(char *acedb_colour_name) ;
 
@@ -323,11 +326,12 @@ ZMapFeatureContext copyContext(void *server_in)
 /* Get features sequence. */
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context)
 {
-  GetFeaturesStruct get_features ;
+  DoAllAlignBlocksStruct get_features ;
 
   get_features.result = ZMAP_SERVERRESPONSE_OK ;
   get_features.server = (AcedbServer)server_in ;
   get_features.server->last_err_status = ACECONN_OK ;
+  get_features.eachBlock = eachBlockSequenceRequest;
 
   /* Fetch all the alignment blocks for all the sequences. */
   g_datalist_foreach(&(feature_context->alignments), eachAlignment, (gpointer)&get_features) ;
@@ -339,41 +343,56 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 /* Get features and/or sequence. */
 static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context)
 {
+  DoAllAlignBlocksStruct get_sequence ;
+
+  get_sequence.result = ZMAP_SERVERRESPONSE_OK;
+  get_sequence.server = (AcedbServer)server_in;
+  get_sequence.server->last_err_status = ACECONN_OK;
+  get_sequence.eachBlock = eachBlockDNARequest;
+
+  g_datalist_foreach(&(feature_context->alignments), eachAlignment, (gpointer)&get_sequence);
+}
+
+static void eachBlockDNARequest(gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
+  DoAllAlignBlocks get_sequence = (DoAllAlignBlocks)user_data ;
+#ifdef RDS_DONT_INCLUDE
   ZMapServerResponseType result ;
   AcedbServer server = (AcedbServer)server_in ;
-
-  /* We should check that there is a sequence context here and report an error if there isn't... */
-
   result = ZMAP_SERVERRESPONSE_OK ;
   server->last_err_status = ACECONN_OK ;
+#endif
+  /* We should check that there is a sequence context here and report an error if there isn't... */
+
 
   /* We should be using the start/end info. in context for the below stuff... */
-  if (!dnaRequest(server, feature_context))
+  if (!dnaRequest(get_sequence->server, feature_block))
     {
       /* If the call failed it may be that the connection failed or that the data coming
        * back had a problem. */
-      if (server->last_err_status == ACECONN_OK)
+      if (get_sequence->server->last_err_status == ACECONN_OK)
 	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	  get_sequence->result = ZMAP_SERVERRESPONSE_REQFAIL ;
 	}
-      else if (server->last_err_status == ACECONN_TIMEDOUT)
+      else if (get_sequence->server->last_err_status == ACECONN_TIMEDOUT)
 	{
-	  result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
+	  get_sequence->result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
 	}
       else
 	{
 	  /* Probably we will want to analyse the response more than this ! */
-	  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+	  get_sequence->result = ZMAP_SERVERRESPONSE_SERVERDIED ;
 	}
 
-      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, get_sequence->server->host,
 		     "Could not map %s because: %s",
-		     g_quark_to_string(server->req_context->sequence_name),
-		     server->last_err_msg) ;
+		     g_quark_to_string(get_sequence->server->req_context->sequence_name),
+		     get_sequence->server->last_err_msg) ;
     }
 
 
-  return result ;
+  return ;
 }
 
 
@@ -759,7 +778,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
  * 
  * 
  */
-static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_context)
+static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
   char *acedb_request = NULL ;
@@ -771,65 +790,72 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureContext feature_contex
    * we will have to add a new code to acedb to do the dna for a named key. */
   if (findSequence(server))
     {
+      int block_start, block_end, dna_length;
+      block_start = feature_block->block_to_sequence.q1;
+      block_end   = feature_block->block_to_sequence.q2;
+      /* These block numbers appear correct, but I may have the wrong
+       * end of the block_to_sequence stick! */
+
       /* Here we get all the dna in one go, in the end we should be doing a number of
        * calls to AceConnRequest() as the server slices...but that will need a change to my
        * AceConn package....
        * -u says get the dna as a single unformatted C string.*/
-      acedb_request =  g_strdup_printf("dna -u -x1 %d -x2 %d", server->req_context->sequence_to_parent.c1, server->req_context->sequence_to_parent.c2) ;
-
+      acedb_request =  g_strdup_printf("dna -u -x1 %d -x2 %d", 
+                                       block_start, block_end);
+      
       server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len) ;
       if (server->last_err_status == ACECONN_OK)
 	{
-	  if ((reply_len - 1) != feature_context->length)
+	  if ((reply_len - 1) != ((dna_length = block_end - block_start + 1)))
 	    {
 	      server->last_err_msg = g_strdup_printf("DNA request failed (\"%s\"),  "
 						     "expected dna length: %d "
 						     "returned length: %d",
 						     acedb_request,
-						     feature_context->length, (reply_len -1)) ;
+						     dna_length, (reply_len -1)) ;
 	      result = FALSE ;
 	    }
 	  else
 	    {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      feature_context->sequence.type = ZMAPSEQUENCE_DNA ;
-	      feature_context->sequence.length = feature_context->length ;
-	      feature_context->sequence.sequence = reply ;
-#endif
               /* This is possibly a _little_ hacked ATM */
               ZMapFeature feature = NULL;
               ZMapFeatureSet feature_set = NULL;
-              ZMapSequenceStruct seq = {ZMAPSEQUENCE_NONE} ;
               ZMapFeatureTypeStyle style = NULL;
+              ZMapFeatureContext context = NULL;
 
-              /* Create the feature set */
-              feature_set = zMapFeatureSetCreate("dna", NULL);
-              /* Create the feature and add sequence to it. */
-              feature      = zMapFeatureCreateEmpty();
-              seq.type     = ZMAPSEQUENCE_DNA ;
-              seq.length   = feature_context->length ;
-              seq.sequence = reply ;
-              feature->feature.sequence = seq;
-              style = zMapFindStyle(feature_context->styles, g_quark_from_string("dna"));
+              feature_block->sequence.type     = ZMAPSEQUENCE_DNA ;
+              feature_block->sequence.length   = dna_length ;
+              feature_block->sequence.sequence = reply ;
 
-              /* need to augment data too... FOR NOW just dna
-	       * 
-	       * NOTE that we give it a strand of NONE because we want it to stay on the forward
-	       * strand always... */
-              zMapFeatureAddStandardData(feature, "dna", "dna", "b0250", "sequence", 
-					 ZMAPFEATURE_RAW_SEQUENCE, style,
-					 0, 0,
-					 FALSE, 0.0,
-					 ZMAPSTRAND_NONE, ZMAPPHASE_NONE) ;
+              context = (ZMapFeatureContext)(feature_block->parent->parent);
+
+              /* Side stepping this issue for a little longer... */
+              /* Ideally we need a style in order to display the dna... */
+              if((style = zMapFindStyle(context->styles, g_quark_from_string("dna"))))
+                {
+                  /* Create the feature set */
+                  feature_set = zMapFeatureSetCreate("dna", NULL);
+                  /* Create the feature and add sequence to it. */
+                  feature      = zMapFeatureCreateEmpty();
+                  /* need to augment data too... FOR NOW just dna
+                   * NOTE that we give it a strand of NONE because we want it to stay on the forward
+                   * strand always... */
+                  zMapFeatureAddStandardData(feature, "dna", "dna", "b0250", "sequence", 
+                                             ZMAPFEATURE_RAW_SEQUENCE, style,
+                                             block_start, block_end,
+                                             FALSE, 0.0,
+                                             ZMAPSTRAND_NONE, ZMAPPHASE_NONE) ;
+                  
+                  /* Add the feature to the master_align's, block's list of featuresets. */
+                  /* First to our feature set */
+                  zMapFeatureSetAddFeature(feature_set, feature);
+                  feature_set->style = style;
+                  zMapFeatureBlockAddFeatureSet(feature_block, 
+                                                feature_set);
+                }
 
               /* Make the link so that getting the sequence is EASY. */
-              feature_context->sequence = &(feature->feature.sequence);
-              
-              /* Add the feature to the master_align's, block's list of featuresets. */
-              /* First to our feature set */
-              zMapFeatureSetAddFeature(feature_set, feature);
-              zMapFeatureBlockAddFeatureSet((ZMapFeatureBlock)(feature_context->master_align->blocks->data), 
-                                            feature_set);
+              context->sequence = &(feature_block->sequence);
 
               /* everything should now be done, result is true */
 	      result = TRUE ;
@@ -1692,19 +1718,19 @@ int getFoundObj(char *text)
 static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
-  GetFeatures get_features = (GetFeatures)user_data ;
+  DoAllAlignBlocks do_allalignblocks = (DoAllAlignBlocks)user_data ;
 
-  if (get_features->result == ZMAP_SERVERRESPONSE_OK)
-    g_list_foreach(alignment->blocks, eachBlock, (gpointer)get_features) ;
+  if (do_allalignblocks->result == ZMAP_SERVERRESPONSE_OK && do_allalignblocks->eachBlock)
+    g_list_foreach(alignment->blocks, do_allalignblocks->eachBlock, (gpointer)do_allalignblocks) ;
 
   return ;
 }
 
 
-static void eachBlock(gpointer data, gpointer user_data)
+static void eachBlockSequenceRequest(gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
-  GetFeatures get_features = (GetFeatures)user_data ;
+  DoAllAlignBlocks get_features = (DoAllAlignBlocks)user_data ;
 
 
   if (get_features->result == ZMAP_SERVERRESPONSE_OK)
