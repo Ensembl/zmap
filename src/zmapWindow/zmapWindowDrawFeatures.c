@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar 27 16:32 2006 (rds)
+ * Last edited: Mar 29 15:12 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.120 2006-03-28 12:45:13 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.121 2006-03-29 14:48:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -710,9 +710,9 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
    * This probably points to some muckiness in the code, problem is caused by us deciding
    * to display all columns whether they have features or not and so some columns may not
    * have feature sets. */
-  g_object_set_data(G_OBJECT(group), "item_feature_strand",
+  g_object_set_data(G_OBJECT(group), ITEM_FEATURE_STRAND,
 		    GINT_TO_POINTER(strand)) ;
-  g_object_set_data(G_OBJECT(group), "item_feature_style",
+  g_object_set_data(G_OBJECT(group), ITEM_FEATURE_STYLE,
 		    GINT_TO_POINTER(style)) ;
 
   g_signal_connect(G_OBJECT(group), "event",
@@ -863,7 +863,7 @@ static void removeEmptyColumnCB(gpointer data, gpointer user_data)
 
 
       /* Remove this item from the hash of features -> items */
-      style = g_object_get_data(G_OBJECT(container), "item_feature_style") ;
+      style = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_STYLE) ;
 #ifdef RDS_DONT_INCLUDE
       status = zmapWindowFToIRemoveSet(canvas_data->window->context_to_item,
 				       canvas_data->curr_alignment->unique_id,
@@ -978,7 +978,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	/* If a column is empty it will not have a feature set but it will have a style from which we
 	 * can display the column id. */
 	feature_set = (ZMapFeatureSet)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
-	style = g_object_get_data(G_OBJECT(item), "item_feature_style") ;
+	style = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_STYLE) ;
 	zMapAssert(feature_set || style) ;
 
         hackAHighlightColumn(window, item);
@@ -1108,7 +1108,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
         GList *list ;
 	
         feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
-	strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(menu_data->item), "item_feature_strand")) ;
+	strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_STRAND)) ;
 				 
 	list = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
 					     feature->parent->parent->unique_id,
