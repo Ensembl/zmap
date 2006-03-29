@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 28 13:31 2006 (rds)
+ * Last edited: Mar 29 11:16 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.107 2006-03-28 12:32:10 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.108 2006-03-29 10:20:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -112,8 +112,6 @@ typedef enum
   } ZMapWindowColConfigureMode ;
 
 
-
-
 typedef enum { 
   ZMAP_WINDOW_LIST_COL_NAME,                /*!< feature name column  */
   ZMAP_WINDOW_LIST_COL_TYPE,                /*!< feature type column  */
@@ -123,7 +121,7 @@ typedef enum {
   ZMAP_WINDOW_LIST_COL_PHASE,               /*!< feature phase  */
   ZMAP_WINDOW_LIST_COL_SCORE,               /*!< feature score  */
   ZMAP_WINDOW_LIST_COL_FEATURE_TYPE,        /*!< feature method  */
-  ZMAP_WINDOW_LIST_COL_FEATURE_ITEM,        /*!< foocanvas item  */
+  ZMAP_WINDOW_LIST_COL_FEATURE,				    /*!< The feature !  */
   ZMAP_WINDOW_LIST_COL_SORT_TYPE,           /*!< \                          */
   ZMAP_WINDOW_LIST_COL_SORT_STRAND,         /*!< -- sort on integer columns */
   ZMAP_WINDOW_LIST_COL_SORT_PHASE,          /*!< /                          */
@@ -544,7 +542,7 @@ void zmapWindowColumnSetMagState(ZMapWindow window,
 void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
 			       double *curr_x1_inout, double *curr_x2_out) ;
 
-void zmapWindowFreeWindowArray(GPtrArray **window_array_inout) ;
+void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_array) ;
 
 GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store) ;
 GtkWidget    *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
