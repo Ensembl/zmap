@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 28 13:52 2006 (rds)
+ * Last edited: Mar 28 15:07 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.15 2006-03-28 12:54:55 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.16 2006-03-29 10:10:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,6 +80,9 @@ static FooCanvasItem *drawSequenceFeature(FooCanvasGroup *parent, ZMapFeature fe
 
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
 			 FooCanvasItem *item) ;
+static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
+				   ZMapGUIMenuItemCallbackFunc callback_func,
+				   gpointer callback_data) ;
 static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
