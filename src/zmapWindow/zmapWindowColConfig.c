@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 22 17:13 2006 (edgrif)
+ * Last edited: Mar 29 15:13 2006 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.2 2006-03-22 17:19:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.3 2006-03-29 14:51:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -107,7 +107,7 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 	  {
 	    ZMapStrand strand ;
 
-	    strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column_group), "item_feature_strand")) ;
+	    strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_STRAND)) ;
 	    zMapAssert(strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_REVERSE) ;
 
 	    if (strand == ZMAPSTRAND_FORWARD)
@@ -287,7 +287,7 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *
       button_data->window = window ;
       button_data->column_group = column_group ;
 
-      style = g_object_get_data(G_OBJECT(column_group), "item_feature_style") ;
+      style = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_STYLE) ;
       zMapAssert(style) ;
 
       col_box = gtk_hbox_new(FALSE, 0) ;
@@ -426,7 +426,7 @@ static void makeColList(ZMapWindow window, GList **forward_cols_out, GList **rev
 
   zmapWindowContainerExecute(strand_parent, ZMAPCONTAINER_LEVEL_FEATURESET,
 			     getSetGroupCB, &reverse_col_list,
-			     NULL, NULL) ;
+			     NULL, NULL, FALSE) ;
 
   /* Get the forward strand which will be the first group in the block level "features" */
   strands_list = g_list_next(strands_list) ;
@@ -435,7 +435,7 @@ static void makeColList(ZMapWindow window, GList **forward_cols_out, GList **rev
 
   zmapWindowContainerExecute(strand_parent, ZMAPCONTAINER_LEVEL_FEATURESET,
 			     getSetGroupCB, &forward_col_list,
-			     NULL, NULL) ;
+			     NULL, NULL, FALSE) ;
 
   /* Return the column lists. */
   *forward_cols_out = forward_col_list ;
