@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  3 18:15 2006 (edgrif)
+ * Last edited: Mar 28 15:37 2006 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.22 2006-02-21 10:47:32 rds Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.23 2006-03-29 10:10:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -284,46 +284,6 @@ ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *it
   return editor;
 }
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static char *myFeatureLookupEnum(int id, int enumType)
-{
-  /* These arrays must correspond 1:1 with the enums declared in zmapFeature.h */
-  static char *types[]   = {"Basic", "Homol", "Exon", "Intron", "Transcript",
-			    "Variation", "Boundary", "Sequence"} ;
-  static char *strands[] = {".", "Forward", "Reverse" } ;
-  static char *phases[]  = {"None", "0", "1", "2" } ;
-  static char *homolTypes[] = {"ZMAPHOMOL_N_HOMOL", "ZMAPHOMOL_X_HOMOL", "ZMAPHOMOL_TX_HOMOL"} ;
-  char *enum_str = NULL ;
-
-  zMapAssert(enumType    == TYPE_ENUM 
-             || enumType == STRAND_ENUM 
-	     || enumType == PHASE_ENUM 
-             || enumType == HOMOLTYPE_ENUM) ;
-
-  switch (enumType)
-    {
-    case TYPE_ENUM:
-      enum_str = types[id];
-      break;
-      
-    case STRAND_ENUM:
-      enum_str = strands[id];
-      break;
-      
-    case PHASE_ENUM:
-      enum_str = phases[id];
-      break;
-
-    case HOMOLTYPE_ENUM:
-      enum_str = homolTypes[id];
-      break;
-    }
-  
-  return enum_str ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
