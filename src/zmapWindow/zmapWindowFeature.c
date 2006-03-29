@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 28 15:07 2006 (edgrif)
+ * Last edited: Mar 29 15:39 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.16 2006-03-29 10:10:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.17 2006-03-29 14:49:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,8 +45,8 @@
 
 
 static FooCanvasItem *drawparentfeature(FooCanvasGroup *parent,
-						  ZMapFeature feature,
-						  double y_origin) ;
+                                        ZMapFeature feature,
+                                        double y_origin) ;
 static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					double feature_offset,
 					double x1, double y1, double x2, double y2,
@@ -70,14 +70,23 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                            GdkColor *foreground,
                                            GdkColor *background,
                                            ZMapWindow window) ;
-static FooCanvasItem *drawSequenceFeature(FooCanvasGroup *parent, ZMapFeature feature,
-                                          double feature_offset,
-                                          double feature_zero,      double feature_top,
-                                          double feature_thickness, double feature_bottom,
-                                          GdkColor *outline, GdkColor *background,
-                                          ZMapWindow window) ;
+static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
+                              double feature_offset,
+                              double feature_zero,      double feature_top,
+                              double feature_thickness, double feature_bottom,
+                              GdkColor *outline, 
+                              GdkColor *foreground,
+                              GdkColor *background,
+                              ZMapWindow window) ;
+static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text, 
+                                    double feature_start, double feature_end,
+                                    GdkColor *fg, GdkColor *bg, GdkColor *out,
+                                    double width, GCallback eventCB, ZMapWindow window);
 
 
+static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
+				   ZMapGUIMenuItemCallbackFunc callback_func,
+				   gpointer callback_data);
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
 			 FooCanvasItem *item) ;
 static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
@@ -89,11 +98,9 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data) ;
 
-
-static void dna_redraw_callback(FooCanvasGroup *text_grp,
-                                double zoom,
-                                gpointer user_data);
-
+static void dnaHandleZoomCB(FooCanvasItem *container,
+                            double zoom,
+                            ZMapWindow user_data);
 static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 
 static gboolean featureClipItemToDraw(ZMapFeature feature, 
@@ -118,7 +125,7 @@ static ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coo
 static void destroyIterator(ZMapDrawTextIterator iterator) ;
 
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
-static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data) ;
 
 static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 
@@ -296,9 +303,6 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   return result ;
 }
 
-
-
-
 /* Called to draw each individual feature. */
 
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature)
@@ -313,9 +317,6 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   GQuark column_id ;
   FooCanvasItem *top_feature_item = NULL ;
   double feature_offset;
-#ifdef RDS_DONT_INCLUDE_UNUSED
-  GdkColor *background ;
-#endif
   double start_x, end_x ;
 
 
@@ -330,8 +331,6 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
       return NULL ;
     }
 
-
-
   set       = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET) ;
   block     = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set, ZMAPFEATURE_STRUCT_BLOCK) ;
   alignment = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_ALIGN) ;
@@ -339,7 +338,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 
   /* Retrieve the parent col. group/id. */
   column_group = zmapWindowContainerGetFeatures(set_group) ;
-
+#ifdef RDS_DONT_INCLUDE_UNUSED
   if (feature->strand == ZMAPSTRAND_FORWARD || feature->strand == ZMAPSTRAND_NONE)
     {
       column_id = zmapWindowFToIMakeSetID(set->unique_id, ZMAPSTRAND_FORWARD) ;
@@ -348,23 +347,18 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
     {
       column_id = zmapWindowFToIMakeSetID(set->unique_id, ZMAPSTRAND_REVERSE) ;
     }
-
+#endif
 
   /* Start/end of feature within alignment block.
    * Feature position on screen is determined the relative offset of the features coordinates within
    * its align block added to the alignment block _query_ coords. You can't just use the
    * features own coordinates as these will be its coordinates in its original sequence. */
 
-#ifdef RDS_DONT_INCLUDE
-  feature_offset = FOO_CANVAS_GROUP(column_group)->ypos;
-#endif
   feature_offset = block->block_to_sequence.q1 ;
-
 
   /* Note: for object to _span_ "width" units, we start at zero and end at "width". */
   start_x = 0.0 ;
-  end_x = style->width ;
-
+  end_x   = style->width ;
 
   switch (feature->type)
     {
@@ -403,19 +397,26 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
       }
     case ZMAPFEATURE_RAW_SEQUENCE:
       {
+        ZMapFeatureBlock block = NULL;
+        block = (ZMapFeatureBlock)(feature->parent->parent);
+
 	/* Surely this must be true.... */
-	zMapAssert(feature->feature.sequence.sequence) ;
-
-	/* Flag our parent container that it has children that need redrawing on zoom. */
-	column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(column_group)) ;
-	zmapWindowContainerSetChildRedrawRequired(column_parent, TRUE) ;
-
+        zMapAssert( block && block->sequence.sequence );
+#ifdef RDS_DONT_INCLUDE
 	top_feature_item = drawSequenceFeature(column_group, feature,
                                                feature_offset,
                                                start_x, feature->x1, end_x, feature->x2,
                                                &style->outline,
                                                &style->background,
                                                window) ;
+#endif
+	top_feature_item = drawDNA(column_group, feature,
+                                   feature_offset,
+                                   start_x, feature->x1, end_x, feature->x2,
+                                   &style->outline,
+                                   &style->foreground,
+                                   &style->background,
+                                   window) ;
 
         break ;
       }
@@ -479,50 +480,6 @@ static void printItem(gpointer data, gpointer user_data)
 
 
 
-/* the column_txt_grp need to exist before calling this! */
-void zmapWindowColumnWriteDNA(ZMapWindow window, FooCanvasGroup *column_txt_grp)
-{
-  ZMapFeatureContext full_context = NULL;
-  ZMapDrawTextIterator iterator   = NULL;
-  PangoFontDescription *dna_font = NULL;
-  double text_height = 0.0;
-  double x1, x2, y1, y2;
-  int i = 0;
-
-  x1 = x2 = y1 = y2 = 0.0;
-  full_context = window->feature_context;
-
-  zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
-
-  /* should this be copied? */
-  dna_font = zMapWindowGetFixedWidthFontDescription(window);
-  /* zMapGUIGetFixedWidthFont(, &dna_font); */
-
-  zmapWindowGetBorderSize(window, &text_height);
-
-  iterator = getIterator(window->min_coord, window->max_coord,
-                         y1, y2, text_height, FALSE);
-  
-  for(i = 0; i < iterator->rows; i++)
-    {
-      FooCanvasItem *item = NULL;
-      iterator->iteration = i;
-
-      if((item = zMapDrawRowOfText(column_txt_grp, 
-                                   dna_font, 
-                                   full_context->sequence->sequence, 
-                                   iterator)))
-        g_signal_connect(G_OBJECT(item), "event",
-                         G_CALLBACK(dnaItemEventCB), (gpointer)window);      
-    }
-
-  destroyIterator(iterator);
-
-  return ;
-}
-
-
-
 
 
 /* 
@@ -579,42 +536,6 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
 
   return feature_item ;
 }
-
-
-static FooCanvasItem *drawSequenceFeature(FooCanvasGroup *parent, ZMapFeature feature,
-                                          double feature_offset,
-                                          double feature_zero,      double feature_top,
-                                          double feature_thickness, double feature_bottom,
-                                          GdkColor *outline, GdkColor *background,
-                                          ZMapWindow window)
-{
-  FooCanvasItem *text_feature ;
-
-  /* I WOULD HAVE THOUGHT THAT WE NEEDED TO BE MAKING MORE USE OF COLOURS ETC HERE.... */
-
-
-  /* Note that the sequence item is different in that there is a single group child for the
-   * entire dna rows of text.... */
-
-  text_feature = foo_canvas_item_new(parent,
-				     foo_canvas_group_get_type(),
-				     NULL) ;
-
-  g_object_set_data(G_OBJECT(text_feature), CONTAINER_REDRAW_CALLBACK,
-		    dna_redraw_callback) ;
-  g_object_set_data(G_OBJECT(text_feature), CONTAINER_REDRAW_DATA,
-		    (gpointer)window) ;
-
-  /* This sets an event handler which would need to be merged with the below.... */
-  zmapWindowColumnWriteDNA(window, FOO_CANVAS_GROUP(text_feature)) ;
-
-
-  /* TRY THIS...EVENT HANDLER MAY INTERFERE THOUGH...SO MAY NEED TO REMOVE EVENT HANDLERS... */
-  attachDataToItem(text_feature, window, feature, ITEM_FEATURE_SIMPLE, NULL) ;
-
-  return text_feature ;
-}
-
 
 static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature feature,
                                            double feature_offset,
@@ -1023,6 +944,105 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
   return feature_item ;
 }
 
+static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text, 
+                                    double feature_start, double feature_end,
+                                    GdkColor *fg, GdkColor *bg, GdkColor *out,
+                                    double width, GCallback eventCB, ZMapWindow window)
+{
+  ZMapDrawTextIterator iterator   = NULL;
+  PangoFontDescription *font = NULL;
+  double txt_height, txt_width;
+  double x1, x2, y1, y2;
+  int i;
+
+  x1 = x2 = y1 = y2 = 0.0;
+  /* Get the current scroll region to find exactly which sub part of
+   * the text to display */
+  zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
+
+  /* should this be copied? */
+  font = zMapWindowZoomGetFixedWidthFontInfo(window, &txt_width, &txt_height);
+
+  zmapWindowGetBorderSize(window, &txt_height);
+
+  iterator = getIterator(feature_start, feature_end,
+                         y1, y2, txt_height, FALSE);
+  
+  printf("drawTextWrappedInColumn (%x): start=%f, end=%f, y1=%f, y2=%f\n",
+         window, feature_start, feature_end, y1, y2);
+
+  for(i = 0; i < iterator->rows; i++)
+    {
+      FooCanvasItem *item = NULL;
+      iterator->iteration = i;
+
+      if((item = zMapDrawRowOfText(FOO_CANVAS_GROUP(parent), 
+                                   font, 
+                                   text, 
+                                   iterator)) && eventCB != NULL)
+        g_signal_connect(G_OBJECT(item), "event",
+                         G_CALLBACK(eventCB), (gpointer)window);      
+    }
+
+  destroyIterator(iterator);
+  
+  return ;
+}
+
+static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
+                              double feature_offset,
+                              double x1, double y1, double x2, double y2,
+                              GdkColor *outline, 
+                              GdkColor *foreground,
+                              GdkColor *background,
+                              ZMapWindow window)
+{
+  double feature_start, feature_end;
+  FooCanvasItem  *feature_parent = NULL;
+  FooCanvasGroup *container      = NULL;
+  FooCanvasGroup *column_parent  = NULL;
+  ZMapFeatureBlock feature_block = NULL;
+  ZMapFeatureSet   feature_set   = NULL;
+
+  feature_start  = feature->x1;
+  feature_end    = feature->x2;
+
+  zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
+
+  feature_parent = drawparentfeature(parent, feature, feature_start);
+
+  feature_set    = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
+                                                             ZMAPFEATURE_STRUCT_FEATURESET);
+  feature_block  = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, 
+                                                               ZMAPFEATURE_STRUCT_BLOCK);
+
+  /* -------------------------------------------------
+   * outline = highlight outline colour...
+   * background = hightlight background colour...
+   * foreground = text colour... 
+   * -------------------------------------------------
+   */
+
+  /* what is parent's CONTAINER_TYPE_KEY and what is it's CONTAINER_DATA->level */
+
+  /* Flag our parent container that it has children that need redrawing on zoom. */
+  column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(parent)) ;
+
+  zmapWindowContainerSetZoomEventHandler(column_parent, dnaHandleZoomCB, window);
+
+  drawTextWrappedInColumn(feature_parent, feature_block->sequence.sequence,
+                          feature->x1, feature->x2,
+                          foreground, background, outline,
+                          300.0, G_CALLBACK(dnaItemEventCB), window);
+
+  /* TRY THIS...EVENT HANDLER MAY INTERFERE THOUGH...SO MAY NEED TO REMOVE EVENT HANDLERS... */
+  attachDataToItem(feature_parent, window, feature, ITEM_FEATURE_SIMPLE, NULL) ;
+
+  return feature_parent;
+}
+
+
+
 
 
 static gboolean featureClipItemToDraw(ZMapFeature feature, 
@@ -1088,104 +1108,47 @@ static void attachDataToItem(FooCanvasItem *feature_item,
   return ;
 }
 
-
-
-/* I'm not completely happy with all the hash removing/adding stuff....if we don't remember to
- * do this properly then it will cause us to crash.... */
-static void dna_redraw_callback(FooCanvasGroup *text_grp,
-                                double zoom,
-                                gpointer user_data)
+typedef struct 
 {
-  ZMapWindow window       = (ZMapWindow)user_data;
-  FooCanvasItem *grp_item = FOO_CANVAS_ITEM(text_grp);
+  ZMapWindow window;
+  FooCanvasGroup *column;
+}processFeatureDataStruct, *processFeatureData;
 
-  if(zmapWindowItemIsVisible(grp_item)) /* No need to redraw if we're not visible! */
+static void drawEachFeature(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeature feature  = (ZMapFeature)data ; 
+  processFeatureData d = (processFeatureData)user_data;
+
+  zmapWindowFeatureDraw(d->window, d->column, feature);
+
+  return ;
+}
+
+static void dnaHandleZoomCB(FooCanvasItem *container,
+                            double zoom,
+                            ZMapWindow user_data)
+{
+  ZMapWindow window = (ZMapWindow)user_data;
+  FooCanvasGroup *container_features ;
+  ZMapFeatureSet feature_set ;
+
+  if(zmapWindowItemIsVisible(container)) /* No need to redraw if we're not visible! */
     {
       textGroupSelection select = NULL;
-#ifdef RDS_DONT_INCLUDE
-      FooCanvasItem *txt_item = NULL;
-      ZMapDrawTextRowData   trd = NULL;
-#endif
-      FooCanvasGroup *container ;
-      ZMapFeature feature ;
-      gboolean status ;
-      GQuark column_id ;
+      processFeatureDataStruct drawHandlerData = {NULL};
 
+      feature_set = (ZMapFeatureSet)g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA) ;
+      /* Check it's actually a featureset */
+      zMapAssert(feature_set && feature_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET) ;
 
-      /* Grab this so we can reattach it to new text group. */
-      feature = (ZMapFeature)g_object_get_data(G_OBJECT(text_grp), ITEM_FEATURE_DATA) ;
-      zMapAssert(feature) ;
+      container_features = FOO_CANVAS_GROUP(zmapWindowContainerGetFeatures(FOO_CANVAS_GROUP(container))) ;
 
+      zmapWindowContainerPurge(container_features) ;
 
-      status = zmapWindowFToIRemoveFeature(window->context_to_item,
-					   feature->parent->parent->parent->unique_id,
-					   feature->parent->parent->unique_id,
-					   feature->parent->unique_id,
-					   feature->strand,
-					   feature->unique_id) ;
-      zMapAssert(status) ;
+      drawHandlerData.window = window;
+      drawHandlerData.column = FOO_CANVAS_GROUP(container);
 
-
-
-      container = zmapWindowContainerGetParent(grp_item->parent) ;
-
-      /* We should hide these so they don't look odd */
-      select = getTextGroupData(text_grp, window);
-      foo_canvas_item_hide(FOO_CANVAS_ITEM(select->tooltip));
-      foo_canvas_item_hide(FOO_CANVAS_ITEM(select->highlight));
-
-      /* gets rid of text_grp !!!!... so we must create it again.... */
-      zmapWindowContainerPurge(FOO_CANVAS_GROUP(grp_item->parent)) ;
-
-      text_grp = FOO_CANVAS_GROUP(foo_canvas_item_new(zmapWindowContainerGetFeatures(container),
-						      foo_canvas_group_get_type(),
-						      NULL)) ;
-      g_object_set_data(G_OBJECT(text_grp), CONTAINER_REDRAW_CALLBACK,
-			dna_redraw_callback) ;
-      g_object_set_data(G_OBJECT(text_grp), CONTAINER_REDRAW_DATA,
-			(gpointer)window) ;
-
-      /* This sets an event handler which would need to be merged with the below.... */
-      zmapWindowColumnWriteDNA(window, text_grp);
-
-
-      /* TRY THIS...EVENT HANDLER MAY INTERFERE THOUGH...SO MAY NEED TO REMOVE EVENT HANDLERS... */
-      attachDataToItem(FOO_CANVAS_ITEM(text_grp), window, feature, ITEM_FEATURE_SIMPLE, NULL) ;
-
-
-
-      /* AGGGGGGGGGGGGGGGHHHHHHHHHHHHHHHHHHH horrible...sort this out....should be automatic. */
-      if (feature->strand == ZMAPSTRAND_FORWARD || feature->strand == ZMAPSTRAND_NONE)
-	{
-	  column_id = zmapWindowFToIMakeSetID(feature->parent->unique_id, ZMAPSTRAND_FORWARD) ;
-	}
-      else
-	{
-	  column_id = zmapWindowFToIMakeSetID(feature->parent->unique_id, ZMAPSTRAND_REVERSE) ;
-	}
-
-      status = zmapWindowFToIAddFeature(window->context_to_item,
-					feature->parent->parent->parent->unique_id,
-					feature->parent->parent->unique_id,
-					feature->parent->unique_id,
-					feature->unique_id,
-					FOO_CANVAS_ITEM(text_grp)) ;
-      zMapAssert(status) ;
-
-
-
-#ifdef RDS_DONT_INCLUDE
-      /* We could probably redraw the highlight here! 
-       * Not sure this is good. Although it sort of works
-       * it's not superb and I think I prefer not doing so */
-      if(text_grp->item_list &&
-         (txt_item = FOO_CANVAS_ITEM(text_grp->item_list->data)) && 
-         (trd = zMapDrawGetTextItemData(txt_item)))
-        zMapDrawHighlightTextRegion(select->highlight,
-                                    select->seqFirstIdx, 
-                                    select->seqLastIdx, 
-                                    txt_item);
-#endif
+      g_datalist_foreach(&(feature_set->features), drawEachFeature, &drawHandlerData);
     }
   
   return ;
@@ -1195,7 +1158,7 @@ static void dna_redraw_callback(FooCanvasGroup *text_grp,
 
 
 /* Callback for destroy of items... */
-static gboolean canvasItemDestroyCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
+static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data)
 {
   gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also
 							       get run. */
@@ -1460,7 +1423,8 @@ ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
   ZMapDrawTextIterator iterator   = g_new0(ZMapDrawTextIteratorStruct, 1);
 
   iterator->seq_start      = win_min_coord;
-  iterator->seq_end        = win_max_coord - 1.0;
+  //iterator->seq_end        = win_max_coord - 1.0;
+  iterator->seq_end        = win_max_coord;
   iterator->offset_start   = floor(offset_start - win_min_coord);
   iterator->offset_end     = ceil( offset_end   - win_min_coord);
   iterator->shownSeqLength = ceil( offset_end - offset_start + 1.0);
