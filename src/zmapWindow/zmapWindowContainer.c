@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Mar 22 16:03 2006 (edgrif)
+ * Last edited: Mar 29 15:43 2006 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.8 2006-03-22 17:17:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.9 2006-03-29 14:50:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,8 +38,10 @@
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
 
-
-#define CONTAINER_DATA "container_data"			    /* gobject get/set name */
+/* gobject get/set names */
+#define CONTAINER_DATA            "container_data"  
+#define CONTAINER_REDRAW_CALLBACK "container_redraw_callback"
+#define CONTAINER_REDRAW_DATA     "container_redraw_data"
 
 
 typedef struct
@@ -65,6 +67,7 @@ typedef struct execOnChildrenStruct_
   GFunc                  up_func_cb ;
   gpointer               up_func_data ;
 
+  gboolean               redraw_during_recursion;
 } execOnChildrenStruct, *execOnChildren ;
 
 static void containerDestroyCB(GtkObject *object, gpointer user_data) ;
@@ -77,7 +80,7 @@ static void printItem(FooCanvasItem *item, int indent, char *prefix) ;
 static void itemDestroyCB(gpointer data, gpointer user_data);
 
 static void redrawChildrenCB(gpointer data, gpointer user_data) ;
-
+static void redrawColumn(FooCanvasItem *container, ContainerData data);
 
 /* Creates a "container" for our sequence features which consists of: 
  * 
@@ -173,7 +176,31 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
   return container_parent ;
 }
 
+/* This is weak and immature ATM, but better than NO type checking for the callback as it was! */
+void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup *c_level_featureset,
+                                            zmapWindowContainerZoomChangedCallback handler_cb,
+                                            ZMapWindow data)
+{
+  FooCanvasGroup *container = NULL;
+  ContainerData container_data = NULL;
+  ContainerType container_type = CONTAINER_INVALID;
 
+  if(((container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(c_level_featureset), 
+                                                          CONTAINER_TYPE_KEY))) == CONTAINER_PARENT)
+     && (container_data = g_object_get_data(G_OBJECT(c_level_featureset), CONTAINER_DATA))
+     && container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET)
+    {
+      zmapWindowContainerSetChildRedrawRequired(c_level_featureset, TRUE) ;
+      g_object_set_data(G_OBJECT(c_level_featureset), CONTAINER_REDRAW_CALLBACK,
+                        handler_cb) ;
+      g_object_set_data(G_OBJECT(c_level_featureset), CONTAINER_REDRAW_DATA,
+                        (gpointer)data) ;
+    }
+  else
+    zMapAssertNotReached();
+
+  return ;
+}
 
 
 void zmapWindowContainerSetChildRedrawRequired(FooCanvasGroup *container_parent,
@@ -297,7 +324,7 @@ ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group)
 {
   ZMapFeatureTypeStyle style = NULL ;
 
-  style = g_object_get_data(G_OBJECT(column_group), "item_feature_style") ;
+  style = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_STYLE) ;
 
   return style ;
 }
@@ -461,11 +488,7 @@ void zmapWindowContainerPrint(FooCanvasGroup *container_parent)
   zmapWindowContainerExecute(container_parent,
 			     ZMAPCONTAINER_LEVEL_FEATURESET,
 			     printlevel, NULL,
-			     NULL, NULL) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  doprint(container_parent, indent) ;
-#endif
+			     NULL, NULL, FALSE) ;
 
   return ;
 }
@@ -474,11 +497,12 @@ void zmapWindowContainerPrint(FooCanvasGroup *container_parent)
 /* unified way to descend and do things to ALL and every or just some */
 /* Something I'm just trying out! */
 void zmapWindowContainerExecute(FooCanvasGroup        *parent, 
-			       ZMapContainerLevelType stop_at_type,
-			       GFunc                  down_func_cb,
-			       gpointer               down_func_data,
-			       GFunc                  up_func_cb,
-			       gpointer               up_func_data)
+                                ZMapContainerLevelType stop_at_type,
+                                GFunc                  down_func_cb,
+                                gpointer               down_func_data,
+                                GFunc                  up_func_cb,
+                                gpointer               up_func_data,
+                                gboolean               redraw_during_recursion)
 {
   execOnChildrenStruct exe  = {0,NULL};
   ContainerType        type = CONTAINER_INVALID ;
@@ -489,12 +513,13 @@ void zmapWindowContainerExecute(FooCanvasGroup        *parent,
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(parent), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_ROOT || type == CONTAINER_PARENT);
 
-  exe.stop                   = stop_at_type;
+  exe.stop                    = stop_at_type;
+  exe.redraw_during_recursion = redraw_during_recursion;
 
-  exe.down_func_cb         = down_func_cb;
-  exe.down_func_data       = down_func_data;
-  exe.up_func_cb         = up_func_cb;
-  exe.up_func_data       = up_func_data;
+  exe.down_func_cb   = down_func_cb;
+  exe.down_func_data = down_func_data;
+  exe.up_func_cb     = up_func_cb;
+  exe.up_func_data   = up_func_data;
 
   eachContainer((gpointer)parent, &exe) ;
 
@@ -634,7 +659,12 @@ void zmapWindowContainerReposition(FooCanvasGroup *container)
 }
 
 
-
+/*
+ * Destroys a container, so long as it's a ContainerType CONTAINER_PARENT or CONTAINER_ROOT.
+ *
+ * @param container_parent  A FooCanvasGroup to be destroyed
+ * @return                  nothing
+ * */
 
 /* WARNING, this is a DUMB destroy, it just literally destroys all the canvas items starting
  * with the container_parent so if you haven't registered destroy callbacks then you may be in
@@ -653,6 +683,13 @@ void zmapWindowContainerDestroy(FooCanvasGroup *container_parent)
   return ;
 }
 
+/*
+ * Destroys all a container's children, so long as it's a ContainerType CONTAINER_FEATURES!
+ * Unlike zmapWindowContainerDestroy, zmapWindowContainerPurge does not destroy itself.
+ *
+ * @param unknown_child   A FooCanvasGroup to empty.
+ * @return                nothing
+ * */
 void zmapWindowContainerPurge(FooCanvasGroup *unknown_child)
 {
   ContainerType type = CONTAINER_INVALID ;
@@ -709,32 +746,16 @@ static void eachContainer(gpointer data, gpointer user_data)
     (all_data->down_func_cb)(container, all_data->down_func_data);
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  {
-    if (container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET)
-      {
-	ZMapFeatureTypeStyle style ;
-
-	style = g_object_get_data(G_OBJECT(container), "item_feature_style") ;
-
-	if (g_ascii_strcasecmp("dna", g_quark_to_string(style->original_id)) == 0)
-	  printf("found it\n") ;
-	else
-	  printf("col: %s\n", g_quark_to_string(style->original_id)) ;
-      }
-  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   /* Optimisation: if the features need redrawing then we do them as a special...
    * note that currently this is only done for children of a feature set..i.e. features. */
-  if (container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET
+  if (all_data->redraw_during_recursion
+      && container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET
       && container_data->child_redraw_required
       && children)
     {
+      redrawColumn(FOO_CANVAS_ITEM(container), container_data);
       /* Surely we will need some user_data here ???? */
-      g_list_foreach(children->item_list, redrawChildrenCB, NULL) ;
+      //g_list_foreach(children->item_list, redrawChildrenCB, NULL) ;
     }
 
 
@@ -865,6 +886,24 @@ static void redrawChildrenCB(gpointer data, gpointer user_data)
       redraw_cb(item, zMapWindowGetZoomFactor(window), window) ;
     }
 
+  return ;
+}
+
+static void redrawColumn(FooCanvasItem *container, ContainerData data)
+{
+  zmapWindowContainerZoomChangedCallback redraw_cb = NULL;
+
+  zMapAssert(data->child_redraw_required);
+
+  if((redraw_cb = g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_CALLBACK )))
+    {
+      ZMapWindow window = NULL;
+
+      window = (ZMapWindow)g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_DATA);
+
+      /* do the callback.... */
+      redraw_cb(container, zMapWindowGetZoomFactor(window), window) ;
+    }
 
   return ;
 }
