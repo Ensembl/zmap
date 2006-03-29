@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 17 16:40 2006 (edgrif)
+ * Last edited: Mar 29 15:32 2006 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.2 2006-03-17 17:03:21 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.3 2006-03-29 14:33:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -299,11 +299,14 @@ static void doFeatureAnyCB(ZMapFeatureAny any_feature, gpointer user_data)
 	ZMapFeatureContext context = (ZMapFeatureContext)any_feature ;
 
 	zmapFeatureSwop(Coord, context->sequence_to_parent.p1, context->sequence_to_parent.p2) ;
-
+#ifdef RDS_DNA_IS_OWNED_BY_THE_BLOCK
+        /* As per Ed's comment, in case ZMAPFEATURE_STRUCT_BLOCK:,
+         * below doing this here is wrong as it'll get done twice
+         * now. */
 	/* Revcomp the DNA if there is any. */
-	if (context->sequence)
-	  revcompDNA(context->sequence->sequence, context->sequence->length) ;
-
+        if (context->sequence)
+          revcompDNA(context->sequence->sequence, context->sequence->length) ;
+#endif
 	dataset = &(context->alignments) ;
 	break ;
       }
