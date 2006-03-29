@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 17 12:18 2006 (rds)
+ * Last edited: Mar 29 15:10 2006 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.18 2006-03-17 12:19:33 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.19 2006-03-29 14:48:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -360,18 +360,17 @@ static void zmapWindowContainerZoomChanged(gpointer data,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
+#ifdef RDS_DONT_INCLUDE
 static void zmapWindowContainerRegionChanged(gpointer data, 
                                              gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data;
-  gpointer        cb_data   = NULL;
   ContainerType   type      = CONTAINER_INVALID ;
+  gpointer        cb_data   = NULL;
   zmapWindowContainerZoomChangedCallback callback = NULL;
 
   callback = g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_CALLBACK);
   cb_data  = g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_DATA);
-
   type     = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container), 
                                                CONTAINER_TYPE_KEY));
   
@@ -399,8 +398,10 @@ static void zmapWindowContainerRegionChanged(gpointer data,
 
     case CONTAINER_FEATURES:
     case CONTAINER_BACKGROUND:
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if(callback)
         (callback)(FOO_CANVAS_ITEM(container), 0.0, cb_data);
+#endif
       break;
     default:
       zMapAssert(0 && "bad coding, unrecognised container type.") ;
@@ -408,7 +409,7 @@ static void zmapWindowContainerRegionChanged(gpointer data,
 
   return ;
 }
-
+#endif
 
 void zmapWindowContainerGetAllColumns(FooCanvasGroup *super_root, GList **list)
 {
@@ -420,7 +421,7 @@ void zmapWindowContainerGetAllColumns(FooCanvasGroup *super_root, GList **list)
 			     ZMAPCONTAINER_LEVEL_STRAND,
 			     addToList,
 			     list,
-			     NULL, NULL) ;
+			     NULL, NULL, FALSE) ;
   
   return ;
 }
@@ -431,11 +432,11 @@ void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window)
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(super_root), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type = CONTAINER_ROOT);
-
+  /* pre callback was set to zmapWindowContainerRegionChanged */
   zmapWindowContainerExecute(FOO_CANVAS_GROUP(super_root),
 			     ZMAPCONTAINER_LEVEL_FEATURESET,
-			     zmapWindowContainerRegionChanged, NULL,
-			     NULL, NULL) ;
+			     NULL, NULL,
+			     NULL, NULL, TRUE) ;
   return ;
 }
 
@@ -461,7 +462,7 @@ void zmapWindowNewReposition(ZMapWindow window)
 			     NULL,
 			     NULL,
 			     positionCB,
-			     window) ;
+			     window, TRUE) ;
 
   return ;
 }
@@ -489,7 +490,7 @@ void zmapWindowDrawZoom(ZMapWindow window)
 			     preZoomCB,
 			     &zoom_data,
 			     positionCB,
-			     window) ;
+			     window, TRUE) ;
 
   return ;
 }
@@ -927,7 +928,7 @@ static void columnZoomChanged(FooCanvasGroup *container, double new_zoom, ZMapWi
 {
   ZMapFeatureTypeStyle style = NULL;
 
-  style = g_object_get_data(G_OBJECT(container), "item_feature_style") ;
+  style = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_STYLE) ;
   zMapAssert(style) ;
 
   zmapWindowColumnSetMagState(window, container, style) ;
