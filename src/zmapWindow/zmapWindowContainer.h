@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Mar 17 12:22 2006 (rds)
+ * Last edited: Mar 29 15:06 2006 (rds)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.4 2006-03-17 12:42:38 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.5 2006-03-29 14:47:04 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -42,10 +42,6 @@ typedef enum {CONTAINER_INVALID, CONTAINER_ROOT,
 	      CONTAINER_PARENT, CONTAINER_FEATURES, CONTAINER_BACKGROUND} ContainerType ;
 
 
-/* Probably I would like these not to be exposed in the end ?? */
-#define CONTAINER_REDRAW_CALLBACK "container_callback"
-#define CONTAINER_REDRAW_DATA     "container_data"
-
 /* because roy can't spell container_type more than once */
 #define CONTAINER_TYPE_KEY        "container_type"
 
@@ -58,16 +54,20 @@ typedef enum {ZMAPCONTAINER_LEVEL_INVALID,
 	      ZMAPCONTAINER_LEVEL_BLOCK, ZMAPCONTAINER_LEVEL_STRAND,
 	      ZMAPCONTAINER_LEVEL_FEATURESET} ZMapContainerLevelType ;
 
-
 typedef void (*zmapWindowContainerZoomChangedCallback)(FooCanvasItem *container, 
                                                        double new_zoom, 
-                                                       gpointer user_data);
+                                                       ZMapWindow user_data);
 
 FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  ZMapContainerLevelType level,
 					  double child_spacing,
 					  GdkColor *background_fill_colour,
 					  GdkColor *background_border_colour) ;
+
+void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup* correct_container_type,
+                                            zmapWindowContainerZoomChangedCallback handler_cb,
+                                            ZMapWindow data);
+
 void zmapWindowContainerSetChildRedrawRequired(FooCanvasGroup *container_parent,
 					       gboolean redraw_required) ;
 FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_parent) ;
@@ -83,14 +83,14 @@ void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_pa
                                                     double height, 
                                                     double border);
 void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent) ;
-void zmapWindowContainerMoveEvent(FooCanvasGroup *container_parent, ZMapWindow window) ;
 void zmapWindowContainerPrint(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerExecute(FooCanvasGroup        *parent, 
 				ZMapContainerLevelType stop_at_type,
 				GFunc                  down_func_cb,
 				gpointer               down_func_data,
 				GFunc                  up_func_cb,
-				gpointer               up_func_data) ;
+				gpointer               up_func_data,
+                                gboolean               redraw_during_recursion) ;
 void zmapWindowContainerGetAllColumns(FooCanvasGroup *super_root, GList **list);
 void zmapWindowContainerZoomEvent(FooCanvasGroup *super_root, ZMapWindow window);
 void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window);
