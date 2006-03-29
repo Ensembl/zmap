@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 29 11:16 2006 (edgrif)
+ * Last edited: Mar 29 15:37 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.108 2006-03-29 10:20:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.109 2006-03-29 14:38:23 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -44,6 +44,8 @@
 /* Names for keys in G_OBJECTS */
 #define ITEM_FEATURE_DATA    ZMAP_WINDOW_P_H "item_feature_data"
 #define ITEM_FEATURE_TYPE    ZMAP_WINDOW_P_H "item_feature_type"
+#define ITEM_FEATURE_STYLE   ZMAP_WINDOW_P_H "item_feature_style"
+#define ITEM_FEATURE_STRAND  ZMAP_WINDOW_P_H "item_feature_strand"
 #define ITEM_SUBFEATURE_DATA ZMAP_WINDOW_P_H "item_subfeature_data"
 #define ZMAP_WINDOW_POINTER  ZMAP_WINDOW_P_H "canvas_to_window"
 
