@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 21 10:33 2006 (edgrif)
+ * Last edited: Mar 29 09:46 2006 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.28 2006-03-21 14:11:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.29 2006-03-29 10:21:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -210,7 +210,7 @@ ZMapWindowClampType zmapWindowClampSpan(ZMapWindow window, double *top_inout, do
  * with the zmap, these need to cleaned up when the zmap goes away.
  * 
  * If window_array points to NULL then function just returns. */
-void zmapWindowFreeWindowArray(GPtrArray **window_array_inout)
+void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_array)
 {
   GPtrArray *window_array ;
 
@@ -230,8 +230,11 @@ void zmapWindowFreeWindowArray(GPtrArray **window_array_inout)
 	  gtk_widget_destroy(widget) ;
 	}
 
-      g_ptr_array_free(window_array, FALSE) ;
-      *window_array_inout = NULL ;
+      if (free_array)
+	{
+	  g_ptr_array_free(window_array, FALSE) ;
+	  *window_array_inout = NULL ;
+	}
     }
 
   return ;
