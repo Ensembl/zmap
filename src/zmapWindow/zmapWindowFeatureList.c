@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 17 13:55 2006 (edgrif)
+ * Last edited: Mar 29 11:16 2006 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.6 2006-02-21 10:47:36 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.7 2006-03-29 10:19:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,7 +86,7 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store)
       store = gtk_tree_store_new(ZMAP_WINDOW_LIST_COL_NUMBER,
                                  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
                                  G_TYPE_INT,    G_TYPE_INT,    G_TYPE_STRING,
-                                 G_TYPE_FLOAT,  G_TYPE_STRING, G_TYPE_POINTER,
+                                 G_TYPE_FLOAT,  G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_POINTER,
                                  G_TYPE_INT,    G_TYPE_INT,    G_TYPE_INT
                                  );
       treeModel = GTK_TREE_MODEL(store);
@@ -97,7 +97,7 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store)
       list = gtk_list_store_new(ZMAP_WINDOW_LIST_COL_NUMBER,
                                 G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
                                 G_TYPE_INT,    G_TYPE_INT,    G_TYPE_STRING,
-                                G_TYPE_FLOAT,  G_TYPE_STRING, G_TYPE_POINTER,
+                                G_TYPE_FLOAT,  G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_POINTER,
                                 G_TYPE_INT,    G_TYPE_INT,    G_TYPE_INT
                                 );
       treeModel = GTK_TREE_MODEL(list);
@@ -162,7 +162,7 @@ GtkWidget *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
                          user_data);
 
       /* set the pointer and data rows to be invisible */
-      if(colNo >= ZMAP_WINDOW_LIST_COL_FEATURE_ITEM)
+      if(colNo >= ZMAP_WINDOW_LIST_COL_FEATURE)
         gtk_tree_view_column_set_visible(column, FALSE);
       else
         gtk_tree_view_column_set_sort_column_id(column, colNo);
@@ -327,7 +327,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                            ZMAP_WINDOW_LIST_COL_STRAND, zMapFeatureStrand2Str(feature->strand),
                            ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
                            ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
-                           ZMAP_WINDOW_LIST_COL_FEATURE_ITEM, item,
+                           ZMAP_WINDOW_LIST_COL_FEATURE, feature,
                            -1) ;
 
 
@@ -346,7 +346,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                          ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
                          ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
                          ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
-                         ZMAP_WINDOW_LIST_COL_FEATURE_ITEM, item,
+                         ZMAP_WINDOW_LIST_COL_FEATURE, feature,
                          ZMAP_WINDOW_LIST_COL_SORT_PHASE,   feature->phase,
                          ZMAP_WINDOW_LIST_COL_SORT_TYPE,    feature->type,
                          ZMAP_WINDOW_LIST_COL_SORT_STRAND,  feature->strand,
