@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 20 15:35 2005 (edgrif)
+ * Last edited: Mar 23 10:45 2006 (rds)
  * Created: Tue Jul 12 16:02:52 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.3 2005-12-20 15:36:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.4 2006-03-29 14:51:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,16 +57,18 @@ typedef struct _ZMapWindowZoomControlStruct
   double zF;
   double minZF;
   double maxZF;
-  double lineHeight;
+  double textHeight;
+  double textWidth;
   double max_window_size;
 
-  int border;
+  int border;                  
 
+  PangoFontDescription *font_desc;
   PangoFont *font; /* This needs to be a fixed
-                                          * width font. We use it to
-                                          * display the DNA which
-                                          * absolutely requires
-                                          * that. */
+                    * width font. We use it to
+                    * display the DNA which
+                    * absolutely requires
+                    * that. */
 
   ZMapWindowZoomStatus status;
 } ZMapWindowZoomControlStruct;

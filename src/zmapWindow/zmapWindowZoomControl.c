@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 23 09:52 2006 (edgrif)
+ * Last edited: Mar 23 11:10 2006 (rds)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.9 2006-03-23 11:05:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.10 2006-03-29 14:51:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,17 +109,42 @@ double zMapWindowGetZoomMagnification(ZMapWindow window)
   
   return mag;
 }
-
+#ifdef RDS_DONT_INCLUDE
 PangoFont *zMapWindowGetFixedWidthFont(ZMapWindow window)
 {
   ZMapWindowZoomControl control = NULL;
   control = controlFromWindow(window);
   return control->font;
 }
+#endif
+
 /* Not sure this is right, copy with pango_font_description_copy and merge??? */
-PangoFontDescription *zMapWindowGetFixedWidthFontDescription(ZMapWindow window)
+PangoFontDescription *zMapWindowZoomGetFixedWidthFontInfo(ZMapWindow window,
+                                                          double *width_out,
+                                                          double *height_out)
 {
-  return pango_font_describe( zMapWindowGetFixedWidthFont(window) );
+  ZMapWindowZoomControl control = NULL;
+  control = controlFromWindow(window);
+
+  if(control->status != ZMAP_ZOOM_INIT)
+    {
+      double ppux, ppuy, tmp;        /* pixels per unit */
+      ppux = FOO_CANVAS(window->canvas)->pixels_per_unit_x;
+      ppuy = FOO_CANVAS(window->canvas)->pixels_per_unit_y;
+
+      if(width_out)
+        {
+          tmp = control->textWidth / ppux;
+          *width_out = tmp;
+        }
+      if(height_out)
+        {
+          tmp = control->textHeight / ppuy;
+          *height_out = tmp;
+        }
+    }
+
+  return control->font_desc;
 }
 
 /* =========================================================================== */
@@ -134,7 +159,6 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window)
   int x_windows_limit = (2 >> 15) - 1;
   int user_set_limit  = (2 >> 15) - 1;  /* possibly a parameter later?!? */
   int max_window_size = 0;
-  PangoFontDescription *font = NULL;
 
   num_cruncher = g_new0(ZMapWindowZoomControlStruct, 1);
   num_cruncher->magic = &zoom_magic_G;
@@ -143,16 +167,19 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window)
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(window->toplevel), 
                                g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY),
                                ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
-                               &(num_cruncher->font), &font))
+                               &(num_cruncher->font), &(num_cruncher->font_desc)))
     printf("zoom failed to get fixed width font \n");
 
   /* Make sure this is the 1:1 text_height 14 on my machine*/
   foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, 1.0);
-  textDimensionsOfFont(foo_canvas_root(window->canvas), font, NULL, &text_height) ;
+  textDimensionsOfFont(foo_canvas_root(window->canvas), 
+                       num_cruncher->font_desc, 
+                       &(num_cruncher->textWidth), 
+                       &(num_cruncher->textHeight)) ;
 
-  num_cruncher->maxZF      = text_height + (double)(ZMAP_WINDOW_TEXT_BORDER);
-  num_cruncher->border     = num_cruncher->maxZF; /* This should _NOT_ be changed */
-  num_cruncher->status     = ZMAP_ZOOM_INIT;
+  num_cruncher->maxZF   = num_cruncher->textHeight + (double)(ZMAP_WINDOW_TEXT_BORDER);
+  num_cruncher->border  = num_cruncher->maxZF; /* This should _NOT_ be changed */
+  num_cruncher->status  = ZMAP_ZOOM_INIT;
   
   //  num_cruncher->max_window_size = (user_set_limit ? user_set_limit : x_windows_limit) 
   //  - ((num_cruncher->border * 2) * num_cruncher->maxZF);
