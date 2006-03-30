@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 30 15:22 2006 (rds)
+ * Last edited: Mar 30 15:58 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.18 2006-03-30 14:24:28 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.19 2006-03-30 15:07:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,6 +43,13 @@
 #include <zmapWindowContainer.h>
 
 
+typedef struct 
+{
+  ZMapWindow window;
+  FooCanvasGroup *column;
+}processFeatureDataStruct, *processFeatureData;
+/* So we can redraw a featureset */
+static void drawEachFeature(GQuark key_id, gpointer data, gpointer user_data);
 
 static FooCanvasItem *drawparentfeature(FooCanvasGroup *parent,
                                         ZMapFeature feature,
@@ -1103,12 +1110,6 @@ static void attachDataToItem(FooCanvasItem *feature_item,
   return ;
 }
 
-typedef struct 
-{
-  ZMapWindow window;
-  FooCanvasGroup *column;
-}processFeatureDataStruct, *processFeatureData;
-
 static void drawEachFeature(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeature feature  = (ZMapFeature)data ; 
@@ -1143,6 +1144,8 @@ static void dnaHandleZoomCB(FooCanvasItem *container,
       drawHandlerData.column = FOO_CANVAS_GROUP(container);
 
       g_datalist_foreach(&(feature_set->features), drawEachFeature, &drawHandlerData);
+
+      zmapWindowContainerSetBackgroundSize(FOO_CANVAS_GROUP(container), 0.0);
     }
   
   return ;
@@ -1337,6 +1340,16 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                                                       event->button.x, 
                                                       event->button.y);
             event_handled = TRUE;
+          }
+        else if(button->button == 3)
+          {
+            int firstIdx, lastIdx;
+            highlighObj = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP(item->parent));
+            if(zmapWindowItemTextHighlightGetIndices(highlighObj, &firstIdx, &lastIdx))
+              {
+                printf("dnaItemEventCB (%x): dna from %d to %d\n", item, firstIdx, lastIdx);
+                event_handled = TRUE;
+              }
           }
       }
       break;
