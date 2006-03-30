@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  2 14:27 2006 (rds)
+ * Last edited: Mar  3 16:16 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.12 2006-03-02 14:29:01 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.13 2006-03-30 16:23:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -99,6 +99,12 @@ static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
  * zmapXMLElements yourself. Recommended ONLY if document is small 
  * (< 100 elements, < 200 attributes).
 
+ * I've imposed this limit to make memory use small.
+
+ * size of object is dependent on the depth of the object. e.g a list
+ * can be 99 elements in size if it's only contained, by one other.  But
+ * if it's 10 levels deep the limit is 90
+
  */
 
 zmapXMLParser zMapXMLParser_create(void *user_data, gboolean validating, gboolean debug)
@@ -129,12 +135,13 @@ zmapXMLParser zMapXMLParser_create(void *user_data, gboolean validating, gboolea
   /* This should probably be done with a NS parser */
   parser->xmlbase = g_quark_from_string(ZMAP_XML_BASE_ATTR);
 
-  parser->max_size   = 100;
-  parser->elements   = g_array_sized_new(TRUE, TRUE, sizeof(zmapXMLElementStruct),   parser->max_size);
-  parser->attributes = g_array_sized_new(TRUE, TRUE, sizeof(zmapXMLAttributeStruct), parser->max_size * 2);
+  parser->max_size_e = 100;
+  parser->max_size_a = parser->max_size_e * 2;
+  parser->elements   = g_array_sized_new(TRUE, TRUE, sizeof(zmapXMLElementStruct),   parser->max_size_e);
+  parser->attributes = g_array_sized_new(TRUE, TRUE, sizeof(zmapXMLAttributeStruct), parser->max_size_a);
 
-  g_array_set_size(parser->elements, parser->max_size);
-  g_array_set_size(parser->attributes, parser->max_size * 2);
+  g_array_set_size(parser->elements, parser->max_size_e);
+  g_array_set_size(parser->attributes, parser->max_size_a);
 
   initElements(parser->elements);
   initAttributes(parser->attributes);
@@ -525,6 +532,18 @@ static void start_handler(void *userData,
   (parser->depth)++;
 #endif
 
+#ifdef ZMAP_XML_VALIDATING_PARSER
+  if(parser->validating && parser->schema)
+    {
+      gboolean element_valid = FALSE;
+      if((element_valid = zMapXMLSchemaValidateElementPosition(parser->schema, current_ele)) == FALSE)
+        abortParsing(parser, "Element '%s' had bad position.", el);
+      if(element_valid && 
+         (element_valid = zMapXMLSchemaValidateElementAttributes(parser->schema, current_ele)) == FALSE)
+        abortParsing(parser, "Element '%s' had bad attributes.", el);
+    }
+#endif  
+
   if(parser->useXMLBase && currentHasXMLBase &&
      ((attribute = zMapXMLElement_getAttributeByName(current_ele, ZMAP_XML_BASE_ATTR)) != NULL))
     {
@@ -590,6 +609,20 @@ static void end_handler(void *userData,
 #endif
           zmapXMLElementMarkDirty(current_ele);
         }
+      else if(parser->array_point_e == parser->max_size_e - 1)
+        {
+          /* If we get here, we're running out of allocated elements */
+          printf("Possible information loss...\n");
+          zmapXMLElementMarkDirty(current_ele);
+        }
+    }
+  else if(parser->array_point_e == parser->max_size_e - 1)
+    {
+      /* If we get here, we're running out of allocated elements */
+      /* To fix this requires an increase in the number of end_handlers 
+       * which return TRUE */
+      printf("Possible information loss...\n");
+      zmapXMLElementMarkDirty(current_ele);
     }
 
   /* We need to do this AFTER the endTagHandler as the xml:base 
@@ -658,6 +691,13 @@ static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
 
   return handler;
 }
+
+/* Why am I not using g lib memory stuff here, or even handle package.
+ * The main reason is I don't want the xml to consume huge amounts of
+ * memory.  This wrapper is designed to make things easier, but has 
+ * the potential for abuse.  The idea all along was to create small
+ * twigs of 'objecty' type data as an intermediate for user objects.
+ */
 static zmapXMLAttribute parserFetchNewAttribute(zmapXMLParser parser,
                                                 const XML_Char *name,
                                                 const XML_Char *value)
@@ -707,6 +747,7 @@ static zmapXMLElement parserFetchNewElement(zmapXMLParser parser,
       element->dirty    = FALSE;
       element->name     = g_quark_from_string(g_ascii_strdown((char *)name, -1));
       element->contents = g_string_sized_new(100);
+      parser->array_point_e = save;
     }
 
   if(element == NULL)
