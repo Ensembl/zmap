@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 29 15:39 2006 (rds)
+ * Last edited: Mar 30 15:22 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.17 2006-03-29 14:49:30 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.18 2006-03-30 14:24:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,13 +112,6 @@ static void attachDataToItem(FooCanvasItem *feature_item,
                              ZMapWindowItemFeatureType type,
                              gpointer subFeatureData) ;
 
-static void updateInfoGivenCoords(textGroupSelection select, 
-                                  double worldCurrentX,
-                                  double worldCurrentY) ;
-static void pointerIsOverItem(gpointer data, gpointer user_data);
-
-static textGroupSelection getTextGroupData(FooCanvasGroup *txtGroup,
-                                           ZMapWindow window);
 static ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
                                         double offset_start,  double offset_end,
                                         double text_height, gboolean numbered) ;
@@ -402,14 +395,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 
 	/* Surely this must be true.... */
         zMapAssert( block && block->sequence.sequence );
-#ifdef RDS_DONT_INCLUDE
-	top_feature_item = drawSequenceFeature(column_group, feature,
-                                               feature_offset,
-                                               start_x, feature->x1, end_x, feature->x2,
-                                               &style->outline,
-                                               &style->background,
-                                               window) ;
-#endif
+
 	top_feature_item = drawDNA(column_group, feature,
                                    feature_offset,
                                    start_x, feature->x1, end_x, feature->x2,
@@ -967,9 +953,15 @@ static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text,
 
   iterator = getIterator(feature_start, feature_end,
                          y1, y2, txt_height, FALSE);
-  
+
+  iterator->foreground = fg;
+  iterator->background = bg;
+  iterator->outline    = out;
+
+#ifdef RDS_THESE_NEED_A_LITTLE_BIT_OF_CHECKING
   printf("drawTextWrappedInColumn (%x): start=%f, end=%f, y1=%f, y2=%f\n",
          window, feature_start, feature_end, y1, y2);
+#endif
 
   for(i = 0; i < iterator->rows; i++)
     {
@@ -980,14 +972,17 @@ static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text,
                                    font, 
                                    text, 
                                    iterator)) && eventCB != NULL)
-        g_signal_connect(G_OBJECT(item), "event",
-                         G_CALLBACK(eventCB), (gpointer)window);      
+        {
+          g_signal_connect(G_OBJECT(item), "event",
+                           G_CALLBACK(eventCB), (gpointer)window);
+        }
     }
-
+  
   destroyIterator(iterator);
   
   return ;
 }
+ 
 
 static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
                               double feature_offset,
@@ -1022,10 +1017,8 @@ static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
    * foreground = text colour... 
    * -------------------------------------------------
    */
-
   /* what is parent's CONTAINER_TYPE_KEY and what is it's CONTAINER_DATA->level */
 
-  /* Flag our parent container that it has children that need redrawing on zoom. */
   column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(parent)) ;
 
   zmapWindowContainerSetZoomEventHandler(column_parent, dnaHandleZoomCB, window);
@@ -1037,6 +1030,8 @@ static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
 
   /* TRY THIS...EVENT HANDLER MAY INTERFERE THOUGH...SO MAY NEED TO REMOVE EVENT HANDLERS... */
   attachDataToItem(feature_parent, window, feature, ITEM_FEATURE_SIMPLE, NULL) ;
+
+  zmapWindowItemTextHighlightCreateData(window, FOO_CANVAS_GROUP(feature_parent));
 
   return feature_parent;
 }
@@ -1134,7 +1129,6 @@ static void dnaHandleZoomCB(FooCanvasItem *container,
 
   if(zmapWindowItemIsVisible(container)) /* No need to redraw if we're not visible! */
     {
-      textGroupSelection select = NULL;
       processFeatureDataStruct drawHandlerData = {NULL};
 
       feature_set = (ZMapFeatureSet)g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA) ;
@@ -1212,6 +1206,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
   ZMapFeature feature ;
   static guint32 last_but_press = 0 ;			    /* Used for double clicks... */
 
+  /*  printf("canvasItemEventCB (%x): enter\n", item); */
 
   switch (event->type)
     {
@@ -1298,87 +1293,81 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE;
-  FooCanvasGroup *txtGroup = NULL;
-  textGroupSelection txtSelect = NULL;
+  ZMapWindowItemHighlighter highlighObj = NULL;
 
-  txtGroup  = FOO_CANVAS_GROUP(item->parent) ;
-
-  txtSelect = getTextGroupData(txtGroup, (ZMapWindow)data); /* This will initialise for us if it's not there. */
-  zMapAssert(txtSelect);
+  /*  printf("dnaItemEventCB (%x): enter... parent %x\n", item, item->parent);  */
 
   switch (event->type)
     {
     case GDK_BUTTON_PRESS:
     case GDK_BUTTON_RELEASE:
       {
-        event_handled   = TRUE;
+        GdkEventButton *button = (GdkEventButton *)event;
+
         if(event->type == GDK_BUTTON_RELEASE)
           {
 #define DONTGRABPOINTER
 #ifndef DONTGRABPOINTER
-            foo_canvas_item_ungrab(item, event->button.time);
+            foo_canvas_item_ungrab(item, button->time);
 #endif 
-            txtSelect->originItemListMember = NULL;
-            foo_canvas_item_hide(FOO_CANVAS_ITEM(txtSelect->tooltip));
+            highlighObj = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP(item->parent));
+            zMapAssert(highlighObj);
+
+            zmapWindowItemTextHighlightFinish(highlighObj);
+            event_handled = TRUE;
           }
-        else
+        else if(button->button == 1)
           {
+#ifndef DONTGRABPOINTER
             GdkCursor *xterm;
-            GList *list;
             xterm = gdk_cursor_new (GDK_XTERM);
 
-#ifndef DONTGRABPOINTER
             foo_canvas_item_grab(item, 
                                  GDK_POINTER_MOTION_MASK |  
                                  GDK_BUTTON_RELEASE_MASK | 
                                  GDK_BUTTON_MOTION_MASK,
                                  xterm,
                                  event->button.time);
-#endif
             gdk_cursor_destroy(xterm);
-            list = g_list_first(txtGroup->item_list);
-            while(list)
-              {
-                /* pointers equal */
-                if(item != list->data)
-                  list = list->next;
-                else
-                  {
-                    txtSelect->originItemListMember = list;
-                    list = NULL;
-                  }
-              }
-            txtSelect->seqFirstIdx = txtSelect->seqLastIdx = -1;
-            updateInfoGivenCoords(txtSelect, event->button.x, event->button.y);
+#endif
+
+            if((highlighObj = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP(item->parent)))
+               && zmapWindowItemTextHighlightBegin(highlighObj, FOO_CANVAS_GROUP(item->parent), item))
+              zmapWindowItemTextHighlightUpdateCoords(highlighObj, 
+                                                      event->button.x, 
+                                                      event->button.y);
+            event_handled = TRUE;
           }
       }
       break;
     case GDK_MOTION_NOTIFY:
       {
-        if(txtSelect->originItemListMember)
+        ZMapDrawTextRowData trd = NULL;
+        
+        highlighObj = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP(item->parent));
+        zMapAssert(highlighObj);
+        
+        if(zmapWindowItemTextHighlightValidForMotion(highlighObj)
+           && (trd = zMapDrawGetTextItemData(item)))
           {
-            ZMapDrawTextRowData trd = NULL;
-            if((trd = zMapDrawGetTextItemData(item)))
-              {
-                updateInfoGivenCoords(txtSelect, event->motion.x, event->motion.y);
-                zMapDrawHighlightTextRegion(txtSelect->highlight,
-                                            txtSelect->seqFirstIdx, 
-                                            txtSelect->seqLastIdx,
-                                            item);
-                event_handled = TRUE;
-              }
-          }
-      }    
+            zmapWindowItemTextHighlightUpdateCoords(highlighObj, 
+                                                    event->motion.x,
+                                                    event->motion.y);
+            zmapWindowItemTextHighlightDraw(highlighObj, item);
+            event_handled = TRUE;
+          }    
+      }
       break;
     case GDK_LEAVE_NOTIFY:
       {
-        foo_canvas_item_hide(FOO_CANVAS_ITEM( txtSelect->tooltip ));
+	event_handled = FALSE ;
+        break;
       }
     case GDK_ENTER_NOTIFY:
       {
-        
+	event_handled = FALSE ;
+        break;
       }
-      break;
     default:
       {
 	/* By default we _don't_handle events. */
@@ -1389,30 +1378,6 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 
   return event_handled ;
 }
-
-
-
-static textGroupSelection getTextGroupData(FooCanvasGroup *txtGroup, ZMapWindow window)
-{
-  textGroupSelection txtSelect = NULL;
-
-  if(!(txtSelect = (textGroupSelection)g_object_get_data(G_OBJECT(txtGroup), "HIGHLIGHT_INFO")))
-    {
-      txtSelect  = (textGroupSelection)g_new0(textGroupSelectionStruct, 1);
-      txtSelect->tooltip = zMapDrawToolTipCreate(FOO_CANVAS_ITEM(txtGroup)->canvas);
-      foo_canvas_item_hide(FOO_CANVAS_ITEM( txtSelect->tooltip ));
-
-      txtSelect->highlight = FOO_CANVAS_GROUP(foo_canvas_item_new(txtGroup,
-                                                                  foo_canvas_group_get_type(),
-                                                                  NULL));
-      txtSelect->window = window;
-      g_object_set_data(G_OBJECT(txtGroup), "HIGHLIGHT_INFO", (gpointer)txtSelect);
-
-    }
-
-  return txtSelect ;
-}
-
 
 
 ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
@@ -1600,46 +1565,6 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
 
 
-static void updateInfoGivenCoords(textGroupSelection select, 
-                                  double currentX,
-                                  double currentY) /* These are WORLD coords */
-{
-  GList *listStart = NULL;
-  FooCanvasItem *origin;
-  ZMapGListDirection forward = ZMAP_GLIST_FORWARD;
-
-  select->buttonCurrentX = currentX;
-  select->buttonCurrentY = currentY;
-  select->need_update    = TRUE;
-  listStart              = select->originItemListMember;
-
-  /* Now work out where we are with custom g_list_foreach */
-  
-  /* First we need to know which way to go */
-  origin = (FooCanvasItem *)(listStart->data);
-  if(origin)
-    {
-      double x1, x2, y1, y2, halfy;
-      foo_canvas_item_get_bounds(origin, &x1, &y1, &x2, &y2);
-      foo_canvas_item_i2w(origin, &x1, &y2);
-      foo_canvas_item_i2w(origin, &x2, &y2);
-      halfy = ((y2 - y1) / 2) + y1;
-      if(select->buttonCurrentY < halfy)
-        forward = ZMAP_GLIST_REVERSE;
-      else if(select->buttonCurrentY > halfy)
-        forward = ZMAP_GLIST_FORWARD;
-      else
-        forward = ZMAP_GLIST_FORWARD;
-    }
-
-  if(select->need_update)
-    zMap_g_list_foreach_directional(listStart, pointerIsOverItem, 
-                                    (gpointer)select, forward);
-
-  return ;
-}
-
-
 
 /* This is in the general menu and needs to be handled separately perhaps as the index is a global
  * one shared amongst all general menu functions...
@@ -1683,62 +1608,6 @@ static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
 
 
 
-static void pointerIsOverItem(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data;
-  textGroupSelection select = (textGroupSelection)user_data;
-  ZMapDrawTextRowData trd = NULL;
-  double currentY = 0.0;
-  currentY = select->buttonCurrentY - select->window->min_coord;
-
-  if(select->need_update && (trd = zMapDrawGetTextItemData(item)))
-    {
-      if(currentY > trd->rowOffset &&
-         currentY < trd->rowOffset + trd->fullStrLength)
-        {
-          /* Now what do we need to do? */
-          /* update the values of seqFirstIdx && seqLastIdx */
-          int currentIdx, iMinIdx, iMaxIdx;
-          double x1, x2, y1, y2, char_width, clmpX;
-
-          foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-          foo_canvas_item_i2w(item, &x1, &y1);
-          foo_canvas_item_i2w(item, &x2, &y2);
-
-          /* clamp inside the item! (and effectively the sequence) */
-          clmpX = (select->buttonCurrentX > x1 ? 
-                   select->buttonCurrentX < x2 ? select->buttonCurrentX :
-                   x2 : x1);
-
-          char_width  = trd->columnWidth / trd->drawnStrLength;
-          currentIdx  = floor((clmpX - x1) / char_width); /* we're zero based so we need to be able to select the first base. revisit if it's an issue */
-          currentIdx += trd->rowOffset;
-
-          if(select->seqLastIdx  == -1 && 
-             select->seqFirstIdx == select->seqLastIdx)
-            select->seqFirstIdx = 
-              select->seqLastIdx = 
-              select->originIdx = currentIdx;
-
-          /* clamp to the original index */
-          iMinIdx = (select->seqFirstIdx < select->originIdx ? select->originIdx : select->seqFirstIdx);
-          iMaxIdx = (select->seqLastIdx  > select->originIdx ? select->originIdx : select->seqLastIdx);
-          
-          /* resize to current index */
-          select->seqFirstIdx = MIN(currentIdx, iMinIdx);
-          select->seqLastIdx  = MAX(currentIdx, iMaxIdx);
-
-          zMapDrawToolTipSetPosition(select->tooltip, 
-                                     x1 - 200,
-                                     trd->rowOffset - (y2 - y1), 
-                                     g_strdup_printf("%d - %d", select->seqFirstIdx + 1, select->seqLastIdx + 1));
-
-          select->need_update = FALSE;
-        }
-    }
-
-  return ;
-}
 
 
 

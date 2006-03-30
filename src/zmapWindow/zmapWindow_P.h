@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 29 15:37 2006 (rds)
+ * Last edited: Mar 30 14:47 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.109 2006-03-29 14:38:23 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.110 2006-03-30 14:25:38 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -49,6 +49,7 @@
 #define ITEM_SUBFEATURE_DATA ZMAP_WINDOW_P_H "item_subfeature_data"
 #define ZMAP_WINDOW_POINTER  ZMAP_WINDOW_P_H "canvas_to_window"
 
+#define ITEM_HIGHLIGHT_DATA  ZMAP_WINDOW_P_H "item_highlight_data"
 
 /* Names of config stanzas. */
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
@@ -393,18 +394,7 @@ typedef struct _zmapWindowFeatureListCallbacksStruct
   GtkTreeSelectionFunc selectionFuncCB;
 } zmapWindowFeatureListCallbacksStruct, *zmapWindowFeatureListCallbacks;
 
-/* text group selection stuff for the highlighting of dna, etc... */
-typedef struct textGroupSelectionStruct_
-{
-  gboolean need_update;
-  GList *originItemListMember;
-  FooCanvasGroup *tooltip, *highlight;
-  double buttonCurrentX;
-  double buttonCurrentY;
-  int originIdx;
-  int seqFirstIdx, seqLastIdx;
-  ZMapWindow window;
-} textGroupSelectionStruct, *textGroupSelection;
+typedef struct _ZMapWindowItemHighlighterStruct *ZMapWindowItemHighlighter;
 
 
 
@@ -642,6 +632,22 @@ gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
 gboolean zmapWindowItemAddFocusItem(ZMapWindow window, FooCanvasItem *item);
 void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item);
 FooCanvasItem *zmapWindowItemHotFocusItem(ZMapWindow window);
+
+
+ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow window, 
+                                                                FooCanvasGroup *group);
+ZMapWindowItemHighlighter zmapWindowItemTextHighlightRetrieve(FooCanvasGroup *group);
+void zmapWindowItemTextHighlightFinish(ZMapWindowItemHighlighter select_control);
+gboolean zmapWindowItemTextHighlightValidForMotion(ZMapWindowItemHighlighter select_control);
+void zmapWindowItemTextHighlightDraw(ZMapWindowItemHighlighter select_control,
+                                     FooCanvasItem *item_receiving_event);
+gboolean zmapWindowItemTextHighlightBegin(ZMapWindowItemHighlighter select_control,
+                                          FooCanvasGroup *group_under_control,
+                                          FooCanvasItem *item_receiving_event);
+void zmapWindowItemTextHighlightUpdateCoords(ZMapWindowItemHighlighter select_control,
+                                             double event_x_coord, 
+                                             double event_y_coord);
+
 
 /* Ruler Functions */
 ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackList callbacks);
