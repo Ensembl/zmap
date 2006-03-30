@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Dec  7 13:59 2005 (rds)
+ * Last edited: Mar 29 17:37 2006 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.25 2005-12-13 10:23:31 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.26 2006-03-30 14:20:33 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -118,6 +118,9 @@ typedef struct _ZMapDrawTextIteratorStruct
   char *format;
   gboolean numbered;
 
+  GdkColor *foreground;
+  GdkColor *background;
+  GdkColor *outline;
 } ZMapDrawTextIteratorStruct, *ZMapDrawTextIterator;
 
 typedef struct ZMapDrawTextRowDataStruct_
@@ -130,6 +133,8 @@ typedef struct ZMapDrawTextRowDataStruct_
   int drawnStrLength;           /* this is the length of the string drawn */
 
   double columnWidth;           /* This is the width of the column */
+  GdkColor *background;
+  GdkColor *outline;
   /* text's char width is columnWidth / drawnStrLength */
 } ZMapDrawTextRowDataStruct, *ZMapDrawTextRowData;
 
