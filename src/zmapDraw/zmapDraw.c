@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Mar 30 09:41 2006 (rds)
+ * Last edited: Mar 30 16:25 2006 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.45 2006-03-30 14:21:33 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.46 2006-03-30 16:23:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1291,8 +1291,9 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
   FooCanvasItem *item = NULL;
   char *item_text = NULL;
   ZMapDrawTextRowData trd = NULL;
-  int char_count, max_chars, text_width = 8, curr_idx;
-  
+  int char_count, max_chars, curr_idx;
+  double text_width = 0.0;
+
   /* Make a ZMapDrawTextRowData object to attach to the text */
   trd = g_new0(ZMapDrawTextRowDataStruct, 1);
 
@@ -1306,6 +1307,7 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
   trd->sequenceOffset = iterator->offset_start;
   trd->background     = iterator->background;
   trd->outline        = iterator->outline;
+  text_width          = iterator->char_width;
 
   max_chars  = floor(MAX_TEXT_COLUMN_WIDTH / text_width) - 3; /* we add 3 dots (...) */
   char_count = MIN(iterator->cols, max_chars);

@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar 23 11:06 2006 (edgrif)
+ * Last edited: Mar 30 17:21 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.37 2006-03-23 11:07:08 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.38 2006-03-30 16:21:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -557,7 +557,7 @@ static void zoomMenuCB(int menu_item_id, gpointer callback_data)
       }
     case ZOOM_ALLDNA:
       {
-	zoom_factor = 0.97 ;
+	zoom_factor = zMapWindowGetZoomMaxDNAInWrappedColumn(window) ;
 	break ;
       }
     case ZOOM_MIN:

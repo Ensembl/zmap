@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Mar 29 17:37 2006 (rds)
+ * Last edited: Mar 30 16:22 2006 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.26 2006-03-30 14:20:33 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.27 2006-03-30 16:24:09 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -107,6 +107,7 @@ typedef struct _ZMapDrawTextIteratorStruct
 
   double x, y;
   double seq_start, seq_end;
+  double char_width;
   int offset_start, offset_end;
 
   int shownSeqLength;

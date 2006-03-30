@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 30 15:58 2006 (rds)
+ * Last edited: Mar 30 16:22 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.19 2006-03-30 15:07:21 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.20 2006-03-30 16:21:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,7 +121,8 @@ static void attachDataToItem(FooCanvasItem *feature_item,
 
 static ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
                                         double offset_start,  double offset_end,
-                                        double text_height, gboolean numbered) ;
+                                        double text_width,    double text_height, 
+                                        gboolean numbered) ;
 static void destroyIterator(ZMapDrawTextIterator iterator) ;
 
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
@@ -959,7 +960,7 @@ static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text,
   zmapWindowGetBorderSize(window, &txt_height);
 
   iterator = getIterator(feature_start, feature_end,
-                         y1, y2, txt_height, FALSE);
+                         y1, y2, txt_width, txt_height, FALSE);
 
   iterator->foreground = fg;
   iterator->background = bg;
@@ -1393,9 +1394,10 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 }
 
 
-ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
-                                 double offset_start,  double offset_end,
-                                 double text_height, gboolean numbered)
+static ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
+                                        double offset_start,  double offset_end,
+                                        double text_width,    double text_height, 
+                                        gboolean numbered)
 {
   int tmp;
   ZMapDrawTextIterator iterator   = g_new0(ZMapDrawTextIteratorStruct, 1);
@@ -1411,6 +1413,7 @@ ZMapDrawTextIterator getIterator(double win_min_coord, double win_max_coord,
   iterator->y            = 0.0;
 
   iterator->n_bases      = ceil(text_height);
+  iterator->char_width   = text_width;
 
   iterator->length2draw  = iterator->shownSeqLength;
   /* checks for trailing bases */

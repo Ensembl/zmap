@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 23 10:45 2006 (rds)
+ * Last edited: Mar 30 16:28 2006 (rds)
  * Created: Tue Jul 12 16:02:52 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.4 2006-03-29 14:51:56 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.5 2006-03-30 16:21:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,6 +43,13 @@
 
 #define ZMAP_ZOOM_FONT_FAMILY "Monospace"
 #define ZMAP_ZOOM_FONT_SIZE (10)
+
+/* This is the same as MAX_TEXT_COLUMN_WIDTH in zmapDraw_P.h This
+ * isn't good, but there's must more to do to make it part of the
+ * style for dna!!! */
+#define ZMAP_ZOOM_MAX_TEXT_COLUMN_WIDTH (300.0)
+
+
 
 static ZMapMagic zoom_magic_G = "ZMAP_ZOOM_MAGIC_VALUE";
 

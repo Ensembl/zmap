@@ -27,12 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 23 11:10 2006 (rds)
+ * Last edited: Mar 30 17:14 2006 (rds)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.10 2006-03-29 14:51:45 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.11 2006-03-30 16:21:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
+#include <math.h>
 #include <zmapWindowZoomControl_P.h>
 
 
@@ -66,6 +67,24 @@ ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window)
   return status;
 }
 
+double zMapWindowGetZoomMaxDNAInWrappedColumn(ZMapWindow window)
+{
+  ZMapWindowZoomControl control = NULL;
+  double zoom_factor = 0.0, max_chars_per_row = 0.0;
+
+  control = controlFromWindow(window);
+
+  /* possibly requiring floor as we can't draw half chars  */
+  max_chars_per_row = ZMAP_ZOOM_MAX_TEXT_COLUMN_WIDTH / control->textWidth;
+
+  /* zoom_factor = control->maxZF / max_chars_per_row; */
+  zoom_factor = control->maxZF / floor(max_chars_per_row - (ZMAP_WINDOW_TEXT_BORDER * 2.0));
+  /* This is a bit of a fudge ATM, mainly as the correct   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+   * calculation results in dots still being shown.  This is because of a problem with my
+   * zMapDrawRowOfText function. https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=1888
+   * **************************************************************************************/
+  return zoom_factor;
+}
 
 double zMapWindowGetZoomFactor(ZMapWindow window)
 {
