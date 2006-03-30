@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 29 09:44 2006 (edgrif)
+ * Last edited: Mar 30 16:07 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.118 2006-03-29 10:22:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.119 2006-03-30 15:23:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -87,7 +87,11 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer d
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 
@@ -111,10 +115,13 @@ static GtkAdjustment *copyAdjustmentObj(GtkAdjustment *orig_adj) ;
 
 static void zoomToRubberBandArea(ZMapWindow window);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 				 GtkWidget *widget, GtkAllocation *allocation) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
+
 
 
 /* Callbacks we make back to the level above us. This structure is static
@@ -415,7 +422,18 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 
   if (reversed)
     {
+      int i ;
+
       foo_canvas_scroll_to(window->canvas, x, y) ;
+
+      for (i = 0 ; i < window->featureListWindows->len ; i++)
+	{
+	  GtkWidget *widget ;
+
+	  widget = g_ptr_array_index(window->featureListWindows, i) ;
+
+	  zmapWindowListWindowReread(widget) ;
+	}
     }
 
 
@@ -976,7 +994,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   {
     ZMapWindowRulerCanvasCallbackListStruct callbacks = {NULL};
     GtkAdjustment *vadjust = NULL;
-    PangoFontDescription *fixed = NULL;
 
     vadjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
     callbacks.paneResize = panedResizeCB;
@@ -1065,7 +1082,6 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
     }
   else
     {
-      FooCanvasGroup *canvas_root_group ;
       double half_new_span;
 
       x1 = y1 = x2 = y2 = 0.0;
@@ -1411,7 +1427,11 @@ static void changeRegion(ZMapWindow window, guint keyval)
 /* widget is the scrolled_window, user_data is the zmapWindow */
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapWindow window = (ZMapWindow)user_data;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
@@ -1635,14 +1655,17 @@ static gboolean getConfiguration(ZMapWindow window)
 static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
 {
   gboolean handled = FALSE;
-  GdkDisplay *display = NULL;
 
   switch(event->type)
     {
     case GDK_BUTTON_PRESS:
       {
         ZMapWindow window = (ZMapWindow)data;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
         printf("windowGeneralEventCB (%x): CLICK\n", window);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	(*(window_cbs_G->focus))(window, window->app_data, NULL) ;
       }
       break;
@@ -1927,6 +1950,10 @@ static void zoomToRubberBandArea(ZMapWindow window)
   return ;
 }
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* THIS FUNCTION IS NOT CURRENTLY USED BUT I'VE KEPT IT IN CASE WE NEED A
  * HANDLER THAT WILL RESPOND TO EVENTS ON ALL ITEMS.... */
 
@@ -1968,6 +1995,8 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 
   return event_handled ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* NOTE: This routine only gets called when the canvas widgets parent requests a resize, not when
  * the canvas changes its own size through zooming.
@@ -2183,6 +2212,8 @@ static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 				 GtkWidget *widget, GtkAllocation *allocation)
 {
@@ -2208,5 +2239,7 @@ static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
