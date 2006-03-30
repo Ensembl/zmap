@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 30 15:06 2006 (rds)
+ * Last edited: Mar 30 15:47 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.18 2006-03-30 14:25:24 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.19 2006-03-30 15:07:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -90,6 +90,7 @@ ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow windo
                                                                   foo_canvas_group_get_type(),
                                                                   NULL));
       selection->window = window;
+      selection->seqFirstIdx = selection->seqLastIdx = -1;
       g_object_set_data(G_OBJECT(group), ITEM_HIGHLIGHT_DATA, (gpointer)selection);
       /* Clear up when we get destroyed. */
       g_signal_connect(G_OBJECT(group), "destroy",
@@ -108,7 +109,21 @@ ZMapWindowItemHighlighter zmapWindowItemTextHighlightRetrieve(FooCanvasGroup *gr
 
   return select_control;
 }
-
+gboolean zmapWindowItemTextHighlightGetIndices(ZMapWindowItemHighlighter select_control, 
+                                               int *firstIdx, int *lastIdx)
+{
+  gboolean set = FALSE;
+  if(select_control->seqFirstIdx != -1 &&
+     select_control->seqLastIdx  != -1)
+    {
+      set = TRUE;
+      if(firstIdx)
+        *firstIdx = select_control->seqFirstIdx;
+      if(lastIdx)
+        *lastIdx  = select_control->seqLastIdx;
+    }
+  return set;
+}
 void zmapWindowItemTextHighlightFinish(ZMapWindowItemHighlighter select_control)
 {
   foo_canvas_item_hide(FOO_CANVAS_ITEM(select_control->tooltip));
