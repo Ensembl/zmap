@@ -28,13 +28,28 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Mar 17 12:13 2006 (rds)
+ * Last edited: Mar 30 09:41 2006 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.44 2006-03-17 12:13:39 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.45 2006-03-30 14:21:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapDraw_P.h>
+
+
+static void drawHighlightLinesInGroup(FooCanvasGroup *parent,
+                                      GdkColor *outline,
+                                      double offsetX1, double offsetY1,
+                                      double offsetX2, double offsetY2,
+                                      double minX,     double maxX,
+                                      double dlength);
+static void drawHighlightBackgroundInGroup(FooCanvasGroup *parent,
+                                           GdkColor *background,
+                                           double offsetX1, double offsetY1,
+                                           double offsetX2, double offsetY2,
+                                           double minX,     double maxX,
+                                           double dlength);
+
 
 FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 			       double x, double y)
@@ -803,15 +818,17 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
   return ;
 }
 
-
 /* *grp must be an empty group or one containing 8 line items at the
  * beginning.
  *
  * To make a multicolour highlight box just #define ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
  */
+#ifdef RDS_DONT_INCLUDE_UNUSED
 void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
                                  int y1Idx, int y2Idx,
-                                 FooCanvasItem *textItem)
+                                 FooCanvasItem *textItem,
+                                 GdkColor *background,
+                                 GdkColor *outline)
 {
   FooCanvasPoints *points = NULL;
   GList *lines = NULL;
@@ -941,11 +958,279 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
           lines = lines->next;
         }        
     }
+
   foo_canvas_item_show(FOO_CANVAS_ITEM(grp));
   foo_canvas_points_free(points);
 
   return ;
 }
+#endif
+
+//#define ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
+                                 int y1Idx, int y2Idx,
+                                 FooCanvasItem *textItem)
+{
+  double offsetX1, offsetX2, offsetY1, offsetY2;
+  double minX, maxX, dlength, chrWidth;
+  int i, y1mod, y2mod;
+  ZMapDrawTextRowData trd = NULL;
+  GdkColor color;
+
+  zMapAssert(textItem && (trd = zMapDrawGetTextItemData(textItem)));
+
+  gdk_color_parse("red", &color);
+
+  y1mod    = (y1Idx - trd->sequenceOffset) % trd->fullStrLength;
+  y2mod    = (y2Idx - trd->sequenceOffset) % trd->fullStrLength;
+
+  dlength  = (double)trd->fullStrLength;
+  chrWidth = trd->columnWidth / trd->drawnStrLength;
+
+  minX     = chrWidth / 4;    /* Also used to get half way between characters */
+  maxX     = trd->columnWidth;      /* -/+ minX ?? */
+
+  offsetX1 = ((double)y1mod) * chrWidth + minX;
+  offsetX2 = ((double)y2mod) * chrWidth + minX;
+
+  offsetY1 = (double)(y1Idx - y1mod);
+  offsetY2 = (double)(y2Idx - y2mod);
+
+  foo_canvas_item_hide(FOO_CANVAS_ITEM(grp));
+
+  if(trd->background != NULL && 1)
+    drawHighlightBackgroundInGroup(grp, trd->background, 
+                                   offsetX1, offsetY1, 
+                                   offsetX2, offsetY2, 
+                                   minX, maxX, dlength);
+  else if(trd->outline != NULL)
+    drawHighlightLinesInGroup(grp, trd->outline, 
+                              offsetX1, offsetY1, 
+                              offsetX2, offsetY2, 
+                              minX, maxX, dlength);
+  else
+    drawHighlightLinesInGroup(grp, &color,
+                              offsetX1, offsetY1, 
+                              offsetX2, offsetY2, 
+                              minX, maxX, dlength);
+
+  foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(grp));
+  foo_canvas_item_show(FOO_CANVAS_ITEM(grp));
+
+  return ;
+}
+
+static void drawHighlightBackgroundInGroup(FooCanvasGroup *parent,
+                                           GdkColor *background,
+                                           double offsetX1, double offsetY1,
+                                           double offsetX2, double offsetY2,
+                                           double minX,     double maxX,
+                                           double dlength)
+{
+  FooCanvasPoints *points = NULL;
+  GList *rects = NULL;
+  GdkColor color;
+  int i;
+  double x1, y1, x2, y2;
+
+  rects    = parent->item_list;
+  points   = foo_canvas_points_new(2);
+
+  color = *background;
+
+  for(i = 0; i < 3; i++)
+    {
+      switch(i)
+        {
+        case 0:                   /* FIRST ROW */
+          x1 = points->coords[0] = MIN(offsetX1, maxX);
+          y1 = points->coords[1] = offsetY1;
+          x2 = points->coords[2] = (offsetY2 - offsetY1  >= dlength ? maxX : offsetX2);
+          //x2 = points->coords[2] = (offsetY2 - offsetY1 >= dlength ? maxX : MIN(offsetX2, maxX)); // 20060329
+          y2 = points->coords[3] = offsetY1 + dlength;
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+          gdk_color_parse("gold", &color);
+#endif
+          break;
+        case 1:                   /* LARGE BLOCK */
+          /* This shows up a good bug in the foocanvas
+           * Without the MIN/MAX on calculating y1 and y2 the foocanvas doesn't invalidate 
+           * the area correctly. Therefore we need to keep the sense of the y coords correct.
+           */
+          x1 = points->coords[0] = (offsetY2 - offsetY1 >= dlength ? minX : offsetX1);
+          y1 = points->coords[1] = MIN((offsetY1 + dlength), offsetY2);
+          x2 = points->coords[2] = (offsetY2 - offsetY1 >= dlength ? maxX : MIN(offsetX2, maxX));
+          y2 = points->coords[3] = MAX((offsetY1 + dlength), offsetY2);
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+          gdk_color_parse("red", &color);
+#endif
+          break;
+        case 2:                   /* LAST ROW */
+          x1 = points->coords[0] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
+          y1 = points->coords[1] = offsetY2;
+          x2 = points->coords[2] = MIN(offsetX2, maxX);
+          y2 = points->coords[3] = offsetY2 + dlength;
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+          gdk_color_parse("blue", &color);
+#endif
+          break;
+        deafult:
+          zMapAssertNotReached();
+          break;
+        }
+#ifdef RDS_DONT_INCLUDE_UNUSED      
+      printf("drawHighlightBackgroundInGroup (%x): %d %f %f %f %f\n", 
+             parent, i, x1, y1, x2, y2);
+#endif
+      if(!rects)
+        foo_canvas_item_new(parent,
+                            foo_canvas_rect_get_type(),
+                            "x1", points->coords[0],
+                            "x2", points->coords[2],
+                            "y1", points->coords[1],
+                            "y2", points->coords[3],
+                            "fill_color_gdk", &color,
+                            "outline_color_gdk", NULL,
+                            "width_units", 1.0,
+                            NULL);
+      else
+        {
+          if(FOO_IS_CANVAS_RECT(FOO_CANVAS_ITEM(rects->data)))
+            foo_canvas_item_set(FOO_CANVAS_ITEM(rects->data),
+                                "x1", points->coords[0],
+                                "x2", points->coords[2],
+                                "y1", points->coords[1],
+                                "y2", points->coords[3],
+                                NULL);
+          rects = rects->next;
+        }        
+
+    }
+  
+  foo_canvas_points_free(points);
+
+  return ;
+}
+
+static void drawHighlightLinesInGroup(FooCanvasGroup *parent,
+                                      GdkColor *outline,
+                                      double offsetX1, double offsetY1,
+                                      double offsetX2, double offsetY2,
+                                      double minX,     double maxX,
+                                      double dlength)
+{
+  FooCanvasPoints *points = NULL;
+  GList *lines = NULL;
+  GdkColor color;
+  int i;
+
+  lines    = parent->item_list;
+  points   = foo_canvas_points_new(2);
+
+  color = *outline;
+
+  for(i = 0; i < REGION_LAST_LINE; i++)
+    {
+      switch(i){
+      case REGION_ROW_LEFT:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("red", &color);
+#endif
+        points->coords[0] = MIN(offsetX1, maxX);
+        points->coords[1] = offsetY1;
+        points->coords[2] = MIN(offsetX1, maxX) ;
+        points->coords[3] = offsetY1 + dlength;
+        break;
+      case REGION_ROW_TOP:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("orange", &color);
+#endif
+        points->coords[0] = MIN(offsetX1, maxX);
+        points->coords[1] = offsetY1;
+        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? maxX : MIN(offsetX2, maxX));
+        points->coords[3] = offsetY1;
+        break;  
+      case REGION_ROW_RIGHT:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("gold", &color);
+#endif
+        points->coords[0] = MIN(offsetX2, maxX);
+        points->coords[1] = offsetY2;
+        points->coords[2] = MIN(offsetX2, maxX);
+        points->coords[3] = offsetY2 + dlength;
+        break;
+      case REGION_ROW_BOTTOM:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("green", &color);
+#endif
+        points->coords[0] = MIN(offsetX2, maxX);
+        points->coords[1] = offsetY2 + dlength;
+        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
+        points->coords[3] = offsetY2 + dlength;
+        break;
+      case REGION_ROW_EXTENSION_LEFT:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("blue", &color);
+#endif
+        points->coords[0] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
+        points->coords[1] = offsetY1 + dlength;
+        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
+        points->coords[3] = offsetY2 + dlength;
+        break;
+      case REGION_ROW_EXTENSION_RIGHT:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("grey", &color);
+#endif
+        points->coords[0] = (offsetY2 - offsetY1  >= dlength ? maxX : offsetX2);
+        points->coords[1] = offsetY1;
+        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? maxX : offsetX2);
+        points->coords[3] = offsetY2;
+        break;
+      case REGION_ROW_JOIN_TOP:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("brown", &color);
+#endif
+        points->coords[0] = MIN(offsetX1, maxX);
+        points->coords[1] = offsetY1 + dlength;
+        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
+        points->coords[3] = offsetY1 + dlength;
+        break;
+      case REGION_ROW_JOIN_BOTTOM:
+#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
+        gdk_color_parse("pink", &color);
+#endif
+        points->coords[0] = MIN(offsetX2, maxX);
+        points->coords[1] = offsetY2;
+        points->coords[2] = (offsetY2 - offsetY1 >= dlength ? maxX : MIN(offsetX2, maxX));
+        points->coords[3] = offsetY2;
+        break;
+      default:
+        zMapAssertNotReached();
+        break;
+      }
+      
+      if(!lines)
+        foo_canvas_item_new(parent,
+                            foo_canvas_line_get_type(),
+                            "points", points,
+                            "line_style", GDK_LINE_ON_OFF_DASH,
+                            "fill_color_gdk", &color,
+                            "width_units", 1.0,
+                            NULL);
+      else
+        {
+          if(FOO_IS_CANVAS_LINE(FOO_CANVAS_ITEM(lines->data)))
+            foo_canvas_item_set(FOO_CANVAS_ITEM(lines->data),
+                                "points", points,
+                                NULL);
+          lines = lines->next;
+        }        
+    }
+  foo_canvas_points_free(points);
+
+  return ;
+}
+
 
 static void textRowDestroy(gpointer data)
 {
@@ -1016,9 +1301,11 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
 
   iterator->y = (double)curr_idx;
 
-  trd->rowOffset      = curr_idx;// + iterator->seq_start - 1;
+  trd->rowOffset      = curr_idx; // + iterator->seq_start - 1;
   trd->fullStrLength  = iterator->cols;
   trd->sequenceOffset = iterator->offset_start;
+  trd->background     = iterator->background;
+  trd->outline        = iterator->outline;
 
   max_chars  = floor(MAX_TEXT_COLUMN_WIDTH / text_width) - 3; /* we add 3 dots (...) */
   char_count = MIN(iterator->cols, max_chars);
@@ -1049,7 +1336,7 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
                                  "text",       item_text,
                                  "anchor",     GTK_ANCHOR_NW,
                                  "font_desc",  fixed_font,
-                                 "fill_color", "black",
+                                 "fill_color_gdk", iterator->foreground,
                                  NULL);
       foo_canvas_item_get_bounds(item, &a, &b, &c, &d);
       trd->columnWidth = c - a + 1.0;
@@ -1063,7 +1350,6 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
                           "clip_height", (double)iterator->n_bases,
                           NULL
                           );
-
       foo_canvas_item_raise_to_top(item);
 
       g_free(item_text);
@@ -1074,7 +1360,7 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
 
     }
 
-  //  iterator->x = ZMAP_WINDOW_TEXT_BORDER; /* reset this */
+  /*  iterator->x = ZMAP_WINDOW_TEXT_BORDER; */  /* reset this */
 
   return item;
 }
