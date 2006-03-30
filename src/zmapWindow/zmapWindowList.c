@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar 29 11:16 2006 (edgrif)
+ * Last edited: Mar 30 16:19 2006 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.44 2006-03-29 10:20:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.45 2006-03-30 15:24:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,11 +48,15 @@ typedef struct _ZMapWindowListStruct
 {
   ZMapWindow  zmapWindow ; /*!< pointer to the zmapWindow that created us.   */
   char          *title ;  /*!< Title for the window  */
+
   GtkWidget     *view  ;  /*!< The treeView so we can get store, selection ... */
   GtkWidget     *toplevel ;
 
-  int cb_action ;					    /* Filled in as needed. */
+  GtkTreeModel *treeModel ;
+
+  int cb_action ;					    /* transient: filled in for callback. */
 } ZMapWindowListStruct, *ZMapWindowList ;
+
 
 
 /* For the menu */
@@ -71,11 +75,8 @@ enum {
   /* Space to add more */
   WINLIST_NONE
 };
-/* function prototypes ***************************************************/
-/* Functions to move into zmapWindow_P.h */
 
 
-/* PRIVATE FUNCTIONS TO THIS IMPLEMENTATION */
 
 /* creator functions ... */
 static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel,
@@ -85,7 +86,11 @@ static GtkWidget *makeMenuBar(ZMapWindowList wlist);
 static void selectItemInView(ZMapWindow window, GtkTreeView *treeView, FooCanvasItem *item);
 
 /* callbacks for the gui... */
-static void closeButtonCB      (GtkWidget *widget, gpointer user_data);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void testButtonCB      (GtkWidget *widget, gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void destroyListWindowCB(GtkWidget *window, gpointer user_data);
 
 static void columnClickedCB    (GtkTreeViewColumn *col, gpointer user_data);
@@ -115,7 +120,9 @@ static void orderByCB (gpointer data, guint cb_action, GtkWidget *widget);
 static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget);
 static void operateCB (gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
-/* functions *************************************************************/
+
+
+
 
 /* menu GLOBAL! */
 static GtkItemFactoryEntry menu_items_G[] = {
@@ -155,6 +162,8 @@ static GtkItemFactoryEntry menu_items_G[] = {
  { "/Help/About",        NULL, helpMenuCB, WINLISTABOUT, NULL,           NULL}
 };
 
+
+
 /* CODE ------------------------------------------------------------------ */
 
 /* Displays a list of selectable features
@@ -165,28 +174,42 @@ static GtkItemFactoryEntry menu_items_G[] = {
  * 
  */
 void zmapWindowListWindowCreate(ZMapWindow zmapWindow, 
-                                GList *itemList,
-                                char *title,
-                                FooCanvasItem *current_item)
+				GList *itemList,
+				char *title,
+				FooCanvasItem *current_item)
 {
-  ZMapWindowList windowList = NULL;
-  GtkTreeModel *treeModel   = NULL;
+  ZMapWindowList window_list = NULL;
 
-  windowList = g_new0(ZMapWindowListStruct, 1) ;
+  window_list = g_new0(ZMapWindowListStruct, 1) ;
 
-  windowList->zmapWindow = zmapWindow ;
-  windowList->title      = title;
+  window_list->zmapWindow = zmapWindow ;
+  window_list->title      = title;
 
-  treeModel = zmapWindowFeatureListCreateStore(FALSE);
+  window_list->treeModel = zmapWindowFeatureListCreateStore(FALSE) ;
 
-  zmapWindowFeatureListPopulateStoreList(treeModel, itemList);
+  zmapWindowFeatureListPopulateStoreList(window_list->treeModel, itemList) ;
 
-  drawListWindow(windowList, treeModel, current_item) ;
+  drawListWindow(window_list, window_list->treeModel, current_item) ;
 
-  g_object_unref(G_OBJECT(treeModel));
+  /* The view now holds a reference so we can get rid of our own reference */
+  g_object_unref(G_OBJECT(window_list->treeModel)) ;
 
-  return;
+  return ;
 }
+
+
+/* Reread its feature data from the feature structs, important when user has done a revcomp. */
+void zmapWindowListWindowReread(GtkWidget *toplevel)
+{  
+  ZMapWindowList window_list ;
+
+  window_list = g_object_get_data(G_OBJECT(toplevel), ZMAP_WINDOW_LIST_OBJ_KEY) ;
+
+  zmapWindowFeatureListRereadStoreList(GTK_TREE_VIEW(window_list->view), window_list->zmapWindow) ;
+
+  return ;
+}
+
 
 
 /***************** Internal functions ************************************/
@@ -195,13 +218,16 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel,
 			   FooCanvasItem *current_item)
 {
   GtkWidget *window, *vBox, *subFrame, *scrolledWindow;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   GtkWidget *button, *buttonBox;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   zmapWindowFeatureListCallbacksStruct windowCallbacks = { NULL, NULL, NULL };
   char *frame_label = NULL;
 
   /* Create window top level */
-  windowList->toplevel =
-    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  windowList->toplevel = window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
   /* Set it up graphically nice */
   gtk_window_set_title(GTK_WINDOW(window), windowList->title) ;
@@ -248,17 +274,16 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel,
   gtk_container_add(GTK_CONTAINER(scrolledWindow), windowList->view) ;
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* I don't like this single "close" button, if we add some more buttons for other purposes
-   * then it can come back. */
+  /* Testing only... */
 
   /* Our Button(s) */
   subFrame = gtk_frame_new("");
   //  gtk_frame_set_shadow_type(GTK_FRAME(subFrame), GTK_SHADOW_IN);
   gtk_box_pack_start(GTK_BOX(vBox), subFrame, FALSE, FALSE, 0);
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   buttonBox = gtk_hbutton_box_new();
   gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
   gtk_box_set_spacing (GTK_BOX(buttonBox), 
@@ -266,9 +291,9 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel,
   gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 
                                   ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
-  button = gtk_button_new_with_label("Close");
+  button = gtk_button_new_with_label("Reread");
   gtk_signal_connect(GTK_OBJECT(button), "clicked",
-                     GTK_SIGNAL_FUNC(closeButtonCB), (gpointer)(windowList));
+                     GTK_SIGNAL_FUNC(testButtonCB), (gpointer)(windowList));
   GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT); 
   
   gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
@@ -386,15 +411,19 @@ static void columnClickedCB(GtkTreeViewColumn *col, gpointer user_data)
 
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Ends up calling destroyListWindowCB via g_signal "destroy"
  * Just for the close button.
  */
-static void closeButtonCB(GtkWidget *widget, gpointer user_data)
+static void testButtonCB(GtkWidget *widget, gpointer user_data)
 {
   ZMapWindowList wList = (ZMapWindowList)user_data;
-  g_signal_emit_by_name(GTK_WIDGET(wList->toplevel), "destroy", NULL, NULL);
+
+  zmapWindowFeatureListRereadStoreList(GTK_TREE_VIEW(wList->view), wList->zmapWindow) ;
+
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -410,9 +439,11 @@ static void destroyListWindowCB(GtkWidget *widget, gpointer user_data)
   if(windowList != NULL)
     {
       ZMapWindow zmapWindow = NULL;
+
       zmapWindow = windowList->zmapWindow;
+
       if(zmapWindow != NULL)
-        g_ptr_array_remove(zmapWindow->featureListWindows, (gpointer)windowList->toplevel);
+        g_ptr_array_remove(zmapWindow->featureListWindows, (gpointer)windowList->toplevel) ;
     }
 
   gtk_widget_destroy(GTK_WIDGET(windowList->toplevel));

@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 30 15:43 2006 (rds)
+ * Last edited: Mar 30 16:22 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.111 2006-03-30 15:08:07 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.112 2006-03-30 15:24:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -229,6 +229,8 @@ typedef struct _ZMapWindowRulerCanvasStruct *ZMapWindowRulerCanvas;
 
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
+
+
 /* Represents a single sequence display window with its scrollbars, canvas and feature
  * display. */
 typedef struct _ZMapWindowStruct
@@ -409,13 +411,16 @@ void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item) ;
 
 void zmapWindowShowItem(FooCanvasItem *item) ;
 
-//void zmapWindowListWindowCreate(ZMapWindow window, FooCanvasItem *item, ZMapStrand strandMask) ;
+
 void zmapWindowListWindowCreate(ZMapWindow zmapWindow, 
-                                GList *itemList,
-                                char *title,
-                                FooCanvasItem *currentItem);
+				GList *itemList,
+				char *title,
+				FooCanvasItem *currentItem) ;
+void zmapWindowListWindowReread(GtkWidget *window_list_widget) ;
+
 
 void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, ZMapFeatureAny feature_any) ;
+
 
 void zmapWindowNewReposition(ZMapWindow window) ;
 
@@ -492,6 +497,7 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 
 gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType);
 
+
 ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item); 
 void zmapWindowEditorDraw(ZMapWindowEditor editor);
 
@@ -543,8 +549,13 @@ GtkWidget    *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
                                               gpointer user_data);
 void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel,
                                             GList *list);
+void zmapWindowFeatureListRereadStoreList(GtkTreeView *tree_view, ZMapWindow window) ;
 gint zmapWindowFeatureListCountSelected(GtkTreeSelection *selection);
 gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
+
+
+
+
 
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
