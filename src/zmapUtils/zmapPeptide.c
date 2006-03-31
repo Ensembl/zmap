@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: Mar 15 15:51 2006 (edgrif)
+ * Last edited: Mar 31 13:00 2006 (rds)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.1 2006-03-17 17:10:34 edgrif Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.2 2006-03-31 12:02:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -98,6 +98,7 @@ static char E_antiCodon (char* cp, GArray *genetic_code, int *index_out) ;
 
 static GArray *pepGetTranslationTable(void) ;
 static void dnaEncodeString(char *cp) ;
+static void dnaDecodeString(char *cp) ;
 
 
 /*
@@ -196,7 +197,7 @@ char dnaEncodeChar[] =
    0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
 } ;
 
-
+char dnaDecodeChar[1<<4] = { 0 }; 
 
 
 
@@ -477,7 +478,21 @@ ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
   return pep ;
 }
 
+/* The same as zMapPeptideCreate, but decodes dna string, which makes
+ * it slower. It could be done with a copy, but then that uses
+ * memory... */
+ZMapPeptide zMapPeptideCreateSafely(char *sequence_name, char *gene_name,
+                                    char *dna, GArray *translation_table, 
+                                    gboolean include_stop)
+{
+  ZMapPeptide pep = NULL;
 
+  pep = zMapPeptideCreate(sequence_name, gene_name, dna,
+                          translation_table, include_stop);
+  dnaDecodeString(dna);
+
+  return pep;
+}
 int zMapPeptideLength(ZMapPeptide peptide)
 {
   int length ;
@@ -784,3 +799,29 @@ static void dnaEncodeString(char *cp)
   return ;
 }
 
+static void dnaDecodeString(char *cp)
+{
+  dnaDecodeChar[A_] = 'a';
+  dnaDecodeChar[T_] = 't';
+  dnaDecodeChar[G_] = 'g';
+  dnaDecodeChar[C_] = 'c';
+
+  dnaDecodeChar[R_] = 'r';
+  dnaDecodeChar[Y_] = 'y';
+  dnaDecodeChar[M_] = 'm';
+  dnaDecodeChar[K_] = 'k';
+  dnaDecodeChar[S_] = 's';
+  dnaDecodeChar[W_] = 'w';
+
+  dnaDecodeChar[H_] = 'h';
+  dnaDecodeChar[B_] = 'b';
+  dnaDecodeChar[V_] = 'v';
+  dnaDecodeChar[D_] = 'd';
+
+  dnaDecodeChar[N_] = 'n';
+
+  --cp;
+  while(*++cp)
+    *cp = dnaDecodeChar[((int)*cp)];
+  return ;
+}
