@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 29 15:32 2006 (rds)
+ * Last edited: Mar 31 12:36 2006 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.3 2006-03-29 14:33:11 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.4 2006-03-31 11:48:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,9 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapFeature_P.h>
 
+/* This isn't ideal, but there is code calling the getDNA functions
+ * below, not checking return value... */
+#define NO_DNA_STRING "<No DNA>"
 
 typedef struct
 {
@@ -51,6 +54,7 @@ static void doFeatureAnyCB(ZMapFeatureAny any_feature, gpointer user_data) ;
 static void datasetCB(GQuark key_id, gpointer data, gpointer user_data) ;
 static void listCB(gpointer data, gpointer user_data) ;
 static void revcompSpan(GArray *spans, int seq_end) ;
+static gboolean fetchBlockDNAPtr(ZMapFeature feature, char **dna);
 
 
 
@@ -74,36 +78,41 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context)
 
 
 
-
+#ifdef RDS_DONT_INCLUDE_UNUSED
 char *zMapFeatureGetDNA(ZMapFeatureContext context, int start, int end)
 {
-  char *dna = NULL ;
+  char *dna = NULL;
 
   zMapAssert(context && (start > 0 && (end == 0 || end > start))) ;
 
   if (end == 0)
     end = context->sequence->length ;
 
-  dna = getDNA(context->sequence->sequence, start, end, FALSE) ;
+
+  dna = getDNA(context->sequence->sequence, start, end, FALSE);
 
   return dna ;
 }
-
+#endif /* RDS_DONT_INCLUDE_UNUSED */
 
 /* Trivial function which just uses the features start/end coords, could be more intelligent
  * and deal with transcripts/alignments more intelligently. */
 char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature)
 {
-  char *dna = NULL ;
+  char *dna = NULL, *tmp;
   gboolean revcomp = FALSE ;
+  ZMapFeatureBlock block = NULL;
 
   /* should check that feature is in context.... */
-  zMapAssert(context && feature) ;
+  zMapAssert(feature) ;
 
   if (feature->strand == ZMAPSTRAND_REVERSE)
     revcomp = TRUE ;
 
-  dna = getDNA(context->sequence->sequence, feature->x1, feature->x2, revcomp) ;
+  if(fetchBlockDNAPtr(feature, &tmp))
+    dna = getDNA(tmp, feature->x1, feature->x2, revcomp) ;
+  else if(NO_DNA_STRING)
+    dna = g_strdup(NO_DNA_STRING);
 
   return dna ;
 }
@@ -114,7 +123,7 @@ char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature)
 char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transcript,
 				  gboolean spliced, gboolean CDS)
 {
-  char *dna = NULL ;
+  char *dna = NULL, *tmp;
   GArray *exons ;
 
   /* should check that feature is in context.... */
@@ -124,12 +133,12 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
 
   if (!spliced || !exons)
     dna = zMapFeatureGetFeatureDNA(context, transcript) ;
-  else
+  else if(fetchBlockDNAPtr(transcript, &tmp))
     {
       GString *dna_str ;
       int i ;
       int seq_length = 0 ;
-
+      
       dna_str = g_string_sized_new(1000) ;		    /* Average length of human proteins is
 							       apparently around 500 amino acids. */
   
@@ -144,7 +153,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
 	  length = exon_span->x2 - exon_span->x1 + 1 ;
 	  seq_length += length ;
 
-	  dna_str = g_string_append_len(dna_str, (context->sequence->sequence + offset), length) ;
+	  dna_str = g_string_append_len(dna_str, (tmp + offset), length) ;
 	}
 
       dna = g_string_free(dna_str, FALSE) ;
@@ -154,6 +163,8 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
 	revcompDNA(dna, seq_length) ;
     }
 
+  if(!dna && NO_DNA_STRING)
+    dna = g_strdup(NO_DNA_STRING);
 
   return dna ;
 }
@@ -183,7 +194,21 @@ static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
   return dna ;
 }
 
+static gboolean fetchBlockDNAPtr(ZMapFeature feature, char **dna)
+{
+  gboolean dna_exists = FALSE;
+  ZMapFeatureBlock block = NULL;
 
+  if((block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
+                                                          ZMAPFEATURE_STRUCT_BLOCK))
+     && block->sequence.sequence)
+    {
+      if(dna && (dna_exists = TRUE))
+        *dna = block->sequence.sequence;
+    }
+
+  return dna_exists;
+}
 
 /* Reverse complement the DNA. This function is fast enough for now, if it proves too slow
  * then rewrite it !
