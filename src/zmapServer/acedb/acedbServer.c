@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar 29 16:02 2006 (rds)
+ * Last edited: Apr  6 17:47 2006 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.50 2006-03-29 15:02:59 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.51 2006-04-06 16:47:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -351,6 +351,8 @@ static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext fe
   get_sequence.eachBlock = eachBlockDNARequest;
 
   g_datalist_foreach(&(feature_context->alignments), eachAlignment, (gpointer)&get_sequence);
+  
+  return get_sequence.result;
 }
 
 static void eachBlockDNARequest(gpointer data, gpointer user_data)
