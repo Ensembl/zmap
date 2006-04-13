@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar 29 15:12 2006 (rds)
+ * Last edited: Apr 13 16:13 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.121 2006-03-29 14:48:36 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.122 2006-04-13 15:15:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,7 @@
 #include <ZMap/zmapConfig.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
-
+#include <ZMap/zmapPeptide.h>
 
 
 /* these will go when scale is in separate window. */
@@ -133,6 +133,7 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
 static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void setColours(ZMapWindow window) ;
+static void createThreeFrameTranslationForBlock(ZMapFeatureBlock block);
 
 
 
@@ -418,7 +419,6 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
   return ;
 }
 
-
 /* Draw all the blocks within an alignment, these will vertically one below another and positioned
  * according to their alignment on the master sequence. If we are drawing the master sequence,
  * the code assumes this is represented by a single block that spans the entire master alignment. */
@@ -513,7 +513,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
    * and also the user may want them displayed even if empty.... */
   g_list_foreach(canvas_data->full_context->feature_set_names, createSetColumn, canvas_data) ;
 
-
+  createThreeFrameTranslationForBlock(block);
   /* Now draw all features within each column, note that this operates on the feature context
    * so is called only for feature sets that contain features. */
   g_datalist_foreach(&(block->feature_sets), ProcessFeatureSet, canvas_data) ;
@@ -1225,6 +1225,45 @@ static void setColours(ZMapWindow window)
 }
 
 
+
+static void createThreeFrameTranslationForBlock(ZMapFeatureBlock block)
+{
+  ZMapFeatureContext context = NULL;
+  ZMapFeatureSet feature_set = NULL;
+  ZMapFeatureTypeStyle style = NULL;
+
+  char *trans = "3frametranslation";
+  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_CONTEXT);
+
+  if((feature_set = (g_datalist_id_get_data(&(block->feature_sets), 
+                                            g_quark_from_string(trans))))
+     && (style = zMapFindStyle(context->styles, g_quark_from_string(trans))))
+    {
+      int i; char *seq = NULL, *f_name = NULL;
+      ZMapFeature threeft = NULL; 
+      ZMapPeptide pep = NULL;
+      seq = block->sequence.sequence;
+      
+      for(i = 0; seq && *seq && i < 3; i++, seq++)
+        {
+          threeft = zMapFeatureCreateEmpty();
+          f_name = g_strdup_printf("%s_phase_%d", trans, i);
+          pep = zMapPeptideCreateSafely(NULL, NULL, seq, NULL, FALSE);
+          
+          threeft->text = g_strdup(zMapPeptideSequence(pep));
+          
+          zMapFeatureAddStandardData(threeft, f_name, f_name,
+                                     "b0250", "sequence",
+                                     ZMAPFEATURE_PEP_SEQUENCE, style,
+                                     i+1, zMapPeptideLength(pep) * 3 + i + 1,
+                                     FALSE, 0.0,
+                                     ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
+          zMapFeatureSetAddFeature(feature_set, threeft);
+        }
+      feature_set->style = style;
+    }
+  return ;
+}
 
 
 /****************** end of file ************************************/
