@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Mar 29 15:26 2006 (rds)
+ * Last edited: Apr 13 16:46 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.63 2006-03-29 14:26:38 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.64 2006-04-13 15:47:00 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -73,10 +73,10 @@ typedef int methodID ;
 /* What about "sequence", atg, and allele as basic feature types ?           */
 
 
-/* ZMAPFEATURE_RAW_SEQUENCE is temporary.... */
+/* ZMAPFEATURE_RAW_SEQUENCE and now ZMAPFEATURE_PEP_SEQUENCE are temporary.... */
 typedef enum {ZMAPFEATURE_INVALID = 0,
 	      ZMAPFEATURE_BASIC, ZMAPFEATURE_ALIGNMENT, ZMAPFEATURE_TRANSCRIPT,
-	      ZMAPFEATURE_RAW_SEQUENCE} ZMapFeatureType ;
+	      ZMAPFEATURE_RAW_SEQUENCE, ZMAPFEATURE_PEP_SEQUENCE} ZMapFeatureType ;
 
 typedef enum {ZMAPFEATURE_SUBPART_INVALID,
 	      ZMAPFEATURE_SUBPART_INTRON, ZMAPFEATURE_SUBPART_EXON,
@@ -454,6 +454,7 @@ typedef struct ZMapFeatureTypeStyleStruct_
   double max_mag ;					    /* Don't display if more bases/line */
 
   double    width ;					    /* column width */
+  double bump_width;
 
   ZMapStyleScoreMode   score_mode ;			    /* Controls width of features that
 							       have scores. */
