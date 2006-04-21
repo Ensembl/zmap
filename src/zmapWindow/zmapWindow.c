@@ -26,11 +26,12 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 30 16:07 2006 (edgrif)
+ * Last edited: Apr 21 08:31 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.119 2006-03-30 15:23:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.120 2006-04-21 07:32:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
+
 #include <math.h>
 #include <string.h>
 #include <glib.h>
@@ -544,7 +545,98 @@ void zMapWindowMove(ZMapWindow window, double start, double end)
 
 
 
+/*!
+ * Returns coords of currently exposed section of canvas, note that coords do not include
+ * the blank boundary, only things that are drawn in the alignment.
+ *
+ *
+ * @param window       The ZMapWindow.
+ * @param x1_out       left coord.
+ * @param y1_out       top coord.
+ * @param x2_out       right coord.
+ * @param y2_out       bottom coord.
+ * @return             TRUE if window is valid and a position is returned, FALSE otherwise.
+ *  */
+gboolean zMapWindowCurrWindowPos(ZMapWindow window,
+				 double *x1_out, double *y1_out, double *x2_out, double *y2_out)
+{
+  gboolean result = TRUE ;
+  GtkAdjustment *h_adjuster, *v_adjuster ;
+  double left, top, right, bottom ;
+  double page_size ;
+  GtkRequisition scrwin_size ;
+  double x1, y1, x2, y2 ;
 
+  h_adjuster = 
+    gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+  v_adjuster = 
+    gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
+  /* note in calculating the right/bottom, its possible for the scrolled window to be forced
+   * to be bigger than the canvas. */
+  left = h_adjuster->value ;
+  top = v_adjuster->value ;
+  right = left + MIN(h_adjuster->page_size, h_adjuster->upper)  ;
+  bottom = top + MIN(v_adjuster->page_size, v_adjuster->upper) ;
+
+
+  foo_canvas_window_to_world(window->canvas, left, top, x1_out, y1_out) ;
+
+  foo_canvas_window_to_world(window->canvas, right, bottom, x2_out, y2_out) ;
+
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(window->feature_root_group),
+			     &x1, &y1, &x2, &y2) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (*x1_out < x1)
+    *x1_out = x1 ;
+  if (*y1_out < y1)
+    *y1_out = y1 ;
+  if (*x2_out > x2)
+    *x2_out = x2 ;
+  if (*y2_out > y2)
+    *y2_out = y2 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  return result ;
+}
+
+
+/*!
+ * Returns the max coords of the alignment.
+ *
+ * @param window       The ZMapWindow.
+ * @param x1_out       left coord.
+ * @param y1_out       top coord.
+ * @param x2_out       right coord.
+ * @param y2_out       bottom coord.
+ * @return             TRUE if window is valid and a position is returned, FALSE otherwise.
+ *  */
+gboolean zMapWindowMaxWindowPos(ZMapWindow window,
+				double *x1_out, double *y1_out, double *x2_out, double *y2_out)
+{
+  gboolean result = TRUE ;
+
+  /* should I be getting the whole thing here including borders ???? */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(window->feature_root_group),
+			     &dump_opts.x1, &dump_opts.y1, &dump_opts.x2, &dump_opts.y2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* THIS MAY NOT WORK AS THE SCALING FACTOR/PIXELS BIT MAY BE ALL WRONG.... */
+
+  /* This doesn't do the borders. */
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(window->canvas->root),
+			     x1_out, y1_out, x2_out, y2_out) ;
+
+  return result ;
+}
 
 
 
