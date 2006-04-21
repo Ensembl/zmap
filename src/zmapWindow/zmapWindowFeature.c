@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 30 16:22 2006 (rds)
+ * Last edited: Mar 31 09:38 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.20 2006-03-30 16:21:19 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.21 2006-04-21 07:33:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1593,8 +1593,8 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"Show Feature",           2, itemMenuCB, NULL},
-      {"All Column Features",      1, itemMenuCB, NULL},
+      {"Show This Feature",           2, itemMenuCB, NULL},
+      {"List All Column Features",      1, itemMenuCB, NULL},
       {"Feature Search Window",  3, itemMenuCB, NULL},
       {"Pfetch this feature",    4, itemMenuCB, NULL},
       {NULL,                     0, NULL,       NULL}
