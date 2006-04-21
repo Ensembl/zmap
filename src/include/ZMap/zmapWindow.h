@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Mar 30 16:42 2006 (rds)
+ * Last edited: Apr 18 17:44 2006 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.57 2006-03-30 16:23:58 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.58 2006-04-21 07:29:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -65,6 +65,7 @@ typedef enum {ZMAP_ZOOM_INIT, ZMAP_ZOOM_MIN, ZMAP_ZOOM_MID, ZMAP_ZOOM_MAX,
  * vertical means that the vertical scrollbars should be locked together, specifying vertical
  * or horizontal means locking of zoom as well. */
 typedef enum {ZMAP_WINLOCK_NONE, ZMAP_WINLOCK_VERTICAL, ZMAP_WINLOCK_HORIZONTAL} ZMapWindowLockType ;
+
 
 
 /* Data returned to the visibilityChange callback routine. */
@@ -205,6 +206,8 @@ void zMapWindowFToIDestroyQuery(ZMapWindowFToIQuery query);
 
 GList *zMapWindowFeatureAllStyles(ZMapWindow window);
 
+gboolean zMapWindowDump(ZMapWindow window) ;
+
 
 /* Add, modify, draw, remove features from the canvas. */
 FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
@@ -216,6 +219,10 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 void zMapWindowColumnConfigure(ZMapWindow window) ;
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
+gboolean zMapWindowCurrWindowPos(ZMapWindow window,
+				 double *x1_out, double *y1_out, double *x2_out, double *y2_out) ;
+gboolean zMapWindowMaxWindowPos(ZMapWindow window,
+				double *x1_out, double *y1_out, double *x2_out, double *y2_out) ;
 gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) ;
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature) ;
 
