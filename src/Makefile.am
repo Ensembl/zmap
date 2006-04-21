@@ -54,7 +54,7 @@ zmap_SOURCES = $(top_srcdir)/zmapApp/zmapApp_P.h
 #	$(NULL) 
 
 # -lZMap was at the end, why is this?
-zmap_LDFLAGS = -L$(top_builddir)/lib -lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lexpat -lpopt \
+zmap_LDFLAGS = -L$(top_builddir)/lib -lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lexpat -lpopt -lg2 -lgd \
 	@ACECONN_LIBS@ \
 	@GTK_LIBS@ \
 	@FOOCANVAS_LIBS@ \
