@@ -27,11 +27,21 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 21 07:39 2006 (edgrif)
+ * Last edited: Apr 21 08:31 2006 (edgrif)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowExport.c,v 1.1 2006-04-21 07:26:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowExport.c,v 1.2 2006-04-21 07:33:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
+
+
+
+/* PLEASE READ THIS: there are some problems with understanding the coord/origin system, some
+ * of which are of our own making (e.g. the blank border at top/bottom of the zmap affects the
+ * scaling factor of the canvas which in turn affects stuff here.. but that is not all, the gv
+ * postscript viewer is not working consistently making it hard to judge output from this
+ * program...sigh...encapuslated and image output looks fine.... */
+
+
 
 #include <string.h>
 #include <math.h>
