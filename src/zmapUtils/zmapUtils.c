@@ -26,12 +26,13 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Feb 20 11:15 2006 (edgrif)
+ * Last edited: Apr 24 11:43 2006 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.15 2006-02-21 15:05:31 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.16 2006-04-25 12:54:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <sys/wait.h>
 #include <time.h>
 #include <string.h>
 #include <errno.h>
@@ -265,7 +266,6 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
   char *format_str ;
   char buffer[MAX_TIMESTRING] = {0} ;
   size_t buf_size = MAX_TIMESTRING, bytes_written ;
-  char *chartime = NULL ;
 
 
   zMapAssert(format == ZMAPTIME_STANDARD || format == ZMAPTIME_YMD
@@ -384,6 +384,106 @@ gboolean zMapStr2Double(char *str, double *double_out)
 }
 
 
+
+
+/*!
+ * Runs the system() call and returns TRUE if it worked or FALSE if it didn't.
+ * If the call failed and err_msg_out is non-NULL then an error message is returned
+ * explaining the failure. The caller should free error message using g_free() when
+ * no longer required.
+ * 
+ * It is not straight forward to interpret the return value of the system call so this
+ * function attempts to interpret the value correctly.
+ *
+ * @param cmd_str       The command to be run (exactly as it would be for the Bourne shell).
+ * @param err_msg_out   A pointer to an internal error message is returned here.
+ * @return              TRUE if system command succeeded, FALSE otherwise.
+ *  */
+gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out)
+{
+  gboolean result = FALSE ;
+  int sys_rc ;
+
+  sys_rc = system(cmd_str) ;
+
+  if (cmd_str == NULL)
+    {
+      /* Deal with special return codes when cmd is NULL. */
+
+      if (sys_rc != 0)
+	result = TRUE ;
+      else
+	{
+	  result = FALSE ;
+	  if (err_msg_out)
+	    *err_msg_out = g_strdup("No shell available !") ;
+	}
+    }
+  else
+    {
+      /* All other command strings... */
+
+      if (sys_rc == -1)
+	{
+	  result = FALSE ;
+	  if (err_msg_out)
+	    *err_msg_out = g_strdup_printf("Failed to run child process correctly, sys error: %s.",
+					   g_strerror(errno)) ;
+	}
+      else
+	{
+	  /* If the shell cannot be exec'd the docs say it behaves as though a command returned
+	   * exit(127) but I don't know if you can disambiguate this from any other command that
+	   * might return 127..... */
+
+	  if (!WIFEXITED(sys_rc))
+	    {
+	      result = FALSE ;
+	      if (err_msg_out)
+		*err_msg_out = g_strdup("Child process did not exit normally.") ;
+	      
+	    }
+	  else
+	    {
+	      /* you can only use WEXITSTATUS() if WIFEXITED() is true. */
+	      int true_rc ;
+
+	      true_rc = WEXITSTATUS(sys_rc) ;
+		  
+	      if (true_rc == EXIT_SUCCESS)
+		result = TRUE ;
+	      else
+		{
+		  result = FALSE ;
+		  if (err_msg_out)
+		    *err_msg_out = g_strdup_printf("Command \"%s\" failed with return code %d",
+						   cmd_str, true_rc) ;
+		}
+	    }
+	}
+    }
+
+
+  return result ;
+}
+
+
+
+
+
+
+/*! @} end of zmaputils docs. */
+
+
+
+
+/* 
+ *                   Internal routines.
+ */
+
+
+
+
 static gboolean getVersionNumbers(char *version_str,
 				  int *version_out, int *release_out, int *update_out)
 {
@@ -408,9 +508,4 @@ static gboolean getVersionNumbers(char *version_str,
   return result ;
 }
 
-
-
-
-
-/*! @} end of zmaputils docs. */
 

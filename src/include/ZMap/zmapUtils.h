@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Mar 23 15:07 2006 (edgrif)
+ * Last edited: Apr 24 11:07 2006 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.21 2006-03-23 16:42:06 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.22 2006-04-25 12:54:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -149,6 +149,7 @@ gboolean zMapStr2Double(char *str, double *double_out) ;
   { TYPE tmp = (FIRST) ; (FIRST) = (SECOND) ; (SECOND) = tmp ; }
 
 
+gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out) ;
 
 gboolean zMapLaunchWebBrowser(char *link, GError **error) ;
 
