@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 30 16:22 2006 (edgrif)
+ * Last edited: Apr 21 14:45 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.112 2006-03-30 15:24:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.113 2006-04-25 12:58:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -434,6 +434,8 @@ void zmapWindowLongItemFree(GList *long_items) ;
 
 void zmapWindowDrawFeatures(ZMapWindow window, 
 			    ZMapFeatureContext current_context, ZMapFeatureContext new_context) ;
+
+gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
 
 
 double zmapWindowExt(double start, double end) ;
