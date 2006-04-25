@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Apr 18 17:44 2006 (edgrif)
+ * Last edited: Apr 21 09:09 2006 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.58 2006-04-21 07:29:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.59 2006-04-25 12:56:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -165,6 +165,7 @@ typedef struct _ZMapWindowFToIQueryStruct
 
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data) ;
+
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
 			  void *app_data, ZMapWindow old,
 			  ZMapFeatureContext features, ZMapWindowLockType window_locking) ;
@@ -175,7 +176,6 @@ void zMapWindowReset(ZMapWindow window) ;
 void zMapWindowRedraw(ZMapWindow window) ;
 void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
 			     gboolean reversed) ;
-GtkWidget *zMapWindowGetWidget(ZMapWindow window);
 
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
@@ -185,11 +185,11 @@ double zMapWindowGetZoomMax(ZMapWindow window) ;
 double zMapWindowGetZoomMagnification(ZMapWindow window);
 double zMapWindowGetZoomMaxDNAInWrappedColumn(ZMapWindow window);
 
+GtkWidget *zMapWindowGetWidget(ZMapWindow window);
 gboolean zMapWindowIsLocked(ZMapWindow window) ;
-
-/* For when a window in the same view has a child removed */
-void zMapWindowSiblingWasRemoved(ZMapWindow window);
-
+GList *zMapWindowFeatureAllStyles(ZMapWindow window);
+void zMapWindowSiblingWasRemoved(ZMapWindow window);	    /* For when a window in the same view
+							       has a child removed */
 #ifdef RDS_DONT_INCLUDE
 /* Remove this to use Ed's version */
 //PangoFont *zMapWindowGetFixedWidthFont(ZMapWindow window);
@@ -197,17 +197,16 @@ void zMapWindowSiblingWasRemoved(ZMapWindow window);
 PangoFontDescription *zMapWindowZoomGetFixedWidthFontInfo(ZMapWindow window, 
                                                           double *width_out, 
                                                           double *height_out);
-
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
 
 ZMapWindowFToIQuery zMapWindowFToINewQuery(void);
 gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query);
 void zMapWindowFToIDestroyQuery(ZMapWindowFToIQuery query);
 
-GList *zMapWindowFeatureAllStyles(ZMapWindow window);
-
+void zMapWindowColumnConfigure(ZMapWindow window) ;
+gboolean zMapWindowExport(ZMapWindow window) ;
 gboolean zMapWindowDump(ZMapWindow window) ;
-
+gboolean zMapWindowPrint(ZMapWindow window) ;
 
 /* Add, modify, draw, remove features from the canvas. */
 FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
@@ -216,7 +215,6 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 				 FooCanvasItem *curr_feature_item, ZMapFeature new_feature) ;
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item) ;
 
-void zMapWindowColumnConfigure(ZMapWindow window) ;
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
 gboolean zMapWindowCurrWindowPos(ZMapWindow window,
@@ -227,7 +225,6 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) 
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature) ;
 
 void zMapWindowDestroyLists(ZMapWindow window) ;
-
 void zMapWindowUnlock(ZMapWindow window) ;
 
 void zMapWindowDestroy(ZMapWindow window) ;
