@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Apr 18 17:57 2006 (edgrif)
+ * Last edited: Apr 21 09:00 2006 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.12 2006-04-21 07:30:14 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.13 2006-04-25 12:55:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,8 +64,9 @@ typedef struct
 static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
-static void featureDumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
@@ -79,8 +80,9 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/_File",         NULL,         NULL, 0, "<Branch>" },
  { "/File/_New",     "<control>N", newCB, 2, NULL },
  { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
- { "/File/_Dump",    "<control>D", featureDumpCB, 0, NULL },
  { "/File/_Export",  "<control>E", exportCB, 0, NULL },
+ { "/File/_Dump",    "<control>D", dumpCB, 0, NULL },
+ { "/File/_Print",   "<control>P", printCB, 0, NULL },
  { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
  { "/File/Close",    "<control>W", closeCB, 0, NULL },
  { "/File/Quit",     "<control>Q", quitCB, 0, NULL },
@@ -125,7 +127,7 @@ GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
 
 
 /* Should pop up a dialog box to ask for a file name....e.g. the file chooser. */
-static void featureDumpCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   ZMap zmap = (ZMap)cb_data ;
   gchar *file = "ZMap.features" ;
@@ -136,7 +138,7 @@ static void featureDumpCB(gpointer cb_data, guint callback_action, GtkWidget *wi
 }
 
 
-static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
+static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 {
   ZMap zmap = (ZMap)cb_data ;
   ZMapWindow window ;
@@ -148,6 +150,18 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
   return ;
 }
 
+
+static void printCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
+{
+  ZMap zmap = (ZMap)cb_data ;
+  ZMapWindow window ;
+
+  window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+
+  zMapWindowPrint(window) ;
+
+  return ;
+}
 
 
 /* Causes currently focussed zmap window to redraw itself. */
