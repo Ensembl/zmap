@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 29 15:10 2006 (rds)
+ * Last edited: Apr 28 18:49 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.19 2006-03-29 14:48:03 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.20 2006-04-28 17:50:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -160,18 +160,24 @@ void zmapWindowColumnSetMagState(ZMapWindow window,
  * to do that you need to use zmapWindowColumnReposition(). The split is made because
  * we don't always want to reposition all the columns following a bump, e.g. when we
  * are creating a zmap window. */
-void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapStyleOverlapMode bump_mode)
+void zmapWindowColumnBump(FooCanvasGroup *column_group,
+			  ZMapStyleOverlapMode bump_mode)
 {
   BumpColStruct bump_data = {0.0} ;
   FooCanvasGroup *column_features ;
   ZMapFeatureTypeStyle style ;
+  double spacing ;
+
+  /* Should check that it is a column group.... */
 
   column_features = zmapWindowContainerGetFeatures(column_group) ;
 
   style = zmapWindowContainerGetStyle(column_group) ;
 
+  spacing = zmapWindowContainerGetSpacing(column_group) ;
+
   bump_data.bump_mode = bump_mode ;
-  bump_data.incr = style->width + BUMP_SPACING ;
+  bump_data.incr = style->width + spacing ;
 
   switch (bump_mode)
     {
@@ -464,8 +470,50 @@ void zmapWindowNewReposition(ZMapWindow window)
 			     positionCB,
 			     window, TRUE) ;
 
+  /* Must reset width as things like bumping can alter it. We don't need to do the
+   * height as that is set via zoom function. */
+  zmapWindowResetWidth(window) ;
+
+
   return ;
 }
+
+
+/* Reset scrolled region width so that user can scroll across whole of canvas. */
+void zmapWindowResetWidth(ZMapWindow window)
+{
+  FooCanvasGroup *root ;
+  double x1, x2, y1, y2 ;
+  double root_x1, root_x2, root_y1, root_y2 ;
+  double scr_reg_width, root_width ;
+
+
+  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+
+  scr_reg_width = x2 - x1 + 1.0 ;
+
+  root = foo_canvas_root(window->canvas) ;
+
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(root), &root_x1, &root_y1, &root_x2, &root_y2) ;
+
+  root_width = root_x2 - root_x1 + 1 ;
+
+  if (root_width != scr_reg_width)
+    {
+      double excess ;
+
+      excess = root_width - scr_reg_width ;
+
+      x2 = x2 + excess ;
+
+      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2) ;
+    }
+
+
+  return ;
+}
+
+
 
 /* Makes sure all the things that need to be redrawn for zooming get redrawn. */
 void zmapWindowDrawZoom(ZMapWindow window)
@@ -904,7 +952,9 @@ static void preZoomCB(gpointer data, gpointer user_data)
 static void positionCB(gpointer data, gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
-  ZMapWindow window = (ZMapWindow)user_data ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  ZMapWindow window = (ZMapWindow)user_data ;		    /* not needed at the moment... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapContainerLevelType level ;
 
   level = zmapWindowContainerGetLevel(container) ;
@@ -912,13 +962,6 @@ static void positionCB(gpointer data, gpointer user_data)
   if (level != ZMAPCONTAINER_LEVEL_FEATURESET)
     zmapWindowContainerReposition(container) ;
   
-#ifdef RDS_DONT_INCLUDE
-  /* Correct for the stupid scale bar.... */  
-  if (level == ZMAPCONTAINER_LEVEL_ROOT)
-    my_foo_canvas_item_goto(FOO_CANVAS_ITEM(container),
-			    &(window->alignment_start), NULL) ; 
-#endif
-
   return ;
 }
 
