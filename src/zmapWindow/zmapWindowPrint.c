@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 25 10:47 2006 (edgrif)
+ * Last edited: Apr 28 12:52 2006 (edgrif)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowPrint.c,v 1.1 2006-04-25 12:48:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowPrint.c,v 1.2 2006-04-28 11:53:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,16 +56,30 @@
 /* This template is used by the g_mkstemp() function which fills in the "XXXXXX" uniquely. */
 #define TMP_FILE_TMPLATE "/tmp/ZMapPrintFile.XXXXXX"
 
+/* Send image to printer or save to file ? */
+typedef enum {TO_PRINTER, TO_FILE} PrintFileDestination ;
+
 
 typedef struct
 {
+  GError *print_file_err ;
+
   GList *printers ;
 
-  /* We hold this string within the struct because mkstemp needs something to write into. */
+  /* We hold this string within the struct because mkstemp only needs a fixed length buffer
+   * to write into. */
   gboolean tmp_file_ok ;				    /* Flags that tmp file was created. */
   char print_template[30] ;				    /* Keep in step with TMP_FILE_TMPLATE */
 
+  PrintFileDestination sendto ;
+  GtkWidget *print ;
+  GtkWidget *file ;
+
+  GtkWidget *print_select ;
   GtkWidget *combo ;
+
+  GtkWidget *save_button, *print_button ;
+  
 
   char *default_printer ;
   char *selected_printer ;
@@ -80,9 +94,13 @@ static void  printNames(gpointer data, gpointer user_data) ;
 static gint mySortFunc(gconstpointer a, gconstpointer b) ;
 
 static gboolean getPrintFileName(PrintCBData print_cb, GError **print_file_err_inout) ;
+static gboolean printFile(ZMapWindow window, PrintCBData print_cb) ;
 
 static gboolean printDialog(PrintCBData print_cb) ;
 static void addNames(gpointer data, gpointer user_data) ;
+static void getButtons(GtkDialog *dialog, PrintCBData print_cb) ;
+static void destinationCB(GtkButton *button, gpointer user_data) ;
+static void setSensitive(PrintCBData cb_data) ;
 
 static gboolean getConfiguration(PrintCBData print_cb) ;
 
@@ -93,7 +111,6 @@ gboolean zMapWindowPrint(ZMapWindow window)
 {
   gboolean result = TRUE ;
   char *sys_printers = SYSTEM_PRINT_FILE ;		    /* May require alternative names for porting. */
-  GError *print_file_err = NULL ;
   PrintCBDataStruct print_cb = {NULL} ;
 
 
@@ -104,25 +121,54 @@ gboolean zMapWindowPrint(ZMapWindow window)
 
 
   /* Get the list of available printers. */
-  print_cb.printers = getPrinters(sys_printers, &print_file_err) ;
+  print_cb.printers = getPrinters(sys_printers, &(print_cb.print_file_err)) ;
 
 
   /* do the dialog bit.... */
   result = printDialog(&print_cb) ;
 
 
-  if (result)
+  /* Depending on what user wanted either print the window or save it. */
+  if (print_cb.sendto == TO_FILE)
     {
-      if (!(result = getPrintFileName(&print_cb, &print_file_err)))
-	{
-	  zMapWarning("%s", print_file_err->message) ;
-	}
+      zMapWindowDump(window) ;
+    }
+  else
+    {
+      result = printFile(window, &print_cb) ;
     }
 
 
+  if (print_cb.print_file_err)
+    g_error_free(print_cb.print_file_err) ;
+
+  if (print_cb.default_printer)
+    g_free(print_cb.default_printer) ;
+
+  if (print_cb.selected_printer)
+    g_free(print_cb.selected_printer) ;
+
+
+  return result ;
+}
+
+
+static gboolean printFile(ZMapWindow window, PrintCBData print_cb)
+{
+  gboolean result = TRUE ;
+
+
   if (result)
     {
-      if (!(result = zmapWindowDumpFile(window, print_cb.print_template)))
+      if (!(result = getPrintFileName(print_cb, &(print_cb->print_file_err))))
+	{
+	  zMapWarning("%s", print_cb->print_file_err->message) ;
+	}
+    }
+
+  if (result)
+    {
+      if (!(result = zmapWindowDumpFile(window, print_cb->print_template)))
 	{
 	  zMapWarning("%s", "Could not dump window to temporary postscript file.") ;
 	}
@@ -137,37 +183,30 @@ gboolean zMapWindowPrint(ZMapWindow window)
       char *print_command = NULL ;
 
       print_command = g_strdup_printf("lpr -P%s %s",
-				      print_cb.selected_printer, print_cb.print_template) ;
+				      print_cb->selected_printer, print_cb->print_template) ;
 
       if (!(result = zMapUtilsSysCall(print_command, &err_msg)))
 	{
-	  zMapWarning("Could not print postscript file: %s.", print_cb.print_template) ;
+	  zMapWarning("Could not print postscript file: %s.", print_cb->print_template) ;
 	}
 
       g_free(print_command) ;
     }
 
 
-  if (print_cb.tmp_file_ok)
+  if (print_cb->tmp_file_ok)
     {
-      if (g_unlink(print_cb.print_template) != 0)
-	zMapWarning("Could not remove printer temporary file \"%s\".", print_cb.print_template) ;
+      if (g_unlink(print_cb->print_template) != 0)
+	zMapWarning("Could not remove printer temporary file \"%s\".", print_cb->print_template) ;
     }
-
-
-  if (print_file_err)
-    g_error_free(print_file_err) ;
-
-  if (print_cb.default_printer)
-    g_free(print_cb.default_printer) ;
-
-
-  if (print_cb.selected_printer)
-    g_free(print_cb.selected_printer) ;
 
 
   return result ;
 }
+
+
+
+
 
 
 
@@ -177,8 +216,9 @@ static gboolean printDialog(PrintCBData print_cb)
 {
   gboolean status = FALSE ;
   char *window_title ;
-  GtkWidget *dialog, *vbox, *frame, *hbox, *label, *combo ;
+  GtkWidget *dialog, *vbox, *frame, *hbox, *button, *combo ;
   GtkEntry *text_box ;
+  GSList *group ;
   int dialog_rc = 0 ;
 
   window_title = zMapGUIMakeTitleString("Print", "Please select printer") ;
@@ -186,14 +226,42 @@ static gboolean printDialog(PrintCBData print_cb)
 					NULL,
 					GTK_DIALOG_DESTROY_WITH_PARENT,
 					GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+					GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 					GTK_STOCK_PRINT, GTK_RESPONSE_ACCEPT,
 					NULL);
   g_free(window_title) ;
 
+
   vbox = GTK_DIALOG(dialog)->vbox ;
 
-  /* Add print box. */
-  frame = gtk_frame_new(NULL) ;
+
+  /* Add print or file selection. */
+  frame = gtk_frame_new(" Destination ") ;
+  gtk_container_border_width(GTK_CONTAINER(frame), 5);
+  gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, TRUE, 0);
+
+  hbox = gtk_hbox_new(FALSE, 10) ;
+  gtk_container_set_border_width(GTK_CONTAINER (hbox), 10) ;
+  gtk_container_add(GTK_CONTAINER(frame), hbox) ;
+
+
+  print_cb->print = button = gtk_radio_button_new_with_label(NULL, "Print");
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (button), TRUE) ;
+  print_cb->sendto = TO_PRINTER ;
+  g_signal_connect(G_OBJECT(button), "clicked",
+                   G_CALLBACK(destinationCB), print_cb) ;
+  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0);
+
+  group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(button));
+  print_cb->file = button = gtk_radio_button_new_with_label(group, "File") ;
+  g_signal_connect(G_OBJECT(button), "clicked",
+                   G_CALLBACK(destinationCB), print_cb) ;
+  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0) ;
+
+
+
+  /* Add print select combo box. */
+  print_cb->print_select = frame = gtk_frame_new(" Available Printers ") ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
   gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, TRUE, 0);
 
@@ -201,9 +269,6 @@ static gboolean printDialog(PrintCBData print_cb)
   hbox = gtk_hbox_new(FALSE, 10) ;
   gtk_container_set_border_width(GTK_CONTAINER(hbox), 10) ;
   gtk_container_add(GTK_CONTAINER(frame), hbox) ;
-
-  label = gtk_label_new("Printer") ;
-  gtk_box_pack_start(GTK_BOX(hbox), label, TRUE, TRUE, 0) ;
 
 
   /* Create the printer list read from the system print file. */
@@ -222,6 +287,14 @@ static gboolean printDialog(PrintCBData print_cb)
 
 
   gtk_widget_show_all(dialog) ;
+
+
+  /* Get the buttons so we can make sensitive or not.... */
+  getButtons(GTK_DIALOG(dialog), print_cb) ;
+
+
+  /* Set GUI up. */
+  setSensitive(print_cb) ;
 
 
   dialog_rc = gtk_dialog_run(GTK_DIALOG(dialog)) ;
@@ -244,7 +317,6 @@ static gboolean printDialog(PrintCBData print_cb)
 	}
     }
 
-
   gtk_widget_destroy (dialog) ;
 
   return status ;
@@ -252,7 +324,7 @@ static gboolean printDialog(PrintCBData print_cb)
 
 
 
-static void  addNames(gpointer data, gpointer user_data)
+static void addNames(gpointer data, gpointer user_data)
 {
   PrintCBData print_cb = (PrintCBData)user_data ;
   char *printer = (char *)data ;
@@ -265,6 +337,61 @@ static void  addNames(gpointer data, gpointer user_data)
   return ;
 }
 
+
+
+static void getButtons(GtkDialog *dialog, PrintCBData print_cb)
+{
+  GtkHButtonBox *but_box = GTK_HBUTTON_BOX(dialog->action_area) ;
+  GList *children ;
+
+  children = gtk_container_get_children(GTK_CONTAINER(but_box)) ;
+
+  /* Fragile code...I don't understand the button order at all.... */
+  print_cb->save_button = GTK_WIDGET((g_list_nth(children, 1))->data) ;
+  print_cb->print_button = GTK_WIDGET((g_list_nth(children, 0))->data) ;
+
+  return ;
+}
+
+
+
+static void destinationCB(GtkButton *button, gpointer user_data)
+{
+  PrintCBData cb_data = (PrintCBData)user_data ;
+
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
+    {
+
+      if (button == GTK_BUTTON(cb_data->print))
+	cb_data->sendto = TO_PRINTER ;
+      else
+	cb_data->sendto = TO_FILE ;
+
+      setSensitive(cb_data) ;				    /* Set which buttons are active. */
+    }
+
+  return ;
+}
+
+
+
+static void setSensitive(PrintCBData cb_data)
+{
+  if (cb_data->sendto == TO_PRINTER)
+    {
+      gtk_widget_set_sensitive(cb_data->print_select, TRUE) ;
+      gtk_widget_set_sensitive(cb_data->print_button, TRUE) ;
+      gtk_widget_set_sensitive(cb_data->save_button, FALSE) ;
+    }
+  else
+    {
+      gtk_widget_set_sensitive(cb_data->print_select, FALSE) ;
+      gtk_widget_set_sensitive(cb_data->print_button, FALSE) ;
+      gtk_widget_set_sensitive(cb_data->save_button, TRUE) ;
+    }
+
+  return ;
+}
 
 
 
