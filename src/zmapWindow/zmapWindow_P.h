@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr 21 14:45 2006 (edgrif)
+ * Last edited: Apr 28 18:36 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.113 2006-04-25 12:58:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.114 2006-04-28 17:47:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -57,9 +57,10 @@
 
 /* default spacings...will be tailorable one day ? */
 #define ALIGN_SPACING        30.0
-#define STRAND_SPACING        5.0
-#define COLUMN_SPACING        2.0
-#define BUMP_SPACING          1.0
+#define BLOCK_SPACING         5.0
+#define STRAND_SPACING        7.0
+#define COLUMN_SPACING        5.0
+#define FEATURE_SPACING       1.0
 
 
 /* X Windows has some limits that are part of the protocol, this means they cannot
@@ -230,12 +231,31 @@ typedef struct _ZMapWindowRulerCanvasStruct *ZMapWindowRulerCanvas;
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
 
+/* My intention is to gradually put all configuration data (spacing, borders, colours etc)
+ * in this struct. */
+typedef struct
+{
+  double align_spacing ;
+  double block_spacing ;
+  double strand_spacing ;
+  double column_spacing ;
+  double feature_spacing ;
+
+} ZMapWindowConfigStruct, *ZMapWindowConfig ;
+
+
+
+
+
 
 /* Represents a single sequence display window with its scrollbars, canvas and feature
  * display. */
 typedef struct _ZMapWindowStruct
 {
-  gchar *sequence ;
+  gchar *sequence ;					    /* Should remove this... */
+
+  ZMapWindowConfigStruct config ;			    /* Holds window configuration info. */
+  
 
   /* Widgets for displaying the data. */
   GtkWidget     *parent_widget ;
@@ -387,7 +407,9 @@ typedef struct
   void *data ;
 } zmapWindowDataStruct, *zmapWindowData ;
 
+
 typedef struct _zmapWindowEditorDataStruct *ZMapWindowEditor;
+
 
 typedef struct _zmapWindowFeatureListCallbacksStruct
 {
@@ -423,6 +445,7 @@ void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, ZMapFeatureAny feature_
 
 
 void zmapWindowNewReposition(ZMapWindow window) ;
+void zmapWindowResetWidth(ZMapWindow window) ;
 
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
@@ -599,7 +622,6 @@ gboolean zmapWindowZoomControlZoomByFactor(ZMapWindow window, double factor);
 void zmapWindowZoomControlHandleResize(ZMapWindow window);
 double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2) ;
 void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new) ;
-
 void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
                                           double *x1_out, double *y1_out, 
                                           double *x2_out, double *y2_out);

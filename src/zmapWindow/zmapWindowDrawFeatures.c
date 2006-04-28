@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 13 16:13 2006 (rds)
+ * Last edited: Apr 28 15:48 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.122 2006-04-13 15:15:03 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.123 2006-04-28 17:44:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -252,7 +252,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
       /* Add a background to the root window, must be as long as entire sequence... */
       root_group = zmapWindowContainerCreate(foo_canvas_root(window->canvas),
                                              ZMAPCONTAINER_LEVEL_ROOT,
-                                             ALIGN_SPACING,
+                                             window->config.align_spacing,
                                              &(window->colour_root), 
                                              &(window->canvas_border)) ;
       root_created = TRUE;
@@ -382,7 +382,7 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
 
   align_parent = zmapWindowContainerCreate(canvas_data->curr_root_group,
 					   ZMAPCONTAINER_LEVEL_ALIGN,
-					   0.0,		    /* There is no spacing between blocks. */
+					   window->config.block_spacing,
 					   &(window->colour_alignment),
 					   &(window->canvas_border)) ;
   canvas_data->curr_align_group = zmapWindowContainerGetFeatures(align_parent) ;
@@ -407,7 +407,8 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
    * and then we draw the next alignment to the right of this one. */
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(align_parent), &x1, &y1, &x2, &y2) ;
 
-  canvas_data->curr_x_offset = x2 + ALIGN_SPACING ;	    /* Must come before we reset x2 below. */
+  canvas_data->curr_x_offset = x2 + window->config.align_spacing ;
+							    /* Must come before we reset x2 below. */
 
 
   /* Set the background object size for the align now we have finished drawing... */
@@ -459,7 +460,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   block_parent = zmapWindowContainerCreate(canvas_data->curr_align_group,
 					   ZMAPCONTAINER_LEVEL_BLOCK,
-					   STRAND_SPACING,
+					   window->config.strand_spacing,
 					   &(window->colour_block),
 					   &(canvas_data->window->canvas_border)) ;
   canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_parent) ;
@@ -494,7 +495,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   forward_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
 					    ZMAPCONTAINER_LEVEL_STRAND,
-					    COLUMN_SPACING,
+					    window->config.column_spacing,
 					    for_bg_colour, &(canvas_data->window->canvas_border)) ;
   canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
   zmapWindowLongItemCheck(canvas_data->window, zmapWindowContainerGetBackground(forward_group),
@@ -502,7 +503,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
   
   reverse_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
 					    ZMAPCONTAINER_LEVEL_STRAND,
-					    COLUMN_SPACING,
+					    window->config.column_spacing,
 					    rev_bg_colour, &(canvas_data->window->canvas_border)) ;
   canvas_data->curr_reverse_group = zmapWindowContainerGetFeatures(reverse_group) ;
   zmapWindowLongItemCheck(canvas_data->window, zmapWindowContainerGetBackground(reverse_group),
@@ -531,8 +532,8 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   /* Now we've positioned all the columns we can set the backgrounds for the forward and
    * reverse strand groups and also set their positions within the block. */
-  zmapWindowContainerSetBackgroundSizePlusBorder(forward_group, 0.0, COLUMN_SPACING) ;
-  zmapWindowContainerSetBackgroundSizePlusBorder(reverse_group, 0.0, COLUMN_SPACING) ;
+  zmapWindowContainerSetBackgroundSizePlusBorder(forward_group, 0.0, window->config.column_spacing) ;
+  zmapWindowContainerSetBackgroundSizePlusBorder(reverse_group, 0.0, window->config.column_spacing) ;
 
   /* Here we need to position the forward/reverse column groups by taking their size and
    * resetting their positions....should we have a reverse group if there are no reverse cols ? */
@@ -542,7 +543,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(reverse_group), &x1, &y1, &x2, &y2) ;
 
-  x2 = x2 + STRAND_SPACING ;
+  x2 = x2 + window->config.strand_spacing ;
   my_foo_canvas_item_goto(FOO_CANVAS_ITEM(forward_group), &x2, NULL) ;
 
 
@@ -684,7 +685,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
 
 
   group = zmapWindowContainerCreate(parent_group, ZMAPCONTAINER_LEVEL_FEATURESET,
-				    0.0,		    /* no spacing between features. */
+				    window->config.feature_spacing,
 				    colour, &(window->canvas_border)) ;
 
   /* By default we do not redraw our children which are the individual features, the canvas
@@ -859,7 +860,6 @@ static void removeEmptyColumnCB(gpointer data, gpointer user_data)
       RemoveEmptyColumn remove_data = (RemoveEmptyColumn)user_data ;
       ZMapCanvasData canvas_data = remove_data->canvas_data ;
       ZMapFeatureTypeStyle style ;
-      gboolean status ;
 
 
       /* Remove this item from the hash of features -> items */
@@ -884,6 +884,10 @@ static void removeEmptyColumnCB(gpointer data, gpointer user_data)
   return ;
 }
 
+
+
+
+/* this should all be container code....this is no good having it all spread everywhere.... */
 
 
 /* Positions columns within the forward/reverse strand groups. We have to do this retrospectively
@@ -911,12 +915,20 @@ static void positionColumns(ZMapCanvasData canvas_data)
 static void positionColumnCB(gpointer data, gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
+  FooCanvasGroup *parent ;
   PositionColumn pos_data  = (PositionColumn)user_data ;
   double x1, y1, x2, y2 ;
   ZMapFeatureTypeStyle style ;
+  double spacing ;
+
+  parent = zmapWindowContainerGetSuperGroup(container) ;
+
+  spacing = zmapWindowContainerGetSpacing(parent) ;
 
   style = zmapWindowContainerGetStyle(container) ;
   zMapAssert(style) ;
+
+
 
   /* Bump columns that need to be bumped. */
   if (style->overlap_mode != ZMAPOVERLAP_COMPLETE)
@@ -927,7 +939,12 @@ static void positionColumnCB(gpointer data, gpointer user_data)
 
   /* Calculate the offset of the next column from this ones width. */
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container), &x1, &y1, &x2, &y2) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   pos_data->offset = pos_data->offset + zmapWindowExt(x1, x2) + COLUMN_SPACING ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  pos_data->offset = pos_data->offset + zmapWindowExt(x1, x2) + spacing ;
 
   return ;
 }

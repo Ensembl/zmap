@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 21 08:31 2006 (edgrif)
+ * Last edited: Apr 28 15:58 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.120 2006-04-21 07:32:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.121 2006-04-28 17:43:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -563,8 +563,6 @@ gboolean zMapWindowCurrWindowPos(ZMapWindow window,
   gboolean result = TRUE ;
   GtkAdjustment *h_adjuster, *v_adjuster ;
   double left, top, right, bottom ;
-  double page_size ;
-  GtkRequisition scrwin_size ;
   double x1, y1, x2, y2 ;
 
   h_adjuster = 
@@ -993,6 +991,14 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   zMapAssert(parent_widget && sequence && *sequence && app_data) ;
 
   window = g_new0(ZMapWindowStruct, 1) ;
+
+
+  window->config.align_spacing = ALIGN_SPACING ;
+  window->config.block_spacing = BLOCK_SPACING ;
+  window->config.strand_spacing = STRAND_SPACING ;
+  window->config.column_spacing = COLUMN_SPACING ;
+  window->config.feature_spacing = FEATURE_SPACING ;
+
 
   window->caller_cbs = window_cbs_G ;
 
@@ -1707,10 +1713,23 @@ static gboolean getConfiguration(ZMapWindow window)
   ZMapConfigStanzaElementStruct window_elements[] = {{"canvas_maxsize", ZMAPCONFIG_INT, {NULL}},
 						     {"canvas_maxbases", ZMAPCONFIG_INT, {NULL}},
 						     {"keep_empty_columns", ZMAPCONFIG_BOOL, {NULL}},
+						     {"align_spacing", ZMAPCONFIG_FLOAT, {NULL}},
+						     {"block_spacing", ZMAPCONFIG_FLOAT, {NULL}},
+						     {"strand_spacing", ZMAPCONFIG_FLOAT, {NULL}},
+						     {"column_spacing", ZMAPCONFIG_FLOAT, {NULL}},
+						     {"feature_spacing", ZMAPCONFIG_FLOAT, {NULL}},
 						     {NULL, -1, {NULL}}} ;
 
+
+  /* Set default values, must be done like this because value field is a union. */
   zMapConfigGetStructInt(window_elements, "canvas_maxsize") = ZMAP_WINDOW_MAX_WINDOW ;
   zMapConfigGetStructBool(window_elements, "keep_empty_columns") = FALSE ;
+  zMapConfigGetStructFloat(window_elements, "align_spacing") = window->config.align_spacing ;
+  zMapConfigGetStructFloat(window_elements, "block_spacing") = window->config.block_spacing ;
+  zMapConfigGetStructFloat(window_elements, "strand_spacing") = window->config.strand_spacing ;
+  zMapConfigGetStructFloat(window_elements, "column_spacing") = window->config.column_spacing ;
+  zMapConfigGetStructFloat(window_elements, "feature_spacing") = window->config.feature_spacing ;
+
 
   if ((config = zMapConfigCreate()))
     {
@@ -1729,6 +1748,11 @@ static gboolean getConfiguration(ZMapWindow window)
 
 	  window->keep_empty_cols = zMapConfigGetElementBool(next_window, "keep_empty_columns") ;
 
+	  window->config.align_spacing = zMapConfigGetElementFloat(next_window, "align_spacing") ;
+	  window->config.block_spacing = zMapConfigGetElementFloat(next_window, "block_spacing") ;
+	  window->config.strand_spacing = zMapConfigGetElementFloat(next_window, "strand_spacing") ;
+	  window->config.column_spacing = zMapConfigGetElementFloat(next_window, "column_spacing") ;
+	  window->config.feature_spacing = zMapConfigGetElementFloat(next_window, "feature_spacing") ;
 	  
 	  zMapConfigDeleteStanzaSet(window_list) ;		    /* Not needed anymore. */
 	}
