@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Mar 29 15:43 2006 (rds)
+ * Last edited: Apr 28 18:46 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.9 2006-03-29 14:50:44 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.10 2006-04-28 17:46:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -181,7 +181,6 @@ void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup *c_level_featureset,
                                             zmapWindowContainerZoomChangedCallback handler_cb,
                                             ZMapWindow data)
 {
-  FooCanvasGroup *container = NULL;
   ContainerData container_data = NULL;
   ContainerType container_type = CONTAINER_INVALID;
 
@@ -236,6 +235,21 @@ ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_par
 
   return level ;
 }
+
+
+double zmapWindowContainerGetSpacing(FooCanvasGroup *container_parent)
+{
+  ContainerData container_data ;
+  double spacing ;
+
+  container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA) ;
+  zMapAssert(container_data) ;
+
+  spacing = container_data->child_spacing ;
+
+  return spacing ;
+}
+
 
 
 
@@ -405,9 +419,10 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
 
   return ;
 }
+
+
 void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_parent,
-                                                    double height, 
-                                                    double border)
+                                                    double height, double border)
 {
   FooCanvasItem *container_background = NULL;
   double x1, x2;
@@ -424,8 +439,9 @@ void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_pa
                       NULL) ;
   border *= -1.0;
 
-  my_foo_canvas_item_goto(container_background, &border, NULL);
-  
+  /* Move background over to left by "border" units. */
+  foo_canvas_item_move(container_background, border, 0.0) ;
+
   return ;
 }
 
@@ -650,7 +666,7 @@ void zmapWindowContainerReposition(FooCanvasGroup *container)
        * rather than rely on the background of the group below.
        */
       if(type == ZMAPCONTAINER_LEVEL_STRAND)
-	zmapWindowContainerSetBackgroundSizePlusBorder(container, 0.0, COLUMN_SPACING);
+	zmapWindowContainerSetBackgroundSizePlusBorder(container, 0.0, COLUMN_SPACING) ;
       else
 	zmapWindowContainerSetBackgroundSize(container, 0.0) ;
     }

@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Mar 29 15:06 2006 (rds)
+ * Last edited: Apr 28 14:11 2006 (edgrif)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.5 2006-03-29 14:47:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.6 2006-04-28 17:46:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -76,6 +76,7 @@ FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent)
 FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent) ;
 ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_parent) ;
 ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group) ;
+double zmapWindowContainerGetSpacing(FooCanvasGroup *column_group) ;
 void zmapWindowContainerReposition(FooCanvasGroup *container) ;
 gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, double y_extent) ;
