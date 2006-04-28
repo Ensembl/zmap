@@ -30,9 +30,9 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: Sep 28 14:12 2005 (edgrif)
+ * Last edited: Apr 28 12:41 2006 (edgrif)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.4 2005-09-30 07:22:29 edgrif Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.5 2006-04-28 11:50:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,17 +57,60 @@ static ZMapCmdLineArgs arg_context_G = NULL ;
 
 
 
-/* The context is only created the first time this function is called, after that
- * it just returns a reference to the existing context.
+/*! @defgroup cmdline_args   ZMap command line parsing
+ * @{
+ *
+ * @section Overview
+ * 
+ * Zmap supports the standard Unix command line format:
+ * 
+ * <PRE>
+ *            zmap  [command flags] [sequence name]
+ * </PRE>
+ * 
+ * 
+ * Command line flags are specified using the standard "long" format:
+ * 
+ * <PRE>
+ *              --flag          e.g. --start
+ * </PRE>
+ *
+ * Some flags require an argument which must be specified as follows:
+ *
+ * <PRE>
+ *               --flag=value   e.g. --start=10000
+ * </PRE>
+ * 
+ * The final (optional) argument on the command line specifies the name
+ * of a sequence to be displayed, this must not be preceded by "--".
+ * 
+ * ZMap uses the popt package to do command line parsing, the functions
+ * provided in the zmap interface to popt provide a simplified interface.
+ *
+ *  */
+
+
+
+/*!
+ * There is no context returned here because these commands create a single global context for the whole
+ * application which is held internally.
  * 
  * Note that as this routine should be called once per application it is not
  * thread safe, it could be made so but is overkill as the GUI/master thread is
  * not thread safe anyway.
  * 
+ * @param argc       The number of arguments in the argv array.
+ * @param argv       A string array holding the command line arguments.
+ * @return           nothing
+ *
  *  */
 void zMapCmdLineArgsCreate(int argc, char *argv[])
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   static ZMapCmdLineArgs arg_context = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   zMapAssert(!arg_context_G) ;
 
@@ -80,6 +123,14 @@ void zMapCmdLineArgsCreate(int argc, char *argv[])
 
 
 
+/*!
+ * Retrieves the final commandline argument, if there is one. This is different
+ * in that by unix convention it is not preceded with a "--". The string
+ * must not be freed by the application.
+ * 
+ * @return           A pointer to the string which is the final argument on the command line.
+ *
+ *  */
 char *zMapCmdLineFinalArg(void)
 {
   char *final_arg = NULL ;
@@ -96,6 +147,16 @@ char *zMapCmdLineFinalArg(void)
 
 
 
+/*!
+ * Given a command line flag, returns the value specified on the command line for
+ * that flag, the value may be NULL if the flag does not take a value. If the flag
+ * cannot be found then returns FALSE.
+ * 
+ * @param arg_name   The argument flag to search for.
+ * @param result     The value for the argument flag.
+ * @return           TRUE if arg_name was found in the args array, FALSE otherwise.
+ *
+ *  */
 gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
 {
   gboolean val_set = FALSE ;
@@ -148,9 +209,12 @@ gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
 }
 
 
-/* 
- * 
- * 
+
+/*!
+ * Frees all resources for the command line parser.
+ *
+ * @return       nothing
+ *
  *  */
 void zMapCmdLineArgsDestroy(void)
 {
@@ -166,6 +230,9 @@ void zMapCmdLineArgsDestroy(void)
   return ;
 }
 
+
+
+/*! @} end of cmdline_args docs. */
 
 
 

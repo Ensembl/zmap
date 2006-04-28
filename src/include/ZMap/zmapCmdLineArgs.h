@@ -20,16 +20,15 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Interface to retrieve command line args given to the
  *              program.
  *
  * HISTORY:
- * Last edited: Jul 19 12:00 2005 (edgrif)
+ * Last edited: Apr 28 12:08 2006 (edgrif)
  * Created: Mon Feb  7 08:19:50 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.h,v 1.3 2005-07-19 13:32:26 edgrif Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.h,v 1.4 2006-04-28 11:50:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_H
@@ -38,16 +37,13 @@
 #include <glib.h>
 
 
-/* These are all the keywords that can be used as command line option flags (e.g. --start) */
-#define ZMAPARG_VERSION        "version"
-#define ZMAPARG_SEQUENCE_START "start"
-#define ZMAPARG_SEQUENCE_END   "end"
-#define ZMAPARG_CONFIG_FILE    "conf_file"
-#define ZMAPARG_CONFIG_DIR     "conf_dir"
-#define ZMAPARG_WINDOW_ID      "win_id"
+/*! @addtogroup cmdline_args
+ * @{
+ */
 
 
-/* The value (if any) for the command line option is returned in this union.
+/*!
+ * The value (if any) for the command line option is returned in this union.
  * NOTE that since the code that uses the option _must_ know what sort of data it is, there
  * is no type field here to record which member of the union is valid. */
 typedef union
@@ -59,8 +55,77 @@ typedef union
 } ZMapCmdLineArgsType ;
 
 
-/* There is no context here because these commands create a global context for the whole
- * application so there is no point in returning it from the create. */
+/*!
+ *
+ * @section cmdline_flags   Command line flags
+ * 
+ * <table>
+ *  <tr>
+ *  <th colspan=4 align=center>"ZMap Command Line Flags"</th>
+ *  </tr>
+ *  <tr>
+ *  <th>Flag</th>
+ *  <th>Datatype</th>
+ *  <th>Default</th>
+ *  <th>Description</th>
+ *  </tr>
+ *  <tr>
+ *  <th>"version"</th>
+ *  <td>none</td>
+ *  <td>none</td>
+ *  <td>--version, causes zmap to print its version information to stdout and then exit.</td>
+ *  </tr>
+ *  <tr>
+ *  <th>"start"</th>
+ *  <td>Int</td>
+ *  <td>1</td>
+ *  <td>--start=nnnn, sets start coordinate of section of sequence to be displayed.</td>
+ *  </tr>
+ *  <tr>
+ *  <th>"end"</th>
+ *  <td>Int</td>
+ *  <td>end of sequence</td>
+ *  <td>--end=nnnn, sets end coordinate of section of sequence to be displayed.</td>
+ *  </tr>
+ *  <tr>
+ *  <th>"conf_dir"</th>
+ *  <td>String</td>
+ *  <td>$HOME/ZMap</td>
+ *  <td>--conf_dir=directory, zmap will read all configuration information from "directory" instead of
+ *      from $HOME/ZMap</td>
+ *  </tr>
+ *  <tr>
+ *  <th>"conf_file"</th>
+ *  <td>String</td>
+ *  <td>$HOME/ZMap/.ZMap</td>
+ *  <td>--conf_file=filename, zmap will read configuration information from "filename" instead of
+ *      from $HOME/ZMap/.ZMap</td>
+ *  </tr>
+ *  <tr>
+ *  <th>"win_id"</th>
+ *  <td>Int</td>
+ *  <td>none</td>
+ *  <td>--win_id=nnnn, zmap will send xremote commands to the X window with window id "nnnn".</td>
+ *  </tr>
+ * </table>
+ *
+ *  */
+
+
+
+/*! @} end of cmdline_args docs. */
+
+
+
+#define ZMAPARG_VERSION        "version"
+#define ZMAPARG_SEQUENCE_START "start"
+#define ZMAPARG_SEQUENCE_END   "end"
+#define ZMAPARG_CONFIG_FILE    "conf_file"
+#define ZMAPARG_CONFIG_DIR     "conf_dir"
+#define ZMAPARG_WINDOW_ID      "win_id"
+
+
+
 void zMapCmdLineArgsCreate(int argc, char *argv[]) ;
 gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result) ;
 char *zMapCmdLineFinalArg(void) ;
