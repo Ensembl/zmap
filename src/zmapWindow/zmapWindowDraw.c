@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 28 18:49 2006 (edgrif)
+ * Last edited: May  2 16:26 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.20 2006-04-28 17:50:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.21 2006-05-02 15:52:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,10 +43,12 @@
 /* Used for holding state while bumping columns. */
 typedef struct
 {
+  GHashTable *pos_hash ;
+  GList *pos_list ;
+
   double offset ;
   double incr ;
   ZMapStyleOverlapMode bump_mode ;
-  GHashTable *pos_hash ;
 } BumpColStruct, *BumpCol ;
 
 
@@ -54,14 +56,9 @@ typedef struct
 {
   double y1, y2 ;
   double offset ;
+  double incr ;
 } BumpColRangeStruct, *BumpColRange ;
 
-
-typedef struct
-{
-  BumpColRange curr ;
-  BumpColRange new ;
-} TempStruct, *Temp ;
 
 
 typedef struct
@@ -87,11 +84,9 @@ typedef struct execOnChildrenStruct_
 
 static void bumpColCB(gpointer data, gpointer user_data) ;
 static void valueDestroyCB(gpointer data) ;
-static gboolean compareOverlapCB(gpointer key, gpointer value, gpointer user_data) ;
 
-static void tempCompareOverlapCB(gpointer key, gpointer value, gpointer user_data) ;
-
-static void itemDestroyCB(gpointer data, gpointer user_data);
+static void compareListOverlapCB(gpointer data, gpointer user_data) ;
+static void destroyListOverlapCB(gpointer data, gpointer user_data) ;
 
 static void repositionGroups(FooCanvasGroup *changed_group, double group_spacing) ;
 
@@ -163,7 +158,7 @@ void zmapWindowColumnSetMagState(ZMapWindow window,
 void zmapWindowColumnBump(FooCanvasGroup *column_group,
 			  ZMapStyleOverlapMode bump_mode)
 {
-  BumpColStruct bump_data = {0.0} ;
+  BumpColStruct bump_data = {NULL} ;
   FooCanvasGroup *column_features ;
   ZMapFeatureTypeStyle style ;
   double spacing ;
@@ -191,8 +186,14 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group,
 						 NULL, valueDestroyCB) ;
       break ;
       case ZMAPOVERLAP_OVERLAP:
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
 						 NULL, valueDestroyCB) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      /* Try doing a list.... */
+
+
       break ;
     case ZMAPOVERLAP_NAME:
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
@@ -206,9 +207,14 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group,
   /* bump all the features. */
   g_list_foreach(column_features->item_list, bumpColCB, (gpointer)&bump_data) ;
 
-  if (bump_mode == ZMAPOVERLAP_POSITION || bump_mode == ZMAPOVERLAP_OVERLAP
-      || bump_mode == ZMAPOVERLAP_NAME)
+  if (bump_mode == ZMAPOVERLAP_POSITION || bump_mode == ZMAPOVERLAP_NAME)
     g_hash_table_destroy(bump_data.pos_hash) ;
+  else if (bump_mode == ZMAPOVERLAP_OVERLAP)
+    {
+      g_list_foreach(bump_data.pos_list, destroyListOverlapCB, NULL) ;
+    }
+
+
 
   /* Make the parent groups bounding box as large as the group.... */
   zmapWindowContainerSetBackgroundSize(column_group, 0.0) ;
@@ -615,20 +621,6 @@ void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style,
  */
 
 
-
-
-/*! g_list_foreach function to remove items */
-static void itemDestroyCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-
-  gtk_object_destroy(GTK_OBJECT(item));
-
-  return ;
-}
-
-
-
 /* SEE COMMENTS ABOVE ABOUT MERGING..... */
 /* The changed group is found in its parents list of items and then all items to the right
  * of the changed group are repositioned with respect to the changed group.
@@ -683,7 +675,8 @@ static void repositionGroups(FooCanvasGroup *changed_group, double group_spacing
 }
 
 
-
+/* Is called once for each item in a column and sets the horizontal position of that
+ * item under various "bumping" modes. */
 static void bumpColCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
@@ -714,6 +707,8 @@ static void bumpColCB(gpointer data, gpointer user_data)
     {
     case ZMAPOVERLAP_POSITION:
       {
+	/* Bump features over if they have the same start coord. */
+
 	y1_ptr = GINT_TO_POINTER((int)y1) ;
 
 	if (g_hash_table_lookup_extended(bump_data->pos_hash, y1_ptr, &key, &value))
@@ -732,54 +727,31 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	
 	break ;
       }
+
+
     case ZMAPOVERLAP_OVERLAP:
       {
-	BumpColRangeStruct new_range ;
-	BumpColRange curr_range ;
+	/* Bump features over if they overlap at all. */
+	BumpColRange new_range ;
 
-	/* TEMP CODE UNTIL 2.6 */
-#warning "temp 2.2 code...agh"
-	TempStruct callback_data = {NULL} ;
-	
+	new_range = g_new0(BumpColRangeStruct, 1) ;
+	new_range->y1 = y1 ;
+	new_range->y2 = y2 ;
+	new_range->offset = 0.0 ;
+	new_range->incr = bump_data->incr ;
 
-	new_range.y1 = y1 ;
-	new_range.y2 = y2 ;
-	new_range.offset = 0.0 ;
+	g_list_foreach(bump_data->pos_list, compareListOverlapCB, new_range) ;
 
+	bump_data->pos_list = g_list_append(bump_data->pos_list, new_range) ;
 
-	callback_data.new = &new_range ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	/* THIS FUNCTION IS NOT AVAILABLE IN GLIB 2.2 leaving me to go quietly spare.... */
-
-	/* if ((curr_range = g_hash_table_find(bump_data->pos_hash, compareOverlap, &new_range))) */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	g_hash_table_foreach(bump_data->pos_hash, tempCompareOverlapCB, &callback_data) ;
-	if ((curr_range = callback_data.curr))
-
-	  {
-	    if (new_range.y1 < curr_range->y1)
-	      curr_range->y1 = new_range.y1 ;
-
-	    if (new_range.y2 > curr_range->y2)
-	      curr_range->y2 = new_range.y2 ;
-
-	    curr_range->offset += bump_data->incr ;
-	  }
-	else
-	  {
-	    curr_range = g_memdup(&new_range, sizeof(BumpColRangeStruct)) ;
-
-	    g_hash_table_insert(bump_data->pos_hash, curr_range, curr_range) ;
-	  }
-
-	offset = curr_range->offset ;
+	offset = new_range->offset ;
 	
 	break ;
       }
     case ZMAPOVERLAP_NAME:
       {
+	/* Bump features that have the same name, i.e. are the same feature, so that each
+	 * vertical subcolumn is composed of just one feature in different positions. */
 	ZMapFeature feature ;
 
 	feature = (ZMapFeature)(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)) ;
@@ -838,35 +810,27 @@ static void valueDestroyCB(gpointer data)
 }
 
 
-/* GHRFunc callback func, called from g_hash_table_find() to test whether current
+/* GFunc callback func, called from g_list_foreach_find() to test whether current
  * element matches supplied overlap coords. */
-static gboolean compareOverlapCB(gpointer key, gpointer value, gpointer user_data)
+static void compareListOverlapCB(gpointer data, gpointer user_data)
 {
-  gboolean result = TRUE ;
-  BumpColRange curr_range = (BumpColRange)value, new_range = (BumpColRange)user_data ;
+  BumpColRange curr_range = (BumpColRange)data ;
+  BumpColRange new_range = (BumpColRange)user_data ;
 
-  /* Easier to test no overlap. */
-  if (new_range->y1 > curr_range->y2 || new_range->y2 < curr_range->y1)
-    result = FALSE ;
+  /* Easier to test no overlap and negate. */
+  if (!(new_range->y1 > curr_range->y2 || new_range->y2 < curr_range->y1))
+    {
+      new_range->offset = curr_range->offset + curr_range->incr ;
+    }
 
-  return result ;
+  return ;
 }
 
 
-/* this is temporary code until we move completely to glib 2.6, it does the same as
- * compareOverlapCB but badly..., it can be deleted when we move to 2.6... */
-static void tempCompareOverlapCB(gpointer key, gpointer value, gpointer user_data)
+/* GFunc callback func, called from g_list_foreach_find() to free list resources. */
+static void destroyListOverlapCB(gpointer data, gpointer user_data)
 {
-  BumpColRange curr_range = (BumpColRange)value ;
-  Temp callback_data = (Temp)user_data ;
-
-  if (!callback_data->curr)
-    {
-      if (callback_data->new->y1 > curr_range->y2 || callback_data->new->y2 < curr_range->y1)
-	callback_data->curr = NULL ;
-      else
-	callback_data->curr = curr_range ;
-    }
+  g_free(data) ;
 
   return ;
 }
@@ -898,6 +862,10 @@ static gint horizPosCompare(gconstpointer a, gconstpointer b)
   return result ;
 }
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printItem(FooCanvasItem *item, int indent, char *prefix)
 {
   int i ;
@@ -912,6 +880,8 @@ static void printItem(FooCanvasItem *item, int indent, char *prefix)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
