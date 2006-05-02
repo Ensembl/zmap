@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 28 15:58 2006 (edgrif)
+ * Last edited: May  2 16:45 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.121 2006-04-28 17:43:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.122 2006-05-02 15:52:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1229,6 +1229,14 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 #endif
 
     }
+
+
+  /* I've stuck this in here but really this call should be integrated into the scroll region
+   * tool...some tidying up to do here... */
+  zmapWindowResetWidth(window) ;
+
+
+
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
