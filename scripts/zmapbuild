@@ -106,7 +106,7 @@ cvscopy="$builddir/$targetdir"
 #
 if [ -n "$tag" ] ; then
 
-#  ZBGotoDir $builddir
+  ZBGotoDir $builddir
 
   versioner -path $targetdir/ZMap/src/include/ZMap/ -$tag -cvs || ZBmsgAndExit "Could not cvs tag zmap files"
 
