@@ -160,7 +160,7 @@ if [ -n "$tag" ] ; then
 
   ZBGotoDir $builddir
 
-  versioner -path $targetdir/ZMap/src/include/ZMap/ -$tag -cvs || ZBmsgAndExit "Could not update version number in source code"
+  versioner -path $targetdir/ZMap/src/include/ZMap/ -increment -$tag -cvs || ZBmsgAndExit "Could not update version number in source code"
 
 fi
 

@@ -238,11 +238,20 @@ __END__
 
     -file     Name of the file containing the versions
     -path     Path of the checkout directory.
+
+
+ what should be incremented:
+
     -version  increment the version
     -release  increment the release
     -update   increment the update
     -all      increment all the above
+
+ how should the file be incremented in cvs:
+
     -cvs      CVS Commit the -file file
+    -increment increment the version in cvs but not the current checkout
+
     -show     just show the tag
     -V        just show the version part of the cvs tag
     -help     Display this help
