@@ -101,16 +101,15 @@ my $QUIET = 0;
     if ( $increment )
       {
       # Make a copy of the version file, update the version, commit it and then
-      # copy back the original.
+      # copy back the original so the current build has the version it was built with.
       my $sys = "cp $version_path $version_path.backup";
       system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
 
       increment_numbers($requested, $version_path, $rotate);
       cvs_commit($version_path, "/") if $commit;
 
-      $sys = "cp -f $version_path.backup $version_path";
+      $sys = "mv -f $version_path.backup $version_path";
       system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
-
       }
 
     $cvs_tag = make_cvs_tag($version_path, $PREPROC_VARS, $VERSION_STR);
