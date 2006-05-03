@@ -39,6 +39,7 @@ my $QUIET = 0;
     my $requested    = {};
     my $commit       = 0;
     my $tag          = 1;
+    my $increment    = 0 ;
     my $usage = sub { exit(exec('perldoc', $0)) };
     my $all = sub {
         my $option = shift;
@@ -55,7 +56,7 @@ my $QUIET = 0;
             return $_[1] + 1;            
         }elsif($requested->{release} && $_[0] eq $requested->{release}){
             return 0 if($requested->{version});
-            return $_[1] + 1;  
+            return $_[1] + 1;
         }else{
             return 0 if($requested->{version});
             return 0 if($requested->{release});
@@ -72,6 +73,7 @@ my $QUIET = 0;
                'update'  => $all,
                'all'     => $all,
                'show'    => sub {$tag = 0},
+	       'increment' => \$increment,
                'cvs'     => \$commit,
                'quiet'   => \$QUIET,
                'V'       => \$version_only,
@@ -96,8 +98,11 @@ my $QUIET = 0;
 
     exit($tag) unless $tag;
 
-    increment_numbers($requested, $version_path, $rotate);
-    cvs_commit($version_path, "/") if $commit;
+    if ( $increment )
+      {
+      increment_numbers($requested, $version_path, $rotate);
+      cvs_commit($version_path, "/") if $commit;
+      }
 
     $cvs_tag = make_cvs_tag($version_path, $PREPROC_VARS, $VERSION_STR);
     print STDERR "Development Version is now $cvs_tag\n" unless $QUIET;
