@@ -45,9 +45,6 @@ tag=""
 initialise=""
 
 
-echo ">$*<"
-
-
 while getopts ":ruvm:I" opt ; do
   case $opt in
     r  ) tag="release"    ;;
@@ -66,9 +63,6 @@ if [ -z "$1" ] ; then
   ZBusage "$cmdstring" "$descstring" "No target build directory specified."
 fi
 targetdir=$1
-
-
-exit 0
 
 
 # Now we've got everything signal that the build has started.
