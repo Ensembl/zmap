@@ -23,11 +23,10 @@
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 20 11:27 2006 (edgrif)
+ * Last edited: May  3 08:08 2006 (edgrif)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
- * CVS info:   $Id: zmapUtils_P.h,v 1.10 2006-02-21 15:05:31 edgrif Exp $
+ * CVS info:   $Id: zmapUtils_P.h,v 1.11 2006-05-03 07:13:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_P_H
@@ -40,8 +39,8 @@
 #define ZMAP_TITLE "ZMap"
 #define ZMAP_DESCRIPTION "A multi-threaded genome browser and annotation tool."
 #define ZMAP_VERSION 0
-#define ZMAP_RELEASE 2
-#define ZMAP_UPDATE 0
+#define ZMAP_RELEASE 1
+#define ZMAP_UPDATE  3
 
 
 /* Make a single version number out of the version, release and update numbers. */
