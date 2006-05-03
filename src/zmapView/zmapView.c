@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar  7 14:53 2006 (rds)
+ * Last edited: May  3 16:43 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.71 2006-03-07 15:11:08 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.72 2006-05-03 15:47:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -701,7 +701,7 @@ char *zMapViewGetStatusStr(ZMapViewState state)
   /* Array must be kept in synch with ZmapState enum in zmapView.h */
   static char *zmapStates[] = {"",
 			       "Connecting", "Connected",
-			       "Loading", "Loaded",
+			       "Data loading", "Data loaded",
 			       "Resetting", "Dying"} ;
   char *state_str ;
 
