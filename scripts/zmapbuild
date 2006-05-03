@@ -47,8 +47,8 @@ initialise=""
 
 while getopts ":ruvm:I" opt ; do
   case $opt in
-    r  ) tag="-release"    ;;
-    u  ) tag="-update"     ;;
+    r  ) tag="release"    ;;
+    u  ) tag="update"     ;;
     v  ) version="true"    ;;
     m  ) machine=$OPTARG   ;;
     I  ) initialise="true" ;; 
@@ -108,7 +108,7 @@ if [ -n "$tag" ] ; then
 
 #  ZBGotoDir $builddir
 
-  versioner -path $targetdir/ZMap/src/include/ZMap/ $tag -cvs || ZBmsgAndExit "Could not cvs tag zmap files"
+  versioner -path $targetdir/ZMap/src/include/ZMap/ -$tag -cvs || ZBmsgAndExit "Could not cvs tag zmap files"
 
 fi
 
