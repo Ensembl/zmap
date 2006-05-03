@@ -16,7 +16,7 @@ ZBmailOnExit="true"
 
 
 # set up usage strings.
-cmdstring='-v -m <machine> -I <target_build_directory>'
+cmdstring='[-v -r -u -m <machine> -I] <target_build_directory>'
 descstring='
    -I   initialise the directory (rm -rf target, cvs co) also makes the docs
 
@@ -42,8 +42,11 @@ builddir="$zmaproot/BUILDS"
 zmapcvstarget='ZMap'
 version=""
 tag=""
-
 initialise=""
+
+
+echo ">$*<"
+
 
 while getopts ":ruvm:I" opt ; do
   case $opt in
@@ -63,6 +66,9 @@ if [ -z "$1" ] ; then
   ZBusage "$cmdstring" "$descstring" "No target build directory specified."
 fi
 targetdir=$1
+
+
+exit 0
 
 
 # Now we've got everything signal that the build has started.
