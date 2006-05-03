@@ -108,13 +108,11 @@ if [ -n "$tag" ] ; then
 
   ZBGotoDir $builddir
 
-  versioner -path $targetdir/ZMap/src/include/ZMap/ -$tag -cvs || ZBmsgAndExit "Could not cvs tag zmap files"
+  versioner -path $targetdir/ZMap/src/include/ZMap/ || ZBmsgAndExit "Could not cvs tag source files"
 
   ZBGotoDir $targetdir
 
 fi
-
-
 
 
 
@@ -157,6 +155,16 @@ fi
 
 
 
+# Update the version number in the code now.
+if [ -n "$tag" ] ; then
+
+  ZBGotoDir $builddir
+
+  versioner -path $targetdir/ZMap/src/include/ZMap/ -$tag -cvs || ZBmsgAndExit "Could not update version number in source code"
+
+fi
+
+
 # If release directory needs to be given a proper release name then do so...
 #
 if [ -n "$version" ] ; then
@@ -172,7 +180,7 @@ fi
 
 # Record end of build.
 #
-ZBmsgInfo "Build completed successfully on machine '$machine'."
+ZBlogmsg "Build completed successfully on machine '$machine'."
 
 ZBlogmsg "ZMap build finished"
 
