@@ -110,7 +110,10 @@ if [ -n "$tag" ] ; then
 
   versioner -path $targetdir/ZMap/src/include/ZMap/ -$tag -cvs || ZBmsgAndExit "Could not cvs tag zmap files"
 
+  ZBGotoDir $targetdir
+
 fi
+
 
 
 
