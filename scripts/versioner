@@ -100,8 +100,17 @@ my $QUIET = 0;
 
     if ( $increment )
       {
+      # Make a copy of the version file, update the version, commit it and then
+      # copy back the original.
+      my $sys = "cp $file $file.backup";
+      system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
+
       increment_numbers($requested, $version_path, $rotate);
       cvs_commit($version_path, "/") if $commit;
+
+      $sys = "cp $file.backup $file";
+      system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
+
       }
 
     $cvs_tag = make_cvs_tag($version_path, $PREPROC_VARS, $VERSION_STR);
