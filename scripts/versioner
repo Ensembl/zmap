@@ -108,7 +108,7 @@ my $QUIET = 0;
       increment_numbers($requested, $version_path, $rotate);
       cvs_commit($version_path, "/") if $commit;
 
-      $sys = "cp $version_path.backup $version_path";
+      $sys = "cp -f $version_path.backup $version_path";
       system($sys) == 0 or die "ERROR $0: Couldn't do '$sys'\n";
 
       }
