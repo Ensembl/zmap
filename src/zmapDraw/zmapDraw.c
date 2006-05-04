@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Mar 30 16:25 2006 (rds)
+ * Last edited: May  4 15:18 2006 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.46 2006-03-30 16:23:45 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.47 2006-05-04 15:53:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -823,196 +823,44 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
  *
  * To make a multicolour highlight box just #define ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
  */
-#ifdef RDS_DONT_INCLUDE_UNUSED
-void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
-                                 int y1Idx, int y2Idx,
-                                 FooCanvasItem *textItem,
-                                 GdkColor *background,
-                                 GdkColor *outline)
-{
-  FooCanvasPoints *points = NULL;
-  GList *lines = NULL;
-  GdkColor color;
-  double offsetX1, offsetX2, offsetY1, offsetY2;
-  double minX, maxX, dlength, chrWidth;
-  int i, y1mod, y2mod;
-  ZMapDrawTextRowData trd = NULL;
-
-  zMapAssert(textItem && (trd = zMapDrawGetTextItemData(textItem)));
-
-  gdk_color_parse("red", &color);
-
-  lines    = grp->item_list;
-  points   = foo_canvas_points_new(2);
-
-  y1mod    = (y1Idx - trd->sequenceOffset) % trd->fullStrLength;
-  y2mod    = (y2Idx - trd->sequenceOffset) % trd->fullStrLength;
-
-  dlength  = (double)trd->fullStrLength;
-  chrWidth = trd->columnWidth / trd->drawnStrLength;
-
-  minX     = chrWidth / 4;    /* Also used to get half way between characters */
-  maxX     = trd->columnWidth;      /* -/+ minX ?? */
-
-  offsetX1 = ((double)y1mod) * chrWidth + minX;
-  offsetX2 = ((double)y2mod) * chrWidth + minX;
-
-  offsetY1 = (double)(y1Idx - y1mod);
-  offsetY2 = (double)(y2Idx - y2mod);
-
-  for(i = 0; i < REGION_LAST_LINE; i++)
-    {
-      switch(i){
-      case REGION_ROW_LEFT:
-#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
-        gdk_color_parse("red", &color);
-#endif
-        points->coords[0] = MIN(offsetX1, maxX);
-        points->coords[1] = offsetY1;
-        points->coords[2] = MIN(offsetX1, maxX) ;
-        points->coords[3] = offsetY1 + dlength;
-        break;
-      case REGION_ROW_TOP:
-#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
-        gdk_color_parse("orange", &color);
-#endif
-        points->coords[0] = MIN(offsetX1, maxX);
-        points->coords[1] = offsetY1;
-        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? maxX : MIN(offsetX2, maxX));
-        points->coords[3] = offsetY1;
-        break;  
-      case REGION_ROW_RIGHT:
-#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
-        gdk_color_parse("yellow", &color);
-#endif
-        points->coords[0] = MIN(offsetX2, maxX);
-        points->coords[1] = offsetY2;
-        points->coords[2] = MIN(offsetX2, maxX);
-        points->coords[3] = offsetY2 + dlength;
-        break;
-      case REGION_ROW_BOTTOM:
-#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
-        gdk_color_parse("green", &color);
-#endif
-        points->coords[0] = MIN(offsetX2, maxX);
-        points->coords[1] = offsetY2 + dlength;
-        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
-        points->coords[3] = offsetY2 + dlength;
-        break;
-      case REGION_ROW_EXTENSION_LEFT:
-#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
-        gdk_color_parse("blue", &color);
-#endif
-        points->coords[0] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
-        points->coords[1] = offsetY1 + dlength;
-        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
-        points->coords[3] = offsetY2 + dlength;
-        break;
-      case REGION_ROW_EXTENSION_RIGHT:
-#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
-        gdk_color_parse("violet", &color);
-#endif
-        points->coords[0] = (offsetY2 - offsetY1  >= dlength ? maxX : offsetX2);
-        points->coords[1] = offsetY1;
-        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? maxX : offsetX2);
-        points->coords[3] = offsetY2;
-        break;
-      case REGION_ROW_JOIN_TOP:
-#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
-        gdk_color_parse("brown", &color);
-#endif
-        points->coords[0] = MIN(offsetX1, maxX);
-        points->coords[1] = offsetY1 + dlength;
-        points->coords[2] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);;
-        points->coords[3] = offsetY1 + dlength;
-        break;
-      case REGION_ROW_JOIN_BOTTOM:
-#ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
-        gdk_color_parse("wheat", &color);
-        gdk_color_parse("blue", &color);
-#endif
-        points->coords[0] = MIN(offsetX2, maxX);
-        points->coords[1] = offsetY2;
-        points->coords[2] = (offsetY2 - offsetY1 >= dlength ? maxX : MIN(offsetX2, maxX));
-        points->coords[3] = offsetY2;
-        break;
-      default:
-        printf("Error\n");
-        break;
-      }
-      
-      if(!lines)
-        foo_canvas_item_new(grp,
-                            foo_canvas_line_get_type(),
-                            "points", points,
-                            "line_style", GDK_LINE_ON_OFF_DASH,
-                            "fill_color_gdk", &color,
-                            "width_units", 1.0,
-                            NULL);
-      else
-        {
-          if(FOO_IS_CANVAS_LINE(FOO_CANVAS_ITEM(lines->data)))
-            foo_canvas_item_set(FOO_CANVAS_ITEM(lines->data),
-                                "points", points,
-                                NULL);
-          lines = lines->next;
-        }        
-    }
-
-  foo_canvas_item_show(FOO_CANVAS_ITEM(grp));
-  foo_canvas_points_free(points);
-
-  return ;
-}
-#endif
-
 //#define ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
 void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
-                                 int y1Idx, int y2Idx,
-                                 FooCanvasItem *textItem)
+                                 double firstX, double firstY, /* obvious! x = row, y = col */
+                                 double lastX,  double lastY,
+                                 FooCanvasItem *srcItem)
 {
-  double offsetX1, offsetX2, offsetY1, offsetY2;
-  double minX, maxX, dlength, chrWidth;
-  int i, y1mod, y2mod;
+  double minX, maxX;
   ZMapDrawTextRowData trd = NULL;
   GdkColor color;
+  gboolean drawBackground = TRUE, drawOutline = FALSE;
 
-  zMapAssert(textItem && (trd = zMapDrawGetTextItemData(textItem)));
+  zMapAssert(srcItem && (trd = zMapDrawGetTextItemData(srcItem)));
 
   gdk_color_parse("red", &color);
 
-  y1mod    = (y1Idx - trd->sequenceOffset) % trd->fullStrLength;
-  y2mod    = (y2Idx - trd->sequenceOffset) % trd->fullStrLength;
-
-  dlength  = (double)trd->fullStrLength;
-  chrWidth = trd->columnWidth / trd->drawnStrLength;
-
-  minX     = chrWidth / 4;    /* Also used to get half way between characters */
-  maxX     = trd->columnWidth;      /* -/+ minX ?? */
-
-  offsetX1 = ((double)y1mod) * chrWidth + minX;
-  offsetX2 = ((double)y2mod) * chrWidth + minX;
-
-  offsetY1 = (double)(y1Idx - y1mod);
-  offsetY2 = (double)(y2Idx - y2mod);
+  minX     = 0.0;
+  maxX     = MAX(trd->row_width, trd->char_width * trd->seq_truncated_idx);
 
   foo_canvas_item_hide(FOO_CANVAS_ITEM(grp));
 
-  if(trd->background != NULL && 1)
-    drawHighlightBackgroundInGroup(grp, trd->background, 
-                                   offsetX1, offsetY1, 
-                                   offsetX2, offsetY2, 
-                                   minX, maxX, dlength);
-  else if(trd->outline != NULL)
-    drawHighlightLinesInGroup(grp, trd->outline, 
-                              offsetX1, offsetY1, 
-                              offsetX2, offsetY2, 
-                              minX, maxX, dlength);
+  if(drawBackground && trd->background != NULL)
+    drawHighlightBackgroundInGroup(grp,    trd->background, 
+                                   firstX, firstY,
+                                   lastX,  lastY, 
+                                   minX,   maxX, 
+                                   trd->row_height);
+  else if(drawOutline && trd->outline != NULL)
+    drawHighlightLinesInGroup(grp,    trd->outline, 
+                              firstX, firstY, 
+                              lastX,  lastY, 
+                              minX,   maxX, 
+                              trd->row_height);
   else
-    drawHighlightLinesInGroup(grp, &color,
-                              offsetX1, offsetY1, 
-                              offsetX2, offsetY2, 
-                              minX, maxX, dlength);
+    drawHighlightLinesInGroup(grp,    &color,
+                              firstX, firstY,
+                              lastX,  lastY,
+                              minX,   maxX, 
+                              trd->row_height);
 
   foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(grp));
   foo_canvas_item_show(FOO_CANVAS_ITEM(grp));
@@ -1074,14 +922,14 @@ static void drawHighlightBackgroundInGroup(FooCanvasGroup *parent,
           gdk_color_parse("blue", &color);
 #endif
           break;
-        deafult:
+        default:
           zMapAssertNotReached();
           break;
         }
-#ifdef RDS_DONT_INCLUDE_UNUSED      
-      printf("drawHighlightBackgroundInGroup (%x): %d %f %f %f %f\n", 
-             parent, i, x1, y1, x2, y2);
-#endif
+
+      //      printf("drawHighlightBackgroundInGroup (%x): %d %f %f %f %f\n", 
+      //             parent, i, x1, y1, x2, y2);
+
       if(!rects)
         foo_canvas_item_new(parent,
                             foo_canvas_rect_get_type(),
@@ -1232,47 +1080,6 @@ static void drawHighlightLinesInGroup(FooCanvasGroup *parent,
 }
 
 
-static void textRowDestroy(gpointer data)
-{
-  ZMapDrawTextRowData trd = (ZMapDrawTextRowData)data;
-
-  if(trd)
-    g_free(trd);
-
-  return ;
-}
-
-#ifdef PREFIX_DNA_WITH_NUMBERS
-static void drawRowBounds(FooCanvasItem *item)
-{
-  double x1, x2, y1, y2;
-  FooCanvasItem *line;
-  FooCanvasPoints *points;
-  GdkColor color;
-
-  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-  points   = foo_canvas_points_new(2);
-  points->coords[0] = x1;
-  points->coords[1] = y1;
-  points->coords[2] = x2;
-  points->coords[3] = y1;
-  line = foo_canvas_item_new(FOO_CANVAS_GROUP( item->parent ),
-                             foo_canvas_line_get_type(),
-                             "points", points,
-                             NULL);
-  points->coords[1] = y2;
-  points->coords[3] = y2;
-  gdk_color_parse("red", &color);
-  line = foo_canvas_item_new(FOO_CANVAS_GROUP( item->parent ),
-                             foo_canvas_line_get_type(),
-                             "points", points,
-                             "fill_color_gdk", &color,
-                             NULL);
-  foo_canvas_points_free(points);
-  return ;
-}
-#endif
-
 ZMapDrawTextRowData zMapDrawGetTextItemData(FooCanvasItem *item)
 {
   ZMapDrawTextRowData trd = NULL;
@@ -1283,86 +1090,111 @@ ZMapDrawTextRowData zMapDrawGetTextItemData(FooCanvasItem *item)
 
   return trd;
 }
+
 FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
                                  PangoFontDescription *fixed_font,
                                  char *fullText, 
                                  ZMapDrawTextIterator iterator)
 {
   FooCanvasItem *item = NULL;
-  char *item_text = NULL;
-  ZMapDrawTextRowData trd = NULL;
-  int char_count, max_chars, curr_idx;
-  double text_width = 0.0;
+  char *errText = "ERROR";
+  ZMapDrawTextRowData curr_data = NULL;
+  int char_count_inc, char_count_ex, curr_idx, iteration, offset;
+  gboolean good = TRUE;
 
-  /* Make a ZMapDrawTextRowData object to attach to the text */
-  trd = g_new0(ZMapDrawTextRowDataStruct, 1);
+  iteration = iterator->iteration;
 
-  curr_idx  = iterator->iteration * iterator->cols;
-  curr_idx += iterator->offset_start;
+  curr_data = (ZMapDrawTextRowData)(iterator->row_data);
+  curr_data+= iteration;
 
-  iterator->y = (double)curr_idx;
+  iterator->y  = iteration * iterator->char_height;
+  iterator->y += offset = iterator->offset_start;
 
-  trd->rowOffset      = curr_idx; // + iterator->seq_start - 1;
-  trd->fullStrLength  = iterator->cols;
-  trd->sequenceOffset = iterator->offset_start;
-  trd->background     = iterator->background;
-  trd->outline        = iterator->outline;
-  text_width          = iterator->char_width;
+  g_string_truncate(iterator->row_text, 0);
 
-  max_chars  = floor(MAX_TEXT_COLUMN_WIDTH / text_width) - 3; /* we add 3 dots (...) */
-  char_count = MIN(iterator->cols, max_chars);
+  fullText     = iterator->wrap_text;
 
-  if(fullText[curr_idx])
+  char_count_ex = iterator->truncate_at;
+
+  /* Protect from overflowing the text */
+  if((curr_idx = iteration * iterator->cols) <= (iterator->lastPopulatedCell))
+    fullText  += curr_idx;
+  else if(iterator->lastPopulatedCell - curr_idx < iterator->truncate_at)
     {
-      trd->drawnStrLength = (char_count >= iterator->cols ? iterator->cols : char_count + 3);
-      if(char_count >= iterator->cols)
-        item_text = g_strndup(&(fullText[curr_idx]), iterator->cols);
-      else if(iterator->numbered)
-        item_text = g_strdup_printf(iterator->format,
-                                    curr_idx,
-                                    g_strndup(&(fullText[curr_idx]), char_count));
-      else
-        item_text = g_strdup_printf(iterator->format,
-                                    g_strndup(&(fullText[curr_idx]), char_count));
+      fullText  += curr_idx;
+      char_count_ex = iterator->lastPopulatedCell - curr_idx;
+    }
+  else
+    {
+      fullText      = errText;
+      char_count_ex = strlen(errText);
+      good          = FALSE;
     }
 
+  g_string_truncate(iterator->row_text, 0);
+  char_count_inc = char_count_ex;
 
-  if(item_text)
+  if(fullText && *fullText)
     {
-      double a, b, c, d;
+      g_string_append_len(iterator->row_text, fullText, char_count_ex);
+
+      if(iterator->truncated)
+        {
+          char_count_inc = char_count_ex + 3;
+          g_string_append(iterator->row_text, "...");
+        }
+    }
+
+  if(iterator->row_text->str)
+    {
+#ifdef RDS_DONT_INCLUDE_UNUSED
+      g_string_append_printf(iterator->row_text, " %d", iteration);
+#endif
 
       item = foo_canvas_item_new(group,
                                  foo_canvas_text_get_type(),
                                  "x",          iterator->x,
                                  "y",          iterator->y,
-                                 "text",       item_text,
+                                 "text",       iterator->row_text->str,
                                  "anchor",     GTK_ANCHOR_NW,
                                  "font_desc",  fixed_font,
                                  "fill_color_gdk", iterator->foreground,
                                  NULL);
-      foo_canvas_item_get_bounds(item, &a, &b, &c, &d);
-      trd->columnWidth = c - a + 1.0;
+
+      /* Now we know most of what we need to store in curr_data */
+      curr_data->curr_first_index  = iterator->offset_start;
+      curr_data->seq_index_start   = curr_idx + curr_data->curr_first_index;
+      curr_data->seq_index_end     = curr_data->seq_index_start + iterator->cols;
+      curr_data->seq_truncated_idx = iterator->truncate_at;
+      curr_data->chars_on_screen   = char_count_inc;
+      curr_data->chars_drawn       = char_count_ex;
+      curr_data->char_width        = iterator->char_width;
+      curr_data->char_height       = iterator->char_height;
+      curr_data->background        = iterator->background;
+      curr_data->outline           = iterator->outline;
+
+      foo_canvas_item_get_bounds(item, 
+                                 &(iterator->x1), 
+                                 &(iterator->y1), 
+                                 &(iterator->x2), 
+                                 &(iterator->y2));
+      curr_data->row_height = iterator->y2 - iterator->y1;
+      curr_data->row_width  = iterator->x2 - iterator->x1;
+
       g_object_set_data_full(G_OBJECT(item), 
                              ZMAP_DRAW_TEXT_ROW_DATA_KEY, 
-                             trd,
-                             textRowDestroy);
+                             curr_data,
+                             NULL); /* this needs setting, but this is an element of an array??? */
+
       foo_canvas_item_set(item,
                           "clip",        TRUE,
-                          "clip_width",  trd->columnWidth,
-                          "clip_height", (double)iterator->n_bases,
+                          "clip_width",  iterator->x2 - iterator->x1,
+                          "clip_height", iterator->y2 - iterator->y1,
                           NULL
                           );
       foo_canvas_item_raise_to_top(item);
 
-      g_free(item_text);
-
-#ifdef  PREFIX_DNA_WITH_NUMBERS
-      drawRowBounds(item);
-#endif
-
     }
-
-  /*  iterator->x = ZMAP_WINDOW_TEXT_BORDER; */  /* reset this */
 
   return item;
 }

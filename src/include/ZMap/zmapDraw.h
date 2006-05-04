@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Mar 30 16:22 2006 (rds)
+ * Last edited: May  4 14:53 2006 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.27 2006-03-30 16:24:09 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.28 2006-05-04 15:53:08 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -101,47 +101,51 @@ typedef enum
     ZMAP_POINT_END_SOUTHWEST
   } ZMapExonCompassPoints;
 
+typedef struct ZMapDrawTextRowDataStruct_
+{
+  /* indices to the string we're displaying */
+  /* i.e. slicing the string sequence[seq_index_start..seq_index_end] */
+  /* we draw the string sequence[seq_index_start..seq_truncated_idx] */
+  int seq_index_start, seq_truncated_idx, seq_index_end; 
+  int curr_first_index;
+  int chars_on_screen, chars_drawn;
+
+  double char_width, char_height;
+  double row_width, row_height;
+
+  GdkColor *background;
+  GdkColor *outline;
+
+  /* text's char width is columnWidth / drawnStrLength */
+} ZMapDrawTextRowDataStruct, *ZMapDrawTextRowData;
+
 typedef struct _ZMapDrawTextIteratorStruct
 {
-  int iteration;
+  int iteration;                /* current iteration... */
+  int rows, cols;               /* number of rows in iteration, columns per row */
+  int lastPopulatedCell;        /* last cell to draw in in table */
+  int truncate_at;              /* only draw this number of the columns */
 
-  double x, y;
-  double seq_start, seq_end;
-  double char_width;
-  int offset_start, offset_end;
+  gboolean truncated;           /* flag to say we're not drawing all columns */
 
-  int shownSeqLength;
-  int length2draw;
-  int n_bases;
+  double x, y;                  /* x & y coords of text NW anchored */
+  double seq_start, seq_end;    /* start and end of sequence */
+  double char_width, char_height; /* text dimensions */
+  double offset_start;          /* item coord offset of first row (add to all!) */
 
-  int rows, cols;
+  double x1, y1, x2, y2;        /* current row item bounds */
 
-  char *format;
-  gboolean numbered;
+  char *wrap_text;              /* full text we're drawing */
+  GString *row_text;            /* current row's text */
 
+  ZMapDrawTextRowData row_data;
+
+  /* colours */
   GdkColor *foreground;
   GdkColor *background;
   GdkColor *outline;
 } ZMapDrawTextIteratorStruct, *ZMapDrawTextIterator;
 
-typedef struct ZMapDrawTextRowDataStruct_
-{
-  int sequenceOffset;           /* This is the offset of the scroll region in characters */
-
-  int rowOffset;                /* The offset of the character */
-
-  int fullStrLength;            /* the string might get clipped. */
-  int drawnStrLength;           /* this is the length of the string drawn */
-
-  double columnWidth;           /* This is the width of the column */
-  GdkColor *background;
-  GdkColor *outline;
-  /* text's char width is columnWidth / drawnStrLength */
-} ZMapDrawTextRowDataStruct, *ZMapDrawTextRowData;
-
-
-//#define MINVAL(x, y) ((x) < (y) ? (x) : (y))
-//#define MAXVAL(x, y) ((x) > (y) ? (x) : (y))
 
 FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 			    GdkColor *colour, double thickness) ;
@@ -193,8 +197,8 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
 
 /* For drawing/highlighting text on the canvas e.g. dna & 3 frame trans.*/
 void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,                                  
-                                 int y1Idx,
-                                 int y2Idx,
+                                 double firstx, double firsty,
+                                 double lastx,  double lasty,
                                  FooCanvasItem *textItem);
 FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
                                  PangoFontDescription *fixed_font,

@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 28 15:48 2006 (edgrif)
+ * Last edited: May  4 16:41 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.123 2006-04-28 17:44:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.124 2006-05-04 15:53:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1260,8 +1260,8 @@ static void createThreeFrameTranslationForBlock(ZMapFeatureBlock block)
       ZMapFeature threeft = NULL; 
       ZMapPeptide pep = NULL;
       seq = block->sequence.sequence;
-      
-      for(i = 0; seq && *seq && i < 3; i++, seq++)
+      seq += 2;                 /* We do it in this order so it looks sensible on the display */
+      for(i = 2; seq && *seq && i >= 0; i--, seq--)
         {
           threeft = zMapFeatureCreateEmpty();
           f_name = g_strdup_printf("%s_phase_%d", trans, i);

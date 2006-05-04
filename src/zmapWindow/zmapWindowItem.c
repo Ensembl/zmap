@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 30 15:47 2006 (rds)
+ * Last edited: May  4 15:16 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.19 2006-03-30 15:07:58 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.20 2006-05-04 15:53:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,8 +52,14 @@ typedef struct _ZMapWindowItemHighlighterStruct
   FooCanvasGroup *tooltip, *highlight;
   double buttonCurrentX;
   double buttonCurrentY;
-  int originIdx;
-  int seqFirstIdx, seqLastIdx;
+  int originIdx, seqFirstIdx, seqLastIdx;
+
+  double x1, y1;
+  double x2, y2;
+
+  double originalX, originalY;
+
+  GString *tooltip_text;
   ZMapWindow window;
 } ZMapWindowItemHighlighterStruct;
 
@@ -83,7 +89,8 @@ ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow windo
                                                                 ITEM_HIGHLIGHT_DATA)))
     {
       selection  = (ZMapWindowItemHighlighter)g_new0(ZMapWindowItemHighlighterStruct, 1);
-      selection->tooltip = zMapDrawToolTipCreate(group_as_item->canvas);
+      selection->tooltip      = zMapDrawToolTipCreate(group_as_item->canvas);
+      selection->tooltip_text = g_string_sized_new(40);
       foo_canvas_item_hide(FOO_CANVAS_ITEM( selection->tooltip ));
 
       selection->highlight = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
@@ -140,8 +147,10 @@ void zmapWindowItemTextHighlightDraw(ZMapWindowItemHighlighter select_control,
                                      FooCanvasItem *item_receiving_event)
 {
   zMapDrawHighlightTextRegion(select_control->highlight,
-                              select_control->seqFirstIdx, 
-                              select_control->seqLastIdx,
+                              select_control->x1,
+                              select_control->y1,
+                              select_control->x2,
+                              select_control->y2,
                               item_receiving_event);
   return ;
 }
@@ -1134,61 +1143,104 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
   return ;
 }
 
-
-
 static void pointerIsOverItem(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data;
   ZMapWindowItemHighlighter select = (ZMapWindowItemHighlighter)user_data;
   ZMapDrawTextRowData trd = NULL;
   double currentY = 0.0;
-  currentY = select->buttonCurrentY - select->window->min_coord;
+  double x1, x2, y1, y2;        /* These will be the world coords */
+  currentY = select->buttonCurrentY; /* As this one is */
 
   if(select->need_update && (trd = zMapDrawGetTextItemData(item)))
     {
-      if(currentY > trd->rowOffset &&
-         currentY < trd->rowOffset + trd->fullStrLength)
+      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
+      foo_canvas_item_i2w(item, &x1, &y1);
+      foo_canvas_item_i2w(item, &x2, &y2);
+      /* Select the correct item, based on the input currentY */
+      if(currentY > y1 &&
+         currentY < y2)
         {
-          /* Now what do we need to do? */
-          /* update the values of seqFirstIdx && seqLastIdx */
-          int currentIdx, iMinIdx, iMaxIdx;
-          double x1, x2, y1, y2, char_width, clmpX;
+          int currentIdx;
+          double topLeftX, topLeftY, dummy = 0.0;
+          gboolean farRight, farLeft;
 
-          foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-          foo_canvas_item_i2w(item, &x1, &y1);
-          foo_canvas_item_i2w(item, &x2, &y2);
+          /* item is under a horizontal line drawn in line with the pointer... */
+          /* clamp the pointer location within the item */
+          topLeftX  = ((farRight = (select->buttonCurrentX > x2))) ? x2 :
+            ((farLeft = (select->buttonCurrentX < x1))) ? x1 : select->buttonCurrentX;
+          topLeftX -= x1;
 
-          /* clamp inside the item! (and effectively the sequence) */
-          clmpX = (select->buttonCurrentX > x1 ? 
-                   select->buttonCurrentX < x2 ? select->buttonCurrentX :
-                   x2 : x1);
+          /* we're zero based so we need to be able to select the
+           * first base. revisit if it's an issue */
+          currentIdx  = (int)(floor(topLeftX / trd->char_width));
+          topLeftX    = currentIdx * trd->char_width;
 
-          char_width  = trd->columnWidth / trd->drawnStrLength;
-          currentIdx  = (int)(floor((clmpX - x1) / char_width)); /* we're zero based so we need to be able to select the first base. revisit if it's an issue */
-          currentIdx += trd->rowOffset;
+          currentIdx += trd->seq_index_start;
 
+          topLeftY    = y1;
+
+          /* back to item coords for the y coordinate */
+          foo_canvas_item_w2i(item, &dummy, &topLeftY);
+
+#ifdef RDS_DONT_INCLUDE
+          printf("pointerIsOverItem (%x): topLeftX=%f, topLeftY=%f\n", item, topLeftX, topLeftY);
+#endif
+          /* initialise if neccessary (when both == -1) */
           if(select->seqLastIdx  == -1 && 
              select->seqFirstIdx == select->seqLastIdx)
-            select->seqFirstIdx = 
-              select->seqLastIdx = 
-              select->originIdx = currentIdx;
-
-          /* clamp to the original index */
-          iMinIdx = (select->seqFirstIdx < select->originIdx ? select->originIdx : select->seqFirstIdx);
-          iMaxIdx = (select->seqLastIdx  > select->originIdx ? select->originIdx : select->seqLastIdx);
+            {
+              select->seqFirstIdx = 
+                select->seqLastIdx = 
+                select->originIdx = currentIdx;
+              select->x1 = select->x2 = select->originalX = topLeftX;
+              select->y1 = select->y2 = select->originalY = topLeftY;
+            }
           
-          /* resize to current index */
-          select->seqFirstIdx = MIN(currentIdx, iMinIdx);
-          select->seqLastIdx  = MAX(currentIdx, iMaxIdx);
+          /* resize to current index */            /* clamping to the original index */
+          select->seqFirstIdx  = MIN(currentIdx, MAX(select->seqFirstIdx, select->originIdx));
+          select->seqLastIdx   = MAX(currentIdx, MIN(select->seqLastIdx,  select->originIdx));
+          
+          select->y1 = MIN(topLeftY, MAX(select->y1, select->originalY));
+          select->y2 = MAX(topLeftY, MIN(select->y2, select->originalY));
+
+          /* Quite a specific requirement to X constraints */
+          if(topLeftY == select->originalY)
+            {
+              select->x1 = MIN(topLeftX, select->originalX);
+              select->x2 = MAX(topLeftX, select->originalX);
+            }
+          else if(currentIdx < select->originIdx)
+            {
+              select->x1 = topLeftX;
+              select->x2 = MIN(select->x2,  select->originalX);
+            }
+          else if(currentIdx > select->originIdx)
+            {
+              select->x2 = topLeftX;
+              select->x1 = MAX(select->x1, select->originalX);
+            }
+
+#ifdef RDS_DONT_INCLUDE
+          printf("pointerIsOverItem (%x): select members, x1=%f, y1=%f, x2=%f, y2=%f\n", 
+                 item, select->x1, select->y1, select->x2, select->y2);
+#endif
+
+          g_string_printf(select->tooltip_text, 
+                          "%d - %d", 
+                          select->seqFirstIdx + 1, 
+                          select->seqLastIdx);
 
           zMapDrawToolTipSetPosition(select->tooltip, 
-                                     x1 - 200,
-                                     trd->rowOffset - (y2 - y1), 
-                                     g_strdup_printf("%d - %d", select->seqFirstIdx + 1, select->seqLastIdx + 1));
+                                     x2,
+                                     topLeftY,
+                                     select->tooltip_text->str);
 
-          select->need_update = FALSE;
+          select->need_update = FALSE; /* Stop us doing any more of this heavy stuff */
         }
     }
+  else if(select->need_update)
+    zMapLogWarning("%s", "Error: No Text Row Data");
 
   return ;
 }
@@ -1229,7 +1281,7 @@ static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select,
     zMap_g_list_foreach_directional(listStart, pointerIsOverItem, 
                                     (gpointer)select, forward);
 
-  return ;
+  return TRUE;
 }
  
 static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data)
