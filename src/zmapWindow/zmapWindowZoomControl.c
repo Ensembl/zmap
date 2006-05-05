@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 30 17:14 2006 (rds)
+ * Last edited: May  5 11:25 2006 (rds)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.11 2006-03-30 16:21:08 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.12 2006-05-05 11:00:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -174,11 +174,12 @@ PangoFontDescription *zMapWindowZoomGetFixedWidthFontInfo(ZMapWindow window,
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) 
 {
   ZMapWindowZoomControl num_cruncher = NULL;
+#ifdef RDS_DONT_INCLUDE_UNUSED
   double text_height;
   int x_windows_limit = (2 >> 15) - 1;
   int user_set_limit  = (2 >> 15) - 1;  /* possibly a parameter later?!? */
   int max_window_size = 0;
-
+#endif
   num_cruncher = g_new0(ZMapWindowZoomControlStruct, 1);
   num_cruncher->magic = &zoom_magic_G;
 
@@ -346,7 +347,8 @@ double zmapWindowZoomControlLimitSpan(ZMapWindow window,
 {
   ZMapWindowZoomControl control;
   double max_span, seq_span, new_span, canv_span;
-  double x1, x2, y1, y2;
+  /* double x1, x2; */
+  double y1, y2;
 
   control   = controlFromWindow(window);
 

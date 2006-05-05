@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 22 14:48 2006 (rds)
+ * Last edited: May  5 11:24 2006 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.5 2006-03-22 14:53:29 rds Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.6 2006-05-05 11:00:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -340,7 +340,7 @@ void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
 void zmapWindowRulerCanvasRepositionHorizon(ZMapWindowRulerCanvas obj,
                                             double y_position)
 {
-  double x1, x2;
+  /*  double x1, x2; */
   FooCanvasPoints *points = NULL;
 
   points = foo_canvas_points_new(2);

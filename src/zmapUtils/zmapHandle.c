@@ -31,9 +31,9 @@
  *
  * Exported functions: See ZMap/zMapMemoryHandle.h
  * HISTORY:
- * Last edited: Nov 29 15:54 2005 (edgrif)
+ * Last edited: May  5 11:21 2006 (rds)
  * Created: Tue Nov 29 15:27:32 2005 (edgrif)
- * CVS info:   $Id: zmapHandle.c,v 1.2 2005-12-02 14:07:04 edgrif Exp $
+ * CVS info:   $Id: zmapHandle.c,v 1.3 2006-05-05 11:00:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -175,7 +175,7 @@ gboolean zMapMemoryHandleRemove(ZMapMemoryHandle memory_handle, gpointer memory,
 
   if ((item = g_list_find(memory_handle->blocks, memory)))
     {
-      ZMapMemoryBlock block = item->data ;
+      /* ZMapMemoryBlock block = item->data ; */
 
       freeBlockCB(memory, GINT_TO_POINTER(free_mem)) ;
 

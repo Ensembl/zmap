@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 28 15:37 2006 (edgrif)
+ * Last edited: May  5 11:22 2006 (rds)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.23 2006-03-29 10:10:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.24 2006-05-05 11:00:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -322,8 +322,8 @@ static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapF
 		  tx1Init     = { ENTRY , INT   , "CDS Start"      , 0, NULL, NULL, {NULL}, TRUE , validateEntryCB  },
 		  tx2Init     = { ENTRY , INT   , "CDS End"        ,-1, NULL, NULL, {NULL}, TRUE , validateEntryCB  },
 		  tphaseInit  = { ENTRY , PHASE , "CDS Phase"      , 0, NULL, NULL, {NULL}, TRUE , validatePhaseCB  },
-		  tsnfInit    = { CHECK , CHECK , "Start Not Found", 0, NULL, NULL, {NULL}, TRUE , NULL  },
-		  tenfInit    = { CHECK , CHECK , "End Not Found " , 0, NULL, NULL, {NULL}, TRUE , NULL  },
+                    /*		  tsnfInit    = { CHECK , CHECK , "Start Not Found", 0, NULL, NULL, {NULL}, TRUE , NULL  },
+                                  tenfInit    = { CHECK , CHECK , "End Not Found " , 0, NULL, NULL, {NULL}, TRUE , NULL  }, */
 		  texonInit   = { EXON  , EXON  , "Exons"          , 0, NULL, NULL, {NULL}, TRUE , NULL  },
 		  tintronInit = { INTRON, INTRON, "Introns"        , 0, NULL, NULL, {NULL}, TRUE , NULL  },
 			    

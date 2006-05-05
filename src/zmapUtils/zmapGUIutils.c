@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Mar 21 17:16 2006 (rds)
+ * Last edited: May  5 11:21 2006 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.15 2006-03-21 17:17:38 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.16 2006-05-05 11:00:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -765,7 +765,7 @@ void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, 
   GdkScreen *screen ;
   double width, height, width_mm, height_mm ;
   double multiplier ;
-  double mm_2_inches = 25.4 ;
+  /* double mm_2_inches = 25.4 ; */
   double x, y ;
 
   screen = gtk_widget_get_screen(widget) ;

@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov 23 15:23 2005 (edgrif)
+ * Last edited: May  5 11:57 2006 (rds)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.2 2005-11-24 15:56:53 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.3 2006-05-05 11:00:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -180,6 +180,9 @@ static gboolean dumpSeqHeaders(GIOChannel *file, ZMapFeatureAny dump_set, GError
     case ZMAPFEATURE_STRUCT_FEATURE:			    /* pathological case... */
       alignment = (ZMapFeatureAlignment)(dump_set->parent->parent->parent) ;
       break ;
+    case ZMAPFEATURE_STRUCT_INVALID:
+      zMapAssertNotReached();
+      break;
     }
 
   if (dataset_start_func)
@@ -231,7 +234,7 @@ static void doBlock(gpointer data, gpointer user_data)
   const char *sequence_name ;
   int start, end ;
   gboolean reversed = FALSE ;
-  char *header, *time_string ;
+  char *header;
   GIOStatus status ;
   gsize bytes_written ;
 

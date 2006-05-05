@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Nov  8 14:31 2005 (edgrif)
+ * Last edited: May  5 11:26 2006 (rds)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.5 2005-11-08 17:11:33 edgrif Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.6 2006-05-05 11:00:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,6 @@ static char *getRelOrAbsPath(char *path_in, gboolean home_relative) ;
 char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir)
 {
   char *directory = NULL ;
-  gboolean absolute ;
   gboolean status = FALSE ;
   char *base_dir ;
   struct stat stat_buf ;
@@ -122,7 +121,7 @@ char *zMapGetFile(char *directory, char *filename, gboolean make_file)
 {
   gboolean status = FALSE ;
   char *filepath ;
-  struct stat stat_buf ;
+  /* struct stat stat_buf ; */
 
   filepath = g_build_path(ZMAP_SEPARATOR, directory, filename, NULL) ;
 
@@ -188,10 +187,10 @@ gboolean zMapFileEmpty(char *filepath)
 static char *getRelOrAbsPath(char *path_in, gboolean home_relative)
 {
   char *path = NULL ;
-  gboolean absolute ;
-  gboolean status = FALSE ;
+  /* gboolean absolute ;
+     gboolean status = FALSE ; */
   char *base_dir ;
-  struct stat stat_buf ;
+  /* struct stat stat_buf ; */
 
   if (g_path_is_absolute(path_in))
     {

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 29 09:46 2006 (edgrif)
+ * Last edited: May  5 11:24 2006 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.29 2006-03-29 10:21:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.30 2006-05-05 11:00:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -141,7 +141,7 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
 ZMapWindowClampType zmapWindowClampedAtStartEnd(ZMapWindow window, double *top_inout, double *bot_inout)
 {
   ZMapWindowClampType clamp = ZMAP_WINDOW_CLAMP_INIT;
-  double top, bot, crc = 0.0;
+  double top, bot;
 
   top = *top_inout;
   bot = *bot_inout;

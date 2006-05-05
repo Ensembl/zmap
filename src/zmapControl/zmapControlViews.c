@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Mar 20 18:33 2006 (rds)
+ * Last edited: May  5 11:33 2006 (rds)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.12 2006-03-20 18:36:24 rds Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.13 2006-05-05 11:00:14 rds Exp $
  *-------------------------------------------------------------------
  */
  
@@ -494,7 +494,7 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
   GtkWidget *viewwindow_frame ;
   ZMapView view ;
   ZMapWindow window ;
-  GdkColor color ;
+  /* GdkColor color ; */
   double top, bottom ;
 
   zMapAssert(new_viewwindow) ;

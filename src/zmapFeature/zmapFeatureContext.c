@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 31 12:36 2006 (rds)
+ * Last edited: May  5 11:19 2006 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.4 2006-03-31 11:48:10 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.5 2006-05-05 11:00:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -101,7 +101,6 @@ char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature)
 {
   char *dna = NULL, *tmp;
   gboolean revcomp = FALSE ;
-  ZMapFeatureBlock block = NULL;
 
   /* should check that feature is in context.... */
   zMapAssert(feature) ;

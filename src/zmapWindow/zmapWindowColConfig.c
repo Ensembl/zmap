@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 29 15:13 2006 (rds)
+ * Last edited: May  5 11:23 2006 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.3 2006-03-29 14:51:18 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.4 2006-05-05 11:00:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -158,8 +158,7 @@ void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode configure_mod
 
 static void colConfigure(ZMapWindow window, GList *forward_cols, GList *reverse_cols)
 {
-  GtkWidget *toplevel, *vbox, *menubar, *hbox, *cols, *frame,
-    *apply_button, *fields, *filters, *buttonBox ;
+  GtkWidget *toplevel, *vbox, *menubar, *cols;
   ColConfigure configure_data ;
   char *title ;
 
@@ -262,7 +261,7 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *
 {
   GtkWidget *cols_panel, *frame, *column_box ;
   ZMapWindow window = configure_data->window ;
-  ZMapFeatureContext context = window->feature_context ;
+  /*  ZMapFeatureContext context = window->feature_context ; */
   GList *column ;
 
 
@@ -352,8 +351,9 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 
 static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
+#ifdef RDS_DONT_INCLUDE_UNUSED
   ColConfigure configure_data = (ColConfigure)cb_data ;
-
+#endif
   /* WE NEED TO CALL COLUMN REPOSITION HERE.... OR MAYBE MORE THAN THAT... */
   printf("not implemented yet\n") ;
 

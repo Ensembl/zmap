@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Mar  3 19:18 2006 (edgrif)
+ * Last edited: May  5 11:49 2006 (rds)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.23 2006-03-06 11:45:54 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.24 2006-05-05 11:00:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -239,24 +239,11 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
 
-#warning THIS NEEDS CHECKING (RDS)
-#ifdef CAUSE_OF_GTK_CRITICAL_ISSUE
   /* this is hacky, I don't like this, if we don't do this then end up trying to kill a
    * non-existent top level window because gtk already seems to have done this...  */
   zmap->toplevel = NULL ; 
   
   zmapControlTopLevelKillCB(zmap) ;
-#endif /* CAUSE_OF_GTK_CRITICAL_ISSUE */
-
-  printf("Ed....\nI'm quitCB() in %s:%d\n"
-         "I think this is where the 'Gtk-CRITICAL **:"
-         " gtk_widget_set_sensitive: assertion"
-         " `GTK_IS_WIDGET (widget)' failed' issue is,"
-         " can you check this.\n", 
-         __FILE__, __LINE__);
-  /* So now we call this which appears to cure the issue. Assuming
-   * threads all get cleaned up in this */
-  (*(zmap->zmap_cbs_G->exit))(zmap, zmap->app_data) ;
 
   return ;
 }

@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: Mar 31 13:00 2006 (rds)
+ * Last edited: May  5 11:21 2006 (rds)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.2 2006-03-31 12:02:05 rds Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.3 2006-05-05 11:00:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -294,7 +294,7 @@ static GArray *pepGetTranslationTable(void)
   KEY gKey = KEY_UNDEFINED ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  int index = 0 ;
+  /* int index = 0 ; */
   static GPtrArray *maps = NULL ;
 
 

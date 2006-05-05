@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Apr 21 09:00 2006 (edgrif)
+ * Last edited: May  5 11:38 2006 (rds)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.13 2006-04-25 12:55:54 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.14 2006-05-05 11:00:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -228,6 +228,7 @@ static void print_hello( gpointer data, guint callback_action, GtkWidget *w )
 
 }
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void handle_option( gpointer data, guint callback_action, GtkWidget *w )
 {
 
@@ -239,6 +240,7 @@ static void handle_option( gpointer data, guint callback_action, GtkWidget *w )
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
