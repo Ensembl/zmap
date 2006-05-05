@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: May  4 14:53 2006 (rds)
+ * Last edited: May  5 10:42 2006 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.28 2006-05-04 15:53:08 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.29 2006-05-05 10:15:18 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -125,6 +125,7 @@ typedef struct _ZMapDrawTextIteratorStruct
   int rows, cols;               /* number of rows in iteration, columns per row */
   int lastPopulatedCell;        /* last cell to draw in in table */
   int truncate_at;              /* only draw this number of the columns */
+  int index_start;              /* like offset_start, but the index in wrap_text */
 
   gboolean truncated;           /* flag to say we're not drawing all columns */
 

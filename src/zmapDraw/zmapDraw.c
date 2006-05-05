@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: May  4 15:18 2006 (rds)
+ * Last edited: May  5 10:43 2006 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.47 2006-05-04 15:53:08 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.48 2006-05-05 10:15:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1163,7 +1163,7 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
 
       /* Now we know most of what we need to store in curr_data */
       curr_data->curr_first_index  = iterator->offset_start;
-      curr_data->seq_index_start   = curr_idx + curr_data->curr_first_index;
+      curr_data->seq_index_start   = curr_idx + iterator->index_start;
       curr_data->seq_index_end     = curr_data->seq_index_start + iterator->cols;
       curr_data->seq_truncated_idx = iterator->truncate_at;
       curr_data->chars_on_screen   = char_count_inc;

@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  4 15:16 2006 (rds)
+ * Last edited: May  4 17:29 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.20 2006-05-04 15:53:09 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.21 2006-05-05 10:15:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,7 +47,7 @@ typedef struct
 /* text group selection stuff for the highlighting of dna, etc... */
 typedef struct _ZMapWindowItemHighlighterStruct
 {
-  gboolean need_update;
+  gboolean need_update, free_string;
   GList *originItemListMember;
   FooCanvasGroup *tooltip, *highlight;
   double buttonCurrentX;
@@ -58,6 +58,8 @@ typedef struct _ZMapWindowItemHighlighterStruct
   double x2, y2;
 
   double originalX, originalY;
+
+  char *data;
 
   GString *tooltip_text;
   ZMapWindow window;
@@ -133,16 +135,38 @@ gboolean zmapWindowItemTextHighlightGetIndices(ZMapWindowItemHighlighter select_
 }
 void zmapWindowItemTextHighlightFinish(ZMapWindowItemHighlighter select_control)
 {
+  GtkClipboard *clip = NULL;
+  int firstIdx, lastIdx;
+  char *full_text = NULL;
+
   foo_canvas_item_hide(FOO_CANVAS_ITEM(select_control->tooltip));
+
+  if(zmapWindowItemTextHighlightGetIndices(select_control, &firstIdx, &lastIdx))
+    {
+      if((clip = gtk_clipboard_get(GDK_SELECTION_PRIMARY)))
+        {
+          if((full_text  = select_control->data) != NULL)
+            {
+              full_text += firstIdx;
+              gtk_clipboard_set_text(clip, full_text,
+                                     lastIdx - firstIdx);
+            }
+        }
+    }
+  
   select_control->originItemListMember = NULL;
+  select_control->seqFirstIdx = select_control->seqLastIdx = -1;
+
   return ;
 }
+
 gboolean zmapWindowItemTextHighlightValidForMotion(ZMapWindowItemHighlighter select_control)
 {
   gboolean valid = FALSE;
   valid = ( select_control->originItemListMember ? TRUE : FALSE );
   return valid;
 }
+
 void zmapWindowItemTextHighlightDraw(ZMapWindowItemHighlighter select_control,
                                      FooCanvasItem *item_receiving_event)
 {
@@ -191,6 +215,16 @@ void zmapWindowItemTextHighlightUpdateCoords(ZMapWindowItemHighlighter select_co
   return ;
 }
 
+void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_control,
+                                            char *text_string, gboolean copy_string)
+{
+  if((select_control->free_string = copy_string))
+    select_control->data = g_strdup(text_string);
+  else
+    select_control->data = text_string;
+
+  return ;
+}
 
 
 /* Highlight a feature, note how this function should just take _any_ feature/item but it doesn't 

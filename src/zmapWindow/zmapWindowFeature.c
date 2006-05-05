@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  4 16:50 2006 (rds)
+ * Last edited: May  5 10:39 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.22 2006-05-04 15:53:09 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.23 2006-05-05 10:15:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1035,7 +1035,8 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
   FooCanvasItem  *feature_parent = NULL;
   FooCanvasItem  *prev_trans     = NULL;
   FooCanvasGroup *column_parent  = NULL;
-  ZMapWindowItemHighlighter high = NULL;
+  ZMapWindowItemHighlighter hlght= NULL;
+  gpointer callback              = NULL;
 
   feature_start  = feature->x1;
   feature_end    = feature->x2;
@@ -1057,19 +1058,22 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
 
       zmapWindowContainerSetZoomEventHandler(column_parent, dnaHandleZoomCB, window);
 
+      if((hlght = zmapWindowItemTextHighlightCreateData(window, 
+                                                        FOO_CANVAS_GROUP(feature_parent))))
+        {
+          zmapWindowItemTextHighlightSetFullText(hlght, feature->text, FALSE);
+          callback = G_CALLBACK(dnaItemEventCB);
+        }
+
       drawTextWrappedInColumn(feature_parent, feature->text,
                               feature_start, feature_end, feature_offset,
                               foreground, background, outline,
-                              300.0, 3, NULL, window);
-      //                              300.0, 3, G_CALLBACK(dnaItemEventCB), window);
+                              300.0, 3, callback, window);
       
 #ifdef RDS_THESE_NEED_A_LITTLE_BIT_OF_CHECKING
       /* TRY THIS...EVENT HANDLER MAY INTERFERE THOUGH...SO MAY NEED TO REMOVE EVENT HANDLERS... */
       attachDataToItem(feature_parent, window, feature, ITEM_FEATURE_SIMPLE, NULL) ;
       
-      if((high = zmapWindowItemTextHighlightCreateData(window, 
-                                                       FOO_CANVAS_GROUP(feature_parent))))
-        zmapWindowItemTextHighlightSetFullText(high, feature->text, FALSE);
 #endif
 
     }
@@ -1091,6 +1095,8 @@ static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
   FooCanvasGroup *column_parent  = NULL;
   ZMapFeatureBlock feature_block = NULL;
   ZMapFeatureSet   feature_set   = NULL;
+  ZMapWindowItemHighlighter hlght= NULL;
+  gpointer callback              = NULL;
 
   feature_start  = feature->x1;
   feature_end    = feature->x2;
@@ -1116,34 +1122,21 @@ static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
 
   zmapWindowContainerSetZoomEventHandler(column_parent, dnaHandleZoomCB, window);
 
+  if((hlght = zmapWindowItemTextHighlightCreateData(window, 
+                                                    FOO_CANVAS_GROUP(feature_parent))))
+    {
+      zmapWindowItemTextHighlightSetFullText(hlght, feature_block->sequence.sequence, FALSE);
+      callback = G_CALLBACK(dnaItemEventCB);
+    }
+
   drawTextWrappedInColumn(feature_parent, feature_block->sequence.sequence,
                           feature->x1, feature->x2, feature_offset,
                           foreground, background, outline,
-                          300.0, 1, G_CALLBACK(dnaItemEventCB), window);
-
-  if(0)
-    {
-      FooCanvasItem *line;
-      FooCanvasPoints *points;
-      double problem_y = 37636.0;
-      points   = foo_canvas_points_new(2);
-      points->coords[0] = 0.0;
-      points->coords[1] = problem_y;
-      points->coords[2] = 100.0;
-      points->coords[3] = problem_y;
-      line = foo_canvas_item_new(FOO_CANVAS_GROUP( feature_parent ),
-                                 foo_canvas_line_get_type(),
-                                 "points", points,
-                                 NULL);
-      foo_canvas_item_raise_to_top(line);
-      foo_canvas_points_free(points);
-    }
+                          300.0, 1, callback, window);
 
   /* TRY THIS...EVENT HANDLER MAY INTERFERE THOUGH...SO MAY NEED TO REMOVE EVENT HANDLERS... */
   attachDataToItem(feature_parent, window, feature, ITEM_FEATURE_SIMPLE, NULL) ;
-
-  zmapWindowItemTextHighlightCreateData(window, FOO_CANVAS_GROUP(feature_parent));
-
+  
   return feature_parent;
 }
 
@@ -1641,7 +1634,7 @@ static ZMapDrawTextIterator zmapDrawTextIteratorBuild(double feature_start, doub
 
   iterator->row_text   = g_string_sized_new(iterator->truncate_at);
   iterator->wrap_text  = full_text;
-  iterator->wrap_text += (int)feature_first_char;
+  iterator->wrap_text += iterator->index_start = (int)feature_first_char;
 
   iterator->row_data   = g_new0(ZMapDrawTextRowDataStruct, iterator->rows);
 
