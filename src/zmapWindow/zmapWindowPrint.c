@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 28 12:52 2006 (edgrif)
+ * Last edited: May 11 14:01 2006 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowPrint.c,v 1.2 2006-04-28 11:53:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowPrint.c,v 1.3 2006-05-11 13:09:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -99,8 +99,7 @@ static gboolean printFile(ZMapWindow window, PrintCBData print_cb) ;
 static gboolean printDialog(PrintCBData print_cb) ;
 static void addNames(gpointer data, gpointer user_data) ;
 static void getButtons(GtkDialog *dialog, PrintCBData print_cb) ;
-static void destinationCB(GtkButton *button, gpointer user_data) ;
-static void setSensitive(PrintCBData cb_data) ;
+static void setSensitive(GtkWidget *button, gpointer data, gboolean active) ;
 
 static gboolean getConfiguration(PrintCBData print_cb) ;
 
@@ -125,19 +124,18 @@ gboolean zMapWindowPrint(ZMapWindow window)
 
 
   /* do the dialog bit.... */
-  result = printDialog(&print_cb) ;
-
-
-  /* Depending on what user wanted either print the window or save it. */
-  if (print_cb.sendto == TO_FILE)
+  if((result = printDialog(&print_cb)))
     {
-      zMapWindowDump(window) ;
+      /* Depending on what user wanted either print the window or save it. */
+      if (print_cb.sendto == TO_FILE)
+        {
+          zMapWindowDump(window) ;
+        }
+      else
+        {
+          result = printFile(window, &print_cb) ;
+        }
     }
-  else
-    {
-      result = printFile(window, &print_cb) ;
-    }
-
 
   if (print_cb.print_file_err)
     g_error_free(print_cb.print_file_err) ;
@@ -216,10 +214,13 @@ static gboolean printDialog(PrintCBData print_cb)
 {
   gboolean status = FALSE ;
   char *window_title ;
-  GtkWidget *dialog, *vbox, *frame, *hbox, *button, *combo ;
+  GtkWidget *dialog, *vbox, *frame, *hbox, *combo ;
   GtkEntry *text_box ;
-  GSList *group ;
   int dialog_rc = 0 ;
+  ZMapGUIRadioButtonStruct print_to_buttons[] = {
+    {TO_PRINTER, "Print", NULL},
+    {TO_FILE,    "File",  NULL},
+    {-1,         NULL,    NULL}};
 
   window_title = zMapGUIMakeTitleString("Print", "Please select printer") ;
   dialog = gtk_dialog_new_with_buttons (window_title,
@@ -244,21 +245,11 @@ static gboolean printDialog(PrintCBData print_cb)
   gtk_container_set_border_width(GTK_CONTAINER (hbox), 10) ;
   gtk_container_add(GTK_CONTAINER(frame), hbox) ;
 
-
-  print_cb->print = button = gtk_radio_button_new_with_label(NULL, "Print");
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (button), TRUE) ;
-  print_cb->sendto = TO_PRINTER ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(destinationCB), print_cb) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0);
-
-  group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(button));
-  print_cb->file = button = gtk_radio_button_new_with_label(group, "File") ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(destinationCB), print_cb) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0) ;
-
-
+  zMapGUICreateRadioGroup(hbox,
+                          &print_to_buttons[0],
+                          TO_PRINTER,
+                          (int *)&(print_cb->sendto),
+                          setSensitive, print_cb);
 
   /* Add print select combo box. */
   print_cb->print_select = frame = gtk_frame_new(" Available Printers ") ;
@@ -294,7 +285,7 @@ static gboolean printDialog(PrintCBData print_cb)
 
 
   /* Set GUI up. */
-  setSensitive(print_cb) ;
+  setSensitive(NULL, print_cb, TRUE) ;
 
 
   dialog_rc = gtk_dialog_run(GTK_DIALOG(dialog)) ;
@@ -353,30 +344,10 @@ static void getButtons(GtkDialog *dialog, PrintCBData print_cb)
   return ;
 }
 
-
-
-static void destinationCB(GtkButton *button, gpointer user_data)
+static void setSensitive(GtkWidget *button, gpointer data, gboolean active)
 {
-  PrintCBData cb_data = (PrintCBData)user_data ;
+  PrintCBData cb_data = (PrintCBData)data;
 
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-    {
-
-      if (button == GTK_BUTTON(cb_data->print))
-	cb_data->sendto = TO_PRINTER ;
-      else
-	cb_data->sendto = TO_FILE ;
-
-      setSensitive(cb_data) ;				    /* Set which buttons are active. */
-    }
-
-  return ;
-}
-
-
-
-static void setSensitive(PrintCBData cb_data)
-{
   if (cb_data->sendto == TO_PRINTER)
     {
       gtk_widget_set_sensitive(cb_data->print_select, TRUE) ;
@@ -598,7 +569,7 @@ static gboolean getPrintFileName(PrintCBData print_cb, GError **print_file_err_i
 
 
 
-/* Read ZMap application defaults for default printer. */
+/* Read ZMap application defaults for default printer. Falling back to environment PRINTER and XPRINTER variables */
 static gboolean getConfiguration(PrintCBData print_cb)
 {
   gboolean result = FALSE ;
@@ -613,6 +584,8 @@ static gboolean getConfiguration(PrintCBData print_cb)
     {
       zmap_stanza = zMapConfigMakeStanza(zmap_stanza_name, zmap_elements) ;
 
+      result = TRUE ;
+
       if (zMapConfigFindStanzas(config, zmap_stanza, &zmap_list))
 	{
 	  ZMapConfigStanza next_zmap ;
@@ -625,14 +598,18 @@ static gboolean getConfiguration(PrintCBData print_cb)
 	  
 	  zMapConfigDeleteStanzaSet(zmap_list) ;		    /* Not needed anymore. */
 	}
-      
+      else if((print_cb->default_printer = getenv("PRINTER")) || 
+              (print_cb->default_printer = getenv("XPRINTER")))
+        print_cb->default_printer = g_strdup_printf(print_cb->default_printer);
+      else
+        result = FALSE;
+    
       zMapConfigDestroyStanza(zmap_stanza) ;
       
       zMapConfigDestroy(config) ;
 
-      result = TRUE ;
     }
-
+  
   return result ;
 }
 

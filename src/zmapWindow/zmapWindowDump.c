@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 24 09:56 2006 (edgrif)
+ * Last edited: May 11 11:15 2006 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.1 2006-04-25 12:59:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.2 2006-05-11 13:09:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,17 +94,9 @@ typedef struct
 {
   DumpOptions dump_opts ;
 
-  GtkWidget *whole, *visible ;
-
-  GtkWidget *encapsulated, *postscript, *png, *jpeg ;
-
   GtkWidget *options_frame ;
 
-  GtkWidget *best_fit, *customise ;
-
   GtkWidget *customise_frame ;
-
-  GtkWidget *portrait, *landscape, *as_is, *fit_to_page ;
 
 } dialogCBStruct, *dialogCB ;
 
@@ -140,12 +132,7 @@ static int openGD(DumpOptions dump_opts) ;
 static int setScalingPS(DumpOptions dump_opts) ;
 
 static gboolean chooseDump(DumpOptions dump_opts) ;
-static void setSensitive(dialogCB cb_data) ;
-static void extentCB(GtkButton *button, gpointer user_data) ;
-static void formatCB(GtkButton *button, gpointer user_data) ;
-static void customiseCB(GtkButton *button, gpointer user_data) ;
-static void orientationCB(GtkButton *button, gpointer user_data) ;
-static void aspectCB(GtkButton *button, gpointer user_data) ;
+static void setSensitive(GtkWidget *button, gpointer cb_data, gboolean active) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printCB(GtkButton *button, gpointer user_data) ;
@@ -285,12 +272,31 @@ static gboolean chooseDump(DumpOptions dump_opts)
   gboolean status = FALSE ;
   dialogCBStruct cb_data = {NULL} ;
   char *window_title ;
-  GtkWidget *dialog, *vbox, *frame, *hbox_top, *hbox, *button ;
-  GSList *group ;
-
+  GtkWidget *dialog, *vbox, *frame, *hbox_top, *hbox;
+  ZMapGUIRadioButtonStruct extent_buttons[] = {
+    {EXTENT_VISIBLE, "Visible Features", NULL},
+    {EXTENT_WHOLE,   "All Features",     NULL},
+    {-1,             NULL,               NULL}};
+  ZMapGUIRadioButtonStruct type_buttons[] = {
+    {DUMP_EPSF, "Encaps. Postscript", NULL},
+    {DUMP_PS,   "Postscript",         NULL},
+    {DUMP_PNG,  "PNG",                NULL},
+    {DUMP_JPEG, "JPEG",               NULL},
+    {-1,        NULL,                 NULL}};
+  ZMapGUIRadioButtonStruct custom_buttons[] = {
+    {CUSTOM_BEST_FIT,  "Best Fit",  NULL},
+    {CUSTOM_CUSTOMISE, "Customise", NULL},
+    {-1, NULL, NULL}};
+  ZMapGUIRadioButtonStruct orient_buttons[] = {
+    {ORIENTATION_PORTRAIT,  "Portrait",  NULL},
+    {ORIENTATION_LANDSCAPE, "Landscape", NULL},
+    {-1,                    NULL,        NULL}};
+  ZMapGUIRadioButtonStruct aspect_buttons[] = {
+    {ASPECT_AS_IS,   "As is",       NULL},
+    {ASPECT_FITPAGE, "Fit to Page", NULL},
+    {-1,             NULL,          NULL}};
 
   cb_data.dump_opts = dump_opts ;
-
 
   window_title = zMapGUIMakeTitleString("Export Window", "Please select options") ;
   dialog = gtk_file_chooser_dialog_new(window_title,
@@ -312,22 +318,15 @@ static gboolean chooseDump(DumpOptions dump_opts)
   gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, TRUE, 0);
 
   hbox = gtk_hbox_new(FALSE, 10) ;
+
+  zMapGUICreateRadioGroup(hbox, 
+                          &extent_buttons[0], 
+                          EXTENT_VISIBLE,
+                          (int *)&(cb_data.dump_opts->extent),
+                          NULL, NULL);
+
   gtk_container_set_border_width(GTK_CONTAINER (hbox), 10) ;
   gtk_container_add(GTK_CONTAINER(frame), hbox) ;
-
-  cb_data.visible = button = gtk_radio_button_new_with_label(NULL, "Visible Features") ;
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), TRUE);
-  cb_data.dump_opts->extent = EXTENT_VISIBLE ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(extentCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0) ;
-
-  group = gtk_radio_button_get_group(GTK_RADIO_BUTTON (button));
-  cb_data.whole = button = gtk_radio_button_new_with_label(group, "All Features");
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(extentCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0);
-
 
   /* Add file format box. */
   frame = gtk_frame_new(" Type ") ;
@@ -338,33 +337,10 @@ static gboolean chooseDump(DumpOptions dump_opts)
   gtk_container_set_border_width(GTK_CONTAINER (hbox), 10) ;
   gtk_container_add(GTK_CONTAINER(frame), hbox) ;
 
-
-  cb_data.encapsulated = button = gtk_radio_button_new_with_label(NULL, "Encaps. Postscript");
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (button), TRUE) ;
-  cb_data.dump_opts->format = DUMP_EPSF ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(formatCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0);
-
-  group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(button));
-  cb_data.postscript = button = gtk_radio_button_new_with_label(group, "Postscript") ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(formatCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0) ;
-
-  group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(button));
-  cb_data.png = button = gtk_radio_button_new_with_label(group, "PNG") ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(formatCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0);
-
-  group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(button));
-  cb_data.jpeg = button = gtk_radio_button_new_with_label(group, "JPEG") ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(formatCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0);
-
-
+  zMapGUICreateRadioGroup(hbox,
+                          &type_buttons[0],
+                          DUMP_EPSF, (int *)&(cb_data.dump_opts->format),
+                          setSensitive, &cb_data);
 
   /* Add a format options box. */
   cb_data.options_frame = frame = gtk_frame_new(" Format Options ") ;
@@ -386,20 +362,11 @@ static gboolean chooseDump(DumpOptions dump_opts)
   gtk_container_set_border_width(GTK_CONTAINER (hbox), 10) ;
   gtk_container_add(GTK_CONTAINER(frame), hbox) ;
 
-
-  cb_data.best_fit = button = gtk_radio_button_new_with_label(NULL, "Best Fit") ;
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (button), TRUE);
-  cb_data.dump_opts->customise = CUSTOM_BEST_FIT ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(customiseCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX(hbox), button, TRUE, TRUE, 0) ;
-
-  group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(button)) ;
-  cb_data.customise = button = gtk_radio_button_new_with_label(group, "Customise") ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(customiseCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX(hbox), button, TRUE, TRUE, 0) ;
-
+  zMapGUICreateRadioGroup(hbox, 
+                          &custom_buttons[0],
+                          CUSTOM_BEST_FIT,
+                          (int *)&(cb_data.dump_opts->customise),
+                          setSensitive, &cb_data);
 
   cb_data.customise_frame = frame = gtk_frame_new(NULL) ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -419,19 +386,11 @@ static gboolean chooseDump(DumpOptions dump_opts)
   gtk_container_set_border_width(GTK_CONTAINER (hbox), 10) ;
   gtk_container_add(GTK_CONTAINER(frame), hbox) ;
 
-  cb_data.portrait = button = gtk_radio_button_new_with_label(NULL, "Portrait") ;
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (button), TRUE);
-  cb_data.dump_opts->orientation = ORIENTATION_PORTRAIT ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(orientationCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0) ;
-
-  group = gtk_radio_button_get_group(GTK_RADIO_BUTTON (button));
-  cb_data.landscape = button = gtk_radio_button_new_with_label(group, "Landscape");
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(orientationCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0);
-
+  zMapGUICreateRadioGroup(hbox,
+                          &orient_buttons[0],
+                          ORIENTATION_PORTRAIT,
+                          (int *)&(cb_data.dump_opts->orientation),
+                          NULL, NULL);
 
   frame = gtk_frame_new(" Aspect Ratio ") ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -441,26 +400,15 @@ static gboolean chooseDump(DumpOptions dump_opts)
   gtk_container_set_border_width(GTK_CONTAINER (hbox), 10) ;
   gtk_container_add(GTK_CONTAINER(frame), hbox) ;
 
-  cb_data.as_is = button = gtk_radio_button_new_with_label(NULL, "As is") ;
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (button), TRUE);
-  cb_data.dump_opts->aspect = ASPECT_AS_IS ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(aspectCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0);
+  zMapGUICreateRadioGroup(hbox,
+                          &aspect_buttons[0],
+                          ASPECT_AS_IS,
+                          (int *)&(cb_data.dump_opts->aspect),
+                          NULL, NULL);
 
-  group = gtk_radio_button_get_group(GTK_RADIO_BUTTON (button));
-  cb_data.fit_to_page = button = gtk_radio_button_new_with_label(group, "Fit to Page") ;
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(aspectCB), &cb_data) ;
-  gtk_box_pack_start(GTK_BOX (hbox), button, TRUE, TRUE, 0);
-
-
-  setSensitive(&cb_data) ;				    /* Set which buttons are active. */
-
+  setSensitive(NULL, &cb_data, FALSE) ; /* Set which buttons are active. */
 
   gtk_widget_show_all(dialog) ;
-
-
 
   if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
     {
@@ -481,8 +429,9 @@ static gboolean chooseDump(DumpOptions dump_opts)
 }
 
 
-static void setSensitive(dialogCB cb_data)
+static void setSensitive(GtkWidget *button, gpointer data, gboolean active)
 {
+  dialogCB cb_data = (dialogCB)data;
 
   if (cb_data->dump_opts->format == DUMP_PNG || cb_data->dump_opts->format == DUMP_JPEG)
     gtk_widget_set_sensitive(cb_data->options_frame, FALSE) ;
@@ -496,101 +445,6 @@ static void setSensitive(dialogCB cb_data)
 
   return ;
 }
-
-
-
-
-static void extentCB(GtkButton *button, gpointer user_data)
-{
-  dialogCB cb_data = (dialogCB)user_data ;
-
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-    {
-      if (button == GTK_BUTTON(cb_data->whole))
-	cb_data->dump_opts->extent = EXTENT_WHOLE ;
-      else
-	cb_data->dump_opts->extent = EXTENT_VISIBLE ;
-    }
-
-  return ;
-}
-
-
-
-static void formatCB(GtkButton *button, gpointer user_data)
-{
-  dialogCB cb_data = (dialogCB)user_data ;
-
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-    {
-
-      if (button == GTK_BUTTON(cb_data->png))
-	cb_data->dump_opts->format = DUMP_PNG ;
-      else if (button == GTK_BUTTON(cb_data->jpeg))
-	cb_data->dump_opts->format = DUMP_JPEG ;
-      else if (button == GTK_BUTTON(cb_data->postscript))
-	cb_data->dump_opts->format = DUMP_PS ;
-      else
-	cb_data->dump_opts->format = DUMP_EPSF ;
-
-      setSensitive(cb_data) ;				    /* Set which buttons are active. */
-    }
-
-
-  return ;
-}
-
-
-
-static void customiseCB(GtkButton *button, gpointer user_data)
-{
-  dialogCB cb_data = (dialogCB)user_data ;
-
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-    {
-      if (button == GTK_BUTTON(cb_data->best_fit))
-	cb_data->dump_opts->customise = CUSTOM_BEST_FIT ;
-      else
-	cb_data->dump_opts->customise = CUSTOM_CUSTOMISE ;
-
-      setSensitive(cb_data) ;				    /* Set which buttons are active. */
-    }
-
-  return ;
-}
-
-
-static void orientationCB(GtkButton *button, gpointer user_data)
-{
-  dialogCB cb_data = (dialogCB)user_data ;
-
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-    {
-      if (button == GTK_BUTTON(cb_data->portrait))
-	cb_data->dump_opts->orientation = ORIENTATION_PORTRAIT ;
-      else
-	cb_data->dump_opts->orientation = ORIENTATION_LANDSCAPE ;
-    }
-
-  return ;
-}
-
-
-static void aspectCB(GtkButton *button, gpointer user_data)
-{
-  dialogCB cb_data = (dialogCB)user_data ;
-
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-    {
-      if (button == GTK_BUTTON(cb_data->as_is))
-	cb_data->dump_opts->aspect = ASPECT_AS_IS ;
-      else
-	cb_data->dump_opts->aspect = ASPECT_FITPAGE ;
-    }
-
-  return ;
-}
-
 
 
 /* Make a raw postscript file. */
