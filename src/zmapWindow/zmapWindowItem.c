@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  4 17:29 2006 (rds)
+ * Last edited: May  9 11:57 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.21 2006-05-05 10:15:18 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.22 2006-05-11 13:02:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1152,7 +1152,7 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
     return;                     /* ^^^^^^^^^^^^^^^ This is a false assumption  */
 #endif
 
-  if (!(FOO_IS_CANVAS_GROUP(item)))
+  if (!(FOO_IS_CANVAS_GROUP(item)) && item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
     {
   
       g_object_get(G_OBJECT(item), 
