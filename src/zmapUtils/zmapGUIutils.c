@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: May  5 11:21 2006 (rds)
+ * Last edited: May 11 14:02 2006 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.16 2006-05-05 11:00:16 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.17 2006-05-11 13:08:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -35,6 +35,13 @@
 #include <zmapUtils_P.h>
 #include <ZMap/zmapUtilsGUI.h>
 
+typedef struct
+{
+  int value;
+  int *output;
+  ZMapGUIRadioButtonCBFunc callback;
+  gpointer user_data;
+}RadioButtonCBDataStruct, *RadioButtonCBData;
 
 /* ONLY NEEDED FOR OLD STYLE FILE SELECTOR, REMOVE WHEN WE CAN USE THE NEW CODE... */
 typedef struct
@@ -805,6 +812,91 @@ void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, 
 } 
 
 
+/* Handle creating a radio group.
+ * pass in a vbox or hbox and the buttons will get packed in order.
+ */
+
+/* Callback to set the value and call any user specified callback */
+static void radioButtonCB(GtkWidget *button, gpointer radio_data)
+{
+  RadioButtonCBData data = (RadioButtonCBData)radio_data;
+  gboolean active;
+
+  if((active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) 
+     && data->output)
+    *(data->output) = data->value;
+
+  if(data->callback)
+    (data->callback)(button, data->user_data, active);
+
+  return ;
+}
+
+/* GDestroyNotify for the RadioButtonCBData attached to radio buttons
+ * for "clicked" signal */
+static void radioButtonCBDataDestroy(gpointer data)
+{
+  RadioButtonCBData button_data = (RadioButtonCBData)data;
+
+  /* clear pointers */
+  button_data->output    = NULL;
+  button_data->callback  = NULL;
+  button_data->user_data = NULL;
+  /* and free .. */
+  g_free(button_data);
+
+  return ;
+}
+
+/* Possibly sensible to make value_out point to a member of clickedData if you are setting clickedCB. */
+void zMapGUICreateRadioGroup(GtkWidget *gtkbox, 
+                             ZMapGUIRadioButton all_buttons, 
+                             int default_button, int *value_out,
+                             ZMapGUIRadioButtonCBFunc clickedCB, gpointer clickedData)
+{
+  GtkWidget *radio = NULL;
+  GSList    *group = NULL;
+  ZMapGUIRadioButton buttons = NULL;
+
+  buttons = all_buttons;
+
+  while(buttons->name)
+    {
+      RadioButtonCBData data = NULL;
+
+      radio = NULL;
+      data  = g_new0(RadioButtonCBDataStruct, 1);
+      data->value     = buttons->value;
+      data->output    = value_out;
+      data->callback  = clickedCB;
+      data->user_data = clickedData;
+
+      buttons->widget = 
+        radio = gtk_radio_button_new_with_label(group, buttons->name);
+
+      g_signal_connect_data(G_OBJECT(radio), "clicked",
+                            G_CALLBACK(radioButtonCB), (gpointer)data,
+                            (GClosureNotify)radioButtonCBDataDestroy, 0);
+
+      /* If value == default set it so */
+      if(buttons->value == default_button)
+        {
+          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio), TRUE);
+          *(data->output) = data->value; /* In case we're never clicked */
+        }
+
+      /* pack into the box */
+      gtk_box_pack_start(GTK_BOX(gtkbox), radio, TRUE, TRUE, 0);
+
+      /* Get the group it's in */
+      group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(radio));
+
+      /* move to the next input */
+      buttons++;
+    }
+
+  return ;
+}
 
 
 /*! @} end of zmapguiutils docs. */

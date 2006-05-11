@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Mar 21 13:33 2006 (edgrif)
+ * Last edited: May 10 18:07 2006 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.8 2006-03-21 14:07:39 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.9 2006-05-11 13:07:41 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -43,6 +43,7 @@ typedef enum {ZMAPGUI_PIXELS_PER_CM, ZMAPGUI_PIXELS_PER_INCH,
 /*! Callback function for menu items. The id indicates which menu_item was selected
  *  resulting in the call to this callback. */
 typedef void (*ZMapGUIMenuItemCallbackFunc)(int menu_item_id, gpointer callback_data) ;
+typedef void (*ZMapGUIRadioButtonCBFunc)(GtkWidget *button, gpointer data, gboolean button_active);
 
 /*!
  * Defines a menu item. */
@@ -57,6 +58,12 @@ typedef struct
 } ZMapGUIMenuItemStruct, *ZMapGUIMenuItem ;
 
 
+typedef struct
+{
+  int        value;
+  char      *name;
+  GtkWidget *widget;
+} ZMapGUIRadioButtonStruct, *ZMapGUIRadioButton ;
 
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
@@ -81,5 +88,9 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable) ;
 
 char *zmapGUIFileChooser(GtkWidget *toplevel, char *title, char *directory, char *file_suffix) ;
 
+void zMapGUICreateRadioGroup(GtkWidget *gtkbox, 
+                             ZMapGUIRadioButton all_buttons,
+                             int default_button, int *value_out,
+                             ZMapGUIRadioButtonCBFunc clickedCB, gpointer clickedData);
 
 #endif /* ZMAP_UTILS_GUI_H */
