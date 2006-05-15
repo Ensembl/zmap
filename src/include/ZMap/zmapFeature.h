@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Apr 13 16:46 2006 (rds)
+ * Last edited: May 12 15:21 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.64 2006-04-13 15:47:00 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.65 2006-05-15 17:39:04 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -35,7 +35,6 @@
 
 
 #include <gdk/gdkcolor.h>
-
 
 
 /* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
@@ -443,6 +442,7 @@ typedef struct ZMapFeatureTypeStyleStruct_
   gboolean show_when_empty ;				    /* If TRUE, features column is
 							       displayed even if there are no features. */
 
+  gboolean background_set, foreground_set, outline_set;
   GdkColor  foreground ;				    /* Overlaid on background. */
   GdkColor  background ;				    /* Fill colour. */
   GdkColor  outline ;					    /* Surround/line colour. */
@@ -636,6 +636,10 @@ ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type) ;
 void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
 GList *zMapFeatureTypeGetFromFile(char *types_file) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
+void zMapFeatureTypeGetColours(ZMapFeatureTypeStyle style,
+                               GdkColor **background,
+                               GdkColor **foreground,
+                               GdkColor **outline);
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
