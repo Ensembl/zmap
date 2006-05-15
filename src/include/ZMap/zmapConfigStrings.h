@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Apr 28 12:48 2006 (edgrif)
+ * Last edited: May 10 15:05 2006 (rds)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.2 2006-04-28 11:50:14 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.3 2006-05-15 17:39:26 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -590,17 +590,17 @@
 #define ZMAPSTANZA_WINDOW_MAXSIZE "canvas_maxsize"
 #define ZMAPSTANZA_WINDOW_MAXBASES "canvas_maxbases"
 #define ZMAPSTANZA_WINDOW_COLUMNS "keep_empty_columns"
-#define ZMAPSTANZA_WINDOW_"colour_root"
+#define ZMAPSTANZA_WINDOW_ROOT "colour_root"
 #define ZMAPSTANZA_WINDOW_ALIGNMENT "colour_alignment"
 #define ZMAPSTANZA_WINDOW_BLOCK "colour_block"
-#define ZMAPSTANZA_WINDOW_FORWARD "colour_m_forward"
-#define ZMAPSTANZA_WINDOW_REVERSE "colour_m_reverse"
-#define ZMAPSTANZA_WINDOW_FORWARD "colour_q_forward"
-#define ZMAPSTANZA_WINDOW_REVERSE "colour_q_reverse"
-#define ZMAPSTANZA_WINDOW_FORWARDCOL "colour_m_forwardcol"
-#define ZMAPSTANZA_WINDOW_REVERSECOL "colour_m_reversecol"
-#define ZMAPSTANZA_WINDOW_FORWARDCOL "colour_q_forwardcol"
-#define ZMAPSTANZA_WINDOW_REVERSECOL "colour_q_reversecol"
+#define ZMAPSTANZA_WINDOW_M_FORWARD "colour_m_forward"
+#define ZMAPSTANZA_WINDOW_M_REVERSE "colour_m_reverse"
+#define ZMAPSTANZA_WINDOW_Q_FORWARD "colour_q_forward"
+#define ZMAPSTANZA_WINDOW_Q_REVERSE "colour_q_reverse"
+#define ZMAPSTANZA_WINDOW_M_FORWARDCOL "colour_m_forwardcol"
+#define ZMAPSTANZA_WINDOW_M_REVERSECOL "colour_m_reversecol"
+#define ZMAPSTANZA_WINDOW_Q_FORWARDCOL "colour_q_forwardcol"
+#define ZMAPSTANZA_WINDOW_Q_REVERSECOL "colour_q_reversecol"
 
 
 /*! @addtogroup config_stanzas
@@ -715,10 +715,10 @@
 #define ZMAPSTANZA_ALIGN_START "reference_start"
 #define ZMAPSTANZA_ALIGN_END "reference_end"
 #define ZMAPSTANZA_ALIGN_STRAND "reference_strand"
-#define ZMAPSTANZA_ALIGN_SEQ "non_reference_seq"
-#define ZMAPSTANZA_ALIGN_START "non_reference_start"
-#define ZMAPSTANZA_ALIGN_END "non_reference_end"
-#define ZMAPSTANZA_ALIGN_STRAND "non_reference_strand"
+#define ZMAPSTANZA_ALIGN_NONREF_SEQ "non_reference_seq"
+#define ZMAPSTANZA_ALIGN_NONREF_START "non_reference_start"
+#define ZMAPSTANZA_ALIGN_NONREF_END "non_reference_end"
+#define ZMAPSTANZA_ALIGN_NONREF_STRAND "non_reference_strand"
 
 
 
@@ -732,7 +732,7 @@
  * <table>
  *  <tr>
  *  <th>Stanza</th>
- *  <th colspan=3 align=center>"blixem"</th>
+ *  <th colspan=3 align=center> ZMAPSTANZA_ALIGN_CONFIG </th>
  *  </tr>
  *  <tr>
  *  <th>Keyword</th>
