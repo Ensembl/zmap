@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  9 11:57 2006 (rds)
+ * Last edited: May 15 18:33 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.22 2006-05-11 13:02:16 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.23 2006-05-15 17:36:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,6 +69,7 @@ typedef struct _ZMapWindowItemHighlighterStruct
 
 static void highlightItem(ZMapWindow window, FooCanvasItem *item);
 static void highlightFuncCB(gpointer data, gpointer user_data);
+static gboolean colourReverseVideo(GdkColor *colour_inout);
 static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item);
 static void setItemColourOriginal(ZMapWindow window, FooCanvasItem *item);
 
@@ -1053,8 +1054,10 @@ static void highlightItem(ZMapWindow window, FooCanvasItem *item)
   else
     {
       ZMapWindowItemFeatureType item_feature_type ;
+      ZMapFeature feature = NULL;
 
       item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
 
       if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX
 	  || item_feature_type == ITEM_FEATURE_CHILD)
@@ -1085,7 +1088,7 @@ static void highlightFuncCB(gpointer data, gpointer user_data)
 
   return ;
 }
-
+#ifdef RDS_DONT_INCLUDE_UNUSED
 static void setItemColourOriginal(ZMapWindow window, FooCanvasItem *item)
 {
   ZMapFeature feature ;
@@ -1139,41 +1142,119 @@ static void setItemColourOriginal(ZMapWindow window, FooCanvasItem *item)
   
   return ;  
 }
-
-static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
-{
-  GdkColor *fill_colour = NULL;
-  ZMapWindowItemFeatureType item_feature_type ;
-  
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  
-#ifdef RDS_DONT_INCLUDE_UNUSED  
-  if (item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
-    return;                     /* ^^^^^^^^^^^^^^^ This is a false assumption  */
 #endif
 
-  if (!(FOO_IS_CANVAS_GROUP(item)) && item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
+
+static gboolean colourReverseVideo(GdkColor *colour_inout)
+{
+  gboolean colour_ok = FALSE;
+
+  if(colour_inout != NULL)
     {
+      colour_inout->red   = (65535 - colour_inout->red) ;
+      colour_inout->green = (65535 - colour_inout->green) ;
+      colour_inout->blue  = (65535 - colour_inout->blue) ;
+      colour_ok = TRUE;
+    }
+
+  return colour_ok;
+}
+
+/* The general premise of this function it to "highlight" the item.
+ * To do this, rather than mess around having to declare the highlight
+ * colour in style files, we just reverse video the colour.  
+ *
+ * There are a couple of caveats:
+ * - Sometimes this doesn't actually highlight the item (greys).  
+ * - The background isn't always set.  The foocanvas will accept a NULL
+ *   pointer for the fill_color_gdk and the item will be "transparent".
+ *   g_object_get doesn't return the right stuff though.
+ *
+ * We only actually guard against the second one as this is a feature.
+ * The outline colour will be used instead rather than the background.
+ * This only works for polygons and rectangle/ellipse item types.
+ *
+ * It's a shame we have to look in the style to find this info, but I
+ * can't think of a better solution at the moment.  There are members
+ * in the rect, ellipse and polygon items to obtain this, but then we 
+ * need to look at the type to decide and would probably only be 
+ * quicker if this were possible.
+
+  GType item_type = G_TYPE_FROM_CLASS(FOO_CANVAS_ITEM_GET_CLASS(FOO_CANVAS_ITEM(item)));
+
+  switch(item_type)
+    {
+    case FOO_TYPE_CANVAS_TEXT:
+      break;
+    case FOO_TYPE_CANVAS_RE:
+      break;
+    case FOO_TYPE_CANVAS_POLYGON:
+      break;
+    case FOO_TYPE_CANVAS_LINE:
+      break;
+    case FOO_TYPE_CANVAS_GROUP:
+      break;
+    case FOO_TYPE_CANVAS_ITEM:
+      break;
+    default:
+      break;
+    }
+ * It makes me want to extend foo canvas items, but I haven't got time.
+ */
+static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
+{
+  GdkColor *rev_colour = NULL;
+  ZMapWindowItemFeatureType item_feature_type ;
+  ZMapFeature item_feature = NULL;
+  ZMapFeatureTypeStyle style = NULL;
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+  item_feature      = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
   
-      g_object_get(G_OBJECT(item), 
-                   "fill_color_gdk", &fill_colour,
-                   NULL);
-      /* there is a problem here with rev. video stuff, some features are drawn with
-       * background, some not. */
-      /* If fill_colour == NULL then it's transparent! This isn't as
-       * true as I thought! The pixel has the colour of the item below
-       * it! */
-      if(fill_colour != NULL)
+  /* Ok we need to be item type specific here now */
+  /* Item type     has fill color   has outline color 
+   * ------------------------------------------------*/
+  /* Text items        yes              no
+   * Rectangle/        yes              yes
+   * Ellipse items
+   * Polygon items     yes              yes
+   * Line items        yes              no
+   * Widget and Pixel Buffer items have neither
+   */
+  
+  if (!(FOO_IS_CANVAS_GROUP(item)) && 
+      item_feature_type != ITEM_FEATURE_BOUNDING_BOX &&
+      item_feature != NULL &&
+      (style = item_feature->style) != NULL)
+    {
+      /* Ok now we can go on. */
+
+      /* If we defintely have a background or can only possibly have a
+       * background we'll use that */
+      if(style->background_set ||
+         (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_TEXT(item)))
         {
-          fill_colour->red   = (65535 - fill_colour->red) ;
-          fill_colour->green = (65535 - fill_colour->green) ;
-          fill_colour->blue  = (65535 - fill_colour->blue) ;
-          
-          foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-                              "fill_color_gdk", fill_colour,
-                              NULL); 
+          g_object_get(G_OBJECT(item), 
+                       "fill_color_gdk", &rev_colour,
+                       NULL);
+          if(colourReverseVideo(rev_colour))
+            foo_canvas_item_set(FOO_CANVAS_ITEM(item),
+                                "fill_color_gdk", rev_colour,
+                                NULL); 
+        } /* else use the outline as a back up */
+      else if(style->outline_set &&
+              (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item)))
+        {
+          g_object_get(G_OBJECT(item), 
+                       "outline_color_gdk", &rev_colour,
+                       NULL);
+          if(colourReverseVideo(rev_colour))
+            foo_canvas_item_set(FOO_CANVAS_ITEM(item),
+                                "outline_color_gdk", rev_colour,
+                                NULL); 
         }
     }
+
   return ;
 }
 
