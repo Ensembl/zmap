@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Aug 31 13:43 2005 (rds)
+ * Last edited: May 15 12:05 2006 (rds)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.13 2005-09-05 17:14:21 rds Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.14 2006-05-15 11:07:36 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -40,7 +40,7 @@
 #include <ZMap/zmapFeature.h>
 
 /* Why is this needed here ?? */
-#include <ZMap/zmapServer.h>				    /* is this ok to go here, think about it... */
+#include <zmapServer.h>				    /* is this ok to go here, think about it... */
 
 
 /* Define function prototypes for generalised server calls, they all go in

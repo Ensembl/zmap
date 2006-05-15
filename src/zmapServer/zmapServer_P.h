@@ -25,15 +25,15 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug 31 13:50 2005 (rds)
+ * Last edited: May 15 11:56 2006 (rds)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer_P.h,v 1.8 2005-09-05 17:14:46 rds Exp $
+ * CVS info:   $Id: zmapServer_P.h,v 1.9 2006-05-15 11:07:41 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_P_H
 #define ZMAP_SERVER_P_H
 
-#include <ZMap/zmapServer.h>
+#include <zmapServer.h>
 #include <zmapServerPrototype.h>
 
 
