@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: May  3 16:43 2006 (edgrif)
+ * Last edited: May 11 14:05 2006 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.72 2006-05-03 15:47:26 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.73 2006-05-15 17:41:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -223,22 +223,22 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
           (config_str == NULL && (config = zMapConfigCreateFromFile(config_file))))
 	{
 	  ZMapConfigStanza server_stanza ;
-	  ZMapConfigStanzaElementStruct server_elements[] = {{"url", ZMAPCONFIG_STRING, {NULL}},
-							     {"timeout", ZMAPCONFIG_INT, {NULL}},
-							     {"version", ZMAPCONFIG_STRING, {NULL}},
+	  ZMapConfigStanzaElementStruct server_elements[] = {{ZMAPSTANZA_SOURCE_URL,     ZMAPCONFIG_STRING, {NULL}},
+							     {ZMAPSTANZA_SOURCE_TIMEOUT, ZMAPCONFIG_INT,    {NULL}},
+							     {ZMAPSTANZA_SOURCE_VERSION, ZMAPCONFIG_STRING, {NULL}},
 							     {"sequence", ZMAPCONFIG_BOOL, {NULL}},
 							     {"writeback", ZMAPCONFIG_BOOL, {NULL}},
 							     {"stylesfile", ZMAPCONFIG_STRING, {NULL}},
 							     {"format", ZMAPCONFIG_STRING, {NULL}},
-							     {"featuresets", ZMAPCONFIG_STRING, {NULL}},
+							     {ZMAPSTANZA_SOURCE_FEATURESETS, ZMAPCONFIG_STRING, {NULL}},
 							     {NULL, -1, {NULL}}} ;
 
 	  /* Set defaults for any element that is not a string. */
-	  zMapConfigGetStructInt(server_elements, "timeout") = 120 ; /* seconds. */
+	  zMapConfigGetStructInt(server_elements, ZMAPSTANZA_SOURCE_TIMEOUT) = 120 ; /* seconds. */
 	  zMapConfigGetStructBool(server_elements, "sequence") = FALSE ;
 	  zMapConfigGetStructBool(server_elements, "writeback") = FALSE ;
 
-	  server_stanza = zMapConfigMakeStanza("source", server_elements) ;
+	  server_stanza = zMapConfigMakeStanza(ZMAPSTANZA_SOURCE_CONFIG, server_elements) ;
 
 	  if (!zMapConfigFindStanzas(config, server_stanza, &server_list))
 	    result = FALSE ;
@@ -268,12 +268,12 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      gboolean sequence_server, writeback_server ;
 	      ZMapViewConnection view_con ;
 
-	      url = zMapConfigGetElementString(next_server, "url") ;
-	      format = zMapConfigGetElementString(next_server, "format") ;
-	      timeout = zMapConfigGetElementInt(next_server, "timeout") ;
-	      version = zMapConfigGetElementString(next_server, "version") ;
+	      url     = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_URL) ;
+	      format  = zMapConfigGetElementString(next_server, "format") ;
+	      timeout = zMapConfigGetElementInt(next_server, ZMAPSTANZA_SOURCE_TIMEOUT) ;
+	      version = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_VERSION) ;
 	      styles_file = zMapConfigGetElementString(next_server, "stylesfile") ;
-	      featuresets = zMapConfigGetElementString(next_server, "featuresets") ;
+	      featuresets = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_FEATURESETS) ;
 
               /* url is absolutely required. Go on to next stanza if there isn't one.
                * Done before anything else so as not to set seq/write servers to invalid locations  */
