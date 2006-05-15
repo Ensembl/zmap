@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  5 10:39 2006 (rds)
+ * Last edited: May 15 17:30 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.23 2006-05-05 10:15:18 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.24 2006-05-15 17:37:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -329,6 +329,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   ZMapFeatureSet set ;
   FooCanvasGroup *column_group ;
   FooCanvasItem *top_feature_item = NULL ;
+  GdkColor *b, *f, *o;
   double feature_offset;
   double start_x, end_x ;
 
@@ -373,6 +374,8 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   start_x = 0.0 ;
   end_x   = style->width ;
 
+  zMapFeatureTypeGetColours(style, &b, &f, &o);
+
   switch (feature->type)
     {
     case ZMAPFEATURE_BASIC:
@@ -380,9 +383,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 	top_feature_item = drawSimpleFeature(column_group, feature,
 					     feature_offset,
 					     start_x, feature->x1, end_x, feature->x2,
-					     &style->outline,
-                                             &style->foreground,
-					     &style->background,
+					     o, f, b,
 					     window) ;
 	break ;
       }
@@ -394,17 +395,13 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
           top_feature_item = drawAlignmentFeature(column_group, feature,
                                                   feature_offset,
                                                   start_x, feature->x1, end_x, feature->x2,
-                                                  &style->outline,
-                                                  &style->foreground,
-                                                  &style->background,
+                                                  o, f, b,
                                                   window);
         else
           top_feature_item = drawSimpleFeature(column_group, feature,
                                                feature_offset,
                                                start_x, feature->x1, end_x, feature->x2,
-                                               &style->outline,
-                                               &style->foreground,
-                                               &style->background,
+                                               o, f, b,
                                                window) ;
         break;
       }
@@ -419,9 +416,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 	top_feature_item = drawDNA(column_group, feature,
                                    feature_offset,
                                    start_x, feature->x1, end_x, feature->x2,
-                                   &style->outline,
-                                   &style->foreground,
-                                   &style->background,
+                                   o, f, b,
                                    window) ;
 
         break ;
@@ -432,9 +427,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
         top_feature_item = drawPep(column_group, feature,
                                    feature_offset,
                                    start_x, feature->x1, end_x, feature->x2,
-                                   &style->outline,
-                                   &style->foreground,
-                                   &style->background,
+                                   o, f, b,
                                    window);
         pep_style = zmapWindowContainerGetStyle(set_group) ;
         pep_style->bump_width = 300.0;
@@ -445,10 +438,8 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 	top_feature_item = drawTranscriptFeature(column_group, feature,
 						 feature_offset,
 						 start_x, 0.0, end_x, 0.0,
-						 &style->outline,
-                                                 &style->foreground,
-						 &style->background,
-						 window) ;
+						 o, f, b,
+                                                 window) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	zmapWindowPrintGroup(FOO_CANVAS_GROUP(feature_group)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -792,6 +783,10 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
       if (feature->feature.transcript.introns)
 	{
           float line_width = 1.5 ;
+          GdkColor *orig_bg = background;
+
+          if(!feature->style->background_set && feature->style->outline_set)
+            background = outline;
 
 	  for (i = 0 ; i < feature->feature.transcript.introns->len ; i++)  
 	    {
@@ -850,6 +845,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
               box_data->twin_item = intron_line;
               
             }
+          background = orig_bg; /* reset to original in case we messed with it. */
 	}
 
 

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan 25 16:47 2006 (edgrif)
+ * Last edited: May 12 16:38 2006 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.16 2006-02-02 11:21:13 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.17 2006-05-15 17:37:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,10 +77,12 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
   /* Set some default colours.... */
   if (!outline)
     outline = "black" ;
+#ifdef RDS_NO_DEFAULT_COLOURS
   if (!foreground)
     foreground = "white" ;
   if (!background)
     background = "white" ;
+#endif
 
   new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
 
@@ -89,9 +91,21 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
   new_type->unique_id = zMapStyleCreateID(name_lower) ;
   g_free(name_lower) ;
 
-  gdk_color_parse(outline, &new_type->outline) ;
-  gdk_color_parse(foreground, &new_type->foreground) ;
-  gdk_color_parse(background, &new_type->background) ;
+  if(outline && *outline)
+    {
+      gdk_color_parse(outline, &new_type->outline) ;
+      new_type->outline_set = TRUE;
+    }
+  if(foreground && *foreground)
+    {
+      gdk_color_parse(foreground, &new_type->foreground) ;
+      new_type->foreground_set = TRUE;
+    }
+  if(background && *background)
+    {
+      gdk_color_parse(background, &new_type->background) ;
+      new_type->background_set = TRUE;
+    }
 
   new_type->width = width ;
 
@@ -388,16 +402,16 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
       ZMapConfigStanza types_stanza ;
       ZMapConfigStanzaElementStruct types_elements[]
 	= {{"name"        , ZMAPCONFIG_STRING, {NULL}},
-	   {"outline"     , ZMAPCONFIG_STRING, {"black"}},
-	   {"foreground"  , ZMAPCONFIG_STRING, {"white"}},
-	   {"background"  , ZMAPCONFIG_STRING, {"black"}},
+	   {"outline"     , ZMAPCONFIG_STRING, {NULL}},
+	   {"foreground"  , ZMAPCONFIG_STRING, {NULL}},
+	   {"background"  , ZMAPCONFIG_STRING, {NULL}},
 	   {"width"       , ZMAPCONFIG_FLOAT , {NULL}},
 	   {"show_reverse", ZMAPCONFIG_BOOL  , {NULL}},
-	   {"strand_specific", ZMAPCONFIG_BOOL  , {NULL}},
-	   {"frame_specific", ZMAPCONFIG_BOOL  , {NULL}},
+	   {"strand_specific", ZMAPCONFIG_BOOL, {NULL}},
+	   {"frame_specific",  ZMAPCONFIG_BOOL, {NULL}},
 	   {"minmag"      , ZMAPCONFIG_INT, {NULL}},
 	   {"maxmag"      , ZMAPCONFIG_INT, {NULL}},
-	   {"bump"      , ZMAPCONFIG_STRING, {NULL}},
+	   {"bump"        , ZMAPCONFIG_STRING, {NULL}},
 	   {"gapped_align", ZMAPCONFIG_BOOL, {NULL}},
 	   {"read_gaps"   , ZMAPCONFIG_BOOL, {NULL}},
 	   {NULL, -1, {NULL}}} ;
@@ -493,6 +507,38 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
   return types ;
 }
 
+
+void zMapFeatureTypeGetColours(ZMapFeatureTypeStyle style, 
+                               GdkColor **background, 
+                               GdkColor **foreground, 
+                               GdkColor **outline)
+{
+  if(background)
+    {
+      if(style->background_set)
+        *background = &(style->background);
+      else
+        *background = NULL;
+    }
+
+  if(foreground)
+    {
+      if(style->foreground_set)
+        *foreground = &(style->foreground);
+      else
+        *foreground = NULL;
+    }
+
+  if(outline)
+    {
+      if(style->outline_set)
+        *outline = &(style->outline);
+      else
+        *outline = NULL;
+    }
+
+  return ;
+}
 
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string)
 {
