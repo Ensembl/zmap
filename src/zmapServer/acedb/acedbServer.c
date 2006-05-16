@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Apr  6 17:47 2006 (rds)
+ * Last edited: May 16 10:57 2006 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.51 2006-04-06 16:47:27 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.52 2006-05-16 10:15:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1437,7 +1437,7 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
   gboolean strand_specific = FALSE, frame_specific = FALSE, show_up_strand = FALSE ;
   double min_mag = 0.0, max_mag = 0.0 ;
   double min_score = 0.0, max_score = 0.0 ;
-  gboolean status = TRUE ;
+  gboolean status = TRUE, outline_flag = FALSE ;
 
 
   if (!g_str_has_prefix(method_str, "Method : "))
@@ -1471,6 +1471,10 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	    colour = tmp_colour ;
 	  
 	  colour = g_strdup(colour) ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Outline") == 0)
+	{
+          outline_flag = TRUE;
 	}
       else if (g_ascii_strcasecmp(tag, "CDS_colour") == 0)
 	{
@@ -1633,7 +1637,10 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	    outline = colour ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  background = colour ;
+          if(outline_flag)
+            outline = colour;
+          else
+            background = colour ;
 	}
 
       /* NOTE that style is created with the method name, NOT the column_group, column
