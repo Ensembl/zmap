@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapConfigDir.h
  * HISTORY:
- * Last edited: Apr 26 12:00 2005 (rds)
+ * Last edited: May 17 12:12 2006 (rds)
  * Created: Thu Feb 10 10:05:36 2005 (edgrif)
- * CVS info:   $Id: zmapConfigDir.c,v 1.2 2005-05-07 18:18:16 rds Exp $
+ * CVS info:   $Id: zmapConfigDir.c,v 1.3 2006-05-17 11:17:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -201,7 +201,7 @@ void zMapConfigDirWriteWindowIdFile(unsigned long id, char *window_name)
         {
           g_error = NULL;
           id_line = g_strdup_printf("WindowID: 0x%lx\n", id);
-          zMapLogMessage("%s", id_line);
+          /* zMapLogMessage("Recorded %s to file %s", id_line, path); */
           g_io_channel_write_chars(winid_file, id_line, -1, &bytes, &g_error); /* should catch not writing here */
           g_io_channel_flush(winid_file, &g_error);                            /* should catch not writing here */
           g_free(id_line);
