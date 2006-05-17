@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 21 09:21 2006 (edgrif)
+ * Last edited: May 16 22:03 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.27 2006-03-21 14:10:09 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.28 2006-05-17 12:40:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,13 +49,13 @@
 static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
 static void quitCB(GtkWidget *widget, gpointer data) ;
-static void removeZmapRow(void *app_data, void *zmap) ;
+static void removeZMapCB(void *app_data, void *zmap) ;
 static void infoSetCB(void *app_data, void *zmap) ;
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArgs(int argc, char *argv[],
 					char **sequence_out, int *start_out, int *end_out) ;
 static void checkConfigDir(void) ;
-static gboolean removeZmapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
+static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
 
 void exitCB(void *app_data, void *zmap_data_unused) ;
@@ -63,13 +63,11 @@ static void appExit(ZMapAppContext app_context) ;
 static gboolean getConfiguration(ZMapAppContext app_context) ;
 
 
-ZMapManagerCallbacksStruct app_window_cbs_G = {removeZmapRow, infoSetCB, exitCB} ;
+ZMapManagerCallbacksStruct app_window_cbs_G = {removeZMapCB, infoSetCB, exitCB} ;
 
 int test_global = 10 ;
 int test_overlap = 0 ;
 
-
-#define ZMAP_APP_CONFIG "ZMap"
 
 
 
@@ -200,7 +198,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 void zmapAppExit(ZMapAppContext app_context)
 {
-
+  /* If we have a client object, clean it up */
+  if(app_context->xremoteClient != NULL)
+    zMapXRemoteDestroy(app_context->xremoteClient);
 
   /* This should probably be the last thing before exitting... */
   if (app_context->logger)
@@ -280,10 +280,11 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
-void removeZmapRow(void *app_data, void *zmap_data)
+void removeZMapCB(void *app_data, void *zmap_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_data ;
   ZMap zmap = (ZMap)zmap_data ;
+  guint child_zmaps = 0;
 
   /* This has the potential to remove multiple rows, but currently
      doesn't as the first found one that matches, gets removed an
@@ -291,22 +292,22 @@ void removeZmapRow(void *app_data, void *zmap_data)
      http://scentric.net/tutorial/sec-treemodel-remove-many-rows.html
      for an implementation of mutliple deletes */
   gtk_tree_model_foreach(GTK_TREE_MODEL(app_context->tree_store_widg), 
-                         (GtkTreeModelForeachFunc)removeZmapRowForeachFunc,
+                         (GtkTreeModelForeachFunc)removeZMapRowForeachFunc,
                          (gpointer)zmap);
 
-  //  if (app_context->selected_zmap == zmap)
-  //  app_context->selected_zmap = NULL ;
+  if (app_context->selected_zmap == zmap)
+    app_context->selected_zmap = NULL ;
 
-  /* The remove call actually sets my data which I attached to the row to NULL
-   * which is v. naughty, so I reset my data in the widget to NULL to avoid it being
-   * messed with. */
-  //  gtk_clist_set_row_data(GTK_CLIST(app_context->clist_widg), row, NULL) ;
-  //  gtk_clist_remove(GTK_CLIST(app_context->clist_widg), row) ;
+#ifdef RDS_DONT_INCLUDE
+  if(app_context->state_flag == KILLING_ALL_ZMAPS &&
+     (child_zmaps = zMapManagerCount(app_context->zmap_manager)) == 0)
+    appExit(app_context);
+#endif
 
   return ;
 }
 
-static gboolean removeZmapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
+static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data)
 {
   ZMap zmap = (ZMap)data;
@@ -469,15 +470,15 @@ static gboolean getConfiguration(ZMapAppContext app_context)
   ZMapConfig config ;
   ZMapConfigStanzaSet zmap_list = NULL ;
   ZMapConfigStanza zmap_stanza ;
-  char *zmap_stanza_name = ZMAP_APP_CONFIG ;
-  ZMapConfigStanzaElementStruct zmap_elements[] = {{"show_mainwindow", ZMAPCONFIG_BOOL, {NULL}},
-						   {"default_sequence", ZMAPCONFIG_STRING, {NULL}},
+  char *zmap_stanza_name = ZMAPSTANZA_APP_CONFIG ;
+  ZMapConfigStanzaElementStruct zmap_elements[] = {{ZMAPSTANZA_APP_MAINWINDOW, ZMAPCONFIG_BOOL,   {NULL}},
+						   {ZMAPSTANZA_APP_SEQUENCE,   ZMAPCONFIG_STRING, {NULL}},
 						   {NULL, -1, {NULL}}} ;
 
 
 
   app_context->show_mainwindow
-    = zMapConfigGetStructBool(zmap_elements, "show_mainwindow") = TRUE ;
+    = zMapConfigGetStructBool(zmap_elements, ZMAPSTANZA_APP_MAINWINDOW) = TRUE ;
 							    /* By default show main window. */
 
   if ((config = zMapConfigCreate()))
@@ -491,9 +492,9 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 	  /* Get the first zmap stanza found, we will ignore any others. */
 	  next_zmap = zMapConfigGetNextStanza(zmap_list, NULL) ;
 	  
-	  app_context->show_mainwindow = zMapConfigGetElementBool(next_zmap, "show_mainwindow") ;
+	  app_context->show_mainwindow = zMapConfigGetElementBool(next_zmap, ZMAPSTANZA_APP_MAINWINDOW) ;
 	  if ((app_context->default_sequence
-	       = zMapConfigGetElementString(next_zmap, "default_sequence")))
+	       = zMapConfigGetElementString(next_zmap, ZMAPSTANZA_APP_SEQUENCE)))
 	    app_context->default_sequence = g_strdup_printf(app_context->default_sequence) ;
 	  
 	  zMapConfigDeleteStanzaSet(zmap_list) ;		    /* Not needed anymore. */

@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Feb 22 14:28 2006 (rds)
+ * Last edited: May 17 12:18 2006 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.14 2006-02-24 12:34:25 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.15 2006-05-17 12:40:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,8 @@ typedef enum {
   ZMAP_APP_REMOTE_CLOSE_ZMAP
 } appValidActions;
 
+typedef enum {KILLING_ALL_ZMAPS = 1} ZMapAppContextState;
+
 /* This should be somewhere else ... 
    or we should be making other objects */
 typedef struct 
@@ -60,6 +62,13 @@ typedef struct
   GQuark source;
 } appRemoteAllStruct, *appRemoteAll;
 
+typedef struct
+{
+  GTimer *timer;
+  ZMapAppContext app_context;
+  ZMapAppContextState state_flag;
+} timerContextStruct, *timerContext;
+
 static gboolean start(void *userData, 
                       zmapXMLElement element, 
                       zmapXMLParser parser);
@@ -70,6 +79,14 @@ static gboolean end(void *userData,
 static char *appexecuteCommand(char *command_text, gpointer app_context, int *statusCode);
 static gboolean createZMap(ZMapAppContext app, appRemoteAll obj);
 static void destroyNotifyData(gpointer destroy_data);
+
+/* closing from remote */
+static gboolean closingTimedOut(GTimer *timer);
+static gboolean setupRemoteCloseHandler(ZMapAppContext app_context);
+static gboolean remoteCloseHandler(gpointer data);
+static gboolean confirmCloseRequestResponseReceived(ZMapAppContext app_context);
+static void remoteCloseDestroyNotify(gpointer data);
+
 
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 {
@@ -88,41 +105,48 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
       notifyData->callback = ZMAPXREMOTE_CALLBACK(appexecuteCommand);
       notifyData->data     = app_context_data; 
       
-     zMapXRemoteInitServer(xremote, id, PACKAGE_NAME, ZMAP_DEFAULT_REQUEST_ATOM_NAME, ZMAP_DEFAULT_RESPONSE_ATOM_NAME);
+      zMapXRemoteInitServer(xremote, id, PACKAGE_NAME, ZMAP_DEFAULT_REQUEST_ATOM_NAME, ZMAP_DEFAULT_RESPONSE_ATOM_NAME);
       zMapConfigDirWriteWindowIdFile(id, "main");
 
       /* Makes sure we actually get the events!!!! Use add-events as set_events needs to be done BEFORE realize */
       gtk_widget_add_events(widget, GDK_PROPERTY_CHANGE_MASK) ;
       /* probably need g_signal_connect_data here so we can destroy when disconnected */
-      g_signal_connect_data(G_OBJECT(widget), "property_notify_event",
-                            G_CALLBACK(zMapXRemotePropertyNotifyEvent), (gpointer)notifyData,
-                            (GClosureNotify) destroyNotifyData, G_CONNECT_AFTER
-                            );
+      app_context->propertyNotifyEventId =
+        g_signal_connect_data(G_OBJECT(widget), "property_notify_event",
+                              G_CALLBACK(zMapXRemotePropertyNotifyEvent), (gpointer)notifyData,
+                              (GClosureNotify) destroyNotifyData, G_CONNECT_AFTER
+                              );
 
       app_context->propertyNotifyData = notifyData; /* So we can free it */
     }
 
   if (zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, &value))
     {
-      unsigned long l_id = 0;
-      char *win_id       = NULL;
-      win_id = value.s ;
-      l_id   = strtoul(win_id, (char **)NULL, 16);
-      if(l_id)
+      unsigned long clientId = 0;
+      char *win_id = NULL;
+      win_id   = value.s ;
+      clientId = strtoul(win_id, (char **)NULL, 16);
+      if(clientId)
         {
           zMapXRemoteObj client = NULL;
-          if((client = zMapXRemoteNew()) != NULL)
+          if((app_context->xremoteClient = client = zMapXRemoteNew()) != NULL)
             {
               char *req = NULL;
+              int ret_code = 0;
               req = g_strdup_printf("<zmap action=\"register_client\"><client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\" /></zmap>",
                                     id,
                                     ZMAP_DEFAULT_REQUEST_ATOM_NAME,
                                     ZMAP_DEFAULT_RESPONSE_ATOM_NAME
                                     );
-              zMapXRemoteInitClient(client, l_id);
+              zMapXRemoteInitClient(client, clientId);
               zMapXRemoteSetRequestAtomName(client, ZMAP_CLIENT_REQUEST_ATOM_NAME);
               zMapXRemoteSetResponseAtomName(client, ZMAP_CLIENT_RESPONSE_ATOM_NAME);
-              zMapXRemoteSendRemoteCommand(client, req);
+              if((ret_code = zMapXRemoteSendRemoteCommand(client, req)) != 0)
+                {
+                  zMapLogWarning("Could not communicate with client '0x%lx'. code %d", clientId, ret_code);
+                  app_context->xremoteClient = NULL;
+                  zMapXRemoteDestroy(client);
+                }
               if(req)
                 g_free(req);
             }
@@ -133,6 +157,120 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
   
   return;
 }
+
+static gboolean confirmCloseRequestResponseReceived(ZMapAppContext app_context)
+{
+  gboolean received = TRUE;
+
+#ifdef RDS_DONT_INCLUDE
+  received = FALSE;
+  
+  if(app_context->xremoteClient)
+    {
+      char *request = "<zmap action=\"closing\" />";
+      zMapXRemoteSendRemoteCommand(app_context->xremoteClient, request);
+      received = TRUE;
+      /* I'm not sure on the library call to get the response, did I write one?
+       * Not super important though... */
+    } 
+  else
+    received = TRUE;            /* This is the best we can do here. */
+#endif
+  
+  return received;
+}
+
+static gboolean closingTimedOut(GTimer *timer)
+{
+  gdouble limit = 10.0, clock;    /* 10 secs */
+  gulong microsecs;
+  gboolean timed_out = FALSE;
+
+  if((clock = g_timer_elapsed(timer, &microsecs)) &&
+     clock > limit)
+    timed_out = TRUE;
+
+  return timed_out;
+}
+
+/* A GSourceFunc, should return FALSE when it is time to remove */
+static gboolean remoteCloseHandler(gpointer data)
+{
+  ZMapAppContext app_context = NULL;
+  timerContext tc = (timerContext)data;
+  gboolean remove = FALSE;
+
+  app_context = tc->app_context;
+
+  if(tc->state_flag != KILLING_ALL_ZMAPS)
+    {
+      tc->state_flag = KILLING_ALL_ZMAPS;
+      zMapManagerKillAllZMaps(app_context->zmap_manager);
+    }
+  else if( (remove = ( zMapManagerCount(app_context->zmap_manager) == 0 )) )
+    remove = TRUE;
+  else if(closingTimedOut(tc->timer))
+    remove = TRUE;
+
+  return !remove;
+}
+
+static void remoteCloseDestroyNotify(gpointer data)
+{
+  timerContext tc = (timerContext)data;
+  ZMapAppContext app_context = NULL;
+
+  app_context = tc->app_context;
+
+  if(closingTimedOut(tc->timer) ||
+     ((zMapManagerCount(app_context->zmap_manager) == 0) &&
+      confirmCloseRequestResponseReceived(app_context)))
+    {
+      /* first clean up the timerContext */
+      g_timer_destroy(tc->timer);
+      tc->app_context = NULL;
+      g_free(tc);
+      /* Now really clean up the main window */
+      zMapManagerDestroy(app_context->zmap_manager);
+      zmapAppExit(app_context);
+    }
+
+  return ;
+}
+
+static gboolean setupRemoteCloseHandler(ZMapAppContext app_context)
+{
+  gboolean good = FALSE;
+  guint timeoutId = 0, interval = 1000;
+  timerContext data = NULL;
+
+  data = g_new0(timerContextStruct, 1);
+  data->app_context = app_context;
+  data->timer       = g_timer_new();
+
+  /* possibly a good idea to check whether we have a client, although
+   * it goes on latter before sending the request, but also to stop 
+   * random close requests... i.e. zmap must have been started as
+   * zmap --win_id 0xNNNNNNN
+   */
+
+  if(/* app_context->xremoteClient != NULL && */
+     (timeoutId = g_timeout_add_full(G_PRIORITY_DEFAULT_IDLE, 
+                                     interval,
+                                     remoteCloseHandler, 
+                                     (gpointer)data,
+                                     remoteCloseDestroyNotify)))
+    {
+      if(app_context->propertyNotifyEventId)
+        g_signal_handler_disconnect(app_context->app_widg, 
+                                    app_context->propertyNotifyEventId);
+      app_context->propertyNotifyEventId = data->state_flag = 0;
+      good = TRUE;
+    }
+
+  return good;
+}
+
 /* This should just be a filter command passing to the correct
    function defined by the action="value" of the request */
 static char *appexecuteCommand(char *command_text, gpointer app_context, int *statusCode){
@@ -173,7 +311,22 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
           code = ZMAPXREMOTE_BADREQUEST;
         break;
       case ZMAP_APP_REMOTE_CLOSE_ZMAP:
-        printf("Doesn't do this yet\n");
+        if(setupRemoteCloseHandler(app))
+          {
+            code = ZMAPXREMOTE_OK;
+            app->info || (app->info = 
+                          g_error_new(g_quark_from_string(__FILE__),
+                                      code,
+                                      "zmap is closing"));
+          }
+        else
+          {
+            code = ZMAPXREMOTE_FORBIDDEN;
+            app->info || (app->info = 
+                          g_error_new(g_quark_from_string(__FILE__),
+                                      code,
+                                      "closing zmap is not allowed via xremote"));
+          }
         break;
       default:
         break;
@@ -310,7 +463,8 @@ static gboolean start(void *userData,
           GQuark action = zMapXMLAttribute_getValue(attr);
           if(action == g_quark_from_string("new"))
             objAll->action = ZMAP_APP_REMOTE_OPEN_ZMAP;
-          if(action == g_quark_from_string("close"))
+          if(action == g_quark_from_string("close") || 
+             (action == g_quark_from_string("shutdown")))
             objAll->action = ZMAP_APP_REMOTE_CLOSE_ZMAP;
         }
       /* Add obj to list */
@@ -363,18 +517,3 @@ static gboolean end(void *userData,
   }
   return handled;
 }
-
-#ifdef RDS_CLOSED_FACTORY
-static zmapXMLFactory openFactory(void)
-{
-  zmapXMLFactory factory = NULL;
-  zmapXMLFactoryLiteItem zmap = NULL;
-
-  factory = zMapXMLFactory_create(TRUE);
-  zmap    = zMapXMLFactoryLiteItem_create(ZMAP_APP_REMOTE_ALL);
-  
-  zMapXMLFactoryLite_addItem(factory, zmap, "zmap");
-
-  return factory;
-}
-#endif

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 22 15:23 2006 (edgrif)
+ * Last edited: May 17 10:09 2006 (rds)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.12 2006-02-22 15:57:05 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.13 2006-05-17 12:40:55 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -43,7 +43,6 @@
 /* Minimum GTK version supported. */
 enum {ZMAP_GTK_MAJOR = 2, ZMAP_GTK_MINOR = 2, ZMAP_GTK_MICRO = 1} ;
 
-
 /* Overall application control struct. */
 typedef struct _ZMapAppContextStruct
 {
@@ -58,13 +57,14 @@ typedef struct _ZMapAppContextStruct
   GError *info;                 /* This is an object to hold a code
                                  * and a message as info for the
                                  * remote control simple IPC stuff */
-
   ZMapManager zmap_manager ;
   ZMap selected_zmap ;
 
   ZMapLog logger ;
 
+  gulong propertyNotifyEventId;
   zMapXRemoteNotifyData propertyNotifyData;
+  zMapXRemoteObj xremoteClient; /* May well be NULL */
 
   gboolean show_mainwindow ;				    /* Should main window be displayed. */
 
