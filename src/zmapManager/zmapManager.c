@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: Feb 17 10:35 2006 (edgrif)
+ * Last edited: May 17 11:09 2006 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.16 2006-02-17 10:45:51 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.17 2006-05-17 10:18:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,6 +121,12 @@ gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, Z
   return result ;
 }
 
+guint zMapManagerCount(ZMapManager zmaps)
+{
+  guint zmaps_count = 0;
+  zmaps_count = g_list_length(zmaps->zmap_list);
+  return zmaps_count;
+}
 
 
 /* Reset an existing ZMap, this call will:
@@ -166,14 +172,8 @@ gboolean zMapManagerKill(ZMapManager zmaps, ZMap zmap)
   return result ;
 }
 
-
-
-/* Frees all resources held by a zmapmanager and then frees the manager itself. */
-gboolean zMapManagerDestroy(ZMapManager zmaps)
+gboolean zMapManagerKillAllZMaps(ZMapManager zmaps)
 {
-  gboolean result = TRUE ;
-
-  /* Free all the existing zmaps. */
   if (zmaps->zmap_list)
     {
       GList *next_zmap ;
@@ -187,6 +187,17 @@ gboolean zMapManagerDestroy(ZMapManager zmaps)
 	}
       while ((next_zmap = g_list_first(zmaps->zmap_list))) ;
     }
+
+  return TRUE;
+}
+
+/* Frees all resources held by a zmapmanager and then frees the manager itself. */
+gboolean zMapManagerDestroy(ZMapManager zmaps)
+{
+  gboolean result = TRUE ;
+
+  /* Free all the existing zmaps. */
+  zMapManagerKillAllZMaps(zmaps);
 
   g_free(zmaps) ;
 
