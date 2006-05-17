@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Aug 24 15:20 2005 (rds)
+ * Last edited: May 17 12:02 2006 (rds)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.6 2005-09-02 10:25:17 rds Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.7 2006-05-17 11:18:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,6 +43,24 @@
 
 #include <ZMap/zmapXRemote.h>            /* Public header */
 #include <ZMap/zmapUtils.h>
+
+/* really this needs to be public and be returned from
+ * zMapXRemoteSendRemoteCommand, but I can't handle having to cope
+ * with version mismatch errors at the moment.
+ *
+ * So add this typedef and this prototype to the public header and
+ * uncomment !XPending in zmapXRemote.c
+ *
+ * ZMapXRemoteSendCommandError zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
+ */
+typedef enum
+  {
+    ZMAPXREMOTE_SENDCOMMAND_SUCCEED = 0,
+    ZMAPXREMOTE_SENDCOMMAND_ISSERVER,
+    ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW = 6,
+    ZMAPXREMOTE_SENDCOMMAND_VERSION_MISMATCH = 9,
+    ZMAPXREMOTE_SENDCOMMAND_UNKNOWN
+  } ZMapXRemoteSendCommandError;
 
 typedef struct _zMapXRemoteObjStruct
 {

@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Aug 23 18:05 2005 (rds)
+ * Last edited: May 17 11:56 2006 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.10 2005-09-02 10:25:16 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.11 2006-05-17 11:18:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -108,6 +108,8 @@ void zMapXRemoteSetRequestAtomName(zMapXRemoteObj object, char *name)
   zmapXDebug("zMapXRemoteSetRequestAtomName change to '%s'\n", name);
   object->request_atom = XInternAtom (object->display, name, False);
   zmapXDebug("New name is %s\n", zmapXRemoteGetAtomName(object, object->request_atom));
+  /* XSync(object->display, True); */
+  /* zmapXRemoteChangeProperty(object, object->request_atom, ""); */
   return ;
 }
 
@@ -116,6 +118,8 @@ void zMapXRemoteSetResponseAtomName(zMapXRemoteObj object, char *name)
   zmapXDebug("zMapXRemoteSetResponseAtomName change to '%s'\n", name);  
   object->response_atom = XInternAtom(object->display, name, False);
   zmapXDebug("New name is %s\n", zmapXRemoteGetAtomName(object, object->response_atom));
+  /* XSync(object->display, True); */
+  /* zmapXRemoteChangeProperty(object, object->response_atom, ""); */
   return ;
 }
 
@@ -217,14 +221,20 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
   unsigned long event_mask = (PropertyChangeMask | StructureNotifyMask);
 
   if(object->is_server == TRUE)
-    return result;
+    {
+      result = ZMAPXREMOTE_SENDCOMMAND_ISSERVER;
+      goto DONE;
+    }
 
   zmapXRemoteResetErrMsg();
 
   result = zmapXRemoteCheckWindow(object);
 
   if(result != 0)
-    return 9;
+    {
+      result = ZMAPXREMOTE_SENDCOMMAND_VERSION_MISMATCH;
+      goto DONE;
+    }
 
   zmapXDebug("remote: (writing %s '%s' to 0x%x)\n",
              zmapXRemoteGetAtomName(object, object->request_atom),
@@ -246,12 +256,13 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
       zmapXDebug(" - while: got event type %d\n", event.type);
 
       if (windowError){
-        result = 6;
+        result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW;
         goto DONE;
       }
 
       if (event.xany.type == DestroyNotify &&
-	  event.xdestroywindow.window == window)
+	  event.xdestroywindow.window == window
+          /* && !XPending(object->display) */)
 	{
           zmapXRemoteSetErrMsg(ZMAPXREMOTE_UNAVAILABLE, 
                                ZMAP_XREMOTE_META_FORMAT
@@ -262,13 +273,14 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
                                XDisplayString(dpy), window, "", "window was destroyed");
 	  zmapXDebug("remote : window 0x%x was destroyed.\n",
 		   (unsigned int) object->window_id);
-	  result = 6;		/* invalid window */
+	  result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* invalid window */
 	  goto DONE;
 	}
       else if (event.xany.type        == PropertyNotify &&
 	       event.xproperty.state  == PropertyNewValue &&
 	       event.xproperty.window == object->window_id &&
-	       event.xproperty.atom   == object->response_atom)
+	       event.xproperty.atom   == object->response_atom
+               /* && !XPending(object->display) */)
 	{
 	  Atom actual_type;
 	  int actual_format;
@@ -309,7 +321,7 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
 	      zmapXDebug("remote: failed reading %s from window 0x%0x.\n",
                          zmapXRemoteGetAtomName(object, object->response_atom),
                        (unsigned int) object->window_id);
-	      result = 6;	/* invalid window */
+	      result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* invalid window */
 	      isDone = True;
 	    }
 	  else
@@ -317,7 +329,7 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
 	      if (commandResult && *commandResult)
 		{
 		  zmapXDebug("cmd result| %s\n", commandResult);
-		  result = 0;	/* everything OK */
+		  result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED; /* everything OK */
 		  isDone = True;
 		}
 	      else
@@ -332,7 +344,7 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
 		  zmapXDebug("remote: invalid data on %s property of window 0x%0x.\n",
                              zmapXRemoteGetAtomName(object, object->response_atom),
                              (unsigned int) object->window_id);
-		  result = 6;	/* invalid window */
+		  result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* invalid window */
 		  isDone = True;
 		}
 	    }
