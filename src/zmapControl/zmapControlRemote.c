@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar  1 19:28 2006 (rds)
+ * Last edited: May 17 17:03 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.22 2006-03-02 09:10:24 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.23 2006-05-17 17:01:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -634,10 +634,11 @@ static gboolean featuresetStrtHndlr(gpointer userdata,
                                     zmapXMLParser parser)
 {
   ZMapWindowFToIQuery query = NULL;
-  zmapXMLAttribute       attr  = NULL;
+  zmapXMLAttribute    attr  = NULL;
+  xmlObjectsData input = (xmlObjectsData)userdata;
 
-  if(!(query = ((xmlObjectsData)userdata)->set))
-    query = ((xmlObjectsData)userdata)->set = zMapWindowFToINewQuery();
+  if(input && !(query = input->set))
+    query = input->set = zMapWindowFToINewQuery();
 
   /* Isn't this fun... */
   if((attr = zMapXMLElement_getAttributeByName(set_element, "align")))
@@ -665,9 +666,13 @@ static gboolean featureStrtHndlr(gpointer userdata,
   controlFeatureQuery fq = g_new0(controlFeatureQueryStruct, 1);
   ZMapWindowFToIQuery new_query = NULL, query;
 
+  zMapXMLParserCheckIfTrueErrorReturn(data->set == NULL,
+                                      parser, 
+                                      "feature tag not contained within featureset tag");
+  
   query     = data->set;        /* Get current one */  
-  new_query = zMapWindowFToINewQuery(); 
   /* Make a new one for this feature. */
+  new_query = zMapWindowFToINewQuery(); 
   /* copy stuff accross that gets set in featuresetStrtHndlr */
   /* so it inherits data from parent */
   new_query->alignId = query->alignId;
@@ -763,8 +768,9 @@ static gboolean featureEndHndlr(void *userData,
   ZMapFeature   feature = NULL;
   gboolean          bad = FALSE;
 
-  if(data->featureQueries_last == NULL)
-    bad = TRUE;                 /* Something seriously wrong with the xml here! */
+  zMapXMLParserCheckIfTrueErrorReturn(data->featureQueries_last == NULL, 
+                                      parser, 
+                                      "a feature end without a feature start.");
 
   if(!bad)
     feature = ((controlFeatureQuery)(data->featureQueries_last->data))->feature;
