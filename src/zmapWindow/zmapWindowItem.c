@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 15 18:33 2006 (rds)
+ * Last edited: May 17 10:09 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.23 2006-05-15 17:36:34 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.24 2006-05-17 09:10:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,12 +66,16 @@ typedef struct _ZMapWindowItemHighlighterStruct
 } ZMapWindowItemHighlighterStruct;
 
 
+static void highlightCB(gpointer data, gpointer user_data) ;
+static void unhighlightCB(gpointer data, gpointer user_data) ;
+static void addFocusItemCB(gpointer data, gpointer user_data) ;
+
 
 static void highlightItem(ZMapWindow window, FooCanvasItem *item);
 static void highlightFuncCB(gpointer data, gpointer user_data);
 static gboolean colourReverseVideo(GdkColor *colour_inout);
 static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item);
-static void setItemColourOriginal(ZMapWindow window, FooCanvasItem *item);
+
 
 static void checkScrollRegion(ZMapWindow window, double start, double end) ;
 
@@ -228,51 +232,116 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
 }
 
 
+/* I'm not sure I understand the first part of this comment now...sigh... */
 /* Highlight a feature, note how this function should just take _any_ feature/item but it doesn't 
- * and so needs redoing....sigh....it should also be called something like focusOnItem() */
+ * and so needs redoing....sigh....it should also be called something like focusOnItem()
+ * 
+ * This function will need some attention if we get to the stage of allowing multiple selections
+ * as in the Mac and other interfaces...usually achieved by holding done the shift key while
+ * selecting items.
+ * 
+ *  */
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 {                                               
+  ZMapFeature feature ;
   ZMapWindowItemFeatureType item_feature_type ;
-  FooCanvasItem *fresh_focus_item = NULL;
+  GList *set_items ;
 
-  /* If any other feature is currently in focus, revert it to its std colours */
-  if ((fresh_focus_item = zmapWindowItemHotFocusItem(window)))
-    {
-      highlightItem(window, fresh_focus_item) ;
-      zmapWindowItemRemoveFocusItem(window, fresh_focus_item);
-    }
-
-  /* Highlight the new item. */
-  highlightItem(window, item) ;
-
-  /* Make this item the new focus item. */
-  zmapWindowItemAddFocusItem(window, item);
-
-
+  /* Retrieve the feature item info from the canvas item. */
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
+  zMapAssert(feature) ;
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
 							ITEM_FEATURE_TYPE)) ;
 
-  /* Only raise this item to the top if it is the whole feature. */
-  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
-    foo_canvas_item_raise_to_top(item) ;
-  else if (item_feature_type == ITEM_FEATURE_CHILD)
+
+  /* If any other feature(s) is currently in focus, revert it to its std colours */
+  if (window->focusItemSet)
     {
+      g_list_foreach(window->focusItemSet, unhighlightCB, window) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* I'D LIKE TO RAISE THE WHOLE GROUP BUT THIS DOESN'T WORK SO WE JUST RAISE THE
-       * CHILD ITEM...I DON'T LIKE THE FEEL OF THIS...DOES IT REALLY WORK.... */
-      foo_canvas_item_raise_to_top(item->parent) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      foo_canvas_item_raise_to_top(item) ;
+      window->focusItemSet = NULL ;
     }
 
-  /* Make sure the canvas gets redisplayed immediately. */
-  foo_canvas_update_now(window->canvas) ;
 
+  /* For some types of feature we want to highlight all the ones with the same name in that column. */
+  switch (feature->type)
+    {
+    case ZMAPFEATURE_ALIGNMENT:
+      set_items = zmapWindowFindSameNameItems(window->context_to_item, feature) ;
+
+      if (set_items)
+	zmapWindowFToIPrintList(set_items) ;
+
+      g_list_foreach(set_items, highlightCB, window) ;
+
+      break ;
+    default:
+      highlightCB((gpointer)item, (gpointer)window) ;
+
+      break ;
+    }
+
+  zmapWindowRaiseItem(item) ;
 
   return ;
 }
+
+
+/* Need to test whether this works for groups...it should do....
+ * 
+ * For simple features or the parent of a compound feature the raise is done on the item
+ * directly, for compound objects we want to raise the parent so that the whole item
+ * is still raised.
+ *  */
+void zmapWindowRaiseItem(FooCanvasItem *item)
+{
+  ZMapWindowItemFeatureType item_feature_type ;
+
+  /* Retrieve the feature item info from the canvas item. */
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+							ITEM_FEATURE_TYPE)) ;
+
+
+  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
+    foo_canvas_item_raise_to_top(item) ;
+  else if (item_feature_type == ITEM_FEATURE_CHILD || item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
+    {
+      foo_canvas_item_raise_to_top(item->parent) ;
+    }
+
+  return ;
+}
+
+
+
+/* Find all the feature items in a column that have the same name, the name is constructed
+ * from the original id as a regular expression: "original_id*", this is then fed into
+ * the hash search function to find all the items.
+ * 
+ * Returns NULL if there no matching features. I think probably this should never happen
+ * as all features match at least themselves.
+ *  */
+GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash, ZMapFeature feature)
+{
+  GList *item_list = NULL ;
+  char *reg_ex_name ;
+  GQuark reg_ex_name_id ;
+
+  reg_ex_name = g_strdup_printf("%s*", (char *)g_quark_to_string(feature->original_id)) ;
+  reg_ex_name_id = g_quark_from_string(reg_ex_name) ;
+
+  item_list = zmapWindowFToIFindItemSetFull(feature_to_context_hash,
+					    feature->parent->parent->parent->unique_id,
+					    feature->parent->parent->unique_id,
+					    feature->parent->unique_id,
+					    zMapFeatureStrand2Str(feature->strand),
+					    reg_ex_name_id) ;
+
+  g_free(reg_ex_name) ;
+
+  return item_list ;
+}
+
 
 
 
@@ -336,18 +405,6 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
 
   /* Find the item that matches */
   matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item, feature) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* I don't know what happened to this bit of code... */
-
-  if (FOO_IS_CANVAS_GROUP( matching_item))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 
   return matching_item ;
 }
@@ -459,6 +516,9 @@ void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
   return ;
 }
 
+
+
+
 /* Scroll to the specified item.
  * If necessary, recalculate the scroll region, then scroll to the item
  * and highlight it.
@@ -491,10 +551,14 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
     }
 
 
+
+  /* UMMMM, What's going on here ????? */
   return TRUE;
 
+
+
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
-  zMapAssert(feature) ;         /* this should never fail. */
+  zMapAssert(feature) ;
   
   /* Get the features canvas coords (may be very different for align block features... */
   zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2);
@@ -558,47 +622,91 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 }
 
 
-gboolean zmapWindowItemAddFocusItem(ZMapWindow window, FooCanvasItem *item)
+
+/* 
+ *              Set of routines to handle focus items.
+ * 
+ * Holds a list of items that are highlighted/focussed, one of these is the "hot" item
+ * which is the last one selected by the user.
+ * 
+ * The first item in the list is always teh "hot" item.
+ * 
+ * The "add" functions just append item(s) to the list, they do not remove any items from it.
+ * 
+ * The "hot" item must be set with a separate call.
+ * 
+ * To replace the list you need to free it first then add new item(s).
+ * 
+ */
+
+
+void zmapWindowItemAddFocusItem(ZMapWindow window, FooCanvasItem *item)
 {
-  gboolean unique = TRUE;
-  GList *list = NULL;
+  addFocusItemCB((gpointer)item, (gpointer)window) ;
 
-  if((list = g_list_find(window->focusItemSet, item)) != NULL)
-    unique = FALSE;
-
-  if(unique)
-    window->focusItemSet = g_list_append(window->focusItemSet, item);
-  else
-    {
-      printf("I think the item should be moved to the last position");
-      /* -- EASY METHOD?? --
-       * zmapWindowItemRemoveFocusItem(window, item);
-       * zmapWindowItemAddFocusItem(window, item);
-       */
-    }
-
-
-  return unique;
-}
-
-FooCanvasItem *zmapWindowItemHotFocusItem(ZMapWindow window)
-{
-  FooCanvasItem *fresh = NULL;
-  GList *last = NULL;
-
-  if((last = g_list_last(window->focusItemSet)))
-    fresh = (FooCanvasItem *)(last->data);
-
-  return fresh;
-}
-
-
-/* I think this is incapable of failing. */
-void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item)
-{
-  window->focusItemSet = g_list_remove(window->focusItemSet, item);
   return ;
 }
+
+
+void zmapWindowItemAddFocusItems(ZMapWindow window, GList *item_list)
+{
+  g_list_foreach(item_list, addFocusItemCB, window) ;
+
+  return ;
+}
+
+
+void zmapWindowItemSetHotFocusItem(ZMapWindow window, FooCanvasItem *item)
+{
+  /* always try to remove, if item is not in list then list is unchanged. */
+  window->focusItemSet = g_list_remove(window->focusItemSet, item) ;
+
+  /* Stick the item on the front. */
+  window->focusItemSet = g_list_prepend(window->focusItemSet, item) ;
+
+  return ;
+}
+
+
+FooCanvasItem *zmapWindowItemGetHotFocusItem(ZMapWindow window)
+{
+  FooCanvasItem *item = NULL ;
+  GList *first ;
+
+  if ((first = g_list_first(window->focusItemSet)))
+    item = (FooCanvasItem *)(first->data) ;
+
+  return item ;
+}
+
+
+/* Remove single item, a side effect is that if this is the hot item then we simply
+ * make the next item in the list a hot item. */
+void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item)
+{
+  window->focusItemSet = g_list_remove(window->focusItemSet, item) ;
+
+  return ;
+}
+
+
+/* Might need to add a call to free a list of items... */
+
+
+/* Simply gets rid of all focus items. */
+void zmapWindowItemFreeFocusItems(ZMapWindow window)
+{
+  g_list_free(window->focusItemSet) ;
+
+  window->focusItemSet = NULL ;
+
+  return ;
+}
+
+
+
+
+
 
 void zmapWindowShowItem(FooCanvasItem *item)
 {
@@ -969,6 +1077,29 @@ gboolean zmapWindowItemIsShown(FooCanvasItem *item)
  *                  Internal routines.
  */
 
+
+
+static void highlightCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+
+  highlightItem(window, item) ;
+  zmapWindowItemAddFocusItem(window, item) ;
+
+  return ;
+}
+
+static void unhighlightCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+
+  highlightItem(window, item) ;
+  zmapWindowItemRemoveFocusItem(window, item) ;
+
+  return ;
+}
 
 
 
@@ -1414,6 +1545,26 @@ static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data)
       
       g_free(select_control);
     }
+
+  return ;
+}
+
+
+
+/* A GFunc() to add all items in a list to the windows focus item list. We don't want duplicates
+ * so we try to remove an item first and then append it. This is a potential performance
+ * problem if there is a _huge_ list of focus items....
+ * 
+ *  */
+static void addFocusItemCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+
+  /* always try to remove, if item is not in list then list is unchanged. */
+  window->focusItemSet = g_list_remove(window->focusItemSet, item) ;
+
+  window->focusItemSet = g_list_append(window->focusItemSet, item) ;
 
   return ;
 }

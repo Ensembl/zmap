@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May  4 17:19 2006 (rds)
+ * Last edited: May 17 09:41 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.115 2006-05-05 10:15:18 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.116 2006-05-17 09:10:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -368,12 +368,19 @@ typedef struct _ZMapWindowStruct
   double         seq_start ;
   double         seq_end ;
 
+
 #ifdef RDS_DONT_INCLUDE
   FooCanvasItem       *focus_item ;			    /* the item which has focus */
 #endif /* RDS_DONT_INCLUDE */
 
-  GList               *focusItemSet; /* the selected/focused items. Interesting operations on these should be possible... */
-  FooCanvasItem       *focusColumn ; /* I wanted the focusItemSet to hold this, but that involves a lot of code, which I need to think about */
+  /* the selected/focused items. Interesting operations on these should be possible... */
+  GList               *focusItemSet; 
+
+  /* I wanted the focusItemSet to hold this, but that involves a lot of code,
+   * which I need to think about */
+  FooCanvasItem       *focusColumn ;
+
+
 
 } ZMapWindowStruct ;
 
@@ -512,6 +519,8 @@ gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash,
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
 
+void zmapWindowRaiseItem(FooCanvasItem *item) ;
+GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
 
 void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 void my_foo_canvas_item_w2i(FooCanvasItem *item, double *x, double *y) ;
@@ -660,13 +669,17 @@ gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
  *| (window->focusItemSet). Just to explain this list should be the   |
  *| highlighted items (rev-video) on the canvas.  This seems          |
  *| simple. We also need to know which item is the current or most    |
- *| recent item.  In order to support this I'm assuming that the last |
+ *| recent item.  In order to support this I'm assuming that the first|
  *| item in the list is the most recent.  I call this the "hot" item, |
  *| like a hot potato.                                                |
  *!-------------------------------------------------------------------!*/
-gboolean zmapWindowItemAddFocusItem(ZMapWindow window, FooCanvasItem *item);
+void zmapWindowItemAddFocusItem(ZMapWindow window, FooCanvasItem *item);
 void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item);
-FooCanvasItem *zmapWindowItemHotFocusItem(ZMapWindow window);
+void zmapWindowItemSetHotFocusItem(ZMapWindow window, FooCanvasItem *item) ;
+FooCanvasItem *zmapWindowItemGetHotFocusItem(ZMapWindow window) ;
+void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item) ;
+void zmapWindowItemFreeFocusItems(ZMapWindow window) ;
+
 
 
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow window, 
