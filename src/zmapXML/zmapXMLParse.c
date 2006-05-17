@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  3 16:16 2006 (rds)
+ * Last edited: May 17 17:36 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.13 2006-03-30 16:23:12 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.14 2006-05-17 23:29:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -328,6 +328,13 @@ void zMapXMLParser_setMarkupObjectTagHandlers(zmapXMLParser parser,
 char *zMapXMLParser_lastErrorMsg(zmapXMLParser parser)
 {
   return parser->last_errmsg;
+}
+
+void zMapXMLParserRaiseParsingError(zmapXMLParser parser,
+                                    char *error_string)
+{
+  abortParsing(parser, "%s", error_string);
+  return ;
 }
 
 gboolean zMapXMLParserReset(zmapXMLParser parser)
@@ -793,6 +800,10 @@ static void initAttributes(GArray *array)
  * will return <alpha><beta><gamma> if current position is start beta
  */
 /* If return is non null it needs freeing sometime in the future! */
+/* slightly inspired by xml parsers which display errors like
+ * <this isnt="valid"><xml></uknow>
+ * error occurred ----------^ line 101
+ */
 static char *getOffendingXML(zmapXMLParser parser, int context)
 {
   char *bad_xml = NULL;
