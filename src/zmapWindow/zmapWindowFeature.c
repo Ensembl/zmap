@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 15 17:30 2006 (rds)
+ * Last edited: May 18 16:25 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.24 2006-05-15 17:37:10 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.25 2006-05-18 15:36:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -182,7 +182,8 @@ static void printItem(gpointer data, gpointer user_data) ;
 GList *zMapWindowFeatureAllStyles(ZMapWindow window)
 {
   zMapAssert(window && window->feature_context);
-  return window->feature_context->styles;
+
+  return window->feature_context->styles ;
 }
 
 
@@ -285,14 +286,6 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 
   zmapWindowItemRemoveFocusItem(zmap_window, feature_item);
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (zmapWindowLongItemRemove(&(menu_data->window->long_items), menu_data->item))
-    printf("found a long item\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
   feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
@@ -300,12 +293,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 
   /* Need to delete the feature from the feature set and from the hash and destroy the
    * canvas item....NOTE this is very order dependent. */
-  if (zmapWindowFToIRemoveFeature(zmap_window->context_to_item,
-				  feature->parent->parent->parent->unique_id,
-				  feature->parent->parent->unique_id,
-				  feature->parent->unique_id,
-				  feature->strand,
-				  feature->unique_id)
+  if (zmapWindowFToIRemoveFeature(zmap_window->context_to_item, feature)
       && zMapFeatureSetRemoveFeature(feature_set, feature))
     {
       /* destroy the canvas item... */
@@ -317,8 +305,40 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   return result ;
 }
 
-/* Called to draw each individual feature. */
 
+/* Encapulates the rules about which strand a feature will be drawn on.
+ * 
+ * For ZMap this amounts to:
+ *                            strand specific     not strand specific
+ *       features strand
+ * 
+ *       ZMAPSTRAND_NONE            +                     +
+ *       ZMAPSTRAND_FORWARD         +                     +
+ *       ZMAPSTRAND_REVERSE         -                     +
+ * 
+ * Some features (e.g. repeats) are derived from alignments that match to the
+ * forward or reverse strand and hence the feature can be said to have strand
+ * in the alignment sense but for the actual feature (the repeat) the strand
+ * is irrelevant.
+ * 
+ *  */
+ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature)
+{
+  ZMapStrand strand = ZMAPSTRAND_FORWARD ;
+  ZMapFeatureTypeStyle style = feature->style ;
+
+
+  if (!(style->strand_specific)
+      || (feature->strand == ZMAPSTRAND_FORWARD || feature->strand == ZMAPSTRAND_NONE))
+    strand = ZMAPSTRAND_FORWARD ;
+  else
+    strand = ZMAPSTRAND_REVERSE ;
+
+    return strand ;
+}
+
+
+/* Called to draw each individual feature. */
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature)
 {
   FooCanvasItem *new_feature = NULL ;
@@ -333,9 +353,6 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   double feature_offset;
   double start_x, end_x ;
 
-
-  /* THIS MAY HAVE TO CHANGE SO WE DRAW EVERYTHING, BUT HIDE SOME COLS....OR MAYBE NOT....
-   * IT ALL DEPENDS HOW WE DO REVCOMP.... */
 
   /* Users will often not want to see what is on the reverse strand, style specifies what should
    * be shown. */
@@ -352,16 +369,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 
   /* Retrieve the parent col. group/id. */
   column_group = zmapWindowContainerGetFeatures(set_group) ;
-#ifdef RDS_DONT_INCLUDE_UNUSED
-  if (feature->strand == ZMAPSTRAND_FORWARD || feature->strand == ZMAPSTRAND_NONE)
-    {
-      column_id = zmapWindowFToIMakeSetID(set->unique_id, ZMAPSTRAND_FORWARD) ;
-    }
-  else
-    {
-      column_id = zmapWindowFToIMakeSetID(set->unique_id, ZMAPSTRAND_REVERSE) ;
-    }
-#endif
+
 
   /* Start/end of feature within alignment block.
    * Feature position on screen is determined the relative offset of the features coordinates within

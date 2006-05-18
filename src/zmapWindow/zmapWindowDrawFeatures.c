@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 18 08:32 2006 (rds)
+ * Last edited: May 18 16:35 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.126 2006-05-18 07:33:14 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.127 2006-05-18 15:36:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -809,11 +809,13 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ; 
+  ZMapFeatureTypeStyle style = feature->style ;
   ZMapCanvasData canvas_data  = (ZMapCanvasDataStruct*)user_data ;
   ZMapWindow window = canvas_data->window ;
   FooCanvasGroup *column_group ;
+  ZMapStrand strand ;
 
-  if (feature->strand == ZMAPSTRAND_FORWARD || feature->strand == ZMAPSTRAND_NONE)
+  if ((strand = zmapWindowFeatureStrand(feature)) == ZMAPSTRAND_FORWARD)
     {
       column_group = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(canvas_data->curr_forward_col)) ;
     }
@@ -832,9 +834,6 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 /* Removes a column which has no features (the default action). */
 static void removeEmptyColumns(ZMapCanvasData canvas_data)
 {
-#ifdef RDS_DONT_INCLUDE
-  ZMapWindow window = canvas_data->window ;
-#endif
   RemoveEmptyColumnStruct remove_data ;
 
   remove_data.canvas_data = canvas_data ;

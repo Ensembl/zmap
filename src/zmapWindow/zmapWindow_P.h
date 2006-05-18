@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May 17 09:41 2006 (edgrif)
+ * Last edited: May 18 16:30 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.116 2006-05-17 09:10:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.117 2006-05-18 15:36:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -352,14 +352,6 @@ typedef struct _ZMapWindowStruct
   GPtrArray     *search_windows ;			    /* popup search windows. */
 
 
-  /* Do we need to clean up feature edit windows as well....????? */
-
-#ifdef RDS_DONT_INCLUDE
-  /* This all needs to move and for scale to be in a separate window..... */
-  FooCanvasItem *scaleBarGroup;           /* canvas item in which we build the scalebar */
-  /* THIS FIELD IS TEMPORARY UNTIL ALL THE SCALE/RULER IS SORTED OUT, DO NOT USE... */
-  double alignment_start ;
-#endif 
   ZMapWindowRulerCanvas ruler;
 
   /* The length, start and end of the segment of sequence to be shown, there will be _no_
@@ -368,19 +360,12 @@ typedef struct _ZMapWindowStruct
   double         seq_start ;
   double         seq_end ;
 
-
-#ifdef RDS_DONT_INCLUDE
-  FooCanvasItem       *focus_item ;			    /* the item which has focus */
-#endif /* RDS_DONT_INCLUDE */
-
   /* the selected/focused items. Interesting operations on these should be possible... */
   GList               *focusItemSet; 
 
   /* I wanted the focusItemSet to hold this, but that involves a lot of code,
    * which I need to think about */
   FooCanvasItem       *focusColumn ;
-
-
 
 } ZMapWindowStruct ;
 
@@ -513,9 +498,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 				 GQuark align_id, GQuark block_id, GQuark set_id,
 				 ZMapStrand set_strand) ;
-gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash,
-				     GQuark align_id, GQuark block_id, GQuark set_id,
-				     ZMapStrand set_strand, GQuark feature_id) ;
+gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
 
@@ -636,6 +619,7 @@ void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
                                           double *x2_out, double *y2_out);
 
 
+ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature) ;
 
 
