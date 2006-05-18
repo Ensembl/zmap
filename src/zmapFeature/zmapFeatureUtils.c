@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  2 15:11 2006 (edgrif)
+ * Last edited: May 18 14:49 2006 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.28 2006-02-17 13:43:03 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.29 2006-05-18 13:49:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,15 +171,26 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
 char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature,
 			    ZMapStrand strand, int start, int end, int query_start, int query_end)
 {
-  char *feature_name = NULL ;
-
+  char *feature_name = NULL, *ptr ;
+  int len;
   zMapAssert(feature_type && feature) ;
+
+  /* Get the length of the feature (saving time??) for later */
+  len = strlen(feature);
 
   if (feature_type == ZMAPFEATURE_ALIGNMENT)
     feature_name = g_strdup_printf("%s_%d.%d_%d.%d", feature,
 				   start, end, query_start, query_end) ;
   else
     feature_name = g_strdup_printf("%s_%d.%d", feature, start, end) ;
+
+  /* lower case the feature name, only the feature part though,
+   * numbers don't matter. Here we do as g_strdown does, but in place
+   * rather than a g_strdup first. */
+  for(ptr = feature_name; ptr <= feature_name + len; ptr++)
+    {
+      *ptr = g_ascii_tolower(*ptr);
+    }
 
   return feature_name ;
 }
