@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  2 16:26 2006 (edgrif)
+ * Last edited: May 17 10:26 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.21 2006-05-02 15:52:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.22 2006-05-18 15:19:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -185,7 +185,7 @@ void zmapWindowColumnBump(FooCanvasGroup *column_group,
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
 						 NULL, valueDestroyCB) ;
       break ;
-      case ZMAPOVERLAP_OVERLAP:
+    case ZMAPOVERLAP_OVERLAP:
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
