@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 17 09:39 2006 (edgrif)
+ * Last edited: May 18 08:32 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.125 2006-05-17 09:10:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.126 2006-05-18 07:33:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -514,7 +514,8 @@ static void drawBlocks(gpointer data, gpointer user_data)
    * and also the user may want them displayed even if empty.... */
   g_list_foreach(canvas_data->full_context->feature_set_names, createSetColumn, canvas_data) ;
 
-  createThreeFrameTranslationForBlock(block);
+  if(block->sequence.length && block->sequence.sequence != NULL)
+    createThreeFrameTranslationForBlock(block);
   /* Now draw all features within each column, note that this operates on the feature context
    * so is called only for feature sets that contain features. */
   g_datalist_foreach(&(block->feature_sets), ProcessFeatureSet, canvas_data) ;
@@ -1252,9 +1253,10 @@ static void createThreeFrameTranslationForBlock(ZMapFeatureBlock block)
   char *trans = "3frametranslation";
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_CONTEXT);
 
-  if((feature_set = (g_datalist_id_get_data(&(block->feature_sets), 
-                                            g_quark_from_string(trans))))
-     && (style = zMapFindStyle(context->styles, g_quark_from_string(trans))))
+  if(block->sequence.length &&
+     (feature_set = (g_datalist_id_get_data(&(block->feature_sets), 
+                                            g_quark_from_string(trans)))) &&
+     (style = zMapFindStyle(context->styles, g_quark_from_string(trans))))
     {
       int i; char *seq = NULL, *f_name = NULL;
       ZMapFeature threeft = NULL; 
