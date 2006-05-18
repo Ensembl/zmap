@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Mar 24 14:29 2006 (edgrif)
+ * Last edited: May 18 08:21 2006 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.46 2006-03-27 12:14:28 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.47 2006-05-18 13:52:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -888,7 +888,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
       (feature_set = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(parser->feature_sets),
 								  feature_set_name)))
     {
-      feature = (ZMapFeature)g_datalist_get_data(&(feature_set->multiline_features), feature_name_id) ;
+      feature = (ZMapFeature)g_datalist_get_data(&(feature_set->multiline_features), feature_name) ;
     }
 
 
@@ -944,7 +944,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
       if (feature_has_name
 	  && (feature_type == ZMAPFEATURE_TRANSCRIPT))
 	{
-	  g_datalist_set_data(&(feature_set->multiline_features), feature_name_id, feature) ;
+	  g_datalist_set_data(&(feature_set->multiline_features), feature_name, feature) ;
 	}
     }
 
@@ -1184,7 +1184,8 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 	    {
 	      has_name         = TRUE ;
 	      *feature_name    = g_strdup(name) ;
-	      *feature_name_id = g_strdup(*feature_name) ;
+	      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						       start, end, query_start, query_end) ;
 	    }
 	  else
 	    {
