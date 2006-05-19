@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May 18 16:30 2006 (edgrif)
+ * Last edited: May 19 11:42 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.117 2006-05-18 15:36:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.118 2006-05-19 10:58:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -55,12 +55,14 @@
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
 
 
-/* default spacings...will be tailorable one day ? */
+/* All settable from configuration file. */
 #define ALIGN_SPACING        30.0
 #define BLOCK_SPACING         5.0
 #define STRAND_SPACING        7.0
 #define COLUMN_SPACING        5.0
 #define FEATURE_SPACING       1.0
+#define FEATURE_LINE_WIDTH    0				    /* Special value meaning one pixel wide
+							       lines with no aliasing. */
 
 
 /* X Windows has some limits that are part of the protocol, this means they cannot
@@ -148,9 +150,14 @@ typedef enum {
 #define ZMAP_WINDOW_QBLOCK_F_BG "light pink"
 #define ZMAP_WINDOW_QBLOCK_R_BG "pink"
 
+/* Colour for highlighting a whole columns background. */
+#define ZMAP_WINDOW_COLUMN_HIGHLIGHT "grey"
+
 /* Default colours for features. */
 #define ZMAP_WINDOW_ITEM_FILL_COLOUR "white"
 #define ZMAP_WINDOW_ITEM_BORDER_COLOUR "black"
+
+
 
 /* Item features are the canvas items that represent sequence features, they can be of various
  * types, in particular compound features such as transcripts require a parent, a bounding box
@@ -240,7 +247,7 @@ typedef struct
   double strand_spacing ;
   double column_spacing ;
   double feature_spacing ;
-
+  guint  feature_line_width ;				    /* n.b. line width is in pixels. */
 } ZMapWindowConfigStruct, *ZMapWindowConfig ;
 
 
@@ -303,8 +310,7 @@ typedef struct _ZMapWindowStruct
   GdkColor colour_mreverse_col ;
   GdkColor colour_qforward_col ;
   GdkColor colour_qreverse_col ;
-
-
+  GdkColor colour_column_highlight ;
 
   ZMapWindowZoomControl zoom;
 
@@ -622,6 +628,7 @@ void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
 ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature) ;
 
+char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyle style) ;
 
 /* 
 void zmapWindowzoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
