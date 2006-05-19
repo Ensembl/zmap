@@ -20,15 +20,14 @@
  * This file is part of the ZMap genome database package
  * and was written by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 16 10:57 2006 (rds)
+ * Last edited: May 19 08:15 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.52 2006-05-16 10:15:28 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.53 2006-05-19 10:48:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1431,10 +1430,12 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
   char *method_str = method_str_in ;
   char *scan_text = NULL ;
   char *next_line = method_str ;
-  char *name = NULL, *colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL,
+  char *name = NULL, *remark = NULL, 
+    *colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL,
     *gff_source = NULL, *gff_feature = NULL, *column_group = NULL, *overlap = NULL ;
   double width = ACEDB_DEFAULT_WIDTH ;
   gboolean strand_specific = FALSE, frame_specific = FALSE, show_up_strand = FALSE ;
+  gboolean no_display = FALSE ;
   double min_mag = 0.0, max_mag = 0.0 ;
   double min_score = 0.0, max_score = 0.0 ;
   gboolean status = TRUE, outline_flag = FALSE ;
@@ -1446,7 +1447,6 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
   do
     {
       char *tag = NULL ;
-      char *value = NULL ;
       char *line_pos = NULL ;
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
@@ -1454,10 +1454,17 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 
       if (g_ascii_strcasecmp(tag, "Method") == 0)
 	{
-	  /* Line format:    Method : "possibly very long method name"  */
+	  /* Line format:    Method : "possibly long method name"  */
 
 	  name = strtok_r(NULL, "\"", &line_pos) ;
 	  name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+	}
+      if (g_ascii_strcasecmp(tag, "Remark") == 0)
+	{
+	  /* Line format:    Remark "possibly quite long bit of text"  */
+
+	  remark = strtok_r(NULL, "\"", &line_pos) ;
+	  remark = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 	}
       else if (g_ascii_strcasecmp(tag, "Colour") == 0)
 	{
@@ -1533,6 +1540,8 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	  show_up_strand = TRUE ;
 	  strand_specific = TRUE ;
 	}
+      else if (g_ascii_strcasecmp(tag, "No_display") == 0)
+	no_display = TRUE ;
       else if (g_ascii_strcasecmp(tag, "Min_mag") == 0)
 	{
 	  char *value ;
@@ -1645,13 +1654,13 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 
       /* NOTE that style is created with the method name, NOT the column_group, column
        * names are independent of method names, they may or may not be the same. */
-      style = zMapFeatureTypeCreate(name, 
+      style = zMapFeatureTypeCreate(name, remark,
 				    outline, foreground, background,
 				    width) ;
 
       if (min_mag || max_mag)
 	zMapStyleSetMag(style, min_mag, max_mag) ;
-      
+
       if (min_score && max_score)
 	zMapStyleSetScore(style, min_score, max_score) ;
 
@@ -1661,11 +1670,15 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
+
+      if (no_display)
+	zMapStyleSetHideInitial(style, no_display) ;
     }
 
 
   /* Clean up, note g_free() does nothing if given NULL. */
   g_free(name) ;
+  g_free(remark) ;
   g_free(colour) ;
   g_free(foreground) ;
   g_free(column_group) ;
