@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May 19 08:21 2006 (edgrif)
+ * Last edited: May 19 13:00 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.66 2006-05-19 10:46:50 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.67 2006-05-19 15:56:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -535,7 +535,7 @@ GData *zMapFeatureFindSetInContext(ZMapFeatureContext feature_context, GQuark se
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
 gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type) ;
 ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
-
+char *zMapFeatureName(ZMapFeatureAny any_feature) ;
 
 
 

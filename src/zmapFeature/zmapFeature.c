@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Mar 23 16:38 2006 (edgrif)
+ * Last edited: May 19 13:11 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.33 2006-03-23 16:41:11 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.34 2006-05-19 15:56:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -135,6 +135,27 @@ gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type)
     result = TRUE ;
 
   return result ;
+}
+
+
+
+/*!
+ * Returns the original name of any feature type. The returned string belongs
+ * to the feature and must _NOT_ be free'd. This function can never return
+ * NULL as all features must have valid names.
+ * 
+ * @param   any_feature    The feature.
+ * @return  char *         The name of the feature.
+ *  */
+char *zMapFeatureName(ZMapFeatureAny any_feature)
+{
+  char *feature_name = NULL ;
+
+  zMapAssert(zMapFeatureIsValid(any_feature)) ;
+
+  feature_name = (char *)g_quark_to_string(any_feature->original_id) ;
+
+  return feature_name ;
 }
 
 
