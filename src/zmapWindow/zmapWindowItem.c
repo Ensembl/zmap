@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 18 16:03 2006 (edgrif)
+ * Last edited: May 19 11:56 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.25 2006-05-18 15:36:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.26 2006-05-19 10:57:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -315,8 +315,9 @@ void zmapWindowRaiseItem(FooCanvasItem *item)
 
 
 /* Find all the feature items in a column that have the same name, the name is constructed
- * from the original id as a regular expression: "original_id*", this is then fed into
- * the hash search function to find all the items.
+ * from the original id as a lower cased regular expression: "original_id*", this is then fed into
+ * the hash search function to find all the items. We lowercase it so that it will match
+ * against the unique ids of the items.
  * 
  * Returns NULL if there no matching features. I think probably this should never happen
  * as all features match at least themselves.
@@ -324,13 +325,15 @@ void zmapWindowRaiseItem(FooCanvasItem *item)
 GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash, ZMapFeature feature)
 {
   GList *item_list = NULL ;
-  char *reg_ex_name ;
+  GString *reg_ex_name ;
   GQuark reg_ex_name_id ;
   ZMapStrand strand ;
 
-  /* we are searching on the original id so leave its case intact or nothing gets found. */
-  reg_ex_name = g_strdup_printf("%s*", (char *)g_quark_to_string(feature->original_id)) ;
-  reg_ex_name_id = g_quark_from_string(reg_ex_name) ;
+  /* I use a GString because it lowercases in place. */
+  reg_ex_name = g_string_new(NULL) ;
+  g_string_append_printf(reg_ex_name, "%s*", (char *)g_quark_to_string(feature->original_id)) ;
+  reg_ex_name = g_string_ascii_down(reg_ex_name) ;
+  reg_ex_name_id = g_quark_from_string(reg_ex_name->str) ;
 
   strand = zmapWindowFeatureStrand(feature) ;
 
@@ -341,8 +344,7 @@ GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash, ZMapFeat
 					    zMapFeatureStrand2Str(strand),
 					    reg_ex_name_id) ;
 
-
-  g_free(reg_ex_name) ;
+  g_string_free(reg_ex_name, TRUE) ;
 
   return item_list ;
 }
