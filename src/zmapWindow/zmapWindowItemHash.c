@@ -30,9 +30,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: May 18 16:29 2006 (edgrif)
+ * Last edited: May 19 09:14 2006 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.25 2006-05-18 15:36:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.26 2006-05-19 10:57:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -610,7 +610,6 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
   ID2Canvas block = NULL ;
   ID2Canvas set = NULL ;
   ZMapFeature item_feature_obj = NULL;
-  ZMapStrand strand ;
 
   /* We need special quarks that incorporate strand indication as the hashes are per column. */
   item_feature_obj = (ZMapFeature)(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)) ;
@@ -1532,7 +1531,7 @@ static gboolean itemInHashDestroyedCB(FooCanvasItem *item_in_hash, gpointer data
         }
       else
         {
-          zMapLogFatal("Coding error, no ZMapWindow attached to item(%x)->canvas!", item_in_hash) ;
+          zMapLogFatal("Coding error, no ZMapWindow attached to item(%p)->canvas!", item_in_hash) ;
 #ifdef RDS_DEBUG_ITEM_IN_HASH_DESTROY
           printf("itemInHashDestroyedCB (%x): no Window \n", item_in_hash);
 #endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
@@ -1542,7 +1541,7 @@ static gboolean itemInHashDestroyedCB(FooCanvasItem *item_in_hash, gpointer data
     {
       /* ISSUE: I've hacked an empty FeatureSet create in DrawFeature
        * createSetColumn/createColumn for styles without features */
-      zMapLogFatal("Coding error, no ITEM_FEATURE_DATA attached to item(%x)!", item_in_hash) ;
+      zMapLogFatal("Coding error, no ITEM_FEATURE_DATA attached to item(%p)!", item_in_hash) ;
 #ifdef RDS_DEBUG_ITEM_IN_HASH_DESTROY
       printf("itemInHashDestroyedCB (%x): no Feature Data\n", item_in_hash);
 #endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
