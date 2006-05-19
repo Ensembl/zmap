@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 18 16:35 2006 (edgrif)
+ * Last edited: May 19 11:52 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.127 2006-05-18 15:36:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.128 2006-05-19 10:53:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -516,15 +516,19 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   if(block->sequence.length && block->sequence.sequence != NULL)
     createThreeFrameTranslationForBlock(block);
+
+
   /* Now draw all features within each column, note that this operates on the feature context
    * so is called only for feature sets that contain features. */
   g_datalist_foreach(&(block->feature_sets), ProcessFeatureSet, canvas_data) ;
   
+
   /* Optionally remove all empty columns. */
   if (!(canvas_data->window->keep_empty_cols))
     {
       removeEmptyColumns(canvas_data) ;
     }
+
 
   /* THIS SHOULD BE WRITTEN AS A GENERAL FUNCTION TO POSITION STUFF, IN FACT WE WILL NEED
    *  A FUNCTION THAT REPOSITIONS EVERYTHING....... */
@@ -720,6 +724,12 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   g_signal_connect(G_OBJECT(group), "event",
 		   G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
 
+
+  /* Some columns are hidden initially.... */
+  if (zMapStyleGetHideInitial(style))
+    foo_canvas_item_hide(FOO_CANVAS_ITEM(group)) ;
+
+
   return group ;
 }
 
@@ -809,7 +819,6 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ; 
-  ZMapFeatureTypeStyle style = feature->style ;
   ZMapCanvasData canvas_data  = (ZMapCanvasDataStruct*)user_data ;
   ZMapWindow window = canvas_data->window ;
   FooCanvasGroup *column_group ;
@@ -963,19 +972,20 @@ static void positionColumnCB(gpointer data, gpointer user_data)
  */
 static void hackAHighlightColumn(ZMapWindow window, FooCanvasItem *column)
 {
-  GdkColor color;
+
   if(window->focusColumn)
     {
-      gdk_color_parse("white", &color);
       foo_canvas_item_set(window->focusColumn,
-                          "fill_color_gdk", &color,
-                          NULL);
+                          "fill_color_gdk", &(window->canvas_background),
+                          NULL) ;
     }
+
   window->focusColumn = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(column)) ;
-  gdk_color_parse("grey", &color);
+
   foo_canvas_item_set(window->focusColumn,
-                      "fill_color_gdk", &color,
-                      NULL);
+                      "fill_color_gdk", &(window->colour_column_highlight),
+                      NULL) ;
+
   return ;
 }
 
@@ -1007,13 +1017,20 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  case 1:
 	    {
 	      ZMapWindowSelectStruct select = {NULL} ;
+	      GQuark feature_set_id ;
 
 	      if (feature_set)
-		select.primary_text = (char *)g_quark_to_string(feature_set->original_id) ;
+		feature_set_id = feature_set->original_id ;
 	      else
-		select.primary_text = (char *)g_quark_to_string(style->original_id) ;
+		feature_set_id = style->original_id ;
+
+	      select.primary_text = zmapWindowFeatureSetDescription(feature_set_id, style) ;
+
               select.secondary_text = select.primary_text;
+
 	      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+
+	      g_free(select.primary_text) ;
 
 	      event_handled = TRUE ;
 	      break ;
@@ -1165,18 +1182,20 @@ static void setColours(ZMapWindow window)
   ZMapConfigStanzaSet colour_list = NULL ;
   ZMapConfigStanza colour_stanza ;
   char *window_stanza_name = ZMAP_WINDOW_CONFIG ;
-  ZMapConfigStanzaElementStruct colour_elements[] = {{"colour_root", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
-						     {"colour_alignment", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
-						     {"colour_block", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
-						     {"colour_m_forward", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_F_BG}},
-						     {"colour_m_reverse", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_R_BG}},
-						     {"colour_q_forward", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_F_BG}},
-						     {"colour_q_reverse", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_R_BG}},
-						     {"colour_m_forwardcol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_F_BG}},
-						     {"colour_m_reversecol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_R_BG}},
-						     {"colour_q_forwardcol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_F_BG}},
-						     {"colour_q_reversecol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_R_BG}},
-						     {NULL, -1, {NULL}}} ;
+  ZMapConfigStanzaElementStruct colour_elements[]
+    = {{"colour_root", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
+       {"colour_alignment", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
+       {"colour_block", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
+       {"colour_m_forward", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_F_BG}},
+       {"colour_m_reverse", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_R_BG}},
+       {"colour_q_forward", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_F_BG}},
+       {"colour_q_reverse", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_R_BG}},
+       {"colour_m_forwardcol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_F_BG}},
+       {"colour_m_reversecol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_R_BG}},
+       {"colour_q_forwardcol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_F_BG}},
+       {"colour_q_reversecol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_R_BG}},
+       {"colour_column_highlight", ZMAPCONFIG_STRING, {ZMAP_WINDOW_COLUMN_HIGHLIGHT}},
+       {NULL, -1, {NULL}}} ;
 
 
   /* IN A HURRY...BADLY WRITTEN, COULD BE MORE COMPACT.... */
@@ -1214,6 +1233,8 @@ static void setColours(ZMapWindow window)
 			  &(window->colour_qforward_col)) ;
 	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_q_reversecol"),
 			  &(window->colour_qreverse_col)) ;
+	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_column_highlight"),
+			  &(window->colour_column_highlight)) ;
 	  
 	  zMapConfigDeleteStanzaSet(colour_list) ;		    /* Not needed anymore. */
 	}
@@ -1230,6 +1251,7 @@ static void setColours(ZMapWindow window)
 	  gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &(window->colour_mreverse_col)) ;
 	  gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &(window->colour_qforward_col)) ;
 	  gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &(window->colour_qreverse_col)) ;
+	  gdk_color_parse(ZMAP_WINDOW_COLUMN_HIGHLIGHT, &(window->colour_column_highlight)) ;
 	}
 
 
