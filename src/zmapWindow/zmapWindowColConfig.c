@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  5 11:23 2006 (rds)
+ * Last edited: May 19 16:45 2006 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.4 2006-05-05 11:00:16 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.5 2006-05-19 15:47:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,6 +67,11 @@ static void quitMenuCB(gpointer data, guint callback_action, GtkWidget *widget) 
 static void noHelpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void showButCB(GtkToggleButton *togglebutton, gpointer user_data) ;
 static void killButCB(GtkToggleButton *togglebutton, gpointer user_data) ;
+
+static void selectAllButtons(GtkWidget *button, gpointer user_data);
+static void unselectAllButtons(GtkWidget *button, gpointer user_data);
+static void allButtonsToggleCB(gpointer data, gpointer user_data);
+static void freeButtonList(gpointer data);
 
 static GtkItemFactoryEntry menu_items_G[] = {
  { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
@@ -158,7 +163,7 @@ void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode configure_mod
 
 static void colConfigure(ZMapWindow window, GList *forward_cols, GList *reverse_cols)
 {
-  GtkWidget *toplevel, *vbox, *menubar, *cols;
+  GtkWidget *toplevel, *vbox, *hbox, *menubar, *cols;
   ColConfigure configure_data ;
   char *title ;
 
@@ -185,15 +190,18 @@ static void colConfigure(ZMapWindow window, GList *forward_cols, GList *reverse_
   menubar = makeMenuBar(configure_data) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
 
-  if (forward_cols)
-    {
-      cols = makeColsPanel(configure_data, "Forward", forward_cols) ;
-      gtk_box_pack_start(GTK_BOX(vbox), cols, TRUE, TRUE, 0) ;
-    }
+  hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0) ;
+
   if (reverse_cols)
     {
       cols = makeColsPanel(configure_data, "Reverse", reverse_cols) ;
-      gtk_box_pack_start(GTK_BOX(vbox), cols, TRUE, TRUE, 0) ;
+      gtk_box_pack_start(GTK_BOX(hbox), cols, TRUE, TRUE, 0) ;
+    }
+  if (forward_cols)
+    {
+      cols = makeColsPanel(configure_data, "Forward", forward_cols) ;
+      gtk_box_pack_start(GTK_BOX(hbox), cols, TRUE, TRUE, 0) ;
     }
 
 
@@ -262,8 +270,8 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *
   GtkWidget *cols_panel, *frame, *column_box ;
   ZMapWindow window = configure_data->window ;
   /*  ZMapFeatureContext context = window->feature_context ; */
-  GList *column ;
-
+  GList *column, *button_list = NULL;
+  gboolean select_all_buttons = TRUE;
 
   cols_panel = frame = gtk_frame_new(frame_title) ;
   gtk_container_set_border_width(GTK_CONTAINER(frame), 
@@ -294,13 +302,15 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *
 
       col_visible = zmapWindowItemIsShown(FOO_CANVAS_ITEM(column_group)) ;
       button = gtk_check_button_new_with_label(g_quark_to_string(style->original_id)) ;
+
+      button_list = g_list_prepend(button_list, button);
+
       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), col_visible) ;
       gtk_box_pack_start(GTK_BOX(col_box), button, TRUE, TRUE, 0) ;
       g_signal_connect(GTK_OBJECT(button), "toggled",
 		       GTK_SIGNAL_FUNC(showButCB), (gpointer)button_data) ;
       g_signal_connect(GTK_OBJECT(button), "destroy",
 		       GTK_SIGNAL_FUNC(killButCB), (gpointer)button_data) ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Not needed yet.... */
@@ -313,6 +323,36 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *
     }
   while ((column = g_list_next(column))) ;
 
+  if(select_all_buttons)
+    {
+      GtkWidget *button_box, *button;
+      button_box = gtk_hbutton_box_new();
+      
+      gtk_box_pack_end(GTK_BOX(column_box), button_box, FALSE, FALSE, 0);
+
+      button = gtk_button_new_with_label("Select All");
+      gtk_box_pack_start(GTK_BOX(button_box), button, FALSE, FALSE, 0);
+
+      /* This isn't the best way to implement this un/select all.
+       * too much redrawing occurs....
+       */
+
+      g_signal_connect_data(G_OBJECT(button), "clicked",
+                            G_CALLBACK(selectAllButtons), 
+                            (gpointer)button_list,
+                            (GClosureNotify)freeButtonList,
+                            0);
+  
+      button = gtk_button_new_with_label("Unselect All");
+      gtk_box_pack_end(GTK_BOX(button_box), button, FALSE, FALSE, 0);
+
+      g_signal_connect_data(G_OBJECT(button), "clicked",
+                            G_CALLBACK(unselectAllButtons), 
+                            (gpointer)button_list, 
+                            NULL, 0) ;
+    }
+  else
+    g_list_free(button_list);
 
   return cols_panel ;
 }
@@ -466,3 +506,40 @@ static void getSetGroupCB(gpointer data, gpointer user_data)
   return ;
 }
 
+static void selectAllButtons(GtkWidget *button, gpointer user_data)
+{
+  GList *all_buttons = (GList *)user_data;
+
+  g_list_foreach(all_buttons, allButtonsToggleCB, GINT_TO_POINTER(TRUE));
+
+  return ;
+}
+
+static void unselectAllButtons(GtkWidget *button, gpointer user_data)
+{
+  GList *all_buttons = (GList *)user_data;
+
+  g_list_foreach(all_buttons, allButtonsToggleCB, GINT_TO_POINTER(FALSE));
+
+  return ;
+}
+
+static void allButtonsToggleCB(gpointer data, gpointer user_data)
+{
+  GtkWidget *button = (GtkWidget *)data;
+  gboolean active = FALSE;
+
+  active = GPOINTER_TO_INT(user_data);
+
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), active);
+
+  return ;
+}
+static void freeButtonList(gpointer data)
+{
+  GList *list = (GList *)data;
+
+  g_list_free(list);
+  
+  return ;
+}
