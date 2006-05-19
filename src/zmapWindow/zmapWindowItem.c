@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 19 11:56 2006 (edgrif)
+ * Last edited: May 19 16:53 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.26 2006-05-19 10:57:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.27 2006-05-19 15:59:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -269,8 +269,11 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
     case ZMAPFEATURE_ALIGNMENT:
       set_items = zmapWindowFindSameNameItems(window->context_to_item, feature) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if (set_items)
 	zmapWindowFToIPrintList(set_items) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       g_list_foreach(set_items, highlightCB, window) ;
 
