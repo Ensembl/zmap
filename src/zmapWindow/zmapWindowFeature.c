@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 19 14:56 2006 (rds)
+ * Last edited: May 19 17:02 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.27 2006-05-19 14:17:11 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.28 2006-05-19 16:02:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1734,18 +1734,17 @@ static void destroyIterator(ZMapDrawTextIterator iterator)
 /* Build the menu for a feature item. */
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
 {
-  char *menu_title = "Item menu" ;
+  char *menu_title ;
   GList *menu_sets = NULL ;
   ItemMenuCBData menu_data ;
   ZMapFeature feature ;
-#ifdef RDS_DONT_INCLUDE
-  ZMapGUIMenuItem menu_item ;
-#endif
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
+
+  menu_title = zMapFeatureName((ZMapFeatureAny)feature) ;
 
   /* Call back stuff.... */
   menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
@@ -1805,12 +1804,15 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
     case 1:
       {
         GList *list = NULL;
+	ZMapStrand strand ;
+
+	strand = zmapWindowFeatureStrand(feature) ;
 
         list = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
 					     feature->parent->parent->parent->unique_id,
 					     feature->parent->parent->unique_id,
 					     feature->parent->unique_id,
-					     zMapFeatureStrand2Str(feature->strand),
+					     zMapFeatureStrand2Str(strand),
 					     g_quark_from_string("*")) ;
 
         zmapWindowListWindowCreate(menu_data->window, list, 
@@ -2021,12 +2023,15 @@ static gboolean makeFeatureEditWindow(ZMapWindow window, ZMapFeature feature)
 {
   gboolean result = FALSE ;
   FooCanvasItem *item ;
+  ZMapStrand strand ;
+
+  strand = zmapWindowFeatureStrand(feature) ;
 
   if ((item = zmapWindowFToIFindItemFull(window->context_to_item, 
 					 feature->parent->parent->parent->unique_id,
 					 feature->parent->parent->unique_id,
 					 feature->parent->unique_id,
-					 feature->strand,
+					 strand,
 					 feature->unique_id)))
     {
       zmapWindowEditorCreate(window, item) ;

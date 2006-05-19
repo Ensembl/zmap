@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 19 11:52 2006 (edgrif)
+ * Last edited: May 19 13:08 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.128 2006-05-19 10:53:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.129 2006-05-19 16:02:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1080,12 +1080,11 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 			   FooCanvasItem *item, ZMapFeatureSet feature_set)
 {
-  char *menu_title = "Column menu" ;
+  char *menu_title ;
   GList *menu_sets = NULL ;
   ItemMenuCBData cbdata ;
-#ifdef RDS_DONT_INCLUDE
-  ZMapGUIMenuItem menu_item ;
-#endif
+
+  menu_title = zMapFeatureName((ZMapFeatureAny)feature_set) ;
 
   cbdata = g_new0(ItemMenuCBDataStruct, 1) ;
   cbdata->item_cb = FALSE ;
@@ -1111,8 +1110,8 @@ static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 /* this is in the general menu and needs to be handled separately perhaps as the index is a global
  * one shared amongst all general menu functions... */
 static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
-					    ZMapGUIMenuItemCallbackFunc callback_func,
-					    gpointer callback_data)
+					 ZMapGUIMenuItemCallbackFunc callback_func,
+					 gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
