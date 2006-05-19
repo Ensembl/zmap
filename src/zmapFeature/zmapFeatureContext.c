@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May  5 11:19 2006 (rds)
+ * Last edited: May 19 15:05 2006 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.5 2006-05-05 11:00:15 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.6 2006-05-19 14:06:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -378,6 +378,11 @@ static void doFeatureAnyCB(ZMapFeatureAny any_feature, gpointer user_data)
 
 	    if (feature->feature.transcript.introns)
 	      revcompSpan(feature->feature.transcript.introns, cb_data->end) ;
+
+            if(feature->feature.transcript.flags.cds)
+              zmapFeatureRevComp(Coord, cb_data->end, 
+                                 feature->feature.transcript.cds_start, 
+                                 feature->feature.transcript.cds_end);
 	  }
 	else if (feature->type == ZMAPFEATURE_ALIGNMENT
 		 && feature->feature.homol.align)
