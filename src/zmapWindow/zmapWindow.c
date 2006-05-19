@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  2 16:45 2006 (edgrif)
+ * Last edited: May 19 10:35 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.122 2006-05-02 15:52:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.123 2006-05-19 10:50:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -845,6 +845,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   ZMapWindowItemFeature item_data ;
   ZMapFeature feature = NULL;
   char *subpart_text = NULL ;
+  ZMapFeatureTypeStyle style ;
+  char *style_text ;
   ZMapWindowSelectStruct select = {NULL} ;
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
@@ -857,20 +859,27 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
       item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
       zMapAssert(item_data) ;
 
-      subpart_text = g_strdup_printf("  (%d %d)", item_data->start, item_data->end) ;
+      subpart_text = g_strdup_printf("(%d %d)", item_data->start, item_data->end) ;
     }
 
-  /* It would be nice for a user to be able to specify the format of this string. */
-  select.primary_text = g_strdup_printf("%s : %s : %s   %s %d %d%s", 
-				zMapFeatureType2Str(feature->type),
-				zMapStyleGetName(zMapFeatureGetStyle(feature)),
-				(char *)g_quark_to_string(feature->original_id),
-				zMapFeatureStrand2Str(feature->strand),
-				feature->x1,
-				feature->x2,
-				(subpart_text ? subpart_text : "")) ;
+
+  style = zMapFeatureGetStyle(feature) ;
+  style_text = zmapWindowFeatureSetDescription(style->original_id, style) ;
+
+
   /* Need to replicate this ... */
   /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
+
+  /* It would be nice for a user to be able to specify the format of this string. */
+  select.primary_text = g_strdup_printf("%s %s %d %d %s  :  %s  :  %s", 
+					(char *)g_quark_to_string(feature->original_id),
+					zMapFeatureStrand2Str(feature->strand),
+					feature->x1,
+					feature->x2,
+					(subpart_text ? subpart_text : ""),
+					zMapFeatureType2Str(feature->type),
+					style_text) ;
+
 
   select.secondary_text = g_strdup_printf("\"%s\"    %d %d (%d)",
                                           (char *)g_quark_to_string(feature->original_id),
@@ -883,10 +892,11 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 
   if (subpart_text)
     g_free(subpart_text) ;
+  g_free(style_text) ;
   g_free(select.primary_text) ;
   g_free(select.secondary_text) ;
 
-  return;
+  return ;
 }
 
 /* I'm not convinced of this. */
@@ -998,6 +1008,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   window->config.strand_spacing = STRAND_SPACING ;
   window->config.column_spacing = COLUMN_SPACING ;
   window->config.feature_spacing = FEATURE_SPACING ;
+  window->config.feature_line_width = FEATURE_LINE_WIDTH ;
 
 
   window->caller_cbs = window_cbs_G ;
@@ -1726,6 +1737,7 @@ static gboolean getConfiguration(ZMapWindow window)
 						     {"strand_spacing", ZMAPCONFIG_FLOAT, {NULL}},
 						     {"column_spacing", ZMAPCONFIG_FLOAT, {NULL}},
 						     {"feature_spacing", ZMAPCONFIG_FLOAT, {NULL}},
+						     {"feature_line_width", ZMAPCONFIG_INT, {NULL}},
 						     {NULL, -1, {NULL}}} ;
 
 
@@ -1737,6 +1749,7 @@ static gboolean getConfiguration(ZMapWindow window)
   zMapConfigGetStructFloat(window_elements, "strand_spacing") = window->config.strand_spacing ;
   zMapConfigGetStructFloat(window_elements, "column_spacing") = window->config.column_spacing ;
   zMapConfigGetStructFloat(window_elements, "feature_spacing") = window->config.feature_spacing ;
+  zMapConfigGetStructInt(window_elements, "feature_line_width") = window->config.feature_line_width ;
 
 
   if ((config = zMapConfigCreate()))
@@ -1761,6 +1774,7 @@ static gboolean getConfiguration(ZMapWindow window)
 	  window->config.strand_spacing = zMapConfigGetElementFloat(next_window, "strand_spacing") ;
 	  window->config.column_spacing = zMapConfigGetElementFloat(next_window, "column_spacing") ;
 	  window->config.feature_spacing = zMapConfigGetElementFloat(next_window, "feature_spacing") ;
+	  window->config.feature_line_width = zMapConfigGetElementInt(next_window, "feature_line_width") ;
 	  
 	  zMapConfigDeleteStanzaSet(window_list) ;		    /* Not needed anymore. */
 	}
