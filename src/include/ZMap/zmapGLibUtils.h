@@ -26,9 +26,9 @@
  *              glib but not included with their distribution.
  *
  * HISTORY:
- * Last edited: Mar 27 12:20 2006 (edgrif)
+ * Last edited: May 19 16:51 2006 (edgrif)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.5 2006-03-27 12:10:54 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.6 2006-05-19 15:55:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -59,6 +59,8 @@ typedef enum
 /*! @} end of zmapGLibutils docs. */
 
 
+
+char *zMap_g_remove_char(char *string, char ch) ;
 
 void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data);
 void zMap_g_list_foreach_directional(GList   *list, 

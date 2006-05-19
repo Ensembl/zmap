@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Mar 27 12:42 2006 (edgrif)
+ * Last edited: May 19 16:50 2006 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.5 2006-03-27 12:10:54 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.6 2006-05-19 15:55:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -88,6 +88,44 @@ static inline GQuark g_quark_new(ZMapQuarkSet quark_set, gchar *string) ;
  * used by all of ZMap.
  *
  *  */
+
+
+/* 
+ *                Additions to String utilities
+ */
+
+
+
+/* This routine removes all occurences of the given char from the target string,
+ * this is done inplace so the returned string will be shorter. */
+char *zMap_g_remove_char(char *string, char ch)
+{
+  char *cp ;
+
+  zMapAssert(string) ;
+
+  cp = string ;
+  while (*cp)
+    {
+      if (*cp == ch)
+	{
+	  char *cq ;
+
+	  cq = cp ;
+	  while (*cq)
+	    {
+	      *cq = *(cq + 1) ;
+
+	      cq++ ;
+	    }
+	  *cq = '\0' ;
+	}
+
+      cp++ ;
+    }
+
+  return string ;
+}
 
 
 
