@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Mar 19 17:43 2006 (rds)
+ * Last edited: May 19 16:51 2006 (edgrif)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.2 2006-03-20 18:37:40 rds Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.3 2006-05-19 15:58:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,6 +96,8 @@ typedef struct
 
 
 static char *makeMenuItemName(char *string) ;
+static char *makeMenuTitleName(char *string) ;
+
 static ZMapGUIMenuItem makeSingleMenu(GList *menu_item_sets, int *menu_items_out) ;
 static ZMapGUIMenuItem copyMenu2NewMenu(ZMapGUIMenuItem new_menu, ZMapGUIMenuItem old_menu) ;
 static void destroyMenu(ZMapGUIMenuItem menu) ;
@@ -133,8 +135,7 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
  * @param button_event  The button event that triggered the menu to be popped up.
  * @return              <nothing>
  *  */
-void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets,
-			GdkEventButton *button_event)
+void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *button_event)
 {
   int num_menu_items, num_factory_items, i ;
   ZMapGUIMenuItem menu_items ;
@@ -160,8 +161,9 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets,
   our_cb_data->factory_items = item = factory_items = g_new0(GtkItemFactoryEntry, num_factory_items) ;
 				
 
-  /* Do title/separator. */
-  item->path = makeMenuItemName(menu_title) ;
+  /* Do title/separator, the title needs to have any '_' chars escaped to stop them being
+   * interpretted as keyboard shortcuts. */
+  item->path = makeMenuTitleName(menu_title) ;
   item->item_type = "<Title>" ;
   item++ ;
 
@@ -192,11 +194,19 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets,
 
   gtk_item_factory_create_items(item_factory, num_factory_items, factory_items, our_cb_data) ;
 
+
   {
+    /* I think this is so we can colour the menu title from a resources file.... */
     GtkWidget *title = NULL;
+
+    /* NOTE this time we need the title string without escaping any '_' so we can find
+     * it in the item factory path. */
     title = gtk_item_factory_get_widget(item_factory, makeMenuItemName(menu_title));
+
     gtk_widget_set_name(title, "zmap-menu-title");
   }
+
+
   /* Note that we need the root window coords for the popup. */
   gtk_item_factory_popup(item_factory, (guint)button_event->x_root, (guint)button_event->y_root,
 			 button_event->button, button_event->time) ;
@@ -287,7 +297,14 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
 }
 
 
-/* Item Name strings must have the format "/item_name". */
+/* 
+ * The menu item/path stuff is complicated by the fact that some of the menu titles we wish
+ * to set have embedded '_' chars which have a special meaning to the item factory...sigh...
+ * This happens because gene names etc. often have '_' embedded in them.
+ */
+
+
+/* Normal Menu Item Name strings must have the format "/item_name". */
 static char *makeMenuItemName(char *string)
 {
   char *item_string ; 
@@ -295,6 +312,45 @@ static char *makeMenuItemName(char *string)
   zMapAssert(string && *string) ;
 
   item_string = g_strdup_printf("/%s", string) ;
+
+  return item_string ;
+}
+
+
+/* Menu titles are just like Item Name strings and must have the format "/menu_title",
+ * but quite often there are embedded '_' chars which will erroneously be interpretted
+ * as keyboard short cuts and so must be escaped by turning them into '__'.
+ */
+static char *makeMenuTitleName(char *string)
+{
+  char *item_string ; 
+  GString *tmp ;
+  char *cp ;
+  gssize pos ;
+
+  zMapAssert(string && *string) ;
+
+  tmp = g_string_new(NULL) ;
+
+  g_string_append_printf(tmp, "/%s", string) ;
+
+
+  /* Must always reset cp from our position in the string in case string gets relocated. */
+  pos = 1 ;						    /* No need to do the first char. */
+  cp = (tmp->str + pos) ;
+  while (*cp)
+    {
+      if (*cp == '_')
+	{
+	  tmp = g_string_insert_c(tmp, pos, '_') ;
+	  pos++ ;
+	}
+
+      pos++ ;
+      cp = (tmp->str + pos) ;
+    }
+
+  item_string = g_string_free(tmp, FALSE) ;
 
   return item_string ;
 }
