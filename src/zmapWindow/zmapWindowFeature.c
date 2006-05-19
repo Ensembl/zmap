@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 18 16:25 2006 (edgrif)
+ * Last edited: May 19 10:34 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.25 2006-05-18 15:36:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.26 2006-05-19 10:54:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,10 +48,12 @@ typedef struct
   ZMapWindow window;
   FooCanvasGroup *column;
 }processFeatureDataStruct, *processFeatureData;
+
+
 /* So we can redraw a featureset */
 static void drawEachFeature(GQuark key_id, gpointer data, gpointer user_data);
 
-static FooCanvasItem *drawparentfeature(FooCanvasGroup *parent,
+static FooCanvasItem *createParentGroup(FooCanvasGroup *parent,
                                         ZMapFeature feature,
                                         double y_origin) ;
 static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feature,
@@ -60,6 +62,7 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
 					GdkColor *outline,
                                         GdkColor *foreground,
                                         GdkColor *background,
+					guint line_width,
 					ZMapWindow window) ;
 static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					    double feature_offset,
@@ -68,6 +71,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 					    GdkColor *outline, 
                                             GdkColor *foreground,
                                             GdkColor *background,
+					    guint line_width,
 					    ZMapWindow window) ;
 static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature feature,
                                            double feature_offset,
@@ -76,6 +80,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                            GdkColor *outline, 
                                            GdkColor *foreground,
                                            GdkColor *background,
+					   guint line_width,
                                            ZMapWindow window) ;
 static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
                               double feature_offset,
@@ -350,6 +355,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   FooCanvasGroup *column_group ;
   FooCanvasItem *top_feature_item = NULL ;
   GdkColor *b, *f, *o;
+  guint line_width ;
   double feature_offset;
   double start_x, end_x ;
 
@@ -384,6 +390,9 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 
   zMapFeatureTypeGetColours(style, &b, &f, &o);
 
+  line_width = window->config.feature_line_width ;
+
+
   switch (feature->type)
     {
     case ZMAPFEATURE_BASIC:
@@ -392,6 +401,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 					     feature_offset,
 					     start_x, feature->x1, end_x, feature->x2,
 					     o, f, b,
+					     line_width,
 					     window) ;
 	break ;
       }
@@ -404,12 +414,14 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
                                                   feature_offset,
                                                   start_x, feature->x1, end_x, feature->x2,
                                                   o, f, b,
+						  line_width,
                                                   window);
         else
           top_feature_item = drawSimpleFeature(column_group, feature,
                                                feature_offset,
                                                start_x, feature->x1, end_x, feature->x2,
                                                o, f, b,
+					       line_width,
                                                window) ;
         break;
       }
@@ -447,6 +459,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 						 feature_offset,
 						 start_x, 0.0, end_x, 0.0,
 						 o, f, b,
+						 line_width,
                                                  window) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	zmapWindowPrintGroup(FOO_CANVAS_GROUP(feature_group)) ;
@@ -481,6 +494,30 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 }
 
 
+/* This is not a great function...a bit dumb really...but hard to make smarter as caller
+ * must make a number of decisions which we can't.... */
+char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyle style)
+{
+  char *description =  NULL ;
+
+  zMapAssert(feature_set_id && style) ;
+
+  description = g_strdup_printf("%s  :  %s%s%s", (char *)g_quark_to_string(feature_set_id),
+				style->description ? "\"" : "",
+				style->description ? style->description : "",
+				style->description ? "\"" : "") ;
+
+  return description ;
+}
+
+
+
+
+
+/* 
+ *                       Internal functions.
+ */
+
 
 static void printItem(gpointer data, gpointer user_data)
 {
@@ -501,17 +538,11 @@ static void printItem(gpointer data, gpointer user_data)
 
 
 
-/* 
- *                       Internal functions.
- */
-
-
-
 /* LONG ITEMS SHOULD BE INCORPORATED IN THIS LOT.... */
 /* some drawing functions, may want these to be externally visible later... */
 
 
-static FooCanvasItem *drawparentfeature(FooCanvasGroup *parent,
+static FooCanvasItem *createParentGroup(FooCanvasGroup *parent,
 					ZMapFeature feature,
 					double y_origin)
 {
@@ -539,6 +570,7 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
 					GdkColor *outline, 
                                         GdkColor *foreground,
                                         GdkColor *background,
+					guint line_width,
 					ZMapWindow window)
 {
   FooCanvasItem *feature_item ;
@@ -549,12 +581,16 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;
   feature_item = zMapDrawBox(FOO_CANVAS_ITEM(parent),
                              x1, y1, x2, y2,
-                             outline, background) ;
+                             outline, background, 0.0) ;
+
   attachDataToItem(feature_item, window, feature, ITEM_FEATURE_SIMPLE, NULL);
+
   zmapWindowLongItemCheck(window, feature_item, y1, y2) ;
 
   return feature_item ;
 }
+
+
 
 static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature feature,
                                            double feature_offset,
@@ -563,6 +599,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                            GdkColor *outline, 
                                            GdkColor *foreground,
                                            GdkColor *background,
+					   guint line_width,
                                            ZMapWindow window) 
 {
   FooCanvasItem *feature_item ;
@@ -572,19 +609,19 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
   if (!feature->feature.homol.align)
     feature_item = drawSimpleFeature(parent, feature, feature_offset,
                                      x1, feature_top, x2, feature_bottom,
-                                     outline, foreground, background, window) ;
+                                     outline, foreground, background, line_width, window) ;
   else if(feature->feature.homol.align)
     {
-      float line_width  = 1.5 ;
       double feature_start, feature_end;
       FooCanvasItem *lastBoxWeDrew   = NULL;
       FooCanvasGroup *feature_group  = NULL;
       ZMapAlignBlock prev_align_span = NULL;
+      double dimension = 1.5 ;
 
       feature_start = feature->x1;
       feature_end   = feature->x2; /* I want this function to find these values */
       zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
-      feature_item  = drawparentfeature(parent, feature, feature_start);
+      feature_item  = createParentGroup(parent, feature, feature_start);
       feature_group = FOO_CANVAS_GROUP(feature_item);
 
       /* Calculate total offset for for subparts of the feature. */
@@ -647,6 +684,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                           NULL,
                                           foreground,
                                           bottom,
+					  line_width,
                                           feature->strand);
                   /* we need to check here that the item hasn't been
                    * expanded to be too long! This will involve
@@ -665,6 +703,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                                   x1, x2,
                                                   top, bottom,
                                                   outline, background,
+						  line_width,
                                                   feature->strand);
                   zmapWindowLongItemCheck(window, align_box, top, bottom);              
                   attachDataToItem(align_box, window, feature, ITEM_FEATURE_CHILD, align_data);
@@ -684,6 +723,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                                    x1, x2,
                                                    bottom, top,
                                                    NULL,NULL,
+						   line_width,
                                                    feature->strand);
                   attachDataToItem(gap_line_box, window, feature, ITEM_FEATURE_BOUNDING_BOX, box_data);
                   zmapWindowLongItemCheck(window, gap_line_box, bottom, top);              
@@ -692,8 +732,9 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                                      ZMAP_ANNOTATE_GAP, 
                                                      NULL,
                                                      background,
+						     dimension,
                                                      line_width,
-                                                     feature->strand);
+						     feature->strand);
                   attachDataToItem(gap_line, window, feature, ITEM_FEATURE_CHILD, gap_data);
                   zmapWindowLongItemCheck(window, gap_line, bottom, top);
                   foo_canvas_item_lower(gap_line, 2);
@@ -709,6 +750,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                               x1, x2,
                                               top, bottom,
                                               outline, background,
+					      line_width,
                                               feature->strand);
               zmapWindowLongItemCheck(window, align_box, top, bottom) ;
               attachDataToItem(align_box, window, feature, ITEM_FEATURE_CHILD, align_data);
@@ -736,6 +778,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 					    GdkColor *outline, 
                                             GdkColor *foreground,
                                             GdkColor *background,
+					    guint line_width,
 					    ZMapWindow window)
 {
   FooCanvasItem *feature_item ;
@@ -749,7 +792,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
     {
       feature_item = drawSimpleFeature(parent, feature, feature_offset,
 				       x1, feature->x1, x2, feature->x2,
-				       outline, foreground, background, window) ;
+				       outline, foreground, background, line_width, window) ;
     }
   else
     {
@@ -763,7 +806,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
       
       zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
 
-      feature_item = drawparentfeature(parent, feature, feature_start);
+      feature_item = createParentGroup(parent, feature, feature_start);
       feature_group = FOO_CANVAS_GROUP(feature_item);
 
       /* Calculate total offset for subparts of the feature. */
@@ -790,8 +833,9 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
        * had a surrounding group.....e.g. what happens when we free ?? */
       if (feature->feature.transcript.introns)
 	{
-          float line_width = 1.5 ;
           GdkColor *orig_bg = background;
+          double dimension = 1.5 ;
+
 
           if(!feature->style->background_set && feature->style->outline_set)
             background = outline;
@@ -806,7 +850,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 	      intron_span = &g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i) ;
 
 	      left   = x1;
-	      right  = x2 - line_width ;
+	      right  = x2 - (double)line_width ;
               top    = intron_span->x1;
               bottom = intron_span->x2;
 
@@ -828,6 +872,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
                                              left, right,
                                              top, bottom,
                                              NULL, NULL,
+					     line_width,
                                              feature->strand);
               
               attachDataToItem(intron_box, window, feature, ITEM_FEATURE_BOUNDING_BOX, box_data);
@@ -844,6 +889,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
                                                     ZMAP_ANNOTATE_INTRON, 
                                                     NULL,
                                                     cds_bg,
+						    dimension,
                                                     line_width,
                                                     feature->strand);
               attachDataToItem(intron_line, window, feature, ITEM_FEATURE_CHILD, intron_data);
@@ -894,6 +940,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
                                            x1, x2,
                                            top, bottom,
                                            outline, cds_bg,
+					   line_width,
                                            feature->strand);
                 
               attachDataToItem(exon_box, window, feature, ITEM_FEATURE_CHILD, exon_data);
@@ -908,13 +955,14 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 		  if ((cds_start > top) && (cds_start <= bottom))
 		    {
 		      non_cds_box = zMapDrawAnnotatePolygon(exon_box,
-							(feature->strand == ZMAPSTRAND_REVERSE ? 
-							 ZMAP_ANNOTATE_UTR_LAST
-							 : ZMAP_ANNOTATE_UTR_FIRST),
-							outline,
-							background,
-							cds_start,
-							feature->strand) ;
+							    (feature->strand == ZMAPSTRAND_REVERSE ? 
+							     ZMAP_ANNOTATE_UTR_LAST
+							     : ZMAP_ANNOTATE_UTR_FIRST),
+							    outline,
+							    background,
+							    cds_start,
+							    line_width,
+							    feature->strand) ;
 
 		      if (non_cds_box)
 			{
@@ -936,10 +984,11 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 							(feature->strand == ZMAPSTRAND_REVERSE ? 
 							 ZMAP_ANNOTATE_UTR_FIRST
 							 : ZMAP_ANNOTATE_UTR_LAST),
-							outline,
-							background,
-							cds_end,
-							feature->strand) ;
+							    outline,
+							    background,
+							    cds_end,
+							    line_width,
+							    feature->strand) ;
 
 		      if (non_cds_box)
 			{
@@ -1051,7 +1100,7 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
   if(parent->item_list_end && (prev_trans = FOO_CANVAS_ITEM(parent->item_list_end->data)))
     foo_canvas_item_get_bounds(prev_trans, NULL, NULL, &new_x, NULL);
   
-  feature_parent = drawparentfeature(parent, feature, feature_start);
+  feature_parent = createParentGroup(parent, feature, feature_start);
 
   new_x += COLUMN_SPACING;
   my_foo_canvas_item_goto(feature_parent, &new_x, NULL);
@@ -1107,7 +1156,7 @@ static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
 
   zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
 
-  feature_parent = drawparentfeature(parent, feature, feature_start);
+  feature_parent = createParentGroup(parent, feature, feature_start);
 
   feature_set    = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
                                                              ZMAPFEATURE_STRUCT_FEATURESET);
