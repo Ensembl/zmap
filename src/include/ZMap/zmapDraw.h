@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: May  5 10:42 2006 (rds)
+ * Last edited: May 19 10:32 2006 (edgrif)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.29 2006-05-05 10:15:18 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.30 2006-05-19 10:46:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -149,12 +149,12 @@ typedef struct _ZMapDrawTextIteratorStruct
 
 
 FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
-			    GdkColor *colour, double thickness) ;
+			    GdkColor *colour, guint line_width) ;
 FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
-				GdkColor *colour, double thickness) ;
+				GdkColor *colour, guint line_width) ;
 FooCanvasItem *zMapDrawBox(FooCanvasItem *group, 
 			   double x1, double y1, double x2, double y2, 
-			   GdkColor *line_colour, GdkColor *fill_colour) ;
+			   GdkColor *line_colour, GdkColor *fill_colour, guint line_width) ;
 FooCanvasItem *zMapDrawSolidBox(FooCanvasItem *group, 
 				double x1, double y1, double x2, double y2, 
 				GdkColor *fill_colour) ;
@@ -163,13 +163,14 @@ FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 
 FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
                                  double x1, double y1, double x2, double y2, 
-                                 GdkColor *border, GdkColor *fill, int zmapStrand);
+                                 GdkColor *border, GdkColor *fill, guint line_width, int zmapStrand);
 
 FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon, 
                                        ZMapAnnotateForm form,
                                        GdkColor *border,
                                        GdkColor *fill,
                                        double thickness,
+				       guint line_width,
                                        int zmapStrand);
 
 FooCanvasItem *zMapDrawScale(FooCanvas *canvas, 

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 12 16:38 2006 (rds)
+ * Last edited: May 19 08:27 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.17 2006-05-15 17:37:50 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.18 2006-05-19 10:46:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,7 +59,7 @@ static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data
 
 
 /* Create a new type for displaying features. */
-ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
+ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
 					   char *outline, char *foreground, char *background,
 					   double width)
 {
@@ -90,6 +90,9 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
   new_type->original_id = g_quark_from_string(name) ;
   new_type->unique_id = zMapStyleCreateID(name_lower) ;
   g_free(name_lower) ;
+
+  if (description)
+    new_type->description = g_strdup(description) ;
 
   if(outline && *outline)
     {
@@ -145,6 +148,25 @@ void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_
 
   return ;
 }
+
+
+/* Controls whether the feature set is displayed initially. */
+void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially)
+{
+  zMapAssert(style) ;
+
+  style->hide_initially = hide_initially ;
+
+  return ;
+}
+
+gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style)
+{
+  zMapAssert(style) ;
+
+  return style->hide_initially ;
+}
+
 
 
 
@@ -318,6 +340,9 @@ ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type)
   new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
   *new_type = *type ;					    /* n.b. struct copy. */
 
+  if (type->description)
+    new_type->description = g_strdup(type->description) ;
+
   return new_type ;
 }
 
@@ -338,6 +363,9 @@ char *zMapStyleGetName(ZMapFeatureTypeStyle style)
 void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type)
 {
   zMapAssert(type) ;
+
+  if (type->description)
+    g_free(type->description) ;
 
   g_free(type) ;
 
@@ -402,6 +430,7 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
       ZMapConfigStanza types_stanza ;
       ZMapConfigStanzaElementStruct types_elements[]
 	= {{"name"        , ZMAPCONFIG_STRING, {NULL}},
+	   {"description" , ZMAPCONFIG_STRING, {NULL}},
 	   {"outline"     , ZMAPCONFIG_STRING, {NULL}},
 	   {"foreground"  , ZMAPCONFIG_STRING, {NULL}},
 	   {"background"  , ZMAPCONFIG_STRING, {NULL}},
@@ -454,6 +483,7 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 #endif /* RDS_DONT_INCLUDE */
 
 	      new_type = zMapFeatureTypeCreate(name,
+					       zMapConfigGetElementString(next_types, "description"),
 					       zMapConfigGetElementString(next_types, "outline"),
 					       zMapConfigGetElementString(next_types, "foreground"),
 					       zMapConfigGetElementString(next_types, "background"),
@@ -472,7 +502,7 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 
               /* Not good to hard code the TRUE here, but I guess blixem requires the gaps array. */
               zMapStyleSetGappedAligns(new_type, 
-                                       zMapConfigGetElementString(next_types, "gapped_align"),
+                                       zMapConfigGetElementBool(next_types, "gapped_align"),
                                        TRUE);
 
 	      types = g_list_append(types, new_type) ;

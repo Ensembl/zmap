@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May 12 15:21 2006 (rds)
+ * Last edited: May 19 08:21 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.65 2006-05-15 17:39:04 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.66 2006-05-19 10:46:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -615,7 +615,7 @@ ZMapFeatureAny zMapFeatureGetGroup(ZMapFeatureAny any_feature, ZMapFeatureStruct
 /* Style functions. */
 
 GList *zMapStylesGetNames(GList *styles) ;
-ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name,
+ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
 					   char *outline, char *foreground, char *background,
 					   double width) ;
 void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;
@@ -623,6 +623,8 @@ void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_
 void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean strand_specific, gboolean frame_specific,
 			     gboolean show_rev_strand) ;
+void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially) ;
+gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, 
                               gboolean show_gaps,

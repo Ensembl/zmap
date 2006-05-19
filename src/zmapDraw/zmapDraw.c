@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: May  5 10:43 2006 (rds)
+ * Last edited: May 19 10:37 2006 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.48 2006-05-05 10:15:18 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.49 2006-05-19 10:46:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,7 +79,8 @@ FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
  * centred on the edge of the rectangle. */
 FooCanvasItem *zMapDrawBox(FooCanvasItem *group, 
 			   double x1, double y1, double x2, double y2, 
-			   GdkColor *border_colour, GdkColor *fill_colour)
+			   GdkColor *border_colour, GdkColor *fill_colour,
+			   guint line_width)
 {
   FooCanvasItem *item = NULL ;
 
@@ -89,6 +90,7 @@ FooCanvasItem *zMapDrawBox(FooCanvasItem *group,
 			     "x2", x2, "y2", y2,
 			     "outline_color_gdk", border_colour,
 			     "fill_color_gdk", fill_colour,
+			     "width_pixels", line_width,
 			     NULL) ;
 
   return item;                                                                       
@@ -105,6 +107,7 @@ FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon,
                                        GdkColor *border,
                                        GdkColor *fill,
                                        double dimension, /* we might need another one */
+				       guint line_width,
                                        int zmapStrand)
 {
   FooCanvasItem   *item  = NULL;
@@ -253,18 +256,20 @@ FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon,
                                annItemType,
                                "points", final,
                                "fill_color_gdk", fill,
-                               "width_units", dimension,
+                               "width_pixels", line_width,
                                "join_style", GDK_JOIN_BEVEL,
                                "cap_style", GDK_CAP_BUTT,
-                               NULL);
+                               NULL) ;
   else if(annItemType == foo_canvas_polygon_get_type())
     item = foo_canvas_item_new(FOO_CANVAS_GROUP(polygon->parent),
                                annItemType,
                                "points", final,
                                "outline_color_gdk", border,
                                "fill_color_gdk", fill,
-                               NULL);
-  return item;
+                               "width_pixels", line_width,
+                               NULL) ;
+
+  return item ;
 }
 
 /* zMapDrawSSPolygon = draw a Strand Sensitive Polygon */
@@ -279,7 +284,9 @@ FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon,
 FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
                                  double fwidthA, double fwidthB, 
                                  double fstart, double fend, 
-                                 GdkColor *border, GdkColor *fill, int zmapStrand)
+                                 GdkColor *border, GdkColor *fill,
+				 guint line_width,
+				 int zmapStrand)
 {
   FooCanvasItem   *item   = NULL;
   FooCanvasPoints *points = NULL;
@@ -557,6 +564,7 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
                              "points", points,
 			     "outline_color_gdk", border,
 			     "fill_color_gdk", fill,
+			     "width_pixels", line_width,
 			     NULL) ;
   /* We Should be doing the long item check here! but we don't get access to that :( */
   /* Mainly cos we know the longest distance here and don't want to pass it elsewhere */
@@ -593,7 +601,7 @@ FooCanvasItem *zMapDrawSolidBox(FooCanvasItem *group,
 /* It may be good not to specify a width here as well (see zMapDrawBox) but I haven't
  * experimented yet. */
 FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
-			    GdkColor *colour, double thickness)
+			    GdkColor *colour, guint line_width)
 {
   FooCanvasItem *item = NULL ;
   FooCanvasPoints *points ;
@@ -612,7 +620,7 @@ FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double 
 			     foo_canvas_line_get_type(),
 			     "points", points,
 			     "fill_color_gdk", colour,
-			     "width_units", thickness,
+			     "width_pixels", line_width,
 			     NULL);
 		    
   /* free the points array */
@@ -625,7 +633,7 @@ FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double 
 /* It may be good not to specify a width here as well (see zMapDrawBox) but I haven't
  * experimented yet. */
 FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
-				GdkColor *colour, double thickness)
+				GdkColor *colour, guint line_width)
 {
   FooCanvasItem *item = NULL ;
 
@@ -634,13 +642,17 @@ FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
 			     foo_canvas_line_get_type(),
 			     "points", points,
 			     "fill_color_gdk", colour,
-			     "width_units", thickness,
+			     "width_pixels", line_width,
 			     "join_style", GDK_JOIN_BEVEL,
 			     "cap_style", GDK_CAP_BUTT,
 			     NULL);
 		    
   return item ;
 }
+
+
+/* WE PROBABLY SHOULDN'T USE THE WIDTH PIXELS BELOW AS IT RESULTS IN SLOWER DRAWING, TRY
+ * REMOVING AT SOME TIME.... */
 
 /* We use the canvas, get the root group and create it there so we can
  * raise to top and always see it. It'll hide behind widgets though,
