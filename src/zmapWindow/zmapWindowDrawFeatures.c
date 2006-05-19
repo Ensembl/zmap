@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 19 13:08 2006 (edgrif)
+ * Last edited: May 19 17:58 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.129 2006-05-19 16:02:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.130 2006-05-19 17:24:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -973,10 +973,20 @@ static void positionColumnCB(gpointer data, gpointer user_data)
 static void hackAHighlightColumn(ZMapWindow window, FooCanvasItem *column)
 {
 
-  if(window->focusColumn)
+  if (window->focusColumn)
     {
+      ZMapStrand strand ;
+      GdkColor *background ;
+
+      strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column), ITEM_FEATURE_STRAND)) ;
+
+      if (strand == ZMAPSTRAND_FORWARD)
+	background = &(window->colour_mforward_col) ;
+      else
+	background = &(window->colour_mreverse_col) ;
+
       foo_canvas_item_set(window->focusColumn,
-                          "fill_color_gdk", &(window->canvas_background),
+                          "fill_color_gdk", background,
                           NULL) ;
     }
 
@@ -1184,7 +1194,7 @@ static void setColours(ZMapWindow window)
   ZMapConfigStanzaElementStruct colour_elements[]
     = {{"colour_root", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
        {"colour_alignment", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
-       {"colour_block", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
+       {"colour_block", ZMAPCONFIG_STRING, {ZMAP_WINDOW_STRAND_DIVIDE_COLOUR}},
        {"colour_m_forward", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_F_BG}},
        {"colour_m_reverse", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_R_BG}},
        {"colour_q_forward", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_F_BG}},

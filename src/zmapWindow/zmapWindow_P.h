@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May 19 11:42 2006 (edgrif)
+ * Last edited: May 19 18:16 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.118 2006-05-19 10:58:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.119 2006-05-19 17:24:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -557,7 +557,8 @@ void zmapWindowColumnWriteDNA(ZMapWindow window,
 
 void zmapWindowColumnSetMagState(ZMapWindow window,
 				 FooCanvasGroup *col_group, ZMapFeatureTypeStyle style) ;
-
+void zmapWindowColumnHide(FooCanvasGroup *column_group) ;
+void zmapWindowColumnShow(FooCanvasGroup *column_group) ;
 
 
 void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,

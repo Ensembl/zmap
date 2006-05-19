@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 19 16:45 2006 (rds)
+ * Last edited: May 19 18:21 2006 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.5 2006-05-19 15:47:04 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.6 2006-05-19 17:24:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -410,9 +410,13 @@ static void showButCB(GtkToggleButton *togglebutton, gpointer user_data)
   but_pressed = gtk_toggle_button_get_active(togglebutton) ;
 
   if (but_pressed)
-    foo_canvas_item_show(FOO_CANVAS_ITEM(button_data->column_group)) ;
+    {
+      zmapWindowColumnShow(button_data->column_group) ;
+    }
   else
-    foo_canvas_item_hide(FOO_CANVAS_ITEM(button_data->column_group)) ;
+    {
+      zmapWindowColumnHide(button_data->column_group) ;
+    }
 
   zmapWindowNewReposition(button_data->window) ;
 

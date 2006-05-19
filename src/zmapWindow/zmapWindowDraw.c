@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 17 10:26 2006 (edgrif)
+ * Last edited: May 19 18:20 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.22 2006-05-18 15:19:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.23 2006-05-19 17:24:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -134,20 +134,45 @@ void zmapWindowColumnSetMagState(ZMapWindow window,
 
       if ((style->min_mag && curr_zoom < style->min_mag)
 	  || (style->max_mag && curr_zoom > style->max_mag))
-	foo_canvas_item_hide(FOO_CANVAS_ITEM(col_group)) ;
+	{
+	  zmapWindowColumnHide(col_group) ;
+	}
       else
 	{
-	  foo_canvas_item_show(FOO_CANVAS_ITEM(col_group)) ;
-
-	  /* A little gotcha here....if you make something visible its background may not
-	   * be big enough because if it was always hidden we will not have been able to
-	   * get the groups size... */
-	  zmapWindowContainerSetBackgroundSize(col_group, 0.0) ;
+	  zmapWindowColumnShow(col_group) ;
 	}
     }
 
   return ;
 }
+
+
+/* Probably these should make better use of the containers... */
+void zmapWindowColumnHide(FooCanvasGroup *column_group)
+{
+  zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
+
+  foo_canvas_item_hide(FOO_CANVAS_ITEM(column_group)) ;
+
+  return ;
+}
+
+void zmapWindowColumnShow(FooCanvasGroup *column_group)
+{
+  zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
+
+  foo_canvas_item_show(FOO_CANVAS_ITEM(column_group)) ;
+
+  /* A little gotcha here....if you make something visible its background may not
+   * be big enough because if it was always hidden we will not have been able to
+   * get the groups size... */
+  zmapWindowContainerSetBackgroundSize(column_group, 0.0) ;
+
+  return ;
+}
+
+
+
 
 
 
