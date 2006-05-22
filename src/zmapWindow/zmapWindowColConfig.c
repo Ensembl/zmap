@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 19 18:21 2006 (edgrif)
+ * Last edited: May 22 14:23 2006 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.6 2006-05-19 17:24:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.7 2006-05-22 13:29:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,15 +36,21 @@
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
 
+#define CONF_DATA "col_data"
 typedef struct
 {
   ZMapWindow window ;
-  GtkWidget *toplevel ;
 
+  /* It's possible for the user to reset a columns state without using the column config. window,
+   * if this happens we need to update the state in the column config window to match the true
+   * column state. */
+  GList *forward_button_list ;
+  GList *reverse_button_list ;
 
 } ColConfigureStruct, *ColConfigure ;
 
 
+#define BUTTON_DATA "button_data"
 typedef struct
 {
   ZMapWindow window ;
@@ -53,17 +59,17 @@ typedef struct
 
 
 static GtkWidget *makeMenuBar(ColConfigure search_data) ;
-static GtkWidget *makeColsPanel(ColConfigure search_data, char *frame_title, GList *column_groups) ;
+static GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title,
+				GList *column_groups, GList **button_list_out) ;
 static void makeColList(ZMapWindow window, GList **forward_cols, GList **reverse_cols) ;
 static void getSetGroupCB(gpointer data, gpointer user_data) ;
 static void colConfigure(ZMapWindow window, GList *forward_cols, GList *reverse_cols) ;
-void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode configure_mode,
-		     FooCanvasGroup *column_group) ;
+static void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode configure_mode,
+			    FooCanvasGroup *column_group) ;
 
-
-static void quitCB(GtkWidget *widget, gpointer cb_data) ;
+static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
+static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void applyCB(GtkWidget *widget, gpointer cb_data) ;
-static void quitMenuCB(gpointer data, guint callback_action, GtkWidget *widget) ;
 static void noHelpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void showButCB(GtkToggleButton *togglebutton, gpointer user_data) ;
 static void killButCB(GtkToggleButton *togglebutton, gpointer user_data) ;
@@ -71,11 +77,22 @@ static void killButCB(GtkToggleButton *togglebutton, gpointer user_data) ;
 static void selectAllButtons(GtkWidget *button, gpointer user_data);
 static void unselectAllButtons(GtkWidget *button, gpointer user_data);
 static void allButtonsToggleCB(gpointer data, gpointer user_data);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void freeButtonList(gpointer data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+static void changeButtonState(GtkWidget *toplevel,
+			      FooCanvasGroup *column_group, ZMapWindowColConfigureMode configure_mode) ;
+static gint findGroupCB(gconstpointer a, gconstpointer b) ;
+
+
+
 
 static GtkItemFactoryEntry menu_items_G[] = {
  { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
- { "/File/Close",      "<control>C",  quitMenuCB,    0, NULL,            NULL},
+ { "/File/Close",      "<control>W",  requestDestroyCB,    0, NULL,            NULL},
  { "/_Help",           NULL,          NULL,          0, "<LastBranch>",  NULL},
  { "/Help/One",        NULL,          noHelpCB,      0, NULL,            NULL}
 };
@@ -83,7 +100,8 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 
 
-/* Trivial cover function, note subtle change of case in name from internal function... */
+/* Trivial cover function, this is the external interface, zmapWindowColumnConfigure() is the
+ * internal function which actually does the work. */
 void zMapWindowColumnConfigure(ZMapWindow window)
 {
   zmapWindowColumnConfigure(window, NULL, ZMAPWWINDOWCOLUMN_CONFIGURE_ALL) ;
@@ -92,21 +110,28 @@ void zMapWindowColumnConfigure(ZMapWindow window)
 }
 
 
+
 /* Note that column_group is not looked at for configuring all columns. */
 void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 			       ZMapWindowColConfigureMode configure_mode)
 {
 
+
   switch (configure_mode)
     {
+
+      /* this bit is not so simple....if there is a column window shown it needs to be updated. */
     case ZMAPWWINDOWCOLUMN_HIDE:
     case ZMAPWWINDOWCOLUMN_SHOW:
       simpleConfigure(window, configure_mode, column_group) ;
       break ;
+
     case ZMAPWWINDOWCOLUMN_CONFIGURE:
     case ZMAPWWINDOWCOLUMN_CONFIGURE_ALL:
       {
 	GList *forward_columns = NULL, *reverse_columns = NULL  ;
+
+	zmapWindowColumnConfigureDestroy(window) ;
 
 	if (configure_mode == ZMAPWWINDOWCOLUMN_CONFIGURE)
 	  {
@@ -144,17 +169,38 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 }
 
 
+/* Destroy the column configuration window if there is one. */
+void zmapWindowColumnConfigureDestroy(ZMapWindow window)
+{
+  if (window->col_config_window)
+    gtk_widget_destroy(window->col_config_window) ;
 
-void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode configure_mode,
-		     FooCanvasGroup *column_group)
+  return ;
+}
+
+
+
+
+
+
+/*
+ *                 Internal functions
+ */
+
+
+static void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode configure_mode,
+			    FooCanvasGroup *column_group)
 {
 
   if (configure_mode == ZMAPWWINDOWCOLUMN_HIDE)
-    foo_canvas_item_hide(FOO_CANVAS_ITEM(column_group)) ;
+    zmapWindowColumnHide(column_group) ;
   else
-    foo_canvas_item_show(FOO_CANVAS_ITEM(column_group)) ;
+    zmapWindowColumnShow(column_group) ;
 
   zmapWindowNewReposition(window) ;
+
+  if (window->col_config_window)
+    changeButtonState(window->col_config_window, column_group, configure_mode) ;
 
   return ;
 }
@@ -174,9 +220,10 @@ static void colConfigure(ZMapWindow window, GList *forward_cols, GList *reverse_
   configure_data->window = window ;
 
   /* set up the top level window */
-  configure_data->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+  configure_data->window->col_config_window =  toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   g_signal_connect(GTK_OBJECT(toplevel), "destroy",
-		   GTK_SIGNAL_FUNC(quitCB), (gpointer)configure_data) ;
+		   GTK_SIGNAL_FUNC(destroyCB), (gpointer)configure_data) ;
+  g_object_set_data(G_OBJECT(toplevel), CONF_DATA, configure_data) ;
   
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   title = zMapGUIMakeTitleString("Column configuration",
@@ -195,12 +242,13 @@ static void colConfigure(ZMapWindow window, GList *forward_cols, GList *reverse_
 
   if (reverse_cols)
     {
-      cols = makeColsPanel(configure_data, "Reverse", reverse_cols) ;
+      cols = makeColsPanel(window, "Reverse", reverse_cols, &(configure_data->reverse_button_list)) ;
       gtk_box_pack_start(GTK_BOX(hbox), cols, TRUE, TRUE, 0) ;
     }
+
   if (forward_cols)
     {
-      cols = makeColsPanel(configure_data, "Forward", forward_cols) ;
+      cols = makeColsPanel(window, "Forward", forward_cols, &(configure_data->forward_button_list)) ;
       gtk_box_pack_start(GTK_BOX(hbox), cols, TRUE, TRUE, 0) ;
     }
 
@@ -238,11 +286,6 @@ static void colConfigure(ZMapWindow window, GList *forward_cols, GList *reverse_
 }
 
 
-/*
- *                 Internal functions
- */
-
-
 GtkWidget *makeMenuBar(ColConfigure configure_data)
 {
   GtkAccelGroup *accel_group;
@@ -257,7 +300,7 @@ GtkWidget *makeMenuBar(ColConfigure configure_data)
   gtk_item_factory_create_items(item_factory, nmenu_items, menu_items_G,
 				(gpointer)configure_data) ;
 
-  gtk_window_add_accel_group(GTK_WINDOW(configure_data->toplevel), accel_group) ;
+  gtk_window_add_accel_group(GTK_WINDOW(configure_data->window->col_config_window), accel_group) ;
 
   menubar = gtk_item_factory_get_widget(item_factory, "<main>");
 
@@ -265,13 +308,12 @@ GtkWidget *makeMenuBar(ColConfigure configure_data)
 }
 
 
-GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *columns_list)
+GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *columns_list,
+			 GList **button_list_out)
 {
   GtkWidget *cols_panel, *frame, *column_box ;
-  ZMapWindow window = configure_data->window ;
-  /*  ZMapFeatureContext context = window->feature_context ; */
-  GList *column, *button_list = NULL;
-  gboolean select_all_buttons = TRUE;
+  GList *column = NULL ;
+  GList *button_list = NULL ;
 
   cols_panel = frame = gtk_frame_new(frame_title) ;
   gtk_container_set_border_width(GTK_CONTAINER(frame), 
@@ -279,7 +321,6 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *
 
   column_box = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(frame), column_box) ;
-
 
   column = g_list_first(columns_list) ;
   do
@@ -300,17 +341,20 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *
       col_box = gtk_hbox_new(FALSE, 0) ;
       gtk_box_pack_start(GTK_BOX(column_box), col_box, TRUE, TRUE, 0);
 
-      col_visible = zmapWindowItemIsShown(FOO_CANVAS_ITEM(column_group)) ;
       button = gtk_check_button_new_with_label(g_quark_to_string(style->original_id)) ;
 
-      button_list = g_list_prepend(button_list, button);
+      button_list = g_list_prepend(button_list, button) ;
 
+      col_visible = zmapWindowItemIsShown(FOO_CANVAS_ITEM(column_group)) ;
       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), col_visible) ;
       gtk_box_pack_start(GTK_BOX(col_box), button, TRUE, TRUE, 0) ;
       g_signal_connect(GTK_OBJECT(button), "toggled",
 		       GTK_SIGNAL_FUNC(showButCB), (gpointer)button_data) ;
       g_signal_connect(GTK_OBJECT(button), "destroy",
 		       GTK_SIGNAL_FUNC(killButCB), (gpointer)button_data) ;
+      g_object_set_data(G_OBJECT(button), BUTTON_DATA, button_data) ;
+
+      /* Need to add button data here.... */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Not needed yet.... */
@@ -323,7 +367,9 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *
     }
   while ((column = g_list_next(column))) ;
 
-  if(select_all_buttons)
+
+  /* We don't need this for a single column. */
+  if (g_list_length(columns_list) > 1)
     {
       GtkWidget *button_box, *button;
       button_box = gtk_hbutton_box_new();
@@ -337,11 +383,15 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *
        * too much redrawing occurs....
        */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       g_signal_connect_data(G_OBJECT(button), "clicked",
                             G_CALLBACK(selectAllButtons), 
                             (gpointer)button_list,
                             (GClosureNotify)freeButtonList,
                             0);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   
       button = gtk_button_new_with_label("Unselect All");
       gtk_box_pack_end(GTK_BOX(button_box), button, FALSE, FALSE, 0);
@@ -351,20 +401,16 @@ GtkWidget *makeColsPanel(ColConfigure configure_data, char *frame_title, GList *
                             (gpointer)button_list, 
                             NULL, 0) ;
     }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   else
     g_list_free(button_list);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* Return the list of buttons. */
+  *button_list_out = button_list ;
 
   return cols_panel ;
-}
-
-
-static void quitMenuCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
-{
-
-  /* To avoid lots of destroys we call our other quit routine. */
-  quitCB(widget, cb_data) ;
-
-  return ;
 }
 
 
@@ -377,18 +423,37 @@ static void noHelpCB(gpointer data, guint callback_action, GtkWidget *w)
 }
 
 
-
-static void quitCB(GtkWidget *widget, gpointer cb_data)
+/* requests window destroy, ends up with gtk calling destroyCB(). */
+static void requestDestroyCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 {
   ColConfigure configure_data = (ColConfigure)cb_data ;
 
-  gtk_widget_destroy(configure_data->toplevel) ;
+  gtk_widget_destroy(configure_data->window->col_config_window) ;
+
+  return ;
+}
+
+
+static void destroyCB(GtkWidget *widget, gpointer cb_data)
+{
+  ColConfigure configure_data = (ColConfigure)cb_data ;
+
+  configure_data->window->col_config_window = NULL ;
+
+  if (configure_data->forward_button_list)
+    g_list_free(configure_data->forward_button_list) ;
+  if (configure_data->reverse_button_list)
+    g_list_free(configure_data->reverse_button_list) ;
+
+  g_free(configure_data) ;
 
   return ;
 }
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
 #ifdef RDS_DONT_INCLUDE_UNUSED
@@ -399,6 +464,8 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -406,6 +473,7 @@ static void showButCB(GtkToggleButton *togglebutton, gpointer user_data)
 {
   ButData button_data = (ButData)user_data ;
   gboolean but_pressed ;
+
 
   but_pressed = gtk_toggle_button_get_active(togglebutton) ;
 
@@ -539,6 +607,11 @@ static void allButtonsToggleCB(gpointer data, gpointer user_data)
 
   return ;
 }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* I don't think this is needed now.... */
 static void freeButtonList(gpointer data)
 {
   GList *list = (GList *)data;
@@ -547,3 +620,56 @@ static void freeButtonList(gpointer data)
   
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+/* Finds the button which represents column_group and sets its state to match configure_mode. */
+static void changeButtonState(GtkWidget *toplevel,
+			      FooCanvasGroup *column_group, ZMapWindowColConfigureMode configure_mode)
+{
+  ColConfigure configure_data ;
+  GList *button_el = NULL ;
+  GtkWidget *button ;
+  gboolean col_visible ;
+
+  configure_data = g_object_get_data(G_OBJECT(toplevel), CONF_DATA) ;
+
+  if (!(button_el = g_list_find_custom(configure_data->forward_button_list,
+				       column_group,
+				       findGroupCB)))
+    button_el = g_list_find_custom(configure_data->reverse_button_list,
+				   column_group,
+				   findGroupCB) ;
+  zMapAssert(button_el) ;
+
+  button = button_el->data ;
+
+  if (configure_mode == ZMAPWWINDOWCOLUMN_HIDE)
+    col_visible = FALSE ;
+  else
+    col_visible = TRUE ;
+
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), col_visible) ;
+
+  return ;
+}
+
+
+/* A  GCompareFunc() to look for the canvas group attached to a button. */
+static gint findGroupCB(gconstpointer a, gconstpointer b)
+{
+  gint result = -1 ;
+  GtkWidget *button = (GtkWidget *)a ;
+  FooCanvasGroup *column_group = (FooCanvasGroup *)b ;
+  ButData button_data ;
+
+  button_data = g_object_get_data(G_OBJECT(button), BUTTON_DATA) ;
+
+  if (button_data->column_group == column_group)
+    result = 0 ;
+
+  return result ;
+}
+
