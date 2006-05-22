@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 17 17:49 2006 (rds)
+ * Last edited: May 19 21:45 2006 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.9 2006-05-17 16:53:13 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.10 2006-05-22 09:26:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,7 +76,7 @@ G_STMT_START{                                                      \
 /*!
  * \brief A XML element object
  */
-typedef struct _zmapXMLElementStruct   *zmapXMLElement;
+typedef struct _zmapXMLElementStruct   *ZMapXMLElement;
 typedef struct _zmapXMLElementStruct 
 {
   gboolean dirty;               /* internal flag */
@@ -84,7 +84,7 @@ typedef struct _zmapXMLElementStruct
   GString *contents;            /* contents <first>This is content</first> */
   GList   *attributes;          /* zmapXMLAttribute list */
 
-  zmapXMLElement parent;        /* parent element */
+  ZMapXMLElement parent;        /* parent element */
   GList   *children;            /* child elements */
 } zmapXMLElementStruct;
 
@@ -99,9 +99,9 @@ typedef struct _zmapXMLElementStruct
  * \brief Opaque XML parser object
  *
  */
-typedef struct _zmapXMLAttributeStruct *zmapXMLAttribute;
-typedef struct _zmapXMLDocumentStruct  *zmapXMLDocument;
-typedef struct _zmapXMLParserStruct    *zmapXMLParser;
+typedef struct _zmapXMLAttributeStruct *ZMapXMLAttribute;
+typedef struct _zmapXMLDocumentStruct  *ZMapXMLDocument;
+typedef struct _zmapXMLParserStruct    *ZMapXMLParser;
 
 /*!
  * \brief XML object handler.
@@ -121,7 +121,7 @@ typedef struct _zmapXMLParserStruct    *zmapXMLParser;
 
  */
 typedef gboolean 
-(*ZMapXMLMarkupObjectHandler)(void *userData, zmapXMLElement element, zmapXMLParser parser);
+(*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 
 /*!
  * \brief Small struct to link element names to their handlers
@@ -140,84 +140,84 @@ typedef struct ZMapXMLObjTagFunctionsStruct_
  * \brief get an attribute's value
  * \param attribute
  */
-GQuark zMapXMLAttribute_getValue(zmapXMLAttribute attr);
+GQuark zMapXMLAttributeGetValue(ZMapXMLAttribute attr);
 
 
 
 /* DOCUMENTS */
-zmapXMLDocument zMapXMLDocument_create(const XML_Char *version,
+ZMapXMLDocument zMapXMLDocumentCreate(const XML_Char *version,
                                        const XML_Char *encoding,
                                        int standalone);
-void zMapXMLDocument_setRoot(zmapXMLDocument doc,
-                              zmapXMLElement root);
-char *zMapXMLDocument_version(zmapXMLDocument doc);
-char *zMapXMLDocument_encoding(zmapXMLDocument doc);
-gboolean zMapXMLDocument_isStandalone(zmapXMLDocument doc);
-void zMapXMLDocument_reset(zmapXMLDocument doc);
-void zMapXMLDocument_destroy(zmapXMLDocument doc);
+void zMapXMLDocumentSetRoot(ZMapXMLDocument doc,
+                              ZMapXMLElement root);
+char *zMapXMLDocumentVersion(ZMapXMLDocument doc);
+char *zMapXMLDocumentEncoding(ZMapXMLDocument doc);
+gboolean zMapXMLDocumentIsStandalone(ZMapXMLDocument doc);
+void zMapXMLDocumentReset(ZMapXMLDocument doc);
+void zMapXMLDocumentDestroy(ZMapXMLDocument doc);
 
 
 
 /* ELEMENTS */
-zmapXMLElement zMapXMLElement_nextSibling(zmapXMLElement ele);
-zmapXMLElement zMapXMLElement_previousSibling(zmapXMLElement ele);
+ZMapXMLElement zMapXMLElementNextSibling(ZMapXMLElement ele);
+ZMapXMLElement zMapXMLElementPreviousSibling(ZMapXMLElement ele);
 
-zmapXMLElement zMapXMLElement_getChildByPath(zmapXMLElement parent,
+ZMapXMLElement zMapXMLElementGetChildByPath(ZMapXMLElement parent,
                                              char *path);
 
-zmapXMLElement zMapXMLElement_getChildByName(zmapXMLElement parent,
+ZMapXMLElement zMapXMLElementGetChildByName(ZMapXMLElement parent,
                                              char *name);
-zmapXMLElement zMapXMLElement_getChildByName1(zmapXMLElement parent,
+ZMapXMLElement zMapXMLElementGetChildByName1(ZMapXMLElement parent,
                                               GQuark name);
-GList *zMapXMLElement_getChildrenByName(zmapXMLElement parent,
+GList *zMapXMLElementGetChildrenByName(ZMapXMLElement parent,
                                         GQuark name,
                                         int expect);
-zmapXMLAttribute zMapXMLElement_getAttributeByName(zmapXMLElement ele,
+ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele,
                                                    char *name);
-zmapXMLAttribute zMapXMLElement_getAttributeByName1(zmapXMLElement ele,
+ZMapXMLAttribute zMapXMLElementGetAttributeByName1(ZMapXMLElement ele,
                                                     GQuark name);
 
 
 /* PARSER */
-zmapXMLParser zMapXMLParser_create(void *userData, gboolean validating, gboolean debug);
+ZMapXMLParser zMapXMLParserCreate(void *userData, gboolean validating, gboolean debug);
 
-void zMapXMLParser_setMarkupObjectHandler(zmapXMLParser parser, 
-                                          ZMapXMLMarkupObjectHandler start,
-                                          ZMapXMLMarkupObjectHandler end);
-void zMapXMLParser_setMarkupObjectTagHandlers(zmapXMLParser parser,
-                                              ZMapXMLObjTagFunctions starts,
-                                              ZMapXMLObjTagFunctions end);
+void zMapXMLParserSetMarkupObjectHandler(ZMapXMLParser parser, 
+                                         ZMapXMLMarkupObjectHandler start,
+                                         ZMapXMLMarkupObjectHandler end);
+void zMapXMLParserSetMarkupObjectTagHandlers(ZMapXMLParser parser,
+                                             ZMapXMLObjTagFunctions starts,
+                                             ZMapXMLObjTagFunctions end);
 
-gboolean zMapXMLParser_parseFile(zmapXMLParser parser,
-                                  FILE *file);
-gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser, 
-                                    void *data, 
-                                    int size);
-char *zMapXMLParser_lastErrorMsg(zmapXMLParser parser);
+gboolean zMapXMLParserParseFile(ZMapXMLParser parser,
+                                FILE *file);
+gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser, 
+                                  void *data, 
+                                  int size);
+char *zMapXMLParserLastErrorMsg(ZMapXMLParser parser);
 
-void zMapXMLParserRaiseParsingError(zmapXMLParser parser, 
+void zMapXMLParserRaiseParsingError(ZMapXMLParser parser, 
                                     char *error_string);
 
-zmapXMLElement zMapXMLParser_getRoot(zmapXMLParser parser);
+ZMapXMLElement zMapXMLParserGetRoot(ZMapXMLParser parser);
 
-gboolean zMapXMLParser_reset(zmapXMLParser parser);
-void zMapXMLParser_destroy(zmapXMLParser parser);
+gboolean zMapXMLParserReset(ZMapXMLParser parser);
+void zMapXMLParserDestroy(ZMapXMLParser parser);
 
 
-/* Expat stuff we need to be able to get hold of given a zmapXMLParser
+/* Expat stuff we need to be able to get hold of given a ZMapXMLParser
  * when that type is opaque. e.g. in handlers */
 /*!
  * \brief calls XML_GetBase assuming parser is valid
  * \param parser
  * \retval char * as XML_GetBase would
  */
-char *zMapXMLParserGetBase(zmapXMLParser parser);
+char *zMapXMLParserGetBase(ZMapXMLParser parser);
 /*!
  * \brief calls XML_GetCurrentByteIndex assuming parser is valid
  * \param parser
  * \retval long as XML_GetCurrentByteIndex would
  */
-long zMapXMLParserGetCurrentByteIndex(zmapXMLParser parser);
+long zMapXMLParserGetCurrentByteIndex(ZMapXMLParser parser);
 
 
 /*!
@@ -229,7 +229,7 @@ long zMapXMLParserGetCurrentByteIndex(zmapXMLParser parser);
  * Useful if you need to preserve a slice of XML that you don't know
  * how to parse for a round trip.
  */
-char *zMapXMLParserGetFullXMLTwig(zmapXMLParser parser, int offset);
+char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset);
 
 #endif /* ZMAP_XML_H */
 
