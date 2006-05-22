@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May 19 18:16 2006 (edgrif)
+ * Last edited: May 22 10:00 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.119 2006-05-19 17:24:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.120 2006-05-22 13:27:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -352,13 +352,17 @@ typedef struct _ZMapWindowStruct
   GList         *long_items ;				    
 
 
-  GPtrArray     *featureListWindows ;			    /* popup windows showing lists of
+  /* Lists of dialog windows associated with this zmap window, these must be destroyed when
+   * the zmap window is destroyed. */
+  GPtrArray *featureListWindows ;			    /* popup windows showing lists of
 							       column features. */
 
-  GPtrArray     *search_windows ;			    /* popup search windows. */
+  GPtrArray *search_windows ;				    /* popup search windows. */
+
+  GtkWidget *col_config_window ;			    /* column configuration window. */
 
 
-  ZMapWindowRulerCanvas ruler;
+  ZMapWindowRulerCanvas ruler ;
 
   /* The length, start and end of the segment of sequence to be shown, there will be _no_
    * features outside of the start/end. */
@@ -550,6 +554,7 @@ void zmapWindowDrawZoom(ZMapWindow window) ;
 
 void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 			       ZMapWindowColConfigureMode configure_mode) ;
+void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
 void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapStyleOverlapMode bump_mode) ;
 void zmapWindowColumnReposition(FooCanvasGroup *column_group) ;
 void zmapWindowColumnWriteDNA(ZMapWindow window,
