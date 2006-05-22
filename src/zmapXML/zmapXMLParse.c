@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 19 22:22 2006 (rds)
+ * Last edited: May 22 10:41 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.15 2006-05-22 09:28:03 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.16 2006-05-22 17:10:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -149,6 +149,12 @@ ZMapXMLParser zMapXMLParserCreate(void *user_data, gboolean validating, gboolean
   return parser ;
 }
 
+void zMapXMLParserSetUserData(ZMapXMLParser parser, void *user_data)
+{
+  zMapAssert(parser);
+  parser->user_data = user_data;
+  return ;
+}
 
 ZMapXMLElement zMapXMLParserGetRoot(ZMapXMLParser parser)
 {

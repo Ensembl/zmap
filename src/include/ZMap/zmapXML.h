@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 19 21:45 2006 (rds)
+ * Last edited: May 22 10:41 2006 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.10 2006-05-22 09:26:14 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.11 2006-05-22 17:10:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -180,6 +180,7 @@ ZMapXMLAttribute zMapXMLElementGetAttributeByName1(ZMapXMLElement ele,
 
 /* PARSER */
 ZMapXMLParser zMapXMLParserCreate(void *userData, gboolean validating, gboolean debug);
+void zMapXMLParserSetUserData(ZMapXMLParser parser, void *user_data);
 
 void zMapXMLParserSetMarkupObjectHandler(ZMapXMLParser parser, 
                                          ZMapXMLMarkupObjectHandler start,
