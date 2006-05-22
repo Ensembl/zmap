@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 21 14:04 2006 (edgrif)
+ * Last edited: May 22 14:14 2006 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.9 2006-03-21 15:28:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.10 2006-05-22 13:27:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,13 +78,11 @@ static GtkWidget *makeMenuBar(SearchData search_data) ;
 static GtkWidget *makeFieldsPanel(SearchData search_data) ;
 static GtkWidget *makeFiltersPanel(SearchData search_data) ;
 
-
-
-static void closeMenuCB(gpointer data, guint callback_action, GtkWidget *widget) ;
+static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
+static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
-
-static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 static void searchCB(GtkWidget *widget, gpointer cb_data) ;
+
 static void displayResult(GList *search_result) ;
 static void printListDataCB(gpointer data, gpointer user_data) ;
 static void setFieldDefaults(SearchData search_data) ;
@@ -95,7 +93,7 @@ static void setFilterDefaults(SearchData search_data) ;
 
 static GtkItemFactoryEntry menu_items_G[] = {
  { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
- { "/File/Close",       "<control>W",  closeMenuCB,    0, NULL,            NULL},
+ { "/File/Close",       "<control>W",  requestDestroyCB,    0, NULL,            NULL},
  { "/_Help",           NULL,          NULL,          0, "<LastBranch>",  NULL},
  { "/Help/One",        NULL,          helpCB,      0, NULL,            NULL}
 };
@@ -119,7 +117,7 @@ void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
   /* set up the top level window */
   search_data->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   g_signal_connect(GTK_OBJECT(toplevel), "destroy",
-		   GTK_SIGNAL_FUNC(closeCB), (gpointer)search_data) ;
+		   GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
 
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   gtk_window_set_title(GTK_WINDOW(toplevel), "Feature Search") ;
@@ -327,16 +325,6 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
 
 
 
-static void closeMenuCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
-{
-
-  /* To avoid lots of destroys we call our other close routine. */
-  closeCB(widget, cb_data) ;
-
-  return ;
-}
-
-
 /* This is not the way to do help, we should really used html and have a set of help files. */
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
 {
@@ -358,16 +346,30 @@ static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
 }
 
 
-static void closeCB(GtkWidget *widget, gpointer cb_data)
+
+/* Requests destroy of search window which will end up with gtk calling destroyCB(). */
+static void requestDestroyCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 {
   SearchData search_data = (SearchData)cb_data ;
-
-  g_ptr_array_remove(search_data->window->search_windows, (gpointer)search_data->toplevel);
 
   gtk_widget_destroy(search_data->toplevel) ;
 
   return ;
 }
+
+
+
+static void destroyCB(GtkWidget *widget, gpointer cb_data)
+{
+  SearchData search_data = (SearchData)cb_data ;
+
+  g_ptr_array_remove(search_data->window->search_windows, (gpointer)search_data->toplevel);
+
+  return ;
+}
+
+
+
 
 
 

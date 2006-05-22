@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  5 11:22 2006 (rds)
+ * Last edited: May 22 13:50 2006 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.24 2006-05-05 11:00:16 rds Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.25 2006-05-22 13:27:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -165,8 +165,8 @@ static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapF
 static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_type);
 
 static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeModel);
-static void closeWindowCB(GtkWidget *widget, gpointer data);
 static void closeButtonCB(GtkWidget *widget, gpointer data);
+static void destroyCB(GtkWidget *widget, gpointer data);
 static void undoChangesCB(GtkWidget *widget, gpointer data);
 static gboolean applyChangesCB(GtkWidget *widget, gpointer data);
 static void saveChangesCB(GtkWidget *widget, gpointer data);
@@ -514,7 +514,7 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
   g_free(title) ;
   gtk_container_set_border_width(GTK_CONTAINER (editor_data->window), 10);
   g_signal_connect(G_OBJECT (editor_data->window), "destroy",
-		   G_CALLBACK (closeWindowCB), editor_data);
+		   G_CALLBACK (destroyCB), editor_data);
 
 
 
@@ -1532,50 +1532,40 @@ static void updateArray(mainTable table, GArray *array)
 
 
 
-/* We don't want the close button to call closeWindowCB directly
- * since that function is also called by the "destroy" signal we've
- * connected to the window itself and would end up being called
- * twice.  This way it's only called once. */
+/* Signal gtk to destroy the editor window, this will end up calling destroyCB(). */
 static void closeButtonCB(GtkWidget *widget, gpointer data)
 {
   ZMapWindowEditor editor_data = (ZMapWindowEditor)data;
 
-  if (editor_data->applyPressed == TRUE
-      && editor_data->savePressed == FALSE)
+  if (editor_data->applyPressed == TRUE && editor_data->savePressed == FALSE)
     {
       /* this is tacky! */
-      zMapMessage("You have unsaved changes! %s", "Press Undo before exiting.");
+      zMapMessage("You have unsaved changes! %s", "Press Undo before exiting.") ;
     }
   else
-    g_signal_emit_by_name(editor_data->window, "destroy", NULL, NULL);
+    gtk_widget_destroy(GTK_WIDGET(editor_data->window)) ;
 
-  return;
+  return ;
 }
   
 
-
-static void closeWindowCB(GtkWidget *widget, gpointer data)
+static void destroyCB(GtkWidget *widget, gpointer data)
 {
-  ZMapWindowEditor editor_data = (ZMapWindowEditor)data;
+  ZMapWindowEditor editor_data = (ZMapWindowEditor)data ;
     
-  if (editor_data->applyPressed == TRUE
-      && editor_data->savePressed == FALSE)
+  if (editor_data->applyPressed == TRUE && editor_data->savePressed == FALSE)
     {
       /* this is tacky, too! */
-      zMapMessage("You had unsaved changes! %s", "They have been lost!");
+      zMapMessage("You had unsaved changes! %s", "They have been lost!") ;
     }
 
-  /* remove reference to this as the foocanvas still holds it and it
-   * will clean it up reather than us. */
-  editor_data->origFeature = NULL; 
-
-  g_free(editor_data->table);
-  g_free(editor_data->wcopyFeature);
-  gtk_widget_destroy(GTK_WIDGET(editor_data->window));
-  g_free(editor_data);
+  g_free(editor_data->table) ;
+  g_free(editor_data->wcopyFeature) ;
+  g_free(editor_data) ;
                                                            
-  return;
+  return ;
 }
+
 
 static gboolean selectionFunc(GtkTreeSelection *selection, 
                               GtkTreeModel     *model,
@@ -1586,6 +1576,8 @@ static gboolean selectionFunc(GtkTreeSelection *selection,
   
   return TRUE;
 }
+
+
 static GtkCellRenderer *getColRenderer(ZMapWindowEditor editor)
 {
   GtkCellRenderer *renderer = NULL;

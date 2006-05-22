@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar 30 16:19 2006 (edgrif)
+ * Last edited: May 22 14:13 2006 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.45 2006-03-30 15:24:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.46 2006-05-22 13:27:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,7 +91,6 @@ static void selectItemInView(ZMapWindow window, GtkTreeView *treeView, FooCanvas
 static void testButtonCB      (GtkWidget *widget, gpointer user_data);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static void destroyListWindowCB(GtkWidget *window, gpointer user_data);
 
 static void columnClickedCB    (GtkTreeViewColumn *col, gpointer user_data);
 static void view_RowActivatedCB(GtkTreeView *treeView,
@@ -113,13 +112,14 @@ static void operateSelectionForeachFunc(GtkTreeModel *model,
                                         GtkTreeIter *iter,
                                         gpointer data);
 
-/* callbacks for the menu */
-static void quitMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
+static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
+static void destroyCB(GtkWidget *window, gpointer user_data);
 static void exportCB  (gpointer data, guint cb_action, GtkWidget *widget);
 static void orderByCB (gpointer data, guint cb_action, GtkWidget *widget);
 static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget);
 static void operateCB (gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
+
 
 
 
@@ -133,7 +133,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
  { "/File/Export/GFF ->", NULL,         exportCB,   WINLISTGFF, NULL,       NULL},
  { "/File/Export/XFF ->", NULL,         exportCB,   WINLISTXFF, NULL,       NULL},
  { "/File/Export/... ->", NULL,         exportCB,   WINLISTUNK, NULL,       NULL},
- { "/File/Close",         "<control>W", quitMenuCB, 0,          NULL,       NULL},
+ { "/File/Close",         "<control>W", requestDestroyCB, 0,          NULL,       NULL},
  /* View */
  { "/_View",                 NULL, NULL,      0,                                 "<Branch>",    NULL},
  { "/View/Order By",         NULL, NULL,      0,                                 "<Branch>",    NULL},
@@ -242,7 +242,7 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel,
 
   /* And a destroy function */
   g_signal_connect(GTK_OBJECT(window), "destroy",
-                   GTK_SIGNAL_FUNC(destroyListWindowCB), windowList);
+                   GTK_SIGNAL_FUNC(destroyCB), windowList);
 
   /* Start drawing things in it. */
   vBox = gtk_vbox_new(FALSE, 0);
@@ -432,7 +432,7 @@ static void testButtonCB(GtkWidget *widget, gpointer user_data)
  * Destroy the list window and its corresponding entry in the
  * array of such windows held in the ZMapWindow structure. 
  */
-static void destroyListWindowCB(GtkWidget *widget, gpointer user_data)
+static void destroyCB(GtkWidget *widget, gpointer user_data)
 {
   ZMapWindowList windowList = (ZMapWindowList)user_data;
 
@@ -446,7 +446,6 @@ static void destroyListWindowCB(GtkWidget *widget, gpointer user_data)
         g_ptr_array_remove(zmapWindow->featureListWindows, (gpointer)windowList->toplevel) ;
     }
 
-  gtk_widget_destroy(GTK_WIDGET(windowList->toplevel));
 
   return;
 }
@@ -543,16 +542,13 @@ static gboolean operateTreeModelForeachFunc(GtkTreeModel *model, GtkTreePath *pa
 }
 
 
-/* Menu Callbacks ---------------------------------------- */
 
-/** \Brief Ends up calling destroyListWindowCB via g_signal "destroy"
- * Just for the close button.
- */
-static void quitMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
+/* Request destroy of list window, ends up with gtk calling destroyCB(). */
+static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget)
 {
   ZMapWindowList wList = (ZMapWindowList)data;
 
-  g_signal_emit_by_name(GTK_WIDGET(wList->toplevel), "destroy", NULL, NULL);
+  gtk_widget_destroy(GTK_WIDGET(wList->toplevel));
 
   return ;
 }
