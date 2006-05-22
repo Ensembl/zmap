@@ -27,19 +27,19 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  9 12:53 2005 (rds)
+ * Last edited: May 19 22:31 2006 (rds)
  * Created: Tue Aug  9 14:25:26 2005 (rds)
- * CVS info:   $Id: zmapXMLDocument.c,v 1.2 2005-09-20 17:18:11 rds Exp $
+ * CVS info:   $Id: zmapXMLDocument.c,v 1.3 2006-05-22 09:28:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapXML_P.h>
 
-zmapXMLDocument zMapXMLDocument_create(const XML_Char *version,
-                                       const XML_Char *encoding,
-                                       int standalone)
+ZMapXMLDocument zMapXMLDocumentCreate(const XML_Char *version,
+                                      const XML_Char *encoding,
+                                      int standalone)
 {
-  zmapXMLDocument doc = NULL;
+  ZMapXMLDocument doc = NULL;
   doc = g_new0(zmapXMLDocumentStruct, 1);
 
   doc->standalone = standalone;
@@ -51,8 +51,8 @@ zmapXMLDocument zMapXMLDocument_create(const XML_Char *version,
   return doc;
 }
 
-void zMapXMLDocument_setRoot(zmapXMLDocument doc,
-                              zmapXMLElement root)
+void zMapXMLDocumentSetRoot(ZMapXMLDocument doc,
+                            ZMapXMLElement root)
 {
   if(!(doc->root))
     doc->root = root;
@@ -61,17 +61,17 @@ void zMapXMLDocument_setRoot(zmapXMLDocument doc,
   return ;
 }
 
-char *zMapXMLDocument_version(zmapXMLDocument doc)
+char *zMapXMLDocumentVersion(ZMapXMLDocument doc)
 {
   return g_strdup(g_quark_to_string(doc->version));
 }
 
-char *zMapXMLDocument_encoding(zmapXMLDocument doc)
+char *zMapXMLDocumentEncoding(ZMapXMLDocument doc)
 {
   return g_strdup(g_quark_to_string(doc->encoding));
 }
 
-gboolean zMapXMLDocument_isStandalone(zmapXMLDocument doc)
+gboolean zMapXMLDocumentIsStandalone(ZMapXMLDocument doc)
 {
   if(doc->standalone)
     return TRUE;
@@ -80,12 +80,12 @@ gboolean zMapXMLDocument_isStandalone(zmapXMLDocument doc)
 }
 
 
-void zMapXMLDocument_reset(zmapXMLDocument doc)
+void zMapXMLDocumentReset(ZMapXMLDocument doc)
 {
   printf("This code isn't written (reset)\n");
   return ;
 }
-void zMapXMLDocument_destroy(zmapXMLDocument doc)
+void zMapXMLDocumentDestroy(ZMapXMLDocument doc)
 {
   printf("This code isn't written (destroy)\n");
   return ;

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb  7 14:45 2006 (rds)
+ * Last edited: May 22 10:25 2006 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.18 2006-02-14 14:32:50 rds Exp $
+ * CVS info:   $Id: dasServer.c,v 1.19 2006-05-22 09:30:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,7 +71,7 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
 static gboolean searchAssembly(DasServer server, dasOneDSN dsn);
 static char *makeCurrentSegmentString(DasServer das, ZMapFeatureContext fc);
 
-static void initialiseParser(DasServer server);
+static void initialiseXMLParser(DasServer server);
 
 static void getFeatures4Aligns(GQuark key,
                                gpointer data,
@@ -161,9 +161,9 @@ static gboolean createConnection(void **server_out,
     server->path = g_quark_from_string(url->path);
 
   server->chunks = 0 ;
-  server->debug  = debug;
+  server->debug  = (getenv("DAS_DEBUG") ? (debug = TRUE) : (debug = FALSE));
 
-  initialiseParser(server);
+  initialiseXMLParser(server);
   
   server->last_errmsg = NULL ;
   server->curl_error  = CURLE_OK ;
@@ -219,7 +219,7 @@ static gboolean createConnection(void **server_out,
       result = FALSE ;
     }
   if(result && 
-     ((server->curl_error = curl_easy_setopt(server->curl_handle, CURLOPT_VERBOSE, fail_on_error)) != CURLE_OK))
+     ((server->curl_error = curl_easy_setopt(server->curl_handle, CURLOPT_VERBOSE, debug)) != CURLE_OK))
     {
       server->last_errmsg = g_strdup_printf("Line %d", __LINE__);
       result = FALSE ;
@@ -399,7 +399,7 @@ static ZMapServerResponseType closeConnection(void *server_in)
   server->curl_handle = NULL ;
 
   if(server->parser)
-    zMapXMLParser_destroy(server->parser);
+    zMapXMLParserDestroy(server->parser);
   server->parser = NULL ;
 
   return result ;
@@ -597,7 +597,7 @@ static size_t WriteMemoryCallback(void *xml, size_t size, size_t nmemb, void *ap
 
   server->chunks++ ;
 
-  if(zMapXMLParser_parseBuffer(server->parser, xml, realsize) != TRUE)
+  if(zMapXMLParserParseBuffer(server->parser, xml, realsize) != TRUE)
     realsize = 0;               /* Signal an error to curl we should
                                    be able to figure it out that this
                                    is what went wrong */
@@ -708,7 +708,7 @@ static gboolean requestAndParseOverHTTP(DasServer server, char *url, dasDataType
            */
           if((server->curl_error != CURLE_WRITE_ERROR) ||
              ((server->curl_error == CURLE_WRITE_ERROR) 
-              && ((server->last_errmsg = zMapXMLParser_lastErrorMsg(server->parser)) == NULL)))
+              && ((server->last_errmsg = zMapXMLParserLastErrorMsg(server->parser)) == NULL)))
             server->last_errmsg = g_strdup_printf("dasServer url: '%s', HTTP Error: %d, %s",
                                                   url,
                                                   server->curl_error,
@@ -719,11 +719,13 @@ static gboolean requestAndParseOverHTTP(DasServer server, char *url, dasDataType
            */
         }
     }
+
+  /* SHOULDN'T WE BE RESETTING THE PARSER HERE???? */
   /* finish off the parser... */
-  if(result && (zMapXMLParser_parseBuffer(server->parser, NULL, 0) != TRUE))
+  if(result && (zMapXMLParserParseBuffer(server->parser, NULL, 0) != TRUE))
     {
       response = FALSE;
-      server->last_errmsg = zMapXMLParser_lastErrorMsg( server->parser );
+      server->last_errmsg = zMapXMLParserLastErrorMsg( server->parser );
     }
   /* ALL THE DATA CREATION GETS DONE IN THE HANDLERS! */
 
@@ -962,7 +964,7 @@ static gboolean serverHasCapabilityLevel(DasServer server, char *capability, dou
   return hasLevel;
 }
 
-static void initialiseParser(DasServer server)
+static void initialiseXMLParser(DasServer server)
 {  
   ZMapXMLObjTagFunctionsStruct starts[] = {
     { "dsn",        dsnStart },
@@ -977,9 +979,9 @@ static void initialiseParser(DasServer server)
     { NULL, NULL }
   };
 
-  server->parser = zMapXMLParser_create((void *)server, FALSE, server->debug);
+  server->parser = zMapXMLParserCreate((void *)server, FALSE, server->debug);
   /*  zMapXMLParser_setMarkupObjectHandler(parser, start, end); */
-  zMapXMLParser_setMarkupObjectTagHandlers(server->parser, &starts[0], &ends[0]);
+  zMapXMLParserSetMarkupObjectTagHandlers(server->parser, &starts[0], &ends[0]);
 
   return ;
 }

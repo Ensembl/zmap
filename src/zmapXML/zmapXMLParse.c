@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 17 17:36 2006 (rds)
+ * Last edited: May 19 22:22 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.14 2006-05-17 23:29:27 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.15 2006-05-22 09:28:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,22 +45,22 @@ typedef struct _tagHandlerItemStruct
   ZMapXMLMarkupObjectHandler handler;
 } tagHandlerItemStruct, *tagHandlerItem;
 
-static void setupExpat(zmapXMLParser parser);
+static void setupExpat(ZMapXMLParser parser);
 static void initElements(GArray *array);
 static void initAttributes(GArray *array);
-static void freeUpTheQueue(zmapXMLParser parser);
-static char *getOffendingXML(zmapXMLParser parser, int context);
-static void abortParsing(zmapXMLParser parser, char *reason, ...);
-static zmapXMLElement parserFetchNewElement(zmapXMLParser parser, 
+static void freeUpTheQueue(ZMapXMLParser parser);
+static char *getOffendingXML(ZMapXMLParser parser, int context);
+static void abortParsing(ZMapXMLParser parser, char *reason, ...);
+static ZMapXMLElement parserFetchNewElement(ZMapXMLParser parser, 
                                             const XML_Char *name);
-static zmapXMLAttribute parserFetchNewAttribute(zmapXMLParser parser,
+static ZMapXMLAttribute parserFetchNewAttribute(ZMapXMLParser parser,
                                                 const XML_Char *name,
                                                 const XML_Char *value);
-static void pushXMLBase(zmapXMLParser parser, const char *xmlBase);
+static void pushXMLBase(ZMapXMLParser parser, const char *xmlBase);
 /* A "user" level ZMapXMLMarkupObjectHandler to handle removing xml bases. */
 static gboolean popXMLBase(void *userData, 
-                           zmapXMLElement element, 
-                           zmapXMLParser parser);
+                           ZMapXMLElement element, 
+                           ZMapXMLParser parser);
 
 /* Expat handlers we set */
 static void start_handler(void *userData, 
@@ -77,7 +77,7 @@ static void xmldecl_handler(void* data,
                             int standalone);
 /* End of Expat handlers */
 
-static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
+static ZMapXMLMarkupObjectHandler getObjHandler(ZMapXMLElement element,
                                                 GList *tagHandlerItemList);
 
 /* So what does this do?
@@ -107,11 +107,11 @@ static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
 
  */
 
-zmapXMLParser zMapXMLParser_create(void *user_data, gboolean validating, gboolean debug)
+ZMapXMLParser zMapXMLParserCreate(void *user_data, gboolean validating, gboolean debug)
 {
-  zmapXMLParser parser = NULL;
+  ZMapXMLParser parser = NULL;
 
-  parser     = (zmapXMLParser)g_new0(zmapXMLParserStruct, 1) ;
+  parser     = (ZMapXMLParser)g_new0(zmapXMLParserStruct, 1) ;
 
   /* Handle arguments */
   validating         = FALSE;           /* IGNORE! We DO NOT validate */
@@ -150,22 +150,22 @@ zmapXMLParser zMapXMLParser_create(void *user_data, gboolean validating, gboolea
 }
 
 
-zmapXMLElement zMapXMLParser_getRoot(zmapXMLParser parser)
+ZMapXMLElement zMapXMLParserGetRoot(ZMapXMLParser parser)
 {
-  zmapXMLElement root = NULL;
+  ZMapXMLElement root = NULL;
   if(parser->document)
     root = parser->document->root;
   return root;
 }
 
-char *zMapXMLParserGetBase(zmapXMLParser parser)
+char *zMapXMLParserGetBase(ZMapXMLParser parser)
 {
   char *base = NULL;
   if(parser->expat != NULL)
     base = (char *)XML_GetBase(parser->expat);
   return base;
 }
-long zMapXMLParserGetCurrentByteIndex(zmapXMLParser parser)
+long zMapXMLParserGetCurrentByteIndex(ZMapXMLParser parser)
 {
   long index = 0;
   if(parser->expat != NULL)
@@ -173,7 +173,7 @@ long zMapXMLParserGetCurrentByteIndex(zmapXMLParser parser)
   return index;
 }
 /* If return is non null it needs freeing sometime in the future! */
-char *zMapXMLParserGetFullXMLTwig(zmapXMLParser parser, int offset)
+char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset)
 {
   char *copy = NULL, *tmp1 = NULL;
   const char *tmp = NULL;
@@ -193,7 +193,7 @@ char *zMapXMLParserGetFullXMLTwig(zmapXMLParser parser, int offset)
 }
 
 #define BUFFER_SIZE 200
-gboolean zMapXMLParser_parseFile(zmapXMLParser parser,
+gboolean zMapXMLParserParseFile(ZMapXMLParser parser,
                                   FILE *file)
 {
   int len = 0;
@@ -212,14 +212,14 @@ gboolean zMapXMLParser_parseFile(zmapXMLParser parser,
         }
 
       done = feof(file);
-      if(zMapXMLParser_parseBuffer(parser, (void *)buffer, len) != TRUE)
+      if(zMapXMLParserParseBuffer(parser, (void *)buffer, len) != TRUE)
         return 0;
     }
   
   return 1;
 }
 
-gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser, 
+gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser, 
                                     void *data, 
                                     int size)
 {
@@ -253,16 +253,16 @@ gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser,
           switch(error)
             {
             case XML_ERROR_ABORTED:
-              parser->last_errmsg = g_strdup_printf("[zmapXMLParse] Parse error line %d column %d\n"
-                                                    "[zmapXMLParse] Aborted: %s\n",
+              parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
+                                                    "[ZMapXMLParse] Aborted: %s\n",
                                                     XML_GetCurrentLineNumber(parser->expat),
                                                     XML_GetCurrentColumnNumber(parser->expat),
                                                     parser->aborted_msg);
               break;
             default:
-              parser->last_errmsg = g_strdup_printf("[zmapXMLParse] Parse error line %d column %d\n"
-                                                    "[zmapXMLParse] Expat reports: %s\n"
-                                                    "[zmapXMLParse] XML near error <!-- >>>>%s<<<< -->\n",
+              parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
+                                                    "[ZMapXMLParse] Expat reports: %s\n"
+                                                    "[ZMapXMLParse] XML near error <!-- >>>>%s<<<< -->\n",
                                                     XML_GetCurrentLineNumber(parser->expat),
                                                     XML_GetCurrentColumnNumber(parser->expat),
                                                     XML_ErrorString(error),
@@ -285,18 +285,18 @@ gboolean zMapXMLParser_parseBuffer(zmapXMLParser parser,
   return result ;
 }
 
-void zMapXMLParser_setMarkupObjectHandler(zmapXMLParser parser, 
-                                          ZMapXMLMarkupObjectHandler start,
-                                          ZMapXMLMarkupObjectHandler end)
+void zMapXMLParserSetMarkupObjectHandler(ZMapXMLParser parser, 
+                                         ZMapXMLMarkupObjectHandler start,
+                                         ZMapXMLMarkupObjectHandler end)
 {
   parser->startMOHandler = start ;
   parser->endMOHandler   = end   ;
   return ;
 }
 
-void zMapXMLParser_setMarkupObjectTagHandlers(zmapXMLParser parser,
-                                              ZMapXMLObjTagFunctions starts,
-                                              ZMapXMLObjTagFunctions ends)
+void zMapXMLParserSetMarkupObjectTagHandlers(ZMapXMLParser parser,
+                                             ZMapXMLObjTagFunctions starts,
+                                             ZMapXMLObjTagFunctions ends)
 {
   ZMapXMLObjTagFunctions p = NULL;
 
@@ -325,19 +325,19 @@ void zMapXMLParser_setMarkupObjectTagHandlers(zmapXMLParser parser,
   return ;
 }
 
-char *zMapXMLParser_lastErrorMsg(zmapXMLParser parser)
+char *zMapXMLParserLastErrorMsg(ZMapXMLParser parser)
 {
   return parser->last_errmsg;
 }
 
-void zMapXMLParserRaiseParsingError(zmapXMLParser parser,
+void zMapXMLParserRaiseParsingError(ZMapXMLParser parser,
                                     char *error_string)
 {
   abortParsing(parser, "%s", error_string);
   return ;
 }
 
-gboolean zMapXMLParserReset(zmapXMLParser parser)
+gboolean zMapXMLParserReset(ZMapXMLParser parser)
 {
   gboolean result = TRUE;
 
@@ -357,7 +357,7 @@ gboolean zMapXMLParserReset(zmapXMLParser parser)
   if((result = XML_ParserReset(parser->expat, NULL))) /* encoding as it was created */
     setupExpat(parser);
   else
-    parser->last_errmsg = "[zmapXMLParse] Failed Resetting the parser.";
+    parser->last_errmsg = "[ZMapXMLParse] Failed Resetting the parser.";
 
   /* The expat parser doesn't clean up the userdata it gets sent.
    * That's us anyway, so that's good, and we don't need to do anything here!
@@ -373,7 +373,7 @@ gboolean zMapXMLParserReset(zmapXMLParser parser)
   return result;
 }
 
-void zMapXMLParser_destroy(zmapXMLParser parser)
+void zMapXMLParserDestroy(ZMapXMLParser parser)
 {
   XML_ParserFree(parser->expat) ;
 
@@ -397,7 +397,7 @@ void zMapXMLParser_destroy(zmapXMLParser parser)
 }
 
 /* INTERNAL */
-static void setupExpat(zmapXMLParser parser)
+static void setupExpat(ZMapXMLParser parser)
 {
   if(parser == NULL)
     return;
@@ -410,7 +410,7 @@ static void setupExpat(zmapXMLParser parser)
   return ;
 }
 
-static void freeUpTheQueue(zmapXMLParser parser)
+static void freeUpTheQueue(ZMapXMLParser parser)
 {
   if (!g_queue_is_empty(parser->elementStack))
     {
@@ -428,7 +428,7 @@ static void freeUpTheQueue(zmapXMLParser parser)
   return ;
 }
 
-static void pushXMLBase(zmapXMLParser parser, const char *xmlBase)
+static void pushXMLBase(ZMapXMLParser parser, const char *xmlBase)
 {
   /* Add to internal list of stuff */
   parser->xmlBaseStack = g_list_append(parser->xmlBaseStack, (char *)xmlBase);
@@ -440,8 +440,8 @@ static void pushXMLBase(zmapXMLParser parser, const char *xmlBase)
 
 /* N.B. element passed in is NULL! */
 static gboolean popXMLBase(void *userData, 
-                           zmapXMLElement element, 
-                           zmapXMLParser parser)
+                           ZMapXMLElement element, 
+                           ZMapXMLParser parser)
 {
   char *previousXMLBase = NULL, *current = NULL;
 
@@ -469,9 +469,9 @@ static void start_handler(void *userData,
                           const char *el, 
                           const char **attr)
 {
-  zmapXMLParser parser = (zmapXMLParser)userData ;
-  zmapXMLElement current_ele = NULL ;
-  zmapXMLAttribute attribute = NULL ;
+  ZMapXMLParser parser = (ZMapXMLParser)userData ;
+  ZMapXMLElement current_ele = NULL ;
+  ZMapXMLAttribute attribute = NULL ;
   ZMapXMLMarkupObjectHandler handler = NULL;
   int depth, i;
   gboolean currentHasXMLBase = FALSE, good = TRUE;
@@ -493,7 +493,7 @@ static void start_handler(void *userData,
     }
 
 #ifdef RDS_DONT_INCLUDE
-  current_ele = zmapXMLElement_create(el);
+  current_ele = zmapXMLElementCreate(el);
 #endif
   
   if((current_ele = parserFetchNewElement(parser, el)) == NULL)
@@ -502,11 +502,11 @@ static void start_handler(void *userData,
     {
       for(i = 0; attr[i]; i+=2){
 #ifdef RDS_DONT_INCLUDE
-        attribute = zmapXMLAttribute_create(attr[i], attr[i + 1]);
+        attribute = ZMapXMLAttribute_create(attr[i], attr[i + 1]);
 #endif
         if(good && (attribute = parserFetchNewAttribute(parser, attr[i], attr[i+1])) != NULL)
           {
-            zmapXMLElement_addAttribute(current_ele, attribute);
+            zmapXMLElementAddAttribute(current_ele, attribute);
             if(attribute->name == parser->xmlbase)
               parser->useXMLBase = currentHasXMLBase = TRUE;
           }
@@ -523,14 +523,14 @@ static void start_handler(void *userData,
     {
       /* In case there wasn't a <?xml version="1.0" ?> */
       if(!(parser->document))
-        parser->document = zMapXMLDocument_create("1.0", "UTF-8", -1);
-      zMapXMLDocument_setRoot(parser->document, current_ele);
+        parser->document = zMapXMLDocumentCreate("1.0", "UTF-8", -1);
+      zMapXMLDocumentSetRoot(parser->document, current_ele);
     }
   else
     {
-      zmapXMLElement parent_ele;
+      ZMapXMLElement parent_ele;
       parent_ele = g_queue_peek_head(parser->elementStack);
-      zmapXMLElement_addChild(parent_ele, current_ele);
+      zmapXMLElementAddChild(parent_ele, current_ele);
     }
     
   g_queue_push_head(parser->elementStack, current_ele);
@@ -552,12 +552,12 @@ static void start_handler(void *userData,
 #endif  
 
   if(parser->useXMLBase && currentHasXMLBase &&
-     ((attribute = zMapXMLElement_getAttributeByName(current_ele, ZMAP_XML_BASE_ATTR)) != NULL))
+     ((attribute = zMapXMLElementGetAttributeByName(current_ele, ZMAP_XML_BASE_ATTR)) != NULL))
     {
       tagHandlerItem item = g_new0(tagHandlerItemStruct, 1);
       item->id      = current_ele->name;
       item->handler = popXMLBase;
-      pushXMLBase(parser, g_quark_to_string(zMapXMLAttribute_getValue(attribute)));
+      pushXMLBase(parser, g_quark_to_string(zMapXMLAttributeGetValue(attribute)));
       parser->xmlBaseHandlers = g_list_prepend(parser->xmlBaseHandlers, item);      
     }
 
@@ -572,15 +572,15 @@ static void start_handler(void *userData,
 static void end_handler(void *userData, 
                         const char *el)
 {
-  zmapXMLParser parser = (zmapXMLParser)userData ;
-  zmapXMLElement current_ele ;
+  ZMapXMLParser parser = (ZMapXMLParser)userData ;
+  ZMapXMLElement current_ele ;
   gpointer dummy ;
   ZMapXMLMarkupObjectHandler handler = NULL, xmlBaseHandler = NULL;
   int i ;
 
   /* Now get rid of head element. */
   dummy       = g_queue_pop_head(parser->elementStack) ;
-  current_ele = (zmapXMLElement)dummy ;
+  current_ele = (ZMapXMLElement)dummy ;
 
   if (parser->debug)
     {
@@ -609,7 +609,7 @@ static void end_handler(void *userData,
         {
           /* We can free the current_ele and all its children */
           /* First we need to tell the parent that its child is being freed. */
-          if(!(zmapXMLElement_signalParentChildFree(current_ele)))
+          if(!(zmapXMLElementSignalParentChildFree(current_ele)))
              printf("Empty'ing document... this might cure memory leak...\n ");
 #ifdef RDS_DONT_INCLUDE
           zmapXMLElement_free(current_ele); 
@@ -652,12 +652,12 @@ static void character_handler(void *userData,
                               const XML_Char *s, 
                               int len)
 {
-  zmapXMLElement content4ele;
-  zmapXMLParser parser = (zmapXMLParser)userData ; 
+  ZMapXMLElement content4ele;
+  ZMapXMLParser parser = (ZMapXMLParser)userData ; 
 
   content4ele = g_queue_peek_head(parser->elementStack);
 
-  zmapXMLElement_addContent(content4ele, s, len);
+  zmapXMLElementAddContent(content4ele, s, len);
 
   return ;
 }
@@ -667,18 +667,18 @@ static void xmldecl_handler(void* data,
                             XML_Char const* encoding,
                             int standalone)
 {
-    zmapXMLParser parser = (zmapXMLParser)data;
+    ZMapXMLParser parser = (ZMapXMLParser)data;
 
     if (parser == NULL)
       return ;
 
     if (!(parser->document))
-      parser->document = zMapXMLDocument_create(version, encoding, standalone);
+      parser->document = zMapXMLDocumentCreate(version, encoding, standalone);
 
     return ;
 }
 
-static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
+static ZMapXMLMarkupObjectHandler getObjHandler(ZMapXMLElement element,
                                                 GList *tagHandlerItemList)
 {
   ZMapXMLMarkupObjectHandler handler = NULL;
@@ -705,11 +705,11 @@ static ZMapXMLMarkupObjectHandler getObjHandler(zmapXMLElement element,
  * the potential for abuse.  The idea all along was to create small
  * twigs of 'objecty' type data as an intermediate for user objects.
  */
-static zmapXMLAttribute parserFetchNewAttribute(zmapXMLParser parser,
+static ZMapXMLAttribute parserFetchNewAttribute(ZMapXMLParser parser,
                                                 const XML_Char *name,
                                                 const XML_Char *value)
 {
-  zmapXMLAttribute attr = NULL;
+  ZMapXMLAttribute attr = NULL;
   int i = 0, save = -1;
 
   zMapAssert(parser->attributes);
@@ -734,10 +734,10 @@ static zmapXMLAttribute parserFetchNewAttribute(zmapXMLParser parser,
   return attr;
 }
 
-static zmapXMLElement parserFetchNewElement(zmapXMLParser parser, 
+static ZMapXMLElement parserFetchNewElement(ZMapXMLParser parser, 
                                             const XML_Char *name)
 {
-  zmapXMLElement element = NULL;
+  ZMapXMLElement element = NULL;
   int i = 0, save = -1;
 
   zMapAssert(parser->elements);
@@ -765,7 +765,7 @@ static zmapXMLElement parserFetchNewElement(zmapXMLParser parser,
 
 static void initElements(GArray *array)
 {
-  zmapXMLElement element = NULL;
+  ZMapXMLElement element = NULL;
   int i;
 
   for(i = 0; i < array->len; i++)
@@ -778,7 +778,7 @@ static void initElements(GArray *array)
 }
 static void initAttributes(GArray *array)
 {
-  zmapXMLAttribute attribute = NULL;
+  ZMapXMLAttribute attribute = NULL;
   int i;
 
   for(i = 0; i < array->len; i++)
@@ -804,7 +804,7 @@ static void initAttributes(GArray *array)
  * <this isnt="valid"><xml></uknow>
  * error occurred ----------^ line 101
  */
-static char *getOffendingXML(zmapXMLParser parser, int context)
+static char *getOffendingXML(ZMapXMLParser parser, int context)
 {
   char *bad_xml = NULL;
   const char *tmpCntxt = NULL;
@@ -818,20 +818,20 @@ static char *getOffendingXML(zmapXMLParser parser, int context)
         {
           if(byte + context < size)
             {
-              tmp = tmpCntxt + byte + context;
+              tmp = (char *)(byte + tmpCntxt + context);
               while(*tmp != '\0' && *tmp != '>'){ tmp++; }
               end = tmp;
             }
           else
-            end = tmpCntxt + size - 1;
+            end = (char *)(size + tmpCntxt - 1);
 
           if(byte > context)
             {
-              tmp = tmpCntxt + byte - context;
+              tmp = (char *)(byte + tmpCntxt - context);
               while(*tmp != '<'){ tmp--; }
             }
           else
-            tmp = tmpCntxt;
+            tmp = (char  *)tmpCntxt;
 
           bad_xml = g_strndup(tmp, end - tmp + 1);
         }
@@ -842,7 +842,7 @@ static char *getOffendingXML(zmapXMLParser parser, int context)
   return bad_xml;               /* PLEASE free me later */
 }
 
-static void abortParsing(zmapXMLParser parser, char *reason, ...)
+static void abortParsing(ZMapXMLParser parser, char *reason, ...)
 {
   va_list args;
   char *error;

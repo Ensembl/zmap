@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: May 17 12:18 2006 (rds)
+ * Last edited: May 19 22:29 2006 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.15 2006-05-17 12:40:55 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.16 2006-05-22 09:27:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,11 +70,11 @@ typedef struct
 } timerContextStruct, *timerContext;
 
 static gboolean start(void *userData, 
-                      zmapXMLElement element, 
-                      zmapXMLParser parser);
+                      ZMapXMLElement element, 
+                      ZMapXMLParser parser);
 static gboolean end(void *userData, 
-                    zmapXMLElement element, 
-                    zmapXMLParser parser);
+                    ZMapXMLElement element, 
+                    ZMapXMLParser parser);
 
 static char *appexecuteCommand(char *command_text, gpointer app_context, int *statusCode);
 static gboolean createZMap(ZMapAppContext app, appRemoteAll obj);
@@ -277,7 +277,7 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
   ZMapAppContext app   = (ZMapAppContext)app_context;
   char *xml_reply      = NULL;
   int code             = ZMAPXREMOTE_INTERNAL; /* unknown command if this isn't changed */
-  zmapXMLParser parser = NULL;
+  ZMapXMLParser parser = NULL;
   gboolean cmd_debug   = FALSE;
   gboolean parse_ok    = FALSE;
   GList *list          = NULL;
@@ -293,10 +293,10 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
 
   g_clear_error(&(app->info));
 
-  parser  = zMapXMLParser_create(&list, FALSE, cmd_debug);
-  zMapXMLParser_setMarkupObjectTagHandlers(parser, startH, endH);
+  parser  = zMapXMLParserCreate(&list, FALSE, cmd_debug);
+  zMapXMLParserSetMarkupObjectTagHandlers(parser, startH, endH);
 
-  parse_ok = zMapXMLParser_parseBuffer(parser, command_text, strlen(command_text));
+  parse_ok = zMapXMLParserParseBuffer(parser, command_text, strlen(command_text));
 
   if(parse_ok && 
      (list != NULL))
@@ -339,12 +339,9 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
         g_error_new(g_quark_from_string(__FILE__),
                     code,
                     "%s",
-                    zMapXMLParser_lastErrorMsg(parser)
+                    zMapXMLParserLastErrorMsg(parser)
                     );      
     }
-
-  /* Free the parser!!! */
-  /* zMapXMLParser_free(parser); */
 
   /* Now check what the status is */
   switch (code)
@@ -405,6 +402,9 @@ static char *appexecuteCommand(char *command_text, gpointer app_context, int *st
   xml_reply   = g_strdup(app->info->message);
   *statusCode = code;
 
+  /* Free the parser!!! */
+  zMapXMLParserDestroy(parser);
+
   return xml_reply;
 }
 
@@ -445,8 +445,8 @@ static void destroyNotifyData(gpointer destroy_data)
 
 
 static gboolean start(void *userData, 
-                      zmapXMLElement element, 
-                      zmapXMLParser parser)
+                      ZMapXMLElement element, 
+                      ZMapXMLParser parser)
 {
   GList **list = NULL;
   gboolean handled  = FALSE;
@@ -456,11 +456,11 @@ static gboolean start(void *userData,
   switch(type){
   case ZMAP_APP_REMOTE_ALL:
     {
-      zmapXMLAttribute attr = NULL;
+      ZMapXMLAttribute attr = NULL;
       appRemoteAll objAll   = g_new0(appRemoteAllStruct, 1);
-      if((attr = zMapXMLElement_getAttributeByName(element, "action")) != NULL)
+      if((attr = zMapXMLElementGetAttributeByName(element, "action")) != NULL)
         {
-          GQuark action = zMapXMLAttribute_getValue(attr);
+          GQuark action = zMapXMLAttributeGetValue(attr);
           if(action == g_quark_from_string("new"))
             objAll->action = ZMAP_APP_REMOTE_OPEN_ZMAP;
           if(action == g_quark_from_string("close") || 
@@ -479,8 +479,8 @@ static gboolean start(void *userData,
 }
 
 static gboolean end(void *userData, 
-                    zmapXMLElement element, 
-                    zmapXMLParser parser)
+                    ZMapXMLElement element, 
+                    ZMapXMLParser parser)
 {
   GList **list     = NULL;
   gboolean handled = FALSE;
@@ -491,23 +491,23 @@ static gboolean end(void *userData,
   switch(type){
   case ZMAP_APP_REMOTE_ALL:
     {
-      zmapXMLElement child = NULL;
+      ZMapXMLElement child = NULL;
       appRemoteAll appOpen = (appRemoteAll)((*list)->data);
-      if((child = zMapXMLElement_getChildByName(element, "segment")) != NULL)
+      if((child = zMapXMLElementGetChildByName(element, "segment")) != NULL)
         {
-          zmapXMLAttribute attr = NULL;
-          if((attr = zMapXMLElement_getAttributeByName(child, "sequence")) != NULL)
-            appOpen->sequence = zMapXMLAttribute_getValue(attr);
-          if((attr = zMapXMLElement_getAttributeByName(child, "start")) != NULL)
-            appOpen->start = strtol(g_quark_to_string(zMapXMLAttribute_getValue(attr)), (char **)NULL, 10);
+          ZMapXMLAttribute attr = NULL;
+          if((attr = zMapXMLElementGetAttributeByName(child, "sequence")) != NULL)
+            appOpen->sequence = zMapXMLAttributeGetValue(attr);
+          if((attr = zMapXMLElementGetAttributeByName(child, "start")) != NULL)
+            appOpen->start = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
           else
             appOpen->start = 1;
-          if((attr = zMapXMLElement_getAttributeByName(child, "end")) != NULL)
-            appOpen->end = strtol(g_quark_to_string(zMapXMLAttribute_getValue(attr)), (char **)NULL, 10);
+          if((attr = zMapXMLElementGetAttributeByName(child, "end")) != NULL)
+            appOpen->end = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
           else
             appOpen->end = 0;
         }
-      if((child = zMapXMLElement_getChildByName(element, "segment")) != NULL)
+      if((child = zMapXMLElementGetChildByName(element, "segment")) != NULL)
         appOpen->source = g_quark_from_string( child->contents->str );
     }
     handled = TRUE;

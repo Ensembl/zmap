@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 17 13:08 2006 (rds)
+ * Last edited: May 19 22:13 2006 (rds)
  * Created: Fri Aug  5 14:33:49 2005 (rds)
- * CVS info:   $Id: zmapXMLElement.c,v 1.9 2006-02-17 13:08:43 rds Exp $
+ * CVS info:   $Id: zmapXMLElement.c,v 1.10 2006-05-22 09:28:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,9 +42,9 @@ static void freeElement(gpointer data, gpointer unused);
 static void freeAttributeListItems(gpointer item, gpointer data);
 
 /* Creates a named element.  That's it.  */
-zmapXMLElement zmapXMLElement_create(const XML_Char *name)
+ZMapXMLElement zmapXMLElementCreate(const XML_Char *name)
 {
-  zmapXMLElement ele = NULL;
+  ZMapXMLElement ele = NULL;
   int len   = 100;
   ele       = g_new0(zmapXMLElementStruct, 1);
   ele->name = g_quark_from_string(g_ascii_strdown((char *)name, -1));
@@ -54,31 +54,31 @@ zmapXMLElement zmapXMLElement_create(const XML_Char *name)
   return ele;
 }
 
-gboolean zmapXMLElement_addAttribute(zmapXMLElement ele, zmapXMLAttribute attr)
+gboolean zmapXMLElementAddAttribute(ZMapXMLElement ele, ZMapXMLAttribute attr)
 {
   ele->attributes = g_list_prepend(ele->attributes, attr);
   return TRUE;
 }
-gboolean zmapXMLElement_add_attr_pair(zmapXMLElement ele,
-                                      const XML_Char *name,
-                                      const XML_Char *value)
+gboolean zmapXMLElementAddAttrPair(ZMapXMLElement ele,
+                                   const XML_Char *name,
+                                   const XML_Char *value)
 {
-  zmapXMLAttribute attr;
-  attr = zmapXMLAttribute_create(name, value);
-  return zmapXMLElement_addAttribute(ele, attr);
+  ZMapXMLAttribute attr;
+  attr = zmapXMLAttributeCreate(name, value);
+  return zmapXMLElementAddAttribute(ele, attr);
 }
 
-void zmapXMLElement_addChild(zmapXMLElement parent, zmapXMLElement child)
+void zmapXMLElementAddChild(ZMapXMLElement parent, ZMapXMLElement child)
 {
   parent->children = g_list_insert(parent->children, child, -1);
   child->parent    = parent;
   return ;
 }
-gboolean zmapXMLElement_signalParentChildFree(zmapXMLElement child)
+gboolean zmapXMLElementSignalParentChildFree(ZMapXMLElement child)
 {
   /* In case we get passed the root element as the the child, its
      parent is NULL! */
-  zmapXMLElement parent = NULL;
+  ZMapXMLElement parent = NULL;
   parent = child->parent;
 
   if(parent == NULL)
@@ -89,9 +89,9 @@ gboolean zmapXMLElement_signalParentChildFree(zmapXMLElement child)
   return TRUE;
 }
 
-void zmapXMLElement_addContent(zmapXMLElement ele, 
-                               const XML_Char *content,
-                               int len)
+void zmapXMLElementAddContent(ZMapXMLElement ele, 
+                              const XML_Char *content,
+                              int len)
 {
   /* N.B. we _only_ get away with this because XML_Char == char at the moment, 
    * this will need to be fixed in the future to support UNICODE/UTF-16 etc...
@@ -109,7 +109,7 @@ void zmapXMLElement_addContent(zmapXMLElement ele,
  * interacting with the GList of children themselves
  */
 /* Will eventually return NULL! caller should check! */
-zmapXMLElement zMapXMLElement_nextSibling(zmapXMLElement ele)
+ZMapXMLElement zMapXMLElementNextSibling(ZMapXMLElement ele)
 {
   GList *sibling, *current;
 
@@ -119,7 +119,7 @@ zmapXMLElement zMapXMLElement_nextSibling(zmapXMLElement ele)
   return (sibling ? sibling->data : NULL);
 }
 
-zmapXMLElement zMapXMLElement_previousSibling(zmapXMLElement ele)
+ZMapXMLElement zMapXMLElementPreviousSibling(ZMapXMLElement ele)
 {
   GList *sibling, *current;
 
@@ -132,10 +132,10 @@ zmapXMLElement zMapXMLElement_previousSibling(zmapXMLElement ele)
 /* This can only get first Child path. Probably not commonly used, but
  * here in case.
  */
-zmapXMLElement zMapXMLElement_getChildByPath(zmapXMLElement parent,
+ZMapXMLElement zMapXMLElementGetChildByPath(ZMapXMLElement parent,
                                              char *path)
 {
-  zmapXMLElement ele = NULL, pele = NULL;
+  ZMapXMLElement ele = NULL, pele = NULL;
   gchar **names = NULL;
   gboolean exist = TRUE;
   names = g_strsplit(path, ".", -1);
@@ -150,7 +150,7 @@ zmapXMLElement zMapXMLElement_getChildByPath(zmapXMLElement parent,
           i++;
           continue;
         }
-      if((ele = zMapXMLElement_getChildByName(pele, names[i])) == NULL)
+      if((ele = zMapXMLElementGetChildByName(pele, names[i])) == NULL)
         exist = FALSE;          /* Search failed, ele = NULL */
       pele = ele;
       i++;
@@ -159,11 +159,11 @@ zmapXMLElement zMapXMLElement_getChildByPath(zmapXMLElement parent,
   return ele;
 }
 
-zmapXMLElement zMapXMLElement_getChildByName(zmapXMLElement parent,
+ZMapXMLElement zMapXMLElementGetChildByName(ZMapXMLElement parent,
                                              char *name)
 {
   if(name && *name)
-    return zMapXMLElement_getChildByName1(parent, g_quark_from_string(g_ascii_strdown(name, -1)));
+    return zMapXMLElementGetChildByName1(parent, g_quark_from_string(g_ascii_strdown(name, -1)));
   else
     return NULL;
 }
@@ -172,12 +172,12 @@ zmapXMLElement zMapXMLElement_getChildByName(zmapXMLElement parent,
  * objects and basically allow slow hash style access to the GList 
  * which is implemented as a list for the reason mentioned below.
  */
-zmapXMLElement zMapXMLElement_getChildByName1(zmapXMLElement parent,
+ZMapXMLElement zMapXMLElementGetChildByName1(ZMapXMLElement parent,
                                               GQuark name)
 {
   GList *list;
 
-  list = zMapXMLElement_getChildrenByName(parent, name, 1);
+  list = zMapXMLElementGetChildrenByName(parent, name, 1);
 
   return (list ? list->data : NULL);
 }
@@ -191,16 +191,16 @@ zmapXMLElement zMapXMLElement_getChildByName1(zmapXMLElement parent,
  * glib's GList will only return the first one it finds.  Passing -1 as 
  * the expect is guarenteed to return all child elements with name.
  */
-GList *zMapXMLElement_getChildrenByName(zmapXMLElement parent,
-                                        GQuark name,
-                                        int expect)
+GList *zMapXMLElementGetChildrenByName(ZMapXMLElement parent,
+                                       GQuark name,
+                                       int expect)
 {
   GList *item     = g_list_first(parent->children);
   GList *children = NULL;
   while(item)
     {
-      zmapXMLElement child;
-      child = (zmapXMLElement)(item->data);
+      ZMapXMLElement child;
+      child = (ZMapXMLElement)(item->data);
 
       if(child->name == name)
         {
@@ -216,15 +216,15 @@ GList *zMapXMLElement_getChildrenByName(zmapXMLElement parent,
   return children;
 }
 
-zmapXMLAttribute zMapXMLElement_getAttributeByName(zmapXMLElement ele,
+ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele,
                                                    char *name)
 {
-  zmapXMLAttribute attr = NULL;
+  ZMapXMLAttribute attr = NULL;
   GList *item = g_list_first(ele->attributes);
   GQuark want = g_quark_from_string(g_ascii_strdown(name, -1));
   while(item)
     {
-      zmapXMLAttribute cur = (zmapXMLAttribute)item->data;
+      ZMapXMLAttribute cur = (ZMapXMLAttribute)item->data;
       if(want == cur->name)
         {
           attr = cur;
@@ -244,7 +244,7 @@ zmapXMLAttribute zMapXMLElement_getAttributeByName(zmapXMLElement ele,
      GList   *attributes;   
      zmapXMLElement parent;
 */
-void zmapXMLElement_free(zmapXMLElement ele)
+void zmapXMLElementFree(ZMapXMLElement ele)
 {
   if(ele == NULL)
     return ;
@@ -258,7 +258,7 @@ void zmapXMLElement_free(zmapXMLElement ele)
     g_string_free(ele->contents, TRUE);
   
   /* Now the attributes */
-  zmapXMLElement_freeAttrList(ele);
+  zmapXMLElementFreeAttrList(ele);
   
   /* my parent, doesn't need 2 b freed so set to null! */
   /* I might want a handler here, but not sure 
@@ -274,7 +274,7 @@ void zmapXMLElement_free(zmapXMLElement ele)
   return ;
 }
 
-void zmapXMLElementMarkDirty(zmapXMLElement ele)
+void zmapXMLElementMarkDirty(ZMapXMLElement ele)
 {
   if(ele == NULL)
     return ;
@@ -298,7 +298,7 @@ void zmapXMLElementMarkDirty(zmapXMLElement ele)
   return ;
 }
 
-void zmapXMLElementMarkAttributesDirty(zmapXMLElement ele)
+void zmapXMLElementMarkAttributesDirty(ZMapXMLElement ele)
 {
   GList *list = NULL;
   list = ele->attributes;
@@ -310,7 +310,7 @@ void zmapXMLElementMarkAttributesDirty(zmapXMLElement ele)
 
   return ;
 }
-void zmapXMLElement_freeAttrList(zmapXMLElement ele)
+void zmapXMLElementFreeAttrList(ZMapXMLElement ele)
 {
   GList *list = NULL;
   list = ele->attributes;
@@ -330,29 +330,29 @@ void zmapXMLElement_freeAttrList(zmapXMLElement ele)
 
 static void freeElement(gpointer data, gpointer unused)
 {
-  zmapXMLElement ele = (zmapXMLElement)data;
-  zmapXMLElement_free(ele);
+  ZMapXMLElement ele = (ZMapXMLElement)data;
+  zmapXMLElementFree(ele);
   return ;
 }
 static void freeAttributeListItems(gpointer item, gpointer data)
 {
-  zmapXMLAttribute attr = (zmapXMLAttribute)item; 
+  ZMapXMLAttribute attr = (ZMapXMLAttribute)item; 
 
-  zmapXMLAttribute_free(attr);
+  zmapXMLAttributeFree(attr);
 
   return ;
 }
 
 static void markElementDirty(gpointer data, gpointer unused)
 {
-  zmapXMLElement ele = (zmapXMLElement)data;
+  ZMapXMLElement ele = (ZMapXMLElement)data;
   zmapXMLElementMarkDirty(ele);
   return ;
 }
 
 static void markAttributeDirty(gpointer item, gpointer data)
 {
-  zmapXMLAttribute attr = (zmapXMLAttribute)item; 
+  ZMapXMLAttribute attr = (ZMapXMLAttribute)item; 
 
   zmapXMLAttributeMarkDirty(attr);
 

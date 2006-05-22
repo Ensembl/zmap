@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  3 16:12 2006 (rds)
+ * Last edited: May 19 22:12 2006 (rds)
  * Created: Fri Aug  5 12:50:44 2005 (rds)
- * CVS info:   $Id: zmapXML_P.h,v 1.8 2006-03-30 16:23:23 rds Exp $
+ * CVS info:   $Id: zmapXML_P.h,v 1.9 2006-05-22 09:28:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,7 +49,7 @@ typedef struct _zmapXMLDocumentStruct
   GQuark version;
   GQuark encoding;
   int standalone;
-  zmapXMLElement root;
+  ZMapXMLElement root;
 } zmapXMLDocumentStruct;
 
 typedef struct _zmapXMLAttributeStruct
@@ -72,7 +72,7 @@ typedef struct _zmapXMLParserStruct
                                  * using this int. (Grrr.)
                                  */
 #endif
-  zmapXMLDocument document;
+  ZMapXMLDocument document;
 
   char *last_errmsg, *aborted_msg ;
   void *user_data ;       /* Caller stores any data they need here. */
@@ -93,25 +93,26 @@ typedef struct _zmapXMLParserStruct
 
 
 /* ATTRIBUTES */
-zmapXMLAttribute zmapXMLAttribute_create(const XML_Char *name,
+ZMapXMLAttribute zmapXMLAttributeCreate(const XML_Char *name,
                                          const XML_Char *value);
-void zmapXMLAttributeMarkDirty(zmapXMLAttribute attr);
-void zmapXMLAttribute_free(zmapXMLAttribute attr);
+void zmapXMLAttributeMarkDirty(ZMapXMLAttribute attr);
+void zmapXMLAttributeFree(ZMapXMLAttribute attr);
 
 /* ELEMENTS */
-zmapXMLElement zmapXMLElement_create(const XML_Char *name);
-gboolean zmapXMLElement_addAttribute(zmapXMLElement ele, zmapXMLAttribute attr);
-gboolean zmapXMLElement_addAttrPair(zmapXMLElement ele,
+ZMapXMLElement zmapXMLElementCreate(const XML_Char *name);
+gboolean zmapXMLElementAddAttribute(ZMapXMLElement ele, ZMapXMLAttribute attr);
+gboolean zmapXMLElementAddAttrPair(ZMapXMLElement ele,
                                     const XML_Char *name,
                                     const XML_Char *value);
-void zmapXMLElement_addContent(zmapXMLElement ele, 
+void zmapXMLElementAddContent(ZMapXMLElement ele, 
                                const XML_Char *content,
                                int len);
-void zmapXMLElement_addChild(zmapXMLElement parent, zmapXMLElement child);
-gboolean zmapXMLElement_signalParentChildFree(zmapXMLElement child);
-void zmapXMLElementMarkDirty(zmapXMLElement ele);
-void zmapXMLElement_free(zmapXMLElement ele);
-void zmapXMLElement_freeAttrList(zmapXMLElement ele);
+void zmapXMLElementAddChild(ZMapXMLElement parent, ZMapXMLElement child);
+gboolean zmapXMLElementSignalParentChildFree(ZMapXMLElement child);
+void zmapXMLElementMarkDirty(ZMapXMLElement ele);
+void zmapXMLElementMarkAttributesDirty(ZMapXMLElement ele);
+void zmapXMLElementFree(ZMapXMLElement ele);
+void zmapXMLElementFreeAttrList(ZMapXMLElement ele);
 
 /* PARSER */
 

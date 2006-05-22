@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Feb  7 09:02 2006 (rds)
+ * Last edited: May 19 22:22 2006 (rds)
  * Created: Thu Mar 18 12:02:52 2004 (edgrif)
- * CVS info:   $Id: dasServer_P.h,v 1.6 2006-02-07 09:24:20 rds Exp $
+ * CVS info:   $Id: dasServer_P.h,v 1.7 2006-05-22 09:30:12 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef DAS_SERVER_P_H
@@ -86,7 +86,7 @@ typedef struct _DasServerStruct
 
   int chunks ;						    /* for debugging at the moment... */
 
-  zmapXMLParser parser;
+  ZMapXMLParser parser;
 
   gboolean debug;
 
@@ -115,26 +115,26 @@ gboolean checkDSNExists(DasServer das,
 
 
 gboolean dsnStart(void *userData,
-                  zmapXMLElement element,
-                  zmapXMLParser parser);
+                  ZMapXMLElement element,
+                  ZMapXMLParser parser);
 gboolean dsnEnd(void *userData,
-                zmapXMLElement element,
-                zmapXMLParser parser);
+                ZMapXMLElement element,
+                ZMapXMLParser parser);
 gboolean segStart(void *userData,
-                  zmapXMLElement element,
-                  zmapXMLParser parser);
+                  ZMapXMLElement element,
+                  ZMapXMLParser parser);
 
 gboolean segEnd(void *userData,
-                zmapXMLElement element,
-                zmapXMLParser parser);
+                ZMapXMLElement element,
+                ZMapXMLParser parser);
 gboolean featStart(void *userData,
-                   zmapXMLElement element,
-                   zmapXMLParser parser);
+                   ZMapXMLElement element,
+                   ZMapXMLParser parser);
 gboolean featEnd(void *userData,
-                 zmapXMLElement element,
-                 zmapXMLParser parser);
+                 ZMapXMLElement element,
+                 ZMapXMLParser parser);
 gboolean cleanUpDoc(void *userData,
-                    zmapXMLElement element,
-                    zmapXMLParser parser);
+                    ZMapXMLElement element,
+                    ZMapXMLParser parser);
 
 #endif /* !DAS_SERVER_P_H */

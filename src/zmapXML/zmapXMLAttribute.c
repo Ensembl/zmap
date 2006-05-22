@@ -27,18 +27,18 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 15 16:51 2006 (rds)
+ * Last edited: May 19 22:30 2006 (rds)
  * Created: Fri Aug  5 14:20:13 2005 (rds)
- * CVS info:   $Id: zmapXMLAttribute.c,v 1.3 2006-02-15 17:08:41 rds Exp $
+ * CVS info:   $Id: zmapXMLAttribute.c,v 1.4 2006-05-22 09:28:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapXML_P.h>
 
-zmapXMLAttribute zmapXMLAttribute_create(const XML_Char *name,
-                                         const XML_Char *value)
+ZMapXMLAttribute zmapXMLAttributeCreate(const XML_Char *name,
+                                        const XML_Char *value)
 {
-  zmapXMLAttribute attr = NULL;
+  ZMapXMLAttribute attr = NULL;
 
   attr = g_new0(zmapXMLAttributeStruct, 1);
 
@@ -48,7 +48,7 @@ zmapXMLAttribute zmapXMLAttribute_create(const XML_Char *name,
   return attr;
 }
 
-void zmapXMLAttribute_free(zmapXMLAttribute attr)
+void zmapXMLAttributeFree(ZMapXMLAttribute attr)
 {
   if(attr != NULL)
     {
@@ -59,12 +59,12 @@ void zmapXMLAttribute_free(zmapXMLAttribute attr)
   return ;
 }
 
-GQuark zMapXMLAttribute_getValue(zmapXMLAttribute attr)
+GQuark zMapXMLAttributeGetValue(ZMapXMLAttribute attr)
 {
   return attr->value;
 }
 
-void zmapXMLAttributeMarkDirty(zmapXMLAttribute attr)
+void zmapXMLAttributeMarkDirty(ZMapXMLAttribute attr)
 {
   attr->dirty = TRUE;
   return ;
