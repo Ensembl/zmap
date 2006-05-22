@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 16 22:03 2006 (rds)
+ * Last edited: May 19 22:33 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.28 2006-05-17 12:40:55 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.29 2006-05-22 09:26:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -284,7 +284,6 @@ void removeZMapCB(void *app_data, void *zmap_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_data ;
   ZMap zmap = (ZMap)zmap_data ;
-  guint child_zmaps = 0;
 
   /* This has the potential to remove multiple rows, but currently
      doesn't as the first found one that matches, gets removed an
@@ -297,12 +296,6 @@ void removeZMapCB(void *app_data, void *zmap_data)
 
   if (app_context->selected_zmap == zmap)
     app_context->selected_zmap = NULL ;
-
-#ifdef RDS_DONT_INCLUDE
-  if(app_context->state_flag == KILLING_ALL_ZMAPS &&
-     (child_zmaps = zMapManagerCount(app_context->zmap_manager)) == 0)
-    appExit(app_context);
-#endif
 
   return ;
 }
