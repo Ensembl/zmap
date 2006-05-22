@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 19 10:35 2006 (edgrif)
+ * Last edited: May 22 10:07 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.123 2006-05-19 10:50:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.124 2006-05-22 13:25:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -688,6 +688,11 @@ void zMapWindowDestroy(ZMapWindow window)
 
   /* free the array of search windows and the windows themselves */
   zmapWindowFreeWindowArray(&(window->search_windows), TRUE) ;
+
+
+  /* Get rid of the column configuration window. */
+  zmapWindowColumnConfigureDestroy(window) ;
+
 
   zmapWindowLongItemFree(window->long_items) ;
 
