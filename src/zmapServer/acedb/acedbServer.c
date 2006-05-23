@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 19 08:15 2006 (edgrif)
+ * Last edited: May 23 15:06 2006 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.53 2006-05-19 10:48:22 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.54 2006-05-23 14:34:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1438,7 +1438,7 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
   gboolean no_display = FALSE ;
   double min_mag = 0.0, max_mag = 0.0 ;
   double min_score = 0.0, max_score = 0.0 ;
-  gboolean status = TRUE, outline_flag = FALSE ;
+  gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE ;
 
 
   if (!g_str_has_prefix(method_str, "Method : "))
@@ -1542,6 +1542,8 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	}
       else if (g_ascii_strcasecmp(tag, "No_display") == 0)
 	no_display = TRUE ;
+      else if (g_ascii_strcasecmp(tag, "Directional_ends") == 0)
+	directional_end = TRUE ;
       else if (g_ascii_strcasecmp(tag, "Min_mag") == 0)
 	{
 	  char *value ;
@@ -1673,6 +1675,8 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 
       if (no_display)
 	zMapStyleSetHideInitial(style, no_display) ;
+      if(directional_end)
+        zMapStyleSetEndStyle(style, directional_end);
     }
 
 
