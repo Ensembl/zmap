@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 23 11:55 2006 (edgrif)
+ * Last edited: May 23 14:17 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.131 2006-05-23 10:59:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.132 2006-05-23 13:18:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -634,8 +634,6 @@ static void createSetColumn(gpointer data, gpointer user_data)
 			     top, bottom,
 			     for_bg_colour) ;
 
-  zmapWindowColumnSetMagState(window, forward_col, style) ;
-
   status = zmapWindowFToIAddSet(window->context_to_item,
 				canvas_data->curr_alignment->unique_id,
 				canvas_data->curr_block->unique_id,
@@ -643,6 +641,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
 				ZMAPSTRAND_FORWARD,
 				forward_col) ;
   zMapAssert(status) ;
+
 
   canvas_data->curr_forward_col = zmapWindowContainerGetFeatures(forward_col) ;
   canvas_data->curr_forward_col_id = zmapWindowFToIMakeSetID(feature_set_id, ZMAPSTRAND_FORWARD) ;
@@ -687,7 +686,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   FooCanvasGroup *group ;
   FooCanvasItem *bounding_box ;
   double x1, x2, y1, y2 ;
-
+  gboolean status ;
 
   group = zmapWindowContainerCreate(parent_group, ZMAPCONTAINER_LEVEL_FEATURESET,
 				    window->config.feature_spacing,
@@ -725,9 +724,12 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
 		   G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
 
 
-  /* Some columns are hidden initially.... */
+  /* Some columns are hidden initially, perhaps because of magnification level or explicitly in
+   * the style for the column. */
   if (zMapStyleGetHideInitial(style))
-    foo_canvas_item_hide(FOO_CANVAS_ITEM(group)) ;
+    zmapWindowColumnHide(group) ;
+  else
+    zmapWindowColumnSetMagState(window, group, style) ;
 
 
   return group ;
