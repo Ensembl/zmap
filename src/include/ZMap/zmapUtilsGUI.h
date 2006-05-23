@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: May 10 18:07 2006 (rds)
+ * Last edited: May 23 10:28 2006 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.9 2006-05-11 13:07:41 rds Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.10 2006-05-23 10:58:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -44,6 +44,11 @@ typedef enum {ZMAPGUI_PIXELS_PER_CM, ZMAPGUI_PIXELS_PER_INCH,
  *  resulting in the call to this callback. */
 typedef void (*ZMapGUIMenuItemCallbackFunc)(int menu_item_id, gpointer callback_data) ;
 typedef void (*ZMapGUIRadioButtonCBFunc)(GtkWidget *button, gpointer data, gboolean button_active);
+
+/*! Set name field in ZMapGUIMenuItemStruct to one of these special values to for
+ * separators etc. */
+#define ZMAPGUI_MENU_SEPARATOR "ZMAPGUI_MENU_SEPARATOR"
+
 
 /*!
  * Defines a menu item. */

@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapUtilsGUI.h
  * HISTORY:
- * Last edited: May 19 16:51 2006 (edgrif)
+ * Last edited: May 23 10:27 2006 (edgrif)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.3 2006-05-19 15:58:04 edgrif Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.4 2006-05-23 10:58:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -167,7 +167,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
   item->item_type = "<Title>" ;
   item++ ;
 
-  item->path = makeMenuItemName("separator") ;
+  item->path = makeMenuItemName(ZMAPGUI_MENU_SEPARATOR) ;
   item->item_type = "<Separator>" ;
   item++ ;
 
@@ -184,6 +184,13 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
 	{
 	  item->item_type = "<Branch>" ;
 	  item->callback = NULL ;
+	  item->callback_action = -1 ;
+	}
+      else if (strcmp((menu_items[i].name), ZMAPGUI_MENU_SEPARATOR) == 0)
+	{
+	  item->item_type = "<Separator>" ;
+	  item->callback = NULL ;
+	  item->callback_action = -1 ;
 	}
 
       item++ ;
