@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May 19 13:00 2006 (edgrif)
+ * Last edited: May 23 14:36 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.67 2006-05-19 15:56:57 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.68 2006-05-23 13:56:20 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -434,18 +434,41 @@ typedef struct ZMapFeatureTypeStyleStruct_
 
   char *description ;					    /* Description of what this style
 							       represents. */
+  struct
+  {
+    /* I don't want a general show/hide flag here because we should
+     * get that dynamically from the state of the column canvas
+     * item.  */
+    unsigned int hide_initially  : 1 ; /* Is the column hidden initially ? */
 
-  /* I don't want a general show/hide flag here because we should get that dynamically from the
-   * state of the column canvas item. */
-  gboolean hide_initially ;				    /* Is the column hidden initially ? */
+    unsigned int show_when_empty : 1 ; /* If TRUE, features' column is
+                                          displayed even if there are no features. */
 
-  gboolean show_when_empty ;				    /* If TRUE, features column is
-							       displayed even if there are no features. */
+    unsigned int showText        : 1 ; /* Should feature text be displayed. */
 
-  gboolean background_set, foreground_set, outline_set;
-  GdkColor  foreground ;				    /* Overlaid on background. */
-  GdkColor  background ;				    /* Fill colour. */
-  GdkColor  outline ;					    /* Surround/line colour. */
+    unsigned int parse_gaps      : 1 ;
+    unsigned int align_gaps      : 1 ; /* TRUE: gaps within alignment are
+                                          displayed, FALSE: alignment is
+                                          displayed as a single block. */
+
+    /* These are all linked, if strand_specific is FALSE, then so are
+     * frame_specific and show_rev_strand. */
+    unsigned int strand_specific : 1 ;
+    unsigned int frame_specific  : 1 ;
+    unsigned int show_rev_strand : 1 ;
+
+    unsigned int directional_end : 1 ;
+  } opts ;
+
+  struct
+  {
+    unsigned int background_set : 1;
+    unsigned int foreground_set : 1;
+    unsigned int outline_set    : 1;
+    GdkColor  foreground ;      /* Overlaid on background. */
+    GdkColor  background ;      /* Fill colour. */
+    GdkColor  outline ;         /* Surround/line colour. */
+  } colours;
 
   ZMapStyleOverlapMode overlap_mode ;			    /* Controls how features are grouped
 							       into sub columns within a column. */
@@ -453,27 +476,12 @@ typedef struct ZMapFeatureTypeStyleStruct_
   double min_mag ;					    /* Don't display if fewer bases/line */
   double max_mag ;					    /* Don't display if more bases/line */
 
-  double    width ;					    /* column width */
+  double   width ;					    /* column width */
   double bump_width;
 
   ZMapStyleScoreMode   score_mode ;			    /* Controls width of features that
 							       have scores. */
   double    min_score, max_score ;			    /* Min/max for score width calc. */
-
-
-  gboolean  showText ;					    /* Should feature text be displayed. */
-
-  gboolean  parse_gaps ;
-  gboolean  align_gaps ;				    /* TRUE: gaps within alignment are
-							       displayed, FALSE: alignment is
-							       displayed as a single block. */
-
-  /* These are all linked, if strand_specific is FALSE, then so are frame_specific
-   * and show_rev_strand. */
-  gboolean  strand_specific ;
-  gboolean  frame_specific ;
-  gboolean  show_rev_strand ;
-
 
   /* GFF feature dumping, allows specifying of source/feature types independently of feature
    * attributes. */
