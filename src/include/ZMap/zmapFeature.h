@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May 23 14:36 2006 (rds)
+ * Last edited: May 23 15:03 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.68 2006-05-23 13:56:20 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.69 2006-05-23 14:30:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -633,6 +633,7 @@ void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean show_rev_strand) ;
 void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially) ;
 gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional);
 void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, 
                               gboolean show_gaps,
