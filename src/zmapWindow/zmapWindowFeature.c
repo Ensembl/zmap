@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 23 11:49 2006 (edgrif)
+ * Last edited: May 23 14:58 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.30 2006-05-23 10:59:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.31 2006-05-23 13:59:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,44 +59,31 @@ static FooCanvasItem *createParentGroup(FooCanvasGroup *parent,
 static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					double feature_offset,
 					double x1, double y1, double x2, double y2,
-					GdkColor *outline,
-                                        GdkColor *foreground,
-                                        GdkColor *background,
-					guint line_width,
+					ZMapFeatureTypeStyle style,
 					ZMapWindow window) ;
 static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					    double feature_offset,
 					    double x1, double feature_top,
 					    double x2, double feature_bottom,
-					    GdkColor *outline, 
-                                            GdkColor *foreground,
-                                            GdkColor *background,
-					    guint line_width,
+					    ZMapFeatureTypeStyle style,
 					    ZMapWindow window) ;
 static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature feature,
                                            double feature_offset,
                                            double x1, double feature_top,
                                            double x2, double feature_bottom,
-                                           GdkColor *outline, 
-                                           GdkColor *foreground,
-                                           GdkColor *background,
-					   guint line_width,
+                                           ZMapFeatureTypeStyle style,
                                            ZMapWindow window) ;
 static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
                               double feature_offset,
                               double feature_zero,      double feature_top,
                               double feature_thickness, double feature_bottom,
-                              GdkColor *outline, 
-                              GdkColor *foreground,
-                              GdkColor *background,
+                              ZMapFeatureTypeStyle style,
                               ZMapWindow window) ;
 static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
                               double feature_offset,
                               double feature_zero,      double feature_top,
                               double feature_thickness, double feature_bottom,
-                              GdkColor *outline, 
-                              GdkColor *foreground,
-                              GdkColor *background,
+                              ZMapFeatureTypeStyle style,
                               ZMapWindow window) ;
 static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text, 
                                     double feature_start, double feature_end,
@@ -332,7 +319,7 @@ ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature)
   ZMapFeatureTypeStyle style = feature->style ;
 
 
-  if (!(style->strand_specific)
+  if (!(style->opts.strand_specific)
       || (feature->strand == ZMAPSTRAND_FORWARD || feature->strand == ZMAPSTRAND_NONE))
     strand = ZMAPSTRAND_FORWARD ;
   else
@@ -353,16 +340,14 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   ZMapFeatureSet set ;
   FooCanvasGroup *column_group ;
   FooCanvasItem *top_feature_item = NULL ;
-  GdkColor *b, *f, *o;
-  guint line_width ;
   double feature_offset;
   double start_x, end_x ;
 
 
   /* Users will often not want to see what is on the reverse strand, style specifies what should
    * be shown. */
-  if (style->strand_specific
-      && (feature->strand == ZMAPSTRAND_REVERSE && style->show_rev_strand == FALSE))
+  if (style->opts.strand_specific
+      && (feature->strand == ZMAPSTRAND_REVERSE && style->opts.show_rev_strand == FALSE))
     {
       return NULL ;
     }
@@ -387,11 +372,6 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   start_x = 0.0 ;
   end_x   = style->width ;
 
-  zMapFeatureTypeGetColours(style, &b, &f, &o);
-
-  line_width = window->config.feature_line_width ;
-
-
   switch (feature->type)
     {
     case ZMAPFEATURE_BASIC:
@@ -399,8 +379,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 	top_feature_item = drawSimpleFeature(column_group, feature,
 					     feature_offset,
 					     start_x, feature->x1, end_x, feature->x2,
-					     o, f, b,
-					     line_width,
+					     style,
 					     window) ;
 	break ;
       }
@@ -408,19 +387,17 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
       {
 	zmapWindowGetPosFromScore(style, feature->score, &start_x, &end_x) ;
 
-        if(style->align_gaps)
+        if(style->opts.align_gaps)
           top_feature_item = drawAlignmentFeature(column_group, feature,
                                                   feature_offset,
                                                   start_x, feature->x1, end_x, feature->x2,
-                                                  o, f, b,
-						  line_width,
+                                                  style,
                                                   window);
         else
           top_feature_item = drawSimpleFeature(column_group, feature,
                                                feature_offset,
                                                start_x, feature->x1, end_x, feature->x2,
-                                               o, f, b,
-					       line_width,
+                                               style,
                                                window) ;
         break;
       }
@@ -435,7 +412,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 	top_feature_item = drawDNA(column_group, feature,
                                    feature_offset,
                                    start_x, feature->x1, end_x, feature->x2,
-                                   o, f, b,
+                                   style,
                                    window) ;
 
         break ;
@@ -446,7 +423,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
         top_feature_item = drawPep(column_group, feature,
                                    feature_offset,
                                    start_x, feature->x1, end_x, feature->x2,
-                                   o, f, b,
+                                   style,
                                    window);
         pep_style = zmapWindowContainerGetStyle(set_group) ;
         pep_style->bump_width = 300.0;
@@ -457,8 +434,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 	top_feature_item = drawTranscriptFeature(column_group, feature,
 						 feature_offset,
 						 start_x, 0.0, end_x, 0.0,
-						 o, f, b,
-						 line_width,
+                                                 style,
                                                  window) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	zmapWindowPrintGroup(FOO_CANVAS_GROUP(feature_group)) ;
@@ -566,13 +542,15 @@ static FooCanvasItem *createParentGroup(FooCanvasGroup *parent,
 static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					double feature_offset,
 					double x1, double y1, double x2, double y2,
-					GdkColor *outline, 
-                                        GdkColor *foreground,
-                                        GdkColor *background,
-					guint line_width,
+                                        ZMapFeatureTypeStyle style,
 					ZMapWindow window)
 {
   FooCanvasItem *feature_item ;
+  GdkColor *outline, *foreground, *background;
+  guint line_width;
+
+  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
+  line_width = window->config.feature_line_width;
 
   if(featureClipItemToDraw(feature, &y1, &y2))
     return NULL ;
@@ -595,20 +573,22 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                            double feature_offset,
                                            double x1, double feature_top,
                                            double x2, double feature_bottom,
-                                           GdkColor *outline, 
-                                           GdkColor *foreground,
-                                           GdkColor *background,
-					   guint line_width,
+                                           ZMapFeatureTypeStyle style,
                                            ZMapWindow window) 
 {
   FooCanvasItem *feature_item ;
   double offset ;
   int i ;
+  GdkColor *outline, *foreground, *background;
+  guint line_width;
+
+  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
+  line_width = window->config.feature_line_width;
 
   if (!feature->feature.homol.align)
     feature_item = drawSimpleFeature(parent, feature, feature_offset,
                                      x1, feature_top, x2, feature_bottom,
-                                     outline, foreground, background, line_width, window) ;
+                                     style, window) ;
   else if(feature->feature.homol.align)
     {
       double feature_start, feature_end;
@@ -774,16 +754,18 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 					    double feature_offset,
 					    double x1, double feature_top,
 					    double x2, double feature_bottom,
-					    GdkColor *outline, 
-                                            GdkColor *foreground,
-                                            GdkColor *background,
-					    guint line_width,
+                                            ZMapFeatureTypeStyle style,
 					    ZMapWindow window)
 {
   FooCanvasItem *feature_item ;
+  GdkColor *outline, *foreground, *background;
+  guint line_width;
   GdkColor *intron_fill = NULL;
   int i ;
   double offset ;
+
+  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
+  line_width = window->config.feature_line_width;
 
   if((intron_fill = background) == NULL)
     intron_fill   = outline;
@@ -795,7 +777,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
     {
       feature_item = drawSimpleFeature(parent, feature, feature_offset,
 				       x1, feature->x1, x2, feature->x2,
-				       outline, foreground, background, line_width, window) ;
+				       style, window) ;
     }
   else
     {
@@ -955,7 +937,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
                 }
 
               exon_box = zMapDrawSSPolygon(feature_item, 
-                                           ZMAP_POLYGON_POINTING, 
+                                           (style->opts.directional_end ? ZMAP_POLYGON_POINTING : ZMAP_POLYGON_SQUARE), 
                                            x1, x2,
                                            top, bottom,
                                            exon_outline, 
@@ -1099,9 +1081,7 @@ static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text,
 static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
                               double feature_offset,
                               double x1, double y1, double x2, double y2,
-                              GdkColor *outline, 
-                              GdkColor *foreground,
-                              GdkColor *background,
+                              ZMapFeatureTypeStyle style,
                               ZMapWindow window)
 {
   double feature_start, feature_end, new_x = 0.0;
@@ -1110,6 +1090,9 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
   FooCanvasGroup *column_parent  = NULL;
   ZMapWindowItemHighlighter hlght= NULL;
   gpointer callback              = NULL;
+  GdkColor *outline, *foreground, *background;
+
+  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
 
   feature_start  = feature->x1;
   feature_end    = feature->x2;
@@ -1158,9 +1141,7 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
 static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
                               double feature_offset,
                               double x1, double y1, double x2, double y2,
-                              GdkColor *outline, 
-                              GdkColor *foreground,
-                              GdkColor *background,
+                              ZMapFeatureTypeStyle style,
                               ZMapWindow window)
 {
   double feature_start, feature_end;
@@ -1170,6 +1151,9 @@ static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
   ZMapFeatureSet   feature_set   = NULL;
   ZMapWindowItemHighlighter hlght= NULL;
   gpointer callback              = NULL;
+  GdkColor *outline, *foreground, *background;
+
+  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
 
   feature_start  = feature->x1;
   feature_end    = feature->x2;
