@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 23 14:39 2006 (rds)
+ * Last edited: May 23 15:32 2006 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.19 2006-05-23 13:56:54 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.20 2006-05-23 14:33:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -167,7 +167,17 @@ gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style)
   return style->opts.hide_initially ;
 }
 
-
+/*!
+ * \brief sets the end style of exons
+ *
+ * Controls the end of exons at the moment.  They are either pointy,
+ * strand sensitive (when true) or square when false (default) */
+void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional)
+{
+  zMapAssert(style);
+  style->opts.directional_end = directional;
+  return;
+}
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -443,6 +453,8 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	   {"bump"        , ZMAPCONFIG_STRING, {NULL}},
 	   {"gapped_align", ZMAPCONFIG_BOOL, {NULL}},
 	   {"read_gaps"   , ZMAPCONFIG_BOOL, {NULL}},
+	   {"directional_end", ZMAPCONFIG_BOOL, {NULL}},
+           {"hide_initially", ZMAPCONFIG_BOOL, {NULL}},
 	   {NULL, -1, {NULL}}} ;
 
       /* Init fields that cannot default to string NULL. */
@@ -504,7 +516,8 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
               zMapStyleSetGappedAligns(new_type, 
                                        zMapConfigGetElementBool(next_types, "gapped_align"),
                                        TRUE);
-
+              zMapStyleSetHideInitial(new_type, zMapConfigGetElementBool(next_types, "hide_initially"));
+              zMapStyleSetEndStyle(new_type, zMapConfigGetElementBool(next_types, "directional_end"));
 	      types = g_list_append(types, new_type) ;
 
 	      num_types++ ;
