@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 19 17:58 2006 (edgrif)
+ * Last edited: May 23 11:55 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.130 2006-05-19 17:24:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.131 2006-05-23 10:59:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1103,11 +1103,11 @@ static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   cbdata->feature_set = feature_set ;
 
   /* Make up the menu. */
-  menu_sets = g_list_append(menu_sets, makeMenuColumnOps(NULL, NULL, cbdata)) ;
-
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBump(NULL, NULL, cbdata)) ;
 
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDumpOps(NULL, NULL, cbdata)) ;
+
+  menu_sets = g_list_append(menu_sets, makeMenuColumnOps(NULL, NULL, cbdata)) ;
 
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
@@ -1125,6 +1125,7 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
+      {ZMAPGUI_MENU_SEPARATOR, 0, NULL, NULL},
       {"Show Feature List",      1, columnMenuCB, NULL},
       {"Feature Search Window",  2, columnMenuCB, NULL},
       {NULL,                     0, NULL,       NULL}

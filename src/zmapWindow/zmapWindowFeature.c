@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 23 10:13 2006 (edgrif)
+ * Last edited: May 23 11:49 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.29 2006-05-23 09:18:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.30 2006-05-23 10:59:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -105,19 +105,18 @@ static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text,
                                     double width, int bases_per_char, 
                                     GCallback eventCB, ZMapWindow window);
 
-static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
-				   ZMapGUIMenuItemCallbackFunc callback_func,
-				   gpointer callback_data);
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
 			 FooCanvasItem *item) ;
 static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
 				   ZMapGUIMenuItemCallbackFunc callback_func,
 				   gpointer callback_data) ;
-static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
-
 static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data) ;
+static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data) ;
+static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void dnaHandleZoomCB(FooCanvasItem *container,
                             double zoom,
@@ -1753,12 +1752,22 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   menu_data->item = item ;
 
   /* Make up the menu. */
+
+  /* Feature ops. */
   menu_sets = g_list_append(menu_sets, makeMenuFeatureOps(NULL, NULL, menu_data)) ;
 
   if (feature->url)
     menu_sets = g_list_append(menu_sets, makeMenuURL(NULL, NULL, menu_data)) ;
 
+  if (feature->type == ZMAPFEATURE_ALIGNMENT)
+    {
+      if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+	menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomol(NULL, NULL, menu_data)) ;
+      else
+	menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, menu_data)) ;
+    }
 
+  /* DNA/Peptide ops. */
   if (feature->type == ZMAPFEATURE_TRANSCRIPT)
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNATranscript(NULL, NULL, menu_data)) ;
@@ -1772,17 +1781,11 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAFeatureAnyFile(NULL, NULL, menu_data)) ;
     }
 
-  if (feature->type == ZMAPFEATURE_ALIGNMENT)
-    {
-      if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
-	menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomol(NULL, NULL, menu_data)) ;
-      else
-	menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, menu_data)) ;
-    }
-
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBump(NULL, NULL, menu_data)) ;
 
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDumpOps(NULL, NULL, menu_data)) ;
+
+  menu_sets = g_list_append(menu_sets, makeMenuGeneralOps(NULL, NULL, menu_data)) ;
 
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
@@ -1874,9 +1877,7 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"Show This Feature",           2, itemMenuCB, NULL},
-      {"List All Column Features",      1, itemMenuCB, NULL},
-      {"Feature Search Window",  3, itemMenuCB, NULL},
+      {"Show Feature Details",   2, itemMenuCB, NULL},
       {"Pfetch this feature",    4, itemMenuCB, NULL},
       {NULL,                     0, NULL,       NULL}
     } ;
@@ -1885,6 +1886,26 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 
   return menu ;
 }
+
+
+
+static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
+					  ZMapGUIMenuItemCallbackFunc callback_func,
+					  gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_SEPARATOR, 0, NULL, NULL},
+      {"List All Column Features",      1, itemMenuCB, NULL},
+      {"Feature Search Window",  3, itemMenuCB, NULL},
+      {NULL,                     0, NULL,       NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
 
 
 static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
