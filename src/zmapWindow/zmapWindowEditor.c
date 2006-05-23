@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 22 13:50 2006 (edgrif)
+ * Last edited: May 23 10:12 2006 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.25 2006-05-22 13:27:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.26 2006-05-23 09:18:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,7 +93,9 @@ typedef enum {
   EDIT_CREATE = 1 << 4  /*!< Further uncoded where editing of created features will take place */
 } editorMode;
 
+
 typedef gboolean (*EditorCallbackFunc)(char *label, char *value, void *retValue) ;
+
 
 /* An array of this struct is the main driver for the program */
 typedef struct MainTableStruct
@@ -114,6 +116,7 @@ typedef struct MainTableStruct
   EditorCallbackFunc validateCB;
 
 } mainTableStruct, *mainTable;
+
 
 typedef struct _zmapWindowEditorDataStruct
 {
@@ -141,7 +144,7 @@ typedef struct _zmapWindowEditorDataStruct
   gboolean editable;      /*!< Whether or not the treeView columns are editable  */
   gboolean Ontology_compliant; /*!< Whether or not we're interested in compliance with a user specified ontology  */
 
-} zmapWindowEditorDataStruct;
+} zmapWindowEditorDataStruct ;
 
 
 
@@ -156,12 +159,8 @@ typedef struct
 
 
 /* function prototypes ************************************/
-//static gboolean arrayClickedCB(GObject *gobject,
-//			GParamSpec *arg1,
-//		       gpointer user_data);
 
 static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapFeature feature);
-//static void parseField(mainTable table, ZMapFeature feature);
 static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_type);
 
 static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeModel);
@@ -192,12 +191,6 @@ static void buildCol(colInfoStruct colInfo, GtkWidget *treeView, mainTable table
 static gboolean arrayEditedCB(GtkCellRendererText *renderer, 
 			  char *path, char *new_text, gpointer user_data);
 
-/* My new methods*/
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static char *myFeatureLookupEnum(int id, int enumType);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static gboolean selectionFunc(GtkTreeSelection *selection, 
                               GtkTreeModel     *model,
                               GtkTreePath      *path, 
@@ -215,6 +208,24 @@ static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer 
 static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
 static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
 
+static GtkWidget *makeMenuBar(ZMapWindowEditor editor_data) ;
+static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
+static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
+
+
+
+
+/* menu GLOBAL! */
+static GtkItemFactoryEntry menu_items_G[] = {
+ /* File */
+ { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
+ { "/File/Close",         "<control>W", requestDestroyCB, 0,          NULL,       NULL},
+ /* Help */
+ { "/_Help",             NULL, NULL,       0,            "<LastBranch>", NULL},
+ { "/Help/Feature List", NULL, helpMenuCB, 1,  NULL,           NULL},
+ { "/Help/1-----------", NULL, NULL,       0,            "<Separator>",  NULL},
+ { "/Help/About",        NULL, helpMenuCB, 2, NULL,           NULL}
+};
 
 
 
@@ -228,7 +239,8 @@ static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpo
  */
 /* For now we accept the item here, but when we start being a feature
  * creator as well, it'll be set before draw. */
-ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item)
+ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow,
+					FooCanvasItem *item, gboolean edittable)
 {
   ZMapWindowEditor editor = NULL ;
   int type = 0 ;
@@ -516,6 +528,8 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
   g_signal_connect(G_OBJECT (editor_data->window), "destroy",
 		   G_CALLBACK (destroyCB), editor_data);
 
+  /* Add ptrs so parent knows about us */
+  g_ptr_array_add(editor_data->zmapWindow->editor_windows, (gpointer)(editor_data->window)) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -528,6 +542,9 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_box_set_spacing(GTK_BOX(vbox), 5) ;
   gtk_container_add(GTK_CONTAINER(editor_data->window), vbox) ;
+
+  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(editor_data), FALSE, FALSE, 0);
+
 
   /* Make the feature subparts window. */
   /* Treeview needs to be in scrolled window otherwise the window can get too big.... */
@@ -590,10 +607,14 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
       gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
       /*  GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);  */
 
+
       button = gtk_button_new_with_label("Undo");
       g_signal_connect(GTK_OBJECT(button), "clicked",
                        GTK_SIGNAL_FUNC(undoChangesCB), editor_data);
       gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
+      if (!(editor_data->zmapWindow->edittable_features))
+	gtk_widget_set_sensitive(button, FALSE) ;
+
 
       /* Add them to the Hbox */
       gtk_box_pack_start(GTK_BOX(buttonHBox), buttonBox, TRUE, TRUE, 0) ;
@@ -610,11 +631,16 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
       g_signal_connect(GTK_OBJECT(button), "clicked",
                        GTK_SIGNAL_FUNC(applyChangesCB), editor_data);
       gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
+      if (!(editor_data->zmapWindow->edittable_features))
+	gtk_widget_set_sensitive(button, FALSE) ;
 
       button = gtk_button_new_with_label("Save & Close");
       g_signal_connect(GTK_OBJECT(button), "clicked",
                        GTK_SIGNAL_FUNC(saveChangesCB), editor_data);
       gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
+      if (!(editor_data->zmapWindow->edittable_features))
+	gtk_widget_set_sensitive(button, FALSE) ;
+
 
       /* Add them to the Hbox */
       gtk_box_pack_start(GTK_BOX(buttonHBox), buttonBox, TRUE, TRUE, 0) ;      
@@ -1559,6 +1585,7 @@ static void destroyCB(GtkWidget *widget, gpointer data)
       zMapMessage("You had unsaved changes! %s", "They have been lost!") ;
     }
 
+  g_ptr_array_remove(editor_data->zmapWindow->editor_windows, (gpointer)editor_data->window);
   g_free(editor_data->table) ;
   g_free(editor_data->wcopyFeature) ;
   g_free(editor_data) ;
@@ -1747,6 +1774,65 @@ static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpo
 
   return ;
 }
+
+
+/* make the menu from the global defined above !
+ */
+
+static GtkWidget *makeMenuBar(ZMapWindowEditor editor_data)
+{
+  GtkAccelGroup *accel_group;
+  GtkItemFactory *item_factory;
+  GtkWidget *menubar ;
+  gint nmenu_items = sizeof (menu_items_G) / sizeof (menu_items_G[0]);
+
+  accel_group = gtk_accel_group_new ();
+
+  item_factory = gtk_item_factory_new (GTK_TYPE_MENU_BAR, "<main>", accel_group );
+
+  gtk_item_factory_create_items(item_factory, nmenu_items, menu_items_G, (gpointer)editor_data) ;
+
+  gtk_window_add_accel_group(GTK_WINDOW(editor_data->window), accel_group) ;
+
+  menubar = gtk_item_factory_get_widget(item_factory, "<main>");
+
+  return menubar ;
+}
+
+
+
+/* Request destroy of list window, ends up with gtk calling destroyCB(). */
+static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget)
+{
+  ZMapWindowEditor editor_data = (ZMapWindowEditor)data;
+
+  gtk_widget_destroy(GTK_WIDGET(editor_data->window)) ;
+
+  return ;
+}
+
+
+
+static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
+{
+  ZMapWindowEditor editor_data = (ZMapWindowEditor)data ;
+  GtkWidget *window ;
+
+  window = editor_data->window ;
+
+  switch(cb_action)
+    {
+    case 1:
+    case 2:
+    default:
+      printf("No help yet.\n");
+      break;
+    }
+
+  return ;
+}
+
+
 
 
 

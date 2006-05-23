@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 19 17:02 2006 (edgrif)
+ * Last edited: May 23 10:13 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.28 2006-05-19 16:02:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.29 2006-05-23 09:18:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2034,7 +2034,8 @@ static gboolean makeFeatureEditWindow(ZMapWindow window, ZMapFeature feature)
 					 strand,
 					 feature->unique_id)))
     {
-      zmapWindowEditorCreate(window, item) ;
+      zmapWindowEditorCreate(window, item, window->edittable_features) ;
+
       result = TRUE ;
     }
 

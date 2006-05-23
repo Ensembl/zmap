@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 22 10:07 2006 (edgrif)
+ * Last edited: May 23 10:09 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.124 2006-05-22 13:25:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.125 2006-05-23 09:18:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -690,6 +690,10 @@ void zMapWindowDestroy(ZMapWindow window)
   zmapWindowFreeWindowArray(&(window->search_windows), TRUE) ;
 
 
+  /* free the array of search windows and the windows themselves */
+  zmapWindowFreeWindowArray(&(window->editor_windows), TRUE) ;
+
+
   /* Get rid of the column configuration window. */
   zmapWindowColumnConfigureDestroy(window) ;
 
@@ -1054,8 +1058,11 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   /* Add a hash table to map features to their canvas items. */
   window->context_to_item = zmapWindowFToICreate() ;
 
-  window->featureListWindows = g_ptr_array_new();
-  window->search_windows = g_ptr_array_new();
+  /* Init. lists of dialog windows attached to this zmap window. */
+  window->featureListWindows = g_ptr_array_new() ;
+  window->search_windows = g_ptr_array_new() ;
+  window->edittable_features = FALSE ;			    /* By default features are not edittable. */
+  window->editor_windows = g_ptr_array_new() ;
 
 
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
@@ -1334,6 +1341,9 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows)
 
       /* free the array of search windows and the windows themselves */
       zmapWindowFreeWindowArray(&(window->search_windows), FALSE) ;
+
+      /* free the array of editor windows and the windows themselves */
+      zmapWindowFreeWindowArray(&(window->editor_windows), FALSE) ;
     }
 
 

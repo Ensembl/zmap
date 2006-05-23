@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May 22 10:00 2006 (edgrif)
+ * Last edited: May 23 10:08 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.120 2006-05-22 13:27:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.121 2006-05-23 09:18:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -359,6 +359,9 @@ typedef struct _ZMapWindowStruct
 
   GPtrArray *search_windows ;				    /* popup search windows. */
 
+  gboolean edittable_features ;				    /* FALSE means no features are edittable. */
+  GPtrArray *editor_windows ;				    /* popup feature editor/display windows. */
+
   GtkWidget *col_config_window ;			    /* column configuration window. */
 
 
@@ -525,7 +528,8 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType);
 
 
-ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item); 
+ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow,
+					FooCanvasItem *item, gboolean edittable) ; 
 void zmapWindowEditorDraw(ZMapWindowEditor editor);
 
 void zmapWindowScrollRegionTool(ZMapWindow window,
