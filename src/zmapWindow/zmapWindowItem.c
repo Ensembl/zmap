@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 19 16:53 2006 (edgrif)
+ * Last edited: May 23 14:59 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.27 2006-05-19 15:59:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.28 2006-05-23 14:00:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1372,7 +1372,7 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
 
       /* If we defintely have a background or can only possibly have a
        * background we'll use that */
-      if(style->background_set ||
+      if(style->colours.background_set ||
          (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_TEXT(item)))
         {
           g_object_get(G_OBJECT(item), 
@@ -1382,8 +1382,10 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
             foo_canvas_item_set(FOO_CANVAS_ITEM(item),
                                 "fill_color_gdk", rev_colour,
                                 NULL); 
-        } /* else use the outline as a back up */
-      else if(style->outline_set &&
+        } 
+      //#ifdef RDS_NOT_SURE_OUTLINE_IS_SUCH_A_GOOD_BACKUP
+      /* else use the outline as a back up */
+      else if(style->colours.outline_set &&
               (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item)))
         {
           g_object_get(G_OBJECT(item), 
@@ -1394,6 +1396,7 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
                                 "outline_color_gdk", rev_colour,
                                 NULL); 
         }
+      //#endif /* RDS_NOT_SURE_OUTLINE_IS_SUCH_A_GOOD_BACKUP */
     }
 
   return ;

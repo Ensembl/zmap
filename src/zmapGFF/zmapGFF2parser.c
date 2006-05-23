@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: May 18 08:21 2006 (rds)
+ * Last edited: May 23 14:22 2006 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.47 2006-05-18 13:52:17 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.48 2006-05-23 13:57:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -999,7 +999,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
      else if (feature_type == ZMAPFEATURE_ALIGNMENT)
        {
 	 /* I am not sure if we ever have target_strand, target_phase from GFF output.... */
-         if(curr_style->parse_gaps && 
+         if(curr_style->opts.parse_gaps && 
             ((gaps_onwards = strstr(attributes, " Gaps ")) != NULL)) 
            {
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));

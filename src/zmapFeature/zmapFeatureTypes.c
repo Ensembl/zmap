@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 19 08:27 2006 (edgrif)
+ * Last edited: May 23 14:39 2006 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.18 2006-05-19 10:46:50 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.19 2006-05-23 13:56:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,25 +96,25 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
 
   if(outline && *outline)
     {
-      gdk_color_parse(outline, &new_type->outline) ;
-      new_type->outline_set = TRUE;
+      gdk_color_parse(outline, &new_type->colours.outline) ;
+      new_type->colours.outline_set = TRUE;
     }
   if(foreground && *foreground)
     {
-      gdk_color_parse(foreground, &new_type->foreground) ;
-      new_type->foreground_set = TRUE;
+      gdk_color_parse(foreground, &new_type->colours.foreground) ;
+      new_type->colours.foreground_set = TRUE;
     }
   if(background && *background)
     {
-      gdk_color_parse(background, &new_type->background) ;
-      new_type->background_set = TRUE;
+      gdk_color_parse(background, &new_type->colours.background) ;
+      new_type->colours.background_set = TRUE;
     }
 
   new_type->width = width ;
 
   /* By default we always parse homology gaps, important for stuff like passing this
    * information to blixem. */
-  new_type->parse_gaps = TRUE ;
+  new_type->opts.parse_gaps = TRUE ;
 
   return new_type ;
 }
@@ -155,7 +155,7 @@ void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially
 {
   zMapAssert(style) ;
 
-  style->hide_initially = hide_initially ;
+  style->opts.hide_initially = hide_initially ;
 
   return ;
 }
@@ -164,7 +164,7 @@ gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style)
 {
   zMapAssert(style) ;
 
-  return style->hide_initially ;
+  return style->opts.hide_initially ;
 }
 
 
@@ -233,9 +233,9 @@ void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
   if (show_rev_strand && !strand_specific)
     strand_specific = TRUE ;
 
-  type->strand_specific = strand_specific ;
-  type->frame_specific = frame_specific ;
-  type->show_rev_strand = show_rev_strand ;
+  type->opts.strand_specific = strand_specific ;
+  type->opts.frame_specific  = frame_specific ;
+  type->opts.show_rev_strand = show_rev_strand ;
 
   return ;
 }
@@ -287,8 +287,8 @@ void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style,
 {
   zMapAssert(style);
 
-  style->align_gaps = show_gaps ;
-  style->parse_gaps = parse_gaps ;
+  style->opts.align_gaps = show_gaps ;
+  style->opts.parse_gaps = parse_gaps ;
 
   return ;
 }
@@ -545,24 +545,24 @@ void zMapFeatureTypeGetColours(ZMapFeatureTypeStyle style,
 {
   if(background)
     {
-      if(style->background_set)
-        *background = &(style->background);
+      if(style->colours.background_set)
+        *background = &(style->colours.background);
       else
         *background = NULL;
     }
 
   if(foreground)
     {
-      if(style->foreground_set)
-        *foreground = &(style->foreground);
+      if(style->colours.foreground_set)
+        *foreground = &(style->colours.foreground);
       else
         *foreground = NULL;
     }
 
   if(outline)
     {
-      if(style->outline_set)
-        *outline = &(style->outline);
+      if(style->colours.outline_set)
+        *outline = &(style->colours.outline);
       else
         *outline = NULL;
     }
@@ -617,7 +617,7 @@ static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data)
   char *style_name = (char *)g_quark_to_string(key_id) ;
   
   printf("\t%s: \t%f \t%s\n", style_name, style->width,
-	 (style->show_rev_strand ? "show_rev_strand" : "!show_rev_strand")) ;
+	 (style->opts.show_rev_strand ? "show_rev_strand" : "!show_rev_strand")) ;
 
   return ;
 }
