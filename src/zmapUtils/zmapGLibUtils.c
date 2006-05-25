@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: May 19 16:50 2006 (edgrif)
+ * Last edited: May 25 16:02 2006 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.6 2006-05-19 15:55:58 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.7 2006-05-25 17:04:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -129,7 +129,6 @@ char *zMap_g_remove_char(char *string, char ch)
 
 
 
-
 /* 
  *                Additions to GList 
  */
@@ -181,6 +180,33 @@ void zMap_g_list_foreach_directional(GList   *list,
       list = next;
     }
   return ;
+}
+
+
+/*! Just like g_list_foreach() except that the ZMapGFuncCond function can return
+ * FALSE to stop the foreach loop from executing.
+ * 
+ * Returns FALSE if ZMapGFuncCond returned FALSE, TRUE otherwise.
+ * 
+ *  */
+gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user_data)
+{
+  gboolean status = TRUE ;
+
+  while (list)
+    {
+      GList *next = list->next ;
+
+      if (!((*func)(list->data, user_data)))
+	{
+	  status = FALSE ;
+	  break ;
+	}
+
+      list = next ;
+    }
+
+  return status ;
 }
 
 
