@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: May 17 11:56 2006 (rds)
+ * Last edited: May 25 16:22 2006 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.11 2006-05-17 11:18:18 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.12 2006-05-25 16:02:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -105,8 +105,13 @@ void zMapXRemoteSetWindowID(zMapXRemoteObj object, Window id)
 
 void zMapXRemoteSetRequestAtomName(zMapXRemoteObj object, char *name)
 {
+  char *atom_name = NULL;
   zmapXDebug("zMapXRemoteSetRequestAtomName change to '%s'\n", name);
   object->request_atom = XInternAtom (object->display, name, False);
+
+  if(!(atom_name = XGetAtomName(object->display, object->request_atom)))
+    zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", name);
+
   zmapXDebug("New name is %s\n", zmapXRemoteGetAtomName(object, object->request_atom));
   /* XSync(object->display, True); */
   /* zmapXRemoteChangeProperty(object, object->request_atom, ""); */
@@ -115,8 +120,13 @@ void zMapXRemoteSetRequestAtomName(zMapXRemoteObj object, char *name)
 
 void zMapXRemoteSetResponseAtomName(zMapXRemoteObj object, char *name)
 {
+  char *atom_name = NULL;
   zmapXDebug("zMapXRemoteSetResponseAtomName change to '%s'\n", name);  
   object->response_atom = XInternAtom(object->display, name, False);
+
+  if(!(atom_name = XGetAtomName(object->display, object->response_atom)))
+    zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", name);
+
   zmapXDebug("New name is %s\n", zmapXRemoteGetAtomName(object, object->response_atom));
   /* XSync(object->display, True); */
   /* zmapXRemoteChangeProperty(object, object->response_atom, ""); */
