@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 22 10:41 2006 (rds)
+ * Last edited: May 25 19:54 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.16 2006-05-22 17:10:13 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.17 2006-05-26 18:00:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,7 @@ static void setupExpat(ZMapXMLParser parser);
 static void initElements(GArray *array);
 static void initAttributes(GArray *array);
 static void freeUpTheQueue(ZMapXMLParser parser);
+static void freeTagHandlers(gpointer data, gpointer un_used_data);
 static char *getOffendingXML(ZMapXMLParser parser, int context);
 static void abortParsing(ZMapXMLParser parser, char *reason, ...);
 static ZMapXMLElement parserFetchNewElement(ZMapXMLParser parser, 
@@ -79,7 +80,10 @@ static void xmldecl_handler(void* data,
 
 static ZMapXMLMarkupObjectHandler getObjHandler(ZMapXMLElement element,
                                                 GList *tagHandlerItemList);
-
+static void setupAutomagicCleanup(ZMapXMLParser parser, ZMapXMLElement element);
+static gboolean defaultAlwaysTrueHandler(void *ignored_data,
+                                         ZMapXMLElement element,
+                                         ZMapXMLParser parser);
 /* So what does this do?
  * ---------------------
 
@@ -347,7 +351,8 @@ gboolean zMapXMLParserReset(ZMapXMLParser parser)
 {
   gboolean result = TRUE;
 
-  printf("\n\n ++++ PARSER is being reset ++++ \n\n");
+  if(parser->debug)
+    printf("\n ++++ PARSER is being reset ++++ \n");
 
   /* Clean up our data structures */
   /* Check out this memory leak. 
@@ -357,6 +362,23 @@ gboolean zMapXMLParserReset(ZMapXMLParser parser)
    * is free....
    */
   parser->document = NULL;
+
+  parser->startMOHandler = 
+    parser->endMOHandler = NULL;
+
+  if(parser->startTagHandlers)
+    {
+      g_list_foreach(parser->startTagHandlers, freeTagHandlers, NULL);
+      g_list_free(parser->startTagHandlers);
+    }
+  if(parser->endTagHandlers)
+    {
+      g_list_foreach(parser->endTagHandlers, freeTagHandlers, NULL);
+      g_list_free(parser->endTagHandlers);
+    }
+
+  parser->startTagHandlers = 
+    parser->endTagHandlers = NULL;
 
   freeUpTheQueue(parser);
 
@@ -434,6 +456,17 @@ static void freeUpTheQueue(ZMapXMLParser parser)
   return ;
 }
 
+static void freeTagHandlers(gpointer data, gpointer un_used_data)
+{
+  tagHandlerItem to_free = (tagHandlerItem)data;
+  if(to_free)
+    {
+      to_free->id = 0;
+      to_free->handler = NULL;
+      g_free(to_free);
+    }
+  return ;
+}
 static void pushXMLBase(ZMapXMLParser parser, const char *xmlBase)
 {
   /* Add to internal list of stuff */
@@ -491,11 +524,11 @@ static void start_handler(void *userData,
   if (parser->debug)
     {
       for (i = 0; i < depth; i++)
-	printf("  ");
+        printf(" ");
       printf("<%s ", el) ;
       for (i = 0; attr[i]; i += 2)
         printf(" %s='%s'", attr[i], attr[i + 1]);
-      printf(">\n");
+      printf(">");
     }
 
 #ifdef RDS_DONT_INCLUDE
@@ -531,6 +564,7 @@ static void start_handler(void *userData,
       if(!(parser->document))
         parser->document = zMapXMLDocumentCreate("1.0", "UTF-8", -1);
       zMapXMLDocumentSetRoot(parser->document, current_ele);
+      setupAutomagicCleanup(parser, current_ele);
     }
   else
     {
@@ -595,10 +629,10 @@ static void end_handler(void *userData,
 #else
       int depth = g_queue_get_length(parser->elementStack);
 #endif
-      for (i = 0; i < depth; i++)
-	printf("  ") ;
+      for (i = 0; !(current_ele->contents->len) && i < depth; i++)
+      	printf("  ") ;
 
-      printf("</%s>\n", el) ;
+      printf("</%s>", el) ;
     }
 #ifdef ZMAP_XML_PARSE_USE_DEPTH
   (parser->depth)--;
@@ -616,16 +650,14 @@ static void end_handler(void *userData,
           /* We can free the current_ele and all its children */
           /* First we need to tell the parent that its child is being freed. */
           if(!(zmapXMLElementSignalParentChildFree(current_ele)))
-             printf("Empty'ing document... this might cure memory leak...\n ");
-#ifdef RDS_DONT_INCLUDE
-          zmapXMLElement_free(current_ele); 
-#endif
+             printf("[zmapXMLParser] XML Document free? Memory leak ?\n");
+
           zmapXMLElementMarkDirty(current_ele);
         }
       else if(parser->array_point_e == parser->max_size_e - 1)
         {
           /* If we get here, we're running out of allocated elements */
-          printf("Possible information loss...\n");
+          printf("[zmapXMLParser] Possible information loss...\n");
           zmapXMLElementMarkDirty(current_ele);
         }
     }
@@ -634,7 +666,7 @@ static void end_handler(void *userData,
       /* If we get here, we're running out of allocated elements */
       /* To fix this requires an increase in the number of end_handlers 
        * which return TRUE */
-      printf("Possible information loss...\n");
+      printf("[zmapXMLParser] Possible information loss...\n");
       zmapXMLElementMarkDirty(current_ele);
     }
 
@@ -664,6 +696,17 @@ static void character_handler(void *userData,
   content4ele = g_queue_peek_head(parser->elementStack);
 
   zmapXMLElementAddContent(content4ele, s, len);
+
+  if(parser->debug)
+    {
+      char save, *s_ptr;
+
+      s_ptr  = (char *)(s + len);
+      save   = *s_ptr;
+      *s_ptr = '\0';
+      printf("%s", s);
+      *s_ptr = save;
+    }
 
   return ;
 }
@@ -872,3 +915,23 @@ static void abortParsing(ZMapXMLParser parser, char *reason, ...)
 
   return ;
 }
+
+static void setupAutomagicCleanup(ZMapXMLParser parser, ZMapXMLElement element)
+{
+  ZMapXMLMarkupObjectHandler user_handler = NULL;
+  tagHandlerItem automagic = NULL;
+  
+  if(!(user_handler = getObjHandler(element, parser->endTagHandlers)))
+    {
+      automagic          = g_new0(tagHandlerItemStruct, 1);
+      automagic->id      = element->name;
+      automagic->handler = defaultAlwaysTrueHandler;
+      parser->endTagHandlers = 
+        g_list_append(parser->endTagHandlers, automagic);
+    }
+  return ;
+}
+static gboolean defaultAlwaysTrueHandler(void *ignored_data,
+                                         ZMapXMLElement element,
+                                         ZMapXMLParser parser)
+{ return TRUE; }
