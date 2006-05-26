@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 22 10:41 2006 (rds)
+ * Last edited: May 24 22:25 2006 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.11 2006-05-22 17:10:29 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.12 2006-05-26 18:02:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,6 +70,29 @@ G_STMT_START{                                                      \
     };                                                             \
 }G_STMT_END
 
+#define zMapXMLIsYes(STRING)                                       \
+((g_ascii_strncasecmp(STRING, "yes", 3) == 0)  ? TRUE : FALSE)
+#define zMapXMLIsTrue(STRING)                                      \
+((g_ascii_strncasecmp(STRING, "true", 4) == 0) ? TRUE : FALSE)
+#define zMapXMLIsTrueInt(STRING)                                   \
+((g_ascii_strncasecmp(STRING, "1", 1) == 0)    ? TRUE : FALSE)
+
+#define zMapXMLStringToBool(STRING)                                \
+(zMapXMLIsTrueInt(STRING) ? TRUE :                                 \
+  zMapXMLIsYes(STRING) ? TRUE :                                    \
+    zMapXMLIsTrue(STRING) ? TRUE : FALSE)
+
+#define zMapXMLElementContentsToInt(ELEMENT)        \
+(strtol(ELEMENT->contents->str, (char **)NULL, 10))
+#define zMapXMLElementContentsToDouble(ELEMENT)     \
+(g_ascii_strtod(ELEMENT->contents->str, (char **)NULL))
+#define zMapXMLElementContentsToBool(ELEMENT)       \
+(zMapXMLStringToBool(ELEMENT->contents->str))
+
+#define zMapXMLAttributeValueToInt(ATTRIBUTE)       \
+(strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE)), (char **)NULL, 10))
+#define zMapXMLAttributeValueToBool(ATTRIBUTE)      \
+(zMapXMLStringToBool((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE))))
 
 /* TYPEDEFS */
 
