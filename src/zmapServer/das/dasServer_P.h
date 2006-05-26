@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: May 26 14:40 2006 (rds)
+ * Last edited: May 26 19:18 2006 (rds)
  * Created: Thu Mar 18 12:02:52 2004 (edgrif)
- * CVS info:   $Id: dasServer_P.h,v 1.8 2006-05-26 18:06:42 rds Exp $
+ * CVS info:   $Id: dasServer_P.h,v 1.9 2006-05-26 18:24:03 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef DAS_SERVER_P_H
@@ -38,7 +38,7 @@
 #include <ZMap/zmapDAS.h>
 #include <ZMap/zmapXML.h>
 #include <ZMap/zmapFeature.h>
-#include <das1schema.h>
+
 
 #define ZMAP_DAS_FORMAT_SEGMENT "segment=%s:%d,%d;"
 #define ZMAP_URL_FORMAT_UN_PWD "%s://%s:%s@%s:%d/%s/%s"
@@ -96,32 +96,5 @@ typedef struct _DasServerStruct
   ZMapFeatureContext cur_context ;
 } DasServerStruct, *DasServer ;
 
-
-gboolean checkDSNExists(DasServer das, 
-                        dasOneDSN *dsn);
-
-
-gboolean dsnStart(void *userData,
-                  ZMapXMLElement element,
-                  ZMapXMLParser parser);
-gboolean dsnEnd(void *userData,
-                ZMapXMLElement element,
-                ZMapXMLParser parser);
-gboolean segStart(void *userData,
-                  ZMapXMLElement element,
-                  ZMapXMLParser parser);
-
-gboolean segEnd(void *userData,
-                ZMapXMLElement element,
-                ZMapXMLParser parser);
-gboolean featStart(void *userData,
-                   ZMapXMLElement element,
-                   ZMapXMLParser parser);
-gboolean featEnd(void *userData,
-                 ZMapXMLElement element,
-                 ZMapXMLParser parser);
-gboolean cleanUpDoc(void *userData,
-                    ZMapXMLElement element,
-                    ZMapXMLParser parser);
 
 #endif /* !DAS_SERVER_P_H */

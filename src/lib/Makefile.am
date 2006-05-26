@@ -120,10 +120,6 @@ libZMapThr_a_SOURCES = $(top_srcdir)/zmapServer/zmapServer.c \
 	$(top_srcdir)/zmapServer/acedb/acedbServer_P.h \
 	$(top_srcdir)/zmapServer/das/dasServer.c \
 	$(top_srcdir)/zmapServer/das/dasServer_P.h \
-	$(top_srcdir)/zmapServer/das/das1schema.h \
-	$(top_srcdir)/zmapServer/das/das1meta.c \
-	$(top_srcdir)/zmapServer/das/das1features.c \
-	$(top_srcdir)/zmapServer/das/das1XMLhandlers.c \
 	$(top_srcdir)/zmapServer/file/fileServer.c \
 	$(top_srcdir)/zmapServer/file/fileServer_P.h \
 	$(top_srcdir)/zmapThreads/zmapSlave.c \
