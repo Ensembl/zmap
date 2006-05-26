@@ -26,9 +26,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 26 11:05 2006 (rds)
+ * Last edited: May 26 19:54 2006 (rds)
  * Created: Sun May 21 16:17:09 2006 (rds)
- * CVS info:   $Id: zmapDAS1Parser.c,v 1.1 2006-05-26 18:10:57 rds Exp $
+ * CVS info:   $Id: zmapDAS1Parser.c,v 1.2 2006-05-26 18:55:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -781,7 +781,7 @@ static gboolean makeGroupsFromFeature(ZMapXMLParser parser,
   ZMapXMLAttribute attr      = NULL;
   ZMapDAS1Group group_ptr    = NULL;
   int groups_found = 0, 
-    current_group  = 0, i;
+    current_group  = 0;
 
   /* Check this works, and we don't get one too many! */
   group_elements = zMapXMLElementGetChildrenByName(feature_element, 
@@ -832,7 +832,6 @@ static gboolean featureEnd(void *userData,
   ZMapDAS1Parser das = (ZMapDAS1Parser)userData;
   ZMapDAS1FeatureStruct feature = {0};
   ZMapDAS1TypeStruct type = {0};
-  ZMapDAS1GroupStruct group = {0};
   ZMapXMLElement sub_element = NULL;
   ZMapXMLAttribute attr = NULL;
   GList          groups_list[MAX_GROUP_NO] = {{0}}; /* Is this right? */
@@ -886,6 +885,7 @@ static gboolean featureEnd(void *userData,
   if(feature.start != 0 && feature.start != feature.end)
     {
       /* quick sanity check */
+
       if(das->callback_set && das->primed_for == ZMAP_DAS1_FEATURES)
         (das->callbacks.features)(&feature, das->callback_data);
     }
