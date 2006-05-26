@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May 23 15:03 2006 (rds)
+ * Last edited: May 24 10:52 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.69 2006-05-23 14:30:31 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.70 2006-05-26 18:02:52 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -626,6 +626,10 @@ GList *zMapStylesGetNames(GList *styles) ;
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
 					   char *outline, char *foreground, char *background,
 					   double width) ;
+void zMapStyleSetColours(ZMapFeatureTypeStyle style, 
+                         char *outline, 
+                         char *foreground, 
+                         char *background);
 void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;
 void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score) ;
 void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,

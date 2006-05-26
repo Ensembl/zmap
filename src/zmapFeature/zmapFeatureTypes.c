@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 23 15:32 2006 (rds)
+ * Last edited: May 24 10:53 2006 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.20 2006-05-23 14:33:07 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.21 2006-05-26 18:03:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,16 +74,6 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
   if (width == 0)
     width = 5 ;
 
-  /* Set some default colours.... */
-  if (!outline)
-    outline = "black" ;
-#ifdef RDS_NO_DEFAULT_COLOURS
-  if (!foreground)
-    foreground = "white" ;
-  if (!background)
-    background = "white" ;
-#endif
-
   new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
 
   name_lower = g_ascii_strdown(name, -1) ;
@@ -94,23 +84,9 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
   if (description)
     new_type->description = g_strdup(description) ;
 
-  if(outline && *outline)
-    {
-      gdk_color_parse(outline, &new_type->colours.outline) ;
-      new_type->colours.outline_set = TRUE;
-    }
-  if(foreground && *foreground)
-    {
-      gdk_color_parse(foreground, &new_type->colours.foreground) ;
-      new_type->colours.foreground_set = TRUE;
-    }
-  if(background && *background)
-    {
-      gdk_color_parse(background, &new_type->colours.background) ;
-      new_type->colours.background_set = TRUE;
-    }
-
   new_type->width = width ;
+
+  zMapStyleSetColours(new_type, outline, foreground, background);
 
   /* By default we always parse homology gaps, important for stuff like passing this
    * information to blixem. */
@@ -119,6 +95,41 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
   return new_type ;
 }
 
+void zMapStyleSetColours(ZMapFeatureTypeStyle style, 
+                         char *outline, 
+                         char *foreground, 
+                         char *background)
+{
+  zMapAssert(style);
+
+  /* Set some default colours.... */
+  if (!outline)
+    outline = "black" ;
+#ifdef RDS_NO_DEFAULT_COLOURS
+  if (!foreground)
+    foreground = "white" ;
+  if (!background)
+    background = "white" ;
+#endif
+
+  if(outline && *outline)
+    {
+      gdk_color_parse(outline, &style->colours.outline) ;
+      style->colours.outline_set = TRUE;
+    }
+  if(foreground && *foreground)
+    {
+      gdk_color_parse(foreground, &style->colours.foreground) ;
+      style->colours.foreground_set = TRUE;
+    }
+  if(background && *background)
+    {
+      gdk_color_parse(background, &style->colours.background) ;
+      style->colours.background_set = TRUE;
+    }
+  
+  return ;
+}
 
 /* Set magnification limits for displaying columns. */
 void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag)
