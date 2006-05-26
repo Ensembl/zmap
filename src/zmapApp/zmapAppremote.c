@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: May 19 22:29 2006 (rds)
+ * Last edited: May 25 17:27 2006 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.16 2006-05-22 09:27:01 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.17 2006-05-26 18:07:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -151,9 +151,13 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
                 g_free(req);
             }
         }
-
+      else
+        {
+          zMapLogWarning("%s", "Failed to get window id.");
+        }
     }
-
+  else
+    zMapLogWarning("%s", "--win_id option not specified.");
   
   return;
 }
