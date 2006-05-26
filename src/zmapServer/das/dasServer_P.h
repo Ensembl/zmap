@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: May 19 22:22 2006 (rds)
+ * Last edited: May 26 14:40 2006 (rds)
  * Created: Thu Mar 18 12:02:52 2004 (edgrif)
- * CVS info:   $Id: dasServer_P.h,v 1.7 2006-05-22 09:30:12 rds Exp $
+ * CVS info:   $Id: dasServer_P.h,v 1.8 2006-05-26 18:06:42 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef DAS_SERVER_P_H
@@ -35,6 +35,7 @@
 #include <curl/curl.h>
 #include <curl/types.h>
 #include <curl/easy.h>
+#include <ZMap/zmapDAS.h>
 #include <ZMap/zmapXML.h>
 #include <ZMap/zmapFeature.h>
 #include <das1schema.h>
@@ -44,21 +45,6 @@
 #define ZMAP_URL_FORMAT        "%s://%s:%d/%s/%s"
 
 /* http://www.biodas.org/documents/spec.html */
-
-typedef enum {
-  ZMAP_DAS_UNKNOWN,             /* DOESN'T even remotely look like DAS */
-  ZMAP_DASONE_UNKNOWN,          /* DOESN'T look like DAS1 */
-  ZMAP_DASONE_DSN,
-  ZMAP_DASONE_ENTRY_POINTS,
-  ZMAP_DASONE_DNA,
-  ZMAP_DASONE_SEQUENCE,
-  ZMAP_DASONE_TYPES,
-  ZMAP_DASONE_INTERNALFEATURES, /* Special type to get das features as */
-  ZMAP_DASONE_FEATURES,         /* das not zmap like this one */
-  ZMAP_DASONE_LINK,
-  ZMAP_DASONE_STYLESHEET,
-  ZMAP_DASTWO_UNKNOWN          /* DOESN'T look like DAS2 */
-} dasDataType;
 
 typedef enum {
   TAG_DAS_UNKNOWN,
@@ -87,6 +73,7 @@ typedef struct _DasServerStruct
   int chunks ;						    /* for debugging at the moment... */
 
   ZMapXMLParser parser;
+  ZMapDAS1Parser das;
 
   gboolean debug;
 
@@ -98,12 +85,12 @@ typedef struct _DasServerStruct
 
   GList *hostAbilities;
   GList *dsn_list;
-  dasOneSegment current_segment;
+  ZMapDAS1Segment current_segment;
 
-  /* this will not stay like this, it should more properly be a union of types of data that might
-   * be returned.... */
-  dasDataType type;
+  ZMapDAS1QueryType request_type;
   void *data ;
+
+  GData *feature_cache;
 
   ZMapFeatureContext req_context ;
   ZMapFeatureContext cur_context ;
