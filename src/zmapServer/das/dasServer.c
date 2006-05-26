@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: May 26 18:18 2006 (rds)
+ * Last edited: May 26 19:40 2006 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.20 2006-05-26 18:06:42 rds Exp $
+ * CVS info:   $Id: dasServer.c,v 1.21 2006-05-26 18:42:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,6 +130,7 @@ static gboolean serverHasCapabilityLevel(DasServer server,
                                   char *capability, 
                                   double minimum);
 
+static gint compareExonCoords(gconstpointer a, gconstpointer b, gpointer feature_data);
 static void fixFeatureCache(GQuark key_id,
                             gpointer data,
                             gpointer user_data);
@@ -908,30 +909,6 @@ static void getFeatures4Blocks(gpointer data, gpointer userData)
   return ;
 }
 
-static gint compareExonCoords(gconstpointer a, gconstpointer b, gpointer feature_data)
-{
-  ZMapFeature feature = (ZMapFeature)feature_data;
-  ZMapSpan 
-    exon_a = (ZMapSpan)a,
-    exon_b = (ZMapSpan)b;
-  gint gt_lt_eq = 0;
-  
-  if(exon_a->x1 < exon_b->x1)
-    {
-      gt_lt_eq = -1;
-    }
-  else if(exon_a->x1 > exon_b->x1)
-    {
-      gt_lt_eq =  1;
-    }
-  else if(exon_a->x1 == exon_b->x1)
-    gt_lt_eq = 0;
-  
-
-  /* negative value if a < b; zero if a = b; positive value if a > b. */
-  return gt_lt_eq;
-}
-
 static gboolean fetchFeatures(DasServer server, ZMapFeatureBlock block)
 {
   char *segStr = NULL, *query = NULL, *url = NULL;
@@ -1412,8 +1389,7 @@ static gboolean mergeWithGroupFeature(ZMapFeature grp_feature,
   /* if type looks like a gene we're ok and will believe it's a gene */
   if(!bad && feature_type == ZMAPFEATURE_TRANSCRIPT)
     {
-      ZMapSpanStruct   exon = {0},   *exon_ptr = NULL;
-      ZMapSpanStruct intron = {0}, *intron_ptr = NULL;
+      ZMapSpanStruct   exon = {0};
 
       if(!(grp_feature->feature.transcript.exons))
         {
@@ -1447,9 +1423,8 @@ static void fixFeatureCache(GQuark key_id,
   ZMapFeature        feature = (ZMapFeature)data;
   ZMapFeatureBlock     block = (ZMapFeatureBlock)user_data;
   ZMapFeatureSet feature_set = NULL;
-  ZMapFeatureTypeStyle style = NULL;
   GQuark style_id = 0;
-  GArray *exons, *introns;
+  GArray *exons;
   char *type_name = NULL;
   int exon_count  = 0, i = 0;
 
@@ -1514,4 +1489,27 @@ static void fixUpFeaturesAndClearCache(DasServer server, ZMapFeatureBlock block)
   g_datalist_clear(&(server->feature_cache));
 
   return ;
+}
+
+static gint compareExonCoords(gconstpointer a, gconstpointer b, gpointer feature_data)
+{
+  ZMapSpan 
+    exon_a = (ZMapSpan)a,
+    exon_b = (ZMapSpan)b;
+  gint gt_lt_eq = 0;
+  
+  if(exon_a->x1 < exon_b->x1)
+    {
+      gt_lt_eq = -1;
+    }
+  else if(exon_a->x1 > exon_b->x1)
+    {
+      gt_lt_eq =  1;
+    }
+  else if(exon_a->x1 == exon_b->x1)
+    gt_lt_eq = 0;
+  
+
+  /* negative value if a < b; zero if a = b; positive value if a > b. */
+  return gt_lt_eq;
 }
