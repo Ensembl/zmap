@@ -26,9 +26,9 @@
  *              
  * Exported functions: None, all functions internal to zmapApp.
  * HISTORY:
- * Last edited: Jan 23 15:14 2006 (rds)
+ * Last edited: May 25 13:14 2006 (rds)
  * Created: Thu Jul 24 14:36:47 2003 (edgrif)
- * CVS info:   $Id: zmapAppmanage.c,v 1.13 2006-01-23 15:17:27 rds Exp $
+ * CVS info:   $Id: zmapAppmanage.c,v 1.14 2006-05-26 18:04:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -249,8 +249,8 @@ static void killThreadCB(GtkWidget *widget, gpointer cb_data)
 
   if (app_context->selected_zmap)
     {
-      zMapDebug("GUI: kill thread for zmap id %s with connection pointer: %x\n",
-                "zmapID", app_context->selected_zmap) ;
+      zMapDebug("GUI: kill thread for zmap id %s with connection pointer: %p\n",
+                "zmapID", (void *)(app_context->selected_zmap)) ;
       zMapManagerKill(app_context->zmap_manager, app_context->selected_zmap) ;      
     }
 
