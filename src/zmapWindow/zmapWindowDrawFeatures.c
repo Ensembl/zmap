@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 23 14:17 2006 (edgrif)
+ * Last edited: May 27 15:22 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.132 2006-05-23 13:18:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.133 2006-05-27 14:23:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1092,6 +1092,11 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 			   FooCanvasItem *item, ZMapFeatureSet feature_set)
 {
+  static ZMapGUIMenuItemStruct separator[] =
+    {
+      {ZMAPGUI_MENU_SEPARATOR, 0, NULL, NULL},
+      {NULL, 0, NULL, NULL}
+    } ;
   char *menu_title ;
   GList *menu_sets = NULL ;
   ItemMenuCBData cbdata ;
@@ -1107,7 +1112,11 @@ static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   /* Make up the menu. */
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBump(NULL, NULL, cbdata)) ;
 
+  menu_sets = g_list_append(menu_sets, separator) ;
+
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDumpOps(NULL, NULL, cbdata)) ;
+
+  menu_sets = g_list_append(menu_sets, separator) ;
 
   menu_sets = g_list_append(menu_sets, makeMenuColumnOps(NULL, NULL, cbdata)) ;
 
@@ -1127,7 +1136,6 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_SEPARATOR, 0, NULL, NULL},
       {"Show Feature List",      1, columnMenuCB, NULL},
       {"Feature Search Window",  2, columnMenuCB, NULL},
       {NULL,                     0, NULL,       NULL}

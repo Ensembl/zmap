@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: May 27 14:27 2006 (edgrif)
+ * Last edited: May 27 15:20 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.12 2006-05-27 13:39:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.13 2006-05-27 14:23:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,7 +91,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_SEPARATOR, 0, NULL, NULL},
       {"_Column Bump", 0, NULL, NULL},
       {"Column Bump/Name + No Overlap", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
       {"Column Bump/Name",              ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
@@ -474,7 +473,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_SEPARATOR, 0, NULL, NULL},
       {"_Dump",                  0, NULL,       NULL},
       {"Dump/Dump DNA"          , 1, dumpMenuCB, NULL},
       {"Dump/Dump Features"     , 2, dumpMenuCB, NULL},

@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 23 14:58 2006 (rds)
+ * Last edited: May 27 15:18 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.31 2006-05-23 13:59:26 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.32 2006-05-27 14:23:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1717,6 +1717,11 @@ static void destroyIterator(ZMapDrawTextIterator iterator)
 /* Build the menu for a feature item. */
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
 {
+  static ZMapGUIMenuItemStruct separator[] =
+    {
+      {ZMAPGUI_MENU_SEPARATOR, 0, NULL, NULL},
+      {NULL, 0, NULL, NULL}
+    } ;
   char *menu_title ;
   GList *menu_sets = NULL ;
   ItemMenuCBData menu_data ;
@@ -1765,9 +1770,15 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAFeatureAnyFile(NULL, NULL, menu_data)) ;
     }
 
+  menu_sets = g_list_append(menu_sets, separator) ;
+
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBump(NULL, NULL, menu_data)) ;
 
+  menu_sets = g_list_append(menu_sets, separator) ;
+
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDumpOps(NULL, NULL, menu_data)) ;
+
+  menu_sets = g_list_append(menu_sets, separator) ;
 
   menu_sets = g_list_append(menu_sets, makeMenuGeneralOps(NULL, NULL, menu_data)) ;
 
@@ -1879,7 +1890,6 @@ static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_SEPARATOR, 0, NULL, NULL},
       {"List All Column Features",      1, itemMenuCB, NULL},
       {"Feature Search Window",  3, itemMenuCB, NULL},
       {NULL,                     0, NULL,       NULL}
