@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 23 10:09 2006 (edgrif)
+ * Last edited: May 27 16:59 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.125 2006-05-23 09:18:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.126 2006-05-27 16:02:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -88,6 +88,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer d
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
@@ -103,8 +104,10 @@ static void sendClientEvent(ZMapWindow window, FeatureSets) ;
 static void moveWindow(ZMapWindow window, guint state, guint keyval) ;
 static void scrollWindow(ZMapWindow window, guint state, guint keyval) ;
 static void changeRegion(ZMapWindow window, guint keyval) ;
-static void printGroup(FooCanvasGroup *group, int indent) ;
 
+static void zoomWindow(ZMapWindow window, guint state, guint keyval) ;
+
+static void printGroup(FooCanvasGroup *group, int indent) ;
 
 static void setCurrLock(ZMapWindowLockType window_locking, ZMapWindow window, 
 			GtkAdjustment **hadjustment, GtkAdjustment **vadjustment) ;
@@ -1468,6 +1471,37 @@ static void scrollWindow(ZMapWindow window, guint state, guint keyval)
 }
 
 
+/* Zooms the window a little or a lot. */
+static void zoomWindow(ZMapWindow window, guint state, guint keyval)
+{
+  double zoom_factor = 0.0 ;
+
+  switch (keyval)
+    {
+    case GDK_plus:
+    case GDK_equal:
+      if (state & GDK_CONTROL_MASK)
+	zoom_factor = 2.0 ;
+      else
+	zoom_factor = 1.1 ;
+      break ;
+    case GDK_minus:
+      if (state & GDK_CONTROL_MASK)
+	zoom_factor = 0.5 ;
+      else
+	zoom_factor = 0.909090909 ;
+      break ;
+    }
+
+  zMapWindowZoom(window, zoom_factor) ;
+
+  return ;
+}
+
+
+
+
+
 /* Change the canvas scroll region, this may be necessary when the user has zoomed in so much
  * that the window has reached the maximum allowable by X Windows, therefore we have shrunk the
  * canvas scrolled region to accomodate further zooming. Hence this routine does a kind of
@@ -1932,6 +1966,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
       {
 	GdkEventKey *key_event = (GdkEventKey *)event ;
 
+	event_handled = keyboardEvent(window, key_event) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	switch (key_event->keyval)
 	  {
 	  case GDK_Page_Up:
@@ -1956,6 +1993,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	    event_handled = FALSE ;
 	    break ;
 	  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	
 	break ;
       }
@@ -2031,6 +2070,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
   return event_handled ;
 }
+
+
+
 
 #define ZOOM_SENSITIVITY 5.0
 static void zoomToRubberBandArea(ZMapWindow window)
@@ -2363,6 +2405,78 @@ static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data)
   return ;
 }
 
+
+
+static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
+{
+  gboolean event_handled = FALSE ;
+
+  switch (key_event->keyval)
+    {
+    case GDK_Page_Up:
+    case GDK_Page_Down:
+    case GDK_Up:
+    case GDK_Down:
+    case GDK_Left:
+    case GDK_Right:
+      {
+	moveWindow(window, key_event->state, key_event->keyval) ;
+	event_handled = TRUE ;
+	break ;
+      }
+    case GDK_plus:
+    case GDK_minus:
+    case GDK_equal:
+      {
+	zoomWindow(window, key_event->state, key_event->keyval) ;
+	event_handled = TRUE ;
+	break ;
+      }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    case GDK_Home:
+      kval = HOME_KEY ; break ;
+    case GDK_End:
+      kval = END_KEY ; break ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    case GDK_d:
+      put dna on ....;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* There is an issue with this...it needs to happen at the view level really so that all
+       * windows for a view get redrawn so we need to signal back to view for this one. */
+    case GDK_r:
+      reversecomp ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+    case GDK_w:
+      {
+	/* Zoom out to show whole sequence. */
+	double zoom_factor = 0.0, curr_factor = 0.0 ;
+
+	curr_factor = zMapWindowGetZoomFactor(window) ;
+	zoom_factor = zMapWindowGetZoomMin(window) ;
+	zoom_factor = zoom_factor / curr_factor ;
+
+	zMapWindowZoom(window, zoom_factor) ;
+	event_handled = TRUE ;
+	break ;
+      }
+
+    default:
+      event_handled = FALSE ;
+      break ;
+    }
+
+  return event_handled ;
+}
 
 
 
