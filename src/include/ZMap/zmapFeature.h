@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May 24 10:52 2006 (rds)
+ * Last edited: May 27 13:23 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.70 2006-05-26 18:02:52 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.71 2006-05-27 13:39:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -405,6 +405,7 @@ typedef struct ZMapFeatureStruct_
  */
 
 
+/* Specifies how wide features should be in relation to their score. */
 typedef enum
   {
     ZMAPSCORE_WIDTH,					    /* Use column width only - default. */
@@ -413,12 +414,17 @@ typedef enum
     ZMAPSCORE_PERCENT
   } ZMapStyleScoreMode ;
 
+
+/* Specifies how features in columns should be overlapped for compact display. */
 typedef enum
   {
     ZMAPOVERLAP_COMPLETE,				    /* draw on top - default */
     ZMAPOVERLAP_OVERLAP,				    /* bump if feature coords overlap. */
     ZMAPOVERLAP_POSITION,				    /* bump if features start at same coord. */
     ZMAPOVERLAP_NAME,					    /* one column per homol target */
+    ZMAPOVERLAP_COMPLEX,				    /* all features with same name in a
+							       single column, several names in one
+							       column but no overlaps. */
     ZMAPOVERLAP_SIMPLE					    /* one column per feature, for testing... */
   } ZMapStyleOverlapMode ;
 
