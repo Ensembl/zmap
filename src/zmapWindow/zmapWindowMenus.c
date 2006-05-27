@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: May 23 11:52 2006 (edgrif)
+ * Last edited: May 27 14:27 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.11 2006-05-23 10:59:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.12 2006-05-27 13:39:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,15 +93,16 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
     {
       {ZMAPGUI_MENU_SEPARATOR, 0, NULL, NULL},
       {"_Column Bump", 0, NULL, NULL},
-      {"Column Bump/Name",           ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
-      {"Column Bump/Position",       ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
-      {"Column Bump/Overlap",        ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
-      {"Column Bump/Simple",         ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
-      {"Column UnBump",         ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
-      {"Column Hide",                ZMAPWWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
+      {"Column Bump/Name + No Overlap", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
+      {"Column Bump/Name",              ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
+      {"Column Bump/No Overlap",        ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
+      {"Column Bump/Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
+      {"Column Bump/Simple",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
+      {"Column UnBump",                 ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
+      {"Column Hide",                   ZMAPWWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
       {"_Column", 0, NULL, NULL},
-      {"Column/Configure This Column",       ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
-      {"Column/Configure All Columns",       ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
+      {"Column/Configure This Column",  ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
+      {"Column/Configure All Columns",  ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
       {NULL, 0, NULL, NULL}
     } ;
 
