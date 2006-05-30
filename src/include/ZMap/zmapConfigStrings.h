@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: May 10 15:05 2006 (rds)
+ * Last edited: May 28 14:47 2006 (rds)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.3 2006-05-15 17:39:26 rds Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.4 2006-05-30 16:41:49 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -150,10 +150,10 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_APP_CONFIG "ZMap"
+#define ZMAPSTANZA_APP_CONFIG     "ZMap"
 #define ZMAPSTANZA_APP_MAINWINDOW "show_mainwindow"
-#define ZMAPSTANZA_APP_SEQUENCE "default_sequence"
-#define ZMAPSTANZA_APP_PRINTER "default_printer"
+#define ZMAPSTANZA_APP_SEQUENCE   "default_sequence"
+#define ZMAPSTANZA_APP_PRINTER    "default_printer"
 
 
 
@@ -203,11 +203,11 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_LOG_CONFIG "logging" 
-#define ZMAPSTANZA_LOG_LOGGING "logging"
-#define ZMAPSTANZA_LOG_FILE "file"
+#define ZMAPSTANZA_LOG_CONFIG    "logging" 
+#define ZMAPSTANZA_LOG_LOGGING   "logging"
+#define ZMAPSTANZA_LOG_FILE      "file"
 #define ZMAPSTANZA_LOG_DIRECTORY "directory"
-#define ZMAPSTANZA_LOG_FILENAME "filename"
+#define ZMAPSTANZA_LOG_FILENAME  "filename"
 
 
 
@@ -319,10 +319,10 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_SOURCE_CONFIG "source"
-#define ZMAPSTANZA_SOURCE_URL "url"
-#define ZMAPSTANZA_SOURCE_TIMEOUT "timeout"
-#define ZMAPSTANZA_SOURCE_VERSION "version"
+#define ZMAPSTANZA_SOURCE_CONFIG      "source"
+#define ZMAPSTANZA_SOURCE_URL         "url"
+#define ZMAPSTANZA_SOURCE_TIMEOUT     "timeout"
+#define ZMAPSTANZA_SOURCE_VERSION     "version"
 #define ZMAPSTANZA_SOURCE_FEATURESETS "featuresets"
 
 
@@ -448,22 +448,23 @@
  *
  *  */
 
-#define ZMAPSTANZA_STYLE_CONFIG "Type"
-#define ZMAPSTANZA_STYLE_NAME "name"
-#define ZMAPSTANZA_STYLE_OUTLINE "outline"
-#define ZMAPSTANZA_STYLE_FOREGROUND "foreground"
-#define ZMAPSTANZA_STYLE_BACKGROUND "background"
-#define ZMAPSTANZA_STYLE_WIDTH "width"
-#define ZMAPSTANZA_STYLE_STRAND "strand_specific"
-#define ZMAPSTANZA_STYLE_REVERSE "show_reverse"
-#define ZMAPSTANZA_STYLE_FRAME  "frame_specific"
-#define ZMAPSTANZA_STYLE_MINMAG "minmag"
-#define ZMAPSTANZA_STYLE_MAXMAG "maxmag"
-#define ZMAPSTANZA_STYLE_BUMP "bump"
-#define ZMAPSTANZA_STYLE_ALIGN "gapped_align"
-
-
-
+#define ZMAPSTANZA_STYLE_CONFIG      "Type"
+#define ZMAPSTANZA_STYLE_NAME        "name"
+#define ZMAPSTANZA_STYLE_OUTLINE     "outline"
+#define ZMAPSTANZA_STYLE_FOREGROUND  "foreground"
+#define ZMAPSTANZA_STYLE_BACKGROUND  "background"
+#define ZMAPSTANZA_STYLE_WIDTH       "width"
+#define ZMAPSTANZA_STYLE_STRAND      "strand_specific"
+#define ZMAPSTANZA_STYLE_REVERSE     "show_reverse"
+#define ZMAPSTANZA_STYLE_FRAME       "frame_specific"
+#define ZMAPSTANZA_STYLE_MINMAG      "minmag"
+#define ZMAPSTANZA_STYLE_MAXMAG      "maxmag"
+#define ZMAPSTANZA_STYLE_BUMP        "bump"
+#define ZMAPSTANZA_STYLE_ALIGN       "gapped_align"
+#define ZMAPSTANZA_STYLE_READ_GAPS   "read_gaps"
+#define ZMAPSTANZA_STYLE_DESC        "description"
+#define ZMAPSTANZA_STYLE_DIRECTIONAL "directional_end"
+#define ZMAPSTANZA_STYLE_INIT_HIDDEN "hide_initially"
 
 
 /*! @addtogroup config_stanzas
@@ -586,17 +587,17 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_WINDOW_CONFIG "ZMapWindow"
-#define ZMAPSTANZA_WINDOW_MAXSIZE "canvas_maxsize"
-#define ZMAPSTANZA_WINDOW_MAXBASES "canvas_maxbases"
-#define ZMAPSTANZA_WINDOW_COLUMNS "keep_empty_columns"
-#define ZMAPSTANZA_WINDOW_ROOT "colour_root"
-#define ZMAPSTANZA_WINDOW_ALIGNMENT "colour_alignment"
-#define ZMAPSTANZA_WINDOW_BLOCK "colour_block"
-#define ZMAPSTANZA_WINDOW_M_FORWARD "colour_m_forward"
-#define ZMAPSTANZA_WINDOW_M_REVERSE "colour_m_reverse"
-#define ZMAPSTANZA_WINDOW_Q_FORWARD "colour_q_forward"
-#define ZMAPSTANZA_WINDOW_Q_REVERSE "colour_q_reverse"
+#define ZMAPSTANZA_WINDOW_CONFIG       "ZMapWindow"
+#define ZMAPSTANZA_WINDOW_MAXSIZE      "canvas_maxsize"
+#define ZMAPSTANZA_WINDOW_MAXBASES     "canvas_maxbases"
+#define ZMAPSTANZA_WINDOW_COLUMNS      "keep_empty_columns"
+#define ZMAPSTANZA_WINDOW_ROOT         "colour_root"
+#define ZMAPSTANZA_WINDOW_ALIGNMENT    "colour_alignment"
+#define ZMAPSTANZA_WINDOW_BLOCK        "colour_block"
+#define ZMAPSTANZA_WINDOW_M_FORWARD    "colour_m_forward"
+#define ZMAPSTANZA_WINDOW_M_REVERSE    "colour_m_reverse"
+#define ZMAPSTANZA_WINDOW_Q_FORWARD    "colour_q_forward"
+#define ZMAPSTANZA_WINDOW_Q_REVERSE    "colour_q_reverse"
 #define ZMAPSTANZA_WINDOW_M_FORWARDCOL "colour_m_forwardcol"
 #define ZMAPSTANZA_WINDOW_M_REVERSECOL "colour_m_reversecol"
 #define ZMAPSTANZA_WINDOW_Q_FORWARDCOL "colour_q_forwardcol"
@@ -630,7 +631,7 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_DEBUG_CONFIG "debug"
+#define ZMAPSTANZA_DEBUG_CONFIG      "debug"
 #define ZMAPSTANZA_DEBUG_APP_THREADS "threads"
 
 
@@ -710,14 +711,14 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_ALIGN_CONFIG "align" 
-#define ZMAPSTANZA_ALIGN_SEQ "reference_seq"
-#define ZMAPSTANZA_ALIGN_START "reference_start"
-#define ZMAPSTANZA_ALIGN_END "reference_end"
-#define ZMAPSTANZA_ALIGN_STRAND "reference_strand"
-#define ZMAPSTANZA_ALIGN_NONREF_SEQ "non_reference_seq"
-#define ZMAPSTANZA_ALIGN_NONREF_START "non_reference_start"
-#define ZMAPSTANZA_ALIGN_NONREF_END "non_reference_end"
+#define ZMAPSTANZA_ALIGN_CONFIG        "align" 
+#define ZMAPSTANZA_ALIGN_SEQ           "reference_seq"
+#define ZMAPSTANZA_ALIGN_START         "reference_start"
+#define ZMAPSTANZA_ALIGN_END           "reference_end"
+#define ZMAPSTANZA_ALIGN_STRAND        "reference_strand"
+#define ZMAPSTANZA_ALIGN_NONREF_SEQ    "non_reference_seq"
+#define ZMAPSTANZA_ALIGN_NONREF_START  "non_reference_start"
+#define ZMAPSTANZA_ALIGN_NONREF_END    "non_reference_end"
 #define ZMAPSTANZA_ALIGN_NONREF_STRAND "non_reference_strand"
 
 
@@ -777,11 +778,11 @@
  *
  *  */
 #define ZMAPSTANZA_BLIXEM_CONFIG "blixem"
-#define ZMAPSTANZA_BLIXEM_NETID "netid"
-#define ZMAPSTANZA_BLIXEM_PORT "port"
+#define ZMAPSTANZA_BLIXEM_NETID  "netid"
+#define ZMAPSTANZA_BLIXEM_PORT   "port"
 #define ZMAPSTANZA_BLIXEM_SCRIPT "script"
-#define ZMAPSTANZA_BLIXEM_SCOPE "scope"
-#define ZMAPSTANZA_BLIXEM_MAX "homol_max"
+#define ZMAPSTANZA_BLIXEM_SCOPE  "scope"
+#define ZMAPSTANZA_BLIXEM_MAX    "homol_max"
 
 
 
