@@ -24,9 +24,9 @@
  *
  * Description:
  * HISTORY:
- * Last edited: May  8 11:14 2006 (rds)
+ * Last edited: May 28 14:28 2006 (rds)
  * Created: Fri Jan 23 13:10:06 2004 (edgrif)
- * CVS info:   $Id: zmapConfig.h,v 1.10 2006-05-15 17:39:57 rds Exp $
+ * CVS info:   $Id: zmapConfig.h,v 1.11 2006-05-30 16:43:45 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_H
@@ -34,6 +34,8 @@
 
 #include <glib.h>
 #include <ZMap/zmapConfigStrings.h>
+#include <ZMap/zmapConfigKeyboard.h>
+#include <ZMap/zmapConfigStyleDefaults.h>
 
 /*! @addtogroup zmapconfig
  * @{
