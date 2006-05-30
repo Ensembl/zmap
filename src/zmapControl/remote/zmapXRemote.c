@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: May 25 16:22 2006 (rds)
+ * Last edited: May 30 17:28 2006 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.12 2006-05-25 16:02:34 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.13 2006-05-30 16:45:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -175,12 +175,14 @@ int zMapXRemoteInitServer(zMapXRemoteObj object,  Window id, char *appName, char
   if (! object->version_sanity_atom)
     {
       object->version_sanity_atom = XInternAtom (object->display, ZMAP_XREMOTE_CURRENT_VERSION_ATOM, False);
-      zmapXRemoteChangeProperty(object, object->version_sanity_atom, ZMAP_XREMOTE_CURRENT_VERSION);
+      if(zmapXRemoteChangeProperty(object, object->version_sanity_atom, ZMAP_XREMOTE_CURRENT_VERSION))
+        zMapLogFatal("Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
     }
   if (! object->app_sanity_atom)
     {
       object->app_sanity_atom = XInternAtom(object->display, ZMAP_XREMOTE_APPLICATION_ATOM, False);
-      zmapXRemoteChangeProperty(object, object->app_sanity_atom, appName);
+      if(zmapXRemoteChangeProperty(object, object->app_sanity_atom, appName))
+        zMapLogFatal("Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_APPLICATION_ATOM);
     }
 
   object->is_server   = TRUE;
