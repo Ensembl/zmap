@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: May 19 10:37 2006 (edgrif)
+ * Last edited: May 30 11:15 2006 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.49 2006-05-19 10:46:50 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.50 2006-05-30 16:45:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -843,36 +843,55 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
 {
   double minX, maxX;
   ZMapDrawTextRowData trd = NULL;
-  GdkColor color;
-  gboolean drawBackground = TRUE, drawOutline = FALSE;
+  GdkColor default_bg_color, default_mq_color, *draw_color;
+  ZMapDrawTextHighlightStyle 
+    highlight_style = ZMAP_TEXT_HIGHLIGHT_BACKGROUND;
 
   zMapAssert(srcItem && (trd = zMapDrawGetTextItemData(srcItem)));
 
-  gdk_color_parse("red", &color);
+  gdk_color_parse("pink",  &default_bg_color);
+  gdk_color_parse("black", &default_mq_color);
 
   minX     = 0.0;
   maxX     = MAX(trd->row_width, trd->char_width * trd->seq_truncated_idx);
 
   foo_canvas_item_hide(FOO_CANVAS_ITEM(grp));
 
-  if(drawBackground && trd->background != NULL)
-    drawHighlightBackgroundInGroup(grp,    trd->background, 
-                                   firstX, firstY,
-                                   lastX,  lastY, 
-                                   minX,   maxX, 
-                                   trd->row_height);
-  else if(drawOutline && trd->outline != NULL)
-    drawHighlightLinesInGroup(grp,    trd->outline, 
-                              firstX, firstY, 
-                              lastX,  lastY, 
-                              minX,   maxX, 
-                              trd->row_height);
+  if(trd->highlight_style == ZMAP_TEXT_HIGHLIGHT_BACKGROUND)
+    {
+      if((draw_color = trd->background) == NULL)
+        draw_color = &default_bg_color;
+      drawHighlightBackgroundInGroup(grp,    draw_color, 
+                                     firstX, firstY,
+                                     lastX,  lastY, 
+                                     minX,   maxX, 
+                                     trd->row_height);
+    }
+  else if(trd->highlight_style == ZMAP_TEXT_HIGHLIGHT_MARQUEE)
+    {
+      if((draw_color = trd->outline) == NULL)
+        draw_color = &default_mq_color;
+      drawHighlightLinesInGroup(grp,    draw_color,
+                                firstX, firstY, 
+                                lastX,  lastY, 
+                                minX,   maxX, 
+                                trd->row_height);
+    }
   else
-    drawHighlightLinesInGroup(grp,    &color,
-                              firstX, firstY,
-                              lastX,  lastY,
-                              minX,   maxX, 
-                              trd->row_height);
+    {
+      if(highlight_style == ZMAP_TEXT_HIGHLIGHT_MARQUEE)
+        drawHighlightLinesInGroup(grp,    &default_mq_color,
+                                  firstX, firstY,
+                                  lastX,  lastY,
+                                  minX,   maxX, 
+                                  trd->row_height);
+      else if (highlight_style == ZMAP_TEXT_HIGHLIGHT_BACKGROUND)
+        drawHighlightBackgroundInGroup(grp,    &default_bg_color,
+                                       firstX, firstY,
+                                       lastX,  lastY,
+                                       minX,   maxX, 
+                                       trd->row_height);
+    }
 
   foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(grp));
   foo_canvas_item_show(FOO_CANVAS_ITEM(grp));
@@ -1184,6 +1203,9 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
       curr_data->char_height       = iterator->char_height;
       curr_data->background        = iterator->background;
       curr_data->outline           = iterator->outline;
+      curr_data->highlight_style   = (iterator->background 
+                                      ? ZMAP_TEXT_HIGHLIGHT_BACKGROUND 
+                                      : ZMAP_TEXT_HIGHLIGHT_MARQUEE);
 
       foo_canvas_item_get_bounds(item, 
                                  &(iterator->x1), 

@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: May 19 10:32 2006 (edgrif)
+ * Last edited: May 27 16:57 2006 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.30 2006-05-19 10:46:50 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.31 2006-05-30 16:42:22 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -101,6 +101,13 @@ typedef enum
     ZMAP_POINT_END_SOUTHWEST
   } ZMapExonCompassPoints;
 
+typedef enum
+  {
+    ZMAP_TEXT_HIGHLIGHT_NONE = 0,
+    ZMAP_TEXT_HIGHLIGHT_MARQUEE,
+    ZMAP_TEXT_HIGHLIGHT_BACKGROUND
+  } ZMapDrawTextHighlightStyle;
+
 typedef struct ZMapDrawTextRowDataStruct_
 {
   /* indices to the string we're displaying */
@@ -116,6 +123,7 @@ typedef struct ZMapDrawTextRowDataStruct_
   GdkColor *background;
   GdkColor *outline;
 
+  ZMapDrawTextHighlightStyle highlight_style;
   /* text's char width is columnWidth / drawnStrLength */
 } ZMapDrawTextRowDataStruct, *ZMapDrawTextRowData;
 
