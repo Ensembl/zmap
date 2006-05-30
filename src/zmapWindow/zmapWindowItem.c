@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 23 14:59 2006 (rds)
+ * Last edited: May 28 08:23 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.28 2006-05-23 14:00:01 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.29 2006-05-30 16:48:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -450,7 +450,7 @@ gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
     {
       visible = TRUE;
     }
-
+  
   return visible;
 }
 
@@ -460,6 +460,9 @@ void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
 {
   double ix1, ix2, iy1, iy2;
   int    cx1, cx2, cy1, cy2;
+  int final_canvasx, final_canvasy, 
+    tmpx, tmpy, cheight, cwidth;
+  gboolean debug = FALSE;
 
   foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2);
 
@@ -467,8 +470,11 @@ void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
   foo_canvas_item_i2w(item, &ix1, &iy1);
   foo_canvas_item_i2w(item, &ix2, &iy2);
 
+  /* the item coords are now WORLD */
+
   if(boundaryAroundItem > 0.0)
     {
+      /* think about PPU for X & Y!! */
       ix1 -= boundaryAroundItem;
       iy1 -= boundaryAroundItem;
       ix2 += boundaryAroundItem;
@@ -477,51 +483,73 @@ void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
 
   if(alterScrollRegionSize)
     {
-      ix1 = ix2;
-      zmapWindowScrollRegionTool(window, &ix1, &iy1, &ix2, &iy2);
+      /* this doeesn't work. don't know why. */
+      double sy1, sy2;
+      sy1 = iy1; sy2 = iy2;
+      zmapWindowClampSpan(window, &sy1, &sy2);
+      zMapWindowMove(window, sy1, sy2);
     }
   else
     {
       if(!zmapWindowItemRegionIsVisible(window, item))
         {
-          double wx1, wx2, wy1, wy2, nwy1, nwy2, tmpidiff, tmpwdiff;
-          wx1 = wx2 = wy1 = wy2 = 0.0;
-          zmapWindowScrollRegionTool(window, &wx1, &wy1, &wx2, &wy2);
-          nwy1  = wy1; nwy2 = wy2;
-          tmpwdiff = ((wy2 - wy1 + 1) / 2);
-          tmpidiff = ( iy1 + ((iy2 - iy1 + 1) / 2));
-          nwy1 -= (wy1 - tmpidiff) + (tmpwdiff);
-          nwy2 -= (wy1 - tmpidiff) + (tmpwdiff);
-          zMapWindowMove(window, nwy1, nwy2);
-          /* zmapWindowScrollRegionTool(window, &wx1, &nwy1, &wx2, &nwy2);
-           * zmapWindowLongItemCrop(window, wx1, nwy1, wx2, nwy2);*/
+          double sx1, sx2, sy1, sy2, tmps, tmpi, diff;
+          sx1 = sx2 = sy1 = sy2 = 0.0;
+          zmapWindowScrollRegionTool(window, &sx1, &sy1, &sx2, &sy2);
+          /* we now have scroll region coords */
+          /* set tmp to centre of regions ... */
+          tmps = sy1 + ((sy2 - sy1) / 2);
+          tmpi = iy1 + ((iy2 - iy1) / 2);
+          /* find difference between centre points */
+          diff = tmps - tmpi;
+
+          /* alter scroll region to match that */
+          sy1 -= diff; sy2 -= diff;
+          /* clamp in case we've moved outside the sequence */
+          zmapWindowClampSpan(window, &sy1, &sy2);
+          /* Do the move ... */
+          zMapWindowMove(window, sy1, sy2);
         }
      }
+  /* get canvas coords to work with */
   foo_canvas_w2c(item->canvas, ix1, iy1, &cx1, &cy1); 
   foo_canvas_w2c(item->canvas, ix2, iy2, &cx2, &cy2); 
-  printf("ix1, ix2, iy1, iy2 %f %f %f %f\n", ix1, ix2, iy1, iy2);
-  printf("cx1, cx2, cy1, cy2 %d %d %d %d\n", cx1, cx2, cy1, cy2);
-  {
-    int cx, cy, tmpx, tmpy, cheight, cwidth;
-    tmpx = cx2 - cx1; tmpy = cy2 - cy1;
-    if(tmpx & 1)
-      tmpx += 1;
-    if(tmpy & 1)
-      tmpy += 1;
-    cx = cx1 + (tmpx / 2);
-    cy = cy1 + (tmpy / 2);
-    tmpx = GTK_WIDGET(window->canvas)->allocation.width;
-    tmpy = GTK_WIDGET(window->canvas)->allocation.height;
-    if(tmpx & 1)
-      tmpx -= 1;
-    if(tmpy & 1)
-      tmpy -= 1;
-    cwidth = tmpx / 2; cheight = tmpy / 2;
-    printf("cwidth, cheight %d %d\n", cwidth, cheight);
-    cx -= cwidth; cy -= cheight;
-    printf("canvas x, y %d %d\n", cx, cy);
-    foo_canvas_scroll_to(window->canvas, cx, cy);
-  }
+
+  if(debug)
+    {
+      printf("[zmapWindowItemCentreOnItem] ix1=%f, ix2=%f, iy1=%f, iy2=%f\n", ix1, ix2, iy1, iy2);
+      printf("[zmapWindowItemCentreOnItem] cx1=%d, cx2=%d, cy1=%d, cy2=%d\n", cx1, cx2, cy1, cy2);
+    }
+
+  /* This should possibly be a function */
+  tmpx = cx2 - cx1; tmpy = cy2 - cy1;
+  if(tmpx & 1)
+    tmpx += 1;
+  if(tmpy & 1)
+    tmpy += 1;
+  final_canvasx = cx1 + (tmpx / 2);
+  final_canvasy = cy1 + (tmpy / 2);
+  
+  tmpx = GTK_WIDGET(window->canvas)->allocation.width;
+  tmpy = GTK_WIDGET(window->canvas)->allocation.height;
+  if(tmpx & 1)
+    tmpx -= 1;
+  if(tmpy & 1)
+    tmpy -= 1;
+  cwidth = tmpx / 2; cheight = tmpy / 2;
+  final_canvasx -= cwidth; 
+  final_canvasy -= cheight;
+
+  if(debug)
+    {
+      printf("[zmapWindowItemCentreOnItem] cwidth=%d  cheight=%d\n", cwidth, cheight);
+      printf("[zmapWindowItemCentreOnItem] scrolling to"
+             " canvas x=%d y=%d\n", 
+             final_canvasx, final_canvasy);
+    }
+
+  /* Scroll to the item... */
+  foo_canvas_scroll_to(window->canvas, final_canvasx, final_canvasy);
 
   return ;
 }
@@ -548,6 +576,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
   zmapWindowItemCentreOnItem(window, item, FALSE, 100.0);
 
+#ifdef RDS_DONT_INCLUDE_UNUSED
   /* highlight the item, which also does raise_to_top! */
   zMapWindowHighlightObject(window, item) ;
   
@@ -559,7 +588,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
       select.item = item ;
       (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
     }
-
+#endif
 
 
   /* UMMMM, What's going on here ????? */
