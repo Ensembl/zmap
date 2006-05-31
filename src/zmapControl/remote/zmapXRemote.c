@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: May 31 14:57 2006 (rds)
+ * Last edited: May 31 15:21 2006 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.14 2006-05-31 14:01:51 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.15 2006-05-31 14:26:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -174,13 +174,19 @@ int zMapXRemoteInitServer(zMapXRemoteObj object,  Window id, char *appName, char
 
   if (! object->version_sanity_atom)
     {
+      char *atom_name = NULL;
       object->version_sanity_atom = XInternAtom (object->display, ZMAP_XREMOTE_CURRENT_VERSION_ATOM, False);
+      if(!(atom_name = XGetAtomName(object->display, object->version_sanity_atom)))
+        zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
       if(zmapXRemoteChangeProperty(object, object->version_sanity_atom, ZMAP_XREMOTE_CURRENT_VERSION))
         zMapLogFatal("Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
     }
   if (! object->app_sanity_atom)
     {
+      char *atom_name = NULL;
       object->app_sanity_atom = XInternAtom(object->display, ZMAP_XREMOTE_APPLICATION_ATOM, False);
+      if(!(atom_name = XGetAtomName(object->display, object->app_sanity_atom)))
+        zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_APPLICATION_ATOM);
       if(zmapXRemoteChangeProperty(object, object->app_sanity_atom, appName))
         zMapLogFatal("Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_APPLICATION_ATOM);
     }
