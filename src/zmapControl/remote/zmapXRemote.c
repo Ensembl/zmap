@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: May 30 17:28 2006 (rds)
+ * Last edited: May 31 14:57 2006 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.13 2006-05-30 16:45:15 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.14 2006-05-31 14:01:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -859,6 +859,10 @@ static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
     zmapXDebug("%s\n","**********************************");
     zmapXDebug("X Error: %s\n", errorText);
     zmapXDebug("%s\n","**********************************");
+
+    zMapLogWarning("%s\n","**********************************");
+    zMapLogWarning("X Error: %s\n", errorText);
+    zMapLogWarning("%s\n","**********************************");
 
     return 1;                   /* This is ignored by the server */
 }
