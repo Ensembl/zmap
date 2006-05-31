@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: May 17 12:02 2006 (rds)
+ * Last edited: May 31 17:09 2006 (rds)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.7 2006-05-17 11:18:18 rds Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.8 2006-05-31 16:27:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,24 @@
 
 
 #include <ZMap/zmapXRemote.h>            /* Public header */
-#include <ZMap/zmapUtils.h>
+
+/* This is ALWAYS undef until I find out how to build this with the .xs files */
+#ifndef ZMAP_PERL_XS_VERSION
+
+#include <ZMap/zmapUtils.h>     /* For logging. */
+
+#else
+/* Logging won't work for the perl stuff? It does but straight to terminal */
+#define zMapLogWarning(FORMAT, ...)     \
+zmapXDebug(FORMAT, __VA_ARGS__);
+
+#define zMapLogCritical(FORMAT, ...)    \
+zmapXDebug(FORMAT, __VA_ARGS__);
+
+#define zMapLogFatal(FORMAT, ...)       \
+zmapXDebug(FORMAT, __VA_ARGS__);        
+
+#endif /* ZMAP_PERL_BUILD */
 
 /* really this needs to be public and be returned from
  * zMapXRemoteSendRemoteCommand, but I can't handle having to cope
