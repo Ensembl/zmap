@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 19 22:33 2006 (rds)
+ * Last edited: Jun  2 11:46 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.29 2006-05-22 09:26:40 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.30 2006-06-02 14:59:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,6 +78,41 @@ char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
 						  ZMAP_DESCRIPTION) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+typedef struct
+{
+  ZMapAppContext app_context;
+  gulong signal_id;
+}AppRealiseDataStruct, *AppRealiseData;
+
+static gboolean exposeWorkAroundRealiseHandler(GtkWidget *widget, 
+                                               GdkEventExpose *expose, 
+                                               gpointer user_data)
+{
+  gboolean handled = TRUE;
+  AppRealiseData app_data = (AppRealiseData)user_data;
+  ZMapAppContext app_context = NULL;
+  
+  zMapAssert(GTK_WIDGET_REALIZED(widget));
+  zMapAssert(app_data && app_data->signal_id);
+  app_context = app_data->app_context;
+  g_signal_handler_disconnect(G_OBJECT(widget), app_data->signal_id);
+
+  zmapAppRemoteInstaller(widget, app_context);
+
+  return handled;
+}
+
+static void appRealiseDataDestroy(gpointer user_data)
+{
+  AppRealiseData app_data = (AppRealiseData)user_data;
+
+  app_data->app_context = NULL;
+  app_data->signal_id   = 0;
+
+  g_free(app_data);
+
+  return ;
+}
 
 
 int zmapMainMakeAppWindow(int argc, char *argv[])
@@ -87,6 +122,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GtkWidget *quit_button ;
   char *sequence ;
   int start, end ;
+  AppRealiseData app_data = g_new0(AppRealiseDataStruct, 1);
 
 
   /*       Application initialisation.        */
@@ -119,13 +155,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Init manager, just happen just once in application. */
   zMapManagerInit(&app_window_cbs_G) ;
 
-
-  app_context = createAppContext() ;
-
+  app_data->app_context = 
+    app_context = createAppContext() ;
 
   /* Set up logging for application. */
   app_context->logger = zMapLogCreate(NULL) ;
-
 
   getConfiguration(app_context) ;
 
@@ -133,14 +167,25 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /*             GTK initialisation              */
 
   initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
-
   app_context->app_widg = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_window_set_title(GTK_WINDOW(toplevel), "ZMap - Son of FMap !") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
+#ifdef RDS_DONT_INCLUDE
+  g_signal_connect_after(G_OBJECT(toplevel), "realize",
+                         G_CALLBACK(zmapAppRemoteInstaller), 
+                         (gpointer)app_context);
+#endif
 
-  g_signal_connect(G_OBJECT(toplevel), "realize",
-                   G_CALLBACK(zmapAppRemoteInstaller), (gpointer)app_context);
+  //#ifdef RDS_DONT_INCLUDE
+  app_data->signal_id   =  
+    g_signal_connect_data(G_OBJECT(toplevel), "expose_event",
+                          G_CALLBACK(exposeWorkAroundRealiseHandler), 
+                          (gpointer)app_data,
+                          (GClosureNotify)(appRealiseDataDestroy), 
+                          0);
+  //#endif
+
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
 
@@ -161,13 +206,19 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(vbox), quit_button, FALSE, FALSE, 0) ;
 
+
+
+
+
+
+
   /* Always create the widget. */
   gtk_widget_show_all(toplevel) ;
 
   /* We don't always want to show this window, for lace users it is useless.... */
-  if (!(app_context->show_mainwindow))
-    gtk_widget_unmap(toplevel) ;
 
+  if (0 && !(app_context->show_mainwindow))
+    gtk_widget_unmap(toplevel) ;
 
   /* If user specifyed a sequence in the config. file or on the command line then
    * display it straight away. */

@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: May 25 17:27 2006 (rds)
+ * Last edited: Jun  2 11:28 2006 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.17 2006-05-26 18:07:20 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.18 2006-06-02 14:59:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,6 +94,8 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
   zMapXRemoteObj xremote;
   ZMapCmdLineArgsType value ;
   Window id;
+  zMapAssert(GTK_WIDGET_REALIZED(widget));
+
   id = (Window)GDK_DRAWABLE_XID(widget->window);
   
   if((xremote = zMapXRemoteNew()) != NULL)
