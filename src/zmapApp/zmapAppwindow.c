@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  2 11:46 2006 (rds)
+ * Last edited: Jun  7 15:05 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.30 2006-06-02 14:59:54 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.31 2006-06-07 14:08:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,6 +78,7 @@ char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
 						  ZMAP_DESCRIPTION) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+#ifdef RDS_DONT_INCLUDE_TESTING
 typedef struct
 {
   ZMapAppContext app_context;
@@ -91,6 +92,8 @@ static gboolean exposeWorkAroundRealiseHandler(GtkWidget *widget,
   gboolean handled = TRUE;
   AppRealiseData app_data = (AppRealiseData)user_data;
   ZMapAppContext app_context = NULL;
+
+  printf("[zmapAppwindow] Expose workaround callback\n");
   
   zMapAssert(GTK_WIDGET_REALIZED(widget));
   zMapAssert(app_data && app_data->signal_id);
@@ -114,6 +117,30 @@ static void appRealiseDataDestroy(gpointer user_data)
   return ;
 }
 
+static gboolean appExposeCallback(GtkWidget *widget, 
+                                  GdkEventExpose *expose, 
+                                  gpointer user_data)
+{
+  printf("[zmapAppwindow] Expose callback\n");  
+  return FALSE;
+}
+static void appRealizeCallback(GtkWidget *widget, gpointer user_data)
+{
+  printf("[zmapAppwindow] Realize callback\n");
+  return ;
+}
+static void appMapCallback(GtkWidget *widget, gpointer user_data)
+{
+  printf("[zmapAppwindow] Map callback\n");
+  return ;
+}
+static gboolean appMapEventCallback(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+  gboolean handled = FALSE;
+  printf("[zmapAppwindow] Map Event callback\n");
+  return handled;
+}
+#endif /* RDS_DONT_INCLUDE_TESTING */
 
 int zmapMainMakeAppWindow(int argc, char *argv[])
 {
@@ -122,7 +149,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GtkWidget *quit_button ;
   char *sequence ;
   int start, end ;
-  AppRealiseData app_data = g_new0(AppRealiseDataStruct, 1);
+  /* AppRealiseData app_data = g_new0(AppRealiseDataStruct, 1); */
 
 
   /*       Application initialisation.        */
@@ -155,14 +182,13 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Init manager, just happen just once in application. */
   zMapManagerInit(&app_window_cbs_G) ;
 
-  app_data->app_context = 
+  /* app_data->app_context = */
     app_context = createAppContext() ;
 
   /* Set up logging for application. */
   app_context->logger = zMapLogCreate(NULL) ;
 
   getConfiguration(app_context) ;
-
 
   /*             GTK initialisation              */
 
@@ -171,21 +197,52 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_window_set_title(GTK_WINDOW(toplevel), "ZMap - Son of FMap !") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
-#ifdef RDS_DONT_INCLUDE
-  g_signal_connect_after(G_OBJECT(toplevel), "realize",
-                         G_CALLBACK(zmapAppRemoteInstaller), 
-                         (gpointer)app_context);
-#endif
 
-  //#ifdef RDS_DONT_INCLUDE
-  app_data->signal_id   =  
-    g_signal_connect_data(G_OBJECT(toplevel), "expose_event",
-                          G_CALLBACK(exposeWorkAroundRealiseHandler), 
-                          (gpointer)app_data,
-                          (GClosureNotify)(appRealiseDataDestroy), 
-                          0);
-  //#endif
+#ifdef RDS_DONT_INCLUDE_TESTING
+  if(app_context->event_model &&
+     (g_ascii_strncasecmp(app_context->event_model, "realize", 7)) == 0)
+    g_signal_connect_after(G_OBJECT(toplevel), "realize",
+                           G_CALLBACK(zmapAppRemoteInstaller), 
+                           (gpointer)app_context);
+  else if(app_context->event_model &&
+          (g_ascii_strncasecmp(app_context->event_model, "expose_event", 12)) == 0)
+    app_data->signal_id =  
+      g_signal_connect_data(G_OBJECT(toplevel), "expose_event",
+                            G_CALLBACK(exposeWorkAroundRealiseHandler), 
+                            (gpointer)app_data,
+                            (GClosureNotify)(appRealiseDataDestroy), 
+                            0);
+  else if(app_context->event_model &&
+          (g_ascii_strncasecmp(app_context->event_model, "map", 3)) == 0)
+    g_signal_connect(G_OBJECT(toplevel), "map",
+                     G_CALLBACK(zmapAppRemoteInstaller), 
+                     (gpointer)app_context);
+  else
+    g_signal_connect_after(G_OBJECT(toplevel), "realize",
+                           G_CALLBACK(zmapAppRemoteInstaller), 
+                           (gpointer)app_context);
 
+  g_signal_connect(G_OBJECT(toplevel), "realize",
+                   G_CALLBACK(appRealizeCallback), 
+                   NULL);
+  g_signal_connect(G_OBJECT(toplevel), "expose_event",
+                   G_CALLBACK(appExposeCallback), 
+                   NULL);
+  g_signal_connect(G_OBJECT(toplevel), "map",
+                   G_CALLBACK(appMapCallback), 
+                   (gpointer)app_context);
+  g_signal_connect(G_OBJECT(toplevel), "map_event",
+                   G_CALLBACK(appMapEventCallback), 
+                   NULL);
+#endif /* RDS_DONT_INCLUDE_TESTING */
+
+  /* This ensures that the widget *really* has a X Window id when it
+   * comes to doing XChangeProperty.  Using realize doesn't and the 
+   * expose_event means we can't hide the mainwindow. */
+  g_signal_connect(G_OBJECT(toplevel), "map",
+                   G_CALLBACK(zmapAppRemoteInstaller), 
+                   (gpointer)app_context);
+  
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
 
@@ -217,7 +274,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* We don't always want to show this window, for lace users it is useless.... */
 
-  if (0 && !(app_context->show_mainwindow))
+  if (!(app_context->show_mainwindow))
     gtk_widget_unmap(toplevel) ;
 
   /* If user specifyed a sequence in the config. file or on the command line then
@@ -347,6 +404,10 @@ void removeZMapCB(void *app_data, void *zmap_data)
 
   if (app_context->selected_zmap == zmap)
     app_context->selected_zmap = NULL ;
+
+  if((!(app_context->show_mainwindow)) && 
+     ((zMapManagerCount(app_context->zmap_manager)) == 0))
+    gtk_widget_destroy(app_context->app_widg);
 
   return ;
 }
@@ -517,6 +578,7 @@ static gboolean getConfiguration(ZMapAppContext app_context)
   char *zmap_stanza_name = ZMAPSTANZA_APP_CONFIG ;
   ZMapConfigStanzaElementStruct zmap_elements[] = {{ZMAPSTANZA_APP_MAINWINDOW, ZMAPCONFIG_BOOL,   {NULL}},
 						   {ZMAPSTANZA_APP_SEQUENCE,   ZMAPCONFIG_STRING, {NULL}},
+                                                   /* {"event_model", ZMAPCONFIG_STRING, {NULL}}, */
 						   {NULL, -1, {NULL}}} ;
 
 
@@ -540,7 +602,13 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 	  if ((app_context->default_sequence
 	       = zMapConfigGetElementString(next_zmap, ZMAPSTANZA_APP_SEQUENCE)))
 	    app_context->default_sequence = g_strdup_printf(app_context->default_sequence) ;
-	  
+
+          /*	  
+          if ((app_context->event_model
+	       = zMapConfigGetElementString(next_zmap, "event_model")))
+	    app_context->event_model = g_strdup_printf(app_context->event_model) ;
+          */
+
 	  zMapConfigDeleteStanzaSet(zmap_list) ;		    /* Not needed anymore. */
 	}
       

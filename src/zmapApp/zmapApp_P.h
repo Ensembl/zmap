@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 17 10:09 2006 (rds)
+ * Last edited: Jun  7 15:06 2006 (rds)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.13 2006-05-17 12:40:55 rds Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.14 2006-06-07 14:08:43 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -70,7 +70,7 @@ typedef struct _ZMapAppContextStruct
 
   char *default_sequence ;				    /* Was a default sequence specified in
 							       the config. file.*/
-
+  /* char *event_model ;*/
 } ZMapAppContextStruct, *ZMapAppContext ;
 
 
