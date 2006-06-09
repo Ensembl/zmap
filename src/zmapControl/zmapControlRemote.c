@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun  9 16:49 2006 (rds)
+ * Last edited: Jun  9 18:06 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.25 2006-06-09 15:53:05 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.26 2006-06-09 17:08:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -796,7 +796,7 @@ static gboolean featureEndHndlr(void *userData,
 
   zMapXMLParserCheckIfTrueErrorReturn(data->featureQueries_last == NULL, 
                                       parser, 
-                                      "a feature end without a feature start.");
+                                      "a feature end tag without a created feature.");
 
   if(!bad)
     feature = ((controlFeatureQuery)(data->featureQueries_last->data))->feature;
