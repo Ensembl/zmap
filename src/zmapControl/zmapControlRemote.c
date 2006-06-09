@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: May 19 22:35 2006 (rds)
+ * Last edited: Jun  9 16:49 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.24 2006-05-22 09:27:14 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.25 2006-06-09 15:53:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -97,6 +97,7 @@ typedef struct
   ZMap zmap;
   int  code;
   gboolean persist;
+  GString *messages;
 } responseCodeZMapStruct, *responseCodeZMap;
 
 /* ZMAPXREMOTE_CALLBACK and destroy internals for zmapControlRemoteInstaller */
@@ -231,7 +232,7 @@ static ZMapXMLParser setupControlRemoteXMLParser(void *data)
 
 static void alterFeature(gpointer data, gpointer userdata)
 {
-  
+  return ;
 }
 
 static void deleteFeature(gpointer data, gpointer userdata)
@@ -245,6 +246,8 @@ static void deleteFeature(gpointer data, gpointer userdata)
   ZMap      zmap = NULL;
   ZMapWindow win = NULL;
 
+  zMapAssert(common->messages);
+
   if(!common->persist)
     return ;
   zmap = common->zmap;
@@ -255,11 +258,14 @@ static void deleteFeature(gpointer data, gpointer userdata)
   if((query = fq->query) == NULL)
     good = FALSE;
 
+  if(common->messages->len)
+    g_string_append_printf(common->messages, "\n");
+
   if(!good)
     {
       common->code = 412;
-      zmapControlInfoSet(zmap, common->code,
-                         "[CHANGE THIS] XML Data Error. Not enough information");
+      g_string_append_printf(common->messages, 
+                             "XML Data Error. Not enough information.");
       error_recorded = TRUE;
     }
 
@@ -283,18 +289,18 @@ static void deleteFeature(gpointer data, gpointer userdata)
   else if(!error_recorded)
     {
       common->code = 404;
-      zmapControlInfoSet(zmap, common->code,
-                         "[CHANGE THIS] Failed to find feature '%s'",
-                         (char *)g_quark_to_string(query->originalId));
+      g_string_append_printf(common->messages,
+                             "Failed to find feature '%s'.",
+                             (char *)g_quark_to_string(query->originalId));
       error_recorded = TRUE;
     }
   
   if(!good && !error_recorded)
     {
       common->code = 404;
-      zmapControlInfoSet(zmap, common->code,
-                         "[CHANGE THIS] Failed to remove feature '%s'",
-                         (char *)g_quark_to_string(query->originalId));
+      g_string_append_printf(common->messages,
+                             "Failed to remove feature '%s'.",
+                             (char *)g_quark_to_string(query->originalId));
       error_recorded = TRUE;
     }
 
@@ -314,6 +320,8 @@ static void drawNewFeature(gpointer data, gpointer userdata)
   ZMap      zmap = NULL;
   ZMapWindow win = NULL;
 
+  zMapAssert(common->messages);
+
   if(!common->persist)
     return ;
 
@@ -324,6 +332,9 @@ static void drawNewFeature(gpointer data, gpointer userdata)
     good = FALSE;
   if((query = fq->query) == NULL)
     good = FALSE;
+
+  if(common->messages->len)
+    g_string_append_printf(common->messages, "\n");
 
   /* All the [CHANGE THIS] refers to the fact that we need to be
    * appending to the error message as we can have multiple
@@ -353,8 +364,8 @@ static void drawNewFeature(gpointer data, gpointer userdata)
   if(!good)
     {
       common->code = 412;
-      zmapControlInfoSet(zmap, common->code,
-                         "[CHANGE THIS] XML Data Error. Not enough information");
+      g_string_append_printf(common->messages,
+                             "XML Data Error. Not enough information.");
       error_recorded = TRUE;
     }
 
@@ -381,18 +392,18 @@ static void drawNewFeature(gpointer data, gpointer userdata)
   else if(!error_recorded)
     {
       common->code = 412;
-      zmapControlInfoSet(zmap, common->code,
-                         "[CHANGE THIS] Failed to find column for feature '%s'",
-                         (char *)g_quark_to_string(query->originalId));
+      g_string_append_printf(common->messages,
+                             "Failed to find column for feature '%s'.",
+                             (char *)g_quark_to_string(query->originalId));
       error_recorded = TRUE;
     }
 
   if(!good && !error_recorded)
     {
       common->code = 412;
-      zmapControlInfoSet(zmap, common->code,
-                         "[CHANGE THIS] Failed to draw feature '%s'",
-                         (char *)g_quark_to_string(query->originalId));
+      g_string_append_printf(common->messages,
+                             "Failed to draw feature '%s'.",
+                             (char *)g_quark_to_string(query->originalId));
       error_recorded = TRUE;
     }
 
@@ -455,25 +466,40 @@ static char *controlexecuteCommand(char *command_text, ZMap zmap, int *statusCod
         listExecData.code = ZMAPXREMOTE_OK;
         listExecData.zmap = zmap;
         listExecData.persist = TRUE;
+        listExecData.messages = g_string_sized_new(200);
         g_list_foreach(objdata.featureQueries_first, drawNewFeature, &listExecData);
-        zmapControlInfoSet(zmap, listExecData.code, "%s",
-                           "Looks like I drew some features.");
+        if(listExecData.messages->str)
+          zmapControlInfoSet(zmap, listExecData.code, "%s",
+                             listExecData.messages->str);
+        else
+          zmapControlInfoSet(zmap, 412, "%s", "Nothing happened. Probably a data error.");
+        g_string_free(listExecData.messages, TRUE);
         break;
       case ZMAP_CONTROL_ACTION_ALTER_FEATURE:
         listExecData.code = ZMAPXREMOTE_OK;
         listExecData.zmap = zmap;
         listExecData.persist = TRUE;
+        listExecData.messages = g_string_sized_new(200);
         g_list_foreach(objdata.featureQueries_first, alterFeature, &listExecData);
-        zmapControlInfoSet(zmap, listExecData.code, "%s",
-                           "Looks like I modified some features.");
+        if(listExecData.messages->str)
+          zmapControlInfoSet(zmap, listExecData.code, "%s",
+                             listExecData.messages->str);
+        else
+          zmapControlInfoSet(zmap, 412, "%s", "Nothing happened. Probably a data error.");
+        g_string_free(listExecData.messages, TRUE);
         break;
       case ZMAP_CONTROL_ACTION_DELETE_FEATURE:
         listExecData.code = ZMAPXREMOTE_OK;
         listExecData.zmap = zmap;
         listExecData.persist = TRUE;
+        listExecData.messages = g_string_sized_new(200);
         g_list_foreach(objdata.featureQueries_first, deleteFeature, &listExecData);
-        zmapControlInfoSet(zmap, listExecData.code, "%s",
-                           "Looks like I deleted some features.");
+        if(listExecData.messages->str)
+          zmapControlInfoSet(zmap, listExecData.code, "%s",
+                             listExecData.messages->str);
+        else
+          zmapControlInfoSet(zmap, 412, "%s", "Nothing happened. Probably a data error.");
+        g_string_free(listExecData.messages, TRUE);
         break;
       case ZMAP_CONTROL_ACTION_HIGHLIGHT_FEATURE:
         code = ZMAPXREMOTE_OK;
