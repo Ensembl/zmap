@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 12 08:51 2006 (edgrif)
+ * Last edited: Jun 12 09:19 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.55 2006-06-12 07:52:19 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.56 2006-06-12 08:20:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1382,9 +1382,7 @@ static gboolean parseTypes(AcedbServer server, GList **types_out)
 
 		  if (col_group)
 		    {
-		      gpointer item ;
 		      GList *method_list = NULL ;
-		      gboolean found = FALSE ;
 
 		      method_list = g_hash_table_lookup(server->method_2_featureset,
 							GINT_TO_POINTER(col_group->feature_set)) ;
@@ -1394,7 +1392,11 @@ static gboolean parseTypes(AcedbServer server, GList **types_out)
 		      g_hash_table_insert(server->method_2_featureset, 
 					  GINT_TO_POINTER(col_group->feature_set), method_list) ;
 		      
-		      g_list_foreach(method_list, printCB, NULL) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		      g_list_foreach(method_list, printCB, NULL) ; /* debug */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 		    }
 		}
@@ -1830,9 +1832,6 @@ static ZMapServerResponseType getStyleNames(AcedbServer server, GList **style_na
 	    {
 	      scan_text = NULL ;
 
-	      if (strcmp((next_line + 1), "wublastx_yeast") == 0)
-		printf("found it\n") ;
-
 	      /* Look for start/end of methods list. */
 	      if (!found_method && g_str_has_prefix(next_line, "Method:"))
 		{
@@ -2042,7 +2041,12 @@ static char *getAcedbColourSpec(char *acedb_colour_name)
 
 static void freeMethodHash(gpointer data)
 {
+
+  /* Doing this screws up later code...sort this out.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_list_free((GList *)data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -2071,12 +2075,12 @@ static void methodFetchCB(gpointer data, gpointer user_data)
   GQuark feature_set = GPOINTER_TO_INT(data) ;
   MethodFetch method_data = (MethodFetch)user_data ;
   GList *method_list ;
-  GQuark method_name = 0 ;
 
   if ((method_list = (GList *)g_hash_table_lookup(method_data->method_2_featureset, GINT_TO_POINTER(feature_set))))
     {
-
-      g_list_foreach(method_list, printCB, NULL) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      g_list_foreach(method_list, printCB, NULL) ;	    /* debug */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       method_data->fetch_methods = g_list_concat(method_data->fetch_methods, method_list) ;
     }
