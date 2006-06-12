@@ -5,3 +5,21 @@ Code that provides an interface to contacting a server over the network and
 asking for and collecting data from the server.
 
 Subdirectories contain any code required for particular servers.
+
+
+
+The organisation of the code is:
+
+                                                                         - acedb
+                                                                        |
+request from GUI  ---> zmapServerProtocolHandler.c ---> zmapServer.c ---|- das
+                                                                        |
+                                                                         - file
+                                                                        |
+                                                                         - etc.
+
+
+zmapServerProtocolHandler functions decode the request and issue the appropriate
+zmapServer calls, these calls do any general request handling that is required by
+all data sources and then route the request to the appropriate set of functions
+for acedb, das or whatever.
