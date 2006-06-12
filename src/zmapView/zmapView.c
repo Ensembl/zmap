@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: May 11 14:05 2006 (rds)
+ * Last edited: Jun 12 08:04 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.73 2006-05-15 17:41:11 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.74 2006-06-12 07:41:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1512,7 +1512,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
    * list determines order of columns. */
   if (featuresets_names)
     {
-      /* If user only wants some featuresets/types displayed then build a list of their quark names. */
+      /* If user only wants some featuresets displayed then build a list of their quark names. */
       req_featuresets = string2StyleQuarks(featuresets_names) ;
     }
 
@@ -1534,7 +1534,9 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 
       open_load->context.context = createContext(sequence, start, end, types, req_featuresets) ;
 
-      open_load->types.req_featuresets = req_featuresets ;
+      open_load->styles.styles = types ;
+
+      open_load->feature_sets.feature_sets = req_featuresets ;
 
       if (sequence_server)
 	open_load->features.type = ZMAP_SERVERREQ_FEATURE_SEQUENCE ;

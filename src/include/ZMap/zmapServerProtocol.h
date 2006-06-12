@@ -28,9 +28,9 @@
  *              give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Aug 31 17:45 2005 (rds)
+ * Last edited: Jun  8 09:57 2006 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.7 2005-09-05 17:25:06 rds Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.8 2006-06-12 07:34:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -47,11 +47,13 @@ typedef enum
   {
     ZMAP_SERVERREQ_INVALID = 0,
 
-    ZMAP_SERVERREQ_OPEN,
+    ZMAP_SERVERREQ_OPEN,				    /* Open a connection to a data server. */
 
-    ZMAP_SERVERREQ_OPENLOAD,
+    ZMAP_SERVERREQ_OPENLOAD,				    /* Open a connection and get features. */
 
-    ZMAP_SERVERREQ_TYPES,				    /* Get the feature types. */
+    ZMAP_SERVERREQ_STYLES,				    /* Set/Get the feature styles. */
+
+    ZMAP_SERVERREQ_FEATURESETS,				    /* Set/Get the feature sets. */
 
     ZMAP_SERVERREQ_FEATURES,				    /* Get the features. */
 
@@ -95,16 +97,26 @@ typedef struct
 } ZMapServerReqOpenStruct, *ZMapServerReqOpen ;
 
 
-/* Find out what types are on a server. */
+/* Used to specify styles (perhaps loaded from users file) or to retrieve styles from the server. */
 typedef struct
 {
   ZMapServerReqType type ;
 
-  GList *req_featuresets ;				    /* featuresets to retrieve for this request,
-							       NULL means get all of them. */
+  GList *styles ;					    /* List of prespecified styles or NULL
+							       to get all available styles. */
+} ZMapServerReqStylesStruct, *ZMapServerReqStyles ;
 
-  GList *types_out ;					    /* Returned list of available feature types. */
-} ZMapServerReqGetTypesStruct, *ZMapServerReqGetTypes ;
+
+/* Used to specify which feature sets should be retrieved or to get the list of all feature sets
+ * available. */
+typedef struct
+{
+  ZMapServerReqType type ;
+
+  GList *feature_sets ;					    /* List of prespecified features sets or
+							       NULL to get all available sets. */
+} ZMapServerReqFeatureSetsStruct, *ZMapServerReqFeatureSets ;
+
 
 
 /* Set a context/region in a server. */
@@ -132,7 +144,9 @@ typedef struct
 
   ZMapServerReqOpenStruct open ;
 
-  ZMapServerReqGetTypesStruct types ;
+  ZMapServerReqStylesStruct styles ;
+
+  ZMapServerReqFeatureSetsStruct feature_sets ;
 
   ZMapServerReqNewContextStruct context ;
 
@@ -148,7 +162,8 @@ typedef union
   ZMapServerReqAny any ;
   ZMapServerReqOpen open ;
   ZMapServerReqOpenLoad open_load ;
-  ZMapServerReqGetTypes get_types ;
+  ZMapServerReqStyles styles ;
+  ZMapServerReqFeatureSets feature_sets ;
   ZMapServerReqGetFeatures get_features ;
   ZMapServerReqNewContext new_context ;
 } ZMapServerReq ;

@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb  2 15:05 2006 (edgrif)
+ * Last edited: Jun 12 08:40 2006 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.19 2006-02-17 10:46:23 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.20 2006-06-12 07:41:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,7 +71,8 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout) ;
 
 static ZMapServerResponseType openConnection(void *server) ;
-static ZMapServerResponseType getTypes(void *server, GList *requested_types, GList **types) ;
+static ZMapServerResponseType getStyles(void *server, GList **styles_out) ;
+static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
 static ZMapFeatureContext copyContext(void *server_conn) ;
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
@@ -100,7 +101,8 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs)
   file_funcs->global_init = globalInit ;
   file_funcs->create = createConnection ;
   file_funcs->open = openConnection ;
-  file_funcs->get_types = getTypes ;
+  file_funcs->get_styles = getStyles ;
+  file_funcs->get_feature_sets = getFeatureSets ;
   file_funcs->set_context = setContext ;
   file_funcs->copy_context = copyContext ;
   file_funcs->get_features = getFeatures ;
@@ -205,12 +207,12 @@ static ZMapServerResponseType openConnection(void *server_in)
 
 
 
-/* We cannot parse the types from a gff file, gff simply doesn't have display types so we
+/* We cannot parse the styles from a gff file, gff simply doesn't have display styles so we
  * just return "unsupported", so if this function is called it will alert the caller that
  * something has gone wrong.
  * 
  *  */
-static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, GList **types_out)
+static ZMapServerResponseType getStyles(void *server_in, GList **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;
@@ -218,13 +220,36 @@ static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, 
   zMapAssert(server) ;
 
   server->last_err_msg = g_strdup("Styles cannot be read from a GFF file.") ;
-  ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->gff_file,
+  ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
 		 "%s", server->last_err_msg) ;
 
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
 
   return result ;
 }
+
+
+/* We could parse out all the "source" fields from the gff file but I don't have time
+ * to do this now. So we just return "unsupported", so if this function is called it
+ * will alert the caller that something has gone wrong.
+ * 
+ *  */
+static ZMapServerResponseType getFeatureSets(void *server_in, GList **feature_sets_out)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  FileServer server = (FileServer)server_in ;
+
+  zMapAssert(server) ;
+
+  server->last_err_msg = g_strdup("Feature Sets cannot be read from a GFF file.") ;
+  ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
+		 "%s", server->last_err_msg) ;
+
+  result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+
+  return result ;
+}
+
 
 
 /* We don't check anything here, we could look in the file to check that it matches the context
@@ -299,7 +324,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 	      server->last_err_msg =
 		g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 				zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str) ;
-	      ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->gff_file,
+	      ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
 			     "%s", server->last_err_msg) ;
 
 	      get_features.result = ZMAP_SERVERRESPONSE_REQFAIL ;
@@ -315,7 +340,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 		}
 	      else
 		{
-		  ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, server->gff_file,
+		  ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, server->file_path,
 				 "%s", error->message) ;
 		}
 	    }
@@ -497,7 +522,7 @@ static void eachBlock(gpointer data, gpointer user_data)
       if (!sequenceRequest(get_features->server, get_features->parser,
 			   get_features->gff_line, feature_block))
 	{
-	  ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, get_features->server->gff_file,
+	  ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, get_features->server->file_path,
 			 "Could not map %s because: %s",
 			 g_quark_to_string(get_features->server->req_context->sequence_name),
 			 get_features->server->last_err_msg) ;
@@ -545,7 +570,7 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
 	      server->last_err_msg =
 		g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 				zMapGFFGetLineNumber(parser), gff_line->str) ;
-	      ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->gff_file,
+	      ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
 			     "%s", server->last_err_msg) ;
 
 	      result = FALSE ;
@@ -561,7 +586,7 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
 		}
 	      else
 		{
-		  ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, server->gff_file,
+		  ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, server->file_path,
 				 "%s", error->message) ;
 		}
 	    }

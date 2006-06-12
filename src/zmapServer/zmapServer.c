@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Sep  2 11:34 2005 (rds)
+ * Last edited: Jun  8 15:31 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.25 2005-09-05 17:13:58 rds Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.26 2006-06-12 07:37:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -166,12 +166,12 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server)
   return result ;
 }
 
-ZMapServerResponseType zMapServerGetTypes(ZMapServer server, GList *requested_types, GList **types_out)
+
+ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GList **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
-  result = server->last_response = (server->funcs->get_types)(server->server_conn,
-							      requested_types, types_out) ;
+  result = server->last_response = (server->funcs->get_styles)(server->server_conn, styles_out) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
     server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
@@ -181,6 +181,21 @@ ZMapServerResponseType zMapServerGetTypes(ZMapServer server, GList *requested_ty
   return result ;
 }
 
+
+ZMapServerResponseType zMapServerGetFeatureSets(ZMapServer server, GList **feature_sets_out)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+  result = server->last_response
+    = (server->funcs->get_feature_sets)(server->server_conn, feature_sets_out) ;
+
+  if (result != ZMAP_SERVERRESPONSE_OK)
+    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                    server->url->host, "%s",
+						    (server->funcs->errmsg)(server->server_conn)) ;
+
+  return result ;
+}
 
 
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContext feature_context)

@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: May 15 12:05 2006 (rds)
+ * Last edited: Jun  8 15:30 2006 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.14 2006-05-15 11:07:36 rds Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.15 2006-06-12 07:36:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -47,18 +47,20 @@
  * the ZMapServerFuncsStruct struct that represents the calls for a server
  * of a particular protocol. */
 typedef gboolean (*ZMapServerGlobalFunc)(void) ;
+
 typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 					 zMapURL url, char *format, 
                                          char *version_str, int timeout) ;
+
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn) ;
 
-typedef ZMapServerResponseType (*ZMapServerGetTypes)(void *server_in,
-						     GList *requested_types, GList **types_out) ;
+typedef ZMapServerResponseType (*ZMapServerGetStyles)(void *server_in, GList **styles_out) ;
+
+typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in, GList **feature_sets_out) ;
 
 typedef ZMapServerResponseType
                  (*ZMapServerSetContextFunc)(void *server_conn,
 					     ZMapFeatureContext feature_context)  ;
-
 
 typedef ZMapFeatureContext
                  (*ZMapServerCopyContextFunc)(void *server_conn) ;
@@ -73,6 +75,7 @@ typedef ZMapServerResponseType
 typedef char *   (*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType (*ZMapServerCloseFunc)  (void *server_conn) ;
+
 typedef gboolean (*ZMapServerDestroyFunc)(void *server_conn) ;
 
 
@@ -81,7 +84,8 @@ typedef struct _ZMapServerFuncsStruct
   ZMapServerGlobalFunc global_init ;
   ZMapServerCreateFunc create ;
   ZMapServerOpenFunc open ;
-  ZMapServerGetTypes get_types ;
+  ZMapServerGetStyles get_styles ;
+  ZMapServerGetFeatureSets get_feature_sets ;
   ZMapServerSetContextFunc set_context ;
   ZMapServerCopyContextFunc copy_context ;
   ZMapServerGetFeatures get_features ;
