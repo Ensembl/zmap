@@ -1,4 +1,4 @@
-/*  File: zmapServer.c
+/*  File: acedbServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2003
  *-------------------------------------------------------------------
@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 23 15:06 2006 (rds)
+ * Last edited: Jun 12 08:51 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.54 2006-05-23 14:34:02 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.55 2006-06-12 07:52:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +50,13 @@ typedef struct
 
 typedef struct
 {
+  GQuark feature_set ;
+  GQuark method ;
+} ZMapColGroupDataStruct, *ZMapColGroupData ;
+
+
+typedef struct
+{
   ZMapServerResponseType result ;
   AcedbServer server ;
   GFunc eachBlock;
@@ -63,6 +70,15 @@ typedef struct
 } AcedbColourSpecStruct, *AcedbColourSpec ;
 
 
+typedef struct
+{
+  GHashTable *method_2_featureset ;
+  GList *fetch_methods ;
+} MethodFetchStruct, *MethodFetch ;
+
+
+
+
 /* These provide the interface functions for an acedb server implementation, i.e. you
  * shouldn't change these prototypes without changing all the other server prototypes..... */
 static gboolean globalInit(void) ;
@@ -70,7 +86,8 @@ static gboolean createConnection(void **server_out,
 				 zMapURL url, char *format, 
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
-static ZMapServerResponseType getTypes(void *server, GList *requested_types, GList **types) ;
+static ZMapServerResponseType getStyles(void *server, GList **styles_out) ;
+static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
 ZMapFeatureContext copyContext(void *server) ;
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
@@ -96,8 +113,12 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
 static gboolean checkServerVersion(AcedbServer server) ;
 static gboolean findSequence(AcedbServer server) ;
 static gboolean setQuietMode(AcedbServer server) ;
-static gboolean parseTypes(AcedbServer server, GList *requested_types, GList **types_out) ;
-ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str, char **end_pos) ;
+
+static gboolean parseTypes(AcedbServer server, GList **styles_out) ;
+static ZMapServerResponseType findMethods(AcedbServer server) ;
+static ZMapServerResponseType getStyleNames(AcedbServer server, GList **style_names_out) ;
+static ZMapFeatureTypeStyle parseMethod(char *method_str_in,
+					char **end_pos, ZMapColGroupData *col_group_data) ;
 gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data) ;
 int getFoundObj(char *text) ;
 
@@ -107,6 +128,16 @@ static void eachBlockSequenceRequest(gpointer data, gpointer user_data) ;
 static void eachBlockDNARequest(gpointer data, gpointer user_data);
 
 static char *getAcedbColourSpec(char *acedb_colour_name) ;
+static void freeMethodHash(gpointer data) ;
+
+static char *getMethodFetchStr(GList *feature_sets, GHashTable *method_2_featureset) ;
+static void methodFetchCB(gpointer data, gpointer user_data) ;
+
+static void printCB(gpointer data, gpointer user_data) ;
+
+/* 
+ *             Server interface functions. 
+ */
 
 
 
@@ -118,7 +149,8 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->global_init = globalInit ;
   acedb_funcs->create = createConnection ;
   acedb_funcs->open = openConnection ;
-  acedb_funcs->get_types = getTypes ;
+  acedb_funcs->get_styles = getStyles ;
+  acedb_funcs->get_feature_sets = getFeatureSets ;
   acedb_funcs->set_context = setContext ;
   acedb_funcs->copy_context = copyContext ;
   acedb_funcs->get_features = getFeatures ;
@@ -212,21 +244,15 @@ static ZMapServerResponseType openConnection(void *server_in)
 }
 
 
-static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, GList **types_out)
+
+static ZMapServerResponseType getStyles(void *server_in, GList **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
 
-  if (requested_types)
-    {
-      server->method_str = getMethodString(requested_types, TRUE, FALSE) ;
-      server->find_method_str = getMethodString(requested_types, TRUE, TRUE) ;
-    }
-  else
-    server->user_specified_styles = FALSE ;
+  server->method_2_featureset = g_hash_table_new_full(NULL, NULL, NULL, freeMethodHash) ;
 
-
-  if (parseTypes(server, requested_types, types_out))
+  if (parseTypes(server, styles_out))
     {
       result = ZMAP_SERVERRESPONSE_OK ;
     }
@@ -239,35 +265,33 @@ static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, 
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Sadly not all types of data (e.g. Allele, clone_end etc.) in acedb have a method, many
-   * are hard-coded which makes our job v. much harder. These types must be added to the
-   * requested_types and types_out as appropriate. */
-  if (result == ZMAP_SERVERRESPONSE_OK)
+  return result ;
+}
+
+
+
+static ZMapServerResponseType getFeatureSets(void *server_in, GList **feature_sets)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  AcedbServer server = (AcedbServer)server_in ;
+  GList *style_names = NULL ;
+
+  /* For acedb the default is to use the style names as the feature sets. */
+  if (((result = findMethods(server_in)) == ZMAP_SERVERRESPONSE_OK)
+      && ((result = getStyleNames(server, &style_names)) == ZMAP_SERVERRESPONSE_OK))
     {
-      if (requested_types)
-	{
-
-
-
-
-	}
-
-      if (types_out)
-	{
-
-
-
-
-
-	}
+      *feature_sets = style_names ;
     }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+  else
+    {
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+		     "Could not get feature sets from server because: %s", server->last_err_msg) ;
+    }
 
   return result ;
 }
+
 
 
 
@@ -325,7 +349,10 @@ ZMapFeatureContext copyContext(void *server_in)
 /* Get features sequence. */
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context)
 {
+  AcedbServer server = (AcedbServer)server_in ;
   DoAllAlignBlocksStruct get_features ;
+
+  server->current_context = feature_context ;
 
   get_features.result = ZMAP_SERVERRESPONSE_OK ;
   get_features.server = (AcedbServer)server_in ;
@@ -445,6 +472,9 @@ static gboolean destroyConnection(void *server_in)
   if (server->version_str)
     g_free(server->version_str) ;
 
+  if (server->method_2_featureset)
+    g_hash_table_destroy(server->method_2_featureset) ;
+
   g_free(server) ;
 
   return result ;
@@ -454,7 +484,7 @@ static gboolean destroyConnection(void *server_in)
 
 
 /* 
- * ---------------------  Internal routines.  ---------------------
+ *                       Internal routines
  */
 
 
@@ -570,19 +600,8 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
   /* Get any styles stored in the context. */
   styles = ((ZMapFeatureContext)(feature_block->parent->parent))->styles ;
 
+  methods = getMethodFetchStr(server->current_context->feature_set_names, server->method_2_featureset) ;
 
-  /* Did the user specify the styles completely via a styles file ? If so we will
-   * need to construct the method string from them. */
-  if (server->user_specified_styles == TRUE)
-    {
-      if (!server->method_str && styles)
-	{
-	  server->method_str = getMethodString(styles, FALSE, FALSE) ;
-	}
-    }
-
-  if (server->method_str)
-    methods = server->method_str ;
 
   /* Here we can convert the GFF that comes back, in the end we should be doing a number of
    * calls to AceConnRequest() as the server slices...but that will need a change to my
@@ -1023,6 +1042,8 @@ static gboolean getSMapping(AcedbServer server, char *class,
       g_free(reply) ;
     }
 
+  g_free(acedb_request) ;
+
   return result ;
 }
 
@@ -1101,6 +1122,8 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
       g_free(reply) ;
     }
 
+  g_free(acedb_request) ;
+
   return result ;
 }
 
@@ -1168,6 +1191,8 @@ static gboolean checkServerVersion(AcedbServer server)
 
 	  g_free(reply) ;
 	}
+
+      g_free(acedb_request) ;
     }
 
   return result ;
@@ -1235,6 +1260,8 @@ static gboolean findSequence(AcedbServer server)
       g_free(reply) ;
     }
 
+  g_free(acedb_request) ;
+
   return result ;
 }
 
@@ -1267,6 +1294,8 @@ static gboolean setQuietMode(AcedbServer server)
 	  g_free(reply) ;
 	}
     }
+
+  g_free(acedb_request) ;
 
   return result ;
 }
@@ -1312,7 +1341,7 @@ static gboolean setQuietMode(AcedbServer server)
  * 
  *
  *  */
-static gboolean parseTypes(AcedbServer server, GList *requested_types, GList **types_out)
+static gboolean parseTypes(AcedbServer server, GList **types_out)
 {
   gboolean result = FALSE ;
   char *command ;
@@ -1321,7 +1350,95 @@ static gboolean parseTypes(AcedbServer server, GList *requested_types, GList **t
   int reply_len = 0 ;
   GList *types = NULL ;
 
+
   /* Get all the methods and then filter them if there are requested types. */
+
+  if (findMethods(server) == ZMAP_SERVERRESPONSE_OK)
+    {
+      command = "show -a" ;
+      acedb_request =  g_strdup_printf("%s", command) ;
+
+      if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
+						    &reply, &reply_len)) == ACECONN_OK)
+	{
+	  int num_types = 0 ;
+	  char *method_str = (char *)reply ;
+	  char *scan_text = method_str ;
+	  char *curr_pos = NULL ;
+	  char *next_line = NULL ;
+
+	  while ((next_line = strtok_r(scan_text, "\n", &curr_pos))
+		 && !g_str_has_prefix(next_line, "// "))
+	    {
+	      ZMapFeatureTypeStyle style = NULL ;
+	      ZMapColGroupData col_group = NULL ;
+
+	      scan_text = NULL ;
+	      
+	      if ((style = parseMethod(next_line, &curr_pos, &col_group)))
+		{
+		  types = g_list_append(types, style) ;
+		  num_types++ ;
+
+		  if (col_group)
+		    {
+		      gpointer item ;
+		      GList *method_list = NULL ;
+		      gboolean found = FALSE ;
+
+		      method_list = g_hash_table_lookup(server->method_2_featureset,
+							GINT_TO_POINTER(col_group->feature_set)) ;
+
+		      method_list = g_list_append(method_list, GINT_TO_POINTER(style->original_id)) ;
+
+		      g_hash_table_insert(server->method_2_featureset, 
+					  GINT_TO_POINTER(col_group->feature_set), method_list) ;
+		      
+		      g_list_foreach(method_list, printCB, NULL) ;
+
+		    }
+		}
+	    }
+
+	  if (!num_types)
+	    result = FALSE ;
+	  else
+	    {
+	      result = TRUE ;
+	      *types_out = types ;
+	    }
+
+	  g_free(reply) ;
+	  reply = NULL ;
+	}
+
+      g_free(acedb_request) ;
+    }
+
+  return result ;
+}
+
+
+/* Makes request "query find method" to get all methods into keyset on server.
+ * 
+ * The "query find" command is used to find all methods:
+ * 
+ * acedb> query find method
+ *
+ * // Found 3 objects
+ * // 3 Active Objects
+ * acedb>
+ * 
+ * Function returns TRUE if methods were found, FALSE otherwise.
+ * 
+ *  */
+static ZMapServerResponseType findMethods(AcedbServer server)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  char *command ;
+  char *acedb_request = NULL ;
+  void *reply = NULL ;
+  int reply_len = 0 ;
 
   /* Get all the methods into the current keyset on the server. */
   command = "query find method" ;
@@ -1348,7 +1465,7 @@ static gboolean parseTypes(AcedbServer server, GList *requested_types, GList **t
 	    {
 	      num_methods = getFoundObj(next_line) ;
 	      if (num_methods > 0)
-		result = TRUE ;
+		result = ZMAP_SERVERRESPONSE_OK ;
 	      else
 		server->last_err_msg = g_strdup_printf("Expected to find method objects but found none.") ;
 	      break ;
@@ -1359,50 +1476,12 @@ static gboolean parseTypes(AcedbServer server, GList *requested_types, GList **t
       reply = NULL ;
     }
 
-  /* Retrieve the requested methods in text form. */
-  if (result == TRUE)
-    {
-      command = "show -a" ;
-      acedb_request =  g_strdup_printf("%s", command) ;
-      if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
-						    &reply, &reply_len)) == ACECONN_OK)
-	{
-	  int num_types = 0 ;
-	  char *method_str = (char *)reply ;
-	  char *scan_text = method_str ;
-	  char *curr_pos = NULL ;
-	  char *next_line = NULL ;
-
-	  while ((next_line = strtok_r(scan_text, "\n", &curr_pos))
-		 && !g_str_has_prefix(next_line, "// "))
-	    {
-	      ZMapFeatureTypeStyle style = NULL ;
-
-	      scan_text = NULL ;
-	      
-	      if ((style = parseMethod(requested_types, next_line, &curr_pos)))
-		{
-		  types = g_list_append(types, style) ;
-		  num_types++ ;
-		}
-	    }
-
-	  if (!num_types)
-	    result = FALSE ;
-	  else
-	    {
-	      result = TRUE ;
-	      *types_out = types ;
-	    }
-
-	  g_free(reply) ;
-	  reply = NULL ;
-	}
-    }
-
+  g_free(acedb_request) ;
 
   return result ;
 }
+
+
 
 
 /* The method string should be of the form:
@@ -1424,15 +1503,17 @@ static gboolean parseTypes(AcedbServer server, GList *requested_types, GList **t
  * name to the requested list we have to look in column group as well.
  * 
  */
-ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, char **end_pos)
+ZMapFeatureTypeStyle parseMethod(char *method_str_in,
+				 char **end_pos, ZMapColGroupData *col_group_data_out)
 {
   ZMapFeatureTypeStyle style = NULL ;
   char *method_str = method_str_in ;
-  char *scan_text = NULL ;
   char *next_line = method_str ;
   char *name = NULL, *remark = NULL, 
     *colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL,
-    *gff_source = NULL, *gff_feature = NULL, *column_group = NULL, *overlap = NULL ;
+    *gff_source = NULL, *gff_feature = NULL,
+    *column_group = NULL, *orig_style = NULL,
+    *overlap = NULL ;
   double width = ACEDB_DEFAULT_WIDTH ;
   gboolean strand_specific = FALSE, frame_specific = FALSE, show_up_strand = FALSE ;
   gboolean no_display = FALSE ;
@@ -1599,7 +1680,9 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
 	  /* Format for this tag:   Column_group "eds_column" "wublastx_fly" */
 
 	  column_group = g_strdup(strtok_r(NULL, ": \"", &line_pos)) ; /* Skip ': "' */
+	  orig_style = g_strdup(strtok_r(NULL, ": \"", &line_pos)) ; /* Skip ': "' */
 	}
+
     }
   while (**end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
 
@@ -1612,18 +1695,19 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
     }
 
 
-  /* If a list of required methods was supplied, make sure that this is one of them,
-   * column_group takes precedence, otherwise we default to the actual method name. */
   if (status)
     {
-      if (requested_types 
-	  && ((column_group && !zMapStyleNameExists(requested_types, column_group))
-	      || !zMapStyleNameExists(requested_types, name)))
+      if (column_group)
 	{
-	  status = FALSE ;
+	  ZMapColGroupData col_group_data ;
+
+	  col_group_data = g_new0(ZMapColGroupDataStruct, 1) ;
+	  col_group_data->feature_set = g_quark_from_string(column_group) ;
+	  col_group_data->method = g_quark_from_string(orig_style) ;
+
+	  *col_group_data_out = col_group_data ;
 	}
     }
-
 
   /* Set some final method stuff and create the ZMap style. */
   if (status)
@@ -1638,6 +1722,9 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
        * that don't exist in X Windows. */
       if (colour)
 	{
+
+	  /* THIS IS REALLY THE PLACE THAT WE SHOULD SET UP THE ACEDB SPECIFIC DISPLAY STUFF... */
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  /* this doesn't work because it messes up the rev. video.... */
 	  if (gff_type && (g_ascii_strcasecmp(gff_type, "\"similarity\"") == 0
@@ -1686,12 +1773,108 @@ ZMapFeatureTypeStyle parseMethod(GList *requested_types, char *method_str_in, ch
   g_free(colour) ;
   g_free(foreground) ;
   g_free(column_group) ;
+  g_free(orig_style) ;
   g_free(overlap) ;
   g_free(gff_source) ;
   g_free(gff_feature) ;
 
   return style ;
 }
+
+
+/* Gets a list of all styles by name on the server (this is the list of acedb methods).
+ * Returns TRUE and the list if database contained any methods, FALSE otherwise.
+ * 
+ * 
+ * acedb> list
+ * 
+ * KeySet : Answer_1
+ * Method:
+ *  cDNA_for_RNAi
+ *  code default
+ *  Coding
+ *  Coding_transcript
+ *  Coil
+ *  curated
+ * 
+ * 
+ * // 6 object listed
+ * // 6 Active Objects
+ * acedb>
+ * 
+ *  */
+static ZMapServerResponseType getStyleNames(AcedbServer server, GList **style_names_out)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+  /* Get all the methods into the current keyset on the server and then list them. */
+  if (findMethods(server) == ZMAP_SERVERRESPONSE_OK)
+    {
+      char *command ;
+      char *acedb_request = NULL ;
+      void *reply = NULL ;
+      int reply_len = 0 ;
+
+      command = "list" ;
+      acedb_request =  g_strdup_printf("%s", command) ;
+
+      if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
+						    &reply, &reply_len)) == ACECONN_OK)
+	{
+	  char *scan_text = (char *)reply ;
+	  char *next_line = NULL ;
+	  gboolean found_method = FALSE ;
+	  GList *style_names = NULL ;
+
+	  while ((next_line = strtok(scan_text, "\n")))
+	    {
+	      scan_text = NULL ;
+
+	      if (strcmp((next_line + 1), "wublastx_yeast") == 0)
+		printf("found it\n") ;
+
+	      /* Look for start/end of methods list. */
+	      if (!found_method && g_str_has_prefix(next_line, "Method:"))
+		{
+		  found_method = TRUE ;
+		  continue ;
+		}
+	      else if (found_method && (*next_line == '/'))
+		break ;
+
+	      if (found_method)
+		{
+		  /* Watch out...hacky...method names have a space in front of them...sigh... */
+		  style_names = g_list_append(style_names,
+					      GINT_TO_POINTER(g_quark_from_string(next_line + 1))) ;
+		}
+	    }
+
+
+	  if (style_names)
+	    {
+	      *style_names_out = style_names ;
+	      result = ZMAP_SERVERRESPONSE_OK ;
+	    }
+	  else
+	    {
+	      server->last_err_msg = g_strdup_printf("No styles found.") ;
+	      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	    }
+
+	  g_free(reply) ;
+	  reply = NULL ;
+	}
+      else
+	result = server->last_err_status ;
+
+      g_free(acedb_request) ;
+    }
+
+
+  return result ;
+}
+
 
 
 /* GCompareDataFunc () used to resort our list of styles to match users original sorting. */
@@ -1851,4 +2034,65 @@ static char *getAcedbColourSpec(char *acedb_colour_name)
     }
 
   return colour_spec ;
+}
+
+
+
+
+
+static void freeMethodHash(gpointer data)
+{
+  g_list_free((GList *)data) ;
+
+  return ;
+}
+
+
+
+static char *getMethodFetchStr(GList *feature_sets, GHashTable *method_2_featureset)
+{
+  char *method_fetch_str = NULL ;
+  MethodFetchStruct method_data ;
+
+  method_data.method_2_featureset = method_2_featureset ;
+  method_data.fetch_methods = NULL ;
+
+  g_list_foreach(feature_sets, methodFetchCB, &method_data) ;
+
+  /* use the routine I've already written to get the final string.... */
+  method_fetch_str = getMethodString(method_data.fetch_methods, TRUE, FALSE) ;
+
+  return method_fetch_str ;
+}
+
+
+static void methodFetchCB(gpointer data, gpointer user_data)
+{
+  GQuark feature_set = GPOINTER_TO_INT(data) ;
+  MethodFetch method_data = (MethodFetch)user_data ;
+  GList *method_list ;
+  GQuark method_name = 0 ;
+
+  if ((method_list = (GList *)g_hash_table_lookup(method_data->method_2_featureset, GINT_TO_POINTER(feature_set))))
+    {
+
+      g_list_foreach(method_list, printCB, NULL) ;
+
+      method_data->fetch_methods = g_list_concat(method_data->fetch_methods, method_list) ;
+    }
+  else
+    method_data->fetch_methods = g_list_append(method_data->fetch_methods,
+					       GINT_TO_POINTER(feature_set)) ;
+
+  return ;
+}
+
+
+static void printCB(gpointer data, gpointer user_data)
+{
+  GQuark feature_set = GPOINTER_TO_INT(data) ;
+
+  printf("%s\n", g_quark_to_string(feature_set)) ;
+
+  return ;
 }

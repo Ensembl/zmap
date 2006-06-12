@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Dec  2 09:43 2005 (edgrif)
+ * Last edited: Jun 12 08:46 2006 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.10 2005-12-02 14:10:18 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.11 2006-06-12 07:52:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -64,10 +64,15 @@ typedef struct _AcedbServerStruct
 
   ZMapFeatureContext req_context ;
 
+  
+  GHashTable *method_2_featureset ;			    /* Records which methods specified a
+							       column_group (aka feature_set. */
+
+  /* Not sure if we need any of these currently..... */
   gboolean user_specified_styles ;			    /* Did the user specify a set of
 							       styles ? */
   char *method_str ;
-  char *find_method_str ;
+
 
   ZMapFeatureContext current_context ;
 
