@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: May 23 14:22 2006 (rds)
+ * Last edited: Jun 12 08:19 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.48 2006-05-23 13:57:05 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.49 2006-06-12 07:55:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,14 +55,14 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line) ;
 
 static gboolean makeNewFeature(ZMapGFFParser parser,
 			       char *sequence, char *source, char *ontology,
-			       ZMapFeatureType feature_type, ZMapFeatureTypeStyle curr_style,
+			       ZMapFeatureType feature_type,
 			       int start, int end,
 			       gboolean has_score, double score,
 			       ZMapStrand strand, ZMapPhase phase, char *attributes) ;
 static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
-static GQuark getColumnGroup(char *attributes) ;
+static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuark *orig_style_out) ;
 static char *getURL(char *attributes) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
@@ -101,9 +101,6 @@ ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only)
   parser->SO_compliant = FALSE ;
   parser->default_to_basic = FALSE ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  parser->clip_mode = GFF_CLIP_OVERLAP ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   parser->clip_mode = GFF_CLIP_NONE ;
   parser->clip_start = parser->clip_end = 0 ;
 
@@ -753,25 +750,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	err_text = g_strdup_printf("strand format not recognised: %s", strand_str) ;
       else if (!zMapFeatureFormatPhase(phase_str, &phase))
 	err_text = g_strdup_printf("phase format not recognised: %s", phase_str) ;
-      else
-	{
-	  GQuark source_id ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* debugging.... */
-	  g_datalist_foreach(&(parser->sources), printSource, NULL) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  source_id = zMapStyleCreateID(source) ;
-
-	  if (parser->sources && 
-              !(curr_style = zMapFindStyle(g_datalist_id_get_data(&(parser->sources), 
-                                                                  source_id), 
-                                           source_id)))
-	    err_text = g_strdup_printf("this feature has source \"%s\", features with this source "
-				       "were not requested.",
-				       source) ;
-	}
 
       if (err_text)
 	{
@@ -814,7 +792,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 	  if (include_feature)
 	    {
-	      result = makeNewFeature(parser, sequence, source, feature_type, type, curr_style,
+	      result = makeNewFeature(parser, sequence, source, feature_type, type,
 				      start, end, has_score, score, strand, phase,
 				      attributes) ;
 	    }
@@ -833,9 +811,10 @@ static void printSource(GQuark key_id, gpointer data, gpointer user_data)
   return ;
 }
 
+
 static gboolean makeNewFeature(ZMapGFFParser parser,
 			       char *sequence, char *source, char *ontology,
-			       ZMapFeatureType feature_type, ZMapFeatureTypeStyle curr_style,
+			       ZMapFeatureType feature_type
 			       int start, int end,
 			       gboolean has_score, double score,
 			       ZMapStrand strand, ZMapPhase phase,
@@ -850,19 +829,54 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0 ;
-  GQuark column_id = 0 ;
+  GQuark column_id = 0, orig_style_id = 0 ;
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   char *url ;
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
+  GQuark source_id ;
+  ZMapStyle curr_style ;
+  char *err_text = NULL ;
 
   /* Set up the name/style for the current feature set....
    * Need to look for a zmap specific attribute field which specifies a column group independently of
    * the required "source" (aka method) field. */
   feature_set_name = source ;
 
-  if ((column_id = getColumnGroup(attributes)))
-    feature_set_name = (char *)g_quark_to_string(column_id) ;
+
+  source_id = zMapStyleCreateID(source) ;
+  
+  if ((getColumnGroup(attributes, &column_id, &orig_style_id)))
+    {
+      feature_set_name = (char *)g_quark_to_string(column_id) ;
+      source_id = zMapStyleCreateID((char *)g_quark_to_string(orig_style_id)) ;
+    }
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* debugging.... */
+  g_datalist_foreach(&(parser->sources), printSource, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* If a feature does not have a style, it is not displayed. */
+  if (!(curr_style = zMapFindStyle(g_datalist_id_get_data(&(parser->sources), source_id), 
+				   source_id)))
+    {
+      err_text = g_strdup_printf("could not find style \"%s\", feature is ignored.",
+				 g_quark_to_string(source_id)) ;
+
+      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
+				  "GFF line %d - %s (\"%s\")",
+				  parser->line_count, err_text, line) ;
+      g_free(err_text) ;
+      result = FALSE ;
+
+      return result ;
+    }
+
+
 
   /* We require additional information from the attributes for some types. */
   if (feature_type == ZMAPFEATURE_ALIGNMENT)
@@ -1243,29 +1257,58 @@ static void initSources(GData **datalist, GList *sources)
 
 /* Format of column group attribute section is:
  * 
- *          Column_group "<column name>" ;
+ *     Column_group "column name" ; Original_method "curated" ;
  * 
- * Format string extracts  column name as a quark.
+ * 
+ * Column_group is a zmap/acedb special tag to enable placement of features
+ * with different styles/methods in a single column. The GFF line specifies the
+ * column the feature should be placed in via the Column_group tag and specifies
+ * its true style with the Original_method tag.
  * 
  *  */
-static GQuark getColumnGroup(char *attributes)
+static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuark *orig_style_out)
 {
-  GQuark column_id = 0 ;
+  gboolean result = FALSE ;
   char *tag_pos ;
+  char *attr_format_str = "%*s %*[\"]%50[^\"]%*[;]" ;
+  char column_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+  char style_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+  int attr_fields ;
 
   if ((tag_pos = strstr(attributes, "Column_group")))
     {
-      int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s[;]" ;
-      char column_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Couldn't get it to parse all in one go sigh..... */
+      char *attr_format_str = "Column_group %*[\"]%50[^\"]%*[;] Original_method %*[\"]%50[^\"]%*[;]" ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      if ((attr_fields = sscanf(tag_pos, attr_format_str, &column_field[0])) == 1)
+      if ((attr_fields = sscanf(tag_pos, attr_format_str,
+				&column_field[0])) == 1)
 	{
-	  column_id = g_quark_from_string(&column_field[0]) ;
+	  result = TRUE ;
 	}
+      else
+	result = FALSE ;
     }
 
-  return column_id ;
+  if (result && (tag_pos = strstr(attributes, "Original_method")))
+    {
+      if ((attr_fields = sscanf(tag_pos, attr_format_str,
+				&style_field[0])) == 1)
+	{
+	  result = TRUE ;
+	}
+      else
+	result = FALSE ;
+    }
+
+  if (result)
+    {
+      *column_group_out = g_quark_from_string(&column_field[0]) ;
+      *orig_style_out = g_quark_from_string(&style_field[0]) ;
+    }
+
+  return result ;
 }
 
 
