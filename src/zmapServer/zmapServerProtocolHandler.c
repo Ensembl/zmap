@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Nov 25 17:23 2005 (edgrif)
+ * Last edited: Jun 12 08:24 2006 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.9 2005-11-25 17:24:07 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.10 2006-06-12 07:35:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -194,7 +194,7 @@ static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, zMapURL url,
   if (!init->init_called)
     {
       if (!zMapServerGlobalInit(url, &(init->global_init_data)))
- 	zMapLogFatal("Initialisation call for %s protocol failed.", protocol) ;
+ 	zMapLogFatal("Initialisation call for %d protocol failed.", protocol) ;
 
       init->init_called = TRUE ;
     }
@@ -240,10 +240,11 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
   ZMapServer server ;
   ZMapServerReqOpen open = &request->open ;
-  ZMapServerReqGetTypes types = &request->types ;
+  ZMapServerReqStyles styles = &request->styles ;
+  ZMapServerReqFeatureSets feature_sets = &request->feature_sets ;
   ZMapServerReqNewContext context = &request->context ;
   ZMapServerReqGetFeatures features = &request->features ;
-  ZMapFeatureContext feature_context ;
+
 
   /* Create the thread block for this specific server thread. */
   if (!zMapServerCreateConnection(&server, global_init_data,
@@ -263,18 +264,33 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     }
 
 
-  /* If there is no feature set list or no styles then we need build the feature
-   * set list and/or get the styles. The list of styles must then be rationalised
-   * with the feature set list as they must map one to one. */
+  /* If there are no styles then retrieve all available styles from the server. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
-      if (!types->req_featuresets || !context->context->styles)
+      if (!(styles->styles))
 	{
-	  /* No styles ?  Then get them from the server. */
-	  if (!context->context->styles)
+	  if (zMapServerGetStyles(server, &(styles->styles))
+	      != ZMAP_SERVERRESPONSE_OK)
 	    {
-	      if (zMapServerGetTypes(server, types->req_featuresets, &(types->types_out))
-		  != ZMAP_SERVERRESPONSE_OK)
+	      *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	    }
+	  else
+	    {
+	      /* Got the types so record them in the server context. */
+	      context->context->styles = styles->styles ;
+	    }
+	}
+    }
+
+
+  /* If there is no feature set list then get the list of all feature sets from the server. */
+  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
+    {
+      if (!(feature_sets->feature_sets))
+	{
+	  if (zMapServerGetFeatureSets(server, &(feature_sets->feature_sets))
+	      != ZMAP_SERVERRESPONSE_OK)
 		{
 		  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
 		  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
@@ -282,29 +298,25 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	      else
 		{
 		  /* Got the types so record them in the server context. */
-		  context->context->styles = types->types_out ;
+		  context->context->feature_set_names = feature_sets->feature_sets ;
 		}
-	    }
-
-	  /* No featureset list ? Then build it from the styles. */
-	  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
-	      && !types->req_featuresets)
-	    {
-	      context->context->feature_set_names = zMapStylesGetNames(context->context->styles) ;
-	    }
-	}
-
-      if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
-	{
-	  if (!zMapSetListEqualStyles(&(context->context->feature_set_names),
-				      &(context->context->styles)))
-	    {
-	      *err_msg_out = g_strdup("The styles available from the server do not match"
-				      " the list of required styles.") ;
-	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-	    }
 	}
     }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I've removed a whole load of acedb-centric stuff here but I've left this as a reminder that
+     we may wish to check feature_sets/styles more carefully at some stage. */
+
+  if (!zMapSetListEqualStyles(&(context->context->feature_set_names),
+			      &(context->context->styles)))
+    {
+      *err_msg_out = g_strdup("The styles available from the server do not match"
+			      " the list of required styles.") ;
+      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* Create a sequence context from the sequence and start/end data. */
@@ -389,10 +401,6 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
       *server_out = server ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      features->feature_context_out = feature_context ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       features->feature_context_out = context->context ;
     }
