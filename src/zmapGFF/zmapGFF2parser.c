@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 12 08:19 2006 (edgrif)
+ * Last edited: Jun 12 09:10 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.49 2006-06-12 07:55:25 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.50 2006-06-12 08:20:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 			       ZMapFeatureType feature_type,
 			       int start, int end,
 			       gboolean has_score, double score,
-			       ZMapStrand strand, ZMapPhase phase, char *attributes) ;
+			       ZMapStrand strand, ZMapPhase phase, char *attributes,
+			       char **err_text) ;
 static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
@@ -697,7 +698,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   int start = 0, end = 0, fields = 0 ;
   double score = 0 ;
   char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %1000[^#] %1000c" ; 
-  ZMapFeatureTypeStyle curr_style = NULL ;
 
   fields = sscanf(line, format_str,
                   &sequence[0], &source[0], &feature_type[0],
@@ -792,9 +792,15 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 	  if (include_feature)
 	    {
-	      result = makeNewFeature(parser, sequence, source, feature_type, type,
-				      start, end, has_score, score, strand, phase,
-				      attributes) ;
+	      if (!(result = makeNewFeature(parser, sequence, source, feature_type, type,
+					    start, end, has_score, score, strand, phase,
+					    attributes, &err_text)))
+		{
+		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
+					      "GFF line %d - %s (\"%s\")",
+					      parser->line_count, err_text, line) ;
+		  g_free(err_text) ;
+		}
 	    }
 	}
     }
@@ -814,11 +820,11 @@ static void printSource(GQuark key_id, gpointer data, gpointer user_data)
 
 static gboolean makeNewFeature(ZMapGFFParser parser,
 			       char *sequence, char *source, char *ontology,
-			       ZMapFeatureType feature_type
+			       ZMapFeatureType feature_type,
 			       int start, int end,
 			       gboolean has_score, double score,
 			       ZMapStrand strand, ZMapPhase phase,
-			       char *attributes)
+			       char *attributes, char **err_text)
 {
   gboolean result = FALSE ;
   char *feature_name_id = NULL, *feature_name = NULL ;
@@ -835,8 +841,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
   GQuark source_id ;
-  ZMapStyle curr_style ;
-  char *err_text = NULL ;
+  ZMapFeatureTypeStyle curr_style ;
+
 
   /* Set up the name/style for the current feature set....
    * Need to look for a zmap specific attribute field which specifies a column group independently of
@@ -864,13 +870,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   if (!(curr_style = zMapFindStyle(g_datalist_id_get_data(&(parser->sources), source_id), 
 				   source_id)))
     {
-      err_text = g_strdup_printf("could not find style \"%s\", feature is ignored.",
-				 g_quark_to_string(source_id)) ;
+      *err_text = g_strdup_printf("could not find style \"%s\", feature is ignored.",
+				  g_quark_to_string(source_id)) ;
 
-      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
-				  "GFF line %d - %s (\"%s\")",
-				  parser->line_count, err_text, line) ;
-      g_free(err_text) ;
       result = FALSE ;
 
       return result ;
