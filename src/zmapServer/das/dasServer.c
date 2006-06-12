@@ -19,17 +19,16 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk and
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
+ *	Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Connects to DAS v2 server to get data.
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: May 26 19:40 2006 (rds)
+ * Last edited: Jun 12 08:44 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.21 2006-05-26 18:42:56 rds Exp $
+ * CVS info:   $Id: dasServer.c,v 1.22 2006-06-12 07:45:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,7 +58,6 @@ typedef struct
 {
   ZMapServerResponseType result ;
   DasServer server;
-  GList *req;
   GList *output;
 }DasServerTypesStruct, *DasServerTypes;
 
@@ -84,7 +82,8 @@ static gboolean createConnection(void **server_out,
 				 zMapURL url, char *format, 
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
-static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, GList **types);
+static ZMapServerResponseType getStyles(void *server, GList **styles_out) ;
+static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
 static ZMapFeatureContext copyContext(void *server_conn) ;
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context) ;
@@ -158,7 +157,8 @@ void dasGetServerFuncs(ZMapServerFuncs das_funcs)
   das_funcs->global_init  = globalInit ;
   das_funcs->create       = createConnection ;
   das_funcs->open         = openConnection ;
-  das_funcs->get_types    = getTypes ;
+  das_funcs->get_styles = getStyles ;
+  das_funcs->get_feature_sets = getFeatureSets ;
   das_funcs->set_context  = setContext ;
   das_funcs->copy_context = copyContext ;
   das_funcs->get_features = getFeatures ;
@@ -345,7 +345,10 @@ static ZMapServerResponseType openConnection(void *server_in)
   return result ;
 }
 
-static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, GList **types)
+
+
+
+static ZMapServerResponseType getStyles(void *server_in, GList **types)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
   DasServer server = (DasServer)server_in;
@@ -353,7 +356,6 @@ static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, 
   requestParseDetailStruct detail = {0};
 
   server_types.server = server;
-  server_types.req    = requested_types;
   server_types.output = NULL;
 
   detail.url          = dsnFullURL(server, "types");
@@ -382,6 +384,20 @@ static ZMapServerResponseType getTypes(void *server_in, GList *requested_types, 
     g_free(detail.url);
 
   return result;
+}
+
+
+/* Roy, this function is supposed to get a list of the _names_ of all the feature
+ * sets, not the feature sets themselves.
+ * 
+ * I haven't filled it in as there was no original code to do this.
+ *  */
+static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
+
+
+  return result ;
 }
 
 
