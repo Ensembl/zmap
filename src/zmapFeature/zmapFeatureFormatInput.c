@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 18 08:46 2006 (edgrif)
+ * Last edited: May 30 12:06 2006 (rds)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.6 2006-03-21 14:09:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.7 2006-06-13 16:52:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -211,12 +211,12 @@ char *zMapFeatureStructType2Str(ZMapFeatureStructType type)
 
 char *zMapFeatureType2Str(ZMapFeatureType type)
 {
-  static char *types[] = {".", "Basic", "Alignment", "Transcript", "Sequence"} ;
+  static char *types[] = {".", "Basic", "Alignment", "Transcript", "Sequence", "Sequence"} ;
   char *type_str ;
 
   zMapAssert(type == ZMAPFEATURE_INVALID || type == ZMAPFEATURE_BASIC
 	     || type == ZMAPFEATURE_ALIGNMENT || type == ZMAPFEATURE_TRANSCRIPT
-	     || type == ZMAPFEATURE_RAW_SEQUENCE) ;
+	     || type == ZMAPFEATURE_RAW_SEQUENCE || type == ZMAPFEATURE_PEP_SEQUENCE) ;
 
   type_str = types[type] ;
 
