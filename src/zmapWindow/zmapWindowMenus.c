@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: May 27 15:20 2006 (edgrif)
+ * Last edited: Jun 14 16:03 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.13 2006-05-27 14:23:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.14 2006-06-14 15:04:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,27 +87,54 @@ static void dumpContext(ZMapWindow window) ;
  * identifier and perhaps the callback data...... */
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
-				       gpointer callback_data)
+				       gpointer callback_data, ZMapStyleOverlapMode curr_overlap)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"_Column Bump", 0, NULL, NULL},
-      {"Column Bump/Name + No Overlap", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
-      {"Column Bump/Name",              ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
-      {"Column Bump/No Overlap",        ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
-      {"Column Bump/Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
-      {"Column Bump/Simple",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
-      {"Column UnBump",                 ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
-      {"Column Hide",                   ZMAPWWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
-      {"_Column", 0, NULL, NULL},
-      {"Column/Configure This Column",  ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
-      {"Column/Configure All Columns",  ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
-      {NULL, 0, NULL, NULL}
+      {ZMAPGUI_MENU_BRANCH, "Column Bump", 0, NULL, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump/Name + No Overlap", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump/Name",              ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump/No Overlap",        ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump/Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump/Simple",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump/None",      ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column UnBump",                 ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column Hide",                   ZMAPWWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "_Column", 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column/Configure This Column",  ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column/Configure All Columns",  ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
-
+  ZMapGUIMenuItem item ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* Unset any previous active radio button.... */
+  item = &(menu[0]) ;
+  while (item->type != ZMAPGUI_MENU_NONE)
+    {
+      if (item->type == ZMAPGUI_MENU_RADIOACTIVE)
+	{
+	  item->type = ZMAPGUI_MENU_RADIO ;
+	  break ;
+	}
+
+      item++ ;
+    }
+
+  /* Set new one... */
+  item = &(menu[0]) ;
+  while (item->type != ZMAPGUI_MENU_NONE)
+    {
+      if (item->type == ZMAPGUI_MENU_RADIO && item->id == curr_overlap)
+	{
+	  item->type = ZMAPGUI_MENU_RADIOACTIVE ;
+	  break ;
+	}
+
+      item++ ;
+    }
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -123,14 +150,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAny(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"Show Feature DNA",               ZMAPUNSPLICED,     dnaMenuCB, NULL},
-      {NULL, 0, NULL, NULL}
+      {ZMAPGUI_MENU_NORMAL, "Show Feature DNA",               ZMAPUNSPLICED,     dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -144,8 +170,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAnyFile(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"DNA dump",               ZMAPUNSPLICED_FILE,     dnaMenuCB, NULL},
-      {NULL, 0, NULL, NULL}
+      {ZMAPGUI_MENU_NORMAL, "DNA dump",               ZMAPUNSPLICED_FILE,     dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -165,11 +191,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNATranscript(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"_DNA", 0, NULL, NULL},
-      {"DNA/CDS",                    ZMAPCDS,           dnaMenuCB, NULL},
-      {"DNA/transcript",             ZMAPTRANSCRIPT,    dnaMenuCB, NULL},
-      {"DNA/unspliced",              ZMAPUNSPLICED,     dnaMenuCB, NULL},
-      {NULL, 0, NULL, NULL}
+      {ZMAPGUI_MENU_BRANCH, "_DNA", 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA/CDS",                    ZMAPCDS,           dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA/transcript",             ZMAPTRANSCRIPT,    dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA/unspliced",              ZMAPUNSPLICED,     dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -188,11 +214,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNATranscriptFile(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"_DNA dump", 0, NULL, NULL},
-      {"DNA dump/CDS",                    ZMAPCDS_FILE,           dnaMenuCB, NULL},
-      {"DNA dump/transcript",             ZMAPTRANSCRIPT_FILE,    dnaMenuCB, NULL},
-      {"DNA dump/unspliced",              ZMAPUNSPLICED_FILE,     dnaMenuCB, NULL},
-      {NULL, 0, NULL, NULL}
+      {ZMAPGUI_MENU_BRANCH, "_DNA dump", 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA dump/CDS",                    ZMAPCDS_FILE,           dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA dump/transcript",             ZMAPTRANSCRIPT_FILE,    dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA dump/unspliced",              ZMAPUNSPLICED_FILE,     dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -301,10 +327,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"_Peptide", 0, NULL, NULL},
-      {"Peptide/CDS",                    ZMAPCDS,           peptideMenuCB, NULL},
-      {"Peptide/transcript",             ZMAPTRANSCRIPT,    peptideMenuCB, NULL},
-      {NULL, 0, NULL, NULL}
+      {ZMAPGUI_MENU_BRANCH, "_Peptide", 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Peptide/CDS",                    ZMAPCDS,           peptideMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Peptide/transcript",             ZMAPTRANSCRIPT,    peptideMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -323,10 +349,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"_Peptide dump", 0, NULL, NULL},
-      {"Peptide dump/CDS",                    ZMAPCDS_FILE,           peptideMenuCB, NULL},
-      {"Peptide dump/transcript",             ZMAPTRANSCRIPT_FILE,    peptideMenuCB, NULL},
-      {NULL, 0, NULL, NULL}
+      {ZMAPGUI_MENU_BRANCH, "_Peptide dump", 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Peptide dump/CDS",                    ZMAPCDS_FILE,           peptideMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Peptide dump/transcript",             ZMAPTRANSCRIPT_FILE,    peptideMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -444,17 +470,41 @@ static void configureMenuCB(int menu_item_id, gpointer callback_data)
 }
 
 
-/* Bump a column and reposition the other columns. */
+/* Bump a column and reposition the other columns.
+ * 
+ * NOTE that this function may be called for an individual feature OR a column and
+ * needs to deal with both.
+ */
 static void bumpMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapStyleOverlapMode bump_type = (ZMapStyleOverlapMode)menu_item_id  ;
   FooCanvasGroup *column_group ;
+  ZMapFeatureTypeStyle style ;
 
   if (menu_data->item_cb)
-    column_group = getItemsColGroup(menu_data->item) ;
+    {
+      ZMapFeature feature ;
+
+      column_group = getItemsColGroup(menu_data->item) ;
+
+      feature = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+
+      style = feature->style ;
+    }
   else
-    column_group = FOO_CANVAS_GROUP(menu_data->item) ;
+    {
+      ZMapFeatureSet feature_set ;
+
+      column_group = FOO_CANVAS_GROUP(menu_data->item) ;
+
+      feature_set = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_DATA) ;
+
+      style = feature_set->style ;
+    }
+
+  /* Set bump mode in the style, bump the columns and reposition the canvas items. */
+  zMapStyleSetOverlapMode(style, bump_type) ;
 
   zmapWindowColumnBump(column_group, bump_type) ;
 
@@ -473,11 +523,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"_Dump",                  0, NULL,       NULL},
-      {"Dump/Dump DNA"          , 1, dumpMenuCB, NULL},
-      {"Dump/Dump Features"     , 2, dumpMenuCB, NULL},
-      {"Dump/Dump Context"      , 3, dumpMenuCB, NULL},
-      {NULL               , 0, NULL, NULL}
+      {ZMAPGUI_MENU_BRANCH, "_Dump",                  0, NULL,       NULL},
+      {ZMAPGUI_MENU_NORMAL, "Dump/Dump DNA"          , 1, dumpMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Dump/Dump Features"     , 2, dumpMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Dump/Dump Context"      , 3, dumpMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -537,10 +587,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"_Blixem",      0, NULL, NULL},
-      {"Blixem/Show multiple dna alignment",                                 1, blixemMenuCB, NULL},
-      {"Blixem/Show multiple dna alignment for just this type of homology",  2, blixemMenuCB, NULL},
-      {NULL,                                                          0, NULL,         NULL}
+      {ZMAPGUI_MENU_BRANCH, "_Blixem",      0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Blixem/Show multiple dna alignment",                                 1, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Blixem/Show multiple dna alignment for just this type of homology",  2, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                                                          0, NULL,         NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -555,10 +605,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"_Blixem",      0, NULL, NULL},
-      {"Blixem/Show multiple protein alignment",                                 1, blixemMenuCB, NULL},
-      {"Blixem/Show multiple protein alignment for just this type of homology",  2, blixemMenuCB, NULL},
-      {NULL,                                                              0, NULL,         NULL}
+      {ZMAPGUI_MENU_BRANCH,  "_Blixem",      0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Blixem/Show multiple protein alignment",                                 1, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Blixem/Show multiple protein alignment for just this type of homology",  2, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE,  NULL, 0, NULL,         NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;

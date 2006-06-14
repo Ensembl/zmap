@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 27 15:18 2006 (edgrif)
+ * Last edited: Jun 14 13:33 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.32 2006-05-27 14:23:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.33 2006-06-14 15:04:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1719,13 +1719,14 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
 {
   static ZMapGUIMenuItemStruct separator[] =
     {
-      {ZMAPGUI_MENU_SEPARATOR, 0, NULL, NULL},
-      {NULL, 0, NULL, NULL}
+      {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
   char *menu_title ;
   GList *menu_sets = NULL ;
   ItemMenuCBData menu_data ;
   ZMapFeature feature ;
+
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
@@ -1772,7 +1773,9 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBump(NULL, NULL, menu_data)) ;
+  menu_sets = g_list_append(menu_sets,
+			    zmapWindowMakeMenuBump(NULL, NULL, menu_data,
+						   zMapStyleGetOverlapMode(feature->style))) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
@@ -1872,9 +1875,9 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"Show Feature Details",   2, itemMenuCB, NULL},
-      {"Pfetch this feature",    4, itemMenuCB, NULL},
-      {NULL,                     0, NULL,       NULL}
+      {ZMAPGUI_MENU_NORMAL, "Show Feature Details",   2, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Pfetch this feature",    4, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -1890,9 +1893,9 @@ static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"List All Column Features",      1, itemMenuCB, NULL},
-      {"Feature Search Window",  3, itemMenuCB, NULL},
-      {NULL,                     0, NULL,       NULL}
+      {ZMAPGUI_MENU_NORMAL, "List All Column Features",      1, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Feature Search Window",  3, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -1908,8 +1911,8 @@ static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"URL",                    6, itemMenuCB, NULL},
-      {NULL,                     0, NULL,       NULL}
+      {ZMAPGUI_MENU_NORMAL, "URL",                    6, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
