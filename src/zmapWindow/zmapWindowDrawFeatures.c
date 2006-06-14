@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 27 15:22 2006 (edgrif)
+ * Last edited: Jun 14 14:08 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.133 2006-05-27 14:23:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.134 2006-06-14 15:02:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -603,10 +603,13 @@ static void createSetColumn(gpointer data, gpointer user_data)
       rev_bg_colour = &(window->colour_qreverse_col) ;
     }
 
+
   if(!(g_datalist_id_get_data(&(canvas_data->curr_block->feature_sets), feature_set_id)))
     {
-      ZMapFeatureSet fs = zMapFeatureSetIDCreate(feature_set_id, feature_set_id, NULL);
-      zMapFeatureBlockAddFeatureSet(canvas_data->curr_block, fs);
+      ZMapFeatureSet fs ;
+
+      fs = zMapFeatureSetIDCreate(feature_set_id, feature_set_id, style, NULL) ;
+      zMapFeatureBlockAddFeatureSet(canvas_data->curr_block, fs) ;
     }
 
 
@@ -686,7 +689,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   FooCanvasGroup *group ;
   FooCanvasItem *bounding_box ;
   double x1, x2, y1, y2 ;
-  gboolean status ;
+
 
   group = zmapWindowContainerCreate(parent_group, ZMAPCONTAINER_LEVEL_FEATURESET,
 				    window->config.feature_spacing,
@@ -1094,8 +1097,8 @@ static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 {
   static ZMapGUIMenuItemStruct separator[] =
     {
-      {ZMAPGUI_MENU_SEPARATOR, 0, NULL, NULL},
-      {NULL, 0, NULL, NULL}
+      {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
   char *menu_title ;
   GList *menu_sets = NULL ;
@@ -1110,7 +1113,9 @@ static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   cbdata->feature_set = feature_set ;
 
   /* Make up the menu. */
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBump(NULL, NULL, cbdata)) ;
+  menu_sets = g_list_append(menu_sets,
+			    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
+						   zMapStyleGetOverlapMode(feature_set->style))) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
@@ -1136,9 +1141,9 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"Show Feature List",      1, columnMenuCB, NULL},
-      {"Feature Search Window",  2, columnMenuCB, NULL},
-      {NULL,                     0, NULL,       NULL}
+      {ZMAPGUI_MENU_NORMAL, "Show Feature List",      1, columnMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Feature Search Window",  2, columnMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
