@@ -27,19 +27,13 @@
  *
  * Exported functions: See zmapUtilsGUI.h
  * HISTORY:
- * Last edited: May 23 10:27 2006 (edgrif)
+ * Last edited: Jun 14 15:56 2006 (edgrif)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.4 2006-05-23 10:58:48 edgrif Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.5 2006-06-14 14:57:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-#include <gtk/gtk.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <zmapUtils_P.h>
 #include <ZMap/zmapUtilsGUI.h>
 
@@ -104,7 +98,8 @@ static void destroyMenu(ZMapGUIMenuItem menu) ;
 static int itemsInMenu(ZMapGUIMenuItem menu) ;
 
 static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widget) ;
-
+static void activeButCB(gpointer data, gpointer user_data) ;
+static void deActiveButCB(gpointer data, gpointer user_data) ;
 
 
 /*! @addtogroup zmapwindow
@@ -142,7 +137,8 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
   GtkItemFactoryEntry *factory_items, *item ;
   GtkItemFactory *item_factory ;
   CallbackData our_cb_data ;
-
+  char *radio_title = NULL ;
+  GList *active_radio_buttons = NULL, *deactive_radio_buttons = NULL ;
 
   /* Make a single menu item list out of the supplied menu_item sets. */
   menu_items = makeSingleMenu(menu_item_sets, &num_menu_items) ;
@@ -167,7 +163,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
   item->item_type = "<Title>" ;
   item++ ;
 
-  item->path = makeMenuItemName(ZMAPGUI_MENU_SEPARATOR) ;
+  item->path = makeMenuItemName("separator") ;
   item->item_type = "<Separator>" ;
   item++ ;
 
@@ -179,31 +175,69 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
       item->callback = ourCB ;
       item->callback_action = i ;
 
-      /* This is not great, I need to add some types etc. to deal with submenus vs. other things. */
-      if (*(menu_items[i].name) == '_')
+      zMapAssert(menu_items[i].type != ZMAPGUI_MENU_NONE) ;
+
+      switch (menu_items[i].type)
 	{
-	  item->item_type = "<Branch>" ;
-	  item->callback = NULL ;
-	  item->callback_action = -1 ;
+	case ZMAPGUI_MENU_BRANCH:
+	  {
+	    item->item_type = "<Branch>" ;
+	    item->callback = NULL ;
+	    item->callback_action = -1 ;
+	    break ;
+	  }
+	case ZMAPGUI_MENU_SEPARATOR:
+	  {
+	    item->item_type = "<Separator>" ;
+	    item->callback = NULL ;
+	    item->callback_action = -1 ;
+	    break ;
+	  }
+	case ZMAPGUI_MENU_RADIO:
+	case ZMAPGUI_MENU_RADIOACTIVE:
+	  {
+	    /* If this is the first radio item, remember its title as we need to use it in all
+	     * the subsequent radio buttons as the key to cluster the buttons in a radio group. */
+	    if (!radio_title)
+	      {
+		radio_title = item->path ;
+		item->item_type = "<RadioItem>" ;
+
+		deactive_radio_buttons = g_list_append(deactive_radio_buttons, item->path) ;
+	      }
+	    else
+	      item->item_type = radio_title ;
+
+	    if (menu_items[i].type == ZMAPGUI_MENU_RADIOACTIVE)
+	      active_radio_buttons = g_list_append(active_radio_buttons, item->path) ;
+
+	    break ;
+	  }
+	default:					    /* ZMAPGUI_MENU_NORMAL */
+	  {
+	    item->item_type = NULL ;
+	    break ;
+	  }
 	}
-      else if (strcmp((menu_items[i].name), ZMAPGUI_MENU_SEPARATOR) == 0)
-	{
-	  item->item_type = "<Separator>" ;
-	  item->callback = NULL ;
-	  item->callback_action = -1 ;
-	}
+
+      /* Reset radio button indicator if we have moved out of the radio button group. */
+      if (radio_title
+	  && (menu_items[i].type != ZMAPGUI_MENU_RADIO
+	      && menu_items[i].type != ZMAPGUI_MENU_RADIOACTIVE))
+	radio_title = NULL ;
+
 
       item++ ;
     }
 
-  /* Construct the menu and pop it up. */
+  /* Construct the menu. */
   item_factory = gtk_item_factory_new(GTK_TYPE_MENU, ITEM_FACTORY_NAME, NULL) ;
 
   gtk_item_factory_create_items(item_factory, num_factory_items, factory_items, our_cb_data) ;
 
 
   {
-    /* I think this is so we can colour the menu title from a resources file.... */
+    /* Give menu title widget a name so we can colour it from a resource file. */
     GtkWidget *title = NULL;
 
     /* NOTE this time we need the title string without escaping any '_' so we can find
@@ -214,7 +248,26 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
   }
 
 
-  /* Note that we need the root window coords for the popup. */
+  /* By default stupid item factory makes the first radio button active but does
+   * not allow us to specify any other one...so de-activate all the first buttons. */
+  if (deactive_radio_buttons)
+    {
+      g_list_foreach(deactive_radio_buttons, deActiveButCB, item_factory) ;
+
+      g_list_free(deactive_radio_buttons) ;
+    }
+
+
+  /* Activate any radio buttons that need to be. */
+  if (active_radio_buttons)
+    {
+      g_list_foreach(active_radio_buttons, activeButCB, item_factory) ;
+
+      g_list_free(active_radio_buttons) ;
+    }
+
+
+  /* Show the menu, note that we need the root window coords for the popup. */
   gtk_item_factory_popup(item_factory, (guint)button_event->x_root, (guint)button_event->y_root,
 			 button_event->button, button_event->time) ;
 
@@ -270,35 +323,46 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
   ZMapGUIMenuItem caller_menu_item ;
   GtkItemFactoryEntry *item ;
   int i ;
+  gboolean call_user_cb = TRUE ;
+
+  /* For radio buttons this function gets called twice, once for deactivating
+   * the currently selected button and once for activating the new one, we need
+   * to detect this and act accordingly. */
+  if (GTK_IS_RADIO_MENU_ITEM(widget) && !(GTK_CHECK_MENU_ITEM(widget)->active))
+    call_user_cb = FALSE ;
 
   caller_menu_item = our_data->callers_menu_copy + callback_action ;
 
-  /* Call the original menu item callback with its callback data and its id. */
-  (caller_menu_item->callback_func)(caller_menu_item->id, caller_menu_item->callback_data) ;
-
-
-  /* What this is trying to do is make sure that menu gets destroyed. It is popped down
-   * automatically by the button release but the docs don't detail if it is destroyed. 
-   * You seem to have to set both the item_factory path and the widget path to the
-   * same thing otherwise it moans.... */
-  gtk_item_factories_path_delete(ITEM_FACTORY_NAME, ITEM_FACTORY_NAME) ;
-
-  /* Get rid of our copy of the callers original menu. */
-  destroyMenu(our_data->callers_menu_copy) ;
-  
-  /* Now we have got rid of the factory, clean up the item factory input data we created
-   * when we made the menu. NOTE that we do this here because on some systems if we delete
-   * this before the menu is popped up the GTK menu code segfaults...this is poor because
-   * it should be taking its own copy of our data....sigh... */
-  for (i = 0, item = our_data->factory_items ; i < our_data->num_factory_items ; i++)
+  if (call_user_cb && caller_menu_item->callback_func)
     {
-      g_free(item->path) ;
-      item++ ;
-    }
-  g_free(our_data->factory_items) ;
+      /* Call the original menu item callback with its callback data and its id. */
+      (caller_menu_item->callback_func)(caller_menu_item->id, caller_menu_item->callback_data) ;
 
-  /* Now free the callback data struct. */
-  g_free(our_data) ;
+
+      /* What this is trying to do is make sure that menu gets destroyed. It is popped down
+       * automatically by the button release but the docs don't detail if it is destroyed. 
+       * You seem to have to set both the item_factory path and the widget path to the
+       * same thing otherwise it moans.... */
+      gtk_item_factories_path_delete(ITEM_FACTORY_NAME, ITEM_FACTORY_NAME) ;
+
+      /* Get rid of our copy of the callers original menu. */
+      destroyMenu(our_data->callers_menu_copy) ;
+  
+      /* Now we have got rid of the factory, clean up the item factory input data we created
+       * when we made the menu. NOTE that we do this here because on some systems if we delete
+       * this before the menu is popped up the GTK menu code segfaults...this is poor because
+       * it should be taking its own copy of our data....sigh... */
+      for (i = 0, item = our_data->factory_items ; i < our_data->num_factory_items ; i++)
+	{
+	  g_free(item->path) ;
+	  item++ ;
+	}
+      g_free(our_data->factory_items) ;
+
+      /* Now free the callback data struct. */
+      g_free(our_data) ;
+    }
+
 
   return ;
 }
@@ -467,5 +531,41 @@ static int itemsInMenu(ZMapGUIMenuItem menu)
 
   return num_menu_items ;
 }
+
+
+
+/* Note that for these activate and deactivate functions we _cannot_ use the
+ * proper widget calls (gtk_check_menu_item_set_active) as these will cause
+ * the code to think the user has already selected an item and the menu
+ * gets popped up/down without them being able to do anything.
+ * 
+ * Hence the need to poke directly into the widget struct. */
+static void activeButCB(gpointer data, gpointer user_data)
+{
+  char *widg_path = (char *)data ;
+  GtkItemFactory *item_factory = (GtkItemFactory *)user_data ;
+  GtkWidget *but_widg ;
+
+  but_widg = gtk_item_factory_get_widget(item_factory, widg_path) ;
+
+  GTK_CHECK_MENU_ITEM(but_widg)->active = TRUE ;
+
+  return ;
+}
+
+
+static void deActiveButCB(gpointer data, gpointer user_data)
+{
+  char *widg_path = (char *)data ;
+  GtkItemFactory *item_factory = (GtkItemFactory *)user_data ;
+  GtkWidget *but_widg ;
+
+  but_widg = gtk_item_factory_get_widget(item_factory, widg_path) ;
+
+  GTK_CHECK_MENU_ITEM(but_widg)->active = FALSE ;
+
+  return ;
+}
+
 
 

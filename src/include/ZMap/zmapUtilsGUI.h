@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: May 23 10:28 2006 (edgrif)
+ * Last edited: Jun 13 15:29 2006 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.10 2006-05-23 10:58:48 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.11 2006-06-14 14:57:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -35,6 +35,7 @@
 
 #include <gtk/gtk.h>
 #include <ZMap/zmapUtilsMesg.h>
+
 
 typedef enum {ZMAPGUI_PIXELS_PER_CM, ZMAPGUI_PIXELS_PER_INCH,
 	      ZMAPGUI_PIXELS_PER_POINT} ZMapGUIPixelConvType ;
@@ -45,22 +46,26 @@ typedef enum {ZMAPGUI_PIXELS_PER_CM, ZMAPGUI_PIXELS_PER_INCH,
 typedef void (*ZMapGUIMenuItemCallbackFunc)(int menu_item_id, gpointer callback_data) ;
 typedef void (*ZMapGUIRadioButtonCBFunc)(GtkWidget *button, gpointer data, gboolean button_active);
 
-/*! Set name field in ZMapGUIMenuItemStruct to one of these special values to for
- * separators etc. */
-#define ZMAPGUI_MENU_SEPARATOR "ZMAPGUI_MENU_SEPARATOR"
+/*! Types of menu entry. */
+typedef enum {ZMAPGUI_MENU_NONE, ZMAPGUI_MENU_BRANCH, ZMAPGUI_MENU_SEPARATOR,
+	      ZMAPGUI_MENU_RADIO, ZMAPGUI_MENU_RADIOACTIVE,
+	      ZMAPGUI_MENU_NORMAL} ZMapGUIMenuType ;
+
 
 
 /*!
  * Defines a menu item. */
 typedef struct
 {
+  ZMapGUIMenuType type ;				    /* Title, separator etc. */
   char *name ;						    /*!< Title string of menu item. */
   int id ;						    /*!< Number uniquely identifying this
 							      menu item within a menu. */
-  ZMapGUIMenuItemCallbackFunc callback_func ;	    /*!< Function to call when this item
+  ZMapGUIMenuItemCallbackFunc callback_func ;		    /*!< Function to call when this item
 							      is selected.  */
   gpointer callback_data ;				    /*!< Data to pass to callback function. */
 } ZMapGUIMenuItemStruct, *ZMapGUIMenuItem ;
+
 
 
 typedef struct
