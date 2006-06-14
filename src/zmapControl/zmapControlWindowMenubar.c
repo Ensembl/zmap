@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: May  5 11:38 2006 (rds)
+ * Last edited: Jun 13 10:10 2006 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.14 2006-05-05 11:00:14 rds Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.15 2006-06-14 15:00:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,7 +70,6 @@ static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
-static void handle_option( gpointer data, guint callback_action, GtkWidget *w ) ;
 
 
 GtkItemFactory *item_factory;
