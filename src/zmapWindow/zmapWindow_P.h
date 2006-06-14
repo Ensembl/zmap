@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May 23 10:08 2006 (edgrif)
+ * Last edited: Jun 14 13:35 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.121 2006-05-23 09:18:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.122 2006-06-14 15:04:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -592,7 +592,7 @@ gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
 
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
-				       gpointer callback_data) ;
+				       gpointer callback_data, ZMapStyleOverlapMode curr_overlap_mode) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAny(int *start_index_inout,
 						ZMapGUIMenuItemCallbackFunc callback_func,
 						gpointer callback_data) ;
