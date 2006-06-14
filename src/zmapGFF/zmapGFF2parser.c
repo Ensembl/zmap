@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 12 09:10 2006 (edgrif)
+ * Last edited: Jun 14 14:03 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.50 2006-06-12 08:20:24 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.51 2006-06-14 14:58:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -858,8 +858,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
       source_id = zMapStyleCreateID((char *)g_quark_to_string(orig_style_id)) ;
     }
 
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* debugging.... */
   g_datalist_foreach(&(parser->sources), printSource, NULL) ;
@@ -937,6 +935,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 	  
 	  feature_set->original_id = g_quark_from_string(feature_set_name) ;
 	  feature_set->unique_id = zMapStyleCreateID(feature_set_name) ;
+	  feature_set->style = curr_style ;
 	  feature_set->multiline_features = NULL ;
 	  g_datalist_init(&(feature_set->multiline_features)) ;
 
@@ -1449,7 +1448,7 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeatureSet new_features ;
 
   new_features = zMapFeatureSetIDCreate(feature_set->original_id, feature_set->unique_id,
-					feature_set->features) ;
+					feature_set->style, feature_set->features) ;
 
   g_datalist_id_set_data(features, new_features->unique_id, new_features) ;
 
