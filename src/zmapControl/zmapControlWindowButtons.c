@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar 30 17:21 2006 (rds)
+ * Last edited: Jun 13 10:10 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.38 2006-03-30 16:21:59 rds Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.39 2006-06-14 15:01:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -521,17 +521,17 @@ static ZMapGUIMenuItem makeMenuZoomOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {"Max (1 bp line)",           ZOOM_MAX,     zoomMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Max (1 bp line)",           ZOOM_MAX,     zoomMenuCB, NULL},
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      {"10 bp line",                ZOOM_10,      zoomMenuCB, NULL},
-      {"1000 bp line",              ZOOM_1000,    zoomMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "10 bp line",                ZOOM_10,      zoomMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "1000 bp line",              ZOOM_1000,    zoomMenuCB, NULL},
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      {"All DNA",                   ZOOM_ALLDNA,  zoomMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "All DNA",                   ZOOM_ALLDNA,  zoomMenuCB, NULL},
 
-      {"Min (whole sequence)",      ZOOM_MIN,     zoomMenuCB, NULL},
-      {NULL,                        0, NULL,       NULL}
+      {ZMAPGUI_MENU_NORMAL, "Min (whole sequence)",      ZOOM_MIN,     zoomMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                        0, NULL,       NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
