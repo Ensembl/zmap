@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 12 09:19 2006 (edgrif)
+ * Last edited: Jun 14 15:59 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.56 2006-06-12 08:20:57 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.57 2006-06-14 14:59:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1541,6 +1541,12 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
 	  name = strtok_r(NULL, "\"", &line_pos) ;
 	  name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  printf("Method:  %s\n", name) ;		    /* debug... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	}
       if (g_ascii_strcasecmp(tag, "Remark") == 0)
 	{
