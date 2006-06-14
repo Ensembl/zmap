@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: May 19 13:11 2006 (edgrif)
+ * Last edited: Jun 14 14:08 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.34 2006-05-19 15:56:56 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.35 2006-06-14 14:49:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -506,7 +506,7 @@ ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features)
   unique_id = zMapStyleCreateID(source) ;
   original_id = g_quark_from_string(source) ;
 
-  feature_set = zMapFeatureSetIDCreate(original_id, unique_id, features) ;
+  feature_set = zMapFeatureSetIDCreate(original_id, unique_id, NULL, features) ;
 
   return feature_set ;
 }
@@ -516,7 +516,8 @@ ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features)
  * original_id  the original name of the feature set
  * unique_id    some derivation of the original name or otherwise unique id to identify this
  *              feature set. */
-ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GData *features)
+ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
+				      ZMapFeatureTypeStyle style, GData *features)
 {
   ZMapFeatureSet feature_set ;
 
@@ -524,6 +525,7 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GDat
   feature_set->struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
   feature_set->unique_id = unique_id ;
   feature_set->original_id = original_id ;
+  feature_set->style = style ;
 
   if (!features)
     g_datalist_init(&(feature_set->features)) ;

@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May 27 13:23 2006 (edgrif)
+ * Last edited: Jun 14 14:01 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.71 2006-05-27 13:39:56 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.72 2006-06-14 14:49:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -418,6 +418,7 @@ typedef enum
 /* Specifies how features in columns should be overlapped for compact display. */
 typedef enum
   {
+    ZMAPOVERLAP_START,
     ZMAPOVERLAP_COMPLETE,				    /* draw on top - default */
     ZMAPOVERLAP_OVERLAP,				    /* bump if feature coords overlap. */
     ZMAPOVERLAP_POSITION,				    /* bump if features start at same coord. */
@@ -425,7 +426,8 @@ typedef enum
     ZMAPOVERLAP_COMPLEX,				    /* all features with same name in a
 							       single column, several names in one
 							       column but no overlaps. */
-    ZMAPOVERLAP_SIMPLE					    /* one column per feature, for testing... */
+    ZMAPOVERLAP_SIMPLE,					    /* one column per feature, for testing... */
+    ZMAPOVERLAP_END
   } ZMapStyleOverlapMode ;
 
 
@@ -614,7 +616,8 @@ gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 void zmapFeatureDestroy(ZMapFeature feature) ;
 
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
-ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id, GData *features) ;
+ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
+				      ZMapFeatureTypeStyle style, GData *features) ;
 gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
@@ -623,6 +626,8 @@ void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 
 
 ZMapFeatureAny zMapFeatureGetGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
+
+gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
 
 
@@ -644,7 +649,6 @@ void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially) ;
 gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional);
-void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, 
                               gboolean show_gaps,
                               gboolean parse_gaps);
@@ -662,7 +666,12 @@ void zMapFeatureTypeGetColours(ZMapFeatureTypeStyle style,
                                GdkColor **foreground,
                                GdkColor **outline);
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
-gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
+
+void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
+ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode) ;
+
+
 
 
 

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 24 10:53 2006 (rds)
+ * Last edited: Jun 14 13:44 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.21 2006-05-26 18:03:18 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.22 2006-06-14 14:49:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -299,6 +299,24 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
 
   return ;
 }
+
+
+
+void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode)
+{
+  zMapAssert(overlap_mode > ZMAPOVERLAP_START && overlap_mode < ZMAPOVERLAP_END) ;
+
+  style->overlap_mode = overlap_mode ;
+
+  return ;
+}
+
+
+ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style)
+{
+  return style->overlap_mode ;
+}
+
 
 
 
