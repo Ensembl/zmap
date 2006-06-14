@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 14 13:44 2006 (edgrif)
+ * Last edited: Jun 14 16:47 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.22 2006-06-14 14:49:24 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.23 2006-06-14 15:47:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,6 +91,8 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
   /* By default we always parse homology gaps, important for stuff like passing this
    * information to blixem. */
   new_type->opts.parse_gaps = TRUE ;
+
+  new_type->overlap_mode = ZMAPOVERLAP_COMPLETE ;
 
   return new_type ;
 }
