@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 19 15:05 2006 (rds)
+ * Last edited: Jun 15 22:10 2006 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.6 2006-05-19 14:06:59 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.7 2006-06-15 21:14:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -120,11 +120,11 @@ char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature)
 /* Get a transcripts DNA, this will probably mean extracting snipping out the dna for
  * each exon. */
 char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transcript,
-				  gboolean spliced, gboolean CDS)
+				  gboolean spliced, gboolean cds_only)
 {
   char *dna = NULL, *tmp;
   GArray *exons ;
-
+  
   /* should check that feature is in context.... */
   zMapAssert(context && transcript && transcript->type == ZMAPFEATURE_TRANSCRIPT) ;
 
@@ -135,21 +135,42 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
   else if(fetchBlockDNAPtr(transcript, &tmp))
     {
       GString *dna_str ;
-      int i ;
+      int i, cds_start, cds_end ;
       int seq_length = 0 ;
-      
+      gboolean has_cds = FALSE;
+
       dna_str = g_string_sized_new(1000) ;		    /* Average length of human proteins is
 							       apparently around 500 amino acids. */
   
+      if(cds_only && (has_cds = transcript->feature.transcript.flags.cds))
+        {
+          cds_start = transcript->feature.transcript.cds_start;
+          cds_end   = transcript->feature.transcript.cds_end;
+        }
+
       for (i = 0 ; i < exons->len ; i++)
 	{
 	  ZMapSpan exon_span ;
-	  int offset, length ;
+	  int offset, length, start, end ;
 
 	  exon_span = &g_array_index(exons, ZMapSpanStruct, i) ;
 
-	  offset = exon_span->x1 - 1 ;
-	  length = exon_span->x2 - exon_span->x1 + 1 ;
+          start = exon_span->x1;
+          end   = exon_span->x2;
+
+          if(cds_only && has_cds)
+            {
+              /* prune out exons not within cds boundaries  */
+              if(((cds_start > end) || (cds_end < (start - 1))))
+                continue;       /* USING continue here rather than a flag! */
+              if((cds_start > start - 1) &&(cds_start < end))
+                start = cds_start;
+              if((cds_end > start - 1) && (cds_end < end))
+                end   = cds_end;
+            }
+
+	  offset = start - 1 ;
+	  length = end - start + 1 ;
 	  seq_length += length ;
 
 	  dna_str = g_string_append_len(dna_str, (tmp + offset), length) ;
