@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 14 13:33 2006 (edgrif)
+ * Last edited: Jun 15 17:18 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.33 2006-06-14 15:04:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.34 2006-06-15 16:24:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -971,6 +971,10 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 			  non_start = top ;
 			  non_end = top + (cds_start - top) - 1 ;
 
+                          /* set the cds box's exon_data while we still have ptr 2 it */
+                          /* Without this the cds part retains the coords of the FULL exon! */
+                          exon_data->start = non_end + offset;
+
 			  exon_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
 			  exon_data->subpart = ZMAPFEATURE_SUBPART_EXON ;
 			  exon_data->start = non_start + offset ;
@@ -996,6 +1000,10 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 			{
 			  non_start = bottom - (bottom - cds_end) + 1 ;
 			  non_end = bottom ;
+
+                          /* set the cds box's exon_data while we still have ptr 2 it */
+                          /* Without this the cds part retains the coords of the FULL exon! */
+                          exon_data->end = non_start + offset;
 
 			  exon_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
 			  exon_data->subpart = ZMAPFEATURE_SUBPART_EXON ;
