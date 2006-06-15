@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: May 25 16:02 2006 (edgrif)
+ * Last edited: Jun 15 09:28 2006 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.7 2006-05-25 17:04:08 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.8 2006-06-15 10:38:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,7 +71,7 @@ struct _GRealArray
 
 static inline GQuark g_quark_new(ZMapQuarkSet quark_set, gchar *string) ;
 
-
+static void printCB(gpointer data, gpointer user_data) ;
 
 
 
@@ -208,6 +208,20 @@ gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user
 
   return status ;
 }
+
+
+
+/* Prints out the contents of a list assuming that each element is a GQuark. We have
+ * lots of these in zmap so this is useful. */
+void zMap_g_quark_list_print(GList *quark_list)
+{
+  zMapAssert(quark_list) ;
+
+  g_list_foreach(quark_list, printCB, NULL) ;
+
+  return ;
+}
+
 
 
 
@@ -458,5 +472,12 @@ static inline GQuark g_quark_new (ZMapQuarkSet quark_set, gchar *string)
 
 
 
+static void printCB(gpointer data, gpointer user_data)
+{
+  GQuark quark = GPOINTER_TO_INT(data) ;
 
+  printf("%s\n", g_quark_to_string(quark)) ;
+
+  return ;
+}
 

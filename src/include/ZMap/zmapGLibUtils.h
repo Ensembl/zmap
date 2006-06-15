@@ -26,9 +26,9 @@
  *              glib but not included with their distribution.
  *
  * HISTORY:
- * Last edited: May 25 16:12 2006 (edgrif)
+ * Last edited: Jun 15 09:29 2006 (edgrif)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.7 2006-05-25 17:04:08 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.8 2006-06-15 10:38:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -70,6 +70,8 @@ void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data);
 void zMap_g_list_foreach_directional(GList *list, GFunc func, gpointer user_data,
                                      ZMapGListDirection forward);
 gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user_data) ;
+void zMap_g_quark_list_print(GList *quark_list) ;
+
 
 
 gboolean zMap_g_string_replace(GString *string, char *target, char *source) ;
