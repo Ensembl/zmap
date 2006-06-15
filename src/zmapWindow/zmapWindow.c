@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 27 16:59 2006 (edgrif)
+ * Last edited: Jun 15 22:53 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.126 2006-05-27 16:02:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.127 2006-06-15 21:56:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1075,9 +1075,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
 
   gtk_paned_add2(GTK_PANED(window->pane), window->scrolled_window);
 
-  g_signal_connect(GTK_OBJECT(window->scrolled_window), "size-allocate",
-		   GTK_SIGNAL_FUNC(sizeAllocateCB), (gpointer)window) ;
-  
   /* ACTUALLY I'M NOT SURE WHY THE SCROLLED WINDOW IS GETTING THESE...WHY NOT JUST SEND
    * DIRECT TO CANVAS.... */
   /* This handler receives the feature data from the threads. */
@@ -1588,37 +1585,6 @@ static void changeRegion(ZMapWindow window, guint keyval)
 
   return ;
 }
-
-
-/* widget is the scrolled_window, user_data is the zmapWindow */
-static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data)
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapWindow window = (ZMapWindow)user_data;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
-	 alloc->x, alloc->y, alloc->height, alloc->width); 
-#endif
-#ifdef RDS_DONT_INCLUDE
-  if (window->seqLength) /* when window first drawn, seqLength = 0 */
-    {
-      zmapWindowZoomControlHandleResize(window);
-      /* call the function given us by zmapView.c to set zoom buttons for this window */
-      /*      (*(window_cbs_G->setZoomButtons))(realiseData->window, realiseData->view);*/
-    }
-  else if(window->zoom == NULL)
-    /* First time through we need to create the zoom controller */
-    zMapWarning("%s\n", "sizeAllocate Should already have a zoom control.");
-    //    window->zoom = zmapWindowZoomControlCreate(window);
-#endif
-  return ;
-}
-
-
 
 /* Because we can't depend on the canvas having a valid height when it's been realized,
  * we have to detect the invalid height and attach this handler to the canvas's 
@@ -2218,6 +2184,9 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
   /* to debug insert calls before after the below code like this: */
   printWindowSizeDebug("PRE", window, widget, allocation) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  if(!window->seqLength)
+    return ;
 
   if (window->window_height != widget->allocation.height
       || window->canvas_height != layout->height)
