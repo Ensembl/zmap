@@ -25,15 +25,16 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 12 08:04 2006 (edgrif)
+ * Last edited: Jun 15 10:13 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.74 2006-06-12 07:41:24 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.75 2006-06-15 10:40:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <gtk/gtk.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapConfig.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
@@ -88,12 +89,11 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req) ;
 
 static GList *string2StyleQuarks(char *feature_sets) ;
-
+static gboolean nextIsQuoted(char **text) ;
 
 static ZMapFeatureContext createContext(char *sequence, int start, int end,
 					GList *types, GList *feature_set_names) ;
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
-
 
 /* this surely needs to end up somewhere else in the end... */
 ZMapAlignBlock zMapAlignBlockCreate(char *ref_seq, int ref_start, int ref_end, int ref_strand,
@@ -1758,26 +1758,70 @@ static void setZoomStatus(gpointer data, gpointer user_data)
   return;
 }
 
+
+
 /* Take a string containing space separated featureset names (e.g. "coding fgenes codon")
  * and convert it to a list of proper featureset id quarks. */
 static GList *string2StyleQuarks(char *featuresets)
 {
   GList *featureset_quark_list = NULL ;
-  char *curr_pos = NULL ;
-  char *next_featureset ;
+  char *list_pos = NULL ;
+  char *next_featureset = NULL ;
+  char *target ;
 
-  while ((next_featureset = strtok_r(featuresets, " \t", &curr_pos)))
+
+  target = featuresets ;
+  do
     {
       GQuark featureset_id ;
-      featuresets = NULL ;
 
-      featureset_id = zMapStyleCreateID(next_featureset) ;
-
-      featureset_quark_list = g_list_append(featureset_quark_list, GUINT_TO_POINTER(featureset_id)) ;
+      if (next_featureset)
+	{
+	  target = NULL ;
+	  featureset_id = zMapStyleCreateID(next_featureset) ;
+	  featureset_quark_list = g_list_append(featureset_quark_list, GUINT_TO_POINTER(featureset_id)) ;
+	}
+      else
+	list_pos = target ;
     }
+  while ((nextIsQuoted(&list_pos) && (next_featureset = strtok_r(target, "\"", &list_pos)))
+	 || (next_featureset = strtok_r(target, " \t", &list_pos))) ;
+
+
+  zMap_g_quark_list_print(featureset_quark_list) ;
+
 
   return featureset_quark_list ;
 }
+
+
+/* Look through string to see if next non-space char is a quote mark, if it is return TRUE
+ * and set *text to point to the quote mark, otherwise return FALSE and leave *text unchanged. */
+static gboolean nextIsQuoted(char **text)
+{
+  gboolean quoted = FALSE ;
+  char *text_ptr = *text ;
+
+  while (*text_ptr)
+    {
+      if (!(g_ascii_isspace(*text_ptr)))
+	{
+	  if (*text_ptr == '"')
+	    {
+	      quoted = TRUE ;
+	      *text = text_ptr ;
+	    }
+	  break ;
+	}
+
+      text_ptr++ ;
+    }
+
+  return quoted ;
+}
+
+
+
 
 
 
