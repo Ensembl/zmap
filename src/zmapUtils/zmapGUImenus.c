@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jun 14 15:56 2006 (edgrif)
+ * Last edited: Jun 16 10:19 2006 (edgrif)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.5 2006-06-14 14:57:30 edgrif Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.6 2006-06-16 09:20:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,7 +171,17 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
    * menu to its vital that i starts at zero. */
   for (i = 0 ; i < num_menu_items ; i++)
     {
-      item->path = makeMenuItemName(menu_items[i].name) ;
+      ZMapGUIMenuItem menu ;
+
+      menu = &(menu_items[i]) ;
+
+      /* User does not have to set a name for a separator but to make our code more uniform
+       * we add one. */
+      if (menu_items[i].type == ZMAPGUI_MENU_SEPARATOR)
+	item->path = makeMenuItemName("separator") ;
+      else
+	item->path = makeMenuItemName(menu_items[i].name) ;
+
       item->callback = ourCB ;
       item->callback_action = i ;
 
@@ -526,7 +536,7 @@ static int itemsInMenu(ZMapGUIMenuItem menu)
 
   /* Count items in menu. */
   for (num_menu_items = 0, menu_item = menu ;
-       menu_item->name != NULL ;
+       menu_item->type != ZMAPGUI_MENU_NONE ;
        num_menu_items++, menu_item++) ;
 
   return num_menu_items ;
