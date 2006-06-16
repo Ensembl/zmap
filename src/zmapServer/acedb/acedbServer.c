@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 14 15:59 2006 (edgrif)
+ * Last edited: Jun 15 15:17 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.57 2006-06-14 14:59:51 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.58 2006-06-16 09:20:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1585,6 +1585,11 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	  
 	  foreground = g_strdup(foreground) ;
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* The link between bump mode and what actually happens to the column is not straight
+       * forward in acedb, the annotators seem to favour no bumping at the moment so that's
+       * what I'm doing. */
       else if (g_ascii_strcasecmp(tag, "Overlap") == 0)
 	{
 	  overlap = g_strdup("complete") ;
@@ -1597,6 +1602,15 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	{
 	  overlap = g_strdup("name") ;
 	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      else if (g_ascii_strcasecmp(tag, "Overlap") == 0
+	       || g_ascii_strcasecmp(tag, "Bumpable") == 0
+	       || g_ascii_strcasecmp(tag, "Cluster") == 0)
+	{
+	  overlap = g_strdup("complete") ;
+	}
+
+
       else if (g_ascii_strcasecmp(tag, "GFF_source") == 0)
 	{
 	  gff_source = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
