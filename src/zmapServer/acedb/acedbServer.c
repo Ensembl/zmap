@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 15 15:17 2006 (edgrif)
+ * Last edited: Jun 16 12:41 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.58 2006-06-16 09:20:15 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.59 2006-06-16 11:44:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1504,6 +1504,10 @@ static ZMapServerResponseType findMethods(AcedbServer server)
  * then NULL is returned. NOTE that this is not just dependent on comparing method
  * name to the requested list we have to look in column group as well.
  * 
+ * Acedb had the concept of empty objects, these are objects whose name/class can
+ * be looked up but which do not have an instance in the database. The code will NOT
+ * produce styles for these objects.
+ * 
  */
 ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 				 char **end_pos, ZMapColGroupData *col_group_data_out)
@@ -1522,11 +1526,13 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   double min_mag = 0.0, max_mag = 0.0 ;
   double min_score = 0.0, max_score = 0.0 ;
   gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE ;
+  int obj_lines ;
 
 
   if (!g_str_has_prefix(method_str, "Method : "))
     return style ;
 
+  obj_lines = 0 ;				    /* Used to detect empty objects. */
   do
     {
       char *tag = NULL ;
@@ -1535,6 +1541,8 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
 	break ;
 
+      /* We don't formally test this but Method _MUST_ be the first line of the acedb output
+       * representing an object. */
       if (g_ascii_strcasecmp(tag, "Method") == 0)
 	{
 	  /* Line format:    Method : "possibly long method name"  */
@@ -1542,12 +1550,11 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	  name = strtok_r(NULL, "\"", &line_pos) ;
 	  name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  printf("Method:  %s\n", name) ;		    /* debug... */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	}
+
       if (g_ascii_strcasecmp(tag, "Remark") == 0)
 	{
 	  /* Line format:    Remark "possibly quite long bit of text"  */
@@ -1706,7 +1713,13 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	}
 
     }
-  while (**end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
+  while (++obj_lines && **end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
+
+  /* acedb can have empty objects which consist of a first line only. */
+  if (obj_lines == 1)
+    {
+      status = FALSE ;
+    }
 
   
   /* If we failed while processing a method we won't have reached the end of the current
