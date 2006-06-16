@@ -1,0 +1,83 @@
+
+# set a null value to use
+NULL = 
+
+# the directories the devices files reside in
+PS_DIR = PS
+FIG_DIR = FIG
+X11_DIR = X11
+WIN32_DIR = WIN32
+GD_DIR = GD
+
+# Conditionally compile devices (See AM_CONDITIONAL in configure.ac)
+if PS
+  PS_SOURCEFILES = $(PS_DIR)/g2_PS.c
+  PS_HEADERFILES = $(PS_DIR)/g2_PS.h
+else
+  PS_SOURCEFILES = $(NULL)
+  PS_HEADERFILES = $(NULL)
+endif
+
+if FIG
+  FIG_SOURCEFILES = $(FIG_DIR)/g2_FIG.c
+  FIG_HEADERFILES = $(FIG_DIR)/g2_FIG.h
+else
+  FIG_SOURCEFILES = $(NULL)
+  FIG_HEADERFILES = $(NULL)
+endif
+
+if X11
+  X11_SOURCEFILES = $(X11_DIR)/g2_X11.c
+  X11_HEADERFILES = $(X11_DIR)/g2_X11.h
+else
+  X11_SOURCEFILES = $(NULL)
+  X11_HEADERFILES = $(NULL)
+endif
+
+if WIN32
+  WIN32_SOURCEFILES = $(WIN32_DIR)/g2_win32.c $(WIN32_DIR)/g2_win32_thread.c
+  WIN32_HEADERFILES = $(WIN32_DIR)/g2_win32.h
+else
+  WIN32_SOURCEFILES = $(NULL)
+  WIN32_HEADERFILES = $(NULL)
+endif
+
+if GD
+  GD_SOURCEFILES = $(GD_DIR)/g2_GD.c
+  GD_HEADERFILES = $(GD_DIR)/g2_GD.h
+else
+  GD_SOURCEFILES = $(NULL)
+  GD_HEADERFILES = $(NULL)
+endif
+
+# libtool library
+
+lib_LTLIBRARIES = libg2.la
+libg2_la_LDFLAGS = -version-info @G2_CURRENT@:@G2_REVISION@:@G2_AGE@
+libg2_la_SOURCES = g2_device.c  \
+	g2_ui_control.c        \
+	g2_util.c              \
+	g2_fif.c               \
+        g2_virtual_device.c    \
+	g2_physical_device.c   \
+        g2_graphic_pd.c        \
+	g2_control_pd.c        \
+        g2_ui_graphic.c        \
+	g2_ui_virtual_device.c \
+        g2_ui_device.c         \
+	g2_splines.c           \
+	$(PS_SOURCEFILES)      \
+	$(FIG_SOURCEFILES)     \
+	$(X11_SOURCEFILES)     \
+	$(WIN32_SOURCEFILES)   \
+	$(GD_SOURCEFILES)      \
+	$(NULL)
+
+# Headers to install
+include_HEADERS = g2.h       \
+	$(PS_HEADERFILES)    \
+	$(FIG_HEADERFILES)   \
+	$(X11_HEADERFILES)   \
+	$(WIN32_HEADERFILES) \
+	$(GD_HEADERFILES)    \
+	$(NULL)
