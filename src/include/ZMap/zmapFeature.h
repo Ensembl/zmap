@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun 14 14:01 2006 (edgrif)
+ * Last edited: Jun 16 16:45 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.72 2006-06-14 14:49:25 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.73 2006-06-16 17:03:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -300,6 +300,9 @@ typedef struct ZMapFeatureSetStruct_
 							       drawn, this applies only to the set
 							       * itself, _not_ the features within
 							       * the set. */
+  GHashTable *feature_styles ;				    /* Cache of styles for features within
+							     * the feature set. */
+
   GData *features ;					    /* A set of ZMapFeatureStruct. */
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
@@ -618,6 +621,9 @@ void zmapFeatureDestroy(ZMapFeature feature) ;
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
 				      ZMapFeatureTypeStyle style, GData *features) ;
+void zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
+gboolean zMapFeatureSetAddStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle new_style) ;
+ZMapFeatureTypeStyle zMapFeatureSetFindStyle(ZMapFeatureSet feature_set, GQuark style_id) ;
 gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
@@ -631,12 +637,13 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
 
 
-/* Style functions. */
+/* Style functions, name should all be rationalised to just use "style", not "type". */
 
 GList *zMapStylesGetNames(GList *styles) ;
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
 					   char *outline, char *foreground, char *background,
 					   double width) ;
+ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetColours(ZMapFeatureTypeStyle style, 
                          char *outline, 
                          char *foreground, 
@@ -657,7 +664,7 @@ GQuark zMapStyleCreateID(char *style_name) ;
 char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
 ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id) ;
 gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
-ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type) ;
+ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle type) ;
 void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
 GList *zMapFeatureTypeGetFromFile(char *types_file) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;

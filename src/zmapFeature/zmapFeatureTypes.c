@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 14 16:47 2006 (edgrif)
+ * Last edited: Jun 16 16:45 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.23 2006-06-14 15:47:28 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.24 2006-06-16 17:03:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,6 +56,24 @@ static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data) ;
 
 static void checkListName(gpointer data, gpointer user_data) ;
 static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data) ;
+
+
+
+/*! @defgroup zmapstyles   zMapStyle: Feature Style handling for ZMap
+ * @{
+ * 
+ * \brief  Feature Style handling for ZMap.
+ * 
+ * zMapStyle routines provide functions to create/modify/destroy individual
+ * styles, the styles control how features are processed and displayed. They
+ * control aspects such as foreground colour, column bumping mode etc.
+ *
+ *  */
+
+
+
+
+
 
 
 /* Create a new type for displaying features. */
@@ -96,6 +114,42 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
 
   return new_type ;
 }
+
+
+/*!
+ * Copy an existing style. The copy will copy all dynamically allocated memory within
+ * the struct as well.
+ * 
+ * Returns the new style or NULL if there is an error.
+ * 
+ * @param   style          The style to be copied.
+ * @return  ZMapFeatureTypeStyle   the style copy or NULL
+ *  */
+ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style)
+{
+  ZMapFeatureTypeStyle new_style = NULL ;
+
+  zMapAssert(style) ;
+
+  new_style = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  new_style = g_memdup((gpointer)style, sizeof(ZMapFeatureTypeStyleStruct)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  *new_style = *style ;					    /* better ?? */
+  
+  if (new_style->description)
+    new_style->description = g_strdup(new_style->description) ;
+
+
+
+  return new_style ;
+}
+
+
+
 
 void zMapStyleSetColours(ZMapFeatureTypeStyle style, 
                          char *outline, 
@@ -371,23 +425,6 @@ GQuark zMapStyleCreateID(char *style)
 }
 
 
-/* Copy an existing type. */
-ZMapFeatureTypeStyle zMapFeatureTypeCopy(ZMapFeatureTypeStyle type)
-{
-  ZMapFeatureTypeStyle new_type = NULL ;
-
-  zMapAssert(type) ;
-
-  new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
-  *new_type = *type ;					    /* n.b. struct copy. */
-
-  if (type->description)
-    new_type->description = g_strdup(type->description) ;
-
-  return new_type ;
-}
-
-
 char *zMapStyleGetName(ZMapFeatureTypeStyle style)
 {
   char *style_name ;
@@ -625,6 +662,11 @@ void zMapFeatureTypePrintAll(GData *type_set, char *user_string)
 
 
 
+/*! @} end of zmapstyles docs. */
+
+
+
+
 
 
 /* 
@@ -644,7 +686,7 @@ static void doTypeSets(GQuark key_id, gpointer data, gpointer user_data)
       /* copy the struct and then add it to the current set. */
       ZMapFeatureTypeStyle type ;
 
-      type = zMapFeatureTypeCopy(new_type) ;
+      type = zMapFeatureStyleCopy(new_type) ;
 
       g_datalist_id_set_data(&current, key_id, type) ;
     }
