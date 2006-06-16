@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 14 14:03 2006 (edgrif)
+ * Last edited: Jun 16 17:51 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.51 2006-06-14 14:58:06 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.52 2006-06-16 16:53:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,7 +72,11 @@ static gboolean getCDSAttrs(char *attributes,
 			    gboolean *end_not_found_out) ;
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static gboolean loadGaps(char *currentPos, GArray *gaps);
 static int sortGapsByTarget(gconstpointer a, gconstpointer b);
@@ -810,12 +814,16 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printSource(GQuark key_id, gpointer data, gpointer user_data)
 {
   printf("source id: %d, name: %s\n", key_id, g_quark_to_string(key_id)) ;
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static gboolean makeNewFeature(ZMapGFFParser parser,
@@ -828,8 +836,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 {
   gboolean result = FALSE ;
   char *feature_name_id = NULL, *feature_name = NULL ;
+  GQuark feature_set_style_id, feature_style_id ;
+  ZMapFeatureSet feature_set = NULL ;
+  ZMapFeatureTypeStyle feature_set_style, feature_style ;
   ZMapFeature feature = NULL ;
-  ZMapGFFParserFeatureSet feature_set = NULL ; 
+  ZMapGFFParserFeatureSet parser_feature_set = NULL ; 
   char *feature_set_name = NULL ;
   gboolean feature_has_name ;
   ZMapFeature new_feature ;
@@ -840,23 +851,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   char *url ;
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
-  GQuark source_id ;
-  ZMapFeatureTypeStyle curr_style ;
 
 
-  /* Set up the name/style for the current feature set....
-   * Need to look for a zmap specific attribute field which specifies a column group independently of
-   * the required "source" (aka method) field. */
-  feature_set_name = source ;
 
-
-  source_id = zMapStyleCreateID(source) ;
-  
-  if ((getColumnGroup(attributes, &column_id, &orig_style_id)))
-    {
-      feature_set_name = (char *)g_quark_to_string(column_id) ;
-      source_id = zMapStyleCreateID((char *)g_quark_to_string(orig_style_id)) ;
-    }
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* debugging.... */
@@ -864,13 +861,44 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-  /* If a feature does not have a style, it is not displayed. */
-  if (!(curr_style = zMapFindStyle(g_datalist_id_get_data(&(parser->sources), source_id), 
-				   source_id)))
+  /* Set up the style for the current feature set, the feature set for a feature may have
+   * been specified via a special acedb "Column_group" tag so check for that first. Otherwise
+   * the style defaults to the "source" field of the GFF. */
+  if ((getColumnGroup(attributes, &column_id, &orig_style_id)))
     {
-      *err_text = g_strdup_printf("could not find style \"%s\", feature is ignored.",
-				  g_quark_to_string(source_id)) ;
+      feature_set_name = (char *)g_quark_to_string(column_id) ;
 
+      feature_set_style_id = column_id ;
+
+      feature_style_id = zMapStyleCreateID((char *)g_quark_to_string(orig_style_id)) ;
+    }
+  else
+    {
+      feature_set_name = source ;
+
+      feature_set_style_id = feature_style_id = zMapStyleCreateID(source) ;
+    }
+
+
+  /* If a feature set style or a feature style is missing then we can't carry on.
+   * NOTE the feature sets style has the same name as the feature set. */
+  if (!(feature_set_style = zMapFindStyle(g_datalist_id_get_data(&(parser->sources),
+								 feature_set_style_id), 
+					  feature_set_style_id)))
+    {
+      *err_text = g_strdup_printf("feature ignored, could not find style \"%s\" for feature set \"%s\".",
+				  feature_set_name, feature_set_name) ;
+      result = FALSE ;
+
+      return result ;
+    }
+
+  if (!(feature_style = zMapFindStyle(g_datalist_id_get_data(&(parser->sources),
+							     feature_style_id), 
+				      feature_style_id)))
+    {
+      *err_text = g_strdup_printf("feature ignored, could not find its style \"%s\".",
+				  g_quark_to_string(feature_style_id)) ;
       result = FALSE ;
 
       return result ;
@@ -899,10 +927,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   /* Check if the feature_set_name for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
   if (!parser->parse_only &&
-      (feature_set = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(parser->feature_sets),
-								  feature_set_name)))
+      (parser_feature_set = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(parser->feature_sets),
+									 feature_set_name)))
     {
-      feature = (ZMapFeature)g_datalist_get_data(&(feature_set->multiline_features), feature_name) ;
+      feature_set = parser_feature_set->feature_set ;
+
+      feature = (ZMapFeature)g_datalist_get_data(&(parser_feature_set->multiline_features),
+						 feature_name) ;
     }
 
 
@@ -926,25 +957,25 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
        * add that to the list of sources...ugh.  */
 
       /* If we don't have this feature_set yet, then make one. */
-      if (!feature_set)
+      if (!parser_feature_set)
 	{
-	  feature_set = g_new0(ZMapGFFParserFeatureSetStruct, 1) ;
+	  parser_feature_set = g_new0(ZMapGFFParserFeatureSetStruct, 1) ;
 
 	  g_datalist_set_data_full(&(parser->feature_sets),
-				   feature_set_name, feature_set, destroyFeatureArray) ;
+				   feature_set_name, parser_feature_set, destroyFeatureArray) ;
 	  
-	  feature_set->original_id = g_quark_from_string(feature_set_name) ;
-	  feature_set->unique_id = zMapStyleCreateID(feature_set_name) ;
-	  feature_set->style = curr_style ;
-	  feature_set->multiline_features = NULL ;
-	  g_datalist_init(&(feature_set->multiline_features)) ;
+	  feature_set = parser_feature_set->feature_set = zMapFeatureSetCreate(feature_set_name, NULL) ;
 
-	  g_datalist_init(&(feature_set->features)) ;
+	  /* cache a copy of the style in the feature set so it can be set individually. */
+	  feature_set_style = zMapFeatureStyleCopy(feature_set_style) ;
+	  zMapFeatureSetStyle(feature_set, feature_set_style) ;
 
-	  feature_set->parser = parser ;		    /* We need parser flags in the destroy
+	  parser_feature_set->multiline_features = NULL ;
+	  g_datalist_init(&(parser_feature_set->multiline_features)) ;
+
+	  parser_feature_set->parser = parser ;		    /* We need parser flags in the destroy
 							       function for the feature_set list. */
 	}
-
 
       /* Always add every new feature to the final set.... */
       g_datalist_set_data(&(feature_set->features), feature_name_id, new_feature) ;
@@ -956,17 +987,23 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
        * our set of such features. There are arcane/adhoc rules in action here, any features
        * that do not have their own feature_name  _cannot_  be multiline features as such features
        * can _only_ be identified if they do have their own name. */
-      if (feature_has_name
-	  && (feature_type == ZMAPFEATURE_TRANSCRIPT))
+      if (feature_has_name && (feature_type == ZMAPFEATURE_TRANSCRIPT))
 	{
-	  g_datalist_set_data(&(feature_set->multiline_features), feature_name, feature) ;
+	  g_datalist_set_data(&(parser_feature_set->multiline_features), feature_name, feature) ;
 	}
     }
 
 
+  /* We cache feature styles in their feature set for later use. */
+  if (!(zMapFeatureSetFindStyle(feature_set, feature_style_id)))
+    {
+      feature_style = zMapFeatureStyleCopy(feature_style) ;  
+      zMapFeatureSetAddStyle(feature_set, feature_style) ;
+    }
+
  if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
 					  sequence, ontology,
-					  feature_type, curr_style,
+					  feature_type, feature_style,
 					  start, end,
 					  has_score, score,
 					  strand, phase)))
@@ -1014,7 +1051,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
      else if (feature_type == ZMAPFEATURE_ALIGNMENT)
        {
 	 /* I am not sure if we ever have target_strand, target_phase from GFF output.... */
-         if(curr_style->opts.parse_gaps && 
+         if(feature_style->opts.parse_gaps && 
             ((gaps_onwards = strstr(attributes, " Gaps ")) != NULL)) 
            {
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
@@ -1443,14 +1480,11 @@ static gboolean getCDSAttrs(char *attributes,
  * in the GData element to the GArray in user_data. */
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 {
-  ZMapGFFParserFeatureSet feature_set = (ZMapGFFParserFeatureSet)data ;
+  ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
+  ZMapFeatureSet feature_set = parser_feature_set->feature_set ;
   GData **features = (GData **)user_data ;
-  ZMapFeatureSet new_features ;
 
-  new_features = zMapFeatureSetIDCreate(feature_set->original_id, feature_set->unique_id,
-					feature_set->style, feature_set->features) ;
-
-  g_datalist_id_set_data(features, new_features->unique_id, new_features) ;
+  g_datalist_id_set_data(features, feature_set->unique_id, feature_set) ;
 
   return ;
 }
@@ -1461,12 +1495,12 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
  * and GData lists. */
 static void destroyFeatureArray(gpointer data)
 {
-  ZMapGFFParserFeatureSet feature_set = (ZMapGFFParserFeatureSet)data ;
+  ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
 
   /* No data to free in this list, just clear it. */
-  g_datalist_clear(&(feature_set->multiline_features)) ;
+  g_datalist_clear(&(parser_feature_set->multiline_features)) ;
 
-  g_free(feature_set) ;
+  g_free(parser_feature_set) ;
 
   return ;
 }

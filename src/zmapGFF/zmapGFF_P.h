@@ -25,9 +25,9 @@
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
  * HISTORY:
- * Last edited: Feb  8 12:33 2006 (edgrif)
+ * Last edited: Jun 16 17:46 2006 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.13 2006-02-17 13:36:07 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.14 2006-06-16 16:53:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -63,19 +63,12 @@ typedef enum
 /* Some features need to be built up from multiple GFF lines so we keep associations
  * of these features in arrays. The arrays are indexed via sources. These arrays are only used
  * while building up the final arrays of features. */
-
-/* REALLY THIS STRUCT COULD EMBED THE FEATURE STRUCT AND JUST ADD A COUPLE OF FIELDS.... */
 /* For each set of features that come from a single source, we keep an array of those features
  * but also a list of features that need to be built up from several GFF lines. */
 typedef struct ZMapGFFParserFeatureSetStruct_
 {
-  GQuark original_id ;					    /* Name of feature set source. */
-  GQuark unique_id ;
-
-  ZMapFeatureTypeStyle style ;
-
-  GData *features ;					    /* All features in this feature set. */
-
+  ZMapFeatureSet feature_set ;				    /* The feature set, gets passed on to
+							     * the feature context proper. */
   GData *multiline_features ;				    /* Features in this feature set that
 							       must be built up from multiple
 							       lines. */
