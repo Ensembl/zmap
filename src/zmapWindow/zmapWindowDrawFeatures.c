@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 14 14:08 2006 (edgrif)
+ * Last edited: Jun 16 13:23 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.134 2006-06-14 15:02:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.135 2006-06-16 12:27:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -587,9 +587,25 @@ static void createSetColumn(gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style ;
 
 
-  /* Look up the overall column style... */
-  style = zMapFindStyle(context->styles, feature_set_id) ;
-  zMapAssert(style) ;
+  /* Look up the overall column style, its possible the style for the column may not have
+   * have been found either because styles may be on a separate server or more often because
+   * the style for a feature set isn't known until the features have been read. Then if we don't
+   * find any features feature set won't have a style...kind of a catch 22. */
+  if (!(style = zMapFindStyle(context->styles, feature_set_id)))
+    {
+      char *name = (char *)g_quark_to_string(feature_set_id) ;
+
+      /* Temporary...probably user will not want to see this in the end but for now its good for debugging. */
+      zMapShowMsg(ZMAP_MSG_WARNING, "feature set \"%s\" not displayed because its style (\"%s\") could not be found.",
+		  name, name) ;
+
+      zMapLogCritical("feature set \"%s\" not displayed because its style (\"%s\") could not be found.",
+		      name, name) ;
+
+      return ;
+    }
+
+
 
   /* Add a background colouring for the column. */
   if (canvas_data->curr_alignment == canvas_data->full_context->master_align)
@@ -604,6 +620,9 @@ static void createSetColumn(gpointer data, gpointer user_data)
     }
 
 
+
+  /* if this is not here the remove column routine crashes...feels uncomfortable, I
+   * haven't tracked down why yet..... */
   if(!(g_datalist_id_get_data(&(canvas_data->curr_block->feature_sets), feature_set_id)))
     {
       ZMapFeatureSet fs ;
@@ -611,6 +630,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
       fs = zMapFeatureSetIDCreate(feature_set_id, feature_set_id, style, NULL) ;
       zMapFeatureBlockAddFeatureSet(canvas_data->curr_block, fs) ;
     }
+
 
 
   /* We need the background column object to span the entire bottom of the alignment block. */
@@ -628,6 +648,9 @@ static void createSetColumn(gpointer data, gpointer user_data)
 
   }
 #endif
+
+
+  /* this forward/reverse stuff needs factorising..... */
 
   forward_col = createColumn(FOO_CANVAS_GROUP(canvas_data->curr_forward_group),
 			     window,
@@ -867,6 +890,10 @@ static void removeEmptyColumns(ZMapCanvasData canvas_data)
 static void removeEmptyColumnCB(gpointer data, gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
+
+
+  /* There is some confusion here as we need to get the featureset id for the ftoi removal,
+   * not the style id..... */
 
 
   if (!zmapWindowContainerHasFeatures(container))
