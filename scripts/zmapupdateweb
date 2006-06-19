@@ -30,8 +30,8 @@ descstring='
 
 ZBacedb=~zmap
 ZBBaseDir="$ZBacedb/ZMap"
-ZBOverDir="$ZBacedb/ZMap.OVERNIGHT.BUILD"
-ZBDevDir="$ZBacedb/ZMap.DEVELOPMENT.BUILD"
+ZBOverDir="$ZBacedb/BUILD.OVERNIGHT"
+ZBDevDir="$ZBacedb/BUILD.DEVELOPMENT"
 
 ZBExportOSVars
 if [ ! -z $ZBbuildOSDir ] ; then
