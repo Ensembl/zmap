@@ -35,7 +35,7 @@ elif test "$zmap_os_type" = "darwin" ; then
    AC_SUBST(ALPHA_POPT)
 else
    # this is pretty evil NEED to find a better method
-   ALPHA_POPT=-I/nfs/disk100/acedb/prefix/ALPHA/include
+   ALPHA_POPT=-I/nfs/team71/acedb/prefix/ALPHA/include
    AC_SUBST(ALPHA_POPT)
 fi
 

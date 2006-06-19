@@ -17,12 +17,12 @@ opsys=`uname`
 case $opsys in
 
   OSF1 )
-    locals=/nfs/team71/acedb/zmap/prefix/ALPHA/bin
+    locals=~zmap/prefix/ALPHA/bin
     PATH="$locals:$PATH"
     export PATH ;;
 
   Linux )
-    locals=/nfs/team71/acedb/zmap/prefix/LINUX/bin
+    locals=~zmap/prefix/LINUX/bin
     PATH="$locals:$PATH"
     export PATH ;;
 

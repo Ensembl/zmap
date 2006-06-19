@@ -15,12 +15,12 @@ opsys=`uname`
 case $opsys in
 
   OSF1 )
-    locals=~acedb/ZMap/prefix/ALPHA/lib
+    locals=~zmap/prefix/ALPHA/lib
     LD_LIBRARY_PATH="$locals:/usr/local/gtk2/lib"
     export LD_LIBRARY_PATH ;;
 
   Linux )
-    locals=~acedb/ZMap/prefix/LINUX/lib
+    locals=~zmap/prefix/LINUX/lib
     LD_LIBRARY_PATH="$locals"
     export LD_LIBRARY_PATH ;;
 
