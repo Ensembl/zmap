@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun 16 16:45 2006 (edgrif)
+ * Last edited: Jun 19 11:37 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.73 2006-06-16 17:03:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.74 2006-06-19 10:39:23 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -35,6 +35,7 @@
 
 
 #include <gdk/gdkcolor.h>
+#include <ZMap/zmapConfigStyleDefaults.h>
 
 
 /* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
@@ -573,6 +574,10 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
 				 ZMapFeatureDumpFeatureCallbackFunc dump_func,
 				 gpointer user_data,
 				 GError **error) ;
+void zMapFeatureContextExecute(ZMapFeatureAny feature_any, 
+                               ZMapFeatureStructType stop, 
+                               GDataForeachFunc callback, 
+                               gpointer data);
 
 void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
@@ -678,10 +683,6 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
 ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode) ;
 
-
-
-
-
 /* ================================================================= */
 /* functions in zmapFeatureFormatInput.c */
 /* ================================================================= */
@@ -704,7 +705,7 @@ gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *s
 char *zMapFeatureGetDNA(ZMapFeatureContext context, int start, int end) ;
 char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature) ;
 char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transcript,
-				  gboolean spliced, gboolean CDS) ;
+				  gboolean spliced, gboolean cds_only) ;
 
 
 
