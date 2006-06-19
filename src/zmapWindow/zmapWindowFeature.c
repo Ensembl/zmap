@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 15 17:18 2006 (rds)
+ * Last edited: Jun 19 08:05 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.34 2006-06-15 16:24:28 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.35 2006-06-19 07:05:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -479,7 +479,7 @@ char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyl
 
   description = g_strdup_printf("%s  :  %s%s%s", (char *)g_quark_to_string(feature_set_id),
 				style->description ? "\"" : "",
-				style->description ? style->description : "",
+				style->description ? style->description : "<no description available>",
 				style->description ? "\"" : "") ;
 
   return description ;
