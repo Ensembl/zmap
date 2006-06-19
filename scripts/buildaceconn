@@ -19,7 +19,7 @@ msgAndExit ()
 # main routine
 #
 
-zmapsrcdir=~acedb/ZMap
+zmapsrcdir=~zmap
 builddir='aceconnbuild'
 cvs_aceconn="Ace-Conn"
 

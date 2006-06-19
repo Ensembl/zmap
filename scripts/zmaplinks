@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Create the symbolic links in ~acedb to point to the various releases of zmap.
+# Create the symbolic links in ~zmap to point to the various releases of zmap.
 #
 
 
@@ -16,14 +16,14 @@
 # set up usage strings.
 cmdstring='[-o] [-d] [-r] <source_directory>'
 descstring='
-  -o  link ~acedb/ZMAP.OVERNIGHT_BUILD to source_directory (default)
+  -o  link ~zmap/BUILD.OVERNIGHT to source_directory (default)
 
-  -d  link ~acedb/ZMAP.DEVELOPMENT_BUILD to source_directory (default)
+  -d  link ~zmap/BUILD.DEVELOPMENT to source_directory (default)
 
-  -r  link ~acedb/ZMAP.RELEASE_BUILD to source_directory (default)'
+  -r  link ~zmap/BUILD.RELEASE to source_directory (default)'
 
 
-linksroot=~acedb
+linksroot=~zmap
 
 prefix='ZMap'
 suffix='BUILD'
@@ -56,7 +56,7 @@ if [ -z "$links" ] ; then
 fi
 
 
-# move to ~acedb where we will make the symbolic links.
+# move to ~zmap where we will make the symbolic links.
 #
 ZBGotoDir $linksroot
 

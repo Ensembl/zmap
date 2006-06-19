@@ -39,7 +39,7 @@ currdir=`pwd`
 
 # move to the zmap build scripts dir and update the scripts there.
 #
-scriptdir=~acedb/ZMap/prefix/scripts
+scriptdir=~zmap/prefix/scripts
 
 ZBGotoDir $scriptdir
 

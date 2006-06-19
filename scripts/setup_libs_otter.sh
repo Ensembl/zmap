@@ -1,6 +1,6 @@
 #!/bin/sh
 
-base=/nfs/disk100/acedb/ZMap/prefix
+base=~zmap/prefix
 script=`basename $0`
 
 OSTYPE=`uname`

@@ -13,8 +13,8 @@
 . ZBfunctions $0
 
 
-acedb_dir=~acedb
-zmap_dir=~acedb/ZMap
+acedb_dir=~zmap
+zmap_dir=~zmap
 prefix='ZMAP_ACEDB_BUILD'
 user=`whoami`
 logfile="$prefix.out"

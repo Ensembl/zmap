@@ -139,10 +139,10 @@ ZBscript=`basename $1`
 # TRY OUT LATER...
 
 # Yes, that's it the variables need to be exported....
-export ZBacedb='/nfs/disk100/acedb'
-ZBBaseDir="$ZBacedb/ZMap"
-ZBOverDir="$ZBacedb/ZMap.OVERNIGHT.BUILD"
-ZBDevDir="$ZBacedb/ZMap.DEVELOPMENT.BUILD"
+export ZBase=~zmap
+ZBBaseDir="$ZBase/ZMap"
+ZBOverDir="$ZBase/ZMap.OVERNIGHT.BUILD"
+ZBDevDir="$ZBase/ZMap.DEVELOPMENT.BUILD"
 
 
 

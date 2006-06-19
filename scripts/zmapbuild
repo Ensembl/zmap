@@ -32,12 +32,12 @@ descstring='
         specify the machine to ssh in to.   
 
    <target_build_directory> 
-        specifies the sub directory of "~acedb/ZMap/builds" where the checkout
+        specifies the sub directory of "~zmap/Builds" where the checkout
          and build should take place.'
 
 
 machine="DESPOT"
-zmaproot=~acedb/ZMap
+zmaproot=~zmap
 builddir="$zmaproot/BUILDS"
 zmapcvstarget='ZMap'
 version=""

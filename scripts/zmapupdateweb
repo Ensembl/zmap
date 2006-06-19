@@ -28,7 +28,7 @@ descstring='
 
 
 
-ZBacedb='/nfs/disk100/acedb'
+ZBacedb=~zmap
 ZBBaseDir="$ZBacedb/ZMap"
 ZBOverDir="$ZBacedb/ZMap.OVERNIGHT.BUILD"
 ZBDevDir="$ZBacedb/ZMap.DEVELOPMENT.BUILD"

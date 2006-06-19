@@ -13,8 +13,8 @@ functions in the ZBfunctions script file. Look in one of the other bash
 scripts for how to call this at the start of your script. If you come up with
 a useful general function then add it to ZBfunctions.
 
-3) The scripts get copied to ~acedb/ZMap/prefix/scripts which the zmap
-developers and the acedb userid have on their path. While this is where your
+3) The scripts get copied to ~zmap/prefix/scripts which the zmap
+developers and the zmap userid have on their path. While this is where your
 script will be found, you should not assume that this is where your script
 will be running from.
 
@@ -31,18 +31,18 @@ new code version number for bug reporting etc.
 Currently this is what you need to do to make such a release...
 
 
-As user "acedb":
+As user "zmap":
 
 
 > zmapbootstrap
 
-> zmapbuild -v  -u -I  -m deskpro16113 MYTEST >ZMap/BUILDS/MYTEST.LOG 2>&1
+> zmapbuild -v  -u -I  -m deskpro16113 MYTEST >BUILDS/MYTEST.LOG 2>&1
 
 
 (currently zmapbootstrap does not pass args through to zmapbuild correctly otherwise
 you could just do this:
 
-> zmapbootstrap -c "zmapbuild -v  -u -I  -m deskpro16113 MYTEST" >ZMap/BUILDS/MYTEST.LOG 2>&1
+> zmapbootstrap -c "zmapbuild -v  -u -I  -m deskpro16113 MYTEST" >BUILDS/MYTEST.LOG 2>&1
 
 )
 
