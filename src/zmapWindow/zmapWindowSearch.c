@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 22 14:14 2006 (edgrif)
+ * Last edited: Jun 19 11:18 2006 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.10 2006-05-22 13:27:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.11 2006-06-19 10:42:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,7 +72,12 @@ typedef struct
 
 } SearchDataStruct, *SearchData ;
 
-
+typedef struct
+{
+  GList *align_list;
+  GList *block_list;
+  GList *set_list;
+}AllComboListsStruct, *AllComboLists;
 
 static GtkWidget *makeMenuBar(SearchData search_data) ;
 static GtkWidget *makeFieldsPanel(SearchData search_data) ;
@@ -88,7 +93,13 @@ static void printListDataCB(gpointer data, gpointer user_data) ;
 static void setFieldDefaults(SearchData search_data) ;
 static void setFilterDefaults(SearchData search_data) ;
 
-
+static void addToComboBoxText(gpointer list_data, gpointer combo_data);
+static void addToComboBoxQuark(gpointer list_data, gpointer combo_data);
+static GtkWidget *createPopulateComboBox(GList *list, gboolean quarks);
+static void fetchAllComboLists(ZMapFeatureAny feature_any, 
+                               GList **align_list_out,
+                               GList **block_list_out,
+                               GList **set_list_out);
 
 
 static GtkItemFactoryEntry menu_items_G[] = {
@@ -202,11 +213,11 @@ GtkWidget *makeMenuBar(SearchData search_data)
   return menubar ;
 }
 
-
 static GtkWidget *makeFieldsPanel(SearchData search_data)
 {
   GtkWidget *frame ;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
+  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label, *combo ;
+  GList *alignList, *blockList, *columnList;
 
 
   /* Need to set up the default values for the text using feature_any, we should
@@ -251,23 +262,28 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
 
-  search_data->align_entry = entry = gtk_entry_new() ;
+  fetchAllComboLists(search_data->feature_any, &alignList, &blockList, &columnList);
+
+  combo = createPopulateComboBox(alignList, TRUE) ;
+  search_data->align_entry = entry = GTK_BIN(combo)->child;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->align_txt) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, TRUE, 0) ;
 
-  search_data->block_entry = entry = gtk_entry_new() ;
+  combo = createPopulateComboBox(blockList, TRUE);
+  search_data->block_entry = entry = GTK_BIN(combo)->child ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->block_txt) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, FALSE, 0) ;
 
-  search_data->set_entry = entry = gtk_entry_new() ;
+  combo = createPopulateComboBox(columnList, TRUE);
+  search_data->set_entry = entry = GTK_BIN(combo)->child ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->set_txt) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, FALSE, 0) ;
 
   search_data->feature_entry = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->feature_txt) ;
@@ -707,6 +723,98 @@ static void setFilterDefaults(SearchData search_data)
 	}
 
       feature_any = feature_any->parent ;
+    }
+
+  return ;
+}
+
+static GtkWidget *createPopulateComboBox(GList *list, gboolean quarks)
+{
+  GtkWidget *combo = NULL;
+
+  combo = gtk_combo_box_entry_new_text();
+
+  if(quarks)
+    g_list_foreach(list, addToComboBoxQuark, (gpointer)combo);
+  else
+    g_list_foreach(list, addToComboBoxText, (gpointer)combo);
+
+  return combo;
+}
+
+static void fillAllComboList(GQuark key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  AllComboLists all_data = (AllComboLists)user_data;
+  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  ZMapFeatureAlignment align = NULL;
+  ZMapFeatureBlock     block = NULL;
+  ZMapFeatureSet         set = NULL;
+
+  feature_type = feature_any->struct_type;
+
+  switch(feature_type)
+    {
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      align = (ZMapFeatureAlignment)feature_any;
+      all_data->align_list = g_list_prepend(all_data->align_list, GUINT_TO_POINTER(key));
+      break;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      block = (ZMapFeatureBlock)feature_any;
+      all_data->block_list = g_list_prepend(all_data->block_list, GUINT_TO_POINTER(key));
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      set   = (ZMapFeatureSet)feature_any;
+      all_data->set_list   = g_list_prepend(all_data->set_list,   GUINT_TO_POINTER(key));
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURE:
+    case ZMAPFEATURE_STRUCT_INVALID:
+    default:
+      zMapAssertNotReached();
+      break;
+    }
+
+  return ;
+}
+
+static void fetchAllComboLists(ZMapFeatureAny feature_any, 
+                               GList **align_list_out,
+                               GList **block_list_out,
+                               GList **set_list_out)
+{
+  AllComboListsStruct all_data = { NULL };
+
+  zMapFeatureContextExecute(feature_any, ZMAPFEATURE_STRUCT_FEATURESET, fillAllComboList, &all_data);
+
+  if(align_list_out)
+    *align_list_out = all_data.align_list;
+  if(block_list_out)
+    *block_list_out = all_data.block_list;
+  if(set_list_out)
+    *set_list_out = all_data.set_list;
+  return ;
+}
+
+static void addToComboBoxText(gpointer list_data, gpointer combo_data)
+{
+  GtkWidget *combo = (GtkWidget *)combo_data;
+  char *text = (char *)list_data;
+  
+  gtk_combo_box_append_text(GTK_COMBO_BOX(combo), text);
+
+  return ;
+}
+
+static void addToComboBoxQuark(gpointer list_data, gpointer combo_data)
+{
+  GtkWidget *combo = (GtkWidget *)combo_data;
+  GQuark textId = GPOINTER_TO_UINT(list_data);
+  const char *text = NULL;
+  
+  if(textId)
+    {
+      text = g_quark_to_string(textId);
+      gtk_combo_box_append_text(GTK_COMBO_BOX(combo), text);
     }
 
   return ;
