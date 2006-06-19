@@ -26,14 +26,31 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 28 09:44 2006 (rds)
+ * Last edited: Jun 19 11:04 2006 (rds)
  * Created: Sun May 28 09:16:38 2006 (rds)
- * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.1 2006-05-30 16:44:30 rds Exp $
+ * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.2 2006-06-19 10:39:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_CONFIG_STYLE_DEFAULTS_H
 #define ZMAP_CONFIG_STYLE_DEFAULTS_H
+
+/*! 
+ * Here are a list of predefined/fixed styles which zmap uses.
+ * ZMap will fill in the style with some reasonable defaults, which
+ * users may overload/override, so llong as they use these names.
+ *
+ * - DNA Sequence
+ * - 3 Frame Translation
+ */
+
+#define ZMAP_FIXED_STYLE_DNA "DNA Sequence"
+#define ZMAP_FIXED_STYLE_3FT "3 Frame Translation"
+
+#define ZMAP_FIXED_STYLE_DNA_ID g_quark_from_string(ZMAP_FIXED_STYLE_DNA)
+#define ZMAP_FIXED_STYLE_3FT_ID g_quark_from_string(ZMAP_FIXED_STYLE_3FT)
+
+
 
 /* The opts struct */
 #define ZMAP_STYLE_DEFAULT_HIDE_INITIALLY  FALSE
