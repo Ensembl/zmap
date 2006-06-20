@@ -13,6 +13,16 @@ AC_INIT([ZMap],[0.1],[zmap@sanger.ac.uk])
 AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.c])
 AC_CONFIG_HEADER(config.h)
 
+echo "************************************************************"
+echo "* Welcome to ./configure for $PACKAGE_STRING"
+echo "* Cmd: $0 $@"
+echo "* Environment:"
+echo "*   LDFLAGS: $LDFLAGS"
+echo "*   CFLAGS : $CFLAGS"
+echo "*   CC     : $CC"
+echo "* continuing..."
+echo "*"
+
 # what are we building on?
 AC_CANONICAL_BUILD
 case $build in
@@ -140,9 +150,19 @@ PKG_CHECK_MODULES([ACECONN], [AceConn-1.1],,AC_MSG_ERROR(AceConn is required))
 CPPFLAGS="$CPPFLAGS $ACECONN_CFLAGS"
 LDFLAGS="$LDFLAGS $ACECONN_LIBS"
 
-AC_CHECK_LIB(AceConn, [main], [],AC_MSG_ERROR(where is AceConn), -lmd5)
-
-
+AC_CHECK_LIB(AceConn, [main],
+  [ have_ace_conn='true' ], 
+  [ have_ace_conn='false';
+    AC_MSG_ERROR(AceConn package is required) ], 
+  [-lmd5])
+AC_CHECK_LIB(g2, [g2_attach],  
+  [ have_g2='true';
+    AC_CHECK_LIB(g2, [g2_open_gd], 
+      [ have_g2_gd='true' ], 
+      [ have_g2_gd='false';
+        AC_MSG_ERROR(g2 must have GD compiled in) ])], 
+  [ have_g2=have_g2_gd='false';
+    AC_MSG_ERROR(g2 package is required)      ])
 
 #AC_CHECK_LIB(popt, [poptFreeContext], [],AC_MSG_ERROR(where is popt))
 
@@ -181,7 +201,7 @@ AC_SUBST(GTK_LIBS)
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h locale.h stdlib.h string.h strings.h sys/param.h unistd.h])
-AC_CHECK_HEADER([AceConn.h], [], [], [])
+AC_CHECK_HEADER([AceConn.h g2.h g2_gd.h], [], [], [])
 AC_CHECK_HEADER([popt.h], [], [], [])
 ################################################################################
 ################################################################################
