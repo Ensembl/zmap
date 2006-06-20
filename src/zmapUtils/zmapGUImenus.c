@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jun 16 10:19 2006 (edgrif)
+ * Last edited: Jun 20 13:24 2006 (edgrif)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.6 2006-06-16 09:20:36 edgrif Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.7 2006-06-20 12:25:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -90,7 +90,7 @@ typedef struct
 
 
 static char *makeMenuItemName(char *string) ;
-static char *makeMenuTitleName(char *string) ;
+static char *makeMenuTitleName(char *string, char *escape_chars) ;
 
 static ZMapGUIMenuItem makeSingleMenu(GList *menu_item_sets, int *menu_items_out) ;
 static ZMapGUIMenuItem copyMenu2NewMenu(ZMapGUIMenuItem new_menu, ZMapGUIMenuItem old_menu) ;
@@ -140,6 +140,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
   char *radio_title = NULL ;
   GList *active_radio_buttons = NULL, *deactive_radio_buttons = NULL ;
 
+
   /* Make a single menu item list out of the supplied menu_item sets. */
   menu_items = makeSingleMenu(menu_item_sets, &num_menu_items) ;
 
@@ -157,9 +158,9 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
   our_cb_data->factory_items = item = factory_items = g_new0(GtkItemFactoryEntry, num_factory_items) ;
 				
 
-  /* Do title/separator, the title needs to have any '_' chars escaped to stop them being
-   * interpretted as keyboard shortcuts. */
-  item->path = makeMenuTitleName(menu_title) ;
+  /* Do title/separator, the title needs to have any '_' or '/' chars escaped to stop them being
+   * interpretted as keyboard shortcuts or submenu indicators. */
+  item->path = makeMenuTitleName(menu_title, "/_") ;
   item->item_type = "<Title>" ;
   item++ ;
 
@@ -251,8 +252,8 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
     GtkWidget *title = NULL;
 
     /* NOTE this time we need the title string without escaping any '_' so we can find
-     * it in the item factory path. */
-    title = gtk_item_factory_get_widget(item_factory, makeMenuItemName(menu_title));
+     * it in the item factory path, but the '/' must still be escaped. */
+    title = gtk_item_factory_get_widget(item_factory, makeMenuTitleName(menu_title, "/")) ;
 
     gtk_widget_set_name(title, "zmap-menu-title");
   }
@@ -380,8 +381,10 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
 
 /* 
  * The menu item/path stuff is complicated by the fact that some of the menu titles we wish
- * to set have embedded '_' chars which have a special meaning to the item factory...sigh...
- * This happens because gene names etc. often have '_' embedded in them.
+ * to set have embedded '_' or '/' chars which have a special meaning to the item factory
+ * ...sigh...
+ * This happens because gene names etc. often have '_' embedded in them and DAS names may
+ * have '/'.
  */
 
 
@@ -400,9 +403,12 @@ static char *makeMenuItemName(char *string)
 
 /* Menu titles are just like Item Name strings and must have the format "/menu_title",
  * but quite often there are embedded '_' chars which will erroneously be interpretted
- * as keyboard short cuts and so must be escaped by turning them into '__'.
+ * as keyboard short cuts and so must be escaped by turning them into "__".
+ * 
+ * For DAS there are also embedded '/' which must be escaped as well as "\/"
+ * 
  */
-static char *makeMenuTitleName(char *string)
+static char *makeMenuTitleName(char *string, char *escape_chars)
 {
   char *item_string ; 
   GString *tmp ;
@@ -411,25 +417,32 @@ static char *makeMenuTitleName(char *string)
 
   zMapAssert(string && *string) ;
 
-  tmp = g_string_new(NULL) ;
+  tmp = g_string_new(string) ;
 
-  g_string_append_printf(tmp, "/%s", string) ;
-
-
-  /* Must always reset cp from our position in the string in case string gets relocated. */
-  pos = 1 ;						    /* No need to do the first char. */
+  pos = 0 ;
   cp = (tmp->str + pos) ;
   while (*cp)
     {
-      if (*cp == '_')
+      if (*cp == '_' || *cp == '/')
 	{
-	  tmp = g_string_insert_c(tmp, pos, '_') ;
-	  pos++ ;
+	  char prepend_ch = *cp ;
+
+	  if (*cp == '/')
+	    prepend_ch = '\\' ;
+
+	  if (strchr(escape_chars, *cp))
+	    {
+	      tmp = g_string_insert_c(tmp, pos, prepend_ch) ;
+	      pos++ ;
+	    }
 	}
 
+      /* Must always reset cp from our position in the string in case string gets relocated. */
       pos++ ;
       cp = (tmp->str + pos) ;
     }
+
+  tmp = g_string_prepend_c(tmp, '/') ;
 
   item_string = g_string_free(tmp, FALSE) ;
 
