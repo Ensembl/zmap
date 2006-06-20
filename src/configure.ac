@@ -160,7 +160,7 @@ AC_CHECK_LIB(g2, [g2_attach],
     AC_CHECK_LIB(g2, [g2_open_gd], 
       [ have_g2_gd='true' ], 
       [ have_g2_gd='false';
-        AC_MSG_ERROR(g2 must have GD compiled in) ])], 
+        AC_MSG_ERROR(g2 must have GD compiled in) ], [-lgd] )], 
   [ have_g2=have_g2_gd='false';
     AC_MSG_ERROR(g2 package is required)      ])
 
