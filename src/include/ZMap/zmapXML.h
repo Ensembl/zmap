@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 24 22:25 2006 (rds)
+ * Last edited: Jun 20 14:07 2006 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.12 2006-05-26 18:02:22 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.13 2006-06-20 13:08:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,6 +60,9 @@
  * not to call the next handler.  The macro provides simple utility
  * access to test the expression, raise an error (message) and return
  * TRUE from the handler if the expression is true.
+ *
+ * This should be read as 
+ * zMapXMLParserCheck, if true, error and return TRUE.
  */
 #define zMapXMLParserCheckIfTrueErrorReturn(EXPR, PARSER, MESSAGE) \
 G_STMT_START{                                                      \
