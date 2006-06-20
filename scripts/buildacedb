@@ -13,14 +13,26 @@
 . ZBfunctions $0
 
 
-acedb_dir=~zmap
+acedb_dir=~zmap/acedb
 zmap_dir=~zmap
 prefix='ZMAP_ACEDB_BUILD'
 user=`whoami`
 logfile="$prefix.out"
 
-# go to acedb build dir.
+
+# point to acedb CVS
 #
+export CVS_ROOT=~acedb/CVS_ACEDB
+
+
+# remove the previous build and start a new one.
+#
+if [ -d $acedb_dir ] ; then
+  rm -rf $acedb_dir || ZBmsgAndExit "Cannot remove contents of acedb build directory: $targetdir"
+fi
+
+mkdir $acedb_dir || ZBmsgAndExit "Cannot make acedb build directory: $targetdir"
+
 ZBGotoDir $acedb_dir
 
 
