@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 25 19:54 2006 (rds)
+ * Last edited: Jun 20 14:03 2006 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.17 2006-05-26 18:00:44 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.18 2006-06-20 13:06:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -862,7 +862,7 @@ static char *getOffendingXML(ZMapXMLParser parser, int context)
 
   if((tmpCntxt = XML_GetInputContext(parser->expat, &curr, &size)) != NULL)
     {
-      byte  = XML_GetCurrentColumnNumber(parser->expat);
+      byte  = curr; //XML_GetCurrentColumnNumber(parser->expat);
       if(byte > 0 && curr && size)
         {
           if(byte + context < size)
@@ -905,13 +905,16 @@ static void abortParsing(ZMapXMLParser parser, char *reason, ...)
 #endif 
     XML_StopParser(parser->expat, FALSE);
 
-  va_start(args, reason);
-  error = g_strdup_vprintf(reason, args);
-  va_end(args);
+  if(!(parser->aborted_msg))    /* So we only see the first error, not so we only see the last */
+    {
+      va_start(args, reason);
+      error = g_strdup_vprintf(reason, args);
+      va_end(args);
 
-  parser->aborted_msg = g_strdup( error );
+      parser->aborted_msg = g_strdup( error );
   
-  g_free(error);
+      g_free(error);
+    }
 
   return ;
 }
