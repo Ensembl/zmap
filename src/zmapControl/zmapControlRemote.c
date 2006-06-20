@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun  9 18:06 2006 (rds)
+ * Last edited: Jun 20 13:57 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.26 2006-06-09 17:08:04 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.27 2006-06-20 13:04:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -651,6 +651,8 @@ static gboolean zmapStrtHndlr(gpointer userdata,
       else if(action == g_quark_from_string("create_client"))
         obj->action = ZMAP_CONTROL_ACTION_REGISTER_CLIENT;
     }
+  else
+    zMapXMLParserRaiseParsingError(parser, "action is a required attribute for zmap.");
 
   return FALSE;
 }
@@ -709,6 +711,9 @@ static gboolean featureStrtHndlr(gpointer userdata,
     {
       new_query->originalId = zMapXMLAttributeGetValue(attr);
     }
+  else
+    zMapXMLParserRaiseParsingError(parser, "name is a required attribute for feature.");
+
   if((attr = zMapXMLElementGetAttributeByName(feature_element, "style")))
     {
       char *style_name = NULL;
@@ -716,22 +721,32 @@ static gboolean featureStrtHndlr(gpointer userdata,
       if(new_query->styleId == 0)
         new_query->styleId = zMapStyleCreateID(style_name);
     }
+  else
+    zMapXMLParserRaiseParsingError(parser, "style is a required attribute for feature.");
+
   if((attr = zMapXMLElementGetAttributeByName(feature_element, "start")))
     {
       new_query->start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
                                 (char **)NULL, 10);
     }
+  else
+    zMapXMLParserRaiseParsingError(parser, "start is a required attribute for feature.");
+
   if((attr = zMapXMLElementGetAttributeByName(feature_element, "end")))
     {
       new_query->end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
                               (char **)NULL, 10);
     }
+  else
+    zMapXMLParserRaiseParsingError(parser, "end is a required attribute for feature.");
+
   if((attr = zMapXMLElementGetAttributeByName(feature_element, "strand")))
     {
       if((zMapFeatureFormatStrand((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
                                   &(new_query->strand))))
         query = query;
     }
+
   if((attr = zMapXMLElementGetAttributeByName(feature_element, "suid")))
     {
       /* Nothing done here yet. */
@@ -751,6 +766,8 @@ static gboolean featureStrtHndlr(gpointer userdata,
       else
         data->featureQueries_last = (g_list_append(data->featureQueries_last, fq))->next;
     }
+  else
+    zMapXMLParserRaiseParsingError(parser, "Failure processing feature.");
 
   return FALSE;
 }
@@ -812,11 +829,16 @@ static gboolean featureEndHndlr(void *userData,
           span.x1 = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
                            (char **)NULL, 10);
         }
+      else
+        zMapXMLParserRaiseParsingError(parser, "start is a required attribute for subfeature.");
+
       if((attr = zMapXMLElementGetAttributeByName(sub_element, "end")))
         {
           span.x2 = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
                            (char **)NULL, 10);
         }
+      else
+        zMapXMLParserRaiseParsingError(parser, "end is a required attribute for subfeature.");
 
       /* Don't like this lower case stuff :( */
       if(ontology == g_quark_from_string("exon"))
@@ -846,6 +868,9 @@ static gboolean clientStrtHndlr(gpointer userdata,
       xid = (char *)g_quark_to_string(zMapXMLAttributeGetValue(xid_attr));
       clientObj->xid = strtoul(xid, (char **)NULL, 16);
     }
+  else
+    zMapXMLParserRaiseParsingError(parser, "id is a required attribute for client.");
+
   if((req_attr  = zMapXMLElementGetAttributeByName(client_element, "request")) != NULL)
     clientObj->request = zMapXMLAttributeGetValue(req_attr);
   if((res_attr  = zMapXMLElementGetAttributeByName(client_element, "response")) != NULL)
