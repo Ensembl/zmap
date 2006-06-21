@@ -1,0 +1,97 @@
+#!/usr/local/bin/bash
+#
+# Get the acedb binaries from a default or specified directory. The binaries
+# are copied into the ~zmap/prefix/XXXX/bin directories.
+#
+
+
+#
+# main routine
+#
+
+
+# set up common functions.
+. ZBfunctions $0
+
+
+# set up usage strings.
+cmdstring='[-a | -l | -m] [source_directory]'
+descstring='
+   -a   just copy Alpha binaries.
+
+   -l   just copy Linux binaries.
+
+   -m   just copy Mac binaries.
+
+   [source_directory] 
+        specifies source directory from which to get acedb binaries,
+        defaults to ~acedb/RELEASE.DEVELOPMENT. NOTE that source directory
+        is expected to contain bin.XXXX subdirectories in the usual acedb style.'
+
+
+# These two list MUST be kept in step for everything to work....need to add in DARWIN...
+acedb_archs='ALPHA_5 LINUX_4'
+archs='ALPHA LINUX'
+
+
+# directories to copy from...
+acedb_dir=~acedb
+release_dir="$acedb_dir/RELEASE.DEVELOPMENT"
+bin_prefix='bin'
+
+# binaries to copy...
+binaries=$ZBAcedbBinaries
+
+# directories to copy to...need mac stuff here in the end....
+zmap_dir=~zmap
+prefix_dir="$zmap_dir/prefix/bin"
+
+
+
+# 
+while getopts ":alm" opt ; do
+  case $opt in
+    a  ) acedb_archs='ALPHA_5'    ;;
+    l  ) acedb_archs='LINUX_4'    ;;
+    m  ) acedb_archs='DARWIN_4'    ;;
+    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag" ;;
+  esac
+done
+
+# Get a source directory...if there is one...
+shift $(($OPTIND - 1))
+if [ "$1" ] ; then
+  release_dir=$1
+fi
+
+
+
+# Copy the binaries...
+#
+if [ ! -d $release_dir ] ; then
+  ZBmsgAndExit "Cannot continue, \"$release_dir\" directory to copy binaries from cannot be found."
+else
+  ZBGotoDir $release_dir
+
+  set $archs						    # Set up acedb archs into $1 $2 etc.
+
+  for i in $acedb_archs
+    do
+      acedb_bin_dir=$bin_prefix.$i
+      zmap_bin=$1
+      zmap_bin_dir=$prefix_dir/$zmap_bin
+
+      for j in $binaries
+        do
+          cp -f $acedb_bin_dir/$j $zmap_bin_dir || ZBmsgAndExit "Cannot copy file $acedb_bin_dir/$j to $zmap_bin_dir"
+        done
+
+      shift						    # Get next zmap arch.
+
+    done
+fi
+
+
+
+exit 0
+
