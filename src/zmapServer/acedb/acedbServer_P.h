@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jun 12 08:46 2006 (edgrif)
+ * Last edited: Jun 21 11:15 2006 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.11 2006-06-12 07:52:38 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.12 2006-06-21 10:15:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -35,7 +35,7 @@
 
 /* For ZMap to be able to use the GFF returned by the acedb server we need the -rawmethods option
  * for the "seqfeatures" command and this is only available from acedb 4.9.28 onwards. */
-#define ACEDB_SERVER_MIN_VERSION "4.9.28"
+#define ACEDB_SERVER_MIN_VERSION "4.9.32"
 
 
 #define ACEDB_PROTOCOL_STR "Acedb"			    /* For error messages. */
