@@ -44,7 +44,7 @@ binaries=$ZBAcedbBinaries
 
 # directories to copy to...need mac stuff here in the end....
 zmap_dir=~zmap
-prefix_dir="$zmap_dir/prefix/bin"
+prefix_dir="$zmap_dir/prefix"
 
 
 
@@ -78,8 +78,9 @@ else
   for i in $acedb_archs
     do
       acedb_bin_dir=$bin_prefix.$i
+
       zmap_bin=$1
-      zmap_bin_dir=$prefix_dir/$zmap_bin
+      zmap_bin_dir="$prefix_dir/$zmap_bin/bin"
 
       for j in $binaries
         do
