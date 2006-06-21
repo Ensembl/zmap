@@ -134,15 +134,14 @@ ZBusage ()
 #
 ZBscript=`basename $1`
 
-# For some reason this doesn't work, the variables don't get passed on....
-# do they need to be exported....probably, even though this is a dot script ????
-# TRY OUT LATER...
-
-# Yes, that's it the variables need to be exported....
-export ZBase=~zmap
+ZBase=~zmap
 ZBBaseDir="$ZBase/ZMap"
 ZBOverDir="$ZBase/ZMap.OVERNIGHT.BUILD"
 ZBDevDir="$ZBase/ZMap.DEVELOPMENT.BUILD"
+
+
+ZBAcedbBinaries='tace xace sgifaceserver makeUserPasswd blixem dotter'
+ZBZmapBinaries='zmap'
 
 
 
