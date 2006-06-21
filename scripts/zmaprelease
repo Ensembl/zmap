@@ -16,8 +16,14 @@
 
 
 # set up usage strings.
-cmdstring='[target_directory]'
+cmdstring='[-a | -l | -m] [target_directory]'
 descstring='
+   -a   just copy Alpha binaries.
+
+   -l   just copy Linux binaries.
+
+   -m   just copy Mac binaries.
+
    [target_build_directory] 
         specifies target directory for binaries, defaults to "ZMap_V.R.U"'
 
@@ -32,8 +38,11 @@ binaries="$acedb_binaries $zmap_binaries"
 
 
 
-while getopts "" opt ; do
+while getopts ":alm" opt ; do
   case $opt in
+    a  ) machines='ALPHA'    ;;
+    l  ) machines='LINUX'    ;;
+    m  ) machines='MACOSX'   ;;
     \? ) ZBusage "$cmdstring" "$descstring" "invalid option"
   esac
 done
