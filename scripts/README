@@ -1,4 +1,7 @@
 
+Introduction
+============
+
 This directory contains scripts used to build and test zmap.
 
 The scripts can be run by hand but are also run from a crontab so be careful
@@ -9,14 +12,74 @@ If you add scripts to this directory then here are some points to note:
 1) scripts must either be perl or bash, i.e. not sh, csh, awk or ksh.
 
 2) If you write a bash script then you should make use of the general
-functions in the ZBfunctions script file. Look in one of the other bash
+functions and variables in the ZBfunctions script file. Look in one of the other bash
 scripts for how to call this at the start of your script. If you come up with
-a useful general function then add it to ZBfunctions.
+a useful general function or variables then add them to ZBfunctions.
 
 3) The scripts get copied to ~zmap/prefix/scripts which the zmap
 developers and the zmap userid have on their path. While this is where your
 script will be found, you should not assume that this is where your script
 will be running from.
+
+
+
+Overview of scripts
+===================
+
+Scripts cover the following tasks:
+
+
+	Task						Script
+--------------------------------------------------      ------------------------
+
+Get lastest CVS copy of Ace-Con package
+used by zmap, compile and put libs in                   buildaceconn
+correct ~zmap/prefix/XXXX/lib dirs.
+
+
+Make a zmap release directory containing
+a consistent set of zmap and acedb binaries             zmaprelease
+from ~zmap/prefix/XXXX/bin
+
+
+Copy the required acedb binaries from an                getacedb
+acedb release directory into ~zmap/prefix/XXXX/bin
+
+
+Interrogate/Set release version of zmap source code     versioner
+
+
+Set up common functions/variables for all scripts       ZBfunctions
+in this directory.
+
+
+Update ~zmap/prefix/scripts to latest code and
+optionally run a command using the shell script         zmapbootstrap
+like -c "command args..." syntax.
+
+
+Do a complete build of zmap on various machines
+using ssh. This script is also run as a cron job        zmapbuild
+overnight so be careful when changing it !
+
+
+Produce zmap documentation for website etc.             zmapdocs
+
+
+Set symbolic links in ~zmap that point to               zmaplinks
+OVERNIGHT, DEVELOPMENT & RELEASE dirs.
+
+
+Compile zmap on a specific machine and                  zmapmake
+optionally test that it runs.
+
+
+Update the zmap web development site and                zmapupdateweb
+optionally update the external website.
+
+
+Return the build dir for a specific machine.            zmapvpathdir
+
 
 
 
