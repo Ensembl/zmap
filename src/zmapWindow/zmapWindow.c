@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 15 22:53 2006 (rds)
+ * Last edited: Jun 22 09:17 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.127 2006-06-15 21:56:55 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.128 2006-06-22 08:17:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -859,6 +859,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   char *subpart_text = NULL ;
   ZMapFeatureTypeStyle style ;
   char *style_text ;
+  char *locus_text = NULL ;
   ZMapWindowSelectStruct select = {NULL} ;
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
@@ -878,19 +879,23 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   style = zMapFeatureGetStyle(feature) ;
   style_text = zmapWindowFeatureSetDescription(style->original_id, style) ;
 
+  if (feature->locus_id)
+    locus_text = g_strdup_printf("    Locus = \"%s\"", g_quark_to_string(feature->locus_id)) ;
 
   /* Need to replicate this ... */
   /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
 
+
   /* It would be nice for a user to be able to specify the format of this string. */
-  select.primary_text = g_strdup_printf("%s %s %d %d %s  :  %s  :  %s", 
+  select.primary_text = g_strdup_printf("%s %s %d %d %s  :  %s  :  %s%s", 
 					(char *)g_quark_to_string(feature->original_id),
 					zMapFeatureStrand2Str(feature->strand),
 					feature->x1,
 					feature->x2,
 					(subpart_text ? subpart_text : ""),
 					zMapFeatureType2Str(feature->type),
-					style_text) ;
+					style_text,
+					locus_text ? locus_text : "") ;
 
 
   select.secondary_text = g_strdup_printf("\"%s\"    %d %d (%d)",
@@ -905,6 +910,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   if (subpart_text)
     g_free(subpart_text) ;
   g_free(style_text) ;
+  g_free(locus_text) ;
   g_free(select.primary_text) ;
   g_free(select.secondary_text) ;
 
