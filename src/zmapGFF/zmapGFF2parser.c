@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 16 17:51 2006 (edgrif)
+ * Last edited: Jun 21 16:42 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.52 2006-06-16 16:53:53 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.53 2006-06-22 08:15:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,6 +65,7 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 			       char **feature_name, char **feature_name_id) ;
 static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuark *orig_style_out) ;
 static char *getURL(char *attributes) ;
+static GQuark getLocus(char *attributes) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
 static gboolean getCDSAttrs(char *attributes,
@@ -849,6 +850,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   GQuark column_id = 0, orig_style_id = 0 ;
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   char *url ;
+  GQuark locus_id = 0 ;
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
 
@@ -914,9 +916,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
     }
 
 
-  /* Was there a url for the feature. */
+  /* Was there a url for the feature ? */
   url = getURL(attributes) ;
 
+  /* Was there a locus for the feature ? */
+  locus_id = getLocus(attributes) ;
 
   /* Get the feature name which may not be unique and a feature "id" which _must_
    * be unique. */
@@ -1011,6 +1015,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
      if (url)
        zMapFeatureAddURL(feature, url) ;
 
+     if (locus_id)
+       zMapFeatureAddLocus(feature, locus_id) ;
 
      if (feature_type == ZMAPFEATURE_TRANSCRIPT)
        {
@@ -1376,6 +1382,34 @@ static char *getURL(char *attributes)
     }
 
   return url ;
+}
+
+
+/* Format of Locus attribute section is:
+ * 
+ *          Locus "<locus_name>" ;
+ * 
+ * Format string extracts locus name returns it as a quark.
+ * 
+ *  */
+static GQuark getLocus(char *attributes)
+{
+  GQuark locus_id = 0 ;
+  char *tag_pos ;
+
+  if ((tag_pos = strstr(attributes, "Locus")))
+    {
+      int attr_fields ;
+      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s[;]" ;
+      char locus_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+      if ((attr_fields = sscanf(tag_pos, attr_format_str, &locus_field[0])) == 1)
+	{
+	  locus_id = g_quark_from_string(&locus_field[0]) ;
+	}
+    }
+
+  return locus_id ;
 }
 
 
