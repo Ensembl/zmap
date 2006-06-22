@@ -27,14 +27,22 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 23 10:12 2006 (edgrif)
+ * Last edited: Jun 22 10:22 2006 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.26 2006-05-23 09:18:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.27 2006-06-22 09:24:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindow_P.h>
 #include <ZMap/zmapUtils.h>
+
+
+/* THERE IS QUITE A BIT OF DEBUGGING CODE IN HERE WHICH ATTEMPTS TO GET THIS WIDGET
+ * TO BE A GOOD SIZE...HOWEVER IT SEEMS A LOST CAUSE AS GTK SEEMS ACTIVELY TO
+ * PREVENT THIS...SIGH.....WHEN I HAVE THE URGE I'LL HAVE ANOTHER GO... */
+
+
+
 
 #define LIST_COLUMN_WIDTH 50
 #define EDITOR_COL_DATA_KEY   "column_decoding_data"
@@ -557,8 +565,12 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
 				 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
   gtk_container_add(GTK_CONTAINER(subFrame), scrolled_window) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_signal_connect(GTK_OBJECT(scrolled_window), "size-allocate",
 		   GTK_SIGNAL_FUNC(ScrsizeAllocateCB), size_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   g_signal_connect(GTK_OBJECT(scrolled_window), "size-request",
 		   GTK_SIGNAL_FUNC(ScrsizeRequestCB), size_data) ;
 
@@ -570,8 +582,12 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
 						 &windowCallbacks, 
 						 editor_data);
   gtk_container_add(GTK_CONTAINER(scrolled_window), treeView) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_signal_connect(GTK_OBJECT(treeView), "size-allocate",
 		   GTK_SIGNAL_FUNC(sizeAllocateCB), size_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   g_signal_connect(GTK_OBJECT(treeView), "size-request",
 		   GTK_SIGNAL_FUNC(sizeRequestCB), size_data) ;
 
@@ -961,7 +977,11 @@ static void cellEditedCB(GtkCellRendererText *renderer,
                                                  ZMAP_WINDOW_FEATURE_LIST_COL_NUMBER_KEY));
   colType    = gtk_tree_model_get_column_type(GTK_TREE_MODEL(treeModel), colNumber);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("Cell Edited: column '%d', new text = '%s'\n", colNumber, new_text);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   /* We have to do some validation???? */
   switch(colType)
     {
@@ -1686,8 +1706,12 @@ static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpoint
   int width, height ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("TreeView: sizeRequestCB:  height: %d, width: %d\n", 
 	 requisition->height, requisition->width); 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   if (!size_data->init_width)
@@ -1762,8 +1786,12 @@ static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpo
     {
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       printf("ScrWin: sizeRequestCB:  height: %d, width: %d\n", 
 	     requisition->height, requisition->width); 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

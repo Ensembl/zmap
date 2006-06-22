@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 15 10:13 2006 (edgrif)
+ * Last edited: Jun 22 10:15 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.75 2006-06-15 10:40:16 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.76 2006-06-22 09:24:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1788,7 +1788,11 @@ static GList *string2StyleQuarks(char *featuresets)
 	 || (next_featureset = strtok_r(target, " \t", &list_pos))) ;
 
 
-  zMap_g_quark_list_print(featureset_quark_list) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMap_g_quark_list_print(featureset_quark_list) ;	    /* debug.... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   return featureset_quark_list ;
