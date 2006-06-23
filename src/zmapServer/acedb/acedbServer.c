@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 16 12:41 2006 (edgrif)
+ * Last edited: Jun 23 09:18 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.59 2006-06-16 11:44:18 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.60 2006-06-23 08:31:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1508,6 +1508,11 @@ static ZMapServerResponseType findMethods(AcedbServer server)
  * be looked up but which do not have an instance in the database. The code will NOT
  * produce styles for these objects.
  * 
+ * Acedb methods can also contain a "No_display" tag which says "do not display this
+ * object at all", if we find this tag we honour it. NOTE however that this can lead
+ * to error messages during zmap display if the feature_set erroneously tries to
+ * display features with this method.
+ * 
  */
 ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 				 char **end_pos, ZMapColGroupData *col_group_data_out)
@@ -1522,7 +1527,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
     *overlap = NULL ;
   double width = ACEDB_DEFAULT_WIDTH ;
   gboolean strand_specific = FALSE, frame_specific = FALSE, show_up_strand = FALSE ;
-  gboolean no_display = FALSE ;
+  gboolean init_hidden = FALSE ;
   double min_mag = 0.0, max_mag = 0.0 ;
   double min_score = 0.0, max_score = 0.0 ;
   gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE ;
@@ -1651,9 +1656,19 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	  strand_specific = TRUE ;
 	}
       else if (g_ascii_strcasecmp(tag, "No_display") == 0)
-	no_display = TRUE ;
+	{
+	  /* Objects that have the No_display tag set should not be shown at all. */
+	  status = FALSE ;
+	  break ;
+	}
+      else if (g_ascii_strcasecmp(tag, "init_hidden") == 0)
+	{
+	  init_hidden = TRUE ;
+	}
       else if (g_ascii_strcasecmp(tag, "Directional_ends") == 0)
-	directional_end = TRUE ;
+	{
+	  directional_end = TRUE ;
+	}
       else if (g_ascii_strcasecmp(tag, "Min_mag") == 0)
 	{
 	  char *value ;
@@ -1795,8 +1810,9 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
 
-      if (no_display)
-	zMapStyleSetHideInitial(style, no_display) ;
+      if (init_hidden)
+	zMapStyleSetHideInitial(style, init_hidden) ;
+
       if(directional_end)
         zMapStyleSetEndStyle(style, directional_end);
     }
