@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jun 21 16:29 2006 (edgrif)
+ * Last edited: Jun 28 10:17 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.37 2006-06-22 08:15:08 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.38 2006-06-28 09:18:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,7 +93,7 @@ static void removeNotFreeFeature(GQuark key_id, gpointer data, gpointer user_dat
 static void destroyFeatureSet(gpointer data) ;
 static void removeNotFreeFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 
-static void styleDestroyCB(gpointer data) ;
+
 
 /* !
  * A set of functions for allocating, populating and destroying features.
@@ -556,7 +556,6 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
   feature_set->unique_id = unique_id ;
   feature_set->original_id = original_id ;
   feature_set->style = style ;
-  feature_set->feature_styles = g_hash_table_new_full(NULL, NULL, NULL, styleDestroyCB) ;
 
   if (!features)
     g_datalist_init(&(feature_set->features)) ;
@@ -567,41 +566,6 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
 }
 
 
-/* Adds a style to the list of feature styles using the styles unique_id as the key.
- * NOTE that if the style is already there it is not added as this would overwrite
- * the existing style. */
-gboolean zMapFeatureSetAddStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle new_style)
-{
-  gboolean result = FALSE ;
-  ZMapFeatureTypeStyle style ;
-
-  zMapAssert(feature_set && new_style) ;
-
-  if (!(style = g_hash_table_lookup(feature_set->feature_styles,
-				    GINT_TO_POINTER(new_style->unique_id))))
-    {
-      g_hash_table_insert(feature_set->feature_styles,
-			  GINT_TO_POINTER(new_style->unique_id), new_style) ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
-
-/* Finds a feature style using the styles unique_id. */
-ZMapFeatureTypeStyle zMapFeatureSetFindStyle(ZMapFeatureSet feature_set, GQuark style_id)
-{
-  ZMapFeatureTypeStyle style ;
-
-  zMapAssert(feature_set && style_id) ;
-
-  style = g_hash_table_lookup(feature_set->feature_styles,
-			      GINT_TO_POINTER(style_id)) ;
-
-  return style ;
-}
 
 
 
@@ -676,8 +640,6 @@ void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
       g_datalist_foreach(&(feature_set->features), removeNotFreeFeature, (gpointer)feature_set) ;
     }
   g_datalist_clear(&(feature_set->features)) ;
-
-  g_hash_table_destroy(feature_set->feature_styles) ;
 
   g_free(feature_set) ;
 
@@ -1401,18 +1363,5 @@ static void doNewFeatures(GQuark key_id, gpointer data, gpointer user_data)
 
   return ;
 }
-
-
-/* Called when a style is destroyed and the styles hash of feature_styles is destroyed. */
-static void styleDestroyCB(gpointer data)
-{
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
-
-  zMapFeatureTypeDestroy(style) ;
-
-  return ;
-}
-
-
 
 

@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun 21 16:40 2006 (edgrif)
+ * Last edited: Jun 28 10:15 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.75 2006-06-22 08:15:08 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.76 2006-06-28 09:18:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -301,9 +301,6 @@ typedef struct ZMapFeatureSetStruct_
 							       drawn, this applies only to the set
 							       * itself, _not_ the features within
 							       * the set. */
-  GHashTable *feature_styles ;				    /* Cache of styles for features within
-							     * the feature set. */
-
   GData *features ;					    /* A set of ZMapFeatureStruct. */
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
