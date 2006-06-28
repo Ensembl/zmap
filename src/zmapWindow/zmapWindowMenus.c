@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jun 14 16:03 2006 (edgrif)
+ * Last edited: Jun 28 10:28 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.14 2006-06-14 15:04:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.15 2006-06-28 09:29:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,7 @@ enum {ZMAPCDS, ZMAPTRANSCRIPT, ZMAPUNSPLICED,
 
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
+static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dnaMenuCB(int menu_item_id, gpointer callback_data) ;
 static void peptideMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
@@ -84,31 +85,52 @@ static void dumpContext(ZMapWindow window) ;
 
 
 /* Probably it would be wise to pass in the callback function, the start index for the item
- * identifier and perhaps the callback data...... */
+ * identifier and perhaps the callback data......
+ * 
+ * There is some mucky stuff for setting buttons etc but its a bit unavoidable.... 
+ * 
+ *  */
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
 				       gpointer callback_data, ZMapStyleOverlapMode curr_overlap)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, "Column Bump", 0, NULL, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump/Name + No Overlap", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump/Name",              ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump/No Overlap",        ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump/Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump/Simple",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump/None",      ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Column UnBump",                 ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_TOGGLE, "Column Smart Bump",                 ZMAPOVERLAP_COMPLETE, bumpToggleMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Hide",                   ZMAPWWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
-      {ZMAPGUI_MENU_BRANCH, "_Column", 0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Column/Configure This Column",  ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Column/Configure All Columns",  ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "Column Bump Opts", 0, NULL, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Name + No Overlap", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Name",              ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/No Overlap",        ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Simple",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/None",      ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "Column Configure", 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column",  ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns",  ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
   ZMapGUIMenuItem item ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* Set the initial toggle button correctly....make sure this stays in step with the array above.
+   * NOTE logic, this button is either "no bump" or "Name + No Overlap", the latter should be
+   * selectable whatever.... */
+  item = &(menu[0]) ;
+  if (curr_overlap == ZMAPOVERLAP_COMPLEX)
+    {
+      item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
+      item->id = ZMAPOVERLAP_COMPLEX ;
+    }
+  else
+    {
+      item->type = ZMAPGUI_MENU_TOGGLE ;
+      item->id = ZMAPOVERLAP_COMPLETE ;
+    }
+
 
   /* Unset any previous active radio button.... */
   item = &(menu[0]) ;
@@ -480,33 +502,20 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapStyleOverlapMode bump_type = (ZMapStyleOverlapMode)menu_item_id  ;
   FooCanvasGroup *column_group ;
-  ZMapFeatureTypeStyle style ;
+  FooCanvasItem *style_item ;
 
   if (menu_data->item_cb)
     {
-      ZMapFeature feature ;
-
       column_group = getItemsColGroup(menu_data->item) ;
-
-      feature = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
-
-      style = feature->style ;
     }
   else
     {
-      ZMapFeatureSet feature_set ;
-
       column_group = FOO_CANVAS_GROUP(menu_data->item) ;
-
-      feature_set = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_DATA) ;
-
-      style = feature_set->style ;
     }
 
-  /* Set bump mode in the style, bump the columns and reposition the canvas items. */
-  zMapStyleSetOverlapMode(style, bump_type) ;
+  style_item = menu_data->item ;
 
-  zmapWindowColumnBump(column_group, bump_type) ;
+  zmapWindowColumnBump(style_item, bump_type) ;
 
   zmapWindowNewReposition(menu_data->window) ;
 
@@ -514,6 +523,46 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
 
   return ;
 }
+
+/* Bump a column and reposition the other columns.
+ * 
+ * NOTE that this function may be called for an individual feature OR a column and
+ * needs to deal with both.
+ */
+static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapStyleOverlapMode bump_type = (ZMapStyleOverlapMode)menu_item_id  ;
+  FooCanvasGroup *column_group ;
+  FooCanvasItem *style_item ;
+
+  if (bump_type == ZMAPOVERLAP_COMPLEX)
+    bump_type = ZMAPOVERLAP_COMPLETE ;
+  else
+    bump_type = ZMAPOVERLAP_COMPLEX ;
+
+
+  if (menu_data->item_cb)
+    {
+      column_group = getItemsColGroup(menu_data->item) ;
+    }
+  else
+    {
+      column_group = FOO_CANVAS_GROUP(menu_data->item) ;
+    }
+
+
+  style_item = menu_data->item ;
+
+  zmapWindowColumnBump(style_item, bump_type) ;
+
+  zmapWindowNewReposition(menu_data->window) ;
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
 
 
 
@@ -581,10 +630,14 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data)
 }
 
 
+
+/* JAMES HAS MADE THE POINT THAT ANNOTATORS ONLY EVER USE THE "JUST THIS TYPE" OPTION, SO
+ * I'VE COMMENTED OUT THE TWO MENU OPTIONS AND REPLACED THEM WITH ONE.... */
 ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
 					   ZMapGUIMenuItemCallbackFunc callback_func,
 					   gpointer callback_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_BRANCH, "_Blixem",      0, NULL, NULL},
@@ -592,22 +645,38 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "Blixem/Show multiple dna alignment for just this type of homology",  2, blixemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                                                          0, NULL,         NULL}
     } ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "Blixem (DNA alignments)",  2, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                                                          0, NULL,         NULL}
+    } ;
+
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
   return menu ;
 }
 
-
 ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 					       ZMapGUIMenuItemCallbackFunc callback_func,
 					       gpointer callback_data)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_BRANCH,  "_Blixem",      0, NULL, NULL},
       {ZMAPGUI_MENU_NORMAL, "Blixem/Show multiple protein alignment",                                 1, blixemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Blixem/Show multiple protein alignment for just this type of homology",  2, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE,  NULL, 0, NULL,         NULL}
+    } ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "Blixem (Protein alignments)",  2, blixemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE,  NULL, 0, NULL,         NULL}
     } ;
 
