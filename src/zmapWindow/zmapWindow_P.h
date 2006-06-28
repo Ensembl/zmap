@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 14 13:35 2006 (edgrif)
+ * Last edited: Jun 27 17:25 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.122 2006-06-14 15:04:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.123 2006-06-28 09:36:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -45,11 +45,28 @@
 #define ITEM_FEATURE_DATA    ZMAP_WINDOW_P_H "item_feature_data"
 #define ITEM_FEATURE_TYPE    ZMAP_WINDOW_P_H "item_feature_type"
 #define ITEM_FEATURE_STYLE   ZMAP_WINDOW_P_H "item_feature_style"
+#define ITEM_FEATURE_STYLETABLE   ZMAP_WINDOW_P_H "item_feature_styletable"
 #define ITEM_FEATURE_STRAND  ZMAP_WINDOW_P_H "item_feature_strand"
 #define ITEM_SUBFEATURE_DATA ZMAP_WINDOW_P_H "item_subfeature_data"
 #define ZMAP_WINDOW_POINTER  ZMAP_WINDOW_P_H "canvas_to_window"
 
 #define ITEM_HIGHLIGHT_DATA  ZMAP_WINDOW_P_H "item_highlight_data"
+
+
+/* Item features are the canvas items that represent sequence features, they can be of various
+ * types, in particular compound features such as transcripts require a parent, a bounding box
+ * and children for features such as introns/exons. */
+typedef enum
+  {
+    ITEM_FEATURE_INVALID,
+    ITEM_FEATURE_SIMPLE,				    /* Item is the whole feature. */
+    ITEM_FEATURE_PARENT,				    /* Item is parent group of compound feature. */
+    ITEM_FEATURE_CHILD,					    /* Item is child/subpart of feature. */
+    ITEM_FEATURE_BOUNDING_BOX				    /* Item is invisible bounding box of
+							       feature or subpart of feature.  */
+  } ZMapWindowItemFeatureType ;
+
+
 
 /* Names of config stanzas. */
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
@@ -157,20 +174,6 @@ typedef enum {
 #define ZMAP_WINDOW_ITEM_FILL_COLOUR "white"
 #define ZMAP_WINDOW_ITEM_BORDER_COLOUR "black"
 
-
-
-/* Item features are the canvas items that represent sequence features, they can be of various
- * types, in particular compound features such as transcripts require a parent, a bounding box
- * and children for features such as introns/exons. */
-typedef enum
-  {
-    ITEM_FEATURE_INVALID,
-    ITEM_FEATURE_SIMPLE,				    /* Item is the whole feature. */
-    ITEM_FEATURE_PARENT,				    /* Item is parent group of compound feature. */
-    ITEM_FEATURE_CHILD,					    /* Item is child/subpart of feature. */
-    ITEM_FEATURE_BOUNDING_BOX				    /* Item is invisible bounding box of
-							       feature or subpart of feature.  */
-  } ZMapWindowItemFeatureType ;
 
 /* A bit field I found I needed to make it easier to calc what had been clamped. */
 typedef enum
@@ -426,6 +429,8 @@ typedef struct _zmapWindowFeatureListCallbacksStruct
 typedef struct _ZMapWindowItemHighlighterStruct *ZMapWindowItemHighlighter;
 
 
+typedef void (*ZMapWindowStyleTableCallback)(ZMapFeatureTypeStyle style, gpointer user_data) ;
+
 
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
@@ -514,7 +519,8 @@ gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
-
+FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
+ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
 void zmapWindowRaiseItem(FooCanvasItem *item) ;
 GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
 
@@ -559,7 +565,9 @@ void zmapWindowDrawZoom(ZMapWindow window) ;
 void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 			       ZMapWindowColConfigureMode configure_mode) ;
 void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
-void zmapWindowColumnBump(FooCanvasGroup *column_group, ZMapStyleOverlapMode bump_mode) ;
+
+void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleOverlapMode bump_mode) ;
+
 void zmapWindowColumnReposition(FooCanvasGroup *column_group) ;
 void zmapWindowColumnWriteDNA(ZMapWindow window,
                               FooCanvasGroup *column_parent);
@@ -702,6 +710,12 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
                                             char *text_string, gboolean copy_string);
 char *zmapWindowItemTextHighlightGetFullText(ZMapWindowItemHighlighter select_control);
 
+GHashTable *zmapWindowStyleTableCreate(void) ;
+gboolean zmapWindowStyleTableAdd(GHashTable *style_table, ZMapFeatureTypeStyle new_style) ;
+ZMapFeatureTypeStyle zmapWindowStyleTableFind(GHashTable *style_table, GQuark style_id) ;
+void zmapWindowStyleTableForEach(GHashTable *style_table,
+				 ZMapWindowStyleTableCallback app_func, gpointer app_data) ;
+void zmapWindowStyleTableDestroy(GHashTable *style_table) ;
 
 /* Ruler Functions */
 ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackList callbacks);
