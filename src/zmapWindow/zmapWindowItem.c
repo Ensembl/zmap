@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 28 11:27 2006 (edgrif)
+ * Last edited: Jun 28 14:04 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.31 2006-06-28 10:28:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.32 2006-06-28 14:01:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1450,7 +1450,7 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
   item_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(item_feature) ;
 
-  style = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_STYLE) ;
+  style = zmapWindowItemGetStyle(item) ;
   zMapAssert(style) ;
 
   
