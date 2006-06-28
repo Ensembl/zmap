@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 21 16:42 2006 (edgrif)
+ * Last edited: Jun 28 10:22 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.53 2006-06-22 08:15:54 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.54 2006-06-28 09:23:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -970,9 +970,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 	  
 	  feature_set = parser_feature_set->feature_set = zMapFeatureSetCreate(feature_set_name, NULL) ;
 
-	  /* cache a copy of the style in the feature set so it can be set individually. */
-	  feature_set_style = zMapFeatureStyleCopy(feature_set_style) ;
-	  zMapFeatureSetStyle(feature_set, feature_set_style) ;
+	  zMapFeatureSetStyle(feature_set, feature_set_style) ;	/* Set the style for the set. */
 
 	  parser_feature_set->multiline_features = NULL ;
 	  g_datalist_init(&(parser_feature_set->multiline_features)) ;
@@ -997,13 +995,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 	}
     }
 
-
-  /* We cache feature styles in their feature set for later use. */
-  if (!(zMapFeatureSetFindStyle(feature_set, feature_style_id)))
-    {
-      feature_style = zMapFeatureStyleCopy(feature_style) ;  
-      zMapFeatureSetAddStyle(feature_set, feature_style) ;
-    }
 
  if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
 					  sequence, ontology,
