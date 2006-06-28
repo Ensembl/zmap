@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 19 08:05 2006 (edgrif)
+ * Last edited: Jun 28 10:31 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.35 2006-06-19 07:05:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.36 2006-06-28 09:32:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -333,7 +333,8 @@ ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature)
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature)
 {
   FooCanvasItem *new_feature = NULL ;
-  ZMapFeatureTypeStyle style = feature->style ;
+  ZMapFeatureTypeStyle style = NULL ;
+  GHashTable *style_table ;
   ZMapFeatureContext context ;
   ZMapFeatureAlignment alignment ;
   ZMapFeatureBlock block ;
@@ -342,6 +343,16 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   FooCanvasItem *top_feature_item = NULL ;
   double feature_offset;
   double start_x, end_x ;
+
+
+  /* Get the styles table from the column and look for the features style.... */
+  style_table = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_STYLETABLE) ;
+  if (!(style = zmapWindowStyleTableFind(style_table, feature->style->unique_id)))
+    {
+      style = zMapFeatureStyleCopy(feature->style) ;  
+      zmapWindowStyleTableAdd(style_table, style) ;
+    }
+
 
 
   /* Users will often not want to see what is on the reverse strand, style specifies what should
@@ -454,7 +465,10 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   if (top_feature_item)
     {
       gboolean status ;
-      
+
+      /* Store the style on the features canvas item. */
+      g_object_set_data(G_OBJECT(top_feature_item), ITEM_FEATURE_STYLE, GINT_TO_POINTER(style)) ;
+
       status = zmapWindowFToIAddFeature(window->context_to_item,
 					alignment->unique_id,
 					block->unique_id, 
@@ -1734,12 +1748,16 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   GList *menu_sets = NULL ;
   ItemMenuCBData menu_data ;
   ZMapFeature feature ;
+  	ZMapFeatureTypeStyle style ;
 
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
+
+  style = zmapWindowItemGetStyle(item) ;
+  zMapAssert(style) ;
 
   menu_title = zMapFeatureName((ZMapFeatureAny)feature) ;
 
@@ -1783,7 +1801,7 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
 
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, menu_data,
-						   zMapStyleGetOverlapMode(feature->style))) ;
+						   zMapStyleGetOverlapMode(style))) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
