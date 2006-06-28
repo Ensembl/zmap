@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jun 20 13:24 2006 (edgrif)
+ * Last edited: Jun 28 10:20 2006 (edgrif)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.7 2006-06-20 12:25:49 edgrif Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.8 2006-06-28 09:20:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -98,8 +98,11 @@ static void destroyMenu(ZMapGUIMenuItem menu) ;
 static int itemsInMenu(ZMapGUIMenuItem menu) ;
 
 static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widget) ;
+
 static void activeButCB(gpointer data, gpointer user_data) ;
 static void deActiveButCB(gpointer data, gpointer user_data) ;
+static void toggleButCB(gpointer data, gpointer user_data) ;
+static void deToggleButCB(gpointer data, gpointer user_data) ;
 
 
 /*! @addtogroup zmapwindow
@@ -139,6 +142,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
   CallbackData our_cb_data ;
   char *radio_title = NULL ;
   GList *active_radio_buttons = NULL, *deactive_radio_buttons = NULL ;
+  GList *active_toggle_buttons = NULL, *deactive_toggle_buttons = NULL ;
 
 
   /* Make a single menu item list out of the supplied menu_item sets. */
@@ -224,13 +228,30 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
 
 	    break ;
 	  }
+	case ZMAPGUI_MENU_TOGGLE:
+	case ZMAPGUI_MENU_TOGGLEACTIVE:
+	  {
+
+	    /* It doesn't seem to matter which style I use here it still looks cr*p */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    item->item_type = "<ToggleItem>" ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	    item->item_type = "<CheckItem>" ;
+
+	    if (menu_items[i].type == ZMAPGUI_MENU_TOGGLEACTIVE)
+	      active_toggle_buttons = g_list_append(active_toggle_buttons, item->path) ;
+	    else
+	      deactive_toggle_buttons = g_list_append(deactive_toggle_buttons, item->path) ;
+	    
+	    break ;
+	  }
 	default:					    /* ZMAPGUI_MENU_NORMAL */
 	  {
 	    item->item_type = NULL ;
 	    break ;
 	  }
 	}
-
+      
       /* Reset radio button indicator if we have moved out of the radio button group. */
       if (radio_title
 	  && (menu_items[i].type != ZMAPGUI_MENU_RADIO
@@ -257,6 +278,21 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
 
     gtk_widget_set_name(title, "zmap-menu-title");
   }
+
+
+  /* Set up any toggle buttons, stupid item factory makes this stupidly difficult. */
+  if (deactive_toggle_buttons)
+    {
+      g_list_foreach(deactive_toggle_buttons, deToggleButCB, item_factory) ;
+
+      g_list_free(deactive_toggle_buttons) ;
+    }
+  if (active_toggle_buttons)
+    {
+      g_list_foreach(active_toggle_buttons, toggleButCB, item_factory) ;
+
+      g_list_free(active_toggle_buttons) ;
+    }
 
 
   /* By default stupid item factory makes the first radio button active but does
@@ -584,6 +620,54 @@ static void deActiveButCB(gpointer data, gpointer user_data)
   GtkWidget *but_widg ;
 
   but_widg = gtk_item_factory_get_widget(item_factory, widg_path) ;
+
+  GTK_CHECK_MENU_ITEM(but_widg)->active = FALSE ;
+
+  return ;
+}
+
+
+/* I'M NOT SURE WE NEED SEPARATE FUNCS FOR THE TOGGLE STUFF...I CAN'T SEEM TO FIND A WAY
+ * TO GET THE BUTTONS DISPLAYED NICELY....SIGH.... */
+
+/* Note that for these activate and deactivate functions we _cannot_ use the
+ * proper widget calls (gtk_check_menu_item_set_active) as these will cause
+ * the code to think the user has already selected an item and the menu
+ * gets popped up/down without them being able to do anything.
+ * 
+ * Hence the need to poke directly into the widget struct. */
+static void toggleButCB(gpointer data, gpointer user_data)
+{
+  char *widg_path = (char *)data ;
+  GtkItemFactory *item_factory = (GtkItemFactory *)user_data ;
+  GtkWidget *but_widg ;
+
+  but_widg = gtk_item_factory_get_widget(item_factory, widg_path) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* this doesn't seem to work, you can't get the toggle permanently displayed....sigh.. */
+  gtk_check_menu_item_set_draw_as_radio(GTK_CHECK_MENU_ITEM(but_widg), TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  GTK_CHECK_MENU_ITEM(but_widg)->active = TRUE ;
+
+  return ;
+}
+
+
+static void deToggleButCB(gpointer data, gpointer user_data)
+{
+  char *widg_path = (char *)data ;
+  GtkItemFactory *item_factory = (GtkItemFactory *)user_data ;
+  GtkWidget *but_widg ;
+
+  but_widg = gtk_item_factory_get_widget(item_factory, widg_path) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* this doesn't seem to work, you can't get the toggle permanently displayed....sigh.. */
+  gtk_check_menu_item_set_draw_as_radio(GTK_CHECK_MENU_ITEM(but_widg), TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   GTK_CHECK_MENU_ITEM(but_widg)->active = FALSE ;
 
