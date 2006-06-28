@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 28 10:34 2006 (edgrif)
+ * Last edited: Jun 28 11:08 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.136 2006-06-28 09:34:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.137 2006-06-28 10:26:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -683,8 +683,6 @@ static void createSetColumn(gpointer data, gpointer user_data)
 			     top, bottom,
 			     rev_bg_colour) ;
 
-  zmapWindowColumnSetMagState(window, reverse_col, style) ;
-
   status = zmapWindowFToIAddSet(window->context_to_item,
 				canvas_data->curr_alignment->unique_id,
 				canvas_data->curr_block->unique_id,
@@ -769,7 +767,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   if (zMapStyleGetHideInitial(style))
     zmapWindowColumnHide(group) ;
   else
-    zmapWindowColumnSetMagState(window, group, style) ;
+    zmapWindowColumnSetMagState(window, group) ;
 
 
   return group ;
@@ -888,9 +886,6 @@ static void removeEmptyColumns(ZMapCanvasData canvas_data)
   RemoveEmptyColumnStruct remove_data ;
 
 
-  /* NEED TO REMOVE THE COPIED STYLE FROM THE COL AS WELL.... */
-
-
   remove_data.canvas_data = canvas_data ;
 
   remove_data.strand = ZMAPSTRAND_FORWARD ;
@@ -909,11 +904,8 @@ static void removeEmptyColumnCB(gpointer data, gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
 
-
   /* There is some confusion here as we need to get the featureset id for the ftoi removal,
    * not the style id..... */
-
-
   if (!zmapWindowContainerHasFeatures(container))
     {
       RemoveEmptyColumn remove_data = (RemoveEmptyColumn)user_data ;
@@ -1341,8 +1333,8 @@ static void createThreeFrameTranslationForBlock(ZMapFeatureBlock block)
   ZMapFeatureContext context = NULL;
   ZMapFeatureSet feature_set = NULL;
   ZMapFeatureTypeStyle style = NULL;
-
   char *trans = "3frametranslation";
+
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_CONTEXT);
 
   if(block->sequence.length &&
@@ -1380,11 +1372,18 @@ static void createThreeFrameTranslationForBlock(ZMapFeatureBlock block)
 /* Called to free resources we added to the column group canvas item. */
 static void columnGroupDestroyCB(GtkObject *object, gpointer user_data)
 {
+  ZMapFeatureTypeStyle style ;
   GHashTable *style_table ;
 
-  style_table = g_object_get_data(G_OBJECT(object), ITEM_FEATURE_STYLETABLE) ;
+  /* Get rid of this columns own style + its style table. */
+  style = g_object_get_data(G_OBJECT(object), ITEM_FEATURE_STYLE) ;
+  zMapAssert(style) ;
+  zMapFeatureTypeDestroy(style) ;
 
+  style_table = g_object_get_data(G_OBJECT(object), ITEM_FEATURE_STYLETABLE) ;
+  zMapAssert(style_table) ;
   zmapWindowStyleTableDestroy(style_table) ;
+
 
   return ;
 }
