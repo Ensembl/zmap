@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 16 13:23 2006 (edgrif)
+ * Last edited: Jun 28 10:34 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.135 2006-06-16 12:27:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.136 2006-06-28 09:34:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -125,8 +125,9 @@ static void positionColumns(ZMapCanvasData canvas_data) ;
 static void positionColumnCB(gpointer data, gpointer user_data) ;
 
 static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
-static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
-			   FooCanvasItem *item, ZMapFeatureSet feature_set) ;
+static void columnGroupDestroyCB(GtkObject *object, gpointer user_data) ;
+static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item,
+			   ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
 					    ZMapGUIMenuItemCallbackFunc callback_func,
 					    gpointer callback_data) ;
@@ -712,6 +713,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   FooCanvasGroup *group ;
   FooCanvasItem *bounding_box ;
   double x1, x2, y1, y2 ;
+  GHashTable *style_table ;
 
 
   group = zmapWindowContainerCreate(parent_group, ZMAPCONTAINER_LEVEL_FEATURESET,
@@ -741,13 +743,25 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
    * This probably points to some muckiness in the code, problem is caused by us deciding
    * to display all columns whether they have features or not and so some columns may not
    * have feature sets. */
-  g_object_set_data(G_OBJECT(group), ITEM_FEATURE_STRAND,
-		    GINT_TO_POINTER(strand)) ;
-  g_object_set_data(G_OBJECT(group), ITEM_FEATURE_STYLE,
-		    GINT_TO_POINTER(style)) ;
+  g_object_set_data(G_OBJECT(group), ITEM_FEATURE_STRAND, GINT_TO_POINTER(strand)) ;
+
+  /* Copy the columns style and attach to the column. */
+  style = zMapFeatureStyleCopy(style) ;
+  g_object_set_data(G_OBJECT(group), ITEM_FEATURE_STYLE, GINT_TO_POINTER(style)) ;
+
+  /* Attach a table of styles, used to cache feature styles. */
+  style_table = zmapWindowStyleTableCreate() ;
+  g_object_set_data(G_OBJECT(group), ITEM_FEATURE_STYLETABLE, style_table) ;
+
+  /* We now need this to free the style table cache.... */
+  g_signal_connect(G_OBJECT(group), "destroy",
+		   G_CALLBACK(columnGroupDestroyCB), (gpointer)window) ;
+
 
   g_signal_connect(G_OBJECT(group), "event",
 		   G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
+
+
 
 
   /* Some columns are hidden initially, perhaps because of magnification level or explicitly in
@@ -873,6 +887,10 @@ static void removeEmptyColumns(ZMapCanvasData canvas_data)
 {
   RemoveEmptyColumnStruct remove_data ;
 
+
+  /* NEED TO REMOVE THE COPIED STYLE FROM THE COL AS WELL.... */
+
+
   remove_data.canvas_data = canvas_data ;
 
   remove_data.strand = ZMAPSTRAND_FORWARD ;
@@ -966,14 +984,14 @@ static void positionColumnCB(gpointer data, gpointer user_data)
 
   spacing = zmapWindowContainerGetSpacing(parent) ;
 
+
   style = zmapWindowContainerGetStyle(container) ;
   zMapAssert(style) ;
 
-
-
   /* Bump columns that need to be bumped. */
   if (style->overlap_mode != ZMAPOVERLAP_COMPLETE)
-    zmapWindowColumnBump(container, style->overlap_mode) ;
+    zmapWindowColumnBump(FOO_CANVAS_ITEM(container), style->overlap_mode) ;
+
 
   /* Set its x position. */
   my_foo_canvas_item_goto(FOO_CANVAS_ITEM(container), &(pos_data->offset), NULL) ;
@@ -1088,7 +1106,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	    {
 	      if (feature_set)
 		{
-		  makeColumnMenu(but_event, window, item, feature_set) ;
+		  makeColumnMenu(but_event, window, item, feature_set, style) ;
 
 		  event_handled = TRUE ;
 		}
@@ -1120,7 +1138,8 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
 /* Build the background menu for a column. */
 static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
-			   FooCanvasItem *item, ZMapFeatureSet feature_set)
+			   FooCanvasItem *item,
+			   ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
 {
   static ZMapGUIMenuItemStruct separator[] =
     {
@@ -1142,7 +1161,7 @@ static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   /* Make up the menu. */
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
-						   zMapStyleGetOverlapMode(feature_set->style))) ;
+						   zMapStyleGetOverlapMode(style))) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
@@ -1356,6 +1375,20 @@ static void createThreeFrameTranslationForBlock(ZMapFeatureBlock block)
     }
   return ;
 }
+
+
+/* Called to free resources we added to the column group canvas item. */
+static void columnGroupDestroyCB(GtkObject *object, gpointer user_data)
+{
+  GHashTable *style_table ;
+
+  style_table = g_object_get_data(G_OBJECT(object), ITEM_FEATURE_STYLETABLE) ;
+
+  zmapWindowStyleTableDestroy(style_table) ;
+
+  return ;
+}
+
 
 
 /****************** end of file ************************************/
