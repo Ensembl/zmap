@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 22 09:17 2006 (edgrif)
+ * Last edited: Jun 23 16:59 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.128 2006-06-22 08:17:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.129 2006-06-28 09:23:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -887,11 +887,12 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 
 
   /* It would be nice for a user to be able to specify the format of this string. */
-  select.primary_text = g_strdup_printf("%s %s %d %d %s  :  %s  :  %s%s", 
+  select.primary_text = g_strdup_printf("%s %s %d %d %f %s  :  %s  :  %s%s", 
 					(char *)g_quark_to_string(feature->original_id),
 					zMapFeatureStrand2Str(feature->strand),
 					feature->x1,
 					feature->x2,
+					(feature->flags.has_score ? feature->score : 0.0),
 					(subpart_text ? subpart_text : ""),
 					zMapFeatureType2Str(feature->type),
 					style_text,
