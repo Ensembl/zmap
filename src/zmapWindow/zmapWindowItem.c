@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 28 09:00 2006 (edgrif)
+ * Last edited: Jun 28 11:27 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.30 2006-06-28 09:30:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.31 2006-06-28 10:28:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1445,7 +1445,14 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
   ZMapFeatureTypeStyle style = NULL;
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  item_feature      = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+  zMapAssert(item_feature_type != ITEM_FEATURE_INVALID) ;
+
+  item_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  zMapAssert(item_feature) ;
+
+  style = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_STYLE) ;
+  zMapAssert(style) ;
+
   
   /* Ok we need to be item type specific here now */
   /* Item type     has fill color   has outline color 
@@ -1458,10 +1465,9 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
    * Widget and Pixel Buffer items have neither
    */
   
-  if (!(FOO_IS_CANVAS_GROUP(item)) && 
-      item_feature_type != ITEM_FEATURE_BOUNDING_BOX &&
-      item_feature != NULL &&
-      (style = item_feature->style) != NULL)
+
+  if (!(FOO_IS_CANVAS_GROUP(item))
+      && item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
     {
       /* Ok now we can go on. */
 
