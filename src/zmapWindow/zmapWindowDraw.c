@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 28 10:14 2006 (edgrif)
+ * Last edited: Jun 28 11:22 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.25 2006-06-28 09:35:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.26 2006-06-28 10:26:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,11 +163,14 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
 
 /* Set the hidden status of a column group, currently this depends on the mag setting in the
  * style for the column but we could allow the user to switch this on and off as well. */
-void zmapWindowColumnSetMagState(ZMapWindow window,
-				 FooCanvasGroup *col_group, ZMapFeatureTypeStyle style)
+void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 {
+  ZMapFeatureTypeStyle style = NULL;
 
-  zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group) && style) ;
+  zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
+
+  style = g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_STYLE) ;
+  zMapAssert(style) ;
 
   if (style->min_mag || style->max_mag)
     {
@@ -1098,14 +1101,11 @@ static void positionCB(gpointer data, gpointer user_data)
   return ;
 }
 
+
 static void columnZoomChanged(FooCanvasGroup *container, double new_zoom, ZMapWindow window)
 {
-  ZMapFeatureTypeStyle style = NULL;
 
-  style = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_STYLE) ;
-  zMapAssert(style) ;
-
-  zmapWindowColumnSetMagState(window, container, style) ;
+  zmapWindowColumnSetMagState(window, container) ;
 
   return ;
 }
