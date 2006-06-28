@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 28 08:23 2006 (rds)
+ * Last edited: Jun 28 09:00 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.29 2006-05-30 16:48:02 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.30 2006-06-28 09:30:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,6 +36,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
+#include <zmapWindowContainer.h>
 
 /* Used to hold highlight information for the hightlight callback function. */
 typedef struct
@@ -351,6 +352,71 @@ GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash, ZMapFeat
 
   return item_list ;
 }
+
+
+
+/* Returns the container parent of the given feature. */
+FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
+{
+  FooCanvasGroup *parent_container = NULL ;
+  ZMapWindowItemFeatureType item_feature_type ;
+  FooCanvasItem *parent_item = NULL ;
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item),
+							ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type != ITEM_FEATURE_INVALID) ;
+
+  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
+    {
+      parent_item = feature_item ;
+    }
+  else
+    {
+      parent_item = feature_item->parent ;
+    }
+
+  parent_container = zmapWindowContainerGetParent(parent_item->parent) ;
+  zMapAssert(parent_container) ;
+
+  return parent_container ;
+}
+
+
+
+
+/* Returns a features style. We need this function because we only attach the style
+ * to the top item of the feature. It is a fatal error if a feature does not have a
+ * style so this function will always return a valid style or it will abort.
+ * 
+ *  */
+ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item)
+{
+  ZMapFeatureTypeStyle style = NULL ;
+  FooCanvasItem *parent_item = NULL ;
+  ZMapWindowItemFeatureType item_feature_type ;
+
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item),
+							ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type != ITEM_FEATURE_INVALID) ;
+
+  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
+    {
+      parent_item = feature_item ;
+    }
+  else
+    {
+      parent_item = feature_item->parent ;
+    }
+
+  style = g_object_get_data(G_OBJECT(parent_item), ITEM_FEATURE_STYLE) ;
+  zMapAssert(style) ;
+
+  return style ;
+}
+
+
+
 
 
 
