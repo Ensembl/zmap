@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Apr 28 18:46 2006 (edgrif)
+ * Last edited: Jun 28 10:40 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.10 2006-04-28 17:46:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.11 2006-06-28 10:25:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -328,10 +328,7 @@ FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent
 }
 
 
-/* Get the style for this columns features. AGH, problem here...bumping will need to cope with
- * several different types of features....
- * 
- * Note that each column has a style but then the features within it may have
+/* Note that each column has a style but then the features within it will have
  * their own styles...
  *  */
 ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group)
