@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jun 28 10:17 2006 (edgrif)
+ * Last edited: Jun 30 16:24 2006 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.38 2006-06-28 09:18:35 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.39 2006-06-30 15:24:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,8 @@
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapFeature_P.h>
+#include <ZMap/zmapPeptide.h>
+
 
 
 
@@ -183,7 +185,7 @@ ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeature
 	     && group_type >= ZMAPFEATURE_STRUCT_CONTEXT
 	     && group_type <= ZMAPFEATURE_STRUCT_FEATURE) ;
 
-  if (any_feature->struct_type > group_type)
+  if (any_feature->struct_type >= group_type)
     {
       ZMapFeatureAny group = any_feature ;
 
@@ -446,7 +448,6 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 
   return result ;
 }
-
 
 /*!
  * Adds a URL to the object, n.b. we add this as a string that must be freed, this.
@@ -761,6 +762,66 @@ void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data)
   g_free(block) ;
 
   return ;
+}
+
+gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatureSet *set_out)
+{
+  ZMapFeatureSet feature_set = NULL;
+  ZMapFeatureTypeStyle style = NULL;
+  ZMapFeatureContext context = NULL;
+  GQuark style_id = 0;
+  gboolean still_good = FALSE, created = FALSE;
+
+  style_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+
+  if(block->sequence.length)
+    still_good = TRUE;
+
+  if(!(context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)block, 
+                                                                ZMAPFEATURE_STRUCT_CONTEXT))))
+    still_good = FALSE;
+
+  if((feature_set = (ZMapFeatureSet)(g_datalist_id_get_data(&(block->feature_sets), style_id))))
+    still_good = FALSE;         /* We've already got one */
+
+  if(still_good &&
+     (style = zMapFindStyle(context->styles, style_id)) != NULL)
+    {
+      feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_3FT_NAME, NULL);
+      feature_set->style = style;
+      created = TRUE;
+    }
+
+  if(still_good && feature_set)
+    {
+      int i; char *seq = NULL, *f_name = NULL, *s_name;
+      ZMapFeature threeft = NULL; 
+      ZMapPeptide pep = NULL;
+      s_name = (char *)g_quark_to_string(block->original_id);
+      seq = block->sequence.sequence;
+      seq += 2;                 /* We do it in this order so it looks sensible on the display */
+      for(i = 2; seq && *seq && i >= 0; i--, seq--)
+        {
+          threeft = zMapFeatureCreateEmpty();
+          f_name = g_strdup_printf(ZMAP_FIXED_STYLE_3FT "_phase_%d", i);
+          pep = zMapPeptideCreateSafely(NULL, NULL, seq, NULL, FALSE);
+          
+          threeft->text = g_strdup(zMapPeptideSequence(pep));
+          
+          zMapFeatureAddStandardData(threeft, f_name, f_name,
+                                     s_name, "sequence",
+                                     ZMAPFEATURE_PEP_SEQUENCE, style,
+                                     i+1, zMapPeptideLength(pep) * 3 + i + 1,
+                                     FALSE, 0.0,
+                                     ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
+          zMapFeatureSetAddFeature(feature_set, threeft);
+        }
+    }
+
+  if(set_out)
+    *set_out = feature_set;
+
+  return created;
 }
 
 
