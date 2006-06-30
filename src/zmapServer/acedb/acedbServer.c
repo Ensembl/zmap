@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 23 09:18 2006 (edgrif)
+ * Last edited: Jun 30 16:37 2006 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.60 2006-06-23 08:31:05 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.61 2006-06-30 15:38:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -837,7 +837,6 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
 	    }
 	  else
 	    {
-              /* This is possibly a _little_ hacked ATM */
               ZMapFeature feature = NULL;
               ZMapFeatureSet feature_set = NULL;
               ZMapFeatureTypeStyle style = NULL;
@@ -847,36 +846,41 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
               feature_block->sequence.length   = dna_length ;
               feature_block->sequence.sequence = reply ;
 
-              context = (ZMapFeatureContext)(feature_block->parent->parent);
+              context = 
+                (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, 
+                                                              ZMAPFEATURE_STRUCT_CONTEXT);
 
-              /* Side stepping this issue for a little longer... */
-              /* Ideally we need a style in order to display the dna... */
-              if((style = zMapFindStyle(context->styles, g_quark_from_string("dna"))))
+              if((style = zMapFindStyle(context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
                 {
-                  /* Create the feature set */
-                  feature_set = zMapFeatureSetCreate("dna", NULL);
-                  /* Create the feature and add sequence to it. */
-                  feature      = zMapFeatureCreateEmpty();
-                  /* need to augment data too... FOR NOW just dna
-                   * NOTE that we give it a strand of NONE because we want it to stay on the forward
-                   * strand always... */
-                  zMapFeatureAddStandardData(feature, "dna", "dna", "b0250", "sequence", 
-                                             ZMAPFEATURE_RAW_SEQUENCE, style,
-                                             block_start, block_end,
-                                             FALSE, 0.0,
-                                             ZMAPSTRAND_NONE, ZMAPPHASE_NONE) ;
-                  
-                  /* Add the feature to the master_align's, block's list of featuresets. */
-                  /* First to our feature set */
-                  zMapFeatureSetAddFeature(feature_set, feature);
+                  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_DNA_NAME, NULL);
                   feature_set->style = style;
-                  zMapFeatureBlockAddFeatureSet(feature_block, 
-                                                feature_set);
                 }
 
-              /* Make the link so that getting the sequence is EASY. */
-              context->sequence = &(feature_block->sequence);
+              if(feature_set)
+                {
+                  const char *sequence = g_quark_to_string(feature_block->original_id);
+                  char *feature_name = NULL;
+                  feature_name = g_strdup_printf("DNA (%s)", sequence);
+                  feature = 
+                    zMapFeatureCreateFromStandardData(feature_name,
+                                                      (char *)sequence, 
+                                                      "sequence", 
+                                                      ZMAPFEATURE_RAW_SEQUENCE, 
+                                                      style,
+                                                      block_start, 
+                                                      block_end,
+                                                      FALSE, 0.0,
+                                                      ZMAPSTRAND_NONE, 
+                                                      ZMAPPHASE_NONE) ;
+                  zMapFeatureSetAddFeature(feature_set, feature);
+                  zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+                  g_free(feature_name);
+                }
 
+              /* I'm going to create the three frame translation up front! */
+              if((zMapFeatureBlockThreeFrameTranslation(feature_block, &feature_set)))
+                zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+                
               /* everything should now be done, result is true */
 	      result = TRUE ;
 	    }
