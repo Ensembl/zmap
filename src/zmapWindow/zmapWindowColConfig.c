@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 22 14:23 2006 (edgrif)
+ * Last edited: Jun 30 10:41 2006 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.7 2006-05-22 13:29:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.8 2006-06-30 09:50:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,7 +57,6 @@ typedef struct
   FooCanvasGroup *column_group ;
 } ButDataStruct, *ButData ;
 
-
 static GtkWidget *makeMenuBar(ColConfigure search_data) ;
 static GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title,
 				GList *column_groups, GList **button_list_out) ;
@@ -72,7 +71,7 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void applyCB(GtkWidget *widget, gpointer cb_data) ;
 static void noHelpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void showButCB(GtkToggleButton *togglebutton, gpointer user_data) ;
-static void killButCB(GtkToggleButton *togglebutton, gpointer user_data) ;
+static void killButCB(gpointer user_data, GClosure *ignored) ;
 
 static void selectAllButtons(GtkWidget *button, gpointer user_data);
 static void unselectAllButtons(GtkWidget *button, gpointer user_data);
@@ -137,7 +136,7 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 	  {
 	    ZMapStrand strand ;
 
-	    strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_STRAND)) ;
+            strand = zmapWindowContainerGetStrand(column_group);
 	    zMapAssert(strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_REVERSE) ;
 
 	    if (strand == ZMAPSTRAND_FORWARD)
@@ -348,10 +347,11 @@ GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *columns_li
       col_visible = zmapWindowItemIsShown(FOO_CANVAS_ITEM(column_group)) ;
       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), col_visible) ;
       gtk_box_pack_start(GTK_BOX(col_box), button, TRUE, TRUE, 0) ;
-      g_signal_connect(GTK_OBJECT(button), "toggled",
-		       GTK_SIGNAL_FUNC(showButCB), (gpointer)button_data) ;
-      g_signal_connect(GTK_OBJECT(button), "destroy",
-		       GTK_SIGNAL_FUNC(killButCB), (gpointer)button_data) ;
+
+      g_signal_connect_data(G_OBJECT(button), "toggled",
+                            G_CALLBACK(showButCB), (gpointer)button_data,
+                            killButCB, 0) ;
+
       g_object_set_data(G_OBJECT(button), BUTTON_DATA, button_data) ;
 
       /* Need to add button data here.... */
@@ -383,15 +383,11 @@ GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *columns_li
        * too much redrawing occurs....
        */
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       g_signal_connect_data(G_OBJECT(button), "clicked",
                             G_CALLBACK(selectAllButtons), 
                             (gpointer)button_list,
-                            (GClosureNotify)freeButtonList,
+                            NULL,
                             0);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   
       button = gtk_button_new_with_label("Unselect All");
       gtk_box_pack_end(GTK_BOX(button_box), button, FALSE, FALSE, 0);
@@ -401,11 +397,6 @@ GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *columns_li
                             (gpointer)button_list, 
                             NULL, 0) ;
     }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  else
-    g_list_free(button_list);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   /* Return the list of buttons. */
   *button_list_out = button_list ;
@@ -493,7 +484,7 @@ static void showButCB(GtkToggleButton *togglebutton, gpointer user_data)
 
 
 /* Clean up resources... */
-static void killButCB(GtkToggleButton *togglebutton, gpointer user_data)
+static void killButCB(gpointer user_data, GClosure *ignored)
 {
   g_free(user_data) ;
 
@@ -582,7 +573,14 @@ static void selectAllButtons(GtkWidget *button, gpointer user_data)
 {
   GList *all_buttons = (GList *)user_data;
 
-  g_list_foreach(all_buttons, allButtonsToggleCB, GINT_TO_POINTER(TRUE));
+  if(all_buttons && all_buttons->data)
+    {
+      ButData button_data = NULL;
+      
+      g_list_foreach(all_buttons, allButtonsToggleCB, GINT_TO_POINTER(TRUE));
+      if((button_data = g_object_get_data(G_OBJECT(all_buttons->data), BUTTON_DATA)))
+        zmapWindowNewReposition(button_data->window) ;
+    }
 
   return ;
 }
@@ -590,8 +588,15 @@ static void selectAllButtons(GtkWidget *button, gpointer user_data)
 static void unselectAllButtons(GtkWidget *button, gpointer user_data)
 {
   GList *all_buttons = (GList *)user_data;
-
-  g_list_foreach(all_buttons, allButtonsToggleCB, GINT_TO_POINTER(FALSE));
+  
+  if(all_buttons && all_buttons->data)
+    {
+      ButData button_data = NULL;
+      
+      g_list_foreach(all_buttons, allButtonsToggleCB, GINT_TO_POINTER(FALSE));
+      if((button_data = g_object_get_data(G_OBJECT(all_buttons->data), BUTTON_DATA)))
+        zmapWindowNewReposition(button_data->window) ;
+    }
 
   return ;
 }
@@ -599,11 +604,33 @@ static void unselectAllButtons(GtkWidget *button, gpointer user_data)
 static void allButtonsToggleCB(gpointer data, gpointer user_data)
 {
   GtkWidget *button = (GtkWidget *)data;
+  ButData button_data = NULL;
   gboolean active = FALSE;
+  gint blocked = 0;
 
   active = GPOINTER_TO_INT(user_data);
 
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), active);
+  if((button_data = g_object_get_data(G_OBJECT(button), BUTTON_DATA)) &&
+     (blocked = g_signal_handlers_block_matched(G_OBJECT(button), 
+                                                G_SIGNAL_MATCH_FUNC,
+                                                0, 0,
+                                                NULL,
+                                                showButCB,
+                                                NULL)))
+    {
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), active);
+      if(active)
+        zmapWindowColumnShow(button_data->column_group);
+      else
+        zmapWindowColumnHide(button_data->column_group);
+
+      g_signal_handlers_unblock_matched(G_OBJECT(button), 
+                                        G_SIGNAL_MATCH_FUNC,
+                                        0, 0,
+                                        NULL,
+                                        showButCB,
+                                        NULL);
+    }
 
   return ;
 }
