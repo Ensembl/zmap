@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun 28 10:15 2006 (edgrif)
+ * Last edited: Jun 30 16:17 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.76 2006-06-28 09:18:35 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.77 2006-06-30 15:18:02 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -588,6 +588,7 @@ ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
 					int ref_start, int ref_end, ZMapStrand ref_strand,
 					int non_start, int non_end, ZMapStrand non_strand) ;
 void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set) ;
+gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
 void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;
 
 ZMapFeature zMapFeatureCreateEmpty(void) ;
