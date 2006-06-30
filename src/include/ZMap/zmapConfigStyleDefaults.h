@@ -26,9 +26,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 19 11:04 2006 (rds)
+ * Last edited: Jun 22 11:07 2006 (rds)
  * Created: Sun May 28 09:16:38 2006 (rds)
- * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.2 2006-06-19 10:39:54 rds Exp $
+ * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.3 2006-06-30 15:33:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,8 +44,10 @@
  * - 3 Frame Translation
  */
 
-#define ZMAP_FIXED_STYLE_DNA "DNA Sequence"
-#define ZMAP_FIXED_STYLE_3FT "3 Frame Translation"
+#define ZMAP_FIXED_STYLE_DNA_NAME "DNA Sequence"
+#define ZMAP_FIXED_STYLE_DNA      "dna sequence"
+#define ZMAP_FIXED_STYLE_3FT_NAME "3 Frame Translation"
+#define ZMAP_FIXED_STYLE_3FT      "3 frame translation"
 
 #define ZMAP_FIXED_STYLE_DNA_ID g_quark_from_string(ZMAP_FIXED_STYLE_DNA)
 #define ZMAP_FIXED_STYLE_3FT_ID g_quark_from_string(ZMAP_FIXED_STYLE_3FT)
