@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 19 10:39 2006 (rds)
+ * Last edited: Jun 20 16:35 2006 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.8 2006-06-19 10:40:36 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.9 2006-06-30 15:25:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -516,7 +516,7 @@ static void templateDataListForeach(GQuark key,
     case ZMAPFEATURE_STRUCT_FEATURE:
       feature_ft = (ZMapFeature)feature_any;
       break;
-    case ZMAPFEATURE_STRUCT_ALIGN:
+    case ZMAPFEATURE_STRUCT_INVALID:
     default:
       zMapAssertNotReached();
       break;
