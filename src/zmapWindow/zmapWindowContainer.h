@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Apr 28 14:11 2006 (edgrif)
+ * Last edited: Jun 28 10:47 2006 (rds)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.6 2006-04-28 17:46:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.7 2006-06-30 09:49:21 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -70,6 +70,7 @@ void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup* correct_container_ty
 
 void zmapWindowContainerSetChildRedrawRequired(FooCanvasGroup *container_parent,
 					       gboolean redraw_required) ;
+
 FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_parent) ;
 FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *any_container_child) ;
 FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent) ;
@@ -77,12 +78,16 @@ FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent
 ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_parent) ;
 ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group) ;
 double zmapWindowContainerGetSpacing(FooCanvasGroup *column_group) ;
+ZMapStrand zmapWindowContainerGetStrand(FooCanvasGroup *container);
+
 void zmapWindowContainerReposition(FooCanvasGroup *container) ;
 gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
+
 void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, double y_extent) ;
 void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_parent,
                                                     double height, 
                                                     double border);
+void zmapWindowContainerSetStrand(FooCanvasGroup *container, ZMapStrand strand);
 void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerPrint(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerExecute(FooCanvasGroup        *parent, 
