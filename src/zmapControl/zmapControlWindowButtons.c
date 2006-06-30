@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun 13 10:10 2006 (edgrif)
+ * Last edited: Jun 30 16:20 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.39 2006-06-14 15:01:06 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.40 2006-06-30 15:23:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,8 @@ typedef struct
 
 enum {ZOOM_MAX, ZOOM_ALLDNA, ZOOM_10, ZOOM_1000, ZOOM_MIN} ;
 
+enum{ SHOW_DNA, HIDE_DNA, SHOW_3FT, HIDE_3FT };
+
 static void reloadCB(GtkWidget *widget, gpointer cb_data) ;
 static void stopCB(GtkWidget *widget, gpointer cb_data) ;
 static void zoomInCB(GtkWindow *widget, gpointer cb_data) ;
@@ -56,14 +58,14 @@ static void revcompCB(GtkWidget *widget, gpointer data) ;
 static void unsplitWindowCB(GtkWidget *widget, gpointer data) ;
 static void columnConfigCB(GtkWidget *widget, gpointer data) ;
 static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
-
+static void sequenceCB(GtkWidget *wigdet, gpointer data);
+static gboolean sequenceEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 
 static void makeZoomMenu(GdkEventButton *button_event, ZMapWindow window) ;
 static ZMapGUIMenuItem makeMenuZoomOps(int *start_index_inout,
-					  ZMapGUIMenuItemCallbackFunc callback_func,
+                                       ZMapGUIMenuItemCallbackFunc callback_func,
 				       gpointer callback_data) ;
 static void zoomMenuCB(int menu_item_id, gpointer callback_data) ;
-
 
 
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
@@ -72,7 +74,9 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *reload_button, *stop_button,
     *hsplit_button, *vsplit_button,
     *zoomin_button, *zoomout_button,
-    *unlock_button, *revcomp_button, *unsplit_button, *column_button ;
+    *unlock_button, *revcomp_button, 
+    *unsplit_button, *column_button,
+    *sequence_button;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -126,6 +130,15 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(revcompCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), revcomp_button, FALSE, FALSE, 0) ;
 
+  zmap->sequence_but = sequence_button = gtk_button_new_with_label("DNA/Protein");
+
+  gtk_signal_connect(GTK_OBJECT(sequence_button), "clicked",
+		     GTK_SIGNAL_FUNC(sequenceCB), (gpointer)zmap);
+
+  g_signal_connect(G_OBJECT(sequence_button), "event",
+                   G_CALLBACK(sequenceEventCB), (gpointer)zmap);
+  gtk_box_pack_start(GTK_BOX(hbox), sequence_button, FALSE, FALSE, 0) ;
+
   zmap->column_but = column_button = gtk_button_new_with_label("Columns");
   gtk_signal_connect(GTK_OBJECT(column_button), "clicked",
 		     GTK_SIGNAL_FUNC(columnConfigCB), (gpointer)zmap);
@@ -178,10 +191,14 @@ void zmapControlButtonTooltips(ZMap zmap)
 		       "Reverse complement sequence view",
 		       "") ;
 
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->sequence_but,
+		       "Toggle display of DNA/3 Frame Translation columns"
+                       " (right click for more options)",
+		       "") ;
+
   gtk_tooltips_set_tip(zmap->tooltips, zmap->unsplit_but,
 		       "Unsplit selected window",
 		       "") ;
-
   gtk_tooltips_set_tip(zmap->tooltips, zmap->column_but,
 		       "Column configuration",
 		       "") ;
@@ -196,9 +213,9 @@ void zmapControlButtonTooltips(ZMap zmap)
 void zmapControlWindowSetButtonState(ZMap zmap)
 {
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
-  gboolean general, unsplit, unlock, stop, reload ;
+  gboolean general, unsplit, unlock, stop, reload, sequence ;
 
-  general = unsplit = unlock = stop = reload = FALSE ;
+  general = unsplit = unlock = stop = reload = sequence = FALSE ;
 
   switch(zmap->state)
     {
@@ -230,12 +247,15 @@ void zmapControlWindowSetButtonState(ZMap zmap)
 	    break ;
 	  case ZMAPVIEW_LOADED:
 	    general = TRUE ;
-
+            sequence = TRUE;
 	    /* If we are down to the last view and that view has a single window then
 	     * disable unsplit button, stops user accidentally closing whole window. */
 	    if ((zmapControlNumViews(zmap) > 1) || (zMapViewNumWindows(zmap->focus_viewwindow) > 1))
 	      unsplit = TRUE ;
-
+            
+            /* Turn the DNA/Protein button on/off */
+            sequence = zMapWindowGetDNAStatus(window);
+              
 	    zoom_status = zMapWindowGetZoomStatus(window) ;
 	    unlock = zMapWindowIsLocked(window) ;
 	    break ;
@@ -261,6 +281,7 @@ void zmapControlWindowSetButtonState(ZMap zmap)
   zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
   gtk_widget_set_sensitive(zmap->unlock_but, unlock) ;
   gtk_widget_set_sensitive(zmap->revcomp_but, general) ;
+  gtk_widget_set_sensitive(zmap->sequence_but, sequence) ;
   gtk_widget_set_sensitive(zmap->unsplit_but, unsplit) ;
   gtk_widget_set_sensitive(zmap->column_but, general) ;
 
@@ -372,6 +393,19 @@ static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
   return handled ;
 }
 
+static void sequenceCB(GtkWidget *wigdet, gpointer cb_data)
+{
+  ZMap zmap = (ZMap)cb_data ;
+  ZMapWindow window ;
+
+  zMapAssert(zmap->focus_viewwindow) ;
+
+  window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+
+  zMapWindowToggleDNAProteinColumns(window, 0, 0, TRUE, TRUE, FALSE, FALSE);
+
+  return ;
+}
 
 /* These callbacks simply make calls to routines in zmapControl.c, this is because I want all
  * the state handling etc. to be in one file so that its easier to work on. */
@@ -580,5 +614,190 @@ static void zoomMenuCB(int menu_item_id, gpointer callback_data)
   return ;
 }
 
+static void seqMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ZMapGUIMenuSubMenuData data = (ZMapGUIMenuSubMenuData)callback_data;
+  ZMapWindow window = NULL;
+  GQuark align_id = 0, block_id = 0;
+  gboolean force = TRUE, 
+    force_to     = FALSE,
+    do_dna       = FALSE,
+    do_aa        = FALSE;
+  
+  align_id = data->align_unique_id;
+  block_id = data->block_unique_id;
 
+  switch(menu_item_id)
+    {
+    case SHOW_DNA:
+      force_to = TRUE;
+      do_dna   = TRUE;
+      break;
+    case HIDE_DNA:
+      do_dna   = TRUE;
+      break;
+    case SHOW_3FT:
+      force_to  = TRUE;
+      do_aa     = TRUE;
+      break;
+    case HIDE_3FT:
+      do_aa     = TRUE;
+      break;
+    default:
+      break;
+    }
+
+  if((window = data->original_data))
+    zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, force_to, force);
+
+  return ;
+}
+
+static void fixSubMenuData(gpointer list_data, gpointer user_data)
+{
+  ZMapGUIMenuItem item = (ZMapGUIMenuItem)list_data, tmp_data = NULL;
+  ZMapGUIMenuSubMenuData sub_data = (ZMapGUIMenuSubMenuData)user_data,
+    item_data = NULL;
+
+  tmp_data = item;
+
+  /* Step through the array of items, fixing up the data as we go */
+  while(tmp_data && tmp_data->name)
+    {
+      if((item_data = tmp_data->callback_data))
+        item_data->original_data = sub_data->original_data;
+      tmp_data++;
+    }
+
+  return ;
+}
+
+static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
+                                           GList **all_menus,
+                                           int *start_index_inout,
+                                           ZMapGUIMenuItemCallbackFunc callback_func,
+                                           gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct dna_menu[] =
+    {
+      {ZMAPGUI_MENU_BRANCH, "DNA",          0,         NULL,      NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA/Show All", SHOW_DNA,  seqMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA/Hide All", HIDE_DNA,  seqMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,           0,         NULL,      NULL}
+    } ;
+  static ZMapGUIMenuItemStruct aa_menu[] = 
+    {
+      {ZMAPGUI_MENU_BRANCH, "3 Frame Translation",          0,        NULL,      NULL},
+      {ZMAPGUI_MENU_NORMAL, "3 Frame Translation/Show All", SHOW_3FT, seqMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "3 Frame Translation/Hide All", HIDE_3FT, seqMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,                           0,        NULL,      NULL}
+    };
+  static GArray *dna_d_menus = NULL, *aa_d_menus = NULL;
+
+  if(!dna_d_menus)
+    {
+      ZMapGUIMenuItemStruct each_level_menu[] = {
+        {ZMAPGUI_MENU_NORMAL, "Show All", SHOW_DNA, seqMenuCB, NULL},
+        {ZMAPGUI_MENU_NORMAL, "Hide All", HIDE_DNA, seqMenuCB, NULL},
+        {ZMAPGUI_MENU_NONE,   NULL,       0,        NULL,      NULL}
+      };
+      dna_d_menus = g_array_new(TRUE, TRUE, sizeof(ZMapGUIMenuItemStruct));
+      zMapWindowMenuAlignBlockSubMenus(window, 
+                                       each_level_menu, each_level_menu, 
+                                       "DNA", &dna_d_menus);
+    }
+  if(!aa_d_menus)
+    {
+      ZMapGUIMenuItemStruct each_level_menu[] = {
+        {ZMAPGUI_MENU_NORMAL, "Show All", SHOW_3FT, seqMenuCB, NULL},
+        {ZMAPGUI_MENU_NORMAL, "Hide All", HIDE_3FT, seqMenuCB, NULL},
+        {ZMAPGUI_MENU_NONE,   NULL,       0,        NULL,      NULL}
+      };
+      aa_d_menus = g_array_new(TRUE, TRUE, sizeof(ZMapGUIMenuItemStruct));
+      zMapWindowMenuAlignBlockSubMenus(window, 
+                                       each_level_menu, each_level_menu, 
+                                       "3 Frame Translation", &aa_d_menus);
+    }
+
+  if(all_menus)
+    {
+      zMapGUIPopulateMenu(dna_menu, start_index_inout, callback_func, callback_data);
+      *all_menus = g_list_append(*all_menus, dna_menu);
+
+      *all_menus = g_list_append(*all_menus, dna_d_menus->data);
+
+      zMapGUIPopulateMenu(aa_menu, start_index_inout, callback_func, callback_data);
+      *all_menus = g_list_append(*all_menus, aa_menu);
+
+      *all_menus = g_list_append(*all_menus, aa_d_menus->data);
+    }
+
+  /* Here we have to fix up the data for the callbacks 
+   * We do this so that we get the correct window passed in.
+   */
+  g_list_foreach(*all_menus, fixSubMenuData, callback_data);
+
+  return NULL ;
+}
+
+static void makeSequenceMenu(GdkEventButton *button_event, ZMapWindow window)
+{
+  char *menu_title = "Sequence menu" ;
+  GList *menu_sets = NULL ;
+  static ZMapGUIMenuSubMenuData sub_data = NULL;
+
+  /* Set up the data so we pass in the correct window to our seqMenuCB 
+   * The issue of sub menu data is here as we have to dynamically generate 
+   * the quarks for the aligns and blocks... i.e. the contents of the 
+   * ZMapGUIMenuSubMenuData ...
+   */
+  if(!sub_data)
+    {
+      sub_data = g_new0(ZMapGUIMenuSubMenuDataStruct, 1);
+      sub_data->original_data = window;
+    }
+  else
+    sub_data->original_data = window;
+
+  /* Make up the menu. */
+  makeMenuSequenceOps(window, &menu_sets, NULL, NULL, sub_data) ;
+
+  zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
+
+  return ;
+}
+static gboolean sequenceEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
+{
+  gboolean handled = FALSE;
+  ZMap zmap = (ZMap)data ;
+  ZMapWindow window ;
+
+  zMapAssert(zmap->focus_viewwindow) ;
+
+  window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+
+  switch(event->type)
+    {
+    case GDK_BUTTON_PRESS:
+      {
+	GdkEventButton *button_ev = (GdkEventButton *)event ;
+
+        switch(button_ev->button)
+          {
+          case 3:
+	    makeSequenceMenu(button_ev, window) ;
+
+            handled = TRUE;
+            break;
+          default:
+            break;
+          }
+      }
+      break;
+    default:
+      break;
+    }
+  
+  return handled;
+}
 
