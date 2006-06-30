@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 28 10:31 2006 (edgrif)
+ * Last edited: Jun 28 11:03 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.36 2006-06-28 09:32:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.37 2006-06-30 10:58:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,10 @@ typedef struct
   FooCanvasGroup *column;
 }processFeatureDataStruct, *processFeatureData;
 
+typedef struct
+{
+  gboolean exists;
+}BlockHasDNAStruct, *BlockHasDNA;
 
 /* So we can redraw a featureset */
 static void drawEachFeature(GQuark key_id, gpointer data, gpointer user_data);
@@ -141,7 +145,9 @@ static gboolean makeFeatureEditWindow(ZMapWindow window, ZMapFeature feature) ;
 
 static void printItem(gpointer data, gpointer user_data) ;
 
-
+static void oneBlockHasDNA(GQuark key, 
+                           gpointer data, 
+                           gpointer user_data);
 
 
 
@@ -499,8 +505,25 @@ char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyl
   return description ;
 }
 
+gboolean zMapWindowGetDNAStatus(ZMapWindow window)
+{
+  gboolean drawable = FALSE;
+  BlockHasDNAStruct dna = {0};
+  /* We just need one of the blocks to have DNA.
+   * This enables us to turn on this button as we
+   * can't have half sensitivity.  Any block which
+   * doesn't have DNA creates a warning for the user
+   * to complain about.
+   */
+  zMapFeatureContextExecute((ZMapFeatureAny)(window->feature_context), 
+                            ZMAPFEATURE_STRUCT_BLOCK, 
+                            oneBlockHasDNA, 
+                            &dna);
+  
+  drawable = dna.exists;
 
-
+  return drawable;
+}
 
 
 /* 
@@ -2084,4 +2107,38 @@ static gboolean makeFeatureEditWindow(ZMapWindow window, ZMapFeature feature)
     }
 
   return result ;
+}
+
+/* Function to check whether any of the blocks has dna */
+static void oneBlockHasDNA(GQuark key, 
+                           gpointer data, 
+                           gpointer user_data)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureBlock     feature_block = NULL;
+  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+
+  BlockHasDNA dna = (BlockHasDNA)user_data;
+  
+  feature_type = feature_any->struct_type;
+
+  switch(feature_type)
+    {
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      feature_block = (ZMapFeatureBlock)feature_any;
+      if(!dna->exists)
+        dna->exists = (gboolean)(feature_block->sequence.length ? TRUE : FALSE);
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+    case ZMAPFEATURE_STRUCT_FEATURE:
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      break;
+    case ZMAPFEATURE_STRUCT_INVALID:
+    default:
+      zMapAssertNotReached();
+      break;
+
+    }
+
+  return ;
 }
