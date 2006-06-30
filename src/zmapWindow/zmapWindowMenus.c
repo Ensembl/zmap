@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jun 28 10:28 2006 (edgrif)
+ * Last edited: Jun 30 16:30 2006 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.15 2006-06-28 09:29:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.16 2006-06-30 15:31:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,13 @@
 enum {ZMAPCDS, ZMAPTRANSCRIPT, ZMAPUNSPLICED,
       ZMAPCDS_FILE, ZMAPTRANSCRIPT_FILE, ZMAPUNSPLICED_FILE} ;
 
+typedef struct
+{
+  char *stem;
+  ZMapGUIMenuItem each_align_items;
+  ZMapGUIMenuItem each_block_items;
+  GArray **array;
+}AlignBlockMenuStruct, *AlignBlockMenu;
 
 
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
@@ -62,7 +69,13 @@ static void dumpFASTA(ZMapWindow window, char *seq, char *seq_name, int seq_len,
 static void dumpFeatures(ZMapWindow window, ZMapFeatureAny feature) ;
 static void dumpContext(ZMapWindow window) ;
 
-
+static void insertSubMenus(GString *branch_point_string,
+                           ZMapGUIMenuItem sub_menus,
+                           ZMapGUIMenuItem item,
+                           GArray **items_array);
+static void alignBlockMenusDataListForeach(GQuark key, 
+                                           gpointer data, 
+                                           gpointer user_data);
 
 
 
@@ -883,3 +896,153 @@ static void dumpContext(ZMapWindow window)
   return ;
 }
 
+/*
+
+ * This is an attempt to make dynamic menus... Only really worth it
+ * for the align & block menus. With others a static struct, as above,
+ * is much more preferable.  
+
+ */
+
+static void insertSubMenus(GString *branch_point_string,
+                           ZMapGUIMenuItem sub_menus,
+                           ZMapGUIMenuItem item,
+                           GArray **items_array)
+{
+  int branch_length = 0;
+  branch_length = branch_point_string->len;
+
+  while(sub_menus && sub_menus->name != NULL)
+    {
+      if(*items_array)
+        {
+          g_string_append_printf(branch_point_string, "/%s", sub_menus->name);
+
+          memcpy(item, sub_menus, sizeof(ZMapGUIMenuItemStruct));
+
+          item->name   = g_strdup(branch_point_string->str); /* memory leak */
+
+          *items_array = g_array_append_val(*items_array, *item);    
+        }
+      
+      branch_point_string = g_string_erase(branch_point_string, 
+                                           branch_length, 
+                                           branch_point_string->len - branch_length);
+      sub_menus++;        /* move on */
+    }
+
+  return ;
+}
+
+
+static void alignBlockMenusDataListForeach(GQuark key, 
+                                           gpointer data, 
+                                           gpointer user_data)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  GString *item_name = NULL;
+  ZMapGUIMenuItem item = NULL, align_items = NULL, block_items = NULL;
+  GArray **items_array = NULL;
+  char *stem = NULL;
+  AlignBlockMenu  all_data = (AlignBlockMenu)user_data;
+
+  items_array = all_data->array;
+  stem        = all_data->stem;
+
+  feature_type = feature_any->struct_type;
+
+  item = g_new0(ZMapGUIMenuItemStruct, 1);
+
+  switch(feature_type)
+    {
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      item_name = g_string_sized_new(100);
+      g_string_printf(item_name, "%s%sAlign %s", 
+                      (stem ? stem : ""),
+                      (stem ? "/"  : ""),
+                      g_quark_to_string( feature_any->original_id ));
+
+      item->name   = g_strdup(item_name->str); /* memory leak */
+      item->type   = ZMAPGUI_MENU_BRANCH;
+      *items_array = g_array_append_val(*items_array, *item);    
+
+      align_items  = all_data->each_align_items;
+      while(align_items && align_items->name != NULL)
+        {
+          ZMapGUIMenuSubMenuData sub_data = g_new0(ZMapGUIMenuSubMenuDataStruct, 1);
+          sub_data->align_unique_id  = feature_any->unique_id;
+          sub_data->block_unique_id  = 0;
+          sub_data->original_data    = align_items->callback_data;
+          align_items->callback_data = sub_data;
+          align_items++;
+        }
+      align_items  = all_data->each_align_items;
+      insertSubMenus(item_name, align_items, item, items_array);
+
+      g_string_free(item_name, TRUE);
+      break;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      item_name = g_string_sized_new(100);
+      g_string_printf(item_name, "%s%sAlign %s/Block %s", 
+                      (stem ? stem : ""),
+                      (stem ? "/"  : ""),
+                      g_quark_to_string( feature_any->parent->original_id ),
+                      g_quark_to_string( feature_any->original_id ));
+
+      item->name   = g_strdup(item_name->str); /* memory leak */
+      item->type   = ZMAPGUI_MENU_BRANCH;
+      *items_array = g_array_append_val(*items_array, *item);    
+
+      block_items  = all_data->each_block_items;
+      while(block_items && block_items->name != NULL)
+        {
+          ZMapGUIMenuSubMenuData sub_data = g_new0(ZMapGUIMenuSubMenuDataStruct, 1);
+          sub_data->align_unique_id  = feature_any->parent->unique_id;
+          sub_data->block_unique_id  = feature_any->unique_id;
+          sub_data->original_data    = block_items->callback_data;
+          block_items->callback_data = sub_data;
+          block_items++;
+        }
+
+      block_items  = all_data->each_block_items;
+      insertSubMenus(item_name, block_items, item, items_array);
+
+      g_string_free(item_name, TRUE);
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+    case ZMAPFEATURE_STRUCT_FEATURE:
+    case ZMAPFEATURE_STRUCT_INVALID:
+    default:
+      zMapAssertNotReached();
+      break;
+
+    }
+
+  g_free(item);
+
+  return ;
+}
+
+
+void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window, 
+                                      ZMapGUIMenuItem each_align, 
+                                      ZMapGUIMenuItem each_block, 
+                                      char *root, 
+                                      GArray **items_array_out)
+{
+  zMapAssert(window);
+  AlignBlockMenuStruct data = {0};
+
+  data.each_align_items = each_align;
+  data.each_block_items = each_block;
+  data.stem             = root;
+  data.array            = items_array_out;
+
+  zMapFeatureContextExecute((ZMapFeatureAny)(window->feature_context), 
+                            ZMAPFEATURE_STRUCT_BLOCK, 
+                            alignBlockMenusDataListForeach,
+                            &data);
+  
+  return ;
+}
