@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 28 11:03 2006 (rds)
+ * Last edited: Jun 30 12:28 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.37 2006-06-30 10:58:35 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.38 2006-06-30 15:30:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -509,18 +509,26 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
 {
   gboolean drawable = FALSE;
   BlockHasDNAStruct dna = {0};
+
   /* We just need one of the blocks to have DNA.
    * This enables us to turn on this button as we
    * can't have half sensitivity.  Any block which
    * doesn't have DNA creates a warning for the user
    * to complain about.
    */
-  zMapFeatureContextExecute((ZMapFeatureAny)(window->feature_context), 
-                            ZMAPFEATURE_STRUCT_BLOCK, 
-                            oneBlockHasDNA, 
-                            &dna);
-  
-  drawable = dna.exists;
+
+  /* check for style too. */
+
+  if(zMapFindStyle(window->feature_context->styles, 
+                   zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+    {
+      zMapFeatureContextExecute((ZMapFeatureAny)(window->feature_context), 
+                                ZMAPFEATURE_STRUCT_BLOCK, 
+                                oneBlockHasDNA, 
+                                &dna);
+
+      drawable = dna.exists;
+    }
 
   return drawable;
 }
