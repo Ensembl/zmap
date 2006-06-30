@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 28 11:08 2006 (edgrif)
+ * Last edited: Jun 30 16:28 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.137 2006-06-28 10:26:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.138 2006-06-30 15:29:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,6 @@
 #include <ZMap/zmapConfig.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
-#include <ZMap/zmapPeptide.h>
 
 
 /* these will go when scale is in separate window. */
@@ -134,7 +133,7 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
 static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void setColours(ZMapWindow window) ;
-static void createThreeFrameTranslationForBlock(ZMapFeatureBlock block);
+
 
 
 
@@ -322,7 +321,80 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   return ;
 }
 
+void zMapWindowToggleDNAProteinColumns(ZMapWindow window, 
+                                       GQuark align_id,   GQuark block_id,
+                                       gboolean dna,      gboolean protein,
+                                       gboolean force_to, gboolean force)
+{
 
+  if(dna)
+    zmapWindowToggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_DNA_NAME, align_id, block_id, force_to, force);
+  if(protein)
+    zmapWindowToggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_3FT_NAME, align_id, block_id, force_to, force);
+
+  zmapWindowNewReposition(window);
+
+  return ;
+}
+void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
+                                            GQuark align_id, GQuark block_id, 
+                                            gboolean force_to, gboolean force)
+{
+  GList *blocks = NULL;
+  const char *wildcard = "*";
+  GQuark feature_set_unique  = 0;
+
+  feature_set_unique = zMapStyleCreateID(name);
+
+  if(align_id == 0)
+    align_id = g_quark_from_string(wildcard);
+  if(block_id == 0)
+    block_id = g_quark_from_string(wildcard);
+
+  /* check we have the style... */
+  if(zMapFindStyle(window->feature_context->styles, feature_set_unique))
+    blocks = zmapWindowFToIFindItemSetFull(window->context_to_item, 
+                                           align_id, block_id, 0, NULL, 0);
+  else
+    {
+      zMapWarning("Column with name '%s' does not exist."
+                  " Check there is a style of the same"
+                  " name in your style source.", name);
+    }
+
+
+  /* Foreach of the blocks, toggle the display of the DNA */
+  while(blocks)                 /* I cant bear to create ANOTHER struct! */
+    {
+      FooCanvasItem            *item = NULL;
+      ZMapFeatureAny     feature_any = NULL;
+      ZMapFeatureBlock feature_block = NULL;
+
+      feature_any   = (ZMapFeatureAny)g_object_get_data(G_OBJECT(blocks->data), ITEM_FEATURE_DATA);
+      feature_block = (ZMapFeatureBlock)feature_any;
+
+      if((item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                            feature_block->parent->unique_id,
+                                            feature_block->unique_id,
+                                            feature_set_unique,
+                                            ZMAPSTRAND_FORWARD,
+                                            0)) != NULL)
+        {
+          if(force && force_to)
+            zmapWindowColumnShow(item);
+          else if(force && !force_to)
+            zmapWindowColumnHide(item);
+          else if(zmapWindowItemIsShown(FOO_CANVAS_ITEM(item)))
+            zmapWindowColumnHide(item);
+          else
+            zmapWindowColumnShow(item);
+        }
+
+      blocks = blocks->next;
+    }
+
+  return ;
+}
 
 /************************ internal functions **************************************/
 
@@ -498,6 +570,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
 					    ZMAPCONTAINER_LEVEL_STRAND,
 					    window->config.column_spacing,
 					    for_bg_colour, &(canvas_data->window->canvas_border)) ;
+  zmapWindowContainerSetStrand(forward_group, ZMAPSTRAND_FORWARD);
   canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
   zmapWindowLongItemCheck(canvas_data->window, zmapWindowContainerGetBackground(forward_group),
 			  top, bottom) ;
@@ -506,17 +579,14 @@ static void drawBlocks(gpointer data, gpointer user_data)
 					    ZMAPCONTAINER_LEVEL_STRAND,
 					    window->config.column_spacing,
 					    rev_bg_colour, &(canvas_data->window->canvas_border)) ;
+  zmapWindowContainerSetStrand(reverse_group, ZMAPSTRAND_REVERSE);
   canvas_data->curr_reverse_group = zmapWindowContainerGetFeatures(reverse_group) ;
   zmapWindowLongItemCheck(canvas_data->window, zmapWindowContainerGetBackground(reverse_group),
 			  top, bottom) ;
 
-
   /* Add _all_ the types cols for the block, at this stage we don't know if they have features
    * and also the user may want them displayed even if empty.... */
   g_list_foreach(canvas_data->full_context->feature_set_names, createSetColumn, canvas_data) ;
-
-  if(block->sequence.length && block->sequence.sequence != NULL)
-    createThreeFrameTranslationForBlock(block);
 
 
   /* Now draw all features within each column, note that this operates on the feature context
@@ -565,8 +635,6 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   return ;
 }
-
-
 
 /* Makes a column for each style in the list, the columns are populated with features by the 
  * ProcessFeatureSet() routine, at this stage the columns do not have any features and some
@@ -652,7 +720,6 @@ static void createSetColumn(gpointer data, gpointer user_data)
 
 
   /* this forward/reverse stuff needs factorising..... */
-
   forward_col = createColumn(FOO_CANVAS_GROUP(canvas_data->curr_forward_group),
 			     window,
 			     style,
@@ -660,6 +727,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
 			     style->width,
 			     top, bottom,
 			     for_bg_colour) ;
+
 
   status = zmapWindowFToIAddSet(window->context_to_item,
 				canvas_data->curr_alignment->unique_id,
@@ -1020,7 +1088,7 @@ static void hackAHighlightColumn(ZMapWindow window, FooCanvasItem *column)
       ZMapStrand strand ;
       GdkColor *background ;
 
-      strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column), ITEM_FEATURE_STRAND)) ;
+      strand = zmapWindowContainerGetStrand(column);
 
       if (strand == ZMAPSTRAND_FORWARD)
 	background = &(window->colour_mforward_col) ;
@@ -1205,8 +1273,9 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
         GList *list ;
 	
         feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
-	strand = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_STRAND)) ;
-				 
+
+        strand = zmapWindowContainerGetStrand(FOO_CANVAS_GROUP(menu_data->item));
+
 	list = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
 					     feature->parent->parent->unique_id,
 					     feature->parent->unique_id,
@@ -1327,48 +1396,6 @@ static void setColours(ZMapWindow window)
 }
 
 
-
-static void createThreeFrameTranslationForBlock(ZMapFeatureBlock block)
-{
-  ZMapFeatureContext context = NULL;
-  ZMapFeatureSet feature_set = NULL;
-  ZMapFeatureTypeStyle style = NULL;
-  char *trans = "3frametranslation";
-
-  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_CONTEXT);
-
-  if(block->sequence.length &&
-     (feature_set = (g_datalist_id_get_data(&(block->feature_sets), 
-                                            g_quark_from_string(trans)))) &&
-     (style = zMapFindStyle(context->styles, g_quark_from_string(trans))))
-    {
-      int i; char *seq = NULL, *f_name = NULL;
-      ZMapFeature threeft = NULL; 
-      ZMapPeptide pep = NULL;
-      seq = block->sequence.sequence;
-      seq += 2;                 /* We do it in this order so it looks sensible on the display */
-      for(i = 2; seq && *seq && i >= 0; i--, seq--)
-        {
-          threeft = zMapFeatureCreateEmpty();
-          f_name = g_strdup_printf("%s_phase_%d", trans, i);
-          pep = zMapPeptideCreateSafely(NULL, NULL, seq, NULL, FALSE);
-          
-          threeft->text = g_strdup(zMapPeptideSequence(pep));
-          
-          zMapFeatureAddStandardData(threeft, f_name, f_name,
-                                     "b0250", "sequence",
-                                     ZMAPFEATURE_PEP_SEQUENCE, style,
-                                     i+1, zMapPeptideLength(pep) * 3 + i + 1,
-                                     FALSE, 0.0,
-                                     ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
-          zMapFeatureSetAddFeature(feature_set, threeft);
-        }
-      feature_set->style = style;
-    }
-  return ;
-}
-
-
 /* Called to free resources we added to the column group canvas item. */
 static void columnGroupDestroyCB(GtkObject *object, gpointer user_data)
 {
@@ -1387,6 +1414,7 @@ static void columnGroupDestroyCB(GtkObject *object, gpointer user_data)
 
   return ;
 }
+
 
 
 
