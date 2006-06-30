@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Jun 23 10:52 2006 (edgrif)
+ * Last edited: Jun 30 16:03 2006 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.12 2006-06-28 09:20:37 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.13 2006-06-30 15:18:39 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -76,6 +76,25 @@ typedef struct
   char      *name;
   GtkWidget *widget;
 } ZMapGUIRadioButtonStruct, *ZMapGUIRadioButton ;
+
+/* A wrongly named (makes it look too general) data struct to hold
+ * info for align/block information plus the original data that may
+ * have been set in the GUIMenuItem. Code currently does a swap 
+ *
+ * tmp = item->callback_data;
+ * sub->original = tmp;
+ * item->callback_data = sub;
+ *
+ * Not really that much fun, but I couldn't think of an alternative...
+ *
+ */
+
+typedef struct
+{
+  GQuark align_unique_id;
+  GQuark block_unique_id;
+  gpointer original_data;
+}ZMapGUIMenuSubMenuDataStruct, *ZMapGUIMenuSubMenuData;
 
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
