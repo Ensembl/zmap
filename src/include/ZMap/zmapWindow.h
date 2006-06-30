@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Apr 21 09:09 2006 (edgrif)
+ * Last edited: Jun 30 16:13 2006 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.59 2006-04-25 12:56:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.60 2006-06-30 15:19:29 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -43,6 +43,7 @@
 /* SHOULD CANVAS BE HERE...MAYBE, MAYBE NOT...... */
 #include <libfoocanvas/libfoocanvas.h>
 
+#include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapFeature.h>
 
 
@@ -185,6 +186,12 @@ double zMapWindowGetZoomMax(ZMapWindow window) ;
 double zMapWindowGetZoomMagnification(ZMapWindow window);
 double zMapWindowGetZoomMaxDNAInWrappedColumn(ZMapWindow window);
 
+gboolean zMapWindowGetDNAStatus(ZMapWindow window);
+void zMapWindowToggleDNAProteinColumns(ZMapWindow window, 
+                                       GQuark align_id,   GQuark block_id,
+                                       gboolean dna,      gboolean protein,
+                                       gboolean force_to, gboolean force);
+
 GtkWidget *zMapWindowGetWidget(ZMapWindow window);
 gboolean zMapWindowIsLocked(ZMapWindow window) ;
 GList *zMapWindowFeatureAllStyles(ZMapWindow window);
@@ -228,6 +235,12 @@ void zMapWindowDestroyLists(ZMapWindow window) ;
 void zMapWindowUnlock(ZMapWindow window) ;
 
 void zMapWindowDestroy(ZMapWindow window) ;
+
+void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window, 
+                                      ZMapGUIMenuItem each_align, 
+                                      ZMapGUIMenuItem each_block, 
+                                      char *root, 
+                                      GArray **items_array_out);
 
 
 #endif /* !ZMAP_WINDOW_H */
