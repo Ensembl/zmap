@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 30 16:37 2006 (rds)
+ * Last edited: Jul  4 09:22 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.61 2006-06-30 15:38:21 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.62 2006-07-04 08:23:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -192,8 +192,6 @@ static gboolean createConnection(void **server_out,
 
   server->host = g_strdup(url->host) ;
 
-  server->user_specified_styles = TRUE ;
-
   /* We need a minimum server version but user can specify a higher one in the config file. */
   if (version_str)
     {
@@ -262,8 +260,6 @@ static ZMapServerResponseType getStyles(void *server_in, GList **styles_out)
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
 		     "Could not get types from server because: %s", server->last_err_msg) ;
     }
-
-
 
   return result ;
 }
@@ -2129,7 +2125,11 @@ static void methodFetchCB(gpointer data, gpointer user_data)
   MethodFetch method_data = (MethodFetch)user_data ;
   GList *method_list ;
 
-  if ((method_list = (GList *)g_hash_table_lookup(method_data->method_2_featureset, GINT_TO_POINTER(feature_set))))
+  /* If there are methods that used a column_group to specify a method then look up the
+   * method from our hash, otherwise just use the method name. */
+  if (method_data->method_2_featureset
+      && (method_list = (GList *)g_hash_table_lookup(method_data->method_2_featureset,
+						     GINT_TO_POINTER(feature_set))))
     {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       g_list_foreach(method_list, printCB, NULL) ;	    /* debug */

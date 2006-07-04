@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jun 21 11:15 2006 (edgrif)
+ * Last edited: Jul  4 09:20 2006 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.12 2006-06-21 10:15:51 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.13 2006-07-04 08:23:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -68,9 +68,6 @@ typedef struct _AcedbServerStruct
   GHashTable *method_2_featureset ;			    /* Records which methods specified a
 							       column_group (aka feature_set. */
 
-  /* Not sure if we need any of these currently..... */
-  gboolean user_specified_styles ;			    /* Did the user specify a set of
-							       styles ? */
   char *method_str ;
 
 
