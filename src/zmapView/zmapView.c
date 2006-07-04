@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 22 10:15 2006 (edgrif)
+ * Last edited: Jul  4 09:24 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.76 2006-06-22 09:24:49 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.77 2006-07-04 08:25:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -283,12 +283,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		  continue ;
 		}
 
-	      if (styles_file && featuresets)
-		{
-		  featuresets = NULL ;
-		  zMapLogWarning("GUI: %s", "Both Featuresets name list and Styles file specified, "
-				 "Featuresets name list has been ignored.") ;
-		}
 
 	      /* We only record the first sequence and writeback servers found, this means you
 	       * can only have one each of these which seems sensible. */
@@ -364,14 +358,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
        * returns to the init state. */
       if (result)
 	{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* I'd like to put this and move to loading later but actually the above call does it
-	   * all in one.... */
-	  zmap_view->state = ZMAPVIEW_CONNECTED ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	  zmap_view->state = ZMAPVIEW_LOADING ;
-
 
 	  /* Start polling function that checks state of this view and its connections, note
 	   * that at this stage there is no data to display. */
