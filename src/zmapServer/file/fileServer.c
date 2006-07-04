@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Jun 12 08:40 2006 (edgrif)
+ * Last edited: Jul  4 10:02 2006 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.20 2006-06-12 07:41:06 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.21 2006-07-04 09:03:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -293,10 +293,27 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
   GError *gff_file_err = NULL ;
   ZMapGFFHeader header ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  {
+    /* DEBUG.... */
+    GList *style_names ;
+
+    zMap_g_quark_list_print(feature_context->feature_set_names) ;
+
+    style_names = zMapStylesGetNames(feature_context->styles) ;
+    zMap_g_quark_list_print(style_names) ;
+  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
   get_features.result = ZMAP_SERVERRESPONSE_OK ;
   get_features.server = (FileServer)server_in ;
+
   get_features.parser = zMapGFFCreateParser(server->req_context->styles, FALSE) ;
 							    /* FALSE => do the real parse. */
+
 
   get_features.gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines will be >
 							       2k chars. */
