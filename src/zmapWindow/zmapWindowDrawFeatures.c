@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 30 16:28 2006 (rds)
+ * Last edited: Jul  3 18:43 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.138 2006-06-30 15:29:27 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.139 2006-07-04 08:26:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -380,14 +380,14 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
                                             ZMAPSTRAND_FORWARD,
                                             0)) != NULL)
         {
-          if(force && force_to)
-            zmapWindowColumnShow(item);
-          else if(force && !force_to)
-            zmapWindowColumnHide(item);
-          else if(zmapWindowItemIsShown(FOO_CANVAS_ITEM(item)))
-            zmapWindowColumnHide(item);
+          if (force && force_to)
+            zmapWindowColumnShow(FOO_CANVAS_GROUP(item)) ;
+          else if (force && !force_to)
+            zmapWindowColumnHide(FOO_CANVAS_GROUP(item)) ;
+          else if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(item)))
+            zmapWindowColumnHide(FOO_CANVAS_GROUP(item)) ;
           else
-            zmapWindowColumnShow(item);
+            zmapWindowColumnShow(FOO_CANVAS_GROUP(item)) ;
         }
 
       blocks = blocks->next;
@@ -862,27 +862,56 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   zMapAssert(type_quark == key_id) ;			    /* sanity check. */
 
 
-  /* UM, I THINK I SHOULD REVISIT THIS...SEEMS BAD TO HARD CODE THAT WE SHOULD _ALWAYS_ HAVE A
-   * FORWARD COLUMN........ */
+  forward_col = FOO_CANVAS_GROUP(zmapWindowFToIFindSetItem(window->context_to_item,
+							   feature_set, ZMAPSTRAND_FORWARD)) ;
+
+  reverse_col = FOO_CANVAS_GROUP(zmapWindowFToIFindSetItem(window->context_to_item,
+							   feature_set, ZMAPSTRAND_REVERSE)) ;
+
+  /* If neither column can be found it means that there is a mismatch between the requested
+   * feature_sets and the styles. This happens when dealing with gff sources read from
+   * files for instance because the features must be retrieved using the style names but then
+   * filtered by feature_set name, so if extra styles are provided this will result in the
+   * mismatch.
+   *  */
+  if (!forward_col && !reverse_col)
+    {
+      /* There is a memory leak here in that we do not delete the feature set from the context. */
+      char *name = (char *)g_quark_to_string(feature_set->original_id) ;
+
+      /* Temporary...probably user will not want to see this in the end but for now its good for debugging. */
+      zMapShowMsg(ZMAP_MSG_WARNING, 
+		  "Feature set \"%s\" not displayed because although it was retrieved from the server,"
+		  " it is not in the list of feature sets to be displayed."
+		  " Please check the list of styles and feature sets in the ZMap configuration file.",
+		  name) ;
+
+      zMapLogCritical("Feature set \"%s\" not displayed because although it was retrieved from the server,"
+		      " it is not in the list of feature sets to be displayed."
+		      " Please check the list of styles and feature sets in the ZMap configuration file.",
+		      name) ;
+
+      return ;
+    }
+
+
+
   /* Get hold of the current column and set up canvas_data to do the right thing,
    * remember that there must always be a forward column but that there might
    * not be a reverse column ! */
-  forward_col = FOO_CANVAS_GROUP(zmapWindowFToIFindSetItem(window->context_to_item,
-							   feature_set, ZMAPSTRAND_FORWARD)) ;
-  zMapAssert(forward_col) ;
-
-  /* Now we have the feature set, make sure it is set for the column. */
-  g_object_set_data(G_OBJECT(forward_col), ITEM_FEATURE_DATA, feature_set) ;
+  if (forward_col)
+    {
+      /* Now we have the feature set, make sure it is set for the column. */
+      g_object_set_data(G_OBJECT(forward_col), ITEM_FEATURE_DATA, feature_set) ;
 
 
-  canvas_data->curr_forward_col = zmapWindowContainerGetFeatures(forward_col) ;
+      canvas_data->curr_forward_col = zmapWindowContainerGetFeatures(forward_col) ;
+      
+      canvas_data->curr_forward_col_id = zmapWindowFToIMakeSetID(feature_set->unique_id,
+								 ZMAPSTRAND_FORWARD) ;
+    }
 
-  canvas_data->curr_forward_col_id = zmapWindowFToIMakeSetID(feature_set->unique_id,
-							     ZMAPSTRAND_FORWARD) ;
-
-
-  if ((reverse_col = FOO_CANVAS_GROUP(zmapWindowFToIFindSetItem(window->context_to_item,
-								feature_set, ZMAPSTRAND_REVERSE))))
+  if (reverse_col)
     {
       /* Now we have the feature set, make sure it is set for the column. */
       g_object_set_data(G_OBJECT(reverse_col), ITEM_FEATURE_DATA, feature_set) ;
@@ -898,14 +927,15 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   g_datalist_foreach(&(feature_set->features), ProcessFeature, canvas_data) ;
 
 
-  /* TRY RESIZING BACKGROUND NOW..... */
+  /* TRY RESIZING BACKGROUND NOW.....get rid of debug info.... */
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(forward_col), &x1, &y1, &x2, &y2) ;
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetBackground(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
 
-  zmapWindowContainerMaximiseBackground(forward_col) ;
+  if (forward_col)
+    zmapWindowContainerMaximiseBackground(forward_col) ;
 
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(forward_col), &x1, &y1, &x2, &y2) ;
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(forward_col)),
@@ -913,6 +943,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetBackground(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
   
+
   if (reverse_col)
     zmapWindowContainerMaximiseBackground(reverse_col) ;
 
@@ -1088,7 +1119,7 @@ static void hackAHighlightColumn(ZMapWindow window, FooCanvasItem *column)
       ZMapStrand strand ;
       GdkColor *background ;
 
-      strand = zmapWindowContainerGetStrand(column);
+      strand = zmapWindowContainerGetStrand(FOO_CANVAS_GROUP(column)) ;
 
       if (strand == ZMAPSTRAND_FORWARD)
 	background = &(window->colour_mforward_col) ;
