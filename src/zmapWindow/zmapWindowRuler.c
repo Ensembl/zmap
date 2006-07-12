@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  5 11:24 2006 (rds)
+ * Last edited: Jul 12 10:51 2006 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.6 2006-05-05 11:00:16 rds Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.7 2006-07-12 09:52:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,6 +64,7 @@ typedef struct _ZMapWindowRulerCanvasStruct
 
   PangoFont *font;
   PangoFontDescription *font_desc;
+  int font_width;
 
   ZMapWindowRulerCanvasCallbackList callbacks; /* The callbacks we need to call sensible window functions... */
 
@@ -130,7 +131,7 @@ ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackL
   obj->callbacks->user_data  = callbacks->user_data;
 
   obj->default_position = DEFAULT_PANE_POSITION;
-  obj->text_left        = FALSE;
+  obj->text_left        = TRUE; /* TRUE = put the text on the left! */
 
   obj->visibilityHandlerCB = 0;
 
@@ -172,7 +173,8 @@ void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
                                g_list_append(NULL, "Monospace"), 10, PANGO_WEIGHT_NORMAL,
                                &(obj->font), &(obj->font_desc)))
     printf("Couldn't get fixed width font\n");
-
+  else
+    zMapGUIGetFontWidth(obj->font, &(obj->font_width));
   
 #ifdef RDS_DONT_INCLUDE
   gtk_widget_modify_bg(GTK_WIDGET(obj->canvas), 
