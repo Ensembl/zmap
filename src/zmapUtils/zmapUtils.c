@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Apr 24 11:43 2006 (edgrif)
+ * Last edited: Jul 14 11:23 2006 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.16 2006-04-25 12:54:25 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.17 2006-07-14 10:24:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -316,6 +316,25 @@ gboolean zMapStr2Int(char *str, int *int_out)
 	  *int_out = (int)retval ;
 	  result = TRUE ;
 	}
+    }
+
+  return result ;
+}
+
+
+gboolean zMapInt2Str(int int_in, char **str_out)
+{
+  gboolean result = FALSE ;
+  char *str = NULL ;
+
+  zMapAssert(str_out) ;
+
+  /* I think this can never fail as the input is just an int. */
+  str = g_strdup_printf("%d", int_in) ;
+  if (str && *str)
+    {
+      *str_out = str ;
+      result = TRUE ;
     }
 
   return result ;
