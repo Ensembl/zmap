@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 30 14:27 2006 (rds)
+ * Last edited: Jul 17 12:39 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.125 2006-06-30 15:31:29 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.126 2006-07-17 11:41:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -432,6 +432,11 @@ typedef struct _ZMapWindowItemHighlighterStruct *ZMapWindowItemHighlighter;
 typedef void (*ZMapWindowStyleTableCallback)(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
 
+/* Callback for use in testing item hash objects to see if they fit a particular predicate. */
+typedef gboolean (*ZMapWindowFToIPredFuncCB)(FooCanvasItem *canvas_item, gpointer user_data) ;
+
+
+
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
@@ -443,16 +448,12 @@ void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item) ;
 
 void zmapWindowShowItem(FooCanvasItem *item) ;
 
-
 void zmapWindowListWindowCreate(ZMapWindow zmapWindow, 
 				GList *itemList,
 				char *title,
 				FooCanvasItem *currentItem) ;
 void zmapWindowListWindowReread(GtkWidget *window_list_widget) ;
-
-
-void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, ZMapFeatureAny feature_any) ;
-
+void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, FooCanvasItem *feature_item) ;
 
 void zmapWindowNewReposition(ZMapWindow window) ;
 void zmapWindowResetWidth(ZMapWindow window) ;
@@ -506,7 +507,8 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
 GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark set_id,
 				     char *strand_spec,
-				     GQuark feature_id) ;
+				     GQuark feature_id,
+				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data) ;
 FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
 					 ZMapFeatureSet feature_set, ZMapStrand strand) ;
 FooCanvasItem *zmapWindowFToIFindFeatureItem(GHashTable *feature_to_context_hash, ZMapFeature feature) ;

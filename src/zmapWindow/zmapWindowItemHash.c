@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Jul  6 16:13 2006 (edgrif)
+ * Last edited: Jul 17 12:37 2006 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.27 2006-07-17 11:22:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.28 2006-07-17 11:41:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,17 +64,6 @@ typedef struct
 
 /* forward declaration, needed for function prototype. */
 typedef struct ItemSearchStruct_ *ItemSearch ;
-
-
-/* THIS NEEDS TO BE REPLACED WITH A MORE GENERAL FUNCTION PASSING IN AN anyfeature struct
- * and a user data pointer.... */
-/* Callback function that takes the given item and checks to see if it satisfies a particular
- * predicate. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-typedef gboolean (*ZMapWindowItemValidFunc)(ItemSearch curr_search, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
@@ -118,10 +107,6 @@ typedef struct
 
 
 
-
-/* SOMETHING I NEED TO ADD HERE IS FORWARD/REVERSE COLUMN STUFF..... */
-
-
 static void destroyIDHash(gpointer data) ;
 static void doHashSet(GHashTable *hash_table, GList *search, GList **result) ;
 static void searchItemHash(gpointer key, gpointer value, gpointer user_data) ;
@@ -135,17 +120,8 @@ static gboolean removeBlock(GHashTable *feature_to_context_hash,
 static void printHashKeys(GQuark align, GQuark block, GQuark set, GQuark feature);
 static void printGlist(gpointer data, gpointer user_data) ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-gboolean filterOnForwardStrand(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data) ;
-gboolean filterOnReverseStrand(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data) ;
-gboolean filterOnStrand(FooCanvasItem *item, ZMapStrand strand) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 gboolean isRegExp(GQuark id) ;
 gboolean filterOnRegExp(ItemSearch curr_search, gpointer user_data) ;
-
 
 static GQuark makeSetID(GQuark set_id, ZMapFeature feature) ;
 
@@ -989,24 +965,12 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 
   align_search.search_quark = align_id ;
   if (align_id && isRegExp(align_id))
-    {
-      align_search.is_reg_exp = TRUE ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      align_search.valid_func = filterOnRegExp ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    }
+    align_search.is_reg_exp = TRUE ;
 
 
   block_search.search_quark = block_id ;
   if (block_id && isRegExp(block_id))
     block_search.is_reg_exp = TRUE ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    block_search.valid_func = filterOnRegExp ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
   if (set_id)
@@ -1031,10 +995,6 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 	  forward_set_search.search_quark = forward_set_id ;
 	  if (isRegExp(set_id))
 	    forward_set_search.is_reg_exp = TRUE ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    forward_set_search.valid_func = filterOnRegExp ;	      
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	}
 
       if (strand_id == strand_reverse || strand_id == strand_both)
@@ -1043,10 +1003,6 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 	  reverse_set_search.search_quark = reverse_set_id ;
 	  if (isRegExp(set_id))
 	    reverse_set_search.is_reg_exp = TRUE ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    reverse_set_search.valid_func = filterOnRegExp ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	}
     }
 
@@ -1087,8 +1043,6 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 	  last_search->user_data = user_data ;
 	}
     }
-
-
 
 
 
@@ -1266,22 +1220,9 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
       if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
 						    GUINT_TO_POINTER(curr_search_id))))
 	{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (!curr_search->valid_func || curr_search->valid_func(item_id->item, curr_search, NULL))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (!curr_search->is_reg_exp || filterOnRegExp(curr_search, NULL))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	  if (!curr_search->pred_func || curr_search->pred_func(item_id->item, curr_search->user_data))
 	    results = g_list_append(results, item_id->item) ;
 	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      else if (curr_search_id == wild_card || curr_search->pred_func)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       else if (curr_search_id == wild_card || curr_search->is_reg_exp)
 	{
 	  curr_search->results = &results ;
@@ -1308,10 +1249,6 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
 	{
 	  doHashSet(item_id->hash_table, search_data.search, search_data.results) ;
 	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      else if (curr_search_id == wild_card || curr_search->valid_func)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       else if (curr_search_id == wild_card || curr_search->is_reg_exp)
 	{
 	  g_hash_table_foreach(hash_table, searchItemHash, (gpointer)&search_data) ;
@@ -1332,11 +1269,6 @@ static void addItem(gpointer key, gpointer value, gpointer user_data)
   ItemSearch curr_search = (ItemSearch)user_data ;
   GList **results = curr_search->results ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (!curr_search->valid_func || curr_search->valid_func(hash_item->item, curr_search, key)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   if (curr_search->is_reg_exp && filterOnRegExp(curr_search, key)
       && (!(curr_search->pred_func)
 	  || (curr_search->pred_func
@@ -1353,11 +1285,6 @@ static void searchItemHash(gpointer key, gpointer value, gpointer user_data)
   ID2Canvas hash_item = (ID2Canvas)value ;
   ItemListSearch search = (ItemListSearch)user_data ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (!search->curr_search->valid_func
-      || search->curr_search->valid_func(hash_item->item, search->curr_search, key))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   if (!search->curr_search->is_reg_exp
       || filterOnRegExp(search->curr_search, key))
     doHashSet(hash_item->hash_table, search->search, search->results) ;
@@ -1409,47 +1336,6 @@ static void printGlist(gpointer data, gpointer user_data)
 
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* THESE APPEAR NOT TO BE USED ANYWHERE.... */
-
-gboolean filterOnForwardStrand(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data)
-{
-  gboolean result ;
-
-  result = filterOnStrand(item, ZMAPSTRAND_FORWARD) ;
-
-  return result ;
-}
-
-
-gboolean filterOnReverseStrand(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data)
-{
-  gboolean result ;
-
-  result = filterOnStrand(item, ZMAPSTRAND_REVERSE) ;
-
-  return result ;
-}
-
-gboolean filterOnStrand(FooCanvasItem *item, ZMapStrand strand)
-{
-  gboolean result = FALSE ;
-  ZMapFeature feature ;
-
-  feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
-  zMapAssert(feature) ;
-
-  if (feature->strand == strand)
-    result = TRUE ;
-
-  return result ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 /* Check to see if the string represented by the quark id contains regexp chars,
  * currently this means "*" or "?". */
 gboolean isRegExp(GQuark id)
@@ -1466,13 +1352,7 @@ gboolean isRegExp(GQuark id)
 }
 
 
-/* We will need a user_data param to hold the compiled string for efficiency....
- * 
- * OK, I think we need to filter on the string that was used to hash this item,
- * _not_ the unique id of the item. This is because some items are hashed using
- * a string _constructed_ from their unique id, e.g. most obviously strand specific
- * stuff.
- * 
+/* Use simple glib regexp func to compare wild card string with unique ids in hash.
  *  */
 gboolean filterOnRegExp(ItemSearch curr_search, gpointer user_data)
 {
@@ -1490,6 +1370,7 @@ gboolean filterOnRegExp(ItemSearch curr_search, gpointer user_data)
 
   return result ;
 }
+
 
 static GQuark rootCanvasID(void)
 {
