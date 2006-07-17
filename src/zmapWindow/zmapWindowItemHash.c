@@ -20,8 +20,7 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Functions to go from an alignment, block, column or feature
  *              in a feature context to the corresponding foocanvas group or item.
@@ -30,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: May 19 09:14 2006 (edgrif)
+ * Last edited: Jul  6 16:13 2006 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.26 2006-05-19 10:57:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.27 2006-07-17 11:22:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,10 +66,17 @@ typedef struct
 typedef struct ItemSearchStruct_ *ItemSearch ;
 
 
+/* THIS NEEDS TO BE REPLACED WITH A MORE GENERAL FUNCTION PASSING IN AN anyfeature struct
+ * and a user data pointer.... */
 /* Callback function that takes the given item and checks to see if it satisfies a particular
  * predicate. */
-typedef gboolean (*ZMapWindowItemValidFunc)(FooCanvasItem *item, 
-					    ItemSearch curr_search, gpointer user_data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+typedef gboolean (*ZMapWindowItemValidFunc)(ItemSearch curr_search, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 /* n.b. sometimes we will want the search thing to be a quark, sometimes a string,
  * depending whether the given string is an exact name or a regexp...hmmmm
@@ -80,13 +86,23 @@ typedef gboolean (*ZMapWindowItemValidFunc)(FooCanvasItem *item,
 typedef struct ItemSearchStruct_
 {
   GQuark search_quark ;					    /* Specifies search string. */
+  gboolean is_reg_exp ;					    /* Is the search quark a regexp ? */
 
-  ZMapWindowItemValidFunc valid_func ;			    /* Function to check items for validity. */
 
+  /* Function to check the final results item for validity, only used when we reach the
+   * terminating leaf of the search. */
+  ZMapWindowFToIPredFuncCB pred_func ;			    /* Function to check items for validity. */
+  gpointer user_data ;					    /* Passed to pred_func. */
+
+
+  /* Actually, I'm not sure why I'm unhappy with this...???? is it because it duplicates the
+   * field in the itemliststruct ?? */
   /* UGH not happy with this, rework this when there is time... */
   GList **results ;					    /* result of search. */
 
 } ItemSearchStruct ;
+
+
 
 
 typedef struct
@@ -120,11 +136,15 @@ static void printHashKeys(GQuark align, GQuark block, GQuark set, GQuark feature
 static void printGlist(gpointer data, gpointer user_data) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean filterOnForwardStrand(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data) ;
 gboolean filterOnReverseStrand(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data) ;
 gboolean filterOnStrand(FooCanvasItem *item, ZMapStrand strand) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 gboolean isRegExp(GQuark id) ;
-gboolean filterOnRegExp(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data) ;
+gboolean filterOnRegExp(ItemSearch curr_search, gpointer user_data) ;
 
 
 static GQuark makeSetID(GQuark set_id, ZMapFeature feature) ;
@@ -359,7 +379,8 @@ gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query
                                                                      block_id,
                                                                      set_id,
                                                                      strand_txt,
-                                                                     feature_id)) != NULL)
+                                                                     feature_id,
+								     NULL, NULL)) != NULL)
             found = TRUE;       /* Success */
           break;
         case ZMAP_FTOI_RETURN_ERROR:
@@ -942,7 +963,8 @@ FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
 GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark set_id,
 				     char *strand_spec,
-				     GQuark feature_id)
+				     GQuark feature_id,
+				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data)
 {
   GList *result = NULL ;
   GQuark strand_id, strand_none, strand_forward, strand_reverse, strand_both ;
@@ -967,11 +989,24 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 
   align_search.search_quark = align_id ;
   if (align_id && isRegExp(align_id))
-    align_search.valid_func = filterOnRegExp ;
+    {
+      align_search.is_reg_exp = TRUE ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      align_search.valid_func = filterOnRegExp ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
 
   block_search.search_quark = block_id ;
   if (block_id && isRegExp(block_id))
+    block_search.is_reg_exp = TRUE ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     block_search.valid_func = filterOnRegExp ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   if (set_id)
@@ -995,7 +1030,11 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 	  forward_set_id = zmapWindowFToIMakeSetID(set_id, ZMAPSTRAND_FORWARD) ;
 	  forward_set_search.search_quark = forward_set_id ;
 	  if (isRegExp(set_id))
+	    forward_set_search.is_reg_exp = TRUE ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    forward_set_search.valid_func = filterOnRegExp ;	      
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	}
 
       if (strand_id == strand_reverse || strand_id == strand_both)
@@ -1003,17 +1042,58 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 	  reverse_set_id = zmapWindowFToIMakeSetID(set_id, ZMAPSTRAND_REVERSE) ;
 	  reverse_set_search.search_quark = reverse_set_id ;
 	  if (isRegExp(set_id))
+	    reverse_set_search.is_reg_exp = TRUE ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    reverse_set_search.valid_func = filterOnRegExp ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	}
     }
 
   feature_search.search_quark = feature_id ;
   if (feature_id && isRegExp(feature_id))
-    feature_search.valid_func = filterOnRegExp ;
+    feature_search.is_reg_exp = TRUE ;
+
+
+  if (pred_func)
+    {
+      /* clunky logic...damn those strands.... */
+      ItemSearch last_search = NULL ;
+
+      /* N.B. there is always an align id.... */
+      if (!block_id)
+	last_search = &align_search ;
+      else if (!set_id)
+	last_search = &block_search ;
+      else if (!feature_id)
+	{
+	  if (forward_set_id)
+	    {
+	      forward_set_search.pred_func = pred_func ;
+	      forward_set_search.user_data = user_data ;
+	    }
+	  if (reverse_set_id)
+	    {
+	      reverse_set_search.pred_func = pred_func ;
+	      reverse_set_search.user_data = user_data ;
+	    }
+	}
+      else
+	last_search = &feature_search ;
+
+      if (last_search)
+	{
+	  last_search->pred_func = pred_func ;
+	  last_search->user_data = user_data ;
+	}
+    }
+
+
+
 
 
   /* build the search list (terminal stop is needed to halt the search if none of the given
-   * parameters is a stop. */
+   * parameters is a stop). */
   if (!set_id
       || (strand_id == strand_none || strand_id == strand_forward || strand_id == strand_both))
     {
@@ -1177,9 +1257,6 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
   zMapAssert(curr_search_id != stop) ;
 
 
-  /* BAD LOGIC BELOW, NEED TO SORT OUT REGEXP VALIDATION FROM SAY POSITION VALIDATION... */
-
-
   if (next_search_id == stop)
     {
       /* If we've reached the end it's time to actually add items to the list. */
@@ -1189,10 +1266,23 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
       if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
 						    GUINT_TO_POINTER(curr_search_id))))
 	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (!curr_search->valid_func || curr_search->valid_func(item_id->item, curr_search, NULL))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  if (!curr_search->is_reg_exp || filterOnRegExp(curr_search, NULL))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  if (!curr_search->pred_func || curr_search->pred_func(item_id->item, curr_search->user_data))
 	    results = g_list_append(results, item_id->item) ;
 	}
-      else if (curr_search_id == wild_card || curr_search->valid_func)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      else if (curr_search_id == wild_card || curr_search->pred_func)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      else if (curr_search_id == wild_card || curr_search->is_reg_exp)
 	{
 	  curr_search->results = &results ;
 
@@ -1218,7 +1308,11 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
 	{
 	  doHashSet(item_id->hash_table, search_data.search, search_data.results) ;
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       else if (curr_search_id == wild_card || curr_search->valid_func)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      else if (curr_search_id == wild_card || curr_search->is_reg_exp)
 	{
 	  g_hash_table_foreach(hash_table, searchItemHash, (gpointer)&search_data) ;
 	}
@@ -1238,7 +1332,15 @@ static void addItem(gpointer key, gpointer value, gpointer user_data)
   ItemSearch curr_search = (ItemSearch)user_data ;
   GList **results = curr_search->results ;
 
-  if (!curr_search->valid_func || curr_search->valid_func(hash_item->item, curr_search, key))
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (!curr_search->valid_func || curr_search->valid_func(hash_item->item, curr_search, key)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  if (curr_search->is_reg_exp && filterOnRegExp(curr_search, key)
+      && (!(curr_search->pred_func)
+	  || (curr_search->pred_func
+	      && curr_search->pred_func(hash_item->item, curr_search->user_data))))
     *results = g_list_append(*results, hash_item->item) ;
 
   return ;
@@ -1251,8 +1353,13 @@ static void searchItemHash(gpointer key, gpointer value, gpointer user_data)
   ID2Canvas hash_item = (ID2Canvas)value ;
   ItemListSearch search = (ItemListSearch)user_data ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (!search->curr_search->valid_func
       || search->curr_search->valid_func(hash_item->item, search->curr_search, key))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (!search->curr_search->is_reg_exp
+      || filterOnRegExp(search->curr_search, key))
     doHashSet(hash_item->hash_table, search->search, search->results) ;
 
   return ;
@@ -1302,6 +1409,11 @@ static void printGlist(gpointer data, gpointer user_data)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* THESE APPEAR NOT TO BE USED ANYWHERE.... */
+
 gboolean filterOnForwardStrand(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data)
 {
   gboolean result ;
@@ -1334,6 +1446,8 @@ gboolean filterOnStrand(FooCanvasItem *item, ZMapStrand strand)
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* Check to see if the string represented by the quark id contains regexp chars,
@@ -1360,7 +1474,7 @@ gboolean isRegExp(GQuark id)
  * stuff.
  * 
  *  */
-gboolean filterOnRegExp(FooCanvasItem *item, ItemSearch curr_search, gpointer user_data)
+gboolean filterOnRegExp(ItemSearch curr_search, gpointer user_data)
 {
   gboolean result = FALSE ;
   char *pattern, *key_string ;

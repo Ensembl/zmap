@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul  3 18:43 2006 (edgrif)
+ * Last edited: Jul 17 12:18 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.139 2006-07-04 08:26:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.140 2006-07-17 11:22:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -354,7 +354,7 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
   /* check we have the style... */
   if(zMapFindStyle(window->feature_context->styles, feature_set_unique))
     blocks = zmapWindowFToIFindItemSetFull(window->context_to_item, 
-                                           align_id, block_id, 0, NULL, 0);
+                                           align_id, block_id, 0, NULL, 0, NULL, NULL) ;
   else
     {
       zMapWarning("Column with name '%s' does not exist."
@@ -1312,7 +1312,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 					     feature->parent->unique_id,
 					     feature->unique_id,
 					     zMapFeatureStrand2Str(strand),
-					     g_quark_from_string("*")) ;
+					     g_quark_from_string("*"), NULL, NULL) ;
 	
         zmapWindowListWindowCreate(menu_data->window, list, 
                                    (char *)g_quark_to_string(feature->original_id), 
@@ -1321,7 +1321,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 	break ;
       }
     case 2:
-      zmapWindowCreateSearchWindow(menu_data->window, (ZMapFeatureAny)(menu_data->feature_set)) ;
+      zmapWindowCreateSearchWindow(menu_data->window, menu_data->item) ;
       break ;
     default:
       zMapAssert("Coding error, unrecognised menu item number.") ;

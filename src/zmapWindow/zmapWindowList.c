@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 27 16:32 2006 (rds)
+ * Last edited: Jul 17 12:20 2006 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.48 2006-05-30 16:48:48 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.49 2006-07-17 11:22:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -664,6 +664,7 @@ static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget)
   GtkTreePath *path       = NULL;
   ZMapFeatureAny feature  = NULL;
   GtkTreeIter iter;
+  FooCanvasItem *feature_item ;
 
   treeView  = GTK_TREE_VIEW(wList->view);
   treeModel = gtk_tree_view_get_model(GTK_TREE_VIEW(treeView));
@@ -685,7 +686,11 @@ static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget)
 		     -1);
   zMapAssert(feature) ;
 
-  zmapWindowCreateSearchWindow(wList->zmapWindow, feature);
+  feature_item = zmapWindowFToIFindFeatureItem(wList->zmapWindow->context_to_item,
+					       (ZMapFeature)feature) ;
+
+  zmapWindowCreateSearchWindow(wList->zmapWindow, feature_item) ;
+
 
   return ;
 }

@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 30 12:28 2006 (rds)
+ * Last edited: Jul 17 12:19 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.38 2006-06-30 15:30:06 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.39 2006-07-17 11:22:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1871,7 +1871,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 					     feature->parent->parent->unique_id,
 					     feature->parent->unique_id,
 					     zMapFeatureStrand2Str(strand),
-					     g_quark_from_string("*")) ;
+					     g_quark_from_string("*"), NULL, NULL) ;
 
         zmapWindowListWindowCreate(menu_data->window, list, 
                                    (char *)g_quark_to_string(feature->parent->original_id), 
@@ -1888,7 +1888,8 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	break ;
       }
     case 3:
-      zmapWindowCreateSearchWindow(menu_data->window, (ZMapFeatureAny)feature) ;
+      zmapWindowCreateSearchWindow(menu_data->window, menu_data->item) ;
+
       break ;
     case 4:
       pfetchEntry(menu_data->window, (char *)g_quark_to_string(feature->original_id)) ;
