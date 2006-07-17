@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul  4 09:24 2006 (edgrif)
+ * Last edited: Jul 14 17:16 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.77 2006-07-04 08:25:16 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.78 2006-07-17 11:07:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1771,7 +1771,8 @@ static GList *string2StyleQuarks(char *featuresets)
       else
 	list_pos = target ;
     }
-  while ((nextIsQuoted(&list_pos) && (next_featureset = strtok_r(target, "\"", &list_pos)))
+  while (((list_pos && nextIsQuoted(&list_pos))
+	  && (next_featureset = strtok_r(target, "\"", &list_pos)))
 	 || (next_featureset = strtok_r(target, " \t", &list_pos))) ;
 
 
