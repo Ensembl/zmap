@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 18 14:49 2006 (rds)
+ * Last edited: Jul 17 10:52 2006 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.29 2006-05-18 13:49:48 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.30 2006-07-17 11:07:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -158,9 +158,31 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
 }
 
 
+/* Given a feature name produce the canonicalised name as used that is used in producing
+ * unique feature names.
+ * 
+ * NOTE that the name is canonicalised in place so caller must provide a string for this
+ * to be done in.
+ *  */
+char *zMapFeatureCanonName(char *feature_name)
+{
+  char *ptr ;
+  int len ;
 
+  zMapAssert(feature_name && *feature_name) ;
 
+  len = strlen(feature_name);
 
+  /* lower case the feature name, only the feature part though,
+   * numbers don't matter. Here we do as g_strdown does, but in place
+   * rather than a g_strdup first. */
+  for(ptr = feature_name; ptr <= feature_name + len; ptr++)
+    {
+      *ptr = g_ascii_tolower(*ptr);
+    }
+
+  return feature_name ;
+}
 
 
 
@@ -173,6 +195,7 @@ char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature,
 {
   char *feature_name = NULL, *ptr ;
   int len;
+
   zMapAssert(feature_type && feature) ;
 
   /* Get the length of the feature (saving time??) for later */

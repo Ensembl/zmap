@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun 30 16:17 2006 (rds)
+ * Last edited: Jul 17 12:06 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.77 2006-06-30 15:18:02 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.78 2006-07-17 11:07:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -555,7 +555,7 @@ gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
 gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type) ;
 ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
 char *zMapFeatureName(ZMapFeatureAny any_feature) ;
-
+char *zMapFeatureCanonName(char *feature_name) ;
 
 
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
