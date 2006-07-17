@@ -28,29 +28,38 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 19 11:18 2006 (rds)
+ * Last edited: Jul 17 11:50 2006 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.11 2006-06-19 10:42:32 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.12 2006-07-17 11:43:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <glib.h>
-#include <zmapWindow_P.h>
 #include <ZMap/zmapUtils.h>
+#include <zmapWindow_P.h>
+#include <zmapWindowContainer.h>
 
 typedef struct
 {
   ZMapWindow window ;
+  FooCanvasItem *feature_item ;
   ZMapFeatureAny feature_any ;
 
+  /* Context field widgets */
   GtkWidget *toplevel ;
   GtkWidget *align_entry ;
   GtkWidget *block_entry ;
-  GtkWidget *strand_entry ;
   GtkWidget *set_entry ;
   GtkWidget *feature_entry ;
 
+  /* Filter field widgets */
+  GtkWidget *strand_entry ;
+  GtkWidget *start_entry ;
+  GtkWidget *end_entry ;
+
+
+  /* Context field data... */
   char *align_txt ;
   GQuark align_id ;
   GQuark align_original_id ;
@@ -67,17 +76,30 @@ typedef struct
   GQuark feature_id ;
   GQuark feature_original_id ;
 
-  /* should make this into set of filters, e.g. strand, position etc..... */
+  /* Filter data. */
   char *strand_txt ;					    /* No need for ids for strand. */
+  char *start ;						    /* Coords range to limit search. */
+  char *end ;
 
 } SearchDataStruct, *SearchData ;
+
 
 typedef struct
 {
   GList *align_list;
   GList *block_list;
   GList *set_list;
-}AllComboListsStruct, *AllComboLists;
+} AllComboListsStruct, *AllComboLists;
+
+
+typedef struct
+{
+  gint start ;
+  gint end ;
+} SearchPredCBDataStruct, *SearchPredCBData ;
+
+
+
 
 static GtkWidget *makeMenuBar(SearchData search_data) ;
 static GtkWidget *makeFieldsPanel(SearchData search_data) ;
@@ -101,6 +123,10 @@ static void fetchAllComboLists(ZMapFeatureAny feature_any,
                                GList **block_list_out,
                                GList **set_list_out);
 
+gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data) ;
+
+GQuark makeCanonID(char *orig_text) ;
+
 
 static GtkItemFactoryEntry menu_items_G[] = {
  { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
@@ -114,15 +140,20 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 
 
-void zmapWindowCreateSearchWindow(ZMapWindow window, ZMapFeatureAny feature_any)
+void zmapWindowCreateSearchWindow(ZMapWindow window, FooCanvasItem *feature_item)
 {
+  ZMapFeatureAny feature_any ;
   GtkWidget *toplevel, *vbox, *menubar, *hbox, *frame,
     *search_button, *fields, *filters, *buttonBox ;
   SearchData search_data ;
 
+  feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature_any) ;
+
   search_data = g_new0(SearchDataStruct, 1) ;
 
   search_data->window = window ;
+  search_data->feature_item = feature_item ;
   search_data->feature_any = feature_any ;
 
   /* set up the top level window */
@@ -303,7 +334,6 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
 
   setFilterDefaults(search_data) ;
 
-
   frame = gtk_frame_new( "Specify Filters: " );
   gtk_frame_set_label_align( GTK_FRAME( frame ), 0.0, 0.0 );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -325,6 +355,14 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
+  label = gtk_label_new( "Start :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+  label = gtk_label_new( "End :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
 
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
@@ -334,6 +372,21 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
+  search_data->start_entry = entry = gtk_entry_new() ;
+  if (search_data->start)
+    gtk_entry_set_text(GTK_ENTRY(entry), search_data->start) ;
+  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
+  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
+  search_data->end_entry = entry = gtk_entry_new() ;
+  if (search_data->end)
+    gtk_entry_set_text(GTK_ENTRY(entry), search_data->end) ;
+  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
+  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
 
   return frame ;
 }
@@ -395,10 +448,17 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 {
   SearchData search_data = (SearchData)cb_data ;
   char *align_txt, *block_txt, *strand_txt, *set_txt, *feature_txt  ;
+  char *start_txt, *end_text ;
   GQuark align_id, block_id, set_id, feature_id ;
   char *strand_spec ;
   GList *search_result ;
+  ZMapWindowFToIPredFuncCB callback = NULL ;
+  SearchPredCBDataStruct search_pred ;
+  SearchPredCBData search_pred_ptr = NULL ;
+  char *wild_card_str = "*" ;
+  GQuark wild_card_id ;
 
+  wild_card_id = g_quark_from_string(wild_card_str) ;
 
   align_txt = block_txt = strand_txt = set_txt = feature_txt = NULL ;
   align_id = block_id = set_id = feature_id = 0 ;
@@ -417,36 +477,39 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   /* STOP ALL THIS DUPLICATION OF CODE... */
   align_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->align_entry)) ;
-  if (align_txt && strlen(align_txt) == 0)
+  if (strlen(align_txt) == 0 || strcmp(align_txt, "0") == 0)
     {
-      align_id = search_data->align_id ;
+      align_id = 0 ;
     }
-  else if (strcmp(align_txt, "0") == 0)
-    align_id = 0 ;
+  else if (strcmp(align_txt, wild_card_str) == 0)
+    {
+      align_id = wild_card_id ;
+    }
   else
     {
-      /* We could do a g_quark_try_string() to see if the id exists which would be some help... */
-
-      align_id = g_quark_from_string(align_txt) ;
-      if (align_id == search_data->align_original_id)
+      if (strcmp(align_txt, g_quark_to_string(search_data->align_original_id)) == 0)
 	align_id = search_data->align_id ;
+      else
+	align_id = makeCanonID(align_txt) ;
     }
 
   if (align_id)
     {
       block_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->block_entry)) ;
-      if (block_txt && strlen(block_txt) == 0)
+      if (strlen(block_txt) == 0 || strcmp(block_txt, "0") == 0)
 	{
-	  block_id = search_data->block_id ;
+	  block_id = 0 ;
 	}
-      else if (strcmp(block_txt, "0") == 0)
-	block_id = 0 ;
+      else if (strcmp(block_txt, wild_card_str) == 0)
+	{
+	  block_id = wild_card_id ;
+	}
       else
 	{
-	  /* We could do a g_quark_try_string() to see if the id exists which would be some help... */
-	  block_id = g_quark_from_string(block_txt) ;
-	  if (block_id == search_data->block_original_id)
+	  if (strcmp(block_txt, g_quark_to_string(search_data->block_original_id)) == 0)
 	    block_id = search_data->block_id ;
+	  else
+	    block_id = makeCanonID(block_txt) ;
 	}
     }
 
@@ -454,35 +517,40 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   if (block_id)
     {
       set_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->set_entry)) ;
-      if (set_txt && strlen(set_txt) == 0)
+      if (strlen(set_txt) == 0 || strcmp(set_txt, "0") == 0)
 	{
-	  set_id = search_data->set_id ;
+	  set_id = 0 ;
 	}
-      else if (strcmp(set_txt, "0") == 0)
-	set_id = 0 ;
+      else if (strcmp(set_txt, wild_card_str) == 0)
+	{
+	  set_id = wild_card_id ;
+	}
      else
 	{
-	  /* We could do a g_quark_try_string() to see if the id exists which would be some help... */
-	  set_id = g_quark_from_string(set_txt) ;
-	  if (set_id == search_data->set_original_id)
+	  if (strcmp(set_txt, g_quark_to_string(search_data->set_original_id)) == 0)
 	    set_id = search_data->set_id ;
+	  else
+	    set_id = makeCanonID(set_txt) ;
 	}
     }
 
   if (set_id)
     {
       feature_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->feature_entry)) ;
-      if (feature_txt && strlen(feature_txt) == 0)
+      if (strlen(feature_txt) == 0 || strcmp(feature_txt, "0") == 0)
 	{
-	  feature_id = search_data->feature_id ;
+	  feature_id = 0 ;
 	}
-      else if (strcmp(feature_txt, "0") == 0)
-	feature_id = 0 ;
+      else if (strcmp(feature_txt, wild_card_str) == 0)
+	{
+	  feature_id = wild_card_id ;
+	}
       else
 	{
-	  feature_id = g_quark_from_string(feature_txt) ;
-	  if (feature_id == search_data->feature_original_id)
+	  if (strcmp(feature_txt, g_quark_to_string(search_data->feature_original_id)) == 0)
 	    feature_id = search_data->feature_id ;
+	  else
+	    feature_id = makeCanonID(feature_txt) ;
 	}
     }
 
@@ -501,6 +569,20 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     strand_spec = "*" ;
 
 
+  /* Get start/end stuff.... */
+  start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->start_entry)) ;
+  end_text = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->end_entry)) ;
+  if (start_txt && *start_txt && end_text && *end_text)
+    {
+      callback = searchPredCB ;
+      search_pred_ptr = &search_pred ;
+
+      search_pred.start = atoi(start_txt) ;
+  
+      search_pred.end = atoi(end_text) ;
+    }
+
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Left for debugging.... */
@@ -512,7 +594,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   if ((search_result = zmapWindowFToIFindItemSetFull(search_data->window->context_to_item,
 						     align_id, block_id, set_id,
-						     strand_spec, feature_id)))
+						     strand_spec, feature_id,
+						     callback, search_pred_ptr)))
     {
 
       /* What the code is trying to trap here is the sort of item returned...
@@ -615,17 +698,13 @@ static void setFieldDefaults(SearchData search_data)
    * in the hierachy depends on what level feature we get passed. */
   while (feature_any->parent)
     {
-
-      /* OK, I'm changing from showing the original_id to the unique_id here because
-       * wild card searches cannot work with original_id's as they are not in the hash... */
-
       switch (feature_any->struct_type)
 	{
 	case ZMAPFEATURE_STRUCT_FEATURE:
 	  {
 	    ZMapFeature feature = (ZMapFeature)feature_any ;
 
-	    search_data->feature_txt = (char *)g_quark_to_string(feature->unique_id) ;
+	    search_data->feature_txt = (char *)g_quark_to_string(feature->original_id) ;
 	    search_data->feature_id = feature->unique_id ;
 	    search_data->feature_original_id = feature->original_id ;
 	    break ;
@@ -634,7 +713,7 @@ static void setFieldDefaults(SearchData search_data)
 	  {
 	    ZMapFeatureSet set = (ZMapFeatureSet)feature_any ;
 
-	    search_data->set_txt = (char *)g_quark_to_string(set->unique_id) ;
+	    search_data->set_txt = (char *)g_quark_to_string(set->original_id) ;
 	    search_data->set_id = set->unique_id ;
 	    search_data->set_original_id = set->original_id ;
 	    break ;
@@ -643,7 +722,7 @@ static void setFieldDefaults(SearchData search_data)
 	  {
 	    ZMapFeatureBlock block = (ZMapFeatureBlock)feature_any ;
 
-	    search_data->block_txt = (char *)g_quark_to_string(block->unique_id) ;
+	    search_data->block_txt = (char *)g_quark_to_string(block->original_id) ;
 	    search_data->block_id = block->unique_id ;
 	    search_data->block_original_id = block->original_id ;
 	    break ;
@@ -652,7 +731,7 @@ static void setFieldDefaults(SearchData search_data)
 	  {
 	    ZMapFeatureAlignment align = (ZMapFeatureAlignment)feature_any ;
 
-	    search_data->align_txt = (char *)g_quark_to_string(align->unique_id) ;
+	    search_data->align_txt = (char *)g_quark_to_string(align->original_id) ;
 	    search_data->align_id = align->unique_id ;
 	    search_data->align_original_id = align->original_id ;
 	    break ;
@@ -673,10 +752,36 @@ static void setFilterDefaults(SearchData search_data)
   ZMapFeatureAny feature_any = search_data->feature_any ;
   char *wild_card_str = "*" ;
   GQuark wild_card_id ;
+  ZMapStrand strand = ZMAPSTRAND_NONE ;
 
   wild_card_id = g_quark_from_string(wild_card_str) ;
 
   search_data->strand_txt = wild_card_str ;
+
+
+  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE
+      || feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+    {
+      FooCanvasGroup *featureset_group ;
+
+      if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+	{
+	  featureset_group = zmapWindowItemGetParentContainer(search_data->feature_item) ;
+	}
+      else
+	featureset_group = FOO_CANVAS_GROUP(search_data->feature_item) ;
+
+      strand = zmapWindowContainerGetStrand(featureset_group);
+
+      if (strand == ZMAPSTRAND_FORWARD)
+	search_data->strand_txt = "+" ;
+      else if (strand == ZMAPSTRAND_REVERSE)
+	search_data->strand_txt = "-" ;
+      else
+	search_data->strand_txt = "." ;
+    }
+
+
 
   /* The loop is unecessary at the moment but may need it later on ..... */
   while (feature_any->parent)
@@ -686,13 +791,15 @@ static void setFilterDefaults(SearchData search_data)
 	case ZMAPFEATURE_STRUCT_FEATURE:
 	  {
 	    ZMapFeature feature = (ZMapFeature)feature_any ;
+	    char *coord = NULL ;
 
-	    if (feature->strand == ZMAPSTRAND_FORWARD)
-	      search_data->strand_txt = "+" ;
-	    if (feature->strand == ZMAPSTRAND_REVERSE)
-	      search_data->strand_txt = "-" ;
-	    else
-	      search_data->strand_txt = "." ;
+	    if (zMapInt2Str(feature->x1, &coord))
+	      search_data->start = coord ;		    /* str needs to be freed... */
+
+	    if (zMapInt2Str(feature->x2, &coord))
+	      search_data->end = coord ;		    /* str needs to be freed... */
+
+
 	    break ;
 	  }
 	case ZMAPFEATURE_STRUCT_FEATURESET:
@@ -822,8 +929,60 @@ static void addToComboBoxQuark(gpointer list_data, gpointer combo_data)
 
 
 
+gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data)
+{
+  gboolean result = FALSE ;
+  SearchPredCBData search_pred = (SearchPredCBData)user_data ;
+  ZMapFeatureAny feature_any ;
+
+  feature_any = g_object_get_data(G_OBJECT(canvas_item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
 
 
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_ALIGN:
+    case ZMAPFEATURE_STRUCT_BLOCK:
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+	ZMapFeature feature = (ZMapFeature)feature_any ;
+
+	if (feature->x1 > search_pred->end || feature->x2 < search_pred->start)
+	  result = FALSE ;
+	else
+	  result = TRUE ;
+
+	break;
+      }
+    case ZMAPFEATURE_STRUCT_INVALID:
+    default:
+      zMapAssertNotReached();
+      break;
+
+    }
+
+
+
+  return result ;
+}
+
+
+/* copies orig_text, canonicalises it and returns the quark for the text. */
+GQuark makeCanonID(char *orig_text)
+{
+  GQuark canon_id= 0 ;
+  char *canon_text ;
+
+  canon_text = g_strdup(orig_text) ;
+
+  canon_text = zMapFeatureCanonName(canon_text) ;
+
+  canon_id = g_quark_from_string(canon_text) ;
+
+  return canon_id ;
+}
 
 
 
