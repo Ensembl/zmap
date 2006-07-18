@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 11 14:01 2006 (rds)
+ * Last edited: Jul 14 16:38 2006 (edgrif)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowPrint.c,v 1.3 2006-05-11 13:09:47 rds Exp $
+ * CVS info:   $Id: zmapWindowPrint.c,v 1.4 2006-07-18 08:34:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <glib.h>
-#include <glib/gstdio.h>				    /* for g_unlink() */
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfig.h>
 #include <zmapWindow_P.h>
@@ -194,7 +193,7 @@ static gboolean printFile(ZMapWindow window, PrintCBData print_cb)
 
   if (print_cb->tmp_file_ok)
     {
-      if (g_unlink(print_cb->print_template) != 0)
+      if (unlink(print_cb->print_template) != 0)
 	zMapWarning("Could not remove printer temporary file \"%s\".", print_cb->print_template) ;
     }
 
