@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jun 30 16:13 2006 (rds)
+ * Last edited: Jul 18 09:44 2006 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.60 2006-06-30 15:19:29 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.61 2006-07-18 08:47:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -205,6 +205,8 @@ PangoFontDescription *zMapWindowZoomGetFixedWidthFontInfo(ZMapWindow window,
                                                           double *width_out, 
                                                           double *height_out);
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out) ;
+
+FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 
 ZMapWindowFToIQuery zMapWindowFToINewQuery(void);
 gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query);
