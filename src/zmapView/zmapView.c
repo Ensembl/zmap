@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 14 17:16 2006 (edgrif)
+ * Last edited: Jul 17 18:25 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.78 2006-07-17 11:07:34 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.79 2006-07-18 08:48:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -773,13 +773,29 @@ gboolean zMapViewDestroy(ZMapView zmap_view)
       /* All states have GUI components which need to be destroyed. */
       killGUI(zmap_view) ;
 
-      /* If we are in init state or resetting then the connections have already being killed. */
-      if (zmap_view->state != ZMAPVIEW_INIT && zmap_view->state != ZMAPVIEW_RESETTING)
-	killConnections(zmap_view) ;
+      if (zmap_view->state == ZMAPVIEW_INIT)
+	{
+	  /* For init we simply need to signal to our parent layer that we have died,
+	   * we will then be cleaned up immediately. */
+	  zmap_view->state = ZMAPVIEW_DYING ;
 
-      /* Must set this as this will prevent any further interaction with the ZMap as
-       * a result of both the ZMap window and the threads dying asynchronously.  */
-      zmap_view->state = ZMAPVIEW_DYING ;
+	  (*(view_cbs_G->destroy))(zmap_view, zmap_view->app_data, NULL) ;
+	}
+      else
+	{
+	  /* for other states there are threads to kill so they must be cleaned
+	   * up asynchronously. */
+
+	  if (zmap_view->state != ZMAPVIEW_RESETTING)
+	    {
+	      /* If we are resetting then the connections have already being killed. */
+	      killConnections(zmap_view) ;
+	    }
+
+	  /* Must set this as this will prevent any further interaction with the ZMap as
+	   * a result of both the ZMap window and the threads dying asynchronously.  */
+	  zmap_view->state = ZMAPVIEW_DYING ;
+	}
     }
 
   return TRUE ;
