@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 19 10:04 2006 (edgrif)
+ * Last edited: Jul 19 11:58 2006 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.1 2006-07-19 09:09:12 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.2 2006-07-19 11:00:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,15 +123,15 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
       desc_str = g_string_new("") ;
 
       if (feature_desc->feature_description)
-	g_string_append_printf(desc_str, "Description -\n%s",
+	g_string_append_printf(desc_str, "Description  -  \"%s\"",
 			       feature_desc->feature_description) ;
 
       if (feature_desc->feature_locus)
 	{
 	  if (desc_str->len)
-	    g_string_append(desc_str, "\n") ;
+	    g_string_append(desc_str, "\n\n") ;
 
-	  g_string_append_printf(desc_str, "Locus -\n%s",
+	  g_string_append_printf(desc_str, "Locus  -  \"%s\"",
 				 feature_desc->feature_locus) ;
 	}
 
