@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 17 11:50 2006 (edgrif)
+ * Last edited: Jul 19 11:55 2006 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.12 2006-07-17 11:43:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.13 2006-07-19 10:57:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,6 +57,7 @@ typedef struct
   GtkWidget *strand_entry ;
   GtkWidget *start_entry ;
   GtkWidget *end_entry ;
+  GtkWidget *locus_but ;
 
 
   /* Context field data... */
@@ -80,6 +81,7 @@ typedef struct
   char *strand_txt ;					    /* No need for ids for strand. */
   char *start ;						    /* Coords range to limit search. */
   char *end ;
+  gboolean locus ;
 
 } SearchDataStruct, *SearchData ;
 
@@ -96,6 +98,8 @@ typedef struct
 {
   gint start ;
   gint end ;
+
+  gboolean locus ;
 } SearchPredCBDataStruct, *SearchPredCBData ;
 
 
@@ -109,6 +113,7 @@ static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *wi
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void searchCB(GtkWidget *widget, gpointer cb_data) ;
+static void locusCB(GtkToggleButton *toggle_button, gpointer cb_data) ;
 
 static void displayResult(GList *search_result) ;
 static void printListDataCB(gpointer data, gpointer user_data) ;
@@ -363,6 +368,10 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
+  label = gtk_label_new( "Locus :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
 
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
@@ -386,6 +395,12 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
+
+  search_data->locus_but = gtk_check_button_new() ;
+  g_signal_connect(GTK_OBJECT(search_data->locus_but), "toggled",
+		   GTK_SIGNAL_FUNC(locusCB), (gpointer)search_data) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), search_data->locus_but, FALSE, FALSE, 0) ;
 
 
   return frame ;
@@ -449,11 +464,12 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   SearchData search_data = (SearchData)cb_data ;
   char *align_txt, *block_txt, *strand_txt, *set_txt, *feature_txt  ;
   char *start_txt, *end_text ;
+  gboolean locus ;
   GQuark align_id, block_id, set_id, feature_id ;
   char *strand_spec ;
   GList *search_result ;
   ZMapWindowFToIPredFuncCB callback = NULL ;
-  SearchPredCBDataStruct search_pred ;
+  SearchPredCBDataStruct search_pred = {0} ;
   SearchPredCBData search_pred_ptr = NULL ;
   char *wild_card_str = "*" ;
   GQuark wild_card_id ;
@@ -569,10 +585,11 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     strand_spec = "*" ;
 
 
-  /* Get start/end stuff.... */
+  /* Get predicate stuff, start/end/locus currently. */
   start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->start_entry)) ;
   end_text = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->end_entry)) ;
-  if (start_txt && *start_txt && end_text && *end_text)
+  locus = search_data->locus ;
+  if ((start_txt && *start_txt && end_text && *end_text) || locus)
     {
       callback = searchPredCB ;
       search_pred_ptr = &search_pred ;
@@ -580,6 +597,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       search_pred.start = atoi(start_txt) ;
   
       search_pred.end = atoi(end_text) ;
+
+      search_pred.locus = locus ;
     }
 
 
@@ -949,10 +968,23 @@ gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data)
       {
 	ZMapFeature feature = (ZMapFeature)feature_any ;
 
-	if (feature->x1 > search_pred->end || feature->x2 < search_pred->start)
-	  result = FALSE ;
-	else
-	  result = TRUE ;
+
+	/* for features we apply various filters according to what has been set. */
+	if (search_pred->start || search_pred->end)
+	  {
+	    if (feature->x1 > search_pred->end || feature->x2 < search_pred->start)
+	      result = FALSE ;
+	    else
+	      result = TRUE ;
+	  }
+
+	if (search_pred->locus)
+	  {
+	    if (feature->locus_id)
+	      result = TRUE ;
+	    else
+	      result = FALSE ;
+	  }
 
 	break;
       }
@@ -982,6 +1014,17 @@ GQuark makeCanonID(char *orig_text)
   canon_id = g_quark_from_string(canon_text) ;
 
   return canon_id ;
+}
+
+
+
+static void locusCB(GtkToggleButton *toggle_button, gpointer cb_data)
+{
+  SearchData search_data = (SearchData)cb_data ;
+
+  search_data->locus = gtk_toggle_button_get_active(toggle_button) ;
+
+  return ;
 }
 
 
