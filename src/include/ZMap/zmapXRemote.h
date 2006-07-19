@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Sep 13 17:33 2005 (rds)
+ * Last edited: Jul 19 09:49 2006 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.9 2005-09-20 17:11:02 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.10 2006-07-19 08:51:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@
 #include <X11/Xatom.h>
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.9 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.10 $"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
 
@@ -154,7 +154,7 @@ void zMapXRemoteDestroy(zMapXRemoteObj object);
 /* CLIENT MODE ONLY METHODS */
 /* ================================================ */
 int zMapXRemoteInitClient(zMapXRemoteObj object, Window id); /* Initialise Client */
-int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command);
+int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **response);
 
 /* ================================================ */
 /* SERVER MODE ONLY METHODS */
