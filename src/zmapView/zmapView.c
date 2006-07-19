@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 17 18:25 2006 (edgrif)
+ * Last edited: Jul 19 09:55 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.79 2006-07-18 08:48:39 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.80 2006-07-19 08:56:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -958,8 +958,9 @@ static void selectCB(ZMapWindow window, void *caller_data, void *window_data)
       while ((list_item = g_list_next(list_item))) ;
     }
 
-  vselect.primary_text   = select_item->primary_text;
-  vselect.secondary_text = select_item->secondary_text;
+
+  vselect.feature_desc = select_item->feature_desc ;
+  vselect.secondary_text = select_item->secondary_text ;
 
   /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
   (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, (void *)&vselect) ;

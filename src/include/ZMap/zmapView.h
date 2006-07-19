@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Mar  7 14:23 2006 (rds)
+ * Last edited: Jul 19 09:54 2006 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.25 2006-03-07 15:09:46 rds Exp $
+ * CVS info:   $Id: zmapView.h,v 1.26 2006-07-19 08:56:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -73,12 +73,13 @@ typedef struct _ZMapViewCallbacksStruct
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 
 
+/* Holds structs/strings describing the selected item, this data actually comes from the
+ * zmapWindow layer and is just passed on through view. */
 typedef struct _ZMapViewSelectStruct
 {
-  /* I can't think of better names just at the moment */
-  char *primary_text;
+  ZMapFeatureDescStruct feature_desc ;
   char *secondary_text;
-}ZMapViewSelectStruct, *ZMapViewSelect;
+} ZMapViewSelectStruct, *ZMapViewSelect ;
 
 
 /* The overall state of the zmapView, we need this because both the zmap window and the its threads
