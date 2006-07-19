@@ -27,13 +27,15 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: May 31 17:26 2006 (rds)
+ * Last edited: Jul 19 10:43 2006 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.16 2006-05-31 16:26:41 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.17 2006-07-19 09:47:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include "zmapXRemote_P.h"
+
+gboolean externalPerl = FALSE;
 
 zMapXRemoteObj zMapXRemoteNew(void)
 {
@@ -229,7 +231,23 @@ int zMapXRemoteSendRemoteCommands(zMapXRemoteObj object){
  * described in http://home.netscape.com/newsref/std/x-remote.html
  *************
  */
-int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
+
+/*
+ * at some point uncomment !XPending and test it.
+ *
+ */
+
+/*!
+ * \brief Send a command to a remote window.
+ *
+ * @param object   The zMapXRemoteObj describing how to communicate with window
+ * @param command  The message to send
+ * @param response The response. This will ONLY be valid if return == 0
+ *
+ * @return int     0 on success other random values otherwise. (this bit needs work)
+ */
+
+int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **response)
 {
   int result = 0;
   Bool isDone   = False;
@@ -348,6 +366,8 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command)
 		{
 		  zmapXDebug("cmd result| %s\n", commandResult);
 		  result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED; /* everything OK */
+                  if(response)
+                    *response = g_strdup(commandResult);
 		  isDone = True;
 		}
 	      else
@@ -866,9 +886,12 @@ static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
     zmapXDebug("X Error: %s\n", errorText);
     zmapXDebug("%s\n","**********************************");
 
-    zMapLogWarning("%s","**********************************");
-    zMapLogWarning("X Error: %s", errorText);
-    zMapLogWarning("%s","**********************************");
+    if(!externalPerl)
+      {
+        zMapLogWarning("%s","**********************************");
+        zMapLogWarning("X Error: %s", errorText);
+        zMapLogWarning("%s","**********************************");
+      }
 
     return 1;                   /* This is ignored by the server */
 }
