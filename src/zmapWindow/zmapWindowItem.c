@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul  6 15:56 2006 (edgrif)
+ * Last edited: Jul 19 09:47 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.33 2006-07-17 11:22:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.34 2006-07-19 09:02:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -650,6 +650,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
   if(window->caller_cbs->select != NULL)
     {
       ZMapWindowSelectStruct select = {NULL} ;
+
       /* Really we should create some text here as well.... */
       select.item = item ;
       (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
@@ -715,10 +716,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
   /* Report the selected object to the layer above us. */
   if(window->caller_cbs->select != NULL)
     {
-      ZMapWindowSelectStruct select = {NULL} ;
-      /* Really we should create some text here as well.... */
-      select.item = item ;
-      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+      zMapWindowUpdateInfoPanel(window, feature, item) ;
     }
 
   result = TRUE ;

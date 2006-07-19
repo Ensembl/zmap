@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 23 16:59 2006 (edgrif)
+ * Last edited: Jul 19 09:44 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.129 2006-06-28 09:23:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.130 2006-07-19 09:02:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -851,53 +851,62 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
 }
 
 
+/* Sets up data that is passed back to our caller to give them information about the feature
+ * the user has selected, perhaps by clicking on it in the zmap window. */
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCanvasItem *item)
 {
   ZMapWindowItemFeatureType type ;
   ZMapWindowItemFeature item_data ;
   ZMapFeature feature = NULL;
   char *subpart_text = NULL ;
+  ZMapFeatureSet feature_set ;
   ZMapFeatureTypeStyle style ;
   char *style_text ;
   char *locus_text = NULL ;
   ZMapWindowSelectStruct select = {NULL} ;
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
 
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
   zMapAssert(feature_arg == feature);
+
+  select.feature_desc.struct_type = feature->struct_type ;
+  select.feature_desc.type = feature->type ;
 
   if (type == ITEM_FEATURE_CHILD)
     {
       item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
       zMapAssert(item_data) ;
 
-      subpart_text = g_strdup_printf("(%d %d)", item_data->start, item_data->end) ;
+      select.feature_desc.subpart_type = item_data->subpart ;
+
+      select.feature_desc.sub_feature_start = g_strdup_printf("%d", item_data->start) ;
+      select.feature_desc.sub_feature_end = g_strdup_printf("%d", item_data->end) ;
     }
 
-
   style = zMapFeatureGetStyle(feature) ;
-  style_text = zmapWindowFeatureSetDescription(style->original_id, style) ;
+  select.feature_desc.feature_description = zmapWindowFeatureSetDescription(style->original_id, style) ;
 
   if (feature->locus_id)
-    locus_text = g_strdup_printf("    Locus = \"%s\"", g_quark_to_string(feature->locus_id)) ;
+    select.feature_desc.feature_locus = (char *)g_quark_to_string(feature->locus_id) ;
 
   /* Need to replicate this ... */
   /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
 
+  select.feature_desc.feature_name = (char *)g_quark_to_string(feature->original_id) ;
 
-  /* It would be nice for a user to be able to specify the format of this string. */
-  select.primary_text = g_strdup_printf("%s %s %d %d %f %s  :  %s  :  %s%s", 
-					(char *)g_quark_to_string(feature->original_id),
-					zMapFeatureStrand2Str(feature->strand),
-					feature->x1,
-					feature->x2,
-					(feature->flags.has_score ? feature->score : 0.0),
-					(subpart_text ? subpart_text : ""),
-					zMapFeatureType2Str(feature->type),
-					style_text,
-					locus_text ? locus_text : "") ;
+  select.feature_desc.feature_start = g_strdup_printf("%d", feature->x1) ;
+  select.feature_desc.feature_end = g_strdup_printf("%d", feature->x2) ;
 
+  select.feature_desc.feature_strand = zMapFeatureStrand2Str(feature->strand) ;
+
+  if (feature->flags.has_score)
+    select.feature_desc.feature_score = g_strdup_printf("%f", feature->score) ;
+
+  select.feature_desc.feature_type = zMapFeatureType2Str(feature->type) ;
+
+  select.feature_desc.feature_set
+    = (char *)g_quark_to_string((zMapFeatureGetSet(feature))->original_id) ;
 
   select.secondary_text = g_strdup_printf("\"%s\"    %d %d (%d)",
                                           (char *)g_quark_to_string(feature->original_id),
@@ -906,17 +915,25 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
                                           feature->x2 - feature->x1 + 1);
   select.item = item ;
   
+  /* We've set up the select data so now callback to the layer above with this data. */
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
-  if (subpart_text)
-    g_free(subpart_text) ;
-  g_free(style_text) ;
-  g_free(locus_text) ;
-  g_free(select.primary_text) ;
+  /* Clear up.... */
+  g_free(select.feature_desc.sub_feature_start) ;
+  g_free(select.feature_desc.sub_feature_end) ;
+  g_free(select.feature_desc.feature_description) ;
+  g_free(select.feature_desc.feature_start) ;
+  g_free(select.feature_desc.feature_end) ;
+
   g_free(select.secondary_text) ;
 
   return ;
 }
+
+
+
+
+
 
 /* I'm not convinced of this. */
 void zMapWindowSiblingWasRemoved(ZMapWindow window)
