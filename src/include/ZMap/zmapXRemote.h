@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Jul 19 09:49 2006 (rds)
+ * Last edited: Jul 19 10:41 2006 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.10 2006-07-19 08:51:05 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.11 2006-07-19 09:42:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@
 #include <X11/Xatom.h>
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.10 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.11 $"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
 
@@ -102,8 +102,19 @@ typedef struct _zMapXRemoteNotifyDataStruct
 {
   zMapXRemoteObj  xremote;      /* The xremote object which has the atoms for us to check */
   zMapXRemoteCallback callback; /* The callback which does something when the property notify event happens */
+  GList * clients;
+  zMapXRemoteCallback client_callback;
   gpointer data;                /* The data which is passed to the callback above. */
 } zMapXRemoteNotifyDataStruct, *zMapXRemoteNotifyData;
+
+typedef enum
+  {
+    ZMAPXREMOTE_SENDCOMMAND_SUCCEED = 0,
+    ZMAPXREMOTE_SENDCOMMAND_ISSERVER,
+    ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW = 6,
+    ZMAPXREMOTE_SENDCOMMAND_VERSION_MISMATCH = 9,
+    ZMAPXREMOTE_SENDCOMMAND_UNKNOWN
+  } ZMapXRemoteSendCommandError;
 
 typedef enum {
   /* 1xx  Informational */
