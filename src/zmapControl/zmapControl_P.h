@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jun 16 18:05 2006 (rds)
+ * Last edited: Jul 19 10:05 2006 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.43 2006-06-30 15:23:24 rds Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.44 2006-07-19 09:09:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -80,10 +80,8 @@ typedef struct _ZMapStruct
 
   GtkWidget       *toplevel ;				    /* top level widget of zmap window. */
 
-  GtkWidget       *info_panel;                              /* show details of object clicked on */
 
-
-  /* Show status of focus view as:  <strand> <seq_coords> <zmap/view status> */
+  /* Show status of focus view sequence as:  <strand> <seq_coords> <zmap/view status> */
   GtkWidget       *status_revcomp ;
   GtkWidget       *status_coords ;
   GtkWidget       *status_entry ;
@@ -101,6 +99,14 @@ typedef struct _ZMapStruct
     *zoomin_but, *zoomout_but,
     *revcomp_but, *column_but,
     *quit_button, *sequence_but ;
+
+  /* Feature details display. */
+  GtkWidget *feature_name,
+    *feature_strand,
+    *feature_coords, *sub_feature_coords,
+    *feature_score, *feature_type, *feature_set ;
+  GtkTooltips *feature_tooltips ;
+
 
   /* The navigator. */
   ZMapNavigator    navigator ;
@@ -132,10 +138,12 @@ typedef struct _ZMapStruct
 gboolean   zmapControlWindowCreate     (ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap) ;
+GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeFrame  (ZMap zmap) ;
 void       zmapControlWindowDestroy    (ZMap zmap) ;
 
 void zmapControlButtonTooltips(ZMap zmap) ;
+void zmapControlInfoPanelTooltips(ZMap zmap, ZMapFeatureDesc feature_desc) ;
 
 ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end) ;
 void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation) ;

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: May  5 11:49 2006 (rds)
+ * Last edited: Jul 19 10:07 2006 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.24 2006-05-05 11:00:14 rds Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.25 2006-07-19 09:09:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,12 +46,13 @@ static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 gboolean zmapControlWindowCreate(ZMap zmap)
 {
   gboolean result = TRUE ;
-  GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *status_box, *info_box ;
+  GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *status_box,
+    *info_panel_box, *info_box ;
 
 
-  /* Make a tooltips group for the main zmap controls. */
+  /* Make tooltips groups for the main zmap controls and the feature information. */
   zmap->tooltips = gtk_tooltips_new() ;
-
+  zmap->feature_tooltips = gtk_tooltips_new() ;
 
 
   zmap->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
@@ -94,8 +95,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   status_box = makeStatusPanel(zmap) ;
   gtk_box_pack_end(GTK_BOX(info_box), status_box, FALSE, TRUE, 0) ;
 
-  zmap->info_panel = gtk_entry_new() ;
-  gtk_box_pack_start(GTK_BOX(controls_box), zmap->info_panel, TRUE, TRUE, 0) ;
+  info_panel_box = zmapControlWindowMakeInfoPanel(zmap) ;
+  gtk_box_pack_start(GTK_BOX(controls_box), info_panel_box, FALSE, FALSE, 0) ;
 
   zmap->navview_frame = zmapControlWindowMakeFrame(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), zmap->navview_frame, TRUE, TRUE, 0);
@@ -124,6 +125,7 @@ void zmapControlWindowDestroy(ZMap zmap)
   gtk_widget_destroy(zmap->toplevel) ;
 
   gtk_object_destroy(GTK_OBJECT(zmap->tooltips)) ;
+  gtk_object_destroy(GTK_OBJECT(zmap->feature_tooltips)) ;
 
   return ;
 }
