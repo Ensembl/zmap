@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 19 09:55 2006 (edgrif)
+ * Last edited: Jul 19 10:52 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.80 2006-07-19 08:56:16 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.81 2006-07-19 10:25:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -935,7 +935,7 @@ static void selectCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
   ZMapWindowSelect select_item = (ZMapWindowSelect)window_data ;
-  ZMapViewSelectStruct vselect = {NULL};
+  ZMapViewSelectStruct vselect = {{0}} ;
 
   if (select_item->item)
     {
