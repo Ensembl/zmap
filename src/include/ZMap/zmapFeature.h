@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 18 15:52 2006 (edgrif)
+ * Last edited: Jul 20 10:02 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.79 2006-07-19 08:52:44 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.80 2006-07-20 09:03:13 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -598,6 +598,14 @@ void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
                                ZMapFeatureStructType stop, 
                                GDataForeachFunc callback, 
                                gpointer data);
+void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any, 
+                                   ZMapFeatureStructType stop, 
+                                   GDataForeachFunc callback, 
+                                   gpointer data);
+void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any, 
+                                     ZMapFeatureStructType stop, 
+                                     GDataForeachFunc callback, 
+                                     gpointer data);
 
 void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
