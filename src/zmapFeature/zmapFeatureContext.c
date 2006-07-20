@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 20 16:35 2006 (rds)
+ * Last edited: Jul 20 09:31 2006 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.9 2006-06-30 15:25:02 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.10 2006-07-20 09:01:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,10 +56,16 @@ typedef struct
 
 static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
 static void revcompDNA(char *sequence, int seq_length) ;
+static void revCompFeature(ZMapFeature feature, int end_coord);
+static void revCompFeaturesCB(GQuark key, 
+                              gpointer data, 
+                              gpointer user_data);
+#ifdef RDS_DONT_INCLUDE_UNUSED
 static void revcompFeatures(ZMapFeatureContext context) ;
 static void doFeatureAnyCB(ZMapFeatureAny any_feature, gpointer user_data) ;
 static void datasetCB(GQuark key_id, gpointer data, gpointer user_data) ;
 static void listCB(gpointer data, gpointer user_data) ;
+#endif
 static void revcompSpan(GArray *spans, int seq_end) ;
 static gboolean fetchBlockDNAPtr(ZMapFeature feature, char **dna);
 
@@ -78,30 +84,25 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context)
   /*	features need to have their positions reversed and also their strand.
     what about blocks ??? they also need doing... and in fact there are the alignment
     * mappings etc.....needs some thought and effort.... */
-
+#ifdef RDS_USES_CONTEXT_EXECUTE_NOW
   revcompFeatures(context) ;
+#endif
+
+  RevCompDataStruct cb_data ;
+
+  /* Get this first... */
+  cb_data.end = context->sequence_to_parent.c2 ;
+  /* Then swop this... */
+  zmapFeatureSwop(Coord, context->sequence_to_parent.p1, context->sequence_to_parent.p2) ;
+
+  /* Because this doesn't allow for execution at context level ;( */
+  zMapFeatureContextExecute((ZMapFeatureAny)context, 
+                            ZMAPFEATURE_STRUCT_FEATURE,
+                            revCompFeaturesCB,
+                            &cb_data);
 
   return ;
 }
-
-
-
-#ifdef RDS_DONT_INCLUDE_UNUSED
-char *zMapFeatureGetDNA(ZMapFeatureContext context, int start, int end)
-{
-  char *dna = NULL;
-
-  zMapAssert(context && (start > 0 && (end == 0 || end > start))) ;
-
-  if (end == 0)
-    end = context->sequence->length ;
-
-
-  dna = getDNA(context->sequence->sequence, start, end, FALSE);
-
-  return dna ;
-}
-#endif /* RDS_DONT_INCLUDE_UNUSED */
 
 /* Trivial function which just uses the features start/end coords, could be more intelligent
  * and deal with transcripts/alignments more intelligently. */
@@ -198,6 +199,31 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
 }
 
 
+/*!
+ * \brief A similar call to g_datalist_foreach. However there are a number of differences.
+ *
+ * - 1 - There's more than one GData * involved
+ * - 2 - There's more than just GData's involved (Blocks are still GLists)
+ * - 3 - Because there is a hierarchy you can specify a stop level
+ * - 4 - You get multiple Feature types in your GDataForeachFunc, which you have to handle.
+ *
+ * N.B. The First level in the callback is the alignment _not_ context, to get the context
+ *      too use zMapFeatureContextExecuteFull
+ *
+ * @param feature_any Provide absolutely any level of feature and it will start from the top
+ *                    for you.  i.e. find the context and work it's way back down through 
+ *                    the tree until...
+ * @param stop        The level at which you want to descend _no_ further.  callback *will*
+ *                    be called at this level, but that's it.
+ * @param callback    The GDataForeachFunc you want to be called on each FEATURE.  This 
+ *                    _includes_ blocks.  There is a helper function which will just call
+ *                    your function with the block->unique_id as the key as if they really 
+ *                    were in a GData.
+ * @param data        Data of your own type for your callback...
+ * @return void.
+ *
+ */
+
 void zMapFeatureContextExecute(ZMapFeatureAny feature_any, 
                                ZMapFeatureStructType stop, 
                                GDataForeachFunc callback, 
@@ -218,6 +244,50 @@ void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
 
   return ;
 }
+
+void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
+                                     ZMapFeatureStructType stop, 
+                                     GDataForeachFunc callback, 
+                                     gpointer data)
+{
+
+  if(stop != ZMAPFEATURE_STRUCT_INVALID)
+    {
+      ContextExecuteStruct full_data = {0};
+      full_data.callback      = callback;
+      full_data.callback_data = data;
+      full_data.stop          = stop;
+      if(feature_any->struct_type <= stop)
+        executeDataForeachFunc(feature_any->unique_id, feature_any, &full_data);
+      else
+        zMapLogWarning("%s", "Too far down the hierarchy...");
+    }
+  else
+    zMapAssertNotReached();
+
+  return ;
+}
+
+void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any, 
+                                   ZMapFeatureStructType stop, 
+                                   GDataForeachFunc callback, 
+                                   gpointer data)
+{
+  ContextExecuteStruct full_data = {0};
+  ZMapFeatureContext context = NULL;
+  
+  if(stop != ZMAPFEATURE_STRUCT_INVALID)
+    {
+      context = (ZMapFeatureContext)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_CONTEXT);
+      full_data.callback      = callback;
+      full_data.callback_data = data;
+      full_data.stop          = stop;
+      executeDataForeachFunc(context->unique_id, context, &full_data);
+    }
+
+  return ;
+}
+
 
 
 
@@ -316,9 +386,245 @@ static void revcompDNA(char *sequence, int length)
   return ;
 }
 
+static void revCompFeature(ZMapFeature feature, int end_coord)
+{
+  zMapAssert(feature);
+
+  zmapFeatureRevComp(Coord, end_coord, feature->x1, feature->x2) ;
+  
+  if (feature->strand == ZMAPSTRAND_FORWARD)
+    feature->strand = ZMAPSTRAND_REVERSE ;
+  else if (feature->strand == ZMAPSTRAND_REVERSE)
+    feature->strand = ZMAPSTRAND_FORWARD ;
+  
+  if (feature->type == ZMAPFEATURE_TRANSCRIPT
+      && (feature->feature.transcript.exons || feature->feature.transcript.introns))
+    {
+      if (feature->feature.transcript.exons)
+        revcompSpan(feature->feature.transcript.exons, end_coord) ;
+      
+      if (feature->feature.transcript.introns)
+        revcompSpan(feature->feature.transcript.introns, end_coord) ;
+      
+      if(feature->feature.transcript.flags.cds)
+        zmapFeatureRevComp(Coord, end_coord, 
+                           feature->feature.transcript.cds_start, 
+                           feature->feature.transcript.cds_end);
+    }
+  else if (feature->type == ZMAPFEATURE_ALIGNMENT
+           && feature->feature.homol.align)
+    {
+      int i ;
+      for (i = 0; i < feature->feature.homol.align->len; i++)
+        {
+          ZMapAlignBlock align ;
+          
+          align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;
+          
+          zmapFeatureRevComp(Coord, end_coord, align->t1, align->t2) ;
+        }
+    }
+
+  return ;
+}
+
+static void revCompFeaturesCB(GQuark key, 
+                              gpointer data, 
+                              gpointer user_data)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+
+  RevCompData cb_data = (RevCompData)user_data;
+
+  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+  
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      {
+        ZMapFeatureAlignment feature_align = NULL;
+        feature_align = (ZMapFeatureAlignment)feature_any;
+        /* Nothing to swop? */
+      }
+      break;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      {
+        ZMapFeatureBlock feature_block = NULL;
+        
+        feature_block = (ZMapFeatureBlock)feature_any;
+        if (feature_block->sequence.sequence)
+	  revcompDNA(feature_block->sequence.sequence, feature_block->sequence.length) ;
+        zmapFeatureRevComp(Coord, cb_data->end,
+                           feature_block->block_to_sequence.t1, 
+                           feature_block->block_to_sequence.t2) ;
+      }
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      {
+        ZMapFeatureSet feature_set = NULL;
+        feature_set = (ZMapFeatureSet)feature_any;
+        /* Nothing to swop here, I think..... */
+      }
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+        ZMapFeature feature_ft = NULL;
+        feature_ft = (ZMapFeature)feature_any;
+        revCompFeature(feature_ft, cb_data->end);
+      }
+      break;
+    case ZMAPFEATURE_STRUCT_INVALID:
+    default:
+      zMapAssertNotReached();
+      break;
+
+    }
+
+  return ;
+}
+
+static void revcompSpan(GArray *spans, int seq_end)
+{
+  int i ;
+
+  for (i = 0; i < spans->len; i++)
+    {
+      ZMapSpan span ;
+      
+      span = &g_array_index(spans, ZMapSpanStruct, i) ;
+
+      zmapFeatureRevComp(Coord, seq_end, span->x1, span->x2) ;
+    }
+  
+
+  return ;
+}
+
+#ifdef RDS_TEMPLATE_USER_DATALIST_FOREACH
+/* Use this function while descending through a feature context */
+static void templateDataListForeach(GQuark key, 
+                                    gpointer data, 
+                                    gpointer user_data)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureContext feature_context = NULL;
+  ZMapFeatureAlignment feature_align = NULL;
+  ZMapFeatureBlock     feature_block = NULL;
+  ZMapFeatureSet       feature_set   = NULL;
+  ZMapFeature          feature_ft    = NULL;
+  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+
+  YourDataType  all_data = (YourDataType)user_data;
+  
+  feature_type = feature_any->struct_type;
+
+  switch(feature_type)
+    {
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+      feature_context = (ZMapFeatureContext)feature_any;
+      break;
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      feature_align = (ZMapFeatureAlignment)feature_any;
+      break;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      feature_block = (ZMapFeatureBlock)feature_any;
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      feature_set = (ZMapFeatureSet)feature_any;
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      feature_ft = (ZMapFeature)feature_any;
+      break;
+    case ZMAPFEATURE_STRUCT_INVALID:
+    default:
+      zMapAssertNotReached();
+      break;
+
+    }
+
+  return ;
+}
+#endif /* RDS_TEMPLATE_USER_DATALIST_FOREACH */
+
+static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ContextExecute full_data = (ContextExecute)user_data;
+  ZMapFeatureContext feature_context = NULL;
+  ZMapFeatureAlignment feature_align = NULL;
+  ZMapFeatureBlock     feature_block = NULL;
+  ZMapFeatureSet       feature_set   = NULL;
+  ZMapFeature          feature_ft    = NULL;
+  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  
+  feature_type = feature_any->struct_type;
+
+  if(full_data->callback)       /* want some error handling here... */
+    (full_data->callback)(key, data, full_data->callback_data);
+  else
+    zMapLogWarning("%s", "Context Execute Callback Not Set.");
+
+  if(feature_type == full_data->stop)
+    zMapLogWarning("%s", "zMapFeatureContextExecute Finished.");
+  else
+    {
+      switch(feature_type)
+        {
+        case ZMAPFEATURE_STRUCT_CONTEXT:
+          feature_context = (ZMapFeatureContext)feature_any;
+          g_datalist_foreach(&(feature_context->alignments), executeDataForeachFunc, full_data);
+          break;
+        case ZMAPFEATURE_STRUCT_ALIGN:
+          feature_align = (ZMapFeatureAlignment)feature_any;
+          g_list_foreach(feature_align->blocks, executeListForeachFunc, full_data);
+#ifdef RDS_WHEN_BLOCKS_ARE_GDATA
+          /* If blocks is a GData use this instead */
+          g_datalist_foreach(&(feature_align->blocks), executeDataForeachFunc, full_data);
+#endif /* RDS_WHEN_BLOCKS_ARE_GDATA */
+          break;
+        case ZMAPFEATURE_STRUCT_BLOCK:
+          feature_block = (ZMapFeatureBlock)feature_any;
+          g_datalist_foreach(&(feature_block->feature_sets), executeDataForeachFunc, full_data);
+          break;
+        case ZMAPFEATURE_STRUCT_FEATURESET:
+          feature_set   = (ZMapFeatureSet)feature_any;
+          g_datalist_foreach(&(feature_set->features), executeDataForeachFunc, full_data);
+          break;
+        case ZMAPFEATURE_STRUCT_FEATURE:
+          feature_ft    = (ZMapFeature)feature_any;
+          /* No children here. */
+          break;
+        case ZMAPFEATURE_STRUCT_INVALID:
+        default:
+          zMapAssertNotReached();
+          break;
+        }
+    }
+
+  return ;
+}
+
+/* This function will be completely useless when blocks are GData */
+static void executeListForeachFunc(gpointer data, gpointer user_data)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureBlock block = NULL;
+
+  if(feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK)
+    {
+      block = (ZMapFeatureBlock)feature_any;
+      executeDataForeachFunc(block->unique_id, (gpointer)block, user_data);
+    }
+  else
+    zMapAssertNotReached();
+
+  return ;
+}
 
 
 
+
+#ifdef RDS_CONDENSED_TO_USE_CONTEXT_EXECUTE
 /* The next three functions could be condensed to a call simply to one if I had had
  * the sense to make all of the context contain g_datalists and not have the blocks as
  * a g_list...sigh...I could go back and change it but there are surprisingly many places
@@ -465,135 +771,5 @@ static void doFeatureAnyCB(ZMapFeatureAny any_feature, gpointer user_data)
 
   return ;
 }
+#endif
 
-
-
-static void revcompSpan(GArray *spans, int seq_end)
-{
-  int i ;
-
-  for (i = 0; i < spans->len; i++)
-    {
-      ZMapSpan span ;
-      
-      span = &g_array_index(spans, ZMapSpanStruct, i) ;
-
-      zmapFeatureRevComp(Coord, seq_end, span->x1, span->x2) ;
-    }
-  
-
-  return ;
-}
-
-#ifdef RDS_TEMPLATE_USER_DATALIST_FOREACH
-/* Use this function while descending through a feature context */
-static void templateDataListForeach(GQuark key, 
-                                    gpointer data, 
-                                    gpointer user_data)
-{
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ZMapFeatureAlignment feature_align = NULL;
-  ZMapFeatureBlock     feature_block = NULL;
-  ZMapFeatureSet       feature_set   = NULL;
-  ZMapFeature          feature_ft    = NULL;
-  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
-
-  YourDataType  all_data = (YourDataType)user_data;
-  
-  feature_type = feature_any->struct_type;
-
-  switch(feature_type)
-    {
-    case ZMAPFEATURE_STRUCT_ALIGN:
-      feature_align = (ZMapFeatureAlignment)feature_any;
-      break;
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      feature_block = (ZMapFeatureBlock)feature_any;
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      feature_set = (ZMapFeatureSet)feature_any;
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      feature_ft = (ZMapFeature)feature_any;
-      break;
-    case ZMAPFEATURE_STRUCT_INVALID:
-    default:
-      zMapAssertNotReached();
-      break;
-
-    }
-
-  return ;
-}
-#endif /* RDS_TEMPLATE_USER_DATALIST_FOREACH */
-
-static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data)
-{
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ContextExecute full_data = (ContextExecute)user_data;
-  ZMapFeatureAlignment feature_align = NULL;
-  ZMapFeatureBlock     feature_block = NULL;
-  ZMapFeatureSet       feature_set   = NULL;
-  ZMapFeature          feature_ft    = NULL;
-  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
-  
-  feature_type = feature_any->struct_type;
-
-  if(full_data->callback)
-    (full_data->callback)(key, data, full_data->callback_data);
-  else
-    zMapLogWarning("%s", "Context Execute Callback Not Set.");
-
-  if(feature_type == full_data->stop)
-    zMapLogWarning("%s", "zMapFeatureContextExecute Finished.");
-  else
-    {
-      switch(feature_type)
-        {
-        case ZMAPFEATURE_STRUCT_ALIGN:
-          feature_align = (ZMapFeatureAlignment)feature_any;
-          g_list_foreach(feature_align->blocks, executeListForeachFunc, full_data);
-#ifdef RDS_WHEN_BLOCKS_ARE_GDATA
-          /* If blocks is a GData use this instead */
-          g_datalist_foreach(&(feature_align->blocks), executeDataForeachFunc, full_data);
-#endif /* RDS_WHEN_BLOCKS_ARE_GDATA */
-          break;
-        case ZMAPFEATURE_STRUCT_BLOCK:
-          feature_block = (ZMapFeatureBlock)feature_any;
-          g_datalist_foreach(&(feature_block->feature_sets), executeDataForeachFunc, full_data);
-          break;
-        case ZMAPFEATURE_STRUCT_FEATURESET:
-          feature_set   = (ZMapFeatureSet)feature_any;
-          g_datalist_foreach(&(feature_set->features), executeDataForeachFunc, full_data);
-          break;
-        case ZMAPFEATURE_STRUCT_FEATURE:
-          feature_ft    = (ZMapFeature)feature_any;
-          /* No children here. */
-          break;
-        case ZMAPFEATURE_STRUCT_INVALID:
-        default:
-          zMapAssertNotReached();
-          break;
-        }
-    }
-
-  return ;
-}
-
-/* This function will be completely useless when blocks are GData */
-static void executeListForeachFunc(gpointer data, gpointer user_data)
-{
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ZMapFeatureBlock block = NULL;
-  ContextExecute full_data = (ContextExecute)user_data;
-
-  if(feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK)
-    {
-      block = (ZMapFeatureBlock)feature_any;
-      executeDataForeachFunc(block->unique_id, (gpointer)block, full_data);
-    }
-  else
-    zMapAssertNotReached();
-
-  return ;
-}
