@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 19 22:12 2006 (rds)
+ * Last edited: Jul 20 15:11 2006 (rds)
  * Created: Fri Aug  5 12:50:44 2005 (rds)
- * CVS info:   $Id: zmapXML_P.h,v 1.9 2006-05-22 09:28:03 rds Exp $
+ * CVS info:   $Id: zmapXML_P.h,v 1.10 2006-07-21 10:26:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +40,8 @@
 
 #define ZMAP_XML_BASE_ATTR "xml:base"
 #define ZMAP_XML_ERROR_CONTEXT_SIZE 10
+
+enum { ZMAPXMLWRITER_FLUSH_COUNT = 10 };
 
 /* For an XML tag holds the element name and attributes, i.e.   <element_name attributes>
  * Used to track which tag we are processing. */
@@ -90,6 +92,18 @@ typedef struct _zmapXMLParserStruct
   GList *xmlBaseHandlers, *xmlBaseStack;
   GQuark xmlbase;
 } zmapXMLParserStruct ;
+
+typedef struct _ZMapXMLWriterStruct
+{
+  GString *xml_output;
+  GArray  *element_stack;
+  gint flush_counter;
+  ZMapXMLWriterOutputCallback output_callback;
+  gpointer                    output_userdata;
+  ZMapXMLWriterErrorCode errorCode;
+  gboolean initialised;
+  gboolean stack_top_has_content;
+} ZMapXMLWriterStruct;
 
 
 /* ATTRIBUTES */
