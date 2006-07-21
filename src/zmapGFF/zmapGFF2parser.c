@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 28 10:22 2006 (edgrif)
+ * Last edited: Jul 21 09:19 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.54 2006-06-28 09:23:04 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.55 2006-07-21 08:20:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,6 +84,10 @@ static int sortGapsByTarget(gconstpointer a, gconstpointer b);
 
 static void initSources(GData **datalist, GList *sources);
 
+
+static void stylePrintCB(gpointer data, gpointer user_data) ;
+
+
 /* types is the list of methods/types, call it what you will that we want to see
  * in the output, we may need to filter the incoming data stream to get this.
  * 
@@ -94,6 +98,10 @@ static void initSources(GData **datalist, GList *sources);
 ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only)
 {
   ZMapGFFParser parser ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  g_list_foreach(sources, stylePrintCB, NULL) ; /* debug */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   parser = g_new0(ZMapGFFParserStruct, 1) ;
 
@@ -854,14 +862,14 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
 
-
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* debugging.... */
   g_datalist_foreach(&(parser->sources), printSource, NULL) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+  /* This is all a bit horrendous and confused and needs clarifying, Im not sure that the
+   * usage of original vs. unique names is quite correct here.... */
 
   /* Set up the style for the current feature set, the feature set for a feature may have
    * been specified via a special acedb "Column_group" tag so check for that first. Otherwise
@@ -870,7 +878,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
     {
       feature_set_name = (char *)g_quark_to_string(column_id) ;
 
-      feature_set_style_id = column_id ;
+      feature_set_style_id = zMapStyleCreateID((char *)g_quark_to_string(column_id)) ;
 
       feature_style_id = zMapStyleCreateID((char *)g_quark_to_string(orig_style_id)) ;
     }
@@ -1529,3 +1537,14 @@ static void destroyFeatureArray(gpointer data)
 
   return ;
 }
+
+
+static void stylePrintCB(gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
+
+  printf("%s (%s)\n", g_quark_to_string(style->original_id), g_quark_to_string(style->unique_id)) ;
+
+  return ;
+}
+
