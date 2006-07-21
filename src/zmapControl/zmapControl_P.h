@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul 19 10:05 2006 (edgrif)
+ * Last edited: Jul 20 15:25 2006 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.44 2006-07-19 09:09:12 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.45 2006-07-21 08:34:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -104,7 +104,8 @@ typedef struct _ZMapStruct
   GtkWidget *feature_name,
     *feature_strand,
     *feature_coords, *sub_feature_coords,
-    *feature_score, *feature_type, *feature_set ;
+    *feature_score, *feature_type,
+    *feature_set, *feature_style ;
   GtkTooltips *feature_tooltips ;
 
 
@@ -144,6 +145,7 @@ void       zmapControlWindowDestroy    (ZMap zmap) ;
 
 void zmapControlButtonTooltips(ZMap zmap) ;
 void zmapControlInfoPanelTooltips(ZMap zmap, ZMapFeatureDesc feature_desc) ;
+void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc) ;
 
 ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end) ;
 void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation) ;
