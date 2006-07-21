@@ -1,5 +1,5 @@
 # The default/sample zmap gtkrc file
-# CVS info: $Id: .gtkrc,v 1.1 2006-03-20 18:48:09 rds Exp $
+# CVS info: $Id: .gtkrc,v 1.2 2006-07-21 08:43:06 edgrif Exp $
 
 
 ###############################
@@ -42,6 +42,18 @@ style "menu-titles" {
 # menu/button items have label widgets
 # class "GtkLabel" style "menu-titles"
 widget "*.zmap-menu-title.*" style "menu-titles"
+
+
+#############################
+# info panel labels
+style "infopanel-labels"
+{
+  bg[NORMAL]={ 1.0, 1.0, 1.0 }
+}
+# menu/button items have label widgets
+# class "GtkLabel" style "menu-titles"
+widget "*.zmap-control-infopanel" style "infopanel-labels"
+
 
 
 #############################
