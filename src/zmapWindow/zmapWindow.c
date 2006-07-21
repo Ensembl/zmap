@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 19 09:44 2006 (edgrif)
+ * Last edited: Jul 20 15:27 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.130 2006-07-19 09:02:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.131 2006-07-21 08:21:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,7 +85,6 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 static void myWindowMove(ZMapWindow window, double start, double end) ;
 
 static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
-static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event) ;
@@ -858,11 +857,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   ZMapWindowItemFeatureType type ;
   ZMapWindowItemFeature item_data ;
   ZMapFeature feature = NULL;
-  char *subpart_text = NULL ;
-  ZMapFeatureSet feature_set ;
   ZMapFeatureTypeStyle style ;
-  char *style_text ;
-  char *locus_text = NULL ;
   ZMapWindowSelectStruct select = {NULL} ;
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
@@ -907,6 +902,9 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 
   select.feature_desc.feature_set
     = (char *)g_quark_to_string((zMapFeatureGetSet(feature))->original_id) ;
+
+  select.feature_desc.feature_style
+    = zMapStyleGetName(zMapFeatureGetStyle(feature)) ;
 
   select.secondary_text = g_strdup_printf("\"%s\"    %d %d (%d)",
                                           (char *)g_quark_to_string(feature->original_id),
