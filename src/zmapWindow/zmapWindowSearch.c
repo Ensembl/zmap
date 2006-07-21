@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 19 11:55 2006 (edgrif)
+ * Last edited: Jul 21 11:27 2006 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.13 2006-07-19 10:57:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.14 2006-07-21 10:33:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,9 @@ typedef struct
   ZMapWindow window ;
   FooCanvasItem *feature_item ;
   ZMapFeatureAny feature_any ;
+  GList *styles ;
+
+
 
   /* Context field widgets */
   GtkWidget *toplevel ;
@@ -58,6 +61,7 @@ typedef struct
   GtkWidget *start_entry ;
   GtkWidget *end_entry ;
   GtkWidget *locus_but ;
+  GtkWidget *style_entry ;
 
 
   /* Context field data... */
@@ -82,6 +86,9 @@ typedef struct
   char *start ;						    /* Coords range to limit search. */
   char *end ;
   gboolean locus ;
+  char *style_text ;
+  ZMapFeatureTypeStyle style ;
+
 
 } SearchDataStruct, *SearchData ;
 
@@ -100,6 +107,8 @@ typedef struct
   gint end ;
 
   gboolean locus ;
+
+  ZMapFeatureTypeStyle style ;
 } SearchPredCBDataStruct, *SearchPredCBData ;
 
 
@@ -127,6 +136,9 @@ static void fetchAllComboLists(ZMapFeatureAny feature_any,
                                GList **align_list_out,
                                GList **block_list_out,
                                GList **set_list_out);
+
+static GList *getStyleQuarks(GList *styles) ;
+static void getQuark(gpointer data, gpointer user_data) ;
 
 gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data) ;
 
@@ -335,7 +347,16 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
 static GtkWidget *makeFiltersPanel(SearchData search_data)
 {
   GtkWidget *frame ;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label;
+  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label, *combo ;
+  ZMapFeatureContext context ;
+  GList *styles, *style_quarks ;
+
+  context = (ZMapFeatureContext)zMapFeatureGetParentGroup(search_data->feature_any,
+							  ZMAPFEATURE_STRUCT_CONTEXT) ;
+
+  search_data->styles = styles = context->styles ;
+  style_quarks = getStyleQuarks(styles) ;
+ 
 
   setFilterDefaults(search_data) ;
 
@@ -372,6 +393,10 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
+  label = gtk_label_new( "Style :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
 
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
@@ -401,6 +426,15 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   g_signal_connect(GTK_OBJECT(search_data->locus_but), "toggled",
 		   GTK_SIGNAL_FUNC(locusCB), (gpointer)search_data) ;
   gtk_box_pack_start(GTK_BOX(entrybox), search_data->locus_but, FALSE, FALSE, 0) ;
+
+
+  combo = createPopulateComboBox(style_quarks, TRUE);
+  search_data->style_entry = entry = GTK_BIN(combo)->child ;
+  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
+  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
+  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, FALSE, 0) ;
+
 
 
   return frame ;
@@ -473,6 +507,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   SearchPredCBData search_pred_ptr = NULL ;
   char *wild_card_str = "*" ;
   GQuark wild_card_id ;
+  char *style_text ;
+  
 
   wild_card_id = g_quark_from_string(wild_card_str) ;
 
@@ -589,7 +625,9 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->start_entry)) ;
   end_text = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->end_entry)) ;
   locus = search_data->locus ;
-  if ((start_txt && *start_txt && end_text && *end_text) || locus)
+  style_text = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->style_entry)) ;
+
+  if ((start_txt && *start_txt && end_text && *end_text) || locus || (style_text && *style_text))
     {
       callback = searchPredCB ;
       search_pred_ptr = &search_pred ;
@@ -599,6 +637,14 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       search_pred.end = atoi(end_text) ;
 
       search_pred.locus = locus ;
+
+      if (style_text && *style_text)
+	{
+	  ZMapFeatureTypeStyle style ;
+
+	  if ((style = zMapFindStyle(search_data->styles, zMapStyleCreateID(style_text))))
+	    search_pred.style = style ;
+	}
     }
 
 
@@ -986,6 +1032,14 @@ gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data)
 	      result = FALSE ;
 	  }
 
+	if (search_pred->style)
+	  {
+	    if (feature->style == search_pred->style)
+	      result = TRUE ;
+	    else
+	      result = FALSE ;
+	  }
+
 	break;
       }
     case ZMAPFEATURE_STRUCT_INVALID:
@@ -1028,5 +1082,27 @@ static void locusCB(GtkToggleButton *toggle_button, gpointer cb_data)
 }
 
 
+
+static GList *getStyleQuarks(GList *styles)
+{
+  GList *style_quarks = NULL ;
+
+  g_list_foreach(styles, getQuark, &style_quarks) ;
+
+  return style_quarks ;
+}
+
+
+static void getQuark(gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
+  GList *style_quarks = *((GList **)user_data) ;
+
+  style_quarks = g_list_append(style_quarks, GINT_TO_POINTER(style->original_id)) ;
+
+  *((GList **)user_data) = style_quarks ;
+
+  return ;
+}
 
 /*************************** end of file *********************************/
