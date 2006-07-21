@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jun  2 11:28 2006 (rds)
+ * Last edited: Jul 18 19:22 2006 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.18 2006-06-02 14:59:54 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.19 2006-07-21 10:04:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -143,7 +143,7 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
               zMapXRemoteInitClient(client, clientId);
               zMapXRemoteSetRequestAtomName(client, ZMAP_CLIENT_REQUEST_ATOM_NAME);
               zMapXRemoteSetResponseAtomName(client, ZMAP_CLIENT_RESPONSE_ATOM_NAME);
-              if((ret_code = zMapXRemoteSendRemoteCommand(client, req)) != 0)
+              if((ret_code = zMapXRemoteSendRemoteCommand(client, req, NULL)) != 0)
                 {
                   zMapLogWarning("Could not communicate with client '0x%lx'. code %d", clientId, ret_code);
                   app_context->xremoteClient = NULL;
