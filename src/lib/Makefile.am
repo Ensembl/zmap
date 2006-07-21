@@ -16,6 +16,7 @@ libZMapXML_a_SOURCES = $(top_srcdir)/zmapXML/zmapXML_P.h \
 	$(top_srcdir)/zmapXML/zmapXMLDocument.c \
 	$(top_srcdir)/zmapXML/zmapXMLElement.c \
 	$(top_srcdir)/zmapXML/zmapXMLAttribute.c \
+	$(top_srcdir)/zmapXML/zmapXMLWriter.c \
 	$(top_srcdir)/zmapXML/zmapXMLParse.c \
 	$(NULL)
 
