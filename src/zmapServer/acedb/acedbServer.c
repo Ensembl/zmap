@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jul  4 09:22 2006 (edgrif)
+ * Last edited: Jul 21 09:14 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.62 2006-07-04 08:23:39 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.63 2006-07-21 08:18:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -134,6 +134,7 @@ static char *getMethodFetchStr(GList *feature_sets, GHashTable *method_2_feature
 static void methodFetchCB(gpointer data, gpointer user_data) ;
 
 static void printCB(gpointer data, gpointer user_data) ;
+static void stylePrintCB(gpointer data, gpointer user_data) ;
 
 /* 
  *             Server interface functions. 
@@ -1392,12 +1393,9 @@ static gboolean parseTypes(AcedbServer server, GList **types_out)
 		      g_hash_table_insert(server->method_2_featureset, 
 					  GINT_TO_POINTER(col_group->feature_set), method_list) ;
 		      
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		      g_list_foreach(method_list, printCB, NULL) ; /* debug */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 		    }
 		}
 	    }
@@ -1408,6 +1406,10 @@ static gboolean parseTypes(AcedbServer server, GList **types_out)
 	    {
 	      result = TRUE ;
 	      *types_out = types ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      g_list_foreach(types, stylePrintCB, NULL) ; /* debug */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	    }
 
 	  g_free(reply) ;
@@ -2150,6 +2152,16 @@ static void printCB(gpointer data, gpointer user_data)
   GQuark feature_set = GPOINTER_TO_INT(data) ;
 
   printf("%s\n", g_quark_to_string(feature_set)) ;
+
+  return ;
+}
+
+
+static void stylePrintCB(gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
+
+  printf("%s (%s)\n", g_quark_to_string(style->original_id), g_quark_to_string(style->unique_id)) ;
 
   return ;
 }
