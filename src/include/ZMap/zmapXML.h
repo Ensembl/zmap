@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 20 14:07 2006 (rds)
+ * Last edited: Jul 20 16:47 2006 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.13 2006-06-20 13:08:10 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.14 2006-07-21 10:30:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -128,6 +128,51 @@ typedef struct _zmapXMLElementStruct
 typedef struct _zmapXMLAttributeStruct *ZMapXMLAttribute;
 typedef struct _zmapXMLDocumentStruct  *ZMapXMLDocument;
 typedef struct _zmapXMLParserStruct    *ZMapXMLParser;
+typedef struct _ZMapXMLWriterStruct    *ZMapXMLWriter;
+
+typedef enum 
+  {
+    ZMAPXMLWRITER_OK, 
+    ZMAPXMLWRITER_FAILED_FLUSHING,
+    ZMAPXMLWRITER_INCOMPLETE_FLUSH,
+    ZMAPXMLWRITER_BAD_POSITION,
+    ZMAPXMLWRITER_DUPLICATE_ATTRIBUTE,
+    ZMAPXMLWRITER_MISMATCHED_TAG
+  } ZMapXMLWriterErrorCode;
+
+typedef enum
+  { 
+    ZMAPXML_NULL_EVENT          = 0,
+
+    ZMAPXML_START_ELEMENT_EVENT = 1 << 0,
+    ZMAPXML_ATTRIBUTE_EVENT     = 1 << 1 ,
+    ZMAPXML_CHAR_DATA_EVENT     = 1 << 2,
+    ZMAPXML_END_ELEMENT_EVENT   = 1 << 3,
+    ZMAPXML_START_DOC_EVENT     = 1 << 4,
+    ZMAPXML_END_DOC_EVENT       = 1 << 5,
+
+    ZMAPXML_UNSUPPORTED_EVENT   = 1 << 15,
+    ZMAPXML_UNKNOWN_EVENT       = 1 << 16
+  } ZMapXMLWriterEventType;
+
+typedef struct _ZMapXMLWriterEventStruct
+{
+  ZMapXMLWriterEventType type ;
+
+  union
+  {
+    GQuark single_item ;
+
+    struct
+    {
+      GQuark item_name  ;
+      GQuark item_value ;
+    } double_item ;
+
+  } data ;
+
+} ZMapXMLWriterEventStruct, *ZMapXMLWriterEvent ;
+
 
 /*!
  * \brief XML object handler.
@@ -148,6 +193,10 @@ typedef struct _zmapXMLParserStruct    *ZMapXMLParser;
  */
 typedef gboolean 
 (*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
+
+typedef int 
+(*ZMapXMLWriterOutputCallback)(ZMapXMLWriter writer, char *flushed_xml, int flushed_length, gpointer user_data);
+
 
 /*!
  * \brief Small struct to link element names to their handlers
@@ -257,6 +306,19 @@ long zMapXMLParserGetCurrentByteIndex(ZMapXMLParser parser);
  * how to parse for a round trip.
  */
 char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset);
+
+
+/* WRITER */
+ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback, 
+                                  gpointer flush_data);
+ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, char *element_name);
+ZMapXMLWriterErrorCode zMapXMLWriterAttribute(ZMapXMLWriter writer, char *name, char *value);
+ZMapXMLWriterErrorCode zMapXMLWriterElementContent(ZMapXMLWriter writer, char *content);
+ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *element);
+ZMapXMLWriterErrorCode zMapXMLWriterEndDocument(ZMapXMLWriter writer);
+ZMapXMLWriterErrorCode zMapXMLWriterStartDocument(ZMapXMLWriter writer, char *document_root_tag);
+ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events);
+ZMapXMLWriterErrorCode zMapXMLWriterDestroy(ZMapXMLWriter writer);
 
 #endif /* ZMAP_XML_H */
 
