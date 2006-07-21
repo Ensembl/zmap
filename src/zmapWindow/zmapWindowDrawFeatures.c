@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 19 09:46 2006 (edgrif)
+ * Last edited: Jul 21 10:19 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.141 2006-07-19 09:02:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.142 2006-07-21 09:22:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1176,6 +1176,15 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 		feature_set_id = style->original_id ;
 
 	      select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      /* probably we should get this displayed somehow but currently it doesn't. */
+
+	      select.feature_desc.feature_description
+		= zmapWindowFeatureSetDescription(style->original_id, style) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
               select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, style) ;
 
