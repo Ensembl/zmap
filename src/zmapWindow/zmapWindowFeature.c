@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 17 12:19 2006 (edgrif)
+ * Last edited: Jul 21 10:41 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.39 2006-07-17 11:22:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.40 2006-07-21 09:43:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -518,8 +518,9 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
    */
 
   /* check for style too. */
-
-  if(zMapFindStyle(window->feature_context->styles, 
+  /* sometimes we don't have a featrue_context ... ODD! */
+  if(window->feature_context &&
+     zMapFindStyle(window->feature_context->styles, 
                    zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
     {
       zMapFeatureContextExecute((ZMapFeatureAny)(window->feature_context), 
@@ -1245,8 +1246,10 @@ static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
                           300.0, 1, callback, window);
 
   /* TRY THIS...EVENT HANDLER MAY INTERFERE THOUGH...SO MAY NEED TO REMOVE EVENT HANDLERS... */
-  attachDataToItem(feature_parent, window, feature, ITEM_FEATURE_SIMPLE, NULL) ;
-  
+#ifdef RDS_DONT_INCLUDE
+  /* It certainly does interfere. Not to remove, but, certainly breaks stuff. */
+  attachDataToItem(feature_parent, window, feature, ITEM_FEATURE_BOUNDING_BOX, NULL) ;
+#endif
   return feature_parent;
 }
 
@@ -1455,7 +1458,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		  {
 		    /* Pass information about the object clicked on back to the application. */
 		    zMapWindowUpdateInfoPanel(window, feature, real_item) ;
-		
+
 		    if (but_event->button == 3)
 		      {
 			/* Pop up an item menu. */
@@ -2138,6 +2141,7 @@ static void oneBlockHasDNA(GQuark key,
       if(!dna->exists)
         dna->exists = (gboolean)(feature_block->sequence.length ? TRUE : FALSE);
       break;
+    case ZMAPFEATURE_STRUCT_CONTEXT:
     case ZMAPFEATURE_STRUCT_FEATURESET:
     case ZMAPFEATURE_STRUCT_FEATURE:
     case ZMAPFEATURE_STRUCT_ALIGN:
