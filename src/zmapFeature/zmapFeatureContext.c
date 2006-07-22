@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 20 09:31 2006 (rds)
+ * Last edited: Jul 21 22:01 2006 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.10 2006-07-20 09:01:15 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.11 2006-07-22 09:34:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,7 +52,6 @@ typedef struct
   gpointer              callback_data;
   ZMapFeatureStructType stop;
 }ContextExecuteStruct, *ContextExecute;
-
 
 static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
 static void revcompDNA(char *sequence, int seq_length) ;
@@ -565,7 +564,9 @@ static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data
     zMapLogWarning("%s", "Context Execute Callback Not Set.");
 
   if(feature_type == full_data->stop)
-    zMapLogWarning("%s", "zMapFeatureContextExecute Finished.");
+    {
+      /* zMapLogWarning("%s", "zMapFeatureContextExecute Finished."); */
+    }
   else
     {
       switch(feature_type)
