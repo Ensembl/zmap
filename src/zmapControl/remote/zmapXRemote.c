@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jul 19 10:43 2006 (rds)
+ * Last edited: Jul 19 13:48 2006 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.17 2006-07-19 09:47:58 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.18 2006-07-22 09:33:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -411,6 +411,46 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
 
   return result;  
 }
+
+gboolean zMapXRemoteResponseIsError(zMapXRemoteObj object, char *response)
+{
+  gboolean is_error = TRUE;
+
+  zMapAssert(response);
+  
+  switch(*response)
+    {
+    case '2':
+      is_error = FALSE;
+      break;
+    default:
+      is_error = TRUE;
+    }
+
+  return is_error;
+}
+
+void zMapXRemoteResponseSplit(zMapXRemoteObj object, char *full_response, int *code, char **response)
+{
+  char *code_str = full_response, *tmp_out = full_response;
+  char *d = ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER;
+
+  tmp_out+=4;
+
+  if(code)
+    {
+      if(code_str[3] == d[0])
+        *code = strtol(code_str, &d, 10);
+      else
+        *code = 0;
+    }
+  
+  if(response)
+    *response = tmp_out;
+
+  return ;
+}
+
 /*! zMapXRemoteGetResponse 
  * ------------------------
  * Generally for the perl bit so it can get the response.

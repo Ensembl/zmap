@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Jul 19 10:41 2006 (rds)
+ * Last edited: Jul 19 12:41 2006 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.11 2006-07-19 09:42:17 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.12 2006-07-22 09:33:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@
 #include <X11/Xatom.h>
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.11 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.12 $"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
 
@@ -159,6 +159,9 @@ char *zMapXRemoteGetResponse(zMapXRemoteObj object);
 
 GdkAtom zMapXRemoteGdkRequestAtom(zMapXRemoteObj object);
 GdkAtom zMapXRemoteGdkResponseAtom(zMapXRemoteObj object);
+
+void zMapXRemoteResponseSplit(zMapXRemoteObj object, char *full_response, int *code, char **response);
+gboolean zMapXRemoteResponseIsError(zMapXRemoteObj object, char *response);
 
 void zMapXRemoteDestroy(zMapXRemoteObj object);
 /* ================================================ */
