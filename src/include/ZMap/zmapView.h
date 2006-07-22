@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Jul 19 09:54 2006 (edgrif)
+ * Last edited: Jul 21 17:49 2006 (rds)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.26 2006-07-19 08:56:17 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.27 2006-07-22 09:19:38 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -67,6 +67,8 @@ typedef struct _ZMapViewCallbacksStruct
   ZMapViewCallbackFunc load_data ;
   ZMapViewWindowCallbackFunc focus ;
   ZMapViewWindowCallbackFunc select ;
+  ZMapViewWindowCallbackFunc double_select ;
+  ZMapViewWindowCallbackFunc split_to_pattern;
   ZMapViewWindowCallbackFunc visibility_change ;
   ZMapViewCallbackFunc state_change ;
   ZMapViewCallbackFunc destroy ;
@@ -81,6 +83,16 @@ typedef struct _ZMapViewSelectStruct
   char *secondary_text;
 } ZMapViewSelectStruct, *ZMapViewSelect ;
 
+typedef struct _ZMapViewDoubleSelectStruct
+{
+  GArray *xml_events;
+}ZMapViewDoubleSelectStruct, *ZMapViewDoubleSelect;
+
+typedef struct _ZMapViewSplittingStruct
+{
+  GArray *split_patterns;
+  GList *touched_window_list;   /* A list of view_windows affected by the split */
+}ZMapViewSplittingStruct, *ZMapViewSplitting;
 
 /* The overall state of the zmapView, we need this because both the zmap window and the its threads
  * will die asynchronously so we need to block further operations while they are in this state. */

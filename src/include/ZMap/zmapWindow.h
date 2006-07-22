@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jul 19 09:49 2006 (edgrif)
+ * Last edited: Jul 22 10:18 2006 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.62 2006-07-19 09:02:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.63 2006-07-22 09:18:50 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -93,6 +93,21 @@ typedef struct
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
 
 
+typedef struct _ZMapWindowDoubleSelectStruct
+{
+  GArray *xml_events;
+}ZMapWindowDoubleSelectStruct, *ZMapWindowDoubleSelect;
+
+typedef struct
+{
+  ZMapWindow original_window;   /* We need to know where we came from... */
+  GArray *split_patterns;
+
+  FooCanvasItem *item;
+  int window_index;             /* Important for stepping through the touched windows and split_patterns */
+  gpointer other_data;
+} ZMapWindowSplittingStruct, *ZMapWindowSplitting;
+
 /* Callback functions that can be registered with ZMapWindow, functions are registered all in one.
  * go via the ZMapWindowCallbacksStruct. */
 typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data, void *window_data) ;
@@ -104,6 +119,8 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc scroll ;
   ZMapWindowCallbackFunc focus ;
   ZMapWindowCallbackFunc select ;
+  ZMapWindowCallbackFunc doubleSelect ;
+  ZMapWindowCallbackFunc splitToPattern;
   ZMapWindowCallbackFunc setZoomStatus;
   ZMapWindowCallbackFunc visibilityChange ;
   ZMapWindowCallbackFunc destroy ;
@@ -245,6 +262,5 @@ void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window,
                                       ZMapGUIMenuItem each_block, 
                                       char *root, 
                                       GArray **items_array_out);
-
 
 #endif /* !ZMAP_WINDOW_H */
