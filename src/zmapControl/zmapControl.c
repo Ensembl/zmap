@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 19 10:05 2006 (edgrif)
+ * Last edited: Jul 21 17:47 2006 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.65 2006-07-19 09:09:12 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.66 2006-07-22 09:32:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,7 +55,9 @@ static void enterCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
-static void visibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+static void controlDoubleSelectCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+static void controlVisibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data) ;
 static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
 
@@ -69,8 +71,9 @@ static ZMapCallbacks zmap_cbs_G = NULL ;
 
 /* Holds callbacks we set in the level below us to be called back on. */
 ZMapViewCallbacksStruct view_cbs_G = {enterCB, leaveCB,
-				      dataLoadCB, focusCB, selectCB,
-				      visibilityChangeCB, viewStateChangeCB, viewKilledCB} ;
+				      dataLoadCB, focusCB, selectCB, 
+                                      controlDoubleSelectCB, controlSplitToPatternCB,
+				      controlVisibilityChangeCB, viewStateChangeCB, viewKilledCB} ;
 
 
 
@@ -638,11 +641,92 @@ static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data
   return ;
 }
 
+static void controlDoubleSelectCB(ZMapViewWindow view_window, void *app_data, void *view_data)
+{
+  ZMap zmap = (ZMap)app_data;
+  ZMapViewDoubleSelect double_select = (ZMapViewDoubleSelect)view_data;
 
+  zmapControlRemoteAlertClients(zmap, double_select->xml_events, "edit");  
+
+  return ;
+}
+
+static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, void *view_data)
+{
+  ZMap zmap = (ZMap)app_data;
+  ZMapView zmap_view = NULL;
+  ZMapWindow zmap_window = NULL;
+  ZMapViewSplitting split = (ZMapViewSplitting)view_data;
+  ZMapViewWindow new_view_window = NULL;
+  GtkWidget *window_container = NULL;
+  ZMapSplitPattern pattern = NULL;
+  char *title = NULL;
+  int i;
+
+  for(i = 0; i < split->split_patterns->len; i++)
+    {
+      ZMapViewWindow tmp_vw = NULL;
+
+      pattern = &(g_array_index(split->split_patterns, ZMapSplitPatternStruct, i));
+
+      zMapAssert(pattern);
+
+      switch(pattern->subject)
+        {
+        case ZMAPSPLIT_NEW:
+          tmp_vw = (ZMapViewWindow)((g_list_last(split->touched_window_list))->data);
+          break;
+        case ZMAPSPLIT_LAST:
+          {
+            GList *tmp_list = split->touched_window_list;
+            int i = 2;          /* Go through loop twice */
+            
+            /* First time sets to the last list member, second time if there is another, the one before that. */
+            for(tmp_list = g_list_last(tmp_list); i > 0 && tmp_list; i--)
+              {
+                tmp_vw   = view_window;
+                tmp_list = tmp_list->prev;
+              }
+          }
+          break;
+        case ZMAPSPLIT_ORIGINAL:
+          tmp_vw = view_window;
+          break;
+        default:
+          zMapAssertNotReached();
+        }
+
+      zMapAssert(tmp_vw);
+
+      zmap_view   = zMapViewGetView(tmp_vw);
+      zmap_window = zMapViewGetWindow(tmp_vw);
+
+      title = zMapViewGetSequence(zmap_view);
+
+      /* hmmm.... */
+      window_container = g_hash_table_lookup(zmap->viewwindow_2_parent, tmp_vw);
+
+      if((new_view_window = zmapControlNewWidgetAndWindowForView(zmap, zmap_view,
+                                                                 zmap_window,
+                                                                 window_container,
+                                                                 pattern->orientation,
+                                                                 title)))
+        {
+          split->touched_window_list = g_list_append(split->touched_window_list, new_view_window);
+        }
+    }
+  
+  zmapControlWindowSetGUIState(zmap) ;
+
+  /* leave this to the last minute */
+  gtk_widget_show_all(zmap->toplevel) ;
+
+  return ;
+}
 
 /* Called when a view needs to tell us it has changed. Note that we only need to change
  * anything if the view in question is the focus view. */
-static void visibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data)
+static void controlVisibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
   ZMapWindowVisibilityChange vis_change = (ZMapWindowVisibilityChange)view_data ;
