@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jun 30 16:24 2006 (rds)
+ * Last edited: Jul 21 16:06 2006 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.39 2006-06-30 15:24:39 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.40 2006-07-22 09:34:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -189,7 +189,7 @@ ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeature
     {
       ZMapFeatureAny group = any_feature ;
 
-      while (group->struct_type > group_type)
+      while (group && group->struct_type > group_type)
 	{
 	  group = group->parent ;
 	}
