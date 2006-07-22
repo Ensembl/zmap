@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 21 09:22 2006 (edgrif)
+ * Last edited: Jul 22 10:21 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.81 2006-07-21 08:22:25 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.82 2006-07-22 09:21:43 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -36,7 +36,7 @@
 
 #include <gdk/gdkcolor.h>
 #include <ZMap/zmapConfigStyleDefaults.h>
-
+#include <ZMap/zmapXML.h>
 
 /* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
  * can surmise from the code that zero is not a valid quark. */
@@ -208,6 +208,10 @@ typedef struct ZMapFeatureContextStruct_
 
   /* OK THIS IS WRONG...WE SHOULDN'T HAVE A POINTER TO DNA HERE AT ALL, THE BLOCKS SHOULD HAVE
    * IT...CHECK USAGE OF THIS FIELD....  */
+  /* At least 
+     zmapFeacture.c:zmapFeatureContextDNA and 
+     zmapWindowCallBlixem.c:zmapWindowCallBlixem
+  */
   ZMapSequence sequence ;				    /* The dna sequence. NB NOW A POINTER! */
 
 
@@ -739,6 +743,13 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
 				  gboolean spliced, gboolean cds_only) ;
 
 
+GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any, 
+                                  /* ZMapFeatureXMLType xml_type */
+                                  int xml_type);
+gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any, 
+                             ZMapXMLWriter xml_writer,
+                             GArray **xml_events_out,
+                             int xml_type);
 
 
 
