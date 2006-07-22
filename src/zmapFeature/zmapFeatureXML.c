@@ -1,0 +1,614 @@
+/*  File: zmapFeatureXML.c
+ *  Author: Roy Storey (rds@sanger.ac.uk)
+ *  Copyright (c) Sanger Institute, 2006
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originally written by:
+ *
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *
+ * Description: 
+ *
+ * Exported functions: See XXXXXXXXXXXXX.h
+ * HISTORY:
+ * Last edited: Jul 21 21:55 2006 (rds)
+ * Created: Fri Jul 21 14:48:18 2006 (rds)
+ * CVS info:   $Id: zmapFeatureXML.c,v 1.1 2006-07-22 09:52:33 rds Exp $
+ *-------------------------------------------------------------------
+ */
+
+#include <glib.h>
+#include <ZMap/zmapUtils.h>
+#include <ZMap/zmapXML.h>
+#include <zmapFeature_P.h>
+
+enum { ZMAPFEATURE_XML_XREMOTE = 2 };
+
+typedef struct
+{
+  struct
+  {
+    unsigned int context    : 1 ;
+    unsigned int align      : 1 ;
+    unsigned int block      : 1 ;
+    unsigned int featureset : 1 ;
+    unsigned int feature    : 1 ;
+  } doEndTag;
+  GArray *xml_events_out;
+  ZMapXMLWriter xml_writer;
+  ZMapXMLWriterErrorCode status;
+  int xml_type;
+} XMLContextDumpStruct, *XMLContextDump;
+
+
+void generateContextXMLEvents   (ZMapFeatureContext feature_context, XMLContextDump xml_data);
+void generateAlignXMLEvents     (ZMapFeatureAlignment feature_align, XMLContextDump xml_data);
+void generateBlockXMLEvents     (ZMapFeatureBlock feature_block,     XMLContextDump xml_data);
+void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,         XMLContextDump xml_data);
+void generateFeatureXMLEvents   (ZMapFeature feature,                XMLContextDump xml_data);
+void generateClosingEvents      (ZMapFeatureAny feature_any,         XMLContextDump xml_data);
+void generateFeatureSpanEventsXremote(ZMapFeature feature,           XMLContextDump xml_data);
+void generateContextXMLEndEvent   (XMLContextDump xml_data);
+void generateAlignXMLEndEvent     (XMLContextDump xml_data);
+void generateBlockXMLEndEvent     (XMLContextDump xml_data);
+void generateFeatureSetXMLEndEvent(XMLContextDump xml_data);
+void generateFeatureXMLEndEvent   (XMLContextDump xml_data);
+
+void xmlDumpCB(GQuark key, 
+               gpointer data, 
+               gpointer user_data);
+
+
+GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any, 
+                                  /* ZMapFeatureXMLType xml_type */
+                                  int xml_type)
+{
+  xml_type = ZMAPFEATURE_XML_XREMOTE;
+  GArray *array = NULL;
+  
+  zMapFeatureAnyAsXML(feature_any, NULL, &array, xml_type);
+
+  return array;
+}
+
+/* don't like this interface of either or with xml_writer and xml_events_out!!! */
+gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any, 
+                             ZMapXMLWriter xml_writer,
+                             GArray **xml_events_out,
+                             int xml_type)
+{
+  XMLContextDumpStruct xmlDumpData = {{0},0};
+  
+  xmlDumpData.doEndTag.context = 
+    xmlDumpData.doEndTag.align = 
+    xmlDumpData.doEndTag.block = 
+    xmlDumpData.doEndTag.featureset =
+    xmlDumpData.doEndTag.feature = 0;
+  
+  if(xml_events_out && xml_writer)
+    zMapLogWarning("Both xml_events and xml_writer specified."
+                   " Will Only use xml_writer, xml_events,"
+                   " %s","may turn out rubbish.");
+  
+  xmlDumpData.xml_events_out = 
+    g_array_sized_new(FALSE, FALSE, 
+                      sizeof(ZMapXMLWriterEventStruct), 512);
+  xmlDumpData.xml_writer = xml_writer;
+  xmlDumpData.xml_type   = xml_type;
+  
+  zMapFeatureContextExecuteSubset(feature_any,
+                                  ZMAPFEATURE_STRUCT_FEATURE,
+                                  xmlDumpCB,
+                                  &xmlDumpData);
+
+  /* We need to close some tags here */
+  generateClosingEvents(feature_any, &xmlDumpData);
+
+  if(!xml_writer && xml_events_out)
+    *xml_events_out = xmlDumpData.xml_events_out;
+  else
+    g_array_free(xmlDumpData.xml_events_out, TRUE);
+
+  return xmlDumpData.status;
+}
+
+void xmlDumpCB(GQuark key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureContext feature_context = NULL;
+  ZMapFeatureAlignment feature_align = NULL;
+  ZMapFeatureBlock     feature_block = NULL;
+  ZMapFeatureSet       feature_set   = NULL;
+  ZMapFeature          feature_ft    = NULL;
+
+  XMLContextDump xml_data = (XMLContextDump)user_data;
+
+  if(xml_data->status == ZMAPXMLWRITER_OK)
+    {
+      switch(feature_any->struct_type)
+        {
+        case ZMAPFEATURE_STRUCT_CONTEXT:
+          feature_context = (ZMapFeatureContext)feature_any;
+          if(xml_data->doEndTag.context)
+            generateContextXMLEndEvent(xml_data);
+
+          generateContextXMLEvents(feature_context, xml_data);
+
+          xml_data->doEndTag.context = 1;
+          xml_data->doEndTag.align = 
+            xml_data->doEndTag.block =
+            xml_data->doEndTag.featureset =
+            xml_data->doEndTag.feature = 0;
+          break;
+        case ZMAPFEATURE_STRUCT_ALIGN:
+          feature_align = (ZMapFeatureAlignment)feature_any;
+          if(xml_data->doEndTag.align)
+            generateAlignXMLEndEvent(xml_data);
+
+          generateAlignXMLEvents(feature_align, xml_data);
+
+          xml_data->doEndTag.align = 1;
+          xml_data->doEndTag.block =
+            xml_data->doEndTag.featureset =
+            xml_data->doEndTag.feature = 0;
+          break;
+        case ZMAPFEATURE_STRUCT_BLOCK:
+          feature_block = (ZMapFeatureBlock)feature_any;
+          if(xml_data->doEndTag.block)
+            generateBlockXMLEndEvent(xml_data);
+
+          generateBlockXMLEvents(feature_block, xml_data);
+
+          xml_data->doEndTag.block = 1;
+          xml_data->doEndTag.featureset =
+            xml_data->doEndTag.feature = 0;
+          break;
+        case ZMAPFEATURE_STRUCT_FEATURESET:
+          feature_set = (ZMapFeatureSet)feature_any;
+          if(xml_data->doEndTag.featureset)
+            generateFeatureXMLEndEvent(xml_data);
+
+          generateFeatureSetXMLEvents(feature_set, xml_data);
+
+          xml_data->doEndTag.featureset = 1;
+          xml_data->doEndTag.feature = 0;
+          break;
+        case ZMAPFEATURE_STRUCT_FEATURE:
+          feature_ft = (ZMapFeature)feature_any;
+          if(xml_data->doEndTag.feature)
+            generateFeatureXMLEndEvent(xml_data);
+
+          generateFeatureXMLEvents(feature_ft, xml_data);
+
+          xml_data->doEndTag.feature = 1;
+          break;
+        case ZMAPFEATURE_STRUCT_INVALID:
+        default:
+          zMapAssertNotReached();
+          break;
+        }
+    }
+
+  return ;
+}
+
+void generateClosingEvents(ZMapFeatureAny feature_any, 
+                           XMLContextDump xml_data)
+{
+  ZMapFeatureStructType start_point = ZMAPFEATURE_STRUCT_FEATURE, 
+    end_point = ZMAPFEATURE_STRUCT_CONTEXT;
+  int i = 0;
+
+  end_point = feature_any->struct_type;
+
+  if(start_point >= end_point)
+    {
+      for(i = start_point; i >= end_point; i--)
+        {
+          switch(i)
+            {
+            case ZMAPFEATURE_STRUCT_CONTEXT:
+              generateContextXMLEndEvent(xml_data);
+              break;
+            case ZMAPFEATURE_STRUCT_ALIGN:
+              generateAlignXMLEndEvent(xml_data);
+              break;
+            case ZMAPFEATURE_STRUCT_BLOCK:
+              generateBlockXMLEndEvent(xml_data);
+              break;
+            case ZMAPFEATURE_STRUCT_FEATURESET:
+              generateFeatureSetXMLEndEvent(xml_data);
+              break;
+            case ZMAPFEATURE_STRUCT_FEATURE:
+              generateFeatureXMLEndEvent(xml_data);
+              break;
+            case ZMAPFEATURE_STRUCT_INVALID:
+            default:
+              zMapAssertNotReached();
+              break;
+            }
+        }
+    }
+  return ;
+}
+
+
+void generateContextXMLEvents(ZMapFeatureContext feature_context,
+                              XMLContextDump xml_data)
+{
+  ZMapXMLWriterEventStruct event = {0};
+
+  switch(xml_data->xml_type)
+    {
+    case ZMAPFEATURE_XML_XREMOTE:
+      zMapLogWarning("%s","ZMAPFEATURE_XML_XREMOTE type has no equivalent to contexts");
+      break;
+    default:
+      zMapLogWarning("%s", "What type of xml did you want?");
+      break;
+    }
+
+  return ;
+}
+
+void generateAlignXMLEvents(ZMapFeatureAlignment feature_align,
+                            XMLContextDump xml_data)
+{
+  ZMapXMLWriterEventStruct event = {0};
+
+  switch(xml_data->xml_type)
+    {
+    case ZMAPFEATURE_XML_XREMOTE:
+      zMapLogWarning("%s","ZMAPFEATURE_XML_XREMOTE type has no equivalent to alignments");
+      break;
+    default:
+      zMapLogWarning("%s", "What type of xml did you want?");
+      break;
+    }
+
+  if(xml_data->xml_writer &&
+     xml_data->xml_events_out->len & 512)
+    {
+      zMapXMLWriterProcessEvents(xml_data->xml_writer, xml_data->xml_events_out);
+    }
+
+  return ;
+}
+
+void generateBlockXMLEvents(ZMapFeatureBlock feature_block,
+                            XMLContextDump xml_data)
+{
+  ZMapXMLWriterEventStruct event = {0};
+
+  switch(xml_data->xml_type)
+    {
+    case ZMAPFEATURE_XML_XREMOTE:
+      zMapLogWarning("%s","ZMAPFEATURE_XML_XREMOTE type has no equivalent to blocks");
+      break;
+    default:
+      zMapLogWarning("%s", "What type of xml did you want?");
+      break;
+    }
+
+  if(xml_data->xml_writer &&
+     xml_data->xml_events_out->len & 512)
+    {
+      zMapXMLWriterProcessEvents(xml_data->xml_writer, xml_data->xml_events_out);
+    }
+
+  return ;
+}
+
+void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set, 
+                                 XMLContextDump xml_data)
+{
+  ZMapXMLWriterEventStruct event = {0};
+
+  switch(xml_data->xml_type)
+    {
+    case ZMAPFEATURE_XML_XREMOTE:
+      {
+        ZMapFeatureAny feature_any = NULL;
+
+        event.type = ZMAPXML_START_ELEMENT_EVENT;
+        event.data.simple = g_quark_from_string("featureset");
+        g_array_append_val(xml_data->xml_events_out, event);
+        
+        if((feature_any = zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set,
+                                                    ZMAPFEATURE_STRUCT_BLOCK)))
+          {
+            event.type = ZMAPXML_ATTRIBUTE_EVENT;
+            event.data.comp.name  = g_quark_from_string("block");
+            event.data.comp.value.quark = feature_any->unique_id;
+            g_array_append_val(xml_data->xml_events_out, event);
+          }
+
+        if(feature_any && 
+           (feature_any = zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_ALIGN)))
+          {
+            event.type = ZMAPXML_ATTRIBUTE_EVENT;
+            event.data.comp.name  = g_quark_from_string("align");
+            event.data.comp.value.quark = feature_any->unique_id;
+            g_array_append_val(xml_data->xml_events_out, event);
+          }
+      }
+      break;
+    default:
+      zMapLogWarning("%s", "What type of xml did you want?");
+      break;
+    }
+
+  if(xml_data->xml_writer &&
+     xml_data->xml_events_out->len & 512)
+    {
+      zMapXMLWriterProcessEvents(xml_data->xml_writer, xml_data->xml_events_out);
+    }
+
+  return ;
+}
+
+void generateFeatureXMLEvents(ZMapFeature feature,
+                              XMLContextDump xml_data)
+{
+  ZMapXMLWriterEventStruct event = {0};
+
+  switch(xml_data->xml_type)
+    {
+    case ZMAPFEATURE_XML_XREMOTE:
+      {
+        event.type = ZMAPXML_START_ELEMENT_EVENT;
+        event.data.simple = g_quark_from_string("feature");
+        g_array_append_val(xml_data->xml_events_out, event);
+
+        event.type = ZMAPXML_ATTRIBUTE_EVENT;
+        event.data.comp.name = g_quark_from_string("name");
+        event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
+        event.data.comp.value.quark = feature->original_id;
+        g_array_append_val(xml_data->xml_events_out, event);
+
+        event.data.comp.name = g_quark_from_string("strand");
+        event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
+        event.data.comp.value.quark = g_quark_from_string(zMapFeatureStrand2Str(feature->strand));
+        g_array_append_val(xml_data->xml_events_out, event);
+
+        if(feature->style)
+          {
+            event.data.comp.name = g_quark_from_string("style");
+            event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
+            event.data.comp.value.quark = feature->style->original_id;
+            g_array_append_val(xml_data->xml_events_out, event);
+          }
+
+        event.data.comp.name = g_quark_from_string("start");
+        event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
+        event.data.comp.value.integer = feature->x1;
+        g_array_append_val(xml_data->xml_events_out, event);
+
+        event.data.comp.name = g_quark_from_string("end");
+        event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
+        event.data.comp.value.integer = feature->x2;
+        g_array_append_val(xml_data->xml_events_out, event);
+#ifdef RDS_DONT_INCLUDE_UNUSED
+        if(feature->type == ZMAPFEATURE_ALIGNMENT)
+          generateFeatureAlignmentEventsXremote();
+#endif
+        if(feature->type == ZMAPFEATURE_TRANSCRIPT)
+          generateFeatureSpanEventsXremote(feature, xml_data);
+      }
+      break;
+    default:
+      zMapLogWarning("%s", "What type of xml did you want?");
+      break;
+    }
+
+  if(xml_data->xml_writer &&
+     xml_data->xml_events_out->len & 512)
+    {
+      zMapXMLWriterProcessEvents(xml_data->xml_writer, xml_data->xml_events_out);
+    }
+
+  return ;
+}
+
+void generateFeatureSpanEventsXremote(ZMapFeature feature, 
+                                      XMLContextDump xml_data)
+{
+  ZMapXMLWriterEventStruct event = {0};
+  GArray *span_array = NULL;
+  GQuark intron_quark, exon_quark, element_quark, ontology_quark, start_quark, end_quark;
+  int i;
+
+  element_quark  = g_quark_from_string("subfeature");
+  ontology_quark = g_quark_from_string("ontology");
+  start_quark = g_quark_from_string("start");
+  end_quark   = g_quark_from_string("end");
+
+  if ((span_array = feature->feature.transcript.exons))
+    {
+      exon_quark = g_quark_from_string("exon");
+
+      for(i = 0; i < span_array->len; i++)
+        {
+          ZMapSpan exon;
+          exon = &(g_array_index(span_array, ZMapSpanStruct, i));
+
+          event.type = ZMAPXML_START_ELEMENT_EVENT;
+          event.data.simple = element_quark;
+          g_array_append_val(xml_data->xml_events_out, event);
+
+          /* ontology */
+          event.type = ZMAPXML_ATTRIBUTE_EVENT;
+          event.data.comp.name = ontology_quark;
+          event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
+          event.data.comp.value.quark = exon_quark;
+          g_array_append_val(xml_data->xml_events_out, event);
+          /* start */
+          event.type = ZMAPXML_ATTRIBUTE_EVENT;
+          event.data.comp.name = start_quark;
+          event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
+          event.data.comp.value.integer = exon->x1;
+          g_array_append_val(xml_data->xml_events_out, event);
+          /* end */
+          event.type = ZMAPXML_ATTRIBUTE_EVENT;
+          event.data.comp.name = end_quark;
+          event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
+          event.data.comp.value.integer = exon->x2;
+          g_array_append_val(xml_data->xml_events_out, event);
+                    
+          event.type = ZMAPXML_END_ELEMENT_EVENT;
+          event.data.simple = element_quark;
+          g_array_append_val(xml_data->xml_events_out, event);
+        }
+    }
+
+  if((span_array = feature->feature.transcript.introns))
+    {
+      intron_quark = g_quark_from_string("intron");
+
+      for(i = 0; i < span_array->len; i++)
+        {
+          ZMapSpan intron;
+          intron = &(g_array_index(span_array, ZMapSpanStruct, i));
+
+          event.type = ZMAPXML_START_ELEMENT_EVENT;
+          event.data.simple = element_quark;
+          g_array_append_val(xml_data->xml_events_out, event);
+
+          /* ontology */
+          event.type = ZMAPXML_ATTRIBUTE_EVENT;
+          event.data.comp.name = ontology_quark;
+          event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
+          event.data.comp.value.quark = intron_quark;
+          g_array_append_val(xml_data->xml_events_out, event);
+          /* start */
+          event.type = ZMAPXML_ATTRIBUTE_EVENT;
+          event.data.comp.name = start_quark;
+          event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
+          event.data.comp.value.integer = intron->x1;
+          g_array_append_val(xml_data->xml_events_out, event);
+          /* end */
+          event.type = ZMAPXML_ATTRIBUTE_EVENT;
+          event.data.comp.name = end_quark;
+          event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
+          event.data.comp.value.integer = intron->x2;
+          g_array_append_val(xml_data->xml_events_out, event);
+                    
+          event.type = ZMAPXML_END_ELEMENT_EVENT;
+          event.data.simple = element_quark;
+          g_array_append_val(xml_data->xml_events_out, event);
+        }
+    }
+
+  return ;
+}
+
+void generateContextXMLEndEvent(XMLContextDump xml_data)
+{
+  ZMapXMLWriterEventStruct event = {0};
+
+  event.type = ZMAPXML_END_ELEMENT_EVENT;
+
+  switch(xml_data->xml_type)
+    {
+    case ZMAPFEATURE_XML_XREMOTE:
+      break;
+    default:
+      zMapLogWarning("%s", "What type of xml did you want?");
+      break;
+    }
+
+  return ;
+}
+
+void generateAlignXMLEndEvent(XMLContextDump xml_data)
+{
+  ZMapXMLWriterEventStruct event = {0};
+
+  event.type = ZMAPXML_END_ELEMENT_EVENT;
+
+  switch(xml_data->xml_type)
+    {
+    case ZMAPFEATURE_XML_XREMOTE:
+      break;
+    default:
+      zMapLogWarning("%s", "What type of xml did you want?");
+      break;
+    }
+
+  return ;
+}
+
+void generateBlockXMLEndEvent(XMLContextDump xml_data)
+{
+  ZMapXMLWriterEventStruct event = {0};
+
+  event.type = ZMAPXML_END_ELEMENT_EVENT;
+
+  switch(xml_data->xml_type)
+    {
+    case ZMAPFEATURE_XML_XREMOTE:
+      break;
+    default:
+      zMapLogWarning("%s", "What type of xml did you want?");
+      break;
+    }
+
+  return ;
+}
+
+void generateFeatureSetXMLEndEvent(XMLContextDump xml_data)
+{
+  ZMapXMLWriterEventStruct event = {0};
+
+  event.type = ZMAPXML_END_ELEMENT_EVENT;
+
+  switch(xml_data->xml_type)
+    {
+    case ZMAPFEATURE_XML_XREMOTE:
+      event.data.simple = g_quark_from_string("featureset");
+      g_array_append_val(xml_data->xml_events_out, event);
+      break;
+    default:
+      zMapLogWarning("%s", "What type of xml did you want?");
+      break;
+    }
+
+  return ;
+}
+
+void generateFeatureXMLEndEvent(XMLContextDump xml_data)
+{
+  ZMapXMLWriterEventStruct event = {0};
+
+  event.type = ZMAPXML_END_ELEMENT_EVENT;
+
+  switch(xml_data->xml_type)
+    {
+    case ZMAPFEATURE_XML_XREMOTE:
+      event.data.simple = g_quark_from_string("feature");
+      g_array_append_val(xml_data->xml_events_out, event);
+      break;
+    default:
+      zMapLogWarning("%s", "What type of xml did you want?");
+      break;
+    }
+
+  return ;
+}
+
