@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 20 15:27 2006 (edgrif)
+ * Last edited: Jul 22 10:48 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.131 2006-07-21 08:21:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.132 2006-07-22 09:49:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -158,17 +158,19 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   zMapAssert(callbacks
 	     && callbacks->enter && callbacks->leave
 	     && callbacks->scroll && callbacks->focus && callbacks->select
+             && callbacks->doubleSelect && callbacks->splitToPattern
 	     && callbacks->visibilityChange && callbacks->destroy) ;
 
   window_cbs_G = g_new0(ZMapWindowCallbacksStruct, 1) ;
 
-  window_cbs_G->enter  = callbacks->enter ;
+  window_cbs_G->enter   = callbacks->enter ;
   window_cbs_G->leave   = callbacks->leave ;
   window_cbs_G->scroll  = callbacks->scroll ;
   window_cbs_G->focus   = callbacks->focus ;
-  window_cbs_G->select   = callbacks->select ;
-  window_cbs_G->setZoomStatus = callbacks->setZoomStatus;
-
+  window_cbs_G->select  = callbacks->select ;
+  window_cbs_G->doubleSelect   = callbacks->doubleSelect ;
+  window_cbs_G->setZoomStatus  = callbacks->setZoomStatus;
+  window_cbs_G->splitToPattern = callbacks->splitToPattern;
   window_cbs_G->visibilityChange = callbacks->visibilityChange ;
 
   window_cbs_G->destroy = callbacks->destroy ;
@@ -675,8 +677,6 @@ void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos)
   return ;
 }
 
-
-
 void zMapWindowDestroy(ZMapWindow window)
 {
 
@@ -929,9 +929,31 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 }
 
 
+void zMapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeature feature, FooCanvasItem *real_item)
+{
+  ZMapWindowDoubleSelectStruct double_select = {NULL};
+  ZMapFeatureSetStruct feature_set = {0};
 
+  /* This is a quick HACK! */
+  feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
+  feature_set.parent      = feature->parent->parent;
+  feature_set.unique_id   = feature->parent->unique_id;
+  feature_set.original_id = feature->parent->original_id;
 
+  g_datalist_init(&(feature_set.features));
+  g_datalist_id_set_data(&(feature_set.features), feature->unique_id, feature);
 
+  double_select.xml_events = zMapFeatureAnyAsXMLEvents(&feature_set, 3);
+
+  g_datalist_clear(&(feature_set.features));
+
+  (*(window->caller_cbs->doubleSelect))(window, window->app_data, &double_select) ;
+
+  if(double_select.xml_events)
+    g_array_free(double_select.xml_events, TRUE);
+
+  return ;
+}
 
 /* I'm not convinced of this. */
 void zMapWindowSiblingWasRemoved(ZMapWindow window)
