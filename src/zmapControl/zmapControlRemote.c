@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 21 19:36 2006 (rds)
+ * Last edited: Jul 22 11:23 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.28 2006-07-22 09:30:52 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.29 2006-07-22 10:23:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -150,7 +150,8 @@ void zMapSetClient(ZMap zmap, void *client_data)
 {
   zMapXRemoteObj client = (zMapXRemoteObj)client_data;
 
-  zmap->client = client;
+  if(client)
+    zmap->client = client;
 
   return ;
 }
