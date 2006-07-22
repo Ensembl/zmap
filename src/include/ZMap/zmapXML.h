@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 20 16:47 2006 (rds)
+ * Last edited: Jul 21 17:08 2006 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.14 2006-07-21 10:30:03 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.15 2006-07-22 09:17:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -155,19 +155,32 @@ typedef enum
     ZMAPXML_UNKNOWN_EVENT       = 1 << 16
   } ZMapXMLWriterEventType;
 
+typedef enum
+  {
+    ZMAPXML_EVENT_DATA_QUARK,
+    ZMAPXML_EVENT_DATA_INTEGER,
+    ZMAPXML_EVENT_DATA_DOUBLE
+  } ZMapXMLWriterEventDataType;
+
 typedef struct _ZMapXMLWriterEventStruct
 {
   ZMapXMLWriterEventType type ;
 
   union
   {
-    GQuark single_item ;
+    GQuark simple;              /* simple string for element names etc... */
 
     struct
     {
-      GQuark item_name  ;
-      GQuark item_value ;
-    } double_item ;
+      GQuark name;
+      ZMapXMLWriterEventDataType data;
+      union
+      {
+        GQuark quark   ;
+        int    integer ;
+        double flt;
+      } value;
+    } comp ;                    /* complex for attributes and namespaced elements */
 
   } data ;
 
