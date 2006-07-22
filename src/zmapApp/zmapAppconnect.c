@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Sep 20 18:06 2005 (rds)
+ * Last edited: Jul 18 15:56 2006 (rds)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.14 2005-09-20 17:06:39 rds Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.15 2006-07-22 10:22:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -134,6 +134,7 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
     }
   else
     {
+      zMapSetClient(zmap, app_context->xremoteClient);
       gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
       gtk_tree_store_set (app_context->tree_store_widg, &iter1,
                           ZMAPID_COLUMN, zMapGetZMapID(zmap),

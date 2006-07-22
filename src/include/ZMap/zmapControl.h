@@ -25,9 +25,9 @@
  * Description: Interface for creating, controlling and destroying ZMaps.
  *              
  * HISTORY:
- * Last edited: Feb 14 16:56 2006 (edgrif)
+ * Last edited: Jul 18 15:57 2006 (rds)
  * Created: Mon Nov 17 08:04:32 2003 (edgrif)
- * CVS info:   $Id: zmapControl.h,v 1.13 2006-02-17 14:07:43 edgrif Exp $
+ * CVS info:   $Id: zmapControl.h,v 1.14 2006-07-22 10:22:40 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_H
@@ -73,6 +73,8 @@ char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
 gboolean zMapDestroy(ZMap zmap) ;
+
+void zMapSetClient(ZMap zmap, void *client);
 
 unsigned long zMapGetXID(ZMap zmap);
 
