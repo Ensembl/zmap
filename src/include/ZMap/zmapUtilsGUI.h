@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Jun 30 16:03 2006 (rds)
+ * Last edited: Jul 17 15:00 2006 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.13 2006-06-30 15:18:39 rds Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.14 2006-07-22 09:20:22 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -53,7 +53,24 @@ typedef enum {ZMAPGUI_MENU_NONE, ZMAPGUI_MENU_BRANCH, ZMAPGUI_MENU_SEPARATOR,
 	      ZMAPGUI_MENU_RADIO, ZMAPGUI_MENU_RADIOACTIVE,
 	      ZMAPGUI_MENU_NORMAL} ZMapGUIMenuType ;
 
+/* Bit of explaination here....
+ * I changed my mind and we now have an array of structs which contain all the information required.
+ * This includes which window to split (original or new) and which orientation to split!
+ */
+typedef enum {
+  ZMAPSPLIT_NONE,
+  ZMAPSPLIT_ORIGINAL,
+  ZMAPSPLIT_LAST,
+  ZMAPSPLIT_NEW,
+  ZMAPSPLIT_BAD_PATTERN
+}ZMapSplitWindow;
 
+typedef struct
+{
+  ZMapSplitWindow subject;
+  GtkOrientation orientation;
+  /* ... This shouldn't get too specific if it stays here! ... */
+} ZMapSplitPatternStruct, *ZMapSplitPattern;
 
 /*!
  * Defines a menu item. */
