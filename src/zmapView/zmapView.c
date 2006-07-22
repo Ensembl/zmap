@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 19 10:52 2006 (edgrif)
+ * Last edited: Jul 22 10:39 2006 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.81 2006-07-19 10:25:09 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.82 2006-07-22 09:39:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,11 +52,15 @@ static void leaveCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void scrollCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void focusCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void selectCB(ZMapWindow window, void *caller_data, void *window_data) ;
-static void visibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data);
+static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data);
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data);
 static void destroyCB(ZMapWindow window, void *caller_data, void *window_data) ;
 
+static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data);
+static void viewDoubleSelectCB(ZMapWindow window, void *caller_data, void *window_data);
+
 static void setZoomStatus(gpointer data, gpointer user_data);
+static void splitMagic(gpointer data, gpointer user_data);
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
 static void stopStateConnectionChecking(ZMapView zmap_view) ;
@@ -115,8 +119,9 @@ static ZMapViewCallbacks view_cbs_G = NULL ;
 
 /* Callbacks back we set in the level below us, i.e. zMapWindow. */
 ZMapWindowCallbacksStruct window_cbs_G = {enterCB, leaveCB,
-					  scrollCB, focusCB, selectCB,
-					  setZoomStatusCB, visibilityChangeCB, destroyCB} ;
+					  scrollCB, focusCB, selectCB, viewDoubleSelectCB, 
+                                          viewSplitToPatternCB,
+					  setZoomStatusCB, viewVisibilityChangeCB, destroyCB} ;
 
 
 
@@ -146,6 +151,8 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
   view_cbs_G->load_data = callbacks->load_data ;
   view_cbs_G->focus = callbacks->focus ;
   view_cbs_G->select = callbacks->select ;
+  view_cbs_G->double_select = callbacks->double_select ;
+  view_cbs_G->split_to_pattern = callbacks->split_to_pattern;
   view_cbs_G->visibility_change = callbacks->visibility_change ;
   view_cbs_G->state_change = callbacks->state_change ;
   view_cbs_G->destroy = callbacks->destroy ;
@@ -983,8 +990,65 @@ static void destroyCB(ZMapWindow window, void *caller_data, void *window_data)
 
   return ;
 }
+static void viewDoubleSelectCB(ZMapWindow window, void *caller_data, void *window_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data;
+  ZMapWindowDoubleSelect window_select = (ZMapWindowDoubleSelect)window_data;
+  ZMapViewDoubleSelectStruct double_select = {NULL};
+  
+  double_select.xml_events = window_select->xml_events;
 
+  (*(view_cbs_G->double_select))(view_window, view_window->parent_view->app_data, &double_select);
 
+  return ;
+}
+static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data;
+  ZMapWindowSplitting split  = (ZMapWindowSplitting)window_data;
+  ZMapViewSplittingStruct view_split = {0};
+
+  view_split.split_patterns      = split->split_patterns;
+  view_split.touched_window_list = NULL;
+
+  view_split.touched_window_list = g_list_append(view_split.touched_window_list, view_window);
+
+  (*(view_cbs_G->split_to_pattern))(view_window, view_window->parent_view->app_data, &view_split);
+
+  /* foreach window find feature and Do something according to pattern */
+  split->window_index = 0;
+  g_list_foreach(view_split.touched_window_list, splitMagic, window_data);
+  
+  /* clean up the list */
+  g_list_free(view_split.touched_window_list);
+
+  return ;
+}
+
+static void splitMagic(gpointer data, gpointer user_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)data;
+  ZMapWindowSplitting  split = (ZMapWindowSplitting)user_data;
+  ZMapSplitPattern   pattern = NULL;
+
+  if(view_window->window == split->original_window)
+    {
+      printf("Ignoring original window for now."
+             "  I may well revisit this, but I"
+             " think we should leave it alone ATM.\n");
+      return ;                    /* really return from this */
+    }
+
+  if((pattern = &(g_array_index(split->split_patterns, ZMapSplitPatternStruct, split->window_index))))
+    {
+      printf("Trying pattern %d\n", split->window_index);
+      /* Do it here! */
+    }
+
+  (split->window_index)++;
+
+  return ;
+}
 
 static ZMapView createZMapView(char *sequence, int start, int end, void *app_data)
 {
@@ -1707,7 +1771,7 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 
 
 
-static void visibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data)
+static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
 
@@ -1717,14 +1781,7 @@ static void visibilityChangeCB(ZMapWindow window, void *caller_data, void *windo
   return;
 }
 
-
-
-/* I REALLY DON'T KNOW WHAT TO SAY ABOUT THIS BIT OF CODE, WHAT ON EARTH IS IT TRYING
- * TO ACHIEVE...WHAT ARE ALL THESE ACCESSOR FUNCTIONS DOING (zMapWindowGetTypeName ETC)
- * THIS SEEMS COMPLETELY OUT OF WHACK........... */
-
-/* When a window is split, we set the zoom status of all windows
- */
+/* When a window is split, we set the zoom status of all windows */
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
@@ -1736,29 +1793,9 @@ static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_d
 
 static void setZoomStatus(gpointer data, gpointer user_data)
 {
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapViewWindow view_window = (ZMapViewWindow)data ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  zMapWindowSetMinZoom(view_window->window) ;
-  zMapWindowSetZoomStatus(view_window->window) ;
-
-
-  /* Would be better to have a function that just scrolls to the current focus item...?? */
-
-  if (zMapWindowGetFocusQuark(view_window->window))
-    zMapWindowScrollToItem(view_window->window, 
-			   zMapWindowGetTypeName(view_window->window), 
-			   zMapWindowGetFocusQuark(view_window->window)) ;
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  
   return;
 }
 
