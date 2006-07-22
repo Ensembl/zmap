@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 21 10:41 2006 (rds)
+ * Last edited: Jul 22 10:42 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.40 2006-07-21 09:43:09 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.41 2006-07-22 09:42:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1481,6 +1481,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		result = makeFeatureEditWindow(window, feature) ;
 		zMapAssert(result) ;			    /* v. bad news if we can't find this item. */
 
+                zMapWindowUpdateXRemoteData(window, feature, real_item);
 		event_handled = TRUE ;
 	      }
 	  }
