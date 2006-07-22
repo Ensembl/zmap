@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Feb 20 17:36 2006 (edgrif)
+ * Last edited: Jul 14 15:08 2006 (rds)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.19 2006-02-21 15:11:14 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.20 2006-07-22 09:40:43 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -113,11 +113,12 @@ typedef struct _ZMapViewStruct
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;
 
-
+#ifdef RDS_DONT_INCLUDE_UNUSED
   /* In DAS2 terminology methods are types...easy to change if we don't like the name.
    * These are the stylesheets in effect for the feature sets, this set is a merge of all the
    * sets from the various servers. */
   GData *types ;
+#endif
 
 } ZMapViewStruct ;
 
