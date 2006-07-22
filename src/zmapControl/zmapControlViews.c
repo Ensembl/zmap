@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: May  5 11:33 2006 (rds)
+ * Last edited: Jul 17 11:38 2006 (rds)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.13 2006-05-05 11:00:14 rds Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.14 2006-07-22 09:29:41 rds Exp $
  *-------------------------------------------------------------------
  */
  
@@ -119,6 +119,33 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
   return zmap_view ;
 }
 
+ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap, 
+                                                    ZMapView zmap_view,
+                                                    ZMapWindow zmap_window,
+                                                    GtkWidget *curr_container, 
+                                                    GtkOrientation orientation, 
+                                                    char *view_title)
+{
+  GtkWidget *view_container;
+  ZMapViewWindow view_window;
+  ZMapWindowLockType window_locking = ZMAP_WINLOCK_NONE ;
+
+  /* Add a new container that will hold the new view window. */
+  view_container = zmapControlAddWindow(zmap, curr_container, orientation, view_title) ;
+
+  /* Copy the focus view window. */
+  if (orientation == GTK_ORIENTATION_HORIZONTAL)
+    window_locking = ZMAP_WINLOCK_HORIZONTAL ;
+  else if (orientation == GTK_ORIENTATION_VERTICAL)
+    window_locking = ZMAP_WINLOCK_VERTICAL ;
+
+  view_window = zMapViewCopyWindow(zmap_view, view_container, zmap_window, window_locking) ;
+
+  /* Add to hash of viewwindows to frames */
+  g_hash_table_insert(zmap->viewwindow_2_parent, view_window, view_container) ;
+
+  return view_window;
+}
 
 /* Not a great name as it may not split and orientation may be ignored..... */
 void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation)
@@ -154,24 +181,14 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation)
       zmap_view = (ZMapView)(g_list_first(zmap->view_list)->data) ;
     }
 
-  view_title = zMapViewGetSequence(zmap_view) ;
+  view_title  = zMapViewGetSequence(zmap_view) ;
 
-  /* Add a new container that will hold the new view window. */
-  view_container = zmapControlAddWindow(zmap, curr_container, orientation, view_title) ;
-
-
-  /* Copy the focus view window. */
-  if (orientation == GTK_ORIENTATION_HORIZONTAL)
-    window_locking = ZMAP_WINLOCK_HORIZONTAL ;
-  else if (orientation == GTK_ORIENTATION_VERTICAL)
-    window_locking = ZMAP_WINLOCK_VERTICAL ;
-
-  view_window = zMapViewCopyWindow(zmap_view, view_container, zmap_window, window_locking) ;
-
-
-  /* Add to hash of viewwindows to frames */
-  g_hash_table_insert(zmap->viewwindow_2_parent, view_window, view_container) ;
-
+  view_window = zmapControlNewWidgetAndWindowForView(zmap, 
+                                                     zmap_view,
+                                                     zmap_window,
+                                                     curr_container, 
+                                                     orientation, 
+                                                     view_title);
 
   /* If there is no current focus window we need to make this new one the focus,
    * if we don't of code will fail because it relies on having a focus window and
