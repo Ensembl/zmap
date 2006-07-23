@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 23 21:56 2006 (rds)
+ * Last edited: Jul 23 22:07 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.43 2006-07-23 20:57:09 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.44 2006-07-23 21:08:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -534,9 +534,22 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
   return drawable;
 }
 
-void zmapWindowFeatureHightlightDNA(ZMapWindow window, ZMapFeature Feature, FooCanvasItem *item)
+void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature Feature, FooCanvasItem *item)
 {
-  
+  double dna_zoom = 0.0, current_zoom = 0.0;
+
+  current_zoom = zMapWindowGetZoomStatus(window);
+  dna_zoom     = zMapWindowGetZoomMaxDNAInWrappedColumn(window);
+
+  if(current_zoom >= dna_zoom)
+    {
+      gboolean context_has_dna = FALSE, showing_dna = FALSE;
+      /* Do we have DNA??? */
+      context_has_dna = zMapWindowGetDNAStatus(window);
+      /* Are we showing DNA? */
+      /* Another call.... */
+    }
+
   return ;
 }
 
@@ -1465,7 +1478,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		  {
 		    /* Pass information about the object clicked on back to the application. */
 		    zMapWindowUpdateInfoPanel(window, feature, real_item) ;
-                    zmapWindowFeatureHightlightDNA(window, feature, real_item);
+                    zmapWindowFeatureHighlightDNA(window, feature, real_item);
 
 		    if (but_event->button == 3)
 		      {
@@ -1833,6 +1846,9 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNATranscriptFile(NULL, NULL, menu_data)) ;
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuPeptide(NULL, NULL, menu_data)) ;
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuPeptideFile(NULL, NULL, menu_data)) ;
+#ifdef RDS_DONT_INCLUDE
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuTranscriptTools(NULL, NULL, menu_data));
+#endif
     }
   else
     {
