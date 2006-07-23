@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 17 12:39 2006 (edgrif)
+ * Last edited: Jul 23 21:49 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.126 2006-07-17 11:41:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.127 2006-07-23 20:52:12 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -633,6 +633,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 					       ZMapGUIMenuItemCallbackFunc callback_func,
 					       gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuTranscriptTools(int *start_index_inout,
+                                                  ZMapGUIMenuItemCallbackFunc callback_func,
+                                                  gpointer callback_data)
 
 
 
@@ -653,6 +656,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 
 char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyle style) ;
 
+void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature Feature, FooCanvasItem *item);
 /* 
 void zmapWindowzoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
 */
