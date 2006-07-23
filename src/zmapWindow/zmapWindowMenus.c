@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jun 30 16:30 2006 (rds)
+ * Last edited: Jul 19 23:06 2006 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.16 2006-06-30 15:31:17 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.17 2006-07-23 20:51:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,6 +44,14 @@
 
 enum {ZMAPCDS, ZMAPTRANSCRIPT, ZMAPUNSPLICED,
       ZMAPCDS_FILE, ZMAPTRANSCRIPT_FILE, ZMAPUNSPLICED_FILE} ;
+enum {
+  ZMAPNAV_SPLIT_FIRST_LAST_EXON, 
+  ZMAPNAV_SPLIT_FLE_WITH_OVERVIEW,
+  ZMAPNAV_FIRST, 
+  ZMAPNAV_PREV, 
+  ZMAPNAV_NEXT, 
+  ZMAPNAV_LAST
+};
 
 typedef struct
 {
@@ -59,6 +67,7 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dnaMenuCB(int menu_item_id, gpointer callback_data) ;
 static void peptideMenuCB(int menu_item_id, gpointer callback_data) ;
+static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
 
@@ -399,6 +408,97 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
   return menu ;
 }
 
+ZMapGUIMenuItem zmapWindowMakeMenuTranscriptTools(int *start_index_inout,
+                                                  ZMapGUIMenuItemCallbackFunc callback_func,
+                                                  gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_BRANCH, "Transcript Tools",       0,             NULL,               NULL},
+      {ZMAPGUI_MENU_NORMAL, "Transcript Tools/Split",   ZMAPNAV_SPLIT_FIRST_LAST_EXON,   transcriptNavMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Transcript Tools/Split 2", ZMAPNAV_SPLIT_FLE_WITH_OVERVIEW, transcriptNavMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Transcript Tools/First", ZMAPNAV_FIRST, transcriptNavMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Transcript Tools/Prev",  ZMAPNAV_PREV,  transcriptNavMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Transcript Tools/Next",  ZMAPNAV_NEXT,  transcriptNavMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Transcript Tools/Last",  ZMAPNAV_LAST,  transcriptNavMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data) 
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data;
+  ZMapWindow window = NULL;
+  GArray  *patterns = NULL;
+  ZMapSplitPatternStruct split_style = {0};
+
+  window   = menu_data->window;
+  patterns = g_array_new(FALSE, FALSE, sizeof(ZMapSplitPatternStruct));
+
+  switch(menu_item_id)
+    {
+    case ZMAPNAV_SPLIT_FLE_WITH_OVERVIEW:
+      {
+        ZMapWindowSplittingStruct split = {0};
+        split.original_window   = window;
+
+        split_style.subject     = ZMAPSPLIT_ORIGINAL;
+        split_style.orientation = GTK_ORIENTATION_HORIZONTAL;
+        g_array_append_val(patterns, split_style);
+
+        split_style.subject     = ZMAPSPLIT_ORIGINAL;
+        split_style.orientation = GTK_ORIENTATION_VERTICAL;
+        g_array_append_val(patterns, split_style);
+
+        split_style.subject     = ZMAPSPLIT_NEW;
+        split_style.orientation = GTK_ORIENTATION_HORIZONTAL;
+        g_array_append_val(patterns, split_style);
+        /*
+        */
+        split.split_patterns    = patterns; 
+
+        (*(window->caller_cbs->splitToPattern))(window, window->app_data, &split);
+      }
+      break;
+    case ZMAPNAV_SPLIT_FIRST_LAST_EXON:
+      {
+        ZMapWindowSplittingStruct split = {0};
+        split.original_window   = window;
+
+        split_style.subject     = ZMAPSPLIT_ORIGINAL;
+        split_style.orientation = GTK_ORIENTATION_VERTICAL;
+        g_array_append_val(patterns, split_style);
+
+        split_style.subject     = ZMAPSPLIT_NEW;
+        split_style.orientation = GTK_ORIENTATION_HORIZONTAL;
+        g_array_append_val(patterns, split_style);
+
+        split.split_patterns    = patterns; 
+
+        (*(window->caller_cbs->splitToPattern))(window, window->app_data, &split);
+      }
+      break;
+    case ZMAPNAV_FIRST:
+      break;
+    case ZMAPNAV_LAST:
+      break;
+    case ZMAPNAV_NEXT:
+      break;
+    case ZMAPNAV_PREV:
+      break;
+    default:
+      break;
+    }
+
+  if(patterns)
+    g_array_free(patterns, TRUE);
+
+  return ;
+}
 
 /* If we had a more generalised "sequence" object that could be with dna or peptide we
  * could merge this routine with the dnamenucb...much more elegant.... */
@@ -1009,6 +1109,8 @@ static void alignBlockMenusDataListForeach(GQuark key,
       insertSubMenus(item_name, block_items, item, items_array);
 
       g_string_free(item_name, TRUE);
+      break;
+    case ZMAPFEATURE_STRUCT_CONTEXT:
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
     case ZMAPFEATURE_STRUCT_FEATURE:
