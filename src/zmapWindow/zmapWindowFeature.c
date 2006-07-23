@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 22 10:42 2006 (rds)
+ * Last edited: Jul 23 21:52 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.41 2006-07-22 09:42:50 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.42 2006-07-23 20:53:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -533,6 +533,13 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
 
   return drawable;
 }
+
+void zmapWindowFeatureHightlightDNA(ZMapWindow window, ZMapFeature Feature, FooCanvasItem *item)
+{
+  
+  return ;
+}
+
 
 
 /* 
@@ -1458,6 +1465,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		  {
 		    /* Pass information about the object clicked on back to the application. */
 		    zMapWindowUpdateInfoPanel(window, feature, real_item) ;
+                    zmapWindowFeatureHightlightDNA(windw, feature, real_item);
 
 		    if (but_event->button == 3)
 		      {
