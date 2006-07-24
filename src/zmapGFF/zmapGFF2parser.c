@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul 21 09:19 2006 (edgrif)
+ * Last edited: Jul 24 18:45 2006 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.55 2006-07-21 08:20:24 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.56 2006-07-24 17:53:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1361,6 +1361,10 @@ static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuar
  * 
  * Format string extracts url and returns it as a string that must be g_free'd when
  * no longer required.
+ *
+ * Currently the _maximum_ size for the URL is 256 chars. This has already 
+ * been upped from the GFF_MAX_FIELD_CHARS of 50. attributes is 5000 
+ * (GFF_MAX_FREETEXT_CHARS), but that's probably a bit silly.
  * 
  *  */
 static char *getURL(char *attributes)
@@ -1371,8 +1375,8 @@ static char *getURL(char *attributes)
   if ((tag_pos = strstr(attributes, "URL")))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s[;]" ;
-      char url_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+      char *attr_format_str = "%*s %*[\"]%256[^\"]%*s[;]" ;
+      char url_field[257] = {'\0'} ;
 
       if ((attr_fields = sscanf(tag_pos, attr_format_str, &url_field[0])) == 1)
 	{
