@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 23 21:54 2006 (rds)
+ * Last edited: Jul 24 21:54 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.128 2006-07-23 20:55:09 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.129 2006-07-24 22:03:40 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -637,7 +637,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuTranscriptTools(int *start_index_inout,
                                                   ZMapGUIMenuItemCallbackFunc callback_func,
                                                   gpointer callback_data);
 
-
+gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, 
+                                     ZMapFeature feature, 
+                                     FooCanvasItem *real_item);
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
