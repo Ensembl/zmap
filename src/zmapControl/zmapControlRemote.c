@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 22 11:23 2006 (rds)
+ * Last edited: Jul 24 22:49 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.29 2006-07-22 10:23:59 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.30 2006-07-24 22:00:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -103,11 +103,13 @@ typedef struct
 typedef struct
 {
   GString *full_text;
+  ZMap zmap;
+  ZMapXMLParser parser;
+  gboolean handled;
 } AlertClientMessageStruct, *AlertClientMessage;
 
 /* ZMAPXREMOTE_CALLBACK and destroy internals for zmapControlRemoteInstaller */
 static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCode);
-static char *controlReadResponse  (char *command_text, ZMap zmap, int *statusCode);
 static void destroyNotifyData(gpointer destroy_data);
 
 
@@ -145,6 +147,13 @@ static gboolean zmapEndHndlr(gpointer userdata,
                              ZMapXMLParser parser);
 
 static void alertClientToMessage(gpointer client_data, gpointer message_data);
+static int xmlToMessageBuffer(ZMapXMLWriter writer, char *xml, int len, gpointer user_data);
+static gboolean responseZmapStartHndlr(void *userData, 
+                                       ZMapXMLElement element, 
+                                       ZMapXMLParser parser);
+static gboolean responseZmapEndHndlr(void *userData, 
+                                     ZMapXMLElement element, 
+                                     ZMapXMLParser parser);
 
 void zMapSetClient(ZMap zmap, void *client_data)
 {
@@ -171,8 +180,6 @@ void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap_data)
       notifyData           = g_new0(zMapXRemoteNotifyDataStruct, 1);
       notifyData->xremote  = xremote;
       notifyData->callback = ZMAPXREMOTE_CALLBACK(controlExecuteCommand);
-      notifyData->clients  = NULL;
-      notifyData->client_callback = ZMAPXREMOTE_CALLBACK(controlReadResponse);
       notifyData->data     = zmap_data; 
 
       /* Moving this (add_events) BEFORE the call to InitServer stops
@@ -204,22 +211,13 @@ void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap_data)
   return;
 }
 
-int xmlToMessageBuffer(ZMapXMLWriter writer, char *xml, int len, gpointer user_data)
-{
-  AlertClientMessage message = (AlertClientMessage)user_data;
-
-  g_string_append_len(message->full_text, xml, len);
-
-  return len;
-}
-
-void zmapControlRemoteAlertClients(ZMap zmap, GArray *xml_events, char *action)
+gboolean zmapControlRemoteAlertClients(ZMap zmap, GArray *xml_events, char *action)
 {
   GList *clients = NULL;
   ZMapXMLWriter xml_creator = NULL;
   AlertClientMessageStruct message_data = {0};
   ZMapXMLWriterEventStruct zmap_event = {0};
-
+  
   /* Making this a GList, I can't afford time to make the
    * zmap->clients a glist, but this will make it easier when I do */
   if(zmap->client)
@@ -228,6 +226,8 @@ void zmapControlRemoteAlertClients(ZMap zmap, GArray *xml_events, char *action)
   if(clients)
     {
       message_data.full_text = g_string_sized_new(500);
+      message_data.zmap      = zmap;
+      message_data.parser    = zMapXMLParserCreate(&message_data, FALSE, FALSE);
 
       if(!xml_events)
         xml_events = g_array_sized_new(FALSE, FALSE, sizeof(ZMapXMLWriterEventStruct), 5);
@@ -251,11 +251,12 @@ void zmapControlRemoteAlertClients(ZMap zmap, GArray *xml_events, char *action)
         zMapLogWarning("%s", "Error processing events");
 
       zMapXMLWriterDestroy(xml_creator);
-      
+      zMapXMLParserDestroy(message_data.parser);
+
       g_list_free(clients);
     }
 
-  return ;
+  return message_data.handled;
 }
 
 /* ========================= */
@@ -299,7 +300,7 @@ static ZMapXMLParser setupControlRemoteXMLParser(void *data)
   ZMapXMLParser parser = NULL;
   gboolean cmd_debug   = TRUE;
   ZMapXMLObjTagFunctionsStruct starts[] = {
-    { "zmap",       zmapStrtHndlr,      },
+    { "zmap",       zmapStrtHndlr       },
     { "featureset", featuresetStrtHndlr },
     { "feature",    featureStrtHndlr    },
     { "client",     clientStrtHndlr     },
@@ -673,16 +674,6 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
   return xml_reply;
 }
 
-static char *controlReadResponse  (char *command_text, ZMap zmap, int *statusCode)
-{
-  char *this_is_wrong = NULL;
-
-  printf("controlReadResponse: just somewhere to break ...\n");
-
-  return this_is_wrong;
-}
-
-
 static gboolean createClient(ZMap zmap, controlClientObj data)
 {
   gboolean result;
@@ -1034,7 +1025,6 @@ static void alertClientToMessage(gpointer client_data, gpointer message_data) /*
 {
   zMapXRemoteObj      client = (zMapXRemoteObj)client_data;
   AlertClientMessage message = (AlertClientMessage)message_data;
-  gboolean bad = FALSE;
   char *response = NULL, *command = NULL;
   int result;
 
@@ -1045,15 +1035,63 @@ static void alertClientToMessage(gpointer client_data, gpointer message_data) /*
 
   if((result = zMapXRemoteSendRemoteCommand(client, command, &response)) == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
     {
-      char *tmp = NULL;
+      char *xml_only = NULL;
       int code  = 0;
-      zMapXRemoteResponseSplit(client, response, &code, &tmp);
+      gboolean parses_ok = FALSE;
+      ZMapXMLObjTagFunctionsStruct starts[] = {
+        {"zmap", responseZmapStartHndlr },
+        { NULL, NULL}
+      };
+      ZMapXMLObjTagFunctionsStruct ends[] = {
+        {"zmap", responseZmapEndHndlr },
+        { NULL, NULL}
+      };
+      zMapXMLParserReset(message->parser);
+      zMapXMLParserSetMarkupObjectTagHandlers(message->parser, &starts[0], &ends[0]);
+      
+      zMapXRemoteResponseSplit(client, response, &code, &xml_only);
       if((zMapXRemoteResponseIsError(client, response)))
-        {
           zMapWarning("Failed to get Successful response.\n"
-                      "Code: %d\nResponse: %s", code, tmp);
+                      "Code: %d\nResponse: %s", code, xml_only);
+
+      if((parses_ok = zMapXMLParserParseBuffer(message->parser, 
+                                               xml_only, 
+                                               strlen(xml_only))) != TRUE)
+        {
+          zMapLogWarning("Parsing error : %s", zMapXMLParserLastErrorMsg(message->parser));
         }
     }
+  else
+    zMapLogWarning("Failed sending xremote command. Code = %d", result);
 
   return ;
+}
+
+static int xmlToMessageBuffer(ZMapXMLWriter writer, char *xml, int len, gpointer user_data)
+{
+  AlertClientMessage message = (AlertClientMessage)user_data;
+
+  g_string_append_len(message->full_text, xml, len);
+
+  return len;
+}
+
+static gboolean responseZmapStartHndlr(void *userData, 
+                                       ZMapXMLElement element, 
+                                       ZMapXMLParser parser)
+{
+
+  zMapLogWarning("%s", "In zmap Start Handler");
+  return TRUE;
+}
+static gboolean responseZmapEndHndlr(void *userData, 
+                                     ZMapXMLElement element, 
+                                     ZMapXMLParser parser)
+{
+  AlertClientMessage message = (AlertClientMessage)userData;
+
+  message->handled = TRUE;
+
+  zMapLogWarning("In zmap %s Handler. Setting handled = TRUE", "End");
+  return TRUE;
 }
