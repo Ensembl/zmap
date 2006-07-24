@@ -39,7 +39,8 @@ if [ ! -z $ZBbuildOSDir ] ; then
 fi
 webpublish=''
 #web_site='/nfs/WWWdev/ACEDB_docs/htdocs/Development/developers_only/ZMap'
-web_site='/nfs/WWWdev/ACEDB_docs/htdocs/ZMap'
+#web_site='/nfs/WWWdev/ACEDB_docs/htdocs/ZMap'
+web_site='/dev/null'
 doc_dirs="web/* src/${ZBbuildOSDir}docs/ZMap/html doc"
 
 
