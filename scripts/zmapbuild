@@ -12,7 +12,7 @@
 
 # Setting this variable means fatal messages also get mailed to the zmap developers
 # mail alias.
-ZBmailOnExit=""
+ZBmailOnExit="true"
 
 
 # set up usage strings.
