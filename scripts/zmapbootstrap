@@ -39,7 +39,9 @@ currdir=`pwd`
 
 # move to the zmap build scripts dir and update the scripts there.
 #
-scriptdir=~zmap/prefix/scripts
+#scriptdir=~zmap/prefix/scripts
+# To make this script easier to test I've changed to this...
+scriptdir=`dirname $0`
 
 ZBGotoDir $scriptdir
 

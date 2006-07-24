@@ -17,7 +17,7 @@ my $QUIET = 0;
         my ($path, $name) = @_;
 
         $path = abs_path($path);
-        if($path =~ m!(.+/$name)/(.+)!){
+        if($path =~ m!(.+/$name)/(.+)!i){
             $checkout_dir = $1;
         }else{
             $checkout_dir = $path;
