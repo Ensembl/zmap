@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: May  3 13:22 2006 (edgrif)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
- * CVS info:   $Id: zmapUtils_P.h,v 1.22 2006-07-24 12:30:49 zmap Exp $
+ * CVS info:   $Id: zmapUtils_P.h,v 1.23 2006-07-24 12:36:19 zmap Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_P_H
