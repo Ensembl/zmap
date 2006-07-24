@@ -97,12 +97,32 @@ ZBmsgInfo ()
 #
 ZBmsgMail ()
 {
-    echo "Build Message:
-  
-$1" | mailx -s "ZMap Build - $2" zmapdev
+
+mailx -s "ZMap Build - $2" zmapdev <<EOF
+
+Build Message:
+
+$1
+EOF
 
 }
 
+ZBbuildNotifyMail()
+{
+
+mailx -s "ZMap Release" $1 <<EOF
+
+Build Message:
+
+A new version of ZMap is now available.
+
+Release Location: $2
+Release Version:  $3
+Release Notes:    $4
+
+EOF
+
+}
 
 ZBlogmsg ()
 {
