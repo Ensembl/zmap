@@ -1,0 +1,28 @@
+#!/bin/bash
+
+. ZBfunctions $0
+
+ZBExportOSVars
+
+
+# $1 should be DEVELOPMENT, EXPERIMENTAL or SUPPORTED
+# $2 should be DEVELOPMENT, OVERNIGHT
+
+source_acedb=$1
+dest_zmap=$2
+
+acedb=~acedb
+target=$ZBBaseDir/BIN.$dest_zmap/$ZBbuildOSCanon/bin
+source=$acedb'/RELEASE.'$source_acedb'/bin.'$ZBbuildOSCanon'_4/'
+
+# copy all the files from acedb release
+
+echo "Copying $ZBAcedbBinaries ..."
+echo "Source = $source, Target = $target"
+
+for binary in $ZBAcedbBinaries
+  do
+  cp $source/$binary $target/$binary || ZBmsgAndExit "Failed to copy $binary"
+done
+
+exit 0
