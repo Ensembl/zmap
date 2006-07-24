@@ -163,7 +163,7 @@ ZBDevDir="$ZBase/ZMap.DEVELOPMENT.BUILD"
 ZBAcedbBinaries='tace xace sgifaceserver makeUserPasswd blixem dotter'
 ZBZmapBinaries='zmap'
 
-
+ZBcvsRoot=/nfs/team71/acedb/zmap/CVS
 
 fi
 

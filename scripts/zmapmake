@@ -70,7 +70,7 @@ if [ -n "$configure" ] ; then
   ZBExportOSVars
   echo $ZBbuildOSDir
   ZBGotoDir $ZBbuildOSDir
-  $builddir/runconfig $prefix || ZBmsgAndExit "runconfig script failed"
+  $builddir/runconfig $prefix/$ZBbuildOSCanon || ZBmsgAndExit "runconfig script failed"
 fi
 
 

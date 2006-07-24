@@ -12,7 +12,7 @@
 
 # Setting this variable means fatal messages also get mailed to the zmap developers
 # mail alias.
-ZBmailOnExit="true"
+ZBmailOnExit=""
 
 
 # set up usage strings.
@@ -52,7 +52,7 @@ notify=""
 pinstall=""
 prefix=""
 
-while getopts ":ruvm:I" opt ; do
+while getopts ":ruvm:Iin:" opt ; do
   case $opt in
     r  ) tag="release"    ;;
     u  ) tag="update"     ;;
@@ -101,7 +101,7 @@ if [ -n "$initialise" ] ; then
 
   ZBGotoDir $targetdir
 
-  cvs checkout $zmapcvstarget || ZBmsgAndExit "Cannot cvs checkout: $zmapcvstarget"
+  cvs -d $ZBcvsRoot checkout $zmapcvstarget || ZBmsgAndExit "Cannot cvs checkout: $zmapcvstarget"
 
 else
   ZBGotoDir $targetdir
