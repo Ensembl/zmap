@@ -33,7 +33,8 @@ configure=""
 target=""
 prefix=""
 
-while getopts ":bct:" opt ; do
+
+while getopts ":bct:p:" opt ; do
   case $opt in
     b  ) bootstrap='true' ;;
     c  ) configure='true' ;;
@@ -42,7 +43,6 @@ while getopts ":bct:" opt ; do
     \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
   esac
 done
-
 
 # Get the source directory for the build.
 shift $(($OPTIND - 1))

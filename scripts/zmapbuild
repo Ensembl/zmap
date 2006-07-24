@@ -112,21 +112,23 @@ cvscopy="$builddir/$targetdir"
 
 
 # If a cvs tag of release is required then do it.
-#
-if [ -n "$tag" ] ; then
+# we end up taggin twice if this is uncommented
+#if [ -n "$tag" ] ; then
 
-  ZBGotoDir $builddir
+#  ZBGotoDir $builddir
 
-  versioner -path $targetdir/ZMap/src/include/ZMap/ || ZBmsgAndExit "Could not cvs tag source files"
+#  versioner -path $targetdir/ZMap/src/include/ZMap/ || ZBmsgAndExit "Could not cvs tag source files"
 
-  ZBGotoDir $targetdir
+#  ZBGotoDir $targetdir
 
-fi
+#fi
 
 # setup to do a make install 
 if [ -n "$pinstall" ] ; then
-  prefix="-p $targetdir/INSTALL"
+  abspath=`pwd`
+  prefix="-p $abspath/INSTALL"
 fi
+
 
 #
 # do the builds on the different machines via ssh....
@@ -147,9 +149,9 @@ vpathdir=`ssh $machine "zmapvpathdir"`
 # as a one time operation like the cvs stuff...
 # This should be ssh $machine "zmapmake -b -c $abspath -d $vpathdir"
 if [ -n "$initialise" ] ; then
-  ssh $machine "zmapmake -b -c $abspath $prefix" || ZBmsgAndExit "zmap make failed on $machine"
+  ssh $machine "zmapmake -b -c $prefix $abspath" || ZBmsgAndExit "zmap make failed on $machine"
 else
-  ssh $machine "zmapmake -c $abspath $prefix" || ZBmsgAndExit "zmap make failed on $machine"
+  ssh $machine "zmapmake -c $prefix $abspath" || ZBmsgAndExit "zmap make failed on $machine"
 fi
 
 
@@ -157,7 +159,7 @@ fi
 #
 if [ -n "$initialise" ] ; then
 
-   echo 'about to issue:'
+  echo 'about to issue:'
   echo ssh $machine "zmapmake -t docs $abspath/$vpathdir" 
   echo
 
@@ -177,7 +179,7 @@ fi
 if [ -n "$tag" ] ; then
 
   ZBGotoDir $builddir
-
+  # This re tags the 
   versioner -path $targetdir/ZMap/src/include/ZMap/ -increment -$tag -cvs || ZBmsgAndExit "Could not update version number in source code"
 
 fi
@@ -191,23 +193,20 @@ if [ -n "$version" ] ; then
 
   version=`versioner -path $targetdir/ZMap/src/include/ZMap/ -show -V -quiet` || ZBmsgAndExit "Could not get zmap version"
 
-  mv $targetdir 'ZMap.'$version'.BUILD' || ZBmsgAndExit "Could not rename build directory"
-fi
+  releasedir='ZMap.'$version'.BUILD'
 
+  mv $targetdir $releasedir || ZBmsgAndExit "Could not rename build directory to $releasedir"
 
+  rm -f $ZBDevDir  || ZBmsgAndExit "Could not remove Old $ZBDevDir link"
 
-# Record end of build.
-#
-ZBlogmsg "Build completed successfully on machine '$machine'."
+  ln -s $ZBbuildBase/$releasedir $ZBDevDir || ZBmsgAndExit "Could not create new link"
 
-ZBlogmsg "ZMap build finished"
+  zmapfetchacedbbinaries DEVELOPMENT DEVELOPMENT || ZBmsgAndExit "Failed to fetch all the binaries"
 
-
-if [ -n "$notify" && -n "$version" ] ; then
-
-release_notes_from_cvs=""
-  
-  ZBbuildNotifyMail $notify "$HOME/BIN.DEVELOPMENT/{YOUR_ARCHITECTURE}/" $version "
+  if [ -n "$notify" ] ; then
+      release_notes_from_cvs=""
+      
+      ZBbuildNotifyMail $notify "$ZBDevBinDir/LINUX/{bin,include,lib}" $version "
 
 It solve some problems, creates others.
 
@@ -218,6 +217,16 @@ The ZMap Team
 Report bugs to zmap@sanger.ac.uk
 "
 
+  fi
+
 fi
+
+
+
+# Record end of build.
+#
+ZBlogmsg "Build completed successfully on machine '$machine'."
+
+ZBlogmsg "ZMap build finished"
 
 exit 0

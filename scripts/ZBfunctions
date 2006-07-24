@@ -39,10 +39,13 @@ ZBExportOSVars()
     case $opsys in
 
         OSF1 )
+            ZBbuildOSCanon="ALPHA"
             ZBbuildOSDir=build/alpha ;;
         Linux )
+            ZBbuildOSCanon="LINUX"
             ZBbuildOSDir=build/linux ;;
         Darwin )
+            ZBbuildOSCanon="MACOSX"
             ZBbuildOSDir=build/macosx ;;
         * )
             ZBmsgAndExit "unsupported operating system: $opsys" ;;       
@@ -154,14 +157,14 @@ ZBusage ()
 #
 ZBscript=`basename $1`
 
-ZBase=~zmap
-ZBBaseDir="$ZBase/ZMap"
-ZBOverDir="$ZBase/ZMap.OVERNIGHT.BUILD"
-ZBDevDir="$ZBase/ZMap.DEVELOPMENT.BUILD"
-
+ZBbuildBase=~zmap/BUILDS
+ZBBaseDir=~zmap
+ZBOverDir="$ZBBaseDir/BUILD.OVERNIGHT"
+ZBOverBinDir="$ZBBaseDir/BIN.OVERNIGHT"
+ZBDevDir="$ZBBaseDir/BUILD.DEVELOPMENT"
+ZBDevBinDir="$ZBBaseDir/BIN.DEVELOPMENT"
 
 ZBAcedbBinaries='tace xace sgifaceserver makeUserPasswd blixem dotter'
-ZBZmapBinaries='zmap'
 
 ZBcvsRoot=/nfs/team71/acedb/zmap/CVS
 
