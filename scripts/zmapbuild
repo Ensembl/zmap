@@ -52,7 +52,7 @@ notify=""
 pinstall=""
 prefix=""
 
-while getopts ":ruvm:Iin:" opt ; do
+while getopts ":ruvm:n:Ii" opt ; do
   case $opt in
     r  ) tag="release"    ;;
     u  ) tag="update"     ;;
