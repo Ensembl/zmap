@@ -16,7 +16,7 @@ ZBmailOnExit="true"
 
 
 # set up usage strings.
-cmdstring='[-v -r -u -m <machine> -I] <target_build_directory>'
+cmdstring='[-v -r -u -m <machine> -I -n <notify@email> -i ] <target_build_directory>'
 descstring='
    -I   initialise the directory (rm -rf target, cvs co) also makes the docs
 
@@ -31,6 +31,11 @@ descstring='
    -m <machine>
         specify the machine to ssh in to.   
 
+   -n <notify@email>
+        specify the email address to notify of a new build.
+
+   -i    install zmap into the target_build_directory/INSTALL/{ARCHITECTURE}
+
    <target_build_directory> 
         specifies the sub directory of "~zmap/Builds" where the checkout
          and build should take place.'
@@ -43,7 +48,9 @@ zmapcvstarget='ZMap'
 version=""
 tag=""
 initialise=""
-
+notify=""
+pinstall=""
+prefix=""
 
 while getopts ":ruvm:I" opt ; do
   case $opt in
@@ -51,7 +58,9 @@ while getopts ":ruvm:I" opt ; do
     u  ) tag="update"     ;;
     v  ) version="true"    ;;
     m  ) machine=$OPTARG   ;;
+    n  ) notify=$OPTARG    ;;
     I  ) initialise="true" ;; 
+    i  ) pinstall="true"   ;;
     \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
   esac
 done
@@ -114,7 +123,10 @@ if [ -n "$tag" ] ; then
 
 fi
 
-
+# setup to do a make install 
+if [ -n "$pinstall" ] ; then
+  prefix="-p $targetdir/INSTALL"
+fi
 
 #
 # do the builds on the different machines via ssh....
@@ -135,11 +147,10 @@ vpathdir=`ssh $machine "zmapvpathdir"`
 # as a one time operation like the cvs stuff...
 # This should be ssh $machine "zmapmake -b -c $abspath -d $vpathdir"
 if [ -n "$initialise" ] ; then
-  ssh $machine "zmapmake -b -c $abspath" || ZBmsgAndExit "zmap make failed on $machine"
+  ssh $machine "zmapmake -b -c $abspath $prefix" || ZBmsgAndExit "zmap make failed on $machine"
 else
-  ssh $machine "zmapmake -c $abspath" || ZBmsgAndExit "zmap make failed on $machine"
+  ssh $machine "zmapmake -c $abspath $prefix" || ZBmsgAndExit "zmap make failed on $machine"
 fi
-
 
 
 # making docs only works on linux at the moment as we need doxygen executables.
@@ -191,5 +202,22 @@ ZBlogmsg "Build completed successfully on machine '$machine'."
 
 ZBlogmsg "ZMap build finished"
 
+
+if [ -n "$notify" && -n "$version" ] ; then
+
+release_notes_from_cvs=""
+  
+  ZBbuildNotifyMail $notify "$HOME/BIN.DEVELOPMENT/{YOUR_ARCHITECTURE}/" $version "
+
+It solve some problems, creates others.
+
+$release_notes_from_cvs
+
+The ZMap Team
+-
+Report bugs to zmap@sanger.ac.uk
+"
+
+fi
 
 exit 0

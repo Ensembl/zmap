@@ -23,18 +23,22 @@ descstring='
 
    -c           run configure script before doing the make.
 
+   -p <prefix>  do make install and use location when doing so.
+
    <make_directory> specifies FULL PATH of directory where make is take place.'
 
 
 bootstrap=""
 configure=""
 target=""
+prefix=""
 
 while getopts ":bct:" opt ; do
   case $opt in
     b  ) bootstrap='true' ;;
     c  ) configure='true' ;;
-    t  ) target=$OPTARG ;;
+    t  ) target=$OPTARG   ;;
+    p  ) prefix="--prefix=$OPTARG" ;;
     \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
   esac
 done
@@ -66,11 +70,18 @@ if [ -n "$configure" ] ; then
   ZBExportOSVars
   echo $ZBbuildOSDir
   ZBGotoDir $ZBbuildOSDir
-  $builddir/runconfig || ZBmsgAndExit "runconfig script failed"
+  $builddir/runconfig $prefix || ZBmsgAndExit "runconfig script failed"
 fi
 
 
-make $target || ZBmsgAndExit "make failed in `pwd`"
+make $target || ZBmsgAndExit "make $target failed in `pwd`"
+
+if [ -n "$prefix" ] ; then
+
+  ZBmsgInfo "running make install"
+  make install || ZBmsgAndExit "make install failed in `pwd`"
+
+fi
 
 
 # A hack really, generalise to run a given command if you feel like it...
