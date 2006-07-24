@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 23 22:07 2006 (rds)
+ * Last edited: Jul 24 21:54 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.44 2006-07-23 21:08:20 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.45 2006-07-24 22:02:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1497,12 +1497,15 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	    /* Handle second click of a double click. */
 	    if (but_event->button == 1)
 	      {
-		gboolean result ;
+		gboolean result, externally_handled = FALSE ;
 		
-		result = makeFeatureEditWindow(window, feature) ;
-		zMapAssert(result) ;			    /* v. bad news if we can't find this item. */
+                if(!(externally_handled = zmapWindowUpdateXRemoteData(window, feature, real_item)))
+                  {
+                    result = makeFeatureEditWindow(window, feature) ;
+                    /* v. bad news if we can't find this item. */
+                    zMapAssert(result) ;
+                  }
 
-                zMapWindowUpdateXRemoteData(window, feature, real_item);
 		event_handled = TRUE ;
 	      }
 	  }

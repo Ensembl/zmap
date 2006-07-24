@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 21 17:47 2006 (rds)
+ * Last edited: Jul 24 21:56 2006 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.66 2006-07-22 09:32:20 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.67 2006-07-24 21:59:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -646,7 +646,7 @@ static void controlDoubleSelectCB(ZMapViewWindow view_window, void *app_data, vo
   ZMap zmap = (ZMap)app_data;
   ZMapViewDoubleSelect double_select = (ZMapViewDoubleSelect)view_data;
 
-  zmapControlRemoteAlertClients(zmap, double_select->xml_events, "edit");  
+  double_select->handled = zmapControlRemoteAlertClients(zmap, double_select->xml_events, "edit");  
 
   return ;
 }

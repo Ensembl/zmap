@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Jul 21 17:49 2006 (rds)
+ * Last edited: Jul 24 21:55 2006 (rds)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.27 2006-07-22 09:19:38 rds Exp $
+ * CVS info:   $Id: zmapView.h,v 1.28 2006-07-24 22:01:48 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -86,6 +86,7 @@ typedef struct _ZMapViewSelectStruct
 typedef struct _ZMapViewDoubleSelectStruct
 {
   GArray *xml_events;
+  gboolean handled;
 }ZMapViewDoubleSelectStruct, *ZMapViewDoubleSelect;
 
 typedef struct _ZMapViewSplittingStruct

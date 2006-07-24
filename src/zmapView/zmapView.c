@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 22 10:39 2006 (rds)
+ * Last edited: Jul 24 21:55 2006 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.82 2006-07-22 09:39:49 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.83 2006-07-24 22:01:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1000,6 +1000,7 @@ static void viewDoubleSelectCB(ZMapWindow window, void *caller_data, void *windo
 
   (*(view_cbs_G->double_select))(view_window, view_window->parent_view->app_data, &double_select);
 
+  window_select->handled   = double_select.handled;
   return ;
 }
 static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data)
