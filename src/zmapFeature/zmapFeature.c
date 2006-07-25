@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jul 21 16:06 2006 (rds)
+ * Last edited: Jul 25 16:28 2006 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.40 2006-07-22 09:34:17 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.41 2006-07-25 15:28:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -213,13 +213,13 @@ ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeature
  * @param   sequence_out  The actual dna sequence as a C string.
  * @return  gboolean      TRUE if context contained a sequence.
  *  */
+#ifdef RDS_DONT_INCLUDE
 gboolean zmapFeatureContextDNA(ZMapFeatureContext context,
 			       char **seq_name_out, int *seq_len_out, char **sequence_out)
 {
   gboolean result = FALSE ;
 
   zMapAssert(context && seq_len_out && seq_name_out) ;
-
   if (context->sequence && context->sequence->sequence)
     {
       *seq_name_out = (char *)g_quark_to_string(context->sequence_name) ;
@@ -230,8 +230,33 @@ gboolean zmapFeatureContextDNA(ZMapFeatureContext context,
 
   return result ;
 }
+#endif
 
+gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
+                             char **seq_name_out, int *seq_len_out, char **sequence_out)
+{
+  gboolean result = FALSE;
+  ZMapFeatureContext context = NULL;
 
+  zMapAssert( block ) ;
+
+  if(block->sequence.sequence && 
+     block->sequence.type != ZMAPSEQUENCE_NONE &&
+     block->sequence.type == ZMAPSEQUENCE_DNA  &&
+     (context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)block,
+                                                              ZMAPFEATURE_STRUCT_CONTEXT)))
+    {
+      if(seq_name_out)
+        *seq_name_out = (char *)g_quark_to_string(context->sequence_name) ;
+      if(seq_len_out)
+        *seq_len_out  = block->sequence.length ;
+      if(sequence_out)
+        *sequence_out = block->sequence.sequence ;
+      result = TRUE ;
+    }
+
+  return result;
+}
 
 
 /*!
