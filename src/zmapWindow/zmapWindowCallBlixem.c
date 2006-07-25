@@ -32,9 +32,9 @@
  *
  * Exported functions: see zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  8 13:53 2006 (rds)
+ * Last edited: Jul 25 15:59 2006 (rds)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.21 2006-03-08 13:58:02 rds Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.22 2006-07-25 15:23:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -103,6 +103,8 @@ static void     freeBlixemData   (blixemData blixem_data);
 
 gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType)
 {
+  ZMapFeature feature = NULL;
+  ZMapFeatureBlock block = NULL;
   gboolean status = TRUE ;
   char *commandString ;
   char *paramString = NULL ;
@@ -115,17 +117,20 @@ gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean o
   blixem_data.item    = item;
   blixem_data.oneType = oneType;
 
-  if(!(window && window->feature_context && window->feature_context->sequence))
+  feature = g_object_get_data(G_OBJECT(blixem_data.item), ITEM_FEATURE_DATA);
+  zMapAssert(feature) ;					    /* something badly wrong if no feature. */
+  blixem_data.feature = feature ;
+
+  if(!(block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+                                                           ZMAPFEATURE_STRUCT_BLOCK)))
     {
       status = FALSE;
-      err_msg = "No DNA in feature context so cannot call blixem." ;
+      err_msg = "feature has parental issues so cannot call blixem.";
     }
-
-  /* We need the dna sequence to send to blixem....so can't do anything without it... */
-  if (status && window->feature_context->sequence->type == ZMAPSEQUENCE_NONE)
+  else if(!(zMapFeatureBlockDNA(block, NULL, NULL, NULL)))
     {
-      status = FALSE ;
-      err_msg = "feature context contains no DNA so cannot call blixem." ;
+      status = FALSE;
+      err_msg = "No DNA attached to feature's parent so cannot call blixem." ;
     }
 
   if (status)
@@ -292,8 +297,8 @@ static gboolean makeTmpfiles(blixemData blixem_data)
 
 static char *buildParamString(blixemData blixem_data)
 {
-  gboolean    status = TRUE;
   ZMapFeature feature;
+  gboolean    status = TRUE;
   char       *paramString = NULL;
   int         start;
   int         scope = 40000;          /* set from user prefs */
@@ -303,10 +308,8 @@ static char *buildParamString(blixemData blixem_data)
   if (blixem_data->Scope > 0)
     scope = blixem_data->Scope ;
 
-  feature = g_object_get_data(G_OBJECT(blixem_data->item), ITEM_FEATURE_DATA);
-  zMapAssert(feature) ;					    /* something badly wrong if no feature. */
-  blixem_data->feature = feature ;
-  
+  feature = blixem_data->feature;
+
   x1 = feature->x1 ;
   x2 = feature->x2 ;
 
@@ -722,6 +725,8 @@ static gboolean printLine(blixemData blixem_data, char *line)
 static gboolean writeFastAFile(blixemData blixem_data)
 {
   enum { FASTA_CHARS = 50 };
+  ZMapFeature feature = NULL;
+  ZMapFeatureBlock block = NULL;
   gsize    bytes_written;
   GError  *channel_error = NULL;
   char    *line;
@@ -731,6 +736,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
   char    *cp = NULL ;
   int      i ;
 
+  feature = blixem_data->feature;
 
   if ((blixem_data->channel = g_io_channel_new_file(blixem_data->fastAFile, "w", &channel_error)))
     {
@@ -745,7 +751,9 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	  g_free(line);
 	  status = FALSE ;
 	}
-      else
+      else if((block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+                                                                   ZMAPFEATURE_STRUCT_BLOCK)) &&
+              zMapFeatureBlockDNA(block, NULL, NULL, &cp))
 	{
 	  int total_chars ;
 
@@ -756,8 +764,10 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	  lines = total_chars / FASTA_CHARS ;
 	  chars_left = total_chars % FASTA_CHARS ;
 
+#ifdef RDS_DONT_INCLUDE          
 	  cp = blixem_data->window->feature_context->sequence->sequence + blixem_data->min - 1 ;
-
+#endif
+          cp += (blixem_data->min - 1);
 
 	  /* Do the full length lines.                                           */
 	  if (lines > 0)
@@ -793,6 +803,8 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	      g_error_free(channel_error) ;
 	    }
 	}        /* if g_io_channel_write_chars(.... */
+      else
+        zMapShowMsg(ZMAP_MSG_WARNING, "Error: writing to file, failed to get feature's DNA");
 
       g_io_channel_shutdown(blixem_data->channel, TRUE, &channel_error);
       if (channel_error)
