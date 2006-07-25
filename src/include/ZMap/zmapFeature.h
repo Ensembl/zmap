@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 22 10:21 2006 (rds)
+ * Last edited: Jul 25 16:26 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.82 2006-07-22 09:21:43 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.83 2006-07-25 15:27:00 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -204,18 +204,6 @@ typedef struct ZMapFeatureContextStruct_
 							       (== sequence_name if no parent). */
 
   int length ;						    /* total length of sequence. */
-
-
-  /* OK THIS IS WRONG...WE SHOULDN'T HAVE A POINTER TO DNA HERE AT ALL, THE BLOCKS SHOULD HAVE
-   * IT...CHECK USAGE OF THIS FIELD....  */
-  /* At least 
-     zmapFeacture.c:zmapFeatureContextDNA and 
-     zmapWindowCallBlixem.c:zmapWindowCallBlixem
-  */
-  ZMapSequence sequence ;				    /* The dna sequence. NB NOW A POINTER! */
-
-
-
 
 
   /* I think we should remove this as in fact our code will break IF  (start != 1)  !!!!!!!  */
@@ -549,9 +537,12 @@ typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
 
 
 
-
+#ifdef RDS_DONT_INCLUDE
 gboolean zmapFeatureContextDNA(ZMapFeatureContext context,
 			       char **seq_name, int *seq_len, char **sequence) ;
+#endif
+gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
+                             char **seq_name, int *seq_len, char **sequence) ;
 
 void zMapFeatureReverseComplement(ZMapFeatureContext context) ;
 
