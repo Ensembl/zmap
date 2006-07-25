@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 24 22:49 2006 (rds)
+ * Last edited: Jul 25 10:53 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.30 2006-07-24 22:00:05 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.31 2006-07-25 09:56:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -106,6 +106,7 @@ typedef struct
   ZMap zmap;
   ZMapXMLParser parser;
   gboolean handled;
+  char *error_message;
 } AlertClientMessageStruct, *AlertClientMessage;
 
 /* ZMAPXREMOTE_CALLBACK and destroy internals for zmapControlRemoteInstaller */
@@ -151,6 +152,12 @@ static int xmlToMessageBuffer(ZMapXMLWriter writer, char *xml, int len, gpointer
 static gboolean responseZmapStartHndlr(void *userData, 
                                        ZMapXMLElement element, 
                                        ZMapXMLParser parser);
+static gboolean responseResponseStartHndlr(void *userData, 
+                                           ZMapXMLElement element, 
+                                           ZMapXMLParser parser);
+static gboolean responseErrorEndHndlr(void *userData, 
+                                      ZMapXMLElement element, 
+                                      ZMapXMLParser parser);
 static gboolean responseZmapEndHndlr(void *userData, 
                                      ZMapXMLElement element, 
                                      ZMapXMLParser parser);
@@ -1037,13 +1044,15 @@ static void alertClientToMessage(gpointer client_data, gpointer message_data) /*
     {
       char *xml_only = NULL;
       int code  = 0;
-      gboolean parses_ok = FALSE;
+      gboolean parses_ok = FALSE, error_response = FALSE;;
       ZMapXMLObjTagFunctionsStruct starts[] = {
-        {"zmap", responseZmapStartHndlr },
+        {"zmap",     responseZmapStartHndlr     },
+        {"response", responseResponseStartHndlr },
         { NULL, NULL}
       };
       ZMapXMLObjTagFunctionsStruct ends[] = {
-        {"zmap", responseZmapEndHndlr },
+        {"zmap",  responseZmapEndHndlr  },
+        {"error", responseErrorEndHndlr },
         { NULL, NULL}
       };
       zMapXMLParserReset(message->parser);
@@ -1051,8 +1060,7 @@ static void alertClientToMessage(gpointer client_data, gpointer message_data) /*
       
       zMapXRemoteResponseSplit(client, response, &code, &xml_only);
       if((zMapXRemoteResponseIsError(client, response)))
-          zMapWarning("Failed to get Successful response.\n"
-                      "Code: %d\nResponse: %s", code, xml_only);
+        error_response = TRUE;
 
       if((parses_ok = zMapXMLParserParseBuffer(message->parser, 
                                                xml_only, 
@@ -1060,6 +1068,11 @@ static void alertClientToMessage(gpointer client_data, gpointer message_data) /*
         {
           zMapLogWarning("Parsing error : %s", zMapXMLParserLastErrorMsg(message->parser));
         }
+      else if(error_response == TRUE)
+        zMapWarning("Failed to get successful response from external program.\n"
+                    "Code: %d\nResponse: %s", 
+                    code, 
+                    (message->error_message ? message->error_message : xml_only));
     }
   else
     zMapLogWarning("Failed sending xremote command. Code = %d", result);
@@ -1080,18 +1093,49 @@ static gboolean responseZmapStartHndlr(void *userData,
                                        ZMapXMLElement element, 
                                        ZMapXMLParser parser)
 {
-
   zMapLogWarning("%s", "In zmap Start Handler");
   return TRUE;
 }
+
+static gboolean responseResponseStartHndlr(void *userData, 
+                                       ZMapXMLElement element, 
+                                       ZMapXMLParser parser)
+{
+  AlertClientMessage message = (AlertClientMessage)userData;
+  ZMapXMLAttribute handled_attribute = NULL;
+  gboolean is_handled = FALSE;
+
+  if((handled_attribute = zMapXMLElementGetAttributeByName(element, "handled")) &&
+     (message->handled == FALSE))
+    {
+      is_handled = zMapXMLAttributeValueToBool(handled_attribute);
+      message->handled = is_handled;
+    }
+
+  return TRUE;
+}
+
+static gboolean responseErrorEndHndlr(void *userData, 
+                                      ZMapXMLElement element, 
+                                      ZMapXMLParser parser)
+{
+  AlertClientMessage message = (AlertClientMessage)userData;
+  ZMapXMLElement mess_element = NULL;
+
+  if((mess_element = zMapXMLElementGetChildByName(element, "message")) &&
+     !message->error_message &&
+     mess_element->contents->str)
+    {
+      message->error_message = g_strdup(mess_element->contents->str);
+    }
+  
+  return TRUE;
+}
+
 static gboolean responseZmapEndHndlr(void *userData, 
                                      ZMapXMLElement element, 
                                      ZMapXMLParser parser)
 {
-  AlertClientMessage message = (AlertClientMessage)userData;
-
-  message->handled = TRUE;
-
-  zMapLogWarning("In zmap %s Handler. Setting handled = TRUE", "End");
+  zMapLogWarning("In zmap %s Handler.", "End");
   return TRUE;
 }
