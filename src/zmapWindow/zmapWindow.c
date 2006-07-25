@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 22 10:48 2006 (rds)
+ * Last edited: Jul 24 21:54 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.132 2006-07-22 09:49:10 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.133 2006-07-25 15:24:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -929,7 +929,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 }
 
 
-void zMapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeature feature, FooCanvasItem *real_item)
+gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeature feature, FooCanvasItem *real_item)
 {
   ZMapWindowDoubleSelectStruct double_select = {NULL};
   ZMapFeatureSetStruct feature_set = {0};
@@ -952,7 +952,7 @@ void zMapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeature feature, FooCanv
   if(double_select.xml_events)
     g_array_free(double_select.xml_events, TRUE);
 
-  return ;
+  return double_select.handled;
 }
 
 /* I'm not convinced of this. */
