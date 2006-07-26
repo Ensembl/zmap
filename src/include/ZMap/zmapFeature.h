@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 25 16:26 2006 (rds)
+ * Last edited: Jul 26 10:30 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.83 2006-07-25 15:27:00 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.84 2006-07-26 09:30:27 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -556,6 +556,7 @@ char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature_name,
 GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
 			   ZMapStrand strand, int start, int end,
 			   int query_start, int query_end) ;
+char *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block);
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
 void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;

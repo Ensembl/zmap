@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 17 10:52 2006 (edgrif)
+ * Last edited: Jul 26 09:51 2006 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.30 2006-07-17 11:07:01 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.31 2006-07-26 09:29:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -253,7 +253,15 @@ GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_stran
 
   return block_id;
 }
+/* Free return when finished! */
+char *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block)
+{
+  char *dna_name = NULL;
 
+  dna_name = g_strdup_printf("%s (%s)", "DNA", g_quark_to_string(block->original_id));
+
+  return dna_name;
+}
 
 /* In zmap we hold coords in the forward orientation always and get strand from the strand
  * member of the feature struct. This function looks at the supplied strand and sets the
@@ -381,16 +389,7 @@ static void addTypeQuark(gpointer data, gpointer user_data)
 
   return ;
 }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* WE MAY STILL WANT A FUNCTION LIKE THIS BUT IT WILL NEED MORE ARGS, E.G. ALIGNMENT... */
-ZMapFeature zMapFeatureFindFeatureInContext(ZMapFeatureContext feature_context,
-					    GQuark type_id, GQuark feature_id) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+#ifdef RDS_DONT_INCLUDE_UNUSED
 ZMapFeature zMapFeatureFindFeatureInBlock(ZMapFeatureBlock feature_block,
 					  GQuark type_id, GQuark feature_id)
 {
@@ -427,7 +426,7 @@ GData *zMapFeatureFindSetInBlock(ZMapFeatureBlock feature_block, GQuark set_id)
 
   return features ;
 }
-
+#endif
 
 
 /* Dump out a feature context. */
