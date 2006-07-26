@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 26 00:38 2006 (rds)
+ * Last edited: Jul 26 09:53 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.130 2006-07-26 00:08:33 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.131 2006-07-26 09:10:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -701,6 +701,8 @@ void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowItemFreeFocusItems(ZMapWindow window) ;
 
 
+void zmapHackAHighlightColumn(ZMapWindow window, FooCanvasItem *column) ;
+
 
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow window, 
                                                                 FooCanvasGroup *group);
@@ -723,6 +725,10 @@ void zmapWindowItemTextHighlightRegion(ZMapWindowItemHighlighter select_control,
 void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_control,
                                             char *text_string, gboolean copy_string);
 char *zmapWindowItemTextHighlightGetFullText(ZMapWindowItemHighlighter select_control);
+
+
+
+
 
 GHashTable *zmapWindowStyleTableCreate(void) ;
 gboolean zmapWindowStyleTableAdd(GHashTable *style_table, ZMapFeatureTypeStyle new_style) ;
