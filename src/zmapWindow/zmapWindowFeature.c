@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 24 21:54 2006 (rds)
+ * Last edited: Jul 26 10:19 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.45 2006-07-24 22:02:42 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.46 2006-07-26 09:22:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,13 +91,17 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
                               ZMapWindow window) ;
 static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text, 
                                     double feature_start, double feature_end,
-                                    double feature_offset,
+                                    double feature_offset, ZMapFeature feature,
                                     GdkColor *fg, GdkColor *bg, GdkColor *out,
                                     double width, int bases_per_char, 
                                     GCallback eventCB, ZMapWindow window);
 
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
 			 FooCanvasItem *item) ;
+static void makeTextItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item);
+static ZMapGUIMenuItem makeMenuTextSelectOps(int *start_index_inout,
+                                             ZMapGUIMenuItemCallbackFunc callback_func,
+                                             gpointer callback_data);
 static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
 				   ZMapGUIMenuItemCallbackFunc callback_func,
 				   gpointer callback_data) ;
@@ -534,20 +538,46 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
   return drawable;
 }
 
-void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature Feature, FooCanvasItem *item)
+void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item)
 {
+  ZMapFeatureBlock block = NULL;
   double dna_zoom = 0.0, current_zoom = 0.0;
+  FooCanvasItem *dna_item = NULL;
+  GQuark feature_set_unique = 0, dna_id = 0;
+  char *feature_name = NULL;
 
-  current_zoom = zMapWindowGetZoomStatus(window);
-  dna_zoom     = zMapWindowGetZoomMaxDNAInWrappedColumn(window);
+  feature_set_unique = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
 
-  if(current_zoom >= dna_zoom)
+  if((block = (ZMapFeatureBlock)(feature->parent->parent)) && 
+     (feature_name = zMapFeatureMakeDNAFeatureName(block)))
     {
-      gboolean context_has_dna = FALSE, showing_dna = FALSE;
-      /* Do we have DNA??? */
-      context_has_dna = zMapWindowGetDNAStatus(window);
-      /* Are we showing DNA? */
-      /* Another call.... */
+      dna_id = zMapFeatureCreateID(ZMAPFEATURE_RAW_SEQUENCE, feature_name, 
+                                   ZMAPSTRAND_FORWARD, 
+                                   block->block_to_sequence.q1,
+                                   block->block_to_sequence.q2,
+                                   0,0);
+      g_free(feature_name);
+    }
+
+  if((dna_item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                            feature->parent->parent->parent->unique_id,
+                                            feature->parent->parent->unique_id,
+                                            feature_set_unique,
+                                            ZMAPSTRAND_FORWARD,
+                                            dna_id)) != NULL)
+    {
+      if((zmapWindowItemIsShown(dna_item)))
+        {
+          ZMapWindowItemHighlighter dna_highlight = NULL;
+          /* Only now is it worth highlighting */
+
+          current_zoom = zMapWindowGetZoomFactor(window);
+          dna_zoom     = zMapWindowGetZoomMaxDNAInWrappedColumn(window);
+
+          if((dna_highlight = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP( dna_item ))))
+            zmapWindowItemTextHighlightRegion(dna_highlight, dna_item, 
+                                              feature->x1, feature->x2);
+        }
     }
 
   return ;
@@ -1095,7 +1125,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 
 static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text, 
                                     double feature_start, double feature_end,
-                                    double feature_offset,
+                                    double feature_offset, ZMapFeature feature,
                                     GdkColor *fg, GdkColor *bg, GdkColor *out,
                                     double width, int bases_per_char,
                                     GCallback eventCB, ZMapWindow window)
@@ -1144,6 +1174,10 @@ static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text,
         {
           g_signal_connect(G_OBJECT(item), "event",
                            G_CALLBACK(eventCB), (gpointer)window);
+          g_object_set_data(G_OBJECT(item), ITEM_FEATURE_TYPE,
+                            GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
+          g_object_set_data(G_OBJECT(item), ITEM_FEATURE_DATA,
+                            (gpointer)feature);
         }
     }
   
@@ -1196,7 +1230,7 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
         }
 
       drawTextWrappedInColumn(feature_parent, feature->text,
-                              feature_start, feature_end, feature_offset,
+                              feature_start, feature_end, feature_offset, feature,
                               foreground, background, outline,
                               300.0, 3, callback, window);
       
@@ -1261,7 +1295,7 @@ static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
     }
 
   drawTextWrappedInColumn(feature_parent, feature_block->sequence.sequence,
-                          feature->x1, feature->x2, feature_offset,
+                          feature->x1, feature->x2, feature_offset, feature,
                           foreground, background, outline,
                           300.0, 1, callback, window);
 
@@ -1270,6 +1304,7 @@ static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
   /* It certainly does interfere. Not to remove, but, certainly breaks stuff. */
   attachDataToItem(feature_parent, window, feature, ITEM_FEATURE_BOUNDING_BOX, NULL) ;
 #endif
+
   return feature_parent;
 }
 
@@ -1531,6 +1566,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE;
+  ZMapWindow window = (ZMapWindowStruct*)data ;
   ZMapWindowItemHighlighter highlighObj = NULL;
 
   /*  printf("dnaItemEventCB (%x): enter... parent %x\n", item, item->parent);  */
@@ -1582,7 +1618,8 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
             highlighObj = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP(item->parent));
             if(zmapWindowItemTextHighlightGetIndices(highlighObj, &firstIdx, &lastIdx))
               {
-                //printf("dnaItemEventCB (%x): dna from %d to %d\n", item, firstIdx, lastIdx);
+                /* printf("dnaItemEventCB (%x): dna from %d to %d\n", item, firstIdx, lastIdx); */
+                makeTextItemMenu(button, window, item->parent);
                 event_handled = TRUE;
               }
           }
@@ -1878,6 +1915,54 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   return ;
 }
 
+static void makeTextItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
+{
+  static ZMapGUIMenuItemStruct separator[] =
+    {
+      {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
+    } ;
+  char *menu_title ;
+  GList *menu_sets = NULL ;
+  ItemMenuCBData menu_data ;
+  ZMapFeature feature ;
+  	ZMapFeatureTypeStyle style ;
+
+
+  /* Some parts of the menu are feature type specific so retrieve the feature item info
+   * from the canvas item. */
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature) ;
+
+  style = zmapWindowItemGetStyle(item) ;
+  zMapAssert(style) ;
+
+  menu_title = zMapFeatureName((ZMapFeatureAny)feature) ;
+
+  /* Call back stuff.... */
+  menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
+  menu_data->item_cb = TRUE ;
+  menu_data->window = window ;
+  menu_data->item = item ;
+
+  /* Make up the menu. */
+
+  /* The select all, None, Copy... */
+  menu_sets = g_list_append(menu_sets, makeMenuTextSelectOps(NULL, NULL, menu_data)) ;
+
+  menu_sets = g_list_append(menu_sets, separator) ;
+
+
+  /* General */
+  menu_sets = g_list_append(menu_sets, makeMenuGeneralOps(NULL, NULL, menu_data)) ;
+
+  /* DNA Search ????????????????? */
+
+  zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
+
+  return ;
+}
+
 
 static void itemMenuCB(int menu_item_id, gpointer callback_data)
 {
@@ -2001,6 +2086,45 @@ static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NORMAL, "URL",                    6, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+static void textSelectCB(int menu_item_id, gpointer callback_data) 
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapWindowItemHighlighter hlght = NULL;
+
+  switch(menu_item_id){
+  case 3:
+    zMapWarning("%s", "Manually selecting the text will copy it to the clip buffer automatically");
+    break;
+  case 2:
+    if((hlght = zmapWindowItemTextHighlightRetrieve(menu_data->item)))
+      zmapWindowItemTextHighlightReset(hlght);
+    break;
+  default:
+    zMapWarning("%s", "Unimplemented feature");
+    break;
+  }
+
+  return ;
+}
+
+
+static ZMapGUIMenuItem makeMenuTextSelectOps(int *start_index_inout,
+                                             ZMapGUIMenuItemCallbackFunc callback_func,
+                                             gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "Select All",  1, textSelectCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Select None", 2, textSelectCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Copy",        3, textSelectCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
     } ;
 
