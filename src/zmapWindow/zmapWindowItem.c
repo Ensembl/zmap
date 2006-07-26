@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 26 10:00 2006 (edgrif)
+ * Last edited: Jul 26 10:25 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.36 2006-07-26 09:12:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.37 2006-07-26 09:25:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,7 +85,6 @@ static void pointerIsOverItem(gpointer data, gpointer user_data);
 static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select, 
                                       double currentX,
                                       double currentY); /* These are WORLD coords */
-static void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control);
 
 
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow window, 
@@ -132,7 +131,7 @@ ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow windo
   return selection;
 }
 
-static void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control)
+void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control)
 {
   zMapAssert(select_control);
 
