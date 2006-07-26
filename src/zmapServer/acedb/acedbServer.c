@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jul 21 09:14 2006 (edgrif)
+ * Last edited: Jul 26 17:33 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.63 2006-07-21 08:18:24 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.64 2006-07-26 16:45:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1539,6 +1539,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   if (!g_str_has_prefix(method_str, "Method : "))
     return style ;
 
+
   obj_lines = 0 ;				    /* Used to detect empty objects. */
   do
     {
@@ -1599,31 +1600,17 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	  
 	  foreground = g_strdup(foreground) ;
 	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* The link between bump mode and what actually happens to the column is not straight
-       * forward in acedb, the annotators seem to favour no bumping at the moment so that's
-       * what I'm doing. */
+       * forward in acedb. */
       else if (g_ascii_strcasecmp(tag, "Overlap") == 0)
 	{
 	  overlap = g_strdup("complete") ;
 	}
-      else if (g_ascii_strcasecmp(tag, "Bumpable") == 0)
-	{
-	  overlap = g_strdup("overlap") ;
-	}
-      else if (g_ascii_strcasecmp(tag, "Cluster") == 0)
-	{
-	  overlap = g_strdup("name") ;
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      else if (g_ascii_strcasecmp(tag, "Overlap") == 0
-	       || g_ascii_strcasecmp(tag, "Bumpable") == 0
+      else if (g_ascii_strcasecmp(tag, "Bumpable") == 0
 	       || g_ascii_strcasecmp(tag, "Cluster") == 0)
 	{
-	  overlap = g_strdup("complete") ;
+	  overlap = g_strdup("smart") ;
 	}
-
 
       else if (g_ascii_strcasecmp(tag, "GFF_source") == 0)
 	{
