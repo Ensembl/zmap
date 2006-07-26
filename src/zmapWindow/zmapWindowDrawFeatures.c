@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 21 10:19 2006 (edgrif)
+ * Last edited: Jul 26 10:08 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.142 2006-07-21 09:22:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.143 2006-07-26 09:09:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -664,9 +664,13 @@ static void createSetColumn(gpointer data, gpointer user_data)
     {
       char *name = (char *)g_quark_to_string(feature_set_id) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Temporary...probably user will not want to see this in the end but for now its good for debugging. */
       zMapShowMsg(ZMAP_MSG_WARNING, "feature set \"%s\" not displayed because its style (\"%s\") could not be found.",
 		  name, name) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       zMapLogCritical("feature set \"%s\" not displayed because its style (\"%s\") could not be found.",
 		      name, name) ;
@@ -1107,39 +1111,6 @@ static void positionColumnCB(gpointer data, gpointer user_data)
  *                           Event handlers
  */
 
-/* This should use the window->focusItemSet list.
- * The items will have a TYPE which anything manipulating the items 
- * will filter on.
- */
-static void hackAHighlightColumn(ZMapWindow window, FooCanvasItem *column)
-{
-
-  if (window->focusColumn)
-    {
-      ZMapStrand strand ;
-      GdkColor *background ;
-
-      strand = zmapWindowContainerGetStrand(FOO_CANVAS_GROUP(column)) ;
-
-      if (strand == ZMAPSTRAND_FORWARD)
-	background = &(window->colour_mforward_col) ;
-      else
-	background = &(window->colour_mreverse_col) ;
-
-      foo_canvas_item_set(window->focusColumn,
-                          "fill_color_gdk", background,
-                          NULL) ;
-    }
-
-  window->focusColumn = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(column)) ;
-
-  foo_canvas_item_set(window->focusColumn,
-                      "fill_color_gdk", &(window->colour_column_highlight),
-                      NULL) ;
-
-  return ;
-}
-
 static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
@@ -1159,7 +1130,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	style = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_STYLE) ;
 	zMapAssert(feature_set || style) ;
 
-        hackAHighlightColumn(window, item);
+	zmapHackAHighlightColumn(window, item) ;
         
 	/* Button 1 and 3 are handled, 2 is passed on to a general handler which could be
 	 * the root handler. */
