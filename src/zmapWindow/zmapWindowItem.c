@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 19 09:47 2006 (edgrif)
+ * Last edited: Jul 26 00:38 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.34 2006-07-19 09:02:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.35 2006-07-26 00:09:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,6 +85,7 @@ static void pointerIsOverItem(gpointer data, gpointer user_data);
 static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select, 
                                       double currentX,
                                       double currentY); /* These are WORLD coords */
+static void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control);
 
 
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow window, 
@@ -96,12 +97,27 @@ ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow windo
   if(!(selection = (ZMapWindowItemHighlighter)g_object_get_data(G_OBJECT(group), 
                                                                 ITEM_HIGHLIGHT_DATA)))
     {
+#ifdef RDS_DONT_INCLUDE
+      /* I thought this might be a good idea... 
+       * The highlight _isn't_ part of a feature so messes everything up! 
+       * However, other issues arise when this is done.
+       * - origin of this group.
+       * - position of this group in the stack!
+
+       * As a stopgap I've just moved 1 up (out of the feature) and it seems 2 work.
+       */
+      FooCanvasGroup *root_child = NULL;
+      root_child = FOO_CANVAS_GROUP(foo_canvas_item_new(foo_canvas_root(group_as_item->canvas),
+                                                        foo_canvas_group_get_type(), 
+                                                        "y", group->ypos,
+                                                        NULL));
+#endif
       selection  = (ZMapWindowItemHighlighter)g_new0(ZMapWindowItemHighlighterStruct, 1);
       selection->tooltip      = zMapDrawToolTipCreate(group_as_item->canvas);
       selection->tooltip_text = g_string_sized_new(40);
       foo_canvas_item_hide(FOO_CANVAS_ITEM( selection->tooltip ));
 
-      selection->highlight = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
+      selection->highlight = FOO_CANVAS_GROUP(foo_canvas_item_new(FOO_CANVAS_GROUP(group_as_item->parent),
                                                                   foo_canvas_group_get_type(),
                                                                   NULL));
       selection->window = window;
@@ -114,6 +130,19 @@ ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow windo
     }
 
   return selection;
+}
+
+static void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control)
+{
+  zMapAssert(select_control);
+
+  foo_canvas_item_hide(FOO_CANVAS_ITEM( select_control->tooltip   ));
+  foo_canvas_item_hide(FOO_CANVAS_ITEM( select_control->highlight ));
+
+  select_control->seqFirstIdx = select_control->seqLastIdx = -1;
+  select_control->originItemListMember = NULL;
+
+  return ;
 }
 
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightRetrieve(FooCanvasGroup *group)
@@ -159,9 +188,10 @@ void zmapWindowItemTextHighlightFinish(ZMapWindowItemHighlighter select_control)
             }
         }
     }
-  
   select_control->originItemListMember = NULL;
+#ifdef RDS_DONT_INCLUDE
   select_control->seqFirstIdx = select_control->seqLastIdx = -1;
+#endif
 
   return ;
 }
@@ -212,7 +242,80 @@ gboolean zmapWindowItemTextHighlightBegin(ZMapWindowItemHighlighter select_contr
 
   return updated;
 }
+void zmapWindowItemTextHighlightRegion(ZMapWindowItemHighlighter select_control,
+                                       FooCanvasItem *feature_parent,
+                                       int firstIdx, int lastIdx)
+{
+  ZMapDrawTextRowData textRowData = NULL;
+  FooCanvasItem *feature_child = NULL;
+  GList *feature_children = NULL;
+  double x1, x2, y1, y2;
+  gboolean start_found = FALSE, end_found = FALSE;
 
+  feature_children = (FOO_CANVAS_GROUP(feature_parent))->item_list;
+  feature_child    = FOO_CANVAS_ITEM(feature_children->data);
+
+  zmapWindowItemTextHighlightReset(select_control);
+
+  if((textRowData = zMapDrawGetTextItemData(feature_child)))
+    {
+      int chars_drawn = 0, chars_screen = 0, first_base = 1, 
+        row_increment = 0, row = 0, tmp = 0;
+      double char_width = 0.0;
+      /* pick out information from textRowData that we need */
+
+      first_base   += textRowData->seq_index_start;
+      row_increment = textRowData->seq_index_end;
+      char_width    = textRowData->char_width;
+      chars_drawn   = textRowData->chars_drawn;
+      chars_screen  = textRowData->chars_on_screen;
+
+      x1 = y1 = x2 = y2 = 0.0;
+
+      do{
+        feature_child = FOO_CANVAS_ITEM(feature_children->data);
+
+        /* In both case here we obtain coords for top left of item
+         * then add the pixels (char_width * offset) to the x coord.
+         * offset is calculated from the distance from first base.
+         * This needs to be truncated if greater than number of chars
+         * drawn on the row.
+         */
+
+        if(first_base < firstIdx && first_base + row_increment > firstIdx)
+          {
+            tmp = firstIdx - first_base;
+            foo_canvas_item_get_bounds(feature_child, &x1, &y1, NULL, NULL);
+            x1 += ((tmp < chars_drawn ? tmp : chars_drawn) * char_width);
+            start_found = TRUE;
+          }
+        if(first_base < lastIdx && first_base + row_increment > lastIdx)
+          {
+            tmp = lastIdx - first_base + 1;
+            foo_canvas_item_get_bounds(feature_child, &x2, &y2, NULL, NULL);
+            /* Watch the off by one! */
+            x2 += ((tmp < chars_screen ? tmp : chars_screen) * char_width);
+            end_found = TRUE;
+          }
+        
+      }while((++row) && (first_base += row_increment) && 
+             (feature_children = g_list_next(feature_children)));
+    }
+  
+  if(start_found && end_found)
+    {
+      select_control->seqFirstIdx = firstIdx;
+      select_control->seqLastIdx  = lastIdx;
+      select_control->x1 = x1;
+      select_control->y1 = y1;
+      select_control->x2 = x2;
+      select_control->y2 = y2;
+      zmapWindowItemTextHighlightDraw(select_control, feature_child);
+      zmapWindowItemTextHighlightFinish(select_control);
+    }
+
+  return ;
+}
 void zmapWindowItemTextHighlightUpdateCoords(ZMapWindowItemHighlighter select_control,
                                              double event_x_coord, 
                                              double event_y_coord)

@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 24 21:54 2006 (rds)
+ * Last edited: Jul 26 00:38 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.129 2006-07-24 22:03:40 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.130 2006-07-26 00:08:33 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -717,6 +717,9 @@ gboolean zmapWindowItemTextHighlightBegin(ZMapWindowItemHighlighter select_contr
 void zmapWindowItemTextHighlightUpdateCoords(ZMapWindowItemHighlighter select_control,
                                              double event_x_coord, 
                                              double event_y_coord);
+void zmapWindowItemTextHighlightRegion(ZMapWindowItemHighlighter select_control,
+                                       FooCanvasItem *feature_parent,
+                                       int firstIdx, int lastIdx);
 void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_control,
                                             char *text_string, gboolean copy_string);
 char *zmapWindowItemTextHighlightGetFullText(ZMapWindowItemHighlighter select_control);
