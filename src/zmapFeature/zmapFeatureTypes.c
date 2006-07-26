@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 16 16:45 2006 (edgrif)
+ * Last edited: Jul 26 13:59 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.24 2006-06-16 17:03:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.25 2006-07-26 16:45:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -341,7 +341,9 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
 
   if (bump_str && *bump_str)
     {
-      if (g_ascii_strcasecmp(bump_str, "overlap") == 0)
+      if (g_ascii_strcasecmp(bump_str, "smart") == 0)
+	bump = ZMAPOVERLAP_COMPLEX ;
+      else if (g_ascii_strcasecmp(bump_str, "overlap") == 0)
 	bump = ZMAPOVERLAP_OVERLAP ;
       else if (g_ascii_strcasecmp(bump_str, "position") == 0)
 	bump = ZMAPOVERLAP_POSITION ;
