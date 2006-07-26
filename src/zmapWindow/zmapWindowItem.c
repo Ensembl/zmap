@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 26 10:25 2006 (rds)
+ * Last edited: Jul 26 10:47 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.37 2006-07-26 09:25:53 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.38 2006-07-26 09:48:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1726,11 +1726,14 @@ static void pointerIsOverItem(gpointer data, gpointer user_data)
           printf("pointerIsOverItem (%x): select members, x1=%f, y1=%f, x2=%f, y2=%f\n", 
                  item, select->x1, select->y1, select->x2, select->y2);
 #endif
-
-          g_string_printf(select->tooltip_text, 
-                          "%d - %d", 
-                          select->seqFirstIdx + 1, 
-                          select->seqLastIdx);
+          {
+            int tmpSeqA, tmpSeqB;
+            tmpSeqA = select->seqFirstIdx + 1;
+            tmpSeqB = (select->seqLastIdx >= tmpSeqA ? select->seqLastIdx : tmpSeqA);
+            g_string_printf(select->tooltip_text, 
+                            "%d - %d", 
+                            tmpSeqA, tmpSeqB);
+          }
 
           zMapDrawToolTipSetPosition(select->tooltip, 
                                      x2,
