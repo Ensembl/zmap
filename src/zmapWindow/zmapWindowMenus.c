@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jul 25 16:02 2006 (rds)
+ * Last edited: Jul 25 16:51 2006 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.18 2006-07-25 15:22:56 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.19 2006-07-26 00:09:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -713,7 +713,7 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data)
 	char *seq_name = NULL ;
 	int seq_len = 0 ;
 
-	if (zMapFeatureBlockDNA(feature->parent->parent, &seq_name, &seq_len, &sequence))
+	if (zMapFeatureBlockDNA((ZMapFeatureBlock)(feature->parent->parent), &seq_name, &seq_len, &sequence))
 	  dumpFASTA(menu_data->window, sequence, seq_name, seq_len, "DNA", NULL) ;
 	else
 	  zMapShowMsg(ZMAP_MSG_WARNING, "%s", "Context contains no DNA.") ;
