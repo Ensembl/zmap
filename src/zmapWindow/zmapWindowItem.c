@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 26 00:38 2006 (rds)
+ * Last edited: Jul 26 10:00 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.35 2006-07-26 00:09:03 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.36 2006-07-26 09:12:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -383,12 +383,53 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 
       break ;
     default:
-      highlightCB((gpointer)item, (gpointer)window) ;
+      {
+	/* Try highlighting both the item and its column. */
 
+	highlightCB((gpointer)item, (gpointer)window) ;
+
+
+	zmapHackAHighlightColumn(window, zmapWindowItemGetParentContainer(item)) ;
+
+      }
       break ;
     }
 
   zmapWindowRaiseItem(item) ;
+
+  return ;
+}
+
+
+/* This should use the window->focusItemSet list.
+ * The items will have a TYPE which anything manipulating the items 
+ * will filter on.
+ */
+void zmapHackAHighlightColumn(ZMapWindow window, FooCanvasItem *column)
+{
+
+  if (window->focusColumn)
+    {
+      ZMapStrand strand ;
+      GdkColor *background ;
+
+      strand = zmapWindowContainerGetStrand(FOO_CANVAS_GROUP(column)) ;
+
+      if (strand == ZMAPSTRAND_FORWARD)
+	background = &(window->colour_mforward_col) ;
+      else
+	background = &(window->colour_mreverse_col) ;
+
+      foo_canvas_item_set(window->focusColumn,
+                          "fill_color_gdk", background,
+                          NULL) ;
+    }
+
+  window->focusColumn = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(column)) ;
+
+  foo_canvas_item_set(window->focusColumn,
+                      "fill_color_gdk", &(window->colour_column_highlight),
+                      NULL) ;
 
   return ;
 }
