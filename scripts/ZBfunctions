@@ -164,7 +164,7 @@ ZBOverBinDir="$ZBBaseDir/BIN.OVERNIGHT"
 ZBDevDir="$ZBBaseDir/BUILD.DEVELOPMENT"
 ZBDevBinDir="$ZBBaseDir/BIN.DEVELOPMENT"
 
-ZBAcedbBinaries='tace xace sgifaceserver makeUserPasswd blixem dotter'
+ZBAcedbBinaries='tace xace sgifaceserver giface makeUserPasswd blixem dotter'
 
 ZBcvsRoot=/nfs/team71/acedb/zmap/CVS
 
