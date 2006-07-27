@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 20 15:33 2006 (edgrif)
+ * Last edited: Jul 27 10:39 2006 (rds)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.3 2006-07-21 08:34:00 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.4 2006-07-27 10:08:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,6 +75,8 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap)
       gtk_container_add(GTK_CONTAINER(frame), event_box) ;
 
       *(label[i]) = gtk_label_new(NULL) ;
+      gtk_label_set_selectable(GTK_LABEL(*(label[i])), TRUE);
+
       gtk_container_add(GTK_CONTAINER(event_box), *(label[i])) ;
     }
 
