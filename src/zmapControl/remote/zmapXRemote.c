@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jul 19 13:48 2006 (rds)
+ * Last edited: Jul 28 11:18 2006 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.18 2006-07-22 09:33:23 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.19 2006-07-28 10:19:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -589,6 +589,9 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
       memcpy(copy_command, command_text, nitems);
       copy_command[nitems] = 0 ;			    /* command_text is not zero terminated */
 
+      if(!externalPerl)
+        zMapLogWarning("[XREMOTE receive] %s", copy_command);
+
       /* Get an answer from the callback */
       xml_stub = (notifyStruct->callback)((char *)copy_command, user_data, &statusCode) ; 
 
@@ -598,8 +601,8 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
       xml_text      = zmapXRemoteProcessForReply(xremote, statusCode, xml_stub);
       response_text = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, statusCode, xml_text) ;
 
-      printf("%s\n", response_text);
-
+      if(!externalPerl)
+        zMapLogWarning("[XREMOTE respond] %s", response_text);
 
       /* actually do the replying */
       zMapXRemoteSetReply(xremote, response_text);
