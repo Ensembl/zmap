@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 30 12:06 2006 (rds)
+ * Last edited: Jul 31 11:52 2006 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.7 2006-06-13 16:52:38 rds Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.8 2006-08-01 09:53:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -157,6 +157,10 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	       /* Problem here is that this is used for overall transcript record... */
 	       || g_ascii_strcasecmp(feature_type, "Sequence") == 0
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	       || g_ascii_strcasecmp(feature_type, "atg") == 0
+	       || g_ascii_strcasecmp(feature_type, "splice3") == 0
+	       || g_ascii_strcasecmp(feature_type, "splice5") == 0
 
 	       || g_ascii_strcasecmp(feature_type, "Clone_left_end") == 0
 	       || g_ascii_strcasecmp(feature_type, "Clone_right_end") == 0
