@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jul 25 16:28 2006 (rds)
+ * Last edited: Jul 31 16:12 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.41 2006-07-25 15:28:45 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.42 2006-08-01 09:52:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -444,6 +444,22 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
   return result ;
 }
 
+
+
+/*!
+ * Adds homology data to a feature which may be empty or may already have partial features.
+ *  */
+gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(feature && (boundary == ZMAPBOUNDARY_5_SPLICE || boundary == ZMAPBOUNDARY_3_SPLICE)) ;
+
+  feature->flags.has_boundary = TRUE ;
+  feature->boundary_type = boundary ;
+
+  return result ;
+}
 
 
 

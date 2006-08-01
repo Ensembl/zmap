@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 26 10:30 2006 (rds)
+ * Last edited: Aug  1 09:04 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.84 2006-07-26 09:30:27 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.85 2006-08-01 09:52:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -299,7 +299,7 @@ typedef struct ZMapFeatureSetStruct_
 
 
 
-
+/* Feature subtypes, homologies and transcripts, the basic feature is just the ZMapFeatureStruct. */
 typedef struct
 {
   ZMapHomolType type ;					    /* as in Blast* */
@@ -347,6 +347,7 @@ typedef struct ZMapFeatureStruct_
   struct
   {
     unsigned int has_score : 1 ;
+    unsigned int has_boundary : 1 ;
   } flags ;
 
   ZMapFeatureType type ;				    /* Basic, transcript, alignment. */
@@ -366,6 +367,8 @@ typedef struct ZMapFeatureStruct_
   Coord x1, x2 ;					    /* start, end of feature in absolute coords. */
 
   ZMapStrand strand ;
+
+  ZMapBoundaryType boundary_type ;			    /* splice, clone end ? */
 
   ZMapPhase phase ;
 
@@ -632,6 +635,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 				    int start, int end,
 				    gboolean has_score, double score,
 				    ZMapStrand strand, ZMapPhase phase) ;
+gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
 gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
 				      gboolean cds, Coord cds_start, Coord cds_end,
 				      gboolean start_not_found, ZMapPhase start_phase,
