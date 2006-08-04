@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 26 10:47 2006 (rds)
+ * Last edited: Aug  1 11:13 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.38 2006-07-26 09:48:32 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.39 2006-08-04 11:49:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -404,7 +404,7 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
  * The items will have a TYPE which anything manipulating the items 
  * will filter on.
  */
-void zmapHackAHighlightColumn(ZMapWindow window, FooCanvasItem *column)
+void zmapHackAHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 {
 
   if (window->focusColumn)
@@ -412,7 +412,7 @@ void zmapHackAHighlightColumn(ZMapWindow window, FooCanvasItem *column)
       ZMapStrand strand ;
       GdkColor *background ;
 
-      strand = zmapWindowContainerGetStrand(FOO_CANVAS_GROUP(column)) ;
+      strand = zmapWindowContainerGetStrand(column) ;
 
       if (strand == ZMAPSTRAND_FORWARD)
 	background = &(window->colour_mforward_col) ;

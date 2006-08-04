@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 26 10:08 2006 (edgrif)
+ * Last edited: Aug  4 12:50 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.143 2006-07-26 09:09:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.144 2006-08-04 11:50:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1130,7 +1130,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	style = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_STYLE) ;
 	zMapAssert(feature_set || style) ;
 
-	zmapHackAHighlightColumn(window, item) ;
+	zmapHackAHighlightColumn(window, FOO_CANVAS_GROUP(item)) ;
         
 	/* Button 1 and 3 are handled, 2 is passed on to a general handler which could be
 	 * the root handler. */

@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 26 10:26 2006 (rds)
+ * Last edited: Aug  1 11:13 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.132 2006-07-26 09:26:27 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.133 2006-08-04 11:50:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -701,7 +701,7 @@ void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowItemFreeFocusItems(ZMapWindow window) ;
 
 
-void zmapHackAHighlightColumn(ZMapWindow window, FooCanvasItem *column) ;
+void zmapHackAHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 
 
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow window, 
