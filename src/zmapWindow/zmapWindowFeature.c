@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 26 10:19 2006 (rds)
+ * Last edited: Aug  4 08:42 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.46 2006-07-26 09:22:19 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.47 2006-08-04 11:53:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -645,16 +645,58 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
   GdkColor *outline, *foreground, *background;
   guint line_width;
 
-  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
-  line_width = window->config.feature_line_width;
-
-  if(featureClipItemToDraw(feature, &y1, &y2))
+  /* don't bother if the item is outside the drawing area. */
+  if (featureClipItemToDraw(feature, &y1, &y2))
     return NULL ;
 
-  zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;
-  feature_item = zMapDrawBox(FOO_CANVAS_ITEM(parent),
-                             x1, y1, x2, y2,
-                             outline, background, 0.0) ;
+
+  line_width = window->config.feature_line_width ;
+
+  zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
+
+
+  if (feature->flags.has_boundary)
+    {
+      static GdkColor splice_outline, splice_background ;
+      double width ;
+      ZMapDrawGlyphType glyph_type ;
+      char *colour ;
+
+      gdk_color_parse("black", &splice_outline) ;
+
+
+      /* colouring is temporary until I get styles fixed up.... */
+      if (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE)
+	{
+	  colour = "blue" ;
+	  glyph_type = ZMAPDRAW_GLYPH_DOWN_BRACKET ;
+	}
+      else
+	{
+	  colour = "red" ;
+	  glyph_type = ZMAPDRAW_GLYPH_UP_BRACKET ;
+	}
+
+      gdk_color_parse(colour, &splice_background) ;
+
+      outline = &splice_outline ;
+      background = &splice_background ;
+
+      width = feature->style->width ;
+
+      feature_item = zMapDrawGlyph(parent, x1, (y2 + y1) * 0.5,
+				   glyph_type,
+				   background, width, 3.0) ;
+
+    }
+  else
+    {
+      zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
+
+      feature_item = zMapDrawBox(FOO_CANVAS_ITEM(parent),
+				 x1, y1, x2, y2,
+				 outline, background, 0.0) ;
+    }
 
   attachDataToItem(feature_item, window, feature, ITEM_FEATURE_SIMPLE, NULL);
 
