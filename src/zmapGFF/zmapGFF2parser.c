@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul 24 18:45 2006 (rds)
+ * Last edited: Aug  4 11:07 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.56 2006-07-24 17:53:47 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.57 2006-08-04 11:48:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,7 +60,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 			       gboolean has_score, double score,
 			       ZMapStrand strand, ZMapPhase phase, char *attributes,
 			       char **err_text) ;
-static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
+static gboolean getFeatureName(char *sequence, char *attributes, char *source, ZMapFeatureType feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
 static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuark *orig_style_out) ;
@@ -932,7 +932,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 
   /* Get the feature name which may not be unique and a feature "id" which _must_
    * be unique. */
-  feature_has_name = getFeatureName(sequence, attributes, feature_type, strand,
+  feature_has_name = getFeatureName(sequence, attributes, source, feature_type, strand,
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
 
@@ -1069,6 +1069,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
 					      query_start, query_end,
 					      gaps) ;
        }
+     else
+       {
+	 if (g_ascii_strcasecmp(ontology, "splice5") == 0)
+	   result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_5_SPLICE) ;
+	 else if (g_ascii_strcasecmp(ontology, "splice3") == 0)
+	   result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_3_SPLICE) ;
+       }
    }
 
 
@@ -1167,6 +1174,12 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
  * 
  *        Target "Classname:objname" query_start query_end
  * 
+ * For genefinder features they all have a source field that starts "GF_" so we use that.
+ * 
+ *        B0250	GF_splice	splice3	106	107	0.233743	+	.
+ *        B0250	GF_ATG	atg	38985	38987	1.8345	-	0
+ *        etc.
+ * 
  * For GFF v2 we must exclude the following types of attributes that are _not_ object names:
  *
  *        Note "Left: B0250"
@@ -1175,7 +1188,8 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
  * and so on....
  * 
  *  */
-static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType feature_type,
+static gboolean getFeatureName(char *sequence, char *attributes,
+			       char *source, ZMapFeatureType feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id)
 {
@@ -1215,6 +1229,18 @@ static gboolean getFeatureName(char *sequence, char *attributes, ZMapFeatureType
 						       start, end, query_start, query_end) ;
 	    }
 	}
+    }
+  else if (feature_type == ZMAPFEATURE_BASIC
+	   && (g_str_has_prefix(source, "GF_")
+	       || (g_ascii_strcasecmp(source, "hexexon") == 0)))
+    {
+      /* Genefinder features, we use the source field as the name.... */
+
+      has_name = FALSE ;				    /* is this correct ??? */
+
+      *feature_name = g_strdup(source) ;
+      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+					       start, end, query_start, query_end) ;
     }
   else /* if (feature_type == ZMAPFEATURE_TRANSCRIPT) */
     {
