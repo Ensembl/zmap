@@ -26,15 +26,30 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: May 27 16:57 2006 (rds)
+ * Last edited: Aug  4 08:38 2006 (edgrif)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.31 2006-05-30 16:42:22 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.32 2006-08-04 11:55:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
 #define ZMAP_DRAW_H
 
 #include <libfoocanvas/libfoocanvas.h>
+
+
+/* Different simple shapes that can be drawn on to the canvas. */
+typedef enum
+  {
+    ZMAPDRAW_GLYPH_INVALID,
+
+    ZMAPDRAW_GLYPH_LINE,				    /* A simple horizontal line. */
+
+    ZMAPDRAW_GLYPH_ARROW,				    /* A crude arrow. */
+
+    ZMAPDRAW_GLYPH_DOWN_BRACKET,			    /* Horizontal "L" shapes pointing up or down. */
+    ZMAPDRAW_GLYPH_UP_BRACKET
+  } ZMapDrawGlyphType ;
+
 
 typedef enum
   {
@@ -156,6 +171,8 @@ typedef struct _ZMapDrawTextIteratorStruct
 } ZMapDrawTextIteratorStruct, *ZMapDrawTextIterator;
 
 
+FooCanvasItem *zMapDrawGlyph(FooCanvasGroup *group, double x, double y, ZMapDrawGlyphType glyph,
+			     GdkColor *colour, double width, guint line_width) ;
 FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 			    GdkColor *colour, guint line_width) ;
 FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,

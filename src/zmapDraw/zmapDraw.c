@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: May 30 11:15 2006 (rds)
+ * Last edited: Aug  4 12:54 2006 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.50 2006-05-30 16:45:56 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.51 2006-08-04 11:55:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,21 @@ static void drawHighlightBackgroundInGroup(FooCanvasGroup *parent,
                                            double offsetX2, double offsetY2,
                                            double minX,     double maxX,
                                            double dlength);
+
+
+
+
+/*! @defgroup zmapdraw   zMapDraw: basic drawing operations: boxes, text etc.
+ * @{
+ * 
+ * \brief  Drawing shapes, lines, text on the foocanvas.
+ * 
+ * zMapDraw routines encapsulate calls to draw items on to the foocanvas.
+ *
+ *  */
+
+
+
 
 
 FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
@@ -96,8 +111,126 @@ FooCanvasItem *zMapDrawBox(FooCanvasItem *group,
   return item;                                                                       
 }
 
-/* **********************************************************************
- * dimension is either a line width when form translates to creating a
+
+
+
+/*!
+ * Draws scaleless glyphs, they show up at any zoom which is what we want.
+ *
+ * @param group        Parent foocanvas group to contain the new item.
+ * @param x            X coordinate of item in group coords.
+ * @param y            Y coordinate of item in group coords.
+ * @param glyph_type   shape to be drawn
+ * @param colour       colour shape is to be drawn in.
+ * @param width        overall width of glyph.
+ * @param width        line width of glyph.
+ *
+ * @return Returns a pointer to the new canvas item representing the glyph.
+ *  */
+FooCanvasItem *zMapDrawGlyph(FooCanvasGroup *group, double x, double y,
+			     ZMapDrawGlyphType glyph_type,
+			     GdkColor *colour, double width, guint line_width)
+{
+  FooCanvasItem *item = NULL ;
+  enum {MAX_POINTS = 20} ;
+  double glyph_points[MAX_POINTS] ;
+  FooCanvasPoints glyph = {NULL} ;
+
+
+  zMapAssert(FOO_IS_CANVAS_GROUP(group)
+	     && glyph_type != ZMAPDRAW_GLYPH_INVALID && colour && width > 0 && line_width >= 0) ;
+
+  switch (glyph_type)
+    {
+    case ZMAPDRAW_GLYPH_LINE:
+      {
+	glyph_points[0] = 0.0 ;
+	glyph_points[1] = 0.0 ;
+	glyph_points[2] = 0.0 + 5.0 ;
+	glyph_points[3] = 0.0 ;
+
+	glyph.num_points = 2 ;
+
+	break ;
+      }
+    case ZMAPDRAW_GLYPH_ARROW:
+      {
+	double arrow_width = width ;
+	double arrow_height = width * 0.25 ;
+
+	glyph_points[0] = 0.0 + arrow_width ;
+	glyph_points[1] = 0.0 ;
+	glyph_points[2] = 0.0 ;
+	glyph_points[3] = 0.0 ;
+	glyph_points[4] = 0.0 + arrow_height ;
+	glyph_points[5] = 0.0 - arrow_height ;
+	glyph_points[6] = 0.0 + arrow_height ;
+	glyph_points[7] = 0.0 + arrow_height ;
+	glyph_points[8] = 0.0 ;
+	glyph_points[9] = 0.0 ;
+
+	glyph.num_points = 5 ;
+
+	break ;
+      }
+
+    case ZMAPDRAW_GLYPH_DOWN_BRACKET:
+    case ZMAPDRAW_GLYPH_UP_BRACKET:
+      {
+	double bracket_height = 10.0 ; ;
+
+	if (glyph_type == ZMAPDRAW_GLYPH_UP_BRACKET)
+	  bracket_height *= -1.0 ;
+
+	line_width = 0 ;				    /* Override line width. */
+
+	glyph_points[0] = 0.0 ;
+	glyph_points[1] = 0.0 ;
+	glyph_points[2] = width ;
+	glyph_points[3] = 0.0 ;
+	glyph_points[4] = width ;
+	glyph_points[5] = bracket_height ;
+
+	glyph.num_points = 3 ;
+
+	break ;
+      }
+
+
+    default:
+      zMapAssertNotReached() ;
+      break ;
+    }
+
+  glyph.coords = glyph_points ;
+  glyph.ref_count = 1 ;					    /* Make sure canvas does not try to free them. */
+
+
+
+  printf("WARNING: glyph display disabled until new build of foocanvas...\n") ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* draw the line */
+  item = foo_canvas_item_new(group,
+			     foo_canvas_line_glyph_get_type(),
+			     "x", x, "y", y,
+			     "points", &glyph,
+			     "fill_color_gdk", colour,
+			     "width_pixels", line_width,
+			     "join_style", GDK_JOIN_BEVEL,
+			     "cap_style", GDK_CAP_BUTT,
+			     NULL);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		    
+  return item ;
+}
+
+
+
+
+
+/* dimension is either a line width when form translates to creating a
  * line.  It can refer to a position though, see utr form.  We might
  * need another one, but if any more are required a rewrite/alternate
  * function might well be better
@@ -898,6 +1031,19 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
 
   return ;
 }
+
+
+/*! @} end of zmapdraw docs. */
+
+
+
+
+/*
+ *  ------------------- Internal functions -------------------
+ */
+
+
+
 
 static void drawHighlightBackgroundInGroup(FooCanvasGroup *parent,
                                            GdkColor *background,
