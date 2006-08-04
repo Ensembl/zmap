@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul  4 09:20 2006 (edgrif)
+ * Last edited: Jul 27 08:30 2006 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.13 2006-07-04 08:23:39 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.14 2006-08-04 11:48:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -72,6 +72,10 @@ typedef struct _AcedbServerStruct
 
 
   ZMapFeatureContext current_context ;
+
+  gboolean fetch_gene_finder_features ;			    /* Need to send additional requests to
+							       server to get these. */
+
 
 } AcedbServerStruct, *AcedbServer ;
 

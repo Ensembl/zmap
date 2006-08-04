@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jul 26 17:33 2006 (edgrif)
+ * Last edited: Aug  4 12:46 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.64 2006-07-26 16:45:40 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.65 2006-08-04 11:48:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,15 @@
 #include <ZMap/zmapGFF.h>
 #include <zmapServerPrototype.h>
 #include <acedbServer_P.h>
+
+
+
+/* To get gene finder features the user must ask for this feature set (= acedb method)
+ * specifically because we need a way to detect that they have been asked for so we can
+ * issue the seqactions call to get the features. */
+#define GENE_FINDER_SET_NAME "GF_"
+
+
 
 typedef struct
 {
@@ -586,6 +595,7 @@ static void addTypeName(gpointer data, gpointer user_data)
 static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
+  char *gene_finder_cmds = "seqactions -gf_features no_draw ;" ;
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
@@ -598,6 +608,12 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
   styles = ((ZMapFeatureContext)(feature_block->parent->parent))->styles ;
 
   methods = getMethodFetchStr(server->current_context->feature_set_names, server->method_2_featureset) ;
+
+
+  /* Check for presence of genefinderfeatures method, if present we need to tell acedb to send
+   * us the gene finder methods... */
+  if ((g_strrstr(methods,  GENE_FINDER_SET_NAME)))
+    server->fetch_gene_finder_features = TRUE ;
 
 
   /* Here we can convert the GFF that comes back, in the end we should be doing a number of
@@ -613,12 +629,15 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
    * code in a way that won't break zmap so we do it here. */
 
   acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s %s ; "
+				   " %s "
 				   "seqfeatures -rawmethods -zmap %s",
 				   g_quark_to_string(feature_block->original_id),
 				   feature_block->block_to_sequence.q1,
 				   feature_block->block_to_sequence.q2,
 				   no_clip ? "-noclip" : "",
 				   methods,
+				   (server->fetch_gene_finder_features ?
+				    gene_finder_cmds : ""),
 				   methods) ;
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
       == ACECONN_OK)
@@ -1393,9 +1412,8 @@ static gboolean parseTypes(AcedbServer server, GList **types_out)
 		      g_hash_table_insert(server->method_2_featureset, 
 					  GINT_TO_POINTER(col_group->feature_set), method_list) ;
 		      
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		      g_list_foreach(method_list, printCB, NULL) ; /* debug */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 		    }
 		}
 	    }
@@ -1407,9 +1425,9 @@ static gboolean parseTypes(AcedbServer server, GList **types_out)
 	      result = TRUE ;
 	      *types_out = types ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
 	      g_list_foreach(types, stylePrintCB, NULL) ; /* debug */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	    }
 
 	  g_free(reply) ;
@@ -1711,9 +1729,9 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
        else if (g_ascii_strcasecmp(tag, "Column_group") == 0)
 	{
 	  /* Format for this tag:   Column_group "eds_column" "wublastx_fly" */
+	  column_group = g_ascii_strdown(strtok_r(NULL, ": \"", &line_pos), -1) ; /* Skip ': "' */
+	  orig_style = g_ascii_strdown(strtok_r(NULL, ": \"", &line_pos), -1) ; /* Skip ': "' */
 
-	  column_group = g_strdup(strtok_r(NULL, ": \"", &line_pos)) ; /* Skip ': "' */
-	  orig_style = g_strdup(strtok_r(NULL, ": \"", &line_pos)) ; /* Skip ': "' */
 	}
 
     }
@@ -2120,9 +2138,9 @@ static void methodFetchCB(gpointer data, gpointer user_data)
       && (method_list = (GList *)g_hash_table_lookup(method_data->method_2_featureset,
 						     GINT_TO_POINTER(feature_set))))
     {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
       g_list_foreach(method_list, printCB, NULL) ;	    /* debug */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       method_data->fetch_methods = g_list_concat(method_data->fetch_methods, method_list) ;
     }
