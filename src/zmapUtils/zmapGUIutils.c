@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: May 11 14:02 2006 (rds)
+ * Last edited: Aug  7 09:03 2006 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.17 2006-05-11 13:08:21 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.18 2006-08-07 08:05:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -493,6 +493,10 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
     }
   else
     {
+      /* code attempts to get font size and then set window size accordingly, it now appears
+       * to get this wrong so I have hacked this for now... */
+
+
       zMapGUIGetFontWidth(font, &width) ;
 
       zMapGUIGetPixelsPerUnit(ZMAPGUI_PIXELS_PER_POINT, dialog, &x, &y) ;
@@ -504,6 +508,10 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
        * size and its not easy to calculate how big to make the window so the text shows....sigh... */
       text_width += TEXT_X_BORDERS ;
       text_height += TEXT_Y_BORDERS ;
+
+      /* Big hack here...see comment above.... */
+      if (text_width < 700)
+	text_width = 700 ;
 
       gtk_widget_modify_font(view, font_desc) ;
 
