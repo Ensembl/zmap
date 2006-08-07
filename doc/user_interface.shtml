@@ -1,0 +1,92 @@
+<!--#set var="banner" value="ZMap User Interface Guide"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<p>ZMap has a fairly complex user interface and this guides describes
+its major aspects.</p>
+
+
+
+
+<h2 id="all_windows">All Windows</h2>
+
+
+<h3>Short Cuts</h3>
+
+<p>The following short cuts can be used on all zmap windows:
+
+<p>
+<table border cellpadding=10>
+  <tr><th>Short Cut</th> <th>Action</th></tr>
+  <tr><td>Cntl-W</td>    <td>Close this window</td></tr>
+  <tr><td>Cntl-Q</td>    <td>Quit ZMap</td></tr>
+</table>
+
+
+
+
+<h2 id="feature_display_window">Feature Display Window</h2>
+
+
+
+
+<h3>Short Cuts</h3>
+
+<p>
+<table border cellpadding=10>
+  <tr><th>Short Cut</th>        <th>Action</th></tr>
+  <tr><td><b>+</b> (or =), <b>-</b></td>         <td>zoom in/out a bit (XXX) </td></tr>
+  <tr><td><b>Cntl +</b> (or =), <b>Cntl -</b></td>    <td>zoom in a lot (XXXX)</td></tr>
+  <tr><td><b>up-arrow</b>, <b>down-arrow</b></td>    <td>scroll up/down a bit</td></tr>
+  <tr><td><b>Cntl up-arrow</b>, <b>Cntl down-arrow</b></td>    <td>scroll up/down a bit</td></tr>
+  <tr><td><b>left-arrow</b>, <b>right-arrow</b></td>    <td>scroll left/right a bit</td></tr>
+  <tr><td><b>page-up</b>, <b>page-down</b></td>    <td>page up/down by XXXX</td></tr>
+  <tr><td><b>Cntl page-up</b>, <b>Cntl page-down</b></td>    <td>page up/down by XXXX</td></tr>
+</table>
+
+
+<h3>Mouse</h3>
+
+<p>
+<table border cellpadding=10>
+  <tr><th>Left</th>        <th>Middle</th>        <th>Right</th></tr>
+  <tr>
+    <th colspan=3>No modifier key</th>
+  </tr>
+  <tr>
+    <td>highlight a feature or column</td>
+    <td>centre on mouse position</td>
+    <td>show context sensitive menu</td>
+  </tr>
+  <tr>
+    <th colspan=3>Shift</th>
+  </tr>
+  <tr>
+    <td>horizontal ruler with sequence position displayed</td>
+    <td><i>as for no modifier</i></td>
+    <td><i>as for no modifier</i></td>
+  </tr>
+
+  <tr>
+    <th colspan=3>Double click</th>
+  </tr>
+  <tr>
+    <td>Display details of selected feature</td>
+    <td><i>as for no modifier</i></td>
+    <td><i>as for no modifier</i></td>
+  </tr>
+
+
+
+
+  
+
+</table>
+
+
+
+
+
+<!--#include virtual="/perl/footer"-->
