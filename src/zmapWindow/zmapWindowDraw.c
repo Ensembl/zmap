@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 28 11:22 2006 (edgrif)
+ * Last edited: Aug  7 09:43 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.26 2006-06-28 10:26:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.27 2006-08-07 08:54:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,7 +65,10 @@ typedef struct
 
 
 
-/* For complex bump.... */
+/* For complex bump users seem to want columns to overlap a bit, if this is set to 1.0 there is
+ * no overlap, if you set it to 0.5 they will overlap by a half and so on. */
+#define COMPLEX_BUMP_COMPRESS 0.5
+
 typedef struct
 {
   ZMapFeatureTypeStyle bumped_style ;
@@ -338,7 +341,8 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	/* Merge the lists into the min. number of non-overlapping lists of features arranged
 	 * by name and to some extent by score. */
 	complex.curr_offset = 0.0 ;
-	complex.incr = style->width + spacing ;
+	complex.incr = (style->width * COMPLEX_BUMP_COMPRESS) + spacing ;
+
 	g_list_foreach(names_list, setOffsetCB, &complex) ;
 
 	/* we reverse the offsets for reverse strand cols so as to mirror the forward strand. */
@@ -1119,7 +1123,7 @@ static void columnZoomChanged(FooCanvasGroup *container, double new_zoom, ZMapWi
  *                       Functions for the complex bump...
  * 
  * If you alter this code you should note the careful use of GList**, list addresses
- * can change to its vital to return the address of the list pointer, not the list
+ * can change so its vital to return the address of the list pointer, not the list
  * pointer itself.
  * 
  */
@@ -1484,7 +1488,8 @@ static void moveItemCB(gpointer data, gpointer user_data)
   /* Some features are drawn with different widths to indicate things like score. In this case
    * their offset needs to be corrected to place them centrally. (We always do this which
    * seems inefficient but its a toss up whether it would be quicker to test (dx == 0). */
-  dx = (feature->style->width - (x2 - x1)) / 2 ;
+  dx = ((feature->style->width * COMPLEX_BUMP_COMPRESS) - (x2 - x1)) / 2 ;
+
   offset = col_data->offset + dx ;
 
   my_foo_canvas_item_goto(item, &offset, NULL) ; 
