@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 24 21:54 2006 (rds)
+ * Last edited: Aug  7 11:10 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.133 2006-07-25 15:24:25 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.134 2006-08-07 10:13:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1453,6 +1453,7 @@ static void scrollWindow(ZMapWindow window, guint state, guint keyval)
   /* Retrieve current scroll position. */
   foo_canvas_get_scroll_offsets(window->canvas, &x_pos, &y_pos) ;
 
+
   switch (keyval)
     {
     case GDK_Page_Up:
@@ -1477,19 +1478,26 @@ static void scrollWindow(ZMapWindow window, guint state, guint keyval)
     case GDK_Up:
     case GDK_Down:
       {
+	double x_world, y_world ;
+	double new_y ;
+
+	/* Retrieve our position in the world from the scroll postion. */
+	foo_canvas_c2w(window->canvas, x_pos, y_pos, &x_world, &y_world) ;
+
+	/* work out where we will be after we've scrolled the right amount. */
 	if (state & GDK_CONTROL_MASK)
-	  foo_canvas_w2c(window->canvas,
-			 0.0, 1000,//(double)window->major_scale_units,
-			 NULL, &incr) ;
+	  new_y = 1000 ;				    /* window->major_scale_units */
 	else
-	  foo_canvas_w2c(window->canvas,
-			 0.0, 100,//(double)window->minor_scale_units,
-			 NULL, &incr) ;
+	  new_y = 100 ;					    /* window->minor_scale_units */
 
 	if (keyval == GDK_Up)
-	  y_pos -= incr ;
-	else
-	  y_pos += incr ;
+	  new_y *= -1 ;
+
+	new_y += y_world ;
+
+	foo_canvas_w2c(window->canvas, 0.0, new_y, NULL, &incr) ;
+
+	y_pos = incr ;
 
 	break ;
       }
