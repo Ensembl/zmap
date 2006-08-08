@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Aug  4 12:46 2006 (edgrif)
+ * Last edited: Aug  8 09:52 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.65 2006-08-04 11:48:01 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.66 2006-08-08 09:06:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1412,8 +1412,10 @@ static gboolean parseTypes(AcedbServer server, GList **types_out)
 		      g_hash_table_insert(server->method_2_featureset, 
 					  GINT_TO_POINTER(col_group->feature_set), method_list) ;
 		      
-		      g_list_foreach(method_list, printCB, NULL) ; /* debug */
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		      g_list_foreach(method_list, printCB, NULL) ; /* debug */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 		    }
 		}
 	    }
@@ -1425,8 +1427,9 @@ static gboolean parseTypes(AcedbServer server, GList **types_out)
 	      result = TRUE ;
 	      *types_out = types ;
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      g_list_foreach(types, stylePrintCB, NULL) ; /* debug */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	    }
 
@@ -2138,9 +2141,9 @@ static void methodFetchCB(gpointer data, gpointer user_data)
       && (method_list = (GList *)g_hash_table_lookup(method_data->method_2_featureset,
 						     GINT_TO_POINTER(feature_set))))
     {
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       g_list_foreach(method_list, printCB, NULL) ;	    /* debug */
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       method_data->fetch_methods = g_list_concat(method_data->fetch_methods, method_list) ;
     }
