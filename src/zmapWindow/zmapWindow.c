@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug  8 09:06 2006 (edgrif)
+ * Last edited: Aug  8 09:30 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.135 2006-08-08 08:08:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.136 2006-08-08 09:06:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1392,8 +1392,9 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows)
       zmapWindowFreeWindowArray(&(window->editor_windows), FALSE) ;
     }
 
+  /* Recreate focus object. */
   zmapWindowItemDestroyFocus(window->focus) ;
-  window->focus = NULL ;
+  window->focus = zmapWindowItemCreateFocus() ;
 
   return ; 
 }
