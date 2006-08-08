@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug  7 11:10 2006 (edgrif)
+ * Last edited: Aug  8 09:06 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.134 2006-08-07 10:13:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.135 2006-08-08 08:08:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1111,6 +1111,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   window->edittable_features = FALSE ;			    /* By default features are not edittable. */
   window->editor_windows = g_ptr_array_new() ;
 
+  /* Init focus item/column stuff. */
+  window->focus = zmapWindowItemCreateFocus() ;
 
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
   window->scrolled_window = gtk_scrolled_window_new(hadjustment, vadjustment) ;
@@ -1390,11 +1392,8 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows)
       zmapWindowFreeWindowArray(&(window->editor_windows), FALSE) ;
     }
 
-
-  g_list_free(window->focusItemSet);  
-  window->focusItemSet = NULL ;
-  window->focusColumn  = NULL ;
-
+  zmapWindowItemDestroyFocus(window->focus) ;
+  window->focus = NULL ;
 
   return ; 
 }
@@ -1456,6 +1455,32 @@ static void scrollWindow(ZMapWindow window, guint state, guint keyval)
 
   switch (keyval)
     {
+    case GDK_Home:
+    case GDK_End:
+      {
+	GtkAdjustment *v_adjust, *h_adjust ;
+
+	v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+	h_adjust = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
+	if (keyval == GDK_Home)
+	  {
+	    if (state & GDK_CONTROL_MASK)
+	      y_pos = v_adjust->lower ;
+	    else
+	      x_pos = h_adjust->lower ;
+	  }
+
+	if (keyval == GDK_End)
+	  {
+	    if (state & GDK_CONTROL_MASK)
+	      y_pos = v_adjust->upper ;
+	    else
+	      x_pos = h_adjust->upper ;
+	  }
+
+	break ;
+      }
     case GDK_Page_Up:
     case GDK_Page_Down:
       {
@@ -1986,34 +2011,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
 	event_handled = keyboardEvent(window, key_event) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	switch (key_event->keyval)
-	  {
-	  case GDK_Page_Up:
-	  case GDK_Page_Down:
-	  case GDK_Up:
-	  case GDK_Down:
-	  case GDK_Left:
-	  case GDK_Right:
-	    {
-	      moveWindow(window, key_event->state, key_event->keyval) ;
-	      event_handled = TRUE ;
-	      break ;
-	    }
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      case GDK_Home:
-		kval = HOME_KEY ; break ;
-	      case GDK_End:
-		kval = END_KEY ; break ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  default:
-	    event_handled = FALSE ;
-	    break ;
-	  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	
 	break ;
       }
     case GDK_MOTION_NOTIFY:
@@ -2440,6 +2437,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_Down:
     case GDK_Left:
     case GDK_Right:
+    case GDK_Home:
+    case GDK_End:
       {
 	moveWindow(window, key_event->state, key_event->keyval) ;
 	event_handled = TRUE ;
@@ -2453,13 +2452,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	event_handled = TRUE ;
 	break ;
       }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    case GDK_Home:
-      kval = HOME_KEY ; break ;
-    case GDK_End:
-      kval = END_KEY ; break ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -2490,6 +2482,30 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	event_handled = TRUE ;
 	break ;
       }
+
+    case GDK_b:
+      {
+	FooCanvasGroup *focus_column ;
+
+	if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+	  {
+	    ZMapFeatureTypeStyle style ;
+	    ZMapStyleOverlapMode overlap_mode ;
+
+	    style = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_STYLE) ;
+	    zMapAssert(style) ;
+
+	    if (zMapStyleGetOverlapMode(style) == ZMAPOVERLAP_COMPLEX)
+	      overlap_mode = ZMAPOVERLAP_COMPLETE ;
+	    else
+	      overlap_mode = ZMAPOVERLAP_COMPLEX ;
+	
+	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), overlap_mode) ;
+	    
+	    zmapWindowNewReposition(window) ;
+	  }
+      }
+
 
     default:
       event_handled = FALSE ;
