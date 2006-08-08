@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Aug  1 11:13 2006 (edgrif)
+ * Last edited: Aug  7 17:06 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.133 2006-08-04 11:50:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.134 2006-08-08 08:12:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -240,6 +240,9 @@ typedef struct _ZMapWindowRulerCanvasStruct *ZMapWindowRulerCanvas;
 
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
+typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
+
+
 
 /* My intention is to gradually put all configuration data (spacing, borders, colours etc)
  * in this struct. */
@@ -376,12 +379,9 @@ typedef struct _ZMapWindowStruct
   double         seq_start ;
   double         seq_end ;
 
-  /* the selected/focused items. Interesting operations on these should be possible... */
-  GList               *focusItemSet; 
 
-  /* I wanted the focusItemSet to hold this, but that involves a lot of code,
-   * which I need to think about */
-  FooCanvasItem       *focusColumn ;
+  /* Holds focus items/column for the zmap. */
+  ZMapWindowFocus focus ;
 
 } ZMapWindowStruct ;
 
@@ -693,15 +693,21 @@ gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
  *| item in the list is the most recent.  I call this the "hot" item, |
  *| like a hot potato.                                                |
  *!-------------------------------------------------------------------!*/
-void zmapWindowItemAddFocusItem(ZMapWindow window, FooCanvasItem *item);
-void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item);
-void zmapWindowItemSetHotFocusItem(ZMapWindow window, FooCanvasItem *item) ;
-FooCanvasItem *zmapWindowItemGetHotFocusItem(ZMapWindow window) ;
-void zmapWindowItemRemoveFocusItem(ZMapWindow window, FooCanvasItem *item) ;
-void zmapWindowItemFreeFocusItems(ZMapWindow window) ;
+ZMapWindowFocus zmapWindowItemCreateFocus(void) ;
+void zmapWindowItemAddFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
+void zmapWindowItemForEachFocusItem(ZMapWindowFocus focus, GFunc callback, gpointer user_data) ;
+void zmapWindowItemResetFocusItem(ZMapWindowFocus focus) ;
+void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
+void zmapWindowItemSetHotFocusItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
+FooCanvasItem *zmapWindowItemGetHotFocusItem(ZMapWindowFocus focus) ;
+FooCanvasGroup *zmapWindowItemGetHotFocusColumn(ZMapWindowFocus focus) ;
+void zmapWindowItemSetHotFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
+void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
+void zmapWindowItemFreeFocusItems(ZMapWindowFocus focus) ;
+void zmapWindowItemDestroyFocus(ZMapWindowFocus focus) ;
 
-
-void zmapHackAHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
+void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
+void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 
 
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow window, 
