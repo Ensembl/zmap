@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug  4 08:42 2006 (edgrif)
+ * Last edited: Aug  7 15:22 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.47 2006-08-04 11:53:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.48 2006-08-08 08:12:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -285,7 +285,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   /* Check to see if there is an entry in long items for this feature.... */
   removeFeatureLongItems(&(zmap_window->long_items), feature_item) ;
 
-  zmapWindowItemRemoveFocusItem(zmap_window, feature_item);
+  zmapWindowItemRemoveFocusItem(zmap_window->focus, feature_item);
 
   feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;

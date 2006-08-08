@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Aug  4 12:50 2006 (edgrif)
+ * Last edited: Aug  7 17:08 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.144 2006-08-04 11:50:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.145 2006-08-08 08:13:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -290,7 +290,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   /* There may be a focus item if this routine is called as a result of splitting a window
    * or adding more features, make sure we scroll to the same point as we were
    * at in the previously. */
-  if ((fresh_focus_item = zmapWindowItemGetHotFocusItem(window)))
+  if ((fresh_focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
     {
       zMapWindowScrollToItem(window, fresh_focus_item) ;
     }
@@ -1123,6 +1123,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	GdkEventButton *but_event = (GdkEventButton *)event ;
 	ZMapFeatureSet feature_set = NULL ;
 	ZMapFeatureTypeStyle style ;
+	FooCanvasGroup *hot_col ;
 
 	/* If a column is empty it will not have a feature set but it will have a style from which we
 	 * can display the column id. */
@@ -1130,7 +1131,13 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	style = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_STYLE) ;
 	zMapAssert(feature_set || style) ;
 
-	zmapHackAHighlightColumn(window, FOO_CANVAS_GROUP(item)) ;
+
+	if ((hot_col = zmapWindowItemGetHotFocusColumn(window->focus)))
+	  zmapUnHighlightColumn(window, hot_col) ;
+
+	zmapWindowItemSetHotFocusColumn(window->focus, FOO_CANVAS_GROUP(item)) ;
+	zmapHighlightColumn(window, FOO_CANVAS_GROUP(item)) ;
+
         
 	/* Button 1 and 3 are handled, 2 is passed on to a general handler which could be
 	 * the root handler. */
