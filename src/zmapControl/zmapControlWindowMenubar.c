@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun 13 10:10 2006 (edgrif)
+ * Last edited: Aug  8 10:10 2006 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.15 2006-06-14 15:00:41 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.16 2006-08-08 09:10:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,10 +78,15 @@ GtkItemFactory *item_factory;
 static GtkItemFactoryEntry menu_items[] = {
  { "/_File",         NULL,         NULL, 0, "<Branch>" },
  { "/File/_New",     "<control>N", newCB, 2, NULL },
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
  { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
  { "/File/_Export",  "<control>E", exportCB, 0, NULL },
- { "/File/_Dump",    "<control>D", dumpCB, 0, NULL },
- { "/File/_Print",   "<control>P", printCB, 0, NULL },
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+ { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
+ { "/File/_Save screen shot",    "<control>D", dumpCB, 0, NULL },
+ { "/File/_Print screen shot",   "<control>P", printCB, 0, NULL },
  { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
  { "/File/Close",    "<control>W", closeCB, 0, NULL },
  { "/File/Quit",     "<control>Q", quitCB, 0, NULL },
