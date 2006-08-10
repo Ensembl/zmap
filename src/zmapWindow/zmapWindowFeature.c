@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug  7 15:22 2006 (edgrif)
+ * Last edited: Aug  9 18:43 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.48 2006-08-08 08:12:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.49 2006-08-10 15:17:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,6 +53,15 @@ typedef struct
 {
   gboolean exists;
 }BlockHasDNAStruct, *BlockHasDNA;
+
+
+typedef struct
+{
+  FooCanvasGroup *new_parent ;
+  double x_origin, y_origin ;
+} ReparentDataStruct, *ReparentData ;
+
+
 
 /* So we can redraw a featureset */
 static void drawEachFeature(GQuark key_id, gpointer data, gpointer user_data);
@@ -154,6 +163,7 @@ static void oneBlockHasDNA(GQuark key,
                            gpointer user_data);
 
 
+static void reparentItemCB(gpointer data, gpointer user_data) ;
 
 
 /* NOTE that we make some assumptions in this code including:
@@ -582,6 +592,45 @@ void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature feature, FooCa
 
   return ;
 }
+
+
+
+FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *feature_items)
+{
+  FooCanvasGroup *new_group = NULL ;
+  ReparentDataStruct reparent_data = {NULL} ;
+  FooCanvasItem *item ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Sort the list of items for position...this looks like a candidate for a general function. */
+  feature_items = zmapWindowItemSortByPostion(feature_items) ;
+
+  /* Now get the position of the top item and use that as the position of the new group. */
+  item = (FooCanvasItem *)(g_list_first(feature_items)->data) ;
+  reparent_data.x_origin = item->x1 ;
+  reparent_data.y_origin = item->x2 ;
+
+  /* Make the new group....remember to add an underlay/background....which is hidden by
+   * default..... */
+  reparent_data.new_parent = new_group = foo_canvas_item_new(FOO_CANVAS_GROUP(item->parent),
+							     foo_canvas_group_get_type(),
+							     "x", reparent_data.x_origin,
+							     "y", reparent_data.y_origin,
+							     NULL) ;
+
+  /* Add all the items to the new group correcting their coords. */
+  g_list_foreach(feature_items, reparentItemCB, &reparent_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  return new_group ;
+}
+
+
+
+
 
 
 
@@ -2346,6 +2395,29 @@ static void oneBlockHasDNA(GQuark key,
       break;
 
     }
+
+  return ;
+}
+
+
+
+
+/* Move a canvas item into a new group, redoing its coords as they must be relative to
+ * the new parent. */
+static void reparentItemCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *feature_item = (FooCanvasItem *)data ;
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  foo_canvas_item_reparent (FooCanvasItem *item, FooCanvasGroup *new_group);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
   return ;
 }
