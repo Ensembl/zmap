@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Aug  1 09:04 2006 (edgrif)
+ * Last edited: Aug  8 10:48 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.85 2006-08-01 09:52:45 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.86 2006-08-10 15:04:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -445,7 +445,11 @@ typedef enum
     ZMAPOVERLAP_NAME,					    /* one column per homol target */
     ZMAPOVERLAP_COMPLEX,				    /* all features with same name in a
 							       single column, several names in one
-							       column but no overlaps. */
+							       column but no 2 features overlap. */
+    ZMAPOVERLAP_NO_INTERLEAVE,				    /* all features with same name in a
+							       single column, several names in one
+							       column but no interleaving of sets
+							       of features. */
     ZMAPOVERLAP_SIMPLE,					    /* one column per feature, for testing... */
     ZMAPOVERLAP_END
   } ZMapStyleOverlapMode ;
