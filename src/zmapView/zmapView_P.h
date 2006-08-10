@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul 14 15:08 2006 (rds)
+ * Last edited: Aug 10 07:34 2006 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.20 2006-07-22 09:40:43 rds Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.21 2006-08-10 15:10:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -104,11 +104,9 @@ typedef struct _ZMapViewStruct
   ZMapViewConnection writeback_server ;			    /* Which connection to send edits to. */
 
 
-  /* I'm trying this here...we need to be able to find out if the user has done a revcomp...
-   * NOTE that the only two sensible values are FORWARD for the initial view and REVERSE
-   * if revcomp'd...this is purely a display record to show if the user did a reverse
-   * complement, it is NOT some overall strand for the feature context.... */
-  ZMapStrand revcomp_strand ;
+  /* We need to know if the user has done a revcomp for a few reasons to do with coord
+   * transforms and the way annotation is done....*/
+  gboolean revcomped_features ;
 
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;

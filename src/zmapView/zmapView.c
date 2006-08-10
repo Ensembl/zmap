@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 24 21:55 2006 (rds)
+ * Last edited: Aug 10 15:33 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.83 2006-07-24 22:01:38 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.84 2006-08-10 15:10:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -539,10 +539,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       zMapFeatureReverseComplement(zmap_view->features) ;
 
       /* Set our record of reverse complementing. */
-      if (zmap_view->revcomp_strand == ZMAPSTRAND_FORWARD)
-	zmap_view->revcomp_strand = ZMAPSTRAND_REVERSE ;
-      else
-	zmap_view->revcomp_strand = ZMAPSTRAND_FORWARD ;
+      zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
 
       list_item = g_list_first(zmap_view->window_list) ;
       do
@@ -551,7 +548,8 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
 	  view_window = list_item->data ;
 
-	  zMapWindowFeatureRedraw(view_window->window, zmap_view->features, TRUE) ;
+	  zMapWindowFeatureRedraw(view_window->window,
+				  zmap_view->features, TRUE) ;
 	}
       while ((list_item = g_list_next(list_item))) ;
 
@@ -564,10 +562,10 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 }
 
 /* Return which strand we are showing viz-a-viz reverse complementing. */
-ZMapStrand zMapViewGetRevCompStatus(ZMapView zmap_view)
+gboolean zMapViewGetRevCompStatus(ZMapView zmap_view)
 {
 
-  return zmap_view->revcomp_strand ;
+  return zmap_view->revcomped_features ;
 
 }
 
@@ -943,34 +941,40 @@ static void selectCB(ZMapWindow window, void *caller_data, void *window_data)
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
   ZMapWindowSelect select_item = (ZMapWindowSelect)window_data ;
   ZMapViewSelectStruct vselect = {{0}} ;
+  void *vselect_ptr = NULL ;
 
-  if (select_item->item)
+  if (select_item)
     {
-      GList* list_item ;
-
-      /* Highlight the feature in all windows, BUT note that we may not find it in some
-       * windows, e.g. if a window has been reverse complemented the item may be hidden. */
-      list_item = g_list_first(view_window->parent_view->window_list) ;
-
-      do
+      if (select_item->item)
 	{
-	  ZMapViewWindow view_window ;
-	  FooCanvasItem *item ;
+	  GList* list_item ;
 
-	  view_window = list_item->data ;
+	  /* Highlight the feature in all windows, BUT note that we may not find it in some
+	   * windows, e.g. if a window has been reverse complemented the item may be hidden. */
+	  list_item = g_list_first(view_window->parent_view->window_list) ;
 
-	  if ((item = zMapWindowFindFeatureItemByItem(view_window->window, select_item->item)))
-	    zMapWindowHighlightObject(view_window->window, item) ;
+	  do
+	    {
+	      ZMapViewWindow view_window ;
+	      FooCanvasItem *item ;
+
+	      view_window = list_item->data ;
+
+	      if ((item = zMapWindowFindFeatureItemByItem(view_window->window, select_item->item)))
+		zMapWindowHighlightObject(view_window->window, item) ;
+	    }
+	  while ((list_item = g_list_next(list_item))) ;
 	}
-      while ((list_item = g_list_next(list_item))) ;
+
+
+      vselect.feature_desc = select_item->feature_desc ;
+      vselect.secondary_text = select_item->secondary_text ;
+
+      vselect_ptr = (void *)&vselect ;
     }
 
-
-  vselect.feature_desc = select_item->feature_desc ;
-  vselect.secondary_text = select_item->secondary_text ;
-
   /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
-  (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, (void *)&vselect) ;
+  (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, vselect_ptr) ;
 
   return ;
 }
@@ -1070,7 +1074,7 @@ static ZMapView createZMapView(char *sequence, int start, int end, void *app_dat
 
   zmap_view->app_data = app_data ;
 
-  zmap_view->revcomp_strand = ZMAPSTRAND_FORWARD ;
+  zmap_view->revcomped_features = FALSE ;
 
   return zmap_view ;
 }
