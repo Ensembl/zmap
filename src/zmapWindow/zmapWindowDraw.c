@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug  7 09:43 2006 (edgrif)
+ * Last edited: Aug 10 16:21 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.27 2006-08-07 08:54:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.28 2006-08-10 15:22:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,6 +69,9 @@ typedef struct
  * no overlap, if you set it to 0.5 they will overlap by a half and so on. */
 #define COMPLEX_BUMP_COMPRESS 0.5
 
+
+typedef gboolean (*OverLapListFunc)(GList *curr_features, GList *new_features) ;
+
 typedef struct
 {
   ZMapFeatureTypeStyle bumped_style ;
@@ -77,6 +80,7 @@ typedef struct
   GList *bumpcol_list ;
   double curr_offset ;
   double incr ;
+  OverLapListFunc overlap_func ;
 } ComplexBumpStruct, *ComplexBump ;
 
 
@@ -88,7 +92,11 @@ typedef struct
 } ComplexColStruct, *ComplexCol ;
 
 
-
+typedef struct
+{
+  GList **name_list ;
+  OverLapListFunc overlap_func ;
+} FeatureDataStruct, *FeatureData ;
 
 
 
@@ -133,7 +141,7 @@ static void makeNameListCB(gpointer data, gpointer user_data) ;
 static void setOffsetCB(gpointer data, gpointer user_data) ;
 static void sortListPosition(gpointer data, gpointer user_data) ;
 static gboolean listsOverlap(GList *curr_features, GList *new_features) ;
-static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
+static gboolean listsOverlapNoInterleave(GList *curr_features, GList *new_features) ;
 static void reverseOffsets(GList *bumpcol_list) ;
 static void moveItemsCB(gpointer data, gpointer user_data) ;
 static void moveItemCB(gpointer data, gpointer user_data) ;
@@ -313,6 +321,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 						 NULL, hashDataDestroyCB) ;
       break ;
     case ZMAPOVERLAP_COMPLEX:
+    case ZMAPOVERLAP_NO_INTERLEAVE:
       {
 	ComplexBumpStruct complex = {NULL} ;
 	GList *names_list = NULL ;
@@ -342,6 +351,10 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	 * by name and to some extent by score. */
 	complex.curr_offset = 0.0 ;
 	complex.incr = (style->width * COMPLEX_BUMP_COMPRESS) + spacing ;
+	if (bump_mode == ZMAPOVERLAP_COMPLEX)
+	  complex.overlap_func = listsOverlap ;
+	else
+	  complex.overlap_func = listsOverlapNoInterleave ;
 
 	g_list_foreach(names_list, setOffsetCB, &complex) ;
 
@@ -367,7 +380,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
 
   /* bump all the features for all modes except complex and then clear up. */
-  if (bump_mode != ZMAPOVERLAP_COMPLEX)
+  if (bump_mode != ZMAPOVERLAP_COMPLEX && bump_mode != ZMAPOVERLAP_NO_INTERLEAVE)
     {
 
       /* Need to add data to test for correct feature here.... */
@@ -1212,38 +1225,13 @@ static void sortListPosition(gpointer data, gpointer user_data)
   GList *name_list = *name_list_ptr ;			    /* Single list of named features. */
 
   /* sort the sublist of features. */
-  name_list = g_list_sort(name_list, sortByPositionCB) ;
+  name_list = zmapWindowItemSortByPostion(name_list) ;
 
   *name_list_ptr = name_list ;
 
   return ;
 }
 
-
-/* GCompareFunc() to compare two features by their coords so they are sorted into ascending order. */
-static gint sortByPositionCB(gconstpointer a, gconstpointer b)
-{
-  gint result ;
-  FooCanvasItem *item_a = (FooCanvasItem *)a ;
-  FooCanvasItem *item_b = (FooCanvasItem *)b ;
-  ZMapFeature feat_a ;
-  ZMapFeature feat_b ;
-      
-  feat_a = g_object_get_data(G_OBJECT(item_a), ITEM_FEATURE_DATA) ;
-  zMapAssert(feat_a) ;
-  
-  feat_b = g_object_get_data(G_OBJECT(item_b), ITEM_FEATURE_DATA) ;
-  zMapAssert(feat_b) ;
-
-  if (feat_a->x1 < feat_b->x1)
-    result = -1 ;
-  else if (feat_a->x1 > feat_b->x1)
-    result = 1 ;
-  else
-    result = 0 ;
-
-  return result ;
-}
 
 
 /* GCompareFunc() to sort two lists of features by the average score of all their features. */
@@ -1272,6 +1260,9 @@ static gint sortByScoreCB(gconstpointer a, gconstpointer b)
 
   return result ;
 }
+
+
+
 
 /* GFunc() to return a features score. */
 static void listScoreCB(gpointer data, gpointer user_data)
@@ -1313,11 +1304,15 @@ static void setOffsetCB(gpointer data, gpointer user_data)
   GList **name_list_ptr = (GList **)data ;
   GList *name_list = *name_list_ptr ;			    /* Single list of named features. */
   ComplexBump complex = (ComplexBump)user_data ;
+  FeatureDataStruct feature_data ;
+
+  feature_data.name_list = &name_list ;
+  feature_data.overlap_func = complex->overlap_func ;
 
   /* If theres already a list of columns then try to add this set of name features to one of them
    * otherwise create a new column. */
   if (!complex->bumpcol_list
-      || zMap_g_list_cond_foreach(complex->bumpcol_list, featureListCB, &name_list))
+      || zMap_g_list_cond_foreach(complex->bumpcol_list, featureListCB, &feature_data))
     {
       ComplexCol col ;
 
@@ -1341,16 +1336,17 @@ static gboolean featureListCB(gpointer data, gpointer user_data)
 {
   gboolean call_again = TRUE ;
   ComplexCol col = (ComplexCol)data ;
-  GList **name_list_ptr = (GList **)user_data ;
-  GList *name_list = *name_list_ptr ;
+  FeatureData feature_data = (FeatureData)user_data ;
+  GList *name_list = *(feature_data->name_list) ;
 
-  if (!listsOverlap(col->feature_list, name_list))
+
+  if (!(feature_data->overlap_func)(col->feature_list, name_list))
     {
       col->feature_list = g_list_concat(col->feature_list, name_list) ;
 
       /* Having done the merge we _must_ resort the list by position otherwise subsequent
        * overlap tests will fail. */
-      col->feature_list = g_list_sort(col->feature_list, sortByPositionCB) ;
+      col->feature_list = zmapWindowItemSortByPostion(col->feature_list) ;
 
       call_again = FALSE ;
     }
@@ -1359,8 +1355,8 @@ static gboolean featureListCB(gpointer data, gpointer user_data)
 }
 
 
-/* Compare two lists of features, return FALSE if any features in the two lists overlap,
- * return TRUE otherwise.
+/* Compare two lists of features, return TRUE if any two features in the two lists overlap,
+ * return FALSE otherwise.
  * 
  * NOTE that this function _completely_ relies on the two feature lists having been sorted
  * into ascending order on their coord positions, it will fail dismally if this is not true.
@@ -1426,6 +1422,58 @@ static gboolean listsOverlap(GList *curr_features, GList *new_features)
 
   return overlap ;
 }
+
+
+
+/* Compare two lists of features, return TRUE if the two lists of features are interleaved
+ * in position, return FALSE otherwise.
+ * 
+ * NOTE that this function _completely_ relies on the two feature lists having been sorted
+ * into ascending order on their coord positions, it will fail dismally if this is not true.
+ *  */
+static gboolean listsOverlapNoInterleave(GList *curr_features, GList *new_features)
+{
+  gboolean overlap = TRUE ;
+  GList *curr_ptr, *new_ptr ;
+  FooCanvasItem *curr_item ;
+  FooCanvasItem *new_item ;
+  ZMapFeature curr_first, curr_last ;
+  ZMapFeature new_first, new_last ;
+
+
+
+  curr_ptr = g_list_first(curr_features) ;
+  curr_item = (FooCanvasItem *)(curr_ptr->data) ;
+  curr_first = g_object_get_data(G_OBJECT(curr_item), ITEM_FEATURE_DATA) ;
+  zMapAssert(curr_first) ;
+
+  curr_ptr = g_list_last(curr_features) ;
+  curr_item = (FooCanvasItem *)(curr_ptr->data) ;
+  curr_last = g_object_get_data(G_OBJECT(curr_item), ITEM_FEATURE_DATA) ;
+  zMapAssert(curr_last) ;
+
+  new_ptr = g_list_first(new_features) ;
+  new_item = (FooCanvasItem *)(new_ptr->data) ;
+  new_first = g_object_get_data(G_OBJECT(new_item), ITEM_FEATURE_DATA) ;
+  zMapAssert(new_first) ;
+
+  new_ptr = g_list_last(new_features) ;
+  new_item = (FooCanvasItem *)(new_ptr->data) ;
+  new_last = g_object_get_data(G_OBJECT(new_item), ITEM_FEATURE_DATA) ;
+  zMapAssert(new_last) ;
+
+  /* We just want to make sure the two lists do not overlap in any of their positions. */
+  if (new_first->x1 > curr_last->x2
+      || new_last->x2 < curr_first->x1)
+    overlap = FALSE ;
+
+  return overlap ;
+}
+
+
+
+
+
 
 
 /* Reverses the offsets for the supplied list...for displaying on the reverse strand. */
