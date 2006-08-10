@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Aug  7 17:08 2006 (edgrif)
+ * Last edited: Aug 10 16:25 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.145 2006-08-08 08:13:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.146 2006-08-10 15:28:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,6 +84,9 @@ typedef struct _ZMapCanvasDataStruct
   FooCanvasGroup *curr_forward_col ;
   FooCanvasGroup *curr_reverse_col ;
 
+
+  GHashTable *feature_hash ;
+
 } ZMapCanvasDataStruct, *ZMapCanvasData ;
 
 
@@ -134,10 +137,8 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void setColours(ZMapWindow window) ;
 
-
-
-
-
+static void makeFeaturesGroupCB(gpointer key, gpointer value, gpointer user_data) ;
+static void destroyFeaturesList(gpointer data) ;
 
 
 /* Drawing coordinates: PLEASE READ THIS BEFORE YOU START MESSING ABOUT WITH ANYTHING...
@@ -216,6 +217,20 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   window->seq_start = full_context->sequence_to_parent.c1 ;
   window->seq_end   = full_context->sequence_to_parent.c2 ;
   window->seqLength = zmapWindowExt(window->seq_start, window->seq_end) ;
+
+
+  /* Set the origin used for displaying coords....
+   * The "+ 2" is because we have to go from sequence_start == 1 to sequence_start == -1
+   * which is a shift of 2. */
+  if (window->display_forward_coords)
+    {
+      if (window->revcomped_features)
+	window->origin = window->seq_end + 2 ;
+      else
+	window->origin = 1 ;
+
+      zmapWindowRulerCanvasSetOrigin(window->ruler, window->origin) ;
+    }
 
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
 
@@ -927,8 +942,23 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
     }
 
 
+
+  /* Set up a list of lists of features within a column.... */
+  canvas_data->feature_hash = g_hash_table_new_full(NULL, NULL, NULL, destroyFeaturesList) ;
+
+
   /* Now draw all the features in the column. */
   g_datalist_foreach(&(feature_set->features), ProcessFeature, canvas_data) ;
+
+
+  if ((g_hash_table_size(canvas_data->feature_hash)))
+    {
+      g_hash_table_foreach(canvas_data->feature_hash, makeFeaturesGroupCB, canvas_data) ;
+    }
+
+  /* Clean up. */
+  g_hash_table_destroy(canvas_data->feature_hash) ;
+  canvas_data->feature_hash = NULL ;
 
 
   /* TRY RESIZING BACKGROUND NOW.....get rid of debug info.... */
@@ -966,6 +996,7 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
   ZMapWindow window = canvas_data->window ;
   FooCanvasGroup *column_group ;
   ZMapStrand strand ;
+  FooCanvasItem *feature_item ;
 
   if ((strand = zmapWindowFeatureStrand(feature)) == ZMAPSTRAND_FORWARD)
     {
@@ -976,7 +1007,35 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
       column_group = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(canvas_data->curr_reverse_col)) ;
     }
 
-  zmapWindowFeatureDraw(window, column_group, feature) ;
+
+  feature_item = zmapWindowFeatureDraw(window, column_group, feature) ;
+
+
+  if (feature->type == ZMAPFEATURE_ALIGNMENT)
+    {
+      GList *feature_list ;
+
+      /* Try and find this feature in the hash of features for this column, if we find it
+       * we need to remove it from the hash table and then re-add it. */
+      if ((feature_list = g_hash_table_lookup(canvas_data->feature_hash,
+					      GINT_TO_POINTER(feature->original_id))))
+	{
+	  if (!g_hash_table_steal(canvas_data->feature_hash,
+				  GINT_TO_POINTER(feature->original_id)))
+	    zMapCrash("Logic error in hash table handling for constructing lists of alignments"
+		      "with same parent (\"%s\")" , g_quark_to_string(feature->original_id)) ;
+	}
+
+      /* Add this feature item into the list. */
+      feature_list = g_list_append(feature_list, feature_item) ;
+
+      /* Insert (or reinsert) the new list into the hash. */
+      g_hash_table_insert(canvas_data->feature_hash, 
+			  GINT_TO_POINTER(feature->original_id), feature_list) ;
+    }
+
+
+
 
   return ;
 }
@@ -1123,7 +1182,6 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	GdkEventButton *but_event = (GdkEventButton *)event ;
 	ZMapFeatureSet feature_set = NULL ;
 	ZMapFeatureTypeStyle style ;
-	FooCanvasGroup *hot_col ;
 
 	/* If a column is empty it will not have a feature set but it will have a style from which we
 	 * can display the column id. */
@@ -1132,8 +1190,9 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	zMapAssert(feature_set || style) ;
 
 
-	if ((hot_col = zmapWindowItemGetHotFocusColumn(window->focus)))
-	  zmapUnHighlightColumn(window, hot_col) ;
+	/* If any other feature(s) is currently in focus, revert it to its std colours */
+	zMapWindowUnHighlightFocusItems(window) ;
+
 
 	zmapWindowItemSetHotFocusColumn(window->focus, FOO_CANVAS_GROUP(item)) ;
 	zmapHighlightColumn(window, FOO_CANVAS_GROUP(item)) ;
@@ -1434,6 +1493,41 @@ static void columnGroupDestroyCB(GtkObject *object, gpointer user_data)
 }
 
 
+
+static void makeFeaturesGroupCB(gpointer key, gpointer value, gpointer user_data)
+{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  GQuark feature_id = GPOINTER_TO_INT(key) ;		    /* unused currently... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  GList *feature_item_list = (GList *)value ;
+  ZMapCanvasData canvas_data  = (ZMapCanvasData)user_data ;
+  guint list_length ;
+  FooCanvasGroup *new_group ;
+
+
+  list_length = g_list_length(feature_item_list) ;
+  zMapAssert(list_length) ;				    /* Should only get called if there is
+							       a list. */
+
+  if (list_length > 1)
+    {
+      new_group = zmapWindowFeatureItemsMakeGroup(canvas_data->window, feature_item_list) ;
+    }
+
+  return ;
+}
+
+
+static void destroyFeaturesList(gpointer data)
+{
+  GList *feature_list = (GList *)data ;
+
+  g_list_free(feature_list) ;
+
+  return ;
+}
 
 
 /****************** end of file ************************************/
