@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 24 21:56 2006 (rds)
+ * Last edited: Aug 10 15:37 2006 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.67 2006-07-24 21:59:32 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.68 2006-08-10 15:08:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -628,10 +628,13 @@ static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data
   GtkClipboard* clip = NULL;
 
   /* Display the feature details in the info. panel. */
-  zmapControlInfoPanelSetText(zmap, &(vselect->feature_desc)) ;
+  if (vselect)
+    zmapControlInfoPanelSetText(zmap, &(vselect->feature_desc)) ;
+  else
+    zmapControlInfoPanelSetText(zmap, NULL) ;
 
   /* We also set this to the primary X selection to the secondary_text, confused? */
-  if(vselect->secondary_text)
+  if(vselect && vselect->secondary_text)
     {
       if((clip = gtk_widget_get_clipboard(GTK_WIDGET(zmap->toplevel), 
                                           GDK_SELECTION_PRIMARY)) != NULL)

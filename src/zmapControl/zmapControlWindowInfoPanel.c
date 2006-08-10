@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 27 10:39 2006 (rds)
+ * Last edited: Aug 10 15:54 2006 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.4 2006-07-27 10:08:30 rds Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.5 2006-08-10 15:08:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,7 +85,8 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap)
 }
 
 
-/* Add text/tooltips to info panel labels.
+/* Add text/tooltips to info panel labels. If feature_desc == NULL then info panel
+ * is reset.
  * 
  * Current panel is:
  * 
@@ -109,58 +110,73 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
   label[6] = zmap->feature_set ;
   label[7] = zmap->feature_style ;
 
-  text[0] = feature_desc->feature_name ;
-  text[1] = feature_desc->feature_strand ;
-  if (feature_desc->feature_start)
-    text[2] = g_strdup_printf("%s -> %s", feature_desc->feature_start, feature_desc->feature_end) ;
-  if (feature_desc->sub_feature_start)
-    text[3] = g_strdup_printf("%s -> %s",
-			      feature_desc->sub_feature_start, feature_desc->sub_feature_end) ;
-  text[4] = feature_desc->feature_score ;
-  text[5] = feature_desc->feature_type ;
-  text[6] = feature_desc->feature_set ;
-  text[7] = feature_desc->feature_style ;
 
-  if (feature_desc->feature_description || feature_desc->feature_locus)
+  /* If no feature description then blank the info panel. */
+  if (!feature_desc)
     {
-      desc_str = g_string_new("") ;
-
-      g_string_append_printf(desc_str, "Feature Name  -  \"%s\"",
-			     feature_desc->feature_name) ;      
-
-      if (feature_desc->feature_description)
+      for (i = 0 ; i < TOTAL_LABELS ; i++)
 	{
-	  g_string_append(desc_str, "\n\n") ;
-
-	  g_string_append_printf(desc_str, "Description  -  \"%s\"",
-				 feature_desc->feature_description) ;
+	  if (i == 0)
+	    text[i] = "" ;				    /* placeholder stops panel disappearing. */
+	  else
+	    text[i] = tooltip[i] = NULL ;
 	}
-
-      if (feature_desc->feature_locus)
-	{
-	  g_string_append(desc_str, "\n\n") ;
-
-	  g_string_append_printf(desc_str, "Locus  -  \"%s\"",
-				 feature_desc->feature_locus) ;
-	}
-
-      tooltip[0] = g_string_free(desc_str, FALSE) ;
     }
+  else
+    {
+      text[0] = feature_desc->feature_name ;
+      text[1] = feature_desc->feature_strand ;
+      if (feature_desc->feature_start)
+	text[2] = g_strdup_printf("%s -> %s", feature_desc->feature_start, feature_desc->feature_end) ;
+      if (feature_desc->sub_feature_start)
+	text[3] = g_strdup_printf("%s -> %s",
+				  feature_desc->sub_feature_start, feature_desc->sub_feature_end) ;
+      text[4] = feature_desc->feature_score ;
+      text[5] = feature_desc->feature_type ;
+      text[6] = feature_desc->feature_set ;
+      text[7] = feature_desc->feature_style ;
 
-  tooltip[1] = "Feature strand relative to sequence strand" ;
-  tooltip[2] = "Feature start/end coords" ;
+      if (feature_desc->feature_description || feature_desc->feature_locus)
+	{
+	  desc_str = g_string_new("") ;
 
-  if (feature_desc->type == ZMAPFEATURE_TRANSCRIPT || feature_desc->type == ZMAPFEATURE_ALIGNMENT)
-    tooltip[3] = g_strdup_printf("%s start/end coords",
-				 (feature_desc->type == ZMAPFEATURE_TRANSCRIPT
-				  ? (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_INTRON
-				     ? "Intron" : "Exon")
-				  : (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_GAP
-				     ? "Gap" : "Match"))) ;
-  tooltip[4] = "Score" ;
-  tooltip[5] = "Feature Type" ;
-  tooltip[6] = "Column/Feature Set" ;
-  tooltip[7] = "Feature Style" ;
+	  g_string_append_printf(desc_str, "Feature Name  -  \"%s\"",
+				 feature_desc->feature_name) ;      
+
+	  if (feature_desc->feature_description)
+	    {
+	      g_string_append(desc_str, "\n\n") ;
+
+	      g_string_append_printf(desc_str, "Description  -  \"%s\"",
+				     feature_desc->feature_description) ;
+	    }
+
+	  if (feature_desc->feature_locus)
+	    {
+	      g_string_append(desc_str, "\n\n") ;
+
+	      g_string_append_printf(desc_str, "Locus  -  \"%s\"",
+				     feature_desc->feature_locus) ;
+	    }
+
+	  tooltip[0] = g_string_free(desc_str, FALSE) ;
+	}
+
+      tooltip[1] = "Feature strand relative to sequence strand" ;
+      tooltip[2] = "Feature start/end coords" ;
+
+      if (feature_desc->type == ZMAPFEATURE_TRANSCRIPT || feature_desc->type == ZMAPFEATURE_ALIGNMENT)
+	tooltip[3] = g_strdup_printf("%s start/end coords",
+				     (feature_desc->type == ZMAPFEATURE_TRANSCRIPT
+				      ? (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_INTRON
+					 ? "Intron" : "Exon")
+				      : (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_GAP
+					 ? "Gap" : "Match"))) ;
+      tooltip[4] = "Score" ;
+      tooltip[5] = "Feature Type" ;
+      tooltip[6] = "Column/Feature Set" ;
+      tooltip[7] = "Feature Style" ;
+    }
 
 
   for (i = 0 ; i < TOTAL_LABELS ; i++)
@@ -188,7 +204,10 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
 
 
   /* I don't know if we need to do this each time....or if it does any harm.... */
-  gtk_tooltips_enable(zmap->feature_tooltips) ;
+  if (feature_desc)
+    gtk_tooltips_enable(zmap->feature_tooltips) ;
+  else
+    gtk_tooltips_disable(zmap->feature_tooltips) ;
 
   return ;
 }
