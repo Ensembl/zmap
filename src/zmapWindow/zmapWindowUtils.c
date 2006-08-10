@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 28 10:25 2006 (edgrif)
+ * Last edited: Aug 10 11:33 2006 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.31 2006-06-28 09:26:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.32 2006-08-10 15:12:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,6 +66,31 @@ static void styleTableHashCB(gpointer key, gpointer value, gpointer user_data) ;
 
 /* A couple of simple coord calculation routines, if these prove too expensive they
  * can be replaced with macros. */
+
+
+/* Users sometimes want to see coords from a different origin e.g. perhaps as though for the
+ * forward strand even though they have revcomped the sequence. */
+int zmapWindowCoordFromOrigin(ZMapWindow window, int start)
+{
+  int new_start ;
+
+  new_start = start - window->origin + 1 ;
+
+  return new_start ;
+}
+
+/* Use if you have no window.... */
+int zmapWindowCoordFromOriginRaw(int origin, int start)
+{
+  int new_start ;
+
+  new_start = start - origin + 1 ;
+
+  return new_start ;
+}
+
+
+
 
 /* This is the basic length calculation, obvious, but the "+ 1" is constantly overlooked. */
 double zmapWindowExt(double start, double end)
