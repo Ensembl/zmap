@@ -26,13 +26,13 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Aug  7 17:06 2006 (edgrif)
+ * Last edited: Aug 10 11:33 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.134 2006-08-08 08:12:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.135 2006-08-10 15:15:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
-#define ZMAP_WINDOW_P_H "zmapWindow_P."
+#define ZMAP_WINDOW_P_H
 
 #include <gtk/gtk.h>
 #include <ZMap/zmapUtilsGUI.h>
@@ -42,13 +42,13 @@
 
 
 /* Names for keys in G_OBJECTS */
-#define ITEM_FEATURE_DATA    ZMAP_WINDOW_P_H "item_feature_data"
-#define ITEM_FEATURE_TYPE    ZMAP_WINDOW_P_H "item_feature_type"
-#define ITEM_FEATURE_STYLE   ZMAP_WINDOW_P_H "item_feature_style"
+#define ITEM_FEATURE_DATA         ZMAP_WINDOW_P_H "item_feature_data"
+#define ITEM_FEATURE_TYPE         ZMAP_WINDOW_P_H "item_feature_type"
+#define ITEM_FEATURE_STYLE        ZMAP_WINDOW_P_H "item_feature_style"
 #define ITEM_FEATURE_STYLETABLE   ZMAP_WINDOW_P_H "item_feature_styletable"
-#define ITEM_FEATURE_STRAND  ZMAP_WINDOW_P_H "item_feature_strand"
-#define ITEM_SUBFEATURE_DATA ZMAP_WINDOW_P_H "item_subfeature_data"
-#define ZMAP_WINDOW_POINTER  ZMAP_WINDOW_P_H "canvas_to_window"
+#define ITEM_FEATURE_STRAND       ZMAP_WINDOW_P_H "item_feature_strand"
+#define ITEM_SUBFEATURE_DATA      ZMAP_WINDOW_P_H "item_subfeature_data"
+#define ZMAP_WINDOW_POINTER       ZMAP_WINDOW_P_H "canvas_to_window"
 
 #define ITEM_HIGHLIGHT_DATA  ZMAP_WINDOW_P_H "item_highlight_data"
 
@@ -59,7 +59,15 @@
 typedef enum
   {
     ITEM_FEATURE_INVALID,
-    ITEM_FEATURE_SIMPLE,				    /* Item is the whole feature. */
+
+    /* Item is a group of features. */
+    ITEM_FEATURE_GROUP,					    /* Parent group for features. */
+    ITEM_FEATURE_GROUP_BACKGROUND,			    /* background for group. */
+
+    /* Item is the whole feature. */
+    ITEM_FEATURE_SIMPLE,
+
+    /* Item is a compound feature composed of subparts, e.g. exons, introns etc. */
     ITEM_FEATURE_PARENT,				    /* Item is parent group of compound feature. */
     ITEM_FEATURE_CHILD,					    /* Item is child/subpart of feature. */
     ITEM_FEATURE_BOUNDING_BOX				    /* Item is invisible bounding box of
@@ -320,6 +328,7 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowZoomControl zoom;
 
+
   /* Max canvas window size can either be set in pixels or in DNA bases, the latter overrides the
    * former. In either case the window cannot be more than 30,000 pixels (32k is the actual 
    * X windows limit. */
@@ -373,15 +382,23 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowRulerCanvas ruler ;
 
+  /* Holds focus items/column for the zmap. */
+  ZMapWindowFocus focus ;
+
   /* The length, start and end of the segment of sequence to be shown, there will be _no_
    * features outside of the start/end. */
   double         seqLength;
   double         seq_start ;
   double         seq_end ;
 
+  /* We need to be able to find out if the user has done a revcomp for coordinate display
+   * and other reasons, the coord transform flag controls whether coords are displayed
+   * always for the original forward strand or for the reverse strand. */
+  gboolean revcomped_features ;
+  gboolean display_forward_coords ;
 
-  /* Holds focus items/column for the zmap. */
-  ZMapWindowFocus focus ;
+  /* Used to transform coords for revcomp if display_forward_coords == TRUE */
+  int origin ;
 
 } ZMapWindowStruct ;
 
@@ -471,7 +488,8 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
 
-
+int zmapWindowCoordFromOrigin(ZMapWindow window, int start) ;
+int zmapWindowCoordFromOriginRaw(int origin, int start) ;
 double zmapWindowExt(double start, double end) ;
 void zmapWindowSeq2CanExt(double *start_inout, double *end_inout) ;
 void zmapWindowExt2Zero(double *start_inout, double *end_inout) ;
@@ -525,6 +543,8 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
 void zmapWindowRaiseItem(FooCanvasItem *item) ;
 GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
+GList *zmapWindowItemSortByPostion(GList *feature_item_list) ;
+FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *feature_items) ;
 
 void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 void my_foo_canvas_item_w2i(FooCanvasItem *item, double *x, double *y) ;
@@ -751,6 +771,7 @@ void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
                                GtkAdjustment *vadjustment);
 void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double y2);
 void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas obj);
+void zmapWindowRulerCanvasSetOrigin(ZMapWindowRulerCanvas obj, int origin) ;
 void zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double x, double y, gboolean force);
 void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
