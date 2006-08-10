@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Jul 19 10:07 2006 (edgrif)
+ * Last edited: Aug 10 10:47 2006 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.25 2006-07-19 09:09:12 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.26 2006-08-10 15:08:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -149,7 +149,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
       {
 	ZMapView view ;
 	ZMapViewState view_state ;
-	ZMapStrand revcomp_strand ;
+	gboolean revcomped ;
 	char *strand_txt ;
 	int start = 0, end = 0 ;
 	char *coord_txt = "" ;
@@ -158,11 +158,11 @@ void zmapControlWindowSetStatus(ZMap zmap)
 
 	view = zMapViewGetView(zmap->focus_viewwindow) ;
 
-	revcomp_strand = zMapViewGetRevCompStatus(view) ;
-	if (revcomp_strand == ZMAPSTRAND_FORWARD)
-	  strand_txt = " + " ;
-	else
+	revcomped = zMapViewGetRevCompStatus(view) ;
+	if (revcomped)
 	  strand_txt = " - " ;
+	else
+	  strand_txt = " + " ;
 	gtk_label_set_text(GTK_LABEL(zmap->status_revcomp), strand_txt) ;
 
 	if (zMapViewGetFeaturesSpan(view, &start, &end))
