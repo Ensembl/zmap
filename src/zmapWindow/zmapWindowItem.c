@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug  8 09:11 2006 (edgrif)
+ * Last edited: Aug  9 18:33 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.40 2006-08-08 08:12:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.41 2006-08-10 15:17:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -106,6 +106,23 @@ static void pointerIsOverItem(gpointer data, gpointer user_data);
 static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select, 
                                       double currentX,
                                       double currentY); /* These are WORLD coords */
+
+static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
+
+
+
+
+/* This looks like something we will want to do often.... */
+GList *zmapWindowItemSortByPostion(GList *feature_item_list)
+{
+  GList *sorted_list = NULL ;
+
+  if (feature_item_list)
+    sorted_list = g_list_sort(feature_item_list, sortByPositionCB) ;
+
+  return sorted_list ;
+}
+
 
 
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow window, 
@@ -370,8 +387,6 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
   ZMapFeature feature ;
   ZMapWindowItemFeatureType item_feature_type ;
   GList *set_items ;
-  FooCanvasItem *hot_item ;
-  FooCanvasGroup *hot_column ;
 
   /* Retrieve the feature item info from the canvas item. */
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
@@ -381,15 +396,7 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
-  if ((hot_column = zmapWindowItemGetHotFocusColumn(window->focus)))
-    zmapUnHighlightColumn(window, hot_column) ;
-
-  if ((hot_item = zmapWindowItemGetHotFocusItem(window->focus)))
-    zmapWindowItemForEachFocusItem(window->focus, unhighlightCB, window) ;
-
-  if (hot_column || hot_item)
-    zmapWindowItemResetFocusItem(window->focus) ;    
-
+  zMapWindowUnHighlightFocusItems(window) ;
 
 
   /* For some types of feature we want to highlight all the ones with the same name in that column. */
@@ -420,6 +427,28 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 
   return ;
 }
+
+
+
+void zMapWindowUnHighlightFocusItems(ZMapWindow window)
+{                                               
+  FooCanvasItem *hot_item ;
+  FooCanvasGroup *hot_column ;
+
+  /* If any other feature(s) is currently in focus, revert it to its std colours */
+  if ((hot_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+    zmapUnHighlightColumn(window, hot_column) ;
+
+  if ((hot_item = zmapWindowItemGetHotFocusItem(window->focus)))
+    zmapWindowItemForEachFocusItem(window->focus, unhighlightCB, window) ;
+
+  if (hot_column || hot_item)
+    zmapWindowItemResetFocusItem(window->focus) ;    
+
+  return ;
+}
+
+
 
 
 /* highlight/unhiglight cols. */
@@ -1939,4 +1968,33 @@ static void freeFocusItems(ZMapWindowFocus focus)
 
   return ;
 }
+
+
+
+
+/* GCompareFunc() to compare two features by their coords so they are sorted into ascending order. */
+static gint sortByPositionCB(gconstpointer a, gconstpointer b)
+{
+  gint result ;
+  FooCanvasItem *item_a = (FooCanvasItem *)a ;
+  FooCanvasItem *item_b = (FooCanvasItem *)b ;
+  ZMapFeature feat_a ;
+  ZMapFeature feat_b ;
+      
+  feat_a = g_object_get_data(G_OBJECT(item_a), ITEM_FEATURE_DATA) ;
+  zMapAssert(feat_a) ;
+  
+  feat_b = g_object_get_data(G_OBJECT(item_b), ITEM_FEATURE_DATA) ;
+  zMapAssert(feat_b) ;
+
+  if (feat_a->x1 < feat_b->x1)
+    result = -1 ;
+  else if (feat_a->x1 > feat_b->x1)
+    result = 1 ;
+  else
+    result = 0 ;
+
+  return result ;
+}
+
 
