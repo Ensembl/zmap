@@ -20,16 +20,15 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Implements the scale bar shown for sequences.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 12 10:51 2006 (rds)
+ * Last edited: Aug 10 14:24 2006 (edgrif)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.7 2006-07-12 09:52:39 rds Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.8 2006-08-10 15:11:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,8 +65,11 @@ typedef struct _ZMapWindowRulerCanvasStruct
   PangoFontDescription *font_desc;
   int font_width;
 
+  int origin ;
+
   ZMapWindowRulerCanvasCallbackList callbacks; /* The callbacks we need to call sensible window functions... */
 
+  guint display_forward_coords : 1;					    /* Has a coord display origin been set. */
 } ZMapWindowRulerCanvasStruct;
 
 /* Just a collection of ints, boring but makes it easier */
@@ -85,6 +87,10 @@ typedef struct _ZMapScaleBarStruct
   int end;
   double top;
   double bottom;
+
+  int origin ;
+
+  guint display_forward_coords : 1;					    /* Has a coord display origin been set. */
 } ZMapScaleBarStruct, *ZMapScaleBar;
 
 typedef enum
@@ -96,7 +102,8 @@ typedef enum
 
 static gboolean initialiseScale(ZMapScaleBar obj_out,
                                 double start, double end, 
-                                double zoom, double line);
+                                double zoom, double line,
+				gboolean display_forward_coords, int origin);
 static void drawScaleBar(ZMapScaleBar scaleBar, 
                          FooCanvasGroup *group, 
                          PangoFontDescription *font,
@@ -106,7 +113,8 @@ static FooCanvasItem *rulerCanvasDrawScale(FooCanvas *canvas,
                                            double start, 
                                            double end,
                                            double height,
-                                           gboolean text_left);
+                                           gboolean text_left,
+					   gboolean display_forward_coords, int origin);
 
 static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right);
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
@@ -272,7 +280,8 @@ void zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double start, double e
                                               start,
                                               end,
                                               obj->line_height,
-                                              obj->text_left);
+                                              obj->text_left,
+					      TRUE, obj->origin);
       
       /* We either need to do this check or 
        * double test = 0.0;
@@ -309,6 +318,17 @@ void zmapWindowRulerCanvasZoom(ZMapWindowRulerCanvas obj, double x, double y)
 
   return ;
 }
+
+void zmapWindowRulerCanvasSetOrigin(ZMapWindowRulerCanvas obj, int origin)
+{
+  zMapAssert(obj) ;
+
+  obj->display_forward_coords = TRUE ;
+  obj->origin = origin ;
+
+  return ;
+}
+
 
 void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustment *vadjustment)
 {
@@ -527,7 +547,8 @@ static FooCanvasItem *rulerCanvasDrawScale(FooCanvas *canvas,
                                            double start, 
                                            double end,
                                            double height,
-                                           gboolean text_left)
+                                           gboolean text_left,
+					   gboolean display_forward_coords, int origin)
 {
   FooCanvasItem *group = NULL ;
   ZMapScaleBarStruct scaleBar = { 0 };
@@ -542,7 +563,7 @@ static FooCanvasItem *rulerCanvasDrawScale(FooCanvas *canvas,
   zoom_factor = FOO_CANVAS(canvas)->pixels_per_unit_y;
   height      = height / zoom_factor;
 
-  if(initialiseScale(&scaleBar, start, end, zoom_factor, height))
+  if(initialiseScale(&scaleBar, start, end, zoom_factor, height, display_forward_coords, origin))
     drawScaleBar(&scaleBar, FOO_CANVAS_GROUP(group), font, text_left);
 
   if(scaleBar.unit)
@@ -555,7 +576,8 @@ static gboolean initialiseScale(ZMapScaleBar obj_out,
                                 double start, 
                                 double end, 
                                 double zoom, 
-                                double line)
+                                double line,
+				gboolean display_forward_coords, int origin)
 {
   gboolean good = TRUE;
   int majorUnits[]      = {1   , 1000, 1000000, 1000000000, 0};
@@ -576,6 +598,8 @@ static gboolean initialiseScale(ZMapScaleBar obj_out,
   obj_out->bottom = end;
   obj_out->force_multiples_of_five = ZMAP_FORCE_FIVES;
   obj_out->zoom_factor = zoom;
+  obj_out->display_forward_coords = display_forward_coords ;
+  obj_out->origin = origin ;
 
   /* line * zoom is constant @ 14 on my machine, 
    * simply increasing this decreases the number of majors (makes it faster),
@@ -706,6 +730,7 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
               )
              ) / scaleBar->minor
             );
+
   i = (scaleBar->start - (scaleBar->start % scaleBar->minor));
 
 
@@ -722,7 +747,7 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
       /* More conditionals than I intended here... */
       /* char *digitUnit = NULL; */
       double i_d = (double)i ;				    /* Save a lot of casting... */
-
+      int scale_pos ;
       
       if (n % ZMAP_SCALE_MINORS_PER_MAJOR) /* Minors */
         {
@@ -734,7 +759,13 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
           else if (i == scaleBar->start && n < 5)
             {                   /* n < 5 to stop overlap of digitUnit at some zooms */
               /* digitUnit = g_strdup_printf("%d", scaleBar->start); */
-              g_string_printf(digitUnitStr, "%d", scaleBar->start);
+
+	      if (scaleBar->display_forward_coords)
+		scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->origin, scaleBar->start) ;
+	      else
+		scale_pos = scaleBar->start ;
+              g_string_printf(digitUnitStr, "%d", scale_pos);
+
               zMapDrawLine(lines, scale_min, i_d, scale_line, i_d, &black, 1.0) ;
             }
           else
@@ -742,25 +773,58 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
         }
       else                      /* Majors */
         {
-          if(i && i >= scaleBar->start)
+          if (i && i >= scaleBar->start)
             {
               zMapDrawLine(lines, scale_maj, i_d, scale_line, i_d, &black, 1.0);
               /* digitUnit = g_strdup_printf("%d%s", 
                                           (i / scaleBar->base), 
                                           scaleBar->unit); */
+
+
+	      if (scaleBar->display_forward_coords)
+		{
+		  scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->origin, i) ;
+		  scale_pos = (scale_pos / scaleBar->base) ;
+		}
+	      else
+		scale_pos = (i / scaleBar->base) ;
+
               g_string_printf(digitUnitStr,
                               "%d%s", 
-                              (i / scaleBar->base), 
-                              scaleBar->unit);
+                              scale_pos, 
+                              scaleBar->unit) ;
             }
           else
             {
+	      /* I guess this means "do the first one".... */
+
               zMapDrawLine(lines, 
                            scale_min, (double)scaleBar->start, 
                            scale_line, (double)scaleBar->start, 
                            &black, 1.0);
               /* digitUnit = g_strdup_printf("%d", scaleBar->start); */
-              g_string_printf(digitUnitStr, "%d", scaleBar->start);
+
+	      if (scaleBar->display_forward_coords)
+		{
+		  scale_pos = zmapWindowCoordFromOriginRaw(scaleBar->origin, scaleBar->start) ;
+
+		  if (abs(scale_pos) > 1)
+		    {
+		      scale_pos = (scale_pos / scaleBar->base) ;
+
+		      g_string_printf(digitUnitStr,
+				      "%d%s", 
+				      scale_pos, 
+				      scaleBar->unit);
+		    }
+		  else
+		    g_string_printf(digitUnitStr, "%d", scale_pos);
+		}
+	      else
+		{
+		  scale_pos = scaleBar->start ;
+		  g_string_printf(digitUnitStr, "%d", scale_pos);
+		}
             }
         }
 

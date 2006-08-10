@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug  8 09:30 2006 (edgrif)
+ * Last edited: Aug 10 14:58 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.136 2006-08-08 09:06:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.137 2006-08-10 15:11:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -233,6 +233,13 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   new_window->seq_start = original_window->seq_start ;
   new_window->seq_end   = original_window->seq_end ;
   new_window->seqLength = original_window->seqLength ;
+
+  /* As we are looking at the same data as the original window this should all just work... */
+  new_window->revcomped_features = original_window->revcomped_features ;
+  new_window->display_forward_coords = original_window->display_forward_coords ;
+  new_window->origin = original_window->origin ;
+
+
   
   zmapWindowZoomControlCopyTo(original_window->zoom, new_window->zoom);
 
@@ -360,7 +367,7 @@ void zMapWindowRedraw(ZMapWindow window)
 }
 
 
-
+/* THIS COMMENT IS STILL NOT CORRECT...WE NEED TO TRANSFORM COORDS AS USER REQUIRES... */
 /* PART 2, ok the 'reversed' parameter is a hack and it would go away if we split this call
  * into the following interface calls:
  *    1) return a struct which is opaque but encapsulates the position information.
@@ -370,23 +377,28 @@ void zMapWindowRedraw(ZMapWindow window)
  *
  * then the hackiness + the bug Roy found will disappear. */
 
-
-/* OK, OK, THE 'REVERSED' PARAMETER IS A HACK...NEED TO THINK UP SOME BETTER WAY OF GETTING
- * A WINDOW TO MAINTAIN ITS POSITION AFTER REVCOMP...BUT IT ACTUALLY IS NOT THAT STRAIGHT
- * FORWARD.....ur and we also need to keep a record for the annotator of whether we are reversed
- * or not....UGH..... */
-/* Draw the window with new features. */
+/* Draw the window with new features, the rev_comp_features is required because the users
+ * may require the coordinates in the scale and as reported in the status line to be displayed
+ * either in reverse strand coords or still in forward strand coords. 
+ * We also need the information so that we can maintain window position after a revcomp.
+ * We really do need to know even though it feels a bit hacky... */
 void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
-			     gboolean reversed)
+			     gboolean features_are_revcomped)
 {
   int x, y ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
 
-  if (reversed)
+
+  if (features_are_revcomped)
     {
       double tmp ;
       GtkAdjustment *adjust ;
       int new_y ;
+
+      /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
+       * originally highlighted feature...but only if its still visible if it ends up on the
+       * reverse strand...for now we just blank it.... */
+      zMapWindowUpdateInfoPanel(window, NULL, NULL) ;
 
       adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
@@ -395,7 +407,6 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       new_y = adjust->upper - (y + adjust->page_size) ;
 
       y = new_y ;
-
 
       /* We need to get the current position, translate it to world coords, reverse it
        * and then scroll to that....needs some thought....  */
@@ -410,11 +421,14 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       tmp = scroll_y1 ;
       scroll_y1 = scroll_y2 ;
       scroll_y2 = tmp ;
+
+      window->revcomped_features = !window->revcomped_features ;
+
     }
 
   resetCanvas(window, FALSE) ;					    /* Resets scrolled region.... */
 
-  if (reversed)
+  if (features_are_revcomped)
     foo_canvas_set_scroll_region(window->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
 
 
@@ -425,7 +439,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   zMapWindowDisplayData(window, feature_context, feature_context) ;
 
 
-  if (reversed)
+  if (features_are_revcomped)
     {
       int i ;
 
@@ -859,6 +873,16 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
   ZMapWindowSelectStruct select = {NULL} ;
+  int feature_start, feature_end ;
+
+  /* If feature_arg is NULL then this implies "reset the info data/panel". */
+  if (!feature_arg)
+    {
+      (*(window->caller_cbs->select))(window, window->app_data, NULL) ;
+
+      return ;
+    }
+
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
 
@@ -870,13 +894,27 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 
   if (type == ITEM_FEATURE_CHILD)
     {
+      int start, end ;
+
       item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
       zMapAssert(item_data) ;
 
       select.feature_desc.subpart_type = item_data->subpart ;
 
-      select.feature_desc.sub_feature_start = g_strdup_printf("%d", item_data->start) ;
-      select.feature_desc.sub_feature_end = g_strdup_printf("%d", item_data->end) ;
+
+      if (window->display_forward_coords)
+	{
+	  start = zmapWindowCoordFromOrigin(window, item_data->start) ;
+	  end = zmapWindowCoordFromOrigin(window, item_data->end) ;
+	}
+      else
+	{
+	  start = item_data->start ;
+	  end = item_data->end ;
+	}
+
+      select.feature_desc.sub_feature_start = g_strdup_printf("%d", start) ;
+      select.feature_desc.sub_feature_end = g_strdup_printf("%d", end) ;
     }
 
   style = zMapFeatureGetStyle(feature) ;
@@ -890,8 +928,21 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 
   select.feature_desc.feature_name = (char *)g_quark_to_string(feature->original_id) ;
 
-  select.feature_desc.feature_start = g_strdup_printf("%d", feature->x1) ;
-  select.feature_desc.feature_end = g_strdup_printf("%d", feature->x2) ;
+
+  if (window->display_forward_coords)
+    {
+      feature_start = zmapWindowCoordFromOrigin(window, feature->x1) ;
+      feature_end = zmapWindowCoordFromOrigin(window, feature->x2) ;
+    }
+  else
+    {
+      feature_start = feature->x1 ;
+      feature_end = feature->x2 ;
+    }
+
+
+  select.feature_desc.feature_start = g_strdup_printf("%d", feature_start) ;
+  select.feature_desc.feature_end = g_strdup_printf("%d", feature_end) ;
 
   select.feature_desc.feature_strand = zMapFeatureStrand2Str(feature->strand) ;
 
@@ -908,8 +959,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 
   select.secondary_text = g_strdup_printf("\"%s\"    %d %d (%d)",
                                           (char *)g_quark_to_string(feature->original_id),
-                                          feature->x1,
-                                          feature->x2,
+                                          feature_start,
+                                          feature_end,
                                           feature->x2 - feature->x1 + 1);
   select.item = item ;
   
@@ -1072,6 +1123,10 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   window->sequence = g_strdup(sequence) ;
   window->app_data = app_data ;
   window->parent_widget = parent_widget ;
+
+  window->revcomped_features = FALSE ;
+  window->display_forward_coords = TRUE ;
+  window->origin = 1 ;
 
   window->toplevel = eventbox = gtk_event_box_new();
   window->pane     = gtk_hpaned_new();
@@ -2035,7 +2090,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
           }
         else if(guide)
           {
-            int bp = 0;
             double y1, y2;
             foo_canvas_get_scroll_region(window->canvas, /* ok, but like to change */
                                          NULL, &y1, NULL, &y2);
@@ -2045,8 +2099,13 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
             /* This test is FLAWED ATM it needs to test for displayed seq start & end */
             if(y1 <= wy && y2 >= wy)
               {
-                char *tip = NULL;
+		int bp = 0;
+		char *tip = NULL;
+
                 bp = (int)floor(wy);
+		if (window->display_forward_coords)
+		  bp = zmapWindowCoordFromOrigin(window, bp) ;
+
                 tip = g_strdup_printf("%d bp", bp);
                 zMapDrawToolTipSetPosition(window->tooltip, wx, wy, tip);
                 g_free(tip);
@@ -2496,10 +2555,10 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    style = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_STYLE) ;
 	    zMapAssert(style) ;
 
-	    if (zMapStyleGetOverlapMode(style) == ZMAPOVERLAP_COMPLEX)
+	    if (zMapStyleGetOverlapMode(style) == ZMAPOVERLAP_NO_INTERLEAVE)
 	      overlap_mode = ZMAPOVERLAP_COMPLETE ;
 	    else
-	      overlap_mode = ZMAPOVERLAP_COMPLEX ;
+	      overlap_mode = ZMAPOVERLAP_NO_INTERLEAVE ;
 	
 	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), overlap_mode) ;
 	    
