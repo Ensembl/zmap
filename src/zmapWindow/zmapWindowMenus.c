@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jul 25 16:51 2006 (rds)
+ * Last edited: Aug  8 16:01 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.19 2006-07-26 00:09:38 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.20 2006-08-10 15:16:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,15 +118,16 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_TOGGLE, "Column Smart Bump",                 ZMAPOVERLAP_COMPLETE, bumpToggleMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Column Hide",                   ZMAPWWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
+      {ZMAPGUI_MENU_TOGGLE, "Column Bump",                 ZMAPOVERLAP_COMPLETE, bumpToggleMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column Hide",                 ZMAPWWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
       {ZMAPGUI_MENU_BRANCH, "Column Bump Opts", 0, NULL, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Name + No Overlap", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Name",              ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/No Overlap",        ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Simple",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/None",      ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Compact Cluster + No Interleave", ZMAPOVERLAP_NO_INTERLEAVE,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Compact Cluster + Interleave", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Cluster",    ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/No Overlap", ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Bump on Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Bump everything",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Unbump",     ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
       {ZMAPGUI_MENU_BRANCH, "Column Configure", 0, NULL, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column",  ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns",  ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
@@ -142,10 +143,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
    * NOTE logic, this button is either "no bump" or "Name + No Overlap", the latter should be
    * selectable whatever.... */
   item = &(menu[0]) ;
-  if (curr_overlap == ZMAPOVERLAP_COMPLEX)
+  if (curr_overlap == ZMAPOVERLAP_NO_INTERLEAVE)
     {
       item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
-      item->id = ZMAPOVERLAP_COMPLEX ;
+      item->id = ZMAPOVERLAP_NO_INTERLEAVE ;
     }
   else
     {
@@ -649,10 +650,10 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
   FooCanvasGroup *column_group ;
   FooCanvasItem *style_item ;
 
-  if (bump_type == ZMAPOVERLAP_COMPLEX)
+  if (bump_type == ZMAPOVERLAP_NO_INTERLEAVE)
     bump_type = ZMAPOVERLAP_COMPLETE ;
   else
-    bump_type = ZMAPOVERLAP_COMPLEX ;
+    bump_type = ZMAPOVERLAP_NO_INTERLEAVE ;
 
 
   if (menu_data->item_cb)
