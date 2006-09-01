@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug 10 14:58 2006 (edgrif)
+ * Last edited: Sep  1 14:25 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.137 2006-08-10 15:11:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.138 2006-09-01 13:30:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1880,6 +1880,7 @@ static gboolean getConfiguration(ZMapWindow window)
   ZMapConfigStanzaElementStruct window_elements[] = {{"canvas_maxsize", ZMAPCONFIG_INT, {NULL}},
 						     {"canvas_maxbases", ZMAPCONFIG_INT, {NULL}},
 						     {"keep_empty_columns", ZMAPCONFIG_BOOL, {NULL}},
+						     {"display_forward_coords", ZMAPCONFIG_BOOL, {NULL}},
 						     {"align_spacing", ZMAPCONFIG_FLOAT, {NULL}},
 						     {"block_spacing", ZMAPCONFIG_FLOAT, {NULL}},
 						     {"strand_spacing", ZMAPCONFIG_FLOAT, {NULL}},
@@ -1892,6 +1893,7 @@ static gboolean getConfiguration(ZMapWindow window)
   /* Set default values, must be done like this because value field is a union. */
   zMapConfigGetStructInt(window_elements, "canvas_maxsize") = ZMAP_WINDOW_MAX_WINDOW ;
   zMapConfigGetStructBool(window_elements, "keep_empty_columns") = FALSE ;
+  zMapConfigGetStructBool(window_elements, "display_forward_coords") = TRUE ;
   zMapConfigGetStructFloat(window_elements, "align_spacing") = window->config.align_spacing ;
   zMapConfigGetStructFloat(window_elements, "block_spacing") = window->config.block_spacing ;
   zMapConfigGetStructFloat(window_elements, "strand_spacing") = window->config.strand_spacing ;
@@ -1916,6 +1918,8 @@ static gboolean getConfiguration(ZMapWindow window)
 	  window->canvas_maxwin_bases = zMapConfigGetElementInt(next_window, "canvas_maxbases") ;
 
 	  window->keep_empty_cols = zMapConfigGetElementBool(next_window, "keep_empty_columns") ;
+
+	  window->display_forward_coords = zMapConfigGetElementBool(next_window, "display_forward_coords") ;
 
 	  window->config.align_spacing = zMapConfigGetElementFloat(next_window, "align_spacing") ;
 	  window->config.block_spacing = zMapConfigGetElementFloat(next_window, "block_spacing") ;
