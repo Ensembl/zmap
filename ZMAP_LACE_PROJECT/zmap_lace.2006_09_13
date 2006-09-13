@@ -1,0 +1,160 @@
+==============================================================================
+ZMap/Otterlace Development
+
+
+Date:  Wens 13th September 2006
+
+Attendees: th, jla1, jgrg, edgrif
+
+
+1) otterlace + zmap progress
+============================
+
+
+new features
+------------
+
+- reverse complement code, the code is there and working in the test
+otterlace system. BUT there is a bug in the interface to blixem which
+results in blixem freezing when used on a reverse complemented sequence.
+
+
+- for a combination of reasons the reverse complement fix did not make
+it through to the annotators for 3 weeks. To try and fix this we will
+do the following:
+
+	1) with each new release of the lace/zmap system we (a lace
+	person and a zmap person) will sit with one of the annotators
+	to check that everything is working
+
+	2) publish a list of the changes/fixes for that release
+
+
+- 3 frame translation is high priority, Ed is working on this and will
+have something working by the end of this week so that there can be a
+release next week.
+
+
+- Navigator with clickable locus names and a display of the clone assembly
+is high priority, Roy is working on this now and it should be ready for
+the next release. We need to allow the user to search for locus names within
+the navigator window.
+
+
+- locus names, as well as having locus names in the navigator, we need them
+in a column in the main display.
+
+
+- bumping, the compact algorithm was discussed and the concensus was that
+it will not do the job. Instead edgrif will write a variant of this that
+does not allow matches to be interleaved. Matches from the same est will
+have a background colour painted between them to make it obvious which
+matches go with which.
+
+
+- the release notes for each release and the code version numbers will be
+put in a web page that will be viewable from either the lace or zmap
+programs as a main menu item. This will help the annotators to be sure of
+which version they are using and of the changes/updates made.
+
+
+- ests:
+   add 'intron' where a feature perfectly aligns over a splice, zmap needs to look
+   through matches and join up ones whose coords are completely correct.
+   This is still be worked on.
+
+
+- glyph for single base features: we need scale independent glyphs for a number
+of features including the gene finder features. edgrif or rds will implment a
+new scale independent drawing type as an add on for foocanvas, this is the most
+natural/efficient way to implement this.
+This has been implemented and we can display gene finder features, we need the
+3 frame translation first before this can be properly used.
+
+
+- alternative translations: edgrif about half way through code to do this.
+
+
+- multiple alignments: edgrif is about a third of the way through implementing
+a more general way of displaying arbitrary blocks.
+
+
+- zmap needs to get sequences that are in acedb from there for blixem, means
+issuing a call to the server to get them but this is possible. NOTE that some
+sequences are _only_ in acedb.
+
+
+- we need a "back" button
+
+
+Builds
+------
+
+- universal binaries: we have an updated mac laptop with the latest XCode set up
+which will allow us to produce the binaries.
+
+
+
+Blixem/pfetch
+--------------
+
+- blixem: dna searching is NOT DONE, edgrif to expedite.
+
+
+- pfetch: caching? NOT DONE + where should we cache ?
+
+
+
+multiple species
+----------------
+
+- James and Ed need to discuss how this will be done. Zmap can display
+multiple sequences in one zmap window but there will need to changes to
+the supporting infrastructure including:
+
+	- should the species go in one or multiple acedb databases
+
+	- the lace <-> zmap protocol needs to allow specification of
+	multiple sequence display.
+
+	- lace needs to allow the user to pick multiple species
+
+
+Acedb
+-----
+
+- Treeview has a bug whereby if you click on an item, the window is no longer
+preserved. This is because of a fix by Ed and now needs to be refixed.
+
+- need to make sure that both acedb and zmap use the Mac "open" command to
+show urls. You can just give the url and "open" will invoke the users default
+browser.
+
+
+
+
+2) Other matters
+================
+
+
+sorry, this section is rather sparse...give me more information if you need to.
+
+- das - NOT DONE (th)
+
+
+- genelists:
+	done for zebrafish
+	using mig list for mouse
+	no human
+	needs multiple list interfaces
+
+
+- interface for tags: NOT DONE
+
+
+- submit button for EMBL dumping
+
+
+- gene_fragments tag - broken
+
+==============================================================================
