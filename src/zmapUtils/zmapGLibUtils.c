@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Jun 15 09:28 2006 (edgrif)
+ * Last edited: Sep  6 18:06 2006 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.8 2006-06-15 10:38:25 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.9 2006-09-15 09:09:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -210,8 +210,35 @@ gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user
 }
 
 
+/*!
+ * Finds the given element data and moves it to the given position in the list if
+ * that is possible. Note that list indices start at zero.
+ * 
+ * Returns the list unaltered if the element could not be moved.
+ * 
+ *  */
+GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
+{
+  GList *new_list = list ;
 
-/* Prints out the contents of a list assuming that each element is a GQuark. We have
+  if (new_index >= 0 && new_index < g_list_length(list))
+    {
+      GList *list_element ;
+
+      if ((list_element = g_list_find(list, user_data)))
+	{
+	  new_list = g_list_remove(new_list, user_data) ;
+
+	  new_list = g_list_insert(new_list, user_data, new_index) ;
+	}
+    }
+
+  return new_list ;
+}
+
+
+/*! 
+ * Prints out the contents of a list assuming that each element is a GQuark. We have
  * lots of these in zmap so this is useful. */
 void zMap_g_quark_list_print(GList *quark_list)
 {
