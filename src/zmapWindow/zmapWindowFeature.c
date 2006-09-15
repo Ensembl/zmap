@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug  9 18:43 2006 (edgrif)
+ * Last edited: Sep 15 09:28 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.49 2006-08-10 15:17:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.50 2006-09-15 09:22:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -151,19 +151,25 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data) ;
 
 static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 
-static void removeFeatureLongItems(GList **long_items, FooCanvasItem *feature_item) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void removeFeatureLongItems(ZMapWindowLongItems long_items, FooCanvasItem *feature_item) ;
 static void removeLongItemCB(gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static gboolean makeFeatureEditWindow(ZMapWindow window, ZMapFeature feature) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printItem(gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void oneBlockHasDNA(GQuark key, 
                            gpointer data, 
                            gpointer user_data);
 
-
-static void reparentItemCB(gpointer data, gpointer user_data) ;
 
 
 /* NOTE that we make some assumptions in this code including:
@@ -238,8 +244,7 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
 /* THERE IS A PROBLEM HERE IN THAT WE REMOVE THE EXISTING FOOCANVAS ITEM FOR THE FEATURE
  * AND DRAW A NEW ONE, THIS WILL INVALIDATE ANY CODE THAT IS CACHING THE ITEM.
  * 
- * THE FIX IS TO KEEP THE TOP CANVAS ITEM FOR THE FEATURE AND MUNGE IT TO HOLD THE NEW
- * NEW FEATURE....BUT THIS IS _NOT_ SIMPLE.... */
+ * THE FIX IS FOR ALL OUR CODE TO USE THE HASH TO GET TO FEATURE ITEMS AND NOT CACHE THEM....*/
 
 /* Replace an existing feature in the feature context, this is the only way to modify
  * a feature currently.
@@ -270,7 +275,8 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 
 	  /* Find the canvas group for this set and draw the feature into it. */
 	  if ((set_item = zmapWindowFToIFindSetItem(zmap_window->context_to_item,
-						    feature_set, new_feature->strand)))
+						    feature_set,
+						    new_feature->strand, ZMAPFRAME_NONE)))
 	    {
 	      replaced_feature = zMapWindowFeatureAdd(zmap_window,
 						      FOO_CANVAS_GROUP(set_item), new_feature) ;
@@ -292,10 +298,9 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   ZMapFeatureSet feature_set ;
 
 
-  /* Check to see if there is an entry in long items for this feature.... */
-  removeFeatureLongItems(&(zmap_window->long_items), feature_item) ;
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zmapWindowItemRemoveFocusItem(zmap_window->focus, feature_item);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
@@ -307,7 +312,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   if (zmapWindowFToIRemoveFeature(zmap_window->context_to_item, feature)
       && zMapFeatureSetRemoveFeature(feature_set, feature))
     {
-      /* destroy the canvas item... */
+      /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
       gtk_object_destroy(GTK_OBJECT(feature_item)) ;
       
       result = TRUE ;
@@ -349,6 +354,42 @@ ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature)
 }
 
 
+/* Encapulates the rules about which frame a feature is in.
+ * 
+ * For ZMap this amounts to:
+ * 
+ * (coord mod 3) - 1
+ * 
+ * 
+ *  */
+ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature)
+{
+  ZMapFrame frame = ZMAPFRAME_NONE ;
+  int start ;
+
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+  start = feature->x1 % 3 ;
+
+  switch (start)
+    {
+    case 1:
+      frame = ZMAPFRAME_0 ;
+      break ;
+    case 2:
+      frame = ZMAPFRAME_1 ;
+      break ;
+    case 3:
+      frame = ZMAPFRAME_2 ;
+      break ;
+    default:
+      zMapAssertNotReached() ;
+    }
+
+  return frame ;
+}
+
+
 /* Called to draw each individual feature. */
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature)
 {
@@ -383,14 +424,14 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
       return NULL ;
     }
 
-  set       = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET) ;
-  block     = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set, ZMAPFEATURE_STRUCT_BLOCK) ;
+  set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET) ;
+  block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set, ZMAPFEATURE_STRUCT_BLOCK) ;
   alignment = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_ALIGN) ;
-  context   = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)alignment, ZMAPFEATURE_STRUCT_CONTEXT) ;
+  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)alignment, ZMAPFEATURE_STRUCT_CONTEXT) ;
+
 
   /* Retrieve the parent col. group/id. */
   column_group = zmapWindowContainerGetFeatures(set_group) ;
-
 
   /* Start/end of feature within alignment block.
    * Feature position on screen is determined the relative offset of the features coordinates within
@@ -573,7 +614,7 @@ void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature feature, FooCa
                                             feature->parent->parent->parent->unique_id,
                                             feature->parent->parent->unique_id,
                                             feature_set_unique,
-                                            ZMAPSTRAND_FORWARD,
+                                            ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE,
                                             dna_id)) != NULL)
     {
       if((zmapWindowItemIsShown(dna_item)))
@@ -598,8 +639,6 @@ void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature feature, FooCa
 FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *feature_items)
 {
   FooCanvasGroup *new_group = NULL ;
-  ReparentDataStruct reparent_data = {NULL} ;
-  FooCanvasItem *item ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -639,6 +678,8 @@ FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *featur
  */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printItem(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
@@ -653,6 +694,8 @@ static void printItem(gpointer data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -749,7 +792,7 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
 
   attachDataToItem(feature_item, window, feature, ITEM_FEATURE_SIMPLE, NULL);
 
-  zmapWindowLongItemCheck(window, feature_item, y1, y2) ;
+  zmapWindowLongItemCheck(window->long_items, feature_item, y1, y2) ;
 
   return feature_item ;
 }
@@ -871,7 +914,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                                   outline, background,
 						  line_width,
                                                   feature->strand);
-                  zmapWindowLongItemCheck(window, align_box, top, bottom);              
+                  zmapWindowLongItemCheck(window->long_items, align_box, top, bottom);              
                   attachDataToItem(align_box, window, feature, ITEM_FEATURE_CHILD, align_data);
 
                   box_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
@@ -892,7 +935,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
 						   line_width,
                                                    feature->strand);
                   attachDataToItem(gap_line_box, window, feature, ITEM_FEATURE_BOUNDING_BOX, box_data);
-                  zmapWindowLongItemCheck(window, gap_line_box, bottom, top);              
+                  zmapWindowLongItemCheck(window->long_items, gap_line_box, bottom, top);              
 
                   gap_line = zMapDrawAnnotatePolygon(gap_line_box,
                                                      ZMAP_ANNOTATE_GAP, 
@@ -902,7 +945,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                                      line_width,
 						     feature->strand);
                   attachDataToItem(gap_line, window, feature, ITEM_FEATURE_CHILD, gap_data);
-                  zmapWindowLongItemCheck(window, gap_line, bottom, top);
+                  zmapWindowLongItemCheck(window->long_items, gap_line, bottom, top);
                   foo_canvas_item_lower(gap_line, 2);
                   gap_data->twin_item = gap_line_box;
                   box_data->twin_item = gap_line;
@@ -918,7 +961,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                                               outline, background,
 					      line_width,
                                               feature->strand);
-              zmapWindowLongItemCheck(window, align_box, top, bottom) ;
+              zmapWindowLongItemCheck(window->long_items, align_box, top, bottom) ;
               attachDataToItem(align_box, window, feature, ITEM_FEATURE_CHILD, align_data);
               /* Finished with the align match */
 
@@ -1045,7 +1088,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
                                              feature->strand);
               
               attachDataToItem(intron_box, window, feature, ITEM_FEATURE_BOUNDING_BOX, box_data);
-              zmapWindowLongItemCheck(window, intron_box, top, bottom);
+              zmapWindowLongItemCheck(window->long_items, intron_box, top, bottom);
 
               /* IF we are part of CDS we need to set intron_fill to foreground */
               /* introns will be completely contained */
@@ -1064,7 +1107,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
                                                     line_width,
                                                     feature->strand);
               attachDataToItem(intron_line, window, feature, ITEM_FEATURE_CHILD, intron_data);
-              zmapWindowLongItemCheck(window, intron_line, top, bottom);              
+              zmapWindowLongItemCheck(window->long_items, intron_line, top, bottom);              
                   
               intron_data->twin_item = intron_box;
               box_data->twin_item    = intron_line;
@@ -1133,7 +1176,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
                                            feature->strand);
                 
               attachDataToItem(exon_box, window, feature, ITEM_FEATURE_CHILD, exon_data);
-              zmapWindowLongItemCheck(window, exon_box, top, bottom);
+              zmapWindowLongItemCheck(window->long_items, exon_box, top, bottom);
 
               if (has_cds)
 		{
@@ -1168,7 +1211,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 			  exon_data->end   = non_end + offset ;
 
 			  attachDataToItem(utr_box, window, feature, ITEM_FEATURE_CHILD, exon_data);
-			  zmapWindowLongItemCheck(window, utr_box, non_start, non_end) ;
+			  zmapWindowLongItemCheck(window->long_items, utr_box, non_start, non_end) ;
 			}
 		    }
 		  if ((cds_end >= top) && (cds_end < bottom))
@@ -1200,7 +1243,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 								       which covers the last base. */
 
 			  attachDataToItem(utr_box, window, feature, ITEM_FEATURE_CHILD, exon_data);
-			  zmapWindowLongItemCheck(window, utr_box, non_start, non_end);
+			  zmapWindowLongItemCheck(window->long_items, utr_box, non_start, non_end);
 			}
 		    }
 		}
@@ -1510,24 +1553,42 @@ static void dnaHandleZoomCB(FooCanvasItem *container,
 
 
 
-/* Callback for destroy of items... */
-static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data)
+/* Callback for destroy of feature items... */
+static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 {
-  gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also
-							       get run. */
+  gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also get run. */
   ZMapWindowItemFeatureType item_feature_type ;
-#ifdef RDS_DONT_INCLUDE
-  ZMapWindow  window = (ZMapWindowStruct*)data ;
-#endif
+  ZMapWindow window = (ZMapWindowStruct*)data ;
 
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+  /* Check to see if there is an entry in long items for this feature.... */
+  zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
+
+  zmapWindowItemRemoveFocusItem(window->focus, feature_item);
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
 
   switch (item_feature_type)
     {
     case ITEM_FEATURE_SIMPLE:
     case ITEM_FEATURE_PARENT:
       {
-	/* Nothing to do... */
+	ZMapFeature feature ;
+	gboolean status ;
+
+	feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
+	zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+	/* Remove this feature item from the hash. */
+	status = zmapWindowFToIRemoveFeature(window->context_to_item, feature) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	/* Can't do this at the moment because the hash may have been invalidated....
+	 * this is an order bug in the code that revcomps and will be for the 3 frame
+	 * stuff.... */
+
+	zMapAssert(status) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	break ;
       }
@@ -1536,7 +1597,7 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data)
       {
 	ZMapWindowItemFeature item_data ;
 
-	item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
+	item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
 	g_free(item_data) ;
 	break ;
       }
@@ -2077,7 +2138,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 					     feature->parent->parent->parent->unique_id,
 					     feature->parent->parent->unique_id,
 					     feature->parent->unique_id,
-					     zMapFeatureStrand2Str(strand),
+					     zMapFeatureStrand2Str(strand), NULL,
 					     g_quark_from_string("*"), NULL, NULL) ;
 
         zmapWindowListWindowCreate(menu_data->window, list, 
@@ -2291,13 +2352,15 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* We may wish to make this public some time but as the rest of the long item calls for features
  * are in this file then there is no need for it to be exposed.
  * 
  * Deals with removing all the items contained in a compound object from the longitem list.
  * 
  *  */
-static void removeFeatureLongItems(GList **long_items, FooCanvasItem *feature_item)
+static void removeFeatureLongItems(ZMapWindowLongItems long_items, FooCanvasItem *feature_item)
 {
   ZMapWindowItemFeatureType type ;
 
@@ -2305,10 +2368,11 @@ static void removeFeatureLongItems(GList **long_items, FooCanvasItem *feature_it
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
   zMapAssert(type == ITEM_FEATURE_SIMPLE
-	     || type == ITEM_FEATURE_PARENT || type == ITEM_FEATURE_CHILD) ;
+	     || type == ITEM_FEATURE_PARENT
+	     || type == ITEM_FEATURE_CHILD || type == ITEM_FEATURE_BOUNDING_BOX) ;
 
-  /* If item is part of a compound featuret then get the parent. */
-  if (type == ITEM_FEATURE_CHILD)
+  /* If item is part of a compound feature then get the parent. */
+  if (type == ITEM_FEATURE_CHILD || type == ITEM_FEATURE_BOUNDING_BOX)
     feature_item = feature_item->parent ;
 
   /* Test for long items according to whether feature is simple or compound. */
@@ -2331,13 +2395,13 @@ static void removeFeatureLongItems(GList **long_items, FooCanvasItem *feature_it
 static void removeLongItemCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
-  GList **long_items = (GList **)user_data ;
+  ZMapWindowLongItems long_items = (ZMapWindowLongItems)user_data ;
 
   zmapWindowLongItemRemove(long_items, item) ;		    /* Ignore boolean result. */
 
   return ;
 }
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /* Returns TRUE if item found, FALSE otherwise.  */
@@ -2353,7 +2417,7 @@ static gboolean makeFeatureEditWindow(ZMapWindow window, ZMapFeature feature)
 					 feature->parent->parent->parent->unique_id,
 					 feature->parent->parent->unique_id,
 					 feature->parent->unique_id,
-					 strand,
+					 strand, ZMAPFRAME_NONE,
 					 feature->unique_id)))
     {
       zmapWindowEditorCreate(window, item, window->edittable_features) ;
@@ -2402,6 +2466,11 @@ static void oneBlockHasDNA(GQuark key,
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* THIS ALL LOOKS LIKE IT NEEDS WRITING SOMETIME.... */
+
 /* Move a canvas item into a new group, redoing its coords as they must be relative to
  * the new parent. */
 static void reparentItemCB(gpointer data, gpointer user_data)
@@ -2409,15 +2478,11 @@ static void reparentItemCB(gpointer data, gpointer user_data)
   FooCanvasItem *feature_item = (FooCanvasItem *)data ;
 
 
-
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   foo_canvas_item_reparent (FooCanvasItem *item, FooCanvasGroup *new_group);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-
-
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
