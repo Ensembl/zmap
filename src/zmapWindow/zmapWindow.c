@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep  1 14:25 2006 (edgrif)
+ * Last edited: Sep 15 07:43 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.138 2006-09-01 13:30:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.139 2006-09-15 09:16:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -713,10 +713,9 @@ void zMapWindowDestroy(ZMapWindow window)
   /* Get rid of the column configuration window. */
   zmapWindowColumnConfigureDestroy(window) ;
 
-
-  zmapWindowLongItemFree(window->long_items) ;
-
   gtk_widget_destroy(window->toplevel) ;
+
+  zmapWindowLongItemDestroy(window->long_items) ;	    /* Must be after widget destroy ? */
 
   zmapWindowFToIDestroy(window->context_to_item) ;
 
@@ -824,7 +823,7 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
       zoom = zMapWindowGetZoomStatus(window) ;
       zmapWindowGetBorderSize(window, &border);
       
-      zmapWindowLongItemCrop(window, x1, y1, x2, y2);
+      zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
       
       clamp = zmapWindowClampedAtStartEnd(window, &y1, &y2);
       y1   -= (tmp_top = ((clamp & ZMAP_WINDOW_CLAMP_START) ? border : 0.0));
@@ -1160,6 +1159,10 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   /* Add a hash table to map features to their canvas items. */
   window->context_to_item = zmapWindowFToICreate() ;
 
+  /* List of items that will exceed X windows max draw size when canvas is zoomed. */
+  window->long_items = zmapWindowLongItemCreate(0.0) ;	    /* Don't know max zoom yet.... */
+
+
   /* Init. lists of dialog windows attached to this zmap window. */
   window->featureListWindows = g_ptr_array_new() ;
   window->search_windows = g_ptr_array_new() ;
@@ -1338,7 +1341,8 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
       /* Firstly the scale bar, which will be changed soon. */
       zmapWindowDrawZoom(window);
       
-      zmapWindowLongItemCrop(window, x1, y1, x2, y2); /* Call this again because of backgrounds :( */
+      zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
+							    /* Call this again because of backgrounds :( */
 
 #ifdef RDS_DONT_INCLUDE						      
 
@@ -1387,11 +1391,14 @@ static void myWindowMove(ZMapWindow window, double start, double end)
 
   zmapWindowScrollRegionTool(window, &x1, &start, &x2, &end);
 
-  if((super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item, 0,0,0,0,0))))
+  if ((super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item,
+								0,0,0,
+								ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
+								0))))
     zmapWindowContainerMoveEvent(super_root, window);
 
   /* need to redo some of the large objects.... */
-  zmapWindowLongItemCrop(window, x1, start, x2, end);
+  zmapWindowLongItemCrop(window->long_items, x1, start, x2, end);
 
   foo_canvas_update_now(window->canvas) ;
 
@@ -1413,17 +1420,17 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows)
    * BUT NOTE THAT SOME THINGS ARE NOT SHARED...e.g. RECREATION OF THE FEATURELISTWINDOWS
    * ARRAY.... */
   
-  if (window->long_items)
-    {
-      zmapWindowLongItemFree(window->long_items) ;
-      window->long_items = NULL ;
-    }
-
   if (window->feature_root_group)
     {
       zmapWindowContainerDestroy(window->feature_root_group) ;
       window->feature_root_group = NULL ;
+
+      /* Must follow the container destroy above...in fact if there is no root group we don't need to
+	 do this...??? */
+      zmapWindowLongItemFree(window->long_items) ;
     }
+
+
 
   if (window->canvas)
     foo_canvas_set_scroll_region(window->canvas, 
