@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun 30 16:20 2006 (rds)
+ * Last edited: Sep 15 10:11 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.40 2006-06-30 15:23:16 rds Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.41 2006-09-15 09:12:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,7 @@ static void revcompCB(GtkWidget *widget, gpointer data) ;
 static void unsplitWindowCB(GtkWidget *widget, gpointer data) ;
 static void columnConfigCB(GtkWidget *widget, gpointer data) ;
 static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
-static void sequenceCB(GtkWidget *wigdet, gpointer data);
+static void frame3CB(GtkWidget *wigdet, gpointer data);
 static gboolean sequenceEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 
 static void makeZoomMenu(GdkEventButton *button_event, ZMapWindow window) ;
@@ -76,7 +76,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *zoomin_button, *zoomout_button,
     *unlock_button, *revcomp_button, 
     *unsplit_button, *column_button,
-    *sequence_button;
+    *frame3_button;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -130,14 +130,12 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(revcompCB), (gpointer)zmap);
   gtk_box_pack_start(GTK_BOX(hbox), revcomp_button, FALSE, FALSE, 0) ;
 
-  zmap->sequence_but = sequence_button = gtk_button_new_with_label("DNA/Protein");
-
-  gtk_signal_connect(GTK_OBJECT(sequence_button), "clicked",
-		     GTK_SIGNAL_FUNC(sequenceCB), (gpointer)zmap);
-
-  g_signal_connect(G_OBJECT(sequence_button), "event",
+  zmap->frame3_but = frame3_button = gtk_button_new_with_label("3 Frame");
+  gtk_signal_connect(GTK_OBJECT(frame3_button), "clicked",
+		     GTK_SIGNAL_FUNC(frame3CB), (gpointer)zmap);
+  g_signal_connect(G_OBJECT(frame3_button), "event",
                    G_CALLBACK(sequenceEventCB), (gpointer)zmap);
-  gtk_box_pack_start(GTK_BOX(hbox), sequence_button, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), frame3_button, FALSE, FALSE, 0) ;
 
   zmap->column_but = column_button = gtk_button_new_with_label("Columns");
   gtk_signal_connect(GTK_OBJECT(column_button), "clicked",
@@ -191,8 +189,8 @@ void zmapControlButtonTooltips(ZMap zmap)
 		       "Reverse complement sequence view",
 		       "") ;
 
-  gtk_tooltips_set_tip(zmap->tooltips, zmap->sequence_but,
-		       "Toggle display of DNA/3 Frame Translation columns"
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->frame3_but,
+		       "Toggle display of Reading Frame columns"
                        " (right click for more options)",
 		       "") ;
 
@@ -213,9 +211,9 @@ void zmapControlButtonTooltips(ZMap zmap)
 void zmapControlWindowSetButtonState(ZMap zmap)
 {
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
-  gboolean general, unsplit, unlock, stop, reload, sequence ;
+  gboolean general, unsplit, unlock, stop, reload, frame3 ;
 
-  general = unsplit = unlock = stop = reload = sequence = FALSE ;
+  general = unsplit = unlock = stop = reload = frame3 = FALSE ;
 
   switch(zmap->state)
     {
@@ -247,14 +245,14 @@ void zmapControlWindowSetButtonState(ZMap zmap)
 	    break ;
 	  case ZMAPVIEW_LOADED:
 	    general = TRUE ;
-            sequence = TRUE;
+            frame3 = TRUE;
 	    /* If we are down to the last view and that view has a single window then
 	     * disable unsplit button, stops user accidentally closing whole window. */
 	    if ((zmapControlNumViews(zmap) > 1) || (zMapViewNumWindows(zmap->focus_viewwindow) > 1))
 	      unsplit = TRUE ;
             
             /* Turn the DNA/Protein button on/off */
-            sequence = zMapWindowGetDNAStatus(window);
+            frame3 = zMapWindowGetDNAStatus(window);
               
 	    zoom_status = zMapWindowGetZoomStatus(window) ;
 	    unlock = zMapWindowIsLocked(window) ;
@@ -281,7 +279,7 @@ void zmapControlWindowSetButtonState(ZMap zmap)
   zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
   gtk_widget_set_sensitive(zmap->unlock_but, unlock) ;
   gtk_widget_set_sensitive(zmap->revcomp_but, general) ;
-  gtk_widget_set_sensitive(zmap->sequence_but, sequence) ;
+  gtk_widget_set_sensitive(zmap->frame3_but, frame3) ;
   gtk_widget_set_sensitive(zmap->unsplit_but, unsplit) ;
   gtk_widget_set_sensitive(zmap->column_but, general) ;
 
@@ -393,7 +391,8 @@ static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
   return handled ;
 }
 
-static void sequenceCB(GtkWidget *wigdet, gpointer cb_data)
+
+static void frame3CB(GtkWidget *wigdet, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
   ZMapWindow window ;
@@ -402,10 +401,13 @@ static void sequenceCB(GtkWidget *wigdet, gpointer cb_data)
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
-  zMapWindowToggleDNAProteinColumns(window, 0, 0, TRUE, TRUE, FALSE, FALSE);
+  zMapWindowToggle3Frame(window) ;
 
   return ;
 }
+
+
+
 
 /* These callbacks simply make calls to routines in zmapControl.c, this is because I want all
  * the state handling etc. to be in one file so that its easier to work on. */
