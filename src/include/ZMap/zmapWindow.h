@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Aug  8 16:03 2006 (edgrif)
+ * Last edited: Sep  4 09:10 2006 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.65 2006-08-10 15:06:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.66 2006-09-15 09:15:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -207,6 +207,8 @@ double zMapWindowGetZoomMagnification(ZMapWindow window);
 double zMapWindowGetZoomMaxDNAInWrappedColumn(ZMapWindow window);
 
 gboolean zMapWindowGetDNAStatus(ZMapWindow window);
+
+void zMapWindowToggle3Frame(ZMapWindow window) ;
 void zMapWindowToggleDNAProteinColumns(ZMapWindow window, 
                                        GQuark align_id,   GQuark block_id,
                                        gboolean dna,      gboolean protein,
