@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Aug  8 10:48 2006 (edgrif)
+ * Last edited: Sep 14 15:07 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.86 2006-08-10 15:04:39 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.87 2006-09-15 09:08:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -78,11 +78,14 @@ typedef enum {ZMAPFEATURE_INVALID = 0,
 	      ZMAPFEATURE_BASIC, ZMAPFEATURE_ALIGNMENT, ZMAPFEATURE_TRANSCRIPT,
 	      ZMAPFEATURE_RAW_SEQUENCE, ZMAPFEATURE_PEP_SEQUENCE} ZMapFeatureType ;
 
-typedef enum {ZMAPFEATURE_SUBPART_INVALID,
+typedef enum {ZMAPFEATURE_SUBPART_INVALID = 0,
 	      ZMAPFEATURE_SUBPART_INTRON, ZMAPFEATURE_SUBPART_EXON,
 	      ZMAPFEATURE_SUBPART_GAP, ZMAPFEATURE_SUBPART_MATCH} ZMapFeatureSubpartType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
+
+typedef enum {ZMAPFRAME_NONE = 0,
+	      ZMAPFRAME_0, ZMAPFRAME_1, ZMAPFRAME_2} ZMapFrame ;
 
 typedef enum {ZMAPPHASE_NONE = 0,
 	      ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPhase ;
@@ -471,6 +474,8 @@ typedef struct ZMapFeatureTypeStyleStruct_
     /* I don't want a general show/hide flag here because we should
      * get that dynamically from the state of the column canvas
      * item.  */
+    unsigned int hide_always  : 1 ;			    /* Never show column. */
+
     unsigned int hide_initially  : 1 ; /* Is the column hidden initially ? */
 
     unsigned int show_when_empty : 1 ; /* If TRUE, features' column is
@@ -485,11 +490,16 @@ typedef struct ZMapFeatureTypeStyleStruct_
 
     /* These are all linked, if strand_specific is FALSE, then so are
      * frame_specific and show_rev_strand. */
-    unsigned int strand_specific : 1 ;
-    unsigned int frame_specific  : 1 ;
-    unsigned int show_rev_strand : 1 ;
+    unsigned int strand_specific : 1 ;			    /* Feature that is on one strand of the dna. */
+    unsigned int show_rev_strand : 1 ;			    /* Only display the feature on the
+							       reverse strand if this is set. */
+    unsigned int frame_specific  : 1 ;			    /* Feature that is in some way linked
+							       to the reading frame of the dna. */
+    unsigned int show_only_as_3_frame : 1 ;		    /* frame specific feature that should
+							       only be displayed when all 3 frames
+							       are shown. */
 
-    unsigned int directional_end : 1 ;
+    unsigned int directional_end : 1 ;			    /* Display pointy ends on exons etc. */
   } opts ;
 
   struct
@@ -692,7 +702,11 @@ void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag)
 void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score) ;
 void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean strand_specific, gboolean frame_specific,
-			     gboolean show_rev_strand) ;
+			     gboolean show_rev_strand, gboolean show_as_3_frame) ;
+void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
+			     gboolean *strand_specific, gboolean *frame_specific,
+			     gboolean *show_rev_strand, gboolean *show_as_3_frame) ;
+void zMapStyleSetHide(ZMapFeatureTypeStyle style, gboolean hide) ;
 void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially) ;
 gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional);
