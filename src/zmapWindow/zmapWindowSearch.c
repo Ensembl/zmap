@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 21 11:27 2006 (edgrif)
+ * Last edited: Sep 15 09:28 2006 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.14 2006-07-21 10:33:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.15 2006-09-15 09:25:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -659,7 +659,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   if ((search_result = zmapWindowFToIFindItemSetFull(search_data->window->context_to_item,
 						     align_id, block_id, set_id,
-						     strand_spec, feature_id,
+						     strand_spec, NULL,
+						     feature_id,
 						     callback, search_pred_ptr)))
     {
 
