@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Aug  8 14:13 2006 (edgrif)
+ * Last edited: Sep  4 11:23 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.26 2006-08-10 15:04:58 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.27 2006-09-15 09:13:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -217,6 +217,17 @@ void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_
 }
 
 
+void zMapStyleSetHide(ZMapFeatureTypeStyle style, gboolean hide)
+{
+  zMapAssert(style) ;
+
+  style->opts.hide_always = hide ;
+
+  return ;
+}
+
+
+
 /* Controls whether the feature set is displayed initially. */
 void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially)
 {
@@ -300,7 +311,7 @@ void zMapStyleSetScore(ZMapFeatureTypeStyle style, char *score_str,
  * a good way of enforcing stuff...so its all a bit heuristic. */
 void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean strand_specific, gboolean frame_specific,
-			     gboolean show_rev_strand)
+			     gboolean show_rev_strand, gboolean show_only_as_3_frame)
 {
   zMapAssert(type) ;
 
@@ -313,9 +324,33 @@ void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
   type->opts.strand_specific = strand_specific ;
   type->opts.frame_specific  = frame_specific ;
   type->opts.show_rev_strand = show_rev_strand ;
+  type->opts.show_only_as_3_frame = show_only_as_3_frame ;
 
   return ;
 }
+
+
+/* These attributes are not needed for many features and are not independent,
+ * hence we set them in a special routine, none of this is very good as we don't have
+ * a good way of enforcing stuff...so its all a bit heuristic. */
+void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
+			     gboolean *strand_specific, gboolean *frame_specific,
+			     gboolean *show_rev_strand, gboolean *show_only_as_3_frame)
+{
+  zMapAssert(type) ;
+
+  if (strand_specific)
+    *strand_specific = type->opts.strand_specific ;
+  if (frame_specific)
+    *frame_specific = type->opts.frame_specific ;
+  if (show_rev_strand )
+    *show_rev_strand = type->opts.show_rev_strand ;
+  if (show_only_as_3_frame)
+    *show_only_as_3_frame = type->opts.show_only_as_3_frame ;
+
+  return ;
+}
+
 
 void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_feature)
 {
@@ -517,9 +552,10 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	   {"foreground"  , ZMAPCONFIG_STRING, {NULL}},
 	   {"background"  , ZMAPCONFIG_STRING, {NULL}},
 	   {"width"       , ZMAPCONFIG_FLOAT , {NULL}},
-	   {"show_reverse", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"strand_specific", ZMAPCONFIG_BOOL, {NULL}},
 	   {"frame_specific",  ZMAPCONFIG_BOOL, {NULL}},
+	   {"show_reverse", ZMAPCONFIG_BOOL  , {NULL}},
+	   {"show_only_as_3_frame", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"minmag"      , ZMAPCONFIG_INT, {NULL}},
 	   {"maxmag"      , ZMAPCONFIG_INT, {NULL}},
 	   {"bump"        , ZMAPCONFIG_STRING, {NULL}},
@@ -580,7 +616,8 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	      zMapStyleSetStrandAttrs(new_type,
 				      zMapConfigGetElementBool(next_types, "strand_specific"),
 				      zMapConfigGetElementBool(next_types, "frame_specific"),
-				      zMapConfigGetElementBool(next_types, "show_reverse")) ;
+				      zMapConfigGetElementBool(next_types, "show_reverse"),
+				      zMapConfigGetElementBool(next_types, "show_only_as_3_frame")) ;
 
 	      zMapStyleSetBump(new_type, zMapConfigGetElementString(next_types, "bump")) ;
 
