@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Aug  8 09:52 2006 (edgrif)
+ * Last edited: Sep 15 10:14 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.66 2006-08-08 09:06:23 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.67 2006-09-15 09:14:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1549,8 +1549,9 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
     *column_group = NULL, *orig_style = NULL,
     *overlap = NULL ;
   double width = ACEDB_DEFAULT_WIDTH ;
-  gboolean strand_specific = FALSE, frame_specific = FALSE, show_up_strand = FALSE ;
-  gboolean init_hidden = FALSE ;
+  gboolean strand_specific = FALSE, show_up_strand = FALSE,
+    frame_specific = FALSE, show_only_as_3_frame = FALSE ;
+  gboolean hide_always = FALSE, init_hidden = FALSE ;
   double min_mag = 0.0, max_mag = 0.0 ;
   double min_score = 0.0, max_score = 0.0 ;
   gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE ;
@@ -1653,13 +1654,17 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	      break ;
 	    }
 	}
-      else if (g_ascii_strcasecmp(tag, "Strand_sensitive") == 0)
-	strand_specific = TRUE ;
       else if (g_ascii_strcasecmp(tag, "Frame_sensitive") == 0)
 	{
 	  frame_specific = TRUE ;
 	  strand_specific = TRUE ;
 	}
+      else if (g_ascii_strcasecmp(tag, "show_only_as_3_frame") == 0)
+	{
+	  show_only_as_3_frame = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Strand_sensitive") == 0)
+	strand_specific = TRUE ;
       else if (g_ascii_strcasecmp(tag, "Show_up_strand") == 0)
 	{
 	  show_up_strand = TRUE ;
@@ -1668,7 +1673,8 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       else if (g_ascii_strcasecmp(tag, "No_display") == 0)
 	{
 	  /* Objects that have the No_display tag set should not be shown at all. */
-	  status = FALSE ;
+	  hide_always = TRUE ;
+
 	  break ;
 	}
       else if (g_ascii_strcasecmp(tag, "init_hidden") == 0)
@@ -1813,12 +1819,16 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       if (min_score && max_score)
 	zMapStyleSetScore(style, min_score, max_score) ;
 
-      zMapStyleSetStrandAttrs(style, strand_specific, frame_specific, show_up_strand) ;
+      zMapStyleSetStrandAttrs(style,
+			      strand_specific, frame_specific,
+			      show_up_strand, show_only_as_3_frame) ;
 
       zMapStyleSetBump(style, overlap) ;
 
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
+
+      zMapStyleSetHide(style, hide_always) ;
 
       if (init_hidden)
 	zMapStyleSetHideInitial(style, init_hidden) ;
