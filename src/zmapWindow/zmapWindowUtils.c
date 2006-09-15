@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug 10 11:33 2006 (edgrif)
+ * Last edited: Sep  7 15:05 2006 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.32 2006-08-10 15:12:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.33 2006-09-15 09:26:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,16 +47,7 @@ typedef struct
 } ZMapWindowStyleTableDataStruct, *ZMapWindowStyleTableData ;
 
 
-typedef struct windowScrollRegionStruct_
-{
-  ZMapWindow window;
-  double x1, x2, y1, y2;
-}windowScrollRegionStruct, *windowScrollRegion;
 
-
-static void cropLongItem(gpointer data, gpointer user_data) ;
-static void freeLongItem(gpointer data, gpointer user_data_unused) ;
-gint findLongItemCB(gconstpointer data, gconstpointer user_data) ;
 
 static void styleDestroyCB(gpointer data) ;
 static void styleTableHashCB(gpointer key, gpointer value, gpointer user_data) ;
@@ -284,109 +275,6 @@ void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_arr
 
 
 
-/* The zmapWindowLongItemXXXXX() functions manage the cropping of canvas items that
- * can exceed the X Windows size limit of 32k for graphical items. We have to do this
- * because the foocanvas does not handle this. */
-
-/* n.b. we could get the start/end from the item but perhaps it doesn't matter...and it is
- * more efficient + the user could always get the start/end themselves before calling us. */
-void zmapWindowLongItemCheck(ZMapWindow window, FooCanvasItem *item, double start, double end)
-{
-  double length ;
-  double zoom;
-
-  zoom = zMapWindowGetZoomMax(window) ;
-
-  length = zmapWindowExt(start, end) * zoom ;
-
-  /* Only add the item if it can exceed the windows limit. */
-  if (length > ZMAP_WINDOW_MAX_WINDOW)
-    {
-      ZMapWindowLongItem long_item ;
-
-      long_item = g_new0(ZMapWindowLongItemStruct, 1) ;
-
-      long_item->item = item ;
-
-      if (FOO_IS_CANVAS_LINE(long_item->item) || FOO_IS_CANVAS_POLYGON(long_item->item))
-	{
-	  FooCanvasPoints *item_points ;
-
-	  g_object_get(G_OBJECT(long_item->item),
-		       "points", &item_points,
-		       NULL) ;
-
-	  long_item->pos.points = foo_canvas_points_new(ZMAP_WINDOW_INTRON_POINTS) ;
-
-	  memcpy(long_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
-
-	  memcpy(long_item->pos.points->coords,
-		 item_points->coords,
-		 ((item_points->num_points * 2) * sizeof(double))) ;
-	}
-      else
-	{
-	  long_item->pos.box.start = start ;
-	  long_item->pos.box.end = end ;
-	}
-
-      window->long_items = g_list_append(window->long_items, long_item) ;
-    }
-
-  return ;
-}
-
-void zmapWindowLongItemCrop(ZMapWindow window, 
-                            double x1, double y1,
-                            double x2, double y2)
-{
-  if (window->long_items)
-    {
-      windowScrollRegionStruct func_data = {NULL, 0.0, 0.0, 0.0, 0.0};
-      func_data.window = window;
-      func_data.x1     = x1;
-      func_data.x2     = x2;
-      func_data.y1     = y1;
-      func_data.y2     = y2;
-      g_list_foreach(window->long_items, cropLongItem, &func_data) ;
-    }
-  return ;
-}
-
-/* Returns TRUE if the item was removed, FALSE if the item could not be
- * found in the list. */
-gboolean zmapWindowLongItemRemove(GList **long_items, FooCanvasItem *item)
-{
-  gboolean result = FALSE ;
-  GList *list_item ;
-
-  if ((list_item = g_list_find_custom(*long_items, item, findLongItemCB)))
-    {
-      gpointer data = list_item->data ;
-
-      *long_items = g_list_remove(*long_items, list_item->data) ;
-
-      freeLongItem(data, NULL) ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
-
-
-/* Free all the long items by freeing individual structs then the list itself. */
-void zmapWindowLongItemFree(GList *long_items)
-{
-  g_list_foreach(long_items, freeLongItem, NULL) ;
-
-  g_list_free(long_items) ;
-
-  return ;
-}
-
-
 
 void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out)
 {
@@ -482,149 +370,6 @@ void zmapWindowStyleTableDestroy(GHashTable *style_table)
 /* 
  *                  Internal routines.
  */
-
-/* A GFunc list callback function, called to free data attached to each list member. */
-static void freeLongItem(gpointer data, gpointer user_data_unused)
-{
-  ZMapWindowLongItem long_item = (ZMapWindowLongItem)data ;
-
-  g_free(long_item) ;
-
-  return ;
-}
-
-/* A GFunc list callback function, called to check whether a canvas item needs to be cropped. */
-static void cropLongItem(gpointer data, gpointer user_data)
-{
-  ZMapWindowLongItem long_item = (ZMapWindowLongItem)data ;
-  windowScrollRegion func_data = (windowScrollRegion)user_data;
-  ZMapWindow window = NULL;
-  double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
-  double start, end, dummy_x ;
-  gboolean start_xing, end_xing;
-
-  zMapAssert(FOO_IS_CANVAS_ITEM(long_item->item)) ;
-  window = func_data->window;
-
-  scroll_x1 = func_data->x1;
-  scroll_x2 = func_data->x2;
-  scroll_y1 = func_data->y1;
-  scroll_y2 = func_data->y2;
-
-  /* Reset to original coords because we may be zooming out, you could be more clever
-   * about this but is it worth the convoluted code ? */
-  if (FOO_IS_CANVAS_LINE(long_item->item))
-    {
-      foo_canvas_item_set(long_item->item,
-			  "points", long_item->pos.points,
-			  NULL) ;
-      start = long_item->pos.points->coords[1] ;
-      end   = long_item->pos.points->coords[((long_item->pos.points->num_points * 2) - 1)] ;
-    }
-  else if (FOO_IS_CANVAS_POLYGON(long_item->item))
-    {
-      int ptidx = (((long_item->pos.points->num_points - 1) * 2) - 1);
-      foo_canvas_item_set(long_item->item,
-			  "points", long_item->pos.points,
-			  NULL) ;
-      /* Watch out here the first and last polygon points not being in order!
-       * i.e first < last is not always true.
-
-       * This method probably isn't fool proof, also slow! I'm also
-       * guessing we should have a convention where first and last
-       * point should be start and end respectively. i.e. the above
-       * should _always_ be true.  This won't work with polygons
-       * though as first and last are the same point, so I'm using
-       * first and penultimate.  There are likely to be times when
-       * these are not the extremes of the extent of an item though,
-       * and as for discussion on whether first < penultimate, that
-       * probably needs to happen....
-
-       */
-      start = MIN(long_item->pos.points->coords[1], long_item->pos.points->coords[ptidx]);
-      end   = MAX(long_item->pos.points->coords[1], long_item->pos.points->coords[ptidx]);
-      
-    }
-  else
-    {
-      foo_canvas_item_set(long_item->item,
-			  "y1", long_item->pos.box.start,
-			  "y2", long_item->pos.box.end,
-			  NULL) ;
-
-      start = long_item->pos.box.start ;
-      end   = long_item->pos.box.end ;
-    }
-
-
-  dummy_x = 0 ;
-
-  foo_canvas_item_i2w(long_item->item, &dummy_x, &start) ;
-  foo_canvas_item_i2w(long_item->item, &dummy_x, &end) ;
-
-  /* Now clip anything that overlaps the boundaries of the scrolled region. */
-  if (!(end < scroll_y1) && !(start > scroll_y2)
-      && ((start_xing = start < scroll_y1) || (end_xing = end > scroll_y2)))
-    {
-      if (start < scroll_y1)
-	start = scroll_y1 ;
-
-      if (end > scroll_y2)
-	end = scroll_y2 ;
-
-      foo_canvas_item_w2i(long_item->item, &dummy_x, &start) ;
-      foo_canvas_item_w2i(long_item->item, &dummy_x, &end) ;
-
-      if(FOO_IS_CANVAS_POLYGON(long_item->item) ||
-         FOO_IS_CANVAS_LINE(long_item->item))
-        {
-          FooCanvasPoints *item_points ;
-          int i, ptidx;
-          double tmpy;
-	  g_object_get(G_OBJECT(long_item->item),
-		       "points", &item_points,
-		       NULL) ;
-          ptidx = item_points->num_points * 2;
-          for(i = 1; i < ptidx; i+=2) /* ONLY Y COORDS!!! */
-            {
-              tmpy = item_points->coords[i];
-              if(tmpy < start)
-                item_points->coords[i] = start;
-              if(tmpy > end)
-                item_points->coords[i] = end;
-            }
-	  foo_canvas_item_set(long_item->item,
-			      "points", item_points,
-			      NULL);
-        }
-      else
-	{
-	  foo_canvas_item_set(long_item->item,
-			      "y1", start,
-			      "y2", end,
-			      NULL) ;
-	}
-    }
-
-  return ;
-}
-
-
-/* Compares canvas item supplied via user_data with canvas item held in data of list item
- * and returns 0 if they are the same. */
-gint findLongItemCB(gconstpointer data, gconstpointer user_data)
-{
-  gint result = -1 ;
-  FooCanvasItem *list_item = ((ZMapWindowLongItem)data)->item ;
-  FooCanvasItem *item = (FooCanvasItem *)user_data ;
-
-  if (list_item == item)
-    result = 0 ;
-
-  return result ;
-}
-
-
 
 
 /* Called when a style is destroyed and the styles hash of feature_styles is destroyed. */
