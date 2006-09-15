@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jun 28 16:21 2006 (rds)
+ * Last edited: Sep 13 17:53 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.12 2006-06-30 09:49:25 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.13 2006-09-15 09:18:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,9 @@ typedef struct
   /* I'd like to add a border here too..... */
   double child_spacing ;
 
+  /* The long_item object, needed for freeing a record of long items. */
+  ZMapWindowLongItems long_items ;
+  
 } ContainerDataStruct, *ContainerData ;
 
 
@@ -121,12 +124,16 @@ static void redrawColumn(FooCanvasItem *container, ContainerData data);
  * CONTAINER_DATA is a property of the PARENT
  * ITEM_FEATURE_STRAND is a property of the ZMAPCONTAINER_LEVEL_STRAND PARENT.
  * 
+ * The long_items is forced on us by foocanvas not dealing with X Windows
+ * limits on the longest graphical object that can be drawn.
+ * 
  */
 FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  ZMapContainerLevelType level,
 					  double child_spacing,
 					  GdkColor *background_fill_colour,
-					  GdkColor *background_border_colour)
+					  GdkColor *background_border_colour,
+					  ZMapWindowLongItems long_items)
 {
   FooCanvasGroup *container_parent = NULL, *container_features ;
   FooCanvasItem *container_background ;
@@ -154,6 +161,7 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
   container_data->level = level ;
   container_data->child_spacing = child_spacing ;
   container_data->child_redraw_required = FALSE ;
+  container_data->long_items = long_items ;
 
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_DATA, container_data) ;
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY,
@@ -279,6 +287,39 @@ ZMapStrand zmapWindowContainerGetStrand(FooCanvasGroup *container)
   
   return strand;
 }
+
+FooCanvasGroup *zmapWindowContainerGetStrandGroup(FooCanvasGroup *strand_parent, ZMapStrand strand)
+{
+  FooCanvasGroup *strand_group = NULL ;
+  ContainerData container_data = NULL;
+  ContainerType container_type = CONTAINER_INVALID;
+  FooCanvasGroup *block_features ;
+  ZMapStrand group_strand ;
+
+  container_data = g_object_get_data(G_OBJECT(strand_parent), CONTAINER_DATA);
+  container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(strand_parent), CONTAINER_TYPE_KEY));
+
+  zMapAssert((container_data && 
+	      container_data->level == ZMAPCONTAINER_LEVEL_BLOCK)
+	     && container_type == CONTAINER_PARENT) ;
+
+  block_features = zmapWindowContainerGetFeatures(strand_parent) ;
+
+  zMapAssert(g_list_length(block_features->item_list) == 2) ;
+
+  strand_group = FOO_CANVAS_GROUP(g_list_nth_data(block_features->item_list, 0)) ;
+  group_strand = zmapWindowContainerGetStrand(strand_group) ;
+
+  if (group_strand != strand)
+    {
+      strand_group = FOO_CANVAS_GROUP(g_list_nth_data(block_features->item_list, 1)) ;
+      group_strand = zmapWindowContainerGetStrand(strand_group) ;
+    }
+
+  return strand_group ;
+}
+
+
 
 ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_parent)
 {
@@ -746,7 +787,6 @@ static void getStrandLevelWithStrand(gpointer data, gpointer user_data)
 
   if(level == ZMAPCONTAINER_LEVEL_STRAND)
     {
-      ZMapFeatureAny feature_any = NULL;
       ZMapStrand strand = ZMAPSTRAND_NONE;
 
       strand = zmapWindowContainerGetStrand(container_parent);
@@ -853,8 +893,14 @@ void zmapWindowContainerPurge(FooCanvasGroup *unknown_child)
 static void containerDestroyCB(GtkObject *object, gpointer user_data)
 {
   ContainerData container_data ;
+  FooCanvasItem *background ;
 
   container_data = g_object_get_data(G_OBJECT(object), CONTAINER_DATA) ;
+
+  background = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(object)) ;
+
+  zmapWindowLongItemRemove(container_data->long_items, background) ;
+
   g_free(container_data) ;
 
   return ;
