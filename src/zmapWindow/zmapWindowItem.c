@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug  9 18:33 2006 (edgrif)
+ * Last edited: Sep 15 09:28 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.41 2006-08-10 15:17:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.42 2006-09-15 09:22:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -536,7 +536,7 @@ GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash, ZMapFeat
 					    feature->parent->parent->parent->unique_id,
 					    feature->parent->parent->unique_id,
 					    feature->parent->unique_id,
-					    zMapFeatureStrand2Str(strand),
+					    zMapFeatureStrand2Str(strand), NULL,
 					    reg_ex_name_id, NULL, NULL) ;
 
   g_string_free(reg_ex_name, TRUE) ;
