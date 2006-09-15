@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Aug 10 11:33 2006 (edgrif)
+ * Last edited: Sep 14 16:39 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.135 2006-08-10 15:15:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.136 2006-09-15 09:24:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -250,6 +250,8 @@ typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
 typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
 
+typedef struct _ZMapWindowLongItemsStruct *ZMapWindowLongItems ;
+
 
 
 /* My intention is to gradually put all configuration data (spacing, borders, colours etc)
@@ -364,7 +366,7 @@ typedef struct _ZMapWindowStruct
   /* The stupid foocanvas can generate graphics items that are greater than the X Windows 32k
    * limit, so we have to keep a list of the canvas items that can generate graphics greater
    * than this limit as we zoom in and crop them ourselves. */
-  GList         *long_items ;				    
+  ZMapWindowLongItems long_items ;				    
 
 
   /* Lists of dialog windows associated with this zmap window, these must be destroyed when
@@ -391,34 +393,21 @@ typedef struct _ZMapWindowStruct
   double         seq_start ;
   double         seq_end ;
 
+
   /* We need to be able to find out if the user has done a revcomp for coordinate display
-   * and other reasons, the coord transform flag controls whether coords are displayed
-   * always for the original forward strand or for the reverse strand. */
+   * and other reasons, the display_forward_coords flag controls whether coords are displayed
+   * always as if for the original forward strand or for the whichever is the current forward strand. */
   gboolean revcomped_features ;
   gboolean display_forward_coords ;
 
   /* Used to transform coords for revcomp if display_forward_coords == TRUE */
   int origin ;
 
+
+  /* Are the "3 frame" columns displayed ? */
+  gboolean display_3_frame ;
+
 } ZMapWindowStruct ;
-
-
-/* We use this to hold info. about canvas items that will exceed the X Windows 32k limit
- * for graphical objects and hence may need to be clipped. */
-typedef struct _ZMapWindowLongItemStruct
-{
-  FooCanvasItem *item ;
-
-  union
-  {
-    struct {
-      double         start ;
-      double         end ;
-    } box ;
-    FooCanvasPoints *points ;
-  } pos ;
-} ZMapWindowLongItemStruct, *ZMapWindowLongItem ;
-
 
 
 /* Used in our event communication.... */
@@ -478,10 +467,14 @@ void zmapWindowResetWidth(ZMapWindow window) ;
 double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
 
-void zmapWindowLongItemCheck(ZMapWindow window, FooCanvasItem *item, double start, double end) ;
-void zmapWindowLongItemCrop(ZMapWindow window, double x1, double y1, double x2, double y2) ;
-gboolean zmapWindowLongItemRemove(GList **long_items, FooCanvasItem *item) ;
-void zmapWindowLongItemFree(GList *long_items) ;
+ZMapWindowLongItems zmapWindowLongItemCreate(double max_zoom) ;
+void zmapWindowLongItemSetMaxZoom(ZMapWindowLongItems long_item, double max_zoom) ;
+void zmapWindowLongItemCheck(ZMapWindowLongItems long_item, FooCanvasItem *item, double start, double end) ;
+void zmapWindowLongItemCrop(ZMapWindowLongItems long_items, double x1, double y1, double x2, double y2) ;
+gboolean zmapWindowLongItemRemove(ZMapWindowLongItems long_item, FooCanvasItem *item) ;
+void zmapWindowLongItemPrint(ZMapWindowLongItems long_items) ;
+void zmapWindowLongItemFree(ZMapWindowLongItems long_items) ;
+void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item) ;
 
 void zmapWindowDrawFeatures(ZMapWindow window, 
 			    ZMapFeatureContext current_context, ZMapFeatureContext new_context) ;
@@ -501,43 +494,43 @@ void zmapHideUnhideColumns(ZMapWindow window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
 GHashTable *zmapWindowFToICreate(void) ;
-GQuark zmapWindowFToIMakeSetID(GQuark set_id, ZMapStrand strand) ;
-gboolean zmapWindowFToIAddRoot(GHashTable *feature_to_context_hash,
-                               FooCanvasGroup *root_group);
+gboolean zmapWindowFToIAddRoot(GHashTable *feature_to_context_hash, FooCanvasGroup *root_group) ;
 gboolean zmapWindowFToIAddAlign(GHashTable *feature_to_context_hash,
-				GQuark align_id,
-				FooCanvasGroup *align_group) ;
+				GQuark align_id, FooCanvasGroup *align_group) ;
 gboolean zmapWindowFToIAddBlock(GHashTable *feature_to_context_hash,
-				GQuark align_id, GQuark block_id,
-				FooCanvasGroup *block_group) ;
+				GQuark align_id, GQuark block_id, FooCanvasGroup *block_group) ;
 gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
 			      GQuark align_id, GQuark block_id, GQuark set_id,
-			      ZMapStrand strand,
+			      ZMapStrand strand, ZMapFrame frame,
 			      FooCanvasGroup *set_group) ;
 gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 				  GQuark align_id, GQuark block_id, GQuark set_id,
 				  GQuark feature_id, FooCanvasItem *feature_item) ;
 FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
 					  GQuark align_id, GQuark block_id, GQuark set_id,
-					  ZMapStrand strand,
+					  ZMapStrand strand, ZMapFrame frame,
 					  GQuark feature_id) ;
 GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark set_id,
-				     char *strand_spec,
+				     char *strand_spec, char *frame_spec,
 				     GQuark feature_id,
 				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data) ;
 FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
-					 ZMapFeatureSet feature_set, ZMapStrand strand) ;
+					 ZMapFeatureSet feature_set,
+					 ZMapStrand strand, ZMapFrame frame) ;
 FooCanvasItem *zmapWindowFToIFindFeatureItem(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash, ZMapFeature feature,
 					   int child_start, int child_end) ;
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 				 GQuark align_id, GQuark block_id, GQuark set_id,
-				 ZMapStrand set_strand) ;
+				 ZMapStrand strand, ZMapFrame frame) ;
 gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
+
+
 
 FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
@@ -674,6 +667,8 @@ void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
 
 
 ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature) ;
+ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
+
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature) ;
 
 char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyle style) ;
@@ -755,6 +750,14 @@ void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control);
 
 
 
+void zmapWindowCreateSetColumns(FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group,
+				ZMapFeatureBlock block, GQuark feature_set_id, ZMapWindow window,
+				FooCanvasGroup **forward_col, FooCanvasGroup **reverse_col) ;
+
+void zmapWindowCreateFeatureSet(ZMapWindow window, ZMapFeatureSet feature_set,
+				FooCanvasGroup *forward_col, FooCanvasGroup *reverse_col) ;
+void zmapWindowRemoveEmptyColumns(ZMapWindow window,
+				  FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group) ;
 
 
 GHashTable *zmapWindowStyleTableCreate(void) ;
@@ -778,5 +781,8 @@ void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, 
 void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
                                         double border);
 /* End Ruler Functions */
+
+
+
 
 #endif /* !ZMAP_WINDOW_P_H */
