@@ -22,35 +22,38 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Defines various strings etc. that are required by the
+ *              configuration routines.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 22 11:07 2006 (rds)
+ * Last edited: Sep 26 09:37 2006 (edgrif)
  * Created: Sun May 28 09:16:38 2006 (rds)
- * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.3 2006-06-30 15:33:15 rds Exp $
+ * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.4 2006-09-26 08:37:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_CONFIG_STYLE_DEFAULTS_H
 #define ZMAP_CONFIG_STYLE_DEFAULTS_H
 
+
 /*! 
- * Here are a list of predefined/fixed styles which zmap uses.
+ * Here are a list of predefined/fixed styles which zmap uses. Styles with these names
+ * _MUST_ be available from the server with the given name (case insensitive),
+ * if they are not then various types of display (dna, 3 frame) are not possible.
+ * 
  * ZMap will fill in the style with some reasonable defaults, which
- * users may overload/override, so llong as they use these names.
+ * users may overload/override, so long as they use these names.
+ * 
+ * - 3 Frame                  controls 3 frame display
+ * - 3 Frame Translation      controls 3 frame protein translation
+ * 
+ * - DNA                      controls dna sequence display
  *
- * - DNA Sequence
- * - 3 Frame Translation
  */
-
-#define ZMAP_FIXED_STYLE_DNA_NAME "DNA Sequence"
-#define ZMAP_FIXED_STYLE_DNA      "dna sequence"
+#define ZMAP_FIXED_STYLE_3FRAME   "3 Frame"
 #define ZMAP_FIXED_STYLE_3FT_NAME "3 Frame Translation"
-#define ZMAP_FIXED_STYLE_3FT      "3 frame translation"
 
-#define ZMAP_FIXED_STYLE_DNA_ID g_quark_from_string(ZMAP_FIXED_STYLE_DNA)
-#define ZMAP_FIXED_STYLE_3FT_ID g_quark_from_string(ZMAP_FIXED_STYLE_3FT)
+#define ZMAP_FIXED_STYLE_DNA_NAME "DNA"
 
 
 
