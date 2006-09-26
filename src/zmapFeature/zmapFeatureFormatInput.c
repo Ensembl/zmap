@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 31 11:52 2006 (edgrif)
+ * Last edited: Sep 21 16:56 2006 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.8 2006-08-01 09:53:46 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.9 2006-09-26 08:44:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -303,6 +303,69 @@ char *zMapFeatureStrand2Str(ZMapStrand strand)
   strand_str = strands[strand] ;
 
   return strand_str ;
+}
+
+
+
+/* Frame must be one of the chars '.', '0' or '1' or '2'. */
+gboolean zMapFeatureFormatFrame(char *frame_str, ZMapFrame *frame_out)
+{
+  gboolean result = FALSE ;
+
+  if (strlen(frame_str) == 1
+      && (*frame_str == '.' || *frame_str == '0' || *frame_str == '1' || *frame_str == '2'))
+    {
+      result = TRUE ;
+
+      switch (*frame_str)
+	{
+	case '0':
+	  *frame_out = ZMAPFRAME_0 ;
+	  break ;
+	case '1':
+	  *frame_out = ZMAPFRAME_1 ;
+	  break ;
+	case '2':
+	  *frame_out = ZMAPFRAME_2 ;
+	  break ;
+	default:
+	  *frame_out = ZMAPFRAME_NONE ;
+	  break ;
+	}
+    }
+
+  return result ;
+}
+	
+gboolean zMapFeatureStr2Frame(char *string, ZMapFrame *frame)
+{
+  gboolean status = TRUE;
+
+  if (g_ascii_strcasecmp(string, "0") == 0)
+    *frame = ZMAPFRAME_0;
+  else if (g_ascii_strcasecmp(string, "1") == 0)
+    *frame = ZMAPFRAME_1;
+  else if (g_ascii_strcasecmp(string, "2") == 0)
+    *frame = ZMAPFRAME_2;
+  else if (g_ascii_strcasecmp(string, "none") == 0)
+    *frame = ZMAPFRAME_NONE;
+  else
+    status = FALSE;
+
+  return status;
+}
+
+char *zMapFeatureFrame2Str(ZMapFrame frame)
+{
+  static char *frames[] = {".", "0", "1", "2" } ;
+  char *frame_str ;
+
+  zMapAssert(frame == ZMAPFRAME_NONE
+	     || frame == ZMAPFRAME_0 || frame == ZMAPFRAME_1 || frame == ZMAPFRAME_2) ;
+
+  frame_str = frames[frame] ;
+
+  return frame_str ;
 }
 
 
