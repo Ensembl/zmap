@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 17 12:20 2006 (edgrif)
+ * Last edited: Sep 21 10:37 2006 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.49 2006-07-17 11:22:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.50 2006-09-26 08:52:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -361,16 +361,22 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
     {
       GtkTreeView *treeView = NULL;
       ZMapFeature feature = NULL ;
+      ZMapStrand set_strand ;
+      ZMapFrame set_frame ;
       FooCanvasItem *item ;
 
       treeView = gtk_tree_selection_get_tree_view(selection);
       
       gtk_tree_model_get(model, &iter, 
                          ZMAP_WINDOW_LIST_COL_FEATURE, &feature,
+			 ZMAP_WINDOW_LIST_COL_SET_STRAND, &set_strand,
+			 ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
                          -1) ;
       zMapAssert(feature) ;
 
-      item = zmapWindowFToIFindFeatureItem(windowList->zmapWindow->context_to_item, feature) ;
+      item = zmapWindowFToIFindFeatureItem(windowList->zmapWindow->context_to_item,
+					   set_strand, set_frame,
+					   feature) ;
       zMapAssert(item) ;
 
       if(!path_currently_selected && item)
@@ -473,18 +479,25 @@ static void view_RowActivatedCB(GtkTreeView       *treeView,
     {
       ZMapWindowList winList = (ZMapWindowList)userdata ;
       ZMapFeature feature = NULL ;
+      ZMapStrand set_strand ;
+      ZMapFrame set_frame ;
       FooCanvasItem *item ;
 
       gtk_tree_model_get(model, &iter, 
                          ZMAP_WINDOW_LIST_COL_FEATURE, &feature,
+			 ZMAP_WINDOW_LIST_COL_SET_STRAND, &set_strand,
+			 ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
                          -1) ;
       zMapAssert(feature) ;
 
-      item = zmapWindowFToIFindFeatureItem(winList->zmapWindow->context_to_item, feature) ;
+      item = zmapWindowFToIFindFeatureItem(winList->zmapWindow->context_to_item,
+					   set_strand, set_frame,
+					   feature) ;
       zMapAssert(item) ;
 
       zmapWindowEditorCreate(winList->zmapWindow, item, winList->zmapWindow->edittable_features) ;
     }
+
   return ;
 }
 
@@ -508,6 +521,8 @@ static gboolean operateTreeModelForeachFunc(GtkTreeModel *model, GtkTreePath *pa
   ZMapWindowList cb_data = (ZMapWindowList)data ;
   gboolean stop = FALSE ;
   ZMapFeature feature = NULL ;
+  ZMapStrand set_strand ;
+  ZMapFrame set_frame ;
   FooCanvasItem *listItem = NULL;
   gint action = 0;
 
@@ -515,10 +530,14 @@ static gboolean operateTreeModelForeachFunc(GtkTreeModel *model, GtkTreePath *pa
 
   gtk_tree_model_get(model, iter, 
 		     ZMAP_WINDOW_LIST_COL_FEATURE, &feature,
+		     ZMAP_WINDOW_LIST_COL_SET_STRAND, &set_strand,
+		     ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
 		     -1) ;
   zMapAssert(feature) ;
 
-  listItem = zmapWindowFToIFindFeatureItem(cb_data->zmapWindow->context_to_item, feature) ;
+  listItem = zmapWindowFToIFindFeatureItem(cb_data->zmapWindow->context_to_item,
+					   set_strand, set_frame,
+					   feature) ;
   zMapAssert(listItem) ;
 
 
@@ -663,6 +682,8 @@ static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget)
   GtkTreeViewColumn *col  = NULL;
   GtkTreePath *path       = NULL;
   ZMapFeatureAny feature  = NULL;
+  ZMapStrand set_strand ;
+  ZMapFrame set_frame ;
   GtkTreeIter iter;
   FooCanvasItem *feature_item ;
 
@@ -683,10 +704,13 @@ static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget)
 
   gtk_tree_model_get(treeModel, &iter, 
 		     ZMAP_WINDOW_LIST_COL_FEATURE, &feature,
+		     ZMAP_WINDOW_LIST_COL_SET_STRAND, &set_strand,
+		     ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
 		     -1);
   zMapAssert(feature) ;
 
   feature_item = zmapWindowFToIFindFeatureItem(wList->zmapWindow->context_to_item,
+					       set_strand, set_frame,
 					       (ZMapFeature)feature) ;
 
   zmapWindowCreateSearchWindow(wList->zmapWindow, feature_item) ;
@@ -761,13 +785,19 @@ static void selectItemInView(ZMapWindow window, GtkTreeView *treeView, FooCanvas
   while (valid)
     {
       ZMapFeature feature = NULL ;
+      ZMapStrand set_strand ;
+      ZMapFrame set_frame ;
       FooCanvasItem *listItem ;
 
       gtk_tree_model_get(treeModel, &iter, 
 			 ZMAP_WINDOW_LIST_COL_FEATURE, &feature,
+			 ZMAP_WINDOW_LIST_COL_SET_STRAND, &set_strand,
+			 ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
 			 -1);
 
-      listItem = zmapWindowFToIFindFeatureItem(window->context_to_item, feature) ;
+      listItem = zmapWindowFToIFindFeatureItem(window->context_to_item,
+					       set_strand, set_frame,
+					       feature) ;
       zMapAssert(listItem) ;
 
       if (item == listItem)

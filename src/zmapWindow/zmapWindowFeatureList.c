@@ -22,13 +22,15 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Implements a sortable list of feature(s) displaying
+ *              coords, strand and much else.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindow_P.h
+ *              
  * HISTORY:
- * Last edited: Mar 30 16:19 2006 (edgrif)
+ * Last edited: Sep 21 11:43 2006 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.8 2006-03-30 15:24:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.9 2006-09-26 08:52:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,10 +63,12 @@ static gint NOsortByFunc (GtkTreeModel *model,
 
 
 static void addFeatureItemToStore(GtkTreeModel *treeModel, 
+				  ZMapStrand set_strand,
+				  ZMapFrame set_frame,
                                   ZMapFeature feature, 
                                   FooCanvasItem *item,
                                   GtkTreeIter *parent);
-gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer user_data) ;
+static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer user_data) ;
 
 
 
@@ -72,14 +76,23 @@ gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpo
 /* Not sure on the sanity of this.  It's going to make the order
  * look a bit odd maybe. Forward is logically before Reverse and 
  * 1 before 2, but for feature type this isn't going to be the 
- * case. Oh well it's really easy to change*/
-static int columnSortIDs[ZMAP_WINDOW_LIST_COL_NUMBER] = { 
-    ZMAP_WINDOW_LIST_COL_NAME,        ZMAP_WINDOW_LIST_COL_SORT_TYPE,
-    ZMAP_WINDOW_LIST_COL_SORT_STRAND, ZMAP_WINDOW_LIST_COL_START,
-    ZMAP_WINDOW_LIST_COL_END,         ZMAP_WINDOW_LIST_COL_SORT_PHASE,
-    ZMAP_WINDOW_LIST_COL_SCORE,       ZMAP_WINDOW_LIST_COL_FEATURE_TYPE,
-    -1, -1, -1, -1
-  };
+ * case. Oh well it's really easy to change.
+ * 
+ * WHATEVER else, you need to keep this in step with the calls to gtk_tree_store_new()
+ * in the code below.
+ * 
+ */
+static int columnSortIDs[ZMAP_WINDOW_LIST_COL_NUMBER] =
+  { 
+    ZMAP_WINDOW_LIST_COL_NAME,
+    ZMAP_WINDOW_LIST_COL_SORT_TYPE,
+    ZMAP_WINDOW_LIST_COL_SORT_STRAND,
+    ZMAP_WINDOW_LIST_COL_START, ZMAP_WINDOW_LIST_COL_END,
+    ZMAP_WINDOW_LIST_COL_SORT_PHASE,
+    ZMAP_WINDOW_LIST_COL_SCORE,
+    ZMAP_WINDOW_LIST_COL_FEATURE_TYPE,
+    -1, -1, -1, -1, -1, -1
+  } ;
 
 
 
@@ -99,10 +112,14 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store)
       GtkTreeStore *store = NULL;
 
       store = gtk_tree_store_new(ZMAP_WINDOW_LIST_COL_NUMBER,
-                                 G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-                                 G_TYPE_INT,    G_TYPE_INT,    G_TYPE_STRING,
-                                 G_TYPE_FLOAT,  G_TYPE_STRING, G_TYPE_POINTER,
-                                 G_TYPE_INT,    G_TYPE_INT,    G_TYPE_INT) ;
+                                 G_TYPE_STRING,
+				 G_TYPE_STRING,
+				 G_TYPE_STRING,
+                                 G_TYPE_INT, G_TYPE_INT,
+				 G_TYPE_STRING,
+                                 G_TYPE_FLOAT,
+				 G_TYPE_STRING,
+				 G_TYPE_POINTER, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT) ;
 
       treeModel = GTK_TREE_MODEL(store);
     }
@@ -111,10 +128,14 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store)
       GtkListStore *list = NULL;
 
       list = gtk_list_store_new(ZMAP_WINDOW_LIST_COL_NUMBER,
-                                G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-                                G_TYPE_INT,    G_TYPE_INT,    G_TYPE_STRING,
-                                G_TYPE_FLOAT,  G_TYPE_STRING, G_TYPE_POINTER,
-                                G_TYPE_INT,    G_TYPE_INT,    G_TYPE_INT) ;
+                                G_TYPE_STRING,
+				G_TYPE_STRING,
+				G_TYPE_STRING,
+                                G_TYPE_INT, G_TYPE_INT,
+				G_TYPE_STRING,
+                                G_TYPE_FLOAT,
+				G_TYPE_STRING,
+				G_TYPE_POINTER, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT) ;
 
       treeModel = GTK_TREE_MODEL(list);
     }
@@ -122,7 +143,7 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store)
   sortable  = GTK_TREE_SORTABLE(treeModel);
 
 
-  for(colNo = 0; colNo < ZMAP_WINDOW_LIST_COL_NUMBER; colNo++)
+  for (colNo = 0; colNo < ZMAP_WINDOW_LIST_COL_NUMBER; colNo++)
     {  
       gtk_tree_sortable_set_sort_func(sortable, 
                                       colNo, 
@@ -146,7 +167,7 @@ GtkWidget *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
   char *column_titles[ZMAP_WINDOW_LIST_COL_NUMBER] = {"Name", "Type", "Strand", 
                                                       "Start", "End", "Phase",
                                                       "Score", "Method", "FEATURE_ITEM",
-                                                      "","",""};
+                                                      "", "", "", "", ""};
 
   /* Create the view from the model */
   treeView = gtk_tree_view_new_with_model(treeModel);
@@ -218,16 +239,26 @@ GtkWidget *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
 void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel, GList *list)
 {
 
-  while(list)
+  while (list)
     {
       FooCanvasItem *item = NULL;
-      ZMapFeature feature = NULL;
+      ZMapFeature feature = NULL ;
+      FooCanvasGroup *set_group ;
+      ZMapWindowItemFeatureSetData set_data ;
 
-      item    = (FooCanvasItem *)list->data;
+      item = (FooCanvasItem *)list->data;
+
       /* do we need some kind of type check on feature here? */
       feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+      zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
-      addFeatureItemToStore(treeModel, feature, item, NULL);
+      set_group = zmapWindowItemGetParentContainer(item) ;
+
+      /* These should go in container some time.... */
+      set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
+      zMapAssert(set_data) ;
+
+      addFeatureItemToStore(treeModel, set_data->strand, set_data->frame, feature, item, NULL);
 
       list = list->next ;
     }
@@ -258,7 +289,7 @@ void zmapWindowFeatureListRereadStoreList(GtkTreeView *tree_view, ZMapWindow win
   sortable  = GTK_TREE_SORTABLE(tree_model);
 
   /* Set sorting OFF by setting a noop func. */
-  for(colNo = 0; colNo < ZMAP_WINDOW_LIST_COL_NUMBER; colNo++)
+  for (colNo = 0; colNo < ZMAP_WINDOW_LIST_COL_NUMBER; colNo++)
     {  
       gtk_tree_sortable_set_sort_func(sortable, 
                                       colNo, 
@@ -272,7 +303,7 @@ void zmapWindowFeatureListRereadStoreList(GtkTreeView *tree_view, ZMapWindow win
   gtk_tree_model_foreach(tree_model, rereadCB, window) ;
 
   /* Reset the sort function. */
-  for(colNo = 0; colNo < ZMAP_WINDOW_LIST_COL_NUMBER; colNo++)
+  for (colNo = 0; colNo < ZMAP_WINDOW_LIST_COL_NUMBER; colNo++)
     {  
       gtk_tree_sortable_set_sort_func(sortable, 
                                       colNo, 
@@ -287,20 +318,24 @@ void zmapWindowFeatureListRereadStoreList(GtkTreeView *tree_view, ZMapWindow win
 
 /* Reread the feature data into the model columns. This is necessary when the feature changes
  * for events like a reverse complement. */
-gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer user_data)
+static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer user_data)
 {
   gboolean result = FALSE ;
   ZMapWindow window = (ZMapWindow)user_data ;
   ZMapFeature feature ;
+  ZMapStrand set_strand ;
+  ZMapFrame set_frame ;
+
 
   /* Get the feature struct... */
   gtk_tree_model_get(model, iter,
 		     ZMAP_WINDOW_LIST_COL_FEATURE, &feature,
+		     ZMAP_WINDOW_LIST_COL_SET_STRAND, &set_strand,
+		     ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
 		     -1) ;
 
   if (GTK_IS_TREE_STORE(model))
     {
-
       /* WARNING: I DON'T ACTUALLY KNOW IF THIS BIT OF THE CODE WORKS AS THE "EDIT" WINDOWS
        * DO NOT GET PUT IN THE RIGHT LIST FOR THIS CODE TO BE CALLED.... */
 
@@ -311,7 +346,9 @@ gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpo
 
       store = GTK_TREE_STORE(model);
 
-      item = zmapWindowFToIFindFeatureItem(window->context_to_item, feature) ;
+      item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+					   set_strand, set_frame,
+					   feature) ;
       zMapAssert(item) ;
 
       type  = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE));
@@ -339,7 +376,8 @@ gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpo
               while (children)
                 {
                   FooCanvasItem *childItem = (FooCanvasItem *)children->data;
-                  addFeatureItemToStore(model, feature, childItem, iter);
+
+                  addFeatureItemToStore(model, set_strand, set_frame, feature, childItem, iter);
                   children = children->next;
                 }
             }
@@ -452,8 +490,10 @@ gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col)
 /* ======================================================= */
 /* INTERNALS */
 
-static void addFeatureItemToStore(GtkTreeModel *treeModel, 
-                                  ZMapFeature feature, 
+static void addFeatureItemToStore(GtkTreeModel *treeModel,
+				  ZMapStrand set_strand,
+				  ZMapFrame set_frame,
+                                  ZMapFeature feature,
                                   FooCanvasItem *item,
                                   GtkTreeIter *parent)
 {
@@ -461,7 +501,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
 
   zMapAssert(feature && item);
 
-  if(GTK_IS_TREE_STORE(treeModel))
+  if (GTK_IS_TREE_STORE(treeModel))
     {
       GtkTreeStore *store = NULL;
       gboolean descend    = TRUE, appended = FALSE;
@@ -494,7 +534,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
               while (children)
                 {
                   FooCanvasItem *childItem = (FooCanvasItem *)children->data;
-                  addFeatureItemToStore(treeModel, feature, childItem, &append);
+                  addFeatureItemToStore(treeModel, set_strand, set_frame, feature, childItem, &append);
                   children = children->next;
                 }
             }
@@ -515,26 +555,32 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                                -1);
           }
           break;
+
         case ITEM_FEATURE_BOUNDING_BOX: 
         default: 
           break;
         }
       
-      if(appended)
+      if (appended)
         gtk_tree_store_set(store, &append, 
                            ZMAP_WINDOW_LIST_COL_STRAND, zMapFeatureStrand2Str(feature->strand),
                            ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
                            ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
                            ZMAP_WINDOW_LIST_COL_FEATURE, feature,
+			   ZMAP_WINDOW_LIST_COL_SET_STRAND, set_strand,
+			   ZMAP_WINDOW_LIST_COL_SET_FRAME, set_frame,
                            -1) ;
 
 
     }
-  else if(GTK_IS_LIST_STORE(treeModel))
+  else if (GTK_IS_LIST_STORE(treeModel))
     {
       GtkListStore *store = NULL;
+
       store = GTK_LIST_STORE(treeModel);
+
       gtk_list_store_append(store, &append);
+
       gtk_list_store_set(store, &append, 
                          ZMAP_WINDOW_LIST_COL_NAME,   (char *)g_quark_to_string(feature->original_id),
                          ZMAP_WINDOW_LIST_COL_STRAND, zMapFeatureStrand2Str(feature->strand),
@@ -545,6 +591,8 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                          ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
                          ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
                          ZMAP_WINDOW_LIST_COL_FEATURE, feature,
+			 ZMAP_WINDOW_LIST_COL_SET_STRAND, set_strand,
+			 ZMAP_WINDOW_LIST_COL_SET_FRAME, set_frame,
                          ZMAP_WINDOW_LIST_COL_SORT_PHASE,   feature->phase,
                          ZMAP_WINDOW_LIST_COL_SORT_TYPE,    feature->type,
                          ZMAP_WINDOW_LIST_COL_SORT_STRAND,  feature->strand,
