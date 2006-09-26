@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 14 16:39 2006 (edgrif)
+ * Last edited: Sep 26 10:45 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.136 2006-09-15 09:24:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.137 2006-09-26 09:47:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -41,21 +41,44 @@
 #include <ZMap/zmapWindow.h>
 
 
+
+/* 
+ *  This section details data that we attacht to the foocanvas items that represent
+ *  contexts, aligns etc. Each data structure is accessed via a key given by the
+ *  string in the hash define for each struct.
+ */
+
+
 /* Names for keys in G_OBJECTS */
 #define ITEM_FEATURE_DATA         ZMAP_WINDOW_P_H "item_feature_data"
-#define ITEM_FEATURE_TYPE         ZMAP_WINDOW_P_H "item_feature_type"
-#define ITEM_FEATURE_STYLE        ZMAP_WINDOW_P_H "item_feature_style"
-#define ITEM_FEATURE_STYLETABLE   ZMAP_WINDOW_P_H "item_feature_styletable"
-#define ITEM_FEATURE_STRAND       ZMAP_WINDOW_P_H "item_feature_strand"
-#define ITEM_SUBFEATURE_DATA      ZMAP_WINDOW_P_H "item_subfeature_data"
+
 #define ZMAP_WINDOW_POINTER       ZMAP_WINDOW_P_H "canvas_to_window"
 
 #define ITEM_HIGHLIGHT_DATA  ZMAP_WINDOW_P_H "item_highlight_data"
 
 
+/* Feature set data, these are the columns in the display. */
+#define ITEM_FEATURE_SET_DATA     ZMAP_WINDOW_P_H "item_feature_set_data"
+
+typedef struct
+{
+  ZMapStrand strand ;
+  ZMapFrame frame ;
+  ZMapFeatureTypeStyle style ;
+  GHashTable *style_table ;
+} ZMapWindowItemFeatureSetDataStruct, *ZMapWindowItemFeatureSetData ;
+
+
+
+
 /* Item features are the canvas items that represent sequence features, they can be of various
  * types, in particular compound features such as transcripts require a parent, a bounding box
  * and children for features such as introns/exons. */
+
+#define ITEM_FEATURE_ITEM_STYLE        ZMAP_WINDOW_P_H "item_feature_item_style"
+#define ITEM_FEATURE_TYPE              ZMAP_WINDOW_P_H "item_feature_type"
+#define ITEM_SUBFEATURE_DATA           ZMAP_WINDOW_P_H "item_subfeature_data"
+
 typedef enum
   {
     ITEM_FEATURE_INVALID,
@@ -135,6 +158,8 @@ enum
     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH = 5
   };
 
+
+
 /* Controls column configuration menu actions. */
 typedef enum
   {
@@ -143,24 +168,33 @@ typedef enum
   } ZMapWindowColConfigureMode ;
 
 
-typedef enum { 
-  ZMAP_WINDOW_LIST_COL_NAME,                /*!< feature name column  */
-  ZMAP_WINDOW_LIST_COL_TYPE,                /*!< feature type column  */
-  ZMAP_WINDOW_LIST_COL_STRAND,              /*!< feature strand  */
-  ZMAP_WINDOW_LIST_COL_START,               /*!< feature start */
-  ZMAP_WINDOW_LIST_COL_END,                 /*!< feature end  */
-  ZMAP_WINDOW_LIST_COL_PHASE,               /*!< feature phase  */
-  ZMAP_WINDOW_LIST_COL_SCORE,               /*!< feature score  */
-  ZMAP_WINDOW_LIST_COL_FEATURE_TYPE,        /*!< feature method  */
-  ZMAP_WINDOW_LIST_COL_FEATURE,				    /*!< The feature !  */
-  ZMAP_WINDOW_LIST_COL_SORT_TYPE,           /*!< \                          */
-  ZMAP_WINDOW_LIST_COL_SORT_STRAND,         /*!< -- sort on integer columns */
-  ZMAP_WINDOW_LIST_COL_SORT_PHASE,          /*!< /                          */
-  ZMAP_WINDOW_LIST_COL_NUMBER               /*!< number of columns  */
-} zmapWindowFeatureListColumn;
+/* Controls what data is displayed in the feature list window. */
+typedef enum
+  { 
+    ZMAP_WINDOW_LIST_COL_NAME,				    /*!< feature name column  */
+    ZMAP_WINDOW_LIST_COL_TYPE,				    /*!< feature type column  */
+    ZMAP_WINDOW_LIST_COL_STRAND,			    /*!< feature strand  */
+    ZMAP_WINDOW_LIST_COL_START,				    /*!< feature start */
+    ZMAP_WINDOW_LIST_COL_END,				    /*!< feature end  */
+    ZMAP_WINDOW_LIST_COL_PHASE,				    /*!< feature phase  */
+    ZMAP_WINDOW_LIST_COL_SCORE,				    /*!< feature score  */
+    ZMAP_WINDOW_LIST_COL_FEATURE_TYPE,			    /*!< feature method  */
+    ZMAP_WINDOW_LIST_COL_FEATURE,			    /*!< The feature !  */
+    ZMAP_WINDOW_LIST_COL_SET_STRAND,			    /* The strand of the features parent set. */
+    ZMAP_WINDOW_LIST_COL_SET_FRAME,			    /* The frame of the features parent set. */
+    ZMAP_WINDOW_LIST_COL_SORT_TYPE,			    /*!< \                          */
+    ZMAP_WINDOW_LIST_COL_SORT_STRAND,			    /*!< -- sort on integer columns */
+    ZMAP_WINDOW_LIST_COL_SORT_PHASE,			    /*!< /                          */
+    ZMAP_WINDOW_LIST_COL_NUMBER				    /*!< number of columns  */
+  } zmapWindowFeatureListColumn;
 #define ZMAP_WINDOW_FEATURE_LIST_COL_NUMBER_KEY "column_number_data"
 
-/* Default colours. */
+
+
+
+/*
+ *           Default colours.
+ */
 
 #define ZMAP_WINDOW_BACKGROUND_COLOUR "white"		    /* main canvas background */
 
@@ -177,6 +211,13 @@ typedef enum {
 
 /* Colour for highlighting a whole columns background. */
 #define ZMAP_WINDOW_COLUMN_HIGHLIGHT "grey"
+
+/* Colours for highlighting 3 frame data */
+#define ZMAP_WINDOW_FRAME_0 "red"
+#define ZMAP_WINDOW_FRAME_1 "deep pink"
+#define ZMAP_WINDOW_FRAME_2 "light pink"
+
+
 
 /* Default colours for features. */
 #define ZMAP_WINDOW_ITEM_FILL_COLOUR "white"
@@ -327,6 +368,10 @@ typedef struct _ZMapWindowStruct
   GdkColor colour_qforward_col ;
   GdkColor colour_qreverse_col ;
   GdkColor colour_column_highlight ;
+  GdkColor colour_frame_0 ;
+  GdkColor colour_frame_1 ;
+  GdkColor colour_frame_2 ;
+
 
   ZMapWindowZoomControl zoom;
 
@@ -497,17 +542,28 @@ void zmapHideUnhideColumns(ZMapWindow window) ;
 
 GHashTable *zmapWindowFToICreate(void) ;
 gboolean zmapWindowFToIAddRoot(GHashTable *feature_to_context_hash, FooCanvasGroup *root_group) ;
+gboolean zmapWindowFToIRemoveRoot(GHashTable *feature_to_context_hash) ;
 gboolean zmapWindowFToIAddAlign(GHashTable *feature_to_context_hash,
 				GQuark align_id, FooCanvasGroup *align_group) ;
+gboolean zmapWindowFToIRemoveAlign(GHashTable *feature_to_context_hash,
+				   GQuark align_id) ;
 gboolean zmapWindowFToIAddBlock(GHashTable *feature_to_context_hash,
 				GQuark align_id, GQuark block_id, FooCanvasGroup *block_group) ;
+gboolean zmapWindowFToIRemoveBlock(GHashTable *feature_to_context_hash,
+				   GQuark align_id, GQuark block_id) ;
 gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
 			      GQuark align_id, GQuark block_id, GQuark set_id,
 			      ZMapStrand strand, ZMapFrame frame,
 			      FooCanvasGroup *set_group) ;
+gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
+				 GQuark align_id, GQuark block_id, GQuark set_id,
+				 ZMapStrand strand, ZMapFrame frame) ;
 gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
-				  GQuark align_id, GQuark block_id, GQuark set_id,
+				  GQuark align_id, GQuark block_id,
+				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame,
 				  GQuark feature_id, FooCanvasItem *feature_item) ;
+gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash,
+				     ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
 					  GQuark align_id, GQuark block_id, GQuark set_id,
 					  ZMapStrand strand, ZMapFrame frame,
@@ -520,14 +576,12 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
 					 ZMapFeatureSet feature_set,
 					 ZMapStrand strand, ZMapFrame frame) ;
-FooCanvasItem *zmapWindowFToIFindFeatureItem(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
-FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash, ZMapFeature feature,
-					   int child_start, int child_end) ;
+FooCanvasItem *zmapWindowFToIFindFeatureItem(GHashTable *feature_to_context_hash, ZMapStrand set_strand,
+					     ZMapFrame set_frame, ZMapFeature feature) ;
+FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
+					   ZMapStrand set_strand, ZMapFrame set_frame,
+					   ZMapFeature feature, int child_start, int child_end) ;
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
-gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
-				 GQuark align_id, GQuark block_id, GQuark set_id,
-				 ZMapStrand strand, ZMapFrame frame) ;
-gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
 
@@ -535,14 +589,22 @@ void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
 void zmapWindowRaiseItem(FooCanvasItem *item) ;
-GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash, ZMapFeature feature) ;
+GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash,
+				   ZMapStrand set_strand, ZMapFrame set_frame,ZMapFeature feature) ;
 GList *zmapWindowItemSortByPostion(GList *feature_item_list) ;
 FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *feature_items) ;
-
+gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame) ;
 void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
+
+/* These should be in a separate file...and merged into foocanvas.... */
 void my_foo_canvas_item_w2i(FooCanvasItem *item, double *x, double *y) ;
 void my_foo_canvas_item_i2w(FooCanvasItem *item, double *x, double *y) ;
 void my_foo_canvas_item_goto(FooCanvasItem *item, double *x, double *y) ;
+
+void my_foo_canvas_item_lower_to(FooCanvasItem *item, int position) ;
+
+
+
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
 void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 
@@ -715,8 +777,8 @@ void zmapWindowItemResetFocusItem(ZMapWindowFocus focus) ;
 void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
 void zmapWindowItemSetHotFocusItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowItemGetHotFocusItem(ZMapWindowFocus focus) ;
-FooCanvasGroup *zmapWindowItemGetHotFocusColumn(ZMapWindowFocus focus) ;
 void zmapWindowItemSetHotFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
+FooCanvasGroup *zmapWindowItemGetHotFocusColumn(ZMapWindowFocus focus) ;
 void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
 void zmapWindowItemFreeFocusItems(ZMapWindowFocus focus) ;
 void zmapWindowItemDestroyFocus(ZMapWindowFocus focus) ;
@@ -748,17 +810,16 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
 char *zmapWindowItemTextHighlightGetFullText(ZMapWindowItemHighlighter select_control);
 void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control);
 
-
-
 void zmapWindowCreateSetColumns(FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group,
 				ZMapFeatureBlock block, GQuark feature_set_id, ZMapWindow window,
+				ZMapFrame frame,
 				FooCanvasGroup **forward_col, FooCanvasGroup **reverse_col) ;
-
 void zmapWindowCreateFeatureSet(ZMapWindow window, ZMapFeatureSet feature_set,
-				FooCanvasGroup *forward_col, FooCanvasGroup *reverse_col) ;
+				FooCanvasGroup *forward_col, FooCanvasGroup *reverse_col,
+				ZMapFrame frame) ;
 void zmapWindowRemoveEmptyColumns(ZMapWindow window,
 				  FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group) ;
-
+gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup *col_group) ;
 
 GHashTable *zmapWindowStyleTableCreate(void) ;
 gboolean zmapWindowStyleTableAdd(GHashTable *style_table, ZMapFeatureTypeStyle new_style) ;
