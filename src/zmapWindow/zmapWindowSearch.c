@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 15 09:28 2006 (edgrif)
+ * Last edited: Sep 22 12:20 2006 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.15 2006-09-15 09:25:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.16 2006-09-26 08:51:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,7 @@ typedef struct
 
   /* Filter field widgets */
   GtkWidget *strand_entry ;
+  GtkWidget *frame_entry ;
   GtkWidget *start_entry ;
   GtkWidget *end_entry ;
   GtkWidget *locus_but ;
@@ -83,6 +84,7 @@ typedef struct
 
   /* Filter data. */
   char *strand_txt ;					    /* No need for ids for strand. */
+  char *frame_txt ;					    /* No need for ids for frame. */
   char *start ;						    /* Coords range to limit search. */
   char *end ;
   gboolean locus ;
@@ -381,6 +383,10 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
+  label = gtk_label_new( "Frame :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
   label = gtk_label_new( "Start :" ) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
@@ -406,6 +412,18 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
+  search_data->frame_entry = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), search_data->frame_txt) ;
+  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
+  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
+
+  /* Frame is only possible if we are in 3 frame mode. */
+  if (!(search_data->window->display_3_frame))
+    gtk_widget_set_sensitive(search_data->frame_entry, FALSE) ;
+
 
   search_data->start_entry = entry = gtk_entry_new() ;
   if (search_data->start)
@@ -453,10 +471,13 @@ static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
     "displayed alignment, block, set and the feature you clicked on. You can either\n"
     "replace or augment these names with the \"*\" wild card to find sets of features,\n"
     "e.g. if the feature name is \"B0250\" then changing it to \"B025*\" will find all\n"
-    "the features for the given align/block/set whose name begins with \"B025\". You can\n"
-    "add wild cards to any of the fields except the strand filter. The strand filter should be\n"
-    "set to one of  +, -, . or *, where * means both strands and . means both strands will be\n"
-    "shown if the feature is not strand sensitive, otherwise only the forward strand is shown." ;
+    "the features for the given align/block/set whose name begins with \"B025\".\n\n"
+    "You can add wild cards to any of the fields except the strand and frame filters.\n"
+    "The strand filter should be set to one of  +, -, . or *, where * means both strands\n"
+    "and . means both strands will be shown if the feature is not strand sensitive,\n"
+    "otherwise only the forward strand is shown.\n\n"
+    "The frame filter should be set to one of  ., 0, 1, 2 or *, where * means all 3 frames\n"
+    "and . the features are not frame sensitive so frame will be ignored.\n" ;
 
   zMapGUIShowText(title, help_text, FALSE) ;
 
@@ -496,11 +517,11 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 static void searchCB(GtkWidget *widget, gpointer cb_data)
 {
   SearchData search_data = (SearchData)cb_data ;
-  char *align_txt, *block_txt, *strand_txt, *set_txt, *feature_txt  ;
+  char *align_txt, *block_txt, *strand_txt, *frame_txt, *set_txt, *feature_txt  ;
   char *start_txt, *end_text ;
   gboolean locus ;
   GQuark align_id, block_id, set_id, feature_id ;
-  char *strand_spec ;
+  char *strand_spec, *frame_spec ;
   GList *search_result ;
   ZMapWindowFToIPredFuncCB callback = NULL ;
   SearchPredCBDataStruct search_pred = {0} ;
@@ -512,7 +533,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   wild_card_id = g_quark_from_string(wild_card_str) ;
 
-  align_txt = block_txt = strand_txt = set_txt = feature_txt = NULL ;
+  align_txt = block_txt = strand_txt = frame_txt = set_txt = feature_txt = NULL ;
   align_id = block_id = set_id = feature_id = 0 ;
 
 
@@ -611,7 +632,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   /* For strand, "." is ZMAPSTRAND_NONE which means search forward strand columns,
    * "*" means search forward and reverse columns. */
   strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->strand_entry)) ;
-  if (strand_txt && strlen(strand_txt) == 0)
+  if (strand_txt && (strlen(strand_txt) == 0 || strstr(strand_txt, ".")))
     strand_spec = "." ;
   else if (strstr(strand_txt, "+"))
     strand_spec = "+" ;
@@ -619,6 +640,21 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     strand_spec = "-" ;
   else
     strand_spec = "*" ;
+
+
+  /* For frame, "." is ZMAPFRAME_NONE which means there are no frame specific columns,
+   * "*" means search all three frame columns on a strand. */
+  frame_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->frame_entry)) ;
+  if (frame_txt && (strlen(frame_txt) == 0 || strstr(frame_txt, ".")))
+    frame_spec = "." ;
+  else if (strstr(frame_txt, "0"))
+    frame_spec = "0" ;
+  else if (strstr(frame_txt, "1"))
+    frame_spec = "1" ;
+  else if (strstr(frame_txt, "2"))
+    frame_spec = "2" ;
+  else
+    frame_spec = "*" ;
 
 
   /* Get predicate stuff, start/end/locus currently. */
@@ -651,15 +687,15 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Left for debugging.... */
-  printf("Search parameters -    align: %s   block: %s  strand: %s  set: %s  feature: %s\n",
-	 align_txt, block_txt, strand_spec, set_txt, feature_txt) ;
+  printf("Search parameters -    align: %s   block: %s  strand: %s  frame: %s  set: %s  feature: %s\n",
+	 align_txt, block_txt, strand_spec, frame_spec, set_txt, feature_txt) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
   if ((search_result = zmapWindowFToIFindItemSetFull(search_data->window->context_to_item,
 						     align_id, block_id, set_id,
-						     strand_spec, NULL,
+						     strand_spec, frame_spec,
 						     feature_id,
 						     callback, search_pred_ptr)))
     {
@@ -705,12 +741,13 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   else
     {
       char *msg = g_strdup_printf("No Results for:\n"
-		  "\n     align  =  \"%s\""
-		  "\n     block  =  \"%s\""
-		  "\n       set  =  \"%s\""
-		  "\n    strand  =  \"%s\""
-		  "\n   feature  =  \"%s\"",
-		  align_txt, block_txt, strand_spec, set_txt, feature_txt) ;
+				  "\n     align  =  \"%s\""
+				  "\n     block  =  \"%s\""
+				  "\n       set  =  \"%s\""
+				  "\n    strand  =  \"%s\""
+				  "\n    frame  =  \"%s\""
+				  "\n   feature  =  \"%s\"",
+				  align_txt, block_txt, set_txt, strand_spec, frame_spec, feature_txt) ;
 
       zMapGUIShowMsgFull(NULL, msg, ZMAP_MSG_INFORMATION, GTK_JUSTIFY_LEFT) ;
 							    /* Format msg for clarity. */
@@ -751,7 +788,7 @@ static void setFieldDefaults(SearchData search_data)
 
   wild_card_id = g_quark_from_string(wild_card_str) ;
 
-  search_data->align_txt = search_data->block_txt = search_data->strand_txt
+  search_data->align_txt = search_data->block_txt = search_data->strand_txt = search_data->frame_txt
     = search_data->set_txt = search_data->feature_txt = wild_card_str ;
 
   search_data->align_id = search_data->block_id
@@ -818,17 +855,17 @@ static void setFilterDefaults(SearchData search_data)
   ZMapFeatureAny feature_any = search_data->feature_any ;
   char *wild_card_str = "*" ;
   GQuark wild_card_id ;
-  ZMapStrand strand = ZMAPSTRAND_NONE ;
 
   wild_card_id = g_quark_from_string(wild_card_str) ;
 
-  search_data->strand_txt = wild_card_str ;
+  search_data->strand_txt = search_data->frame_txt = wild_card_str ;
 
 
   if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE
       || feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
     {
       FooCanvasGroup *featureset_group ;
+      ZMapWindowItemFeatureSetData set_data ;
 
       if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	{
@@ -837,14 +874,24 @@ static void setFilterDefaults(SearchData search_data)
       else
 	featureset_group = FOO_CANVAS_GROUP(search_data->feature_item) ;
 
-      strand = zmapWindowContainerGetStrand(featureset_group);
+      set_data = g_object_get_data(G_OBJECT(featureset_group), ITEM_FEATURE_SET_DATA) ;
+      zMapAssert(set_data) ;
 
-      if (strand == ZMAPSTRAND_FORWARD)
+      if (set_data->strand == ZMAPSTRAND_FORWARD)
 	search_data->strand_txt = "+" ;
-      else if (strand == ZMAPSTRAND_REVERSE)
+      else if (set_data->strand == ZMAPSTRAND_REVERSE)
 	search_data->strand_txt = "-" ;
       else
 	search_data->strand_txt = "." ;
+
+      if (set_data->frame == ZMAPFRAME_NONE)
+	search_data->frame_txt = "." ;
+      else if (set_data->frame == ZMAPFRAME_0)
+	search_data->frame_txt = "0" ;
+      else if (set_data->frame == ZMAPFRAME_1)
+	search_data->frame_txt = "1" ;
+      else if (set_data->frame == ZMAPFRAME_2)
+	search_data->frame_txt = "2" ;
     }
 
 
