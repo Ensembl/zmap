@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 30 10:41 2006 (rds)
+ * Last edited: Sep 20 12:32 2006 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.8 2006-06-30 09:50:09 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.9 2006-09-26 08:50:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -326,7 +326,12 @@ GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *columns_li
     {
       FooCanvasGroup *column_group = (FooCanvasGroup *)(column->data) ;
       ButData button_data ;
+      ZMapWindowItemFeatureSetData set_data ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       ZMapFeatureTypeStyle style ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       GtkWidget *col_box, *button ;
       gboolean col_visible ;
       
@@ -334,13 +339,14 @@ GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *columns_li
       button_data->window = window ;
       button_data->column_group = column_group ;
 
-      style = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_STYLE) ;
-      zMapAssert(style) ;
+      /* These should go in container some time.... */
+      set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+      zMapAssert(set_data) ;
 
       col_box = gtk_hbox_new(FALSE, 0) ;
       gtk_box_pack_start(GTK_BOX(column_box), col_box, TRUE, TRUE, 0);
 
-      button = gtk_check_button_new_with_label(g_quark_to_string(style->original_id)) ;
+      button = gtk_check_button_new_with_label(g_quark_to_string(set_data->style->original_id)) ;
 
       button_list = g_list_prepend(button_list, button) ;
 

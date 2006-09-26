@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 15 07:43 2006 (edgrif)
+ * Last edited: Sep 26 09:16 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.139 2006-09-15 09:16:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.140 2006-09-26 08:50:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -389,6 +389,11 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
 
 
+  /* Note that currently we lose the 3 frame state and other state such as columns */
+  window->display_3_frame = FALSE ;
+
+  /* We need to hold on to some state and also to report the revcomp change to our callers
+   * _before_ we reset everything. */
   if (features_are_revcomped)
     {
       double tmp ;
@@ -423,14 +428,14 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       scroll_y2 = tmp ;
 
       window->revcomped_features = !window->revcomped_features ;
-
     }
 
-  resetCanvas(window, FALSE) ;					    /* Resets scrolled region.... */
+
+  resetCanvas(window, FALSE) ;					    /* Resets scrolled region and much else. */
+
 
   if (features_are_revcomped)
     foo_canvas_set_scroll_region(window->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
-
 
 
   /* You cannot just draw the features here as the canvas needs to be realised so we send
@@ -713,6 +718,7 @@ void zMapWindowDestroy(ZMapWindow window)
   /* Get rid of the column configuration window. */
   zmapWindowColumnConfigureDestroy(window) ;
 
+
   gtk_widget_destroy(window->toplevel) ;
 
   zmapWindowLongItemDestroy(window->long_items) ;	    /* Must be after widget destroy ? */
@@ -993,7 +999,7 @@ gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeature feature, Foo
   g_datalist_init(&(feature_set.features));
   g_datalist_id_set_data(&(feature_set.features), feature->unique_id, feature);
 
-  double_select.xml_events = zMapFeatureAnyAsXMLEvents(&feature_set, 3);
+  double_select.xml_events = zMapFeatureAnyAsXMLEvents((ZMapFeatureAny)(&feature_set), 3);
 
   g_datalist_clear(&(feature_set.features));
 
@@ -2560,13 +2566,12 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
 	  {
-	    ZMapFeatureTypeStyle style ;
+	    ZMapWindowItemFeatureSetData set_data ;
 	    ZMapStyleOverlapMode overlap_mode ;
 
-	    style = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_STYLE) ;
-	    zMapAssert(style) ;
+	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
 
-	    if (zMapStyleGetOverlapMode(style) == ZMAPOVERLAP_NO_INTERLEAVE)
+	    if (zMapStyleGetOverlapMode(set_data->style) == ZMAPOVERLAP_NO_INTERLEAVE)
 	      overlap_mode = ZMAPOVERLAP_COMPLETE ;
 	    else
 	      overlap_mode = ZMAPOVERLAP_NO_INTERLEAVE ;
