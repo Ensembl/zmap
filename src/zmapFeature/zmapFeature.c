@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jul 31 16:12 2006 (edgrif)
+ * Last edited: Sep 26 09:46 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.42 2006-08-01 09:52:45 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.43 2006-09-26 08:47:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -835,16 +835,24 @@ gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatu
 
   if(still_good && feature_set)
     {
-      int i; char *seq = NULL, *f_name = NULL, *s_name;
+      int i;
+      char *seq = NULL, *f_name = NULL, *s_name;
       ZMapFeature threeft = NULL; 
       ZMapPeptide pep = NULL;
+
       s_name = (char *)g_quark_to_string(block->original_id);
-      seq = block->sequence.sequence;
+
+      seq = block->sequence.sequence ;
       seq += 2;                 /* We do it in this order so it looks sensible on the display */
+
       for(i = 2; seq && *seq && i >= 0; i--, seq--)
         {
           threeft = zMapFeatureCreateEmpty();
-          f_name = g_strdup_printf(ZMAP_FIXED_STYLE_3FT "_phase_%d", i);
+
+          f_name = g_strdup_printf("%s_phase_%d",
+				   g_quark_to_string(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)),
+				   i);
+
           pep = zMapPeptideCreateSafely(NULL, NULL, seq, NULL, FALSE);
           
           threeft->text = g_strdup(zMapPeptideSequence(pep));
@@ -855,6 +863,7 @@ gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatu
                                      i+1, zMapPeptideLength(pep) * 3 + i + 1,
                                      FALSE, 0.0,
                                      ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
+
           zMapFeatureSetAddFeature(feature_set, threeft);
         }
     }
