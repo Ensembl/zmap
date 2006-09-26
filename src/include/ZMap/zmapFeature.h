@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep 14 15:07 2006 (edgrif)
+ * Last edited: Sep 22 09:11 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.87 2006-09-15 09:08:57 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.88 2006-09-26 08:47:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -585,6 +585,7 @@ ZMapFeature zMapFeatureFindFeatureInSet(ZMapFeatureSet feature_set, GQuark featu
 
 GData *zMapFeatureFindSetInContext(ZMapFeatureContext feature_context, GQuark set_id) ;
 
+ZMapFeatureSet zMapFeatureFindSetInBlock(ZMapFeatureBlock feature_block, GQuark set_id) ;
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
 gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type) ;
@@ -744,6 +745,9 @@ char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart) ;
 gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out);
 gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);
 char *zMapFeatureStrand2Str(ZMapStrand strand) ;
+gboolean zMapFeatureFormatFrame(char *frame_str, ZMapFrame *frame_out);
+gboolean zMapFeatureStr2Frame(char *string, ZMapFrame *frame);
+char *zMapFeatureFrame2Str(ZMapFrame frame) ;
 gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out);
 gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase);
 char *zMapFeaturePhase2Str(ZMapPhase phase) ;
