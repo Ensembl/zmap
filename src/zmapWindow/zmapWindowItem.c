@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 15 09:28 2006 (edgrif)
+ * Last edited: Sep 26 08:23 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.42 2006-09-15 09:22:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.43 2006-09-26 08:58:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,6 +121,33 @@ GList *zmapWindowItemSortByPostion(GList *feature_item_list)
     sorted_list = g_list_sort(feature_item_list, sortByPositionCB) ;
 
   return sorted_list ;
+}
+
+
+gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame)
+{                                               
+  gboolean result = FALSE ;
+  ZMapFeature feature ;
+  FooCanvasGroup *set_group ;
+  ZMapWindowItemFeatureSetData set_data ;
+
+
+  /* Retrieve the feature item info from the canvas item. */
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
+  zMapAssert(feature && feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+
+  set_group = zmapWindowItemGetParentContainer(item) ;
+
+  /* These should go in container some time.... */
+  set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
+
+  *set_strand = set_data->strand ;
+  *set_frame = set_data->frame ;
+
+  result = TRUE ;
+
+  return result ;
 }
 
 
@@ -403,16 +430,26 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
   switch (feature->type)
     {
     case ZMAPFEATURE_ALIGNMENT:
-      set_items = zmapWindowFindSameNameItems(window->context_to_item, feature) ;
+      {
+	ZMapStrand set_strand ;
+	ZMapFrame set_frame ;
+	gboolean result ;
+	
+	result = zmapWindowItemGetStrandFrame(item, &set_strand, &set_frame) ;
+	zMapAssert(result) ;
+
+	set_items = zmapWindowFindSameNameItems(window->context_to_item, set_strand, set_frame, feature) ;
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (set_items)
-	zmapWindowFToIPrintList(set_items) ;
+	if (set_items)
+	  zmapWindowFToIPrintList(set_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      g_list_foreach(set_items, highlightCB, window) ;
+	g_list_foreach(set_items, highlightCB, window) ;
 
-      break ;
+	break ;
+      }
     default:
       {
 	/* Try highlighting both the item and its column. */
@@ -454,32 +491,22 @@ void zMapWindowUnHighlightFocusItems(ZMapWindow window)
 /* highlight/unhiglight cols. */
 void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 {
-
-  foo_canvas_item_set(zmapWindowContainerGetBackground(column),
-                      "fill_color_gdk", &(window->colour_column_highlight),
-                      NULL) ;
+  zmapWindowContainerSetBackgroundColour(column, &(window->colour_column_highlight)) ;
 
   return ;
 }
+
 
 void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 {
   ZMapStrand strand ;
   GdkColor *background ;
 
-  strand = zmapWindowContainerGetStrand(column) ;
-
-  if (strand == ZMAPSTRAND_FORWARD)
-    background = &(window->colour_mforward_col) ;
-  else
-    background = &(window->colour_mreverse_col) ;
-
-  foo_canvas_item_set(zmapWindowContainerGetBackground(column),
-		      "fill_color_gdk", background,
-		      NULL) ;
+  zmapWindowContainerResetBackgroundColour(column) ;
 
   return ;
 }
+
 
 
 /* Need to test whether this works for groups...it should do....
@@ -517,12 +544,13 @@ void zmapWindowRaiseItem(FooCanvasItem *item)
  * Returns NULL if there no matching features. I think probably this should never happen
  * as all features match at least themselves.
  *  */
-GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash, ZMapFeature feature)
+GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash,
+				   ZMapStrand set_strand, ZMapFrame set_frame,
+				   ZMapFeature feature)
 {
   GList *item_list = NULL ;
   GString *reg_ex_name ;
   GQuark reg_ex_name_id ;
-  ZMapStrand strand ;
 
   /* I use a GString because it lowercases in place. */
   reg_ex_name = g_string_new(NULL) ;
@@ -530,13 +558,12 @@ GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash, ZMapFeat
   reg_ex_name = g_string_ascii_down(reg_ex_name) ;
   reg_ex_name_id = g_quark_from_string(reg_ex_name->str) ;
 
-  strand = zmapWindowFeatureStrand(feature) ;
-
   item_list = zmapWindowFToIFindItemSetFull(feature_to_context_hash,
 					    feature->parent->parent->parent->unique_id,
 					    feature->parent->parent->unique_id,
 					    feature->parent->unique_id,
-					    zMapFeatureStrand2Str(strand), NULL,
+					    zMapFeatureStrand2Str(set_strand),
+					    zMapFeatureFrame2Str(set_frame),
 					    reg_ex_name_id, NULL, NULL) ;
 
   g_string_free(reg_ex_name, TRUE) ;
@@ -566,8 +593,14 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
       parent_item = feature_item->parent ;
     }
 
-  parent_container = zmapWindowContainerGetParent(parent_item->parent) ;
-  zMapAssert(parent_container) ;
+
+  /* It's possible for us to be called when we have no parent, e.g. when this routine is
+   * called as a result of a GtkDestroy on one of our parents. */
+  if (parent_item->parent)
+    {
+      parent_container = zmapWindowContainerGetParent(parent_item->parent) ;
+      zMapAssert(parent_container) ;
+    }
 
   return parent_container ;
 }
@@ -600,7 +633,7 @@ ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item)
       parent_item = feature_item->parent ;
     }
 
-  style = g_object_get_data(G_OBJECT(parent_item), ITEM_FEATURE_STYLE) ;
+  style = g_object_get_data(G_OBJECT(parent_item), ITEM_FEATURE_ITEM_STYLE) ;
   zMapAssert(style) ;
 
   return style ;
@@ -624,6 +657,8 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   FooCanvasItem *matching_item = NULL ;
   ZMapFeature feature ;
   ZMapWindowItemFeatureType item_feature_type ;
+  FooCanvasGroup *set_group ;
+  ZMapWindowItemFeatureSetData set_data ;
 
 
   /* Retrieve the feature item info from the canvas item. */
@@ -633,9 +668,18 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
 							ITEM_FEATURE_TYPE)) ;
 
+  set_group = zmapWindowItemGetParentContainer(item) ;
+
+  /* These should go in container some time.... */
+  set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
+
+
   if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
     {
-      matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item, feature) ;
+      matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+						    set_data->strand, set_data->frame,
+						    feature) ;
     }
   else
     {
@@ -644,7 +688,9 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
       item_subfeature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
 								      ITEM_SUBFEATURE_DATA) ;
 
-      matching_item = zmapWindowFToIFindItemChild(window->context_to_item, feature,
+      matching_item = zmapWindowFToIFindItemChild(window->context_to_item,
+						  set_data->strand, set_data->frame,
+						  feature,
 						  item_subfeature_data->start,
 						  item_subfeature_data->end) ;
     }
@@ -662,6 +708,8 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
 {
   FooCanvasItem *matching_item = NULL ;
   ZMapFeature feature ;
+  FooCanvasGroup *set_group ;
+  ZMapWindowItemFeatureSetData set_data ;
 
   zMapAssert(window && item && child_start > 0 && child_end > 0 && child_start <= child_end) ;
 
@@ -670,8 +718,15 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature) ;
 
+  set_group = zmapWindowItemGetParentContainer(item) ;
+
+  /* These should go in container some time.... */
+  set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
+
   /* Find the item that matches */
-  matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item, feature) ;
+  matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+						set_data->strand, set_data->frame, feature) ;
 
   return matching_item ;
 }
@@ -1238,9 +1293,20 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
       /* get the FooCanvasItem using original feature */
       origSpan = g_array_index(origArray, ZMapSpanStruct, i);
       
+
+      /* needs changing....to accept frame/strand.... */
+
+#warning "code needs changing for strand/frame"
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
       item = zmapWindowFToIFindItemChild(window->context_to_item,
 					 originalFeature, origSpan.x1, origSpan.x2);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       
+
+
+
       /* coords are relative to start of transcript. */
       modSpan  = g_array_index(modArray, ZMapSpanStruct, i);
       top = (double)modSpan.x1 - transcriptOrigin;
