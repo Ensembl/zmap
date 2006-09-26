@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Sep 13 17:53 2006 (edgrif)
+ * Last edited: Sep 25 15:40 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.13 2006-09-15 09:18:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.14 2006-09-26 09:05:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,6 +57,9 @@ typedef struct
 
   /* I'd like to add a border here too..... */
   double child_spacing ;
+
+  /* We cash this as some containers have their own special colours (e.g. 3 frame cols.). */
+  GdkColor orig_background ;
 
   /* The long_item object, needed for freeing a record of long items. */
   ZMapWindowLongItems long_items ;
@@ -88,6 +91,15 @@ static void itemDestroyCB(gpointer data, gpointer user_data);
 
 static void redrawChildrenCB(gpointer data, gpointer user_data) ;
 static void redrawColumn(FooCanvasItem *container, ContainerData data);
+
+
+static void printFeatureSet(gpointer data, gpointer user_data) ;
+
+
+
+
+
+
 
 /* Creates a "container" for our sequence features which consists of: 
  * 
@@ -161,6 +173,7 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
   container_data->level = level ;
   container_data->child_spacing = child_spacing ;
   container_data->child_redraw_required = FALSE ;
+  container_data->orig_background = *background_fill_colour ; /* n.b. struct copy. */
   container_data->long_items = long_items ;
 
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_DATA, container_data) ;
@@ -432,8 +445,13 @@ FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent
 ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group)
 {
   ZMapFeatureTypeStyle style = NULL ;
+  ZMapWindowItemFeatureSetData set_data ;
 
-  style = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_STYLE) ;
+  /* These should go in container some time.... */
+  set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
+
+  style = set_data->style ;
 
   return style ;
 }
@@ -570,6 +588,52 @@ void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent)
 }
 
 
+void zmapWindowContainerSetBackgroundColour(FooCanvasGroup *container_parent,
+					    GdkColor *background_fill_colour)
+{
+  FooCanvasItem *container_background ;
+  ContainerType type ;
+
+  zMapAssert(FOO_IS_CANVAS_GROUP(container_parent) && background_fill_colour) ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  container_background = zmapWindowContainerGetBackground(container_parent) ;
+
+  foo_canvas_item_set(container_background,
+                      "fill_color_gdk", background_fill_colour,
+                      NULL) ;
+
+  return ;
+}
+
+
+void zmapWindowContainerResetBackgroundColour(FooCanvasGroup *container_parent)
+{
+  FooCanvasItem *container_background ;
+  ContainerType type ;
+  ContainerData container_data ;
+
+  zMapAssert(FOO_IS_CANVAS_GROUP(container_parent)) ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA) ;
+
+  container_background = zmapWindowContainerGetBackground(container_parent) ;
+
+  foo_canvas_item_set(container_background,
+                      "fill_color_gdk", &(container_data->orig_background),
+                      NULL) ;
+
+  return ;
+}
+
+
+
+
 /* Does the container contain any child features ? */
 gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent)
 {
@@ -587,6 +651,29 @@ gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent)
 
   return result ;
 }
+
+
+void zmapWindowContainerPrintLevel(FooCanvasGroup *strand_container)
+{
+  ContainerType type = CONTAINER_INVALID ;
+  ContainerData container_data ;
+  ZMapContainerLevelType level ;
+  FooCanvasGroup *columns ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(strand_container), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT) ;
+
+  container_data = g_object_get_data(G_OBJECT(strand_container), CONTAINER_DATA) ;
+  level = container_data->level ;
+  zMapAssert(level == ZMAPCONTAINER_LEVEL_STRAND) ;
+
+  columns = zmapWindowContainerGetFeatures(strand_container) ;
+
+  g_list_foreach(columns->item_list, printFeatureSet, NULL) ;
+
+  return ;
+}
+
 
 
 void zmapWindowContainerPrint(FooCanvasGroup *container_parent)
@@ -1084,6 +1171,21 @@ static void redrawColumn(FooCanvasItem *container, ContainerData data)
       /* do the callback.... */
       redraw_cb(container, zMapWindowGetZoomFactor(window), window) ;
     }
+
+  return ;
+}
+
+
+
+static void printFeatureSet(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *col_parent = (FooCanvasItem *)data ;
+  ZMapFeatureSet feature_set ;
+
+
+  feature_set = g_object_get_data(G_OBJECT(col_parent), ITEM_FEATURE_DATA) ;
+
+  printf("col_name: %s\n", g_quark_to_string(feature_set->unique_id)) ;
 
   return ;
 }

@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Sep  8 17:04 2006 (edgrif)
+ * Last edited: Sep 25 15:16 2006 (edgrif)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.8 2006-09-15 09:16:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.9 2006-09-26 09:05:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -68,7 +68,6 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup* correct_container_type,
                                             zmapWindowContainerZoomChangedCallback handler_cb,
                                             ZMapWindow data);
-
 void zmapWindowContainerSetChildRedrawRequired(FooCanvasGroup *container_parent,
 					       gboolean redraw_required) ;
 
@@ -79,8 +78,6 @@ FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent
 ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_parent) ;
 ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group) ;
 double zmapWindowContainerGetSpacing(FooCanvasGroup *column_group) ;
-
-ZMapStrand zmapWindowContainerGetStrand(FooCanvasGroup *container);
 FooCanvasGroup *zmapWindowContainerGetStrandGroup(FooCanvasGroup *strand_parent, ZMapStrand strand) ;
 
 void zmapWindowContainerReposition(FooCanvasGroup *container) ;
@@ -90,9 +87,18 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, doub
 void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_parent,
                                                     double height, 
                                                     double border);
-void zmapWindowContainerSetStrand(FooCanvasGroup *container, ZMapStrand strand);
+void zmapWindowContainerSetBackgroundColour(FooCanvasGroup *container_parent, GdkColor *background_fill_colour) ;
+void zmapWindowContainerResetBackgroundColour(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent) ;
+
+ZMapStrand zmapWindowContainerGetStrand(FooCanvasGroup *container);
+void zmapWindowContainerSetStrand(FooCanvasGroup *container, ZMapStrand strand);
+
+
 void zmapWindowContainerPrint(FooCanvasGroup *container_parent) ;
+
+void zmapWindowContainerPrintLevel(FooCanvasGroup *strand_container) ;
+
 void zmapWindowContainerExecute(FooCanvasGroup        *parent, 
 				ZMapContainerLevelType stop_at_type,
 				GFunc                  down_func_cb,
