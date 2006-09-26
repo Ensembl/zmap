@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 26 09:51 2006 (rds)
+ * Last edited: Sep 22 09:19 2006 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.31 2006-07-26 09:29:42 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.32 2006-09-26 08:45:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -416,17 +416,20 @@ ZMapFeature zMapFeatureFindFeatureInSet(ZMapFeatureSet feature_set, GQuark featu
 }
 
 
-GData *zMapFeatureFindSetInBlock(ZMapFeatureBlock feature_block, GQuark set_id)
+#endif
+
+
+ZMapFeatureSet zMapFeatureFindSetInBlock(ZMapFeatureBlock feature_block, GQuark set_id)
 {
-  GData *features = NULL ;
   ZMapFeatureSet feature_set ;
 
-  if ((feature_set = g_datalist_id_get_data(&(feature_block->feature_sets), set_id)))
-    features = feature_set->features ;
+  feature_set = g_datalist_id_get_data(&(feature_block->feature_sets), set_id) ;
 
-  return features ;
+  return feature_set ;
 }
-#endif
+
+
+
 
 
 /* Dump out a feature context. */
