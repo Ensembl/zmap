@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Aug  4 11:07 2006 (edgrif)
+ * Last edited: Sep 29 10:46 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.57 2006-08-04 11:48:47 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.58 2006-09-29 09:56:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,17 +50,20 @@ static void setSet(GQuark key_id, gpointer data, gpointer user_data) ;
 /* END OF HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
 
 
+typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE} NameFindType ;
+
+
 static gboolean parseHeaderLine(ZMapGFFParser parser, char *line) ;
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line) ;
-
-static gboolean makeNewFeature(ZMapGFFParser parser,
+static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
 			       ZMapFeatureType feature_type,
 			       int start, int end,
 			       gboolean has_score, double score,
 			       ZMapStrand strand, ZMapPhase phase, char *attributes,
 			       char **err_text) ;
-static gboolean getFeatureName(char *sequence, char *attributes, char *source, ZMapFeatureType feature_type,
+static gboolean getFeatureName(NameFindType name_find, char *sequence, char *attributes,
+			       char *source, ZMapFeatureType feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
 static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuark *orig_style_out) ;
@@ -98,6 +101,7 @@ static void stylePrintCB(gpointer data, gpointer user_data) ;
 ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only)
 {
   ZMapGFFParser parser ;
+  GQuark locus_id ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_list_foreach(sources, stylePrintCB, NULL) ; /* debug */
@@ -127,8 +131,24 @@ ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only)
   parser->sequence_name = NULL ;
   parser->features_start = parser->features_end = 0 ;
 
-  //  parser->sources = sources ;
   initSources(&(parser->sources), sources);
+
+  /* Check for Locus as one of the sources as this needs to be constructed as we go along. */
+  locus_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
+  if (!(parser->locus_set_style = zMapFindStyle(g_datalist_id_get_data(&(parser->sources),
+								       locus_id), 
+						locus_id)))
+    {
+      zMapLogWarning("Locus set will not be created, "
+		     "could not find style \"%s\" for feature set \"%s\".",
+		     ZMAP_FIXED_STYLE_LOCUS_NAME, ZMAP_FIXED_STYLE_LOCUS_NAME) ;
+    }
+  else
+    {
+      parser->locus_set_id = locus_id ;
+    }
+
+
 
   if (!parser->parse_only)
     {
@@ -805,7 +825,10 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 
 	  if (include_feature)
 	    {
-	      if (!(result = makeNewFeature(parser, sequence, source, feature_type, type,
+	      GQuark locus_id = 0 ;
+
+	      if (!(result = makeNewFeature(parser, NAME_FIND, sequence,
+					    source, feature_type, type,
 					    start, end, has_score, score, strand, phase,
 					    attributes, &err_text)))
 		{
@@ -813,6 +836,34 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 					      "GFF line %d - %s (\"%s\")",
 					      parser->line_count, err_text, line) ;
 		  g_free(err_text) ;
+		}
+	      
+
+	      /* If the Locus feature set has been requested then check to see if this feature
+	       * has a locus and add it to the locus feature set. Note this is different in that
+	       * locus entries are not exported as a separate features but as part of another
+	       * feature.
+	       * 
+	       * We may wish to revisit this and have locus items as separate features but its
+	       * not straight forwared to export them from acedb _and_ get their locations. */
+	      if (parser->locus_set_id && (locus_id = getLocus(attributes)))
+		{
+
+		  if (!zMapFeatureFormatType(parser->SO_compliant, parser->default_to_basic,
+					     ZMAP_FIXED_STYLE_LOCUS_NAME, &type))
+		    err_text = g_strdup_printf("feature_type not recognised: %s", ZMAP_FIXED_STYLE_LOCUS_NAME) ;
+
+
+		  if (!(result = makeNewFeature(parser, NAME_USE_SEQUENCE, (char *)g_quark_to_string(locus_id),
+						ZMAP_FIXED_STYLE_LOCUS_NAME, ZMAP_FIXED_STYLE_LOCUS_NAME, type,
+						start, end, FALSE, 0.0, ZMAPSTRAND_NONE, ZMAPPHASE_NONE,
+						attributes, &err_text)))
+		    {
+		      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
+						  "GFF line %d - %s (\"%s\")",
+						  parser->line_count, err_text, line) ;
+		      g_free(err_text) ;
+		    }
 		}
 	    }
 	}
@@ -835,7 +886,7 @@ static void printSource(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
-static gboolean makeNewFeature(ZMapGFFParser parser,
+static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
 			       ZMapFeatureType feature_type,
 			       int start, int end,
@@ -927,12 +978,14 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   /* Was there a url for the feature ? */
   url = getURL(attributes) ;
 
+
   /* Was there a locus for the feature ? */
   locus_id = getLocus(attributes) ;
 
+
   /* Get the feature name which may not be unique and a feature "id" which _must_
    * be unique. */
-  feature_has_name = getFeatureName(sequence, attributes, source, feature_type, strand,
+  feature_has_name = getFeatureName(name_find, sequence, attributes, source, feature_type, strand,
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
 
@@ -1083,15 +1136,18 @@ static gboolean makeNewFeature(ZMapGFFParser parser,
   g_free(feature_name_id) ;
   g_free(url) ;
 
-
   /* If we are only parsing then free any stuff allocated by addDataToFeature() */
   if (parser->parse_only)
     {
       zmapFeatureDestroy(feature) ;
     }
 
+
   return result ;
 }
+
+
+
 
 
 /* *************************************************************
@@ -1188,7 +1244,7 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
  * and so on....
  * 
  *  */
-static gboolean getFeatureName(char *sequence, char *attributes,
+static gboolean getFeatureName(NameFindType name_find, char *sequence, char *attributes,
 			       char *source, ZMapFeatureType feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id)
@@ -1198,104 +1254,121 @@ static gboolean getFeatureName(char *sequence, char *attributes,
 
   /* Probably we should do some checking to make sure start/end are in correct order....and
    * that other fields are correct.... */
-
-  if (feature_type == ZMAPFEATURE_ALIGNMENT)
+  if (name_find == NAME_USE_SEQUENCE)
     {
-      /* This needs amalgamating with the gethomols routine..... */
-      char *tag_pos ;
+      has_name = TRUE ;
 
-      /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
-       * clarity in the GFFv2 spec....needs some attention.... */
-      if (g_str_has_prefix(attributes, "Note"))
-	{
-	  *feature_name = g_strdup(sequence) ;
-	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-						   start, end, query_start, query_end) ;
-	}
-      else if ((tag_pos = strstr(attributes, "Target")))
-	{
-	  /* In acedb output at least, homologies all have the same format. */
-	  int attr_fields ;
-	  char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
-	  char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
-
-	  attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
-
-	  if (attr_fields == 1)
-	    {
-	      has_name = FALSE ;
-	      *feature_name = g_strdup(name) ;
-	      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-						       start, end, query_start, query_end) ;
-	    }
-	}
+      *feature_name = g_strdup(sequence) ;
+      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+					       start, end, query_start, query_end) ;
     }
-  else if (feature_type == ZMAPFEATURE_BASIC
-	   && (g_str_has_prefix(source, "GF_")
-	       || (g_ascii_strcasecmp(source, "hexexon") == 0)))
+  else if (name_find == NAME_USE_SOURCE)
     {
-      /* Genefinder features, we use the source field as the name.... */
-
-      has_name = FALSE ;				    /* is this correct ??? */
+      has_name = TRUE ;
 
       *feature_name = g_strdup(source) ;
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 					       start, end, query_start, query_end) ;
     }
-  else /* if (feature_type == ZMAPFEATURE_TRANSCRIPT) */
+  else
     {
-      has_name = FALSE ;
-
-      /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
-       * clarity in the GFFv2 spec....needs some attention.... */
-      if (g_str_has_prefix(attributes, "Note"))
+      if (feature_type == ZMAPFEATURE_ALIGNMENT)
 	{
-	  *feature_name = g_strdup(sequence) ;
-	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-						   start, end, query_start, query_end) ;
-	}
-      else
-	{
-	  /* Named feature such as a gene. */
-	  int attr_fields ;
-	  char *attr_format_str = "%50s %*[\"]%50[^\"]%*[\"]%*s" ;
-	  char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+	  /* This needs amalgamating with the gethomols routine..... */
+	  char *tag_pos ;
 
-	  attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0]) ;
-
-	  if (attr_fields == 2)
-	    {
-	      has_name         = TRUE ;
-	      *feature_name    = g_strdup(name) ;
-	      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-						       start, end, query_start, query_end) ;
-	    }
-	  else
+	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
+	   * clarity in the GFFv2 spec....needs some attention.... */
+	  if (g_str_has_prefix(attributes, "Note"))
 	    {
 	      *feature_name = g_strdup(sequence) ;
 	      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 						       start, end, query_start, query_end) ;
 	    }
+	  else if ((tag_pos = strstr(attributes, "Target")))
+	    {
+	      /* In acedb output at least, homologies all have the same format. */
+	      int attr_fields ;
+	      char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
+	      char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+	      attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
+
+	      if (attr_fields == 1)
+		{
+		  has_name = FALSE ;
+		  *feature_name = g_strdup(name) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
+	    }
 	}
-    }
+      else if (feature_type == ZMAPFEATURE_BASIC
+	       && (g_str_has_prefix(source, "GF_")
+		   || (g_ascii_strcasecmp(source, "hexexon") == 0)))
+	{
+	  /* Genefinder features, we use the source field as the name.... */
+
+	  has_name = FALSE ;				    /* is this correct ??? */
+
+	  *feature_name = g_strdup(source) ;
+	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						   start, end, query_start, query_end) ;
+	}
+      else /* if (feature_type == ZMAPFEATURE_TRANSCRIPT) */
+	{
+	  has_name = FALSE ;
+
+	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
+	   * clarity in the GFFv2 spec....needs some attention.... */
+	  if (g_str_has_prefix(attributes, "Note"))
+	    {
+	      *feature_name = g_strdup(sequence) ;
+	      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						       start, end, query_start, query_end) ;
+	    }
+	  else
+	    {
+	      /* Named feature such as a gene. */
+	      int attr_fields ;
+	      char *attr_format_str = "%50s %*[\"]%50[^\"]%*[\"]%*s" ;
+	      char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+	      attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0]) ;
+
+	      if (attr_fields == 2)
+		{
+		  has_name         = TRUE ;
+		  *feature_name    = g_strdup(name) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
+	      else
+		{
+		  *feature_name = g_strdup(sequence) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
+	    }
+	}
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  else
-    {
-      /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
-       * clarity in the GFFv2 spec. */
-      has_name = FALSE ;
-
-      if (g_str_has_prefix(attributes, "Note"))
-	*feature_name = g_strdup(sequence) ;
       else
-	*feature_name = g_strdup(sequence) ;
+	{
+	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
+	   * clarity in the GFFv2 spec. */
+	  has_name = FALSE ;
 
-      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-					       start, end, query_start, query_end) ;
-    }
+	  if (g_str_has_prefix(attributes, "Note"))
+	    *feature_name = g_strdup(sequence) ;
+	  else
+	    *feature_name = g_strdup(sequence) ;
+
+	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						   start, end, query_start, query_end) ;
+	}
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
+    }
 
 
 
@@ -1310,15 +1383,20 @@ static gboolean getFeatureName(char *sequence, char *attributes,
 static void initSources(GData **datalist, GList *sources)
 {
   GList *list = NULL;
-  list = g_list_first( sources );
+
+  list = g_list_first(sources);
+
   g_datalist_init(datalist);
-  while(list){
-    g_datalist_id_set_data_full(datalist, 
-                                ((ZMapFeatureTypeStyle)list->data)->unique_id, 
-                                list,
-                                NULL); /* MUST NOT Destroy when g_dataset_clear called */
-    list = list->next;
-  }
+
+  while(list)
+    {
+      g_datalist_id_set_data_full(datalist, 
+				  ((ZMapFeatureTypeStyle)list->data)->unique_id, 
+				  list,
+				  NULL); /* MUST NOT Destroy when g_dataset_clear called */
+      list = list->next;
+    }
+
   return ;
 }
 

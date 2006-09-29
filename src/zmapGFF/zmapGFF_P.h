@@ -25,9 +25,9 @@
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
  * HISTORY:
- * Last edited: Jun 16 17:46 2006 (edgrif)
+ * Last edited: Sep 29 08:34 2006 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.14 2006-06-16 16:53:53 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.15 2006-09-29 09:56:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -118,6 +118,10 @@ typedef struct ZMapGFFParserStruct_
   char *sequence_name ;
   int features_start, features_end ;
 
+  ZMapFeatureTypeStyle locus_set_style ;			    /* cached locus style. */
+  GQuark locus_set_id ;					    /* If not zero then make a locus set from
+							       locus tags in sequence objects. */
+
   GData *sources ;					    /* If present, only make features from
 							       GFF records with a source from this
 							       list. */
@@ -130,8 +134,6 @@ typedef struct ZMapGFFParserStruct_
 							       features for that source. */
 
 } ZMapGFFParserStruct ;
-
-
 
 
 
