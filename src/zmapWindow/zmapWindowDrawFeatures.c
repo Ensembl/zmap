@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 26 10:36 2006 (edgrif)
+ * Last edited: Sep 29 14:26 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.148 2006-09-26 09:40:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.149 2006-09-29 15:24:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1162,10 +1162,18 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
   FooCanvasItem *feature_item ;
 
 
-  if (featureset_data->frame != ZMAPFRAME_NONE && featureset_data->frame != zmapWindowFeatureFrame(feature))
+  strand = zmapWindowFeatureStrand(feature) ;
+
+
+  /* If we are doing frame specific display then don't display the feature if its the wrong
+   * frame or its on the reverse strand and we aren't displaying reverse strand frames. */
+  if (featureset_data->frame != ZMAPFRAME_NONE
+      && (featureset_data->frame != zmapWindowFeatureFrame(feature)
+	  || !(window->show_3_frame_reverse) && strand == ZMAPSTRAND_REVERSE))
     return ;
 
-  if ((strand = zmapWindowFeatureStrand(feature)) == ZMAPSTRAND_FORWARD)
+
+  if (strand == ZMAPSTRAND_FORWARD)
     {
       column_group = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(featureset_data->curr_forward_col)) ;
     }

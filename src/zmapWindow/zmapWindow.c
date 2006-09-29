@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 26 09:16 2006 (edgrif)
+ * Last edited: Sep 29 14:16 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.140 2006-09-26 08:50:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.141 2006-09-29 15:24:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1881,8 +1881,8 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 }
 
 
-/* Read logging information from the configuration, note that we read _only_ the first
- * logging stanza found in the configuration, subsequent ones are not read. */
+/* Read window settings from the configuration file, note that we read _only_ the first
+ * stanza found in the configuration, subsequent ones are not read. */
 static gboolean getConfiguration(ZMapWindow window)
 {
   gboolean result = FALSE ;
@@ -1894,6 +1894,7 @@ static gboolean getConfiguration(ZMapWindow window)
 						     {"canvas_maxbases", ZMAPCONFIG_INT, {NULL}},
 						     {"keep_empty_columns", ZMAPCONFIG_BOOL, {NULL}},
 						     {"display_forward_coords", ZMAPCONFIG_BOOL, {NULL}},
+						     {"show_3_frame_reverse", ZMAPCONFIG_BOOL, {NULL}},
 						     {"align_spacing", ZMAPCONFIG_FLOAT, {NULL}},
 						     {"block_spacing", ZMAPCONFIG_FLOAT, {NULL}},
 						     {"strand_spacing", ZMAPCONFIG_FLOAT, {NULL}},
@@ -1907,6 +1908,7 @@ static gboolean getConfiguration(ZMapWindow window)
   zMapConfigGetStructInt(window_elements, "canvas_maxsize") = ZMAP_WINDOW_MAX_WINDOW ;
   zMapConfigGetStructBool(window_elements, "keep_empty_columns") = FALSE ;
   zMapConfigGetStructBool(window_elements, "display_forward_coords") = TRUE ;
+  zMapConfigGetStructBool(window_elements, "show_3_frame_reverse") = FALSE ;
   zMapConfigGetStructFloat(window_elements, "align_spacing") = window->config.align_spacing ;
   zMapConfigGetStructFloat(window_elements, "block_spacing") = window->config.block_spacing ;
   zMapConfigGetStructFloat(window_elements, "strand_spacing") = window->config.strand_spacing ;
@@ -1927,12 +1929,11 @@ static gboolean getConfiguration(ZMapWindow window)
 	  next_window = zMapConfigGetNextStanza(window_list, NULL) ;
 	  
 	  window->canvas_maxwin_size = zMapConfigGetElementInt(next_window, "canvas_maxsize") ;
-
 	  window->canvas_maxwin_bases = zMapConfigGetElementInt(next_window, "canvas_maxbases") ;
 
 	  window->keep_empty_cols = zMapConfigGetElementBool(next_window, "keep_empty_columns") ;
-
 	  window->display_forward_coords = zMapConfigGetElementBool(next_window, "display_forward_coords") ;
+	  window->show_3_frame_reverse = zMapConfigGetElementBool(next_window, "show_3_frame_reverse") ;
 
 	  window->config.align_spacing = zMapConfigGetElementFloat(next_window, "align_spacing") ;
 	  window->config.block_spacing = zMapConfigGetElementFloat(next_window, "block_spacing") ;

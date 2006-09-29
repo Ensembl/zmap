@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 26 10:45 2006 (edgrif)
+ * Last edited: Sep 29 14:36 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.137 2006-09-26 09:47:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.138 2006-09-29 15:24:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -444,6 +444,11 @@ typedef struct _ZMapWindowStruct
    * always as if for the original forward strand or for the whichever is the current forward strand. */
   gboolean revcomped_features ;
   gboolean display_forward_coords ;
+
+  /* currently we don't do any 3 frame display on the reverse strand, in fact the frame sensitive
+   * columns are removed because to have then as single cols would be difficult for the hash
+   * stuff though not impossible... */
+  gboolean show_3_frame_reverse ;
 
   /* Used to transform coords for revcomp if display_forward_coords == TRUE */
   int origin ;
