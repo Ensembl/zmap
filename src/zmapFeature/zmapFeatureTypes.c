@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep  4 11:23 2006 (edgrif)
+ * Last edited: Sep 29 09:30 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.27 2006-09-15 09:13:15 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.28 2006-09-29 09:51:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,7 +77,7 @@ static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data
 
 
 /* Create a new type for displaying features. */
-ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
+ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description, ZMapStyleMode mode,
 					   char *outline, char *foreground, char *background,
 					   double width)
 {
@@ -101,6 +101,8 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
 
   if (description)
     new_type->description = g_strdup(description) ;
+
+  new_type->mode = mode ;
 
   new_type->width = width ;
 
@@ -202,6 +204,35 @@ void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag)
 }
 
 
+
+void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode)
+{
+  zMapAssert(style
+	     && (mode >= ZMAPSTYLE_MODE_NONE || mode <= ZMAPSTYLE_MODE_TEXT)) ;
+
+  style->mode = mode ;
+
+  return ;
+}
+
+
+
+gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureStr2EnumStruct mode_table [] = {{"NONE", ZMAPSTYLE_MODE_NONE},
+					     {"BASIC", ZMAPSTYLE_MODE_BASIC},
+					     {"TRANSCRIPT", ZMAPSTYLE_MODE_TRANSCRIPT},
+					     {"ALIGNMENT", ZMAPSTYLE_MODE_ALIGNMENT},
+					     {"TEXT", ZMAPSTYLE_MODE_TEXT},
+					     {NULL, 0}} ;
+
+  zMapAssert(mode_str && *mode_str && mode_out) ;
+
+  result = zmapStr2Enum(&(mode_table[0]), mode_str, (int *)mode_out) ;
+
+  return result ;
+}
 
 
 /* Set score bounds for displaying column with width related to score. */
@@ -549,6 +580,7 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	= {{"name"        , ZMAPCONFIG_STRING, {NULL}},
 	   {"description" , ZMAPCONFIG_STRING, {NULL}},
 	   {"outline"     , ZMAPCONFIG_STRING, {NULL}},
+	   {"mode"        , ZMAPCONFIG_STRING, {NULL}},
 	   {"foreground"  , ZMAPCONFIG_STRING, {NULL}},
 	   {"background"  , ZMAPCONFIG_STRING, {NULL}},
 	   {"width"       , ZMAPCONFIG_FLOAT , {NULL}},
@@ -601,9 +633,16 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	      gboolean strand_specific, frame_specific, show_rev_strand ;
 	      int min_mag, max_mag ;
 #endif /* RDS_DONT_INCLUDE */
+	      ZMapStyleMode mode = ZMAPSTYLE_MODE_NONE ;
+
+	      
+	      if (!zMapStyleFormatMode(zMapConfigGetElementString(next_types, "description"), &mode))
+		zMapLogWarning("config file \"%s\" has a \"Type\" stanza which has no \"name\" element, "
+			       "the stanza has been ignored.", types_file_name) ;
 
 	      new_type = zMapFeatureTypeCreate(name,
 					       zMapConfigGetElementString(next_types, "description"),
+					       mode,
 					       zMapConfigGetElementString(next_types, "outline"),
 					       zMapConfigGetElementString(next_types, "foreground"),
 					       zMapConfigGetElementString(next_types, "background"),

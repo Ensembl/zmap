@@ -27,15 +27,44 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 21 16:56 2006 (edgrif)
+ * Last edited: Sep 29 08:11 2006 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.9 2006-09-26 08:44:23 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.10 2006-09-29 09:51:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapFeature_P.h>
+
+
+
+/* Utility to map strings to enums, needed by lots of the format calls in here and the styles
+ * code. The last entry in the table must end with  type_str == NULL .
+ *  */
+gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_out)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureStr2Enum type ;
+
+  zMapAssert(type_table && type_str && *type_str && type_out) ;
+
+  type = type_table ;
+  while (type->type_str)
+    {
+      if (g_ascii_strcasecmp(type_str, type->type_str) == 0)
+	{
+	  *type_out = type->type_enum ;
+	  result = TRUE ;
+
+	  break;
+	}
+      else
+	type++ ;
+    }
+
+  return result ;
+}
 
 
 /* Type must equal something that the code understands. In GFF v1 this is unregulated and
@@ -161,9 +190,9 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	       || g_ascii_strcasecmp(feature_type, "atg") == 0
 	       || g_ascii_strcasecmp(feature_type, "splice3") == 0
 	       || g_ascii_strcasecmp(feature_type, "splice5") == 0
-
 	       || g_ascii_strcasecmp(feature_type, "Clone_left_end") == 0
 	       || g_ascii_strcasecmp(feature_type, "Clone_right_end") == 0
+	       || g_ascii_strcasecmp(feature_type, ZMAP_FIXED_STYLE_LOCUS_NAME) == 0
 	       || g_ascii_strcasecmp(feature_type, "SL1_acceptor_site") == 0
 	       || g_ascii_strcasecmp(feature_type, "SL2_acceptor_site") == 0
 	       || g_ascii_strcasecmp(feature_type, "utr") == 0

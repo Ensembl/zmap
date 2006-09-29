@@ -25,15 +25,26 @@
  * Description: Internals for zmapFeature routines.
  *
  * HISTORY:
- * Last edited: Jan 23 13:48 2006 (edgrif)
+ * Last edited: Sep 26 15:59 2006 (edgrif)
  * Created: Wed Nov 24 11:01:24 2004 (edgrif)
- * CVS info:   $Id: zmapFeature_P.h,v 1.2 2006-01-23 14:10:55 edgrif Exp $
+ * CVS info:   $Id: zmapFeature_P.h,v 1.3 2006-09-29 09:51:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_P_H
 #define ZMAP_FEATURE_P_H
 
 #include <ZMap/zmapFeature.h>
+
+
+
+/* Used to construct a table of strings and corresponding enums to go between the two,
+ * the table must end with an entry in which type_str is NULL. */
+typedef struct
+{
+  char *type_str ;
+  int type_enum ;
+} ZMapFeatureStr2EnumStruct, *ZMapFeatureStr2Enum ;
+
 
 
 #define zmapFeatureSwop(TYPE, FIRST, SECOND)   \
@@ -53,6 +64,9 @@
 
 
 void zmapPrintFeatureContext(ZMapFeatureContext context) ;
+
+gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_out) ;
+
 
 
 
