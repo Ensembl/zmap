@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep 22 09:11 2006 (edgrif)
+ * Last edited: Sep 26 14:38 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.88 2006-09-26 08:47:40 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.89 2006-09-29 09:50:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -428,6 +428,19 @@ typedef struct
  */
 
 
+/* Specifies how features that reference this style will be processed. */
+typedef enum
+  {
+    ZMAPSTYLE_MODE_NONE,				    /* Features are not processed or for meta=style. */
+    ZMAPSTYLE_MODE_BASIC,				    /* Basic box features. */
+    ZMAPSTYLE_MODE_TRANSCRIPT,				    /* Usual transcript like structure. */
+    ZMAPSTYLE_MODE_ALIGNMENT,				    /* Usual homology structure. */
+    ZMAPSTYLE_MODE_TEXT					    /* Text only display. */
+  } ZMapStyleMode ;
+
+
+
+
 /* Specifies how wide features should be in relation to their score. */
 typedef enum
   {
@@ -469,6 +482,10 @@ typedef struct ZMapFeatureTypeStyleStruct_
 
   char *description ;					    /* Description of what this style
 							       represents. */
+
+  ZMapStyleMode mode ;					    /* Specifies how features that
+							       reference this style will be processed. */
+
   struct
   {
     /* I don't want a general show/hide flag here because we should
@@ -688,17 +705,19 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
 
 
-/* Style functions, name should all be rationalised to just use "style", not "type". */
+/* 
+ *     Style functions, name should all be rationalised to just use "style", not "type".
+ */
 
 GList *zMapStylesGetNames(GList *styles) ;
-ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description,
+
+ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description, ZMapStyleMode mode,
 					   char *outline, char *foreground, char *background,
 					   double width) ;
 ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
-void zMapStyleSetColours(ZMapFeatureTypeStyle style, 
-                         char *outline, 
-                         char *foreground, 
-                         char *background);
+void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
+gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out) ;
+void zMapStyleSetColours(ZMapFeatureTypeStyle style, char *outline, char *foreground, char *background) ;
 void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;
 void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score) ;
 void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
@@ -710,10 +729,10 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 void zMapStyleSetHide(ZMapFeatureTypeStyle style, gboolean hide) ;
 void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially) ;
 gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style) ;
-void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional);
+void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, 
                               gboolean show_gaps,
-                              gboolean parse_gaps);
+                              gboolean parse_gaps) ;
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
 char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
@@ -726,12 +745,13 @@ gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
 void zMapFeatureTypeGetColours(ZMapFeatureTypeStyle style,
                                GdkColor **background,
                                GdkColor **foreground,
-                               GdkColor **outline);
+                               GdkColor **outline) ;
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
 
 void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
 ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode) ;
+
 
 /* ================================================================= */
 /* functions in zmapFeatureFormatInput.c */
