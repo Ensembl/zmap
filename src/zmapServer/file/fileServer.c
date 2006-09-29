@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Jul  4 10:02 2006 (edgrif)
+ * Last edited: Sep 26 14:33 2006 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.21 2006-07-04 09:03:40 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.22 2006-09-29 09:53:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -275,7 +275,11 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 static ZMapFeatureContext copyContext(void *server_in)
 {
   ZMapFeatureContext context = NULL ;
-  FileServer server = (FileServer)server_in ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  FileServer server = (FileServer)server_in ;		    /* Not needed just now. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   return context ;

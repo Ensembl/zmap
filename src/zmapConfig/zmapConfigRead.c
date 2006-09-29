@@ -25,12 +25,13 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: Feb 17 12:59 2006 (rds)
+ * Last edited: Sep 27 11:01 2006 (edgrif)
  * Created: Thu Apr  1 14:33:04 2004 (edgrif)
- * CVS info:   $Id: zmapConfigRead.c,v 1.5 2006-02-17 13:02:11 rds Exp $
+ * CVS info:   $Id: zmapConfigRead.c,v 1.6 2006-09-29 09:53:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>

@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 26 08:23 2006 (edgrif)
+ * Last edited: Sep 26 14:33 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.43 2006-09-26 08:58:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.44 2006-09-29 09:54:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -499,9 +499,6 @@ void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 
 void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 {
-  ZMapStrand strand ;
-  GdkColor *background ;
-
   zmapWindowContainerResetBackgroundColour(column) ;
 
   return ;

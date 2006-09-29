@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Jul 17 11:38 2006 (rds)
+ * Last edited: Sep 26 15:36 2006 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.14 2006-07-22 09:29:41 rds Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.15 2006-09-29 09:54:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -150,12 +150,11 @@ ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
 /* Not a great name as it may not split and orientation may be ignored..... */
 void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation)
 {
-  GtkWidget *curr_container, *view_container ;
+  GtkWidget *curr_container ;
   ZMapViewWindow view_window ;
   ZMapView zmap_view ;
   ZMapWindow zmap_window ;
   char *view_title ;
-  ZMapWindowLockType window_locking = ZMAP_WINLOCK_NONE ;
 
   /* If there is a focus window then that will be the one we split and we need to find out
    * the container parent of that canvas. */
