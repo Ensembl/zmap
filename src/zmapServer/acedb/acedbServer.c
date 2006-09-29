@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 15 10:14 2006 (edgrif)
+ * Last edited: Sep 29 09:00 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.67 2006-09-15 09:14:48 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.68 2006-09-29 09:52:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1551,6 +1551,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   double width = ACEDB_DEFAULT_WIDTH ;
   gboolean strand_specific = FALSE, show_up_strand = FALSE,
     frame_specific = FALSE, show_only_as_3_frame = FALSE ;
+  ZMapStyleMode mode = ZMAPSTYLE_MODE_NONE ;
   gboolean hide_always = FALSE, init_hidden = FALSE ;
   double min_mag = 0.0, max_mag = 0.0 ;
   double min_score = 0.0, max_score = 0.0 ;
@@ -1604,6 +1605,10 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	    colour = tmp_colour ;
 	  
 	  colour = g_strdup(colour) ;
+	}
+      else if (g_ascii_strcasecmp(tag, "ZMap_mode_text") == 0)
+	{
+	  mode = ZMAPSTYLE_MODE_TEXT ;
 	}
       else if (g_ascii_strcasecmp(tag, "Outline") == 0)
 	{
@@ -1788,7 +1793,6 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
        * that don't exist in X Windows. */
       if (colour)
 	{
-
 	  /* THIS IS REALLY THE PLACE THAT WE SHOULD SET UP THE ACEDB SPECIFIC DISPLAY STUFF... */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1807,9 +1811,12 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
             background = colour ;
 	}
 
+
       /* NOTE that style is created with the method name, NOT the column_group, column
-       * names are independent of method names, they may or may not be the same. */
-      style = zMapFeatureTypeCreate(name, remark,
+       * names are independent of method names, they may or may not be the same.
+       * Also, there is no way of deriving the mode from the acedb method object
+       * currently, we have to set it later. */
+      style = zMapFeatureTypeCreate(name, remark, mode,
 				    outline, foreground, background,
 				    width) ;
 

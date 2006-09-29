@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Jun 12 08:44 2006 (edgrif)
+ * Last edited: Sep 26 14:32 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.22 2006-06-12 07:45:22 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.23 2006-09-29 09:52:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1220,7 +1220,8 @@ static void typesFilter      (ZMapDAS1Type type,              gpointer user_data
 
   outline = fg = bg = NULL;
 
-  style = zMapFeatureTypeCreate(name, desc, outline, fg, bg, width);
+  /* Mode is currently hard-coded, don't know if das will address this. */
+  style = zMapFeatureTypeCreate(name, desc, ZMAPSTYLE_MODE_NONE, outline, fg, bg, width);
   style->opts.strand_specific = style->opts.show_rev_strand = 1;
   server_types->output = g_list_append(server_types->output, style);
 
