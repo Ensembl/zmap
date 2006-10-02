@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 29 09:00 2006 (edgrif)
+ * Last edited: Oct  2 16:16 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.68 2006-09-29 09:52:36 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.69 2006-10-02 15:19:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <AceConn.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapGFF.h>
 #include <zmapServerPrototype.h>
 #include <acedbServer_P.h>
@@ -821,14 +822,22 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
   void *reply = NULL ;
   int reply_len = 0 ;
   
+
+  /* belt and braces really...check that dna was actually requested. */
+  if ((zMap_g_list_find_quark(context->feature_set_names,
+			      zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+    return result ;
+
+
   /* Because the acedb "dna" command works on the current keyset, we have to find the sequence
    * first before we can get its dna. A bit poor really but otherwise
    * we will have to add a new code to acedb to do the dna for a named key. */
   if (findSequence(server))
     {
-      int block_start, block_end, dna_length;
-      block_start = feature_block->block_to_sequence.q1;
-      block_end   = feature_block->block_to_sequence.q2;
+      int block_start, block_end, dna_length ;
+
+      block_start = feature_block->block_to_sequence.q1 ;
+      block_end   = feature_block->block_to_sequence.q2 ;
       /* These block numbers appear correct, but I may have the wrong
        * end of the block_to_sequence stick! */
 
@@ -836,8 +845,7 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
        * calls to AceConnRequest() as the server slices...but that will need a change to my
        * AceConn package....
        * -u says get the dna as a single unformatted C string.*/
-      acedb_request =  g_strdup_printf("dna -u -x1 %d -x2 %d", 
-                                       block_start, block_end);
+      acedb_request = g_strdup_printf("dna -u -x1 %d -x2 %d", block_start, block_end) ;
       
       server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len) ;
       if (server->last_err_status == ACECONN_OK)
@@ -866,13 +874,13 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
                 (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, 
                                                               ZMAPFEATURE_STRUCT_CONTEXT);
 
-              if((style = zMapFindStyle(context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+              if ((style = zMapFindStyle(context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
                 {
                   feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_DNA_NAME, NULL);
                   feature_set->style = style;
                 }
 
-              if(feature_set)
+              if (feature_set)
                 {
                   const char *sequence = g_quark_to_string(feature_block->original_id);
                   char *feature_name = NULL;
@@ -893,9 +901,15 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
                   g_free(feature_name);
                 }
 
+
               /* I'm going to create the three frame translation up front! */
-              if((zMapFeatureBlockThreeFrameTranslation(feature_block, &feature_set)))
-                zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+              if ((zMap_g_list_find_quark(context->feature_set_names,
+					  zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
+		  && (style = zMapFindStyle(context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
+                {
+		  if ((zMapFeatureBlockThreeFrameTranslation(feature_block, &feature_set)))
+		    zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+		}
                 
               /* everything should now be done, result is true */
 	      result = TRUE ;
