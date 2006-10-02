@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 29 14:26 2006 (edgrif)
+ * Last edited: Oct  2 09:59 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.149 2006-09-29 15:24:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.150 2006-10-02 09:22:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -438,24 +438,25 @@ void zmapWindowCreateSetColumns(FooCanvasGroup *forward_group, FooCanvasGroup *r
 
   }
 #endif
+  if (forward_group)
+    *forward_col = createColumn(FOO_CANVAS_GROUP(forward_group),
+				window,
+				block,
+				feature_set_id,
+				style,
+				ZMAPSTRAND_FORWARD, frame,
+				style->width,
+				top, bottom) ;
 
-  *forward_col = createColumn(FOO_CANVAS_GROUP(forward_group),
-			      window,
-			      block,
-			      feature_set_id,
-			      style,
-			      ZMAPSTRAND_FORWARD, frame,
-			      style->width,
-			      top, bottom) ;
-
-  *reverse_col = createColumn(FOO_CANVAS_GROUP(reverse_group),
-			      window,
-			      block,
-			      feature_set_id,
-			      style,
-			      ZMAPSTRAND_REVERSE, frame,
-			      style->width,
-			      top, bottom) ;
+  if (reverse_group)
+    *reverse_col = createColumn(FOO_CANVAS_GROUP(reverse_group),
+				window,
+				block,
+				feature_set_id,
+				style,
+				ZMAPSTRAND_REVERSE, frame,
+				style->width,
+				top, bottom) ;
 
   return ;
 }
@@ -467,12 +468,19 @@ void zmapWindowCreateFeatureSet(ZMapWindow window, ZMapFeatureSet feature_set,
 				ZMapFrame frame)
 {
   CreateFeatureSetDataStruct featureset_data = {NULL} ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   double x1, y1, x2, y2 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   featureset_data.window = window ;
 
-  featureset_data.curr_forward_col = zmapWindowContainerGetFeatures(forward_col) ;
-  featureset_data.curr_reverse_col = zmapWindowContainerGetFeatures(reverse_col) ;
+  if (forward_col)
+    featureset_data.curr_forward_col = zmapWindowContainerGetFeatures(forward_col) ;
+
+  if (reverse_col)
+    featureset_data.curr_reverse_col = zmapWindowContainerGetFeatures(reverse_col) ;
   
 
   /* Set up a list of lists of features within a column.... */
@@ -496,22 +504,25 @@ void zmapWindowCreateFeatureSet(ZMapWindow window, ZMapFeatureSet feature_set,
 
 
   /* TRY RESIZING BACKGROUND NOW.....get rid of debug info.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(forward_col), &x1, &y1, &x2, &y2) ;
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetBackground(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   if (forward_col)
     zmapWindowContainerMaximiseBackground(forward_col) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(forward_col), &x1, &y1, &x2, &y2) ;
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetBackground(forward_col)),
 			     &x1, &y1, &x2, &y2) ;
-  
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   if (reverse_col)
     zmapWindowContainerMaximiseBackground(reverse_col) ;
 
@@ -525,13 +536,21 @@ void zmapWindowRemoveEmptyColumns(ZMapWindow window,
 {
   RemoveEmptyColumnStruct remove_data ;
 
+  zMapAssert(forward_group || reverse_group) ;
+
   remove_data.window = window ;
 
-  remove_data.strand = ZMAPSTRAND_FORWARD ;
-  g_list_foreach(forward_group->item_list, removeEmptyColumnCB, &remove_data) ;
+  if (forward_group)
+    {
+      remove_data.strand = ZMAPSTRAND_FORWARD ;
+      g_list_foreach(forward_group->item_list, removeEmptyColumnCB, &remove_data) ;
+    }
 
-  remove_data.strand = ZMAPSTRAND_REVERSE ;
-  g_list_foreach(reverse_group->item_list, removeEmptyColumnCB, &remove_data) ;
+  if (reverse_group)
+    {
+      remove_data.strand = ZMAPSTRAND_REVERSE ;
+      g_list_foreach(reverse_group->item_list, removeEmptyColumnCB, &remove_data) ;
+    }
 
   return ;
 }
@@ -1169,8 +1188,16 @@ static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
    * frame or its on the reverse strand and we aren't displaying reverse strand frames. */
   if (featureset_data->frame != ZMAPFRAME_NONE
       && (featureset_data->frame != zmapWindowFeatureFrame(feature)
-	  || !(window->show_3_frame_reverse) && strand == ZMAPSTRAND_REVERSE))
+	  || (!(window->show_3_frame_reverse) && strand == ZMAPSTRAND_REVERSE)))
     return ;
+
+
+  /* Caller may not want a forward or reverse strand and this is indicated by NULL value for
+   * curr_forward_col or curr_reverse_col */
+  if ((strand == ZMAPSTRAND_FORWARD && !(featureset_data->curr_forward_col))
+      || (strand == ZMAPSTRAND_REVERSE && !(featureset_data->curr_reverse_col)))
+    return ;
+
 
 
   if (strand == ZMAPSTRAND_FORWARD)
