@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 29 14:36 2006 (edgrif)
+ * Last edited: Oct  2 10:24 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.138 2006-09-29 15:24:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.139 2006-10-02 09:24:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -438,24 +438,18 @@ typedef struct _ZMapWindowStruct
   double         seq_start ;
   double         seq_end ;
 
-
   /* We need to be able to find out if the user has done a revcomp for coordinate display
    * and other reasons, the display_forward_coords flag controls whether coords are displayed
-   * always as if for the original forward strand or for the whichever is the current forward strand. */
+   * always as if for the original forward strand or for the whichever is the current forward
+   * strand. origin is used to transform coords for revcomp if display_forward_coords == TRUE */
   gboolean revcomped_features ;
   gboolean display_forward_coords ;
-
-  /* currently we don't do any 3 frame display on the reverse strand, in fact the frame sensitive
-   * columns are removed because to have then as single cols would be difficult for the hash
-   * stuff though not impossible... */
-  gboolean show_3_frame_reverse ;
-
-  /* Used to transform coords for revcomp if display_forward_coords == TRUE */
   int origin ;
 
-
-  /* Are the "3 frame" columns displayed ? */
+  /* Are the "3 frame" columns displayed currently ? If show_3_frame_reverse == TRUE then
+   * they are displayed on forward and reverse strands. */
   gboolean display_3_frame ;
+  gboolean show_3_frame_reverse ;
 
 } ZMapWindowStruct ;
 
