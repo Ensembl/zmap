@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Sep  6 18:06 2006 (edgrif)
+ * Last edited: Oct  2 15:40 2006 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.9 2006-09-15 09:09:54 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.10 2006-10-02 15:12:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -240,7 +240,7 @@ GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
 /*! 
  * Prints out the contents of a list assuming that each element is a GQuark. We have
  * lots of these in zmap so this is useful. */
-void zMap_g_quark_list_print(GList *quark_list)
+void zMap_g_list_quark_print(GList *quark_list)
 {
   zMapAssert(quark_list) ;
 
@@ -250,6 +250,17 @@ void zMap_g_quark_list_print(GList *quark_list)
 }
 
 
+GList *zMap_g_list_find_quark(GList *list, GQuark str_quark)
+{
+  GList *result = NULL ;
+  GCompareFunc compare_func ;
+
+  zMapAssert(list && str_quark) ;
+
+  result = g_list_find(list, GINT_TO_POINTER(str_quark)) ;
+
+  return result ;
+}
 
 
 
