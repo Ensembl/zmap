@@ -29,14 +29,15 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Sep 26 10:43 2006 (edgrif)
+ * Last edited: Sep 29 17:46 2006 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.30 2006-09-26 09:43:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.31 2006-10-02 09:25:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapFeature.h>
 #include <zmapWindow_P.h>
 
 
@@ -133,7 +134,7 @@ static GQuark makeSetID(GQuark set_id, ZMapStrand strand, ZMapFrame frame) ;
 static GQuark makeSetIDFromStr(GQuark set_id, ZMapStrand strand, GQuark frame_id) ;
 
 
-#define FRAME_PREFIX "FRAME-"
+
 
 
 
