@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Aug 10 15:54 2006 (edgrif)
+ * Last edited: Sep 29 18:09 2006 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.5 2006-08-10 15:08:15 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.6 2006-10-02 09:18:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 
 /* Keep in step with number of feature details widgets. NOTE that _not_ every text field in
  * the feature description is displayed in a label. */
-enum {TOTAL_LABELS = 8} ;
+enum {TOTAL_LABELS = 9} ;
 
 
 /* Used for naming the info panel widgets so we can set their background colour with a style. */
@@ -55,10 +55,11 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap)
   label[1] = &(zmap->feature_strand) ;
   label[2] = &(zmap->feature_coords) ;
   label[3] = &(zmap->sub_feature_coords) ;
-  label[4] = &(zmap->feature_score) ;
-  label[5] = &(zmap->feature_type) ;
-  label[6] = &(zmap->feature_set) ;
-  label[7] = &(zmap->feature_style) ;
+  label[4] = &(zmap->feature_frame) ;
+  label[5] = &(zmap->feature_score) ;
+  label[6] = &(zmap->feature_type) ;
+  label[7] = &(zmap->feature_set) ;
+  label[8] = &(zmap->feature_style) ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -90,7 +91,7 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap)
  * 
  * Current panel is:
  * 
- *  name [strand] [start end [subpart_start subpart_end]] [score] [type] [feature_set] [feature_style]
+ *  name [strand] [start end [subpart_start subpart_end]] [frame] [score] [type] [feature_set] [feature_style]
  * 
  *  */
 void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
@@ -105,10 +106,11 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
   label[1] = zmap->feature_strand ;
   label[2] = zmap->feature_coords ;
   label[3] = zmap->sub_feature_coords ;
-  label[4] = zmap->feature_score ;
-  label[5] = zmap->feature_type ;
-  label[6] = zmap->feature_set ;
-  label[7] = zmap->feature_style ;
+  label[4] = zmap->feature_frame ;
+  label[5] = zmap->feature_score ;
+  label[6] = zmap->feature_type ;
+  label[7] = zmap->feature_set ;
+  label[8] = zmap->feature_style ;
 
 
   /* If no feature description then blank the info panel. */
@@ -131,10 +133,11 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
       if (feature_desc->sub_feature_start)
 	text[3] = g_strdup_printf("%s -> %s",
 				  feature_desc->sub_feature_start, feature_desc->sub_feature_end) ;
-      text[4] = feature_desc->feature_score ;
-      text[5] = feature_desc->feature_type ;
-      text[6] = feature_desc->feature_set ;
-      text[7] = feature_desc->feature_style ;
+      text[4] = feature_desc->feature_frame ;
+      text[5] = feature_desc->feature_score ;
+      text[6] = feature_desc->feature_type ;
+      text[7] = feature_desc->feature_set ;
+      text[8] = feature_desc->feature_style ;
 
       if (feature_desc->feature_description || feature_desc->feature_locus)
 	{
@@ -172,10 +175,11 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
 					 ? "Intron" : "Exon")
 				      : (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_GAP
 					 ? "Gap" : "Match"))) ;
-      tooltip[4] = "Score" ;
-      tooltip[5] = "Feature Type" ;
-      tooltip[6] = "Column/Feature Set" ;
-      tooltip[7] = "Feature Style" ;
+      tooltip[4] = "Frame" ;
+      tooltip[5] = "Score" ;
+      tooltip[6] = "Feature Type" ;
+      tooltip[7] = "Column/Feature Set" ;
+      tooltip[8] = "Feature Style" ;
     }
 
 

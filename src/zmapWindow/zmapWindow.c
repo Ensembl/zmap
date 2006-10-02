@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 29 14:16 2006 (edgrif)
+ * Last edited: Sep 29 18:13 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.141 2006-09-29 15:24:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.142 2006-10-02 09:19:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -950,6 +950,9 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   select.feature_desc.feature_end = g_strdup_printf("%d", feature_end) ;
 
   select.feature_desc.feature_strand = zMapFeatureStrand2Str(feature->strand) ;
+
+  if (style->opts.frame_specific)
+    select.feature_desc.feature_frame = zMapFeatureFrame2Str(zmapWindowFeatureFrame(feature)) ;
 
   if (feature->flags.has_score)
     select.feature_desc.feature_score = g_strdup_printf("%f", feature->score) ;
