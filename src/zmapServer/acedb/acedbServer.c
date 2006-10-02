@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct  2 16:16 2006 (edgrif)
+ * Last edited: Oct  2 16:31 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.69 2006-10-02 15:19:43 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.70 2006-10-02 15:32:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -821,7 +821,12 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
-  
+  ZMapFeatureContext context = NULL ;
+
+
+  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, 
+							  ZMAPFEATURE_STRUCT_CONTEXT) ;
+
 
   /* belt and braces really...check that dna was actually requested. */
   if ((zMap_g_list_find_quark(context->feature_set_names,
@@ -864,15 +869,10 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
               ZMapFeature feature = NULL;
               ZMapFeatureSet feature_set = NULL;
               ZMapFeatureTypeStyle style = NULL;
-              ZMapFeatureContext context = NULL;
 
               feature_block->sequence.type     = ZMAPSEQUENCE_DNA ;
               feature_block->sequence.length   = dna_length ;
               feature_block->sequence.sequence = reply ;
-
-              context = 
-                (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, 
-                                                              ZMAPFEATURE_STRUCT_CONTEXT);
 
               if ((style = zMapFindStyle(context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
                 {
