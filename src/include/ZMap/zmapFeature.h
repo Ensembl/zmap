@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep 26 14:38 2006 (edgrif)
+ * Last edited: Sep 29 18:09 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.89 2006-09-29 09:50:04 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.90 2006-10-02 09:17:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -84,6 +84,7 @@ typedef enum {ZMAPFEATURE_SUBPART_INVALID = 0,
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
 
+#define FRAME_PREFIX "FRAME-"				    /* For text versions. */
 typedef enum {ZMAPFRAME_NONE = 0,
 	      ZMAPFRAME_0, ZMAPFRAME_1, ZMAPFRAME_2} ZMapFrame ;
 
@@ -410,6 +411,7 @@ typedef struct
 
   char *feature_name ;
   char *feature_strand ;
+  char *feature_frame ;
   char *feature_start ; char *feature_end ; char *sub_feature_start ; char *sub_feature_end ;
   char *feature_score ; char *feature_type ;
   char *feature_set ; char *feature_style ;
