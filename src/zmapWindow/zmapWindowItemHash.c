@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Sep 29 17:46 2006 (edgrif)
+ * Last edited: Oct  2 10:29 2006 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.31 2006-10-02 09:25:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.32 2006-10-02 09:37:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -609,9 +609,6 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
   /* We need special quarks that incorporate strand/frame indication because any one feature set
    * may be displayed in multiple columns. */
   set_id = makeSetID(set_id, set_strand, set_frame) ;
-
-
-  printf("Adding to hash set: %s\n", g_quark_to_string(set_id)) ;
 
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
 					      GUINT_TO_POINTER(align_id)))

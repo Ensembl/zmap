@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  2 10:20 2006 (edgrif)
+ * Last edited: Oct  2 10:29 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.31 2006-10-02 09:22:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.32 2006-10-02 09:37:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -903,9 +903,9 @@ void zmapWindowSortCols(GList *col_names, FooCanvasGroup *col_container, gboolea
 
   zMapAssert(col_names && FOO_IS_CANVAS_GROUP(col_container)) ;
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_list_foreach(col_names, printQuarks, NULL) ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   column_group = zmapWindowContainerGetFeatures(col_container) ;
   column_list = column_group->item_list ;
@@ -2287,8 +2287,6 @@ static void printPtr(gpointer data, gpointer user_data)
 
   return ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 static void printQuarks(gpointer data, gpointer user_data)
@@ -2300,3 +2298,4 @@ static void printQuarks(gpointer data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
