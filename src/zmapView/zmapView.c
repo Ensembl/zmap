@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Aug 10 15:33 2006 (edgrif)
+ * Last edited: Oct  2 16:21 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.84 2006-08-10 15:10:28 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.85 2006-10-02 15:22:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1560,7 +1560,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
   GList *req_featuresets = NULL ;
   ZMapThread thread ;
   gboolean status = TRUE ;
-
+  gboolean dna_requested = FALSE ;
 
 
   /* User can specify styles in a file. If they don't we get them all and filter them
@@ -1587,6 +1587,10 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
     {
       /* If user only wants some featuresets displayed then build a list of their quark names. */
       req_featuresets = string2StyleQuarks(featuresets_names) ;
+
+      /* Check whether dna was requested, see comments below about setting up sequence req. */
+      if ((zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+	dna_requested = TRUE ;
     }
 
 
@@ -1611,11 +1615,12 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 
       open_load->feature_sets.feature_sets = req_featuresets ;
 
-      if (sequence_server)
+      /* NOTE, some slightly tricky logic here: if this is a sequence server AND dna has been
+       * requested then ask for the sequence, otherwise don't. Only one server can be a sequence server. */
+      if (sequence_server && dna_requested)
 	open_load->features.type = ZMAP_SERVERREQ_FEATURE_SEQUENCE ;
       else
 	open_load->features.type = ZMAP_SERVERREQ_FEATURES ;
-
 
       /* Send the request to the thread to open a connection and get the date. */
       zMapThreadRequest(thread, (void *)open_load) ;
