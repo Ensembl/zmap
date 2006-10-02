@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Jun 12 08:24 2006 (edgrif)
+ * Last edited: Oct  2 15:00 2006 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.10 2006-06-12 07:35:21 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.11 2006-10-02 15:13:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -347,19 +347,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
     }
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
-  /* I can't remember why we need to copy the context now.....sigh... */
-
-  /* Get a copy of the context to use in fetching the features and/or sequence. */
-  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
-    {
-      feature_context = zMapServerCopyContext(server) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
- 
 
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && (features->type == ZMAP_SERVERREQ_FEATURES
@@ -385,7 +373,6 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     {
       *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* We need to free feature_context here, its subparts should have been freed by routines
