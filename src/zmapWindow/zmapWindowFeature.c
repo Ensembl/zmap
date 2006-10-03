@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 25 17:17 2006 (edgrif)
+ * Last edited: Oct  3 14:23 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.51 2006-09-26 09:03:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.52 2006-10-03 15:09:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -170,6 +170,8 @@ static void oneBlockHasDNA(GQuark key,
                            gpointer data, 
                            gpointer user_data);
 
+
+static double getWidthFromScore(ZMapFeatureTypeStyle style, double score) ;
 
 
 /* NOTE that we make some assumptions in this code including:
@@ -760,39 +762,52 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
 
 
+  /* This will be driven by a draw type set in the style but we haven't got that far yet. */
   if (feature->flags.has_boundary)
     {
-      static GdkColor splice_outline, splice_background ;
+      static GdkColor splice_background ;
       double width ;
       ZMapDrawGlyphType glyph_type ;
       char *colour ;
+      ZMapFrame frame ;
 
-      gdk_color_parse("black", &splice_outline) ;
+      frame = zmapWindowFeatureFrame(feature) ;
+
+      /* colouring is temporary until I get styles fixed up....then we need to allow stuff like
+       * splice/frame specific colouring.... */
+      switch (frame)
+	{
+	case ZMAPFRAME_0:
+	  colour = "red" ;
+	  break ;
+	case ZMAPFRAME_1:
+	  colour = "green" ;
+	  break ;
+	case ZMAPFRAME_2:
+	  colour = "blue" ;
+	  break ;
+	default:
+	  zMapAssertNotReached() ;
+	}
+      gdk_color_parse(colour, &splice_background) ;
 
 
-      /* colouring is temporary until I get styles fixed up.... */
       if (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE)
 	{
-	  colour = "blue" ;
 	  glyph_type = ZMAPDRAW_GLYPH_DOWN_BRACKET ;
 	}
       else
 	{
-	  colour = "red" ;
 	  glyph_type = ZMAPDRAW_GLYPH_UP_BRACKET ;
 	}
 
-      gdk_color_parse(colour, &splice_background) ;
-
-      outline = &splice_outline ;
-      background = &splice_background ;
-
-      width = feature->style->width ;
+      /* Adjust width to score....NOTE that to do acedb like stuff we really need to set an origin
+	 and pass it in to this routine....*/
+      width = getWidthFromScore(feature->style, feature->score) ;
 
       feature_item = zMapDrawGlyph(parent, x1, (y2 + y1) * 0.5,
 				   glyph_type,
-				   background, width, 3.0) ;
-
+				   &splice_background, width, 2) ;
     }
   else
     {
@@ -1343,7 +1358,6 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
   FooCanvasItem  *feature_parent = NULL;
   FooCanvasItem  *prev_trans     = NULL;
   FooCanvasGroup *column_parent  = NULL;
-  ZMapWindowItemHighlighter hlght= NULL;
   gpointer callback              = NULL;
   GdkColor *outline, *foreground, *background;
 
@@ -2525,4 +2539,152 @@ static void reparentItemCB(gpointer data, gpointer user_data)
   return ;
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+static double getWidthFromScore(ZMapFeatureTypeStyle style, double score)
+{
+  double tmp, width = 0.0 ;
+  double fac ;
+
+  fac = style->width / (style->max_score - style->min_score) ;
+
+  if (score <= style->min_score)
+    tmp = 0 ;
+  else if (score >= style->max_score) 
+    tmp = style->width ;
+  else 
+    tmp = fac * (score - style->min_score) ;
+
+  width = tmp ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (x > origin + 0.5 || x < origin - 0.5) 
+    graphLine (bc->offset+origin, y, bc->offset+x, y) ;
+  else if (x > origin)
+    graphLine (bc->offset+origin-0.5, y, bc->offset+x, y) ;
+  else
+    graphLine (bc->offset+origin+0.5, y, bc->offset+x, y) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  return width ;
+}
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Here's how acedb does all this..... */
+
+void fMapShowSplices (LOOK genericLook, float *offset, MENU *menu)
+     /* This is of type MapColDrawFunc */
+{
+  FeatureMap look = (FeatureMap)genericLook;
+  float x, y1, y2, origin ;
+  BoxCol *bc ;
+
+  bc = bcFromName (look, look->map->activeColName, menu) ;
+	/* NB old default diff was 5 - now using bc system it is 1 */
+  if (!bcTestMag (bc, look->map->mag))
+    return ;
+  bc->offset = *offset ;
+
+  y1 = MAP2GRAPH(look->map,look->min) ;
+  y2 = MAP2GRAPH(look->map,look->max) ;
+
+  graphColor(LIGHTGRAY) ;
+  x = *offset + 0.5 * bc->width ;  graphLine (x, y1, x, y2) ;
+  x = *offset + 0.75 * bc->width ;  graphLine (x, y1, x, y2) ;
+
+  graphColor(DARKGRAY) ;
+  if (bc->meth->minScore < 0 && 0 < bc->meth->maxScore)
+    origin = bc->width *
+      (-bc->meth->minScore / (bc->meth->maxScore - bc->meth->minScore)) ;
+  else
+    origin = 0 ;
+  graphLine (*offset + origin, y1, *offset + origin, y2) ;
+
+  graphColor (BLACK) ;
+  showSplices (look, SPLICE5, bc, origin) ;
+  showSplices (look, SPLICE3, bc, origin) ;
+
+  *offset += bc->width + 1 ;
+
+  return;
+} /* fMapShowSplices */
+
+
+static void showSplices (FeatureMap look, SegType type, BoxCol *bc, float origin)
+{
+  char  *v ;
+  int i, box, background ;
+  SEG *seg ;
+  float y=0, delta=0, x=0 ; /* delta: mieg: shows frame by altering the drawing of the arrow */
+  float fac;
+
+  fac = bc->width / (bc->meth->maxScore - bc->meth->minScore);
+  
+  for (i = 0 ; i < arrayMax(look->segs) ; ++i)
+    { seg = arrp(look->segs, i, SEG) ;
+      if (seg->x1 > look->max
+	  || seg->x2 < look->min
+	  || (lexAliasOf(seg->key) != bc->meth->key)
+	  || seg->type != type)
+	continue ;
+      y = MAP2GRAPH(look->map, seg->x2) ;
+      if (seg->data.f <= bc->meth->minScore) 
+	x = 0 ;
+      else if (seg->data.f >= bc->meth->maxScore) 
+	x = bc->width ;
+      else 
+	x = fac * (seg->data.f - bc->meth->minScore) ;
+      box = graphBoxStart() ;
+      if (x > origin + 0.5 || x < origin - 0.5) 
+	graphLine (bc->offset+origin, y, bc->offset+x, y) ;
+      else if (x > origin)
+	graphLine (bc->offset+origin-0.5, y, bc->offset+x, y) ;
+      else
+	graphLine (bc->offset+origin+0.5, y, bc->offset+x, y) ;
+      switch (type)
+	{
+	case SPLICE5:
+	  delta = (look->flag & FLAG_REVERSE) ? -0.5 : 0.5 ;
+	  break ;
+	case SPLICE3:
+	  delta = (look->flag & FLAG_REVERSE) ? 0.5 : -0.5 ;
+	  break ;
+        default:
+	  messcrash ("Bad type %d in showSplices", type) ;
+	}
+      graphLine (bc->offset+x, y, bc->offset+x, y+delta) ;
+      graphBoxEnd() ;
+      v = SEG_HASH (seg) ;
+      if (assFind (look->chosen, v, 0))
+	background = GREEN ;
+      else if (assFind (look->antiChosen, v, 0))
+	background = LIGHTGREEN ;
+      else
+	background = TRANSPARENT ;
+      switch (seg->x2 % 3)
+	{
+	case 0:
+	  graphBoxDraw (box, RED, background) ; break ;
+	case 1:
+	  graphBoxDraw (box, BLUE, background) ; break ;
+	case 2:
+	  graphBoxDraw (box, DARKGREEN, background) ; break ;
+	}
+      array(look->boxIndex, box, int) = i ;
+      fMapBoxInfo (look, box, seg) ;
+      graphBoxFreeMenu (box, fMapChooseMenuFunc, fMapChooseMenu) ;
+    }
+
+  return;
+} /* showSplices */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
