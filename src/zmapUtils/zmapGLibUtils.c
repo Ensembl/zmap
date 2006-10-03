@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Oct  2 15:40 2006 (edgrif)
+ * Last edited: Oct  3 15:38 2006 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.10 2006-10-02 15:12:41 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.11 2006-10-03 15:07:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,9 +70,8 @@ struct _GRealArray
 
 
 static inline GQuark g_quark_new(ZMapQuarkSet quark_set, gchar *string) ;
-
 static void printCB(gpointer data, gpointer user_data) ;
-
+static gint caseCompareFunc(gconstpointer a, gconstpointer b) ;
 
 
 /*! @defgroup zmapGLibutils   zMapGLibUtils: glib-derived utilities for ZMap
@@ -253,11 +252,10 @@ void zMap_g_list_quark_print(GList *quark_list)
 GList *zMap_g_list_find_quark(GList *list, GQuark str_quark)
 {
   GList *result = NULL ;
-  GCompareFunc compare_func ;
 
   zMapAssert(list && str_quark) ;
 
-  result = g_list_find(list, GINT_TO_POINTER(str_quark)) ;
+  result = g_list_find_custom(list, GINT_TO_POINTER(str_quark), caseCompareFunc) ;
 
   return result ;
 }
@@ -517,5 +515,21 @@ static void printCB(gpointer data, gpointer user_data)
   printf("%s\n", g_quark_to_string(quark)) ;
 
   return ;
+}
+
+
+
+/*
+The function takes two gconstpointer arguments, the GList element's data and the given user data
+*/
+
+static gint caseCompareFunc(gconstpointer a, gconstpointer b)
+{
+  gint result = -1 ;
+  GQuark list_quark = GPOINTER_TO_INT(a), str_quark = GPOINTER_TO_INT(b) ;
+
+  result = g_ascii_strcasecmp(g_quark_to_string(list_quark), g_quark_to_string(str_quark)) ;
+
+  return result ;
 }
 
