@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct  3 16:02 2006 (edgrif)
+ * Last edited: Oct  3 16:49 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.151 2006-10-03 15:08:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.152 2006-10-03 15:55:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -865,8 +865,6 @@ static void drawBlocks(gpointer data, gpointer user_data)
   zmapWindowLongItemCheck(canvas_data->window->long_items, zmapWindowContainerGetBackground(reverse_group),
 			  top, bottom) ;
 
-
-  g_datalist_foreach(&(block->feature_sets), printFeatureSet, NULL) ;
 
 
 
