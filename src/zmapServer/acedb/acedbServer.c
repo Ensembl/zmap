@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct  2 16:31 2006 (edgrif)
+ * Last edited: Oct  3 15:41 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.70 2006-10-02 15:32:19 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.71 2006-10-03 15:07:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,12 +40,6 @@
 #include <zmapServerPrototype.h>
 #include <acedbServer_P.h>
 
-
-
-/* To get gene finder features the user must ask for this feature set (= acedb method)
- * specifically because we need a way to detect that they have been asked for so we can
- * issue the seqactions call to get the features. */
-#define GENE_FINDER_SET_NAME "GF_"
 
 
 
@@ -613,7 +607,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 
   /* Check for presence of genefinderfeatures method, if present we need to tell acedb to send
    * us the gene finder methods... */
-  if ((g_strrstr(methods,  GENE_FINDER_SET_NAME)))
+  if ((g_strrstr(methods, g_quark_to_string(zMapStyleCreateID(ZMAP_FIXED_STYLE_GFF_NAME)))))
     server->fetch_gene_finder_features = TRUE ;
 
 
@@ -829,7 +823,7 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
 
 
   /* belt and braces really...check that dna was actually requested. */
-  if ((zMap_g_list_find_quark(context->feature_set_names,
+  if (!(zMap_g_list_find_quark(context->feature_set_names,
 			      zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
     return result ;
 
