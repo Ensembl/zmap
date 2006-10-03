@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct  2 09:59 2006 (edgrif)
+ * Last edited: Oct  3 16:02 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.150 2006-10-02 09:22:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.151 2006-10-03 15:08:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -866,6 +866,10 @@ static void drawBlocks(gpointer data, gpointer user_data)
 			  top, bottom) ;
 
 
+  g_datalist_foreach(&(block->feature_sets), printFeatureSet, NULL) ;
+
+
+
   /* OK, I'M GOING TO REMOVE THE OPTIONAL EMPTY COLUMNS LARK...IT JUST MAKES PROBLEMS..... */
 
   /* THESE TWO CALLS NEED MERGING JUST LIKE IN THE 3 FRAME CODE...DO THIS SHORTLY AND REMOVE
@@ -938,15 +942,17 @@ static void createSetColumn(gpointer data, gpointer user_data)
   GQuark feature_set_id = GPOINTER_TO_UINT(data) ;
   ZMapCanvasData canvas_data  = (ZMapCanvasData)user_data ;
   ZMapWindow window = canvas_data->window ;
-  FooCanvasGroup *forward_col, *reverse_col ;
+  FooCanvasGroup *forward_col = NULL, *reverse_col = NULL ;
 
   zmapWindowCreateSetColumns(canvas_data->curr_forward_group, canvas_data->curr_reverse_group,
 			     canvas_data->curr_block, feature_set_id, window, ZMAPFRAME_NONE,
 			     &forward_col, &reverse_col) ;
 
-  canvas_data->curr_forward_col = zmapWindowContainerGetFeatures(forward_col) ;
+  if (forward_col)
+    canvas_data->curr_forward_col = zmapWindowContainerGetFeatures(forward_col) ;
 
-  canvas_data->curr_reverse_col = zmapWindowContainerGetFeatures(reverse_col) ;
+  if (reverse_col)
+    canvas_data->curr_reverse_col = zmapWindowContainerGetFeatures(reverse_col) ;
 
   return ;
 }
