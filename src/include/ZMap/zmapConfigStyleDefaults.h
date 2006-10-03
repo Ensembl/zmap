@@ -26,9 +26,9 @@
  *              configuration routines.
  *
  * HISTORY:
- * Last edited: Sep 26 17:45 2006 (edgrif)
+ * Last edited: Oct  3 14:39 2006 (edgrif)
  * Created: Sun May 28 09:16:38 2006 (rds)
- * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.5 2006-09-29 09:48:43 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.6 2006-10-03 15:05:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,9 @@
  * - DNA                      controls dna sequence display
  * 
  * - Locus                    controls display of a column of locus names
- *
+ * 
+ * - GeneFinderFeatures       controls fetching/display of gene finder features
+ * 
  */
 
 #define ZMAP_FIXED_STYLE_3FRAME   "3 Frame"
@@ -59,6 +61,8 @@
 #define ZMAP_FIXED_STYLE_DNA_NAME "DNA"
 
 #define ZMAP_FIXED_STYLE_LOCUS_NAME "Locus"
+
+#define ZMAP_FIXED_STYLE_GFF_NAME "GeneFinderFeatures"
 
 
 
