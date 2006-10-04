@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 29 18:13 2006 (edgrif)
+ * Last edited: Oct  4 15:14 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.142 2006-10-02 09:19:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.143 2006-10-04 14:28:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1351,7 +1351,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
       zmapWindowDrawZoom(window);
       
       zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
-							    /* Call this again because of backgrounds :( */
+      /* Call this again because of backgrounds :( */
 
 #ifdef RDS_DONT_INCLUDE						      
 
@@ -1367,11 +1367,11 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
     }
 
-
+#ifdef RDS_DONT_INCLUDE
   /* I've stuck this in here but really this call should be integrated into the scroll region
    * tool...some tidying up to do here... */
-  zmapWindowResetWidth(window) ;
-
+  zmapWindowResetWidth(window) ; /* zmapWindowDrawZoom organises for this now. */
+#endif
 
 
 

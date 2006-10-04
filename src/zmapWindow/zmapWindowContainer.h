@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Sep 25 15:16 2006 (edgrif)
+ * Last edited: Oct  4 14:00 2006 (rds)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.9 2006-09-26 09:05:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.10 2006-10-04 14:28:11 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -57,6 +57,10 @@ typedef enum {ZMAPCONTAINER_LEVEL_INVALID,
 typedef void (*zmapWindowContainerZoomChangedCallback)(FooCanvasItem *container, 
                                                        double new_zoom, 
                                                        ZMapWindow user_data);
+
+typedef void (*ZMapContainerExecFunc)(FooCanvasGroup  *container, 
+                                      FooCanvasPoints *container_points,
+                                      gpointer         func_data);
 
 FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  ZMapContainerLevelType level,
@@ -101,12 +105,15 @@ void zmapWindowContainerPrintLevel(FooCanvasGroup *strand_container) ;
 
 void zmapWindowContainerExecute(FooCanvasGroup        *parent, 
 				ZMapContainerLevelType stop_at_type,
-				GFunc                  down_func_cb,
-				gpointer               down_func_data,
-				GFunc                  up_func_cb,
-				gpointer               up_func_data,
-                                gboolean               redraw_during_recursion) ;
-void zmapWindowContainerGetAllColumns(FooCanvasGroup *super_root, GList **list);
+				ZMapContainerExecFunc  down_cb,
+				gpointer               down_data) ;
+void zmapWindowContainerExecuteFull(FooCanvasGroup        *parent, 
+                                    ZMapContainerLevelType stop_at_type,
+                                    ZMapContainerExecFunc  down_func_cb,
+                                    gpointer               down_func_data,
+                                    ZMapContainerExecFunc  up_func_cb,
+                                    gpointer               up_func_data,
+                                    gboolean               redraw_during_recursion) ;
 void zmapWindowContainerZoomEvent(FooCanvasGroup *super_root, ZMapWindow window);
 void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window);
 

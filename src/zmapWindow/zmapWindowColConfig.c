@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 20 12:32 2006 (edgrif)
+ * Last edited: Oct  4 14:23 2006 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.9 2006-09-26 08:50:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.10 2006-10-04 14:28:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,7 +61,7 @@ static GtkWidget *makeMenuBar(ColConfigure search_data) ;
 static GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title,
 				GList *column_groups, GList **button_list_out) ;
 static void makeColList(ZMapWindow window, GList **forward_cols, GList **reverse_cols) ;
-static void getSetGroupCB(gpointer data, gpointer user_data) ;
+static void getSetGroupCB(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data) ;
 static void colConfigure(ZMapWindow window, GList *forward_cols, GList *reverse_cols) ;
 static void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode configure_mode,
 			    FooCanvasGroup *column_group) ;
@@ -524,18 +524,13 @@ static void makeColList(ZMapWindow window, GList **forward_cols_out, GList **rev
   strands = zmapWindowContainerGetFeatures(curr_level) ;
   strands_list = strands->item_list ;
 
-
-  /* N.B. it would be possible to use zmapWindowContainerExecute() here to traverse the strands
-   * rather then doing it by steam, when my head is less tired I will do that. */
-
   /* Get the reverse strand which will be the first group in the block level "features" */
   strands_list = g_list_first(strands_list) ;
 
   strand_parent = strands_list->data ;
 
   zmapWindowContainerExecute(strand_parent, ZMAPCONTAINER_LEVEL_FEATURESET,
-			     getSetGroupCB, &reverse_col_list,
-			     NULL, NULL, FALSE) ;
+                             getSetGroupCB, &reverse_col_list);
 
   /* Get the forward strand which will be the first group in the block level "features" */
   strands_list = g_list_next(strands_list) ;
@@ -543,8 +538,7 @@ static void makeColList(ZMapWindow window, GList **forward_cols_out, GList **rev
   strand_parent = strands_list->data ;
 
   zmapWindowContainerExecute(strand_parent, ZMAPCONTAINER_LEVEL_FEATURESET,
-			     getSetGroupCB, &forward_col_list,
-			     NULL, NULL, FALSE) ;
+                             getSetGroupCB, &forward_col_list);
 
   /* Return the column lists. */
   *forward_cols_out = forward_col_list ;
@@ -556,9 +550,8 @@ static void makeColList(ZMapWindow window, GList **forward_cols_out, GList **rev
 
 
 /* Adds this columns group to the list supplied as user data. */
-static void getSetGroupCB(gpointer data, gpointer user_data)
+static void getSetGroupCB(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data)
 {
-  FooCanvasGroup *container = (FooCanvasGroup *)data ;
   GList **return_list = (GList **)user_data ;
   GList *col_list = *return_list ;
   ZMapContainerLevelType level ;

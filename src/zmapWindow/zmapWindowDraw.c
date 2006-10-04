@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  2 10:29 2006 (edgrif)
+ * Last edited: Oct  4 14:25 2006 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.32 2006-10-02 09:37:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.33 2006-10-04 14:28:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -140,8 +140,9 @@ typedef struct
 
 static void bumpColCB(gpointer data, gpointer user_data) ;
 
-static void preZoomCB(gpointer data, gpointer user_data) ;
-static void positionCB(gpointer data, gpointer user_data) ;
+static void preZoomCB(FooCanvasGroup *data, FooCanvasPoints *points, gpointer user_data) ;
+static void positionCB(FooCanvasGroup *data, FooCanvasPoints *points, gpointer user_data) ;
+static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points, gpointer user_data);
 static void columnZoomChanged(FooCanvasGroup *container, double new_zoom, ZMapWindow window) ;
 
 
@@ -170,15 +171,15 @@ static void getListFromHash(gpointer key, gpointer value, gpointer user_data) ;
 static void setStyleBumpCB(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
 static void remove3Frame(ZMapWindow window) ;
-static void remove3FrameCol(gpointer data, gpointer user_data) ;
+static void remove3FrameCol(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data) ;
 
 static void redraw3FrameNormal(ZMapWindow window) ;
-static void redraw3FrameCol(gpointer data, gpointer user_data) ;
+static void redraw3FrameCol(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data) ;
 static void createSetColumn(gpointer data, gpointer user_data) ;
 static void drawSetFeatures(GQuark key_id, gpointer data, gpointer user_data) ;
 
 static void redrawAs3Frames(ZMapWindow window) ;
-static void redrawAs3FrameCols(gpointer data, gpointer user_data) ;
+static void redrawAs3FrameCols(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data) ;
 static void create3FrameCols(gpointer data, gpointer user_data) ;
 static void draw3FrameSetFeatures(GQuark key_id, gpointer data, gpointer user_data) ;
 
@@ -254,6 +255,7 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
   zMapAssert(FOO_IS_CANVAS_GROUP(group_inout)) ;
 
   group_inout->item_list = g_list_sort(group_inout->item_list, horizPosCompare) ;
+  group_inout->item_list_end = g_list_last(group_inout->item_list);
 
   /* Now reset the last item as well !!!! */
   group_inout->item_list_end = g_list_last(group_inout->item_list) ;
@@ -695,21 +697,6 @@ static void zmapWindowContainerRegionChanged(gpointer data,
 }
 #endif
 
-void zmapWindowContainerGetAllColumns(FooCanvasGroup *super_root, GList **list)
-{
-  ContainerType type = CONTAINER_INVALID ;
-  
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(super_root), CONTAINER_TYPE_KEY)) ;
-
-  zmapWindowContainerExecute(super_root,
-			     ZMAPCONTAINER_LEVEL_STRAND,
-			     addToList,
-			     list,
-			     NULL, NULL, FALSE) ;
-  
-  return ;
-}
-
 void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window)
 {
   ContainerType type = CONTAINER_INVALID ;
@@ -717,10 +704,10 @@ void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window)
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(super_root), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type = CONTAINER_ROOT);
   /* pre callback was set to zmapWindowContainerRegionChanged */
-  zmapWindowContainerExecute(FOO_CANVAS_GROUP(super_root),
-			     ZMAPCONTAINER_LEVEL_FEATURESET,
-			     NULL, NULL,
-			     NULL, NULL, TRUE) ;
+  zmapWindowContainerExecuteFull(FOO_CANVAS_GROUP(super_root),
+                                 ZMAPCONTAINER_LEVEL_FEATURESET,
+                                 NULL, NULL,
+                                 NULL, NULL, TRUE) ;
   return ;
 }
 
@@ -744,17 +731,12 @@ void zmapWindowNewReposition(ZMapWindow window)
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(super_root), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type = CONTAINER_ROOT) ;
 
-  zmapWindowContainerExecute(FOO_CANVAS_GROUP(super_root),
-			     ZMAPCONTAINER_LEVEL_FEATURESET,
-			     NULL,
-			     NULL,
-			     positionCB,
-			     window, TRUE) ;
-
-  /* Must reset width as things like bumping can alter it. We don't need to do the
-   * height as that is set via zoom function. */
-  zmapWindowResetWidth(window) ;
-
+  zmapWindowContainerExecuteFull(FOO_CANVAS_GROUP(super_root),
+                                 ZMAPCONTAINER_LEVEL_FEATURESET,
+                                 NULL,
+                                 NULL,
+                                 resetWindowWidthCB,
+                                 window, TRUE) ;
 
   return ;
 }
@@ -817,12 +799,12 @@ void zmapWindowDrawZoom(ZMapWindow window)
   zoom_data.zoom = zMapWindowGetZoomFactor(window) ;
 
 
-  zmapWindowContainerExecute(FOO_CANVAS_GROUP(super_root),
-			     ZMAPCONTAINER_LEVEL_FEATURESET,
-			     preZoomCB,
-			     &zoom_data,
-			     positionCB,
-			     window, TRUE) ;
+  zmapWindowContainerExecuteFull(FOO_CANVAS_GROUP(super_root),
+                                 ZMAPCONTAINER_LEVEL_FEATURESET,
+                                 preZoomCB,
+                                 &zoom_data,
+                                 resetWindowWidthCB,
+                                 window, TRUE) ;
 
   return ;
 }
@@ -1243,7 +1225,7 @@ static void addToList(gpointer data, gpointer user_data)
 /* We need the window in here.... */
 /* GFunc to call on potentially all container groups.
  */
-static void preZoomCB(gpointer data, gpointer user_data)
+static void preZoomCB(FooCanvasGroup *data, FooCanvasPoints *points, gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
   ZoomData zoom_data = (ZoomData)user_data ;
@@ -1265,7 +1247,7 @@ static void preZoomCB(gpointer data, gpointer user_data)
 
 
 /* Called by zoom and also reposition functions, since all these need repositioning. */
-static void positionCB(gpointer data, gpointer user_data)
+static void positionCB(FooCanvasGroup *data, FooCanvasPoints *points, gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1275,8 +1257,44 @@ static void positionCB(gpointer data, gpointer user_data)
 
   level = zmapWindowContainerGetLevel(container) ;
 
-  if (level != ZMAPCONTAINER_LEVEL_FEATURESET)
-    zmapWindowContainerReposition(container) ;
+  //  if (level != ZMAPCONTAINER_LEVEL_FEATURESET)
+  //  zmapWindowContainerReposition(container) ;
+  
+  return ;
+}
+
+/* A version of zmapWindowResetWidth which uses the points from the recursion to set the width */
+static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points, gpointer user_data)
+{
+  FooCanvasGroup *container = (FooCanvasGroup *)data ;
+  ZMapContainerLevelType level ;
+  ZMapWindow window = NULL;
+  double x1, x2, y1, y2 ;       /* scroll region positions */
+  double scr_reg_width, root_width ;
+
+  level = zmapWindowContainerGetLevel(container) ;
+
+  if(level == ZMAPCONTAINER_LEVEL_ROOT)
+    {
+      window = (ZMapWindow)user_data ;
+
+      foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+
+      scr_reg_width = x2 - x1 + 1.0 ;
+
+      root_width = points->coords[2] - points->coords[0] + 1.0 ;
+
+      if (root_width != scr_reg_width)
+        {
+          double excess ;
+          
+          excess = root_width - scr_reg_width ;
+          
+          x2 = x2 + excess ;
+
+          foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2) ;
+        }
+    }
   
   return ;
 }
@@ -1769,18 +1787,14 @@ static void remove3Frame(ZMapWindow window)
 
 
   zmapWindowContainerExecute(super_root,
-			     ZMAPCONTAINER_LEVEL_FEATURESET,
-			     remove3FrameCol, window,
-			     NULL, NULL,
-			     FALSE) ;
-
+                             ZMAPCONTAINER_LEVEL_FEATURESET,
+                             remove3FrameCol, window);
 
   return ;
 }
 
-static void remove3FrameCol(gpointer data, gpointer user_data)
+static void remove3FrameCol(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data)
 {
-  FooCanvasGroup *container = (FooCanvasGroup *)data ;
   ZMapWindow window = (ZMapWindow)user_data ;
   ZMapContainerLevelType level ;
 
@@ -1836,18 +1850,15 @@ static void redraw3FrameNormal(ZMapWindow window)
   zMapAssert(super_root) ;
 
   zmapWindowContainerExecute(super_root,
-			     ZMAPCONTAINER_LEVEL_BLOCK,
-			     redraw3FrameCol, window,
-			     NULL, NULL,
-			     FALSE) ;
+                             ZMAPCONTAINER_LEVEL_BLOCK,
+                             redraw3FrameCol, window);
 
   return ;
 }
 
 
-static void redraw3FrameCol(gpointer data, gpointer user_data)
+static void redraw3FrameCol(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data)
 {
-  FooCanvasGroup *container = (FooCanvasGroup *)data ;
   ZMapWindow window = (ZMapWindow)user_data ;
   ZMapContainerLevelType level ;
 
@@ -2040,18 +2051,15 @@ static void redrawAs3Frames(ZMapWindow window)
   zMapAssert(super_root) ;
 
   zmapWindowContainerExecute(super_root,
-			     ZMAPCONTAINER_LEVEL_BLOCK,
-			     redrawAs3FrameCols, window,
-			     NULL, NULL,
-			     FALSE) ;
+                             ZMAPCONTAINER_LEVEL_BLOCK,
+                             redrawAs3FrameCols, window);
 
   return ;
 }
 
 
-static void redrawAs3FrameCols(gpointer data, gpointer user_data)
+static void redrawAs3FrameCols(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data)
 {
-  FooCanvasGroup *container = (FooCanvasGroup *)data ;
   ZMapWindow window = (ZMapWindow)user_data ;
   ZMapContainerLevelType level ;
 

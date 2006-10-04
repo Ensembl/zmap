@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 11 11:15 2006 (rds)
+ * Last edited: Oct  4 14:26 2006 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.2 2006-05-11 13:09:47 rds Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.3 2006-10-04 14:28:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,7 +121,7 @@ typedef struct
 
 
 static gboolean dumpWindow(DumpOptions dump_opts) ;
-static void dumpCB(gpointer data, gpointer user_data) ;
+static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points, gpointer user_data);
 static void itemCB(gpointer data, gpointer user_data) ;
 static void dumpFeature(FooCanvasItem *item, gpointer user_data) ;
 static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean outline) ;
@@ -246,10 +246,8 @@ static gboolean dumpWindow(DumpOptions dump_opts)
       /* Could turn off autoflush herefor performance, see how it goes....see p.16 in docs... */
 
       zmapWindowContainerExecute(dump_opts->window->feature_root_group, 
-				 ZMAPCONTAINER_LEVEL_FEATURESET,
-				 dumpCB,
-				 dump_opts,
-				 NULL, NULL, FALSE) ;
+                                 ZMAPCONTAINER_LEVEL_FEATURESET,
+                                 dumpCB, dump_opts);
 
       g2_close(dump_opts->g2_id) ;
 
@@ -675,9 +673,8 @@ static int openGD(DumpOptions dump_opts)
  * AND WE SHOULD ALLOW CONTAINERS NOT TO HAVE A BACKGROUND.... */
 
 
-static void dumpCB(gpointer data, gpointer user_data)
+static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points, gpointer user_data)
 {
-  FooCanvasGroup *container_parent = (FooCanvasGroup *)data ;
   DumpOptions cb_data = (DumpOptions)user_data ;
   ZMapContainerLevelType level ;
 
