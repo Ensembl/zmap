@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 29 09:30 2006 (edgrif)
+ * Last edited: Oct  6 11:14 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.28 2006-09-29 09:51:56 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.29 2006-10-06 10:18:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,12 +51,23 @@ typedef struct
 } CheckSetListStruct, *CheckSetList ;
 
 
+
+typedef struct
+{
+  GList *curr_styles ;
+
+} MergeStyleCBStruct, *MergeStyleCB ;
+
+
+
 static void doTypeSets(GQuark key_id, gpointer data, gpointer user_data) ;
 static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data) ;
 
 static void checkListName(gpointer data, gpointer user_data) ;
 static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data) ;
 
+static void mergeStyle(gpointer data, gpointer user_data_unused) ;
+static void destroyStyle(gpointer data, gpointer user_data_unused) ;
 
 
 /*! @defgroup zmapstyles   zMapStyle: Feature Style handling for ZMap
@@ -135,20 +146,67 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style)
 
   new_style = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  new_style = g_memdup((gpointer)style, sizeof(ZMapFeatureTypeStyleStruct)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  *new_style = *style ;					    /* better ?? */
+  *new_style = *style ;					    /* n.b. struct copy. */
   
   if (new_style->description)
     new_style->description = g_strdup(new_style->description) ;
 
-
-
   return new_style ;
 }
+
+
+/*!
+ * Merge one style into another. Values in curr_style are overwritten with those
+ * in the new_style. new_style is not altered.
+ * 
+ * Returns TRUE if merege ok, FALSE if there was a problem, e.g. different style names.
+ * 
+ * @param   curr_style          The style to be overwritten.
+ * @param   new_style           The style to used for overwriting.
+ * @return  gboolean            TRUE means successful merge.
+ *  */
+gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(curr_style && new_style) ;
+
+  if (new_style->unique_id == curr_style->unique_id)
+    {
+      /* You can't just do a simple struct copy here so we do it by steam.... */
+      if (new_style->description)
+	{
+	  g_free(curr_style->description) ;
+	  curr_style->description = g_strdup(new_style->description) ;
+	}
+
+      curr_style->mode = new_style->mode ;
+
+      curr_style->opts = new_style->opts ;		    /* struct copy ok here I think.... */
+
+      if (new_style->colours.background_set)
+	curr_style->colours.background = new_style->colours.background ;
+      if (new_style->colours.foreground_set)
+	curr_style->colours.foreground = new_style->colours.foreground ;
+      if (new_style->colours.outline_set)
+	curr_style->colours.outline = new_style->colours.outline ;
+
+      curr_style->overlap_mode = new_style->overlap_mode ;
+      curr_style->min_mag = new_style->min_mag ;
+      curr_style->max_mag = new_style->max_mag ;
+      curr_style->width = new_style->width ;
+      curr_style->bump_width = new_style->bump_width ;
+      curr_style->score_mode = new_style->score_mode ;
+      curr_style->min_score = new_style->min_score ;
+      curr_style->max_score = new_style->max_score ;
+      curr_style->gff_source = new_style->gff_source ;
+      curr_style->gff_feature = new_style->gff_feature ;
+    }
+
+  return result ;
+}
+
+
 
 
 
@@ -523,9 +581,6 @@ void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type)
 
 
 
-
-
-
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new)
 {
   gboolean result = FALSE ;
@@ -560,6 +615,148 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles)
 
   return result ;
 }
+
+
+/* Merge new_styles into curr_styles. Rules are:
+ * 
+ * if new_style is not in curr_styles its simply added, otherwise new_style
+ * overloads curr_style.
+ * 
+ *  */
+GList *zMapStyleMergeStyles(GList *curr_styles, GList *new_styles)
+{
+  GList *merged_styles = NULL ;
+  MergeStyleCBStruct merge_data = {NULL} ;
+
+  merge_data.curr_styles = curr_styles ;
+
+  g_list_foreach(new_styles, mergeStyle, &merge_data) ;
+  
+  merged_styles = merge_data.curr_styles ;
+
+  return merged_styles ;
+}
+
+
+/* Returns a Glist of all predefined styles, the user should free the list AND the styles when
+ * they have finished with them. */
+GList *zMapStyleGetAllPredefined(void)
+{
+  GList *style_list = NULL ;
+  ZMapFeatureTypeStyle curr = NULL ;
+  static ZMapFeatureTypeStyleStruct predefined_styles[] =
+    {
+      {0},						    /* 3 Frame */
+      {0},						    /* 3 Frame translation */
+      {0},						    /* DNA */
+      {0},						    /* Locus */
+      {0},						    /* Gene Finder */
+      {0}						    /* End value. */
+    } ;
+
+  curr = &(predefined_styles[0]) ;
+
+  /* init if necessary. */
+  if (!(curr->original_id))
+    {
+      /* 3 Frame */
+      curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME) ;
+      curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME) ;
+      curr->description = ZMAP_FIXED_STYLE_3FRAME_TEXT ;
+      curr->opts.hide_always = TRUE ;
+      curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+
+      /* 3 Frame Translation */
+      curr++ ;
+      curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME) ;
+      curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
+      curr->description = ZMAP_FIXED_STYLE_3FT_NAME_TEXT ;
+      curr->opts.hide_initially = TRUE ;
+      zMapStyleSetStrandAttrs(curr, TRUE, TRUE, FALSE, TRUE) ;
+      curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+      
+      /* DNA */
+      curr++ ;
+      curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_DNA_NAME) ;
+      curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
+      curr->description = ZMAP_FIXED_STYLE_DNA_NAME_TEXT ;
+      curr->opts.hide_initially = TRUE ;
+      curr->width = 10.0 ;
+      zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, FALSE) ;
+      zMapStyleSetColours(curr, NULL, "black", "white") ;
+      curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+
+      /* Locus */
+      curr++ ;
+      curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
+      curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
+      curr->description = ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT ;
+      curr->opts.hide_initially = TRUE ;
+      curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+
+      /* GeneFinderFeatures */
+      curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_GFF_NAME) ;
+      curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_GFF_NAME) ;
+      curr->description = ZMAP_FIXED_STYLE_GFF_NAME_TEXT ;
+      curr->opts.hide_always = TRUE ;
+      curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+    }
+
+  curr = &(predefined_styles[0]) ;
+  while ((curr->original_id))
+    {
+      ZMapFeatureTypeStyle style ;
+
+      style = zMapFeatureStyleCopy(curr) ;
+
+      style_list = g_list_append(style_list, style) ;
+
+      curr++ ;
+    }
+
+  return style_list ;
+}
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* NOT SURE WE NEED THIS AT THE MOMENT.....if will need to take a list of predefined ones as a param. */
+ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name)
+{
+  ZMapFeatureTypeStyle style = NULL, curr = NULL ;
+
+  style_id = zMapStyleCreateID(style_name) ;
+  curr = &(predefined_styles[0]) ;
+  while ((curr->original_id))
+    {
+      if (style_id == curr->unique_id)
+	{
+	  style = curr ;
+	  break ;
+	}
+      else
+	curr++ ;
+    }
+
+  return style ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+/* need a func to free a styles list here..... */
+void zMapStyleDestroyStyles(GList *styles)
+{
+
+  g_list_foreach(styles, destroyStyle, NULL) ;
+
+  g_list_free(styles) ;
+
+  return ;
+}
+
+
+
+
 
 
 
@@ -825,4 +1022,35 @@ static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data
 
 
 
+/* Either merges a new style or adds it to current list. */
+static void mergeStyle(gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle new_style = (ZMapFeatureTypeStyle)data ;
+  MergeStyleCB merge_data = (MergeStyleCB)user_data ;
+  GList *curr_styles = merge_data->curr_styles ;
+  ZMapFeatureTypeStyle curr_style = NULL ;
 
+  /* If we find the style then merge it, if not then add a copy to the curr_styles. */
+  if ((curr_style = zMapFindStyle(curr_styles, new_style->unique_id)))
+    {
+      zMapStyleMerge(curr_style, new_style) ;
+    }
+  else
+    {
+      curr_styles = g_list_append(curr_styles, zMapFeatureStyleCopy(new_style)) ;
+    }
+
+  return ;
+}
+
+
+
+/* Destroy the given style. */
+static void destroyStyle(gpointer data, gpointer user_data_unused)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
+
+  zMapFeatureTypeDestroy(style) ;
+
+  return ;
+}

@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep 29 18:09 2006 (edgrif)
+ * Last edited: Oct  6 10:43 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.90 2006-10-02 09:17:57 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.91 2006-10-06 10:18:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -710,13 +710,9 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 /* 
  *     Style functions, name should all be rationalised to just use "style", not "type".
  */
-
-GList *zMapStylesGetNames(GList *styles) ;
-
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description, ZMapStyleMode mode,
 					   char *outline, char *foreground, char *background,
 					   double width) ;
-ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
 gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out) ;
 void zMapStyleSetColours(ZMapFeatureTypeStyle style, char *outline, char *foreground, char *background) ;
@@ -738,21 +734,28 @@ void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style,
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
 char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
-ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id) ;
-gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
-ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle type) ;
 void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
-GList *zMapFeatureTypeGetFromFile(char *types_file) ;
+ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
 void zMapFeatureTypeGetColours(ZMapFeatureTypeStyle style,
                                GdkColor **background,
                                GdkColor **foreground,
                                GdkColor **outline) ;
-void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
-
 void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
 ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode) ;
+
+ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style) ;
+
+void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
+GList *zMapFeatureTypeGetFromFile(char *types_file) ;
+gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
+ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id) ;
+GList *zMapStylesGetNames(GList *styles) ;
+GList *zMapStyleGetAllPredefined(void) ;
+GList *zMapStyleMergeStyles(GList *curr_styles, GList *new_styles) ;
+void zMapStyleDestroyStyles(GList *styles) ;
 
 
 /* ================================================================= */
