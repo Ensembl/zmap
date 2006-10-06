@@ -27,15 +27,16 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Sep 26 09:46 2006 (edgrif)
+ * Last edited: Oct  6 10:53 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.43 2006-09-26 08:47:10 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.44 2006-10-06 10:16:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <strings.h>
 #include <glib.h>
+#include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapFeature_P.h>
 #include <ZMap/zmapPeptide.h>
@@ -984,6 +985,8 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
     }
   else
     {
+
+      /* AGH...THIS ALL SEEMS TO BE DISABLED....MAKE IT WORK QUICK.... */
 
       /* Here we need to merge for all alignments and all blocks.... */
 
