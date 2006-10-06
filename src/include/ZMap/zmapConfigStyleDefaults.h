@@ -26,9 +26,9 @@
  *              configuration routines.
  *
  * HISTORY:
- * Last edited: Oct  3 14:39 2006 (edgrif)
+ * Last edited: Oct  3 17:19 2006 (edgrif)
  * Created: Sun May 28 09:16:38 2006 (rds)
- * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.6 2006-10-03 15:05:42 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.7 2006-10-06 10:15:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,15 +55,18 @@
  * 
  */
 
+#define TEXT_PREFIX "Predefined method: required for "
+
 #define ZMAP_FIXED_STYLE_3FRAME   "3 Frame"
+#define ZMAP_FIXED_STYLE_3FRAME_TEXT TEXT_PREFIX "3 frame display."
 #define ZMAP_FIXED_STYLE_3FT_NAME "3 Frame Translation"
-
+#define ZMAP_FIXED_STYLE_3FT_NAME_TEXT TEXT_PREFIX "3 frame translation display."
 #define ZMAP_FIXED_STYLE_DNA_NAME "DNA"
-
+#define ZMAP_FIXED_STYLE_DNA_NAME_TEXT TEXT_PREFIX "dna display (and hence also for dna translation display)."
 #define ZMAP_FIXED_STYLE_LOCUS_NAME "Locus"
-
+#define ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT TEXT_PREFIX "locus name text column display."
 #define ZMAP_FIXED_STYLE_GFF_NAME "GeneFinderFeatures"
-
+#define ZMAP_FIXED_STYLE_GFF_NAME_TEXT TEXT_PREFIX "Gene Finder Features display."
 
 
 /* The opts struct */
