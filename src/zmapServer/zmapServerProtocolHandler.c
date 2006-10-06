@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Oct  2 15:00 2006 (edgrif)
+ * Last edited: Oct  6 10:32 2006 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.11 2006-10-02 15:13:06 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.12 2006-10-06 10:19:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -277,8 +277,14 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	    }
 	  else
 	    {
-	      /* Got the types so record them in the server context. */
-	      context->context->styles = styles->styles ;
+	      /* Some styles are predefined and do not have to be in the server,
+	       * do a merge of styles from the server with these predefined ones. */
+	      context->context->styles = zMapStyleGetAllPredefined() ;
+
+	      context->context->styles = zMapStyleMergeStyles(context->context->styles, styles->styles) ;
+
+	      zMapStyleDestroyStyles(styles->styles) ;
+	      styles->styles = NULL ;
 	    }
 	}
     }
@@ -304,7 +310,13 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     }
 
 
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* WE SHOULD BE DOING THIS OTHERWISE HOW CAN BE SURE WE CAN DO THE DISPLAY ? BUT ON THE
+   * OTHER HAND WHAT IF STYLES FROM ANOTHER SERVER ???? */
+
   /* I've removed a whole load of acedb-centric stuff here but I've left this as a reminder that
      we may wish to check feature_sets/styles more carefully at some stage. */
 
