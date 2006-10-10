@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Aug  4 12:54 2006 (edgrif)
+ * Last edited: Oct  3 14:55 2006 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.51 2006-08-04 11:55:22 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.52 2006-10-10 08:54:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,7 +123,7 @@ FooCanvasItem *zMapDrawBox(FooCanvasItem *group,
  * @param glyph_type   shape to be drawn
  * @param colour       colour shape is to be drawn in.
  * @param width        overall width of glyph.
- * @param width        line width of glyph.
+ * @param line_width   line width of glyph.
  *
  * @return Returns a pointer to the new canvas item representing the glyph.
  *  */
@@ -182,8 +182,6 @@ FooCanvasItem *zMapDrawGlyph(FooCanvasGroup *group, double x, double y,
 	if (glyph_type == ZMAPDRAW_GLYPH_UP_BRACKET)
 	  bracket_height *= -1.0 ;
 
-	line_width = 0 ;				    /* Override line width. */
-
 	glyph_points[0] = 0.0 ;
 	glyph_points[1] = 0.0 ;
 	glyph_points[2] = width ;
@@ -206,10 +204,6 @@ FooCanvasItem *zMapDrawGlyph(FooCanvasGroup *group, double x, double y,
   glyph.ref_count = 1 ;					    /* Make sure canvas does not try to free them. */
 
 
-
-  printf("WARNING: glyph display disabled until new build of foocanvas...\n") ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* draw the line */
   item = foo_canvas_item_new(group,
 			     foo_canvas_line_glyph_get_type(),
@@ -220,7 +214,7 @@ FooCanvasItem *zMapDrawGlyph(FooCanvasGroup *group, double x, double y,
 			     "join_style", GDK_JOIN_BEVEL,
 			     "cap_style", GDK_CAP_BUTT,
 			     NULL);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 		    
   return item ;
