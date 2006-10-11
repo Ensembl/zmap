@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapConfigDir.h
  * HISTORY:
- * Last edited: May 17 12:12 2006 (rds)
+ * Last edited: Oct 10 10:11 2006 (edgrif)
  * Created: Thu Feb 10 10:05:36 2005 (edgrif)
- * CVS info:   $Id: zmapConfigDir.c,v 1.3 2006-05-17 11:17:11 rds Exp $
+ * CVS info:   $Id: zmapConfigDir.c,v 1.4 2006-10-11 09:46:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -207,7 +207,7 @@ void zMapConfigDirWriteWindowIdFile(unsigned long id, char *window_name)
           g_free(id_line);
         }
       else{
-        zMapLogWarning("Error doing something to path '%s', %d", path, g_error);
+        zMapLogWarning("Error doing something to path '%s', %s", path, g_error->message);
       }
       if(path)
         g_free(path);
