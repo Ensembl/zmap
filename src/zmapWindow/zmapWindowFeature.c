@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 11 10:40 2006 (edgrif)
+ * Last edited: Oct 11 11:42 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.53 2006-10-11 09:49:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.54 2006-10-11 10:43:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -766,7 +766,7 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
   if (feature->flags.has_boundary)
     {
       static GdkColor splice_background ;
-      double width ;
+      double width, origin, start ;
       ZMapDrawGlyphType glyph_type ;
       char *colour ;
       ZMapFrame frame ;
@@ -781,10 +781,10 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
 	  colour = "red" ;
 	  break ;
 	case ZMAPFRAME_1:
-	  colour = "green" ;
+	  colour = "blue" ;
 	  break ;
 	case ZMAPFRAME_2:
-	  colour = "blue" ;
+	  colour = "green" ;
 	  break ;
 	default:
 	  zMapAssertNotReached() ;
@@ -801,11 +801,50 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
 	  glyph_type = ZMAPDRAW_GLYPH_UP_BRACKET ;
 	}
 
+
+      /* THIS NEEDS MORE WORK...STILL HAVEN'T GOT VERTICAL LINES ETC.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      x = *offset + 0.5 * bc->width ;  graphLine (x, y1, x, y2) ;
+      x = *offset + 0.75 * bc->width ;  graphLine (x, y1, x, y2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      if (feature->style->min_score < 0 && 0 < feature->style->max_score)
+	origin = 0 ;
+      else
+	origin = style->width * (feature->style->min_score / (feature->style->max_score - feature->style->min_score)) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      graphLine (*offset + origin, y1, *offset + origin, y2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
       /* Adjust width to score....NOTE that to do acedb like stuff we really need to set an origin
 	 and pass it in to this routine....*/
       width = getWidthFromScore(feature->style, feature->score) ;
 
-      feature_item = zMapDrawGlyph(parent, x1, (y2 + y1) * 0.5,
+
+      if (width > origin + 0.5 || width < origin - 0.5)
+	{
+	  start = x1 + origin ;
+	  width = width - origin ;
+	  /* graphLine (bc->offset+origin, y, bc->offset+x, y) ; */
+	}
+      else if (width > origin)
+	{
+	  /*graphLine (bc->offset+origin-0.5, y, bc->offset+x, y) ; */
+	  start = x1 + origin - 0.5 ;
+	  width = width - origin - 0.5 ;
+	}
+      else
+	{
+	  /* graphLine (bc->offset+origin+0.5, y, bc->offset+x, y) ; */
+	  start = x1 + origin + 0.5 ;
+	  width = width - origin + 0.5 ;
+	}
+
+      feature_item = zMapDrawGlyph(parent, start, (y2 + y1) * 0.5,
 				   glyph_type,
 				   &splice_background, width, 2) ;
     }
@@ -2566,12 +2605,21 @@ static double getWidthFromScore(ZMapFeatureTypeStyle style, double score)
   width = tmp ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (x > origin + 0.5 || x < origin - 0.5) 
-    graphLine (bc->offset+origin, y, bc->offset+x, y) ;
-  else if (x > origin)
-    graphLine (bc->offset+origin-0.5, y, bc->offset+x, y) ;
-  else
-    graphLine (bc->offset+origin+0.5, y, bc->offset+x, y) ;
+      if (seg->data.f <= bc->meth->minScore) 
+	x = 0 ;
+      else if (seg->data.f >= bc->meth->maxScore) 
+	x = bc->width ;
+      else 
+	x = fac * (seg->data.f - bc->meth->minScore) ;
+
+      box = graphBoxStart() ;
+
+      if (x > origin + 0.5 || x < origin - 0.5) 
+	graphLine (bc->offset+origin, y, bc->offset+x, y) ;
+      else if (x > origin)
+	graphLine (bc->offset+origin-0.5, y, bc->offset+x, y) ;
+      else
+	graphLine (bc->offset+origin+0.5, y, bc->offset+x, y) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
