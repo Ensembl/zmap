@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 26 14:33 2006 (edgrif)
+ * Last edited: Oct 11 09:38 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.44 2006-09-29 09:54:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.45 2006-10-11 09:50:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -763,9 +763,23 @@ gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
   return visible;
 }
 
+
 void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
                                 gboolean alterScrollRegionSize,
                                 double boundaryAroundItem)
+{
+
+  zmapWindowItemCentreOnItemSubPart(window, item, alterScrollRegionSize, boundaryAroundItem, 0.0, 0.0) ;
+
+  return ;
+}
+
+
+/* If sub_start == sub_end == 0.0 then they are ignored. */
+void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
+				       gboolean alterScrollRegionSize,
+				       double boundaryAroundItem,
+				       double sub_start, double sub_end)
 {
   double ix1, ix2, iy1, iy2;
   int    cx1, cx2, cy1, cy2;
@@ -774,6 +788,17 @@ void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
   gboolean debug = FALSE;
 
   foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2);
+
+  if (sub_start != 0.0 && sub_end != 0.0)
+    {
+      zMapAssert(sub_start <= sub_end
+		 && (sub_start >= iy1 && sub_start <= iy2)
+		 && (sub_end >= iy1 && sub_end <= iy2)) ;
+
+      iy2 = iy1 ;
+      iy1 = iy1 + sub_start ;
+      iy2 = iy2 + sub_end ;
+    }
 
   /* Fix the numbers to make sense. */
   foo_canvas_item_i2w(item, &ix1, &iy1);
