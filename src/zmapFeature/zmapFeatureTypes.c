@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct  6 11:14 2006 (edgrif)
+ * Last edited: Oct 11 16:08 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.29 2006-10-06 10:18:19 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.30 2006-10-11 15:19:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,6 +62,8 @@ typedef struct
 
 static void doTypeSets(GQuark key_id, gpointer data, gpointer user_data) ;
 static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data) ;
+
+static void stylePrintFunc(gpointer data, gpointer user_data) ;
 
 static void checkListName(gpointer data, gpointer user_data) ;
 static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data) ;
@@ -630,9 +632,16 @@ GList *zMapStyleMergeStyles(GList *curr_styles, GList *new_styles)
 
   merge_data.curr_styles = curr_styles ;
 
+  zMapFeatureStylePrintAll(curr_styles, "") ;
+
+
   g_list_foreach(new_styles, mergeStyle, &merge_data) ;
   
   merged_styles = merge_data.curr_styles ;
+
+
+  zMapFeatureStylePrintAll(merged_styles, "") ;
+
 
   return merged_styles ;
 }
@@ -695,6 +704,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
 
       /* GeneFinderFeatures */
+      curr++ ;
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_GFF_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_GFF_NAME) ;
       curr->description = ZMAP_FIXED_STYLE_GFF_NAME_TEXT ;
@@ -938,6 +948,18 @@ void zMapFeatureTypePrintAll(GData *type_set, char *user_string)
 }
 
 
+void zMapFeatureStylePrintAll(GList *styles, char *user_string)
+{
+  printf("\nTypes at %s\n", user_string) ;
+
+  g_list_foreach(styles, stylePrintFunc, NULL) ;
+
+  return ;
+}
+
+
+
+
 
 /*! @} end of zmapstyles docs. */
 
@@ -978,6 +1000,18 @@ static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   char *style_name = (char *)g_quark_to_string(key_id) ;
+  
+  printf("\t%s: \t%f \t%s\n", style_name, style->width,
+	 (style->opts.show_rev_strand ? "show_rev_strand" : "!show_rev_strand")) ;
+
+  return ;
+}
+
+
+static void stylePrintFunc(gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
+  char *style_name = (char *)g_quark_to_string(style->original_id) ;
   
   printf("\t%s: \t%f \t%s\n", style_name, style->width,
 	 (style->opts.show_rev_strand ? "show_rev_strand" : "!show_rev_strand")) ;
