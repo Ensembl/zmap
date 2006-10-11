@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 22 10:22 2006 (edgrif)
+ * Last edited: Oct 10 14:34 2006 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.27 2006-06-22 09:24:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.28 2006-10-11 09:48:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -292,9 +292,9 @@ ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow,
   {
     GtkTreeModel *treeModel = NULL;
     GList *itemList         = NULL;
-    treeModel = zmapWindowFeatureListCreateStore(TRUE);
+    treeModel = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_TREE);
     itemList  = g_list_append(itemList, item);
-    zmapWindowFeatureListPopulateStoreList(treeModel, itemList);
+    zmapWindowFeatureListPopulateStoreList(treeModel, ZMAPWINDOWLIST_FEATURE_TREE, itemList, NULL);
 
     createEditWindow(editor, treeModel);
   }
@@ -577,7 +577,7 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
 
   windowCallbacks.selectionFuncCB = selectionFunc;
   size_data->tree_view = editor_data->view
-    = treeView = zmapWindowFeatureListCreateView(treeModel, 
+    = treeView = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_FEATURE_TREE, treeModel, 
 						 getColRenderer(editor_data),
 						 &windowCallbacks, 
 						 editor_data);

@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 21 10:37 2006 (edgrif)
+ * Last edited: Oct 10 14:29 2006 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.50 2006-09-26 08:52:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.51 2006-10-11 09:48:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -185,9 +185,9 @@ void zmapWindowListWindowCreate(ZMapWindow zmapWindow,
   window_list->zmapWindow = zmapWindow ;
   window_list->title      = title;
 
-  window_list->treeModel = zmapWindowFeatureListCreateStore(FALSE) ;
+  window_list->treeModel = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_LIST) ;
 
-  zmapWindowFeatureListPopulateStoreList(window_list->treeModel, itemList) ;
+  zmapWindowFeatureListPopulateStoreList(window_list->treeModel, ZMAPWINDOWLIST_FEATURE_LIST, itemList, NULL) ;
 
   drawListWindow(window_list, window_list->treeModel, current_item) ;
 
@@ -267,7 +267,8 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel,
   windowCallbacks.columnClickedCB = NULL; /* G_CALLBACK(columnClickedCB); */
   windowCallbacks.rowActivatedCB  = G_CALLBACK(view_RowActivatedCB);
   windowCallbacks.selectionFuncCB = selectionFuncCB;
-  windowList->view = zmapWindowFeatureListCreateView(treeModel, NULL, &windowCallbacks, windowList);
+  windowList->view = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_FEATURE_LIST,
+						     treeModel, NULL, &windowCallbacks, windowList);
 
   selectItemInView(windowList->zmapWindow, GTK_TREE_VIEW(windowList->view), current_item) ;
 
