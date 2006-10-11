@@ -18,6 +18,7 @@ ZMap/zmapThreads.h \
 ZMap/zmapUtilsCheck.h \
 ZMap/zmapUtilsDebug.h \
 ZMap/zmapUtils.h \
+ZMap/zmapDNA.h \
 ZMap/zmapUtilsLog.h \
 ZMap/zmapUtilsMesg.h \
 ZMap/zmapView.h \
