@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct  3 16:49 2006 (edgrif)
+ * Last edited: Oct 11 10:20 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.152 2006-10-03 15:55:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.153 2006-10-11 09:47:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1491,6 +1491,7 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
     {
       {ZMAPGUI_MENU_NORMAL, "Show Feature List",      1, columnMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Feature Search Window",  2, columnMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA Search Window",  5, columnMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
     } ;
 
@@ -1536,6 +1537,12 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
     case 2:
       zmapWindowCreateSearchWindow(menu_data->window, menu_data->item) ;
       break ;
+
+    case 5:
+      zmapWindowCreateDNAWindow(menu_data->window, menu_data->item) ;
+
+      break ;
+
     default:
       zMapAssert("Coding error, unrecognised menu item number.") ;
       break ;
