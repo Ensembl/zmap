@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct  4 15:14 2006 (rds)
+ * Last edited: Oct 11 10:16 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.143 2006-10-04 14:28:01 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.144 2006-10-11 09:46:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,7 +96,7 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 
-static void resetCanvas(ZMapWindow window, gboolean free_child_windows) ;
+static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean keep_revcomp_safe_windows) ;
 static gboolean getConfiguration(ZMapWindow window) ;
 static void sendClientEvent(ZMapWindow window, FeatureSets) ;
 
@@ -324,7 +324,7 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_feature
 void zMapWindowReset(ZMapWindow window)
 {
 
-  resetCanvas(window, TRUE) ;
+  resetCanvas(window, TRUE, TRUE) ;
 
   /* Need to reset feature context pointer and any other things..... */
 
@@ -387,6 +387,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 {
   int x, y ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
+  gboolean free_child_windows = FALSE, free_revcomp_safe_windows = FALSE ;
 
 
   /* Note that currently we lose the 3 frame state and other state such as columns */
@@ -428,10 +429,12 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       scroll_y2 = tmp ;
 
       window->revcomped_features = !window->revcomped_features ;
+
+      free_child_windows = TRUE ;
     }
 
 
-  resetCanvas(window, FALSE) ;					    /* Resets scrolled region and much else. */
+  resetCanvas(window, free_child_windows, free_revcomp_safe_windows) ; /* Resets scrolled region and much else. */
 
 
   if (features_are_revcomped)
@@ -711,7 +714,15 @@ void zMapWindowDestroy(ZMapWindow window)
   zmapWindowFreeWindowArray(&(window->search_windows), TRUE) ;
 
 
-  /* free the array of search windows and the windows themselves */
+  /* free the array of dna windows and the windows themselves */
+  zmapWindowFreeWindowArray(&(window->dna_windows), TRUE) ;
+
+
+  /* free the array of dna windows and the windows themselves */
+  zmapWindowFreeWindowArray(&(window->dnalist_windows), TRUE) ;
+
+
+  /* free the array of editor windows and the windows themselves */
   zmapWindowFreeWindowArray(&(window->editor_windows), TRUE) ;
 
 
@@ -1175,6 +1186,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   /* Init. lists of dialog windows attached to this zmap window. */
   window->featureListWindows = g_ptr_array_new() ;
   window->search_windows = g_ptr_array_new() ;
+  window->dna_windows = g_ptr_array_new() ;
+  window->dnalist_windows = g_ptr_array_new() ;
   window->edittable_features = FALSE ;			    /* By default features are not edittable. */
   window->editor_windows = g_ptr_array_new() ;
 
@@ -1419,11 +1432,10 @@ static void myWindowMove(ZMapWindow window, double start, double end)
  * are destroyed and all the associated resources free'd.
  * 
  * NOTE that this _must_ not touch the feature context which belongs to the parent View. */
-static void resetCanvas(ZMapWindow window, gboolean free_child_windows)
+static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean free_revcomp_safe_windows)
 {
 
   zMapAssert(window) ;
-
 
   /* There is code here that should be shared with zmapwindowdestroy....
    * BUT NOTE THAT SOME THINGS ARE NOT SHARED...e.g. RECREATION OF THE FEATURELISTWINDOWS
@@ -1454,10 +1466,17 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows)
   if (free_child_windows)
     {
       /* free the array of featureListWindows and the windows themselves */
-      zmapWindowFreeWindowArray(&(window->featureListWindows), FALSE) ;
+      if (free_revcomp_safe_windows)
+	zmapWindowFreeWindowArray(&(window->featureListWindows), FALSE) ;
 
       /* free the array of search windows and the windows themselves */
       zmapWindowFreeWindowArray(&(window->search_windows), FALSE) ;
+
+      /* free the array of dna windows and the windows themselves */
+      zmapWindowFreeWindowArray(&(window->dna_windows), FALSE) ;
+
+      /* free the array of dna list windows and the windows themselves */
+      zmapWindowFreeWindowArray(&(window->dnalist_windows), FALSE) ;
 
       /* free the array of editor windows and the windows themselves */
       zmapWindowFreeWindowArray(&(window->editor_windows), FALSE) ;
