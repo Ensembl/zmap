@@ -28,14 +28,17 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Sep 21 11:43 2006 (edgrif)
+ * Last edited: Oct 10 14:22 2006 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.9 2006-09-26 08:52:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.10 2006-10-11 09:52:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <zmapWindow_P.h>
+
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapDNA.h>
+#include <zmapWindow_P.h>
+
 
 enum { USE_TREE_STORE = 0 } ;
 
@@ -68,6 +71,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                                   ZMapFeature feature, 
                                   FooCanvasItem *item,
                                   GtkTreeIter *parent);
+static void addDNAItemToStore(GtkTreeModel *treeModel, ZMapDNAMatch match, ZMapFeatureBlock block) ;
 static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer user_data) ;
 
 
@@ -98,76 +102,91 @@ static int columnSortIDs[ZMAP_WINDOW_LIST_COL_NUMBER] =
 
 
 
-/* ======================================================= */
-/* Functions */
-
-GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store)
+GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type)
 {
-  GtkTreeSortable *sortable = NULL;
-  GtkTreeModel *treeModel   = NULL;
-  int colNo = 0;
+  GtkTreeSortable *sortable = NULL ;
+  GtkTreeModel *treeModel   = NULL ;
+  int colNo = 0 ;
 
-  if (use_tree_store)
+  switch (list_type)
     {
-      GtkTreeStore *store = NULL;
+    case ZMAPWINDOWLIST_FEATURE_TREE:
+      {
+	GtkTreeStore *store = NULL;
 
-      store = gtk_tree_store_new(ZMAP_WINDOW_LIST_COL_NUMBER,
-                                 G_TYPE_STRING,
-				 G_TYPE_STRING,
-				 G_TYPE_STRING,
-                                 G_TYPE_INT, G_TYPE_INT,
-				 G_TYPE_STRING,
-                                 G_TYPE_FLOAT,
-				 G_TYPE_STRING,
-				 G_TYPE_POINTER, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT) ;
+	store = gtk_tree_store_new(ZMAP_WINDOW_LIST_COL_NUMBER,
+				   G_TYPE_STRING,
+				   G_TYPE_STRING,
+				   G_TYPE_STRING,
+				   G_TYPE_INT, G_TYPE_INT,
+				   G_TYPE_STRING,
+				   G_TYPE_FLOAT,
+				   G_TYPE_STRING,
+				   G_TYPE_POINTER, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT) ;
 
-      treeModel = GTK_TREE_MODEL(store);
+	treeModel = GTK_TREE_MODEL(store);
+	break ;
+      }
+    case ZMAPWINDOWLIST_FEATURE_LIST:
+      {
+	GtkListStore *list = NULL;
+
+	list = gtk_list_store_new(ZMAP_WINDOW_LIST_COL_NUMBER,
+				  G_TYPE_STRING,
+				  G_TYPE_STRING,
+				  G_TYPE_STRING,
+				  G_TYPE_INT, G_TYPE_INT,
+				  G_TYPE_STRING,
+				  G_TYPE_FLOAT,
+				  G_TYPE_STRING,
+				  G_TYPE_POINTER, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT) ;
+	
+	treeModel = GTK_TREE_MODEL(list);
+	break ;
+      }
+    case ZMAPWINDOWLIST_DNA_LIST:
+      {
+	GtkListStore *list = NULL;
+
+	list = gtk_list_store_new(ZMAP_WINDOW_LIST_DNA_NUMBER,
+				  G_TYPE_INT, G_TYPE_INT, G_TYPE_INT,
+				  G_TYPE_STRING, G_TYPE_POINTER) ;
+	
+	treeModel = GTK_TREE_MODEL(list);
+	break ;
+      }
+    default:
+      zMapAssertNotReached() ;
     }
-  else
+
+
+  if (list_type ==  ZMAPWINDOWLIST_FEATURE_TREE || list_type == ZMAPWINDOWLIST_FEATURE_LIST)
     {
-      GtkListStore *list = NULL;
+      sortable  = GTK_TREE_SORTABLE(treeModel);
 
-      list = gtk_list_store_new(ZMAP_WINDOW_LIST_COL_NUMBER,
-                                G_TYPE_STRING,
-				G_TYPE_STRING,
-				G_TYPE_STRING,
-                                G_TYPE_INT, G_TYPE_INT,
-				G_TYPE_STRING,
-                                G_TYPE_FLOAT,
-				G_TYPE_STRING,
-				G_TYPE_POINTER, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT) ;
-
-      treeModel = GTK_TREE_MODEL(list);
+      for (colNo = 0; colNo < ZMAP_WINDOW_LIST_COL_NUMBER; colNo++)
+	{  
+	  gtk_tree_sortable_set_sort_func(sortable, 
+					  colNo, 
+					  sortByFunc, 
+					  GINT_TO_POINTER(columnSortIDs[colNo]), 
+					  NULL);
+	}
     }
 
-  sortable  = GTK_TREE_SORTABLE(treeModel);
-
-
-  for (colNo = 0; colNo < ZMAP_WINDOW_LIST_COL_NUMBER; colNo++)
-    {  
-      gtk_tree_sortable_set_sort_func(sortable, 
-                                      colNo, 
-                                      sortByFunc, 
-                                      GINT_TO_POINTER(columnSortIDs[colNo]), 
-                                      NULL);
-    }
 
   return treeModel ;
 }
 
 
-GtkWidget *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
-                                           GtkCellRenderer *renderer,
+GtkWidget *zmapWindowFeatureListCreateView(ZMapWindowListType list_type,
+					   GtkTreeModel *treeModel, GtkCellRenderer *renderer,
                                            zmapWindowFeatureListCallbacks callbacks,
                                            gpointer user_data)
 {
   GtkWidget    *treeView;
   GtkTreeSelection  *selection;
   int colNo = 0;
-  char *column_titles[ZMAP_WINDOW_LIST_COL_NUMBER] = {"Name", "Type", "Strand", 
-                                                      "Start", "End", "Phase",
-                                                      "Score", "Method", "FEATURE_ITEM",
-                                                      "", "", "", "", ""};
 
   /* Create the view from the model */
   treeView = gtk_tree_view_new_with_model(treeModel);
@@ -176,43 +195,104 @@ GtkWidget *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
   if(renderer == NULL)
     renderer = gtk_cell_renderer_text_new ();
 
-  /* Add it to all of them, not sure we need to add it to all, just the visible ones... */
-  for(colNo = 0; colNo < ZMAP_WINDOW_LIST_COL_NUMBER; colNo++)
+
+
+  switch (list_type)
     {
-      GtkTreeViewColumn *column = NULL;
+    case ZMAPWINDOWLIST_FEATURE_TREE:
+    case ZMAPWINDOWLIST_FEATURE_LIST:
+      {
+	char *column_titles[ZMAP_WINDOW_LIST_COL_NUMBER] = {"Name", "Type", "Strand", 
+							    "Start", "End", "Phase",
+							    "Score", "Method", "FEATURE_ITEM",
+							    "", "", "", "", ""};
 
-      column = gtk_tree_view_column_new_with_attributes(column_titles[colNo],
-                                                        renderer,
-                                                        "text", colNo,
-                                                        NULL);
-      g_object_set_data_full(G_OBJECT(column),
-                             ZMAP_WINDOW_FEATURE_LIST_COL_NUMBER_KEY, 
-                             GINT_TO_POINTER(colNo),
-                             NULL);
+	/* Add it to all of them, not sure we need to add it to all, just the visible ones... */
+	for(colNo = 0; colNo < ZMAP_WINDOW_LIST_COL_NUMBER; colNo++)
+	  {
+	    GtkTreeViewColumn *column = NULL;
 
-      /* The order of the next two calls IS IMPORTANT.  With the
-       * signal_connect FIRST the callback is called BEFORE the
-       * sorting happens. A user can then manipulate how the sort is
-       * done, but the other way round the sorting is done FIRST and
-       * the callback is useless to effect the sort without needlessly
-       * sorting again!! This gives me a headache.
-       */
-      if(callbacks->columnClickedCB)
-        g_signal_connect(G_OBJECT(column), "clicked",
-                         G_CALLBACK(callbacks->columnClickedCB), 
-                         user_data);
+	    column = gtk_tree_view_column_new_with_attributes(column_titles[colNo],
+							      renderer,
+							      "text", colNo,
+							      NULL);
+	    g_object_set_data_full(G_OBJECT(column),
+				   ZMAP_WINDOW_FEATURE_LIST_COL_NUMBER_KEY, 
+				   GINT_TO_POINTER(colNo),
+				   NULL);
 
-      /* set the pointer and data rows to be invisible */
-      if(colNo >= ZMAP_WINDOW_LIST_COL_FEATURE)
-        gtk_tree_view_column_set_visible(column, FALSE);
-      else
-        gtk_tree_view_column_set_sort_column_id(column, colNo);
+	    /* The order of the next two calls IS IMPORTANT.  With the
+	     * signal_connect FIRST the callback is called BEFORE the
+	     * sorting happens. A user can then manipulate how the sort is
+	     * done, but the other way round the sorting is done FIRST and
+	     * the callback is useless to effect the sort without needlessly
+	     * sorting again!! This gives me a headache.
+	     */
+	    if(callbacks->columnClickedCB)
+	      g_signal_connect(G_OBJECT(column), "clicked",
+			       G_CALLBACK(callbacks->columnClickedCB), 
+			       user_data);
 
-      /* Add the column to the view now it's all set up */
-      gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
+	    /* set the pointer and data rows to be invisible */
+	    if(colNo >= ZMAP_WINDOW_LIST_COL_FEATURE)
+	      gtk_tree_view_column_set_visible(column, FALSE);
+	    else
+	      gtk_tree_view_column_set_sort_column_id(column, colNo);
+
+	    /* Add the column to the view now it's all set up */
+	    gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
+	  }
+
+	break ;
+      }
+      case ZMAPWINDOWLIST_DNA_LIST:
+      {
+	char *column_titles[ZMAP_WINDOW_LIST_DNA_NUMBER] = {"Start", "End", "Length", "Match", ""} ;
+
+	/* Add it to all of them, not sure we need to add it to all, just the visible ones... */
+	for (colNo = 0 ; colNo < ZMAP_WINDOW_LIST_DNA_NUMBER ; colNo++)
+	  {
+	    GtkTreeViewColumn *column = NULL;
+
+	    column = gtk_tree_view_column_new_with_attributes(column_titles[colNo],
+							      renderer,
+							      "text", colNo,
+							      NULL);
+	    g_object_set_data_full(G_OBJECT(column),
+				   ZMAP_WINDOW_FEATURE_LIST_COL_NUMBER_KEY, 
+				   GINT_TO_POINTER(colNo),
+				   NULL);
+
+	    /* The order of the next two calls IS IMPORTANT.  With the
+	     * signal_connect FIRST the callback is called BEFORE the
+	     * sorting happens. A user can then manipulate how the sort is
+	     * done, but the other way round the sorting is done FIRST and
+	     * the callback is useless to effect the sort without needlessly
+	     * sorting again!! This gives me a headache.
+	     */
+	    if(callbacks->columnClickedCB)
+	      g_signal_connect(G_OBJECT(column), "clicked",
+			       G_CALLBACK(callbacks->columnClickedCB), 
+			       user_data);
+
+	    /* set the pointer and data rows to be invisible */
+	    if(colNo >= ZMAP_WINDOW_LIST_DNA_NOSHOW)
+	      gtk_tree_view_column_set_visible(column, FALSE);
+	    else
+	      gtk_tree_view_column_set_sort_column_id(column, colNo);
+
+	    /* Add the column to the view now it's all set up */
+	    gtk_tree_view_append_column (GTK_TREE_VIEW (treeView), column);
+	  }
+
+	break ;
+      }
+    default:
+      zMapAssertNotReached() ;
     }
 
-  //  gtk_tree_view_set_headers_clickable(GTK_TREE_VIEW(treeView), TRUE);
+
+  /*  gtk_tree_view_set_headers_clickable(GTK_TREE_VIEW(treeView), TRUE); */
 
 
   /* Setup the selection handler */
@@ -225,6 +305,7 @@ GtkWidget *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
                                            callbacks->selectionFuncCB, 
                                            user_data, NULL);
 
+
   /* Allow users to edit from this list... */
   if(callbacks->rowActivatedCB)
     g_signal_connect(G_OBJECT(treeView), "row-activated", 
@@ -236,31 +317,59 @@ GtkWidget *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
 }
 
 
-void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel, GList *list)
+void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel, ZMapWindowListType list_type,
+					    GList *list, gpointer user_data)
 {
 
-  while (list)
+  switch (list_type)
     {
-      FooCanvasItem *item = NULL;
-      ZMapFeature feature = NULL ;
-      FooCanvasGroup *set_group ;
-      ZMapWindowItemFeatureSetData set_data ;
+    case ZMAPWINDOWLIST_FEATURE_TREE:
+    case ZMAPWINDOWLIST_FEATURE_LIST:
+      {
+	while (list)
+	  {
+	    FooCanvasItem *item = NULL;
+	    ZMapFeature feature = NULL ;
+	    FooCanvasGroup *set_group ;
+	    ZMapWindowItemFeatureSetData set_data ;
 
-      item = (FooCanvasItem *)list->data;
+	    item = (FooCanvasItem *)list->data;
 
-      /* do we need some kind of type check on feature here? */
-      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
-      zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+	    /* do we need some kind of type check on feature here? */
+	    feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
-      set_group = zmapWindowItemGetParentContainer(item) ;
+	    set_group = zmapWindowItemGetParentContainer(item) ;
 
-      /* These should go in container some time.... */
-      set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
-      zMapAssert(set_data) ;
+	    /* These should go in container some time.... */
+	    set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
+	    zMapAssert(set_data) ;
 
-      addFeatureItemToStore(treeModel, set_data->strand, set_data->frame, feature, item, NULL);
+	    addFeatureItemToStore(treeModel, set_data->strand, set_data->frame, feature, item, NULL);
 
-      list = list->next ;
+	    list = list->next ;
+	  }
+	break ;
+      }
+    case ZMAPWINDOWLIST_DNA_LIST:
+      {
+	while (list)
+	  {
+	    ZMapDNAMatch match ;
+	    ZMapFeatureBlock block ;
+
+	    match = (ZMapDNAMatch)list->data ;
+
+	    block = (ZMapFeatureBlock)user_data ;
+
+	    addDNAItemToStore(treeModel, match, block) ;
+
+	    list = list->next ;
+	  }
+	break ;
+      }
+    default:
+      zMapAssertNotReached() ;
     }
 
   return ;
@@ -598,6 +707,31 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                          ZMAP_WINDOW_LIST_COL_SORT_STRAND,  feature->strand,
                          -1) ;
     }
+
+  return ;
+}
+
+
+static void addDNAItemToStore(GtkTreeModel *treeModel, ZMapDNAMatch match, ZMapFeatureBlock block)
+
+{
+  GtkTreeIter append ;
+  GtkListStore *store = NULL;
+
+
+  zMapAssert(treeModel && match) ;
+
+  store = GTK_LIST_STORE(treeModel);
+
+  gtk_list_store_append(store, &append);
+
+  gtk_list_store_set(store, &append, 
+		     ZMAP_WINDOW_LIST_DNA_START, match->start, 
+		     ZMAP_WINDOW_LIST_DNA_END, match->end,
+		     ZMAP_WINDOW_LIST_DNA_LENGTH, (match->end - match->start + 1),
+		     ZMAP_WINDOW_LIST_DNA_MATCH, match->match,
+		     ZMAP_WINDOW_LIST_DNA_BLOCK, block,
+		     -1) ;
 
   return ;
 }
