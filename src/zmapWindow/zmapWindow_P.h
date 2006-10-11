@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Oct  2 10:24 2006 (edgrif)
+ * Last edited: Oct 11 10:05 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.139 2006-10-02 09:24:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.140 2006-10-11 09:49:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -168,6 +168,16 @@ typedef enum
   } ZMapWindowColConfigureMode ;
 
 
+
+/* Controls type of window list created. */
+typedef enum
+  {
+    ZMAPWINDOWLIST_FEATURE_TREE,			    /* Show features as clickable "trees". */
+    ZMAPWINDOWLIST_FEATURE_LIST,			    /* Show features as single lines. */
+    ZMAPWINDOWLIST_DNA_LIST,				    /* Show dna matches as single lines. */
+  } ZMapWindowListType ;
+
+
 /* Controls what data is displayed in the feature list window. */
 typedef enum
   { 
@@ -185,9 +195,23 @@ typedef enum
     ZMAP_WINDOW_LIST_COL_SORT_TYPE,			    /*!< \                          */
     ZMAP_WINDOW_LIST_COL_SORT_STRAND,			    /*!< -- sort on integer columns */
     ZMAP_WINDOW_LIST_COL_SORT_PHASE,			    /*!< /                          */
-    ZMAP_WINDOW_LIST_COL_NUMBER				    /*!< number of columns  */
+    ZMAP_WINDOW_LIST_COL_NUMBER				    /*!< number of columns, must be last.  */
   } zmapWindowFeatureListColumn;
 #define ZMAP_WINDOW_FEATURE_LIST_COL_NUMBER_KEY "column_number_data"
+
+
+/* Controls what data is displayed in the dna list window. */
+typedef enum
+  { 
+    ZMAP_WINDOW_LIST_DNA_START,				    /* match start coord */
+    ZMAP_WINDOW_LIST_DNA_END,				    /* match end coord */
+    ZMAP_WINDOW_LIST_DNA_LENGTH,			    /* match length */
+    ZMAP_WINDOW_LIST_DNA_MATCH,				    /* match */
+    ZMAP_WINDOW_LIST_DNA_NOSHOW,			    /* cols after this are not displayed. */
+    ZMAP_WINDOW_LIST_DNA_BLOCK = ZMAP_WINDOW_LIST_DNA_NOSHOW, /* block. */
+    ZMAP_WINDOW_LIST_DNA_NUMBER				    /* number of columns, must be last.  */
+  } zmapWindowDNAListColumn ;
+
 
 
 
@@ -421,6 +445,10 @@ typedef struct _ZMapWindowStruct
 
   GPtrArray *search_windows ;				    /* popup search windows. */
 
+  GPtrArray *dna_windows ;				    /* popup dna search windows. */
+
+  GPtrArray *dnalist_windows ;				    /* popup showing list of dna match locations. */
+
   gboolean edittable_features ;				    /* FALSE means no features are edittable. */
   GPtrArray *editor_windows ;				    /* popup feature editor/display windows. */
 
@@ -503,7 +531,12 @@ void zmapWindowListWindowCreate(ZMapWindow zmapWindow,
 				char *title,
 				FooCanvasItem *currentItem) ;
 void zmapWindowListWindowReread(GtkWidget *window_list_widget) ;
+
 void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, FooCanvasItem *feature_item) ;
+
+void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item) ;
+void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list, char *title, ZMapFeatureBlock block) ;
+
 
 void zmapWindowNewReposition(ZMapWindow window) ;
 void zmapWindowResetWidth(ZMapWindow window) ;
@@ -662,13 +695,14 @@ void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
 
 void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_array) ;
 
-GtkTreeModel *zmapWindowFeatureListCreateStore(gboolean use_tree_store) ;
-GtkWidget    *zmapWindowFeatureListCreateView(GtkTreeModel *treeModel,
+
+GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type) ;
+GtkWidget    *zmapWindowFeatureListCreateView(ZMapWindowListType list_type, GtkTreeModel *treeModel,
                                               GtkCellRenderer *renderer,
                                               zmapWindowFeatureListCallbacks callbacks,
                                               gpointer user_data);
-void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel,
-                                            GList *list);
+void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel, ZMapWindowListType list_type,
+                                            GList *list, gpointer user_data);
 void zmapWindowFeatureListRereadStoreList(GtkTreeView *tree_view, ZMapWindow window) ;
 gint zmapWindowFeatureListCountSelected(GtkTreeSelection *selection);
 gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
@@ -757,6 +791,16 @@ gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
  *| instead.                                                          |
  *!-------------------------------------------------------------------!*/
 gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
+
+
+
+void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
+                                gboolean alterScrollRegionSize,
+                                double boundaryAroundItem) ;
+void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
+				       gboolean alterScrollRegionSize,
+				       double boundaryAroundItem,
+				       double sub_start, double sub_end) ;
 
 
 
