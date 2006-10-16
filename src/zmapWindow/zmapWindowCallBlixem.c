@@ -1,4 +1,3 @@
-
 /*  File: zmapWindowCallBlixem.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2005
@@ -32,9 +31,9 @@
  *
  * Exported functions: see zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 25 15:59 2006 (rds)
+ * Last edited: Oct 13 17:14 2006 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.22 2006-07-25 15:23:46 rds Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.23 2006-10-16 10:52:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,6 +62,7 @@ typedef struct BlixemDataStruct
   char          *tmpDir;
   char          *fastAFile;
   char          *exblxFile;
+  gboolean      keep_tmpfiles ;
   char          *opts;
   gboolean       oneType;                                  /* show stuff for just this type */
   GIOChannel    *channel;
@@ -194,6 +194,7 @@ static gboolean getUserPrefs(blixemData blixem_data)
   ZMapConfigStanzaElementStruct elements[] = {{"netid"     , ZMAPCONFIG_STRING, {NULL}},
 					      {"port"      , ZMAPCONFIG_INT   , {NULL}},
 					      {"script"    , ZMAPCONFIG_STRING, {NULL}},
+					      {"keep_tempfiles", ZMAPCONFIG_BOOL, {NULL}},
 					      {"scope"     , ZMAPCONFIG_INT   , {NULL}},
 					      {"homol_max" , ZMAPCONFIG_INT   , {NULL}},
 					      {NULL, -1, {NULL}}} ;
@@ -214,6 +215,8 @@ static gboolean getUserPrefs(blixemData blixem_data)
 	  blixem_data->Script   = g_strdup(zMapConfigGetElementString(next, "script"   ));
 	  blixem_data->Scope    = zMapConfigGetElementInt            (next, "scope"     );
 	  blixem_data->HomolMax = zMapConfigGetElementInt            (next, "homol_max" );
+
+	  blixem_data->keep_tmpfiles = zMapConfigGetElementBool(next, "keep_tempfiles") ;
 	  
 	  zMapConfigDeleteStanzaSet(list) ;		    /* Not needed anymore. */
 	}
@@ -349,9 +352,10 @@ static char *buildParamString(blixemData blixem_data)
    {
      /* For testing purposes remove the "-r" flag to leave the temporary files. */
 
-     paramString = g_strdup_printf("-P %s:%d -r -S %d -O %d -o %s %s %s",
-				   blixem_data->Netid, 
+     paramString = g_strdup_printf("-P %s:%d %s -S %d -O %d -o %s %s %s",
+				   blixem_data->Netid,
 				   blixem_data->Port,
+				   blixem_data->keep_tmpfiles ? "" : "-r",
 				   start,
 				   offset,
 				   blixem_data->opts,
@@ -541,6 +545,8 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
     }
 
 
+
+
   /* qframe is derived from the position of the start position
    * of this homology relative to one end of the viewing window
    * or the other, depending on strand.  Mod3 gives us the odd
@@ -550,8 +556,10 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       qframe_strand = '-' ;
       qframe = 1 + (((max - min + 1) - qstart) % 3) ;
 
+
       sstart = feature->feature.homol.y2 ;
       send   = feature->feature.homol.y1 ;
+
     }
   else
     {
@@ -560,7 +568,20 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 
       sstart = feature->feature.homol.y1 ;
       send   = feature->feature.homol.y2 ;
+
     }
+
+
+  /* Not sure about this.... */
+  if (blixem_data->window->revcomped_features)
+    {
+      double tmp ;
+
+      tmp = sstart ;
+      sstart = send ;
+      send = tmp ;
+    }
+
 
 
   score = feature->score + 0.5 ;			    /* round up to integer ????????? */
@@ -569,9 +590,9 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
   if (score)
     {
       g_string_printf(line, "%d\t(%c%d)\t%d\t%d\t%d\t%d %s ", 
-		      score,
-		      qframe_strand, qframe,
-		      qstart, qend, sstart, send,
+		      score, qframe_strand, qframe,
+		      qstart, qend,
+		      sstart, send,
 		      g_quark_to_string(feature->original_id)) ;
 
       if (feature->feature.homol.align)
