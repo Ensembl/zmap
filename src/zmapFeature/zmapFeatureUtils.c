@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 22 09:19 2006 (edgrif)
+ * Last edited: Oct 13 16:48 2006 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.32 2006-09-26 08:45:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.33 2006-10-16 10:26:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,7 +79,7 @@ static void doBlock(gpointer data, gpointer user_data) ;
 static void doFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void doFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 
-
+static int sortGapsByTarget(gconstpointer a, gconstpointer b) ;
 
 
 
@@ -237,6 +237,7 @@ GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature,
   return feature_id ;
 }
 
+
 GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_strand,
                                 int non_start, int non_end, ZMapStrand non_strand)
 {
@@ -262,6 +263,19 @@ char *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block)
 
   return dna_name;
 }
+
+
+void zMapFeatureSortGaps(GArray *gaps)
+{
+  zMapAssert(gaps) ;
+
+  /* Sort the array of gaps. performance hit? */
+  g_array_sort(gaps, sortGapsByTarget);
+
+  return ;
+}
+
+
 
 /* In zmap we hold coords in the forward orientation always and get strand from the strand
  * member of the feature struct. This function looks at the supplied strand and sets the
@@ -872,5 +886,23 @@ static void doFeature(GQuark key_id, gpointer data, gpointer user_data)
 						  dump_data->error_out) ;
 
   return ;
+}
+
+
+
+
+/* *************************************************************
+ * Not entirely sure of the wisdom of this (mainly performance
+ * concerns), but everywhere else we have start < end!.  previously
+ * loadGaps didn't even fill in the strand or apply the start < end 
+ * idiom and gaps array required a test when iterating through 
+ * it (the GArray). The GArray will now be ordered as it almost
+ * certainly should be to fit with the start < end idiom.  RDS 
+ */
+static int sortGapsByTarget(gconstpointer a, gconstpointer b)
+{
+  ZMapAlignBlock alignA = (ZMapAlignBlock)a, 
+    alignB = (ZMapAlignBlock)b;
+  return (alignA->t1 == alignB->t1 ? 0 : (alignA->t1 > alignB->t1 ? 1 : -1));
 }
 

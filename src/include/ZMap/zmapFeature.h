@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Oct  6 10:43 2006 (edgrif)
+ * Last edited: Oct 13 16:48 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.91 2006-10-06 10:18:19 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.92 2006-10-16 10:26:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -686,6 +686,7 @@ ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature) ;
 ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
+void zMapFeatureSortGaps(GArray *gaps) ;
 void zmapFeatureDestroy(ZMapFeature feature) ;
 
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
@@ -749,6 +750,7 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style) ;
 
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
+void zMapFeatureStylePrintAll(GList *styles, char *user_string) ;
 GList *zMapFeatureTypeGetFromFile(char *types_file) ;
 gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
 ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id) ;
