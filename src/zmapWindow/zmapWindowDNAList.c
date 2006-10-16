@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 11 10:41 2006 (edgrif)
+ * Last edited: Oct 11 17:09 2006 (edgrif)
  * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.1 2006-10-11 11:37:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNAList.c,v 1.2 2006-10-16 10:50:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,85 +39,7 @@
 #include <zmapWindow_P.h>
 
 
-
-
 #define DNA_LIST_OBJ_KEY "ZMapWindowDNAList"
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* ZMapWindowListStruct structure declaration
- *
- */
-typedef struct _ZMapWindowListStruct
-{
-  ZMapWindow  zmapWindow ; /*!< pointer to the zmapWindow that created us.   */
-  char          *title ;  /*!< Title for the window  */
-
-  GtkWidget     *view  ;  /*!< The treeView so we can get store, selection ... */
-  GtkWidget     *toplevel ;
-
-  GtkTreeModel *treeModel ;
-
-  int cb_action ;					    /* transient: filled in for callback. */
-} ZMapWindowListStruct, *ZMapWindowList ;
-
-
-
-/* For the menu */
-enum {
-  WINLISTGFF,
-  WINLISTXFF,
-  WINLISTUNK,
-
-  WINLIST_RESULTS_SHOW,
-  WINLIST_RESULTS_HIDE,
-  WINLIST_SELECTION_SHOW,
-  WINLIST_SELECTION_HIDE,
-
-  WINLISTHELP,
-  WINLISTABOUT,
-  /* Space to add more */
-  WINLIST_NONE
-};
-
-
-
-/* creator functions ... */
-
-
-static void selectItemInView(ZMapWindow window, GtkTreeView *treeView, FooCanvasItem *item);
-
-/* callbacks for the gui... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void testButtonCB      (GtkWidget *widget, gpointer user_data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-static void columnClickedCB    (GtkTreeViewColumn *col, gpointer user_data);
-
-static gboolean operateTreeModelForeachFunc(GtkTreeModel *model,
-                                            GtkTreePath *path,
-                                            GtkTreeIter *iter,
-                                            gpointer data);
-static void operateSelectionForeachFunc(GtkTreeModel *model,
-                                        GtkTreePath *path,
-                                        GtkTreeIter *iter,
-                                        gpointer data);
-
-
-
-static void exportCB  (gpointer data, guint cb_action, GtkWidget *widget);
-static void orderByCB (gpointer data, guint cb_action, GtkWidget *widget);
-static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget);
-static void operateCB (gpointer data, guint cb_action, GtkWidget *widget);
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
 
 
 
@@ -133,9 +55,6 @@ typedef struct _ZMapWindowListStruct
 
   GList *dna_list ;
 
-  int cb_action ;					    /* transient: filled in for
-							       callback. */
-
 } DNAWindowListDataStruct, *DNAWindowListData ;
 
 
@@ -148,25 +67,15 @@ static void drawListWindow(DNAWindowListData windowList, GtkTreeModel *treeModel
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void destroyCB(GtkWidget *window, gpointer user_data);
-static void view_RowActivatedCB(GtkTreeView *treeView,
-                                GtkTreePath        *path,
-                                GtkTreeViewColumn  *col,
-                                gpointer            userdata);
 static gboolean selectionFuncCB(GtkTreeSelection *selection, 
                                 GtkTreeModel     *model,
                                 GtkTreePath      *path, 
                                 gboolean          path_currently_selected,
                                 gpointer          user_data);
-static gboolean operateTreeModelForeachFunc(GtkTreeModel *model,
-                                            GtkTreePath *path,
-                                            GtkTreeIter *iter,
-                                            gpointer data);
-static void operateSelectionForeachFunc(GtkTreeModel *model,
-                                        GtkTreePath *path,
-                                        GtkTreeIter *iter,
-                                        gpointer data);
-
 static void freeDNAMatchCB(gpointer data, gpointer user_data_unused) ;
+
+
+
 
 /* menu GLOBAL! */
 static GtkItemFactoryEntry menu_items_G[] = {
@@ -281,11 +190,11 @@ static void drawListWindow(DNAWindowListData windowList, GtkTreeModel *treeModel
 
 
   /* Get our treeView */
-  windowCallbacks.columnClickedCB = NULL; /* G_CALLBACK(columnClickedCB); */
-  windowCallbacks.rowActivatedCB  = G_CALLBACK(view_RowActivatedCB);
-  windowCallbacks.selectionFuncCB = selectionFuncCB;
+  windowCallbacks.columnClickedCB = NULL ;
+  windowCallbacks.rowActivatedCB  = NULL ;
+  windowCallbacks.selectionFuncCB = selectionFuncCB ;
   windowList->view = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_DNA_LIST,
-						     treeModel, NULL, &windowCallbacks, windowList);
+						     treeModel, NULL, &windowCallbacks, windowList) ;
 
   gtk_container_add(GTK_CONTAINER(scrolledWindow), windowList->view) ;
 
@@ -415,31 +324,6 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 
 
 
-/* handles user clicks on the column title widgets
- * Makes the column sort by this column or reverses the order if 
- * already sorted by this column.
- */
-static void columnClickedCB(GtkTreeViewColumn *col, gpointer user_data)
-{
-  DNAWindowListData windowList = (DNAWindowListData)user_data;
-  GtkTreeModel *model       = NULL;
-  int sortable_id = 0, column_id = 0;
-  GtkSortType order = 0, neworder;
-
-  model     = gtk_tree_view_get_model(GTK_TREE_VIEW(windowList->view));
-  column_id = gtk_tree_view_column_get_sort_column_id(col);
-  gtk_tree_sortable_get_sort_column_id(GTK_TREE_SORTABLE(model), &sortable_id, &order);
-
-  neworder = (order == GTK_SORT_ASCENDING) ? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
-  /* The sort indicator looks wrong to me, points up on descending numbers down the list??? */
-  /*  gtk_tree_view_column_set_sort_order (col, order);  doesn't alter anything*/
-  /*  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(model), sortable_id, order); breaks sorting,  */
-  printf("Well on the way to sorting columns %d, %d by order %d, neworder %d\n", column_id, sortable_id, order, neworder);
-
-  return ;
-}
-
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Ends up calling destroyListWindowCB via g_signal "destroy"
@@ -487,114 +371,6 @@ static void destroyCB(GtkWidget *widget, gpointer user_data)
 
 
 
-/* handles the row double click event
- * When a user double clicks on a row of the feature list 
- * the feature editor window pops up. This sorts that out.
- */
-static void view_RowActivatedCB(GtkTreeView       *treeView,
-                                GtkTreePath       *path,
-                                GtkTreeViewColumn *col,
-                                gpointer          userdata)
-{
-  GtkTreeModel *model;
-  GtkTreeIter   iter;
-
-  model = gtk_tree_view_get_model(treeView);
-
-  if (gtk_tree_model_get_iter(model, &iter, path))
-    {
-      DNAWindowListData winList = (DNAWindowListData)userdata ;
-      ZMapFeature feature = NULL ;
-      ZMapStrand set_strand ;
-      ZMapFrame set_frame ;
-      FooCanvasItem *item ;
-
-      gtk_tree_model_get(model, &iter, 
-                         ZMAP_WINDOW_LIST_COL_FEATURE, &feature,
-			 ZMAP_WINDOW_LIST_COL_SET_STRAND, &set_strand,
-			 ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
-                         -1) ;
-      zMapAssert(feature) ;
-
-      item = zmapWindowFToIFindFeatureItem(winList->window->context_to_item,
-					   set_strand, set_frame,
-					   feature) ;
-      zMapAssert(item) ;
-
-      zmapWindowEditorCreate(winList->window, item, winList->window->edittable_features) ;
-    }
-
-  return ;
-}
-
-
-static void operateSelectionForeachFunc(GtkTreeModel *model,
-                                        GtkTreePath  *path,
-                                        GtkTreeIter  *iter,
-                                        gpointer      data)
-{
-  /* we ignore the return as we can't duck out of a selectionForeach
-   * :( */
-  operateTreeModelForeachFunc(model, path, 
-                              iter, data) ;
-  return ;
-}
-
-
-static gboolean operateTreeModelForeachFunc(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter,
-                                            gpointer data)
-{
-  DNAWindowListData cb_data = (DNAWindowListData)data ;
-  gboolean stop = FALSE ;
-  ZMapFeature feature = NULL ;
-  ZMapStrand set_strand ;
-  ZMapFrame set_frame ;
-  FooCanvasItem *listItem = NULL;
-  gint action = 0;
-
-  action = cb_data->cb_action ;
-
-  gtk_tree_model_get(model, iter, 
-		     ZMAP_WINDOW_LIST_COL_FEATURE, &feature,
-		     ZMAP_WINDOW_LIST_COL_SET_STRAND, &set_strand,
-		     ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
-		     -1) ;
-  zMapAssert(feature) ;
-
-  listItem = zmapWindowFToIFindFeatureItem(cb_data->window->context_to_item,
-					   set_strand, set_frame,
-					   feature) ;
-  zMapAssert(listItem) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (listItem)
-    {
-      switch(action)
-	{
-	case WINLIST_SELECTION_HIDE:
-	case WINLIST_RESULTS_HIDE:
-	  foo_canvas_item_hide(listItem);
-	  break;
-
-	case WINLIST_SELECTION_SHOW:
-	case WINLIST_RESULTS_SHOW:
-	  foo_canvas_item_show(listItem);
-	  break;
-
-	default:
-	  break;
-	}
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return stop ;
-}
-
-
-
 /* Request destroy of list window, ends up with gtk calling destroyCB(). */
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget)
 {
@@ -607,81 +383,6 @@ static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget)
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/** \Brief Will allow user to export the list as a file of specified type 
- * Err nothing happens yet.
- */
-static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
-{
-  DNAWindowListData wList = (DNAWindowListData)data;
-  GtkWidget *window    = NULL;
-  window = wList->toplevel;
-  switch(cb_action)
-    {
-    case WINLISTUNK:
-    case WINLISTXFF:
-    case WINLISTGFF:
-    default:
-      printf("No way to do this yet.\n");
-      break;
-    }
-  return ;
-}
-
-/** \Brief Another way to order the list.  
- * Menu select sorts on that column ascending, except "Reverse" 
- * which reverses the current sort.
- */
-static void orderByCB(gpointer data, guint cb_action, GtkWidget *widget)
-{
-  ZMapWindowList wList    = (ZMapWindowList)data;
-  GtkTreeView *treeView   = NULL;
-  GtkTreeModel *treeModel = NULL;
-  GtkTreeViewColumn *col  = NULL;
-  GtkTreePath *path       = NULL;
-  int sortable_id = 0, column_id = 0;
-  GtkSortType order = 0, neworder;
-
-  treeView  = GTK_TREE_VIEW(wList->view);
-  treeModel = gtk_tree_view_get_model(GTK_TREE_VIEW(treeView));
-
-  gtk_tree_view_get_cursor(GTK_TREE_VIEW(treeView), &path, &col);  
-  if(path)
-    gtk_tree_path_free(path);
-  if(!col)
-    return ;
-  column_id = gtk_tree_view_column_get_sort_column_id(col);
-  gtk_tree_sortable_get_sort_column_id(GTK_TREE_SORTABLE(treeModel), 
-                                       &sortable_id, &order);
-
-  neworder = (order == GTK_SORT_ASCENDING) ? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
-
-  switch(cb_action)
-    {
-    case ZMAP_WINDOW_LIST_COL_NAME:
-    case ZMAP_WINDOW_LIST_COL_TYPE:
-    case ZMAP_WINDOW_LIST_COL_START:
-    case ZMAP_WINDOW_LIST_COL_END:
-    case ZMAP_WINDOW_LIST_COL_STRAND:
-    case ZMAP_WINDOW_LIST_COL_PHASE:
-    case ZMAP_WINDOW_LIST_COL_SCORE:
-    case ZMAP_WINDOW_LIST_COL_FEATURE_TYPE:
-      gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(treeModel), 
-                                           cb_action, 
-                                           GTK_SORT_ASCENDING);
-      break;
-    case ZMAP_WINDOW_LIST_COL_NUMBER:
-      gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(treeModel), 
-                                           sortable_id, 
-                                           neworder);
-      break;
-    default:
-      break;
-    }
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 /*
  * Show limited help.
@@ -692,7 +393,7 @@ static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
   char *help_text =
     "The ZMap DNA List Window shows all the matches from your DNA search.\n"
     "You can click on a match and the corresponding ZMap window will scroll\n"
-    "to the DNA matchs location." ;
+    "to the matchs location." ;
 
   zMapGUIShowText(title, help_text, FALSE) ;
 
@@ -701,155 +402,7 @@ static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
 
 
 
-
-/** \Brief Will allow user to open the search window
- * Either uses the currently selected row as a feature input to the
- * searchWindow or the first item in the list.  The searchWindow
- * requires a ZMapFeatureAny as input so this is what we give it.
- *
- */
-static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget)
-{
-  DNAWindowListData wList = (DNAWindowListData)data;
-  GtkTreeView *treeView   = NULL;
-  GtkTreeModel *treeModel = NULL;
-  GtkTreeViewColumn *col  = NULL;
-  GtkTreePath *path       = NULL;
-  ZMapFeatureAny feature  = NULL;
-  ZMapStrand set_strand ;
-  ZMapFrame set_frame ;
-  GtkTreeIter iter;
-  FooCanvasItem *feature_item ;
-
-  treeView  = GTK_TREE_VIEW(wList->view);
-  treeModel = gtk_tree_view_get_model(GTK_TREE_VIEW(treeView));
-
-  gtk_tree_view_get_cursor(GTK_TREE_VIEW(treeView), &path, &col);  
-  if(!path)
-    {
-      if(!(gtk_tree_model_get_iter_first(treeModel, &iter)))
-         return ;               /* We can't continue if the list is empty */
-    }
-  else
-    {
-      gtk_tree_model_get_iter(GTK_TREE_MODEL(treeModel), &iter, path);
-      gtk_tree_path_free(path);
-    }
-
-  gtk_tree_model_get(treeModel, &iter, 
-		     ZMAP_WINDOW_LIST_COL_FEATURE, &feature,
-		     ZMAP_WINDOW_LIST_COL_SET_STRAND, &set_strand,
-		     ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
-		     -1);
-  zMapAssert(feature) ;
-
-  feature_item = zmapWindowFToIFindFeatureItem(wList->window->context_to_item,
-					       set_strand, set_frame,
-					       (ZMapFeature)feature) ;
-
-  zmapWindowCreateSearchWindow(wList->window, feature_item) ;
-
-
-  return ;
-}
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void operateCB(gpointer data, guint cb_action, GtkWidget *widget)
-{
-  DNAWindowListData wList    = (DNAWindowListData)data ;
-  GtkTreeView *treeView   = NULL ;
-  GtkTreeModel *treeModel = NULL ;
-
-  treeView  = GTK_TREE_VIEW(wList->view);
-  treeModel = gtk_tree_view_get_model(GTK_TREE_VIEW(treeView));
-
-
-  wList->cb_action = cb_action ;
-
-  /* take advantage of the model and selection foreach
-   * functions. Although they do not have the same prototypes 
-   * they take the same arguments allowing one to call the 
-   * other...The user data will likely need to be changed if 
-   * we do anything more complicated in them though.
-   */
-  switch(cb_action)
-    {
-    case WINLIST_SELECTION_SHOW:
-    case WINLIST_SELECTION_HIDE:
-      {
-        GtkTreeSelection *selection = NULL;
-        selection = gtk_tree_view_get_selection(GTK_TREE_VIEW (treeView));
-        gtk_tree_selection_selected_foreach(selection, 
-                                            operateSelectionForeachFunc, 
-                                            wList) ;
-      }
-      break;
-    case WINLIST_RESULTS_SHOW:
-    case WINLIST_RESULTS_HIDE:
-      gtk_tree_model_foreach(treeModel, 
-                             operateTreeModelForeachFunc,
-                             wList) ;
-      break;
-    default:
-      break;
-    }
-
-  return ;
-}
-
-/** \Brief Select/Highlight the row with the item 
- * This has the side effect of zooming to the item on the canvas (selectFuncCB). 
- * While this isn't necessarily a good/bad thing it does take time.  
- * We can't really attach the callback after doing this, which would stop this,
- * as it's done in the createView function.  Merits of this, is it a feature??
- */
-static void selectItemInView(ZMapWindow window, GtkTreeView *treeView, FooCanvasItem *item)
-{
-  GtkTreeModel *treeModel = NULL;
-  GtkTreeSelection *selection = NULL;
-  GtkTreeIter iter;
-  gboolean valid;
-
-  treeModel = gtk_tree_view_get_model(GTK_TREE_VIEW(treeView));
-  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(treeView));
-
-  /* Get the first iter in the list */
-  valid = gtk_tree_model_get_iter_first(treeModel, &iter) ;
-
-  while (valid)
-    {
-      ZMapFeature feature = NULL ;
-      ZMapStrand set_strand ;
-      ZMapFrame set_frame ;
-      FooCanvasItem *listItem ;
-
-      gtk_tree_model_get(treeModel, &iter, 
-			 ZMAP_WINDOW_LIST_COL_FEATURE, &feature,
-			 ZMAP_WINDOW_LIST_COL_SET_STRAND, &set_strand,
-			 ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
-			 -1);
-
-      listItem = zmapWindowFToIFindFeatureItem(window->context_to_item,
-					       set_strand, set_frame,
-					       feature) ;
-      zMapAssert(listItem) ;
-
-      if (item == listItem)
-	{
-	  gtk_tree_selection_select_iter(selection, &iter);
-          valid = FALSE;
-	}
-      else
-        valid = gtk_tree_model_iter_next(treeModel, &iter);
-    }
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+/* Free allocated DNA match structs. */
 static void freeDNAMatchCB(gpointer data, gpointer user_data_unused)
 {
   ZMapDNAMatch match = (ZMapDNAMatch)data ;
