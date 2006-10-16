@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Sep 29 10:46 2006 (edgrif)
+ * Last edited: Oct 16 11:46 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.58 2006-09-29 09:56:25 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.59 2006-10-16 10:49:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -730,7 +730,26 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
     attributes[GFF_MAX_FREETEXT_CHARS + 1] = {'\0'}, comments[GFF_MAX_FREETEXT_CHARS + 1] = {'\0'} ;
   int start = 0, end = 0, fields = 0 ;
   double score = 0 ;
-  char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %1000[^#] %1000c" ; 
+
+  char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %5000[^#] %5000c" ; 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I'd like to do this to keep everything in step but haven't quite got the right incantation... */
+
+  char *format_str =
+    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
+    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
+    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
+    "%d%d"
+    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
+    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
+    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
+    " %"ZMAP_MAKESTRING(GFF_MAX_FREETEXT_CHARS)"[^#]"
+    " %"ZMAP_MAKESTRING(GFF_MAX_FREETEXT_CHARS)"c" ; 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
   fields = sscanf(line, format_str,
                   &sequence[0], &source[0], &feature_type[0],
@@ -1110,8 +1129,12 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
        {
 	 /* I am not sure if we ever have target_strand, target_phase from GFF output.... */
          if(feature_style->opts.parse_gaps && 
-            ((gaps_onwards = strstr(attributes, " Gaps ")) != NULL)) 
+            ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL)) 
            {
+	     if (g_ascii_strcasecmp("em:cb183150.1", feature_name) == 0)
+	       printf("found it\n") ;
+
+
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
              gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not terminated */
              loadGaps(gaps_onwards, gaps);
@@ -1147,23 +1170,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 }
 
 
-
-
-
-/* *************************************************************
- * Not entirely sure of the wisdom of this (mainly performance
- * concerns), but everywhere else we have start < end!.  previously
- * loadGaps didn't even fill in the strand or apply the start < end 
- * idiom and gaps array required a test when iterating through 
- * it (the GArray). The GArray will now be ordered as it almost
- * certainly should be to fit with the start < end idiom.  RDS 
- */
-static int sortGapsByTarget(gconstpointer a, gconstpointer b)
-{
-  ZMapAlignBlock alignA = (ZMapAlignBlock)a, 
-    alignB = (ZMapAlignBlock)b;
-  return (alignA->t1 == alignB->t1 ? 0 : (alignA->t1 > alignB->t1 ? 1 : -1));
-}
 /* This reads any gaps which are present on the gff line.
  * They are preceded by a Gaps tag, and are presented as
  * space-delimited groups of 4, consecutive groups being
@@ -1211,8 +1217,8 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
           break;  /* anything other than 4 is not a gap */
         }
     }
-  /* Sort the array of gaps. performance hit? */
-  g_array_sort(gaps, sortGapsByTarget);
+
+  zMapFeatureSortGaps(gaps) ;
 
   return valid ;
 }
