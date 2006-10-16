@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 11 11:42 2006 (edgrif)
+ * Last edited: Oct 13 15:49 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.54 2006-10-11 10:43:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.55 2006-10-16 10:51:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -907,7 +907,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
         {
           ZMapAlignBlock align_span;
           FooCanvasItem *align_box, *gap_line, *gap_line_box;
-          double top, bottom, dummy = 0.0;
+          double top, bottom ;
           ZMapWindowItemFeature box_data, gap_data, align_data ;
           
           align_span = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;   
@@ -974,6 +974,8 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                 }
               else
                 {
+		  double dummy = 0.0 ;
+
                   lastBoxWeDrew = 
                     align_box = zMapDrawSSPolygon(feature_item, ZMAP_POLYGON_SQUARE,
                                                   x1, x2,
@@ -993,7 +995,7 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                   gap_data->start = align_span->t1 ;
                   gap_data->end   = prev_align_span->t2 ;
 
-                  bottom = prev_align_span->t2;
+                  dummy = bottom = prev_align_span->t2;
                   zmapWindowSeq2CanOffset(&dummy, &bottom, offset);
                   gap_line_box = zMapDrawSSPolygon(feature_item, ZMAP_POLYGON_SQUARE,
                                                    x1, x2,
