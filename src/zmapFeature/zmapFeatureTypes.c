@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 11 16:08 2006 (edgrif)
+ * Last edited: Oct 11 17:12 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.30 2006-10-11 15:19:50 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.31 2006-10-16 10:27:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -632,16 +632,9 @@ GList *zMapStyleMergeStyles(GList *curr_styles, GList *new_styles)
 
   merge_data.curr_styles = curr_styles ;
 
-  zMapFeatureStylePrintAll(curr_styles, "") ;
-
-
   g_list_foreach(new_styles, mergeStyle, &merge_data) ;
   
   merged_styles = merge_data.curr_styles ;
-
-
-  zMapFeatureStylePrintAll(merged_styles, "") ;
-
 
   return merged_styles ;
 }
