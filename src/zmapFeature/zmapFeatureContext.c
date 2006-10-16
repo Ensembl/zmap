@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 21 22:01 2006 (rds)
+ * Last edited: Oct 13 16:51 2006 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.11 2006-07-22 09:34:43 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.12 2006-10-16 10:27:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -422,6 +422,8 @@ static void revCompFeature(ZMapFeature feature, int end_coord)
           
           zmapFeatureRevComp(Coord, end_coord, align->t1, align->t2) ;
         }
+
+      zMapFeatureSortGaps(feature->feature.homol.align) ;
     }
 
   return ;
