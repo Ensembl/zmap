@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 13 16:51 2006 (edgrif)
+ * Last edited: Oct 18 14:41 2006 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.12 2006-10-16 10:27:25 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.13 2006-10-18 15:13:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,17 +48,22 @@ typedef struct
 
 typedef struct
 {
-  GDataForeachFunc      callback;
+  ZMapGDataRecurseFunc  start_callback;
+  ZMapGDataRecurseFunc  end_callback;
   gpointer              callback_data;
+  char                 *error_string;
   ZMapFeatureStructType stop;
+  ZMapFeatureStructType stopped_at;
+  ZMapFeatureContextExecuteStatus status;
 }ContextExecuteStruct, *ContextExecute;
 
 static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
 static void revcompDNA(char *sequence, int seq_length) ;
 static void revCompFeature(ZMapFeature feature, int end_coord);
-static void revCompFeaturesCB(GQuark key, 
-                              gpointer data, 
-                              gpointer user_data);
+static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key, 
+                                                         gpointer data, 
+                                                         gpointer user_data,
+                                                         char **error_out);
 #ifdef RDS_DONT_INCLUDE_UNUSED
 static void revcompFeatures(ZMapFeatureContext context) ;
 static void doFeatureAnyCB(ZMapFeatureAny any_feature, gpointer user_data) ;
@@ -71,6 +76,8 @@ static gboolean fetchBlockDNAPtr(ZMapFeature feature, char **dna);
 
 static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data);
 static void executeListForeachFunc(gpointer data, gpointer user_data);
+
+static void postExecuteProcess(ContextExecute execute_data);
 
 /* Reverse complement a feature context.
  * 
@@ -225,7 +232,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
 
 void zMapFeatureContextExecute(ZMapFeatureAny feature_any, 
                                ZMapFeatureStructType stop, 
-                               GDataForeachFunc callback, 
+                               ZMapGDataRecurseFunc callback, 
                                gpointer data)
 {
   ContextExecuteStruct full_data = {0};
@@ -234,11 +241,16 @@ void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
   if(stop != ZMAPFEATURE_STRUCT_INVALID)
     {
       context = (ZMapFeatureContext)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_CONTEXT);
-      full_data.callback      = callback;
-      full_data.callback_data = data;
-      full_data.stop          = stop;
+      full_data.start_callback = callback;
+      full_data.end_callback   = NULL;
+      full_data.callback_data  = data;
+      full_data.stop           = stop;
+      full_data.stopped_at     = ZMAPFEATURE_STRUCT_INVALID;
+      full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
       /* Start it all off with the alignments */
       g_datalist_foreach(&(context->alignments), executeDataForeachFunc, &full_data);
+
+      postExecuteProcess(&full_data);
     }
 
   return ;
@@ -246,20 +258,26 @@ void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
 
 void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
                                      ZMapFeatureStructType stop, 
-                                     GDataForeachFunc callback, 
+                                     ZMapGDataRecurseFunc callback, 
                                      gpointer data)
 {
 
   if(stop != ZMAPFEATURE_STRUCT_INVALID)
     {
       ContextExecuteStruct full_data = {0};
-      full_data.callback      = callback;
-      full_data.callback_data = data;
-      full_data.stop          = stop;
+      full_data.start_callback = callback;
+      full_data.end_callback   = NULL;
+      full_data.callback_data  = data;
+      full_data.stop           = stop;
+      full_data.stopped_at     = ZMAPFEATURE_STRUCT_INVALID;
+      full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
       if(feature_any->struct_type <= stop)
         executeDataForeachFunc(feature_any->unique_id, feature_any, &full_data);
       else
-        zMapLogWarning("%s", "Too far down the hierarchy...");
+        full_data.error_string = g_strdup("Too far down the hierarchy...");
+
+      postExecuteProcess(&full_data);
     }
   else
     zMapAssertNotReached();
@@ -269,8 +287,17 @@ void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
 
 void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any, 
                                    ZMapFeatureStructType stop, 
-                                   GDataForeachFunc callback, 
+                                   ZMapGDataRecurseFunc callback, 
                                    gpointer data)
+{
+  return zMapFeatureContextExecuteComplete(feature_any, stop, callback, NULL, data);
+}
+
+void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any, 
+                                       ZMapFeatureStructType stop, 
+                                       ZMapGDataRecurseFunc start_callback, 
+                                       ZMapGDataRecurseFunc end_callback, 
+                                       gpointer data)
 {
   ContextExecuteStruct full_data = {0};
   ZMapFeatureContext context = NULL;
@@ -278,15 +305,20 @@ void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any,
   if(stop != ZMAPFEATURE_STRUCT_INVALID)
     {
       context = (ZMapFeatureContext)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_CONTEXT);
-      full_data.callback      = callback;
-      full_data.callback_data = data;
-      full_data.stop          = stop;
+      full_data.start_callback = start_callback;
+      full_data.end_callback   = end_callback;
+      full_data.callback_data  = data;
+      full_data.stop           = stop;
+      full_data.stopped_at     = ZMAPFEATURE_STRUCT_INVALID;
+      full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
       executeDataForeachFunc(context->unique_id, context, &full_data);
+
+      postExecuteProcess(&full_data);
     }
 
   return ;
 }
-
 
 
 
@@ -429,11 +461,13 @@ static void revCompFeature(ZMapFeature feature, int end_coord)
   return ;
 }
 
-static void revCompFeaturesCB(GQuark key, 
-                              gpointer data, 
-                              gpointer user_data)
+static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key, 
+                                                         gpointer data, 
+                                                         gpointer user_data,
+                                                         char **error_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
   RevCompData cb_data = (RevCompData)user_data;
 
@@ -481,7 +515,7 @@ static void revCompFeaturesCB(GQuark key,
 
     }
 
-  return ;
+  return status;
 }
 
 static void revcompSpan(GArray *spans, int seq_end)
@@ -503,9 +537,10 @@ static void revcompSpan(GArray *spans, int seq_end)
 
 #ifdef RDS_TEMPLATE_USER_DATALIST_FOREACH
 /* Use this function while descending through a feature context */
-static void templateDataListForeach(GQuark key, 
-                                    gpointer data, 
-                                    gpointer user_data)
+static ZMapFeatureContextExecuteStatus templateDataListForeach(GQuark key, 
+                                                               gpointer data, 
+                                                               gpointer user_data,
+                                                               char **error_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeatureContext feature_context = NULL;
@@ -514,6 +549,7 @@ static void templateDataListForeach(GQuark key,
   ZMapFeatureSet       feature_set   = NULL;
   ZMapFeature          feature_ft    = NULL;
   ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
 
   YourDataType  all_data = (YourDataType)user_data;
   
@@ -543,7 +579,7 @@ static void templateDataListForeach(GQuark key,
 
     }
 
-  return ;
+  return status;
 }
 #endif /* RDS_TEMPLATE_USER_DATALIST_FOREACH */
 
@@ -558,49 +594,91 @@ static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data
   ZMapFeature          feature_ft    = NULL;
   ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   
-  feature_type = feature_any->struct_type;
-
-  if(full_data->callback)       /* want some error handling here... */
-    (full_data->callback)(key, data, full_data->callback_data);
-  else
-    zMapLogWarning("%s", "Context Execute Callback Not Set.");
-
-  if(feature_type == full_data->stop)
+  if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK)
     {
-      /* zMapLogWarning("%s", "zMapFeatureContextExecute Finished."); */
-    }
-  else
-    {
-      switch(feature_type)
+      feature_type = feature_any->struct_type;
+      
+      if(full_data->start_callback)
+        full_data->status = (full_data->start_callback)(key, data, 
+                                                        full_data->callback_data, 
+                                                        &(full_data->error_string));
+      
+      if(!(full_data->stop   == feature_type || 
+           full_data->status != ZMAP_CONTEXT_EXEC_STATUS_OK))
         {
-        case ZMAPFEATURE_STRUCT_CONTEXT:
-          feature_context = (ZMapFeatureContext)feature_any;
-          g_datalist_foreach(&(feature_context->alignments), executeDataForeachFunc, full_data);
-          break;
-        case ZMAPFEATURE_STRUCT_ALIGN:
-          feature_align = (ZMapFeatureAlignment)feature_any;
-          g_list_foreach(feature_align->blocks, executeListForeachFunc, full_data);
+          switch(feature_type)
+            {
+            case ZMAPFEATURE_STRUCT_CONTEXT:
+              feature_context = (ZMapFeatureContext)feature_any;
+              g_datalist_foreach(&(feature_context->alignments), executeDataForeachFunc, full_data);
+              if(full_data->end_callback)
+                {
+                  if((full_data->status = (full_data->end_callback)(key, data, 
+                                                                    full_data->callback_data, 
+                                                                    &(full_data->error_string))) == ZMAP_CONTEXT_EXEC_STATUS_ERROR)
+                    full_data->stopped_at = feature_type;
+                  else if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
+                    full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;            
+                }
+              break;
+            case ZMAPFEATURE_STRUCT_ALIGN:
+              feature_align = (ZMapFeatureAlignment)feature_any;
+              g_list_foreach(feature_align->blocks, executeListForeachFunc, full_data);
 #ifdef RDS_WHEN_BLOCKS_ARE_GDATA
-          /* If blocks is a GData use this instead */
-          g_datalist_foreach(&(feature_align->blocks), executeDataForeachFunc, full_data);
+              /* If blocks is a GData use this instead */
+              g_datalist_foreach(&(feature_align->blocks), executeDataForeachFunc, full_data);
 #endif /* RDS_WHEN_BLOCKS_ARE_GDATA */
-          break;
-        case ZMAPFEATURE_STRUCT_BLOCK:
-          feature_block = (ZMapFeatureBlock)feature_any;
-          g_datalist_foreach(&(feature_block->feature_sets), executeDataForeachFunc, full_data);
-          break;
-        case ZMAPFEATURE_STRUCT_FEATURESET:
-          feature_set   = (ZMapFeatureSet)feature_any;
-          g_datalist_foreach(&(feature_set->features), executeDataForeachFunc, full_data);
-          break;
-        case ZMAPFEATURE_STRUCT_FEATURE:
-          feature_ft    = (ZMapFeature)feature_any;
-          /* No children here. */
-          break;
-        case ZMAPFEATURE_STRUCT_INVALID:
-        default:
-          zMapAssertNotReached();
-          break;
+              if(full_data->end_callback)
+                {
+                  if((full_data->status = (full_data->end_callback)(key, data, 
+                                                                    full_data->callback_data, 
+                                                                    &(full_data->error_string))) == ZMAP_CONTEXT_EXEC_STATUS_ERROR)
+                    full_data->stopped_at = feature_type;
+                  else if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
+                    full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;            
+                }
+              break;
+            case ZMAPFEATURE_STRUCT_BLOCK:
+              feature_block = (ZMapFeatureBlock)feature_any;
+              g_datalist_foreach(&(feature_block->feature_sets), executeDataForeachFunc, full_data);
+              if(full_data->end_callback)
+                {
+                  if((full_data->status = (full_data->end_callback)(key, data, 
+                                                                    full_data->callback_data, 
+                                                                    &(full_data->error_string))) == ZMAP_CONTEXT_EXEC_STATUS_ERROR)
+                    full_data->stopped_at = feature_type;
+                  else if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
+                    full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;            
+                }
+              break;
+            case ZMAPFEATURE_STRUCT_FEATURESET:
+              feature_set   = (ZMapFeatureSet)feature_any;
+              g_datalist_foreach(&(feature_set->features), executeDataForeachFunc, full_data);
+              if(full_data->end_callback)
+                {
+                  if((full_data->status = (full_data->end_callback)(key, data, 
+                                                                    full_data->callback_data, 
+                                                                    &(full_data->error_string))) == ZMAP_CONTEXT_EXEC_STATUS_ERROR)
+                    full_data->stopped_at = feature_type;
+                  else if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
+                    full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;            
+                }
+              break;
+            case ZMAPFEATURE_STRUCT_FEATURE:
+              feature_ft    = (ZMapFeature)feature_any;
+              /* No children here. can't possibly go further down, so no end-callback either. */
+              break;
+            case ZMAPFEATURE_STRUCT_INVALID:
+            default:
+              zMapAssertNotReached();
+              break;
+            }
+        }
+      else if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
+        full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+      else
+        {
+          full_data->stopped_at = feature_type;
         }
     }
 
@@ -624,6 +702,18 @@ static void executeListForeachFunc(gpointer data, gpointer user_data)
   return ;
 }
 
+static void postExecuteProcess(ContextExecute execute_data)
+{
+
+  if(execute_data->status == ZMAP_CONTEXT_EXEC_STATUS_ERROR)
+    {
+      printf("ContextExecute: Error, function stopped @ level %d, message = %s\n", 
+             execute_data->stopped_at,
+             execute_data->error_string);
+    }
+
+  return ;
+}
 
 
 
