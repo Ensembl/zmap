@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Oct  3 14:55 2006 (edgrif)
+ * Last edited: Oct 18 14:26 2006 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.52 2006-10-10 08:54:30 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.53 2006-10-18 15:12:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,11 +80,61 @@ FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 			     "text", text,
                              "font", "Lucida Console",
 			     "fill_color", colour,
+                             "anchor",     GTK_ANCHOR_NW,
 			     NULL);
+  if(0)
+    {
+      PangoLayout *layout = NULL;
+      PangoContext *context = NULL;
+      const PangoMatrix matrix = PANGO_MATRIX_INIT;
+      
+      layout  = FOO_CANVAS_TEXT(item)->layout;
+      
+      context = pango_layout_get_context(layout);
+      
+      pango_matrix_rotate(&matrix, 90.0);
+      
+      pango_context_set_matrix(context, &matrix);
+      pango_layout_context_changed(layout);
+    }
 
   return item ;
 }
 
+FooCanvasItem *zMapDrawHighlightableText(FooCanvasGroup *group,
+                                         char *text_string,
+                                         double x, double y,
+                                         GdkColor *foreground, 
+                                         GdkColor *highlight,
+                                         FooCanvasItem **highlight_item_out)
+{
+  FooCanvasItem *text = NULL, *highlight_item = NULL;
+
+  text = foo_canvas_item_new(group,
+			     foo_canvas_text_get_type(),
+			     "x",          x, 
+                             "y",          y,
+			     "text",       text_string,
+                             "font",       "Lucida Console",
+			     "fill_color", foreground,
+                             "anchor",     GTK_ANCHOR_NW,
+			     NULL);
+  if(text)
+    {
+      double x1 = 0.0, y1 = 0.0, x2 = 0.0, y2 = 0.0;
+      foo_canvas_item_get_bounds(text, &x1, &y1, &x2, &y2);
+      if((highlight_item = zMapDrawSolidBox(group, x1, y1, x2, y2, highlight)))
+        {
+          foo_canvas_item_lower(highlight_item, 1);
+          foo_canvas_item_hide(highlight_item);
+        }
+    }
+
+  if(highlight_item_out)
+    *highlight_item_out = highlight_item;
+
+  return text;
+}
 
 
 /* Note that we don't specify "width_units" or "width_pixels" for the outline
@@ -882,7 +932,7 @@ FooCanvasGroup *zMapDrawToolTipCreate(FooCanvas *canvas)
   g_object_set_data(G_OBJECT(tooltip), "tooltip_box", box);
   /* Create the item for the text of the tip */
   tip = foo_canvas_item_new(tooltip,
-                            FOO_TYPE_CANVAS_TEXT,
+                            foo_canvas_text_get_type(),
                             "x", 0.0, "y", 0.0,
                             "text", "",
                             "font", "Lucida Console",
@@ -992,7 +1042,7 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
                                      firstX, firstY,
                                      lastX,  lastY, 
                                      minX,   maxX, 
-                                     trd->row_height);
+                                     trd->char_height);
     }
   else if(trd->highlight_style == ZMAP_TEXT_HIGHLIGHT_MARQUEE)
     {
@@ -1052,11 +1102,15 @@ static void drawHighlightBackgroundInGroup(FooCanvasGroup *parent,
   int i;
   double x1, y1, x2, y2;
 
+  double ydiff = offsetY2 - offsetY1 + 1.0;
+
   rects    = parent->item_list;
   points   = foo_canvas_points_new(2);
 
   color = *background;
-
+#ifdef RDS_DEBUG
+  printf("drawHighlightBackgroundInGroup (%x): y1=%f, y2=%f, y2-y1=%f, dlength=%f\n", parent, offsetY1, offsetY2, ydiff, dlength);
+#endif
   for(i = 0; i < 3; i++)
     {
       switch(i)
@@ -1064,7 +1118,7 @@ static void drawHighlightBackgroundInGroup(FooCanvasGroup *parent,
         case 0:                   /* FIRST ROW */
           x1 = points->coords[0] = MIN(offsetX1, maxX);
           y1 = points->coords[1] = offsetY1;
-          x2 = points->coords[2] = (offsetY2 - offsetY1  >= dlength ? maxX : offsetX2);
+          x2 = points->coords[2] = (ydiff  >= dlength ? maxX : offsetX2);
           //x2 = points->coords[2] = (offsetY2 - offsetY1 >= dlength ? maxX : MIN(offsetX2, maxX)); // 20060329
           y2 = points->coords[3] = offsetY1 + dlength;
 #ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
@@ -1076,16 +1130,16 @@ static void drawHighlightBackgroundInGroup(FooCanvasGroup *parent,
            * Without the MIN/MAX on calculating y1 and y2 the foocanvas doesn't invalidate 
            * the area correctly. Therefore we need to keep the sense of the y coords correct.
            */
-          x1 = points->coords[0] = (offsetY2 - offsetY1 >= dlength ? minX : offsetX1);
+          x1 = points->coords[0] = (ydiff >= dlength ? minX : offsetX1);
           y1 = points->coords[1] = MIN((offsetY1 + dlength), offsetY2);
-          x2 = points->coords[2] = (offsetY2 - offsetY1 >= dlength ? maxX : MIN(offsetX2, maxX));
+          x2 = points->coords[2] = (ydiff >= dlength ? maxX : MIN(offsetX2, maxX));
           y2 = points->coords[3] = MAX((offsetY1 + dlength), offsetY2);
 #ifdef ZMAP_DRAW_HIGHLIGHT_MULTICOLOR
           gdk_color_parse("red", &color);
 #endif
           break;
         case 2:                   /* LAST ROW */
-          x1 = points->coords[0] = (offsetY2 - offsetY1  >= dlength ? minX : offsetX1);
+          x1 = points->coords[0] = (ydiff  >= dlength ? minX : offsetX1);
           y1 = points->coords[1] = offsetY2;
           x2 = points->coords[2] = MIN(offsetX2, maxX);
           y2 = points->coords[3] = offsetY2 + dlength;
@@ -1100,6 +1154,14 @@ static void drawHighlightBackgroundInGroup(FooCanvasGroup *parent,
 
       //      printf("drawHighlightBackgroundInGroup (%x): %d %f %f %f %f\n", 
       //             parent, i, x1, y1, x2, y2);
+#ifdef RDS_DEBUG
+      printf("drawHighlightBackgroundInGroup (%x): %d %f %f %f %f\n", 
+             parent, i, 
+             points->coords[0], 
+             points->coords[1], 
+             points->coords[2], 
+             points->coords[3]);
+#endif
 
       if(!rects)
         foo_canvas_item_new(parent,
@@ -1359,13 +1421,14 @@ FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
                              ZMAP_DRAW_TEXT_ROW_DATA_KEY, 
                              curr_data,
                              NULL); /* this needs setting, but this is an element of an array??? */
-
+#ifdef RDS_DONT_INCLUDE_UNUSED
       foo_canvas_item_set(item,
                           "clip",        TRUE,
                           "clip_width",  iterator->x2 - iterator->x1,
                           "clip_height", iterator->y2 - iterator->y1,
                           NULL
                           );
+#endif 
       foo_canvas_item_raise_to_top(item);
 
     }
