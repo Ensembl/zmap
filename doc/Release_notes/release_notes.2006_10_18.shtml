@@ -2,8 +2,10 @@
 <!--#include virtual="/perl/header"-->
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
-<h2>ZMap Release Notes For:  **Month Year**</h2>
+<h2>ZMap Release Notes For:  October 2006</h2>
 
+
+<h3>Release: ZMap 0.1.7</h3>
 
 
 <h3>Request Tracker Tickets Resolved</h3>
