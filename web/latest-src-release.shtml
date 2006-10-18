@@ -1,0 +1,16 @@
+<!--#set var="releaseFile"    value="no-release.tar.gz" -->
+<!--#set var="redirect_delay" value="3"                 -->
+
+<!---------- Nothing should change below here --------- -->
+
+<!--#set var="redirect" value="/Software/analysis/zmap/releases/$releaseFile" -->
+<!--#set var="banner" value="ZMap source download" -->
+<!--#include virtual="/perl/header"-->
+
+<div id="zmapContent">
+  <div class="divLikePre">Your download should start in <!--#echo var="redirect_delay" --> secs.
+ If it fails to start the file is available <a href="<!--#echo var="redirect" -->" >here</a>.</div>
+</div>
+
+<!--#include virtual="/perl/footer" -->
+
