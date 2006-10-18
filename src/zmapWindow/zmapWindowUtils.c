@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep  7 15:05 2006 (edgrif)
+ * Last edited: Oct 11 09:29 2006 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.33 2006-09-15 09:26:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.34 2006-10-18 15:25:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -169,9 +169,17 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
   return ;
 }
 
-ZMapWindowClampType zmapWindowClampedAtStartEnd(ZMapWindow window, double *top_inout, double *bot_inout)
+
+ZMapGUIClampType zmapWindowClampedAtStartEnd(ZMapWindow window, double *top_inout, double *bot_inout)
 {
-  ZMapWindowClampType clamp = ZMAP_WINDOW_CLAMP_INIT;
+  ZMapGUIClampType clamp_type = ZMAPGUI_CLAMP_INIT;
+
+  clamp_type = zMapGUICoordsClampToLimits(window->min_coord, window->max_coord, 
+                                          top_inout, bot_inout);
+
+  return clamp_type;                 /* ! */
+
+#ifdef RDS_DONT_INCLUDE
   double top, bot;
 
   top = *top_inout;
@@ -197,15 +205,21 @@ ZMapWindowClampType zmapWindowClampedAtStartEnd(ZMapWindow window, double *top_i
   *bot_inout = bot;
 
   return clamp;  
+#endif
 }
 
 /* Clamps the span within the length of the sequence,
  * possibly shifting the span to keep it the same size. */
-ZMapWindowClampType zmapWindowClampSpan(ZMapWindow window, double *top_inout, double *bot_inout)
+ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window, double *top_inout, double *bot_inout)
 {
-  double top, bot;
-  ZMapWindowClampType clamp = ZMAP_WINDOW_CLAMP_INIT;
+  ZMapGUIClampType clamp = ZMAPGUI_CLAMP_INIT;
 
+  clamp = zMapGUICoordsClampSpanWithLimits(window->min_coord, 
+                                           window->max_coord, 
+                                           top_inout, bot_inout);
+
+#ifdef RDS_DONT_INCLUDE
+  double top, bot;
   top = *top_inout;
   bot = *bot_inout;
 
@@ -232,7 +246,7 @@ ZMapWindowClampType zmapWindowClampSpan(ZMapWindow window, double *top_inout, do
 
   *top_inout = top;
   *bot_inout = bot;
-
+#endif
   return clamp;
 }
 
