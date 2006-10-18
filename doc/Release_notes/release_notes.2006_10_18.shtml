@@ -1,15 +1,18 @@
-<!--#set var="banner" value="Release Notes: 18th October 2006"-->
+<!--#set var="banner" value="ZMap Release Notes For October 2006"-->
 <!--#include virtual="/perl/header"-->
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
-<h2>ZMap Release Notes For:  October 2006</h2>
+
+<h3>Release Version: ZMap 0.1.7</h3>
 
 
-<h3>Release: ZMap 0.1.7</h3>
+<h3>Release Date: 18th October 2006</h3>
 
 
 <h3>Request Tracker Tickets Resolved</h3>
 
+
+<h4>ZMap</h4>
 <PRE>
 8581	sizing of pfetch window	resolved	zmap	Nobody	5
 	hks@sanger.ac.uk	2 months ago		2 months ago	0
@@ -36,752 +39,103 @@
 </PRE>
 
 
+<h4>Acedb</h4>
+<PRE>
+7303	when will bugs be fixed?	resolved	acedb	Nobody	0
+	mt3@sanger.ac.uk	3 months ago		2 months ago	0
+9343	otterlace bugs	resolved	acedb	edgrif	1
+	rcg@sanger.ac.uk	2 months ago	2 months ago	2 months ago	0
+11790	rename via tace ?	resolved	acedb	edgrif	0
+	ar2@sanger.ac.uk	3 weeks ago	3 weeks ago	3 weeks ago	0
+11808	rename via tace ?	resolved	acedb	Nobody	0
+	ar2@sanger.ac.uk	3 weeks ago		3 weeks ago	0
+5383	MAC - dotter for MacOSX please	resolved	acedb	edgrif	7
+	hjr@sanger.ac.uk	4 months ago	3 months ago	9 days ago	0
+12600	DE line	resolved	acedb	Nobody	0
+	cas@sanger.ac.uk	9 days ago		9 days ago	0
+12481	remove "efetch"	resolved	acedb	Nobody	0
+	jgrg@sanger.ac.uk	12 days ago		5 days ago	0
+</PRE>
+
+
+
 
 <h3>ZMap Changes/Fixes</h3>
 
-<pre>
-2006-09-01 14:30  edgrif
+<p>Fix coordinate display for reverse complement to be just like fmap.
 
-	* src/zmapWindow/zmapWindow.c: make showing of forward strand
-	  relative coords (like fmap) a config file option.
+<p>Add a "3 Frame" display button to the main window buttons with a sub menu
+which shows the 3 frame translation. User can now toggle 3 frame display off.
 
-2006-09-15 10:08  edgrif
+<p>Add frame parameter to search window so users can search by frame as well as strand.
 
-	* src/include/ZMap/zmapFeature.h: add frame enum, 'only as 3 frame'
-	  display tag. Add frame to strand attrs func.
+<p>Add some built in styles for "3 Frame", "DNA" and other required columns.
 
-2006-09-15 10:09  edgrif
 
-	* src/: include/ZMap/zmapGLibUtils.h, zmapUtils/zmapGLibUtils.c:
-	  add new glist function to move elements in a list.
+<p>Add code to requrest gene finder features to predefined style names.
 
-2006-09-15 10:10  edgrif
+<p>Add dna search window.
 
-	* src/lib/Makefile.am: add new longitems file to build for
-	  zmapwindow code.
+<p>Fix bug that meant we did not get the alignment gaps data, needed for display and
+especially blixem.
 
-2006-09-15 10:12  edgrif
+<p>Fix bug in data passed to blixem, coords wrong for revcomp'd sequence.
 
-	* src/zmapControl/: zmapControlWindowButtons.c, zmapControl_P.h:
-	  change the protein button to a 3 frame button.
+<p>Add code to display release notes.
 
-2006-09-15 10:13  edgrif
+<p>Set up standalone zmap website at: http://wwwdev.sanger.ac.uk/Software/analysis/ZMap/
 
-	* src/zmapFeature/zmapFeatureTypes.c: add code to set hide flag for
-	  style and to read/set 3 frame display for style.
+<p>Replace left hand scroll bar with navigator window showing clone assembly, locus
+names, overall scale and a box to indicate the scrollable region which can be dragged
+to move the region at high zoom levels.
 
-2006-09-15 10:14  edgrif
+<p>Fix bugs in text items and text highlighting.
 
-	* src/zmapServer/acedb/acedbServer.c: add code to read no_display
-	  correctly and set 3 frame and 3 frame only flags.
+<p>Add scale to the list of default styles
 
-2006-09-15 10:15  edgrif
-
-	* src/include/ZMap/zmapWindow.h: add new call to toggle 3 frame
-	  display.
-
-2006-09-15 10:16  edgrif
-
-	* src/zmapWindow/zmapWindow.c: add new longitem and hash entry
-	  calls.
-
-2006-09-15 10:16  edgrif
-
-	* src/zmapWindow/zmapWindowContainer.h: add longitems parameter to
-	  container creation and call to get strand group.
-
-2006-09-15 10:18  edgrif
-
-	* src/zmapWindow/zmapWindowContainer.c: add longitems object to
-	  containers so they can remove their items on destruction. Add
-	  function to get strand group.
-
-2006-09-15 10:19  edgrif
-
-	* src/zmapWindow/zmapWindowDraw.c: add start of code to do 3 frame
-	  display, work in progress
-
-2006-09-15 10:20  edgrif
-
-	* src/zmapWindow/zmapWindowDrawFeatures.c: party altered code to
-	  allow us to call some functions in here from the 3 frame code.
-
-2006-09-15 10:22  edgrif
-
-	* src/zmapWindow/zmapWindowFeature.c: add new longitem calls for
-	  caching items that may need to be clipped. Make the item
-	  destructor remove the item from longitem.
-
-2006-09-15 10:22  edgrif
-
-	* src/zmapWindow/zmapWindowItem.c: minor change to support new hash
-	  call interface.
-
-2006-09-15 10:23  edgrif
-
-	* src/zmapWindow/zmapWindowItemHash.c: introduce frame param for
-	  making hashes, needed for 3 frame col support, work in progress
-
-2006-09-15 10:24  edgrif
-
-	* src/zmapWindow/zmapWindow_P.h: add new encapsulated long item
-	  stuff, add frame stuff for hashes, add calls to create
-	  sets/delete sets/columns.
-
-2006-09-15 10:25  edgrif
-
-	* src/zmapWindow/zmapWindowSearch.c: add frame stuff for hash
-	  search, work in progress.
-
-2006-09-15 10:26  edgrif
-
-	* src/zmapWindow/zmapWindowUtils.c: remove long item stuff, now in
-	  its own file.
-
-2006-09-15 10:27  edgrif
-
-	* src/zmapWindow/zmapWindowLongItems.c: add new longitems package,
-	  more encapsulated and works better.
-
-2006-09-26 09:37  edgrif
-
-	* src/include/ZMap/zmapConfigStyleDefaults.h: clear up some muddles
-	  in some of the hard coded column names.
-
-2006-09-26 09:44  edgrif
-
-	* src/zmapFeature/zmapFeatureFormatInput.c: add functions to deal
-	  with a frame type ZMapFrame
-
-2006-09-26 09:45  edgrif
-
-	* src/zmapFeature/zmapFeatureUtils.c: add function to retrieve a
-	  feature set from a block.
-
-2006-09-26 09:47  edgrif
-
-	* src/zmapFeature/zmapFeature.c: fix small glitch in hard coded 3
-	  frame name.
-
-2006-09-26 09:47  edgrif
-
-	* src/include/ZMap/zmapFeature.h: add new frame funcs + find
-	  feature in block.
-
-2006-09-26 09:48  edgrif
-
-	* src/include/ZMap/zmapWindow.h: add frame to hash query function.
-
-2006-09-26 09:50  edgrif
-
-	* src/zmapWindow/: zmapWindow.c, zmapWindowColConfig.c: feature set
-	  data is now held in one struct on the canvas obj.
-
-2006-09-26 09:51  edgrif
-
-	* src/zmapWindow/zmapWindowSearch.c: add feature frame to search
-	  criteria for features.
-
-2006-09-26 09:52  edgrif
-
-	* src/zmapWindow/: zmapWindowList.c, zmapWindowFeatureList.c: start
-	  adding feature set frame to query code. NOT FINISHED.
-
-2006-09-26 09:58  edgrif
-
-	* src/zmapWindow/zmapWindowItem.c: Add function to get strand/frame
-	  for a feature set canvas group, code to do better col.
-	  highlights, add frame to all hash calls.
-
-2006-09-26 10:03  edgrif
-
-	* src/zmapWindow/zmapWindowFeature.c: make sure destroy handler run
-	  for dna/protein items. Add feature frame routine. All set date
-	  now in one struct on canvas group. Tidy up destroy function and
-	  make it work !
-
-2006-09-26 10:05  edgrif
-
-	* src/zmapWindow/: zmapWindowContainer.c, zmapWindowContainer.h:
-	  cache background colour and allow it to be reset. Add debug
-	  function to print feature sets.
-
-2006-09-26 10:28  edgrif
-
-	* src/zmapWindow/zmapWindowDraw.c: Add code to toggle between
-	  normal and 3frame display. code needs factorising + tidying.
-
-2006-09-26 10:40  edgrif
-
-	* src/zmapWindow/zmapWindowDrawFeatures.c: Make some of the feature
-	  set/feature code into externally callable routines so they can be
-	  used for 3 frame display.
-
-2006-09-26 10:43  edgrif
-
-	* src/zmapWindow/zmapWindowItemHash.c: add frame to filters for
-	  hash search and rationalise use of strand.
-
-2006-09-26 10:47  edgrif
-
-	* src/zmapWindow/zmapWindow_P.h: rationalise feature set data held
-	  on canvas group. Add frame to list col data. Add colours for
-	  frames. Add frame to lots of funcs.
-
-2006-09-29 10:48  edgrif
-
-	* src/include/ZMap/zmapConfigStyleDefaults.h: add hard coded locus
-	  feature set name, needed because code must search for this in
-	  requested feature sets.
-
-2006-09-29 10:50  edgrif
-
-	* src/include/ZMap/zmapFeature.h: add a processing mode to the
-	  style, e.g. text mode.
-
-2006-09-29 10:51  edgrif
-
-	* src/zmapFeature/: zmapFeatureFormatInput.c, zmapFeature_P.h,
-	  zmapFeatureTypes.c: add a function to map strings to enums in a
-	  more generalised way, other funcs need to use this.
-
-2006-09-29 10:52  edgrif
-
-	* src/zmapServer/: acedb/acedbServer.c, das/dasServer.c: read a
-	  style mode for the method to style convertor.
-
-2006-09-29 10:53  edgrif
-
-	* src/: zmapServer/file/fileServer.c, zmapConfig/zmapConfigRead.c,
-	  zmapControl/zmapControlViews.c, zmapWindow/zmapWindowItem.c:
-	  trivial removal of compiler warning.
-
-2006-09-29 10:56  edgrif
-
-	* src/zmapGFF/: zmapGFF2parser.c, zmapGFF_P.h: Funcs to dynamically
-	  create a locus feature set from features parsed in.
-
-2006-09-29 16:24  edgrif
-
-	* src/zmapWindow/: zmapWindow.c, zmapWindowDrawFeatures.c,
-	  zmapWindow_P.h: add config option to only show frame specific
-	  stuff on forward strand.
-
-2006-10-02 10:17  edgrif
-
-	* src/include/ZMap/zmapFeature.h: add standard prefix for stringify
-	  of frame.
-
-2006-10-02 10:18  edgrif
-
-	* src/: zmapControl/zmapControlWindowInfoPanel.c,
-	  zmapControl/zmapControl_P.h, zmapWindow/zmapWindow.c: add frame
-	  information for frame sensitive features when 3 frame is on.
-
-2006-10-02 10:22  edgrif
-
-	* src/zmapWindow/: zmapWindowDrawFeatures.c, zmapWindowDraw.c: make
-	  it optional whether 3 frame cols are shown on reverse strand.
-
-2006-10-02 10:24  edgrif
-
-	* src/zmapWindow/zmapWindow_P.h: tidy/correction of 3 frame
-	  comments.
-
-2006-10-02 10:25  edgrif
-
-	* src/zmapWindow/zmapWindowItemHash.c: remove frame prefix, now in
-	  feature code where it belongs.
-
-2006-10-02 10:37  edgrif
-
-	* src/zmapWindow/: zmapWindowDraw.c, zmapWindowItemHash.c: remove
-	  debugging output...oops.
-
-2006-10-02 16:12  edgrif
-
-	* src/: include/ZMap/zmapGLibUtils.h, zmapUtils/zmapGLibUtils.c:
-	  add trivial function to find a quark in a glist...
-
-2006-10-02 16:13  edgrif
-
-	* src/zmapServer/zmapServerProtocolHandler.c: remove redundant
-	  code.
-
-2006-10-02 16:19  edgrif
-
-	* src/zmapServer/acedb/acedbServer.c: check requested feature set
-	  list _before_ just adding them to the feature sets.
-
-2006-10-02 16:22  edgrif
-
-	* src/zmapView/zmapView.c: make sure dna was requested before we
-	  send off a request to get it.
-
-2006-10-02 16:32  edgrif
-
-	* src/zmapServer/acedb/acedbServer.c: fix stupid typo...
-
-2006-10-03 16:05  edgrif
-
-	* src/include/ZMap/zmapConfigStyleDefaults.h: add gene finder
-	  features to predefined style names.
-
-2006-10-03 16:07  edgrif
-
-	* src/zmapServer/acedb/acedbServer.c: make gene finder features
-	  trigger off predefined feature set name.
-
-2006-10-03 16:07  edgrif
-
-	* src/zmapUtils/zmapGLibUtils.c: make quark search case insensitive
-
-2006-10-03 16:08  edgrif
-
-	* src/zmapWindow/zmapWindowDrawFeatures.c: fix small bug in making
-	  cols, needs making like 3 frame stuff.
-
-2006-10-03 16:09  edgrif
-
-	* src/zmapWindow/zmapWindowFeature.c: fix frame and width by score
-	  for gene finder stuff.
-
-2006-10-03 16:55  edgrif
-
-	* src/zmapWindow/zmapWindowDrawFeatures.c: remove debugging output.
-
-2006-10-04 15:28  rds
-
-	* src/zmapWindow/: zmapWindow.c, zmapWindowColConfig.c,
-	  zmapWindowContainer.c, zmapWindowContainer.h, zmapWindowDraw.c,
-	  zmapWindowDump.c: Keeping up with changes to
-	  zmapWindowContainerExecute and zmapWindowContainerExecuteFull
-
-	  This code keeps better track of the size of the containers rather
-	  than asking the foo_canvas via foo_canvas_item_get_bounds.
-
-2006-10-06 11:15  edgrif
-
-	* src/include/ZMap/zmapConfigStyleDefaults.h: add default
-	  description strings for predefined styles.
-
-2006-10-06 11:16  edgrif
-
-	* src/zmapFeature/zmapFeature.c: add missing header include.
-
-2006-10-06 11:18  edgrif
-
-	* src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeatureTypes.c:
-	  add functions to: merge two styles, merge two lists of styles,
-	  return list of predefined styles, destroy a list of styles.
-
-2006-10-06 11:19  edgrif
-
-	* src/zmapServer/zmapServerProtocolHandler.c: add code to merge
-	  styles returned from server with predefined styles.
-
-2006-10-10 09:54  edgrif
-
-	* src/zmapDraw/zmapDraw.c: Uncomment my glph code.
-
-2006-10-11 10:44  edgrif
-
-	* src/include/Makefile.am: add dna header to build list.
-
-2006-10-11 10:45  edgrif
-
-	* src/lib/Makefile.am: add dna utils and dna search/display files.
-
-2006-10-11 10:46  edgrif
-
-	* src/zmapUtils/zmapConfigDir.c: fix stupid compiler warning error.
-
-2006-10-11 10:46  edgrif
-
-	* src/zmapWindow/zmapWindow.c: make sure new dna windows are thrown
-	  away properly.
-
-2006-10-11 10:47  edgrif
-
-	* src/zmapWindow/zmapWindowDrawFeatures.c: add dna search to col.
-	  menu.
-
-2006-10-11 10:48  edgrif
-
-	* src/zmapWindow/: zmapWindowEditor.c, zmapWindowList.c: add new
-	  list type param. to calls to feature list code.
-
-2006-10-11 10:49  edgrif
-
-	* src/zmapWindow/zmapWindowFeature.c: add dna search to item menu.
-
-2006-10-11 10:49  edgrif
-
-	* src/zmapWindow/zmapWindow_P.h: add stuff for new dna match list,
-	  and new item centre function.
-
-2006-10-11 10:50  edgrif
-
-	* src/zmapWindow/zmapWindowItem.c: add new
-	  zmapWindowItemCentreOnItemSubPart() function to go to location
-	  within a canvas item.
-
-2006-10-11 10:52  edgrif
-
-	* src/zmapWindow/zmapWindowFeatureList.c: add dna_list type, so
-	  code now does tree, list and dna_list
-
-2006-10-11 11:43  edgrif
-
-	* src/zmapWindow/zmapWindowFeature.c: correct frame colours, try to
-	  get bars the correct length.
-
-2006-10-11 12:35  edgrif
-
-	* src/zmapUtils/zmapDNA.c: utility functions for searching/handling
-	  dna.
-
-2006-10-11 12:36  edgrif
-
-	* src/include/ZMap/zmapDNA.h: add header for dna util. funcs.
-
-2006-10-11 12:37  edgrif
-
-	* src/zmapWindow/: zmapWindowDNA.c, zmapWindowDNAList.c: add
-	  functions to search dna for matches.
-
-2006-10-11 16:19  edgrif
-
-	* src/zmapFeature/zmapFeatureTypes.c: fix horrible bug that
-	  prevented the locus stuff appearing.
-
-2006-10-16 11:26  edgrif
-
-	* src/: include/ZMap/zmapFeature.h, zmapFeature/zmapFeatureUtils.c:
-	  Add function to sort align gaps array, need them to be in
-	  ascending/colinear order.
-
-2006-10-16 11:27  edgrif
-
-	* src/zmapFeature/zmapFeatureContext.c: fix bug in revcomp, forgot
-	  to reorder align gaps arrays.
-
-2006-10-16 11:27  edgrif
-
-	* src/zmapFeature/zmapFeatureTypes.c: remove debugging output.
-
-2006-10-16 11:49  edgrif
-
-	* src/zmapGFF/zmapGFF2parser.c: fix bad bug in parsing gaps
-	  array...meant we didn't !
-
-2006-10-16 11:50  edgrif
-
-	* src/zmapServer/acedb/acedbServer.c: Make sure we pick up that
-	  user wants alignments displayed with gaps.
-
-2006-10-16 11:50  edgrif
-
-	* src/zmapWindow/zmapWindowDNAList.c: clean out redundant code.
-
-2006-10-16 11:51  edgrif
-
-	* src/zmapWindow/zmapWindowFeature.c: dummy not set correctly so
-	  crashes code sometimes.
-
-2006-10-16 11:52  edgrif
-
-	* src/zmapWindow/zmapWindowCallBlixem.c: add config file resource
-	  for removal of tmp files. fix bug in writing exblx file for
-	  revcomp features.
-
-2006-10-18 09:47  edgrif
-
-	* doc/Release_notes/: index.shtml, release_notes.2006_10_18.shtml:
-	  start release notes directory
-
-2006-10-18 09:57  edgrif
-
-	* doc/Release_notes/index.shtml: minor typo in file name.
 </pre>
 
 
 
 <h3>Acedb Changes/Fixes</h3>
 
-<pre>
-2006-02-02 11:31  edgrif
+<p>Fixed bug that led to double intron records in GFF for DBs like wormbase.
 
-	* acedb/w7/fmapfeatures.c: fix old bug which led to double intron
-	  records for DBs like wormbase.
+<p>Added graphical progress meter to blixem for pfetching, with a cancel button !
 
-2006-02-13 15:43  edgrif
+<p>Added column overlap threshold as an option to displays.wrm, lace system
+needs this because they have many columns.
 
-	* acedb/w9/blxview.c: Add graphical progress meter to blixem with a
-	  cancel button !
+<p>Move acedb to use GTK2 libraries.
 
-2006-03-08 08:01  edgrif
+<p>Make acedb dump locus names in GFF so zmap can read them.
 
-	* acedb/: wh/display.h, w6/display.c, w7/mapcontrol.c: add column
-	  overlap threshold as an option to displays.wrm, lace system needs
-	  this because they have many columns.
+<p>Fix bad bug in blixem/graph, overwriting of messprintf's static buffer is again the culprit.
 
-2006-03-08 09:28  edgrif
+<p>Remove erroneous gtk2 code, produces wrong dialog window.
 
-	* acedb/wnq/aceversion.c: update release tag...out of step sigh....
+<p>Fix up autopreserve to work more consistently: displays originating from the keyset window would
+no longer ignore autopreserve. autopreserve is off by default. User can now set autopreserve to allow no preserve,
+preserve of selected windows or preserve of all windows.
 
-2006-03-08 10:39  edgrif
+<p>Make sure blixem version gets displayed correctly.
 
-	* acedb/wnq/aceversion.c: increment for next code version.
+<p> Fix bug caused by change to gtk2, some of blixems windows were not being updated.
 
-2006-03-08 10:57  edgrif
+<p>Add option to get genefinder features _without_ doing an fmap redraw which messes up the coords,
+needed to show gene finder features in zmap.
 
-	* acedb/w6/display.c: dummy change, something wrong with time
-	  stamp...
+<p>Fix toolbar in blixem so that it shows sequence name properly.
 
-2006-03-13 10:40  edgrif
+<p>Fix acedb server from any kind of saving when readonly.
 
-	* acedb/w9/blxview.c: change failure message for sequence pfetching
-	  to be dumped to log only, annoying for annotators otherwise.
+<p>Fix server shutdown behaviour so that if client says shutdown, it must also now explicitly quit,
+required so that lace can shut server down cleanly.
 
-2006-04-11 09:40  edgrif
+<p>Set line wrapping by word as default mode for text widget, helps annotation in lace.
 
-	* acedb/wmake/truemake: Jean spotted that gf binary does not use
-	  $(CC)
+<p>Make acedb use the open command for urls on the mac.
 
-2006-06-15 11:43  edgrif
-
-	* acedb/w4/gifcommand.c: improve comments for source/methods flags.
-
-2006-06-15 11:44  edgrif
-
-	* acedb/w7/fmapcontrol.c: fix stupid bug in addToSet and make it
-	  cope with embedded blanks in source/method names.
-
-2006-06-15 11:58  edgrif
-
-	* acedb/w7/gff.c: get urls dumped for zmap and clean up column
-	  group stuff and make sure we dump strand stuff whenever its valid
-	  for zmap.
-
-2006-06-15 12:09  edgrif
-
-	* acedb/w9/blxview.c: fix up progress meter for pfetch from blixem.
-
-2006-06-15 12:10  edgrif
-
-	* acedb/wmake/truemake: fix link command for genefeatures
-	  executable.
-
-2006-06-15 14:01  edgrif
-
-	* acedb/wmake/LINUX_GTK2_4_DEF: this file is now LINUX_4_DEF, we
-	  only need one linux def file.
-
-2006-06-15 14:12  edgrif
-
-	* acedb/wmake/ALPHA_5_ZMAP_DEF: not needed anymore, zmap is not
-	  part of acedb.
-
-2006-06-15 14:24  edgrif
-
-	* acedb/wmake/ALPHA_5_GTK2_DEF: no longer needed, all alpha builds
-	  going to gkt2
-
-2006-06-15 14:34  edgrif
-
-	* acedb/wmake/DARWIN_4_GTK2_DEF: not needed any more as darwin
-	  build is gtk2 only.
-
-2006-06-15 14:35  edgrif
-
-	* acedb/wmake/: ALPHA_5_DEF, LINUX_4_DEF: update alpha, darwin and
-	  linux builds to gtk2
-
-2006-06-15 14:40  edgrif
-
-	* acedb/wmake/OPTERON_4_DEF: update for new gtk2 build.
-
-2006-06-15 14:47  edgrif
-
-	* acedb/w3rdparty/: cygncurses6.dll, cygwin1.dll, glib-1.3.dll,
-	  gtk-1.3.dll, cygreadline5.dll, gdk-1.3.dll, gmodule-1.3.dll: we
-	  are no longer supporting windows builds.
-
-2006-06-15 14:49  edgrif
-
-	* acedb/w3rdparty/: gzip.exe, rxvt.exe, sh.exe, sort.exe: we no
-	  longer support windows builds.
-
-2006-06-15 14:54  edgrif
-
-	* acedb/w3rdparty/: glib-2.2.3.tar.gz, libpng-1.2.5.tar.gz,
-	  glib-1.2.10.tar.gz, libiconv-1.9.1.tar.gz, readline-4.1.tar.gz,
-	  gettext-0.12.1.tar.gz, gtk+-2.2.4.tar.gz,
-	  pkgconfig-0.14.0.tar.gz, atk-1.2.4.tar.gz, gtk+-1.2.10.tar.gz,
-	  pango-1.2.3.tar.gz: we no longer support static builds.
-
-2006-06-15 14:56  edgrif
-
-	* acedb/w3rdparty/: build_all_3rdparty, extract_gnu_lib, lndir: we
-	  don't support static builds any more.
-
-2006-06-15 15:00  edgrif
-
-	* acedb/w3rdparty/: acedb-config, include-config, libs-config:
-	  updated to do just the gtk2 dynamic build.
-
-2006-06-19 15:20  edgrif
-
-	* acedb/wnq/aceversion.c: increment update number.
-
-2006-06-20 09:58  edgrif
-
-	* acedb/wnq/aceversion.c: oops, got ahead of myself, decrement
-	  update level.
-
-2006-06-20 14:08  edgrif
-
-	* acedb/wnq/aceversion.c: increment the update number.
-
-2006-06-22 09:13  edgrif
-
-	* acedb/w7/gff.c: add locus name dumping for zmap/gff.
-
-2006-06-29 10:21  edgrif
-
-	* acedb/wmake/DARWIN_4_DEF: udpate darwin to work on gtk2 stuff.
-
-2006-06-29 10:56  edgrif
-
-	* acedb/wmake/DARWIN_4_DEF: finally fix darwin build with all libs
-	  required...
-
-2006-06-30 18:20  edgrif
-
-	* acedb/wtools/MAKE_INSTALL: update to replace sgi/sun builds with
-	  mac builds.
-
-2006-07-03 09:32  edgrif
-
-	* acedb/: w2/graphcon.c, w9/blxview.c: fix bad bug in blixem/graph,
-	  overwriting of messprintf's static buffer is again the culprit.
-
-2006-07-03 09:44  edgrif
-
-	* acedb/wh/regular.h: add some warning comments about messprintf(),
-	  a deadly function.
-
-2006-07-03 09:45  edgrif
-
-	* acedb/w2/graphgtk.c: remove erroneous gtk2 code, produces wrong
-	  dialog window.
-
-2006-07-03 09:50  edgrif
-
-	* acedb/w6/treedisp.c: fix up autopreserve to work more
-	  consistently, displays originating from the keyset window would
-	  ignore autopreserve.
-
-2006-07-03 10:02  edgrif
-
-	* acedb/: w2/gex.c, wh/gex.h: fix up gex code for gtk2, some stuff
-	  redundant, other bits just wrong.
-
-2006-07-12 16:08  edgrif
-
-	* acedb/w9/: blixem_.h, blxmain.c: update blixem version and make
-	  sure it gets displayed correctly.
-
-2006-07-12 16:26  edgrif
-
-	* acedb/w9/blxview.c: fix bug caused by change to gtk2, some of
-	  blixems graphs were not being updated.
-
-2006-07-12 16:34  edgrif
-
-	* acedb/w2/graphgtk.c: fix bug in
-	  scrollwindow->viewport->drawingarea updates, gtk2 seems to have
-	  changed the way exposes are generated.
-
-2006-07-17 10:30  edgrif
-
-	* acedb/wnq/aceversion.c: increment update level.
-
-2006-08-08 13:01  edgrif
-
-	* acedb/w6/treedisp.c: switch autopreserve off by default.
-
-2006-08-08 13:02  edgrif
-
-	* acedb/w4/session.c: fix up Mac compiles on intel machines.
-
-2006-08-08 13:05  edgrif
-
-	* acedb/w7/: fmap_.h, fmapcontrol.c, fmapgene.c: add option to get
-	  genefinder features _without_ doing an fmap redraw which messes
-	  up the coords.
-
-2006-08-08 13:55  edgrif
-
-	* acedb/wnq/aceversion.c: increment the update number.
-
-2006-08-09 17:33  edgrif
-
-	* acedb/w9/blxview.c: change toolbar to use gtk2 calls so toolbar
-	  is not so long.
-
-2006-08-30 15:30  edgrif
-
-	* acedb/wsocket/serverace.c: stop server from any kind of saving
-	  when readonly.
-
-2006-08-31 16:05  edgrif
-
-	* acedb/wsocket/: acesocket.c, saceclient.c, serverace.c: change
-	  shutdown behaviour so that if client says shutdown, it must also
-	  now explicitly quit.
-
-2006-09-01 16:28  edgrif
-
-	* acedb/wmake/truemake: make sure aceversion is updated when server
-	  is updated.
-
-2006-09-15 11:12  edgrif
-
-	* acedb/: w4/session.c, w9/belvu.c, w9/embl.c, wh/dotter_.h: fix
-	  compilation bugs on the Mac caused by more stringent version of
-	  gcc.
-
-2006-09-27 10:41  edgrif
-
-	* acedb/w7/: smapconvert.c, fmapfeatures.c: fix subtle bug where
-	  value returned in smapconvert caused later crash in fmapfeatures
-	  display..ugh.
-
-2006-10-09 12:26  edgrif
-
-	* acedb/w2/gex.c: set line wrapping by word as default mode for
-	  text widget.
-
-2006-10-11 15:21  edgrif
-
-	* acedb/w2/graphgdkremote.c: make acedb use the open command for
-	  urls on the mac.
-
-2006-10-18 08:54  edgrif
-
-	* acedb/w7/fmapgene.c: remove debug message.
-
-2006-10-18 08:55  edgrif
-
-	* acedb/: w4/prefsubs.c, w7/fmapfeatures.c, wh/pref.h: Add option
-	  to stop blixem removing its temp files, good for debug.
-
-2006-10-18 09:08  edgrif
-
-	* acedb/w6/treedisp.c: fix up autopreserve to allow no preserve,
-	  preserve of selected windows or preserve of all windows.
 </pre>
 
 
