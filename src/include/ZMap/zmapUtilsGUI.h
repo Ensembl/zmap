@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Jul 17 15:00 2006 (rds)
+ * Last edited: Oct 11 09:20 2006 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.14 2006-07-22 09:20:22 rds Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.15 2006-10-18 15:08:34 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -39,6 +39,16 @@
 
 typedef enum {ZMAPGUI_PIXELS_PER_CM, ZMAPGUI_PIXELS_PER_INCH,
 	      ZMAPGUI_PIXELS_PER_POINT} ZMapGUIPixelConvType ;
+
+/* A bit field I found I needed to make it easier to calc what had been clamped. */
+typedef enum
+  {
+    ZMAPGUI_CLAMP_INIT  = 0,
+    ZMAPGUI_CLAMP_NONE  = (1 << 0),
+    ZMAPGUI_CLAMP_START = (1 << 1),
+    ZMAPGUI_CLAMP_END   = (1 << 2)
+  } ZMapGUIClampType;
+
 
 
 /*! Callback function for menu items. The id indicates which menu_item was selected
@@ -140,5 +150,10 @@ void zMapGUICreateRadioGroup(GtkWidget *gtkbox,
                              ZMapGUIRadioButton all_buttons,
                              int default_button, int *value_out,
                              ZMapGUIRadioButtonCBFunc clickedCB, gpointer clickedData);
+
+ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot_limit, 
+                                                  double *top_inout, double *bot_inout);
+ZMapGUIClampType zMapGUICoordsClampToLimits(double  top_limit, double  bot_limit, 
+                                            double *top_inout, double *bot_inout);
 
 #endif /* ZMAP_UTILS_GUI_H */
