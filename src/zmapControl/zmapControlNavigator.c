@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 22 14:48 2006 (edgrif)
+ * Last edited: Oct 18 14:54 2006 (rds)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.24 2006-02-22 15:02:03 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.25 2006-10-18 15:10:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,16 @@
 
 
 static void valueCB(GtkAdjustment *adjustment, gpointer user_data) ;
+static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
+static void canvasValueCB(gpointer user_data, double top, double bottom) 
+{
+  ZMapNavigator navigator = (ZMapNavigator)user_data;
+
+  if (navigator->cb_func)
+    (*(navigator->cb_func))(navigator->user_data, top, bottom) ;
+
+  return ;
+}
 
 
 /* Create an instance of the navigator, this currently has two scroll bars,
@@ -52,7 +62,7 @@ static void valueCB(GtkAdjustment *adjustment, gpointer user_data) ;
  * one to show the position of the window within the canvas.
  * The function returns the navigator instance but also its top container
  * widget in top_widg_out. */
-ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out)
+ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_out)
 {
   ZMapNavigator navigator ;
   GtkWidget *pane ;
@@ -98,8 +108,65 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out)
    * user drags this scroll bar the position is only reported on button release. This is
    * necessary because the underlying canvas window cannot be remapped rapidly. */
   navigator->wind_vbox = gtk_vbox_new(FALSE, 0);
-  gtk_paned_add2(GTK_PANED(pane), navigator->wind_vbox) ;
 
+  {
+    GtkWidget *locator_frame = NULL,
+      *locator_canvas = NULL,
+      *locator_pane   = NULL, 
+      *locator_vbox   = NULL,
+      *locator_label  = NULL,
+      *event_box      = NULL,
+      *event_label    = NULL;
+    ZMapWindowNavigatorCallbackStruct cbs = {NULL};
+
+#ifdef RDS_USE_SCROLL
+    locator_pane = gtk_hpaned_new();
+    gtk_paned_add2(GTK_PANED(pane), locator_pane) ; /* add this pane to main pane */
+
+    gtk_paned_add1(GTK_PANED(locator_pane), navigator->wind_vbox) ; /* add scroll to this pane */
+#endif /* RDS_USE_SCROLL */
+    
+    locator_vbox = gtk_vbox_new(FALSE, 0);
+
+#ifdef RDS_USE_SCROLL
+    gtk_paned_add2(GTK_PANED(locator_pane), locator_vbox) ; /* add locusnav to this pane */
+#else
+    gtk_paned_add2(GTK_PANED(pane), locator_vbox) ; /* add locusnav to this pane */
+#endif /* RDS_USE_SCROLL */
+
+    locator_label = gtk_label_new("Navigator") ;
+    gtk_box_pack_start(GTK_BOX(locator_vbox), locator_label, FALSE, TRUE, 0);
+
+    locator_frame = gtk_frame_new(NULL);
+    gtk_frame_set_shadow_type(GTK_FRAME(locator_frame), GTK_SHADOW_NONE);
+    gtk_box_pack_start(GTK_BOX(locator_vbox), locator_frame, TRUE, TRUE, 0);
+
+    cbs.valueCB    = canvasValueCB;
+    locator_canvas = navigator->locator_widget = 
+      zMapWindowNavigatorCreateCanvas(&cbs, navigator);
+    
+    gtk_container_add(GTK_CONTAINER(locator_frame), locator_canvas);
+    
+    event_box = gtk_event_box_new();
+    /* gtk_widget_set_name(event_box, "zmap-control-infopanel"); */
+    gtk_box_pack_start(GTK_BOX(locator_vbox), event_box, FALSE, FALSE, 2);
+    
+    event_label = gtk_label_new("drag box to navigate");
+    gtk_label_set_selectable(GTK_LABEL(event_label), TRUE);
+    gtk_container_add(GTK_CONTAINER(event_box), event_label);
+#ifdef RDS_USE_SCROLL
+    g_object_connect(G_OBJECT(pane), 
+                     "signal::notify::position", 
+                     G_CALLBACK(paneNotifyPositionCB), 
+                     (gpointer)navigator,
+                     NULL);
+#endif
+    if(canvas_out)
+      *canvas_out = locator_canvas;
+    
+  }
+
+#ifdef RDS_USE_SCROLL
   label = gtk_label_new("Scroll") ;
   gtk_box_pack_start(GTK_BOX(navigator->wind_vbox), label, FALSE, TRUE, 0);
 
@@ -107,8 +174,11 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out)
   gtk_box_pack_start(GTK_BOX(navigator->wind_vbox), navigator->wind_top_label, FALSE, TRUE, 0);
 
   adjustment = gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ; /* "blank" adjustment obj. */
+
+#ifdef RDS_DONT_INCLUDE_UNUSED
   gtk_signal_connect(GTK_OBJECT(adjustment), "value-changed",
-		     GTK_SIGNAL_FUNC(valueCB), (void *)navigator) ;
+                     GTK_SIGNAL_FUNC(valueCB), (void *)navigator) ;
+#endif /* RDS_DONT_INCLUDE_UNUSED */
 
   navigator->wind_scroll = gtk_vscrollbar_new(GTK_ADJUSTMENT(adjustment)) ;
   gtk_range_set_update_policy(GTK_RANGE(navigator->wind_scroll), GTK_UPDATE_DISCONTINUOUS) ;
@@ -119,6 +189,7 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out)
    * remains small and the vscale expands to fill the rest of the box. */
   navigator->wind_bot_label = gtk_label_new(BOTTEXT_NO_SCALE) ;
   gtk_box_pack_end(GTK_BOX(navigator->wind_vbox), navigator->wind_bot_label, FALSE, TRUE, 0);
+#endif /* RDS_USE_SCROLL */
 
   navigator->wind_top = navigator->wind_bot = 0.0 ;
 
@@ -142,6 +213,7 @@ void zMapNavigatorSetWindowCallback(ZMapNavigator navigator,
   return ;
 }
 
+/* zmapControl.c:388 calls this! */
 
 /* Set the window adjuster to match the Max Window size of the underlying canvas. This is needed
  * because with a long sequence it is not possible to zoom the whole sequence down to the level
@@ -154,8 +226,10 @@ int zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bo
 {
   int pane_width = 0 ;
   GtkAdjustment *window_adjuster ;
+  double w, h;
   enum {PANED_WINDOW_GUTTER_SIZE = 10} ;		    /* There is no simple way to get this. */
 
+#ifdef RDS_USE_SCROLL
   /* Set the new scrollbar size. */
   window_adjuster = (GtkAdjustment *)gtk_range_get_adjustment(GTK_RANGE(navigator->wind_scroll)) ;
 
@@ -164,10 +238,9 @@ int zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bo
 
   gtk_adjustment_changed(window_adjuster) ;
 
-
   /* find out if page_size is smaller than max pane size....if so then return width of window
      navigator box, otherwise return 0 so the window navigator will not be visible. */
-  if (window_adjuster->page_size < (window_adjuster->upper - window_adjuster->lower + 1))
+  //  if (window_adjuster->page_size < (window_adjuster->upper - window_adjuster->lower + 1))
     {
       GtkRequisition box_size ;
 
@@ -175,8 +248,16 @@ int zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bo
 
       pane_width = box_size.width + PANED_WINDOW_GUTTER_SIZE ;
     }
+#endif /* RDS_USE_SCROLL */
+    
+    {
+      zMapWindowNavigatorPackDimensions(navigator->locator_widget, &w, &h);
+      pane_width = (int)fabs(w);
+      if(pane_width > 0)
+        pane_width += PANED_WINDOW_GUTTER_SIZE;
+    }
 
-  return pane_width ;
+  return pane_width;
 }
 
 
@@ -187,9 +268,10 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 {
   GtkObject *region_adjuster, *window_adjuster ;
   gchar *region_top_str, *region_bot_str, *window_top_str, *window_bot_str ;
-
   region_adjuster = (GtkObject *)gtk_range_get_adjustment(GTK_RANGE(navigator->navVScroll)) ;
+#ifdef RDS_USE_SCROLL
   window_adjuster = (GtkObject *)gtk_range_get_adjustment(GTK_RANGE(navigator->wind_scroll)) ;
+#endif /* RDS_USE_SCROLL */
 
   /* May be called with no sequence to parent mapping so must set default navigator for this. */
   if (features)
@@ -212,6 +294,7 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
       window_top_str = g_strdup_printf("%d", navigator->sequence_to_parent.c1) ;
       window_bot_str = g_strdup_printf("%d", navigator->sequence_to_parent.c2) ;
 
+#ifdef RDS_USE_SCROLL
       /* I assume here that we start at the top. */
       GTK_ADJUSTMENT(window_adjuster)->value = (0.0) ;
       GTK_ADJUSTMENT(window_adjuster)->lower = (gdouble)navigator->sequence_to_parent.c1 ;
@@ -220,7 +303,7 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
       GTK_ADJUSTMENT(window_adjuster)->page_increment = 0.0 ;
       GTK_ADJUSTMENT(window_adjuster)->page_size = (gdouble)(fabs(navigator->sequence_to_parent.c2
 								  - navigator->sequence_to_parent.c1) + 1) ;
-
+#endif /* RDS_USE_SCROLL */
       zMapNavigatorSetWindowPos(navigator, top, bottom) ;
     }
   else
@@ -242,29 +325,32 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 
       window_top_str = g_strdup(TOPTEXT_NO_SCALE) ;
       window_bot_str = g_strdup(BOTTEXT_NO_SCALE) ;
-
+#ifdef RDS_USE_SCROLL
       GTK_ADJUSTMENT(window_adjuster)->value = 0.0 ;
       GTK_ADJUSTMENT(window_adjuster)->lower = 0.0 ;
       GTK_ADJUSTMENT(window_adjuster)->upper = 0.0 ;
       GTK_ADJUSTMENT(window_adjuster)->step_increment = 0.0 ;
       GTK_ADJUSTMENT(window_adjuster)->page_increment = 0.0 ;
       GTK_ADJUSTMENT(window_adjuster)->page_size = 0.0 ;
+#endif /* RDS_USE_SCROLL */
     }
 
   gtk_adjustment_changed(GTK_ADJUSTMENT(region_adjuster)) ;
+#ifdef RDS_USE_SCROLL
   gtk_adjustment_changed(GTK_ADJUSTMENT(window_adjuster)) ;
-
+#endif /* RDS_USE_SCROLL */
   gtk_label_set_text(GTK_LABEL(navigator->topLabel), region_top_str) ;
   gtk_label_set_text(GTK_LABEL(navigator->botLabel), region_bot_str) ;
 
   g_free(region_top_str) ;
   g_free(region_bot_str) ;
-
+#ifdef RDS_USE_SCROLL
   gtk_label_set_text(GTK_LABEL(navigator->wind_top_label), window_top_str) ;
   gtk_label_set_text(GTK_LABEL(navigator->wind_bot_label), window_bot_str) ;
 
   g_free(window_top_str) ;
   g_free(window_bot_str) ;
+#endif /* RDS_USE_SCROLL */
 
   return ;
 }
@@ -293,9 +379,9 @@ static void valueCB(GtkAdjustment *adjustment, gpointer user_data)
   ZMapNavigator navigator = (ZMapNavigator)user_data ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  //#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("top: %f, bottom: %f\n", adjustment->value, adjustment->value + adjustment->page_size) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  //#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   if (navigator->cb_func)
@@ -306,5 +392,22 @@ static void valueCB(GtkAdjustment *adjustment, gpointer user_data)
 }
 
 
+static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data)
+{
+  ZMapNavigator navigator = (ZMapNavigator)user_data;
+  double width = 0.0;
+  int current_position = 0, new_position = 0;
 
+  current_position = gtk_paned_get_position(GTK_PANED( navigator->pane ));
+
+  zMapWindowNavigatorPackDimensions(navigator->locator_widget, &width, NULL);
+
+  new_position = (int)fabs(width);
+
+  if(current_position > new_position)
+    gtk_paned_set_position(GTK_PANED( navigator->pane ),
+                           new_position);
+
+  return ;
+}
 
