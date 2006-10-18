@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Sep 26 15:36 2006 (edgrif)
+ * Last edited: Oct  4 11:39 2006 (rds)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.15 2006-09-29 09:54:12 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.16 2006-10-18 15:11:05 rds Exp $
  *-------------------------------------------------------------------
  */
  
@@ -98,7 +98,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
 
   view_window = zMapViewCreate(view_container, sequence, start, end, (void *)zmap) ;
   zmap_view = zMapViewGetView(view_window) ;
-
+  zMapViewSetupNavigator(zmap_view, zmap->nav_canvas) ;
 
   /* Add to hash of viewwindows to frames */
   g_hash_table_insert(zmap->viewwindow_2_parent, view_window, view_container) ;

@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Aug 10 07:34 2006 (edgrif)
+ * Last edited: Oct 13 15:04 2006 (rds)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.21 2006-08-10 15:10:28 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.22 2006-10-18 15:15:48 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -35,6 +35,8 @@
 #include <glib.h>
 #include <ZMap/zmapThreads.h>
 #include <ZMap/zmapView.h>
+#include <ZMap/zmapWindow.h>
+#include <ZMap/zmapWindowNavigator.h>
 
 
 /* We have this because it enables callers to call on a window but us to get the corresponding view. */
@@ -103,6 +105,7 @@ typedef struct _ZMapViewStruct
 							       sequence from. */
   ZMapViewConnection writeback_server ;			    /* Which connection to send edits to. */
 
+  ZMapWindowNavigator navigator_window;
 
   /* We need to know if the user has done a revcomp for a few reasons to do with coord
    * transforms and the way annotation is done....*/
@@ -117,6 +120,8 @@ typedef struct _ZMapViewStruct
    * sets from the various servers. */
   GData *types ;
 #endif
+
+  GList *navigator_set_names;
 
 } ZMapViewStruct ;
 

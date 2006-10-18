@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct  2 16:21 2006 (edgrif)
+ * Last edited: Oct 18 09:22 2006 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.85 2006-10-02 15:22:02 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.86 2006-10-18 15:15:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,6 @@
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapServerProtocol.h>
-#include <ZMap/zmapWindow.h>
 #include <zmapView_P.h>
 
 
@@ -78,6 +77,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   zMapURL url, char *format,
 					   int timeout, char *version,
 					   char *styles_file, char *feature_sets,
+                                           char *navigator_set_names,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end) ;
 static void destroyConnection(ZMapViewConnection *view_conn) ;
@@ -199,7 +199,11 @@ ZMapViewWindow zMapViewCreate(GtkWidget *parent_widget,
   return view_window ;
 }
 
-
+void zMapViewSetupNavigator(ZMapView zmap_view, GtkWidget *canvas_widget)
+{
+  zmap_view->navigator_window = zMapWindowNavigatorCreate(canvas_widget);
+  return ;
+}
 
 /* Connect a View to its databases via threads, at this point the View is blank and waiting
  * to be called to load some data. */
@@ -238,6 +242,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 							     {"stylesfile", ZMAPCONFIG_STRING, {NULL}},
 							     {"format", ZMAPCONFIG_STRING, {NULL}},
 							     {ZMAPSTANZA_SOURCE_FEATURESETS, ZMAPCONFIG_STRING, {NULL}},
+                                                             {"navigator_sets", ZMAPCONFIG_STRING, {NULL}},
 							     {NULL, -1, {NULL}}} ;
 
 	  /* Set defaults for any element that is not a string. */
@@ -269,7 +274,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	  while (result
 		 && ((next_server = zMapConfigGetNextStanza(server_list, next_server)) != NULL))
 	    {
-	      char *version, *styles_file, *format, *url, *featuresets ;
+	      char *version, *styles_file, *format, *url, *featuresets, *navigatorsets ;
 	      int timeout, url_parse_error ;
               zMapURL urlObj;
 	      gboolean sequence_server, writeback_server ;
@@ -281,6 +286,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      version = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_VERSION) ;
 	      styles_file = zMapConfigGetElementString(next_server, "stylesfile") ;
 	      featuresets = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_FEATURESETS) ;
+              navigatorsets = zMapConfigGetElementString(next_server, "navigator_sets");
 
               /* url is absolutely required. Go on to next stanza if there isn't one.
                * Done before anything else so as not to set seq/write servers to invalid locations  */
@@ -309,7 +315,8 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
               else if (urlObj
 		       && (view_con = createConnection(zmap_view, urlObj,
 						       format,
-						       timeout, version, styles_file, featuresets,
+						       timeout, version, styles_file, 
+                                                       featuresets, navigatorsets,
 						       sequence_server, writeback_server,
 						       zmap_view->sequence,
 						       zmap_view->start, zmap_view->end)))
@@ -1089,7 +1096,7 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 
   view_window = createWindow(zmap_view, NULL) ;
 
-  if (!(window = zMapWindowCreate(parent_widget, zmap_view->sequence, view_window)))
+  if (!(window = zMapWindowCreate(parent_widget, zmap_view->sequence, view_window, NULL)))
     {
       /* should glog and/or gerror at this stage....really need g_errors.... */
       view_window = NULL ;
@@ -1546,18 +1553,32 @@ static void killConnections(ZMapView zmap_view)
   return ;
 }
 
+static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
+{
+  ZMapViewWindow view_window = (ZMapWindow)list_data;
+  GList *feature_set_names = (GList *)user_data;
 
+  /* This relies on hokey code... with a number of issues...
+   * 1) the window function only concats the lists.
+   * 2) this view code might well want to do the merge?
+   * 3) how do we order all these columns?
+   */
+  zMapWindowMergeInFeatureSetNames(view_window->window, feature_set_names);
+
+  return ;
+}
 /* Allocate a connection and send over the request to get the sequence displayed. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   zMapURL url, char *format,
 					   int timeout, char *version,
 					   char *styles_file, char *featuresets_names,
+                                           char *navigator_set_names,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end)
 {
   ZMapViewConnection view_con = NULL ;
   GList *types = NULL ;
-  GList *req_featuresets = NULL ;
+  GList *req_featuresets = NULL, *tmp_navigator_sets = NULL ;
   ZMapThread thread ;
   gboolean status = TRUE ;
   gboolean dna_requested = FALSE ;
@@ -1591,8 +1612,22 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       /* Check whether dna was requested, see comments below about setting up sequence req. */
       if ((zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
 	dna_requested = TRUE ;
+
+      g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
+
+    }
+  if(navigator_set_names)
+    {
+      tmp_navigator_sets = zmap_view->navigator_set_names = string2StyleQuarks(navigator_set_names);
+      if(zmap_view->navigator_window)
+        zMapWindowNavigatorMergeInFeatureSetNames(zmap_view->navigator_window, tmp_navigator_sets);
     }
 
+  if(req_featuresets && tmp_navigator_sets)
+    {
+      /* We should do a proper merge here! */
+      req_featuresets = g_list_concat(req_featuresets, tmp_navigator_sets);
+    }
 
   /* Create the thread to service the connection requests, we give it a function that it will call
    * to decode the requests we send it and a terminate function. */
@@ -1771,6 +1806,8 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
       /* Signal the ZMap that there is work to be done. */
       displayDataWindows(zmap_view, zmap_view->features, diff_context) ;
 
+      zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features);
+
       /* signal our caller that we have data. */
       (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
 
@@ -1784,9 +1821,14 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+  ZMapWindowVisibilityChange vis = (ZMapWindowVisibilityChange)window_data;
 
   /* signal our caller that something has changed. */
   (*(view_cbs_G->visibility_change))(view_window, view_window->parent_view->app_data, window_data) ;
+
+  zMapWindowNavigatorSetCurrentWindow(view_window->parent_view->navigator_window, view_window->window);
+
+  zMapWindowNavigatorDrawLocator(view_window->parent_view->navigator_window, vis->scrollable_top, vis->scrollable_bot);
 
   return;
 }
