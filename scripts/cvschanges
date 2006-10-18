@@ -15,10 +15,8 @@
 changes_file=`pwd`
 
 # We need to run it on several directories.....
-acedb_cvs="$HOME/acedb/CODE"
-acedb_dirs='Ace-Conn Ace-docs Ace-python acedb build tools'
-acedb_dirs='acedb tools'
-zmap_cvs="$HOME/ZMap/ZMap"
+#zmap_cvs="$HOME/ZMap/ZMap_Curr/ZMap"
+zmap_cvs="."
 zmap_dirs='doc src'
 
 # Need to make sure the date stuff is passed correctly to cvs, format must be:
@@ -27,12 +25,6 @@ zmap_dirs='doc src'
 #
 
 date="-d'"$1"'"
-
-# do acedb stuf...
-cd $acedb_cvs
-print "Issuing: cvs2cl --chrono -f $changes_file'/ChangeLog.ACEDB'  -l $date $acedb_dirs"
-
-cvs2cl --chrono -f $changes_file'/ChangeLog.ACEDB'  -l $date $acedb_dirs
 
 #do Zmap stuf...
 #  could use "--accum" to put zmap stuff in same change file....
