@@ -25,13 +25,14 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Aug  7 09:03 2006 (edgrif)
+ * Last edited: Oct 11 09:29 2006 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.18 2006-08-07 08:05:52 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.19 2006-10-18 15:14:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <gtk/gtk.h>
+#include <math.h>
 #include <zmapUtils_P.h>
 #include <ZMap/zmapUtilsGUI.h>
 
@@ -906,6 +907,74 @@ void zMapGUICreateRadioGroup(GtkWidget *gtkbox,
   return ;
 }
 
+
+
+ZMapGUIClampType zMapGUICoordsClampToLimits(double  top_limit, double  bot_limit, 
+                                            double *top_inout, double *bot_inout)
+{
+  ZMapGUIClampType ct = ZMAPGUI_CLAMP_INIT;
+  double top, bot;
+
+  top = *top_inout;
+  bot = *bot_inout;
+
+  if (top < top_limit)
+    {
+      top = top_limit;
+      ct |= ZMAPGUI_CLAMP_START;
+    }
+  else if (floor(top) == top_limit)
+    ct |= ZMAPGUI_CLAMP_START;
+
+  if (bot > bot_limit)
+    {
+      bot = bot_limit;
+      ct |= ZMAPGUI_CLAMP_END;
+    }
+  else if(ceil(bot) == bot_limit)
+    ct |= ZMAPGUI_CLAMP_END;
+    
+  *top_inout = top;
+  *bot_inout = bot;
+
+  return ct;
+}
+
+ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot_limit, 
+                                                  double *top_inout, double *bot_inout)
+{
+  ZMapGUIClampType ct = ZMAPGUI_CLAMP_INIT;
+  double top, bot;
+
+  top = *top_inout;
+  bot = *bot_inout;
+
+  if (top < top_limit)
+    {
+      if ((bot = bot + (top_limit - top)) > bot_limit)
+        {
+          bot = bot_limit ;
+          ct |= ZMAPGUI_CLAMP_END;
+        }
+      ct |= ZMAPGUI_CLAMP_START;
+      top = top_limit;
+    }
+  else if (bot > bot_limit)
+    {
+      if ((top = top - (bot - bot_limit)) < top_limit)
+        {
+          ct |= ZMAPGUI_CLAMP_START;
+          top = top_limit;
+        }
+      ct |= ZMAPGUI_CLAMP_END;
+      bot = bot_limit;
+    }
+
+  *top_inout = top;
+  *bot_inout = bot;
+
+  return ct;
+}
 
 /*! @} end of zmapguiutils docs. */
 
