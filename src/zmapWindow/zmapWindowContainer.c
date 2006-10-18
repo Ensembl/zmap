@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Oct  4 15:14 2006 (rds)
+ * Last edited: Oct 18 14:25 2006 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.15 2006-10-04 14:28:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.16 2006-10-18 15:18:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -141,7 +141,7 @@ static void containerPointsCacheResetPoints(ContainerPointsCache cache,
                                             ZMapContainerLevelType level);
 static void containerPointsCacheResetBound(ContainerPointsCache cache,
                                            ZMapContainerLevelType level);
-
+static gboolean containerRootInvokeContainerBGEvent(FooCanvasItem *item, GdkEvent *event, gpointer data);
 
 
 /* Creates a "container" for our sequence features which consists of: 
@@ -208,18 +208,27 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
       container_type   = CONTAINER_PARENT ;
       parent_container = zmapWindowContainerGetParent(FOO_CANVAS_ITEM( parent ));
       parent_data  = g_object_get_data(G_OBJECT(parent_container), CONTAINER_DATA);
+      level = parent_data->level + 1;
       this_spacing = parent_data->child_spacing;
     }
   else
-    container_type = CONTAINER_ROOT ;
+    {
+      container_type = CONTAINER_ROOT ;
+      level = ZMAPCONTAINER_LEVEL_ROOT;
+    }
 
+  zMapAssert(level >  ZMAPCONTAINER_LEVEL_INVALID &&
+             level <= ZMAPCONTAINER_LEVEL_FEATURESET);
 
   container_parent = FOO_CANVAS_GROUP(foo_canvas_item_new(parent,
 							  foo_canvas_group_get_type(),
 							  NULL)) ;
 
+  g_signal_connect(G_OBJECT(container_parent), "event", 
+                   G_CALLBACK(containerRootInvokeContainerBGEvent), NULL);
+
   container_data = g_new0(ContainerDataStruct, 1) ;
-  container_data->level = level ;
+  container_data->level = level;
   container_data->child_spacing = child_spacing ;
   container_data->this_spacing  = this_spacing ;
   container_data->child_redraw_required = FALSE ;
@@ -255,28 +264,47 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 }
 
 /* This is weak and immature ATM, but better than NO type checking for the callback as it was! */
-void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup *c_level_featureset,
+void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup *featureset_container,
                                             zmapWindowContainerZoomChangedCallback handler_cb,
-                                            ZMapWindow data)
+                                            gpointer user_data,
+                                            GDestroyNotify data_destroy_notify)
 {
   ContainerData container_data = NULL;
   ContainerType container_type = CONTAINER_INVALID;
 
-  if(((container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(c_level_featureset), 
+  if(((container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(featureset_container), 
                                                           CONTAINER_TYPE_KEY))) == CONTAINER_PARENT)
-     && (container_data = g_object_get_data(G_OBJECT(c_level_featureset), CONTAINER_DATA))
+     && (container_data = g_object_get_data(G_OBJECT(featureset_container), CONTAINER_DATA))
      && container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET)
     {
-      zmapWindowContainerSetChildRedrawRequired(c_level_featureset, TRUE) ;
-      g_object_set_data(G_OBJECT(c_level_featureset), CONTAINER_REDRAW_CALLBACK,
+      zmapWindowContainerSetChildRedrawRequired(featureset_container, TRUE) ;
+      g_object_set_data(G_OBJECT(featureset_container), CONTAINER_REDRAW_CALLBACK,
                         handler_cb) ;
-      g_object_set_data(G_OBJECT(c_level_featureset), CONTAINER_REDRAW_DATA,
-                        (gpointer)data) ;
+      g_object_set_data_full(G_OBJECT(featureset_container), CONTAINER_REDRAW_DATA,
+                             (gpointer)user_data, data_destroy_notify) ;
     }
   else
     zMapAssertNotReached();
 
   return ;
+}
+
+gboolean zmapWindowContainerIsChildRedrawRequired(FooCanvasGroup *container_parent)
+{
+  ContainerType type = CONTAINER_INVALID ;
+  ContainerData container_data ;
+  gboolean redraw_required = FALSE;
+
+  zMapAssert(container_parent) ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT) ;
+
+  container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA) ;
+
+  redraw_required = container_data->child_redraw_required;
+
+  return redraw_required;
 }
 
 
@@ -522,7 +550,6 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
 					  double height)
 {
   FooCanvasGroup *container_features ;
-  FooCanvasGroup *container_text  = NULL;
   FooCanvasItem *container_background ;
   double x1, y1, x2, y2 ;
   ContainerType type = CONTAINER_INVALID ;
@@ -534,14 +561,7 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
 
   container_features   = zmapWindowContainerGetFeatures(container_parent) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  container_text       = zmapWindowContainerGetText(container_parent) ;  
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   container_background = zmapWindowContainerGetBackground(container_parent) ;
-
-
-
 
   /* Either the caller sets the height or we get the height from the main group.
    * We do this because features may cover only part of the range of the group, e.g. transcripts
@@ -561,17 +581,6 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
 
   /* Get the width from the child group */
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features), &x1, NULL, &x2, NULL) ;
-
-  /* And if there's a text group, that too. */
-  if(container_text != NULL)
-    {
-      double tx1, tx2;
-      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_text), &tx1, NULL, &tx2, NULL) ;
-      if(tx1 < x1)
-        x1 = tx1;
-      if(tx2 > x2)
-        x2 = tx2;
-    }
 
   foo_canvas_item_set(container_background,
                       "x1", x1,
@@ -979,6 +988,58 @@ FooCanvasItem *zmapWindowContainerBlockGetStrandContainer(FooCanvasGroup *block_
   return item;
 }
 
+FooCanvasGroup *zmapWindowContainerGetFeaturesContainerFromItem(FooCanvasItem *feature_item)
+{
+  FooCanvasGroup *features_container = NULL ;
+  ZMapWindowItemFeatureType item_feature_type ;
+  ContainerType type = CONTAINER_INVALID ;
+  FooCanvasItem *parent_item = NULL ;
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item),
+                                                        ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type != ITEM_FEATURE_INVALID) ;
+  
+  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
+    {
+      parent_item = feature_item ;
+    }
+  else
+    {
+      parent_item = feature_item->parent ;
+    }
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(parent_item),
+                                                        ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE ||
+             item_feature_type == ITEM_FEATURE_PARENT) ;
+  
+  /* It's possible for us to be called when we have no parent, e.g. when this routine is
+   * called as a result of a GtkDestroy on one of our parents. */
+  if (parent_item->parent)
+    {
+      features_container = FOO_CANVAS_GROUP(parent_item->parent);
+
+      type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(features_container), CONTAINER_TYPE_KEY)) ;
+
+      zMapAssert(type == CONTAINER_FEATURES) ;
+    }
+
+  return features_container ;
+}
+
+FooCanvasGroup *zmapWindowContainerGetParentContainerFromItem(FooCanvasItem *feature_item)
+{
+  FooCanvasGroup *features_container = NULL, *parent_container = NULL;
+
+  if((features_container = zmapWindowContainerGetFeaturesContainerFromItem(feature_item)))
+    {
+      parent_container = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(features_container));
+      zMapAssert(parent_container) ;
+    }
+
+  return parent_container;
+}
+
 
 /*
  * Destroys a container, so long as it's a ContainerType CONTAINER_PARENT or CONTAINER_ROOT.
@@ -1137,6 +1198,7 @@ static void eachContainer(gpointer data, gpointer user_data)
                                      &(this_points->coords[1]),
                                      &(this_points->coords[2]),
                                      &(this_points->coords[3]));
+          containerSetMaxBackground(container, this_points, container_data);
           break;
         case ZMAPCONTAINER_LEVEL_INVALID:
         default:
@@ -1252,25 +1314,6 @@ static void printItem(FooCanvasItem *item, int indent, char *prefix)
 }
 
 
-static void redrawChildrenCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-  zmapWindowContainerZoomChangedCallback redraw_cb ;
-
-  
-  if ((redraw_cb = g_object_get_data(G_OBJECT(item), CONTAINER_REDRAW_CALLBACK)))
-    {
-      ZMapWindow window ;
-
-      window = (ZMapWindow)g_object_get_data(G_OBJECT(item), CONTAINER_REDRAW_DATA) ;
-
-      /* do the callback.... */
-      redraw_cb(item, zMapWindowGetZoomFactor(window), window) ;
-    }
-
-  return ;
-}
-
 static void redrawColumn(FooCanvasItem *container, ContainerData data)
 {
   zmapWindowContainerZoomChangedCallback redraw_cb = NULL;
@@ -1279,12 +1322,18 @@ static void redrawColumn(FooCanvasItem *container, ContainerData data)
 
   if((redraw_cb = g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_CALLBACK )))
     {
+#ifdef RDS_DONT_INCLUDE
       ZMapWindow window = NULL;
 
       window = (ZMapWindow)g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_DATA);
 
       /* do the callback.... */
       redraw_cb(container, zMapWindowGetZoomFactor(window), window) ;
+#endif
+      gpointer redraw_data = NULL;
+      redraw_data = g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_DATA);
+      /* do the callback.... */
+      redraw_cb(container, 0.0, redraw_data) ;
     }
 
   return ;
@@ -1386,6 +1435,7 @@ static void containerMoveToZero(FooCanvasGroup *container)
   return ;
 }
 
+/* This MUST update the long items!!! Hence container_data!!! */
 static void containerSetMaxBackground(FooCanvasGroup *container, 
                                       FooCanvasPoints *this_points, 
                                       ContainerData container_data)
@@ -1394,8 +1444,27 @@ static void containerSetMaxBackground(FooCanvasGroup *container,
   FooCanvasItem *bg = NULL;
   
   bg = zmapWindowContainerGetBackground(container);
-  
-  nx1 = ny1 = 0.0;
+
+  /* It is worth a get_bounds call here??
+   * ************************************
+   * foo_canvas_item_get_bounds(bg, &tx1, &ty1, &tx2, &ty2);
+   * if(tx1 != nx1 && tx2 != nx2 && ty1 != ny1 && ty2 != ny2)
+   *   item_set(...); longItemCheck(...)
+   * ***********************************
+   * Should we update this_points???? Only if x changes...
+   */
+
+  /* Also needs to set the background to the FULL height not 
+   * just limited to features... */
+  nx1 = 0.0;//this_points->coords[0];
+  ny1 = 0.0;//this_points->coords[1];
+  nx1 = this_points->coords[0];
+  ny1 = this_points->coords[1];
+
+  /* nx1 and ny1 aren't correct. They should be 0.0 and 0.0.
+   * Bumping knocks this off though and this->points[0,1] 
+   * are both negative then. */
+
   nx2 = this_points->coords[2];
   ny2 = this_points->coords[3];
   foo_canvas_item_set(bg,
@@ -1404,6 +1473,7 @@ static void containerSetMaxBackground(FooCanvasGroup *container,
                       "x2", nx2,
                       "y2", ny2,
                       NULL);
+
   return ;
 }
 
@@ -1531,4 +1601,42 @@ static void containerPointsCacheResetBound(ContainerPointsCache cache,
     *bound = 0.0;
 
   return ;
+}
+
+/* the foo canvas event stuff doesn't really do events by point although 
+ * it says it does...
+ *
+ * It does an invoke_point to find a leaf item.
+ * then while(item && !finished){ ... item = item->parent; ... }
+ * 
+ * This doesn't quite work for us in our containers...
+ * Our organisation is a little like this, where containers(group)
+ * have a bg(item) and a features(group) which is the nxt container. 
+ *
+ * Root -> Align -> Block -> Strand -> Set -> Feature *
+ *  \       \        \        \         \      \
+ *   bg *    bg *     bg *     bg *      bg *   bg *
+ * if handlers are attached(*) 
+ * a feature handler returning false will not make a feature bg 
+ * handler get called, nor a set bg handler, nor ...
+ * 
+ * containerRootInvokeContainerBGEvent calls the bg handler for you.
+ * I hope it's fast enough...
+ */
+static gboolean containerRootInvokeContainerBGEvent(FooCanvasItem *item, GdkEvent *event, gpointer data)
+{
+  FooCanvasItem *background = NULL;
+  gboolean event_handled = FALSE;
+  int item_event = 0, detail = 0, count = 0, *ids;
+
+  background = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(item));
+
+  ids = g_signal_list_ids(foo_canvas_item_get_type(), &count);
+
+  zMapAssert(count == 1 && ids); /* failure here, possibly means the next bit is no longer true.
+                                  * item_event == ITEM_EVENT 
+                                  * (foo-canvas.c enum{ ITEM_EVENT, ITEM_LAST_SIGNAL }) */
+  g_signal_emit(GTK_OBJECT(background), ids[item_event], detail, event, &event_handled);
+
+  return event_handled;
 }

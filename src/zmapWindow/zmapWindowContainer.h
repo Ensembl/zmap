@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Oct  4 14:00 2006 (rds)
+ * Last edited: Oct 13 08:45 2006 (rds)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.10 2006-10-04 14:28:11 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.11 2006-10-18 15:18:30 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -69,9 +69,11 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  GdkColor *background_border_colour,
 					  ZMapWindowLongItems long_items) ;
 
-void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup* correct_container_type,
+void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup* featureset_container,
                                             zmapWindowContainerZoomChangedCallback handler_cb,
-                                            ZMapWindow data);
+                                            gpointer user_data,
+                                            GDestroyNotify data_destroy_notify);
+gboolean zmapWindowContainerIsChildRedrawRequired(FooCanvasGroup *container_parent);
 void zmapWindowContainerSetChildRedrawRequired(FooCanvasGroup *container_parent,
 					       gboolean redraw_required) ;
 
@@ -83,6 +85,11 @@ ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_par
 ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group) ;
 double zmapWindowContainerGetSpacing(FooCanvasGroup *column_group) ;
 FooCanvasGroup *zmapWindowContainerGetStrandGroup(FooCanvasGroup *strand_parent, ZMapStrand strand) ;
+
+/* These work from ... */
+FooCanvasGroup *zmapWindowContainerGetFeaturesContainerFromItem(FooCanvasItem *feature_item);
+FooCanvasGroup *zmapWindowContainerGetParentContainerFromItem(FooCanvasItem *feature_item);
+
 
 void zmapWindowContainerReposition(FooCanvasGroup *container) ;
 gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
