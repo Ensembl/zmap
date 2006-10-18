@@ -20,7 +20,7 @@ $ cd foocanvas/libfoocanvas
 $ gcvs diff -u > ZMap/foocanvas/support/libfoocanvas-VERSION.patch
 
 
-store in ZMap cvs. Make sure '-ko' is used to STOP keyword substitution ($Id: DEV_NOTES,v 1.4 2006-03-27 11:18:58 rds Exp $).
+store in ZMap cvs. Make sure '-ko' is used to STOP keyword substitution ($Id: DEV_NOTES,v 1.5 2006-10-18 20:14:35 rds Exp $).
 
 $ cd ZMap/foocanvas/support/
 $ cvs add -ko -m'message' libfoocanvas-VERSION.patch
@@ -36,11 +36,22 @@ $ patch -p0 < ZMap/foocanvas/support/libfoocanvas-VERSION.patch
 Creating the tar.gz
 -------------------
 
-$ gcvs export -rHEAD foocanvas
-$ mv foocanvas libfoocanvas-VERSION
+$ gcvs co -d libfoocanvas-VERSION foocanvas
+
+*** additional files fix ***
+
+now we have additional files this step is a little more difficult and makes me
+think we should just distribute a fully patched tar.gz.
+
+$ cd libfoocanvas-VERSION/libfoocanvas/
+$ patch -p0 -u < ../path/to/additional_files/Makefile.am.patch
+$ cp ../path/to/additional_files/*.{c,h} .
+****************************
 
 now make all the autoconf stuff.  I had to do this first.
-$ export AUTOMAKE=~/bin/automake
+NOT $ export AUTOMAKE=~/bin/automake
+try this...
+$ export AUTOMAKE=/nfs/team71/acedb/zmap/prefix/LINUX/bin/automake
 
 aclocal needs to be told where it's m4 files are.
 ~zmap/prefix/LINUX/share/aclocal
@@ -48,7 +59,9 @@ aclocal needs to be told where it's m4 files are.
 are good bets at the moment. glib-gettext.m4 seems to be a dependancy 
 which breaks everything silently....
 
-$ export ACLOCAL_FLAGS="-I ~/share/aclocal -I ~/share/aclocal-1.9"
+NOT $ export ACLOCAL_FLAGS="-I ~/share/aclocal -I ~/share/aclocal-1.9"
+try this...
+$ export ACLOCAL_FLAGS='-I /nfs/team71/acedb/zmap/prefix/LINUX/share/aclocal -I /nfs/team71/acedb/zmap/prefix/LINUX/share/aclocal-1.9'
 autogen.sh also requires gnome-common 
 
 $ gcvs co gnome-common; ./configure; make; make install
@@ -61,8 +74,13 @@ $ ./autogen.sh
 
 $ make dist-gzip
   this uses VERSION from configure.in (currently 0.1), I was using YYYYMMDD, who knows what's best.
+  to change this edit the Makefile
+-distdir = $(PACKAGE)-$(VERSION)
++distdir = $(PACKAGE)-YYYYMMDD
+
 
 $ mv libfoocanvas-VERSION.tar.gz ZMap/foocanvas/support/
+$ cvs add -ko -m'message' libfoocanvas-VERSION.tar.gz
 $ cvs commit -m'message' libfoocanvas-VERSION.tar.gz
 
 Should alter untar_patch.sh to set the version variable to VERSION and
@@ -74,6 +92,9 @@ Test by running ./untar_patch.sh and seeing no errors in patch and a complete bu
 
 ALPHA builds
 ------------
+
+...NO LONGER SUPPORTED...
+-------------------------
 
 Now auto{conf,make}, m4 and libtool are installed
 
