@@ -25,11 +25,13 @@
  * Description: DNA manipulation functions.
  *
  * HISTORY:
- * Last edited: Oct 11 10:32 2006 (edgrif)
+ * Last edited: Oct 18 11:22 2006 (edgrif)
  * Created: Fri Oct  6 14:26:08 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.h,v 1.1 2006-10-11 11:36:16 edgrif Exp $
+ * CVS info:   $Id: zmapDNA.h,v 1.2 2006-10-18 13:36:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_DNA_H
+#define ZMAP_DNA_H
 
 #include <glib.h>
 
@@ -52,3 +54,5 @@ gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
 			  char **start_out, char **end_out, char **match_str) ;
 GList *zMapDNAFindAllMatches(char *dna, char *query, int from, int length,
 			     int max_errors, int max_Ns, gboolean return_matches) ;
+
+#endif /* ZMAP_DNA_H */
