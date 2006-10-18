@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  4 14:25 2006 (rds)
+ * Last edited: Oct 17 19:55 2006 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.33 2006-10-04 14:28:17 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.34 2006-10-18 15:19:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1885,12 +1885,12 @@ static void redraw3FrameCol(FooCanvasGroup *container, FooCanvasPoints *points, 
 	}
 
       /* Recreate all the frame sensitive columns as single columns and populate them with features. */
-      g_list_foreach(window->feature_context->feature_set_names, createSetColumn, &redraw_data) ;
+      g_list_foreach(window->feature_set_names, createSetColumn, &redraw_data) ;
 
       /* Now make sure the columns are in the right order. */
-      zmapWindowSortCols(window->feature_context->feature_set_names, forward, FALSE) ;
+      zmapWindowSortCols(window->feature_set_names, forward, FALSE) ;
       if (window->show_3_frame_reverse)
-	zmapWindowSortCols(window->feature_context->feature_set_names, reverse, TRUE) ;
+	zmapWindowSortCols(window->feature_set_names, reverse, TRUE) ;
 
       /* Now remove any empty columns. */
       if (!(window->keep_empty_cols))
@@ -2089,7 +2089,7 @@ static void redrawAs3FrameCols(FooCanvasGroup *container, FooCanvasPoints *point
 
 
       /* We need to find the 3 frame position and use this to insert stuff.... */
-      if ((redraw_data.frame3_pos = g_list_index(window->feature_context->feature_set_names,
+      if ((redraw_data.frame3_pos = g_list_index(window->feature_set_names,
 						 GINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME))))
 	  == -1)
 	{
@@ -2104,7 +2104,7 @@ static void redrawAs3FrameCols(FooCanvasGroup *container, FooCanvasPoints *point
 	{
 	  for (redraw_data.frame = ZMAPFRAME_0 ; redraw_data.frame <= ZMAPFRAME_2 ; redraw_data.frame++)
 	    {
-	      g_list_foreach(window->feature_context->feature_set_names, create3FrameCols, &redraw_data) ;
+	      g_list_foreach(window->feature_set_names, create3FrameCols, &redraw_data) ;
 	    }
 
 	  /* Remove empty cols.... */
