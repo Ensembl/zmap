@@ -40,7 +40,7 @@ fi
 
 webpublish=''
 
-web_site=/nfs/WWWdev/SANGER_docs/htdocs/Software/analysis/zmap'
+web_site='/nfs/WWWdev/SANGER_docs/htdocs/Software/analysis/zmap'
 
 doc_dirs="web/* src/${ZBbuildOSDir}docs/ZMap/html doc"
 
