@@ -1,0 +1,9 @@
+<!--#set var="banner" value="Release Notes: 18th October 2006"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h2>Release notes to go here...</h2>
+
+
+<!--#include virtual="/perl/footer"-->
+
