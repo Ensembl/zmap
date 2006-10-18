@@ -26,16 +26,16 @@
  *              code release.
  *
  * HISTORY:
- * Last edited: Oct 18 11:35 2006 (edgrif)
+ * Last edited: Oct 18 14:06 2006 (edgrif)
  * Created: Wed Oct 18 11:19:12 2006 (edgrif)
- * CVS info:   $Id: zmapWebPages.h,v 1.1 2006-10-18 10:39:03 edgrif Exp $
+ * CVS info:   $Id: zmapWebPages.h,v 1.2 2006-10-18 13:37:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WEBPAGES_H
 #define ZMAP_WEBPAGES_H
 
 
-#define ZMAPWEB_URL "http://dev.acedb.org/ZMap"
+#define ZMAPWEB_URL "http://wwwdev.sanger.ac.uk/Software/analysis/ZMap"
 
 #define ZMAPWEB_RELEASE_NOTES_DIR "doc/Release_notes"
 
