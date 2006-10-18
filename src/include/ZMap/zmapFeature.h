@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Oct 13 16:48 2006 (edgrif)
+ * Last edited: Oct 18 16:01 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.92 2006-10-16 10:26:51 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.93 2006-10-18 15:06:11 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -519,6 +519,7 @@ typedef struct ZMapFeatureTypeStyleStruct_
 							       are shown. */
 
     unsigned int directional_end : 1 ;			    /* Display pointy ends on exons etc. */
+
   } opts ;
 
   struct
@@ -552,8 +553,17 @@ typedef struct ZMapFeatureTypeStyleStruct_
 } ZMapFeatureTypeStyleStruct ;
 
 
+typedef enum
+  {
+    ZMAP_CONTEXT_EXEC_STATUS_OK,
+    ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND,
+    ZMAP_CONTEXT_EXEC_STATUS_ERROR
+  } ZMapFeatureContextExecuteStatus;
 
-
+typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
+                                                                gpointer list_data,
+                                                                gpointer user_data,
+                                                                char   **error);
 /* Callback function for calls to zMapFeatureDumpFeatures(), caller can use this function to
  * format features in any way they want. */
 typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
@@ -630,15 +640,20 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
 				 GError **error) ;
 void zMapFeatureContextExecute(ZMapFeatureAny feature_any, 
                                ZMapFeatureStructType stop, 
-                               GDataForeachFunc callback, 
+                               ZMapGDataRecurseFunc callback, 
                                gpointer data);
 void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any, 
                                    ZMapFeatureStructType stop, 
-                                   GDataForeachFunc callback, 
+                                   ZMapGDataRecurseFunc callback, 
                                    gpointer data);
+void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any, 
+                                       ZMapFeatureStructType stop, 
+                                       ZMapGDataRecurseFunc start_callback, 
+                                       ZMapGDataRecurseFunc end_callback, 
+                                       gpointer data);
 void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any, 
                                      ZMapFeatureStructType stop, 
-                                     GDataForeachFunc callback, 
+                                     ZMapGDataRecurseFunc callback, 
                                      gpointer data);
 
 void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
