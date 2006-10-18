@@ -37,10 +37,11 @@ ZBExportOSVars
 if [ ! -z $ZBbuildOSDir ] ; then
     ZBbuildOSDir=$ZBbuildOSDir/
 fi
+
 webpublish=''
-#web_site='/nfs/WWWdev/ACEDB_docs/htdocs/Development/developers_only/ZMap'
-#web_site='/nfs/WWWdev/ACEDB_docs/htdocs/ZMap'
-web_site='/tmp'
+
+web_site=/nfs/WWWdev/SANGER_docs/htdocs/Software/analysis/zmap'
+
 doc_dirs="web/* src/${ZBbuildOSDir}docs/ZMap/html doc"
 
 
