@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 11 10:20 2006 (edgrif)
+ * Last edited: Oct 13 14:07 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.153 2006-10-11 09:47:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.154 2006-10-18 15:20:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #include <ZMap/zmapConfig.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
-
+#include <zmapWindowItemFactory.h>
 
 /* these will go when scale is in separate window. */
 #define SCALEBAR_OFFSET   0.0
@@ -213,6 +213,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
   zMapAssert(window && full_context && diff_context) ;
 
+  window->item_factory = zmapWindowFToIFactoryOpen(window->context_to_item, window->long_items);
+  zmapWindowFeatureFactoryInit(window);
+
   /* Set up colours. */
   if (!window->done_colours)
     {
@@ -360,6 +363,8 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
   if(debug_containers)
     zmapWindowContainerPrint(root_group) ;
+
+  zmapWindowFToIFactoryClose(window->item_factory);
 
   return ;
 }
@@ -875,7 +880,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   /* Add _all_ the types cols for the block, at this stage we don't know if they have features
    * and also the user may want them displayed even if empty.... */
-  g_list_foreach(canvas_data->full_context->feature_set_names, createSetColumn, canvas_data) ;
+  g_list_foreach(canvas_data->window->feature_set_names, createSetColumn, canvas_data) ;
 
   /* Now draw all features within each column, note that this operates on the feature context
    * so is called only for feature sets that contain features. */
