@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug 10 14:24 2006 (edgrif)
+ * Last edited: Oct 17 17:53 2006 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.8 2006-08-10 15:11:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.9 2006-10-18 15:25:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,6 +82,7 @@ typedef struct _ZMapScaleBarStruct
 
   gboolean force_multiples_of_five;
   double zoom_factor;
+  double projection_factor;
 
   int start;
   int end;
@@ -103,7 +104,8 @@ typedef enum
 static gboolean initialiseScale(ZMapScaleBar obj_out,
                                 double start, double end, 
                                 double zoom, double line,
-				gboolean display_forward_coords, int origin);
+				gboolean display_forward_coords, int origin,
+                                double projection_factor);
 static void drawScaleBar(ZMapScaleBar scaleBar, 
                          FooCanvasGroup *group, 
                          PangoFontDescription *font,
@@ -396,6 +398,56 @@ void zmapWindowRulerCanvasHideHorizon(ZMapWindowRulerCanvas obj)
   return ;
 }
 
+void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, double start, double end)
+{
+  FooCanvas *canvas = NULL;
+  ZMapScaleBarStruct scaleBar = {0};
+  PangoFontDescription *font_desc = NULL;
+  PangoFont *font = NULL;
+  double font_width  = 0.0;
+  double line_height = 0.0;
+  double zoom_factor = 0.0;
+
+  canvas = FOO_CANVAS(FOO_CANVAS_ITEM(parent)->canvas);
+
+  zoom_factor = FOO_CANVAS(canvas)->pixels_per_unit_y;
+
+  if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(canvas), 
+                               g_list_append(NULL, "Monospace"), 10, PANGO_WEIGHT_NORMAL,
+                               &font, &font_desc))
+    printf("Couldn't get fixed width font\n");
+  else
+    {
+      FooCanvasItem *item ;
+      PangoLayout *playout;
+      int iwidth = -1, iheight = -1;
+      
+      item = foo_canvas_item_new(parent,
+                                 FOO_TYPE_CANVAS_TEXT,
+                                 "x",         0.0, 
+                                 "y",         0.0, 
+                                 "text",      "X",
+                                 "font_desc", font_desc,
+                                 NULL);
+      playout = FOO_CANVAS_TEXT(item)->layout;
+      
+      pango_layout_get_pixel_size( playout , &iwidth, &iheight );
+      
+      font_width  = (double)iwidth;
+      line_height = (double)iheight;
+      
+      gtk_object_destroy(GTK_OBJECT(item));
+    }
+
+  //line_height      = line_height / zoom_factor;
+
+  if(initialiseScale(&scaleBar, start, end, zoom_factor, line_height, TRUE, 1, project_at))
+    drawScaleBar(&scaleBar, FOO_CANVAS_GROUP(parent), font_desc, TRUE);
+  
+
+  return ;
+}
+
 
 /* INTERNALS */
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data)
@@ -563,7 +615,7 @@ static FooCanvasItem *rulerCanvasDrawScale(FooCanvas *canvas,
   zoom_factor = FOO_CANVAS(canvas)->pixels_per_unit_y;
   height      = height / zoom_factor;
 
-  if(initialiseScale(&scaleBar, start, end, zoom_factor, height, display_forward_coords, origin))
+  if(initialiseScale(&scaleBar, start, end, zoom_factor, height, display_forward_coords, origin, 1.0))
     drawScaleBar(&scaleBar, FOO_CANVAS_GROUP(group), font, text_left);
 
   if(scaleBar.unit)
@@ -577,7 +629,8 @@ static gboolean initialiseScale(ZMapScaleBar obj_out,
                                 double end, 
                                 double zoom, 
                                 double line,
-				gboolean display_forward_coords, int origin)
+				gboolean display_forward_coords, int origin,
+                                double projection_factor)
 {
   gboolean good = TRUE;
   int majorUnits[]      = {1   , 1000, 1000000, 1000000000, 0};
@@ -597,9 +650,10 @@ static gboolean initialiseScale(ZMapScaleBar obj_out,
   obj_out->end    = (int)end;
   obj_out->bottom = end;
   obj_out->force_multiples_of_five = ZMAP_FORCE_FIVES;
-  obj_out->zoom_factor = zoom;
+  obj_out->zoom_factor = zoom * projection_factor;
   obj_out->display_forward_coords = display_forward_coords ;
   obj_out->origin = origin ;
+  obj_out->projection_factor = projection_factor;
 
   /* line * zoom is constant @ 14 on my machine, 
    * simply increasing this decreases the number of majors (makes it faster),
@@ -746,15 +800,15 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
     {
       /* More conditionals than I intended here... */
       /* char *digitUnit = NULL; */
-      double i_d = (double)i ;				    /* Save a lot of casting... */
+      double i_d = (double)i *scaleBar->projection_factor ; /* Save a lot of casting, typing and multiplication... */
       int scale_pos ;
       
       if (n % ZMAP_SCALE_MINORS_PER_MAJOR) /* Minors */
         {
           if (i < scaleBar->start)
             zMapDrawLine(lines, 
-                         scale_min, (double)scaleBar->start, 
-                         scale_line, (double)scaleBar->start, 
+                         scale_min, (double)scaleBar->start * scaleBar->projection_factor, 
+                         scale_line, (double)scaleBar->start * scaleBar->projection_factor, 
                          &black, 1.0) ;
           else if (i == scaleBar->start && n < 5)
             {                   /* n < 5 to stop overlap of digitUnit at some zooms */
@@ -766,16 +820,25 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
 		scale_pos = scaleBar->start ;
               g_string_printf(digitUnitStr, "%d", scale_pos);
 
-              zMapDrawLine(lines, scale_min, i_d, scale_line, i_d, &black, 1.0) ;
+              zMapDrawLine(lines, 
+                           scale_min,  i_d, 
+                           scale_line, i_d, 
+                           &black, 1.0) ;
             }
           else
-            zMapDrawLine(lines, scale_min, i_d, scale_line, i_d, &black, 1.0) ;
+            zMapDrawLine(lines, 
+                         scale_min,  i_d, 
+                         scale_line, i_d, 
+                         &black, 1.0) ;
         }
       else                      /* Majors */
         {
           if (i && i >= scaleBar->start)
             {
-              zMapDrawLine(lines, scale_maj, i_d, scale_line, i_d, &black, 1.0);
+              zMapDrawLine(lines, 
+                           scale_maj,  i_d, 
+                           scale_line, i_d, 
+                           &black, 1.0);
               /* digitUnit = g_strdup_printf("%d%s", 
                                           (i / scaleBar->base), 
                                           scaleBar->unit); */
@@ -799,8 +862,8 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
 	      /* I guess this means "do the first one".... */
 
               zMapDrawLine(lines, 
-                           scale_min, (double)scaleBar->start, 
-                           scale_line, (double)scaleBar->start, 
+                           scale_min, (double)scaleBar->start * scaleBar->projection_factor, 
+                           scale_line, (double)scaleBar->start * scaleBar->projection_factor, 
                            &black, 1.0);
               /* digitUnit = g_strdup_printf("%d", scaleBar->start); */
 
@@ -844,7 +907,7 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
           item = foo_canvas_item_new(text,
                                      foo_canvas_text_get_type(),
                                      "x",          x,
-                                     "y",          (i_d < (double)scaleBar->start ? (double)scaleBar->start : i_d),
+                                     "y",          (i_d < (double)scaleBar->start ? (double)scaleBar->start * scaleBar->projection_factor : i_d),
                                      "text",       digitUnitStr->str,
                                      "font_desc",  font,
                                      "fill_color", "black",
@@ -864,9 +927,9 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
 				                                            
   /* fill out the points */
   points->coords[0] = scale_line ;
-  points->coords[1] = scaleBar->top ;
+  points->coords[1] = scaleBar->top * scaleBar->projection_factor;
   points->coords[2] = scale_line ;
-  points->coords[3] = scaleBar->bottom ;
+  points->coords[3] = scaleBar->bottom * scaleBar->projection_factor;
 
   /* draw the line, unfortunately we need to use GDK_CAP_PROJECTING here to make it work */
   foo_canvas_item_new(lines,
