@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 11 17:12 2006 (edgrif)
+ * Last edited: Oct 18 14:42 2006 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.31 2006-10-16 10:27:58 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.32 2006-10-18 15:13:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -653,6 +653,7 @@ GList *zMapStyleGetAllPredefined(void)
       {0},						    /* DNA */
       {0},						    /* Locus */
       {0},						    /* Gene Finder */
+      {0},                                                  /* Scale bar */
       {0}						    /* End value. */
     } ;
 
@@ -696,6 +697,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->opts.hide_initially = TRUE ;
       curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
 
+
       /* GeneFinderFeatures */
       curr++ ;
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_GFF_NAME) ;
@@ -703,6 +705,14 @@ GList *zMapStyleGetAllPredefined(void)
       curr->description = ZMAP_FIXED_STYLE_GFF_NAME_TEXT ;
       curr->opts.hide_always = TRUE ;
       curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+      
+      /* Scale bar */
+      curr++;
+      curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
+      curr->unique_id   = zMapStyleCreateID(ZMAP_FIXED_STYLE_SCALE_NAME);
+      curr->description = ZMAP_FIXED_STYLE_SCALE_TEXT;
+      curr->opts.hide_always = TRUE;
+      curr->overlap_mode     = ZMAPOVERLAP_COMPLETE ;
     }
 
   curr = &(predefined_styles[0]) ;
