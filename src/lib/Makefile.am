@@ -97,6 +97,8 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures_P.h \
 	$(top_srcdir)/zmapWindow/zmapWindowEditor.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFrame.c \
+	$(top_srcdir)/zmapWindow/zmapWindowItemHighlight.c \
+	$(top_srcdir)/zmapWindow/zmapWindowItemFactory.c \
 	$(top_srcdir)/zmapWindow/zmapWindowItemHash.c \
 	$(top_srcdir)/zmapWindow/zmapWindowList.c \
 	$(top_srcdir)/zmapWindow/zmapWindowLongItems.c \
@@ -112,6 +114,9 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDraw.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDump.c \
 	$(top_srcdir)/zmapWindow/zmapWindowExport.c \
+	$(top_srcdir)/zmapWindow/zmapWindowNavigator.c \
+	$(top_srcdir)/zmapWindow/zmapWindowNavigatorMenus.c \
+	$(top_srcdir)/zmapWindow/zmapWindowNavigatorWidget.c \
 	$(top_srcdir)/zmapWindow/zmapWindowPrint.c \
 	$(top_srcdir)/zmapWindow/zmapWindowRuler.c \
 	$(top_srcdir)/zmapWindow/zmapWindowContainer.c \
