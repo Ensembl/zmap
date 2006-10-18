@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 13 15:49 2006 (edgrif)
+ * Last edited: Oct 18 14:14 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.55 2006-10-16 10:51:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.56 2006-10-18 15:22:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,7 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
-
+#include <zmapWindowItemFactory.h>
 
 typedef struct 
 {
@@ -62,7 +62,6 @@ typedef struct
 } ReparentDataStruct, *ReparentData ;
 
 
-
 /* So we can redraw a featureset */
 static void drawEachFeature(GQuark key_id, gpointer data, gpointer user_data);
 
@@ -73,7 +72,7 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
 					double feature_offset,
 					double x1, double y1, double x2, double y2,
 					ZMapFeatureTypeStyle style,
-					ZMapWindow window) ;
+					ZMapWindow window);
 static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					    double feature_offset,
 					    double x1, double feature_top,
@@ -166,10 +165,22 @@ static void printItem(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-static void oneBlockHasDNA(GQuark key, 
-                           gpointer data, 
-                           gpointer user_data);
+static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key, 
+                                                      gpointer data, 
+                                                      gpointer user_data,
+                                                      char **error_out);
 
+static void factoryItemCreated(FooCanvasItem            *new_item,
+                               ZMapWindowItemFeatureType new_item_type,
+                               ZMapFeature               full_feature,
+                               ZMapWindowItemFeature     sub_feature,
+                               double                    new_item_y1,
+                               double                    new_item_y2,
+                               gpointer                  handler_data);
+static gboolean factoryFeatureSizeReq(ZMapFeature feature, 
+                                      double *limits_array, 
+                                      double *points_array_inout, 
+                                      gpointer handler_data);
 
 static double getWidthFromScore(ZMapFeatureTypeStyle style, double score) ;
 
@@ -396,6 +407,19 @@ ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature)
   return frame ;
 }
 
+void zmapWindowFeatureFactoryInit(ZMapWindow window)
+{
+  ZMapWindowFToIFactoryProductionTeamStruct factory_helpers = {NULL};
+
+  factory_helpers.feature_size_request = factoryFeatureSizeReq;
+  factory_helpers.item_created         = factoryItemCreated;
+
+  zmapWindowFToIFactorySetup(window->item_factory, window->config.feature_line_width,
+                             &factory_helpers, (gpointer)window);
+
+  return ;
+}
+
 
 /* Called to draw each individual feature. */
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature)
@@ -412,8 +436,6 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   double feature_offset;
   double start_x, end_x ;
 
-
-  /* These should go in container some time.... */
   set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
   
@@ -435,14 +457,28 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
       return NULL ;
     }
 
+  /* These should be parameters, rather than continually fetch them, caller will almost certainly know these! */
   set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET) ;
   block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set, ZMAPFEATURE_STRUCT_BLOCK) ;
   alignment = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_ALIGN) ;
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)alignment, ZMAPFEATURE_STRUCT_CONTEXT) ;
 
-
-  /* Retrieve the parent col. group/id. */
+ /* Retrieve the parent col. group/id. */
   column_group = zmapWindowContainerGetFeatures(set_group) ;
+
+  //#ifdef RDS_THESE_NEED_A_LITTLE_BIT_OF_CHECKING
+  new_feature = zmapWindowFToIFactoryRunSingle(window->item_factory,
+                                               set_group, 
+                                               context, 
+                                               alignment, 
+                                               block, 
+                                               set, 
+                                               feature);
+  return new_feature;
+  //#endif
+
+  /* Get the styles table from the column and look for the features style.... */
+
 
   /* Start/end of feature within alignment block.
    * Feature position on screen is determined the relative offset of the features coordinates within
@@ -741,7 +777,6 @@ static FooCanvasItem *createParentGroup(FooCanvasGroup *parent,
   return grp ;
 }
 
-
 static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					double feature_offset,
 					double x1, double y1, double x2, double y2,
@@ -756,8 +791,13 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
   if (featureClipItemToDraw(feature, &y1, &y2))
     return NULL ;
 
+#ifdef RDS_THESE_NEED_A_LITTLE_BIT_OF_CHECKING
+  if(window)
+    line_width = window->config.feature_line_width ;
+  else
+#endif
 
-  line_width = window->config.feature_line_width ;
+    line_width = 1.0;
 
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
 
@@ -857,8 +897,8 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
 				 outline, background, 0.0) ;
     }
 
+  
   attachDataToItem(feature_item, window, feature, ITEM_FEATURE_SIMPLE, NULL, TRUE);
-
   zmapWindowLongItemCheck(window->long_items, feature_item, y1, y2) ;
 
   return feature_item ;
@@ -1326,6 +1366,169 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
   return feature_item ;
 }
 
+static void fuzzyTableDimensions(double region_range, double trunc_col, 
+                                 double chars_per_base, int *row, int *col,
+                                 double *height_inout, int *rcminusmod_out)
+{
+  double orig_height, final_height, fl_height, cl_height;
+  double temp_rows, temp_cols, text_height, tmp_mod = 0.0;
+  gboolean row_precedence = FALSE;
+
+  region_range--;
+  region_range *= chars_per_base;
+
+  orig_height = text_height = *height_inout * chars_per_base;
+  temp_rows   = region_range / orig_height     ;
+  fl_height   = region_range / floor(temp_rows);
+  cl_height   = region_range / ceil(temp_rows) ;
+
+  if(((region_range / temp_rows) > trunc_col))
+    row_precedence = TRUE;
+  
+  if(row_precedence)            /* dot dot dot */
+    {
+      /* printf("row_precdence\n"); */
+      if(cl_height < fl_height && ((fl_height - cl_height) < (orig_height / 8)))
+        final_height = cl_height;
+      else
+        final_height = fl_height;
+
+      temp_rows = floor(region_range / final_height);
+      temp_cols = floor(final_height);
+    }
+  else                          /* column_precedence */
+    {
+      double tmp_rws, tmp_len, sos;
+      /* printf("col_precdence\n"); */
+
+      if((sos = orig_height - 0.5) <= floor(orig_height) && sos > 0.0)
+        temp_cols = final_height = floor(orig_height);
+      else
+        temp_cols = final_height = ceil(orig_height);
+
+      /*
+      printf(" we're going to miss %f bases at the end if using %f cols\n", 
+             (tmp_mod = fmod(region_range, final_height)), final_height);
+      */
+
+      if(final_height != 0.0 && tmp_mod != 0.0)
+        {
+          tmp_len = region_range + (final_height - fmod(region_range, final_height));
+          tmp_rws = tmp_len / final_height;
+          
+          final_height = (region_range + 1) / tmp_rws;
+          temp_rows    = tmp_rws;
+
+          /* 
+          printf("so modifying... tmp_len=%f, tmp_rws=%f, final_height=%f\n", 
+                 tmp_len, tmp_rws, final_height);
+          */
+        }
+      else if(final_height != 0.0)
+        temp_rows = floor(region_range / final_height);
+
+    }
+
+  /* sanity */
+  if(temp_rows > region_range)
+    temp_rows = region_range;
+
+#ifdef RDS_DONT_INCLUDE
+  printf("rows=%f, height=%f, range=%f, would have been min rows=%f & height=%f, or orignal rows=%f & height=%f\n", 
+         temp_rows, final_height, region_range,
+         region_range / fl_height, fl_height,
+         region_range / orig_height, orig_height);
+#endif
+
+  if(height_inout)
+    *height_inout = text_height = final_height / chars_per_base;
+  if(row)
+    *row = (int)temp_rows;
+  if(col)
+    *col = (int)temp_cols;
+  if(rcminusmod_out)
+    *rcminusmod_out = (int)(temp_rows * temp_cols - tmp_mod);
+
+  return ;
+}
+
+
+
+static ZMapDrawTextIterator zmapDrawTextIteratorBuild(double feature_start, double feature_end,
+                                                      double feature_offset,
+                                                      double scroll_start,  double scroll_end,
+                                                      double text_width,    double text_height, 
+                                                      char  *full_text,     int    bases_per_char,
+                                                      gboolean numbered,
+                                                      PangoFontDescription *font)
+{
+  int tmp;
+  double column_width = 300.0, chars_per_base, feature_first_char, feature_first_base;
+  ZMapDrawTextIterator iterator   = g_new0(ZMapDrawTextIteratorStruct, 1);
+
+  column_width  /= bases_per_char;
+  chars_per_base = 1.0 / bases_per_char;
+
+  iterator->seq_start      = feature_start;
+  iterator->seq_end        = feature_end;
+  iterator->offset_start   = floor(scroll_start - feature_offset);
+
+  feature_first_base  = floor(scroll_start) - feature_start;
+  tmp                 = (int)feature_first_base % (int)bases_per_char;
+  feature_first_char  = (feature_first_base - tmp) / bases_per_char;
+
+  /* iterator->offset_start += tmp; */ /* Keep this in step with the bit above */
+
+  iterator->x            = 0.0;
+  iterator->y            = 0.0;
+
+  iterator->char_width   = text_width;
+
+  iterator->truncate_at  = floor(column_width / text_width);
+
+  iterator->char_height = text_height;
+
+  fuzzyTableDimensions((ceil(scroll_end) - floor(scroll_start) + 1.0), 
+                       (double)iterator->truncate_at, 
+                       chars_per_base,
+                       &(iterator->rows), 
+                       &(iterator->cols), 
+                       &(iterator->char_height),
+                       &(iterator->lastPopulatedCell));
+
+  /* Not certain this column calculation is correct (chars_per_base bit) */
+  if(iterator->cols > iterator->truncate_at)
+    {
+      iterator->truncated = TRUE;
+      /* Just make the cols smaller and the number of rows bigger */
+      iterator->cols *= chars_per_base;
+    }
+  else
+    {
+      iterator->truncate_at  = iterator->cols;
+    }
+
+
+  iterator->row_text   = g_string_sized_new(iterator->truncate_at);
+  iterator->wrap_text  = full_text;
+  iterator->wrap_text += iterator->index_start = (int)feature_first_char;
+
+  iterator->row_data   = g_new0(ZMapDrawTextRowDataStruct, iterator->rows);
+
+  return iterator;
+}
+
+
+static void destroyIterator(ZMapDrawTextIterator iterator)
+{
+  zMapAssert(iterator);
+  g_string_free(iterator->row_text, TRUE);
+  iterator->row_data = NULL;
+  g_free(iterator);
+
+  return ;
+}
+
 static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text, 
                                     double feature_start, double feature_end,
                                     double feature_offset, ZMapFeature feature,
@@ -1375,6 +1578,7 @@ static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text,
                                    text, 
                                    iterator)) && eventCB != NULL)
         {
+          /* This should be callItemHandler(item, ITEM_FEATURE_CHILD, feature, NULL, y1, y2)! */
           g_signal_connect(G_OBJECT(item), "event",
                            G_CALLBACK(eventCB), (gpointer)window);
           g_object_set_data(G_OBJECT(item), ITEM_FEATURE_TYPE,
@@ -1388,7 +1592,7 @@ static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text,
   
   return ;
 }
- 
+
 static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
                               double feature_offset,
                               double x1, double y1, double x2, double y2,
@@ -1409,6 +1613,8 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
 
   zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
 
+  printf("type %d\n", GPOINTER_TO_INT(g_object_get_data(G_OBJECT(parent), CONTAINER_TYPE_KEY)));
+
   /* bump the feature BEFORE drawing */
   if(parent->item_list_end && (prev_trans = FOO_CANVAS_ITEM(parent->item_list_end->data)))
     foo_canvas_item_get_bounds(prev_trans, NULL, NULL, &new_x, NULL);
@@ -1416,13 +1622,14 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
   feature_parent = createParentGroup(parent, feature, feature_start);
 
   new_x += COLUMN_SPACING;
+  printf("moving to %f\n", new_x);
   my_foo_canvas_item_goto(feature_parent, &new_x, NULL);
 
   if(!featureClipItemToDraw(feature, &feature_start, &feature_end))
     {
       column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(parent)) ;
 
-      zmapWindowContainerSetZoomEventHandler(column_parent, dnaHandleZoomCB, window);
+      zmapWindowContainerSetZoomEventHandler(column_parent, dnaHandleZoomCB, window, NULL);
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1487,10 +1694,9 @@ static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
 
   column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(parent)) ;
 
-  zmapWindowContainerSetZoomEventHandler(column_parent, dnaHandleZoomCB, window);
+  zmapWindowContainerSetZoomEventHandler(column_parent, dnaHandleZoomCB, window, NULL);
 
-  if((hlght = zmapWindowItemTextHighlightCreateData(window, 
-                                                    FOO_CANVAS_GROUP(feature_parent))))
+  if((hlght = zmapWindowItemTextHighlightCreateData(FOO_CANVAS_GROUP(feature_parent))))
     {
       zmapWindowItemTextHighlightSetFullText(hlght, feature_block->sequence.sequence, FALSE);
       callback = G_CALLBACK(dnaItemEventCB);
@@ -1559,7 +1765,7 @@ static void attachDataToItem(FooCanvasItem *feature_item,
                              gpointer subFeatureData,
 			     gboolean attach_handlers)	    /* hack for now.... */
 {
-  zMapAssert(feature_item && window && feature);
+  //  zMapAssert(feature_item && window && feature);
 
   g_object_set_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE,
                     GINT_TO_POINTER(type)) ;
@@ -1577,7 +1783,7 @@ static void attachDataToItem(FooCanvasItem *feature_item,
     }
 
   g_signal_connect(GTK_OBJECT(feature_item), "destroy",
-		   GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
+                   GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
 
 
   return ;
@@ -1907,168 +2113,6 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
   return event_handled ;
 }
 
-
-static void fuzzyTableDimensions(double region_range, double trunc_col, 
-                                 double chars_per_base, int *row, int *col,
-                                 double *height_inout, int *rcminusmod_out)
-{
-  double orig_height, final_height, fl_height, cl_height;
-  double temp_rows, temp_cols, text_height, tmp_mod = 0.0;
-  gboolean row_precedence = FALSE;
-
-  region_range--;
-  region_range *= chars_per_base;
-
-  orig_height = text_height = *height_inout * chars_per_base;
-  temp_rows   = region_range / orig_height     ;
-  fl_height   = region_range / floor(temp_rows);
-  cl_height   = region_range / ceil(temp_rows) ;
-
-  if(((region_range / temp_rows) > trunc_col))
-    row_precedence = TRUE;
-  
-  if(row_precedence)            /* dot dot dot */
-    {
-      /* printf("row_precdence\n"); */
-      if(cl_height < fl_height && ((fl_height - cl_height) < (orig_height / 8)))
-        final_height = cl_height;
-      else
-        final_height = fl_height;
-
-      temp_rows = floor(region_range / final_height);
-      temp_cols = floor(final_height);
-    }
-  else                          /* column_precedence */
-    {
-      double tmp_rws, tmp_len, sos;
-      /* printf("col_precdence\n"); */
-
-      if((sos = orig_height - 0.5) <= floor(orig_height) && sos > 0.0)
-        temp_cols = final_height = floor(orig_height);
-      else
-        temp_cols = final_height = ceil(orig_height);
-
-      /*
-      printf(" we're going to miss %f bases at the end if using %f cols\n", 
-             (tmp_mod = fmod(region_range, final_height)), final_height);
-      */
-
-      if(final_height != 0.0 && tmp_mod != 0.0)
-        {
-          tmp_len = region_range + (final_height - fmod(region_range, final_height));
-          tmp_rws = tmp_len / final_height;
-          
-          final_height = (region_range + 1) / tmp_rws;
-          temp_rows    = tmp_rws;
-
-          /* 
-          printf("so modifying... tmp_len=%f, tmp_rws=%f, final_height=%f\n", 
-                 tmp_len, tmp_rws, final_height);
-          */
-        }
-      else if(final_height != 0.0)
-        temp_rows = floor(region_range / final_height);
-
-    }
-
-  /* sanity */
-  if(temp_rows > region_range)
-    temp_rows = region_range;
-
-#ifdef RDS_DONT_INCLUDE
-  printf("rows=%f, height=%f, range=%f, would have been min rows=%f & height=%f, or orignal rows=%f & height=%f\n", 
-         temp_rows, final_height, region_range,
-         region_range / fl_height, fl_height,
-         region_range / orig_height, orig_height);
-#endif
-
-  if(height_inout)
-    *height_inout = text_height = final_height / chars_per_base;
-  if(row)
-    *row = (int)temp_rows;
-  if(col)
-    *col = (int)temp_cols;
-  if(rcminusmod_out)
-    *rcminusmod_out = (int)(temp_rows * temp_cols - tmp_mod);
-
-  return ;
-}
-
-
-static ZMapDrawTextIterator zmapDrawTextIteratorBuild(double feature_start, double feature_end,
-                                                      double feature_offset,
-                                                      double scroll_start,  double scroll_end,
-                                                      double text_width,    double text_height, 
-                                                      char  *full_text,     int    bases_per_char,
-                                                      gboolean numbered,
-                                                      PangoFontDescription *font)
-{
-  int tmp;
-  double column_width = 300.0, chars_per_base, feature_first_char, feature_first_base;
-  ZMapDrawTextIterator iterator   = g_new0(ZMapDrawTextIteratorStruct, 1);
-
-  column_width  /= bases_per_char;
-  chars_per_base = 1.0 / bases_per_char;
-
-  iterator->seq_start      = feature_start;
-  iterator->seq_end        = feature_end;
-  iterator->offset_start   = floor(scroll_start - feature_offset);
-
-  feature_first_base  = floor(scroll_start) - feature_start;
-  tmp                 = (int)feature_first_base % (int)bases_per_char;
-  feature_first_char  = (feature_first_base - tmp) / bases_per_char;
-
-  /* iterator->offset_start += tmp; */ /* Keep this in step with the bit above */
-
-  iterator->x            = 0.0;
-  iterator->y            = 0.0;
-
-  iterator->char_width   = text_width;
-
-  iterator->truncate_at  = floor(column_width / text_width);
-
-  iterator->char_height = text_height;
-
-  fuzzyTableDimensions((ceil(scroll_end) - floor(scroll_start) + 1.0), 
-                       (double)iterator->truncate_at, 
-                       chars_per_base,
-                       &(iterator->rows), 
-                       &(iterator->cols), 
-                       &(iterator->char_height),
-                       &(iterator->lastPopulatedCell));
-
-  /* Not certain this column calculation is correct (chars_per_base bit) */
-  if(iterator->cols > iterator->truncate_at)
-    {
-      iterator->truncated = TRUE;
-      /* Just make the cols smaller and the number of rows bigger */
-      iterator->cols *= chars_per_base;
-    }
-  else
-    {
-      iterator->truncate_at  = iterator->cols;
-    }
-
-
-  iterator->row_text   = g_string_sized_new(iterator->truncate_at);
-  iterator->wrap_text  = full_text;
-  iterator->wrap_text += iterator->index_start = (int)feature_first_char;
-
-  iterator->row_data   = g_new0(ZMapDrawTextRowDataStruct, iterator->rows);
-
-  return iterator;
-}
-
-
-static void destroyIterator(ZMapDrawTextIterator iterator)
-{
-  zMapAssert(iterator);
-  g_string_free(iterator->row_text, TRUE);
-  iterator->row_data = NULL;
-  g_free(iterator);
-
-  return ;
-}
 
 
 
@@ -2530,9 +2574,10 @@ static gboolean makeFeatureEditWindow(ZMapWindow window, ZMapFeature feature)
 }
 
 /* Function to check whether any of the blocks has dna */
-static void oneBlockHasDNA(GQuark key, 
-                           gpointer data, 
-                           gpointer user_data)
+static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key, 
+                                                      gpointer data, 
+                                                      gpointer user_data,
+                                                      char **error_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeatureBlock     feature_block = NULL;
@@ -2561,7 +2606,7 @@ static void oneBlockHasDNA(GQuark key,
 
     }
 
-  return ;
+  return ZMAP_CONTEXT_EXEC_STATUS_OK;
 }
 
 
@@ -2743,4 +2788,74 @@ static void showSplices (FeatureMap look, SegType type, BoxCol *bc, float origin
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+static void factoryItemCreated(FooCanvasItem            *new_item,
+                               ZMapWindowItemFeatureType new_item_type,
+                               ZMapFeature               full_feature,
+                               ZMapWindowItemFeature     sub_feature,
+                               double                    new_item_y1,
+                               double                    new_item_y2,
+                               gpointer                  handler_data)
+{
+  /* some items, e.g. dna, have their event handling messed up if we include the general handler. */
+  if(full_feature->type == ZMAPFEATURE_RAW_SEQUENCE)
+    g_signal_connect(GTK_OBJECT(new_item), "event",
+                     GTK_SIGNAL_FUNC(dnaItemEventCB), handler_data) ;
+  else if(full_feature->type == ZMAPFEATURE_PEP_SEQUENCE)
+    zMapAssert(1);              /* DONT set anything up!!!! */
+  else
+    g_signal_connect(GTK_OBJECT(new_item), "event",
+                     GTK_SIGNAL_FUNC(canvasItemEventCB), handler_data) ;
+    
+  g_signal_connect(GTK_OBJECT(new_item), "destroy",
+                   GTK_SIGNAL_FUNC(canvasItemDestroyCB), handler_data) ;
+  return ;
+}
 
+
+static gboolean factoryFeatureSizeReq(ZMapFeature feature, 
+                                      double *limits_array, 
+                                      double *points_array_inout, 
+                                      gpointer handler_data)
+{
+  gboolean outside = FALSE;
+  double x1_in = points_array_inout[1];
+  double x2_in = points_array_inout[3];
+  int start_end_crossing = 0;
+  double block_start, block_end;
+
+  if(feature->type == ZMAPFEATURE_RAW_SEQUENCE ||
+     feature->type == ZMAPFEATURE_PEP_SEQUENCE)
+    {
+      ZMapWindow window = (ZMapWindow)handler_data;
+      double x1, x2;
+
+      points_array_inout[1] = points_array_inout[3] = x1 = x2 = 0.0;
+
+      zmapWindowScrollRegionTool(window, 
+                                 &x1, &(points_array_inout[1]), 
+                                 &x2, &(points_array_inout[3]));
+    }
+  else
+    {
+      block_start = limits_array[1];
+      block_end   = limits_array[3];
+
+      /* shift according to how we cross, like this for ease of debugging, not speed */
+      start_end_crossing |= ((x1_in < block_start) << 1);
+      start_end_crossing |= ((x2_in > block_end)   << 2);
+      start_end_crossing |= ((x1_in > block_end)   << 3);
+      start_end_crossing |= ((x2_in < block_start) << 4);
+      
+      /* Now check whether we cross! */
+      if(start_end_crossing & 8 || 
+         start_end_crossing & 16) /* everything is out of range don't display! */
+        outside = TRUE;        
+      
+      if(start_end_crossing & 2)
+        points_array_inout[1] = block_start;
+      if(start_end_crossing & 4)
+        points_array_inout[3] = block_end;
+    }
+
+  return outside;
+}
