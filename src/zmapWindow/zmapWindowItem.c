@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 11 09:38 2006 (edgrif)
+ * Last edited: Oct 13 08:51 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.45 2006-10-11 09:50:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.46 2006-10-18 15:22:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,7 +83,6 @@ typedef struct _ZMapWindowItemHighlighterStruct
   char *data;
 
   GString *tooltip_text;
-  ZMapWindow window;
 } ZMapWindowItemHighlighterStruct;
 
 
@@ -152,8 +151,7 @@ gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_stran
 
 
 
-ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow window, 
-                                                                FooCanvasGroup *group)
+ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(FooCanvasGroup *group)
 {
   ZMapWindowItemHighlighter selection = NULL;
   FooCanvasItem *group_as_item = FOO_CANVAS_ITEM(group);
@@ -184,7 +182,6 @@ ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(ZMapWindow windo
       selection->highlight = FOO_CANVAS_GROUP(foo_canvas_item_new(FOO_CANVAS_GROUP(group_as_item->parent),
                                                                   foo_canvas_group_get_type(),
                                                                   NULL));
-      selection->window = window;
       selection->seqFirstIdx = selection->seqLastIdx = -1;
       g_object_set_data(G_OBJECT(group), ITEM_HIGHLIGHT_DATA, (gpointer)selection);
       /* Clear up when we get destroyed. */
@@ -317,7 +314,10 @@ void zmapWindowItemTextHighlightRegion(ZMapWindowItemHighlighter select_control,
   gboolean start_found = FALSE, end_found = FALSE;
 
   feature_children = (FOO_CANVAS_GROUP(feature_parent))->item_list;
+  zMapAssert(feature_children);
+
   feature_child    = FOO_CANVAS_ITEM(feature_children->data);
+  zMapAssert(feature_child);
 
   zmapWindowItemTextHighlightReset(select_control);
 
@@ -375,7 +375,7 @@ void zmapWindowItemTextHighlightRegion(ZMapWindowItemHighlighter select_control,
       select_control->x2 = x2;
       select_control->y2 = y2;
       zmapWindowItemTextHighlightDraw(select_control, feature_child);
-      zmapWindowItemTextHighlightFinish(select_control);
+      zmapWindowItemTextHighlightFinish (select_control);
     }
 
   return ;
@@ -574,6 +574,11 @@ GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash,
 FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
 {
   FooCanvasGroup *parent_container = NULL ;
+
+  parent_container = zmapWindowContainerGetParentContainerFromItem(feature_item);
+
+  return parent_container;
+#ifdef RDS_MOVED_CODE
   ZMapWindowItemFeatureType item_feature_type ;
   FooCanvasItem *parent_item = NULL ;
 
@@ -600,6 +605,7 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
     }
 
   return parent_container ;
+#endif
 }
 
 
@@ -2012,7 +2018,6 @@ static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data)
       select_control->need_update = 0;
       select_control->tooltip   = NULL;
       select_control->highlight = NULL;
-      select_control->window    = NULL;
 
       g_list_free(select_control->originItemListMember);
       
