@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Aug  8 10:10 2006 (edgrif)
+ * Last edited: Oct 18 11:32 2006 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.16 2006-08-08 09:10:50 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.17 2006-10-18 13:36:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,6 +41,7 @@
 #include <stdio.h>
 
 #include <ZMap/zmapUtilsGUI.h>
+#include <ZMap/zmapWebPages.h>
 #include <zmapControl_P.h>
 
 
@@ -69,6 +70,7 @@ static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void releaseNotesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
 
 
@@ -97,13 +99,7 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Edit/_Redraw",  NULL,         redrawCB, 0, NULL },
  { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
  { "/Help/About",    NULL,         aboutCB, 0, NULL },
- { "/Help/Two",      NULL,         NULL, 0, "<Branch>" },
- { "/Help/Two/A",    NULL,         NULL, 0, "<RadioItem>" },
- { "/Help/Two/B",    NULL,         NULL, 0, "/Help/Two/A" },
- { "/Help/Two/C",    NULL,         NULL, 0, "/Help/Two/A" },
- { "/Help/Two/D",    NULL,         NULL, 0, "/Help/Two/A" },
- { "/Help/Two/E",    NULL,         NULL, 0, "/Help/Two/A" },
- { "/Help/Three",    NULL,         NULL, 0, NULL },
+ { "/Help/Release Notes", NULL,    releaseNotesCB, 0, NULL },
 };
 
 
@@ -185,6 +181,24 @@ static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
 
   zMapGUIShowAbout() ;
+
+  return ;
+}
+
+
+/* Show the web page of release notes. */
+static void releaseNotesCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  char *web_page = ZMAPWEB_URL "/" ZMAPWEB_RELEASE_NOTES_DIR "/" ZMAPWEB_RELEASE_NOTES ;
+  gboolean result ;
+  GError *error = NULL ;
+
+  if (!(result = zMapLaunchWebBrowser(web_page, &error)))
+    {
+      zMapWarning("Error: %s\n", error->message) ;
+      
+      g_error_free(error) ;
+    }
 
   return ;
 }
