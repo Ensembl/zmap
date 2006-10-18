@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 11 10:16 2006 (edgrif)
+ * Last edited: Oct 16 12:01 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.144 2006-10-11 09:46:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.145 2006-10-18 15:24:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,8 +79,11 @@ typedef struct _RealiseDataStruct
 } RealiseDataStruct, *RealiseData ;
 
 
-static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data,
-				 GtkAdjustment *hadjustment, GtkAdjustment *vadjustment) ;
+static ZMapWindow myWindowCreate(GtkWidget *parent_widget, 
+                                 char *sequence, void *app_data,
+                                 GList *feature_set_names,
+				 GtkAdjustment *hadjustment, 
+                                 GtkAdjustment *vadjustment) ;
 static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos) ;
 static void myWindowMove(ZMapWindow window, double start, double end) ;
 
@@ -179,11 +182,15 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
 }
 
 
-ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data)
+ZMapWindow zMapWindowCreate(GtkWidget *parent_widget, 
+                            char *sequence, void *app_data, 
+                            GList *feature_set_names)
 {
   ZMapWindow window ;
 
-  window = myWindowCreate(parent_widget, sequence, app_data, NULL, NULL) ;
+  window = myWindowCreate(parent_widget, sequence, app_data, 
+                          feature_set_names,
+                          NULL, NULL) ;
 
   return window ;
 }
@@ -214,7 +221,9 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
    * reset the scroll to where it should be. */
   foo_canvas_get_scroll_offsets(original_window->canvas, &x, &y) ;
   
-  new_window = myWindowCreate(parent_widget, sequence, app_data, hadjustment, vadjustment) ;
+  new_window = myWindowCreate(parent_widget, sequence, app_data, 
+                              original_window->feature_set_names, 
+                              hadjustment, vadjustment) ;
   zMapAssert(new_window) ;
 
   /* Lock windows together for scrolling/zooming if requested. */
@@ -699,6 +708,15 @@ void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos)
   return ;
 }
 
+void zMapWindowMergeInFeatureSetNames(ZMapWindow window, GList *feature_set_names)
+{
+  /* This needs to do more that just concat!! ha, it'll break something down the line ... column ordering at least */
+  feature_set_names = g_list_copy(feature_set_names);
+  window->feature_set_names = g_list_concat(window->feature_set_names, feature_set_names);
+
+  return ;
+}
+
 void zMapWindowDestroy(ZMapWindow window)
 {
 
@@ -783,7 +801,7 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
                                 double *x1_inout, double *y1_inout,
                                 double *x2_inout, double *y2_inout)
 {
-  ZMapWindowClampType clamp = ZMAP_WINDOW_CLAMP_INIT;
+  ZMapGUIClampType clamp = ZMAPGUI_CLAMP_INIT;
   double  x1,  x2,  y1,  y2;    /* New region coordinates */
   double wx1, wx2, wy1, wy2;    /* Current world coordinates */
 
@@ -843,8 +861,8 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
       zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
       
       clamp = zmapWindowClampedAtStartEnd(window, &y1, &y2);
-      y1   -= (tmp_top = ((clamp & ZMAP_WINDOW_CLAMP_START) ? border : 0.0));
-      y2   += (tmp_bot = ((clamp & ZMAP_WINDOW_CLAMP_END)   ? border : 0.0));
+      y1   -= (tmp_top = ((clamp & ZMAPGUI_CLAMP_START) ? border : 0.0));
+      y2   += (tmp_bot = ((clamp & ZMAPGUI_CLAMP_END)   ? border : 0.0));
       
       /* -----> and finally set the scroll region */
       foo_canvas_set_scroll_region(FOO_CANVAS(window->canvas), /* OK */
@@ -1116,8 +1134,11 @@ static void panedResizeCB(gpointer data, gpointer userdata)
 /* I think probably we should insist on being supplied with a sequence.... */
 /* NOTE that not all fields are initialised here as some need to be done when we draw
  * the actual features. */
-static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void *app_data,
-				 GtkAdjustment *hadjustment, GtkAdjustment *vadjustment)
+static ZMapWindow myWindowCreate(GtkWidget *parent_widget, 
+                                 char *sequence, void *app_data,
+                                 GList *feature_set_names,
+				 GtkAdjustment *hadjustment, 
+                                 GtkAdjustment *vadjustment)
 {
   ZMapWindow window ;
   GtkWidget *canvas, *eventbox ;
@@ -1146,6 +1167,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget, char *sequence, void 
   window->revcomped_features = FALSE ;
   window->display_forward_coords = TRUE ;
   window->origin = 1 ;
+
+  window->feature_set_names   = g_list_copy(feature_set_names);
 
   window->toplevel = eventbox = gtk_event_box_new();
   window->pane     = gtk_hpaned_new();
