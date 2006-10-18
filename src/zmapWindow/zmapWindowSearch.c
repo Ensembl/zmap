@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 22 12:20 2006 (edgrif)
+ * Last edited: Sep 26 10:42 2006 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.16 2006-09-26 08:51:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.17 2006-10-18 15:25:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -138,6 +138,8 @@ static void fetchAllComboLists(ZMapFeatureAny feature_any,
                                GList **align_list_out,
                                GList **block_list_out,
                                GList **set_list_out);
+static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer data, 
+                                                        gpointer user_data, char **err_out);
 
 static GList *getStyleQuarks(GList *styles) ;
 static void getQuark(gpointer data, gpointer user_data) ;
@@ -962,7 +964,8 @@ static GtkWidget *createPopulateComboBox(GList *list, gboolean quarks)
   return combo;
 }
 
-static void fillAllComboList(GQuark key, gpointer data, gpointer user_data)
+static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer data, 
+                                                        gpointer user_data, char **err_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   AllComboLists all_data = (AllComboLists)user_data;
@@ -994,7 +997,7 @@ static void fillAllComboList(GQuark key, gpointer data, gpointer user_data)
       break;
     }
 
-  return ;
+  return ZMAP_CONTEXT_EXEC_STATUS_OK;
 }
 
 static void fetchAllComboLists(ZMapFeatureAny feature_any, 

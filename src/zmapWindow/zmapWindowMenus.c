@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Aug  8 16:01 2006 (edgrif)
+ * Last edited: Oct 18 08:24 2006 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.20 2006-08-10 15:16:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.21 2006-10-18 15:24:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,9 +82,10 @@ static void insertSubMenus(GString *branch_point_string,
                            ZMapGUIMenuItem sub_menus,
                            ZMapGUIMenuItem item,
                            GArray **items_array);
-static void alignBlockMenusDataListForeach(GQuark key, 
-                                           gpointer data, 
-                                           gpointer user_data);
+static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key, 
+                                                                      gpointer data, 
+                                                                      gpointer user_data,
+                                                                      char **error_out);
 
 
 
@@ -134,10 +135,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
   ZMapGUIMenuItem item ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   /* Set the initial toggle button correctly....make sure this stays in step with the array above.
    * NOTE logic, this button is either "no bump" or "Name + No Overlap", the latter should be
@@ -1036,9 +1033,10 @@ static void insertSubMenus(GString *branch_point_string,
 }
 
 
-static void alignBlockMenusDataListForeach(GQuark key, 
-                                           gpointer data, 
-                                           gpointer user_data)
+static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key, 
+                                                                      gpointer data, 
+                                                                      gpointer user_data,
+                                                                      char **error_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
@@ -1124,7 +1122,7 @@ static void alignBlockMenusDataListForeach(GQuark key,
 
   g_free(item);
 
-  return ;
+  return ZMAP_CONTEXT_EXEC_STATUS_OK;
 }
 
 
