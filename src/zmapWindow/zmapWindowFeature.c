@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 19 13:55 2006 (rds)
+ * Last edited: Oct 19 14:58 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.57 2006-10-19 13:16:54 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.58 2006-10-19 13:58:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1618,8 +1618,6 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
 
   zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
 
-  printf("type %d\n", GPOINTER_TO_INT(g_object_get_data(G_OBJECT(parent), CONTAINER_TYPE_KEY)));
-
   /* bump the feature BEFORE drawing */
   if(parent->item_list_end && (prev_trans = FOO_CANVAS_ITEM(parent->item_list_end->data)))
     foo_canvas_item_get_bounds(prev_trans, NULL, NULL, &new_x, NULL);
@@ -1627,7 +1625,6 @@ static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
   feature_parent = createParentGroup(parent, feature, feature_start);
 
   new_x += COLUMN_SPACING;
-  printf("moving to %f\n", new_x);
   my_foo_canvas_item_goto(feature_parent, &new_x, NULL);
 
   if(!featureClipItemToDraw(feature, &feature_start, &feature_end))
