@@ -1,35 +1,10 @@
-? foozmap-canvas-line-glyph.c
-? foozmap-canvas-line-glyph.h
-Index: Makefile.am
-===================================================================
-RCS file: /cvs/gnome/foocanvas/libfoocanvas/Makefile.am,v
-retrieving revision 1.8
-diff -u -w -r1.8 Makefile.am
---- Makefile.am	1 Apr 2005 10:44:08 -0000	1.8
-+++ Makefile.am	18 Oct 2006 18:17:41 -0000
-@@ -22,6 +22,7 @@
- 
- libfoocanvasinclude_HEADERS =			\
- 	foo-canvas-line.h			\
-+	foozmap-canvas-line-glyph.h		\
- 	foo-canvas-pixbuf.h			\
- 	foo-canvas-polygon.h			\
- 	foo-canvas-rect-ellipse.h		\
-@@ -36,6 +37,7 @@
- 	foo-canvas-marshal.list			\
- 	foo-canvas-i18n.h			\
- 	foo-canvas-line.c			\
-+	foozmap-canvas-line-glyph.c		\
- 	foo-canvas-pixbuf.c			\
- 	foo-canvas-polygon.c			\
- 	foo-canvas-rect-ellipse.c		\
 Index: foo-canvas-line.c
 ===================================================================
 RCS file: /cvs/gnome/foocanvas/libfoocanvas/foo-canvas-line.c,v
 retrieving revision 1.7
 diff -u -w -r1.7 foo-canvas-line.c
 --- foo-canvas-line.c	4 Apr 2005 15:13:29 -0000	1.7
-+++ foo-canvas-line.c	18 Oct 2006 18:17:42 -0000
++++ foo-canvas-line.c	19 Oct 2006 08:48:55 -0000
 @@ -1,3 +1,4 @@
 +/*  Last edited: Oct 18 18:34 2006 (rds) */
  /*
@@ -97,7 +72,7 @@ RCS file: /cvs/gnome/foocanvas/libfoocanvas/foo-canvas-pixbuf.c,v
 retrieving revision 1.9
 diff -u -w -r1.9 foo-canvas-pixbuf.c
 --- foo-canvas-pixbuf.c	4 Apr 2005 15:13:29 -0000	1.9
-+++ foo-canvas-pixbuf.c	18 Oct 2006 18:17:42 -0000
++++ foo-canvas-pixbuf.c	19 Oct 2006 08:48:55 -0000
 @@ -1,3 +1,4 @@
 +/*  Last edited: May 11 11:33 2004 (rnc) */
  /* GNOME libraries - GdkPixbuf item for the GNOME canvas
@@ -170,9 +145,9 @@ RCS file: /cvs/gnome/foocanvas/libfoocanvas/foo-canvas-polygon.c,v
 retrieving revision 1.7
 diff -u -w -r1.7 foo-canvas-polygon.c
 --- foo-canvas-polygon.c	4 Apr 2005 15:13:29 -0000	1.7
-+++ foo-canvas-polygon.c	18 Oct 2006 18:17:42 -0000
++++ foo-canvas-polygon.c	19 Oct 2006 08:48:55 -0000
 @@ -1,3 +1,4 @@
-+/*  Last edited: Oct 18 19:10 2006 (rds) */
++/*  Last edited: Oct 19 09:39 2006 (rds) */
  /*
   * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
   * All rights reserved.
@@ -194,7 +169,30 @@ diff -u -w -r1.7 foo-canvas-polygon.c
  
  	gdk_gc_set_line_attributes (poly->outline_gc, width,
  				    GDK_LINE_SOLID, GDK_CAP_ROUND, GDK_JOIN_ROUND);
-@@ -801,7 +802,7 @@
+@@ -595,15 +596,16 @@
+ static void
+ get_color_value (FooCanvasPolygon *poly, gulong pixel, GValue *value)
+ {
+-	GdkColor *color;
++	GdkColor color;
+ 	GdkColormap *colormap;
+ 
+-	color = g_new (GdkColor, 1);
+-	color->pixel = pixel;
++	//color = g_new (GdkColor, 1);
++	//color->pixel = pixel;
+ 
+-	colormap = gtk_widget_get_colormap (GTK_WIDGET (poly));
+-	gdk_rgb_find_color (colormap, color);
+-	g_value_set_boxed (value, color);
++	colormap = gtk_widget_get_colormap (GTK_WIDGET (FOO_CANVAS_ITEM(poly)->canvas));
++	gdk_colormap_query_color(colormap, pixel, &color);
++	//gdk_rgb_find_color (colormap, color);
++	g_value_set_boxed (value, &color);
+ }
+ 
+ static void
+@@ -801,7 +803,7 @@
  
  	if (poly->outline_set) {
  		if (poly->width_pixels)
@@ -209,7 +207,7 @@ RCS file: /cvs/gnome/foocanvas/libfoocanvas/foo-canvas-rect-ellipse.c,v
 retrieving revision 1.12
 diff -u -w -r1.12 foo-canvas-rect-ellipse.c
 --- foo-canvas-rect-ellipse.c	4 Apr 2005 15:13:29 -0000	1.12
-+++ foo-canvas-rect-ellipse.c	18 Oct 2006 18:17:42 -0000
++++ foo-canvas-rect-ellipse.c	19 Oct 2006 08:48:55 -0000
 @@ -1,3 +1,4 @@
 +/*  Last edited: Feb 25 11:09 2005 (rds) */
  /*
@@ -275,7 +273,7 @@ RCS file: /cvs/gnome/foocanvas/libfoocanvas/foo-canvas-text.c,v
 retrieving revision 1.8
 diff -u -w -r1.8 foo-canvas-text.c
 --- foo-canvas-text.c	4 Apr 2005 15:13:29 -0000	1.8
-+++ foo-canvas-text.c	18 Oct 2006 18:17:42 -0000
++++ foo-canvas-text.c	19 Oct 2006 08:48:55 -0000
 @@ -1,3 +1,4 @@
 +/*  Last edited: Oct 18 18:38 2006 (rds) */
  /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
@@ -382,7 +380,7 @@ RCS file: /cvs/gnome/foocanvas/libfoocanvas/foo-canvas-widget.c,v
 retrieving revision 1.5
 diff -u -w -r1.5 foo-canvas-widget.c
 --- foo-canvas-widget.c	13 May 2005 03:34:36 -0000	1.5
-+++ foo-canvas-widget.c	18 Oct 2006 18:17:42 -0000
++++ foo-canvas-widget.c	19 Oct 2006 08:48:55 -0000
 @@ -1,3 +1,4 @@
 +/*  Last edited: May 11 11:42 2004 (rnc) */
  /*
@@ -416,7 +414,7 @@ RCS file: /cvs/gnome/foocanvas/libfoocanvas/foo-canvas.c,v
 retrieving revision 1.26
 diff -u -w -r1.26 foo-canvas.c
 --- foo-canvas.c	14 Mar 2006 00:13:44 -0000	1.26
-+++ foo-canvas.c	18 Oct 2006 18:17:42 -0000
++++ foo-canvas.c	19 Oct 2006 08:48:55 -0000
 @@ -1,3 +1,4 @@
 +/*  Last edited: Oct 18 18:59 2006 (rds) */
  /* -*- Mode: C; tab-width: 8; indent-tabs-mode: 8; c-basic-offset: 8 -*- */
@@ -682,7 +680,7 @@ RCS file: /cvs/gnome/foocanvas/libfoocanvas/foo-canvas.h,v
 retrieving revision 1.4
 diff -u -w -r1.4 foo-canvas.h
 --- foo-canvas.h	2 Mar 2004 14:32:55 -0000	1.4
-+++ foo-canvas.h	18 Oct 2006 18:17:42 -0000
++++ foo-canvas.h	19 Oct 2006 08:48:55 -0000
 @@ -1,3 +1,4 @@
 +/*  Last edited: Jun 15 08:20 2005 (edgrif) */
  /* -*- Mode: C; tab-width: 8; indent-tabs-mode: 8; c-basic-offset: 8 -*- */
@@ -726,7 +724,7 @@ RCS file: /cvs/gnome/foocanvas/libfoocanvas/libfoocanvas.h,v
 retrieving revision 1.1.1.1
 diff -u -w -r1.1.1.1 libfoocanvas.h
 --- libfoocanvas.h	11 Feb 2002 04:23:32 -0000	1.1.1.1
-+++ libfoocanvas.h	18 Oct 2006 18:17:42 -0000
++++ libfoocanvas.h	19 Oct 2006 08:48:55 -0000
 @@ -1,3 +1,4 @@
 +/*  Last edited: Aug  1 11:42 2006 (edgrif) */
  /*
