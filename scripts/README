@@ -99,7 +99,7 @@ As user "zmap":
 
 > zmapbootstrap
 
-> zmapbuild -v  -u -I  -m deskpro16113 MYTEST >BUILDS/MYTEST.LOG 2>&1
+> zmapbuild -v  -u -I -i -m deskpro16113 MYTEST >BUILDS/MYTEST.LOG 2>&1
 
 
 (currently zmapbootstrap does not pass args through to zmapbuild correctly otherwise
