@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 18 14:08 2006 (rds)
+ * Last edited: Oct 19 14:12 2006 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.1 2006-10-18 15:28:41 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.2 2006-10-19 13:16:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -728,13 +728,14 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 
               if(q_indel >= t_indel) /* insertion in query, expand align and annotate the insertion */
                 {
-                  zMapDrawAnnotatePolygon(lastBoxWeDrew,
-                                          ZMAP_ANNOTATE_EXTEND_ALIGN, 
-                                          NULL,
-                                          foreground,
-                                          bottom,
-					  line_width,
-                                          feature->strand);
+                  FooCanvasItem *tmp = NULL;
+                  tmp = zMapDrawAnnotatePolygon(lastBoxWeDrew,
+                                                ZMAP_ANNOTATE_EXTEND_ALIGN, 
+                                                NULL,
+                                                foreground,
+                                                bottom,
+                                                line_width,
+                                                feature->strand);
                   /* we need to check here that the item hasn't been
                    * expanded to be too long! This will involve
                    * updating the rather than inserting as the check
@@ -744,6 +745,9 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
                    * t_indel may always be 1, but possible that this is not the case, 
                    * code allows it not to be.
                    */
+                  /* using bottom twice here is wrong */
+                  if(tmp != NULL && tmp != lastBoxWeDrew)
+                    callItemHandler(factory, tmp, ITEM_FEATURE_CHILD, feature, align_data, bottom, bottom);
                 }
               else
                 {

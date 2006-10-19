@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 18 14:14 2006 (rds)
+ * Last edited: Oct 19 13:55 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.56 2006-10-18 15:22:09 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.57 2006-10-19 13:16:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -466,7 +466,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
  /* Retrieve the parent col. group/id. */
   column_group = zmapWindowContainerGetFeatures(set_group) ;
 
-  //#ifdef RDS_THESE_NEED_A_LITTLE_BIT_OF_CHECKING
+#ifdef RDS_THESE_NEED_A_LITTLE_BIT_OF_CHECKING
   new_feature = zmapWindowFToIFactoryRunSingle(window->item_factory,
                                                set_group, 
                                                context, 
@@ -475,7 +475,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
                                                set, 
                                                feature);
   return new_feature;
-  //#endif
+#endif
 
   /* Get the styles table from the column and look for the features style.... */
 
@@ -995,13 +995,14 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
 
               if(q_indel >= t_indel) /* insertion in query, expand align and annotate the insertion */
                 {
-                  zMapDrawAnnotatePolygon(lastBoxWeDrew,
-                                          ZMAP_ANNOTATE_EXTEND_ALIGN, 
-                                          NULL,
-                                          foreground,
-                                          bottom,
-					  line_width,
-                                          feature->strand);
+                  FooCanvasItem *tmp = NULL;
+                  tmp = zMapDrawAnnotatePolygon(lastBoxWeDrew,
+                                                ZMAP_ANNOTATE_EXTEND_ALIGN, 
+                                                NULL,
+                                                foreground,
+                                                bottom,
+                                                line_width,
+                                                feature->strand);
                   /* we need to check here that the item hasn't been
                    * expanded to be too long! This will involve
                    * updating the rather than inserting as the check
@@ -1011,6 +1012,10 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
                    * t_indel may always be 1, but possible that this is not the case, 
                    * code allows it not to be.
                    */
+                  if(tmp != lastBoxWeDrew)
+                    {
+                      attachDataToItem(tmp, window, feature, ITEM_FEATURE_CHILD, align_data, TRUE);
+                    }
                 }
               else
                 {
