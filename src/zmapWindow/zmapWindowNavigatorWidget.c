@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 18 14:58 2006 (rds)
+ * Last edited: Oct 19 14:35 2006 (rds)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.1 2006-10-18 15:28:42 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.2 2006-10-19 16:56:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -132,7 +132,8 @@ void zMapWindowNavigatorPackDimensions(GtkWidget *widget, double *width, double 
         x -= a;
       if(b != 0.0)
         y -= b;
-      x += SHIFT_COLUMNS_LEFT;
+      if(x != 0.0)
+        x += SHIFT_COLUMNS_LEFT;
     }
 
   if(*width)
@@ -251,17 +252,28 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
 {
   double border_x = 2.0;
   double border_y = border;
-  double max_x, max_y;
+  double max_x, max_y, container_width, container_height;
 
   zMapAssert(x1 && x2 && y1 && y2);
   
   max_x = 200.0;
   max_y = (double)(NAVIGATOR_SIZE);
 
-  *x1 = 0.0 - border_x;
-  *y1 = 0.0 - border_y;
-  *x2 = (class_data->container_width  > max_x ? max_x : class_data->container_width)  + border_x; 
-  *y2 = (class_data->container_height > max_y ? max_y : class_data->container_height) + border_y;
+  container_width  = class_data->container_width;
+  container_height = class_data->container_height;
+
+  *x1 = *y1 = *x2 = *y2 = 0.0;
+
+  if(container_width > 0.0)
+    {
+      *x1 -= border_x;
+      *x2 += (container_width > max_x ? max_x : container_width) + border_x;
+    }
+  if(container_height > 0.0)
+    {
+      *y1 -= border_y;
+      *y2 += (container_height > max_y ? max_y : container_height) + border_y;
+    }
 
   return ;
 }
