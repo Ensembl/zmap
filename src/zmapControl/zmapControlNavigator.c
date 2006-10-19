@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Oct 18 14:54 2006 (rds)
+ * Last edited: Oct 18 16:48 2006 (rds)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.25 2006-10-18 15:10:54 rds Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.26 2006-10-19 13:15:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -134,7 +134,7 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
     gtk_paned_add2(GTK_PANED(pane), locator_vbox) ; /* add locusnav to this pane */
 #endif /* RDS_USE_SCROLL */
 
-    locator_label = gtk_label_new("Navigator") ;
+    locator_label = gtk_label_new("Scroll Navigator") ;
     gtk_box_pack_start(GTK_BOX(locator_vbox), locator_label, FALSE, TRUE, 0);
 
     locator_frame = gtk_frame_new(NULL);
