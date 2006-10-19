@@ -20,6 +20,8 @@ source=$acedb'/RELEASE.'$source_acedb'/bin.'$ZBbuildOSCanon'_4/'
 echo "Copying $ZBAcedbBinaries ..."
 echo "Source = $source, Target = $target"
 
+mkdir -p $target
+
 for binary in $ZBAcedbBinaries
   do
   cp $source/$binary $target/$binary || ZBmsgAndExit "Failed to copy $binary"
