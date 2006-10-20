@@ -157,13 +157,20 @@ ZBusage ()
 #
 ZBscript=`basename $1`
 
-ZBbuildBase=~zmap/BUILDS
 ZBBaseDir=~zmap
+ZBbuildBase=~zmap/BUILDS
 ZBOverDir="$ZBBaseDir/BUILD.OVERNIGHT"
 ZBOverBinDir="$ZBBaseDir/BIN.OVERNIGHT"
 ZBDevDir="$ZBBaseDir/BUILD.DEVELOPMENT"
 ZBDevBinDir="$ZBBaseDir/BIN.DEVELOPMENT"
 
+# Add new build machines to this list, separate with a blank within the single string.
+# NOTE THAT THE FIRST MACHINE IN THE LIST _MUST_ BE ABLE TO BUILD THE DOCS....see loop
+# in zmapbootstrap script. We only build on this machine at the moment because the Mac
+# is not on the network....
+ZBmachines='deskpro16113'
+
+# Add new acedb binaries to this list, separate with a blank within the single string.
 ZBAcedbBinaries='tace xace sgifaceserver giface makeUserPasswd blixem dotter'
 
 ZBcvsRoot=/nfs/team71/acedb/zmap/CVS
