@@ -56,7 +56,7 @@ while getopts ":alm" opt ; do
     l  ) acedb_archs="$acedb_archs LINUX_4"
          archs="$archs LINUX" ;;
     m  ) acedb_archs="$acedb_archs DARWIN_4"
-         archs="$archs DARWIN" ;;
+         archs="$archs MACOSX" ;;
     \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag" ;;
   esac
 done
