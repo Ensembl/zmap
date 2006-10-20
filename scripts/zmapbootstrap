@@ -57,8 +57,8 @@ if [ -n "$command" ] ; then
     script=$1
     dir=$2
     INIT='-I'
-    # first machine must be able to build docs
-    for machine in 'deskpro16113' 'cbi1a' 
+
+    for machine in $ZBmachines
       do
       eval $script -m '$machine' $INIT $dir || ZBmsgAndExit "Command failed: $command"
       # Only do it once.
