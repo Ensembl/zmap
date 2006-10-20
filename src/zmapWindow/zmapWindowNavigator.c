@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 18 10:22 2006 (rds)
+ * Last edited: Oct 20 15:01 2006 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.1 2006-10-18 15:28:41 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.2 2006-10-20 14:02:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -423,9 +423,9 @@ static gboolean navExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gp
 {
   NavigateDraw draw_data = (NavigateDraw)user_data;
 
-  navigateDrawFunc(draw_data, widget);
-
   g_signal_handler_disconnect(G_OBJECT(widget), draw_data->expose_handler_id);
+
+  navigateDrawFunc(draw_data, widget);
 
   g_free(draw_data);
 
