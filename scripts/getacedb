@@ -30,8 +30,8 @@ descstring='
 
 
 # These two list MUST be kept in step for everything to work....need to add in DARWIN...
-acedb_archs='ALPHA_5 LINUX_4'
-archs='ALPHA LINUX'
+acedb_archs=''
+archs=''
 
 
 # directories to copy from...
@@ -51,12 +51,16 @@ prefix_dir="$zmap_dir/prefix"
 # 
 while getopts ":alm" opt ; do
   case $opt in
-    a  ) acedb_archs='ALPHA_5'    ;;
-    l  ) acedb_archs='LINUX_4'    ;;
-    m  ) acedb_archs='DARWIN_4'    ;;
+    a  ) acedb_archs="$acedb_archs ALPHA_5"
+         archs="$archs ALPHA" ;;
+    l  ) acedb_archs="$acedb_archs LINUX_4"
+         archs="$archs LINUX_4" ;;
+    m  ) acedb_archs="$acedb_archs DARWIN_4"
+         archs="$archs DARWIN_4" ;;
     \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag" ;;
   esac
 done
+
 
 # Get a source directory...if there is one...
 shift $(($OPTIND - 1))
