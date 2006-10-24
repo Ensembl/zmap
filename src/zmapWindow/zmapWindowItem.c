@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 13 08:51 2006 (rds)
+ * Last edited: Oct 24 14:26 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.46 2006-10-18 15:22:41 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.47 2006-10-24 13:27:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -375,7 +375,7 @@ void zmapWindowItemTextHighlightRegion(ZMapWindowItemHighlighter select_control,
       select_control->x2 = x2;
       select_control->y2 = y2;
       zmapWindowItemTextHighlightDraw(select_control, feature_child);
-      zmapWindowItemTextHighlightFinish (select_control);
+      //zmapWindowItemTextHighlightFinish (select_control);
     }
 
   return ;
