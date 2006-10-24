@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 18 14:41 2006 (rds)
+ * Last edited: Oct 24 12:20 2006 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.13 2006-10-18 15:13:29 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.14 2006-10-24 13:21:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -705,7 +705,7 @@ static void executeListForeachFunc(gpointer data, gpointer user_data)
 static void postExecuteProcess(ContextExecute execute_data)
 {
 
-  if(execute_data->status == ZMAP_CONTEXT_EXEC_STATUS_ERROR)
+  if(execute_data->status >= ZMAP_CONTEXT_EXEC_STATUS_ERROR)
     {
       printf("ContextExecute: Error, function stopped @ level %d, message = %s\n", 
              execute_data->stopped_at,
