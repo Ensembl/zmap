@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 21 21:55 2006 (rds)
+ * Last edited: Oct 24 14:13 2006 (rds)
  * Created: Fri Jul 21 14:48:18 2006 (rds)
- * CVS info:   $Id: zmapFeatureXML.c,v 1.1 2006-07-22 09:52:33 rds Exp $
+ * CVS info:   $Id: zmapFeatureXML.c,v 1.2 2006-10-24 13:22:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,9 +70,10 @@ void generateBlockXMLEndEvent     (XMLContextDump xml_data);
 void generateFeatureSetXMLEndEvent(XMLContextDump xml_data);
 void generateFeatureXMLEndEvent   (XMLContextDump xml_data);
 
-void xmlDumpCB(GQuark key, 
-               gpointer data, 
-               gpointer user_data);
+ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key, 
+                                          gpointer data, 
+                                          gpointer user_data, 
+                                          char **error);
 
 
 GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any, 
@@ -128,7 +129,10 @@ gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any,
   return xmlDumpData.status;
 }
 
-void xmlDumpCB(GQuark key, gpointer data, gpointer user_data)
+ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key, 
+                                          gpointer data, 
+                                          gpointer user_data, 
+                                          char **error)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeatureContext feature_context = NULL;
@@ -136,6 +140,7 @@ void xmlDumpCB(GQuark key, gpointer data, gpointer user_data)
   ZMapFeatureBlock     feature_block = NULL;
   ZMapFeatureSet       feature_set   = NULL;
   ZMapFeature          feature_ft    = NULL;
+  ZMapFeatureContextExecuteStatus cs = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
   XMLContextDump xml_data = (XMLContextDump)user_data;
 
@@ -205,7 +210,15 @@ void xmlDumpCB(GQuark key, gpointer data, gpointer user_data)
         }
     }
 
-  return ;
+  if(xml_data->status != ZMAPXMLWRITER_OK)
+    {
+      cs = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
+      if(error && !*error)
+        *error = g_strdup_printf("Failed to dump xml from feature '%s'.", 
+                                 g_quark_to_string(feature_any->unique_id));
+    }
+
+  return cs;
 }
 
 void generateClosingEvents(ZMapFeatureAny feature_any, 
@@ -252,8 +265,9 @@ void generateClosingEvents(ZMapFeatureAny feature_any,
 void generateContextXMLEvents(ZMapFeatureContext feature_context,
                               XMLContextDump xml_data)
 {
+#ifdef RDS_KEEP_GCC_QUIET
   ZMapXMLWriterEventStruct event = {0};
-
+#endif /* RDS_KEEP_GCC_QUIET */
   switch(xml_data->xml_type)
     {
     case ZMAPFEATURE_XML_XREMOTE:
@@ -270,8 +284,9 @@ void generateContextXMLEvents(ZMapFeatureContext feature_context,
 void generateAlignXMLEvents(ZMapFeatureAlignment feature_align,
                             XMLContextDump xml_data)
 {
+#ifdef RDS_KEEP_GCC_QUIET
   ZMapXMLWriterEventStruct event = {0};
-
+#endif /* RDS_KEEP_GCC_QUIET */
   switch(xml_data->xml_type)
     {
     case ZMAPFEATURE_XML_XREMOTE:
@@ -294,8 +309,9 @@ void generateAlignXMLEvents(ZMapFeatureAlignment feature_align,
 void generateBlockXMLEvents(ZMapFeatureBlock feature_block,
                             XMLContextDump xml_data)
 {
+#ifdef RDS_KEEP_GCC_QUIET
   ZMapXMLWriterEventStruct event = {0};
-
+#endif /* RDS_KEEP_GCC_QUIET */
   switch(xml_data->xml_type)
     {
     case ZMAPFEATURE_XML_XREMOTE:
