@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 20 15:01 2006 (rds)
+ * Last edited: Oct 24 14:57 2006 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.2 2006-10-20 14:02:46 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.3 2006-10-24 13:59:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -637,9 +637,9 @@ static void createColumnCB(gpointer data, gpointer user_data)
   gboolean status = FALSE;
 
   /* assuming set name == style name !!! */
-  if((style = zMapFindStyle(draw_data->context->styles, set_id)))
+  if((style = zMapFindStyle(draw_data->context->styles, set_id)) &&
+     (draw_data->current_set = g_datalist_id_get_data(&(draw_data->current_block->feature_sets), set_id)))
     {
-      draw_data->current_set = g_datalist_id_get_data(&(draw_data->current_block->feature_sets), set_id);
       zMapAssert(draw_data->current_set);
 
       features = zmapWindowContainerGetFeatures(draw_data->container_strand);
@@ -671,8 +671,10 @@ static void createColumnCB(gpointer data, gpointer user_data)
                        G_CALLBACK(columnBackgroundEventCB), 
                        (gpointer)draw_data->navigate);
     }
-  else
+  else if(!style)
     printf("Failed to find style with id %s\n", g_quark_to_string(set_id));
+  else
+    printf("Failed to find ftset with id %s\n", g_quark_to_string(set_id));
 
   return ;
 }
