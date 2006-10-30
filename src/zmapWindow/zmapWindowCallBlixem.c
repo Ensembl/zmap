@@ -31,9 +31,9 @@
  *
  * Exported functions: see zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 13 17:14 2006 (edgrif)
+ * Last edited: Oct 30 11:35 2006 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.23 2006-10-16 10:52:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.24 2006-10-30 11:36:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,7 +72,7 @@ typedef struct BlixemDataStruct
   ZMapWindow     window;
   FooCanvasItem *item ;
   ZMapFeature feature ;
-
+  ZMapFeatureBlock block ;
 
   /* Used for processing individual features. */
   ZMapFeatureType required_feature_type ;		    /* specifies what type of feature
@@ -132,6 +132,7 @@ gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean o
       status = FALSE;
       err_msg = "No DNA attached to feature's parent so cannot call blixem." ;
     }
+  blixem_data.block = block ;
 
   if (status)
     status = getUserPrefs(&blixem_data) ;
@@ -306,7 +307,7 @@ static char *buildParamString(blixemData blixem_data)
   int         start;
   int         scope = 40000;          /* set from user prefs */
   int         x1, x2;
-  int offset ;
+  int offset, origin ;
 
   if (blixem_data->Scope > 0)
     scope = blixem_data->Scope ;
@@ -332,9 +333,13 @@ static char *buildParamString(blixemData blixem_data)
   start = x1 - blixem_data->min - 30 ;
 
 
-  /* Offset is "- 1" because blixem needs to use it literally as an offset and not as an
-   * absolute position. */
-  offset = blixem_data->min - 1 ;
+  /* Offset is "+ 2" because acedb uses  seq_length + 1  for revcomp for its own obsure reasons and blixem
+   * has inherited this. I don't know why but don't want to change anything in blixem. */
+  if (blixem_data->window->revcomped_features)
+    origin = blixem_data->block->block_to_sequence.q2 + 2 ;
+  else
+    origin = 1 ;
+  offset = blixem_data->min - origin ;
 
 
   if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)  /* protein */
