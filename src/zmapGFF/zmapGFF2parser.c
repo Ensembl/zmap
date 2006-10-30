@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Oct 16 11:46 2006 (edgrif)
+ * Last edited: Oct 30 16:56 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.59 2006-10-16 10:49:27 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.60 2006-10-30 16:57:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1131,10 +1131,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
          if(feature_style->opts.parse_gaps && 
             ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL)) 
            {
-	     if (g_ascii_strcasecmp("em:cb183150.1", feature_name) == 0)
-	       printf("found it\n") ;
-
-
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
              gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not terminated */
              loadGaps(gaps_onwards, gaps);
