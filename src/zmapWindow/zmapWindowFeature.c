@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 19 14:58 2006 (rds)
+ * Last edited: Oct 31 16:42 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.58 2006-10-19 13:58:46 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.59 2006-10-31 16:44:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -183,6 +183,8 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       gpointer handler_data);
 
 static double getWidthFromScore(ZMapFeatureTypeStyle style, double score) ;
+
+static void cleanUpFeatureCB(gpointer data, gpointer user_data) ;
 
 
 /* NOTE that we make some assumptions in this code including:
@@ -589,6 +591,9 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
       zMapAssert(status) ;
 
       new_feature = top_feature_item ;
+
+      g_signal_connect(GTK_OBJECT(top_feature_item), "destroy",
+		       GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
     }
 
   return new_feature ;
@@ -1581,11 +1586,14 @@ static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text,
       if((item = zMapDrawRowOfText(FOO_CANVAS_GROUP(parent), 
                                    font, 
                                    text, 
-                                   iterator)) && eventCB != NULL)
+                                   iterator)))
         {
           /* This should be callItemHandler(item, ITEM_FEATURE_CHILD, feature, NULL, y1, y2)! */
-          g_signal_connect(G_OBJECT(item), "event",
-                           G_CALLBACK(eventCB), (gpointer)window);
+	  if (eventCB)
+	    g_signal_connect(G_OBJECT(item), "event",
+			     G_CALLBACK(eventCB), (gpointer)window);
+
+
           g_object_set_data(G_OBJECT(item), ITEM_FEATURE_TYPE,
                             GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
           g_object_set_data(G_OBJECT(item), ITEM_FEATURE_DATA,
@@ -1784,10 +1792,6 @@ static void attachDataToItem(FooCanvasItem *feature_item,
 		       GTK_SIGNAL_FUNC(canvasItemEventCB), window) ;
     }
 
-  g_signal_connect(GTK_OBJECT(feature_item), "destroy",
-                   GTK_SIGNAL_FUNC(canvasItemDestroyCB), window) ;
-
-
   return ;
 }
 
@@ -1836,79 +1840,88 @@ static void dnaHandleZoomCB(FooCanvasItem *container,
 
 
 
-
 /* Callback for destroy of feature items... */
 static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 {
   gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also get run. */
   ZMapWindowItemFeatureType item_feature_type ;
   ZMapWindow window = (ZMapWindowStruct*)data ;
+  gboolean status ;
+  FooCanvasGroup *set_group ;
 
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
+
+  /* We may not have a parent group if we are being called as a result of a
+   * parent/superparent being destroyed. In this case our parent pointer is
+   * set to NULL before we are called. */
+  if ((set_group = zmapWindowItemGetParentContainer(feature_item)))
+    {
+      ZMapFeature feature ;
+      ZMapWindowItemFeatureSetData set_data ;
+
+      /* These should go in container some time.... */
+      set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
+      zMapAssert(set_data) ;
+
+      feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
+      zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+      /* Remove this feature item from the hash. */
+      status = zmapWindowFToIRemoveFeature(window->context_to_item,
+					   set_data->strand, set_data->frame, feature) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Can't do this at the moment because the hash may have been invalidated....
+       * this is an order bug in the code that revcomps and will be for the 3 frame
+       * stuff.... */
+
+      zMapAssert(status) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    }
+
+
+  if (item_feature_type == ITEM_FEATURE_SIMPLE)
+    {
+      /* Check to see if there is an entry in long items for this feature.... */
+      zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
+
+      zmapWindowItemRemoveFocusItem(window->focus, feature_item);
+    }
+  else /* ITEM_FEATURE_PARENT */
+    {
+      FooCanvasGroup *group = FOO_CANVAS_GROUP(feature_item) ;
+
+      /* Now do children of compound object.... */
+      g_list_foreach(group->item_list, cleanUpFeatureCB, window) ;
+    }
+
+  return event_handled ;
+}
+
+
+
+static void cleanUpFeatureCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(data) ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+  ZMapWindowItemFeatureType item_feature_type ;
+  ZMapWindowItemFeature item_data ;
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type == ITEM_FEATURE_BOUNDING_BOX || item_feature_type == ITEM_FEATURE_CHILD) ;
+
+  item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
+  g_free(item_data) ;
 
   /* Check to see if there is an entry in long items for this feature.... */
   zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
 
   zmapWindowItemRemoveFocusItem(window->focus, feature_item);
 
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
-
-  switch (item_feature_type)
-    {
-    case ITEM_FEATURE_SIMPLE:
-    case ITEM_FEATURE_PARENT:
-      {
-	ZMapFeature feature ;
-	gboolean status ;
-	FooCanvasGroup *set_group ;
-	ZMapWindowItemFeatureSetData set_data ;
-
-
-	feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
-	zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
-	/* We may not have a parent group if we are being called as a result of a
-	 * parent/superparent being destroyed. In this case our parent pointer is
-	 * set to NULL before we are called. */
-	if ((set_group = zmapWindowItemGetParentContainer(feature_item)))
-	  {
-	    /* These should go in container some time.... */
-	    set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
-	    zMapAssert(set_data) ;
-
-	    /* Remove this feature item from the hash. */
-	    status = zmapWindowFToIRemoveFeature(window->context_to_item,
-						 set_data->strand, set_data->frame, feature) ;
-	  }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	/* Can't do this at the moment because the hash may have been invalidated....
-	 * this is an order bug in the code that revcomps and will be for the 3 frame
-	 * stuff.... */
-
-	zMapAssert(status) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-	break ;
-      }
-    case ITEM_FEATURE_BOUNDING_BOX:
-    case ITEM_FEATURE_CHILD:
-      {
-	ZMapWindowItemFeature item_data ;
-
-	item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
-	g_free(item_data) ;
-	break ;
-      }
-    default:
-      {
-	zMapLogFatal("Coding error, unrecognised ZMapWindowItemFeatureType: %d", item_feature_type) ;
-	break ;
-      }
-    }
-
-  return event_handled ;
+  return ;
 }
+
 
 
 
@@ -1925,7 +1938,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
   ZMapFeature feature ;
   static guint32 last_but_press = 0 ;			    /* Used for double clicks... */
 
-  /*  printf("canvasItemEventCB (%x): enter\n", item); */
+  printf("canvasItemEventCB (%x): enter\n", item);
 
   switch (event->type)
     {
@@ -2809,7 +2822,9 @@ static void factoryItemCreated(FooCanvasItem            *new_item,
                      GTK_SIGNAL_FUNC(canvasItemEventCB), handler_data) ;
     
   g_signal_connect(GTK_OBJECT(new_item), "destroy",
-                   GTK_SIGNAL_FUNC(canvasItemDestroyCB), handler_data) ;
+		   GTK_SIGNAL_FUNC(canvasItemDestroyCB), handler_data) ;
+
+
   return ;
 }
 
