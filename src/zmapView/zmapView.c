@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct 18 09:22 2006 (rds)
+ * Last edited: Oct 31 16:37 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.86 2006-10-18 15:15:48 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.87 2006-10-31 16:37:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1328,12 +1328,13 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		}
 	      else if (reply == ZMAPTHREAD_REPLY_DIED)
 		{
+		  /* This means the thread has failed for some reason and we should clean up. */
+
 		  if (err_msg)
 		    zMapWarning("%s", err_msg) ;
 
 		  threads_have_died = TRUE ;
 
-		  /* This means the thread has failed for some reason and we should clean up. */
 		  zMapDebug("GUI: thread %lu has died so cleaning up....\n",
 			    zMapThreadGetThreadid(thread)) ;
 		  
@@ -1555,7 +1556,7 @@ static void killConnections(ZMapView zmap_view)
 
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
 {
-  ZMapViewWindow view_window = (ZMapWindow)list_data;
+  ZMapViewWindow view_window = (ZMapViewWindow)list_data;
   GList *feature_set_names = (GList *)user_data;
 
   /* This relies on hokey code... with a number of issues...
