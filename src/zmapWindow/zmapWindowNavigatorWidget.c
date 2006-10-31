@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 19 14:35 2006 (rds)
+ * Last edited: Oct 31 15:54 2006 (edgrif)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.2 2006-10-19 16:56:10 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.3 2006-10-31 16:38:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -338,7 +338,6 @@ static void destroyClassData(gpointer user_data)
 {
   ZMapNavigatorClassData class_data = (ZMapNavigatorClassData)user_data;
 
-  printf("everything will be set to NULL\n");
   class_data->width = 
     class_data->height = 0;
   class_data->text_height = 
