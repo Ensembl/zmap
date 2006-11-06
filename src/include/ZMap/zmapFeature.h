@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Oct 18 16:01 2006 (rds)
+ * Last edited: Nov  6 11:46 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.93 2006-10-18 15:06:11 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.94 2006-11-06 11:47:53 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -468,6 +468,7 @@ typedef enum
 							       single column, several names in one
 							       column but no interleaving of sets
 							       of features. */
+    ZMAPOVERLAP_ITEM_OVERLAP,                               /* bump if item coords overlap in canvas space... */
     ZMAPOVERLAP_SIMPLE,					    /* one column per feature, for testing... */
     ZMAPOVERLAP_END
   } ZMapStyleOverlapMode ;
