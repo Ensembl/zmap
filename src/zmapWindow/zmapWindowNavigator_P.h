@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 18 09:21 2006 (rds)
+ * Last edited: Nov  3 16:31 2006 (rds)
  * Created: Thu Sep  7 09:23:47 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.1 2006-10-18 15:28:42 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.2 2006-11-06 10:44:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,7 +80,8 @@ typedef struct _ZMapWindowNavigatorStruct
   GdkColor        locator_drag_gdk;
   GdkBitmap      *locator_stipple;
   guint           locator_width;
-  double          locator_x1, locator_x2;
+  double          locator_x1, locator_x2; /* width */
+  ZMapSpanStruct  locator_span;           /* height */
 
   GdkColor        root_background;
   GdkColor        align_background;
@@ -89,10 +90,11 @@ typedef struct _ZMapWindowNavigatorStruct
   GdkColor        column_background;
 
   GHashTable     *ftoi_hash;
+  GHashTable     *locus_display_hash;
 
   GList          *feature_set_names;
 
-  ZMapSpanStruct  span;
+  ZMapSpanStruct  full_span;
 
   double scaling_factor;        /* NAVIGTOR_SIZE / block length */
 
@@ -111,6 +113,8 @@ typedef struct
   ZMapFeatureSet feature_set ;				    /* Only used in column callbacks... */
 } NavigateMenuCBDataStruct, *NavigateMenuCBData ;
 
+void zmapWindowNavigatorPositioning(ZMapWindowNavigator navigate);
+
 /* Menu prototypes... */
 ZMapGUIMenuItem zmapWindowNavigatorMakeMenuColumnOps(int *start_index_inout,
                                                      ZMapGUIMenuItemCallbackFunc callback_func,
@@ -124,6 +128,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
 void zmapWindowNavigatorSizeRequest(GtkWidget *widget, double x, double y);
 void zmapWindowNavigatorFillWidget(GtkWidget *widget);
 void zmapWindowNavigatorValueChanged(GtkWidget *widget, double top, double bottom);
+void zmapWindowNavigatorTextSize(GtkWidget *widget, double *x, double *y);
 
 #endif /*  ZMAP_WINDOW_NAVIGATOR_P_H  */
 
