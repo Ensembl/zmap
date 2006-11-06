@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 18 09:23 2006 (rds)
+ * Last edited: Oct 31 08:41 2006 (rds)
  * Created: Thu Sep  7 09:10:32 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.h,v 1.1 2006-10-18 15:29:40 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.h,v 1.2 2006-11-06 14:35:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,6 @@
 
 #include <ZMap/zmapWindow.h>
 
-#define ZMAP_NAVIGATOR_CLASS_DATA "ZMAP_WINDOW_NAV_CLASS_DATA"
 
 typedef void (*ZMapWindowNavigatorValueChanged)(void *user_data, double start, double end) ;
 
@@ -48,17 +47,6 @@ typedef struct _ZMapNavigatorCallbackStruct
 {
   ZMapWindowNavigatorValueChanged valueCB;
 } ZMapWindowNavigatorCallbackStruct, *ZMapWindowNavigatorCallback;
-
-/* unsure on publicness of this... */
-typedef struct _ZMapNavigatorClassDataStruct
-{
-  int width, height;
-  double text_height;
-  ZMapWindowNavigatorCallbackStruct callbacks;
-  gpointer user_data;
-  double container_width, container_height;
-} ZMapNavigatorClassDataStruct, *ZMapNavigatorClassData;
-
 
 
 ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget);
