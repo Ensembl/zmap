@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 31 15:54 2006 (edgrif)
+ * Last edited: Nov  6 09:28 2006 (rds)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.3 2006-10-31 16:38:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.4 2006-11-06 10:44:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,17 @@
 
 #define NAVIGATOR_WIDTH 100.0
 #define NAVIGATOR_BACKGROUND_COLOUR ""
+
+#define ZMAP_NAVIGATOR_CLASS_DATA "ZMAP_WINDOW_NAV_CLASS_DATA"
+
+typedef struct _ZMapNavigatorClassDataStruct
+{
+  int width, height;
+  double text_height;
+  ZMapWindowNavigatorCallbackStruct callbacks;
+  gpointer user_data;
+  double container_width, container_height;
+} ZMapNavigatorClassDataStruct, *ZMapNavigatorClassData;
 
 static void navCanvasSizeAllocateCB(GtkWidget     *allocatee, 
                                     GtkAllocation *allocation, 
@@ -194,6 +205,32 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
   return ;
 }
 
+void zmapWindowNavigatorTextSize(GtkWidget *widget, double *x, double *y)
+{
+  ZMapNavigatorClassData class_data = NULL;
+  FooCanvas *canvas = NULL;
+  double width, height, ppux, ppuy;
+
+  canvas = FOO_CANVAS(widget);
+
+  class_data = g_object_get_data(G_OBJECT(canvas), ZMAP_NAVIGATOR_CLASS_DATA);
+
+  zMapAssert(class_data);
+
+  ppux = canvas->pixels_per_unit_x;
+  ppuy = canvas->pixels_per_unit_y;
+
+  width  = 1.0 / ppux;          /* Not accurate!! */
+  height = class_data->text_height / ppuy;
+
+  if(x)
+    *x = width;
+  if(y)
+    *y = height;
+
+  return ;
+}
+
 
 static void navCanvasSizeAllocateCB(GtkWidget     *allocatee, 
                                     GtkAllocation *allocation, 
@@ -334,6 +371,7 @@ static gboolean getTextOnCanvasDimensions(FooCanvas *canvas,
 
   return success;
 }
+
 static void destroyClassData(gpointer user_data)
 {
   ZMapNavigatorClassData class_data = (ZMapNavigatorClassData)user_data;
