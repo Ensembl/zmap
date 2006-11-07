@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: May  5 11:57 2006 (rds)
+ * Last edited: Nov  7 13:36 2006 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.3 2006-05-05 11:00:16 rds Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.4 2006-11-07 17:01:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -470,6 +470,9 @@ static char strand2Char(ZMapStrand strand)
     case ZMAPSTRAND_REVERSE:
       strand_char = '-' ;
       break ;
+    default:
+      strand_char = '.' ;
+      break ;
     }
 
   return strand_char ;
@@ -490,6 +493,9 @@ static char phase2Char(ZMapPhase phase)
       break ;
     case ZMAPPHASE_2:
       phase_char = '2' ;
+      break ;
+    default:
+      phase_char = '.' ;
       break ;
     }
 
