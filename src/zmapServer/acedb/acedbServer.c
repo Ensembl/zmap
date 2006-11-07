@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov  7 12:08 2006 (edgrif)
+ * Last edited: Nov  7 13:56 2006 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.73 2006-11-07 12:09:10 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.74 2006-11-07 13:57:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1617,6 +1617,10 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       else if (g_ascii_strcasecmp(tag, "ZMap_mode_text") == 0)
 	{
 	  mode = ZMAPSTYLE_MODE_TEXT ;
+	}
+      else if (g_ascii_strcasecmp(tag, "ZMap_mode_basic") == 0)
+	{
+	  mode = ZMAPSTYLE_MODE_BASIC ;
 	}
       else if (g_ascii_strcasecmp(tag, "Outline") == 0)
 	{
