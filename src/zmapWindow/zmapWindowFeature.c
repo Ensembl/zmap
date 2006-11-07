@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 31 16:42 2006 (edgrif)
+ * Last edited: Nov  7 11:53 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.59 2006-10-31 16:44:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.60 2006-11-07 12:03:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -142,7 +142,6 @@ static ZMapDrawTextIterator zmapDrawTextIteratorBuild(double feature_start, doub
                                                       char  *full_text,     int    bases_per_char,
                                                       gboolean numbered,
                                                       PangoFontDescription *font);
-
 static void destroyIterator(ZMapDrawTextIterator iterator) ;
 
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
@@ -150,20 +149,11 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data) ;
 
 static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void removeFeatureLongItems(ZMapWindowLongItems long_items, FooCanvasItem *feature_item) ;
-static void removeLongItemCB(gpointer data, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 static gboolean makeFeatureEditWindow(ZMapWindow window, ZMapFeature feature) ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printItem(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key, 
                                                       gpointer data, 
@@ -185,6 +175,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 static double getWidthFromScore(ZMapFeatureTypeStyle style, double score) ;
 
 static void cleanUpFeatureCB(gpointer data, gpointer user_data) ;
+
 
 
 /* NOTE that we make some assumptions in this code including:
@@ -506,20 +497,35 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
       }
     case ZMAPFEATURE_ALIGNMENT:
       {
+	window->stats.total_matches++ ;
+
 	zmapWindowGetPosFromScore(style, feature->score, &start_x, &end_x) ;
 
-        if(style->opts.align_gaps)
-          top_feature_item = drawAlignmentFeature(column_group, feature,
-                                                  feature_offset,
-                                                  start_x, feature->x1, end_x, feature->x2,
-                                                  style,
-                                                  window);
+        if (style->opts.align_gaps)
+	  {
+	    /* Style says "draw gaps seperately"... */
+	    top_feature_item = drawAlignmentFeature(column_group, feature,
+						    feature_offset,
+						    start_x, feature->x1, end_x, feature->x2,
+						    style,
+						    window) ;
+
+	  }
         else
-          top_feature_item = drawSimpleFeature(column_group, feature,
-                                               feature_offset,
-                                               start_x, feature->x1, end_x, feature->x2,
-                                               style,
-                                               window) ;
+	  {
+	    /* Style says "draw as a single box"... */
+	    top_feature_item = drawSimpleFeature(column_group, feature,
+						 feature_offset,
+						 start_x, feature->x1, end_x, feature->x2,
+						 style,
+						 window) ;
+
+	    window->stats.ungapped_matches++ ;
+
+	    window->stats.total_boxes++ ;
+	    window->stats.ungapped_boxes++ ;
+	  }
+
         break;
       }
     case ZMAPFEATURE_RAW_SEQUENCE:
@@ -924,14 +930,51 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
   GdkColor *outline, *foreground, *background;
   guint line_width;
 
+
   zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
   line_width = window->config.feature_line_width;
 
-  if (!feature->feature.homol.align)
-    feature_item = drawSimpleFeature(parent, feature, feature_offset,
-                                     x1, feature_top, x2, feature_bottom,
-                                     style, window) ;
-  else if(feature->feature.homol.align)
+  if (feature->feature.homol.align)
+    {
+      if (feature->feature.homol.flags.perfect)
+	{
+	  window->stats.gapped_matches++ ;
+
+	  window->stats.total_boxes += feature->feature.homol.align->len ;
+	  window->stats.gapped_boxes += feature->feature.homol.align->len ;
+
+	  /* Colour homols in special way....hacky.... */
+	  if (foreground)
+	    background = foreground ;
+	}
+      else
+	{
+	  window->stats.not_perfect_gapped_matches++ ;
+
+	  window->stats.total_boxes++ ;
+	  window->stats.ungapped_boxes++ ;
+	  window->stats.imperfect_boxes += feature->feature.homol.align->len ;
+	}
+    }
+  else
+    {
+      window->stats.ungapped_matches++ ;
+
+      window->stats.ungapped_boxes++ ;
+      window->stats.total_boxes++ ;
+    }
+
+  if (!feature->feature.homol.align || !feature->feature.homol.flags.perfect)
+    {
+      /* If there are no gaps OR the gaps do not match "perfectly" then just draw a single box to
+       * represent the whole alignment. */
+      feature_item = drawSimpleFeature(parent, feature, feature_offset,
+				       x1, feature_top, x2, feature_bottom,
+				       style, window) ;
+
+      
+    }
+  else /* if(feature->feature.homol.align) surely this isn't needed ? */
     {
       double feature_start, feature_end;
       FooCanvasItem *lastBoxWeDrew   = NULL;
@@ -1938,7 +1981,11 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
   ZMapFeature feature ;
   static guint32 last_but_press = 0 ;			    /* Used for double clicks... */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("canvasItemEventCB (%x): enter\n", item);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   switch (event->type)
     {
