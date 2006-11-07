@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Jul 14 11:23 2006 (edgrif)
+ * Last edited: Nov  7 16:06 2006 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.17 2006-07-14 10:24:09 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.18 2006-11-07 17:07:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,6 +68,11 @@ static gboolean getVersionNumbers(char *version_str,
 
 /*! Can be set on/off to turn on/off debugging output via the zMapDebug() macro. */
 gboolean zmap_debug_G = FALSE ; 
+
+
+/*! A global timer used for giving overall timings for zmap operations.
+ * See the timer macros in zmapUtilsDebug.h */
+GTimer *zmap_global_timer_G = NULL ;
 
 
 
