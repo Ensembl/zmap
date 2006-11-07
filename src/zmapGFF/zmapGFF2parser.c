@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov  6 14:54 2006 (edgrif)
+ * Last edited: Nov  7 13:40 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.61 2006-11-07 11:59:40 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.62 2006-11-07 17:02:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,7 +83,11 @@ static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
 
 
 static gboolean loadGaps(char *currentPos, GArray *gaps);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static int sortGapsByTarget(gconstpointer a, gconstpointer b);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void initSources(GData **datalist, GList *sources);
 
@@ -1652,6 +1656,8 @@ static void destroyFeatureArray(gpointer data)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void stylePrintCB(gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
@@ -1660,4 +1666,6 @@ static void stylePrintCB(gpointer data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
