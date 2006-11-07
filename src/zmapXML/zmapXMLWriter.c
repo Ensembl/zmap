@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 22 09:41 2006 (rds)
+ * Last edited: Oct 24 12:07 2006 (rds)
  * Created: Tue Jul 18 16:49:49 2006 (rds)
- * CVS info:   $Id: zmapXMLWriter.c,v 1.2 2006-07-22 09:16:11 rds Exp $
+ * CVS info:   $Id: zmapXMLWriter.c,v 1.3 2006-11-07 14:09:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -242,19 +242,19 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
       switch(event->type)
         {
         case ZMAPXML_START_ELEMENT_EVENT:
-          first  = g_quark_to_string(event->data.simple);
+          first  = (char *)g_quark_to_string(event->data.simple);
           status = zMapXMLWriterStartElement(writer, first);
           break;
         case ZMAPXML_END_ELEMENT_EVENT:
-          first  = g_quark_to_string(event->data.simple);
+          first  = (char *)g_quark_to_string(event->data.simple);
           status = zMapXMLWriterEndElement(writer, first);
           break;
         case ZMAPXML_CHAR_DATA_EVENT:
-          first  = g_quark_to_string(event->data.simple);
+          first  = (char *)g_quark_to_string(event->data.simple);
           status = zMapXMLWriterElementContent(writer, first);
           break;
         case ZMAPXML_START_DOC_EVENT:
-          first  = g_quark_to_string(event->data.simple);
+          first  = (char *)g_quark_to_string(event->data.simple);
           status = zMapXMLWriterStartDocument(writer, first);
           break;
         case ZMAPXML_END_DOC_EVENT:
@@ -263,11 +263,11 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
         case ZMAPXML_ATTRIBUTE_EVENT:
           {
             gboolean free_second = TRUE;
-            first  = g_quark_to_string(event->data.comp.name);
+            first  = (char *)g_quark_to_string(event->data.comp.name);
             
             if (event->data.comp.data == ZMAPXML_EVENT_DATA_QUARK)
               {
-                second = g_quark_to_string(event->data.comp.value.quark);
+                second = (char *)g_quark_to_string(event->data.comp.value.quark);
                 free_second = FALSE;
               }
             else if(event->data.comp.data == ZMAPXML_EVENT_DATA_INTEGER)
