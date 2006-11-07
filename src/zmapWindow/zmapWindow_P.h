@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Oct 17 16:14 2006 (rds)
+ * Last edited: Nov  7 12:04 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.141 2006-10-18 15:26:22 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.142 2006-11-07 12:05:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -323,6 +323,27 @@ typedef struct
 } ZMapWindowConfigStruct, *ZMapWindowConfig ;
 
 
+/* Stats struct, useful for debugging but also for general information about a window. */
+typedef struct
+{
+
+
+
+  /* Alignment stats. */
+  int total_matches ;					    /* All matches drawn. */
+  int gapped_matches ;					    /* Gapped matches drawn as gapped matches. */
+  int not_perfect_gapped_matches ;			    /* Gapped matches drawn as ungapped because
+							       failed quality check. */
+  int ungapped_matches ;				    /* Ungapped matches drawn. */
+
+  int total_boxes ;					    /* Total alignment boxes drawn. */
+  int gapped_boxes ;					    /* Gapped boxes drawn. */
+  int ungapped_boxes ;					    /* Ungapped boxes drawn. */
+  int imperfect_boxes ;					    /* Gapped boxes _not_ drawn because of
+							       quality check. */
+
+} ZMapWindowStatsStruct, *ZMapWindowStats ;
+
 
 
 
@@ -334,7 +355,8 @@ typedef struct _ZMapWindowStruct
   gchar *sequence ;					    /* Should remove this... */
 
   ZMapWindowConfigStruct config ;			    /* Holds window configuration info. */
-  
+
+  ZMapWindowStatsStruct stats ;				    /* Holds statitics about no. of features etc. */
 
   /* Widgets for displaying the data. */
   GtkWidget     *parent_widget ;
@@ -896,6 +918,9 @@ void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, double 
 
 /* End Ruler Functions */
 
+
+void zmapWindowStatsReset(ZMapWindowStats stats) ;
+void zmapWindowStatsPrint(ZMapWindowStats stats) ;
 
 
 
