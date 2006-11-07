@@ -119,6 +119,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowNavigatorWidget.c \
 	$(top_srcdir)/zmapWindow/zmapWindowPrint.c \
 	$(top_srcdir)/zmapWindow/zmapWindowRuler.c \
+	$(top_srcdir)/zmapWindow/zmapWindowStats.c \
 	$(top_srcdir)/zmapWindow/zmapWindowContainer.c \
 	$(top_srcdir)/zmapWindow/zmapWindowContainer.h \
 	$(top_srcdir)/zmapWindow/zmapWindowZoomControl.c \
