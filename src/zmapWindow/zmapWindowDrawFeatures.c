@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 13 14:07 2006 (rds)
+ * Last edited: Nov  7 16:58 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.154 2006-10-18 15:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.155 2006-11-07 17:05:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -151,6 +151,10 @@ static void destroyFeaturesList(gpointer data) ;
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 
 
+extern GTimer *view_timer_G ;
+
+
+
 /* Drawing coordinates: PLEASE READ THIS BEFORE YOU START MESSING ABOUT WITH ANYTHING...
  * 
  * It seems that item coordinates are _not_ specified in absolute world coordinates but
@@ -210,6 +214,11 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   double x, y, start, end ;
   double ix1, ix2, iy1, iy2;    /* initial root_group coords */
   double fx1, fx2, fy1, fy2;    /* final root_group coords   */
+
+
+
+  zMapPrintTimer(NULL, "About to create canvas features") ;
+
 
   zMapAssert(window && full_context && diff_context) ;
 
@@ -365,6 +374,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
     zmapWindowContainerPrint(root_group) ;
 
   zmapWindowFToIFactoryClose(window->item_factory);
+
+
+  zMapPrintTimer(NULL, "Finished creating canvas features") ;
 
   return ;
 }

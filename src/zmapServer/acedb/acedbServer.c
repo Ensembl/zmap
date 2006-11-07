@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov  7 13:56 2006 (rds)
+ * Last edited: Nov  7 17:05 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.74 2006-11-07 13:57:22 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.75 2006-11-07 17:05:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -360,8 +360,16 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
   get_features.server->last_err_status = ACECONN_OK ;
   get_features.eachBlock = eachBlockSequenceRequest;
 
+
+
+  zMapPrintTimer(NULL, "In thread, getting features") ;
+
   /* Fetch all the alignment blocks for all the sequences. */
   g_datalist_foreach(&(feature_context->alignments), eachAlignment, (gpointer)&get_features) ;
+
+  zMapPrintTimer(NULL, "In thread, got features") ;
+
+
 
   return get_features.result ;
 }
@@ -623,6 +631,8 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
    * the parent sequence if it is not required, this is actually quite fiddly to do in the acedb
    * code in a way that won't break zmap so we do it here. */
 
+  zMapPrintTimer(NULL, "In thread, about to ask for features") ;
+
   acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s %s ; "
 				   " %s "
 				   "seqfeatures -rawmethods -zmap %s",
@@ -642,6 +652,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
       gboolean inplace = TRUE ;
       char *first_error = NULL ;
 
+      zMapPrintTimer(NULL, "In thread, got features and about to parse into context") ;
 
       line_reader = zMapReadLineCreate((char *)reply, inplace) ;
 
@@ -791,10 +802,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
       g_free(reply) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("Finished parse features\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+      zMapPrintTimer(NULL, "In thread, finished parsing features") ;
 
     }
 

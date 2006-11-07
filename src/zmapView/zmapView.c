@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct 31 16:37 2006 (edgrif)
+ * Last edited: Nov  7 17:03 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.87 2006-10-31 16:37:29 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.88 2006-11-07 17:05:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -103,8 +103,6 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 ZMapAlignBlock zMapAlignBlockCreate(char *ref_seq, int ref_start, int ref_end, int ref_strand,
 				    char *non_seq, int non_start, int non_end, int non_strand) ;
 static void addAlignments(ZMapFeatureContext context) ;
-
-
 
 
 
@@ -205,12 +203,15 @@ void zMapViewSetupNavigator(ZMapView zmap_view, GtkWidget *canvas_widget)
   return ;
 }
 
+
+
 /* Connect a View to its databases via threads, at this point the View is blank and waiting
  * to be called to load some data. */
 gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 {
   gboolean result = TRUE ;
   ZMapConfigStanzaSet server_list = NULL ;
+
 
   if (zmap_view->state != ZMAPVIEW_INIT)
     {
@@ -222,6 +223,9 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
     {
       ZMapConfig config ;
       char *config_file = NULL ;
+
+      zMapStartTimer(ZMAP_GLOBAL_TIMER) ;
+      zMapPrintTimer(NULL, "Open connection") ;
 
       zmapViewBusy(zmap_view, TRUE) ;
 
@@ -1794,6 +1798,10 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 {
   ZMapFeatureContext new_features = NULL, diff_context = NULL ;
 
+
+  zMapPrintTimer(NULL, "Got Features from Thread") ;
+
+
   /* Merge new data with existing data (if any). */
   new_features = feature_req->feature_context_out ;
 
@@ -1803,6 +1811,8 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
     {
       /* We should free the new_features context here....actually better
        * would to have a "free" flag on the above merge call. */
+
+      zMapPrintTimer(NULL, "Merged Features into context and about to display") ;
 
       /* Signal the ZMap that there is work to be done. */
       displayDataWindows(zmap_view, zmap_view->features, diff_context) ;

@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Mar 10 08:27 2006 (rds)
+ * Last edited: Nov  7 16:53 2006 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.25 2006-03-10 08:27:36 rds Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.26 2006-11-07 17:05:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -136,9 +136,13 @@ void *zmapNewThread(void *thread_args)
 	  ZMAPTHREAD_DEBUG(("%lu: servicing request....\n", thread->thread_id)) ;
 
 
+	  zMapPrintTimer(NULL, "In thread, calling handler function") ;
+
 	  /* Call the registered slave handler function. */
 	  slave_response = (*(thread->handler_func))(&(thread_cb->slave_data), request, &reply,
 						     &slave_error) ;
+
+	  zMapPrintTimer(NULL, "In thread, returned from handler function") ;
 
 	  /* The handling below is not now correct, if a call fails we need to kill the thread
 	   * we can't cope with dangling threads....we will need to set the thread_died flag */
