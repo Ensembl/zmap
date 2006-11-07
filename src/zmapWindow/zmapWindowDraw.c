@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  7 08:55 2006 (rds)
+ * Last edited: Nov  7 09:49 2006 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.35 2006-11-07 08:59:57 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.36 2006-11-07 09:51:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -424,6 +424,8 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
 						 NULL, hashDataDestroyCB) ;
       break ;
+    case ZMAPOVERLAP_ITEM_OVERLAP:
+      break;
     case ZMAPOVERLAP_COMPLEX:
     case ZMAPOVERLAP_NO_INTERLEAVE:
       {
@@ -1117,6 +1119,26 @@ static void bumpColCB(gpointer data, gpointer user_data)
 
 	break ;
       }
+    case ZMAPOVERLAP_ITEM_OVERLAP:
+      {
+	/* Bump features over if they overlap at all. */
+	BumpColRange new_range ;
+
+	new_range = g_new0(BumpColRangeStruct, 1) ;
+	new_range->y1 = y1 ;
+	new_range->y2 = y2 ;
+	new_range->offset = 0.0 ;
+	new_range->incr = x2 - x1 + 1.0;//bump_data->incr ;
+
+	g_list_foreach(bump_data->pos_list, compareListOverlapCB, new_range) ;
+
+	bump_data->pos_list = g_list_append(bump_data->pos_list, new_range) ;
+
+	offset = new_range->offset ;
+	
+	break ;
+      }
+      break;
     default:
       zMapAssertNotReached() ;
       break ;
@@ -1129,6 +1151,12 @@ static void bumpColCB(gpointer data, gpointer user_data)
   dx = (feature->style->width - (x2 - x1)) / 2 ;
   offset += dx ;
 
+  /* Not having something like this appears to be part of the cause of the oddness. Not all though */
+  if(offset < 0.0)
+    offset = 0.0;
+
+  /* This does a item_get_bounds... don't we already have them? 
+   * Might be missing something though. Why doesn't the "Bump" bit calculate offsets? */
   my_foo_canvas_item_goto(item, &(offset), NULL) ; 
 
   return ;
