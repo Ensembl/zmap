@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Oct 30 16:56 2006 (edgrif)
+ * Last edited: Nov  6 14:54 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.60 2006-10-30 16:57:32 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.61 2006-11-07 11:59:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1134,7 +1134,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
              gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not terminated */
              loadGaps(gaps_onwards, gaps);
+
            }
+
 	 result = zMapFeatureAddAlignmentData(feature,
 					      homol_type,
 					      ZMAPSTRAND_NONE, ZMAPPHASE_0,
@@ -1166,15 +1168,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 }
 
 
-/* This reads any gaps which are present on the gff line.
- * They are preceded by a Gaps tag, and are presented as
- * space-delimited groups of 4, consecutive groups being
- * comma-delimited. gapsPos is wherever we are in the gff
- * and is set to NULL when strstr can't find another comma.
- * fields must be 4 for a gap so either way we drop out
- * of the loop at the end. */
-/* i.e. gapPos should equal something like this (incl "")
- *  "531 544 34799 34758,545 550 34751 34734" */
+/* This reads any gaps which are present on the gff line. They are preceded by a Gaps tag, and are presented as
+ * space-delimited groups of 4, consecutive groups being comma-delimited. gapsPos is wherever we are in the gff
+ * and is set to NULL when strstr can't find another comma. fields must be 4 for a gap so either way we drop out
+ * of the loop at the end. i.e. gapPos should equal something like this (incl "")
+ *
+ *                             "531 544 34799 34758,545 550 34751 34734"
+ */
 static gboolean loadGaps(char *gapsPos, GArray *gaps)
 {
   gboolean valid = TRUE, avoidFirst_strstr = TRUE ;
@@ -1185,12 +1185,15 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
   while (avoidFirst_strstr == TRUE || ((gapsPos = strstr(gapsPos, ",")) != NULL))
     {
       avoidFirst_strstr = FALSE; /* Only to get here to start with */
+
       /* ++gapsPos to skip the '"' or the ',' */
       if((fields = sscanf(++gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2)) == 4)
         {
           int tmp;
+
           gap.q_strand = ZMAPSTRAND_FORWARD;
           gap.t_strand = ZMAPSTRAND_FORWARD;
+
           if (gap.q1 > gap.q2)
             {
               tmp = gap.q2;
@@ -1198,6 +1201,7 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
               gap.q1 = tmp;
               gap.q_strand = ZMAPSTRAND_REVERSE;
             }
+
           if (gap.t1 > gap.t2)
             {
               tmp = gap.t2;
@@ -1205,6 +1209,7 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
               gap.t1 = tmp;
               gap.t_strand = ZMAPSTRAND_REVERSE;
             }
+
 	  gaps = g_array_append_val(gaps, gap);
 	}
       else
@@ -1213,8 +1218,6 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
           break;  /* anything other than 4 is not a gap */
         }
     }
-
-  zMapFeatureSortGaps(gaps) ;
 
   return valid ;
 }
