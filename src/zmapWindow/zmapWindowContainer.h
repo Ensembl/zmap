@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Oct 13 08:45 2006 (rds)
+ * Last edited: Nov  7 08:58 2006 (rds)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.11 2006-10-18 15:18:30 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.12 2006-11-07 08:59:57 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -58,9 +58,10 @@ typedef void (*zmapWindowContainerZoomChangedCallback)(FooCanvasItem *container,
                                                        double new_zoom, 
                                                        ZMapWindow user_data);
 
-typedef void (*ZMapContainerExecFunc)(FooCanvasGroup  *container, 
-                                      FooCanvasPoints *container_points,
-                                      gpointer         func_data);
+typedef void (*ZMapContainerExecFunc)(FooCanvasGroup        *container, 
+                                      FooCanvasPoints       *container_points,
+                                      ZMapContainerLevelType container_level,
+                                      gpointer               func_data);
 
 FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  ZMapContainerLevelType level,

@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 26 10:42 2006 (rds)
+ * Last edited: Nov  7 08:39 2006 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.17 2006-10-18 15:25:23 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.18 2006-11-07 08:59:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -841,6 +841,12 @@ static void setFieldDefaults(SearchData search_data)
 	    search_data->align_original_id = align->original_id ;
 	    break ;
 	  }
+        case ZMAPFEATURE_STRUCT_CONTEXT:
+          break;
+        case ZMAPFEATURE_STRUCT_INVALID:
+        default:
+          zMapAssertNotReached();
+          break;
 	}
 
       feature_any = feature_any->parent ;
@@ -942,6 +948,12 @@ static void setFilterDefaults(SearchData search_data)
 
 	    break ;
 	  }
+        case ZMAPFEATURE_STRUCT_CONTEXT:
+          break;
+        case ZMAPFEATURE_STRUCT_INVALID:
+        default:
+          zMapAssertNotReached();
+          break;
 	}
 
       feature_any = feature_any->parent ;

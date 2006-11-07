@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  3 17:41 2006 (rds)
+ * Last edited: Nov  7 08:50 2006 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.4 2006-11-06 09:32:04 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.5 2006-11-07 08:59:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -120,7 +120,8 @@ static void setupLocatorGroup(ZMapWindowNavigator navigate);
 static void updateLocatorDragger(ZMapWindowNavigator navigate, double button_y, double size);
 static gboolean rootBGEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data);
 static gboolean columnBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data);
-static void positioningCB(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data);
+static void positioningCB(FooCanvasGroup *container, FooCanvasPoints *points, 
+                          ZMapContainerLevelType level, gpointer user_data);
 
 static FooCanvas *fetchCanvas(ZMapWindowNavigator navigate);
 
@@ -379,15 +380,13 @@ void zMapWindowNavigatorDestroy(ZMapWindowNavigator navigate)
 
 /* INTERNAL */
 
-static void positioningCB(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data)
+static void positioningCB(FooCanvasGroup *container, FooCanvasPoints *points, 
+                          ZMapContainerLevelType level, gpointer user_data)
 {
   ZMapWindowNavigator navigate = (ZMapWindowNavigator)user_data;
   FooCanvasGroup *align = NULL;
   double init_y1, init_y2, init_size;
   double rx1, rx2, width_x;
-  ZMapContainerLevelType level ;
-
-  level = zmapWindowContainerGetLevel(container) ;
 
   switch(level)
     {

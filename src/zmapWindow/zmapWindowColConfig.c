@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct  4 14:23 2006 (rds)
+ * Last edited: Nov  7 08:41 2006 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.10 2006-10-04 14:28:05 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.11 2006-11-07 08:59:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,7 +61,8 @@ static GtkWidget *makeMenuBar(ColConfigure search_data) ;
 static GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title,
 				GList *column_groups, GList **button_list_out) ;
 static void makeColList(ZMapWindow window, GList **forward_cols, GList **reverse_cols) ;
-static void getSetGroupCB(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data) ;
+static void getSetGroupCB(FooCanvasGroup *container, FooCanvasPoints *points, 
+                          ZMapContainerLevelType level, gpointer user_data) ;
 static void colConfigure(ZMapWindow window, GList *forward_cols, GList *reverse_cols) ;
 static void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode configure_mode,
 			    FooCanvasGroup *column_group) ;
@@ -550,15 +551,12 @@ static void makeColList(ZMapWindow window, GList **forward_cols_out, GList **rev
 
 
 /* Adds this columns group to the list supplied as user data. */
-static void getSetGroupCB(FooCanvasGroup *container, FooCanvasPoints *points, gpointer user_data)
+static void getSetGroupCB(FooCanvasGroup *container, FooCanvasPoints *points, ZMapContainerLevelType level, gpointer user_data)
 {
   GList **return_list = (GList **)user_data ;
   GList *col_list = *return_list ;
-  ZMapContainerLevelType level ;
 
-  level = zmapWindowContainerGetLevel(container) ;
-
-  if (zmapWindowContainerGetLevel(container) == ZMAPCONTAINER_LEVEL_FEATURESET)
+  if (level == ZMAPCONTAINER_LEVEL_FEATURESET)
     {
       col_list = g_list_append(col_list, container) ;
       *return_list = col_list ;

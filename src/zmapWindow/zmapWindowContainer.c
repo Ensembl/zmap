@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Oct 18 14:25 2006 (rds)
+ * Last edited: Nov  7 08:56 2006 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.16 2006-10-18 15:18:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.17 2006-11-07 08:59:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -106,12 +106,12 @@ static void containerDestroyCB(GtkObject *object, gpointer user_data) ;
 
 static void eachContainer(gpointer data, gpointer user_data) ;
 
-static void printlevel(FooCanvasGroup *container_parent, FooCanvasPoints *points, gpointer user_data);
+static void printlevel(FooCanvasGroup *container_parent, FooCanvasPoints *points,
+                       ZMapContainerLevelType level, gpointer user_data);
 static void printItem(FooCanvasItem *item, int indent, char *prefix) ;
 
 static void itemDestroyCB(gpointer data, gpointer user_data);
 
-static void redrawChildrenCB(gpointer data, gpointer user_data) ;
 static void redrawColumn(FooCanvasItem *container, ContainerData data);
 
 
@@ -933,14 +933,13 @@ void zmapWindowContainerReposition(FooCanvasGroup *container)
 
 static void getStrandLevelWithStrand(FooCanvasGroup *container_parent, 
                                      FooCanvasPoints *points, 
+                                     ZMapContainerLevelType level,
                                      gpointer user_data)
 {
   ContainerData container_data = NULL;
-  ZMapContainerLevelType level = ZMAPCONTAINER_LEVEL_INVALID;
   ContainerToStrand io_data = (ContainerToStrand)user_data;
 
   container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA) ;
-  level          = container_data->level;
 
   if(level == ZMAPCONTAINER_LEVEL_STRAND)
     {
@@ -1145,7 +1144,7 @@ static void eachContainer(gpointer data, gpointer user_data)
 
   /* Execute pre-recursion function. */
   if(all_data->container_enter_cb)
-    (all_data->container_enter_cb)(container, this_points, all_data->container_enter_data);
+    (all_data->container_enter_cb)(container, this_points, level, all_data->container_enter_data);
 
   /* Recurse ? */
   if (children)
@@ -1214,7 +1213,7 @@ static void eachContainer(gpointer data, gpointer user_data)
 
   /* Execute post-recursion function. */
   if(all_data->container_leave_cb)
-    (all_data->container_leave_cb)(container, this_points, all_data->container_leave_data);
+    (all_data->container_leave_cb)(container, this_points, level, all_data->container_leave_data);
 
   containerPointsCacheResetPoints(all_data->cache, level);
 
@@ -1234,7 +1233,8 @@ static void itemDestroyCB(gpointer data, gpointer user_data)
 }
 
 
-static void printlevel(FooCanvasGroup *container_parent, FooCanvasPoints *points, gpointer user_data)
+static void printlevel(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
+                       ZMapContainerLevelType level, gpointer user_data)
 {
   ContainerType type = CONTAINER_INVALID ;
   ZMapFeatureAny any_feature ;

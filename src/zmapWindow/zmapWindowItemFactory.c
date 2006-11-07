@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 19 14:12 2006 (rds)
+ * Last edited: Nov  7 08:36 2006 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.2 2006-10-19 13:16:20 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.3 2006-11-07 08:59:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -479,6 +479,7 @@ static void ZoomEventHandler(FooCanvasItem *container, double zoom_factor, gpoin
                                  factory_input->user_funcs, 
                                  factory_input->user_data);
       
+      /* THIS LOOKS ODD container is an item, not a group !!! */
       zmapWindowFToIFactoryRunSet(tmp_factory, feature_set, container);
       
       zmapWindowFToIFactoryClose(tmp_factory);
@@ -1310,6 +1311,7 @@ static FooCanvasItem *drawSeqFeature(RunSet run_data,  ZMapFeature feature,
       zmapWindowFToIFactorySetup(zoom_data, factory->line_width, 
                                  factory->user_funcs, factory->user_data);
 
+      /* ZoomEventHandler is of WRONG type */
       zmapWindowContainerSetZoomEventHandler(column_parent, ZoomEventHandler, 
                                              (gpointer)zoom_data, ZoomDataDestroy);
     }
@@ -1433,6 +1435,7 @@ static FooCanvasItem *drawPepFeature(RunSet run_data,  ZMapFeature feature,
       zmapWindowFToIFactorySetup(zoom_data, factory->line_width, 
                                  factory->user_funcs, factory->user_data);
 
+      /* ZoomEventHandler is of wrong type !!! */
       zmapWindowContainerSetZoomEventHandler(column_parent, ZoomEventHandler, 
                                              (gpointer)zoom_data, ZoomDataDestroy);
     }
