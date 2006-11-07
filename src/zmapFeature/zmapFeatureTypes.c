@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 18 14:42 2006 (rds)
+ * Last edited: Nov  2 12:14 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.32 2006-10-18 15:13:49 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.33 2006-11-07 11:56:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -506,14 +506,14 @@ ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style)
 
 
 
-void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, 
-                              gboolean show_gaps,
-                              gboolean parse_gaps)
+void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
+			      unsigned int align_error)
 {
   zMapAssert(style);
 
   style->opts.align_gaps = show_gaps ;
   style->opts.parse_gaps = parse_gaps ;
+  style->align_error = align_error ;
 
   return ;
 }
@@ -802,6 +802,7 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	   {"maxmag"      , ZMAPCONFIG_INT, {NULL}},
 	   {"bump"        , ZMAPCONFIG_STRING, {NULL}},
 	   {"gapped_align", ZMAPCONFIG_BOOL, {NULL}},
+	   {"gapped_error", ZMAPCONFIG_INT, {NULL}},
 	   {"read_gaps"   , ZMAPCONFIG_BOOL, {NULL}},
 	   {"directional_end", ZMAPCONFIG_BOOL, {NULL}},
            {"hide_initially", ZMAPCONFIG_BOOL, {NULL}},
@@ -873,7 +874,8 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
               /* Not good to hard code the TRUE here, but I guess blixem requires the gaps array. */
               zMapStyleSetGappedAligns(new_type, 
                                        zMapConfigGetElementBool(next_types, "gapped_align"),
-                                       TRUE);
+                                       TRUE,
+				       zMapConfigGetElementBool(next_types, "gapped_error")) ;
               zMapStyleSetHideInitial(new_type, zMapConfigGetElementBool(next_types, "hide_initially"));
               zMapStyleSetEndStyle(new_type, zMapConfigGetElementBool(next_types, "directional_end"));
 	      types = g_list_append(types, new_type) ;
