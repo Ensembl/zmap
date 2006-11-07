@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct 13 11:14 2006 (edgrif)
+ * Last edited: Nov  7 12:08 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.72 2006-10-16 10:50:07 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.73 2006-11-07 12:09:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1565,7 +1565,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   double min_score = 0.0, max_score = 0.0 ;
   gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE, gaps = FALSE ;
   int obj_lines ;
-
+  int align_error = 0 ;
 
   if (!g_str_has_prefix(method_str, "Method : "))
     return style ;
@@ -1700,7 +1700,18 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	}
       else if (g_ascii_strcasecmp(tag, "Gapped") == 0)
 	{
+	  char *value ;
+
 	  gaps = TRUE ;
+
+	  value = strtok_r(NULL, " ", &line_pos) ;
+
+	  if (!(value && (status = zMapStr2Int(value, &align_error))))
+	    {
+	      zMapLogWarning("Bad value for \"Gapped\" align error specified in method: %s", name) ;
+	      
+	      break ;
+	    }
 	}
       else if (g_ascii_strcasecmp(tag, "Min_mag") == 0)
 	{
@@ -1708,12 +1719,16 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
+#warning "I have disabled mag for now as vastly slows down zooming." 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (!(status = zMapStr2Double(value, &min_mag)))
 	    {
 	      zMapLogWarning("Bad value for \"Min_mag\" specified in method: %s", name) ;
 	      
 	      break ;
 	    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	}
       else if (g_ascii_strcasecmp(tag, "Max_mag") == 0)
 	{
@@ -1721,12 +1736,16 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
+#warning "I have disabled mag for now as vastly slows down zooming." 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (!(status = zMapStr2Double(value, &max_mag)))
 	    {
 	      zMapLogWarning("Bad value for \"Max_mag\" specified in method: %s", name) ;
 	      
 	      break ;
 	    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	}
       else if (g_ascii_strcasecmp(tag, "Score_bounds") == 0)
 	{
@@ -1817,7 +1836,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	    outline = colour ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-          if(outline_flag)
+          if (outline_flag)
             outline = colour;
           else
             background = colour ;
@@ -1856,7 +1875,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
         zMapStyleSetEndStyle(style, directional_end);
 
       if (gaps)
-	zMapStyleSetGappedAligns(style, TRUE, TRUE) ;
+	zMapStyleSetGappedAligns(style, TRUE, TRUE, align_error) ;
 
     }
 
