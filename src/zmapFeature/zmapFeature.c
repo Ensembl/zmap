@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Oct  6 10:53 2006 (edgrif)
+ * Last edited: Nov  6 16:05 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.44 2006-10-06 10:16:31 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.45 2006-11-07 11:56:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -95,6 +95,8 @@ static void removeNotFreeFeature(GQuark key_id, gpointer data, gpointer user_dat
 
 static void destroyFeatureSet(gpointer data) ;
 static void removeNotFreeFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
+
+static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 
 
 
@@ -473,7 +475,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     int query_start, int query_end,
 				     GArray *gaps)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;				    /* Not used at the moment. */
 
   zMapAssert(feature && feature->type == ZMAPFEATURE_ALIGNMENT) ;
 
@@ -484,10 +486,15 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   feature->feature.homol.y2 = query_end ;
 
   if (gaps)
-    feature->feature.homol.align = gaps ;
-	  
-  result = TRUE ;
+    {
+      zMapFeatureSortGaps(gaps) ;
 
+      feature->feature.homol.align = gaps ;
+
+      feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align,
+								  feature->style->align_error) ;
+    }
+	  
   return result ;
 }
 
@@ -1479,3 +1486,59 @@ static void doNewFeatures(GQuark key_id, gpointer data, gpointer user_data)
 }
 
 
+/* Returns TRUE if the target blocks match coords are within align_error bases of each other, if
+ * there are less than two blocks then FALSE is returned.
+ * 
+ * Sometimes, for reasons I don't understand, its possible to have two butting matches, i.e. they
+ * should really be one continuous match. It may be that this happens at a clone boundary, I don't
+ * try to correct this because really its a data entry problem.
+ * 
+ *  */
+static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
+{
+  gboolean perfect_align = FALSE ;
+  int i ;
+  ZMapAlignBlock align, last_align ;
+
+  if (gaps->len > 1)
+    {
+      perfect_align = TRUE ;
+      last_align = &g_array_index(gaps, ZMapAlignBlockStruct, 0) ;
+
+      for (i = 1 ; i < gaps->len ; i++)
+	{
+	  int prev_end, curr_start ;
+
+	  align = &g_array_index(gaps, ZMapAlignBlockStruct, i) ;
+
+
+	  /* The gaps array gets sorted by target coords, this can have the effect of reversing
+	     the order of the query coords if the match is to the reverse strand of the target sequence. */
+	  if (align->q2 < last_align->q1)
+	    {
+	      prev_end = align->q2 ;
+	      curr_start = last_align->q1 ;
+	    }
+	  else
+	    {
+	      prev_end = last_align->q2 ;
+	      curr_start = align->q1 ;
+	    }
+
+
+	  /* The "- 1" is because the default align_error is zero, i.e. zero _missing_ bases,
+	     which is true when sub alignment follows on directly from the next. */
+	  if ((curr_start - prev_end - 1) <= align_error)
+	    {
+	      last_align = align ;
+	    }
+	  else
+	    {
+	      perfect_align = FALSE ;
+	      break ;
+	    }
+	}
+    }
+
+  return perfect_align ;
+}
