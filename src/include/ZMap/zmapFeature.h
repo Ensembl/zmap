@@ -25,18 +25,18 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov  6 11:46 2006 (rds)
+ * Last edited: Nov  7 09:00 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.94 2006-11-06 11:47:53 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.95 2006-11-07 11:55:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
 
-
 #include <gdk/gdkcolor.h>
 #include <ZMap/zmapConfigStyleDefaults.h>
 #include <ZMap/zmapXML.h>
+
 
 /* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
  * can surmise from the code that zero is not a valid quark. */
@@ -311,11 +311,27 @@ typedef struct
   ZMapStrand target_strand ;
   ZMapPhase target_phase ;				    /* for tx_homol */
   GArray *align ;					    /* of AlignBlock, if null, align is ungapped. */
+
+  struct
+  {
+    unsigned int perfect : 1 ;				    /* If align != NULL and perfect == TRUE
+							       then gaps array is a "perfect"
+							       alignment within style specified
+							       slop factor. */
+  } flags ;
+
 } ZMapHomolStruct, *ZMapHomol ;
 
 
 typedef struct
 {
+  /* If cds == TRUE, then these must show the position of the cds in sequence coords... */
+  Coord cds_start, cds_end ;
+
+  ZMapPhase start_phase ;
+  GArray *exons ;					    /* Of ZMapSpanStruct. */
+  GArray *introns ;					    /* Of ZMapSpanStruct. */
+
   struct
   {
     unsigned int cds : 1 ;
@@ -323,12 +339,6 @@ typedef struct
     unsigned int end_not_found : 1 ;
   } flags ;
 
-  /* If cds == TRUE, then these must show the position of the cds in sequence coords... */
-  Coord cds_start, cds_end ;
-
-  ZMapPhase start_phase ;
-  GArray *exons ;					    /* Of ZMapSpanStruct. */
-  GArray *introns ;					    /* Of ZMapSpanStruct. */
 } ZMapTranscriptStruct, *ZMapTranscript ;
 
 
@@ -546,6 +556,11 @@ typedef struct ZMapFeatureTypeStyleStruct_
 							       have scores. */
   double    min_score, max_score ;			    /* Min/max for score width calc. */
 
+
+  unsigned int align_error ;				    /* Number of missing bases allowed in
+							       alignment for a "perfect"
+							       alignment, default = 0. */
+
   /* GFF feature dumping, allows specifying of source/feature types independently of feature
    * attributes. */
   GQuark gff_source ;
@@ -745,9 +760,8 @@ void zMapStyleSetHide(ZMapFeatureTypeStyle style, gboolean hide) ;
 void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially) ;
 gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
-void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, 
-                              gboolean show_gaps,
-                              gboolean parse_gaps) ;
+void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
+			      unsigned int align_error) ;
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
 char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
