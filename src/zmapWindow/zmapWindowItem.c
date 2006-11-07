@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 24 14:26 2006 (rds)
+ * Last edited: Nov  7 10:48 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.47 2006-10-24 13:27:28 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.48 2006-11-07 12:03:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1526,7 +1526,7 @@ gboolean zmapWindowItemIsShown(FooCanvasItem *item)
 {
   gboolean visible = FALSE;
   
-  zMapAssert(item != NULL);
+  zMapAssert(FOO_IS_CANVAS_ITEM(item)) ;
 
   g_object_get(G_OBJECT(item), 
                "visible", &visible,
