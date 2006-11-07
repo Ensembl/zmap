@@ -26,9 +26,9 @@
  *              code.
  *              
  * HISTORY:
- * Last edited: Apr  8 17:09 2004 (edgrif)
+ * Last edited: Nov  7 15:39 2006 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsCheck.h,v 1.1 2004-04-08 16:14:53 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsCheck.h,v 1.2 2006-11-07 17:00:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_CHECK_H
@@ -36,13 +36,6 @@
 
 #include <stdlib.h>
 #include <glib.h>
-
-
-#ifdef HOME
-
-#define zMapCheck(EXPR, FORMAT, ...)
-
-#else
 
 
 /* Use to test functions, e.g.
@@ -53,16 +46,12 @@ G_STMT_START{			                                \
   if ((EXPR))                					\
     {								\
       g_printerr(ZMAP_MSG_FORMAT_STRING " '%s' " FORMAT,        \
-		 __FILE__,					\
-		 ZMAP_MSG_FUNCTION_MACRO    		        \
-		 __LINE__,					\
+		 ZMAP_MSG_FUNCTION_MACRO,    		        \
 		 #EXPR,                                         \
 		 __VA_ARGS__);					\
       exit(EXIT_FAILURE) ;                                      \
     };                                                          \
 }G_STMT_END
 
-
-#endif /*HOME*/
 
 #endif /* ZMAP_UTILS_CHECK_H */

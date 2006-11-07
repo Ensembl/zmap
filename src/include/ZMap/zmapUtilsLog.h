@@ -25,9 +25,9 @@
  * Description: Contains macros, functions etc. for logging.
  *              
  * HISTORY:
- * Last edited: May  7 09:40 2004 (edgrif)
+ * Last edited: Nov  7 15:37 2006 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsLog.h,v 1.2 2004-05-07 09:17:20 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsLog.h,v 1.3 2006-11-07 17:00:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_LOG_H
@@ -48,17 +48,6 @@
 #include <glib.h>
 
 
-
-#ifdef EDG_HOME
-
-#define zMapLogFatal(FORMAT, ...)
-
-#define zMapLogFatalSysErr(ERRNO, FORMAT, ...)
-
-
-#else
-
-
 /* Use these macros like this:
  * 
  *    zMapLogXXXX("%s is about to %s", str, str) ;
@@ -74,37 +63,29 @@
 	 g_log(ZMAPLOG_DOMAIN,				  \
 	       G_LOG_LEVEL_MESSAGE,			  \
 	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
-		__FILE__,				  \
-                  ZMAP_MSG_FUNCTION_MACRO                 \
-		__LINE__,				  \
-		__VA_ARGS__)
+	       ZMAP_MSG_FUNCTION_MACRO,			  \
+	       __VA_ARGS__)
 
 #define zMapLogWarning(FORMAT, ...)                       \
 	 g_log(ZMAPLOG_DOMAIN,				  \
 	       G_LOG_LEVEL_WARNING,			  \
 	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
-		__FILE__,				  \
-                  ZMAP_MSG_FUNCTION_MACRO                 \
-		__LINE__,				  \
-		__VA_ARGS__)
+	       ZMAP_MSG_FUNCTION_MACRO,			  \
+	       __VA_ARGS__)
 
 #define zMapLogCritical(FORMAT, ...)                      \
 	 g_log(ZMAPLOG_DOMAIN,				  \
 	       G_LOG_LEVEL_CRITICAL,			  \
 	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
-		__FILE__,				  \
-                  ZMAP_MSG_FUNCTION_MACRO                 \
-		__LINE__,				  \
-		__VA_ARGS__)
+	       ZMAP_MSG_FUNCTION_MACRO,			  \
+	       __VA_ARGS__)
      
 #define zMapLogFatal(FORMAT, ...)                         \
 	 g_log(ZMAPLOG_DOMAIN,				  \
 	       G_LOG_LEVEL_ERROR,			  \
 	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
-		__FILE__,				  \
-                  ZMAP_MSG_FUNCTION_MACRO                 \
-		__LINE__,				  \
-		__VA_ARGS__)
+	       ZMAP_MSG_FUNCTION_MACRO,			  \
+	       __VA_ARGS__)
 
 
 /* Use this macro like this:
@@ -116,13 +97,9 @@
 	 g_log(ZMAPLOG_DOMAIN,				  \
 	       G_LOG_LEVEL_ERROR,			  \
 	       ZMAP_MSG_FORMAT_STRING FORMAT " (errno = \"%s\")",  \
-		__FILE__,				  \
-                  ZMAP_MSG_FUNCTION_MACRO                 \
-		__LINE__,				  \
-		__VA_ARGS__,                              \
+	       ZMAP_MSG_FUNCTION_MACRO,				   \
+	       __VA_ARGS__,					   \
 	       g_strerror(ERRNO))
 
-
-#endif /*HOME*/
 
 #endif /* ZMAP_UTILS_LOG_H */

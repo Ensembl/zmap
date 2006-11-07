@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Jul 14 09:48 2006 (edgrif)
+ * Last edited: Nov  7 15:35 2006 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.23 2006-07-14 10:24:10 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.24 2006-11-07 17:00:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -42,13 +42,13 @@
 
 #define ZMAP_MSG_FORMAT_STRING  "(%s, %s(), line %d) - "
 
-#define ZMAP_MSG_FUNCTION_MACRO __PRETTY_FUNCTION__,
+#define ZMAP_MSG_FUNCTION_MACRO __FILE__, __PRETTY_FUNCTION__, __LINE__
 
 #else /* __GNUC__ */
 
 #define ZMAP_MSG_FORMAT_STRING  "(%s, line %d) - "
 
-#define ZMAP_MSG_FUNCTION_MACRO        
+#define ZMAP_MSG_FUNCTION_MACRO __FILE__, __LINE__
 
 #endif /* __GNUC__ */
 

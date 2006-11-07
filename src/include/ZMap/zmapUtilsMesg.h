@@ -26,9 +26,9 @@
  *              in production code.
  *              
  * HISTORY:
- * Last edited: Nov 15 14:09 2004 (edgrif)
+ * Last edited: Nov  7 15:38 2006 (edgrif)
  * Created: Mon Mar 29 18:23:48 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsMesg.h,v 1.2 2004-11-19 13:47:47 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsMesg.h,v 1.3 2006-11-07 17:00:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_MESG_H
@@ -40,21 +40,9 @@
 /* Can call the message routine directly but better to use the macros below. */
 typedef enum {ZMAP_MSG_INFORMATION, ZMAP_MSG_WARNING, ZMAP_MSG_EXIT, ZMAP_MSG_CRASH} ZMapMsgType ;
 
+
 void zMapShowMsg(ZMapMsgType msg_type, char *format, ...) ;
 
-
-#ifdef HOME
-
-#define zMapMessage(FORMAT, ...)
-
-#define zMapWarning(FORMAT, ...)
-  
-#define zMapExit(FORMAT, ...)
-
-#define zMapCrash(FORMAT, ...)
-
-
-#else
 
 
 /* Informational messages. */
@@ -76,9 +64,7 @@ G_STMT_START{                                              \
 G_STMT_START{                                     \
   zMapShowMsg(ZMAP_MSG_EXIT,                      \
 	      ZMAP_MSG_FORMAT_STRING FORMAT,      \
-	      __FILE__,			          \
-	      ZMAP_MSG_FUNCTION_MACRO  	          \
-	      __LINE__,				  \
+	      ZMAP_MSG_FUNCTION_MACRO,		  \
 	      __VA_ARGS__) ;                      \
 }G_STMT_END
 
@@ -88,14 +74,10 @@ G_STMT_START{                                     \
 G_STMT_START{                                     \
   zMapShowMsg(ZMAP_MSG_CRASH,                     \
 	      ZMAP_MSG_FORMAT_STRING FORMAT,      \
-	      __FILE__,			          \
-	      ZMAP_MSG_FUNCTION_MACRO		  \
-	      __LINE__,				  \
+	      ZMAP_MSG_FUNCTION_MACRO,		  \
 	      __VA_ARGS__) ;                      \
 }G_STMT_END
 
-
-#endif /*HOME*/
 
 
 #endif /* ZMAP_UTILS_MESG_H */
