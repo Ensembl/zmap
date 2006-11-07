@@ -25,12 +25,13 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Oct 11 09:29 2006 (rds)
+ * Last edited: Nov  7 13:37 2006 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.19 2006-10-18 15:14:48 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.20 2006-11-07 17:06:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <gtk/gtk.h>
 #include <math.h>
 #include <zmapUtils_P.h>

@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: May  5 11:21 2006 (rds)
+ * Last edited: Nov  7 13:40 2006 (edgrif)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.3 2006-05-05 11:00:16 rds Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.4 2006-11-07 17:06:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,7 @@
  * 
  */
 
-
+#include <string.h>
 #include <ZMap/zmapUtils.h>
 
 
