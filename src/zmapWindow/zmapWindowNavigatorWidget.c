@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  6 09:28 2006 (rds)
+ * Last edited: Nov  7 16:29 2006 (rds)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.4 2006-11-06 10:44:04 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.5 2006-11-08 08:31:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -194,11 +194,10 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
       double x1, x2, y1, y2;
       double border = class_data->text_height / target_pixels;
           
-      fetchScrollCoords(class_data, border, &x1, &y1, &x2, &y2);
-
       if(curr_pixels != target_pixels)
         foo_canvas_set_pixels_per_unit_xy(canvas, 1.0, target_pixels);
 
+      fetchScrollCoords(class_data, border, &x1, &y1, &x2, &y2);
       foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2);
   }
 

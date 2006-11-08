@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  3 09:05 2006 (rds)
+ * Last edited: Nov  7 15:46 2006 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.2 2006-11-06 10:43:06 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.3 2006-11-08 08:31:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,21 @@
 
 static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data);
 static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data);
+
+ZMapGUIMenuItem zmapWindowNavigatorMakeMenuLocusOps(int *start_index_inout,
+                                                    ZMapGUIMenuItemCallbackFunc callback_func,
+                                                    gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] = 
+    {
+      {ZMAPGUI_MENU_NORMAL, "Show Variants List", 1, NULL, NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,        0, NULL, NULL}
+    };
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data);
+
+  return menu;
+}
 
 ZMapGUIMenuItem zmapWindowNavigatorMakeMenuColumnOps(int *start_index_inout,
                                                      ZMapGUIMenuItemCallbackFunc callback_func,
@@ -117,11 +132,19 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
       {
         ZMapFeatureAny feature ;
 	ZMapWindowItemFeatureSetData set_data ;
+        FooCanvasItem *set_item = menu_data->item;
         GList *list ;
 	
         feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
 
-	set_data = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_SET_DATA) ;
+        if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+          {
+            /* a small hack for the time being... */
+            set_item = zmapWindowContainerGetParentContainerFromItem(menu_data->item);
+            feature = feature->parent;
+          }
+
+        set_data = g_object_get_data(G_OBJECT(set_item), ITEM_FEATURE_SET_DATA) ;
 	zMapAssert(set_data) ;
 
 	list = zmapWindowFToIFindItemSetFull(menu_data->navigate->ftoi_hash, 
