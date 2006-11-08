@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  7 16:58 2006 (edgrif)
+ * Last edited: Nov  8 11:23 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.156 2006-11-08 09:25:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.157 2006-11-08 11:58:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -95,12 +95,6 @@ typedef struct
 } RemoveEmptyColumnStruct, *RemoveEmptyColumn ;
 
 
-typedef struct
-{
-  double offset ;				    /* I think we do need these... */
-} PositionColumnStruct, *PositionColumn ;
-
-
 
 /* Data for creating a feature set with features.... */
 typedef struct
@@ -132,8 +126,6 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 static gboolean containerDestroyCB(FooCanvasItem *item_in_hash, gpointer data) ;
 
 static void removeEmptyColumnCB(gpointer data, gpointer user_data) ;
-static void positionColumns(ZMapCanvasData canvas_data) ;
-static void positionColumnCB(gpointer data, gpointer user_data) ;
 
 static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item,
 			   ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
@@ -907,14 +899,8 @@ static void drawBlocks(gpointer data, gpointer user_data)
     }
 
 
-
-  /* REPLACE THIS CALL WITH THE NewWindowReposition function which works much better */
-
-  /* THIS SHOULD BE WRITTEN AS A GENERAL FUNCTION TO POSITION STUFF, IN FACT WE WILL NEED
-   *  A FUNCTION THAT REPOSITIONS EVERYTHING....... */
   /* Now we must position all the columns as some columns will have been bumped. */
-  positionColumns(canvas_data) ;
-
+  zmapWindowNewReposition(window) ;
 
 
   /* Now we've positioned all the columns we can set the backgrounds for the forward and
@@ -1163,28 +1149,23 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 		      " it is not in the list of feature sets to be displayed."
 		      " Please check the list of styles and feature sets in the ZMap configuration file.",
 		      name) ;
-
-      return ;
     }
-
-
-
-  /* Get hold of the current column and set up canvas_data to do the right thing,
-   * remember that there must always be a forward column but that there might
-   * not be a reverse column ! */
-  if (forward_col)
+  else
     {
-      /* Now we have the feature set, make sure it is set for the column. */
-      g_object_set_data(G_OBJECT(forward_col), ITEM_FEATURE_DATA, feature_set) ;
+      /* Now we have the feature set, make sure it is set for the forward/reverse columns. */
+      if (forward_col)
+	{
+	  g_object_set_data(G_OBJECT(forward_col), ITEM_FEATURE_DATA, feature_set) ;
+	}
+
+      if (reverse_col)
+	{
+	  g_object_set_data(G_OBJECT(reverse_col), ITEM_FEATURE_DATA, feature_set) ;
+	}
+
+      zmapWindowCreateFeatureSet(window, feature_set, forward_col, reverse_col, ZMAPFRAME_NONE) ;
     }
 
-  if (reverse_col)
-    {
-      /* Now we have the feature set, make sure it is set for the column. */
-      g_object_set_data(G_OBJECT(reverse_col), ITEM_FEATURE_DATA, feature_set) ;
-    }
-
-  zmapWindowCreateFeatureSet(window, feature_set, forward_col, reverse_col, ZMAPFRAME_NONE) ;
 
   return ;
 }
@@ -1273,73 +1254,6 @@ static void removeEmptyColumnCB(gpointer data, gpointer user_data)
 
   return ;
 }
-
-
-
-
-/* this should all be container code....this is no good having it all spread everywhere.... */
-
-
-/* Positions columns within the forward/reverse strand groups. We have to do this retrospectively
- * because the width of some columns is determined at the time they are drawn and hence we don't
- * know their size until they've been drawn.
- */
-static void positionColumns(ZMapCanvasData canvas_data)
-{
-  PositionColumnStruct pos_data ;
-
-  pos_data.offset = 0.0 ;
-  g_list_foreach(canvas_data->curr_forward_group->item_list, positionColumnCB, &pos_data) ;
-
-  /* We want the reverse strand columns as a mirror image of the forward strand so we position
-   * them backwards. */
-  pos_data.offset = 0.0 ;
-  zMap_g_list_foreach_directional(canvas_data->curr_reverse_group->item_list_end, 
-                                  positionColumnCB, &pos_data, ZMAP_GLIST_REVERSE) ;
-
-  return ;
-}
-
-/* Note how we must look at the items drawn, _not_ whether there are any features in the feature
- * set because the features may not be drawn (e.g. because they are on the opposite strand. */
-static void positionColumnCB(gpointer data, gpointer user_data)
-{
-  FooCanvasGroup *container = (FooCanvasGroup *)data ;
-  FooCanvasGroup *parent ;
-  PositionColumn pos_data  = (PositionColumn)user_data ;
-  double x1, y1, x2, y2 ;
-  ZMapFeatureTypeStyle style ;
-  double spacing ;
-
-  parent = zmapWindowContainerGetSuperGroup(container) ;
-
-  spacing = zmapWindowContainerGetSpacing(parent) ;
-
-
-  style = zmapWindowContainerGetStyle(container) ;
-  zMapAssert(style) ;
-
-  /* Bump columns that need to be bumped. */
-  if (style->overlap_mode != ZMAPOVERLAP_COMPLETE)
-    zmapWindowColumnBump(FOO_CANVAS_ITEM(container), style->overlap_mode) ;
-
-
-  /* Set its x position. */
-  my_foo_canvas_item_goto(FOO_CANVAS_ITEM(container), &(pos_data->offset), NULL) ;
-
-  /* Calculate the offset of the next column from this ones width. */
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container), &x1, &y1, &x2, &y2) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  pos_data->offset = pos_data->offset + zmapWindowExt(x1, x2) + COLUMN_SPACING ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  pos_data->offset = pos_data->offset + zmapWindowExt(x1, x2) + spacing ;
-
-  return ;
-}
-
-
 
 
 
