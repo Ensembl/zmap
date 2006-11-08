@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  7 09:49 2006 (rds)
+ * Last edited: Nov  8 11:45 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.37 2006-11-08 09:25:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.38 2006-11-08 11:57:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,9 +65,12 @@ typedef struct
 
 
 
+/* THERE IS A BUG IN THE CODE THAT USES THIS...IT MOVES FEATURES OUTSIDE OF THE BACKGROUND SO
+ * IT ALL LOOKS NAFF, PROBABLY WE GET AWAY WITH IT BECAUSE COLS ARE SO WIDELY SPACED OTHERWISE
+ * THEY MIGHT OVERLAP. I THINK THE MOVING CODE MAY BE AT FAULT. */
 /* For complex bump users seem to want columns to overlap a bit, if this is set to 1.0 there is
  * no overlap, if you set it to 0.5 they will overlap by a half and so on. */
-#define COMPLEX_BUMP_COMPRESS 0.5
+#define COMPLEX_BUMP_COMPRESS 1.0
 
 
 typedef gboolean (*OverLapListFunc)(GList *curr_features, GList *new_features) ;
