@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov  7 17:05 2006 (edgrif)
+ * Last edited: Nov  7 17:27 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.76 2006-11-08 09:24:26 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.77 2006-11-08 11:56:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1571,9 +1571,9 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   gboolean hide_always = FALSE, init_hidden = FALSE ;
   double min_mag = 0.0, max_mag = 0.0 ;
   double min_score = 0.0, max_score = 0.0 ;
-  gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE, gaps = FALSE ;
+  gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE, gaps = FALSE, join_aligns = FALSE ;
   int obj_lines ;
-  int align_error = 0 ;
+  int within_align_error = 0, between_align_error = 0 ;
 
   if (!g_str_has_prefix(method_str, "Method : "))
     return style ;
@@ -1718,9 +1718,24 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (!(value && (status = zMapStr2Int(value, &align_error))))
+	  if (!(value && (status = zMapStr2Int(value, &within_align_error))))
 	    {
 	      zMapLogWarning("Bad value for \"Gapped\" align error specified in method: %s", name) ;
+	      
+	      break ;
+	    }
+	}
+      else if (g_ascii_strcasecmp(tag, "Join_aligns") == 0)
+	{
+	  char *value ;
+
+	  join_aligns = TRUE ;
+
+	  value = strtok_r(NULL, " ", &line_pos) ;
+
+	  if (!(value && (status = zMapStr2Int(value, &between_align_error))))
+	    {
+	      zMapLogWarning("Bad value for \"Join_aligns\" align error specified in method: %s", name) ;
 	      
 	      break ;
 	    }
@@ -1887,7 +1902,11 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
         zMapStyleSetEndStyle(style, directional_end);
 
       if (gaps)
-	zMapStyleSetGappedAligns(style, TRUE, TRUE, align_error) ;
+	zMapStyleSetGappedAligns(style, TRUE, TRUE, within_align_error) ;
+
+      if (join_aligns)
+	zMapStyleSetJoinAligns(style, TRUE, between_align_error) ;
+
 
     }
 

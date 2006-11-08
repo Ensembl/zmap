@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov  7 09:00 2006 (edgrif)
+ * Last edited: Nov  7 17:29 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.96 2006-11-08 09:23:14 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.97 2006-11-08 11:55:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -514,9 +514,13 @@ typedef struct ZMapFeatureTypeStyleStruct_
     unsigned int showText        : 1 ; /* Should feature text be displayed. */
 
     unsigned int parse_gaps      : 1 ;
-    unsigned int align_gaps      : 1 ; /* TRUE: gaps within alignment are
-                                          displayed, FALSE: alignment is
-                                          displayed as a single block. */
+    unsigned int align_gaps      : 1 ;			    /* TRUE: gaps within alignment are displayed,
+							       FALSE: alignment is displayed as a single block. */
+
+    unsigned int join_aligns     : 1 ;			    /* TRUE: joins aligns if between_align_error not exceeded,
+							       FALSE: does not joing aligns. */
+
+
 
     /* These are all linked, if strand_specific is FALSE, then so are
      * frame_specific and show_rev_strand. */
@@ -557,9 +561,13 @@ typedef struct ZMapFeatureTypeStyleStruct_
   double    min_score, max_score ;			    /* Min/max for score width calc. */
 
 
-  unsigned int align_error ;				    /* Number of missing bases allowed in
-							       alignment for a "perfect"
-							       alignment, default = 0. */
+  /* Allowable align errors, used to decide whether a match should be classified as "perfect".
+   *   within_align_error   is used to assess the blocks in a single gapped alignment if align_gaps = TRUE
+   *  between_align_error   is used to assess several alignments (e.g. for exon matches) if join_homols = TRUE
+   * 
+   * Number is allowable number of missing bases between blocks/alignments, default is 0. */
+  unsigned int within_align_error ;
+  unsigned int between_align_error ;
 
   /* GFF feature dumping, allows specifying of source/feature types independently of feature
    * attributes. */
@@ -761,7 +769,8 @@ void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially
 gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
-			      unsigned int align_error) ;
+			      unsigned int within_align_error) ;
+void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, unsigned int between_align_error) ;
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
 char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;

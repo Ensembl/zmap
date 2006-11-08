@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov  2 12:14 2006 (edgrif)
+ * Last edited: Nov  7 17:27 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.34 2006-11-08 09:24:11 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.35 2006-11-08 11:55:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -507,16 +507,28 @@ ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style)
 
 
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
-			      unsigned int align_error)
+			      unsigned int within_align_error)
 {
   zMapAssert(style);
 
   style->opts.align_gaps = show_gaps ;
   style->opts.parse_gaps = parse_gaps ;
-  style->align_error = align_error ;
+  style->within_align_error = within_align_error ;
 
   return ;
 }
+
+
+void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, unsigned int between_align_error)
+{
+  zMapAssert(style);
+
+  style->opts.join_aligns = join_aligns ;
+  style->between_align_error = between_align_error ;
+
+  return ;
+}
+
 
 
 /* Pretty brain dead but we need some way to deal with the situation where a style may differ in

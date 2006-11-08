@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov  6 16:05 2006 (edgrif)
+ * Last edited: Nov  7 17:30 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.46 2006-11-08 09:24:08 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.47 2006-11-08 11:55:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -492,7 +492,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
       feature->feature.homol.align = gaps ;
 
       feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align,
-								  feature->style->align_error) ;
+								  feature->style->within_align_error) ;
     }
 	  
   return result ;
