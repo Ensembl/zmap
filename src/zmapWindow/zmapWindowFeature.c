@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  7 11:53 2006 (edgrif)
+ * Last edited: Nov  8 13:01 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.61 2006-11-08 09:25:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.62 2006-11-08 13:06:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2347,6 +2347,25 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
                                    menu_data->item) ;
 	break ;
       }
+    case 9:
+      {
+        GList *list = NULL;
+	ZMapStrand set_strand ;
+	ZMapFrame set_frame ;
+	gboolean result ;
+
+	result = zmapWindowItemGetStrandFrame(menu_data->item, &set_strand, &set_frame) ;
+	zMapAssert(result) ;
+
+	list = zmapWindowFindSameNameItems(menu_data->window->context_to_item,
+					   zMapFeatureStrand2Str(set_strand), zMapFeatureFrame2Str(set_frame),
+					   feature) ;
+
+        zmapWindowListWindowCreate(menu_data->window, list, 
+                                   (char *)g_quark_to_string(feature->parent->original_id), 
+                                   menu_data->item) ;
+	break ;
+      }
     case 2:
       {
 	gboolean result ;
@@ -2425,10 +2444,11 @@ static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "List All Column Features",      1, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Feature Search Window",  3, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "DNA Search Window",  5, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
+      {ZMAPGUI_MENU_NORMAL, "List All Column Features",       1, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "List This Name Column Features", 9, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Feature Search Window",          3, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA Search Window",              5, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                               0, NULL,       NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;

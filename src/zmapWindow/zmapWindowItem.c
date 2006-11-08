@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  7 10:48 2006 (edgrif)
+ * Last edited: Nov  8 12:41 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.49 2006-11-08 09:25:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.50 2006-11-08 13:06:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -431,15 +431,12 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
     {
     case ZMAPFEATURE_ALIGNMENT:
       {
-	ZMapStrand set_strand ;
-	ZMapFrame set_frame ;
+	char *set_strand, *set_frame ;
 	gboolean result ;
 	
-	result = zmapWindowItemGetStrandFrame(item, &set_strand, &set_frame) ;
-	zMapAssert(result) ;
+	set_strand = set_frame = "*" ;
 
 	set_items = zmapWindowFindSameNameItems(window->context_to_item, set_strand, set_frame, feature) ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	if (set_items)
@@ -447,6 +444,8 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	g_list_foreach(set_items, highlightCB, window) ;
+
+	zmapWindowItemSetHotFocusItem(window->focus, item) ;
 
 	break ;
       }
@@ -542,7 +541,7 @@ void zmapWindowRaiseItem(FooCanvasItem *item)
  * as all features match at least themselves.
  *  */
 GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash,
-				   ZMapStrand set_strand, ZMapFrame set_frame,
+				   char *set_strand, char *set_frame,
 				   ZMapFeature feature)
 {
   GList *item_list = NULL ;
@@ -559,8 +558,8 @@ GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash,
 					    feature->parent->parent->parent->unique_id,
 					    feature->parent->parent->unique_id,
 					    feature->parent->unique_id,
-					    zMapFeatureStrand2Str(set_strand),
-					    zMapFeatureFrame2Str(set_frame),
+					    set_strand,
+					    set_frame,
 					    reg_ex_name_id, NULL, NULL) ;
 
   g_string_free(reg_ex_name, TRUE) ;
