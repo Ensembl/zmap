@@ -1,6 +1,6 @@
 /*  File: zmapServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2003
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Sep 26 14:32 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.23 2006-09-29 09:52:56 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.24 2006-11-08 09:24:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

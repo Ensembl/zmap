@@ -1,6 +1,6 @@
 /*  File: zmapWindowSearch.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  7 08:39 2006 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.18 2006-11-07 08:59:57 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.19 2006-11-08 09:25:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

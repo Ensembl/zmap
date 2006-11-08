@@ -1,6 +1,6 @@
 /*  File: zmapXMLAttributes.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 19 22:30 2006 (rds)
  * Created: Fri Aug  5 14:20:13 2005 (rds)
- * CVS info:   $Id: zmapXMLAttribute.c,v 1.4 2006-05-22 09:28:03 rds Exp $
+ * CVS info:   $Id: zmapXMLAttribute.c,v 1.5 2006-11-08 09:25:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

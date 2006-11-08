@@ -1,6 +1,6 @@
 /*  File: zmapServerProtocol.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jun  8 09:57 2006 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.8 2006-06-12 07:34:44 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.9 2006-11-08 09:23:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H

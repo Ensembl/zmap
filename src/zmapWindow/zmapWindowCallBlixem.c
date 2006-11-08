@@ -1,6 +1,6 @@
 /*  File: zmapWindowCallBlixem.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Oct 30 11:35 2006 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.24 2006-10-30 11:36:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.25 2006-11-08 09:25:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

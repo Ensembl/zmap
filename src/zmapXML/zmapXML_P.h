@@ -1,6 +1,6 @@
 /*  File: zmapXML_P.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 20 15:11 2006 (rds)
  * Created: Fri Aug  5 12:50:44 2005 (rds)
- * CVS info:   $Id: zmapXML_P.h,v 1.10 2006-07-21 10:26:31 rds Exp $
+ * CVS info:   $Id: zmapXML_P.h,v 1.11 2006-11-08 09:25:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapWebBrowser.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2006
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar 28 15:07 2006 (edgrif)
  * Created: Thu Mar 23 13:35:10 2006 (edgrif)
- * CVS info:   $Id: zmapWebBrowser.c,v 1.3 2006-03-29 10:09:14 edgrif Exp $
+ * CVS info:   $Id: zmapWebBrowser.c,v 1.4 2006-11-08 09:24:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

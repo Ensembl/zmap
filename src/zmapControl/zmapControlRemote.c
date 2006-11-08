@@ -1,6 +1,6 @@
 /*  File: zmapControlRemote.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2004
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Jul 25 10:53 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.31 2006-07-25 09:56:47 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.32 2006-11-08 09:23:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapWindow.h
  *  Author: Rob Clack (rnc@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2004
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov  8 11:50 2004 (rnc)
  * Created: Fri Aug 13 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.8 2004-11-08 12:02:24 rnc Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.h,v 1.9 2006-11-08 09:23:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_DRAWFEATURES_H

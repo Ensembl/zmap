@@ -1,6 +1,6 @@
 /*  File: zmapWindowItemHighlight.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2006
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 13 11:29 2006 (rds)
  * Created: Thu Oct 12 14:40:57 2006 (rds)
- * CVS info:   $Id: zmapWindowItemHighlight.c,v 1.1 2006-10-18 15:28:41 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHighlight.c,v 1.2 2006-11-08 09:25:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

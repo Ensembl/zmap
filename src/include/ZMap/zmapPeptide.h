@@ -1,6 +1,6 @@
 /*  File: zmapPeptide.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2006
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar 31 12:59 2006 (rds)
  * Created: Tue Mar 14 13:55:27 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.h,v 1.2 2006-03-31 12:01:16 rds Exp $
+ * CVS info:   $Id: zmapPeptide.h,v 1.3 2006-11-08 09:23:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PEPTIDE_H

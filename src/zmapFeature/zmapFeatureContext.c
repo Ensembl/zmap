@@ -1,6 +1,6 @@
 /*  File: zmapFeatureContext.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2006
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 24 12:20 2006 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.14 2006-10-24 13:21:41 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.15 2006-11-08 09:24:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

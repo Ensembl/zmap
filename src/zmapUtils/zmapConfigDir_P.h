@@ -1,6 +1,6 @@
 /*  File: zmapConfigDir_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 10 13:50 2005 (edgrif)
  * Created: Thu Feb 10 10:10:27 2005 (edgrif)
- * CVS info:   $Id: zmapConfigDir_P.h,v 1.1 2005-02-10 16:31:50 edgrif Exp $
+ * CVS info:   $Id: zmapConfigDir_P.h,v 1.2 2006-11-08 09:24:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIGDIR_P_H

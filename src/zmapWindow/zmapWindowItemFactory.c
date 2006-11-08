@@ -1,6 +1,6 @@
 /*  File: zmapWindowItemFactory.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2006
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov  7 08:36 2006 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.3 2006-11-07 08:59:57 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.4 2006-11-08 09:25:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

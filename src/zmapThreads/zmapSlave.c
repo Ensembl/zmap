@@ -1,6 +1,6 @@
 /*  File: zmapSlave.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2003
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  7 16:53 2006 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.26 2006-11-07 17:05:20 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.27 2006-11-08 09:24:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

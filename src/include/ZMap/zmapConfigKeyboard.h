@@ -1,6 +1,6 @@
 /*  File: zmapConfigKeyboard.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2006
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 19 09:14 2006 (rds)
  * Created: Thu May 18 11:50:36 2006 (rds)
- * CVS info:   $Id: zmapConfigKeyboard.h,v 1.1 2006-05-30 16:44:27 rds Exp $
+ * CVS info:   $Id: zmapConfigKeyboard.h,v 1.2 2006-11-08 09:23:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

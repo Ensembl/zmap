@@ -1,6 +1,6 @@
 /*  File: zmapGUImenus.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2006
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 28 10:20 2006 (edgrif)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.8 2006-06-28 09:20:37 edgrif Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.9 2006-11-08 09:24:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

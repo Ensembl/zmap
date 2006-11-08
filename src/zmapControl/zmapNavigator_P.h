@@ -1,6 +1,6 @@
 /*  File: zmapNavigator_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Sep 19 19:22 2006 (rds)
  * Created: Fri Jan  7 13:50:33 2005 (edgrif)
- * CVS info:   $Id: zmapNavigator_P.h,v 1.3 2006-10-18 15:11:37 rds Exp $
+ * CVS info:   $Id: zmapNavigator_P.h,v 1.4 2006-11-08 09:24:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_NAVIGATOR_P_H

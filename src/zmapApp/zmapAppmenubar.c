@@ -1,6 +1,6 @@
 /*  File: zmapappmenubar.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2003
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Feb 26 10:29 2004 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapAppmenubar.c,v 1.3 2004-03-03 12:10:47 edgrif Exp $
+ * CVS info:   $Id: zmapAppmenubar.c,v 1.4 2006-11-08 09:23:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

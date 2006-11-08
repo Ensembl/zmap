@@ -1,6 +1,6 @@
 /*  File: zmapWindowDrawFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2004
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov  7 16:58 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.155 2006-11-07 17:05:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.156 2006-11-08 09:25:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

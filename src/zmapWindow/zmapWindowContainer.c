@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2006
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov  7 08:56 2006 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.17 2006-11-07 08:59:57 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.18 2006-11-08 09:25:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

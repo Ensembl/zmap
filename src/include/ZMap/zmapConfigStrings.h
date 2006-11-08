@@ -1,6 +1,6 @@
 /*  File: zmapConfigStrings.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2006
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: May 28 14:47 2006 (rds)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.4 2006-05-30 16:41:49 rds Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.5 2006-11-08 09:23:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H

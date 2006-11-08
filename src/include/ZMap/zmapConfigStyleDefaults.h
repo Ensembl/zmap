@@ -1,6 +1,6 @@
 /*  File: zmapConfigStyleDefaults.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2006
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 17 12:34 2006 (rds)
  * Created: Sun May 28 09:16:38 2006 (rds)
- * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.8 2006-10-18 15:01:05 rds Exp $
+ * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.9 2006-11-08 09:23:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

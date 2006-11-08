@@ -1,6 +1,6 @@
 /*  File: zmapThreads_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Feb 17 13:36 2006 (edgrif)
  * Created: Thu Jan 27 11:18:44 2005 (edgrif)
- * CVS info:   $Id: zmapThreads_P.h,v 1.5 2006-02-17 13:36:54 edgrif Exp $
+ * CVS info:   $Id: zmapThreads_P.h,v 1.6 2006-11-08 09:24:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_PRIV_H

@@ -1,6 +1,6 @@
 /*  File: zmapDAS1EntryPoint.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2006
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: May 24 17:07 2006 (rds)
  * Created: Wed May 24 11:43:47 2006 (rds)
- * CVS info:   $Id: zmapDAS1DSN.c,v 1.1 2006-05-26 18:10:57 rds Exp $
+ * CVS info:   $Id: zmapDAS1DSN.c,v 1.2 2006-11-08 09:24:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

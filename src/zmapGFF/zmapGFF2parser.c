@@ -1,6 +1,6 @@
 /*  File: zmapGFF2parser.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2004
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov  7 13:40 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.62 2006-11-07 17:02:23 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.63 2006-11-08 09:24:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

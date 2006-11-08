@@ -1,6 +1,6 @@
 /*  File: zmapWindowEditor.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 10 14:34 2006 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.28 2006-10-11 09:48:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.29 2006-11-08 09:25:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

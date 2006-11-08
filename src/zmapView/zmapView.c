@@ -1,6 +1,6 @@
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2004
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Nov  7 17:03 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.88 2006-11-07 17:05:20 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.89 2006-11-08 09:24:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 

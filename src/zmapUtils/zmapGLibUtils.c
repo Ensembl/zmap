@@ -1,6 +1,6 @@
 /*  File: zmapGLibUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) Sanger Institute, 2005
+ *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov  7 13:38 2006 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.12 2006-11-07 17:05:51 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.13 2006-11-08 09:24:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
