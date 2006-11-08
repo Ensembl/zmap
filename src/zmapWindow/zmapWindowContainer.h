@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Nov  7 08:58 2006 (rds)
+ * Last edited: Nov  8 10:27 2006 (edgrif)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.13 2006-11-08 09:25:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.14 2006-11-08 11:56:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -38,8 +38,14 @@
 
 /* Used to identify unambiguously which part of a zmapWindowContainer group a particular
  * foo canvas group or item represents. */
-typedef enum {CONTAINER_INVALID, CONTAINER_ROOT,
-	      CONTAINER_PARENT, CONTAINER_FEATURES, CONTAINER_BACKGROUND} ContainerType ;
+typedef enum
+  {
+    CONTAINER_INVALID,
+    CONTAINER_ROOT,					    /* Root container has this instead of CONTAINER_PARENT */
+    CONTAINER_PARENT,					    /* Container parent group */
+    CONTAINER_FEATURES,					    /* Container subgroup containing features. */
+    CONTAINER_BACKGROUND				    /* Rectangular item to form group background. */
+  } ContainerType ;
 
 
 /* because roy can't spell container_type more than once */
@@ -49,10 +55,16 @@ typedef enum {CONTAINER_INVALID, CONTAINER_ROOT,
 /* I don't really like having to do this...seems clumsy...these represent the level in the
  * feature context hierachy...forced on us by the lack of a "strand" level in the actual
  * feature context but we need it for the canvas item hierachy.... */
-typedef enum {ZMAPCONTAINER_LEVEL_INVALID,
-	      ZMAPCONTAINER_LEVEL_ROOT, ZMAPCONTAINER_LEVEL_ALIGN,
-	      ZMAPCONTAINER_LEVEL_BLOCK, ZMAPCONTAINER_LEVEL_STRAND,
-	      ZMAPCONTAINER_LEVEL_FEATURESET} ZMapContainerLevelType ;
+typedef enum
+  {
+    ZMAPCONTAINER_LEVEL_INVALID,
+    ZMAPCONTAINER_LEVEL_ROOT,
+    ZMAPCONTAINER_LEVEL_ALIGN,
+    ZMAPCONTAINER_LEVEL_BLOCK,
+    ZMAPCONTAINER_LEVEL_STRAND,
+    ZMAPCONTAINER_LEVEL_FEATURESET,
+    ZMAPCONTAINER_LEVEL_FEATURESET_GROUP
+} ZMapContainerLevelType ;
 
 typedef void (*zmapWindowContainerZoomChangedCallback)(FooCanvasItem *container, 
                                                        double new_zoom, 
