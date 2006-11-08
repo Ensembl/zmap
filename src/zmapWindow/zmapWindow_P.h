@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov  7 12:04 2006 (edgrif)
+ * Last edited: Nov  8 11:43 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.143 2006-11-08 09:25:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.144 2006-11-08 11:59:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -106,7 +106,7 @@ typedef enum
 #define ALIGN_SPACING        30.0
 #define BLOCK_SPACING         5.0
 #define STRAND_SPACING        7.0
-#define COLUMN_SPACING        5.0
+#define COLUMN_SPACING        2.0
 #define FEATURE_SPACING       1.0
 #define FEATURE_LINE_WIDTH    0				    /* Special value meaning one pixel wide
 							       lines with no aliasing. */
