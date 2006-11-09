@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Oct  2 10:29 2006 (edgrif)
+ * Last edited: Nov  9 09:43 2006 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.33 2006-11-08 09:25:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.34 2006-11-09 10:16:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1123,6 +1123,42 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
     }
 
   return result ;
+}
+
+
+/* Find all the feature items in a column that have the same name, the name is constructed
+ * from the original id as a lower cased regular expression: "original_id*", this is then fed into
+ * the hash search function to find all the items. We lowercase it so that it will match
+ * against the unique ids of the items.
+ * 
+ * Returns NULL if there no matching features. I think probably this should never happen
+ * as all features match at least themselves.
+ *  */
+GList *zmapWindowFToIFindSameNameItems(GHashTable *feature_to_context_hash,
+				       char *set_strand, char *set_frame,
+				       ZMapFeature feature)
+{
+  GList *item_list = NULL ;
+  GString *reg_ex_name ;
+  GQuark reg_ex_name_id ;
+
+  /* I use a GString because it lowercases in place. */
+  reg_ex_name = g_string_new(NULL) ;
+  g_string_append_printf(reg_ex_name, "%s*", (char *)g_quark_to_string(feature->original_id)) ;
+  reg_ex_name = g_string_ascii_down(reg_ex_name) ;
+  reg_ex_name_id = g_quark_from_string(reg_ex_name->str) ;
+
+  item_list = zmapWindowFToIFindItemSetFull(feature_to_context_hash,
+					    feature->parent->parent->parent->unique_id,
+					    feature->parent->parent->unique_id,
+					    feature->parent->unique_id,
+					    set_strand,
+					    set_frame,
+					    reg_ex_name_id, NULL, NULL) ;
+
+  g_string_free(reg_ex_name, TRUE) ;
+
+  return item_list ;
 }
 
 

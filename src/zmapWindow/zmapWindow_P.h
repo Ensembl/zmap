@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov  8 12:22 2006 (edgrif)
+ * Last edited: Nov  9 09:41 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.145 2006-11-08 13:05:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.146 2006-11-09 10:16:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -627,7 +627,9 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark set_id,
 				     char *strand_spec, char *frame_spec,
 				     GQuark feature_id,
-				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data) ;
+				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data) ; 
+GList *zmapWindowFToIFindSameNameItems(GHashTable *feature_to_context_hash,
+				       char *set_strand, char *set_frame, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
 					 ZMapFeatureSet feature_set,
 					 ZMapStrand strand, ZMapFrame frame) ;
@@ -645,8 +647,6 @@ void zmapWindowFeatureFactoryInit(ZMapWindow window);
 FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
 void zmapWindowRaiseItem(FooCanvasItem *item) ;
-GList *zmapWindowFindSameNameItems(GHashTable *feature_to_context_hash,
-				   char *set_strand, char *set_frame,ZMapFeature feature) ;
 GList *zmapWindowItemSortByPostion(GList *feature_item_list) ;
 FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *feature_items) ;
 gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame) ;
