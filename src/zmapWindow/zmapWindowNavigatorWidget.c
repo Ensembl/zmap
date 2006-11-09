@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  7 16:29 2006 (rds)
+ * Last edited: Nov  9 08:56 2006 (rds)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.6 2006-11-08 09:25:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.7 2006-11-09 12:03:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -292,7 +292,7 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
 
   zMapAssert(x1 && x2 && y1 && y2);
   
-  max_x = 200.0;
+  max_x = 32000.0;             /* only canvas limit */
   max_y = (double)(NAVIGATOR_SIZE);
 
   container_width  = class_data->container_width;
