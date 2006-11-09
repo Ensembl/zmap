@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  7 15:14 2006 (rds)
+ * Last edited: Nov  9 11:57 2006 (rds)
  * Created: Thu Sep  7 09:23:47 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.4 2006-11-08 09:25:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.5 2006-11-09 13:29:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -100,6 +100,7 @@ typedef struct _ZMapWindowNavigatorStruct
 
   double text_width, text_height;
   double left;
+
 }ZMapWindowNavigatorStruct;
 
 
@@ -116,6 +117,7 @@ typedef struct
 void zmapWindowNavigatorPositioning(ZMapWindowNavigator navigate);
 
 /* Menu prototypes... */
+void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvasItem *item);
 ZMapGUIMenuItem zmapWindowNavigatorMakeMenuLocusOps(int *start_index_inout,
                                                     ZMapGUIMenuItemCallbackFunc callback_func,
                                                     gpointer callback_data);
