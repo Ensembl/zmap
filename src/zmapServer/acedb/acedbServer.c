@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov  7 17:27 2006 (edgrif)
+ * Last edited: Nov  8 16:40 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.77 2006-11-08 11:56:21 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.78 2006-11-09 10:14:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1893,10 +1893,10 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
 
-      zMapStyleSetHide(style, hide_always) ;
+      zMapStyleSetHideAlways(style, hide_always) ;
 
       if (init_hidden)
-	zMapStyleSetHideInitial(style, init_hidden) ;
+	zMapStyleSetHidden(style, init_hidden) ;
 
       if(directional_end)
         zMapStyleSetEndStyle(style, directional_end);

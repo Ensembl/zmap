@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  8 11:23 2006 (edgrif)
+ * Last edited: Nov  8 16:30 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.157 2006-11-08 11:58:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.158 2006-11-09 10:15:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -411,7 +411,7 @@ void zmapWindowCreateSetColumns(FooCanvasGroup *forward_group, FooCanvasGroup *r
 
       return ;
     }
-  else if (style->opts.hide_always)
+  else if (style->opts.hidden_always)
     {
       /* some styles should not be shown, e.g. they may be "meta" styles like "3 Frame". */
       return ;
@@ -1068,7 +1068,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
 
   /* Some columns are hidden initially, perhaps because of magnification level or explicitly in
    * the style for the column. */
-  if (zMapStyleGetHideInitial(style))
+  if (zMapStyleGetHidden(style))
     zmapWindowColumnHide(group) ;
   else
     zmapWindowColumnSetMagState(window, group) ;
