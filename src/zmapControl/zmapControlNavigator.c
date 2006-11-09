@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  8 08:32 2006 (rds)
+ * Last edited: Nov  9 14:00 2006 (rds)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.28 2006-11-08 09:23:51 edgrif Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.29 2006-11-09 14:03:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -131,16 +131,14 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
       /* pack into the pane */
       gtk_paned_add2(GTK_PANED(pane), locator_vbox) ;
       
-#ifdef RDS_DONT_INCLUDE_UNUSED  
+      /* Set left hand (region view) pane closed by default. */
+      gtk_paned_set_position(GTK_PANED(pane), 0) ;
+
       g_object_connect(G_OBJECT(pane), 
                        "signal::notify::position", 
                        G_CALLBACK(paneNotifyPositionCB), 
                        (gpointer)navigator,
                        NULL);
-#endif  
-      
-      /* Set left hand (region view) pane closed by default. */
-      gtk_paned_set_position(GTK_PANED(pane), 0) ;
 
       if(canvas_out)
         *canvas_out = locator_canvas;
@@ -296,15 +294,7 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
   double width = 0.0;
   int current_position = 0, new_position = 0;
 
-  current_position = gtk_paned_get_position(GTK_PANED( navigator->pane ));
-
-  zMapWindowNavigatorPackDimensions(navigator->locator_widget, &width, NULL);
-
-  new_position = (int)fabs(width);
-
-  if(current_position > new_position)
-    gtk_paned_set_position(GTK_PANED( navigator->pane ),
-                           new_position);
+  /* record the current position */
 
   return ;
 }
