@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  7 15:46 2006 (rds)
+ * Last edited: Nov  9 12:01 2006 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.4 2006-11-08 09:25:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.5 2006-11-09 12:02:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,13 +39,94 @@
 static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data);
 static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data);
 
+static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
+{
+  GQuark locus_name = GPOINTER_TO_UINT(user_data);
+  ZMapFeatureAny feature_any = NULL;
+  gboolean match = FALSE;
+
+  feature_any = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+  zMapAssert(feature_any);
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+        if(locus_name == feature_any->original_id)
+          match = TRUE;
+      }
+      break;
+    default:
+      break;
+    }
+  
+  return match;
+}
+
+void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvasItem *item)
+{
+  ZMapWindow window = NULL;
+  ZMapFeature feature = NULL;
+  ZMapWindowFToIPredFuncCB callback = NULL ;
+  GList *result = NULL;
+  GQuark locus_quark = 0;
+  char *wild_card = "*";
+
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+  zMapAssert(feature);
+
+  window = navigate->current_window;
+
+  /* Is it right to use window->context_to_item here??? */
+  if(!(result = zmapWindowFToIFindSameNameItems(window->context_to_item,
+                                                ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
+                                                feature)))
+    {
+      callback    = searchLocusSetCB;
+      locus_quark = g_quark_from_string(wild_card);
+
+      result = zmapWindowFToIFindItemSetFull(window->context_to_item,
+                                             feature->parent->parent->parent->unique_id,
+                                             feature->parent->parent->unique_id,
+                                             feature->parent->unique_id, 
+                                             wild_card, wild_card, locus_quark,
+                                             callback, GUINT_TO_POINTER(feature->original_id));
+    }
+  
+  if(result)
+    {
+      zmapWindowListWindowCreate(window, result,
+                                 (char *)(g_quark_to_string(feature->original_id)), item);
+      g_list_free(result);  /* clean up list. */
+    }
+
+  return ;
+}
+
+static void popUpVariantList(int menu_item_id, gpointer callback_data)
+{
+  NavigateMenuCBData menu_data = (NavigateMenuCBData)callback_data ;
+
+  switch (menu_item_id)
+    {
+    case 1:
+      {
+        zmapWindowNavigatorShowSameNameList(menu_data->navigate, menu_data->item);
+      }
+      break;
+    default:
+      break;
+    }
+  return ;
+}
+
 ZMapGUIMenuItem zmapWindowNavigatorMakeMenuLocusOps(int *start_index_inout,
                                                     ZMapGUIMenuItemCallbackFunc callback_func,
                                                     gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] = 
     {
-      {ZMAPGUI_MENU_NORMAL, "Show Variants List", 1, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Show Variants List", 1, popUpVariantList, NULL},
       {ZMAPGUI_MENU_NONE,   NULL,        0, NULL, NULL}
     };
 

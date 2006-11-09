@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  7 16:55 2006 (rds)
+ * Last edited: Nov  9 11:59 2006 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.7 2006-11-08 09:25:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.8 2006-11-09 12:02:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -158,7 +158,6 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       gpointer handler_data);
 
 /* ------------------- */
-
 static GQuark locus_id_G = 0;
 
 static void destroyLocusEntry(gpointer data)
@@ -1065,10 +1064,11 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
 
           style = zmapWindowItemGetStyle(item) ;
           menu_data->item_cb  = TRUE;
-
+          /* This is the variant filter... Shouldn't be in the menu code too! */
           if(feature->parent && feature->parent->unique_id == locus_id_G)
             {
-              menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusOps(NULL, NULL, NULL));
+              menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusOps(NULL, NULL, menu_data));
+              menu_sets = g_list_append(menu_sets, separator);
             }
         }
       else
@@ -1121,62 +1121,6 @@ static gboolean columnBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gp
   return event_handled;
 }
 
-static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
-{
-  GQuark locus_name = GPOINTER_TO_UINT(user_data);
-  ZMapFeatureAny feature_any = NULL;
-  gboolean match = FALSE;
-
-  feature_any = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
-  zMapAssert(feature_any);
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      {
-        if(locus_name == feature_any->original_id)
-          match = TRUE;
-      }
-      break;
-    default:
-      break;
-    }
-  
-  return match;
-}
-
-static void popupItemFriendsList(FooCanvasItem *item, ZMapWindow window)
-{
-  GQuark locus_quark = 0;
-  ZMapFeature feature = NULL;
-  GList *result;
-  char *wild_card = "*";
-  ZMapWindowFToIPredFuncCB callback = NULL ;
-
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
-  zMapAssert(feature);
-
-  callback = searchLocusSetCB;
-  locus_quark = g_quark_from_string(wild_card);
-
-  if(locus_id_G == feature->parent->unique_id)
-    {
-      if((result = zmapWindowFToIFindItemSetFull(window->context_to_item,
-                                                 feature->parent->parent->parent->unique_id,
-                                                 feature->parent->parent->unique_id,
-                                                 locus_id_G, wild_card, wild_card, locus_quark,
-                                                 callback, GUINT_TO_POINTER(feature->original_id))))
-        {
-          zmapWindowListWindowCreate(window, result,
-                                     (char *)(g_quark_to_string(feature->original_id)), item);
-          g_list_free(result);  /* clean up list. */
-        }
-    }
-
-
-  return ;
-}
-
 static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE;
@@ -1224,7 +1168,7 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
           {
             if(button->button == 1)
               {
-                popupItemFriendsList(item, navigate->current_window);
+                zmapWindowNavigatorShowSameNameList(navigate, item);
                 event_handled = TRUE;
               }
           }
