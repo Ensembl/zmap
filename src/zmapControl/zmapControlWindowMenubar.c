@@ -31,15 +31,16 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Oct 18 11:32 2006 (edgrif)
+ * Last edited: Nov  8 16:30 2006 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.18 2006-11-08 09:23:58 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.19 2006-11-09 10:14:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapWebPages.h>
 #include <zmapControl_P.h>
@@ -65,7 +66,11 @@ typedef struct
 static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
@@ -126,6 +131,8 @@ GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Should pop up a dialog box to ask for a file name....e.g. the file chooser. */
 static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
@@ -136,6 +143,8 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
