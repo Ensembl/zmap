@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov  7 17:27 2006 (edgrif)
+ * Last edited: Nov  9 09:59 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.35 2006-11-08 11:55:51 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.36 2006-11-09 10:12:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -119,6 +119,8 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description, ZMapSt
 
   new_type->width = width ;
 
+  new_type->min_mag = new_type->max_mag = 0.0 ;
+
   zMapStyleSetColours(new_type, outline, foreground, background);
 
   /* By default we always parse homology gaps, important for stuff like passing this
@@ -126,6 +128,8 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description, ZMapSt
   new_type->opts.parse_gaps = TRUE ;
 
   new_type->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+
+  new_type->opts.hidden_always = new_type->opts.hidden_now = FALSE ;
 
   return new_type ;
 }
@@ -308,33 +312,33 @@ void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_
 }
 
 
-void zMapStyleSetHide(ZMapFeatureTypeStyle style, gboolean hide)
+void zMapStyleSetHideAlways(ZMapFeatureTypeStyle style, gboolean hide_always)
 {
   zMapAssert(style) ;
 
-  style->opts.hide_always = hide ;
+  style->opts.hidden_always = hide_always ;
 
   return ;
 }
-
-
 
 /* Controls whether the feature set is displayed initially. */
-void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially)
+void zMapStyleSetHidden(ZMapFeatureTypeStyle style, gboolean hidden)
 {
   zMapAssert(style) ;
 
-  style->opts.hide_initially = hide_initially ;
+  style->opts.hidden_now = hidden ;
 
   return ;
 }
 
-gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style)
+gboolean zMapStyleGetHidden(ZMapFeatureTypeStyle style)
 {
   zMapAssert(style) ;
 
-  return style->opts.hide_initially ;
+  return style->opts.hidden_now ;
 }
+
+
 
 /*!
  * \brief sets the end style of exons
@@ -678,7 +682,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME) ;
       curr->description = ZMAP_FIXED_STYLE_3FRAME_TEXT ;
-      curr->opts.hide_always = TRUE ;
+      curr->opts.hidden_always = TRUE ;
       curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
 
       /* 3 Frame Translation */
@@ -686,7 +690,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
       curr->description = ZMAP_FIXED_STYLE_3FT_NAME_TEXT ;
-      curr->opts.hide_initially = TRUE ;
+      curr->opts.hidden_now = TRUE ;
       zMapStyleSetStrandAttrs(curr, TRUE, TRUE, FALSE, TRUE) ;
       curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
       
@@ -695,7 +699,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_DNA_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
       curr->description = ZMAP_FIXED_STYLE_DNA_NAME_TEXT ;
-      curr->opts.hide_initially = TRUE ;
+      curr->opts.hidden_now = TRUE ;
       curr->width = 10.0 ;
       zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, FALSE) ;
       zMapStyleSetColours(curr, NULL, "black", "white") ;
@@ -706,7 +710,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
       curr->description = ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT ;
-      curr->opts.hide_initially = TRUE ;
+      curr->opts.hidden_now = TRUE ;
       curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
 
 
@@ -715,7 +719,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_GFF_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_GFF_NAME) ;
       curr->description = ZMAP_FIXED_STYLE_GFF_NAME_TEXT ;
-      curr->opts.hide_always = TRUE ;
+      curr->opts.hidden_always = TRUE ;
       curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
       
       /* Scale bar */
@@ -723,7 +727,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
       curr->unique_id   = zMapStyleCreateID(ZMAP_FIXED_STYLE_SCALE_NAME);
       curr->description = ZMAP_FIXED_STYLE_SCALE_TEXT;
-      curr->opts.hide_always = TRUE;
+      curr->opts.hidden_always = TRUE;
       curr->overlap_mode     = ZMAPOVERLAP_COMPLETE ;
     }
 
@@ -817,7 +821,7 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	   {"gapped_error", ZMAPCONFIG_INT, {NULL}},
 	   {"read_gaps"   , ZMAPCONFIG_BOOL, {NULL}},
 	   {"directional_end", ZMAPCONFIG_BOOL, {NULL}},
-           {"hide_initially", ZMAPCONFIG_BOOL, {NULL}},
+           {"hidden_now", ZMAPCONFIG_BOOL, {NULL}},
 	   {NULL, -1, {NULL}}} ;
 
       /* Init fields that cannot default to string NULL. */
@@ -888,7 +892,7 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
                                        zMapConfigGetElementBool(next_types, "gapped_align"),
                                        TRUE,
 				       zMapConfigGetElementBool(next_types, "gapped_error")) ;
-              zMapStyleSetHideInitial(new_type, zMapConfigGetElementBool(next_types, "hide_initially"));
+              zMapStyleSetHidden(new_type, zMapConfigGetElementBool(next_types, "hidden_now"));
               zMapStyleSetEndStyle(new_type, zMapConfigGetElementBool(next_types, "directional_end"));
 	      types = g_list_append(types, new_type) ;
 

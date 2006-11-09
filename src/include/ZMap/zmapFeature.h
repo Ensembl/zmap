@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov  7 17:29 2006 (edgrif)
+ * Last edited: Nov  8 16:46 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.97 2006-11-08 11:55:51 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.98 2006-11-09 10:12:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -504,14 +504,14 @@ typedef struct ZMapFeatureTypeStyleStruct_
     /* I don't want a general show/hide flag here because we should
      * get that dynamically from the state of the column canvas
      * item.  */
-    unsigned int hide_always  : 1 ;			    /* Never show column. */
+    unsigned int hidden_always   : 1 ;			    /* Column always hidden. */
 
-    unsigned int hide_initially  : 1 ; /* Is the column hidden initially ? */
+    unsigned int hidden_now      : 1 ;			    /* Column hidden now ? */
 
-    unsigned int show_when_empty : 1 ; /* If TRUE, features' column is
-                                          displayed even if there are no features. */
+    unsigned int show_when_empty : 1 ;			    /* If TRUE, features' column is
+							       displayed even if there are no features. */
 
-    unsigned int showText        : 1 ; /* Should feature text be displayed. */
+    unsigned int showText        : 1 ;			    /* Should feature text be displayed. */
 
     unsigned int parse_gaps      : 1 ;
     unsigned int align_gaps      : 1 ;			    /* TRUE: gaps within alignment are displayed,
@@ -764,9 +764,9 @@ void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean *strand_specific, gboolean *frame_specific,
 			     gboolean *show_rev_strand, gboolean *show_as_3_frame) ;
-void zMapStyleSetHide(ZMapFeatureTypeStyle style, gboolean hide) ;
-void zMapStyleSetHideInitial(ZMapFeatureTypeStyle style, gboolean hide_initially) ;
-gboolean zMapStyleGetHideInitial(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetHideAlways(ZMapFeatureTypeStyle style, gboolean hide_always) ;
+void zMapStyleSetHidden(ZMapFeatureTypeStyle style, gboolean hidden) ;
+gboolean zMapStyleGetHidden(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
 			      unsigned int within_align_error) ;

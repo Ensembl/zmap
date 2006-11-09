@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  8 11:45 2006 (edgrif)
+ * Last edited: Nov  9 10:02 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.38 2006-11-08 11:57:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.39 2006-11-09 10:12:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -288,20 +288,24 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
   zMapAssert(set_data) ;
   style = set_data->style ;
 
-  if (style->min_mag || style->max_mag)
+  /* Only check the mag factor if the column is visible. */
+  if (!style->opts.hidden_now)
     {
-      double curr_zoom ;
-
-      curr_zoom = zMapWindowGetZoomMagnification(window) ;
-
-      if ((style->min_mag && curr_zoom < style->min_mag)
-	  || (style->max_mag && curr_zoom > style->max_mag))
+      if (style->min_mag > 0.0 || style->max_mag > 0.0)
 	{
-	  zmapWindowColumnHide(col_group) ;
-	}
-      else
-	{
-	  zmapWindowColumnShow(col_group) ;
+	  double curr_zoom ;
+
+	  curr_zoom = zMapWindowGetZoomMagnification(window) ;
+
+	  if ((style->min_mag && curr_zoom < style->min_mag)
+	      || (style->max_mag && curr_zoom > style->max_mag))
+	    {
+	      zmapWindowColumnHide(col_group) ;
+	    }
+	  else
+	    {
+	      zmapWindowColumnShow(col_group) ;
+	    }
 	}
     }
 
@@ -1952,7 +1956,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
 		      name, name) ;
     }
   else if (feature_set_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)
-	   && (!(style->opts.hide_always) && style->opts.frame_specific)
+	   && (!(style->opts.hidden_always) && style->opts.frame_specific)
 	   && ((feature_set = zMapFeatureFindSetInBlock(redraw_data->block, feature_set_id))))
     {
 
@@ -2033,7 +2037,7 @@ static void drawSetFeatures(GQuark key_id, gpointer data, gpointer user_data)
    * means the frame will be ignored and the features will all be in one column on the.
    * forward or reverse strand. */
   style = feature_set->style ;
-  if (!(style->opts.hide_always) && style->opts.frame_specific)
+  if (!(style->opts.hidden_always) && style->opts.frame_specific)
     {
       zmapWindowCreateFeatureSet(window, feature_set,
 				 forward_col, reverse_col, ZMAPFRAME_NONE) ;
@@ -2161,7 +2165,7 @@ static void create3FrameCols(gpointer data, gpointer user_data)
 		      name, name) ;
     }
   else if (feature_set_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)
-	   && (!(style->opts.hide_always) && style->opts.frame_specific)
+	   && (!(style->opts.hidden_always) && style->opts.frame_specific)
 	   && ((feature_set = zMapFeatureFindSetInBlock(redraw_data->block, feature_set_id))))
     {
       int forward_len, reverse_len, forward_incr, reverse_incr ;
@@ -2279,7 +2283,7 @@ static void draw3FrameSetFeatures(GQuark key_id, gpointer data, gpointer user_da
   /* need to get style and check for 3 frame and if column should be displayed and then
    * draw features. */
   style = feature_set->style ;
-  if (!(style->opts.hide_always) && style->opts.frame_specific)
+  if (!(style->opts.hidden_always) && style->opts.frame_specific)
     {
       zmapWindowCreateFeatureSet(window, feature_set,
 				 forward_col, reverse_col, redraw_data->frame) ;
