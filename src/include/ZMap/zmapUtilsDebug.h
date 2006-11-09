@@ -25,9 +25,9 @@
  * Description: Contains macros, functions etc. useful for testing/debugging.
  *              
  * HISTORY:
- * Last edited: Nov  7 16:47 2006 (edgrif)
+ * Last edited: Nov  9 10:08 2006 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsDebug.h,v 1.3 2006-11-08 09:23:25 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsDebug.h,v 1.4 2006-11-09 10:10:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DEBUG_H
@@ -68,13 +68,15 @@ G_STMT_START{                                             \
 
 
 
+
 /* Timer functions, just simplifies printing etc a bit and provides a global timer if required.
- * Just comment out #define ZMAP_DISABLE_TIMER to make it all work.
+ * Just comment out #define ZMAP_DISABLE_TIMER to turn it all on.
  */
-/* #define ZMAP_DISABLE_TIMER */
+#define ZMAP_DISABLE_TIMER
 
 
 #ifdef ZMAP_DISABLE_TIMER
+
 
 #define zMapStartTimer(TIMER_PTR) (void)0
 #define zMapPrintTimer(TIMER, TEXT) (void)0
@@ -82,11 +84,12 @@ G_STMT_START{                                             \
 
 #else
 
+
 #define ZMAP_GLOBAL_TIMER zmap_global_timer_G
 
 extern GTimer *ZMAP_GLOBAL_TIMER ;
 
-/* A bit clumsy but couln't see a neat way to allow just putting NULL for the timer to get
+/* A bit clumsy but couldn't see a neat way to allow just putting NULL for the timer to get
  * the global one.
  * Do this for the global one: zMapStartTimer(ZMAP_GLOBAL_TIMER) ;
  * and this for your one:      zMapStartTimer(your_timer_ptr) ;
@@ -94,16 +97,19 @@ extern GTimer *ZMAP_GLOBAL_TIMER ;
 #define zMapStartTimer(TIMER_PTR)                                                       \
 (TIMER_PTR) = g_timer_new()
 
-
-/* Takes an optional Gtimer* and an optional char* (you must supply the arg but it can NULL */
+/* Takes an optional Gtimer* and an optional char* (you must supply the args but either can be NULL */
 #define zMapPrintTimer(TIMER, TEXT)	                              \
   printf(ZMAP_MSG_FORMAT_STRING " %s   - elapsed time: %g\n",         \
   ZMAP_MSG_FUNCTION_MACRO,                                            \
-  (TEXT),                                                             \
+  ((TEXT) ? (TEXT) : ""),             				      \
   g_timer_elapsed(((TIMER) ? (TIMER) : ZMAP_GLOBAL_TIMER), NULL)) ;
 
 
 #endif /* ZMAP_DISABLE_TIMER */
+
+
+
+
 
 
 #endif /* ZMAP_UTILS_DEBUG_H */
