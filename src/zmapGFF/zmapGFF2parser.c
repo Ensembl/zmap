@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov  7 13:40 2006 (edgrif)
+ * Last edited: Nov  9 09:49 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.63 2006-11-08 09:24:17 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.64 2006-11-09 10:11:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,7 +92,11 @@ static int sortGapsByTarget(gconstpointer a, gconstpointer b);
 static void initSources(GData **datalist, GList *sources);
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void stylePrintCB(gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* types is the list of methods/types, call it what you will that we want to see

@@ -26,13 +26,14 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 13 16:48 2006 (edgrif)
+ * Last edited: Nov  9 09:49 2006 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.34 2006-11-08 09:24:12 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.35 2006-11-09 10:13:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
@@ -140,6 +141,9 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
       break ;
     case ZMAPFEATURE_STRUCT_FEATURE:			    /* pathological case... */
       feature = (ZMapFeature)dump_set ;
+      break ;
+    default:
+      zMapAssertNotReached() ;
       break ;
     }
 
