@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov  9 09:49 2006 (edgrif)
+ * Last edited: Nov  9 10:33 2006 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.64 2006-11-09 10:11:05 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.65 2006-11-09 10:33:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -98,6 +98,7 @@ static void stylePrintCB(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+static void mungeFeatureType(char *source, ZMapFeatureType *type_inout);
 
 /* types is the list of methods/types, call it what you will that we want to see
  * in the output, we may need to filter the incoming data stream to get this.
@@ -822,6 +823,8 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
       else
 	{
 	  gboolean include_feature = TRUE ;
+
+          mungeFeatureType(source, &type);
 
 	  /* Clip start/end as specified in clip_mode. */
 	  if (parser->clip_mode != GFF_CLIP_NONE)
@@ -1673,3 +1676,12 @@ static void stylePrintCB(gpointer data, gpointer user_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+static void mungeFeatureType(char *source, ZMapFeatureType *type_inout)
+{
+  zMapAssert(type_inout);
+
+  if(g_ascii_strcasecmp(source, "Genomic_canonical") == 0)
+    *type_inout = ZMAPFEATURE_BASIC;
+
+  return ;
+}
