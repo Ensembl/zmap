@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 16:07 2006 (rds)
+ * Last edited: Nov 10 08:31 2006 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.5 2006-11-10 08:20:53 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.6 2006-11-10 09:25:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -521,7 +521,7 @@ static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpoi
   ZMapFeatureSet feature_set = NULL;
   FooCanvasGroup *container_features = NULL;
 
-  if(zmapWindowItemIsVisible(container))
+  if(zmapWindowItemIsVisible(FOO_CANVAS_ITEM(container)))
     {
       tmp_factory = zmapWindowFToIFactoryOpen(factory_input->ftoi_hash, factory_input->long_items);
      
@@ -880,7 +880,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
                                             ZMapFeatureTypeStyle style)
 {
   ZMapWindowFToIFactory factory = run_data->factory;
-  ZMapFeatureBlock        block = run_data->block;
+  /*  ZMapFeatureBlock        block = run_data->block; */
   FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem *feature_item ;
   GdkColor *outline, *foreground, *background;
@@ -1337,8 +1337,7 @@ static FooCanvasItem *drawSeqFeature(RunSet run_data,  ZMapFeature feature,
   ZMapWindowItemHighlighter hlght= NULL;
   GdkColor *outline, *foreground, *background;
   ZMapDrawTextIterator iterator  = NULL;
-  PangoFontDescription *font = NULL;
-  double txt_height, txt_width;
+  double txt_height;
   int i;
 
   zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
@@ -1434,17 +1433,15 @@ static FooCanvasItem *drawPepFeature(RunSet run_data,  ZMapFeature feature,
                                      ZMapFeatureTypeStyle style)
 {
   ZMapWindowFToIFactory  factory = run_data->factory;
-  ZMapFeatureBlock feature_block = run_data->block;
+  /* ZMapFeatureBlock feature_block = run_data->block; */
   FooCanvasGroup         *parent = run_data->container;
   double feature_start, feature_end;
   FooCanvasItem  *prev_trans     = NULL;
   FooCanvasItem  *feature_parent = NULL;
   FooCanvasGroup *column_parent  = NULL;
-  ZMapWindowItemHighlighter hlght= NULL;
   GdkColor *outline, *foreground, *background;
   ZMapDrawTextIterator iterator  = NULL;
-  PangoFontDescription *font = NULL;
-  double txt_height, txt_width, new_x;
+  double txt_height, new_x;
   int i;
 
   zMapFeatureTypeGetColours(style, &background, &foreground, &outline);

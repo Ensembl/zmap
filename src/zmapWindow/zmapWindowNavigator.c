@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 17:01 2006 (rds)
+ * Last edited: Nov 10 08:47 2006 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.9 2006-11-10 08:19:43 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.10 2006-11-10 09:26:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,7 +109,6 @@ typedef struct
   double wheight;
 }RepositionTextDataStruct, *RepositionTextData;
 
-static void popupItemFriendsList(FooCanvasItem *item, ZMapWindow window);
 static void repositionText(ZMapWindowNavigator navigate);
 
 /* draw some features... */
@@ -478,7 +477,7 @@ static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_
   ZMapFeature feature = NULL;
   FooCanvasItem *item = NULL;
   LocusEntry locus_data = (LocusEntry)hash_value;
-  double text_height, start, end, mid, draw_here, dummy_x = 0.0, i2w_dy;
+  double text_height, start, end, mid, draw_here, dummy_x = 0.0;
   double iy1, iy2, wy1, wy2;
   int cx = 0, cy1, cy2;
 

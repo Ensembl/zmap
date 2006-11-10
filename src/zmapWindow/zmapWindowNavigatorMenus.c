@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 12:01 2006 (rds)
+ * Last edited: Nov 10 08:48 2006 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.5 2006-11-09 12:02:50 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.6 2006-11-10 09:26:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -187,7 +187,6 @@ static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data)
 {
   NavigateMenuCBData   menu_data = (NavigateMenuCBData)callback_data ;
   ZMapStyleOverlapMode bump_type = (ZMapStyleOverlapMode)menu_item_id  ;
-  FooCanvasGroup *column_group ;
   FooCanvasItem *style_item ;
 
   /* This will only toggle the bumping */
@@ -222,7 +221,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
           {
             /* a small hack for the time being... */
             set_item = zmapWindowContainerGetParentContainerFromItem(menu_data->item);
-            feature = feature->parent;
+            feature = (ZMapFeatureAny)(feature->parent);
           }
 
         set_data = g_object_get_data(G_OBJECT(set_item), ITEM_FEATURE_SET_DATA) ;
