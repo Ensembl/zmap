@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  7 08:36 2006 (rds)
+ * Last edited: Nov  9 16:07 2006 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.4 2006-11-08 09:25:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.5 2006-11-10 08:20:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,6 +68,9 @@ typedef struct _ZMapWindowFToIFactoryStruct
   PangoFontDescription               *font_desc;
   double                              text_width;
   double                              text_height;
+
+  gboolean stats_allocated;
+  ZMapWindowStats stats;
 }ZMapWindowFToIFactoryStruct;
 
 typedef struct _RunSetStruct
@@ -80,6 +83,9 @@ typedef struct _RunSetStruct
   FooCanvasGroup       *container;
 }RunSetStruct;
 
+
+static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpointer user_data);
+static void ZoomDataDestroy(gpointer data);
 
 static void datalistRun(GQuark key_id, gpointer list_data, gpointer user_data);
 inline 
@@ -252,6 +258,7 @@ ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash
 
 void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory, 
                                 guint line_width, /* a config struct ? */
+                                ZMapWindowStats stats,
                                 ZMapWindowFToIFactoryProductionTeam signal_handlers, 
                                 gpointer handler_data)
 {
@@ -265,6 +272,14 @@ void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory,
 
   if(signal_handlers->feature_size_request)
     factory->user_funcs->feature_size_request = signal_handlers->feature_size_request;
+
+  if(!stats)
+    {
+      factory->stats = g_new0(ZMapWindowStatsStruct, 1);
+      factory->stats_allocated = TRUE;
+    }
+  else
+    factory->stats = stats;
 
   factory->user_data  = handler_data;
   factory->line_width = line_width;
@@ -393,10 +408,38 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         case ZMAPFEATURE_ALIGNMENT:
           zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
 
-          if ((!feature->feature.homol.align) || (!style->opts.align_gaps))
-            method = &(method_table[ZMAPFEATURE_BASIC]);
+          factory->stats->total_matches++;
+
+          if((!feature->feature.homol.align) || (!style->opts.align_gaps))
+            {
+              factory->stats->ungapped_matches++;
+              factory->stats->ungapped_boxes++;
+              factory->stats->total_boxes++;
+
+              method = &(method_table[ZMAPFEATURE_BASIC]);              
+            }
+          else if(feature->feature.homol.align)
+            {
+              if(feature->feature.homol.flags.perfect)
+                {
+                  factory->stats->gapped_matches++;
+                  factory->stats->total_boxes  += feature->feature.homol.align->len ;
+                  factory->stats->gapped_boxes += feature->feature.homol.align->len ;
+
+                  method = &(method_table[feature_type]);
+                }
+              else
+                {
+                  factory->stats->not_perfect_gapped_matches++;
+                  factory->stats->total_boxes++;
+                  factory->stats->ungapped_boxes++;
+                  factory->stats->imperfect_boxes += feature->feature.homol.align->len;
+
+                  method = &(method_table[ZMAPFEATURE_BASIC]);
+                }
+            }
           else
-            method = &(method_table[feature_type]);
+            zMapAssertNotReached();
 
           break;
         case ZMAPFEATURE_BASIC:
@@ -450,13 +493,28 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory)
 {
+  if(factory->stats_allocated)
+    {
+      g_free(factory->stats);
+    }
+
+  factory->ftoi_hash  = NULL;
+  factory->long_items = NULL;
+  g_free(factory->user_funcs);
+  factory->user_data  = NULL;
+  /* font desc??? */
+  /* factory->font_desc = NULL; */
+
+  /* free the factory */
+  g_free(factory);
+
   return ;
 }
 
 
 /* INTERNAL */
 
-static void ZoomEventHandler(FooCanvasItem *container, double zoom_factor, gpointer user_data)
+static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpointer user_data)
 {
   ZMapWindowFToIFactory tmp_factory = NULL; /* A factory so we can redraw */
   ZMapWindowFToIFactory factory_input = (ZMapWindowFToIFactory)user_data;
@@ -471,15 +529,15 @@ static void ZoomEventHandler(FooCanvasItem *container, double zoom_factor, gpoin
       /* Check it's actually a featureset */
       zMapAssert(feature_set && feature_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET) ;
 
-      container_features = FOO_CANVAS_GROUP(zmapWindowContainerGetFeatures(FOO_CANVAS_GROUP(container))) ;
+      container_features = FOO_CANVAS_GROUP(zmapWindowContainerGetFeatures(container)) ;
 
       zmapWindowContainerPurge(container_features);
 
       zmapWindowFToIFactorySetup(tmp_factory, factory_input->line_width,
+                                 (factory_input->stats_allocated ? NULL : factory_input->stats),
                                  factory_input->user_funcs, 
                                  factory_input->user_data);
       
-      /* THIS LOOKS ODD container is an item, not a group !!! */
       zmapWindowFToIFactoryRunSet(tmp_factory, feature_set, container);
       
       zmapWindowFToIFactoryClose(tmp_factory);
@@ -1309,6 +1367,7 @@ static FooCanvasItem *drawSeqFeature(RunSet run_data,  ZMapFeature feature,
       zoom_data = zmapWindowFToIFactoryOpen(factory->ftoi_hash, factory->long_items);
 
       zmapWindowFToIFactorySetup(zoom_data, factory->line_width, 
+                                 (factory->stats_allocated ? NULL : factory->stats),
                                  factory->user_funcs, factory->user_data);
 
       /* ZoomEventHandler is of WRONG type */
@@ -1366,18 +1425,6 @@ static FooCanvasItem *drawSeqFeature(RunSet run_data,  ZMapFeature feature,
 
     }
 
-
-#ifdef RDS_FMAP_DOESNT_DO_THIS
-
-  drawTextWrappedInColumn(feature_parent, feature_block->sequence.sequence,
-                          feature->x1, feature->x2, feature_offset, feature,
-                          foreground, background, outline,
-                          300.0, 1, callback, window);
-
-  attachDataToItem(feature_parent, window, feature, ITEM_FEATURE_PARENT, NULL, FALSE) ;
-
-  callItemHandler(factory, ...);
-#endif
   return feature_parent;
 }
 
@@ -1433,6 +1480,7 @@ static FooCanvasItem *drawPepFeature(RunSet run_data,  ZMapFeature feature,
       zoom_data = zmapWindowFToIFactoryOpen(factory->ftoi_hash, factory->long_items);
 
       zmapWindowFToIFactorySetup(zoom_data, factory->line_width, 
+                                 NULL,
                                  factory->user_funcs, factory->user_data);
 
       /* ZoomEventHandler is of wrong type !!! */
@@ -1492,22 +1540,7 @@ static FooCanvasItem *drawPepFeature(RunSet run_data,  ZMapFeature feature,
 
     }
 
-
-#ifdef RDS_FMAP_DOESNT_DO_THIS
-
-  drawTextWrappedInColumn(feature_parent, feature_block->sequence.sequence,
-                          feature->x1, feature->x2, feature_offset, feature,
-                          foreground, background, outline,
-                          300.0, 1, callback, window);
-
-  attachDataToItem(feature_parent, window, feature, ITEM_FEATURE_PARENT, NULL, FALSE) ;
-
-  callItemHandler(factory, ...);
-#endif
   return feature_parent;
-
-  printf("Not drawing these yet!\n");
-  return NULL;
 }
 
 static FooCanvasItem *invalidFeature(RunSet run_data,  ZMapFeature feature,
