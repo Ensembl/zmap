@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 16 12:01 2006 (rds)
+ * Last edited: Nov 10 17:26 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.146 2006-11-08 09:25:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.147 2006-11-10 17:26:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -753,6 +753,12 @@ void zMapWindowDestroy(ZMapWindow window)
   zmapWindowLongItemDestroy(window->long_items) ;	    /* Must be after widget destroy ? */
 
   zmapWindowFToIDestroy(window->context_to_item) ;
+
+  if(window->item_factory)
+    {
+      zmapWindowFToIFactoryClose(window->item_factory);
+      window->item_factory = NULL;
+    }
 
   if (window->sequence)
     g_free(window->sequence) ;
