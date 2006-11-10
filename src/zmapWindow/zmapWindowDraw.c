@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 10:02 2006 (edgrif)
+ * Last edited: Nov 10 08:33 2006 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.39 2006-11-09 10:12:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.40 2006-11-10 09:25:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1304,7 +1304,6 @@ static void positionCB(FooCanvasGroup *data, FooCanvasPoints *points,
 static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points, 
                                ZMapContainerLevelType level, gpointer user_data)
 {
-  FooCanvasGroup *container = (FooCanvasGroup *)data ;
   ZMapWindow window = NULL;
   double x1, x2, y1, y2 ;       /* scroll region positions */
   double scr_reg_width, root_width ;
