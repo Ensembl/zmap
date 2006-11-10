@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov  7 17:03 2006 (edgrif)
+ * Last edited: Nov 10 09:23 2006 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.89 2006-11-08 09:24:57 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.90 2006-11-10 09:24:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1837,7 +1837,9 @@ static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *w
   /* signal our caller that something has changed. */
   (*(view_cbs_G->visibility_change))(view_window, view_window->parent_view->app_data, window_data) ;
 
-  zMapWindowNavigatorSetCurrentWindow(view_window->parent_view->navigator_window, view_window->window);
+  /* view_window->window can be NULL (when window copying) so we use the passed in window... */
+  /* Yes it's a bit messy, but it's stopping it crashing. */
+  zMapWindowNavigatorSetCurrentWindow(view_window->parent_view->navigator_window, window);
 
   zMapWindowNavigatorDrawLocator(view_window->parent_view->navigator_window, vis->scrollable_top, vis->scrollable_bot);
 
