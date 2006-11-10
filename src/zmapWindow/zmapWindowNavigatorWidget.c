@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 08:56 2006 (rds)
+ * Last edited: Nov  9 16:58 2006 (rds)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.7 2006-11-09 12:03:21 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.8 2006-11-10 08:20:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,6 +48,7 @@ typedef struct _ZMapNavigatorClassDataStruct
   ZMapWindowNavigatorCallbackStruct callbacks;
   gpointer user_data;
   double container_width, container_height;
+  GtkTooltips *tooltips; /* Tooltips */
 } ZMapNavigatorClassDataStruct, *ZMapNavigatorClassData;
 
 static void navCanvasSizeAllocateCB(GtkWidget     *allocatee, 
@@ -62,6 +63,19 @@ static gboolean getTextOnCanvasDimensions(FooCanvas *canvas,
                                           double *width_out,
                                           double *height_out);
 static void destroyClassData(gpointer user_data);
+
+static void setupTooltips(GtkWidget *widget, ZMapNavigatorClassData class_data)
+{
+  gtk_tooltips_set_tip(class_data->tooltips, widget,
+                       "ZMap Window Navigator.\n"
+                       "The box shows the extent of the sequence displayed in the main window. "
+                       "Use this to alter the bounds of the display in the main window "
+                       "and the scrollbar to the right of the main window to quickly scroll through that data.",
+                       ""
+                       );
+
+  return ;
+}
 
 GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks, gpointer user_data)
 {
@@ -107,6 +121,8 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
                              ZMAP_NAVIGATOR_CLASS_DATA,
                              (gpointer)class_data,
                              destroyClassData);
+      class_data->tooltips = gtk_tooltips_new();
+      setupTooltips(canvas_widget, class_data);
     }
 
 
