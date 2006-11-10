@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 09:45 2006 (edgrif)
+ * Last edited: Nov 10 08:16 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.63 2006-11-09 10:16:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.64 2006-11-10 08:22:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -160,6 +160,13 @@ static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key,
                                                       gpointer user_data,
                                                       char **error_out);
 
+static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
+                                      ZMapFeatureContext context,
+                                      ZMapFeatureAlignment align,
+                                      ZMapFeatureBlock block,
+                                      ZMapFeatureSet set,
+                                      ZMapFeature feature,
+                                      gpointer handler_data);
 static void factoryItemCreated(FooCanvasItem            *new_item,
                                ZMapWindowItemFeatureType new_item_type,
                                ZMapFeature               full_feature,
@@ -406,9 +413,10 @@ void zmapWindowFeatureFactoryInit(ZMapWindow window)
 
   factory_helpers.feature_size_request = factoryFeatureSizeReq;
   factory_helpers.item_created         = factoryItemCreated;
+  factory_helpers.top_item_created     = factoryTopItemCreated;
 
   zmapWindowFToIFactorySetup(window->item_factory, window->config.feature_line_width,
-                             &factory_helpers, (gpointer)window);
+                             &(window->stats), &factory_helpers, (gpointer)window);
 
   return ;
 }
@@ -459,7 +467,8 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
  /* Retrieve the parent col. group/id. */
   column_group = zmapWindowContainerGetFeatures(set_group) ;
 
-#ifdef RDS_THESE_NEED_A_LITTLE_BIT_OF_CHECKING
+  /* #ifdef RDS_DONT_USE_FACTORY */
+  /* Use the factory. */
   new_feature = zmapWindowFToIFactoryRunSingle(window->item_factory,
                                                set_group, 
                                                context, 
@@ -468,7 +477,9 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
                                                set, 
                                                feature);
   return new_feature;
-#endif
+  /* #endif //RDS_DONT_USE_FACTORY */
+
+#ifdef RDS_DONT_INCLUDE
 
   /* Get the styles table from the column and look for the features style.... */
 
@@ -603,6 +614,8 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
     }
 
   return new_feature ;
+#endif
+
 }
 
 
@@ -788,6 +801,7 @@ static FooCanvasItem *createParentGroup(FooCanvasGroup *parent,
   return grp ;
 }
 
+#ifdef RDS_SEE_ZMAPWINDOWFEATUREITEMFACTORY_C
 static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					double feature_offset,
 					double x1, double y1, double x2, double y2,
@@ -914,9 +928,9 @@ static FooCanvasItem *drawSimpleFeature(FooCanvasGroup *parent, ZMapFeature feat
 
   return feature_item ;
 }
+#endif /*  RDS_SEE_ZMAPWINDOWFEATUREITEMFACTORY_C  */
 
-
-
+#ifdef  RDS_SEE_ZMAPWINDOWFEATUREITEMFACTORY_C
 static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature feature,
                                            double feature_offset,
                                            double x1, double feature_top,
@@ -1136,12 +1150,12 @@ static FooCanvasItem *drawAlignmentFeature(FooCanvasGroup *parent, ZMapFeature f
     
   return feature_item ;
 }
-
+#endif /*  RDS_SEE_ZMAPWINDOWFEATUREITEMFACTORY_C  */
 
 	/* Note that for transcripts the boxes and lines are contained in a canvas group
 	 * and that therefore their coords are relative to the start of the group which
 	 * is the start of the transcript, i.e. feature->x1. */
-
+#ifdef RDS_SEE_ZMAPWINDOWFEATUREITEMFACTORY_C
 static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature feature,
 					    double feature_offset,
 					    double x1, double feature_top,
@@ -1418,7 +1432,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
 
   return feature_item ;
 }
-
+#endif /* RDS_SEE_ZMAPWINDOWFEATUREITEMFACTORY_C */
 static void fuzzyTableDimensions(double region_range, double trunc_col, 
                                  double chars_per_base, int *row, int *col,
                                  double *height_inout, int *rcminusmod_out)
@@ -1648,7 +1662,7 @@ static void drawTextWrappedInColumn(FooCanvasItem *parent, char *text,
   
   return ;
 }
-
+#ifdef RDS_SEE_ZMAPWINDOWFEATUREITEMFACTORY_C
 static FooCanvasItem *drawPep(FooCanvasGroup *parent, ZMapFeature feature,
                               double feature_offset,
                               double x1, double y1, double x2, double y2,
@@ -1764,7 +1778,7 @@ static FooCanvasItem *drawDNA(FooCanvasGroup *parent, ZMapFeature feature,
 
   return feature_parent;
 }
-
+#endif /* RDS_SEE_ZMAPWINDOWFEATUREITEMFACTORY_C */
 
 
 
@@ -1980,12 +1994,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
   ZMapWindow window = (ZMapWindowStruct*)data ;
   ZMapFeature feature ;
   static guint32 last_but_press = 0 ;			    /* Used for double clicks... */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("canvasItemEventCB (%x): enter\n", item);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   switch (event->type)
     {
@@ -2869,6 +2877,18 @@ static void showSplices (FeatureMap look, SegType type, BoxCol *bc, float origin
 } /* showSplices */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
+                                      ZMapFeatureContext context,
+                                      ZMapFeatureAlignment align,
+                                      ZMapFeatureBlock block,
+                                      ZMapFeatureSet set,
+                                      ZMapFeature feature,
+                                      gpointer handler_data)
+{
+  g_signal_connect(GTK_OBJECT(top_item), "destroy",
+		   GTK_SIGNAL_FUNC(canvasItemDestroyCB), handler_data) ;
+  return TRUE;
+}
 
 static void factoryItemCreated(FooCanvasItem            *new_item,
                                ZMapWindowItemFeatureType new_item_type,
@@ -2888,10 +2908,6 @@ static void factoryItemCreated(FooCanvasItem            *new_item,
     g_signal_connect(GTK_OBJECT(new_item), "event",
                      GTK_SIGNAL_FUNC(canvasItemEventCB), handler_data) ;
     
-  g_signal_connect(GTK_OBJECT(new_item), "destroy",
-		   GTK_SIGNAL_FUNC(canvasItemDestroyCB), handler_data) ;
-
-
   return ;
 }
 
