@@ -81,6 +81,9 @@ if [ -n "$prefix" ] ; then
   ZBmsgInfo "running make install"
   make install || ZBmsgAndExit "make install failed in `pwd`"
 
+  ZBmsgInfo "running X11::XRemote build and install"
+  # untested. RDS
+  $builddir/perl/build.sh $prefix/$ZBbuildOSCanon || ZBmsgAndExit "X11::XRemote build failed"
 fi
 
 
