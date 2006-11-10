@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  8 16:30 2006 (edgrif)
+ * Last edited: Nov 10 17:27 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.158 2006-11-09 10:15:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.159 2006-11-10 17:27:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -214,8 +214,11 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
   zMapAssert(window && full_context && diff_context) ;
 
-  window->item_factory = zmapWindowFToIFactoryOpen(window->context_to_item, window->long_items);
-  zmapWindowFeatureFactoryInit(window);
+  if(!window->item_factory)
+    {
+      window->item_factory = zmapWindowFToIFactoryOpen(window->context_to_item, window->long_items);
+      zmapWindowFeatureFactoryInit(window);
+    }
 
   /* Set up colours. */
   if (!window->done_colours)
@@ -364,8 +367,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
   if(debug_containers)
     zmapWindowContainerPrint(root_group) ;
-
-  zmapWindowFToIFactoryClose(window->item_factory);
 
 
   zMapPrintTimer(NULL, "Finished creating canvas features") ;
