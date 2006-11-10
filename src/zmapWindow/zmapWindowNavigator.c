@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 11:59 2006 (rds)
+ * Last edited: Nov  9 17:01 2006 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.8 2006-11-09 12:02:14 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.9 2006-11-10 08:19:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -251,7 +251,9 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
       factory_helpers.feature_size_request = factoryFeatureSizeReq;
       factory_helpers.item_created         = factoryItemHandler;
       zmapWindowFToIFactorySetup(navigate->item_factory, 1, /* line_width hardcoded for now. */
+                                 NULL,
                                  &factory_helpers, (gpointer)navigate);
+
     }
 
   zMapAssert(navigate);
