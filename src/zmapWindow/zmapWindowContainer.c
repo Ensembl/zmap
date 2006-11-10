@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Nov  7 08:56 2006 (rds)
+ * Last edited: Nov 10 08:27 2006 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.18 2006-11-08 09:25:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.19 2006-11-10 09:25:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,7 +112,7 @@ static void printItem(FooCanvasItem *item, int indent, char *prefix) ;
 
 static void itemDestroyCB(gpointer data, gpointer user_data);
 
-static void redrawColumn(FooCanvasItem *container, ContainerData data);
+static void redrawColumn(FooCanvasGroup *container, ContainerData data);
 
 
 static void printFeatureSet(gpointer data, gpointer user_data) ;
@@ -1188,7 +1188,7 @@ static void eachContainer(gpointer data, gpointer user_data)
           /* If this featureset requires a redraw... */
           if (children && container_data->child_redraw_required)
             {
-              redrawColumn(FOO_CANVAS_ITEM(container), container_data);
+              redrawColumn(container, container_data);
             }
           
           containerMoveToZero(container);
@@ -1314,7 +1314,7 @@ static void printItem(FooCanvasItem *item, int indent, char *prefix)
 }
 
 
-static void redrawColumn(FooCanvasItem *container, ContainerData data)
+static void redrawColumn(FooCanvasGroup *container, ContainerData data)
 {
   zmapWindowContainerZoomChangedCallback redraw_cb = NULL;
 

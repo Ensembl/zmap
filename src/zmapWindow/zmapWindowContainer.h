@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Nov  8 10:27 2006 (edgrif)
+ * Last edited: Nov 10 08:28 2006 (rds)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.14 2006-11-08 11:56:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.15 2006-11-10 09:25:24 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -66,9 +66,9 @@ typedef enum
     ZMAPCONTAINER_LEVEL_FEATURESET_GROUP
 } ZMapContainerLevelType ;
 
-typedef void (*zmapWindowContainerZoomChangedCallback)(FooCanvasItem *container, 
+typedef void (*zmapWindowContainerZoomChangedCallback)(FooCanvasGroup *container, 
                                                        double new_zoom, 
-                                                       ZMapWindow user_data);
+                                                       gpointer user_data);
 
 typedef void (*ZMapContainerExecFunc)(FooCanvasGroup        *container, 
                                       FooCanvasPoints       *container_points,
