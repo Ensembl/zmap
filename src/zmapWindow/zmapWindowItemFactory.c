@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 10 08:31 2006 (rds)
+ * Last edited: Nov 13 12:07 2006 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.6 2006-11-10 09:25:59 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.7 2006-11-13 12:10:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -628,6 +628,45 @@ static FooCanvasItem *createParentGroup(FooCanvasGroup *parent,
   return group ;
 }
 
+static double getWidthFromScore(ZMapFeatureTypeStyle style, double score)
+{
+  double tmp, width = 0.0 ;
+  double fac ;
+
+  fac = style->width / (style->max_score - style->min_score) ;
+
+  if (score <= style->min_score)
+    tmp = 0 ;
+  else if (score >= style->max_score) 
+    tmp = style->width ;
+  else 
+    tmp = fac * (score - style->min_score) ;
+
+  width = tmp ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if (seg->data.f <= bc->meth->minScore) 
+	x = 0 ;
+      else if (seg->data.f >= bc->meth->maxScore) 
+	x = bc->width ;
+      else 
+	x = fac * (seg->data.f - bc->meth->minScore) ;
+
+      box = graphBoxStart() ;
+
+      if (x > origin + 0.5 || x < origin - 0.5) 
+	graphLine (bc->offset+origin, y, bc->offset+x, y) ;
+      else if (x > origin)
+	graphLine (bc->offset+origin-0.5, y, bc->offset+x, y) ;
+      else
+	graphLine (bc->offset+origin+0.5, y, bc->offset+x, y) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  return width ;
+}
+
 static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
                                         double feature_offset,
 					double x1, double y1, double x2, double y2,
@@ -646,35 +685,74 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
   if (feature->flags.has_boundary)
     {
       static GdkColor splice_outline, splice_background ;
-      double width ;
+      double width, origin, start ;
       ZMapDrawGlyphType glyph_type ;
       char *colour ;
+      ZMapFrame frame ;
 
-      gdk_color_parse("black", &splice_outline) ;
+      frame = zmapWindowFeatureFrame(feature) ;
 
+      /* colouring is temporary until I get styles fixed up....then we need to allow stuff like
+       * splice/frame specific colouring.... */
+      switch (frame)
+	{
+	case ZMAPFRAME_0:
+	  colour = "red" ;
+	  break ;
+	case ZMAPFRAME_1:
+	  colour = "blue" ;
+	  break ;
+	case ZMAPFRAME_2:
+	  colour = "green" ;
+	  break ;
+	default:
+	  zMapAssertNotReached() ;
+	}
+      gdk_color_parse(colour, &splice_background) ;
 
-      /* colouring is temporary until I get styles fixed up.... */
       if (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE)
 	{
-	  colour = "blue" ;
 	  glyph_type = ZMAPDRAW_GLYPH_DOWN_BRACKET ;
 	}
       else
 	{
-	  colour = "red" ;
 	  glyph_type = ZMAPDRAW_GLYPH_UP_BRACKET ;
 	}
 
-      gdk_color_parse(colour, &splice_background) ;
 
-      outline = &splice_outline ;
-      background = &splice_background ;
+      if (feature->style->min_score < 0 && 0 < feature->style->max_score)
+	origin = 0 ;
+      else
+	origin = style->width * (feature->style->min_score / (feature->style->max_score - feature->style->min_score)) ;
 
-      width = feature->style->width ;
 
-      feature_item = zMapDrawGlyph(parent, x1, (y2 + y1) * 0.5,
+      /* Adjust width to score....NOTE that to do acedb like stuff we really need to set an origin
+	 and pass it in to this routine....*/
+      width = getWidthFromScore(feature->style, feature->score) ;
+
+
+      if (width > origin + 0.5 || width < origin - 0.5)
+	{
+	  start = x1 + origin ;
+	  width = width - origin ;
+	  /* graphLine (bc->offset+origin, y, bc->offset+x, y) ; */
+	}
+      else if (width > origin)
+	{
+	  /*graphLine (bc->offset+origin-0.5, y, bc->offset+x, y) ; */
+	  start = x1 + origin - 0.5 ;
+	  width = width - origin - 0.5 ;
+	}
+      else
+	{
+	  /* graphLine (bc->offset+origin+0.5, y, bc->offset+x, y) ; */
+	  start = x1 + origin + 0.5 ;
+	  width = width - origin + 0.5 ;
+	}
+
+      feature_item = zMapDrawGlyph(parent, start, (y2 + y1) * 0.5,
 				   glyph_type,
-				   background, width, 3.0) ;
+				   &splice_background, width, 2) ;
 
     }
   else
