@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 31 08:41 2006 (rds)
+ * Last edited: Nov 10 19:58 2006 (rds)
  * Created: Thu Sep  7 09:10:32 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.h,v 1.3 2006-11-08 09:23:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigator.h,v 1.4 2006-11-13 10:59:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +50,10 @@ typedef struct _ZMapNavigatorCallbackStruct
 
 
 ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget);
+void zMapWindowNavigatorFocus(ZMapWindowNavigator navigate, 
+                              gboolean raise_to_top,
+                              double *x1_inout, double *y1_inout, 
+                              double *x2_inout, double *y2_inout);
 void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindow window);
 void zMapWindowNavigatorMergeInFeatureSetNames(ZMapWindowNavigator navigate, 
                                                GList *navigator_sets);
