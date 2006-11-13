@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 13 09:47 2006 (edgrif)
+ * Last edited: Nov 13 10:51 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.147 2006-11-13 09:55:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.148 2006-11-13 11:08:18 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -919,7 +919,8 @@ void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, 
 void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
                                         double border);
 
-void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, double start, double end);
+void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, 
+                              double origin, double start, double end);
 
 /* End Ruler Functions */
 

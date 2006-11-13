@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 17 17:53 2006 (rds)
+ * Last edited: Nov 13 10:10 2006 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.10 2006-11-08 09:25:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.11 2006-11-13 11:08:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -398,7 +398,7 @@ void zmapWindowRulerCanvasHideHorizon(ZMapWindowRulerCanvas obj)
   return ;
 }
 
-void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, double start, double end)
+void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, double origin, double start, double end)
 {
   FooCanvas *canvas = NULL;
   ZMapScaleBarStruct scaleBar = {0};
@@ -441,7 +441,7 @@ void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, double 
 
   //line_height      = line_height / zoom_factor;
 
-  if(initialiseScale(&scaleBar, start, end, zoom_factor, line_height, TRUE, 1, project_at))
+  if(initialiseScale(&scaleBar, start, end, zoom_factor, line_height, TRUE, origin, project_at))
     drawScaleBar(&scaleBar, FOO_CANVAS_GROUP(parent), font_desc, TRUE);
   
 
