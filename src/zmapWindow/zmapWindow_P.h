@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov  9 09:41 2006 (edgrif)
+ * Last edited: Nov 13 09:47 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.146 2006-11-09 10:16:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.147 2006-11-13 09:55:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -213,7 +213,12 @@ typedef enum
 
 
 
-
+/* Used by menus to decide whether to display a "Show" or an "Export" button in dialogs. */
+typedef enum
+  {
+    ZMAP_DIALOG_SHOW,
+    ZMAP_DIALOG_EXPORT
+  } ZMapWindowDialogType ;
 
 /*
  *           Default colours.
@@ -559,7 +564,7 @@ void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, FooCanvasItem *feature_
 
 void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item) ;
 void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list, char *title, ZMapFeatureBlock block) ;
-
+char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWindowDialogType dialog_type) ;
 
 void zmapWindowNewReposition(ZMapWindow window) ;
 void zmapWindowResetWidth(ZMapWindow window) ;
@@ -922,6 +927,8 @@ void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, double 
 void zmapWindowStatsReset(ZMapWindowStats stats) ;
 void zmapWindowStatsPrint(ZMapWindowStats stats) ;
 
+
+char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type) ;
 
 
 #endif /* !ZMAP_WINDOW_P_H */
