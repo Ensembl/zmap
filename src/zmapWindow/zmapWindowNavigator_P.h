@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 11:57 2006 (rds)
+ * Last edited: Nov 13 10:09 2006 (rds)
  * Created: Thu Sep  7 09:23:47 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.5 2006-11-09 13:29:50 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.6 2006-11-13 11:07:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,9 +59,9 @@
 #define COLUMN_BACKGROUND "grey"
 
 #define LOCATOR_BORDER    "darkred"
-#define LOCATOR_DRAG      "pink"
+#define LOCATOR_DRAG      "white"
 #define LOCATOR_FILL      "grey"
-#define LOCATOR_LINE_WIDTH 2
+#define LOCATOR_LINE_WIDTH 1
 
 typedef struct _ZMapWindowNavigatorStruct
 {
@@ -100,6 +100,8 @@ typedef struct _ZMapWindowNavigatorStruct
 
   double text_width, text_height;
   double left;
+
+  gboolean draw_locator, is_reversed;
 
 }ZMapWindowNavigatorStruct;
 
