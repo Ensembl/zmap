@@ -40,7 +40,7 @@ case $opsys in
     PATH="$locals/bin:$PATH"
     export PATH
 
-    PKG_CONFIG_PATH="$locals/lib/pkgconfig:/home/rds/lib/pkgconfig"
+    PKG_CONFIG_PATH="$locals/lib/pkgconfig"
     export PKG_CONFIG_PATH
     LD_LIBRARY_PATH=/usr/local/oracle/lib
     export LD_LIBRARY_PATH
@@ -50,7 +50,7 @@ case $opsys in
     ld_args='' ;;
 
  Darwin )
-    # SET PATH TO INCLUDE ~edgrif/installs/bin && /sw/bin in that order
+    # SET PATH TO INCLUDE ~zmap/prefix && /sw/bin in that order
     # This is for autotools and pkg-config respectively
     # AceConn ... 
     # AceConn is installed in /sw/lib && /sw/include for now. A couple of things to note. (manual copy)
