@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Oct 18 08:24 2006 (rds)
+ * Last edited: Nov 13 09:50 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.22 2006-11-08 09:25:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.23 2006-11-13 09:54:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,8 +42,39 @@
 #include <zmapWindowContainer.h>
 
 
-enum {ZMAPCDS, ZMAPTRANSCRIPT, ZMAPUNSPLICED,
-      ZMAPCDS_FILE, ZMAPTRANSCRIPT_FILE, ZMAPUNSPLICED_FILE} ;
+/* some common menu strings, needed because cascading menus need the same string as their parent
+ * menu item. */
+
+#define FEATURE_DUMP_STR           "Export "
+#define FEATURE_SHOW_STR           "Show "
+
+#define FEATURE_DNA_STR            "Feature DNA"
+#define FEATURE_DNA_DUMP_STR       FEATURE_DUMP_STR FEATURE_DNA_STR
+#define FEATURE_DNA_SHOW_STR       FEATURE_SHOW_STR FEATURE_DNA_STR
+
+#define FEATURE_PEPTIDE_STR        "Feature peptide"
+#define FEATURE_PEPTIDE_DUMP_STR   FEATURE_DUMP_STR FEATURE_PEPTIDE_STR
+#define FEATURE_PEPTIDE_SHOW_STR   FEATURE_SHOW_STR FEATURE_PEPTIDE_STR
+
+#define CONTEXT_STR                "Whole View"
+#define CONTEXT_EXPORT_STR         FEATURE_DUMP_STR CONTEXT_STR
+
+
+
+/* Choose which way a transcripts dna is dumped... */
+enum
+  {
+    ZMAPCDS,
+    ZMAPTRANSCRIPT,
+    ZMAPUNSPLICED,
+    ZMAPCHOOSERANGE,
+    ZMAPCDS_FILE,
+    ZMAPTRANSCRIPT_FILE,
+    ZMAPUNSPLICED_FILE,
+    ZMAPCHOOSERANGE_FILE
+} ;
+
+
 enum {
   ZMAPNAV_SPLIT_FIRST_LAST_EXON, 
   ZMAPNAV_SPLIT_FLE_WITH_OVERVIEW,
@@ -192,10 +223,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAny(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Show Feature DNA",               ZMAPUNSPLICED,     dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_DNA_SHOW_STR,               ZMAPUNSPLICED,     dnaMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -212,14 +242,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAnyFile(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "DNA dump",               ZMAPUNSPLICED_FILE,     dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_DNA_DUMP_STR,               ZMAPUNSPLICED_FILE,     dnaMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -233,10 +261,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNATranscript(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, "_DNA", 0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, "DNA/CDS",                    ZMAPCDS,           dnaMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "DNA/transcript",             ZMAPTRANSCRIPT,    dnaMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "DNA/unspliced",              ZMAPUNSPLICED,     dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "_"FEATURE_DNA_SHOW_STR, 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_DNA_SHOW_STR"/CDS",                    ZMAPCDS,           dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_DNA_SHOW_STR"/transcript",             ZMAPTRANSCRIPT,    dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_DNA_SHOW_STR"/unspliced",              ZMAPUNSPLICED,     dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_DNA_SHOW_STR"/with flanking sequence", ZMAPCHOOSERANGE,   dnaMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
@@ -256,10 +285,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNATranscriptFile(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, "_DNA dump", 0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, "DNA dump/CDS",                    ZMAPCDS_FILE,           dnaMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "DNA dump/transcript",             ZMAPTRANSCRIPT_FILE,    dnaMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "DNA dump/unspliced",              ZMAPUNSPLICED_FILE,     dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "_"FEATURE_DNA_DUMP_STR, 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_DNA_DUMP_STR"/CDS",                    ZMAPCDS_FILE,           dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_DNA_DUMP_STR"/transcript",             ZMAPTRANSCRIPT_FILE,    dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_DNA_DUMP_STR"/unspliced",              ZMAPUNSPLICED_FILE,     dnaMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_DNA_DUMP_STR"/with flanking sequence", ZMAPCHOOSERANGE_FILE,   dnaMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
@@ -312,6 +342,11 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
       {
 	break ;
       }
+    case ZMAPCHOOSERANGE:
+    case ZMAPCHOOSERANGE_FILE:
+      {
+	break ;
+      }
     default:
       zMapAssertNotReached() ;				    /* exits... */
       break ;
@@ -321,7 +356,21 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
     {
       molecule_type = "DNA" ;
       gene_name = (char *)g_quark_to_string(feature->original_id) ;
+    }
 
+  if (menu_item_id == ZMAPCHOOSERANGE || menu_item_id == ZMAPCHOOSERANGE_FILE)
+    {
+      ZMapWindowDialogType dialog_type ;
+
+      if (menu_item_id == ZMAPCHOOSERANGE)
+	dialog_type = ZMAP_DIALOG_SHOW ;
+      else
+	dialog_type = ZMAP_DIALOG_EXPORT ;
+
+      dna = zmapWindowDNAChoose(menu_data->window, menu_data->item, dialog_type) ;
+    }
+  else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+    {
       dna = zMapFeatureGetTranscriptDNA(context, feature, spliced, cds) ;
     }
   else
@@ -329,32 +378,36 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
       dna = zMapFeatureGetFeatureDNA(context, feature) ;
     }
 
-  /* Would be better to have the dna functions calculate and return this.... */
-  seq_len = strlen(dna) ;
-
-
-  if (menu_item_id == ZMAPCDS || menu_item_id == ZMAPTRANSCRIPT || menu_item_id == ZMAPUNSPLICED)
+  if (dna)
     {
-      char *title ;
-      char *dna_fasta ;
+      /* Would be better to have the dna functions calculate and return this.... */
+      seq_len = strlen(dna) ;
 
-      dna_fasta = zMapFASTAString(seq_name, molecule_type, gene_name, seq_len, dna) ;
 
-      title = g_strdup_printf("%s%s%s",
-			      seq_name,
-			      gene_name ? ":" : "",
-			      gene_name ? gene_name : "") ;
-      zMapGUIShowText(title, dna_fasta, FALSE) ;
-      g_free(title) ;
+      if (menu_item_id == ZMAPCDS || menu_item_id == ZMAPTRANSCRIPT || menu_item_id == ZMAPUNSPLICED
+	  || menu_item_id == ZMAPCHOOSERANGE)
+	{
+	  char *title ;
+	  char *dna_fasta ;
 
-      g_free(dna_fasta) ;
+	  dna_fasta = zMapFASTAString(seq_name, molecule_type, gene_name, seq_len, dna) ;
+
+	  title = g_strdup_printf("%s%s%s",
+				  seq_name,
+				  gene_name ? ":" : "",
+				  gene_name ? gene_name : "") ;
+	  zMapGUIShowText(title, dna_fasta, FALSE) ;
+	  g_free(title) ;
+
+	  g_free(dna_fasta) ;
+	}
+      else
+	{
+	  dumpFASTA(menu_data->window, dna, seq_name, seq_len, molecule_type, gene_name) ;
+	}
+
+      g_free(dna) ;
     }
-  else
-    {
-      dumpFASTA(menu_data->window, dna, seq_name, seq_len, molecule_type, gene_name) ;
-    }
-
-  g_free(dna) ;
 
   g_free(menu_data) ;
 
@@ -369,9 +422,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, "_Peptide", 0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Peptide/CDS",                    ZMAPCDS,           peptideMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Peptide/transcript",             ZMAPTRANSCRIPT,    peptideMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "_"FEATURE_PEPTIDE_SHOW_STR, 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_PEPTIDE_SHOW_STR"/CDS",                    ZMAPCDS,           peptideMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_PEPTIDE_SHOW_STR"/transcript",             ZMAPTRANSCRIPT,    peptideMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
@@ -391,9 +444,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, "_Peptide dump", 0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Peptide dump/CDS",                    ZMAPCDS_FILE,           peptideMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Peptide dump/transcript",             ZMAPTRANSCRIPT_FILE,    peptideMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "_"FEATURE_PEPTIDE_DUMP_STR, 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_PEPTIDE_DUMP_STR"/CDS",             ZMAPCDS_FILE,           peptideMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_PEPTIDE_DUMP_STR"/transcript",      ZMAPTRANSCRIPT_FILE,    peptideMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
@@ -683,10 +736,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, "_Dump",                  0, NULL,       NULL},
-      {ZMAPGUI_MENU_NORMAL, "Dump/Dump DNA"          , 1, dumpMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Dump/Dump Features"     , 2, dumpMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Dump/Dump Context"      , 3, dumpMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "_"CONTEXT_EXPORT_STR,                  0, NULL,       NULL},
+      {ZMAPGUI_MENU_NORMAL, CONTEXT_EXPORT_STR"/DNA"          , 1, dumpMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, CONTEXT_EXPORT_STR"/Features"     , 2, dumpMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, CONTEXT_EXPORT_STR"/Context"      , 3, dumpMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
