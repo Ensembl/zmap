@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 11 09:29 2006 (rds)
+ * Last edited: Nov 13 09:50 2006 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.35 2006-11-08 09:25:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.36 2006-11-13 09:55:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -378,6 +378,29 @@ void zmapWindowStyleTableDestroy(GHashTable *style_table)
 
   return ;
 }
+
+
+char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type)
+{
+  char *dialog_text = NULL ;
+
+  switch (dialog_type)
+    {
+    case ZMAP_DIALOG_SHOW:
+      dialog_text = "Show" ;
+      break ;
+    case ZMAP_DIALOG_EXPORT:
+      dialog_text = "Export" ;
+      break ;
+    default:
+      zMapAssertNotReached() ;
+      break ;
+    }
+
+
+  return dialog_text ;
+}
+
 
 
 
