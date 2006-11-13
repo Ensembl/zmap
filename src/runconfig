@@ -42,7 +42,7 @@ case $opsys in
 
     PKG_CONFIG_PATH="$locals/lib/pkgconfig"
     export PKG_CONFIG_PATH
-    LD_LIBRARY_PATH=/usr/local/oracle/lib
+    LD_LIBRARY_PATH="$locals/lib"
     export LD_LIBRARY_PATH
 
     cc_args='CFLAGS=-Wall'
