@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 10 17:27 2006 (rds)
+ * Last edited: Nov 13 09:04 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.159 2006-11-10 17:27:52 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.160 2006-11-13 09:53:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -511,6 +511,24 @@ void zmapWindowCreateFeatureSet(ZMapWindow window, ZMapFeatureSet feature_set,
   /* Clean up. */
   g_hash_table_destroy(featureset_data.feature_hash) ;
   featureset_data.feature_hash = NULL ;
+
+
+  /* We should be bumping columns here if required... */
+  
+
+
+  {
+    ZMapStyleOverlapMode overlap_mode ;
+
+    if ((overlap_mode = zMapStyleGetOverlapMode(feature_set->style)) != ZMAPOVERLAP_COMPLETE)
+      {
+	if (forward_col)
+	  zmapWindowColumnBump(FOO_CANVAS_ITEM(forward_col), overlap_mode) ;
+
+	if (reverse_col)
+	  zmapWindowColumnBump(FOO_CANVAS_ITEM(reverse_col), overlap_mode) ;
+      }
+  }	    
 
 
   /* TRY RESIZING BACKGROUND NOW.....get rid of debug info.... */
