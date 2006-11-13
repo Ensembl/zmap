@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 24 12:20 2006 (rds)
+ * Last edited: Nov 10 11:33 2006 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.15 2006-11-08 09:24:09 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.16 2006-11-13 09:53:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,6 +109,24 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context)
 
   return ;
 }
+
+
+
+
+/* Extracts DNA for the given start/end from a block, doing a reverse complement if required.
+ */
+char *zMapFeatureGetDNA(ZMapFeatureBlock block, int start, int end, gboolean revcomp)
+{
+  char *dna = NULL, *tmp;
+
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)block)) ;
+
+  if (fetchBlockDNAPtr((ZMapFeatureAny)block, &tmp))
+    dna = getDNA(tmp, start, end, revcomp) ;
+
+  return dna ;
+}
+
 
 /* Trivial function which just uses the features start/end coords, could be more intelligent
  * and deal with transcripts/alignments more intelligently. */
