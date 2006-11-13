@@ -1,0 +1,173 @@
+
+New ZMap style "methods" in acedb.   (Ed Griffiths, 29th Sept. 2006)
+=================================================================================
+
+
+
+Column Ordering
+---------------
+
+There are two column orderings required for zmap, the columns in the main zmap window and the
+column orderings in the navigator window. These are specified in the ZMap configuration file in
+the "source" stanza:
+
+
+source
+{
+featuresets = "Locus \"3 Frame\" \"3 Frame Translation\" vertebrate_mRNA Assembly_Tags etc."
+navigator = "Genomic_canonical Locus Scale"
+}
+
+(Note that feature set names can have embedded blanks)
+
+These lists not only specify the order of columns but also control which feature sets will be
+displayed, if the feature set (or its Column_group) is not in this list then the feature will not
+be displayed.
+
+
+
+Acedb Methods vs. ZMap styles
+-----------------------------
+
+The two exist along side each other and have the following relationship/uses:
+
+For every zmap feature set there must be a ZMap_style object in the acedb database AND also an
+acedb Method, they MUST have the same name.
+
+ZMap feature display is completely controlled by the ZMap_style object.
+
+Retrieval of features from the acedb database is completely controlled by the acedb Method because
+we use the acedb GFF dumper which makes heavy use of acedb Methods.
+
+In other words its vital that acedb Methods continue to exist unaltered alongside the new
+ZMap_style objects.
+
+
+
+Inheritance
+-----------
+
+ZMap_style implement one level of inheritance, this allows you to specify a common base style for
+a number of styles that differ perhaps only in colour or some other small detail.
+
+
+
+Column_group styles
+-------------------
+
+Where several different types of features all perhaps having their own styles are displayed in a
+single column specified via the "Column_group" tag, then there must be a style with name given by
+that tag. This is partly to make processing within zmap uniform (i.e. everything has a style) and
+partly because we need an overall style for the column to allow column wide operations such as
+bumping all features in the column or hiding the whole column etc.
+
+
+
+Meta or implicit styles
+-----------------------
+
+There are a number of "implicit" or "meta" styles which have predefined (i.e. fixed) names within
+zmap. Styles with these names (case insensitive) _MUST_ be available from the server, if they are
+not then various types of display (dna, 3 frame) will not be possible.
+
+ZMap will fill in the style with some reasonable defaults but users can override these by
+specifying their own values in these styles. Users must avoid using these names for any other
+styles.
+
+
+The current list of these styles is:
+
+"3 Frame"                  controls 3 frame display
+"3 Frame Translation"      controls 3 frame protein translation display
+
+"DNA"                      controls dna sequence display
+
+"Locus"                    controls display of a column of locus names
+
+
+
+
+The New ZMap_style Classes
+--------------------------
+
+The new classes all begin with "ZMap_" to separate them from any likely existing
+classes. Acedb tags have scope within classes so we can call our tags what we want.
+All classes have a "Remark" field to allow documentation.
+
+
+// Specifies a set of colours, colours should be specified as standard X11 colour names,
+// e.g. "light pink"
+//
+?ZMap_colour Remark Text
+             Draw Text                // default "black"
+             Fill Text                // default "white"
+             Border Text              // default "black"
+
+
+// Specifies the colours for a feature, the feature will be displayed with "Normal"
+// colours initially and then with "Selected" colours when selected in some way.
+//
+?ZMap_feature_colour Remark Text
+                     Normal ?ZMap_colour
+		     Selected ?ZMap_colour
+
+
+// Specifies display and processing options for features.
+//
+?ZMap_Style Remark Text
+            //
+            // Base_style is a basic style inherited by this style, the only thing not
+            // inherited from Base_style is this tag....
+            //
+            Base_style UNIQUE ?ZMap_Style
+            //
+            // Column_group allows placement of different sets of features within a single column:
+            //
+            //      Column_group "column group name"
+            //
+            Column_group UNIQUE Text
+            //
+            Control Never_display                   // never display features
+                    Init_hidden                     // initially hide features
+            //
+            Width Float                             // default 2.0
+            //
+            // Don't show below/above these magnifications, default is always show.
+            Min_mag Float
+            Max_mag Float
+            //
+            // Should boxes have pointy ends to show features direction ? (default = FALSE)
+            Directional_ends
+            //
+            Colours #ZMap_feature_colour
+            //
+            // includes new bump modes directly.
+            Bump_mode UNIQUE Unbumped
+                             Compact_Cluster_Interleaved
+                             Compact_Cluster_NonInterleaved
+            //
+            Strand_sensitive Show_up_strand ?ZMap_feature_colour
+            //
+            // Is feature read frame dependent ? (optionally only ever show as 3 frames)
+            Frame_sensitive Show_only_as_3_frame
+            //
+            // Score_bounds controls feature width when related to score, specifies min/max.
+            Score_bounds Float Float
+            //
+            // The mode...contentious...??
+            Mode UNIQUE Basic          // default
+                        Transcript CDS_colour ?ZMap_feature_colour
+                        Alignment
+            //
+            // Draw_style specifies how the feature should be drawn, if not specified
+            // then Basic mode defaults to box, Transcript to Gene and Alignment to Homol.
+            Draw_style UNIQUE Box
+                              Gene
+                              Homol
+                              Text
+            //
+            // Dumping options
+            Dump GFF Source Text
+                     Feature Text
+
+                              
