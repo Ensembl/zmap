@@ -1,4 +1,4 @@
-/*  Last edited: Apr 13 17:55 2005 (rds) */
+/*  Last edited: Nov 10 11:56 2006 (rds) */
 /*  compile using compile_test.sh */
 
 #include <ZMap/zmapXRemote.h>            /* Public header for Perl Stuff */
@@ -11,6 +11,7 @@ void myUselessCallback(gpointer data);
 int main(int argc, char *argv[]){
   zMapXRemoteObj obj;
   Window win;
+  char *response;
 
   if(argc != 2)
     printf("Usage: ./test windowId\n"); /* e.g. windowId = 0x2200210 */
@@ -21,7 +22,7 @@ int main(int argc, char *argv[]){
 
     zMapXRemoteSetRequestAtomName(obj, "_PERL_REQUEST_NAME");
     zMapXRemoteSetResponseAtomName(obj, "_PERL_RESPONSE_NAME");
-    zMapXRemoteSendRemoteCommand(obj, "zoom_in");
+    zMapXRemoteSendRemoteCommand(obj, "zoom_in", &response);
 #ifdef AAAAA
     zMapXRemoteSetWindowID(obj, strtoul(argv[1], (char **)NULL, 16));
     zMapXRemoteSendRemoteCommand(obj, "zoom_in");

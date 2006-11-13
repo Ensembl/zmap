@@ -1,4 +1,4 @@
-/*  Last edited: Jun 17 15:58 2005 (rds) */
+/*  Last edited: Nov 10 11:55 2006 (rds) */
 /* Hej, Emacs, this is -*- C -*- mode!   */
 
 /* This is  before the perl code  includes as, as Ed and  I have found
@@ -108,7 +108,26 @@ send_command(self, command)
     X11::XRemote::Handle self
     char *command
     CODE:
-      RETVAL = zMapXRemoteSendRemoteCommand(self, command);
+    {
+      char *response;
+      int result;
+      if((result = zMapXRemoteSendRemoteCommand(self, command, &response)) == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+        {
+          int code;
+          char *xml_only;
+          zMapXRemoteResponseSplit(self, response, &code, &xml_only);
+          if((zMapXRemoteResponseIsError(self, response)))
+            {
+              croak("Non 200 response. error code %d.", code);
+            }
+        }
+      else
+        {
+          croak("Failure sending xremote command. Code = %d.", result);
+        }
+
+      RETVAL = result;
+    }                  
     OUTPUT:
       RETVAL
 
