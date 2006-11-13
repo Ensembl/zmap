@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Aug 10 15:37 2006 (edgrif)
+ * Last edited: Nov 13 08:26 2006 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.69 2006-11-08 09:23:50 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.70 2006-11-13 11:04:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -387,7 +387,7 @@ void zmapControlSetGUIVisChange(ZMap zmap, ZMapWindowVisibilityChange vis_change
    * then open the pane that shows the window navigator scroll bar. */
   pane_width = zMapNavigatorSetWindowPos(zmap->navigator,
 					 vis_change->scrollable_top, vis_change->scrollable_bot) ;
-  gtk_paned_set_position(GTK_PANED(zmap->hpane), pane_width) ;
+  //gtk_paned_set_position(GTK_PANED(zmap->hpane), pane_width) ;
 
 
   return ;
@@ -605,9 +605,27 @@ static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data_
 {
   ZMap zmap = (ZMap)app_data ;
   ZMapView view = zMapViewGetView(view_window) ;
+  ZMapWindowNavigator navigator = NULL;
+  GList *list_item = NULL;
+  double x1, x2, y1, y2;
 
   /* Make this view window the focus view window. */
   zmapControlSetWindowFocus(zmap, view_window) ;
+
+  list_item = zmap->view_list;
+  x1 = x2 = y1 = y2 = 0.0;
+  do
+    {
+      ZMapViewWindow view_item = (ZMapView)(list_item->data);
+      navigator = zMapViewGetNavigator(view_item);
+      /* badly named function... */
+      zMapWindowNavigatorFocus(navigator, FALSE, &x1, &y1, &x2, &y2);
+    }
+  while((list_item = g_list_next(list_item)));
+
+  navigator = zMapViewGetNavigator(view);
+
+  zMapWindowNavigatorFocus(navigator, TRUE, &x1, &y1, &x2, &y2);
 
   /* If view has features then change the window title. */
   updateControl(zmap, view) ;
