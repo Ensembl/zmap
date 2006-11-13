@@ -3,10 +3,12 @@
 #set -x
 #==========================================
 # Find where we are
-HERE=`pwd`
- SRC=`dirname $HERE`
+HERE=`dirname $0`
+cd $HERE
 #==========================================
 # This works from the /ZMap/src/perl directory
+HERE=`pwd`
+ SRC=$HERE/..
 ZMAP_INC="$SRC/include"
 ZMAP_LIB="$SRC/build/linux/lib"
 #==========================================
@@ -20,7 +22,7 @@ PERL_VERSION=`$PERL_EXE -MConfig -e 'print $Config{version}'`
 #==========================================
 #==========================================
 
-cd X11-XRemote-0.01/X11/XRemote
+cd $HERE/X11-XRemote-0.01/X11/XRemote
 
 if [ $1 ]; then
     PREFIX=$1
@@ -39,21 +41,8 @@ case $opsys in
     export PKG_CONFIG_PATH ;;
 esac
 
-   PERL_CODE=$(cat <<EOF 
-\$m = ExtUtils::MakeMaker->new({qw(NAME X)});
-\$a = \$m->{INSTALLSITEARCH};
-\$b = \$m->{INSTALLSITELIB};
-\$a =~ s!\\\$\\((SITE)?PREFIX\\)!$PREFIX!;
-\$b =~ s!\\\$\\((SITE)?PREFIX\\)!$PREFIX!;
-print STDOUT "\$a:\$b";
-print STDERR "\$a:\$b";
-EOF
-)
 
-PERL_INSTALL=`$PERL_EXE -MExtUtils::MakeMaker -le "$PERL_CODE" PREFIX=$PREFIX`
-
-
-ADD_PERL5LIB=$PERL_INSTALL
+ADD_PERL5LIB=$PREFIX/lib/perl
 
 $PERL_EXE Makefile.PL PREFIX=$PREFIX \
 --with-zmap-inc "-I$ZMAP_INC" \
