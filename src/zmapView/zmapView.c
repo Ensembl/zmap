@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov 10 09:23 2006 (rds)
+ * Last edited: Nov 13 10:14 2006 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.90 2006-11-10 09:24:40 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.91 2006-11-13 11:06:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -552,6 +552,9 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       /* Set our record of reverse complementing. */
       zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
 
+      zMapWindowNavigatorReset(zmap_view->navigator_window);
+      zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features);
+
       list_item = g_list_first(zmap_view->window_list) ;
       do
 	{
@@ -726,6 +729,13 @@ ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
     window = view_window->window ;
 
   return window ;
+}
+
+ZMapWindowNavigator zMapViewGetNavigator(ZMapView view)
+{
+  zMapAssert(view);
+
+  return view->navigator_window;
 }
 
 
@@ -940,6 +950,14 @@ static void focusCB(ZMapWindow window, void *caller_data, void *window_data)
 
   /* Pass back a ZMapViewWindow as it has both the View and the window. */
   (*(view_cbs_G->focus))(view_window, view_window->parent_view->app_data, NULL) ;
+
+  {
+    double x1, x2, y1, y2;
+    x1 = x2 = y1 = y2 = 0.0;
+    /* zero the input so that nothing changes */
+    zMapWindowNavigatorFocus(view_window->parent_view->navigator_window, TRUE,
+                             &x1, &y1, &x2, &y2);
+  }
 
   return ;
 }
