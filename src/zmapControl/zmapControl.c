@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Nov 13 08:26 2006 (rds)
+ * Last edited: Nov 13 16:51 2006 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.70 2006-11-13 11:04:52 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.71 2006-11-14 10:27:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -158,6 +158,19 @@ ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end)
   zmapControlWindowSetGUIState(zmap) ;
 
   return view ;
+}
+
+gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
+
+  result = zMapViewConnect(view, config) ;
+
+  zmapControlWindowSetGUIState(zmap) ;
+  
+  return result ;
 }
 
 
