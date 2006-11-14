@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 25 10:53 2006 (rds)
+ * Last edited: Nov 14 10:27 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.32 2006-11-08 09:23:52 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.33 2006-11-14 10:28:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,10 +60,20 @@ typedef enum {
   ZMAP_CONTROL_ACTION_UNHIGHLIGHT_FEATURE,
   ZMAP_CONTROL_ACTION_REGISTER_CLIENT,
 
+  ZMAP_CONTROL_ACTION_NEW_VIEW,
+  ZMAP_CONTROL_ACTION_INSERT_VIEW_DATA,
+
   ZMAP_CONTROL_ACTION_ADD_DATASOURCE,
 
   ZMAP_CONTROL_ACTION_UNKNOWN
 } zmapControlAction;
+
+typedef struct
+{
+  char *xml_action_string;
+  zmapControlAction action;
+  GQuark string_as_quark;
+} ActionValidatorStruct, *ActionValidator;
 
 typedef struct {
   unsigned long xid;
@@ -76,6 +86,13 @@ typedef struct
   ZMapWindowFToIQuery query;
   ZMapFeature feature;
 } controlFeatureQueryStruct, *controlFeatureQuery;
+
+typedef struct
+{
+  GQuark sequence;
+  gint   start, end;
+  char *config;
+}ViewConnectDataStruct, *ViewConnectData;
 
 typedef struct {
   zmapControlAction action;
@@ -90,7 +107,8 @@ typedef struct {
   GList *styles;                /* These should be ZMapFeatureTypeStyle */
   GList *locations;             /* This is just a list of ZMapSpan Structs */
 
-} xmlObjectsDataStruct, *xmlObjectsData;
+  ViewConnectDataStruct new_view;
+} XMLDataStruct, *XMLData;
 
 typedef struct
 {
@@ -115,6 +133,7 @@ static void destroyNotifyData(gpointer destroy_data);
 
 
 static gboolean createClient(ZMap zmap, controlClientObj data);
+static gboolean insertView(ZMap zmap, ViewConnectData new_view);
 static ZMapXMLParser setupControlRemoteXMLParser(void *data);
 
 static void drawNewFeature(gpointer data, gpointer userdata);
@@ -132,6 +151,9 @@ static gboolean featureStrtHndlr(gpointer userdata,
                                  ZMapXMLElement feature_element,
                                  ZMapXMLParser parser);
 static gboolean featureEndHndlr(void *userData, 
+                                ZMapXMLElement sub_element, 
+                                ZMapXMLParser parser);
+static gboolean segmentEndHndlr(void *userData, 
                                 ZMapXMLElement sub_element, 
                                 ZMapXMLParser parser);
 static gboolean clientStrtHndlr(gpointer userdata, 
@@ -315,6 +337,7 @@ static ZMapXMLParser setupControlRemoteXMLParser(void *data)
   };
   ZMapXMLObjTagFunctionsStruct ends[] = {
     { "zmap",       zmapEndHndlr     },
+    { "segment",    segmentEndHndlr  },
     { "subfeature", featureEndHndlr  },
     { "location",   locationEndHndlr },
     { "style",      styleEndHndlr    },
@@ -520,7 +543,13 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
 {
   char *xml_reply = NULL ;
   int code        = ZMAPXREMOTE_INTERNAL;
-  xmlObjectsDataStruct objdata = {0, NULL};
+  /*
+  static ActionValidatorStruct validators[] = {
+    {"blow_chunks", ZMAP_CONTROL_ACTION_BLOW_CHUNKS,    0},
+    {"barf",        ZMAP_CONTROL_ACTION_ADD_DATASOURCE, 0},
+    {NULL, 0, 0},
+    }; */
+  XMLDataStruct objdata = {0, NULL};
   responseCodeZMapStruct listExecData = {};
   ZMapXMLParser parser = NULL;
   gboolean parse_ok    = FALSE;
@@ -618,6 +647,21 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
         else
           code = ZMAPXREMOTE_BADREQUEST;
         break;
+      case ZMAP_CONTROL_ACTION_NEW_VIEW:
+        code = ZMAPXREMOTE_BADREQUEST;
+        if(objdata.new_view.sequence != 0)
+          {
+            code = ZMAPXREMOTE_OK;
+            if(!(insertView(zmap, &(objdata.new_view))))
+              code = ZMAPXREMOTE_PRECOND;
+          }
+        zmapControlInfoSet(zmap, code,
+                           "%s",
+                           "a quick message about the new view");
+
+        break;
+      case ZMAP_CONTROL_ACTION_INSERT_VIEW_DATA:
+        break;
       default:
         code = ZMAPXREMOTE_INTERNAL;
         break;
@@ -714,6 +758,28 @@ static gboolean createClient(ZMap zmap, controlClientObj data)
   return result ;
 }
 
+static gboolean insertView(ZMap zmap, ViewConnectData new_view)
+{
+  ZMapView view = NULL;
+  char *sequence;
+  gboolean inserted = FALSE;
+  
+  if((sequence = (char *)g_quark_to_string(new_view->sequence)) &&
+     new_view->config)
+    {
+      if((view = zMapAddView(zmap, sequence, 
+                             new_view->start, 
+                             new_view->end)))
+        {
+          if(!(zmapConnectViewConfig(zmap, view, new_view->config)))
+            zMapDeleteView(zmap, view); /* Need 2 do more here. */
+          else
+            inserted = TRUE;
+        }
+    }
+
+  return inserted;
+}
 
 
 static gboolean zmapStrtHndlr(gpointer userdata, 
@@ -721,7 +787,7 @@ static gboolean zmapStrtHndlr(gpointer userdata,
                               ZMapXMLParser parser)
 {
   ZMapXMLAttribute attr = NULL;
-  xmlObjectsData   obj  = (xmlObjectsData)userdata;
+  XMLData   obj  = (XMLData)userdata;
 
   if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
     {
@@ -749,6 +815,8 @@ static gboolean zmapStrtHndlr(gpointer userdata,
         obj->action = ZMAP_CONTROL_ACTION_UNHIGHLIGHT_FEATURE;
       else if(action == g_quark_from_string("create_client"))
         obj->action = ZMAP_CONTROL_ACTION_REGISTER_CLIENT;
+      else if(action == g_quark_from_string("new_view"))
+        obj->action = ZMAP_CONTROL_ACTION_NEW_VIEW;
     }
   else
     zMapXMLParserRaiseParsingError(parser, "action is a required attribute for zmap.");
@@ -762,7 +830,7 @@ static gboolean featuresetStrtHndlr(gpointer userdata,
 {
   ZMapWindowFToIQuery query = NULL;
   ZMapXMLAttribute    attr  = NULL;
-  xmlObjectsData input = (xmlObjectsData)userdata;
+  XMLData input = (XMLData)userdata;
 
   if(input && !(query = input->set))
     query = input->set = zMapWindowFToINewQuery();
@@ -788,7 +856,7 @@ static gboolean featureStrtHndlr(gpointer userdata,
                                  ZMapXMLElement feature_element,
                                  ZMapXMLParser parser)
 {
-  xmlObjectsData    data = (xmlObjectsData)userdata;
+  XMLData    data = (XMLData)userdata;
   ZMapXMLAttribute attr  = NULL;
   controlFeatureQuery fq = g_new0(controlFeatureQueryStruct, 1);
   ZMapWindowFToIQuery new_query = NULL, query;
@@ -906,7 +974,7 @@ static gboolean featureEndHndlr(void *userData,
                                 ZMapXMLParser parser)
 {
   ZMapXMLAttribute attr = NULL;
-  xmlObjectsData   data = (xmlObjectsData)userData;
+  XMLData   data = (XMLData)userData;
   ZMapFeature   feature = NULL;
   gboolean          bad = FALSE;
 
@@ -954,6 +1022,29 @@ static gboolean featureEndHndlr(void *userData,
 
   return TRUE;                  /* tell caller to clean us up. */
 }
+static gboolean segmentEndHndlr(void *user_data, 
+                                ZMapXMLElement segment, 
+                                ZMapXMLParser parser)
+{
+  XMLData xml_data = (XMLData)user_data;
+  ZMapXMLAttribute attr = NULL;
+
+  if((attr = zMapXMLElementGetAttributeByName(segment, "sequence")) != NULL)
+    xml_data->new_view.sequence = zMapXMLAttributeGetValue(attr);
+  if((attr = zMapXMLElementGetAttributeByName(segment, "start")) != NULL)
+    xml_data->new_view.start = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
+  else
+    xml_data->new_view.start = 1;
+  if((attr = zMapXMLElementGetAttributeByName(segment, "end")) != NULL)
+    xml_data->new_view.end = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
+  else
+    xml_data->new_view.end = 0;
+
+  /* Need to put contents into a source stanza buffer... */
+  xml_data->new_view.config = zMapXMLElementStealContent(segment);
+  
+  return TRUE;
+}
 
 static gboolean clientStrtHndlr(gpointer userdata, 
                                 ZMapXMLElement client_element,
@@ -975,7 +1066,7 @@ static gboolean clientStrtHndlr(gpointer userdata,
   if((res_attr  = zMapXMLElementGetAttributeByName(client_element, "response")) != NULL)
     clientObj->response = zMapXMLAttributeGetValue(res_attr);
 
-  ((xmlObjectsData)userdata)->client = clientObj;
+  ((XMLData)userdata)->client = clientObj;
 
   return FALSE;
 }
@@ -993,7 +1084,7 @@ static gboolean styleEndHndlr(gpointer userdata,
 {
   ZMapFeatureTypeStyle style = NULL;
   ZMapXMLAttribute      attr = NULL;
-  xmlObjectsData        data = (xmlObjectsData)userdata;
+  XMLData               data = (XMLData)userdata;
   GQuark id = 0;
 
   if((attr = zMapXMLElementGetAttributeByName(element, "id")))
