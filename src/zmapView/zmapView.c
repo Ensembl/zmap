@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov 13 10:14 2006 (rds)
+ * Last edited: Nov 14 08:15 2006 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.91 2006-11-13 11:06:11 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.92 2006-11-14 10:35:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -362,7 +362,8 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	    result = FALSE ;
 
 	}
-
+      else
+        result = FALSE;
 
       /* clean up. */
       if (server_list)
