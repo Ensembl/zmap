@@ -1,0 +1,61 @@
+<!--#set var="banner" value="Release Notes For **Month Year**"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<!-- This file is a template for creating release note files, you should copy this file
+     and fill in the blanks, marked with **. -->
+
+
+
+<h3>Release Version: ZMap 0.1.12</h3>
+
+
+<h3>Release Date: **XXth Month Year**</h3>
+
+
+<h3>Request Tracker Tickets Resolved</h3>
+
+<h4>ZMap</h4>
+<PRE>
+id	Queue	Subject	Status	TimeEstimated	TimeWorked	TimeLeft	Priority	FinalPriority	Owner	Requestors	Due	Told	Created	Resolved	Urgency	Importance
+523	zmap	multiple methods per column	resolved	0	0	0	7	7	Nobody	rds@sanger.ac.uk	2005-12-22 18:56:43	1970-01-01 00:00:00	2005-12-08 18:56:43	2006-10-18 16:01:17		
+544	zmap	print	resolved	0	0	0	7	7	Nobody	rds@sanger.ac.uk	2005-12-22 18:56:50	1970-01-01 00:00:00	2005-12-08 18:56:50	2006-10-19 10:12:31		
+556	zmap	transcript display	resolved	0	0	0	7	7	Nobody	rds@sanger.ac.uk	2005-12-22 18:56:53	1970-01-01 00:00:00	2005-12-08 18:56:53	2006-11-10 10:46:24		
+6499	zmap	Blixem	resolved	0	0	0	7	7	edgrif	cas@sanger.ac.uk	2006-07-13 09:53:44	2006-07-03 09:43:41	2006-06-29 09:53:44	2006-11-08 15:25:36	Urgent	Important
+8507	zmap	column bump and revcomp	resolved	0	0	0	7	7	Nobody	jgrg@sanger.ac.uk	2006-08-09 10:31:10	1970-01-01 00:00:00	2006-07-26 10:31:10	2006-11-13 10:23:40	Urgent	Important
+8515	zmap	DNA & 3FT columns	resolved	0	0	0	0	0	Nobody	rds@sanger.ac.uk	1970-01-01 00:00:00	2006-07-26 11:54:35	2006-07-26 11:20:26	2006-11-10 10:41:01		
+8580	zmap	bump/cluster near top of menu	resolved	0	0	0	7	7	Nobody	sb7@sanger.ac.uk	2006-08-10 09:15:19	1970-01-01 00:00:00	2006-07-27 09:15:19	2006-10-19 10:15:47	Urgent	Important
+8582	zmap	copying and pasting evidence names.	resolved	0	0	0	7	7	Nobody	sb7@sanger.ac.uk	2006-08-10 09:18:38	2006-07-27 10:23:56	2006-07-27 09:18:38	2006-11-10 11:01:22	Not Urgent	Important
+9297	zmap	Zmap puts DNA, not coordinates, in clipboard	resolved	0	0	0	7	7	Nobody	eah@sanger.ac.uk	2006-08-22 13:33:41	2006-08-18 10:30:26	2006-08-08 13:33:41	2006-10-30 11:41:20	Urgent	Important
+9833	zmap	Overlap within columns	resolved	0	0	0	7	7	Nobody	jgrg@sanger.ac.uk	2006-09-01 09:34:09	1970-01-01 00:00:00	2006-08-18 10:36:38	2006-11-09 10:34:28	Urgent	Important
+10153	zmap	locus name on locator bar	resolved	0	0	0	7	7	Nobody	lw2@sanger.ac.uk	2006-09-07 10:05:03	1970-01-01 00:00:00	2006-08-24 11:10:15	2006-11-10 11:11:24	Urgent	Important
+13545	zmap	ZMap Release	resolved	0	0	0	4	4	jgrg	rds@sanger.ac.uk	1970-01-01 00:00:00	2006-10-20 13:22:26	2006-10-19 11:01:42	2006-11-10 10:55:38		
+13732	zmap	Hidden columns reappear on zoom in	resolved	0	0	0	7	7	edgrif	jgrg@sanger.ac.uk	2006-11-03 15:21:37	2006-11-08 15:35:00	2006-10-20 15:21:37	2006-11-13 10:16:32	Urgent	Important
+13733	zmap	Double-clicking on a transcript doesn't open ExonCanvas	resolved	0	0	0	3	3	rds	jgrg@sanger.ac.uk	2006-11-03 15:47:25	2006-10-24 11:32:01	2006-10-20 15:47:25	2006-11-10 10:38:33	Urgent	Important
+13734	zmap	DNA button	resolved	0	0	0	3	3	Nobody	jgrg@sanger.ac.uk	2006-11-03 15:49:51	1970-01-01 00:00:00	2006-10-20 15:49:51	2006-11-08 15:23:02	Urgent	Important
+13735	zmap	Navigator rev-comp	resolved	0	0	0	3	3	rds	jgrg@sanger.ac.uk	2006-11-03 15:53:40	2006-10-24 14:56:10	2006-10-20 15:53:40	2006-11-13 15:17:32	Urgent	Important
+14058	zmap	blixem, rev. complemented - wrong co-ordinates	resolved	0	0	0	7	7	edgrif	gkl@sanger.ac.uk	2006-11-07 13:20:15	2006-10-30 09:08:47	2006-10-24 13:20:15	2006-10-30 11:39:26	Urgent	Important
+15782	zmap	Default bump columns not bumped	resolved	0	0	0	1	7	Nobody	jgrg@sanger.ac.uk	2006-11-24 13:55:56	1970-01-01 00:00:00	2006-11-10 13:55:56	2006-11-14 10:39:39	Urgent	Important
+</PRE>
+
+<h4>Acedb</h4>
+<PRE>
+</PRE>
+
+
+<h3>ZMap Changes/Fixes</h3>
+
+<pre>
+</pre>
+
+
+
+<h3>Acedb Changes/Fixes</h3>
+
+<pre>
+</pre>
+
+
+<!--#include virtual="/perl/footer"-->
+
