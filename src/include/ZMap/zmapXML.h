@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 21 17:08 2006 (rds)
+ * Last edited: Nov 13 21:54 2006 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.16 2006-11-08 09:23:35 edgrif Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.17 2006-11-14 10:30:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,6 +112,7 @@ typedef struct _zmapXMLElementStruct
 
   ZMapXMLElement parent;        /* parent element */
   GList   *children;            /* child elements */
+  gboolean contents_stolen;
 } zmapXMLElementStruct;
 
 /*!
@@ -264,6 +265,7 @@ ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele,
                                                    char *name);
 ZMapXMLAttribute zMapXMLElementGetAttributeByName1(ZMapXMLElement ele,
                                                     GQuark name);
+char *zMapXMLElementStealContent(ZMapXMLElement element);
 
 
 /* PARSER */

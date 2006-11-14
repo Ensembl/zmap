@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 19 22:13 2006 (rds)
+ * Last edited: Nov 13 21:55 2006 (rds)
  * Created: Fri Aug  5 14:33:49 2005 (rds)
- * CVS info:   $Id: zmapXMLElement.c,v 1.11 2006-11-08 09:25:38 edgrif Exp $
+ * CVS info:   $Id: zmapXMLElement.c,v 1.12 2006-11-14 10:29:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -235,6 +235,18 @@ ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele,
   return attr;
 }
 
+char *zMapXMLElementStealContent(ZMapXMLElement element)
+{
+  char *steal = NULL;
+
+  if(element->contents)
+    {
+      steal = element->contents->str;
+      element->contents_stolen = TRUE;
+    }
+
+  return steal;
+}
 
 /* Frees an element and all that it contains (children and all) */
 /*   
@@ -255,7 +267,7 @@ void zmapXMLElementFree(ZMapXMLElement ele)
 
   /* And free myself... First the contents */
   if(ele->contents)
-    g_string_free(ele->contents, TRUE);
+    g_string_free(ele->contents, (!(ele->contents_stolen)));
   
   /* Now the attributes */
   zmapXMLElementFreeAttrList(ele);
@@ -286,7 +298,7 @@ void zmapXMLElementMarkDirty(ZMapXMLElement ele)
   g_list_free(ele->children);
 
   if(ele->contents)
-    g_string_free(ele->contents, TRUE);
+    g_string_free(ele->contents, (!(ele->contents_stolen)));
   
   /* Now the attributes */
   zmapXMLElementMarkAttributesDirty(ele);
