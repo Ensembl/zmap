@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Aug  8 14:31 2006 (edgrif)
+ * Last edited: Nov 13 14:59 2006 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.16 2006-11-08 09:24:27 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.17 2006-11-15 16:35:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -52,7 +52,9 @@
 /* Holds all the state we need to manage the acedb connection. */
 typedef struct _AcedbServerStruct
 {
+  /* Connection details. */
   char *host ;
+  int port ;
 
   AceConnection connection ;
 
@@ -61,6 +63,8 @@ typedef struct _AcedbServerStruct
   char *last_err_msg ;
 
   char *version_str ;					    /* For checking server is at right level. */
+
+  gboolean acedb_styles ;				    /* Use old method or new zmap style objects. */
 
   ZMapFeatureContext req_context ;
 
