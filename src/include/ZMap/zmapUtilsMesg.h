@@ -26,9 +26,9 @@
  *              in production code.
  *              
  * HISTORY:
- * Last edited: Nov  7 15:38 2006 (edgrif)
+ * Last edited: Nov 15 11:53 2006 (edgrif)
  * Created: Mon Mar 29 18:23:48 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsMesg.h,v 1.4 2006-11-08 09:23:29 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsMesg.h,v 1.5 2006-11-15 16:38:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_MESG_H
@@ -38,7 +38,7 @@
 
 
 /* Can call the message routine directly but better to use the macros below. */
-typedef enum {ZMAP_MSG_INFORMATION, ZMAP_MSG_WARNING, ZMAP_MSG_EXIT, ZMAP_MSG_CRASH} ZMapMsgType ;
+typedef enum {ZMAP_MSG_INFORMATION, ZMAP_MSG_WARNING, ZMAP_MSG_CRITICAL, ZMAP_MSG_EXIT, ZMAP_MSG_CRASH} ZMapMsgType ;
 
 
 void zMapShowMsg(ZMapMsgType msg_type, char *format, ...) ;
@@ -52,10 +52,18 @@ G_STMT_START{                                              \
 }G_STMT_END
 
 
-/* Warning messages. */
+/* Warning messages, use for errors that are _not_ coding problems but are also not serious,
+ *  e.g. no file name given for export of data to a file. */
 #define zMapWarning(FORMAT, ...)                           \
 G_STMT_START{                                              \
   zMapShowMsg(ZMAP_MSG_WARNING, FORMAT, __VA_ARGS__) ;     \
+}G_STMT_END
+
+
+/* Critical messages, use for serious errors that are _not_ coding problems, e.g. a bad configuration file. */
+#define zMapCritical(FORMAT, ...)                           \
+G_STMT_START{                                              \
+  zMapShowMsg(ZMAP_MSG_CRITICAL, FORMAT, __VA_ARGS__) ;     \
 }G_STMT_END
 
 
