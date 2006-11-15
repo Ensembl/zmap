@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Nov  7 13:37 2006 (edgrif)
+ * Last edited: Nov 15 12:09 2006 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.21 2006-11-08 09:24:47 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.22 2006-11-15 16:38:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -164,15 +164,15 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
  * Display a short message in a pop-up dialog box, the behaviour of the dialog depends on
  * the message type:
  *
- *     ZMAP_MSG_INFORMATION, ZMAP_MSG_WARNING - non-blocking, non-modal
- *              ZMAP_MSG_EXIT, ZMAP_MSG_CRASH - blocking and modal
+ *               ZMAP_MSG_INFORMATION, ZMAP_MSG_WARNING - non-blocking, non-modal
+ *     ZMAP_MSG_CRITICAL, ZMAP_MSG_EXIT, ZMAP_MSG_CRASH - blocking and modal
  *
  * If parent is non-NULL then the dialog will be kept on top of that window, essential for
  * modal dialogs in particular. I think parent should be the application window that the message
  * applies to probably, or perhaps the application main window.
  *
  * @param parent       Widget that message should be kept on top of or NULL.
- * @param msg_type     ZMAP_MSG_INFORMATION | ZMAP_MSG_WARNING | ZMAP_MSG_EXIT | ZMAP_MSG_CRASH
+ * @param msg_type     ZMAP_MSG_INFORMATION | ZMAP_MSG_WARNING | ZMAP_MSG_CRITICAL | ZMAP_MSG_EXIT | ZMAP_MSG_CRASH
  * @param msg          Message to be displayed in dialog.
  * @return             nothing
  *  */
@@ -196,18 +196,21 @@ void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
       title = "ZMAP - Information" ;
       break ;
     case ZMAP_MSG_WARNING:
-      title = "ZMAP - Warning!" ;
+      title = "ZMAP - Warning !" ;
+      break;
+    case ZMAP_MSG_CRITICAL:
+      title = "ZMAP - CRITICAL !" ;
       break;
     case ZMAP_MSG_EXIT:
-      title = "ZMAP - Error!" ;
+      title = "ZMAP - EXIT !" ;
       break;
     case ZMAP_MSG_CRASH:
-      title = "ZMAP - Crash!" ;
+      title = "ZMAP - CRASH !" ;
       break;
     }
 
   /* Some times of dialog should be modal. */
-  if (msg_type == ZMAP_MSG_EXIT || msg_type == ZMAP_MSG_CRASH)
+  if (msg_type == ZMAP_MSG_CRITICAL || msg_type == ZMAP_MSG_EXIT || msg_type == ZMAP_MSG_CRASH)
     modal = TRUE ;
 
   if (modal)
