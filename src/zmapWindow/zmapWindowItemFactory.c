@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 13 12:07 2006 (rds)
+ * Last edited: Nov 15 15:41 2006 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.7 2006-11-13 12:10:09 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.8 2006-11-15 15:42:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1004,12 +1004,17 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
           cds_end   = feature->feature.transcript.cds_end ;
           zMapAssert(cds_start < cds_end);
           has_cds   = TRUE;
-#warning RDS!!!!!!!!!!!!!!!!!!
-#ifdef RDS___________________________________________________________________________________________________________________________
-	  /* I think this is correct...???? */
-	  if(!featureClipItemToDraw(feature, &cds_start, &cds_end))
-            zmapWindowSeq2CanOffset(&cds_start, &cds_end, offset) ;
-#endif
+          
+          /* I think this is correct...???? */
+          if(!((factory->user_funcs->feature_size_request)(feature, &limits[0], 
+                                                           &points_inout[0], 
+                                                           factory->user_data)))
+            {
+              cds_start = points_inout[1];
+              cds_end   = points_inout[3];
+              zmapWindowSeq2CanOffset(&cds_start, &cds_end, offset) ;
+            }
+
         }
 
       /* first we draw the introns, then the exons.  Introns will have an invisible
