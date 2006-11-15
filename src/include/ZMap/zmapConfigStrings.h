@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: May 28 14:47 2006 (rds)
+ * Last edited: Nov 13 14:57 2006 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.5 2006-11-08 09:23:07 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.6 2006-11-15 16:34:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -289,6 +289,13 @@
  *      this the connection will not be made.
  *  </tr>
  *  <tr>
+ *  <th>"use_acedb_methods"</th>
+ *  <td>Boolean</td>
+ *  <td>false</td>
+ *  <td><b>Only read for acedb databases.</b> If true, then zmap reads style information from
+ *      Method class objects instead of the newer and more flexible ZMap_style classes.
+ *  </tr>
+ *  <tr>
  *  <th>"sequence"</th>
  *  <td>Boolean</td>
  *  <td>false</td>
@@ -324,7 +331,7 @@
 #define ZMAPSTANZA_SOURCE_TIMEOUT     "timeout"
 #define ZMAPSTANZA_SOURCE_VERSION     "version"
 #define ZMAPSTANZA_SOURCE_FEATURESETS "featuresets"
-
+#define ZMAPSTANZA_SOURCE_STYLE       "use_zmap_styles"
 
 
 
