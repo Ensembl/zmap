@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: May 17 11:09 2006 (rds)
+ * Last edited: Nov 15 16:45 2006 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.18 2006-11-08 09:24:19 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.19 2006-11-15 16:46:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,28 +94,35 @@ ZMapManager zMapManagerCreate(void *gui_data)
 
 
 /* Add a new zmap window with associated thread and all the gubbins.
- * Returns FALSE on failure. */
-gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, ZMap *zmap_out)
+ * Return indicates what happened on trying to add zmap. */
+ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, ZMap *zmap_out)
 {
-  gboolean result = FALSE ;
+  ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap = NULL ;
   ZMapView view = NULL ;
 
+  zMapAssert(zmaps && sequence) ;
+
   if ((zmap = zMapCreate((void *)zmaps)))
     {
-      zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
-      *zmap_out = zmap ;
+      if (!(view = zMapAddView(zmap, sequence, start, end)))
+	{
+	  /* Remove zmap we just created, if this fails then return disaster.... */
+	  if (!zMapDestroy(zmap))
+	    result = ZMAPMANAGER_ADD_DISASTER ;
+	}
+      else
+	{
+	  zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
+	  *zmap_out = zmap ;
 
-      /* If there is no sequence return an empty ZMap, if there is a sequence then create/connect
-       * a view. */
-      if (!sequence
-	  || (sequence
-	      && ((view = zMapAddView(zmap, sequence, start, end)))
-	      && ((zMapConnectView(zmap, view)))))
-	result = TRUE ;
+	  (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;      
 
-      /* Either way we should have a zmap now, fill in the info */
-      (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;      
+	  if (!(zMapConnectView(zmap, view)))
+	    result = ZMAPMANAGER_ADD_NOTCONNECTED ;
+	  else
+	    result = ZMAPMANAGER_ADD_OK ;
+	}
     }
 
   return result ;

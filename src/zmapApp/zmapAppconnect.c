@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Jul 18 15:56 2006 (rds)
+ * Last edited: Nov 15 12:04 2006 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.16 2006-11-08 09:23:38 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.17 2006-11-15 16:47:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,7 +118,7 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
 {
   ZMap zmap ;
   GtkTreeIter iter1;
-
+  ZMapManagerAddResult add_result ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Not sure about this, what if user wants a blank zmap ? */
@@ -128,12 +128,20 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
   /* Set the text.  This is done even if it's already set, ah well! */
   gtk_entry_set_text(GTK_ENTRY(app_context->sequence_widg), sequence);
 
-  if (!zMapManagerAdd(app_context->zmap_manager, sequence, start, end, &zmap))
+  add_result = zMapManagerAdd(app_context->zmap_manager, sequence, start, end, &zmap) ;
+  if (add_result == ZMAPMANAGER_ADD_DISASTER)
+    {
+      zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly, save your work and exit now !") ;
+    }
+  else if (add_result == ZMAPMANAGER_ADD_FAIL)
     {
       zMapWarning("%s", "Failed to create ZMap") ;
     }
   else
     {
+      if (add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
+	zMapWarning("%s", "ZMap added but could not connect to server, try \"Reload\".") ;
+
       zMapSetClient(zmap, app_context->xremoteClient);
       gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
       gtk_tree_store_set (app_context->tree_store_widg, &iter1,

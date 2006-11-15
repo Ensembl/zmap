@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Nov 13 16:51 2006 (rds)
+ * Last edited: Nov 15 16:48 2006 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.71 2006-11-14 10:27:54 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.72 2006-11-15 16:48:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -148,14 +148,15 @@ gboolean zMapRaise(ZMap zmap)
 /* Might rename this to be more meaningful maybe.... */
 ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end)
 {
-  ZMapView view ;
+  ZMapView view = NULL ;
 
   zMapAssert(zmap && sequence && *sequence
 	     && (start > 0 && (end == 0 || end > start))) ;
 
-  view = zmapControlAddView(zmap, sequence, start, end) ;
-
-  zmapControlWindowSetGUIState(zmap) ;
+  if ((view = zmapControlAddView(zmap, sequence, start, end)))
+    {
+      zmapControlWindowSetGUIState(zmap) ;
+    }
 
   return view ;
 }
@@ -180,9 +181,8 @@ gboolean zMapConnectView(ZMap zmap, ZMapView view)
 
   zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
 
-  result = zMapViewConnect(view, NULL) ;
-
-  zmapControlWindowSetGUIState(zmap) ;
+  if ((result = zMapViewConnect(view, NULL)))
+    zmapControlWindowSetGUIState(zmap) ;
   
   return result ;
 }
@@ -443,15 +443,15 @@ void zmapControlLoadCB(ZMap zmap)
 
       curr_view = zMapViewGetView(zmap->focus_viewwindow) ;
 
-      if (zMapViewGetStatus(curr_view) == ZMAPVIEW_INIT)
-	status = zMapViewConnect(curr_view, NULL) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (status && zMapViewGetStatus(curr_view) == ZMAPVIEW_CONNECTED)
-	zMapViewLoad(curr_view) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+      if (zMapViewGetStatus(curr_view) != ZMAPVIEW_INIT)
+	{
+	  zMapWarning("%s", "ZMap not ready to load, please retry when ready.") ;
+	}
+      else
+	{
+	  if (!(status = zMapViewConnect(curr_view, NULL)))
+	    zMapCritical("%s", "ZMap could not configure server connections, please check connection data.") ;
+	}
     }
 
   return ;
@@ -516,7 +516,7 @@ static ZMap createZMap(void *app_data)
 {
   ZMap zmap = NULL ;
   GdkScreen *screen ;
-
+  double screen_proportion = ZMAPWINDOW_DEFAULT_WINDOW ;
   /* GROSS HACK FOR NOW, NEED SOMETHING BETTER LATER, JUST A TACKY ID...... */
   static int zmap_num = 0 ;
 
@@ -533,15 +533,18 @@ static ZMap createZMap(void *app_data)
   zmap->viewwindow_2_parent = g_hash_table_new(NULL, NULL) ;
 
 
-  /* Set up some screen stuff, we make zmap 2/3rd height of the screen by default.
+  /* Set default window height, we try to maximise the height but if this fails then
+   * we will use this.
    * If someone displays a really short piece of dna this will make the window
    * too big so really we should readjust the window size to fit the sequence
    * but this will be rare. */
   screen = gdk_screen_get_default() ;
-  zmap->window_height = (int)((float)(gdk_screen_get_height(screen)) * 0.67) ;
+  zmap->window_height = (int)((float)(gdk_screen_get_height(screen)) * screen_proportion) ;
 
   return zmap ;
 }
+
+
 
 
 /* This is the strict opposite of createZMap(), should ONLY be called once all of the Views

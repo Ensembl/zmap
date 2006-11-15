@@ -24,15 +24,27 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: May 16 14:50 2006 (rds)
+ * Last edited: Nov 15 11:20 2006 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapManager.h,v 1.9 2006-11-08 09:23:17 edgrif Exp $
+ * CVS info:   $Id: zmapManager.h,v 1.10 2006-11-15 16:46:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_MANAGER_H
 #define ZMAP_MANAGER_H
 
 #include <ZMap/zmapControl.h>
+
+
+/* Specifies result of trying to add a new zmap to manager. */
+typedef enum
+ {
+   ZMAPMANAGER_ADD_INVALID,
+   ZMAPMANAGER_ADD_OK,					    /* Add succeeded, zmap connected. */
+   ZMAPMANAGER_ADD_NOTCONNECTED,			    /* ZMap added but connect failed. */
+   ZMAPMANAGER_ADD_FAIL,				    /* ZMap could not be added. */
+   ZMAPMANAGER_ADD_DISASTER				    /* There has been a serious error,
+							       caller should abort. */
+ } ZMapManagerAddResult ;
 
 
 /* Opaque type, controls interaction with all current ZMap windows. */
@@ -60,7 +72,7 @@ typedef struct
 
 void zMapManagerInit(ZMapManagerCallbacks callbacks) ;
 ZMapManager zMapManagerCreate(void *gui_data) ;
-gboolean zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, ZMap *zmap_out) ;
+ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, ZMap *zmap_out) ;
 guint zMapManagerCount(ZMapManager zmaps);
 gboolean zMapManagerReset(ZMap zmap) ;
 gboolean zMapManagerRaise(ZMap zmap) ;
