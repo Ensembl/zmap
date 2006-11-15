@@ -26,11 +26,12 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Aug 10 10:47 2006 (edgrif)
+ * Last edited: Nov 15 16:53 2006 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.27 2006-11-08 09:23:54 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.28 2006-11-15 16:54:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
+
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
@@ -40,6 +41,8 @@ static void setTooltips(ZMap zmap) ;
 static void makeStatusTooltips(ZMap zmap) ;
 static GtkWidget *makeStatusPanel(ZMap zmap) ;
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
+
+static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap) ;
 
 
 /* Makes the toplevel window and control panels for an individual zmap. */
@@ -61,13 +64,15 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
 
 
-  /* We can leave width to default sensibly but height does not because zmap is in a scrolled
-   * window. */
-  gtk_window_set_default_size(GTK_WINDOW(zmap->toplevel), -1, zmap->window_height) ;
-
-
   g_signal_connect(G_OBJECT(toplevel), "realize",
                    G_CALLBACK(zmapControlRemoteInstaller), (gpointer)zmap);
+
+  /* We can leave width to default sensibly but height does not because zmap is in a scrolled
+   * window, we try to maximise it to the screen depth but have to do this after window is mapped.
+   * SHOULD WE BE REMOVING THIS HANDLER ??? TAKE A LOOK AT THIS LATER.... */
+  g_signal_connect(G_OBJECT(toplevel), "map",
+                   G_CALLBACK(myWindowMaximize), (gpointer)zmap);
+
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)zmap) ;
@@ -286,5 +291,154 @@ static void makeStatusTooltips(ZMap zmap)
 
   return ;
 }
+
+
+
+/* This code was taken from the following gtk_maximise_window() to gdk_window_maximise() etc.
+ * through...but I can't seem to make it work...damn....their code is given below...sigh.... */
+static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
+{
+  GdkAtom max_atom_vert ;
+  GdkScreen *screen ;
+
+
+  /* This all needs the tests/tidying that the gtk routines have.... */
+
+  max_atom_vert = gdk_atom_intern ("_NET_WM_STATE_MAXIMIZED_VERT", FALSE) ;
+
+  screen = gtk_widget_get_screen(toplevel) ;
+
+  if (gdk_x11_screen_supports_net_wm_hint(screen, max_atom_vert))
+    {
+      GtkWindow *gtk_window = GTK_WINDOW(toplevel) ;
+      GdkDisplay *display = gtk_widget_get_display(toplevel) ;
+      GdkWindow *window = toplevel->window ;
+      GdkWindow *root_window = gtk_widget_get_root_window(toplevel) ;
+      XEvent xev ;
+
+      if ( GTK_WIDGET_MAPPED(toplevel))
+	printf("done it\n") ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* If you do this stupid gtk just maximises in both directions.... */
+      gtk_window->maximize_initially = TRUE;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      if (gtk_window->frame)
+	window = gtk_window->frame;
+      else
+	window = toplevel->window ;
+      
+      xev.xclient.type = ClientMessage;
+      xev.xclient.serial = 0;
+      xev.xclient.send_event = True;
+      xev.xclient.window = GDK_WINDOW_XID (window);
+      xev.xclient.message_type = gdk_x11_get_xatom_by_name_for_display (display, "_NET_WM_STATE");
+      xev.xclient.format = 32 ;
+      xev.xclient.data.l[0] = TRUE ;
+      xev.xclient.data.l[1] = gdk_x11_atom_to_xatom_for_display (display, max_atom_vert) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      xev.xclient.data.l[2] = gdk_x11_atom_to_xatom_for_display (display, max_atom_horz) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      xev.xclient.data.l[2] = 0 ;
+
+      xev.xclient.data.l[3] = 0;
+      xev.xclient.data.l[4] = 0;
+  
+      XSendEvent(GDK_WINDOW_XDISPLAY(window),
+		 GDK_WINDOW_XID(root_window),
+		 False,
+		 SubstructureRedirectMask | SubstructureNotifyMask,
+		 &xev) ; 
+
+    }
+  else
+    {
+      gtk_window_set_default_size(GTK_WINDOW(toplevel), -1, zmap->window_height) ;
+    }
+
+
+  return ;
+}
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void my_gtk_window_maximize (GtkWindow *window)
+{
+  GtkWidget *widget;
+  GdkWindow *toplevel;
+  
+  g_return_if_fail (GTK_IS_WINDOW (window));
+
+  widget = GTK_WIDGET (window);
+
+  window->maximize_initially = TRUE;
+
+  if (window->frame)
+    toplevel = window->frame;
+  else
+    toplevel = widget->window;
+  
+  if (toplevel != NULL)
+    my_gdk_window_maximize (toplevel);
+}
+
+
+static void my_gdk_window_maximize(GdkWindow *window)
+{
+  g_return_if_fail (GDK_IS_WINDOW (window));
+
+  if (GDK_WINDOW_DESTROYED (window))
+    return;
+
+  if (GDK_WINDOW_IS_MAPPED (window))
+    gdk_wmspec_change_state (TRUE, window,
+			     gdk_atom_intern ("_NET_WM_STATE_MAXIMIZED_VERT", FALSE),
+			     gdk_atom_intern ("_NET_WM_STATE_MAXIMIZED_HORZ", FALSE));
+  else
+    gdk_synthesize_window_state (window,
+				 0,
+				 GDK_WINDOW_STATE_MAXIMIZED);
+}
+
+
+
+static void
+gdk_wmspec_change_state (gboolean   add,
+			 GdkWindow *window,
+			 GdkAtom    state1,
+			 GdkAtom    state2)
+{
+  GdkDisplay *display = GDK_WINDOW_DISPLAY (window);
+  XEvent xev;
+  
+#define _NET_WM_STATE_REMOVE        0    /* remove/unset property */
+#define _NET_WM_STATE_ADD           1    /* add/set property */
+#define _NET_WM_STATE_TOGGLE        2    /* toggle property  */  
+  
+  xev.xclient.type = ClientMessage;
+  xev.xclient.serial = 0;
+  xev.xclient.send_event = True;
+  xev.xclient.window = GDK_WINDOW_XID (window);
+  xev.xclient.message_type = gdk_x11_get_xatom_by_name_for_display (display, "_NET_WM_STATE");
+  xev.xclient.format = 32;
+  xev.xclient.data.l[0] = add ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE;
+  xev.xclient.data.l[1] = gdk_x11_atom_to_xatom_for_display (display, state1);
+  xev.xclient.data.l[2] = gdk_x11_atom_to_xatom_for_display (display, state2);
+  xev.xclient.data.l[3] = 0;
+  xev.xclient.data.l[4] = 0;
+  
+  XSendEvent (GDK_WINDOW_XDISPLAY (window), GDK_WINDOW_XROOTWIN (window), False,
+	      SubstructureRedirectMask | SubstructureNotifyMask,
+	      &xev);
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 
