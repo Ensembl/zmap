@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 15 15:41 2006 (rds)
+ * Last edited: Nov 15 16:40 2006 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.8 2006-11-15 15:42:52 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.9 2006-11-15 16:40:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1000,8 +1000,8 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
       /* Set up the cds coords if there is one. */
       if(feature->feature.transcript.flags.cds)
         {
-          cds_start = feature->feature.transcript.cds_start ;
-          cds_end   = feature->feature.transcript.cds_end ;
+          cds_start = points_inout[1] = feature->feature.transcript.cds_start ;
+          cds_end   = points_inout[3] = feature->feature.transcript.cds_end ;
           zMapAssert(cds_start < cds_end);
           has_cds   = TRUE;
           
