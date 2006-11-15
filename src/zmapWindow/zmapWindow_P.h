@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 13 10:51 2006 (rds)
+ * Last edited: Nov 15 14:00 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.148 2006-11-13 11:08:18 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.149 2006-11-15 15:28:42 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -499,6 +499,7 @@ typedef struct _ZMapWindowStruct
 
   GList *feature_set_names;
 
+  gboolean interrupt_expose;
 } ZMapWindowStruct ;
 
 

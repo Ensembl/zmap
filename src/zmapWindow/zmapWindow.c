@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 10 17:26 2006 (rds)
+ * Last edited: Nov 15 15:27 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.147 2006-11-10 17:26:57 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.148 2006-11-15 15:28:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,6 +78,11 @@ typedef struct _RealiseDataStruct
   FeatureSets feature_sets ;
 } RealiseDataStruct, *RealiseData ;
 
+typedef struct
+{
+  ZMapWindow window;
+  gulong handler_id;
+} ExposeDataStruct, *ExposeData;
 
 static ZMapWindow myWindowCreate(GtkWidget *parent_widget, 
                                  char *sequence, void *app_data,
@@ -87,6 +92,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos) ;
 static void myWindowMove(ZMapWindow window, double start, double end) ;
 
+static gboolean canvasLayoutExposeCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
+static void canvasLayoutExposeDestroyNotify(gpointer user_data, GClosure *closure);
 static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
@@ -369,6 +376,7 @@ void zMapWindowRedraw(ZMapWindow window)
   expose_area.width = allocation->width - 1 ;
   expose_area.height = allocation->height - 1 ;
 
+  window->interrupt_expose = FALSE;
   /* Invalidate the displayed canvas window causing to be redrawn. */
   gdk_window_invalidate_rect(GTK_WIDGET(&(window->canvas->layout))->window, &expose_area, TRUE) ;
 
@@ -1148,6 +1156,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 {
   ZMapWindow window ;
   GtkWidget *canvas, *eventbox ;
+  ExposeData expose_data = NULL;
+
   /* No callbacks, then no window creation. */
   zMapAssert(window_cbs_G) ;
 
@@ -1155,6 +1165,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   window = g_new0(ZMapWindowStruct, 1) ;
 
+  expose_data = g_new0(ExposeDataStruct, 1);
+  expose_data->window = window;
 
   window->config.align_spacing = ALIGN_SPACING ;
   window->config.block_spacing = BLOCK_SPACING ;
@@ -1317,6 +1329,12 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
    * I think we may need a widget window to exist for this call to work. */
   gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
 
+  expose_data->handler_id = g_signal_connect_data(GTK_OBJECT(&(FOO_CANVAS(window->canvas)->layout)), 
+                                                  "expose-event",
+                                                  GTK_SIGNAL_FUNC(canvasLayoutExposeCB), 
+                                                  (gpointer)expose_data,
+                                                  canvasLayoutExposeDestroyNotify, 0) ;
+  
 
   return window ; 
 }
@@ -1337,6 +1355,8 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
   int x, y ;
   double x1, y1, x2, y2, width ;
   double new_canvas_span ;
+
+  window->interrupt_expose = TRUE;
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
@@ -1422,6 +1442,8 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
       foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
       foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
     }
+
+  zMapWindowRedraw(window);
 
   return ;
 }
@@ -1782,6 +1804,49 @@ static void changeRegion(ZMapWindow window, guint keyval)
 
   return ;
 }
+
+/* Unlike the one below this is on the canvas->layout and does not get disconnected. */
+static gboolean canvasLayoutExposeCB(GtkWidget      *widget,
+                                     GdkEventExpose *event,
+                                     gpointer        user_data)  
+{
+  ExposeData expose_data = (ExposeData)user_data;
+  ZMapWindow window      = NULL;
+  gboolean  disable_draw = FALSE;
+  GtkAllocation *allocation ;
+  gint alloc_width, alloc_height,
+    event_width, event_height,
+    event_x, event_y;
+
+  window = expose_data->window;
+
+  if(!window->interrupt_expose)
+    {
+      allocation   = &(GTK_WIDGET(widget)->allocation) ;
+      alloc_width  = allocation->width;
+      alloc_height = allocation->height;
+      
+      event_x = event->area.x;
+      event_y = event->area.y;
+      event_width  = event->area.width;
+      event_height = event->area.height;
+    }
+  else
+    disable_draw = TRUE;
+
+  return disable_draw;
+}
+
+static void canvasLayoutExposeDestroyNotify(gpointer user_data, GClosure *closure)
+{
+  ExposeData expose_data = (ExposeData)user_data;
+  expose_data->window = NULL;
+
+  g_free(expose_data);
+
+  return ;
+}
+
 
 /* Because we can't depend on the canvas having a valid height when it's been realized,
  * we have to detect the invalid height and attach this handler to the canvas's 
