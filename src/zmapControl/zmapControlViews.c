@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Oct  4 11:39 2006 (rds)
+ * Last edited: Nov 15 09:31 2006 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.17 2006-11-08 09:23:53 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.18 2006-11-15 16:50:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -96,25 +96,33 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
   /* Add a new container that will hold the new view window. */
   view_container = zmapControlAddWindow(zmap, curr_container, orientation, view_title) ;
 
-  view_window = zMapViewCreate(view_container, sequence, start, end, (void *)zmap) ;
-  zmap_view = zMapViewGetView(view_window) ;
-  zMapViewSetupNavigator(zmap_view, zmap->nav_canvas) ;
+  if (!(view_window = zMapViewCreate(view_container, sequence, start, end, (void *)zmap)))
+    {
+      /* remove window we just added....not sure we need to do anything with remaining view... */
+      ZMapViewWindow remaining_view ;
 
-  /* Add to hash of viewwindows to frames */
-  g_hash_table_insert(zmap->viewwindow_2_parent, view_window, view_container) ;
+      remaining_view = closeWindow(zmap, view_container) ;
+    }
+  else
+    {
+      zmap_view = zMapViewGetView(view_window) ;
 
+      zMapViewSetupNavigator(zmap_view, zmap->nav_canvas) ;
 
-  /* If there is no current focus window we need to make this new one the focus,
-   * if we don't of code will fail because it relies on having a focus window and
-   * the user will not get visual feedback that a window is the focus window. */
-  if (!zmap->focus_viewwindow)
-    zmapControlSetWindowFocus(zmap, view_window) ;
+      /* Add to hash of viewwindows to frames */
+      g_hash_table_insert(zmap->viewwindow_2_parent, view_window, view_container) ;
 
-  /* We'll need to update the display..... */
-  gtk_widget_show_all(zmap->toplevel) ;
+      /* If there is no current focus window we need to make this new one the focus,
+       * if we don't of code will fail because it relies on having a focus window and
+       * the user will not get visual feedback that a window is the focus window. */
+      if (!zmap->focus_viewwindow)
+	zmapControlSetWindowFocus(zmap, view_window) ;
+      
+      /* We'll need to update the display..... */
+      gtk_widget_show_all(zmap->toplevel) ;
 
-  zmapControlWindowSetGUIState(zmap) ;
-
+      zmapControlWindowSetGUIState(zmap) ;
+    }
 
   return zmap_view ;
 }

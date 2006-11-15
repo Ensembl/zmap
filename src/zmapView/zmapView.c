@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov 14 08:15 2006 (rds)
+ * Last edited: Nov 15 16:51 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.92 2006-11-14 10:35:50 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.93 2006-11-15 16:51:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,8 +76,8 @@ static void killConnections(ZMapView zmap_view) ;
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   zMapURL url, char *format,
 					   int timeout, char *version,
-					   char *styles_file, char *feature_sets,
-                                           char *navigator_set_names,
+					   char *styles_file,
+					   char *feature_sets, char *navigator_set_names,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end) ;
 static void destroyConnection(ZMapViewConnection *view_conn) ;
@@ -180,19 +180,18 @@ ZMapViewWindow zMapViewCreate(GtkWidget *parent_widget,
   gboolean debug ;
 
   /* No callbacks, then no view creation. */
-  zMapAssert(view_cbs_G) ;
+  zMapAssert(view_cbs_G && GTK_IS_WIDGET(parent_widget) && sequence && start > 0 && (end == 0 || end >= start)) ;
 
   /* Set up debugging for threads, we do it here so that user can change setting in config file
    * and next time they create a view the debugging will go on/off. */
   if (zMapUtilsConfigDebug(ZMAPTHREAD_CONFIG_DEBUG_STR, &debug))
     zmap_thread_debug_G = debug ;
 
-  zmap_view = createZMapView(sequence, start, end, app_data) ;
+  zmap_view = createZMapView(sequence, start, end, app_data) ; /* N.B. this step can't fail. */
 
   zmap_view->state = ZMAPVIEW_INIT ;
 
   view_window = addWindow(zmap_view, parent_widget) ;
-
 
   return view_window ;
 }
@@ -241,6 +240,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	  ZMapConfigStanzaElementStruct server_elements[] = {{ZMAPSTANZA_SOURCE_URL,     ZMAPCONFIG_STRING, {NULL}},
 							     {ZMAPSTANZA_SOURCE_TIMEOUT, ZMAPCONFIG_INT,    {NULL}},
 							     {ZMAPSTANZA_SOURCE_VERSION, ZMAPCONFIG_STRING, {NULL}},
+							     {ZMAPSTANZA_SOURCE_STYLE,  ZMAPCONFIG_BOOL, {NULL}},
 							     {"sequence", ZMAPCONFIG_BOOL, {NULL}},
 							     {"writeback", ZMAPCONFIG_BOOL, {NULL}},
 							     {"stylesfile", ZMAPCONFIG_STRING, {NULL}},
@@ -251,6 +251,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 	  /* Set defaults for any element that is not a string. */
 	  zMapConfigGetStructInt(server_elements, ZMAPSTANZA_SOURCE_TIMEOUT) = 120 ; /* seconds. */
+	  zMapConfigGetStructBool(server_elements, ZMAPSTANZA_SOURCE_STYLE) = FALSE ;
 	  zMapConfigGetStructBool(server_elements, "sequence") = FALSE ;
 	  zMapConfigGetStructBool(server_elements, "writeback") = FALSE ;
 
@@ -265,7 +266,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 
       /* Set up connections to the named servers. */
-      if (config && server_list)
+      if (result && config && server_list)
 	{
 	  int connections = 0 ;
 	  ZMapConfigStanza next_server ;
@@ -281,7 +282,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      char *version, *styles_file, *format, *url, *featuresets, *navigatorsets ;
 	      int timeout, url_parse_error ;
               zMapURL urlObj;
-	      gboolean sequence_server, writeback_server ;
+	      gboolean sequence_server, writeback_server, acedb_styles ;
 	      ZMapViewConnection view_con ;
 
 	      url     = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_URL) ;
@@ -291,6 +292,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      styles_file = zMapConfigGetElementString(next_server, "stylesfile") ;
 	      featuresets = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_FEATURESETS) ;
               navigatorsets = zMapConfigGetElementString(next_server, "navigator_sets");
+	      acedb_styles = zMapConfigGetElementBool(next_server, ZMAPSTANZA_SOURCE_STYLE) ;
 
               /* url is absolutely required. Go on to next stanza if there isn't one.
                * Done before anything else so as not to set seq/write servers to invalid locations  */
@@ -319,8 +321,9 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
               else if (urlObj
 		       && (view_con = createConnection(zmap_view, urlObj,
 						       format,
-						       timeout, version, styles_file, 
-                                                       featuresets, navigatorsets,
+						       timeout, version,
+						       styles_file,
+						       featuresets, navigatorsets,
 						       sequence_server, writeback_server,
 						       zmap_view->sequence,
 						       zmap_view->start, zmap_view->end)))
@@ -1110,8 +1113,7 @@ static ZMapView createZMapView(char *sequence, int start, int end, void *app_dat
 }
 
 
-/* Adds the first window to a view.
- * Returns the window on success, NULL on failure. */
+/* Adds a window to a view. */
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 {
   ZMapViewWindow view_window = NULL ;
@@ -1119,33 +1121,35 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 
   view_window = createWindow(zmap_view, NULL) ;
 
-  if (!(window = zMapWindowCreate(parent_widget, zmap_view->sequence, view_window, NULL)))
-    {
-      /* should glog and/or gerror at this stage....really need g_errors.... */
-      view_window = NULL ;
-    }
-  else
-    {
-      view_window->window = window ;
+  /* There are no steps where this can fail at the moment. */
+  window = zMapWindowCreate(parent_widget, zmap_view->sequence, view_window, NULL) ;
+  zMapAssert(window) ;
 
-      /* add to list of windows.... */
-      zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
+  view_window->window = window ;
+
+  /* add to list of windows.... */
+  zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
 	  
-      /* There is a bit of a hole in the "busy" state here in that we do the windowcreate
-       * but have not signalled that we are busy, I suppose we could do the busy stuff twice,
-       * once before the windowCreate and once here to make sure we set cursors everywhere.. */
-      zmapViewBusy(zmap_view, TRUE) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* This seems redundant now....old code ???? */
+
+  /* There is a bit of a hole in the "busy" state here in that we do the windowcreate
+   * but have not signalled that we are busy, I suppose we could do the busy stuff twice,
+   * once before the windowCreate and once here to make sure we set cursors everywhere.. */
+  zmapViewBusy(zmap_view, TRUE) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Start polling function that checks state of this view and its connections, note
-       * that at this stage there is no data to display. */
-      startStateConnectionChecking(zmap_view) ;
+  /* Start polling function that checks state of this view and its connections, note
+   * that at this stage there is no data to display. */
+  startStateConnectionChecking(zmap_view) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  zmapViewBusy(zmap_view, FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      zmapViewBusy(zmap_view, FALSE) ;
-    }
 
   return view_window ;
 }
@@ -1595,8 +1599,8 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   zMapURL url, char *format,
 					   int timeout, char *version,
-					   char *styles_file, char *featuresets_names,
-                                           char *navigator_set_names,
+					   char *styles_file,
+					   char *featuresets_names, char *navigator_set_names,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end)
 {
