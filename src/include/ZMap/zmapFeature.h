@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov 10 11:11 2006 (edgrif)
+ * Last edited: Nov 16 08:49 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.99 2006-11-13 09:53:12 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.100 2006-11-16 08:53:38 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -422,7 +422,9 @@ typedef struct
   char *feature_name ;
   char *feature_strand ;
   char *feature_frame ;
-  char *feature_start ; char *feature_end ; char *sub_feature_start ; char *sub_feature_end ;
+  char *feature_start ; char *feature_end ; 
+  char *sub_feature_tstart ; char *sub_feature_tend ;
+  char *sub_feature_qstart ; char *sub_feature_qend ;
   char *feature_score ; char *feature_type ;
   char *feature_set ; char *feature_style ;
   char *feature_description ; char *feature_locus ;
