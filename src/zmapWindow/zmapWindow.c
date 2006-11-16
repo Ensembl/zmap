@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 16 08:11 2006 (rds)
+ * Last edited: Nov 16 08:42 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.149 2006-11-16 08:14:33 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.150 2006-11-16 08:56:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -918,6 +918,8 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
 
 /* Sets up data that is passed back to our caller to give them information about the feature
  * the user has selected, perhaps by clicking on it in the zmap window. */
+
+/* To Reset the panel pass in a NULL pointer as feature_arg */
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCanvasItem *item)
 {
   ZMapWindowItemFeatureType type ;
@@ -965,8 +967,27 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 	  end = item_data->end ;
 	}
 
-      select.feature_desc.sub_feature_start = g_strdup_printf("%d", start) ;
-      select.feature_desc.sub_feature_end = g_strdup_printf("%d", end) ;
+      select.feature_desc.sub_feature_tstart = g_strdup_printf("%d", start) ;
+      select.feature_desc.sub_feature_tend = g_strdup_printf("%d", end) ;
+
+      if(feature->type == ZMAPFEATURE_ALIGNMENT)
+        {
+          GArray *aligns = NULL;
+          if((aligns = feature->feature.homol.align))
+            {
+              int i;
+              for(i = 0 ; i < aligns->len; i++)
+                {
+                  ZMapAlignBlock align;
+                  align = &(g_array_index(aligns, ZMapAlignBlockStruct, i));
+                  if(start == align->t1 && end == align->t2)
+                    {
+                      select.feature_desc.sub_feature_qstart = g_strdup_printf("%d", align->q1);
+                      select.feature_desc.sub_feature_qend   = g_strdup_printf("%d", align->q2);
+                    }
+                }
+            }
+        }
     }
 
   style = zMapFeatureGetStyle(feature) ;
@@ -1023,8 +1044,10 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
   /* Clear up.... */
-  g_free(select.feature_desc.sub_feature_start) ;
-  g_free(select.feature_desc.sub_feature_end) ;
+  g_free(select.feature_desc.sub_feature_tstart) ;
+  g_free(select.feature_desc.sub_feature_tend) ;
+  g_free(select.feature_desc.sub_feature_qstart) ;
+  g_free(select.feature_desc.sub_feature_qend) ;
   g_free(select.feature_desc.feature_description) ;
   g_free(select.feature_desc.feature_start) ;
   g_free(select.feature_desc.feature_end) ;
