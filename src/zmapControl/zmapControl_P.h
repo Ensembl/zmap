@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Nov 15 16:49 2006 (edgrif)
+ * Last edited: Nov 16 08:47 2006 (rds)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.54 2006-11-15 16:49:29 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.55 2006-11-16 08:55:42 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -105,9 +105,8 @@ typedef struct _ZMapStruct
     *quit_button, *frame3_but, *dna_but ;
 
   /* Feature details display. */
-  GtkWidget *feature_name,
-    *feature_strand,
-    *feature_coords, *sub_feature_coords,
+  GtkWidget *feature_name, *feature_strand,
+    *feature_coords, *sub_feature_tcoords, *sub_feature_qcoords,
     *feature_frame, *feature_score, *feature_type,
     *feature_set, *feature_style ;
   GtkTooltips *feature_tooltips ;
