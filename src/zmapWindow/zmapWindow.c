@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 15 15:27 2006 (rds)
+ * Last edited: Nov 16 08:11 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.148 2006-11-15 15:28:34 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.149 2006-11-16 08:14:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -467,6 +467,10 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   if (features_are_revcomped)
     {
       int i ;
+
+      /* This sometimes gets redrawn twice or not at all. Hence we have to do some monkeying! */
+      zmapWindowClampedAtStartEnd(window, &scroll_y1, &scroll_y2);
+      zmapWindowRulerCanvasDraw(window->ruler, scroll_y1, scroll_y2, TRUE); 
 
       foo_canvas_scroll_to(window->canvas, x, y) ;
 
