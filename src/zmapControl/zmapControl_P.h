@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Nov 16 08:47 2006 (rds)
+ * Last edited: Nov 17 17:33 2006 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.55 2006-11-16 08:55:42 rds Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.56 2006-11-17 17:33:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -40,8 +40,9 @@
 #include <ZMap/zmapControl.h>
 #include <ZMap/zmapXRemote.h>
 
+
 /* Windows are 95% of screen height by default... */
-#define ZMAPWINDOW_DEFAULT_WINDOW 0.95
+#define ZMAPWINDOW_VERT_PROP 0.95
 
 
 /* The overall state of the zmap, we need this because both the zmap window and the its threads
@@ -75,8 +76,6 @@ typedef struct _ZMapStruct
 
   void            *app_data ;				    /* Data passed back to all callbacks
 							       registered for this ZMap. */
-
-  int window_height ;					    /* Overall height of zmap window. */
 
   /* Widget stuff for the Zmap. */
   GtkTooltips     *tooltips ;
@@ -132,6 +131,10 @@ typedef struct _ZMapStruct
                                          * remote control simple IPC stuff */
   zMapXRemoteObj client;
   zMapXRemoteNotifyData propertyNotifyData;
+
+
+
+  gulong map_handler ;					    /* Needed for disconnecting map handler cb. */
 
 } ZMapStruct ;
 
