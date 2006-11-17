@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 15 14:00 2006 (rds)
+ * Last edited: Nov 17 11:51 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.149 2006-11-15 15:28:42 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.150 2006-11-17 17:37:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -280,6 +280,8 @@ typedef struct
   ZMapFeatureSubpartType subpart ;			    /* Exon, Intron etc. */
 
   int start, end ;					    /* start/end of subpart in sequence coords. */
+
+  int query_start, query_end ;				    /* For alignments. */
 
   FooCanvasItem *twin_item ;				    /* Some features need to be drawn with
 							       two canvas items, an example is
@@ -650,6 +652,12 @@ void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 void zmapWindowFeatureFactoryInit(ZMapWindow window);
 
 
+void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item) ;
+void zmapWindowZoomToItems(ZMapWindow window, GList *items) ;
+void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
+				   double rootx1, double rootx2, double rooty1, double rooty2) ;
+
+FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item) ;
 FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
 void zmapWindowRaiseItem(FooCanvasItem *item) ;
