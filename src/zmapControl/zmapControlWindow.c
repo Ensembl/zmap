@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Nov 15 16:53 2006 (edgrif)
+ * Last edited: Nov 16 08:59 2006 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.28 2006-11-15 16:54:39 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.29 2006-11-17 17:34:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,8 +70,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   /* We can leave width to default sensibly but height does not because zmap is in a scrolled
    * window, we try to maximise it to the screen depth but have to do this after window is mapped.
    * SHOULD WE BE REMOVING THIS HANDLER ??? TAKE A LOOK AT THIS LATER.... */
-  g_signal_connect(G_OBJECT(toplevel), "map",
-                   G_CALLBACK(myWindowMaximize), (gpointer)zmap);
+  zmap->map_handler = g_signal_connect(G_OBJECT(toplevel), "map",
+				       G_CALLBACK(myWindowMaximize), (gpointer)zmap);
 
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
@@ -295,16 +295,14 @@ static void makeStatusTooltips(ZMap zmap)
 
 
 /* This code was taken from the following gtk_maximise_window() to gdk_window_maximise() etc.
- * through...but I can't seem to make it work...damn....their code is given below...sigh.... */
+ * through...but it doesn't work that reliably....their code is given below...sigh.... */
 static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 {
   GdkAtom max_atom_vert ;
   GdkScreen *screen ;
 
-
   /* This all needs the tests/tidying that the gtk routines have.... */
-
-  max_atom_vert = gdk_atom_intern ("_NET_WM_STATE_MAXIMIZED_VERT", FALSE) ;
+  max_atom_vert = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_VERT", FALSE) ;
 
   screen = gtk_widget_get_screen(toplevel) ;
 
@@ -315,10 +313,6 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
       GdkWindow *window = toplevel->window ;
       GdkWindow *root_window = gtk_widget_get_root_window(toplevel) ;
       XEvent xev ;
-
-      if ( GTK_WIDGET_MAPPED(toplevel))
-	printf("done it\n") ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* If you do this stupid gtk just maximises in both directions.... */
@@ -356,8 +350,21 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
     }
   else
     {
-      gtk_window_set_default_size(GTK_WINDOW(toplevel), -1, zmap->window_height) ;
+      /* Set default window height, we try to maximise the height but if this fails then
+       * we will use this.
+       * If someone displays a really short piece of dna this will make the window
+       * too big so really we should readjust the window size to fit the sequence
+       * but this will be rare. */
+      int window_height ;
+
+      window_height = (int)((float)(gdk_screen_get_height(screen)) * ZMAPWINDOW_VERT_PROP) ;
+
+      gtk_window_set_default_size(GTK_WINDOW(toplevel), -1, window_height) ;
     }
+
+  /* I think we need to disconnect this now otherwise we reset the window height every time we
+   * are re-mapped. */
+  g_signal_handler_disconnect (zmap->toplevel, zmap->map_handler) ;
 
 
   return ;
