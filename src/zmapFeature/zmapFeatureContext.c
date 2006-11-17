@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 10 11:33 2006 (edgrif)
+ * Last edited: Nov 17 09:40 2006 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.16 2006-11-13 09:53:12 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.17 2006-11-17 17:35:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,7 +71,7 @@ static void datasetCB(GQuark key_id, gpointer data, gpointer user_data) ;
 static void listCB(gpointer data, gpointer user_data) ;
 #endif
 static void revcompSpan(GArray *spans, int seq_end) ;
-static gboolean fetchBlockDNAPtr(ZMapFeature feature, char **dna);
+static gboolean fetchBlockDNAPtr(ZMapFeatureAny feature, char **dna);
 
 
 static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data);
@@ -141,7 +141,7 @@ char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature)
   if (feature->strand == ZMAPSTRAND_REVERSE)
     revcomp = TRUE ;
 
-  if(fetchBlockDNAPtr(feature, &tmp))
+  if(fetchBlockDNAPtr((ZMapFeatureAny)feature, &tmp))
     dna = getDNA(tmp, feature->x1, feature->x2, revcomp) ;
   else if(NO_DNA_STRING)
     dna = g_strdup(NO_DNA_STRING);
@@ -165,7 +165,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
 
   if (!spliced || !exons)
     dna = zMapFeatureGetFeatureDNA(context, transcript) ;
-  else if(fetchBlockDNAPtr(transcript, &tmp))
+  else if(fetchBlockDNAPtr((ZMapFeatureAny)transcript, &tmp))
     {
       GString *dna_str ;
       int i, cds_start, cds_end ;
@@ -362,13 +362,12 @@ static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
   return dna ;
 }
 
-static gboolean fetchBlockDNAPtr(ZMapFeature feature, char **dna)
+static gboolean fetchBlockDNAPtr(ZMapFeatureAny feature_any, char **dna)
 {
   gboolean dna_exists = FALSE;
   ZMapFeatureBlock block = NULL;
 
-  if((block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
-                                                          ZMAPFEATURE_STRUCT_BLOCK))
+  if((block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_BLOCK))
      && block->sequence.sequence)
     {
       if(dna && (dna_exists = TRUE))
