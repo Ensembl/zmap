@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Nov 15 16:48 2006 (edgrif)
+ * Last edited: Nov 17 09:38 2006 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.72 2006-11-15 16:48:37 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.73 2006-11-17 17:32:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -515,8 +515,7 @@ ZMapView zmapControlAddView(ZMap zmap, char *sequence, int start, int end)
 static ZMap createZMap(void *app_data)
 {
   ZMap zmap = NULL ;
-  GdkScreen *screen ;
-  double screen_proportion = ZMAPWINDOW_DEFAULT_WINDOW ;
+
   /* GROSS HACK FOR NOW, NEED SOMETHING BETTER LATER, JUST A TACKY ID...... */
   static int zmap_num = 0 ;
 
@@ -532,14 +531,6 @@ static ZMap createZMap(void *app_data)
   /* Use default hashing functions, but THINK ABOUT THIS, MAY NEED TO ATTACH DESTROY FUNCTIONS. */
   zmap->viewwindow_2_parent = g_hash_table_new(NULL, NULL) ;
 
-
-  /* Set default window height, we try to maximise the height but if this fails then
-   * we will use this.
-   * If someone displays a really short piece of dna this will make the window
-   * too big so really we should readjust the window size to fit the sequence
-   * but this will be rare. */
-  screen = gdk_screen_get_default() ;
-  zmap->window_height = (int)((float)(gdk_screen_get_height(screen)) * screen_proportion) ;
 
   return zmap ;
 }
@@ -632,7 +623,8 @@ static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data_
   x1 = x2 = y1 = y2 = 0.0;
   do
     {
-      ZMapViewWindow view_item = (ZMapView)(list_item->data);
+      ZMapView view_item = (ZMapView)(list_item->data);
+
       navigator = zMapViewGetNavigator(view_item);
       /* badly named function... */
       zMapWindowNavigatorFocus(navigator, FALSE, &x1, &y1, &x2, &y2);
