@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 09:57 2006 (edgrif)
+ * Last edited: Nov 16 10:45 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.51 2006-11-09 10:16:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.52 2006-11-17 17:36:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -502,6 +502,27 @@ void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
   return ;
 }
 
+
+
+/* Get "parent" item of feature, for simple features, this is just the item itself but
+ * for compound features we need the parent group.
+ *  */
+FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item)
+{
+  FooCanvasItem *true_item = NULL ;
+  ZMapWindowItemFeatureType item_feature_type ;
+
+  /* Retrieve the feature item info from the canvas item. */
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+							ITEM_FEATURE_TYPE)) ;
+
+  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
+    true_item = item ;
+  else if (item_feature_type == ITEM_FEATURE_CHILD || item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
+    true_item = item->parent ;
+
+  return true_item ;
+}
 
 
 /* Need to test whether this works for groups...it should do....
