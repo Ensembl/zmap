@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 10 08:16 2006 (rds)
+ * Last edited: Nov 17 15:28 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.64 2006-11-10 08:22:01 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.65 2006-11-17 15:29:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -244,8 +244,16 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
       /* Add it to the feature set. */
       if (zMapFeatureSetAddFeature(feature_set, feature))
 	{
+          ZMapStyleOverlapMode bump_mode;
 	  /* This function will add the new feature to the hash. */
 	  new_feature = zmapWindowFeatureDraw(window, FOO_CANVAS_GROUP(feature_group), feature) ;
+
+          /* Should this get the style from the feature set's set data??? */
+          /* In fact I forsee multiple "New Features don't always get bumped" tickets. */
+          if((bump_mode = zMapStyleGetOverlapMode(feature_set->style)) != ZMAPOVERLAP_COMPLETE)
+            {
+              zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
+            }
 	}
     }
 
