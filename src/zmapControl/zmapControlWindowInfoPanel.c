@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov 16 08:54 2006 (rds)
+ * Last edited: Nov 17 17:35 2006 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.8 2006-11-16 08:55:22 rds Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.9 2006-11-17 17:35:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,7 +92,7 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap)
  * 
  * Current panel is:
  * 
- *  name [strand] [start end [subpart_start subpart_end]] [frame] [score] [type] [feature_set] [feature_style]
+ *  name [strand] [start end] [subpart_start subpart_end] [frame] [score] [type] [feature_set] [feature_style]
  * 
  *  */
 void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
@@ -131,18 +131,26 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
       text[0] = feature_desc->feature_name ;
       text[1] = feature_desc->feature_strand ;
       if (feature_desc->feature_start)
-	text[2] = g_strdup_printf("%s -> %s", feature_desc->feature_start, feature_desc->feature_end) ;
-      if (feature_desc->sub_feature_tstart)
-	text[3] = g_strdup_printf("%s -> %s",
-				  feature_desc->sub_feature_tstart, feature_desc->sub_feature_tend) ;
-      if (feature_desc->sub_feature_qstart)
-	text[4] = g_strdup_printf("%s -> %s",
-				  feature_desc->sub_feature_qstart, feature_desc->sub_feature_qend) ;
-      text[5] = feature_desc->feature_frame ;
-      text[6] = feature_desc->feature_score ;
-      text[7] = feature_desc->feature_type ;
-      text[8] = feature_desc->feature_set ;
-      text[9] = feature_desc->feature_style ;
+	text[2] = g_strdup_printf("%s, %s%s%s%s%s  (%s)",
+				  feature_desc->feature_start, feature_desc->feature_end,
+				  (feature_desc->feature_query_start ? " <- " : ""),
+				  (feature_desc->feature_query_start ? feature_desc->feature_query_start : ""),
+				  (feature_desc->feature_query_start ? ", " : ""),
+				  (feature_desc->feature_query_end ? feature_desc->feature_query_end : ""),
+				  feature_desc->feature_length) ;
+      if (feature_desc->sub_feature_start)
+	text[3] = g_strdup_printf("%s, %s%s%s%s%s  (%s)",
+				  feature_desc->sub_feature_start, feature_desc->sub_feature_end,
+				  (feature_desc->sub_feature_query_start ? " <- " : ""),
+				  (feature_desc->sub_feature_query_start ? feature_desc->sub_feature_query_start : ""),
+				  (feature_desc->sub_feature_query_start ? ", " : ""),
+				  (feature_desc->sub_feature_query_end ? feature_desc->sub_feature_query_end : ""),
+				  feature_desc->sub_feature_length) ;
+      text[4] = feature_desc->feature_frame ;
+      text[5] = feature_desc->feature_score ;
+      text[6] = feature_desc->feature_type ;
+      text[7] = feature_desc->feature_set ;
+      text[8] = feature_desc->feature_style ;
 
       if (feature_desc->feature_description || feature_desc->feature_locus)
 	{
