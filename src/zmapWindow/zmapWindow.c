@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 16 08:42 2006 (rds)
+ * Last edited: Nov 17 17:41 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.150 2006-11-16 08:56:25 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.151 2006-11-17 17:41:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,6 +84,13 @@ typedef struct
   gulong handler_id;
 } ExposeDataStruct, *ExposeData;
 
+
+typedef struct
+{
+  double rootx1, rootx2, rooty1, rooty2 ;
+} MaxBoundsStruct, *MaxBounds ;
+
+
 static ZMapWindow myWindowCreate(GtkWidget *parent_widget, 
                                  char *sequence, void *app_data,
                                  GList *feature_set_names,
@@ -134,6 +141,10 @@ static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 				 GtkWidget *widget, GtkAllocation *allocation) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+static void getMaxBounds(gpointer data, gpointer user_data) ;
+
+static void jumpFeature(ZMapWindow window, guint keyval) ;
+static void jumpColumn(ZMapWindow window, guint keyval) ;
 
 
 
@@ -967,27 +978,16 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
 	  end = item_data->end ;
 	}
 
-      select.feature_desc.sub_feature_tstart = g_strdup_printf("%d", start) ;
-      select.feature_desc.sub_feature_tend = g_strdup_printf("%d", end) ;
+      select.feature_desc.sub_feature_start = g_strdup_printf("%d", start) ;
+      select.feature_desc.sub_feature_end = g_strdup_printf("%d", end) ;
 
-      if(feature->type == ZMAPFEATURE_ALIGNMENT)
-        {
-          GArray *aligns = NULL;
-          if((aligns = feature->feature.homol.align))
-            {
-              int i;
-              for(i = 0 ; i < aligns->len; i++)
-                {
-                  ZMapAlignBlock align;
-                  align = &(g_array_index(aligns, ZMapAlignBlockStruct, i));
-                  if(start == align->t1 && end == align->t2)
-                    {
-                      select.feature_desc.sub_feature_qstart = g_strdup_printf("%d", align->q1);
-                      select.feature_desc.sub_feature_qend   = g_strdup_printf("%d", align->q2);
-                    }
-                }
-            }
-        }
+      if (feature->type == ZMAPFEATURE_ALIGNMENT)
+	{
+	  select.feature_desc.sub_feature_query_start = g_strdup_printf("%d", item_data->query_start) ;
+	  select.feature_desc.sub_feature_query_end = g_strdup_printf("%d", item_data->query_end) ;
+	}
+
+      select.feature_desc.sub_feature_length = g_strdup_printf("%d", (end - start + 1)) ;
     }
 
   style = zMapFeatureGetStyle(feature) ;
@@ -1013,9 +1013,14 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
       feature_end = feature->x2 ;
     }
 
-
   select.feature_desc.feature_start = g_strdup_printf("%d", feature_start) ;
   select.feature_desc.feature_end = g_strdup_printf("%d", feature_end) ;
+  if (feature->type == ZMAPFEATURE_ALIGNMENT)
+    {
+      select.feature_desc.feature_query_start = g_strdup_printf("%d", feature->feature.homol.y1) ;
+      select.feature_desc.feature_query_end = g_strdup_printf("%d", feature->feature.homol.y2) ;
+    }
+  select.feature_desc.feature_length = g_strdup_printf("%d", zMapFeatureLength(feature)) ;
 
   select.feature_desc.feature_strand = zMapFeatureStrand2Str(feature->strand) ;
 
@@ -2310,12 +2315,71 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
 
 
+
 #define ZOOM_SENSITIVITY 5.0
+
+
 static void zoomToRubberBandArea(ZMapWindow window)
 {
-  GtkAdjustment *v_adjuster ;
-  /* The bands bounds */
+
+  if (window->rubberband)
+    {
+      double rootx1, rootx2, rooty1, rooty2 ;
+      gboolean border = FALSE ;
+
+      /* Get size of item and convert to world coords. */
+      foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
+      foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
+      foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
+
+      zmapWindowZoomToWorldPosition(window, border, rootx1, rootx2, rooty1, rooty2) ;
+    }
+
+  return ;
+}
+
+
+
+/* Zoom to a single item. */
+void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item)
+{
   double rootx1, rootx2, rooty1, rooty2;
+  gboolean border = TRUE ;
+
+  /* Get size of item and convert to world coords. */
+  foo_canvas_item_get_bounds(item, &rootx1, &rooty1, &rootx2, &rooty2) ;
+  foo_canvas_item_i2w(item, &rootx1, &rooty1) ;
+  foo_canvas_item_i2w(item, &rootx2, &rooty2) ;
+
+  zmapWindowZoomToWorldPosition(window, border, rootx1, rootx2, rooty1, rooty2) ;
+
+  return ;
+}
+
+
+/* Zoom to the max extent of a set of items. */
+void zmapWindowZoomToItems(ZMapWindow window, GList *items)
+{
+  MaxBoundsStruct max_bounds = {0.0} ;
+  gboolean border = TRUE ;
+
+  g_list_foreach(items, getMaxBounds, &max_bounds) ;
+
+  zmapWindowZoomToWorldPosition(window, border, max_bounds.rootx1, max_bounds.rootx2,
+				max_bounds.rooty1, max_bounds.rooty2) ;
+
+  return ;
+}
+
+
+/* THIS FUNCTION NEEDS THE CODE ADDING TO SUPPORT THE "border" parameter which is intended to make
+   sure that a feature is fully contained within a window with some room top and bottom. */
+/* This needs to set an extra bit top and bottom to make sure that its possible to see _all_ of
+ * the feature or area....perhaps as an option ?? Then we remove Roys lasso bit and just use this func. */
+void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
+				   double rootx1, double rootx2, double rooty1, double rooty2)
+{
+  GtkAdjustment *v_adjuster ;
   /* size of bound area */
   double ydiff;
   double area_middle;
@@ -2324,62 +2388,67 @@ static void zoomToRubberBandArea(ZMapWindow window)
   double zoom_by_factor, target_zoom_factor, current;
   double wx1, wx2, wy1, wy2;
 
-  if(!window->rubberband)
-    return ;
-
-  v_adjuster = 
-    gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
+  v_adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
   win_height = v_adjuster->page_size;
 
-  /* this returns world coords */
-  foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2);
+  current = zMapWindowGetZoomFactor(window) ;
+
   /* make them canvas so we can scroll there */
   foo_canvas_w2c(window->canvas, rootx1, rooty1, &beforex, &beforey);
 
   /* work out the zoom factor to show all the area (vertically) and
      calculate how much we need to zoom by to achieve that. */
   ydiff = rooty2 - rooty1;
-  if(ydiff < ZOOM_SENSITIVITY)
-    return ;
-  area_middle = rooty1 + (ydiff / 2.0); /* So we can make this the centre later */
-  target_zoom_factor = (double)(win_height / ydiff);
-  current        = zMapWindowGetZoomFactor(window);
-  zoom_by_factor = (target_zoom_factor / current);
 
+  if (ydiff >= ZOOM_SENSITIVITY)
+    {
+      area_middle = rooty1 + (ydiff / 2.0) ; /* So we can make this the centre later */
 
-  /* actually do the zoom */
-  zMapWindowZoom(window, zoom_by_factor);
+      target_zoom_factor = (double)(win_height / ydiff);
 
-  /* Now we need to find where the original top of the area is in
-   * canvas coords after the effect of the zoom. Hence the w2c calls
-   * below.
-   * And scroll there:
-   * We use this rather than zMapWindowScrollTo as we may have zoomed 
-   * in so far that we can't just sroll the current canvas buffer to 
-   * where we clicked. We actually need to check we haven't zoomed off.
-   * If we have then we need to move there first, otherwise scroll_to
-   * doesn't do anything.
-   */
-  foo_canvas_get_scroll_region(window->canvas, &wx1, &wy1, &wx2, &wy2); /* ok, but can we refactor? */
-  if(rooty1 > wy1 && rooty2 < wy2)
-    {                           /* We're still in the same area, */
-      foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
-      if(beforey != canvasy)
-        foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
+      zoom_by_factor = (target_zoom_factor / current);
+
+      /* actually do the zoom */
+      zMapWindowZoom(window, zoom_by_factor);
+
+      /* Now we need to find where the original top of the area is in
+       * canvas coords after the effect of the zoom. Hence the w2c calls
+       * below.
+       * And scroll there:
+       * We use this rather than zMapWindowScrollTo as we may have zoomed 
+       * in so far that we can't just sroll the current canvas buffer to 
+       * where we clicked. We actually need to check we haven't zoomed off.
+       * If we have then we need to move there first, otherwise scroll_to
+       * doesn't do anything.
+       */
+      foo_canvas_get_scroll_region(window->canvas, &wx1, &wy1, &wx2, &wy2); /* ok, but can we refactor? */
+      if (rooty1 > wy1 && rooty2 < wy2)
+	{                           /* We're still in the same area, */
+	  foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
+
+	  if(beforey != canvasy)
+	    foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
+	}
+      else
+	{                           /* This takes a lot of time.... */
+	  double half_win_span = (window->canvas_maxwin_size / 2.0);
+	  double min_seq = area_middle - half_win_span;
+	  double max_seq = area_middle + half_win_span - 1;
+
+	  /* unfortunately freeze/thaw child-notify doesn't stop flicker */
+	  /* can we do something else to make it busy?? */
+	  zMapWindowMove(window, min_seq, max_seq);
+
+	  foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
+
+	  foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
+	}
     }
-  else
-    {                           /* This takes a lot of time.... */
-      double half_win_span = (window->canvas_maxwin_size / 2.0);
-      double min_seq = area_middle - half_win_span;
-      double max_seq = area_middle + half_win_span - 1;
-      /* unfortunately freeze/thaw child-notify doesn't stop flicker */
-      /* can we do something else to make it busy?? */
-      zMapWindowMove(window, min_seq, max_seq);
-      foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
-      foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
-    }
+
   return ;
 }
+
+
 
 
 
@@ -2652,16 +2721,26 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
   switch (key_event->keyval)
     {
-    case GDK_Page_Up:
-    case GDK_Page_Down:
     case GDK_Up:
     case GDK_Down:
     case GDK_Left:
     case GDK_Right:
+      /* Note that we fall through if shift mask is not on.... */
+      if (key_event->state & GDK_SHIFT_MASK)
+	{
+	  /* Trial code to shift columns and features via cursor keys..... */
+	  if (key_event->keyval == GDK_Up || key_event->keyval == GDK_Down)
+	    jumpFeature(window, key_event->keyval) ;
+	  else
+	    jumpColumn(window, key_event->keyval) ;
+	}
+    case GDK_Page_Up:
+    case GDK_Page_Down:
     case GDK_Home:
     case GDK_End:
       {
 	moveWindow(window, key_event->state, key_event->keyval) ;
+
 	event_handled = TRUE ;
 	break ;
       }
@@ -2670,17 +2749,15 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_equal:
       {
 	zoomWindow(window, key_event->state, key_event->keyval) ;
+
 	event_handled = TRUE ;
 	break ;
       }
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_d:
       put dna on ....;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* There is an issue with this...it needs to happen at the view level really so that all
@@ -2688,7 +2765,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_r:
       reversecomp ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
     case GDK_w:
       {
@@ -2700,6 +2776,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	zoom_factor = zoom_factor / curr_factor ;
 
 	zMapWindowZoom(window, zoom_factor) ;
+
 	event_handled = TRUE ;
 	break ;
       }
@@ -2724,8 +2801,60 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    
 	    zmapWindowNewReposition(window) ;
 	  }
+
+	event_handled = TRUE ;
+	break ;
       }
 
+    case GDK_Z:
+    case GDK_z:
+      {
+	FooCanvasItem *focus_item ;
+	
+	if ((focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
+	  {
+	    ZMapFeature feature ;
+
+	    feature = g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
+	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+	    
+	    if (key_event->keyval == GDK_z)
+	      zmapWindowZoomToItem(window, focus_item) ;
+	    else
+	      {
+		if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+		  {
+		    zmapWindowZoomToItem(window, zmapWindowItemGetTrueItem(focus_item)) ;
+		  }
+		else if (feature->type == ZMAPFEATURE_ALIGNMENT)
+		  {
+		    GList *list = NULL;
+		    ZMapStrand set_strand ;
+		    ZMapFrame set_frame ;
+		    gboolean result ;
+		    
+		    result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
+		    zMapAssert(result) ;
+		    
+		    list = zmapWindowFToIFindSameNameItems(window->context_to_item,
+							   zMapFeatureStrand2Str(set_strand),
+							   zMapFeatureFrame2Str(set_frame),
+							   feature) ;
+		    
+		    zmapWindowZoomToItems(window, list) ;
+		    
+		    g_list_free(list) ;
+		  }
+		else
+		  {
+		    zmapWindowZoomToItem(window, focus_item) ;
+		  }
+	      }
+	  }
+	
+	event_handled = TRUE ;
+	break ;
+      }
 
     default:
       event_handled = FALSE ;
@@ -2766,4 +2895,132 @@ static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+/* Checks to see if current item has coords outside of current min/max. */
+static void getMaxBounds(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  MaxBounds max_bounds = (MaxBounds)user_data ;
+  double rootx1, rootx2, rooty1, rooty2 ;
+
+  /* Get size of item and convert to world coords. */
+  foo_canvas_item_get_bounds(item, &rootx1, &rooty1, &rootx2, &rooty2) ;
+  foo_canvas_item_i2w(item, &rootx1, &rooty1) ;
+  foo_canvas_item_i2w(item, &rootx2, &rooty2) ;
+
+  if (max_bounds->rootx1 == 0.0  && max_bounds->rooty1 == 0.0
+      && max_bounds->rootx2 == 0.0 && max_bounds->rooty2 == 0.0)
+    {
+      max_bounds->rootx1 = rootx1 ;
+      max_bounds->rooty1 = rooty1 ;
+      max_bounds->rootx2 = rootx2 ;
+      max_bounds->rooty2 = rooty2 ; 
+    }
+  else
+    {
+      if (rootx1 < max_bounds->rootx1)
+	max_bounds->rootx1 = rootx1 ;
+      if (rooty1 < max_bounds->rooty1)
+	max_bounds->rooty1 = rooty1 ;
+      if (rootx2 > max_bounds->rootx2)
+	max_bounds->rootx2 = rootx2 ;
+      if (rooty2 > max_bounds->rooty2)
+	max_bounds->rooty2 = rooty2 ; 
+    }
+
+  return ;
+}
+
+
+
+static void jumpFeature(ZMapWindow window, guint keyval)
+{
+  FooCanvasGroup *focus_column ;
+  FooCanvasItem *focus_item ;
+
+  focus_column = zmapWindowItemGetHotFocusColumn(window->focus) ;
+  
+  focus_item = zmapWindowItemGetHotFocusItem(window->focus) ;
+
+
+  return ;
+}
+
+
+static void jumpColumn(ZMapWindow window, guint keyval)
+{
+  FooCanvasGroup *focus_column, *column_parent, *columns ;
+  GList *column_ptr ;
+  gboolean move_focus ;
+
+  /* We don't do anything if there is no current focus column, we could take an educated guess and
+   * start with the middle visible column but perhaps not worth it ? */
+  if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+    {
+      column_parent = zmapWindowContainerGetSuperGroup(focus_column) ;
+
+      columns = zmapWindowContainerGetFeatures(column_parent) ;
+
+      column_ptr = g_list_find(columns->item_list, focus_column) ;
+
+      move_focus = FALSE ;
+      while (TRUE)
+	{
+	  if (keyval == GDK_Left)
+	    {
+	      column_ptr = g_list_previous(column_ptr) ;
+	    }
+	  else
+	    {
+	      column_ptr = g_list_next(column_ptr) ;
+	    }
+
+	  /* Deal with hidden columns, we need to move over them until we find a visible one or
+	   * we reach the left/right end of the columns. */
+	  if (!column_ptr)
+	    break ;
+	  else if (zmapWindowItemIsShown((FooCanvasItem *)(column_ptr->data)))
+	    {
+	      move_focus = TRUE ;
+	      break ;
+	    }
+	}
+
+
+      /* For now if we reach the left or right ends of the columns we do nothing...we could warp
+       * around or jump to the other strand or all sorts of things but perhaps simple is best. */
+      if (move_focus)
+	{
+	  ZMapWindowItemFeatureSetData set_data ;
+	  ZMapWindowSelectStruct select = {NULL} ;
+	  GQuark feature_set_id ;
+
+
+	  focus_column = (FooCanvasGroup *)(column_ptr->data) ;
+
+	  zMapWindowUnHighlightFocusItems(window) ;
+
+	  zmapWindowItemSetHotFocusColumn(window->focus, focus_column) ;
+
+	  zmapHighlightColumn(window, zmapWindowItemGetHotFocusColumn(window->focus)) ;
+
+
+	  /* These should go in container some time.... */
+	  set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
+	  zMapAssert(set_data) ;
+
+	  feature_set_id = set_data->style->original_id ;
+
+	  select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
+
+	  select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
+
+	  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+
+	  g_free(select.secondary_text) ;
+	}
+    }
+
+
+  return ;
+}
 
