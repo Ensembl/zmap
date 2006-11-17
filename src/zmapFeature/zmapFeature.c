@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov  7 17:30 2006 (edgrif)
+ * Last edited: Nov 17 17:29 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.47 2006-11-08 11:55:51 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.48 2006-11-17 17:31:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -528,6 +528,56 @@ gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id)
   return result ;
 }
 
+
+/*!
+ * Returns the length of a feature. For a simple feature this is just (end - start + 1),
+ * for transcripts and alignments the exons or blocks must be totalled up.
+ * 
+ * @param   feature      Feature for which length is required.
+ * @return               nothing.
+ *  */
+int zMapFeatureLength(ZMapFeature feature)
+{
+  int length = 0 ;
+
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+  length = (feature->x2 - feature->x1 + 1) ;
+
+  if (feature->type == ZMAPFEATURE_TRANSCRIPT && feature->feature.transcript.exons)
+    {
+      int i ;
+      ZMapSpan span ;
+      GArray *exons = feature->feature.transcript.exons ;
+
+      length = 0 ;
+
+      for (i = 0 ; i < exons->len ; i++)
+	{
+	  span = &g_array_index(exons, ZMapSpanStruct, i) ;
+
+	  length += (span->x2 - span->x1 + 1) ;
+	}
+
+    }
+  else if (feature->type == ZMAPFEATURE_ALIGNMENT && feature->feature.homol.align)
+    {
+      int i ;
+      ZMapAlignBlock align ;
+      GArray *gaps = feature->feature.homol.align ;
+
+      length = 0 ;
+
+      for (i = 0 ; i < gaps->len ; i++)
+	{
+	  align = &g_array_index(gaps, ZMapAlignBlockStruct, i) ;
+
+	  length += (align->q2 - align->q1 + 1) ;
+	}
+    }
+
+  return length ;
+}
 
 /*!
  * Destroys a feature, freeing up all of its resources.

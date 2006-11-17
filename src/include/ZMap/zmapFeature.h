@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov 16 08:49 2006 (rds)
+ * Last edited: Nov 17 17:31 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.100 2006-11-16 08:53:38 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.101 2006-11-17 17:31:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -422,9 +422,12 @@ typedef struct
   char *feature_name ;
   char *feature_strand ;
   char *feature_frame ;
-  char *feature_start ; char *feature_end ; 
-  char *sub_feature_tstart ; char *sub_feature_tend ;
-  char *sub_feature_qstart ; char *sub_feature_qend ;
+  char *feature_start ; char *feature_end ;
+  char *feature_query_start ; char *feature_query_end ;
+  char *feature_length ;
+  char *sub_feature_start ; char *sub_feature_end ;
+  char *sub_feature_query_start ; char *sub_feature_query_end ;
+  char *sub_feature_length ;
   char *feature_score ; char *feature_type ;
   char *feature_set ; char *feature_style ;
   char *feature_description ; char *feature_locus ;
@@ -633,6 +636,7 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
 void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
 
+
 ZMapFeature zMapFeatureFindFeatureInContext(ZMapFeatureContext feature_context,
 					    GQuark type_id, GQuark feature_id) ;
 
@@ -702,7 +706,6 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
                                               int start, int end,
                                               gboolean has_score, double score,
                                               ZMapStrand strand, ZMapPhase phase);
-
 ZMapFeature zMapFeatureCopy(ZMapFeature feature) ;
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
 				    char *sequence, char *ontology,
@@ -728,6 +731,7 @@ ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
 void zMapFeatureSortGaps(GArray *gaps) ;
+int zMapFeatureLength(ZMapFeature feature) ;
 void zmapFeatureDestroy(ZMapFeature feature) ;
 
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
