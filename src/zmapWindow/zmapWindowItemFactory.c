@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 15 16:40 2006 (rds)
+ * Last edited: Nov 20 10:03 2006 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.9 2006-11-15 16:40:57 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.10 2006-11-20 14:26:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -406,7 +406,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             method = &(method_table[feature_type]);
           break;
         case ZMAPFEATURE_ALIGNMENT:
-          zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
+          if(feature->flags.has_score)
+            zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
 
           factory->stats->total_matches++;
 
@@ -444,6 +445,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
           break;
         case ZMAPFEATURE_BASIC:
         default:
+          if(feature->flags.has_score)
+            zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
+
           method = &(method_table[feature_type]);
           break;
         }
@@ -730,7 +734,7 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
 	 and pass it in to this routine....*/
       width = getWidthFromScore(feature->style, feature->score) ;
 
-
+      x1 = 0.0;                 /* HACK */
       if (width > origin + 0.5 || width < origin - 0.5)
 	{
 	  start = x1 + origin ;
@@ -1646,7 +1650,7 @@ static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature featu
   char *text_colour = "black";
   ZMapWindowItemFeature child_data = NULL;
   
-  text_string = g_quark_to_string(feature->locus_id);
+  text_string = (char *)g_quark_to_string(feature->locus_id);
 
   item = zMapDisplayText(parent, text_string, 
                          text_colour, 0.0, y1);
