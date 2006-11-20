@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 17 17:41 2006 (edgrif)
+ * Last edited: Nov 20 09:09 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.151 2006-11-17 17:41:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.152 2006-11-20 09:45:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1049,10 +1049,10 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
   /* Clear up.... */
-  g_free(select.feature_desc.sub_feature_tstart) ;
-  g_free(select.feature_desc.sub_feature_tend) ;
-  g_free(select.feature_desc.sub_feature_qstart) ;
-  g_free(select.feature_desc.sub_feature_qend) ;
+  g_free(select.feature_desc.sub_feature_start) ;
+  g_free(select.feature_desc.sub_feature_end) ;
+  g_free(select.feature_desc.sub_feature_query_start) ;
+  g_free(select.feature_desc.sub_feature_query_end) ;
   g_free(select.feature_desc.feature_description) ;
   g_free(select.feature_desc.feature_start) ;
   g_free(select.feature_desc.feature_end) ;
