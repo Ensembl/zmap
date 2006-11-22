@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 20 09:09 2006 (rds)
+ * Last edited: Nov 22 13:37 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.152 2006-11-20 09:45:42 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.153 2006-11-22 13:46:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -886,9 +886,9 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
 
       zoom = zMapWindowGetZoomStatus(window) ;
       zmapWindowGetBorderSize(window, &border);
-      
+#ifdef RDS_DONT_INCLUDE
       zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
-      
+#endif /* RDS_DONT_INCLUDE */
       clamp = zmapWindowClampedAtStartEnd(window, &y1, &y2);
       y1   -= (tmp_top = ((clamp & ZMAPGUI_CLAMP_START) ? border : 0.0));
       y2   += (tmp_bot = ((clamp & ZMAPGUI_CLAMP_END)   ? border : 0.0));
@@ -1444,9 +1444,10 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
       /* Firstly the scale bar, which will be changed soon. */
       zmapWindowDrawZoom(window);
       
+#ifdef RDS_DONT_INCLUDE						      
       zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
       /* Call this again because of backgrounds :( */
-
+#endif /* RDS_DONT_INCLUDE */
 #ifdef RDS_DONT_INCLUDE						      
 
       /* THIS IS A HACK....AS WE DO IT ABOVE ALSO, THE CALL ABOVE SHOULD GET US THE SIZE
@@ -1503,8 +1504,9 @@ static void myWindowMove(ZMapWindow window, double start, double end)
     zmapWindowContainerMoveEvent(super_root, window);
 
   /* need to redo some of the large objects.... */
+#ifdef RDS_DONT_INCLUDE
   zmapWindowLongItemCrop(window->long_items, x1, start, x2, end);
-
+#endif /* RDS_DONT_INCLUDE */
   foo_canvas_update_now(window->canvas) ;
 
   return ;
@@ -1845,15 +1847,18 @@ static gboolean canvasLayoutExposeCB(GtkWidget      *widget,
   ExposeData expose_data = (ExposeData)user_data;
   ZMapWindow window      = NULL;
   gboolean  disable_draw = FALSE;
-  GtkAllocation *allocation ;
-  gint alloc_width, alloc_height,
-    event_width, event_height,
-    event_x, event_y;
 
   window = expose_data->window;
 
   if(!window->interrupt_expose)
     {
+      ZMapWindowLongItems long_items = NULL;
+#ifdef RDS_DONT_INCLUDE
+      GtkAllocation *allocation ;
+      gint alloc_width, alloc_height,
+        event_width, event_height,
+        event_x, event_y;
+
       allocation   = &(GTK_WIDGET(widget)->allocation) ;
       alloc_width  = allocation->width;
       alloc_height = allocation->height;
@@ -1862,6 +1867,15 @@ static gboolean canvasLayoutExposeCB(GtkWidget      *widget,
       event_y = event->area.y;
       event_width  = event->area.width;
       event_height = event->area.height;
+#endif
+      if((long_items = window->long_items))
+        {
+          double x1, x2, y1, y2;
+          x1 = x2 = y1 = y2 = 0.0;
+          //foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+          zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
+          zmapWindowLongItemCrop(long_items, x1, y1, x2, y2);
+        }
     }
   else
     disable_draw = TRUE;
