@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 16:58 2006 (rds)
+ * Last edited: Nov 24 13:47 2006 (rds)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.8 2006-11-10 08:20:04 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.9 2006-11-24 13:48:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,18 +64,11 @@ static gboolean getTextOnCanvasDimensions(FooCanvas *canvas,
                                           double *height_out);
 static void destroyClassData(gpointer user_data);
 
-static void setupTooltips(GtkWidget *widget, ZMapNavigatorClassData class_data)
-{
-  gtk_tooltips_set_tip(class_data->tooltips, widget,
-                       "ZMap Window Navigator.\n"
-                       "The box shows the extent of the sequence displayed in the main window. "
-                       "Use this to alter the bounds of the display in the main window "
-                       "and the scrollbar to the right of the main window to quickly scroll through that data.",
-                       ""
-                       );
+static void setupTooltips(GtkWidget *widget, ZMapNavigatorClassData class_data);
 
-  return ;
-}
+static gboolean navigator_debug_G = FALSE;
+
+/* ------------ CREATE --------------- */
 
 GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks, gpointer user_data)
 {
@@ -135,6 +128,9 @@ void zmapWindowNavigatorValueChanged(GtkWidget *widget, double top, double botto
 
   class_data = g_object_get_data(G_OBJECT(widget), ZMAP_NAVIGATOR_CLASS_DATA);
   zMapAssert(class_data);
+
+  if(navigator_debug_G)
+    printf("%s to %f %f\n", __PRETTY_FUNCTION__, top, bottom);
 
   if(class_data->callbacks.valueCB)
     (class_data->callbacks.valueCB)(class_data->user_data, top, bottom);
@@ -400,6 +396,19 @@ static void destroyClassData(gpointer user_data)
   class_data->user_data = NULL;
 
   g_free(class_data);
+
+  return ;
+}
+
+static void setupTooltips(GtkWidget *widget, ZMapNavigatorClassData class_data)
+{
+  gtk_tooltips_set_tip(class_data->tooltips, widget,
+                       "ZMap Window Navigator.\n"
+                       "The box shows the extent of the sequence displayed in the main window. "
+                       "Use this to alter the bounds of the display in the main window "
+                       "and the scrollbar to the right of the main window to quickly scroll through that data.",
+                       ""
+                       );
 
   return ;
 }
