@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  7 09:06 2006 (rds)
+ * Last edited: Nov 24 12:06 2006 (rds)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.20 2006-11-08 09:23:56 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.21 2006-11-24 13:42:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -99,8 +99,8 @@ static void valueCB(void *user_data, double start, double end)
   if (zmap->state == ZMAP_VIEWS)
     {
       ZMapWindow window = zMapViewGetWindow(zmap->focus_viewwindow) ;
-      /* This needs to use zmapWindowSeq2CanExt(&start, &end), but can't see it :( */
-      zMapWindowMove(window, start, end + 1.0) ;
+
+      zMapWindowMove(window, start, end) ;
     }  
 
   return ;
