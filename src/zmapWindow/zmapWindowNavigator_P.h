@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 13 10:09 2006 (rds)
+ * Last edited: Nov 24 15:05 2006 (rds)
  * Created: Thu Sep  7 09:23:47 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.6 2006-11-13 11:07:13 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.7 2006-11-27 14:51:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,7 +79,7 @@ typedef struct _ZMapWindowNavigatorStruct
   GdkColor        locator_border_gdk;
   GdkColor        locator_drag_gdk;
   GdkBitmap      *locator_stipple;
-  guint           locator_width;
+  guint           locator_bwidth;
   double          locator_x1, locator_x2; /* width */
   ZMapSpanStruct  locator_span;           /* height */
 
@@ -94,7 +94,7 @@ typedef struct _ZMapWindowNavigatorStruct
 
   GList          *feature_set_names;
 
-  ZMapSpanStruct  full_span;
+  ZMapSpanStruct  full_span;    /* N.B. this is seqExtent !!! i.e. seq start -> seq end + 1!!! */
 
   double scaling_factor;        /* NAVIGTOR_SIZE / block length */
 
