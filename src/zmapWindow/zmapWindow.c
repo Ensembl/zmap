@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 22 13:37 2006 (rds)
+ * Last edited: Nov 27 13:56 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.153 2006-11-22 13:46:18 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.154 2006-11-27 13:56:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -882,13 +882,18 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
       if(y1 == y2){ y1 = wy1; y2 = wy2; }
 
       if (x1 == wx1 && x2 == wx2 && y1 == wy1 && y2 == wy2)
-        goto set_coords;        /* Likely a size request */
+        {
+          zmapWindowClampedAtStartEnd(window, &y1, &y2);
+          goto set_coords;        /* Likely a size request */
+        }
 
       zoom = zMapWindowGetZoomStatus(window) ;
       zmapWindowGetBorderSize(window, &border);
+
 #ifdef RDS_DONT_INCLUDE
       zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
 #endif /* RDS_DONT_INCLUDE */
+
       clamp = zmapWindowClampedAtStartEnd(window, &y1, &y2);
       y1   -= (tmp_top = ((clamp & ZMAPGUI_CLAMP_START) ? border : 0.0));
       y2   += (tmp_bot = ((clamp & ZMAPGUI_CLAMP_END)   ? border : 0.0));
@@ -1489,11 +1494,11 @@ static void myWindowMove(ZMapWindow window, double start, double end)
   FooCanvasGroup *super_root = NULL;
   double x1, x2;
   x1 = x2 = 0.0;
+
+  window->interrupt_expose = TRUE;
+
   /* Clamp the start/end. */
-  if (start < window->min_coord)
-    start = window->min_coord ;
-  if (end > window->max_coord)
-    end = window->max_coord ;
+  zmapWindowClampSpan(window, &start, &end);
 
   zmapWindowScrollRegionTool(window, &x1, &start, &x2, &end);
 
@@ -1507,6 +1512,9 @@ static void myWindowMove(ZMapWindow window, double start, double end)
 #ifdef RDS_DONT_INCLUDE
   zmapWindowLongItemCrop(window->long_items, x1, start, x2, end);
 #endif /* RDS_DONT_INCLUDE */
+
+  window->interrupt_expose = FALSE;
+
   foo_canvas_update_now(window->canvas) ;
 
   return ;
@@ -1868,18 +1876,18 @@ static gboolean canvasLayoutExposeCB(GtkWidget      *widget,
       event_width  = event->area.width;
       event_height = event->area.height;
 #endif
+
       if((long_items = window->long_items))
         {
           double x1, x2, y1, y2;
           x1 = x2 = y1 = y2 = 0.0;
-          //foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
           zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
           zmapWindowLongItemCrop(long_items, x1, y1, x2, y2);
         }
     }
   else
     disable_draw = TRUE;
-
+  
   return disable_draw;
 }
 
@@ -2233,6 +2241,17 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	    {
 	      /* Oh dear, we would like to do a general back ground menu here but can't as we need
 	       * to pass the event along in case it goes to a canvas item....aggghhhh */
+              double ppuy, pixspan, y2, y1, x1, x2, c2wx, c2wy;
+
+              foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+              ppuy    = window->canvas->pixels_per_unit_y;
+              pixspan = (ppuy * (y2 - y1));
+              
+              foo_canvas_c2w(window->canvas, but_event->x, but_event->y, &c2wx, &c2wy);
+              printf("%s: Right Click - Details:\n", __PRETTY_FUNCTION__) ;
+              printf("\tEvent @ %f,%f = %f,%f\n", but_event->x, but_event->y, c2wx, c2wy);
+              printf("\tX - scroll region %f -> %f, pixel span %f\n", x1, x2, x2 - x1 + 1.0);
+              printf("\tY - scroll region %f -> %f, pixel span %f\n", y1, y2, pixspan);
 
 	      event_handled = FALSE ;
 	      break ;
