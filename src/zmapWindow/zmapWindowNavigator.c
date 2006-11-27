@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 13 10:56 2006 (rds)
+ * Last edited: Nov 27 14:48 2006 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.11 2006-11-13 11:06:46 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.12 2006-11-27 14:50:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -156,8 +156,11 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *points_array_inout, 
                                       gpointer handler_data);
 
+static void printCoordsInfo(ZMapWindowNavigator navigate, char *message, double start, double end);
+
 /* ------------------- */
 static GQuark locus_id_G = 0;
+static gboolean locator_debug_G = FALSE;
 
 static void destroyLocusEntry(gpointer data)
 {
@@ -235,15 +238,9 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
       foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(navigate->container_root));
 
       navigate->scaling_factor = 0.0;
-      navigate->locator_width  = LOCATOR_LINE_WIDTH;
+      navigate->locator_bwidth = LOCATOR_LINE_WIDTH;
       navigate->locator_x1     = 0.0;
       navigate->locator_x2     = 0.0;
-
-      if((navigate->locator_width > SHIFT_COLUMNS_LEFT) || 
-         ((SHIFT_COLUMNS_LEFT / 3.0) < ((double)navigate->locator_width)))
-        {
-          zMapAssertNotReached();
-        }
 
       setupLocatorGroup(navigate);
 
@@ -355,7 +352,7 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
   draw_data.context   = full_context;
 
   navigate->full_span.x1 = full_context->sequence_to_parent.c1;
-  navigate->full_span.x2 = full_context->sequence_to_parent.c2;
+  navigate->full_span.x2 = full_context->sequence_to_parent.c2 + 1.0;
 
   navigate->scaling_factor = NAVIGATOR_SIZE / (navigate->full_span.x2 - navigate->full_span.x1 + 1.0);
 
@@ -424,6 +421,9 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
                           "y2", bot,
                           NULL);
       
+      if(locator_debug_G)
+        printCoordsInfo(navigate, __PRETTY_FUNCTION__, top, bot);
+
       foo_canvas_item_show(FOO_CANVAS_ITEM(navigate->locator_group));
       foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(navigate->locator_group));
     }
@@ -485,7 +485,7 @@ static void positioningCB(FooCanvasGroup *container, FooCanvasPoints *points,
           }
 
         init_size = init_y2 - init_y1;
-        width_x   = (double)(navigate->locator_width);
+        width_x   = (double)(navigate->locator_bwidth);
         
         rx1 = points->coords[0];
         rx2 = points->coords[2];
@@ -880,7 +880,7 @@ static void setupLocatorGroup(ZMapWindowNavigator navigate)
                             "fill_color_gdk",    (GdkColor *)(NULL),
                             //"fill_stipple",      navigate->locator_stipple,
                             //"fill_color_gdk",    &(navigate->locator_fill_gdk),
-                            "width_pixels",      navigate->locator_width,
+                            "width_pixels",      navigate->locator_bwidth,
                             NULL);
 
       foo_canvas_item_lower_to_bottom(locator);
@@ -897,7 +897,7 @@ static void setupLocatorGroup(ZMapWindowNavigator navigate)
                             "y2", init_y2,
                             "outline_color_gdk", &(navigate->locator_drag_gdk),
                             "fill_color_gdk",    (GdkColor *)(NULL),
-                            "width_pixels",      navigate->locator_width,
+                            "width_pixels",      navigate->locator_bwidth,
                             NULL);
       
       foo_canvas_item_hide(FOO_CANVAS_ITEM(locator_drag));
@@ -973,9 +973,12 @@ static void updateLocatorDragger(ZMapWindowNavigator navigate, double button_y, 
   if(navigate->draw_locator)
     {
       a = button_y;
-      b = button_y + size;
+      b = button_y + size - 1.0;
       
       clampScaled(navigate, &a, &b);
+
+      if(locator_debug_G)
+        printCoordsInfo(navigate, __PRETTY_FUNCTION__, a, b);
       
       foo_canvas_item_set(FOO_CANVAS_ITEM(navigate->locator_drag),
                           "y1", a,
@@ -1035,6 +1038,9 @@ static gboolean rootBGEventCB(FooCanvasItem *item, GdkEvent *event, gpointer dat
               {
                 transp_data->click_correction = y_coord - locator_y1;
 
+                locator_y1  += LOCATOR_LINE_WIDTH / 2.0;
+                locator_y2  -= LOCATOR_LINE_WIDTH / 2.0;
+
                 locator_size = locator_y2 - locator_y1 + 1.0;
            
                 foo_canvas_item_show(navigate->locator_drag);
@@ -1049,14 +1055,26 @@ static gboolean rootBGEventCB(FooCanvasItem *item, GdkEvent *event, gpointer dat
       break;
     case GDK_BUTTON_RELEASE:
       {
-        double locator_y1, locator_y2, origin_y1, origin_y2;
+        double locator_y1, locator_y2, origin_y1, origin_y2, dummy;
         zMapAssert(navigate->locator_drag);
         
         if(transp_data->locator_click == TRUE)
           {
             foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(navigate->locator_drag), NULL, &locator_y1, NULL, &locator_y2);
             foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(navigate->locator), NULL, &origin_y1, NULL, &origin_y2);
+
+            locator_y1 += LOCATOR_LINE_WIDTH / 2.0;
+            locator_y2 -= LOCATOR_LINE_WIDTH / 2.0;
+
+            origin_y1 += LOCATOR_LINE_WIDTH / 2.0;
+            origin_y2 -= LOCATOR_LINE_WIDTH / 2.0;
             
+            foo_canvas_item_i2w(FOO_CANVAS_ITEM(navigate->locator_drag), &dummy, &locator_y1);
+            foo_canvas_item_i2w(FOO_CANVAS_ITEM(navigate->locator_drag), &dummy, &locator_y2);
+
+            foo_canvas_item_i2w(FOO_CANVAS_ITEM(navigate->locator), &dummy, &origin_y1);
+            foo_canvas_item_i2w(FOO_CANVAS_ITEM(navigate->locator), &dummy, &origin_y2);
+
             locator_y1 /= navigate->scaling_factor;
             locator_y2 /= navigate->scaling_factor;
 
@@ -1088,6 +1106,9 @@ static gboolean rootBGEventCB(FooCanvasItem *item, GdkEvent *event, gpointer dat
 
             foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(navigate->locator), NULL, &locator_y1, NULL, &locator_y2);
             
+            locator_y1 += LOCATOR_LINE_WIDTH / 2.0;
+            locator_y2 -= LOCATOR_LINE_WIDTH / 2.0;
+
             locator_size = locator_y2 - locator_y1 + 1.0;
 
             updateLocatorDragger(navigate, button_y, locator_size);
@@ -1365,6 +1386,21 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 }
 
 
+static void printCoordsInfo(ZMapWindowNavigator navigate, char *message, double start, double end)
+{
+  double sf = navigate->scaling_factor;
+  double top, bot;
+
+  top = start / sf;
+  bot = end   / sf;
+
+  printf("%s: [nav] %f -> %f (%f) = [wrld] %f -> %f (%f)\n", 
+         message, 
+         start, end, end - start + 1.0,
+         top, bot, bot - top + 1.0);
+
+  return ;
+}
 
 
 
