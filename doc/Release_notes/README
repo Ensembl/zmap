@@ -1,0 +1,20 @@
+
+This directory contains the release notes for ZMap.
+
+
+Release notes include:
+
+- the code releases version numbers of zmap and acedb
+
+- which request tracker tickets were resolved, these are obtained
+using the ticket search page by setting the queue to zmap or whatever
+and then setting the "before/after" criteria to
+
+status = resolved
+when = after
+date = dd/mm/yyyy
+
+- features added/fixed for zmap
+
+- features added/fixed for acedb
+
