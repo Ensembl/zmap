@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 28 08:30 2006 (rds)
+ * Last edited: Nov 28 14:30 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.151 2006-11-28 09:54:41 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.152 2006-11-28 14:30:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -49,23 +49,43 @@
 
 
 /* Names for keys in G_OBJECTS */
-#define ITEM_FEATURE_DATA         ZMAP_WINDOW_P_H "item_feature_data"
+
 
 #define ZMAP_WINDOW_POINTER       ZMAP_WINDOW_P_H "canvas_to_window"
 
 #define ITEM_HIGHLIGHT_DATA  ZMAP_WINDOW_P_H "item_highlight_data"
 
 
-/* Feature set data, these are the columns in the display. */
-#define ITEM_FEATURE_SET_DATA     ZMAP_WINDOW_P_H "item_feature_set_data"
+/* All Align/Block/Column/Feature FooCanvas objects have their corresponding ZMapFeatureAny struct
+ * attached to them via this key. */
+#define ITEM_FEATURE_DATA         ZMAP_WINDOW_P_H "item_feature_data"
 
+
+/* Feature set data, this struct is attached to all FooCanvas column objects via ITEM_FEATURE_SET_DATA key. */
+#define ITEM_FEATURE_SET_DATA     ZMAP_WINDOW_P_H "item_feature_set_data"
 typedef struct
 {
+  ZMapWindow window ;
   ZMapStrand strand ;
   ZMapFrame frame ;
   ZMapFeatureTypeStyle style ;
   GHashTable *style_table ;
+
+  /* These fields are used for some of the more exotic column bumping. */
+  GList *extra_items ;					    /* Match backgrounds etc. */
+  gboolean hidden_bump_features ;			    /* Have any features been hidden for bumping ? */
 } ZMapWindowItemFeatureSetDataStruct, *ZMapWindowItemFeatureSetData ;
+
+
+
+/* Bump col data, this struct is attached to all extra bump col objects via ITEM_FEATURE_SET_DATA key. */
+#define ITEM_FEATURE_BUMP_DATA     ZMAP_WINDOW_P_H "item_feature_bump_data"
+typedef struct
+{
+  ZMapWindow window ;
+  GQuark feature_id ;
+  ZMapFeatureTypeStyle style ;
+} ZMapWindowItemFeatureBumpDataStruct, *ZMapWindowItemFeatureBumpData ;
 
 
 
@@ -148,11 +168,13 @@ enum
   {
     ZMAP_WINDOW_INTRON_POINTS = 3			    /* Number of points to draw an intron. */
   } ;
+
 enum 
   {
     ZMAP_WINDOW_GTK_BOX_SPACING = 5, /* Size in pixels for the GTK_BOX spacing between children */
     ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING = 10
   };
+
 enum 
   {
     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH = 5
@@ -445,13 +467,23 @@ typedef struct _ZMapWindowStruct
   void          *app_data ;
   gulong         exposeHandlerCB ;
 
-  FooCanvasGroup *feature_root_group ;			    /* the root of our features. */
+
+  /* The length, start and end of the segment of sequence to be shown, there will be _no_
+   * features outside of the start/end. */
+  double         seqLength;
+  double         seq_start ;
+  double         seq_end ;
 
   ZMapFeatureContext feature_context ;			    /* Currently displayed features. */
+
+  GList *feature_set_names ;				    /* Gives names/order of columns to be displayed. */
 
   GHashTable *context_to_item ;				    /* Links parts of a feature context to
 							       the canvas groups/items that
 							       represent those parts. */
+
+
+  FooCanvasGroup *feature_root_group ;			    /* the root of our features. */
 
   /* The stupid foocanvas can generate graphics items that are greater than the X Windows 32k
    * limit, so we have to keep a list of the canvas items that can generate graphics greater
@@ -475,17 +507,13 @@ typedef struct _ZMapWindowStruct
 
   GtkWidget *col_config_window ;			    /* column configuration window. */
 
-
   ZMapWindowRulerCanvas ruler ;
 
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
 
-  /* The length, start and end of the segment of sequence to be shown, there will be _no_
-   * features outside of the start/end. */
-  double         seqLength;
-  double         seq_start ;
-  double         seq_end ;
+  /* Holds a feature item that is used for setting bumping range for range bump option. */
+  FooCanvasItem *bump_range_item ;
 
   /* We need to be able to find out if the user has done a revcomp for coordinate display
    * and other reasons, the display_forward_coords flag controls whether coords are displayed
@@ -500,7 +528,7 @@ typedef struct _ZMapWindowStruct
   gboolean display_3_frame ;
   gboolean show_3_frame_reverse ;
 
-  GList *feature_set_names;
+
 
   gboolean interrupt_expose;
 } ZMapWindowStruct ;
@@ -871,6 +899,7 @@ void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
 void zmapWindowItemFreeFocusItems(ZMapWindowFocus focus) ;
 void zmapWindowItemDestroyFocus(ZMapWindowFocus focus) ;
 
+void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean raise_item) ;
 void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 
