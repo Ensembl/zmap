@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 28 14:05 2006 (edgrif)
+ * Last edited: Nov 28 15:22 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.41 2006-11-28 14:35:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.42 2006-11-28 15:48:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1621,16 +1621,17 @@ static void addBackgrounds(gpointer data, gpointer user_data)
   double x1, y1, x2, y2 ;
 
 
-  /* SHOULD FILTER ON TYPE AS WELL...WE DON'T WANT ALL TYPES TO HAVE BACKGROUNDS.... */
+  /* SHOULD FILTER ON TYPE AS WELL...WE DON'T WANT ALL TYPES TO HAVE BACKGROUNDS....???? */
   if (g_list_length(name_list) > 1)
     {
       GList *backgrounds = NULL ;
       GList *list_item ;
       GQuark first_id = 0 ;
       ZMapFeatureTypeStyle first_style = NULL ;
+      double mid, half_width = COLUMN_BACKGROUND_SPACING ;
 
       gdk_color_parse(colour, &fill) ;
-      gdk_color_parse(colour2, &outline) ;
+      gdk_color_parse(colour, &outline) ;
 
       first = last = NULL ;
       list_item = g_list_first(name_list) ;
@@ -1653,6 +1654,8 @@ static void addBackgrounds(gpointer data, gpointer user_data)
 	      
 	      /* should really get max width of all, not just width of first.... */
 	      foo_canvas_item_get_bounds(first_item, &x1, &y1, &x2, NULL) ;
+
+	      mid = (x2 + x1) * 0.5 ;
 
 	      first_id = feature_id ;
 	      first_style = feature->style ;
@@ -1682,7 +1685,7 @@ static void addBackgrounds(gpointer data, gpointer user_data)
 		      bump_data->style = first_style ;
 
 		      background = zMapDrawBox(FOO_CANVAS_ITEM(first_item->parent),
-					       x1, y1, x2, y2,
+					       (mid - half_width), y1, (mid + half_width), y2,
 					       &outline, &fill, 0.0) ;
 
 		      zmapWindowLongItemCheck(col_data->window->long_items, background, y1, y2) ;
