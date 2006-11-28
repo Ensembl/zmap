@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 17 11:51 2006 (edgrif)
+ * Last edited: Nov 28 08:30 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.150 2006-11-17 17:37:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.151 2006-11-28 09:54:41 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -110,7 +110,8 @@ typedef enum
 #define FEATURE_SPACING       1.0
 #define FEATURE_LINE_WIDTH    0				    /* Special value meaning one pixel wide
 							       lines with no aliasing. */
-
+/* Not settable, but could be */
+#define ZMAP_WINDOW_FEATURE_ZOOM_BORDER 25
 
 /* X Windows has some limits that are part of the protocol, this means they cannot
  * be changed any time soon...they impinge on the canvas which could have a very
