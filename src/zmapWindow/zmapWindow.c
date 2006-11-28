@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 28 08:30 2006 (rds)
+ * Last edited: Nov 28 14:24 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.155 2006-11-28 08:32:17 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.156 2006-11-28 14:24:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1061,6 +1061,9 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   g_free(select.feature_desc.feature_description) ;
   g_free(select.feature_desc.feature_start) ;
   g_free(select.feature_desc.feature_end) ;
+  g_free(select.feature_desc.feature_query_start) ;
+  g_free(select.feature_desc.feature_query_end) ;
+  g_free(select.feature_desc.feature_length) ;
 
   g_free(select.secondary_text) ;
 
@@ -2776,6 +2779,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    jumpFeature(window, key_event->keyval) ;
 	  else
 	    jumpColumn(window, key_event->keyval) ;
+
+	  break ;
 	}
     case GDK_Page_Up:
     case GDK_Page_Down:
@@ -2809,22 +2814,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       reversecomp ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-    case GDK_w:
-      {
-	/* Zoom out to show whole sequence. */
-	double zoom_factor = 0.0, curr_factor = 0.0 ;
-
-	curr_factor = zMapWindowGetZoomFactor(window) ;
-	zoom_factor = zMapWindowGetZoomMin(window) ;
-	zoom_factor = zoom_factor / curr_factor ;
-
-	zMapWindowZoom(window, zoom_factor) ;
-
-	event_handled = TRUE ;
-	break ;
-      }
-
     case GDK_b:
+    case GDK_B:
       {
 	FooCanvasGroup *focus_column ;
 
@@ -2844,6 +2835,33 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    
 	    zmapWindowNewReposition(window) ;
 	  }
+
+	event_handled = TRUE ;
+	break ;
+      }
+
+    case GDK_f:
+    case GDK_F:
+      {
+	FooCanvasItem *focus_item ;
+
+	if ((focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
+	  window->bump_range_item = focus_item ;
+
+	break ;
+      }
+
+    case GDK_w:
+    case GDK_W:
+      {
+	/* Zoom out to show whole sequence. */
+	double zoom_factor = 0.0, curr_factor = 0.0 ;
+
+	curr_factor = zMapWindowGetZoomFactor(window) ;
+	zoom_factor = zMapWindowGetZoomMin(window) ;
+	zoom_factor = zoom_factor / curr_factor ;
+
+	zMapWindowZoom(window, zoom_factor) ;
 
 	event_handled = TRUE ;
 	break ;
@@ -2974,21 +2992,94 @@ static void getMaxBounds(gpointer data, gpointer user_data)
 }
 
 
-
+/* Jump to the previous/next feature according to whether up or down arrow was pressed. */
 static void jumpFeature(ZMapWindow window, guint keyval)
 {
-  FooCanvasGroup *focus_column ;
   FooCanvasItem *focus_item ;
+  FooCanvasGroup *features ;
+  GList *feature_ptr ;
 
-  focus_column = zmapWindowItemGetHotFocusColumn(window->focus) ;
-  
-  focus_item = zmapWindowItemGetHotFocusItem(window->focus) ;
+
+  /* We don't do anything if there is no current focus item, we could take an educated guess and
+   * start with the middle visible item or perhaps the bottom or top one, but perhaps not worth it ? */
+  if ((focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
+    {
+      gboolean move_focus ;
+
+      focus_item = zmapWindowItemGetTrueItem(focus_item) ;
+
+      features = zmapWindowContainerGetFeaturesContainerFromItem(focus_item) ;
+
+      feature_ptr = g_list_find(features->item_list, focus_item) ;
+
+      move_focus = FALSE ;
+      while (TRUE)
+	{
+	  if (keyval == GDK_Down)
+	    {
+	      feature_ptr = g_list_previous(feature_ptr) ;
+	    }
+	  else
+	    {
+	      feature_ptr = g_list_next(feature_ptr) ;
+	    }
+
+	  /* Deal with hidden features, we need to move over them until we find a visible one or
+	   * we reach the left/right end of the columns. */
+	  if (!feature_ptr)
+	    break ;
+	  else if (zmapWindowItemIsShown((FooCanvasItem *)(feature_ptr->data)))
+	    {
+	      move_focus = TRUE ;
+	      break ;
+	    }
+	}
+
+
+      /* For now if we reach the left or right ends of the columns we do nothing...we could warp
+       * around or jump to the other strand or all sorts of things but perhaps simple is best. */
+      if (move_focus)
+	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* I need to insert the code to update the info display data. */
+
+	  ZMapWindowItemFeatureSetData set_data ;
+	  ZMapWindowSelectStruct select = {NULL} ;
+	  GQuark feature_set_id ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+	  focus_item = (FooCanvasItem *)(feature_ptr->data) ;
+
+	  zmapWindowHighlightObject(window, focus_item, FALSE) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* These should go in container some time.... */
+	  set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
+	  zMapAssert(set_data) ;
+
+	  feature_set_id = set_data->style->original_id ;
+
+	  select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
+
+	  select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
+
+	  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+
+	  g_free(select.secondary_text) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	}
+    }
 
 
   return ;
 }
 
 
+/* Jump to the previous/next column according to which arrow key was pressed. */
 static void jumpColumn(ZMapWindow window, guint keyval)
 {
   FooCanvasGroup *focus_column, *column_parent, *columns ;
