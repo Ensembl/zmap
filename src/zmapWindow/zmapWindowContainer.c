@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Nov 10 08:27 2006 (rds)
+ * Last edited: Nov 28 09:34 2006 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.19 2006-11-10 09:25:14 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.20 2006-11-28 09:48:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -553,6 +553,7 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
   FooCanvasItem *container_background ;
   double x1, y1, x2, y2 ;
   ContainerType type = CONTAINER_INVALID ;
+  ContainerData container_data = NULL;
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
@@ -589,6 +590,12 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
                       "y2", y2,
                       NULL) ;
 
+  if((container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA)) 
+     && container_data->long_items)
+    {
+      zmapWindowLongItemCheck(container_data->long_items, container_background, y1, y2);
+    }
+
   return ;
 }
 
@@ -597,7 +604,7 @@ void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_pa
                                                     double height, double border)
 {
   FooCanvasItem *container_background = NULL;
-  double x1, x2;
+  double x1, x2, size, two_x;
 
   zmapWindowContainerSetBackgroundSize(container_parent, height);
 
@@ -605,11 +612,15 @@ void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_pa
 
   foo_canvas_item_get_bounds(container_background, &x1, NULL, &x2, NULL) ;
 
+  two_x = border * 2.0;
   foo_canvas_item_set(container_background,
                       "x1", x1,
-                      "x2", x2 + (border * 2.0),
+                      "x2", x2 + two_x,
                       NULL) ;
   border *= -1.0;
+
+  if((size = ((x2 + two_x) - x1)) > (double)(1 << 15))
+    zMapLogWarning("%s [%d < %f]", "Container background larger than 1 << 15 in x coords.", 1 << 15, size);
 
   /* Move background over to left by "border" units. */
   foo_canvas_item_move(container_background, border, 0.0) ;
@@ -623,8 +634,9 @@ void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_pa
 void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent)
 {
   FooCanvasItem *container_background ;
-  double x1, y1, x2, y2 ;
+  double x1, y1, x2, y2, size ;
   ContainerType type = CONTAINER_INVALID ;
+  ContainerData container_data = NULL;
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
@@ -642,6 +654,15 @@ void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent)
 		      "x2", x2,
 		      "y2", y2,
 		      NULL) ;
+
+  if((size = (x2 - x1)) > (double)(1 << 15))
+    zMapLogWarning("%s [%d < %f]", "Container background larger than 1 << 15 in x coords.", 1 << 15, size);
+
+  if((container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA)) 
+     && container_data->long_items)
+    {
+      zmapWindowLongItemCheck(container_data->long_items, container_background, y1, y2);
+    }
 
   return ;
 }
@@ -795,6 +816,28 @@ void zmapWindowContainerExecuteFull(FooCanvasGroup        *parent,
   eachContainer((gpointer)parent, &data) ;
 
   containerPointsCacheDestroy(data.cache);
+
+#ifdef RDS_CANT_CROP_LONG_ITEMS_HERE
+  /* This seems like a good idea, but is flawed in a number of ways, here's 2:
+   * 1) The scroll region can move after this call... needs to be done again.
+   * 2) The scroll region results in unclamped coords meaning extra unneccessary
+   *    calls to the guts in LongItemCrop.
+   */
+  {
+    ContainerData container_data = NULL;
+    FooCanvasItem *item = NULL;
+    double x1, x2, y1, y2;
+    
+    container_data = g_object_get_data(G_OBJECT(parent), CONTAINER_DATA) ;
+    
+    item = FOO_CANVAS_ITEM(parent);
+    
+    foo_canvas_get_scroll_region(item->canvas, &x1, &y1, &x2, &y2);
+    
+    if(container_data->long_items)
+      zmapWindowLongItemCrop(container_data->long_items, x1, y1, x2, y2);
+  }
+#endif /* RDS_CANT_CROP_LONG_ITEMS_HERE */
 
   return ;
 }
@@ -1440,10 +1483,10 @@ static void containerSetMaxBackground(FooCanvasGroup *container,
                                       FooCanvasPoints *this_points, 
                                       ContainerData container_data)
 {
-  double nx1, nx2, ny1, ny2;
-  FooCanvasItem *bg = NULL;
+  double nx1, nx2, ny1, ny2, size;
+  FooCanvasItem *container_background = NULL;
   
-  bg = zmapWindowContainerGetBackground(container);
+  container_background = zmapWindowContainerGetBackground(container);
 
   /* It is worth a get_bounds call here??
    * ************************************
@@ -1467,12 +1510,21 @@ static void containerSetMaxBackground(FooCanvasGroup *container,
 
   nx2 = this_points->coords[2];
   ny2 = this_points->coords[3];
-  foo_canvas_item_set(bg,
+  foo_canvas_item_set(container_background,
                       "x1", 0.0,
                       "y1", 0.0,
                       "x2", nx2,
                       "y2", ny2,
                       NULL);
+  
+  if((size = (nx2 - nx1)) > (double)(1 << 15))
+    zMapLogWarning("%s [%d < %f]", "Container background larger than 1 << 15 in x coords.", 1 << 15, size);
+
+  if(container_data->long_items)
+    {
+      zmapWindowLongItemCheck(container_data->long_items, container_background, ny1, ny2);
+    }
+  
 
   return ;
 }
