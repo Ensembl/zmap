@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 28 11:41 2006 (rds)
+ * Last edited: Nov 28 14:26 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.162 2006-11-28 11:43:24 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.163 2006-11-28 14:26:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1076,6 +1076,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
    * represents, and also its style and a table of styles, used to cache column feature styles
    * where there is more than one feature type in a column. */
   set_data = g_new0(ZMapWindowItemFeatureSetDataStruct, 1) ;
+  set_data->window = window ;
   set_data->strand = strand ;
   set_data->frame = frame ;
   set_data->style = zMapFeatureStyleCopy(style) ;
