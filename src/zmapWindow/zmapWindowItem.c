@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 16 10:45 2006 (edgrif)
+ * Last edited: Nov 22 15:55 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.52 2006-11-17 17:36:42 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.53 2006-11-28 14:32:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -411,6 +411,14 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
  *  */
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 {                                               
+  zmapWindowHighlightObject(window, item, TRUE) ;
+
+  return ;
+}
+
+
+void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean raise_item)
+{                                               
   ZMapFeature feature ;
   ZMapWindowItemFeatureType item_feature_type ;
   GList *set_items ;
@@ -458,7 +466,8 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 
   zmapHighlightColumn(window, zmapWindowItemGetHotFocusColumn(window->focus)) ;
 
-  zmapWindowRaiseItem(item) ;
+  if (raise_item)
+    zmapWindowRaiseItem(item) ;
 
   return ;
 }
