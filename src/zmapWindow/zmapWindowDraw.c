@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 10 08:33 2006 (rds)
+ * Last edited: Nov 28 14:05 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.40 2006-11-10 09:25:41 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.41 2006-11-28 14:35:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,6 +77,7 @@ typedef gboolean (*OverLapListFunc)(GList *curr_features, GList *new_features) ;
 
 typedef struct
 {
+  ZMapWindow window ;
   ZMapFeatureTypeStyle bumped_style ;
   gboolean bump_all ;
   GHashTable *name_hash ;
@@ -89,6 +90,7 @@ typedef struct
 
 typedef struct
 {
+  ZMapWindow window ;
   double incr ;
   double offset ;
   GList *feature_list ;
@@ -100,6 +102,12 @@ typedef struct
   GList **name_list ;
   OverLapListFunc overlap_func ;
 } FeatureDataStruct, *FeatureData ;
+
+typedef struct
+{
+  gboolean overlap ;
+  int start, end ;
+} RangeDataStruct, *RangeData ;
 
 
 
@@ -164,17 +172,25 @@ static void listScoreCB(gpointer data, gpointer user_data) ;
 static void makeNameListCB(gpointer data, gpointer user_data) ;
 static void setOffsetCB(gpointer data, gpointer user_data) ;
 static void sortListPosition(gpointer data, gpointer user_data) ;
+static void addBackgrounds(gpointer data, gpointer user_data) ;
 static gboolean listsOverlap(GList *curr_features, GList *new_features) ;
 static gboolean listsOverlapNoInterleave(GList *curr_features, GList *new_features) ;
 static void reverseOffsets(GList *bumpcol_list) ;
 static void moveItemsCB(gpointer data, gpointer user_data) ;
 static void moveItemCB(gpointer data, gpointer user_data) ;
-
+static void freeExtraItems(gpointer data, gpointer user_data) ;
+static void showItems(gpointer data, gpointer user_data) ;
+static gboolean removeNameListsByRange(GList **names_list, FooCanvasItem *feature_item) ;
+static void testRangeCB(gpointer data, gpointer user_data) ;
+static void hideItemsCB(gpointer data, gpointer user_data_unused) ;
 static void hashDataDestroyCB(gpointer data) ;
 static void listDataDestroyCB(gpointer data, gpointer user_data) ;
 static void getListFromHash(gpointer key, gpointer value, gpointer user_data) ;
-
 static void setStyleBumpCB(ZMapFeatureTypeStyle style, gpointer user_data) ;
+static gboolean bumpBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+static gboolean bumpBackgroundDestroyCB(FooCanvasItem *feature_item, gpointer data) ;
+
+
 
 static void remove3Frame(ZMapWindow window) ;
 static void remove3FrameCol(FooCanvasGroup *container, FooCanvasPoints *points, 
@@ -196,10 +212,8 @@ static gint compareNameToColumn(gconstpointer list_data, gconstpointer user_data
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printChild(gpointer data, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static void printQuarks(gpointer data, gpointer user_data) ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -338,6 +352,7 @@ void zmapWindowColumnShow(FooCanvasGroup *column_group)
 }
 
 
+
 /* Bumps either the whole column represented by column_item, or if the item is a feature item
  * in the column then bumps just features in that column that share the same style. This
  * allows the user control over whether to bump all features in a column or just some features
@@ -360,6 +375,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   FooCanvasGroup *column_group =  NULL ;
   ZMapWindowItemFeatureSetData set_data ;
   gboolean column = FALSE ;
+  gboolean bumped = TRUE ;
 
 
   /* Decide if the column_item is a column group or a feature within that group. */
@@ -379,15 +395,38 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
     zMapAssertNotReached() ;
 
 
+  column_features = zmapWindowContainerGetFeatures(column_group) ;
+
+  spacing = zmapWindowContainerGetSpacing(column_group) ;
+
+  set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
+
+
+  /* We may have created extra items for some bump modes to show all matches from the same query
+   * etc. so now we need to get rid of them before redoing the bump. */
+  if (set_data->extra_items)
+    {
+      g_list_foreach(set_data->extra_items, freeExtraItems, NULL) ;
+
+      g_list_free(set_data->extra_items) ;
+      set_data->extra_items = NULL ;
+    }
+
+
+  /* Some features may have been hidden for bumping, unhide them now. */
+  if (set_data->hidden_bump_features)
+    {
+      g_list_foreach(column_features->item_list, showItems, NULL) ;
+      set_data->hidden_bump_features = FALSE ;
+    }
+
+
   /* Get the style for the selected item. */
   if (!column)
     style = zmapWindowItemGetStyle(column_item) ;
   else
-    {
-      set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
-      zMapAssert(set_data) ;
-      style = set_data->style ;
-    }
+    style = set_data->style ;
 
 
   /* Set bump mode in the style. */
@@ -407,10 +446,6 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
   /* All bump modes except ZMAPOVERLAP_COMPLEX share common data/code as they are essentially
    * simple variants. The complex mode requires more processing so uses its own structs/lists. */
-  column_features = zmapWindowContainerGetFeatures(column_group) ;
-
-  spacing = zmapWindowContainerGetSpacing(column_group) ;
-
   bump_data.bumped_style = style ;
   bump_data.incr = style->width + spacing ;
 
@@ -435,54 +470,90 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
       break;
     case ZMAPOVERLAP_COMPLEX:
     case ZMAPOVERLAP_NO_INTERLEAVE:
+    case ZMAPOVERLAP_COMPLEX_RANGE:
       {
 	ComplexBumpStruct complex = {NULL} ;
 	GList *names_list = NULL ;
-	ZMapWindowItemFeatureSetData set_data ;
 
-	complex.bumped_style = style ;
-
-	if (column)
-	  complex.bump_all = TRUE ;
-
-	/* Make a hash table of feature names which are hashed to lists of features with that name. */
-	complex.name_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash/comparison. */
-						  NULL, hashDataDestroyCB) ;
-
-	g_list_foreach(column_features->item_list, makeNameListCB, &complex) ;
-
-	/* Extract the lists of features into a list of lists for sorting. */
-	g_hash_table_foreach(complex.name_hash, getListFromHash, &names_list) ;
-
-	/* Sort each sub list of features by position for simpler position sorting later. */
-	g_list_foreach(names_list, sortListPosition, NULL) ;
-
-	/* Sort the top list using the combined normalised scores of the sublists. */
-	names_list = g_list_sort(names_list, sortByScoreCB) ;
-
-	/* Merge the lists into the min. number of non-overlapping lists of features arranged
-	 * by name and to some extent by score. */
-	complex.curr_offset = 0.0 ;
-	complex.incr = (style->width * COMPLEX_BUMP_COMPRESS) + spacing ;
-	if (bump_mode == ZMAPOVERLAP_COMPLEX)
-	  complex.overlap_func = listsOverlap ;
+	if (bump_mode == ZMAPOVERLAP_COMPLEX_RANGE && !(set_data->window->bump_range_item))
+	  {
+	    /* For the range mode the user must have selected a feature for bump range. */
+	    bumped = FALSE ;
+	  }
 	else
-	  complex.overlap_func = listsOverlapNoInterleave ;
+	  {
+	    complex.bumped_style = style ;
 
-	g_list_foreach(names_list, setOffsetCB, &complex) ;
+	    if (column)
+	      complex.bump_all = TRUE ;
 
-	/* we reverse the offsets for reverse strand cols so as to mirror the forward strand. */
-	set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
-	if (set_data->strand == ZMAPSTRAND_REVERSE)
-	  reverseOffsets(complex.bumpcol_list) ;
+	    /* Make a hash table of feature names which are hashed to lists of features with that name. */
+	    complex.name_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash/comparison. */
+						      NULL, hashDataDestroyCB) ;
+	    g_list_foreach(column_features->item_list, makeNameListCB, &complex) ;
 
-	/* Bump all the features to their correct offsets. */
-	g_list_foreach(complex.bumpcol_list, moveItemsCB, NULL) ;
 
-	/* Clear up. */
-	g_list_foreach(complex.bumpcol_list, listDataDestroyCB, NULL) ;
-	g_hash_table_destroy(complex.name_hash) ;
-	g_list_free(names_list) ;
+	    /* Extract the lists of features into a list of lists for sorting. */
+	    g_hash_table_foreach(complex.name_hash, getListFromHash, &names_list) ;
+
+
+	    /* Sort each sub list of features by position for simpler position sorting later. */
+	    g_list_foreach(names_list, sortListPosition, NULL) ;
+
+
+	    /* Sort the top list using the combined normalised scores of the sublists so higher
+	     * scoring matches come first. */
+	    names_list = g_list_sort(names_list, sortByScoreCB) ;
+
+
+	    /* for the range stuff I should hide non-overlapping ranges here and remove them from the
+	     * names list.....that would be a much better way of doing it. */
+	    if (bump_mode == ZMAPOVERLAP_COMPLEX_RANGE)
+	      {
+		if (removeNameListsByRange(&names_list, set_data->window->bump_range_item))
+		  set_data->hidden_bump_features = TRUE ;
+	      }
+
+	    if (!names_list)
+	      {
+		bumped = FALSE ;
+	      }
+	    else
+	      {
+		/* Merge the lists into the min. number of non-overlapping lists of features arranged
+		 * by name and to some extent by score. */
+		complex.window = set_data->window ;
+		complex.curr_offset = 0.0 ;
+		complex.incr = (style->width * COMPLEX_BUMP_COMPRESS) + spacing ;
+		if (bump_mode == ZMAPOVERLAP_COMPLEX)
+		  complex.overlap_func = listsOverlap ;
+		else if (bump_mode == ZMAPOVERLAP_NO_INTERLEAVE || ZMAPOVERLAP_COMPLEX_RANGE)
+		  complex.overlap_func = listsOverlapNoInterleave ;
+		g_list_foreach(names_list, setOffsetCB, &complex) ;
+
+
+		/* we reverse the offsets for reverse strand cols so as to mirror the forward strand. */
+		set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+		if (set_data->strand == ZMAPSTRAND_REVERSE)
+		  reverseOffsets(complex.bumpcol_list) ;
+
+
+		/* Bump all the features to their correct offsets. */
+		g_list_foreach(complex.bumpcol_list, moveItemsCB, NULL) ;
+
+
+		/* for no interleave add background items.... */
+		g_list_foreach(complex.bumpcol_list, addBackgrounds, &set_data->extra_items) ;
+	      }
+
+	    /* Clear up. */
+	    if (complex.bumpcol_list)
+	      g_list_foreach(complex.bumpcol_list, listDataDestroyCB, NULL) ;
+	    if (complex.name_hash)
+	      g_hash_table_destroy(complex.name_hash) ;
+	    if (names_list)
+	      g_list_free(names_list) ;
+	  }
 
 	break ;
       }
@@ -493,21 +564,25 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
 
   /* bump all the features for all modes except complex and then clear up. */
-  if (bump_mode != ZMAPOVERLAP_COMPLEX && bump_mode != ZMAPOVERLAP_NO_INTERLEAVE)
+  if (bumped)
     {
+      if (bump_mode != ZMAPOVERLAP_COMPLEX && bump_mode != ZMAPOVERLAP_NO_INTERLEAVE
+	  && bump_mode != ZMAPOVERLAP_COMPLEX_RANGE)
+	{
 
-      /* Need to add data to test for correct feature here.... */
+	  /* Need to add data to test for correct feature here.... */
 
-      g_list_foreach(column_features->item_list, bumpColCB, (gpointer)&bump_data) ;
+	  g_list_foreach(column_features->item_list, bumpColCB, (gpointer)&bump_data) ;
 
-      if (bump_mode == ZMAPOVERLAP_POSITION || bump_mode == ZMAPOVERLAP_NAME)
-	g_hash_table_destroy(bump_data.pos_hash) ;
-      else if (bump_mode == ZMAPOVERLAP_OVERLAP)
-	g_list_foreach(bump_data.pos_list, listDataDestroyCB, NULL) ;
+	  if (bump_mode == ZMAPOVERLAP_POSITION || bump_mode == ZMAPOVERLAP_NAME)
+	    g_hash_table_destroy(bump_data.pos_hash) ;
+	  else if (bump_mode == ZMAPOVERLAP_OVERLAP)
+	    g_list_foreach(bump_data.pos_list, listDataDestroyCB, NULL) ;
+	}
+
+      /* Make the parent groups bounding box as large as the group.... */
+      zmapWindowContainerSetBackgroundSize(column_group, 0.0) ;
     }
-
-  /* Make the parent groups bounding box as large as the group.... */
-  zmapWindowContainerSetBackgroundSize(column_group, 0.0) ;
 
   return ;
 }
@@ -1449,6 +1524,233 @@ static void sortListPosition(gpointer data, gpointer user_data)
 
 
 
+/* This may be a candidate to be a more general function to filter sets of features by range....
+ * Checks all the features in each feature list within names_list to see if they overlap the
+ * given feature item, removes from names_list any that don't.
+ * Returns TRUE if any items were _removed_. */
+static gboolean removeNameListsByRange(GList **names_list, FooCanvasItem *feature_item)
+{
+  gboolean result = FALSE ;
+  GList *new_list, *list_item ;
+  ZMapFeature feature ;
+  RangeDataStruct range_data ;
+
+
+  feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature) ;
+
+  range_data.overlap = FALSE ;
+  range_data.start = feature->x1 ;
+  range_data.end = feature->x2 ;
+  new_list = NULL ;
+  list_item = *names_list ;
+  while (list_item)
+    {
+      /* testRangeCB() sets overlap to TRUE when it detects one. */
+      g_list_foreach(*((GList **)(list_item->data)), testRangeCB, &range_data) ;
+
+      /* Tricky list logic here, g_list_delete_link() has the effect of moving us on to the next
+       * list item so we mustn't do g_list_next() as well. */
+      if (!range_data.overlap)
+	{
+	  /* Now hide these items as they don't overlap... */
+	  g_list_foreach(*((GList **)(list_item->data)), hideItemsCB, NULL) ;
+
+	  list_item = g_list_delete_link(list_item, list_item) ;
+
+	  result = TRUE ;
+	}
+      else
+	{
+	  new_list = list_item ;			    /* Hang on to valid list ptr. */
+	  list_item = g_list_next(list_item) ;
+	  range_data.overlap = FALSE ;
+	}
+    }
+
+
+  *names_list = g_list_first(new_list) ;		    /* Hand back the _start_ of the list. */
+
+  return result ;
+}
+
+
+
+/* GFunc() to test whether a set of features overlaps the range given in user_data, sets
+ * TRUE when an overlap is detected. Features that don't ovelap are hidden. */
+static void testRangeCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  RangeData range_data = (RangeData)user_data ;
+  ZMapFeature feature ;
+
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature) ;
+
+  if (!(feature->x1 > range_data->end || feature->x2 < range_data->start))
+    range_data->overlap = TRUE ;
+
+  return ;
+}
+
+
+/* GFunc() to hide all items in a list. */
+static void hideItemsCB(gpointer data, gpointer user_data_unused)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+
+  foo_canvas_item_hide(item) ;
+
+  return ;
+}
+
+
+
+/* GFunc() to add a background item to each set of items in a list. */
+static void addBackgrounds(gpointer data, gpointer user_data)
+{
+  ComplexCol col_data = (ComplexCol)data ;
+  GList **extras_ptr = (GList **)user_data ;
+  GList *extra_items = *extras_ptr ;
+  GList *name_list = col_data->feature_list ;			    /* Single list of named features. */
+  GList *first, *last ;
+  FooCanvasItem *first_item, *last_item, *background ;
+  GdkColor fill, outline ;
+  char *colour = "lightblue" ;
+  char *colour2 = "black" ;
+  double x1, y1, x2, y2 ;
+
+
+  /* SHOULD FILTER ON TYPE AS WELL...WE DON'T WANT ALL TYPES TO HAVE BACKGROUNDS.... */
+  if (g_list_length(name_list) > 1)
+    {
+      GList *backgrounds = NULL ;
+      GList *list_item ;
+      GQuark first_id = 0 ;
+      ZMapFeatureTypeStyle first_style = NULL ;
+
+      gdk_color_parse(colour, &fill) ;
+      gdk_color_parse(colour2, &outline) ;
+
+      first = last = NULL ;
+      list_item = g_list_first(name_list) ;
+
+      while (list_item)
+	{
+	  FooCanvasItem *item ;
+	  ZMapFeature feature ;
+	  GQuark feature_id = 0 ;
+
+	  item = (FooCanvasItem *)list_item->data ;
+	  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+	  zMapAssert(feature) ;
+	  feature_id = feature->original_id ;
+
+	  if (!first)
+	    {
+	      first = last = list_item ;
+	      first_item = (FooCanvasItem *)first->data ;
+	      
+	      /* should really get max width of all, not just width of first.... */
+	      foo_canvas_item_get_bounds(first_item, &x1, &y1, &x2, NULL) ;
+
+	      first_id = feature_id ;
+	      first_style = feature->style ;
+	      list_item = g_list_next(list_item) ;
+	    }
+	  else
+	    {
+	      if (feature_id == first_id)
+		{
+		  last = list_item ;
+		  list_item = g_list_next(list_item) ;
+		}
+
+	      if (feature_id != first_id || !list_item)
+		{
+		  /* Only do boxes where there is more than one item. */
+		  if (first != last)
+		    {
+		      ZMapWindowItemFeatureBumpData bump_data ;
+
+		      last_item = (FooCanvasItem *)last->data ;
+
+		      foo_canvas_item_get_bounds(last_item, NULL, NULL, NULL, &y2);
+
+		      bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
+		      bump_data->feature_id = first_id ;
+		      bump_data->style = first_style ;
+
+		      background = zMapDrawBox(FOO_CANVAS_ITEM(first_item->parent),
+					       x1, y1, x2, y2,
+					       &outline, &fill, 0.0) ;
+
+		      zmapWindowLongItemCheck(col_data->window->long_items, background, y1, y2) ;
+
+		      extra_items = g_list_append(extra_items, background) ;
+
+		      g_object_set_data(G_OBJECT(background), ITEM_FEATURE_TYPE,
+					GINT_TO_POINTER(ITEM_FEATURE_GROUP_BACKGROUND)) ;
+		      g_object_set_data(G_OBJECT(background), ITEM_FEATURE_BUMP_DATA, bump_data) ;
+		      g_signal_connect(GTK_OBJECT(background), "event",
+				       GTK_SIGNAL_FUNC(bumpBackgroundEventCB), col_data->window) ;
+		      g_signal_connect(GTK_OBJECT(background), "destroy",
+				       GTK_SIGNAL_FUNC(bumpBackgroundDestroyCB), col_data->window) ;
+
+
+		      /* Make sure these backgrounds are drawn behind the features items. */
+		      foo_canvas_item_lower_to_bottom(background) ;
+
+		      backgrounds = g_list_append(backgrounds, background) ;
+		    }
+		  
+		  /* N.B. ensure we don't move on in the list so that we pick up this item
+		   * as the next "first" item... */
+		  first = NULL ;
+		}
+
+	    }
+	}
+
+
+      /* Need to add all backgrounds to col list here and lower them in group.... */
+      name_list = g_list_concat(name_list, backgrounds) ;
+
+
+      col_data->feature_list = name_list ;
+
+      *extras_ptr = extra_items ;
+    }
+
+  return ;
+}
+
+
+
+
+
+static void freeExtraItems(gpointer data, gpointer user_data_unused)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+
+  gtk_object_destroy(GTK_OBJECT(item)) ;
+
+  return ;
+}
+
+
+
+static void showItems(gpointer data, gpointer user_data_unused)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+
+  foo_canvas_item_show(item) ;
+
+  return ;
+}
+
+
+
 /* GCompareFunc() to sort two lists of features by the average score of all their features. */
 static gint sortByScoreCB(gconstpointer a, gconstpointer b)
 {
@@ -1497,12 +1799,12 @@ static void listScoreCB(gpointer data, gpointer user_data)
 
       feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
       zMapAssert(feature) ;
-  
+      
       /* Can only compare by score if features have a score... */
       if (feature->flags.has_score)
 	{
 	  score += feature->score ;
-
+	      
 	  *((double *)user_data) = score ;
 	}
     }
@@ -1532,6 +1834,7 @@ static void setOffsetCB(gpointer data, gpointer user_data)
       ComplexCol col ;
 
       col = g_new0(ComplexColStruct, 1) ;
+      col->window = complex->window ;
       col->offset = complex->curr_offset ;
       col->feature_list = name_list ;
 
@@ -1684,10 +1987,6 @@ static gboolean listsOverlapNoInterleave(GList *curr_features, GList *new_featur
 
   return overlap ;
 }
-
-
-
-
 
 
 
@@ -2293,10 +2592,90 @@ static void draw3FrameSetFeatures(GQuark key_id, gpointer data, gpointer user_da
 
 
 
+
+/* Callback for any events that happen on bump background items.
+ * 
+ *  */
+static gboolean bumpBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
+{
+  gboolean event_handled = FALSE ;
+  ZMapWindow window = (ZMapWindowStruct*)data ;
+
+  switch (event->type)
+    {
+    case GDK_BUTTON_PRESS:
+      {
+	ZMapWindowItemFeatureType item_feature_type ;
+	ZMapWindowItemFeatureBumpData bump_data ;
+	ZMapWindowSelectStruct select = {NULL} ;
+
+	item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+							      ITEM_FEATURE_TYPE)) ;
+	zMapAssert(item_feature_type == ITEM_FEATURE_GROUP_BACKGROUND) ;
+
+
+	/* Retrieve the feature item info from the canvas item. */
+	bump_data = (ZMapWindowItemFeatureBumpData)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_BUMP_DATA) ;  
+	zMapAssert(bump_data) ;
+
+	/* Pass back details for display to the user to our caller. */
+	select.feature_desc.feature_name = (char *)g_quark_to_string(bump_data->feature_id) ;
+
+	select.feature_desc.feature_set = (char *)g_quark_to_string(bump_data->style->original_id) ;
+
+	select.secondary_text = zmapWindowFeatureSetDescription(bump_data->style->original_id, bump_data->style) ;
+
+	(*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+
+	g_free(select.secondary_text) ;
+
+	event_handled = TRUE ;
+
+	break ;
+      }
+    default:
+      {
+	/* By default we _don't_ handle events. */
+	event_handled = FALSE ;
+
+	break ;
+      }
+    }
+  
+  return event_handled ;
+}
+
+
+
+
+/* Callback for destroy of feature items... */
+static gboolean bumpBackgroundDestroyCB(FooCanvasItem *feature_item, gpointer data)
+{
+  gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also get run. */
+  ZMapWindowItemFeatureType item_feature_type ;
+  ZMapWindow window = (ZMapWindowStruct*)data ;
+  ZMapWindowItemFeatureBumpData bump_data ;
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type == ITEM_FEATURE_GROUP_BACKGROUND) ;
+
+  /* Retrieve the feature item info from the canvas item. */
+  bump_data = (ZMapWindowItemFeatureBumpData)g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_BUMP_DATA) ;  
+  zMapAssert(bump_data) ;
+  g_free(bump_data) ;
+
+  zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
+
+  return event_handled ;
+}
+
+
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
 /* 
- *             debug functions.
+ *             debug functions, please leave here for future use.
  */
 
 
