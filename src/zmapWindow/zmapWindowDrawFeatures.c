@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 28 09:47 2006 (rds)
+ * Last edited: Nov 28 11:41 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.161 2006-11-28 09:49:27 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.162 2006-11-28 11:43:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1129,7 +1129,7 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
   ZMapWindow window = canvas_data->window ;
   GQuark type_quark ;
   FooCanvasGroup *forward_col, *reverse_col ;
-
+  ZMapFeatureTypeStyle style = NULL;
 
   canvas_data->curr_set = feature_set ;
 
@@ -1158,18 +1158,32 @@ static void ProcessFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
     {
       /* There is a memory leak here in that we do not delete the feature set from the context. */
       char *name = (char *)g_quark_to_string(feature_set->original_id) ;
+      gboolean warn = FALSE;
+      /* It's not enough just to check that there is no column.  There might be a valid reason for it.
+       * 1) The style might say No_display.
+       * 2) ...
+       */
+      if((style = zMapFindStyle(canvas_data->full_context->styles, zMapStyleCreateID(name))))
+        {
+          warn = !(style->opts.hidden_always);
+        }
+      else
+        warn = TRUE;
 
-      /* Temporary...probably user will not want to see this in the end but for now its good for debugging. */
-      zMapShowMsg(ZMAP_MSG_WARNING, 
-		  "Feature set \"%s\" not displayed because although it was retrieved from the server,"
-		  " it is not in the list of feature sets to be displayed."
-		  " Please check the list of styles and feature sets in the ZMap configuration file.",
-		  name) ;
-
-      zMapLogCritical("Feature set \"%s\" not displayed because although it was retrieved from the server,"
-		      " it is not in the list of feature sets to be displayed."
-		      " Please check the list of styles and feature sets in the ZMap configuration file.",
-		      name) ;
+      if(warn)
+        {
+          /* Temporary...probably user will not want to see this in the end but for now its good for debugging. */
+          zMapShowMsg(ZMAP_MSG_WARNING, 
+                      "Feature set \"%s\" not displayed because although it was retrieved from the server,"
+                      " it is not in the list of feature sets to be displayed."
+                      " Please check the list of styles and feature sets in the ZMap configuration file.",
+                      name) ;
+          
+          zMapLogCritical("Feature set \"%s\" not displayed because although it was retrieved from the server,"
+                          " it is not in the list of feature sets to be displayed."
+                          " Please check the list of styles and feature sets in the ZMap configuration file.",
+                          name) ;
+        }
     }
   else
     {
