@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 17 17:38 2006 (edgrif)
+ * Last edited: Nov 28 11:26 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.66 2006-11-17 17:38:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.67 2006-11-28 14:32:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -441,9 +441,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   ZMapFeatureBlock block ;
   ZMapFeatureSet set ;
   FooCanvasGroup *column_group ;
-  FooCanvasItem *top_feature_item = NULL ;
-  double feature_offset;
-  double start_x, end_x ;
+
 
   set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
@@ -2393,6 +2391,10 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
 	break ;
       }
+    case 7:
+      menu_data->window->bump_range_item = menu_data->item ;
+
+      break ;
     case 3:
       zmapWindowCreateSearchWindow(menu_data->window, menu_data->item) ;
 
@@ -2446,6 +2448,7 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
     {
       {ZMAPGUI_MENU_NORMAL, "Show Feature Details",   2, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Pfetch this feature",    4, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Set Feature for Bump",   7, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
     } ;
 
