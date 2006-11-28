@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 28 11:33 2006 (edgrif)
+ * Last edited: Nov 28 14:39 2006 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.5 2006-11-28 14:27:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.6 2006-11-28 14:42:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -170,41 +170,43 @@ void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item
           new_item = g_new0(LongFeatureItemStruct, 1) ;
           new_item->item = item ;
           created = TRUE;
-        }
 
-      if (FOO_IS_CANVAS_LINE(new_item->item) || FOO_IS_CANVAS_POLYGON(new_item->item))
-        {
-          FooCanvasPoints *item_points ;
-              
-          g_object_get(G_OBJECT(new_item->item),
-                       "points", &item_points,
-                       NULL) ;
-          if(created)
+          if (FOO_IS_CANVAS_LINE(new_item->item) || FOO_IS_CANVAS_POLYGON(new_item->item))
             {
-              new_item->pos.points = foo_canvas_points_new(item_points->num_points) ;
+              FooCanvasPoints *item_points ;
               
-              memcpy(new_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
-
+              g_object_get(G_OBJECT(new_item->item),
+                           "points", &item_points,
+                           NULL) ;
+              if(created)
+                {
+                  new_item->pos.points = foo_canvas_points_new(item_points->num_points) ;
+                  
+                  memcpy(new_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
+                  
+                }
+              else if(new_item->pos.points->num_points != item_points->num_points)
+                {
+                  foo_canvas_points_free(new_item->pos.points);
+                  new_item->pos.points = foo_canvas_points_new(item_points->num_points);
+                  memcpy(new_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
+                }
+              
+              memcpy(new_item->pos.points->coords,
+                     item_points->coords,
+                     ((item_points->num_points * 2) * sizeof(double))) ;
             }
-          else if(new_item->pos.points->num_points != item_points->num_points)
+          else
             {
-              foo_canvas_points_free(new_item->pos.points);
-              new_item->pos.points = foo_canvas_points_new(item_points->num_points);
-              memcpy(new_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
+              new_item->pos.box.start = start ;
+              new_item->pos.box.end = end ;
             }
+        }
 
-          memcpy(new_item->pos.points->coords,
-                 item_points->coords,
-                 ((item_points->num_points * 2) * sizeof(double))) ;
-        }
-      else
-        {
-          new_item->pos.box.start = start ;
-          new_item->pos.box.end = end ;
-        }
-          
-      new_item->extreme.y1 = start;
-      new_item->extreme.y2 = end;
+      if(start < new_item->extreme.y1)
+        new_item->extreme.y1 = start;
+      if(end   > new_item->extreme.y2)
+        new_item->extreme.y2 = end;
       
       if(created)
         {
