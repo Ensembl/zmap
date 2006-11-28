@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Nov 15 12:09 2006 (edgrif)
+ * Last edited: Nov 22 12:17 2006 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.22 2006-11-15 16:38:13 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.23 2006-11-28 14:22:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -286,14 +286,14 @@ void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
  * the message type:
  *
  *     ZMAP_MSG_INFORMATION, ZMAP_MSG_WARNING - non-blocking, non-modal
- *              ZMAP_MSG_EXIT, ZMAP_MSG_CRASH - blocking and modal
+ *     ZMAP_MSG_CRITICAL, ZMAP_MSG_EXIT, ZMAP_MSG_CRASH - blocking and modal
  *
  * If parent is non-NULL then the dialog will be kept on top of that window, essential for
  * modal dialogs in particular. I think parent should be the application window that the message
  * applies to probably, or perhaps the application main window.
  *
  * @param parent       Widget that message should be kept on top of or NULL.
- * @param msg_type     ZMAP_MSG_INFORMATION | ZMAP_MSG_WARNING | ZMAP_MSG_EXIT | ZMAP_MSG_CRASH
+ * @param msg_type     ZMAP_MSG_INFORMATION | ZMAP_MSG_WARNING | ZMAP_MSG_CRITICAL | ZMAP_MSG_EXIT | ZMAP_MSG_CRASH
  * @param msg          Message to be displayed in dialog.
  * @return             nothing
  *  */
@@ -317,6 +317,9 @@ gboolean zMapGUIShowChoice(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
       break ;
     case ZMAP_MSG_WARNING:
       title = "ZMAP - Warning!" ;
+      break;
+    case ZMAP_MSG_CRITICAL:
+      title = "ZMAP - Critical!" ;
       break;
     case ZMAP_MSG_EXIT:
       title = "ZMAP - Error!" ;
