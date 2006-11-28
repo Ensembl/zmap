@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 10 08:48 2006 (rds)
+ * Last edited: Nov 28 14:43 2006 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.6 2006-11-10 09:26:18 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.7 2006-11-28 14:45:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,7 +52,9 @@ static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
     {
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
-        if(locus_name == feature_any->original_id)
+        ZMapFeature feature = (ZMapFeature)feature_any;
+        /* if(locus_name == feature_any->original_id) // quick fix to zmapWindowNavigatorShowSameNameList...  */
+        if(locus_name == feature->locus_id)
           match = TRUE;
       }
       break;
@@ -76,22 +78,23 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
   zMapAssert(feature);
 
   window = navigate->current_window;
-
+#ifdef RDS_DONT_INCLUDE
   /* Is it right to use window->context_to_item here??? */
   if(!(result = zmapWindowFToIFindSameNameItems(window->context_to_item,
                                                 ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
                                                 feature)))
     {
+#endif
       callback    = searchLocusSetCB;
       locus_quark = g_quark_from_string(wild_card);
 
       result = zmapWindowFToIFindItemSetFull(window->context_to_item,
                                              feature->parent->parent->parent->unique_id,
                                              feature->parent->parent->unique_id,
-                                             feature->parent->unique_id, 
+                                             locus_quark, // feature->parent->unique_id, 
                                              wild_card, wild_card, locus_quark,
                                              callback, GUINT_TO_POINTER(feature->original_id));
-    }
+      //    }
   
   if(result)
     {
