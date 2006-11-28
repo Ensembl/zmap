@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 28 14:39 2006 (rds)
+ * Last edited: Nov 28 15:48 2006 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.6 2006-11-28 14:42:00 rds Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.7 2006-11-28 15:48:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -368,10 +368,15 @@ static void freeLongItem(gpointer data, gpointer user_data_unused)
 {
   LongFeatureItem long_item = (LongFeatureItem)data ;
 
-  /* What happens about the points list ??????????????????? */
-  if(long_item->pos.points)
-    foo_canvas_points_free(long_item->pos.points);
-
+  if(long_item->item)
+    {
+      if(FOO_IS_CANVAS_LINE(long_item->item) || FOO_IS_CANVAS_POLYGON(long_item->item))
+        {
+          /* What happens about the points list ??????????????????? */
+          if(long_item->pos.points)
+            foo_canvas_points_free(long_item->pos.points);
+        }
+    }
   g_free(long_item) ;
 
   return ;
