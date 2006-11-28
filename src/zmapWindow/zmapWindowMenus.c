@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Nov 13 09:50 2006 (edgrif)
+ * Last edited: Nov 27 10:14 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.23 2006-11-13 09:54:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.24 2006-11-28 14:27:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,8 +153,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_TOGGLE, "Column Bump",                 ZMAPOVERLAP_COMPLETE, bumpToggleMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Hide",                 ZMAPWWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
       {ZMAPGUI_MENU_BRANCH, "Column Bump Opts", 0, NULL, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Compact Cluster + No Interleave", ZMAPOVERLAP_NO_INTERLEAVE,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Compact Cluster + Interleave", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Feature Overlap", ZMAPOVERLAP_COMPLEX_RANGE,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Compact + No Interleave", ZMAPOVERLAP_NO_INTERLEAVE,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Compact + Interleave", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Cluster",    ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/No Overlap", ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Bump on Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
