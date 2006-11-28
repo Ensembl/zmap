@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 27 13:56 2006 (rds)
+ * Last edited: Nov 28 08:30 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.154 2006-11-27 13:56:36 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.155 2006-11-28 08:32:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2404,11 +2404,6 @@ void zmapWindowZoomToItems(ZMapWindow window, GList *items)
   return ;
 }
 
-
-/* THIS FUNCTION NEEDS THE CODE ADDING TO SUPPORT THE "border" parameter which is intended to make
-   sure that a feature is fully contained within a window with some room top and bottom. */
-/* This needs to set an extra bit top and bottom to make sure that its possible to see _all_ of
- * the feature or area....perhaps as an option ?? Then we remove Roys lasso bit and just use this func. */
 void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 				   double rootx1, double rootx2, double rooty1, double rooty2)
 {
@@ -2420,9 +2415,17 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
   /* Zoom factor */
   double zoom_by_factor, target_zoom_factor, current;
   double wx1, wx2, wy1, wy2;
+  int two_times, border_size = ZMAP_WINDOW_FEATURE_ZOOM_BORDER;
 
   v_adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
   win_height = v_adjuster->page_size;
+
+  /* If we want a border add it...
+   * Actually take it away from the current height of the canvas, this
+   * way that pixel size will automatically be ratioed by the zoom.
+   */
+  if(border && ((two_times = (border_size * 2)) < win_height))
+    win_height -= two_times;
 
   current = zMapWindowGetZoomFactor(window) ;
 
@@ -2459,6 +2462,12 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 	{                           /* We're still in the same area, */
 	  foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
 
+          /* If we had a border we need to take this into account,
+           * otherwise the feature just ends up at the top of the
+           * window with 2 border widths at the bottom! */
+          if(border)
+            canvasy -= border_size;
+
 	  if(beforey != canvasy)
 	    foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
 	}
@@ -2474,6 +2483,7 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 
 	  foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
 
+          /* No need to worry about border here as we're using the centre of the window. */
 	  foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
 	}
     }
