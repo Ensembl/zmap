@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 13 09:04 2006 (edgrif)
+ * Last edited: Nov 28 09:47 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.160 2006-11-13 09:53:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.161 2006-11-28 09:49:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -203,7 +203,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   FooCanvasItem *fresh_focus_item = NULL, *tmp_item = NULL;
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT;
   gboolean debug_containers = FALSE, root_created = FALSE;
-  double x, y, start, end ;
+  double x, y;
   double ix1, ix2, iy1, iy2;    /* initial root_group coords */
   double fx1, fx2, fy1, fy2;    /* final root_group coords   */
 
@@ -308,12 +308,13 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   zmapWindowFToIAddRoot(window->context_to_item, root_group);
   window->feature_root_group = root_group ;
 
-
+#ifdef RDS_DONT_INCLUDE
   start = window->seq_start ;
   end   = window->seq_end ;
   zmapWindowSeq2CanExtZero(&start, &end) ;
   zmapWindowLongItemCheck(window->long_items, zmapWindowContainerGetBackground(root_group),
 			  start, end) ;
+#endif /* RDS_DONT_INCLUDE */
 
   /* Set root group to start where sequence starts... */
   x = canvas_data.curr_x_offset ;
@@ -837,10 +838,10 @@ static void drawBlocks(gpointer data, gpointer user_data)
   g_signal_connect(G_OBJECT(block_parent), "destroy", G_CALLBACK(containerDestroyCB), canvas_data->window) ;
 
   canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_parent) ;
-
+#ifdef RDS_DONT_INCLUDE
   zmapWindowLongItemCheck(canvas_data->window->long_items, zmapWindowContainerGetBackground(block_parent),
 			  top, bottom) ;
-
+#endif
   foo_canvas_item_set(FOO_CANVAS_ITEM(block_parent),
 		      "y", y,
 		      NULL) ;
@@ -876,10 +877,10 @@ static void drawBlocks(gpointer data, gpointer user_data)
   zmapWindowContainerSetStrand(forward_group, ZMAPSTRAND_FORWARD);
 
   canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
-
+#ifdef RDS_DONT_INCLUDE
   zmapWindowLongItemCheck(canvas_data->window->long_items, zmapWindowContainerGetBackground(forward_group),
 			  top, bottom) ;
-  
+#endif /* RDS_DONT_INCLUDE */
   reverse_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
 					    ZMAPCONTAINER_LEVEL_STRAND,
 					    window->config.column_spacing,
@@ -889,10 +890,10 @@ static void drawBlocks(gpointer data, gpointer user_data)
   zmapWindowContainerSetStrand(reverse_group, ZMAPSTRAND_REVERSE);
 
   canvas_data->curr_reverse_group = zmapWindowContainerGetFeatures(reverse_group) ;
-
+#ifdef RDS_DONT_INCLUDE
   zmapWindowLongItemCheck(canvas_data->window->long_items, zmapWindowContainerGetBackground(reverse_group),
 			  top, bottom) ;
-
+#endif /* RDS_DONT_INCLUDE */
 
 
 
@@ -1052,8 +1053,9 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   zmapWindowContainerSetBackgroundSize(group, bot) ;
 
   bounding_box = zmapWindowContainerGetBackground(group) ;
+#ifdef RDS_DONT_INCLUDE
   zmapWindowLongItemCheck(window->long_items, bounding_box, top, bot) ;
-
+#endif /* RDS_DONT_INCLUDE */
 
   /* I THINK THIS IS FOR EMPTY COLS ?????? */
   /* Ugh...what is this code.....??? should be done by a container call.... */
