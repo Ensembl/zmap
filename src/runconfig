@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/bin/bash
 #
 # Noddy script to run configure as alphas + Roys machine are far from standard.
 #

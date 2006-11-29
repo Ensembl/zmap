@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/bin/bash
 #
 # Noddy script to run bootstrap as alphas need a lot of help.
 #
