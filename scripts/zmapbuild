@@ -42,8 +42,8 @@ descstring='
 
 
 machine="DESPOT"
-zmaproot=~zmap
-builddir="$zmaproot/BUILDS"
+zmaproot=$ZBBaseDir
+local_builddir=$ZBbuildBase
 zmapcvstarget='ZMap'
 version=""
 tag=""
@@ -81,12 +81,16 @@ ZBlogmsg "ZMap build started"
 ZBlogmsg "building on machine '$machine'"
 
 
+ZBRemoteDirectories $machine
+remote_builddir=$ZBRbuildBase
+remote_targetdir=$remote_builddir/$targetdir
+remote_cvscopy=$remote_targetdir
 
 #
 # move to the generic build directory and do a cvs checkout of the source
 #
 
-ZBGotoDir $builddir
+ZBGotoDir $local_builddir
 
 if [ -n "$initialise" ] ; then
 
@@ -107,7 +111,7 @@ else
   ZBGotoDir $targetdir
 fi
 
-cvscopy="$builddir/$targetdir"
+cvscopy="$local_builddir/$targetdir"
 
 
 
@@ -115,7 +119,7 @@ cvscopy="$builddir/$targetdir"
 # we end up taggin twice if this is uncommented
 #if [ -n "$tag" ] ; then
 
-#  ZBGotoDir $builddir
+#  ZBGotoDir $local_builddir
 
 #  versioner -path $targetdir/ZMap/src/include/ZMap/ || ZBmsgAndExit "Could not cvs tag source files"
 
@@ -125,8 +129,7 @@ cvscopy="$builddir/$targetdir"
 
 # setup to do a make install 
 if [ -n "$pinstall" ] ; then
-  abspath=`pwd`
-  prefix="-p $abspath/INSTALL"
+  prefix="-p $remote_targetdir/INSTALL"
 fi
 
 
@@ -134,11 +137,14 @@ fi
 # do the builds on the different machines via ssh....
 #
 
-cvsbuilddir='ZMap/src'
+local_cvsbuilddir='ZMap/src'
 
-ZBGotoDir $cvsbuilddir
 
-abspath=`pwd`
+ZBGotoDir $local_cvsbuilddir
+# and the same to the remote dir ... AAAAARGGH ...
+remote_cvsbuilddir=$remote_targetdir/$local_cvsbuilddir
+
+remote_abspath=$remote_cvsbuilddir
 vpathdir=`ssh $machine "zmapvpathdir"`
 # NOTE THAT CURRENTLY THE BUILD MUST ALL BE DONE ON THE SAME MACHINE OTHERWISE NONE
 # OF THE CONFIG STUFF IS SET UP CORRECTLY....
@@ -149,9 +155,9 @@ vpathdir=`ssh $machine "zmapvpathdir"`
 # as a one time operation like the cvs stuff...
 # This should be ssh $machine "zmapmake -b -c $abspath -d $vpathdir"
 if [ -n "$initialise" ] ; then
-  ssh $machine "zmapmake -b -c $prefix $abspath" || ZBmsgAndExit "zmap make failed on $machine"
+  ssh $machine "zmapmake -b -c $prefix $remote_abspath" || ZBmsgAndExit "zmap make failed on $machine"
 else
-  ssh $machine "zmapmake -c $prefix $abspath" || ZBmsgAndExit "zmap make failed on $machine"
+  ssh $machine "zmapmake -c $prefix $remote_abspath" || ZBmsgAndExit "zmap make failed on $machine"
 fi
 
 
@@ -160,10 +166,10 @@ fi
 if [ -n "$initialise" ] ; then
 
   echo 'about to issue:'
-  echo ssh $machine "zmapmake -t docs $abspath/$vpathdir" 
+  echo ssh $machine "zmapmake -t docs $remote_abspath/$vpathdir" 
   echo
 
-  ssh $machine "zmapmake -t docs $abspath/$vpathdir" || ZBmsgAndExit "zmap make of docs failed"
+  ssh $machine "zmapmake -t docs $remote_abspath/$vpathdir" || ZBmsgAndExit "zmap make of docs failed"
 
   docdir="$cvscopy/ZMap/doc"
   ssh $machine "cd $docdir ; makeQuadList TODO"
@@ -178,7 +184,7 @@ fi
 # Update the version number in the code now.
 if [ -n "$tag" ] ; then
 
-  ZBGotoDir $builddir
+  ZBGotoDir $local_builddir
   # This re tags the 
   versioner -path $targetdir/ZMap/src/include/ZMap/ -increment -$tag -cvs || ZBmsgAndExit "Could not update version number in source code"
 
@@ -189,7 +195,7 @@ fi
 #
 if [ -n "$version" ] ; then
 
-  ZBGotoDir $builddir
+  ZBGotoDir $local_builddir
 
   version=`versioner -path $targetdir/ZMap/src/include/ZMap/ -show -V -quiet` || ZBmsgAndExit "Could not get zmap version"
 
