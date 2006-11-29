@@ -152,13 +152,50 @@ ZBusage ()
   exit 1
 }
 
+ZBRemoteDirectories ()
+{
+    ZBRBaseDir=`ssh $1 zmaproot`
+    
+    ZBRbuildBase=$ZBRBaseDir/BUILDS
+    ZBROverDir="$ZBRBaseDir/BUILD.OVERNIGHT"
+    ZBROverBinDir="$ZBRBaseDir/BIN.OVERNIGHT"
+    ZBRDevDir="$ZBRBaseDir/BUILD.DEVELOPMENT"
+    ZBRDevBinDir="$ZBRBaseDir/BIN.DEVELOPMENT"
+}
+
+# WARNING INSANITY FOLLOWS
+#Arrgh this hurts....
+
+# Basically  because we have  a machine  which cannot  currently mount
+# ~zmap as ~zmap we need to have this. Why? 
+
+# Because:
+# local -> ssh build machine
+# build machine includes _this_ file.
+# finds ZBBaseBir = ~zmap, but it doesn't it's more like ~zmap/nfs_mount!
+
+opsys=`uname`
+case $opsys in
+    
+    OSF1 )
+        real_home=~zmap ;;
+    Linux )
+        real_home=~zmap ;;
+    Darwin )
+        real_home=~zmap/nfs_mount ;;
+    * )
+        ZBmsgAndExit "unsupported operating system: $opsys" ;;       
+esac
+# END OF INSANE BIT
+
+
 
 # all variables must be after functions...
 #
 ZBscript=`basename $1`
 
-ZBBaseDir=~zmap
-ZBbuildBase=~zmap/BUILDS
+ZBBaseDir=$real_home
+ZBbuildBase=$ZBBaseDir/BUILDS
 ZBOverDir="$ZBBaseDir/BUILD.OVERNIGHT"
 ZBOverBinDir="$ZBBaseDir/BIN.OVERNIGHT"
 ZBDevDir="$ZBBaseDir/BUILD.DEVELOPMENT"
@@ -174,6 +211,14 @@ ZBmachines='deskpro16113'
 ZBAcedbBinaries='tace xace sgifaceserver giface makeUserPasswd blixem dotter'
 
 ZBcvsRoot=/nfs/team71/acedb/zmap/CVS
+
+
+# REMOTE DIRECTORIES
+ZBRbuildBase=""
+ZBROverDir=""
+ZBROverBinDir=""
+ZBRDevDir=""
+ZBRDevBinDir=""
 
 fi
 
