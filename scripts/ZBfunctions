@@ -154,7 +154,7 @@ ZBusage ()
 
 ZBRemoteDirectories ()
 {
-    ZBRBaseDir=`ssh $1 zmaproot`
+    ZBRBaseDir=`ssh $1 zmapbase`
     
     ZBRbuildBase=$ZBRBaseDir/BUILDS
     ZBROverDir="$ZBRBaseDir/BUILD.OVERNIGHT"
