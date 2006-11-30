@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 28 14:24 2006 (edgrif)
+ * Last edited: Nov 30 14:43 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.156 2006-11-28 14:24:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.157 2006-11-30 14:44:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2476,7 +2476,7 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 	}
       else
 	{                           /* This takes a lot of time.... */
-	  double half_win_span = (window->canvas_maxwin_size / 2.0);
+	  double half_win_span = ((window->canvas_maxwin_size / target_zoom_factor) / 2.0);
 	  double min_seq = area_middle - half_win_span;
 	  double max_seq = area_middle + half_win_span - 1;
 
@@ -2485,6 +2485,10 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 	  zMapWindowMove(window, min_seq, max_seq);
 
 	  foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
+
+          /* Do the right thing with the border again. */
+          if(border)
+            canvasy -= border_size;
 
           /* No need to worry about border here as we're using the centre of the window. */
 	  foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
