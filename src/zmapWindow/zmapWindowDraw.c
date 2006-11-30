@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 28 15:22 2006 (edgrif)
+ * Last edited: Nov 30 09:52 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.42 2006-11-28 15:48:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.43 2006-11-30 10:03:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -168,11 +168,13 @@ static void addToList(gpointer data, gpointer user_data);
 static gboolean featureListCB(gpointer data, gpointer user_data) ;
 
 static gint sortByScoreCB(gconstpointer a, gconstpointer b) ;
+static gint sortBySpanCB(gconstpointer a, gconstpointer b) ;
 static void listScoreCB(gpointer data, gpointer user_data) ;
 static void makeNameListCB(gpointer data, gpointer user_data) ;
 static void setOffsetCB(gpointer data, gpointer user_data) ;
 static void sortListPosition(gpointer data, gpointer user_data) ;
 static void addBackgrounds(gpointer data, gpointer user_data) ;
+static void addMultiBackgrounds(gpointer data, gpointer user_data) ;
 static gboolean listsOverlap(GList *curr_features, GList *new_features) ;
 static gboolean listsOverlapNoInterleave(GList *curr_features, GList *new_features) ;
 static void reverseOffsets(GList *bumpcol_list) ;
@@ -503,7 +505,11 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
 	    /* Sort the top list using the combined normalised scores of the sublists so higher
 	     * scoring matches come first. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    names_list = g_list_sort(names_list, sortByScoreCB) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	    names_list = g_list_sort(names_list, sortBySpanCB) ;
 
 
 	    /* for the range stuff I should hide non-overlapping ranges here and remove them from the
@@ -543,7 +549,11 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
 
 		/* for no interleave add background items.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		g_list_foreach(complex.bumpcol_list, addBackgrounds, &set_data->extra_items) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		g_list_foreach(complex.bumpcol_list, addMultiBackgrounds, &set_data->extra_items) ;
 	      }
 
 	    /* Clear up. */
@@ -1615,10 +1625,21 @@ static void addBackgrounds(gpointer data, gpointer user_data)
   GList *name_list = col_data->feature_list ;			    /* Single list of named features. */
   GList *first, *last ;
   FooCanvasItem *first_item, *last_item, *background ;
-  GdkColor fill, outline ;
-  char *colour = "lightblue" ;
-  char *colour2 = "black" ;
+  static gboolean colour_init = FALSE ;
+  static GdkColor perfect, colinear, bad ;
+  char *perfect_colour = "green" ;
+  char *colinear_colour = "lightblue" ;
+  char *bad_colour = "red" ;
   double x1, y1, x2, y2 ;
+
+  if (!colour_init)
+    {
+      gdk_color_parse(perfect_colour, &perfect) ;
+      gdk_color_parse(colinear_colour, &colinear) ;
+      gdk_color_parse(bad_colour, &bad) ;
+
+      colour_init = TRUE ;
+    }
 
 
   /* SHOULD FILTER ON TYPE AS WELL...WE DON'T WANT ALL TYPES TO HAVE BACKGROUNDS....???? */
@@ -1629,9 +1650,6 @@ static void addBackgrounds(gpointer data, gpointer user_data)
       GQuark first_id = 0 ;
       ZMapFeatureTypeStyle first_style = NULL ;
       double mid, half_width = COLUMN_BACKGROUND_SPACING ;
-
-      gdk_color_parse(colour, &fill) ;
-      gdk_color_parse(colour, &outline) ;
 
       first = last = NULL ;
       list_item = g_list_first(name_list) ;
@@ -1652,9 +1670,8 @@ static void addBackgrounds(gpointer data, gpointer user_data)
 	      first = last = list_item ;
 	      first_item = (FooCanvasItem *)first->data ;
 	      
-	      /* should really get max width of all, not just width of first.... */
+	      /* N.B. this works because the items have already been positioned in the column. */
 	      foo_canvas_item_get_bounds(first_item, &x1, &y1, &x2, NULL) ;
-
 	      mid = (x2 + x1) * 0.5 ;
 
 	      first_id = feature_id ;
@@ -1686,7 +1703,7 @@ static void addBackgrounds(gpointer data, gpointer user_data)
 
 		      background = zMapDrawBox(FOO_CANVAS_ITEM(first_item->parent),
 					       (mid - half_width), y1, (mid + half_width), y2,
-					       &outline, &fill, 0.0) ;
+					       &perfect, &perfect, 0.0) ;
 
 		      zmapWindowLongItemCheck(col_data->window->long_items, background, y1, y2) ;
 
@@ -1729,6 +1746,156 @@ static void addBackgrounds(gpointer data, gpointer user_data)
 }
 
 
+/* GFunc() to add background items indicating goodness of match to each set of items in a list. */
+static void addMultiBackgrounds(gpointer data, gpointer user_data)
+{
+  ComplexCol col_data = (ComplexCol)data ;
+  GList **extras_ptr = (GList **)user_data ;
+  GList *extra_items = *extras_ptr ;
+  GList *name_list = col_data->feature_list ;			    /* Single list of named features. */
+  static gboolean colour_init = FALSE ;
+  static GdkColor perfect, colinear, noncolinear ;
+  char *perfect_colour = "green" ;
+  char *colinear_colour = "orange" ;
+  char *noncolinear_colour = "red" ;
+
+  if (!colour_init)
+    {
+      gdk_color_parse(perfect_colour, &perfect) ;
+      gdk_color_parse(colinear_colour, &colinear) ;
+      gdk_color_parse(noncolinear_colour, &noncolinear) ;
+
+      colour_init = TRUE ;
+    }
+
+
+  /* SHOULD FILTER ON TYPE AS WELL...WE DON'T WANT ALL TYPES TO HAVE BACKGROUNDS....???? */
+  if (g_list_length(name_list) > 1)
+    {
+      GList *backgrounds = NULL ;
+      GList *list_item ;
+      ZMapFeatureTypeStyle prev_style = NULL, curr_style = NULL ;
+      double mid, half_width = COLUMN_BACKGROUND_SPACING ;
+      double x1, prev_y1, x2, prev_y2, curr_y1, curr_y2 ;
+      int prev_end = 0, curr_start = 0 ;
+      FooCanvasItem *item ;
+      FooCanvasItem *background ;
+      ZMapFeature feature ;
+      GQuark prev_id = 0, curr_id = 0 ;
+
+
+      /* Get the first item. */
+      list_item = g_list_first(name_list) ;
+      item = (FooCanvasItem *)list_item->data ;
+      foo_canvas_item_get_bounds(item, &x1, &prev_y1, &x2, &prev_y2) ;
+
+      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+      zMapAssert(feature) ;
+      prev_id = feature->original_id ;
+      prev_end = feature->feature.homol.y2 ;
+      prev_style = feature->style ;
+
+
+      /* N.B. this works because the items have already been positioned in the column. */
+      mid = (x2 + x1) * 0.5 ;
+
+
+      do
+	{
+	  if ((list_item = g_list_next(list_item)))
+	    {
+	      int match_threshold ;
+
+	      item = (FooCanvasItem *)list_item->data ;
+
+	      foo_canvas_item_get_bounds(item, NULL, &curr_y1, NULL, &curr_y2);
+
+	      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+	      zMapAssert(feature) ;
+
+	      curr_id = feature->original_id ;
+	      curr_style = feature->style ;
+
+	      /* We only do aligns (remember that there can be different types in a single col)
+	       * and only those for which joining of homols was requested. */
+	      if (feature->type != ZMAPFEATURE_ALIGNMENT
+		  || !(zMapStyleGetJoinAligns(curr_style, &match_threshold)))
+		continue ;
+
+	      if (curr_id != prev_id)
+		{
+		  prev_id = curr_id ;
+		  prev_style = curr_style ;
+		  prev_y2 = curr_y2 ;
+		  prev_end = feature->feature.homol.y2 ;
+
+		  curr_id = 0 ;
+		}
+	      else
+		{
+		  ZMapWindowItemFeatureBumpData bump_data ;
+		  GdkColor *box_colour ;
+		  int diff ;
+
+		  curr_start = feature->feature.homol.y1 ;
+
+		  bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
+		  bump_data->feature_id = prev_id ;
+		  bump_data->style = prev_style ;
+
+		  diff = abs(prev_end - curr_start) ;
+		  if (diff > match_threshold)
+		    {
+		      if (curr_start < prev_end)
+			box_colour = &noncolinear ;
+		      else
+			box_colour = &colinear ;
+		    }
+		  else
+		    box_colour = &perfect ;
+
+		  background = zMapDrawBox(FOO_CANVAS_ITEM(item->parent),
+					   (mid - half_width), prev_y2, (mid + half_width), curr_y1,
+					   box_colour, box_colour, 0.0) ;
+
+		  zmapWindowLongItemCheck(col_data->window->long_items, background, prev_y2, curr_y1) ;
+
+		  extra_items = g_list_append(extra_items, background) ;
+
+		  g_object_set_data(G_OBJECT(background), ITEM_FEATURE_TYPE,
+				    GINT_TO_POINTER(ITEM_FEATURE_GROUP_BACKGROUND)) ;
+		  g_object_set_data(G_OBJECT(background), ITEM_FEATURE_BUMP_DATA, bump_data) ;
+		  g_signal_connect(GTK_OBJECT(background), "event",
+				   GTK_SIGNAL_FUNC(bumpBackgroundEventCB), col_data->window) ;
+		  g_signal_connect(GTK_OBJECT(background), "destroy",
+				   GTK_SIGNAL_FUNC(bumpBackgroundDestroyCB), col_data->window) ;
+
+
+
+		  /* Make sure these backgrounds are drawn behind the feature items. */
+		  foo_canvas_item_lower_to_bottom(background) ;
+
+
+		  backgrounds = g_list_append(backgrounds, background) ;
+
+		  prev_y2 = curr_y2 ;
+		  prev_end = feature->feature.homol.y2 ;
+		}
+	    }
+	} while (list_item) ;
+
+
+      /* Need to add all backgrounds to col list here and lower them in group.... */
+      name_list = g_list_concat(name_list, backgrounds) ;
+
+
+      col_data->feature_list = name_list ;
+
+      *extras_ptr = extra_items ;
+    }
+
+  return ;
+}
 
 
 
@@ -1814,6 +1981,105 @@ static void listScoreCB(gpointer data, gpointer user_data)
 
   return ;
 }
+
+
+
+/* GCompareFunc() to sort two lists of features by the overall span of all their features. */
+static gint sortBySpanCB(gconstpointer a, gconstpointer b)
+{
+  gint result = 0 ;					    /* make a == b default. */
+  GList **feature_list_out_1 = (GList **)a ;
+  GList *feature_list_1 = *feature_list_out_1 ;		    /* Single list of named features. */
+  GList **feature_list_out_2 = (GList **)b ;
+  GList *feature_list_2 = *feature_list_out_2 ;		    /* Single list of named features. */
+  FooCanvasItem *item ;
+  ZMapWindowItemFeatureType item_feature_type ;
+  ZMapFeature feature ;
+  int list_span_1 = 0, list_span_2 = 0 ;
+
+
+
+  feature_list_1 = g_list_first(feature_list_1) ;
+  item = (FooCanvasItem *)feature_list_1->data ;
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature) ;
+  list_span_1 = feature->x1 ;
+
+  feature_list_1 = g_list_last(feature_list_1) ;
+  item = (FooCanvasItem *)feature_list_1->data ;
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature) ;
+  list_span_1 = feature->x1 - list_span_1 + 1 ;
+
+
+  feature_list_2 = g_list_first(feature_list_2) ;
+  item = (FooCanvasItem *)feature_list_2->data ;
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature) ;
+  list_span_2 = feature->x1 ;
+
+  feature_list_2 = g_list_last(feature_list_2) ;
+  item = (FooCanvasItem *)feature_list_2->data ;
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature) ;
+  list_span_2 = feature->x1 - list_span_2 + 1 ;
+  
+
+  /* Highest spans go first. */
+  if (list_span_1 > list_span_2)
+    result = -1 ;
+  else if (list_span_1 < list_span_2)
+    result = 1 ;
+
+  return result ;
+}
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* GFunc() to return a features span. */
+static void listSpanCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  double span = *((double *)user_data) ;
+
+  /* don't bother if something is not displayed. */
+  if((zmapWindowItemIsShown(item)))
+    {
+      ZMapWindowItemFeatureType item_feature_type ;
+      ZMapFeature feature ;
+
+      /* Sanity checks... */
+      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+      zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
+
+      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+      zMapAssert(feature) ;
+      
+      /* Can only compare by span if features have a span... */
+      if (feature->flags.has_score)
+	{
+	  score += feature->score ;
+	      
+	  *((double *)user_data) = score ;
+	}
+    }
+
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 
 
