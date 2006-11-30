@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov 22 16:14 2006 (edgrif)
+ * Last edited: Nov 30 09:13 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.102 2006-11-28 14:20:58 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.103 2006-11-30 09:51:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -781,6 +781,7 @@ void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
 			      unsigned int within_align_error) ;
 void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, unsigned int between_align_error) ;
+gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *between_align_error) ;
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
 char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;

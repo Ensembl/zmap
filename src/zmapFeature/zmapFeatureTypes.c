@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov  9 09:59 2006 (edgrif)
+ * Last edited: Nov 30 09:18 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.36 2006-11-09 10:12:54 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.37 2006-11-30 09:51:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -531,6 +531,19 @@ void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, un
   style->between_align_error = between_align_error ;
 
   return ;
+}
+
+
+/* Returns TRUE and returns the between_align_error if join_aligns is TRUE for the style,
+ * otherwise returns FALSE. */
+gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *between_align_error)
+{
+  zMapAssert(style);
+
+  if (style->opts.join_aligns)
+    *between_align_error = style->between_align_error ;
+
+  return style->opts.join_aligns ;
 }
 
 
