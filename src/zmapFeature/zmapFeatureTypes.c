@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 30 09:18 2006 (edgrif)
+ * Last edited: Nov 30 11:31 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.37 2006-11-30 09:51:39 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.38 2006-11-30 12:05:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -521,6 +521,18 @@ void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gb
 
   return ;
 }
+
+
+gboolean zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, unsigned int *within_align_error)
+{
+  zMapAssert(style);
+
+  if (style->opts.align_gaps)
+    *within_align_error = style->within_align_error ;
+
+  return style->opts.align_gaps ;
+}
+
 
 
 void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, unsigned int between_align_error)
