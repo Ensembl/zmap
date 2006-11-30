@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 30 09:52 2006 (edgrif)
+ * Last edited: Nov 30 11:57 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.43 2006-11-30 10:03:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.44 2006-11-30 12:06:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1626,17 +1626,17 @@ static void addBackgrounds(gpointer data, gpointer user_data)
   GList *first, *last ;
   FooCanvasItem *first_item, *last_item, *background ;
   static gboolean colour_init = FALSE ;
-  static GdkColor perfect, colinear, bad ;
-  char *perfect_colour = "green" ;
-  char *colinear_colour = "lightblue" ;
-  char *bad_colour = "red" ;
+  static GdkColor perfect, colinear, noncolinear ;
+  char *perfect_colour = ZMAP_WINDOW_MATCH_PERFECT ;
+  char *colinear_colour = ZMAP_WINDOW_MATCH_COLINEAR ;
+  char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
   double x1, y1, x2, y2 ;
 
   if (!colour_init)
     {
       gdk_color_parse(perfect_colour, &perfect) ;
       gdk_color_parse(colinear_colour, &colinear) ;
-      gdk_color_parse(bad_colour, &bad) ;
+      gdk_color_parse(noncolinear_colour, &noncolinear) ;
 
       colour_init = TRUE ;
     }
@@ -1755,9 +1755,9 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
   GList *name_list = col_data->feature_list ;			    /* Single list of named features. */
   static gboolean colour_init = FALSE ;
   static GdkColor perfect, colinear, noncolinear ;
-  char *perfect_colour = "green" ;
-  char *colinear_colour = "orange" ;
-  char *noncolinear_colour = "red" ;
+  char *perfect_colour = ZMAP_WINDOW_MATCH_PERFECT ;
+  char *colinear_colour = ZMAP_WINDOW_MATCH_COLINEAR ;
+  char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
 
   if (!colour_init)
     {
@@ -1769,7 +1769,7 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
     }
 
 
-  /* SHOULD FILTER ON TYPE AS WELL...WE DON'T WANT ALL TYPES TO HAVE BACKGROUNDS....???? */
+  /* No point in doing lists that are only 1 long.... */
   if (g_list_length(name_list) > 1)
     {
       GList *backgrounds = NULL ;
