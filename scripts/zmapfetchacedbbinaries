@@ -20,6 +20,11 @@ source=$acedb'/RELEASE.'$source_acedb'/bin.'$ZBbuildOSCanon'_4/'
 echo "Copying $ZBAcedbBinaries ..."
 echo "Source = $source, Target = $target"
 
+# make sure the target of the symlink exists
+sym_target=`readlink -q $ZBBaseDir/BIN.$dest_zmap`
+mkdir -p $ZBBaseDir/BIN.$dest_zmap
+
+# make sure the rest of the target exists...
 mkdir -p $target
 
 for binary in $ZBAcedbBinaries
