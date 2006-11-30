@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 20 10:03 2006 (rds)
+ * Last edited: Nov 30 11:56 2006 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.10 2006-11-20 14:26:26 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.11 2006-11-30 12:07:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -201,7 +201,7 @@ static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *tabl
   if(table_in && table_out && *table_out == NULL)
     {  
       /* copy factory_methods into factory->methods */
-      methods = table_in;
+      methods = (ZMapWindowFToIFactoryMethods)table_in;
       while(methods && methods->method){ methods++; i++; } /* Get the size first! */
       
       /* Allocate */
@@ -688,7 +688,7 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
 
   if (feature->flags.has_boundary)
     {
-      static GdkColor splice_outline, splice_background ;
+      static GdkColor splice_background ;
       double width, origin, start ;
       ZMapDrawGlyphType glyph_type ;
       char *colour ;
@@ -788,6 +788,26 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   int i ;
   GdkColor *outline, *foreground, *background;
   guint line_width;
+  static gboolean colour_init = FALSE ;
+  static GdkColor perfect, colinear, noncolinear ;
+  char *perfect_colour = ZMAP_WINDOW_MATCH_PERFECT ;
+  char *colinear_colour = ZMAP_WINDOW_MATCH_COLINEAR ;
+  char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
+  unsigned int match_threshold = 0 ;
+
+
+
+  if (!colour_init)
+    {
+      gdk_color_parse(perfect_colour, &perfect) ;
+      gdk_color_parse(colinear_colour, &colinear) ;
+      gdk_color_parse(noncolinear_colour, &noncolinear) ;
+
+      colour_init = TRUE ;
+    }
+
+  zMapStyleGetGappedAligns(style, &match_threshold) ;
+
 
   zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
   line_width = factory->line_width;
@@ -892,6 +912,22 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
                 }
               else
                 {
+		  GdkColor *line_colour ;
+		  int diff ;
+
+		  /* Colour gap lines according to colinearity. */
+		  diff = abs(prev_align_span->q2 - align_span->q1) ;
+		  if (diff > match_threshold)
+		    {
+		      if (align_span->q1 < prev_align_span->q2)
+			line_colour = &noncolinear ;
+		      else
+			line_colour = &colinear ;
+		    }
+		  else
+		    line_colour = &perfect ;
+
+
                   lastBoxWeDrew = 
                     align_box = zMapDrawSSPolygon(feature_item, ZMAP_POLYGON_SQUARE,
                                                   x1, x2,
@@ -923,7 +959,7 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
                   gap_line = zMapDrawAnnotatePolygon(gap_line_box,
                                                      ZMAP_ANNOTATE_GAP, 
                                                      NULL,
-                                                     background,
+                                                     line_colour,
 						     dimension,
                                                      line_width,
 						     feature->strand);
@@ -1648,7 +1684,6 @@ static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature featu
   FooCanvasItem *item = NULL;
   char *text_string = NULL;
   char *text_colour = "black";
-  ZMapWindowItemFeature child_data = NULL;
   
   text_string = (char *)g_quark_to_string(feature->locus_id);
 
