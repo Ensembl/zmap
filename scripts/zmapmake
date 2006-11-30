@@ -32,14 +32,14 @@ bootstrap=""
 configure=""
 target=""
 prefix=""
-
+perl_prefix=""
 
 while getopts ":bct:p:" opt ; do
   case $opt in
     b  ) bootstrap='true' ;;
     c  ) configure='true' ;;
     t  ) target=$OPTARG   ;;
-    p  ) prefix="--prefix=$OPTARG" ;;
+    p  ) prefix="--prefix=$OPTARG"; perl_prefix=$OPTARG;;
     \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
   esac
 done
@@ -83,7 +83,7 @@ if [ -n "$prefix" ] ; then
 
   ZBmsgInfo "running X11::XRemote build and install"
   # untested. RDS
-  $builddir/perl/build.sh $prefix/$ZBbuildOSCanon || ZBmsgAndExit "X11::XRemote build failed"
+  $builddir/perl/build.sh $perl_prefix/$ZBbuildOSCanon || ZBmsgAndExit "X11::XRemote build failed"
 fi
 
 
