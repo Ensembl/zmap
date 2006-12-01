@@ -58,7 +58,7 @@ ${ACLOCAL} ${DEFAULT_INC}    || { echo "${ACLOCAL} failed";    exit 1; }
 echo "Running ${AUTOHEADER}..."
 ${AUTOHEADER} --warnings=all || { echo "${AUTOHEADER} failed"; exit 1; }
 echo "Running ${AUTOMAKE}..."
-${AUTOMAKE} --warnings=all --gnu --add-missing --copy \
+${AUTOMAKE} --gnu --add-missing --copy \
     || { echo "${AUTOMAKE} failed"; exit 1; }
 echo "Running ${AUTOCONF}..."
 ${AUTOCONF} --warnings=all   || { echo "${AUTOCONF} failed";   exit 1; }
