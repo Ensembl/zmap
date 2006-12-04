@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 30 14:43 2006 (rds)
+ * Last edited: Dec  4 12:46 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.157 2006-11-30 14:44:08 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.158 2006-12-04 13:44:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -267,7 +267,6 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   new_window->origin = original_window->origin ;
 
 
-  
   zmapWindowZoomControlCopyTo(original_window->zoom, new_window->zoom);
 
   /* I'm a little uncertain how much of the below is really necessary as we are
@@ -1274,6 +1273,9 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   /* Init focus item/column stuff. */
   window->focus = zmapWindowItemCreateFocus() ;
+
+  /* Init highlight colouring. */
+  window->use_rev_video = TRUE ;
 
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
   window->scrolled_window = gtk_scrolled_window_new(hadjustment, vadjustment) ;
@@ -2826,14 +2828,20 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
-	    ZMapStyleOverlapMode overlap_mode ;
+	    ZMapStyleOverlapMode curr_overlap_mode, overlap_mode ;
 
 	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
 
-	    if (zMapStyleGetOverlapMode(set_data->style) == ZMAPOVERLAP_NO_INTERLEAVE)
+	    curr_overlap_mode = zMapStyleGetOverlapMode(set_data->style) ;
+	    if (curr_overlap_mode == ZMAPOVERLAP_NO_INTERLEAVE ||curr_overlap_mode == ZMAPOVERLAP_COMPLEX_RANGE)
 	      overlap_mode = ZMAPOVERLAP_COMPLETE ;
 	    else
-	      overlap_mode = ZMAPOVERLAP_NO_INTERLEAVE ;
+	      {
+		if (window->range_item)
+		  overlap_mode = ZMAPOVERLAP_COMPLEX_RANGE ;
+		else
+		  overlap_mode = ZMAPOVERLAP_NO_INTERLEAVE ;
+	      }
 	
 	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), overlap_mode) ;
 	    
@@ -2844,13 +2852,52 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	break ;
       }
 
-    case GDK_f:
-    case GDK_F:
+    case GDK_m:
+    case GDK_M:
       {
+	/* Mark an item for later zooming/column bumping etc. */
 	FooCanvasItem *focus_item ;
 
 	if ((focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
-	  window->bump_range_item = focus_item ;
+	  {
+	    ZMapFeature feature ;
+
+	    if (window->range_item)
+	      {
+		zmapWindowMarkItem(window, window->range_item, FALSE) ;
+		window->range_item = NULL ;
+		window->range_top = window->range_bottom = 0 ;
+	      }
+
+	    window->range_item = focus_item ;
+
+	    feature = g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
+	    zMapAssert(feature) ;
+
+	    window->range_top = feature->x1 ;
+	    window->range_bottom = feature->x2 ;
+
+
+	    /* Show user which is marked item. */
+	    zmapWindowMarkItem(window, window->range_item, TRUE) ;
+
+	  }
+
+	break ;
+      }
+
+    case GDK_u:
+    case GDK_U:
+      {
+	/* Unmark an item. */
+
+	if (window->range_item)
+	  {
+	    zmapWindowMarkItem(window, window->range_item, FALSE) ;
+
+	    window->range_item = NULL ;
+	    window->range_top = window->range_bottom = 0 ;
+	  }
 
 	break ;
       }
@@ -2874,15 +2921,19 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_Z:
     case GDK_z:
       {
+	/* Zoom to an item or subpart of an item. */
 	FooCanvasItem *focus_item ;
-	
-	if ((focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
+
+	/* I'm just going to try this and see how it works...if there is a marked range item we use that
+	 * for zooming, otherwise we use the focus item. */
+	if ((focus_item = window->range_item)
+	    || (focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
 	  {
 	    ZMapFeature feature ;
 
 	    feature = g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
 	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-	    
+
 	    if (key_event->keyval == GDK_z)
 	      zmapWindowZoomToItem(window, focus_item) ;
 	    else
