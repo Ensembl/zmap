@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 30 10:49 2006 (edgrif)
+ * Last edited: Dec  4 13:12 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.154 2006-11-30 12:06:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.155 2006-12-04 13:40:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -281,6 +281,9 @@ typedef enum
 #define ZMAP_WINDOW_FRAME_2 "light pink"
 
 
+/* Colour for "marked" item. */
+#define ZMAP_WINDOW_ITEM_MARK "light blue"
+
 
 /* Default colours for features. */
 #define ZMAP_WINDOW_ITEM_FILL_COLOUR "white"
@@ -451,7 +454,7 @@ typedef struct _ZMapWindowStruct
   GdkColor colour_mreverse_col ;
   GdkColor colour_qforward_col ;
   GdkColor colour_qreverse_col ;
-  GdkColor colour_column_highlight ;
+
   GdkColor colour_frame_0 ;
   GdkColor colour_frame_1 ;
   GdkColor colour_frame_2 ;
@@ -529,8 +532,19 @@ typedef struct _ZMapWindowStruct
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
 
-  /* Holds a feature item that is used for setting bumping range for range bump option. */
-  FooCanvasItem *bump_range_item ;
+  /* TRUE => highlight using rev. video, FALSE => use focus_colour  for focus item highlighting. */
+  gboolean use_rev_video ;
+  GdkColor colour_item_highlight ;
+  GdkColor colour_column_highlight ;
+
+
+  /* User can set a range (perhaps by selecting an item) for operations like zooming
+   * and some bump options. */
+  FooCanvasItem *range_item ;
+  int range_top, range_bottom ;
+  GdkColor colour_item_mark ;
+
+
 
   /* We need to be able to find out if the user has done a revcomp for coordinate display
    * and other reasons, the display_forward_coords flag controls whether coords are displayed
@@ -920,6 +934,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean 
 void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 
+void zmapWindowMarkItem(ZMapWindow window, FooCanvasItem *item, gboolean mark) ;
 
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(FooCanvasGroup *group);
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightRetrieve(FooCanvasGroup *group);
