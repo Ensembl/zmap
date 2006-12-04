@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 28 11:26 2006 (edgrif)
+ * Last edited: Nov 30 13:53 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.67 2006-11-28 14:32:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.68 2006-12-04 13:42:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2392,7 +2392,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	break ;
       }
     case 7:
-      menu_data->window->bump_range_item = menu_data->item ;
+      menu_data->window->range_item = menu_data->item ;
 
       break ;
     case 3:
