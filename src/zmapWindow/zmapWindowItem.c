@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 22 15:55 2006 (edgrif)
+ * Last edited: Dec  4 13:11 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.53 2006-11-28 14:32:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.54 2006-12-04 13:46:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,8 +62,9 @@ typedef struct _ZMapWindowFocusStruct
 typedef struct
 {
   ZMapWindow window ;
-  gboolean rev_video ;
+  gboolean highlight ;
 } HighlightStruct, *Highlight ;
+
 
 /* text group selection stuff for the highlighting of dna, etc... */
 typedef struct _ZMapWindowItemHighlighterStruct
@@ -92,11 +93,14 @@ static void unhighlightCB(gpointer data, gpointer user_data) ;
 static void addFocusItemCB(gpointer data, gpointer user_data) ;
 static void freeFocusItems(ZMapWindowFocus focus) ;
 
-static void highlightItem(ZMapWindow window, FooCanvasItem *item);
+static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
 static void highlightFuncCB(gpointer data, gpointer user_data);
-static gboolean colourReverseVideo(GdkColor *colour_inout);
-static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item);
+static void colourReverseVideo(GdkColor *colour_inout);
+static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight, gboolean bounding_box_only) ;
 
+
+static void markItem(ZMapWindow window, FooCanvasItem *item, gboolean mark) ;
+static void markFuncCB(gpointer data, gpointer user_data) ;
 
 static void checkScrollRegion(ZMapWindow window, double start, double end) ;
 
@@ -107,6 +111,9 @@ static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select,
                                       double currentY); /* These are WORLD coords */
 
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
+
+
+
 
 
 
@@ -400,6 +407,10 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
 }
 
 
+
+
+/* Feature Item highlighting.... */
+
 /* I'm not sure I understand the first part of this comment now...sigh... */
 /* Highlight a feature, note how this function should just take _any_ feature/item but it doesn't 
  * and so needs redoing....sigh....it should also be called something like focusOnItem()
@@ -417,11 +428,14 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
 }
 
 
+/* raise_item is temporary and must go...replace with more sophisticated raise....i.e. only
+ * raise if item is obscured... */
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean raise_item)
 {                                               
   ZMapFeature feature ;
   ZMapWindowItemFeatureType item_feature_type ;
   GList *set_items ;
+
 
   /* Retrieve the feature item info from the canvas item. */
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
@@ -510,6 +524,18 @@ void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 
   return ;
 }
+
+
+
+/* Mark an item, the marking must be done explicitly, it is unaffected by highlighting. 
+ * If mark == TRUE the item is marked, if FALSE it is unmarked. */
+void zmapWindowMarkItem(ZMapWindow window, FooCanvasItem *item, gboolean mark)
+{
+  markItem(window, item, mark) ;
+
+  return ;
+}
+
 
 
 
@@ -1542,7 +1568,7 @@ static void highlightCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   ZMapWindow window = (ZMapWindow)user_data ;
 
-  highlightItem(window, item) ;
+  highlightItem(window, item, TRUE) ;
 
   zmapWindowItemAddFocusItem(window->focus, item) ;
 
@@ -1554,7 +1580,8 @@ static void unhighlightCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   ZMapWindow window = (ZMapWindow)user_data ;
 
-  highlightItem(window, item) ;
+  highlightItem(window, item, FALSE) ;
+
   zmapWindowItemRemoveFocusItem(window->focus, item) ;
 
   return ;
@@ -1562,84 +1589,18 @@ static void unhighlightCB(gpointer data, gpointer user_data)
 
 
 
-/* THIS FUNCTION HAS TOTALLY THE WRONG NAME, IT __SETS__ THE SCROLL REGION.... */
-/** \Brief Recalculate the scroll region.
- *
- * If the selected feature is outside the current scroll region, recalculate
- * the region to be the same size but with the selecte feature in the middle.
- */
-static void checkScrollRegion(ZMapWindow window, double start, double end)
-{
-  double x1, y1, x2, y2 ;
-
-  x1 = x2 = 0.0;
-  y1 = start;
-  y2 = end;
-  zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
-  return ;
-  /* NOTE THAT THIS ROUTINE NEEDS TO CALL THE VISIBILITY CHANGE CALLBACK IF WE MOVE
-   * THE SCROLL REGION TO MAKE SURE THAT ZMAPCONTROL UPDATES ITS SCROLLBARS.... */
-
-  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);  /* world coords */
-  if ( start < y1 || end > y2)
-    {
-      ZMapWindowVisibilityChangeStruct vis_change ;
-      int top, bot ;
-      double height ;
-
-
-      height = y2 - y1;
-
-      y1 = start - (height / 2.0) ;
-
-      if (y1 < window->min_coord)
-	y1 = window->min_coord ;
-
-      y2 = y1 + height;
-
-      /* this shouldn't happen */
-      if (y2 > window->max_coord)
-	y2 = window->max_coord ;
-
-      /* This should probably call zmapWindow_set_scroll_region */
-      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
-
-      /* UGH, I'M NOT SURE I LIKE THE LOOK OF ALL THIS INT CONVERSION STUFF.... */
-
-      /* redraw the scale bar */
-      top = (int)y1;                   /* zmapDrawScale expects integer coordinates */
-      bot = (int)y2;
-      /* gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup)); */
-
-      /* agh, this seems to be here because we move the scroll region...we need a function
-       * to do this all....... */
-      //      zmapWindowLongItemCrop(window) ;
-
-      /* Call the visibility change callback to notify our caller that our zoom/position has
-       * changed. */
-      vis_change.zoom_status = zMapWindowGetZoomStatus(window) ;
-      vis_change.scrollable_top = y1 ;
-      vis_change.scrollable_bot = y2 ;
-      (*(window->caller_cbs->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
-
-    }
-
-
-  return ;
-}
-
 /* Do the right thing with groups and items */
-static void highlightItem(ZMapWindow window, FooCanvasItem *item)
+static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight)
 {
   if (FOO_IS_CANVAS_GROUP(item))
     {
-      HighlightStruct highlight = {NULL, FALSE} ;
+      HighlightStruct highlight_data = {NULL} ;
       FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
 
-      highlight.window = window ;
-      /* highlight.rev_video = rev_video ; */
+      highlight_data.window = window ;
+      highlight_data.highlight = highlight ;
       
-      g_list_foreach(group->item_list, highlightFuncCB, (void *)&highlight) ;
+      g_list_foreach(group->item_list, highlightFuncCB, (void *)&highlight_data) ;
     }
   else
     {
@@ -1649,18 +1610,17 @@ static void highlightItem(ZMapWindow window, FooCanvasItem *item)
       item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
       feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
 
-      if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX
-	  || item_feature_type == ITEM_FEATURE_CHILD)
+      if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX || item_feature_type == ITEM_FEATURE_CHILD)
 	{
 	  ZMapWindowItemFeature item_data ;
 
 	  item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
 
 	  if (item_data->twin_item)
-	    setItemColourRevVideo(window, item_data->twin_item) ;
+	    setItemColour(window, item_data->twin_item, highlight, FALSE) ;
 	}
 
-      setItemColourRevVideo(window, item);
+      setItemColour(window, item, highlight, FALSE) ;
 
     }
 
@@ -1674,81 +1634,57 @@ static void highlightFuncCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   Highlight highlight = (Highlight)user_data ;
 
-  setItemColourRevVideo(highlight->window, item) ;
+  setItemColour(highlight->window, item, highlight->highlight, FALSE) ;
 
   return ;
 }
-#ifdef RDS_DONT_INCLUDE_UNUSED
-static void setItemColourOriginal(ZMapWindow window, FooCanvasItem *item)
-{
-  ZMapFeature feature ;
-  GdkColor *fill_colour = NULL;
-  ZMapFeatureTypeStyle style ;
-  
-  /* Retrieve the feature from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
-  zMapAssert(feature) ;
-  style = zMapFeatureGetStyle(feature) ;
-  zMapAssert(style) ;
-  
-  g_object_get(G_OBJECT(item), 
-               "fill_color_gdk", &fill_colour,
-               NULL);
 
-  if(fill_colour)
+
+
+/* Do the right thing with groups and items */
+static void markItem(ZMapWindow window, FooCanvasItem *item, gboolean mark)
+{
+  FooCanvasItem *parent ;
+
+  parent = zmapWindowItemGetTrueItem(item) ;
+
+  if (FOO_IS_CANVAS_GROUP(parent))
     {
-      GdkColor *bg, *fg;
-      bg = &(style->background);
-      fg = &(style->foreground);
-      /* currently we only need to check foreground and background */
-      if(fill_colour->red   == (65535 - bg->red) &&
-         fill_colour->green == (65535 - bg->green) &&
-         fill_colour->blue  == (65535 - bg->blue))
-        {
-          setItemColourRevVideo(window, item);
-        }
-      else if(fill_colour->red   == (65535 - fg->red) &&
-              fill_colour->green == (65535 - fg->green) &&
-              fill_colour->blue  == (65535 - fg->blue))
-        {
-          setItemColourRevVideo(window, item);
-        }
-      else if((fill_colour->red   == bg->red &&
-               fill_colour->green == bg->green &&
-               fill_colour->blue  == bg->blue) ||
-              (fill_colour->red   == fg->red &&
-               fill_colour->green == fg->green &&
-               fill_colour->blue  == fg->blue))
-        {
-          printf("Original colour, no need to do anything.\n");
-        }
-      else
-        {
-          printf("Some kind of issue here colour is neither"
-                 " original nor rev video of either foreground"
-                 " of background colour.\n");
-        }
+      HighlightStruct highlight_data = {NULL} ;
+      FooCanvasGroup *group = FOO_CANVAS_GROUP(parent) ;
+
+      highlight_data.window = window ;
+      highlight_data.highlight = mark ;
+      
+      g_list_foreach(group->item_list, markFuncCB, (void *)&highlight_data) ;
     }
-  
-  return ;  
-}
-#endif
-
-
-static gboolean colourReverseVideo(GdkColor *colour_inout)
-{
-  gboolean colour_ok = FALSE;
-
-  if(colour_inout != NULL)
+  else
     {
-      colour_inout->red   = (65535 - colour_inout->red) ;
-      colour_inout->green = (65535 - colour_inout->green) ;
-      colour_inout->blue  = (65535 - colour_inout->blue) ;
-      colour_ok = TRUE;
+      setItemColour(window, parent, mark, TRUE) ;
     }
 
-  return colour_ok;
+  return ;
 }
+
+
+/* This is a g_datalist callback function. */
+static void markFuncCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  Highlight highlight = (Highlight)user_data ;
+
+  setItemColour(highlight->window, item, highlight->highlight, TRUE) ;
+
+  return ;
+}
+
+
+
+
+
+
+
+
 
 /* The general premise of this function it to "highlight" the item.
  * To do this, rather than mess around having to declare the highlight
@@ -1790,13 +1726,19 @@ static gboolean colourReverseVideo(GdkColor *colour_inout)
       break;
     }
  * It makes me want to extend foo canvas items, but I haven't got time.
+ * 
+ * The bounding_box_only flag is a bit of a hack to support marking objects,
+ * a better way would be to use masks as overlays but I don't have time just
+ * now.
+ * 
  */
-static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
+static void setItemColour(ZMapWindow window, FooCanvasItem *item,
+			  gboolean highlight, gboolean bounding_box_only)
 {
-  GdkColor *rev_colour = NULL;
   ZMapWindowItemFeatureType item_feature_type ;
   ZMapFeature item_feature = NULL;
   ZMapFeatureTypeStyle style = NULL;
+
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
   zMapAssert(item_feature_type != ITEM_FEATURE_INVALID) ;
@@ -1820,42 +1762,82 @@ static void setItemColourRevVideo(ZMapWindow window, FooCanvasItem *item)
    */
   
 
-  if (!(FOO_IS_CANVAS_GROUP(item))
-      && item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
+  if ((!bounding_box_only && !(FOO_IS_CANVAS_GROUP(item)) && item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
+      || (bounding_box_only && item_feature_type == ITEM_FEATURE_BOUNDING_BOX))
     {
-      /* Ok now we can go on. */
+      GdkColor *highlight_colour = NULL ;
+      char *highlight_target ;
 
-      /* If we defintely have a background or can only possibly have a
-       * background we'll use that */
-      if(style->colours.background_set ||
-         (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_TEXT(item)))
-        {
-          g_object_get(G_OBJECT(item), 
-                       "fill_color_gdk", &rev_colour,
-                       NULL);
-          if(colourReverseVideo(rev_colour))
-            foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-                                "fill_color_gdk", rev_colour,
-                                NULL); 
-        } 
-      //#ifdef RDS_NOT_SURE_OUTLINE_IS_SUCH_A_GOOD_BACKUP
-      /* else use the outline as a back up */
-      else if(style->colours.outline_set &&
-              (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item)))
-        {
-          g_object_get(G_OBJECT(item), 
-                       "outline_color_gdk", &rev_colour,
-                       NULL);
-          if(colourReverseVideo(rev_colour))
-            foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-                                "outline_color_gdk", rev_colour,
-                                NULL); 
-        }
-      //#endif /* RDS_NOT_SURE_OUTLINE_IS_SUCH_A_GOOD_BACKUP */
+
+      if (bounding_box_only)
+	{
+	  highlight_target = "fill_color_gdk" ;
+	}
+      else
+	{
+	  /* If we definitely have a background or can only possibly have a background we'll use that */
+	  if (style->colours.background_set || (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_TEXT(item)))
+	    highlight_target = "fill_color_gdk" ;
+	  else if (style->colours.outline_set && (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item)))
+	    highlight_target = "outline_color_gdk" ;
+	  else
+	    zMapAssertNotReached() ;
+	}
+
+      if (!(window->use_rev_video))
+	{
+	  if (highlight)
+	    {
+	      if (bounding_box_only)
+		highlight_colour = &(window->colour_item_mark) ;
+	      else
+		highlight_colour = &(window->colour_item_highlight) ;
+	    }
+	  else
+	    {
+	      if (bounding_box_only)
+		highlight_colour = NULL ;
+	      else
+		{
+		  if (style->colours.background_set)
+		    highlight_colour = &(style->colours.background) ;
+		  else
+		    highlight_colour = &(style->colours.outline) ;
+		}
+	    }
+	}
+      else
+	{
+	  g_object_get(G_OBJECT(item), 
+		       highlight_target, &highlight_colour,
+		       NULL);
+
+	  colourReverseVideo(highlight_colour) ;
+	}
+
+      foo_canvas_item_set(FOO_CANVAS_ITEM(item),
+			  highlight_target, highlight_colour,
+			  NULL) ;
     }
 
   return ;
 }
+
+
+
+static void colourReverseVideo(GdkColor *colour_inout)
+{
+  zMapAssert(colour_inout) ;
+
+  colour_inout->red   = (65535 - colour_inout->red) ;
+  colour_inout->green = (65535 - colour_inout->green) ;
+  colour_inout->blue  = (65535 - colour_inout->blue) ;
+
+  return ;
+}
+
+
+
 
 static void pointerIsOverItem(gpointer data, gpointer user_data)
 {
@@ -2080,6 +2062,75 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b)
     result = 0 ;
 
   return result ;
+}
+
+
+
+
+/* THIS FUNCTION HAS TOTALLY THE WRONG NAME, IT __SETS__ THE SCROLL REGION.... */
+/** \Brief Recalculate the scroll region.
+ *
+ * If the selected feature is outside the current scroll region, recalculate
+ * the region to be the same size but with the selecte feature in the middle.
+ */
+static void checkScrollRegion(ZMapWindow window, double start, double end)
+{
+  double x1, y1, x2, y2 ;
+
+  x1 = x2 = 0.0;
+  y1 = start;
+  y2 = end;
+  zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
+  return ;
+  /* NOTE THAT THIS ROUTINE NEEDS TO CALL THE VISIBILITY CHANGE CALLBACK IF WE MOVE
+   * THE SCROLL REGION TO MAKE SURE THAT ZMAPCONTROL UPDATES ITS SCROLLBARS.... */
+
+  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);  /* world coords */
+  if ( start < y1 || end > y2)
+    {
+      ZMapWindowVisibilityChangeStruct vis_change ;
+      int top, bot ;
+      double height ;
+
+
+      height = y2 - y1;
+
+      y1 = start - (height / 2.0) ;
+
+      if (y1 < window->min_coord)
+	y1 = window->min_coord ;
+
+      y2 = y1 + height;
+
+      /* this shouldn't happen */
+      if (y2 > window->max_coord)
+	y2 = window->max_coord ;
+
+      /* This should probably call zmapWindow_set_scroll_region */
+      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
+
+      /* UGH, I'M NOT SURE I LIKE THE LOOK OF ALL THIS INT CONVERSION STUFF.... */
+
+      /* redraw the scale bar */
+      top = (int)y1;                   /* zmapDrawScale expects integer coordinates */
+      bot = (int)y2;
+      /* gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup)); */
+
+      /* agh, this seems to be here because we move the scroll region...we need a function
+       * to do this all....... */
+      //      zmapWindowLongItemCrop(window) ;
+
+      /* Call the visibility change callback to notify our caller that our zoom/position has
+       * changed. */
+      vis_change.zoom_status = zMapWindowGetZoomStatus(window) ;
+      vis_change.scrollable_top = y1 ;
+      vis_change.scrollable_bot = y2 ;
+      (*(window->caller_cbs->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
+
+    }
+
+
+  return ;
 }
 
 
