@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 28 14:26 2006 (edgrif)
+ * Last edited: Dec  4 13:23 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.163 2006-11-28 14:26:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.164 2006-12-04 13:45:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1545,6 +1545,8 @@ static void setColours(ZMapWindow window)
        {"colour_q_forwardcol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_F_BG}},
        {"colour_q_reversecol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_R_BG}},
        {"colour_column_highlight", ZMAPCONFIG_STRING, {ZMAP_WINDOW_COLUMN_HIGHLIGHT}},
+       {"colour_item_mark", ZMAPCONFIG_STRING, {ZMAP_WINDOW_ITEM_MARK}},
+       {"colour_item_highlight", ZMAPCONFIG_STRING, {NULL}},
        {"colour_frame_0", ZMAPCONFIG_STRING, {ZMAP_WINDOW_FRAME_0}},
        {"colour_frame_1", ZMAPCONFIG_STRING, {ZMAP_WINDOW_FRAME_1}},
        {"colour_frame_2", ZMAPCONFIG_STRING, {ZMAP_WINDOW_FRAME_2}},
@@ -1560,6 +1562,7 @@ static void setColours(ZMapWindow window)
       if (zMapConfigFindStanzas(config, colour_stanza, &colour_list))
 	{
 	  ZMapConfigStanza next_colour ;
+	  char *colour ;
 	  
 	  /* Get the first window stanza found, we will ignore any others. */
 	  next_colour = zMapConfigGetNextStanza(colour_list, NULL) ;
@@ -1588,6 +1591,15 @@ static void setColours(ZMapWindow window)
 			  &(window->colour_qreverse_col)) ;
 	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_column_highlight"),
 			  &(window->colour_column_highlight)) ;
+	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_item_mark"),
+			  &(window->colour_item_mark)) ;
+
+	  if ((colour = zMapConfigGetElementString(next_colour, "colour_item_highlight")))
+	    {
+	      gdk_color_parse(colour, &(window->colour_item_highlight)) ;
+	      window->use_rev_video = FALSE ;
+	    }
+
 	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_frame_0"),
 			  &(window->colour_frame_0)) ;
 	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_frame_1"),
@@ -1611,6 +1623,7 @@ static void setColours(ZMapWindow window)
 	  gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &(window->colour_qforward_col)) ;
 	  gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &(window->colour_qreverse_col)) ;
 	  gdk_color_parse(ZMAP_WINDOW_COLUMN_HIGHLIGHT, &(window->colour_column_highlight)) ;
+	  gdk_color_parse(ZMAP_WINDOW_ITEM_MARK, &(window->colour_item_mark)) ;
 	  gdk_color_parse(ZMAP_WINDOW_FRAME_0, &(window->colour_frame_0)) ;
 	  gdk_color_parse(ZMAP_WINDOW_FRAME_1, &(window->colour_frame_1)) ;
 	  gdk_color_parse(ZMAP_WINDOW_FRAME_2, &(window->colour_frame_2)) ;
