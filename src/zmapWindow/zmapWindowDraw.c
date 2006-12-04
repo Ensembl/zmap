@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 30 11:57 2006 (edgrif)
+ * Last edited: Nov 30 14:04 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.44 2006-11-30 12:06:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.45 2006-12-04 13:44:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -477,7 +477,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	ComplexBumpStruct complex = {NULL} ;
 	GList *names_list = NULL ;
 
-	if (bump_mode == ZMAPOVERLAP_COMPLEX_RANGE && !(set_data->window->bump_range_item))
+	if (bump_mode == ZMAPOVERLAP_COMPLEX_RANGE && !(set_data->window->range_item))
 	  {
 	    /* For the range mode the user must have selected a feature for bump range. */
 	    bumped = FALSE ;
@@ -516,7 +516,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	     * names list.....that would be a much better way of doing it. */
 	    if (bump_mode == ZMAPOVERLAP_COMPLEX_RANGE)
 	      {
-		if (removeNameListsByRange(&names_list, set_data->window->bump_range_item))
+		if (removeNameListsByRange(&names_list, set_data->window->range_item))
 		  set_data->hidden_bump_features = TRUE ;
 	      }
 

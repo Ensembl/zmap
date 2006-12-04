@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Nov 27 10:14 2006 (edgrif)
+ * Last edited: Dec  4 12:41 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.24 2006-11-28 14:27:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.25 2006-12-04 13:41:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -172,10 +172,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
    * NOTE logic, this button is either "no bump" or "Name + No Overlap", the latter should be
    * selectable whatever.... */
   item = &(menu[0]) ;
-  if (curr_overlap == ZMAPOVERLAP_NO_INTERLEAVE)
+  if (curr_overlap == ZMAPOVERLAP_NO_INTERLEAVE || curr_overlap == ZMAPOVERLAP_COMPLEX_RANGE)
     {
       item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
-      item->id = ZMAPOVERLAP_NO_INTERLEAVE ;
+      item->id = curr_overlap ;
     }
   else
     {
@@ -701,11 +701,17 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
   FooCanvasGroup *column_group ;
   FooCanvasItem *style_item ;
 
-  if (bump_type == ZMAPOVERLAP_NO_INTERLEAVE)
-    bump_type = ZMAPOVERLAP_COMPLETE ;
+  if (bump_type == ZMAPOVERLAP_NO_INTERLEAVE || bump_type == ZMAPOVERLAP_COMPLEX_RANGE)
+    {
+      bump_type = ZMAPOVERLAP_COMPLETE ;
+    }
   else
-    bump_type = ZMAPOVERLAP_NO_INTERLEAVE ;
-
+    {
+      if (menu_data->window->range_item)
+	bump_type = ZMAPOVERLAP_COMPLEX_RANGE ;
+      else
+	bump_type = ZMAPOVERLAP_NO_INTERLEAVE ;
+    }
 
   if (menu_data->item_cb)
     {
