@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 30 14:04 2006 (edgrif)
+ * Last edited: Dec  5 16:11 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.45 2006-12-04 13:44:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.46 2006-12-05 16:23:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -234,6 +234,8 @@ static void printQuarks(gpointer data, gpointer user_data) ;
 void zMapWindowToggle3Frame(ZMapWindow window)
 {
 
+  zMapWindowBusy(window, TRUE) ;
+
   /* Remove all col. configuration windows as columns will be destroyed/recreated and the column
    * list will be out of date. */
   zmapWindowColumnConfigureDestroy(window) ;
@@ -259,6 +261,8 @@ void zMapWindowToggle3Frame(ZMapWindow window)
     }
 
   window->display_3_frame = !window->display_3_frame ;
+
+  zMapWindowBusy(window, FALSE) ;
 
   return ;
 }
@@ -380,6 +384,8 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   gboolean bumped = TRUE ;
 
 
+
+
   /* Decide if the column_item is a column group or a feature within that group. */
   if ((feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_TYPE)))
       != ITEM_FEATURE_INVALID)
@@ -404,6 +410,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
 
+  zMapWindowBusy(set_data->window, TRUE) ;
 
   /* We may have created extra items for some bump modes to show all matches from the same query
    * etc. so now we need to get rid of them before redoing the bump. */
@@ -593,6 +600,8 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
       /* Make the parent groups bounding box as large as the group.... */
       zmapWindowContainerSetBackgroundSize(column_group, 0.0) ;
     }
+
+  zMapWindowBusy(set_data->window, FALSE) ;
 
   return ;
 }
@@ -1800,6 +1809,10 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
       mid = (x2 + x1) * 0.5 ;
 
 
+      /* CODE HERE WORKS BUT IS NOT CORRECT IN THAT IT IS USING THE CANVAS BOX COORDS WHEN IT
+	 SHOULD
+	 * BE USING THE FEATURE->X1/X2 COORDS...i'LL FIX IT LATER... */
+
       do
 	{
 	  if ((list_item = g_list_next(list_item)))
@@ -1812,6 +1825,13 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
 
 	      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
 	      zMapAssert(feature) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      printf("%s :  %d, %d\n", g_quark_to_string(feature->original_id), feature->x1, feature->x2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      curr_id = feature->original_id ;
 	      curr_style = feature->style ;
@@ -1839,44 +1859,46 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
 
 		  curr_start = feature->feature.homol.y1 ;
 
-		  bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
-		  bump_data->feature_id = prev_id ;
-		  bump_data->style = prev_style ;
-
-		  diff = abs(prev_end - curr_start) ;
-		  if (diff > match_threshold)
+		  /* Peverse stuff...it can happen that there can be overlapping matches for a
+		   * single piece of evidence in which case we cannot draw a box between them....sigh... */
+		  if (curr_y1 > prev_y2)
 		    {
-		      if (curr_start < prev_end)
-			box_colour = &noncolinear ;
+		      bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
+		      bump_data->feature_id = prev_id ;
+		      bump_data->style = prev_style ;
+
+		      diff = abs(prev_end - curr_start) ;
+		      if (diff > match_threshold)
+			{
+			  if (curr_start < prev_end)
+			    box_colour = &noncolinear ;
+			  else
+			    box_colour = &colinear ;
+			}
 		      else
-			box_colour = &colinear ;
+			box_colour = &perfect ;
+
+		      background = zMapDrawBox(FOO_CANVAS_ITEM(item->parent),
+					       (mid - half_width), prev_y2, (mid + half_width), curr_y1,
+					       box_colour, box_colour, 0.0) ;
+
+		      zmapWindowLongItemCheck(col_data->window->long_items, background, prev_y2, curr_y1) ;
+
+		      extra_items = g_list_append(extra_items, background) ;
+
+		      g_object_set_data(G_OBJECT(background), ITEM_FEATURE_TYPE,
+					GINT_TO_POINTER(ITEM_FEATURE_GROUP_BACKGROUND)) ;
+		      g_object_set_data(G_OBJECT(background), ITEM_FEATURE_BUMP_DATA, bump_data) ;
+		      g_signal_connect(GTK_OBJECT(background), "event",
+				       GTK_SIGNAL_FUNC(bumpBackgroundEventCB), col_data->window) ;
+		      g_signal_connect(GTK_OBJECT(background), "destroy",
+				       GTK_SIGNAL_FUNC(bumpBackgroundDestroyCB), col_data->window) ;
+
+		      /* Make sure these backgrounds are drawn behind the feature items. */
+		      foo_canvas_item_lower_to_bottom(background) ;
+
+		      backgrounds = g_list_append(backgrounds, background) ;
 		    }
-		  else
-		    box_colour = &perfect ;
-
-		  background = zMapDrawBox(FOO_CANVAS_ITEM(item->parent),
-					   (mid - half_width), prev_y2, (mid + half_width), curr_y1,
-					   box_colour, box_colour, 0.0) ;
-
-		  zmapWindowLongItemCheck(col_data->window->long_items, background, prev_y2, curr_y1) ;
-
-		  extra_items = g_list_append(extra_items, background) ;
-
-		  g_object_set_data(G_OBJECT(background), ITEM_FEATURE_TYPE,
-				    GINT_TO_POINTER(ITEM_FEATURE_GROUP_BACKGROUND)) ;
-		  g_object_set_data(G_OBJECT(background), ITEM_FEATURE_BUMP_DATA, bump_data) ;
-		  g_signal_connect(GTK_OBJECT(background), "event",
-				   GTK_SIGNAL_FUNC(bumpBackgroundEventCB), col_data->window) ;
-		  g_signal_connect(GTK_OBJECT(background), "destroy",
-				   GTK_SIGNAL_FUNC(bumpBackgroundDestroyCB), col_data->window) ;
-
-
-
-		  /* Make sure these backgrounds are drawn behind the feature items. */
-		  foo_canvas_item_lower_to_bottom(background) ;
-
-
-		  backgrounds = g_list_append(backgrounds, background) ;
 
 		  prev_y2 = curr_y2 ;
 		  prev_end = feature->feature.homol.y2 ;
