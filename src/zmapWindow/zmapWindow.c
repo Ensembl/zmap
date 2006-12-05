@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec  4 12:46 2006 (edgrif)
+ * Last edited: Dec  5 16:21 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.158 2006-12-04 13:44:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.159 2006-12-05 16:22:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -227,6 +227,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   GtkAdjustment *hadjustment = NULL, *vadjustment = NULL ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
   int x, y ;
+
+  zMapWindowBusy(original_window, TRUE) ;
   
   if (window_locking != ZMAP_WINLOCK_NONE)
     {
@@ -295,9 +297,66 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
   zMapWindowDisplayData(new_window, feature_context, feature_context) ;
+
+  zMapWindowBusy(original_window, FALSE) ;
   
   return new_window ;
 }
+
+
+/* This function shouldn't be called directly, instead use the macro zMapWindowBusy()
+ * defined in the public header zmapWindow.h */
+void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean busy)
+{
+  static GdkCursor* busy_cursor = NULL ;
+  GdkWindow *gdk_window ;
+  gboolean debug = FALSE ;
+
+  zMapAssert(window) ;
+
+  if (busy_cursor == NULL)
+    {
+      busy_cursor = gdk_cursor_new(GDK_WATCH) ;
+    }
+
+  /* Need to guard against toplevel window not being realised yet. */
+  if ((gdk_window = window->toplevel->window))
+    {
+
+      if (debug)
+	printf("%s (%s): %s\n", file, func ? func : "<no funcname>", busy ? "on" : "off") ;
+
+      if (window->cursor_busy_count < 0)
+	{
+	  if (debug)
+	    printf("bad cursor_busy_count on entry, reset to zero, value was: %d\n", window->cursor_busy_count) ;
+
+	  window->cursor_busy_count = 0 ;
+	}
+
+      if (busy && window->cursor_busy_count == 0)
+	gdk_window_set_cursor(gdk_window, busy_cursor) ;
+
+      if (busy)
+	window->cursor_busy_count++ ;
+      else
+	window->cursor_busy_count-- ;
+
+      if (window->cursor_busy_count < 0)
+	{
+	  if (debug)
+	    printf("bad cursor_busy_count on leaving, reset to zero, value was: %d\n", window->cursor_busy_count) ;
+
+	  window->cursor_busy_count = 0 ;
+	}
+
+      if (!busy && window->cursor_busy_count == 0)
+	gdk_window_set_cursor(gdk_window, NULL) ;	    /* NULL => use parents cursor. */
+    }
+
+  return ;
+}
+
 
 
 /* This routine is called by the code in zmapView.c that manages the slave threads. 
@@ -324,9 +383,14 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_feature
   feature_sets->current_features = current_features ;
   feature_sets->new_features = new_features ;
 
+  /* We either turn the busy cursor on here if there is already a window or we do it in the expose
+   * handler exposeHandlerCB() which is called when the window is first realised, its turned off
+   * again in zmapWindowDrawFeatures(). */
   if (GTK_WIDGET(window->canvas)->allocation.height > 1
       && GTK_WIDGET(window->canvas)->window)
     {
+      zMapWindowBusy(window, TRUE) ;
+
       sendClientEvent(window, feature_sets) ;
     }
   else
@@ -349,10 +413,13 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_feature
 /* completely reset window. */
 void zMapWindowReset(ZMapWindow window)
 {
+  zMapWindowBusy(window, TRUE) ;
 
   resetCanvas(window, TRUE, TRUE) ;
 
   /* Need to reset feature context pointer and any other things..... */
+
+  zMapWindowBusy(window, FALSE) ;
 
   return ;
 }
@@ -537,6 +604,9 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
   adjust = 
     gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
+
+  zMapWindowBusy(window, TRUE) ;
+
   /* Record the current position. */
   /* In order to stay centred on wherever we are in the canvas while zooming, we get the 
    * current position (offset, in canvas pixels), add half the page-size to get the centre
@@ -575,6 +645,9 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
       foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
       foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
     }
+
+  zMapWindowBusy(window, FALSE) ;
+
 
   return;
 }
@@ -1920,6 +1993,9 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoin
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("exposeHandlerCB\n");
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  zMapWindowBusy(realiseData->window, TRUE) ;
 
   /* call the function given us by zmapView.c to set zoom_status
    * for all windows in this view. */
