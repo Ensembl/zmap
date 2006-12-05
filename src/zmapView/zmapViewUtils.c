@@ -27,9 +27,9 @@
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
  * HISTORY:
- * Last edited: Feb  1 12:51 2005 (edgrif)
+ * Last edited: Dec  5 16:19 2006 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.5 2006-11-08 09:24:58 edgrif Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.6 2006-12-05 16:20:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,42 +51,19 @@ void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom)
 
 void zmapViewBusy(ZMapView zmap_view, gboolean busy)
 {
-  static GdkCursor* busy_cursor = NULL ;
   GList* list_item ;
 
-  if (busy_cursor == NULL)
-    {
-      busy_cursor = gdk_cursor_new(GDK_WATCH) ;
-    }
-
   zmap_view->busy = busy ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("zmapViewBusy state is: %s\n", busy ? "on" : "off") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   if ((list_item = g_list_first(zmap_view->window_list)))
     {
       do
 	{
 	  ZMapViewWindow view_window ;
-	  GtkWidget *view_widget ;
-	  GdkWindow *window = NULL ;
 
 	  view_window = list_item->data ;
 
-	  view_widget = zMapWindowGetWidget(view_window->window) ;
-
-	  if ((window = view_widget->window))
-	    {
-	      if (busy)
-		gdk_window_set_cursor(window, busy_cursor) ;
-	      else
-		gdk_window_set_cursor(window, NULL) ;		    /* NULL => use parents cursor. */
-	    }
+	  zMapWindowBusy(view_window->window, busy) ;
 	}
       while ((list_item = g_list_next(list_item))) ;
     }
