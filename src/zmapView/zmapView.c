@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov 15 16:51 2006 (edgrif)
+ * Last edited: Dec  5 13:52 2006 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.93 2006-11-15 16:51:24 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.94 2006-12-05 16:18:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -495,7 +495,11 @@ void zMapViewRemoveWindow(ZMapViewWindow view_window)
 	{
 	  /* We should check the window is in the list of windows for that view and abort if
 	   * its not........ */
+	  zMapWindowBusy(view_window->window, TRUE) ;
+
 	  destroyWindow(zmap_view, view_window) ;
+
+	  /* no need to reset cursor here...the window is gone... */
 	}
     }
 
