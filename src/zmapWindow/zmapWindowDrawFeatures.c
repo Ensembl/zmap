@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec  4 13:23 2006 (edgrif)
+ * Last edited: Dec  5 16:10 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.164 2006-12-04 13:45:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.165 2006-12-05 16:24:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -372,6 +372,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
   zMapPrintTimer(NULL, "Finished creating canvas features") ;
 
+  /* cursor should have been set on by anyone calling us. */
+  zMapWindowBusy(window, FALSE) ;
+
   return ;
 }
 
@@ -607,6 +610,8 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        gboolean force_to, gboolean force)
 {
 
+  zMapWindowBusy(window, TRUE) ;
+
   if (dna)
     zmapWindowToggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_DNA_NAME,
 					   align_id, block_id, force_to, force);
@@ -616,6 +621,8 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
 					   align_id, block_id, force_to, force);
 
   zmapWindowNewReposition(window) ;
+
+  zMapWindowBusy(window, FALSE) ;
 
   return ;
 }
