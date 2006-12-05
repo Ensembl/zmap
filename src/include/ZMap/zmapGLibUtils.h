@@ -26,9 +26,9 @@
  *              glib but not included with their distribution.
  *
  * HISTORY:
- * Last edited: Oct  2 16:05 2006 (edgrif)
+ * Last edited: Dec  5 15:10 2006 (rds)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.11 2006-11-08 09:23:16 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.12 2006-12-05 16:09:40 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -73,6 +73,8 @@ gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user
 GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index) ;
 void zMap_g_list_quark_print(GList *quark_list) ;
 GList *zMap_g_list_find_quark(GList *list, GQuark str_quark) ;
+GList *zMap_g_list_grep(GList **list_inout, gpointer data, GCompareFunc func);
+GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point);
 
 
 gboolean zMap_g_string_replace(GString *string, char *target, char *source) ;

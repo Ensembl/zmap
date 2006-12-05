@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Nov  7 13:38 2006 (edgrif)
+ * Last edited: Dec  5 16:08 2006 (rds)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.13 2006-11-08 09:24:45 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.14 2006-12-05 16:09:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -261,8 +261,80 @@ GList *zMap_g_list_find_quark(GList *list, GQuark str_quark)
   return result ;
 }
 
+/* filter out a list of matching items */
+GList *zMap_g_list_grep(GList **list_inout, gpointer data, GCompareFunc func)
+{
+  GList *matched = NULL;
+  GList *loop_list, *tmp, *inout;
 
+  zMapAssert(list_inout);
 
+  loop_list = inout = *list_inout;
+
+  while(loop_list)
+    {
+      if(!func(loop_list->data, data))
+        {
+          tmp = loop_list->next;
+          inout = g_list_remove_link(inout, loop_list);
+          matched = g_list_concat(matched, loop_list);
+          loop_list = tmp;
+        }
+      else
+        loop_list = loop_list->next;
+    }
+
+  /* basically in case we removed the first element */
+  *list_inout = inout;
+
+  return matched;
+}
+
+/* point is 0 based! */
+GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point)
+{
+  GList *complete = NULL;
+
+  recipient = g_list_first(recipient);
+
+  if(point == 0)
+    {
+      /* quicker to concat the recipient to the donor! */
+      recipient = g_list_concat(donor, recipient);
+    }
+  else if((recipient = g_list_nth(recipient, point)) &&
+          recipient->next)
+    {
+      /*
+       * This next bit of code is confusing so here is a desciption...
+       *
+       * recipient A -> <- B -> <- F 
+       * donor     C -> <- D -> <- E
+       * point = 2
+       *
+       * recipient[B]->next[F]->prev = g_list_last(donor)[E]
+       * recipient[B]->next[F]->prev[E]->next = recipient->next[F]
+       * recipient[B]->next = donor[C]
+       * donor[C]->prev = recipient[B]
+       *
+       * complete =  A -> <- B -> <- C -> <- D -> <- E -> <- F 
+       *                       |   |                   |   |
+       * so we've changed B->next, C->prev,      E->next & F->prev
+       */
+      recipient->next->prev = g_list_last(donor);
+      recipient->next->prev->next = recipient->next;
+      recipient->next = donor;
+      donor->prev = recipient;
+    }
+  else if(recipient)
+    recipient = g_list_concat(recipient, donor);
+  else
+    zMapAssertNotReached();     /* point off list! */
+
+  complete = g_list_first(recipient);
+
+  return complete;
+}
 
 /* 
  *                Additions to GArray
