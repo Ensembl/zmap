@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec  5 16:11 2006 (edgrif)
+ * Last edited: Dec  6 10:06 2006 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.46 2006-12-05 16:23:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.47 2006-12-06 10:07:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,8 +153,6 @@ static void bumpColCB(gpointer data, gpointer user_data) ;
 
 static void preZoomCB(FooCanvasGroup *data, FooCanvasPoints *points, 
                       ZMapContainerLevelType level, gpointer user_data) ;
-static void positionCB(FooCanvasGroup *data, FooCanvasPoints *points, 
-                       ZMapContainerLevelType level, gpointer user_data) ;
 static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points, 
                                ZMapContainerLevelType level, gpointer user_data);
 static void columnZoomChanged(FooCanvasGroup *container, double new_zoom, ZMapWindow window) ;
@@ -679,133 +677,6 @@ void zmapWindowColumnReposition(FooCanvasGroup *column)
 }
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* Roys code below needs to be merged into my general feature handling.... */
-
-/* GFunc to call on potentially all container groups.
- * This is still a little creased, get out the ironing board... 
- * Issues include:
- *  - Being unsure on whether parents should call this on children
- *  - small problem on timing, but that might need a check in setbackgroundsize.
- *  - Can parents and children (text esp.) be sorted by moving to sub features style organisation?
- */
-static void zmapWindowContainerZoomChanged(gpointer data, 
-                                           gpointer user_data)
-{
-  FooCanvasGroup *container = (FooCanvasGroup *)data;
-  double          new_zoom  = 0.0;
-  gpointer        cb_data   = NULL;
-  ContainerType   type      = CONTAINER_INVALID ;
-  zmapWindowContainerZoomChangedCallback callback = NULL;
-
-  new_zoom = *((double *)user_data);
-
-  callback = g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_CALLBACK);
-  cb_data  = g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_DATA);
-
-  type     = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container), 
-                                               CONTAINER_TYPE_KEY));
-  
-  switch(type)
-    {
-      /* Is this convoluted?  Could we get round this, by just having
-       * callbacks on features and text? I think this depends on where 
-       * the style is going to sit.  If it sits on the parent it can
-       * easily apply to both the feature, bckgrnd & text.  If it sits
-       * on the feature then, maybe it's only a feature thing.  Will
-       * we need an extra style for the text? Is this reasonable anyway? 
-       * Where does the text get it's width from is it just guessed/
-       * automatic?
-       */
-    case CONTAINER_ROOT:
-    case CONTAINER_PARENT:    
-      if(callback)
-        (callback)(container, new_zoom, cb_data);
-      /* Issue with whether we have a text child.... */
-      /* Do we have a text child? Yes -> zmapWindowContainerZoomChangedCB(text_child, new_zoom, ...); */
-      {
-        FooCanvasGroup *text = NULL;
-        if((text = zmapWindowContainerGetText(container)))
-          zmapWindowContainerZoomChanged(text, &new_zoom);
-      }
-      /* We assume that the child will have changed it's size, so sort
-       * out the background. No need for children to do this! */
-      /* MUST watch out for the resize to bigger than 32K!!!!  THIS
-       * function MUST be called BEFORE zmapWindowScrollRegionTool so
-       * that the backgrounds get cropped by longitemcrop */
-      /* However some columns need to know what the scroll region is
-       * so zmapWindowScrollRegionTool MUST be called FIRST!
-       * Arrrrgh. */
-      break;
-    case CONTAINER_TEXT:
-    case CONTAINER_FEATURES:
-    case CONTAINER_BACKGROUND:
-      if(callback)
-        (callback)(container, new_zoom, cb_data);
-      break;
-    default:
-      zMapAssert(0 && "bad coding, unrecognised container type.") ;
-    }
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef RDS_DONT_INCLUDE
-static void zmapWindowContainerRegionChanged(gpointer data, 
-                                             gpointer user_data)
-{
-  FooCanvasGroup *container = (FooCanvasGroup *)data;
-  ContainerType   type      = CONTAINER_INVALID ;
-  gpointer        cb_data   = NULL;
-  zmapWindowContainerZoomChangedCallback callback = NULL;
-
-  callback = g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_CALLBACK);
-  cb_data  = g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_DATA);
-  type     = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container), 
-                                               CONTAINER_TYPE_KEY));
-  
-  switch(type)
-    {
-    case CONTAINER_ROOT:
-    case CONTAINER_PARENT:    
-      {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-        FooCanvasGroup *text = NULL;
-        if((text = zmapWindowContainerGetText(container)))
-          zmapWindowContainerRegionChanged(text, NULL);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      }
-      break;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    case CONTAINER_TEXT:
-      if(callback)
-        (callback)(FOO_CANVAS_ITEM(container), 0.0, cb_data);
-      break;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    case CONTAINER_FEATURES:
-    case CONTAINER_BACKGROUND:
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if(callback)
-        (callback)(FOO_CANVAS_ITEM(container), 0.0, cb_data);
-#endif
-      break;
-    default:
-      zMapAssert(0 && "bad coding, unrecognised container type.") ;
-    }
-
-  return ;
-}
-#endif
-
 void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window)
 {
   ContainerType type = CONTAINER_INVALID ;
@@ -840,6 +711,7 @@ void zmapWindowNewReposition(ZMapWindow window)
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(super_root), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type = CONTAINER_ROOT) ;
 
+  /* This could probably call the col order stuff as pre recurse function... */
   zmapWindowContainerExecuteFull(FOO_CANVAS_GROUP(super_root),
                                  ZMAPCONTAINER_LEVEL_FEATURESET,
                                  NULL,
@@ -906,7 +778,6 @@ void zmapWindowDrawZoom(ZMapWindow window)
 
   zoom_data.window = window ;
   zoom_data.zoom = zMapWindowGetZoomFactor(window) ;
-
 
   zmapWindowContainerExecuteFull(FOO_CANVAS_GROUP(super_root),
                                  ZMAPCONTAINER_LEVEL_FEATURESET,
@@ -1379,20 +1250,6 @@ static void preZoomCB(FooCanvasGroup *data, FooCanvasPoints *points,
 }
 
 
-/* Called by zoom and also reposition functions, since all these need repositioning. */
-static void positionCB(FooCanvasGroup *data, FooCanvasPoints *points, 
-                       ZMapContainerLevelType level, gpointer user_data)
-{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  FooCanvasGroup *container = (FooCanvasGroup *)data ;
-  ZMapWindow window = (ZMapWindow)user_data ;		    /* not needed at the moment... */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  //  if (level != ZMAPCONTAINER_LEVEL_FEATURESET)
-  //  zmapWindowContainerReposition(container) ;
-  
-  return ;
-}
 
 /* A version of zmapWindowResetWidth which uses the points from the recursion to set the width */
 static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points, 
@@ -2670,9 +2527,21 @@ static void redrawAs3Frames(ZMapWindow window)
 							   0)) ;
   zMapAssert(super_root) ;
 
+  /* possibly change nxt 3 calls to. 
+   * zmapWindowContainerExecuteFull(super_root, 
+   *                                ZMAPCONTAINER_LEVEL_STRAND,
+   *                                redrawAs3FrameCols, window,
+   *                                orderColumnCB, order_data, NULL);
+   * means moving column code around though. Basically need to decide 
+   * on how much NewReposition does...
+   */
   zmapWindowContainerExecute(super_root,
                              ZMAPCONTAINER_LEVEL_BLOCK,
                              redrawAs3FrameCols, window);
+
+  zmapWindowColOrderColumns(window);
+  
+  zmapWindowNewReposition(window) ;
 
   return ;
 }
@@ -2728,7 +2597,6 @@ static void redrawAs3FrameCols(FooCanvasGroup *container, FooCanvasPoints *point
 	  zmapWindowRemoveEmptyColumns(window, redraw_data.forward_group, redraw_data.reverse_group) ;
 	}
 
-      zmapWindowNewReposition(window) ;
     }
 
   return ;
@@ -2765,41 +2633,14 @@ static void create3FrameCols(gpointer data, gpointer user_data)
 				 redraw_data->block, feature_set_id, window, redraw_data->frame,
 				 &forward_col, &reverse_col) ;
 
+      /* There was some column ordering code here, but that's now in the
+       * zmapWindowColOrderColumns code instead. */
 
-      /* Now move them to their correct offsets using the foocanvas lower. */
-
-      forward_len = g_list_length(redraw_data->forward_group->item_list) ;
+      /* Set the current columns */
       redraw_data->curr_forward_col = forward_col ;
-      forward_incr = ((forward_len - 1) - redraw_data->frame3_pos) ;
-      foo_canvas_item_lower(FOO_CANVAS_ITEM(forward_col), forward_incr) ;
-
 
       if (window->show_3_frame_reverse)
-	{
-	  reverse_len = g_list_length(redraw_data->reverse_group->item_list) ;
-	  redraw_data->curr_reverse_col = reverse_col ;
-	  reverse_incr = redraw_data->frame3_pos - 1 ;
-	  foo_canvas_item_lower(FOO_CANVAS_ITEM(reverse_col), reverse_incr) ;
-	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("Making forward column %s at position: %d, frame %d\n",
-	     g_quark_to_string(feature_set_id),
-	     forward_len - 1, redraw_data->frame) ;
-      printf("Making reverse column %s at position: %d, frame %d\n",
-	     g_quark_to_string(feature_set_id),
-	     reverse_len - 1, redraw_data->frame) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("moving forward column from %d to %d\n",
-	     forward_len - 1, forward_incr) ;
-      printf("moving reverse column from %d to %d\n",
-	     reverse_len - 1, reverse_incr) ;
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+        redraw_data->curr_reverse_col = reverse_col ;
 
       /* Now draw the features into the forward and reverse columns, empty columns are removed
        * at this stage. */
