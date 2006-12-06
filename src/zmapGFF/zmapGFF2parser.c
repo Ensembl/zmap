@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov  9 10:33 2006 (rds)
+ * Last edited: Dec  5 17:21 2006 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.65 2006-11-09 10:33:37 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.66 2006-12-06 08:58:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,6 +69,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuark *orig_style_out) ;
 static char *getURL(char *attributes) ;
 static GQuark getLocus(char *attributes) ;
+static gboolean getHomolLength(char *attributes, int *length_out) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
 static gboolean getCDSAttrs(char *attributes,
@@ -935,7 +936,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   gboolean feature_has_name ;
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
-  int query_start = 0, query_end = 0 ;
+  int query_start = 0, query_end = 0, query_length = 0 ;
   GQuark column_id = 0, orig_style_id = 0 ;
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   char *url ;
@@ -1001,7 +1002,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   if (feature_type == ZMAPFEATURE_ALIGNMENT)
     {
       /* if this fails, what do we do...should just log the error I think..... */
-      result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end) ;
+      if ((result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end)))
+	result = getHomolLength(attributes, &query_length) ;
     }
 
 
@@ -1151,7 +1153,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	 result = zMapFeatureAddAlignmentData(feature,
 					      homol_type,
 					      ZMAPSTRAND_NONE, ZMAPPHASE_0,
-					      query_start, query_end,
+					      query_start, query_end, query_length,
 					      gaps) ;
        }
      else
@@ -1626,6 +1628,36 @@ static gboolean getCDSAttrs(char *attributes,
 
   if (result && (target = strstr(attributes, "end_not_found")))
     *end_not_found_out = end_not_found = TRUE ;
+
+  return result ;
+}
+
+
+
+/* Format of Lemgth attribute section is:
+ * 
+ *          Length <length> ;
+ * 
+ * Format string extracts the integer length.
+ * 
+ *  */
+static gboolean getHomolLength(char *attributes, int *length_out)
+{
+  gboolean result = FALSE ;
+  char *target ;
+
+  if ((target = strstr(attributes, "Length")))
+    {
+      int attr_fields ;
+      char *attr_format_str = "%*s %d %*s" ;
+      int length = 0 ;
+
+      if ((attr_fields = sscanf(target, attr_format_str, &length)) == 1)
+	{
+	  *length_out = length ;
+	  result = TRUE ;
+	}
+    }
 
   return result ;
 }
