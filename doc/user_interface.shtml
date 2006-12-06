@@ -4,18 +4,113 @@
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
 
-<p>ZMap has a fairly complex user interface and this guides describes
-its major aspects.</p>
+<p><hr>
+<h2 id="overview">Overview</h2>
+
+<p>ZMap has a fairly complex display and this document describes the user interface
+and how to make use of ZMap to look at sequence data.
+
+
+<h3>The Focus Feature vs. the Marked Feature</h3>
+
+<p>If you click on a column background then that column becomes the
+"focus" column and you can do various short cut operations on it such
+as pressing "b" to bump it. If you click on a feature then that feature
+becomes the "focus" feature and similarly you can do various
+short cut operations on it such as zooming in to it. (Note when
+you select a feature then its column automatically becomes the
+focus column.)
+
+<p>While the focus facility is useful the focus changes every time you
+click on a new feature. Sometimes you want to more permanently select
+a "working" feature, to do this you can "mark" a feature and it will
+stay "marked" until you unmark it. Marking simply involves:
+
+<ol>
+  <li>Select a feature to make it the focus feature.
+  <li>Press "m" to mark the feature (it will be highlighted in blue).
+</ol>
+
+To unmark it simply press "u".
+
+
+<p><hr>
+<h2 id="efficient_use">Making Good Use Of ZMap</h3>
+
+<p>In general zmap will be faster for zooming, bumping etc if you make good use of the
+built in short cuts, these can often avoid the need for ZMap to redraw large amounts
+of data that you may not even be interested in.
+
+<p>The following sections give some examples to illustrate this.
+
+
+<h3>Marking a Feature and Zooming and Bumping</h3>
+
+<p>This section describes how to select a feature, mark it and then
+zoom in to it and examine evidence that overlaps that feature.
+
+<p>Selecting, marking, zooming:
+
+<ol>
+  <li>Click on the feature you are interested in (perhaps a transcript)
+  <li>Mark it by pressing "m"
+  <li>Zoom in to the feature by pressing "Z" (that's a captial "z" !)
+</ol>
+
+<p>Now when you bump an evidence column to look at matches that overlap the
+feature you will find that bumping is much faster because only those matches
+that overlap the feature get bumped and you also have fewer matches to look at.
+The quickest way to bump a column is:
+
+<ol>
+  <li>Click on the column to select it
+  <li>Bump it by pressing "b" (if you press "b" again the column will be unbumped)
+</ol>
+
+
+<p>Bumping has changed considerably from acedb FMap, the main points to note are:
+
+<ul>
+  <li>If you have marked a feature then bumping is restricted to matches that overlap that feature,
+      otherwise bumping is for the whole column.
+  <li>If you use the default bumping mode (i.e. you pressed "b") then you will find all matches from
+      the same piece of evidence are joined by coloured bars, the colours indicate the level of colinearity
+      between the matches:
+      <ul>
+	<li>green: the matches at either end are perfectly contiguous, e.g. 100, 230  ---> 231, 351
+	<li>orange: the matches at either end are colinear but not perfect, e.g. 100, 230 ---> 297, 351
+	<li>red: the matches are not colinear, e.g.  100, 230 ---> 141, 423
+      </ul>
+      you can click on the bars to see the evidence name and its column name is, e.g. "Tr:Q95JD1.1", "BLASTX"
+</ul>
+
+<p>The colouring means you can instantly see all matches for a piece of evidence but also how good
+an alignment they are to the feature you marked.
+
+
+<h3>Zooming in to an Area</h3>
+
+<p>Sometimes you don't have a particular feature you want to zoom to but you do
+know the approximate area. Zmap allows you to interactively mark a rectangle to zoom in to.
+
+<p>To mark the rectangle:
+
+<ul>
+  <li>Press the Cntl and left mouse button at the top left of the area you want to outline
+      and then drag out the outline until it encloses the area you want to zoom to. When you
+      release the button, zmap zooms in to that rectangle.
+</ul>
 
 
 
 
-<h2 id="all_windows">All Windows</h2>
+<p><hr>
+<h2 id="keyboard_mouse">Keyboard and Mouse Usage</h2>
 
 
-<h3>Short Cuts</h3>
+<h3 id="all_windows">All Windows</h3>
 
-<p>The following short cuts can be used on all zmap windows:
+<h4>Short Cuts</h4>
 
 <p>
 <table border cellpadding=10>
@@ -26,17 +121,16 @@ its major aspects.</p>
 
 
 
+<h3 id="feature_display_window">Feature Display Window</h3>
 
-<h2 id="feature_display_window">Feature Display Window</h2>
-
-
-
-
-<h3>Short Cuts</h3>
+<h4>Short Cuts</h4>
 
 <p>
 <table border cellpadding=10>
   <tr><th>Short Cut</th>        <th>Action</th></tr>
+  <tr>
+    <th colspan=3>control keys</th>
+  </tr>
   <tr><td><b>+</b> (or =), <b>-</b></td>         <td>zoom in/out a bit (XXX) </td></tr>
   <tr><td><b>Cntl +</b> (or =), <b>Cntl -</b></td>    <td>zoom in a lot (XXXX)</td></tr>
   <tr><td><b>up-arrow</b>, <b>down-arrow</b></td>    <td>scroll up/down a bit</td></tr>
@@ -44,44 +138,63 @@ its major aspects.</p>
   <tr><td><b>left-arrow</b>, <b>right-arrow</b></td>    <td>scroll left/right a bit</td></tr>
   <tr><td><b>page-up</b>, <b>page-down</b></td>    <td>page up/down by XXXX</td></tr>
   <tr><td><b>Cntl page-up</b>, <b>Cntl page-down</b></td>    <td>page up/down by XXXX</td></tr>
+  <tr><td><b>Home</b>, <b>End</b></td>    <td>Go to far left or right</td></tr>
+  <tr><td><b>Cntl Home</b>, <b>Cntl End</b></td>    <td>Go to top or bottom</td></tr>
+  <tr>
+    <th colspan=3>alpha-numeric keys</th>
+  </tr>
+  <tr><td><b>b or B</b></td>         <td>bump/umbump current column</td></tr>
+  <tr><td><b>m or M</b></td>         <td>mark a feature for zooming, smart bumping</td></tr>
+  <tr><td><b>u or U</b></td>         <td>unmark a feature for zooming, smart bumping</td></tr>
+  <tr><td><b>w or W</b></td>         <td>zoom out to show whole sequence</td></tr>
+  <tr><td><b>z</b></td>         <td>zoom to exon/intron or single HSP of marked feature (or current feature
+  if none marked)</td></tr>
+  <tr><td><b>Z</b></td>         <td>zoom to whole transcript or all HSPs of marked feature (or current feature
+  if none marked)</td></tr>
+
 </table>
 
 
-<h3>Mouse</h3>
+<h4>Mouse</h4>
 
 <p>
 <table border cellpadding=10>
   <tr><th>Left</th>        <th>Middle</th>        <th>Right</th></tr>
   <tr>
-    <th colspan=3>No modifier key</th>
+    <th colspan=3>Single mouse button click</th>
   </tr>
   <tr>
     <td>highlight a feature or column</td>
     <td>centre on mouse position</td>
-    <td>show context sensitive menu</td>
-  </tr>
-  <tr>
-    <th colspan=3>Shift</th>
-  </tr>
-  <tr>
-    <td>horizontal ruler with sequence position displayed</td>
-    <td><i>as for no modifier</i></td>
-    <td><i>as for no modifier</i></td>
+    <td>show feature or column menu</td>
   </tr>
 
   <tr>
-    <th colspan=3>Double click</th>
+    <th colspan=3>Double mouse button click</th>
   </tr>
   <tr>
     <td>Display details of selected feature</td>
-    <td><i>as for no modifier</i></td>
-    <td><i>as for no modifier</i></td>
+    <td><i>same as single click</i></td>
+    <td><i>same as single click</i></td>
   </tr>
 
+  <tr>
+    <th colspan=3>Shift + mouse button click</th>
+  </tr>
+  <tr>
+    <td>horizontal ruler with sequence position displayed</td>
+    <td><i>same as single click</i></td>
+    <td><i>same as single click</i></td>
+  </tr>
 
-
-
-  
+  <tr>
+    <th colspan=3>Cntl + mouse button click</th>
+  </tr>
+  <tr>
+    <td>mark a rectangle and zoom in to it</td>
+    <td><i>same as single click</i></td>
+    <td><i>same as single click</i></td>
+  </tr>
 
 </table>
 
