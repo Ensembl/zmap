@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec  5 16:21 2006 (edgrif)
+ * Last edited: Dec  5 17:37 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.159 2006-12-05 16:22:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.160 2006-12-06 08:59:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1096,6 +1096,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
     {
       select.feature_desc.feature_query_start = g_strdup_printf("%d", feature->feature.homol.y1) ;
       select.feature_desc.feature_query_end = g_strdup_printf("%d", feature->feature.homol.y2) ;
+      if (feature->feature.homol.length)
+	select.feature_desc.feature_query_length = g_strdup_printf("%d", feature->feature.homol.length) ;
     }
   select.feature_desc.feature_length = g_strdup_printf("%d", zMapFeatureLength(feature)) ;
 
@@ -1135,6 +1137,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
   g_free(select.feature_desc.feature_end) ;
   g_free(select.feature_desc.feature_query_start) ;
   g_free(select.feature_desc.feature_query_end) ;
+  g_free(select.feature_desc.feature_query_length) ;
   g_free(select.feature_desc.feature_length) ;
 
   g_free(select.secondary_text) ;
