@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov 30 11:32 2006 (edgrif)
+ * Last edited: Dec  5 17:43 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.104 2006-11-30 12:05:45 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.105 2006-12-06 08:57:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -308,6 +308,7 @@ typedef struct
 {
   ZMapHomolType type ;					    /* as in Blast* */
   int y1, y2 ;						    /* Query start/end */
+  int length ;						    /* Length of homol/align etc. */
   ZMapStrand target_strand ;
   ZMapPhase target_phase ;				    /* for tx_homol */
   GArray *align ;					    /* of AlignBlock, if null, align is ungapped. */
@@ -423,7 +424,7 @@ typedef struct
   char *feature_strand ;
   char *feature_frame ;
   char *feature_start ; char *feature_end ;
-  char *feature_query_start ; char *feature_query_end ;
+  char *feature_query_start ; char *feature_query_end ; char *feature_query_length ;
   char *feature_length ;
   char *sub_feature_start ; char *sub_feature_end ;
   char *sub_feature_query_start ; char *sub_feature_query_end ;
@@ -728,7 +729,7 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapHomolType homol_type,
 				     ZMapStrand target_strand, ZMapPhase target_phase,
-				     int query_start, int query_end,
+				     int query_start, int query_end, int query_length,
 				     GArray *gaps) ;
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature) ;
 ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature) ;

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov 17 17:29 2006 (edgrif)
+ * Last edited: Dec  5 17:09 2006 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.48 2006-11-17 17:31:23 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.49 2006-12-06 08:57:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -472,7 +472,7 @@ gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapHomolType homol_type,
 				     ZMapStrand target_strand, ZMapPhase target_phase,
-				     int query_start, int query_end,
+				     int query_start, int query_end, int query_length,
 				     GArray *gaps)
 {
   gboolean result = TRUE ;				    /* Not used at the moment. */
@@ -484,6 +484,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   feature->feature.homol.target_phase = target_phase ;
   feature->feature.homol.y1 = query_start ;
   feature->feature.homol.y2 = query_end ;
+  feature->feature.homol.length = query_length ;
 
   if (gaps)
     {
