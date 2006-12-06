@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  5 15:09 2006 (rds)
+ * Last edited: Dec  6 09:56 2006 (rds)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.1 2006-12-05 16:13:55 rds Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.2 2006-12-06 09:56:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,15 +40,15 @@
 
 typedef struct 
 {
+  ZMapWindow window;            /* The window */
+  GList *item_list2order;       /* Which list we'll order */
   int current_list_number;      /* zero based. */
-  GQuark feature_set_name;
-  ZMapWindow window;
-  int group_length;
-  int three_frame_position;
-  ZMapStrand strand;
-  ZMapFrame frame;
-  GList *item_list2order;
-  GQuark three_frame_position_quark;
+  int group_length;             /* item_list2order length */
+  ZMapStrand strand;            /* which strand group we're sorting... 
+                                 * direction of window->feature_set_names */
+
+  GQuark feature_set_name;      /* columnWithNameAndFrame depends on this. */
+  ZMapFrame frame;              /* columnWithNameAndFrame depends on this. */
 } OrderColumnsDataStruct, *OrderColumnsData;
 
 static gint columnWithName(gconstpointer list_data, gconstpointer user_data);
@@ -60,13 +60,19 @@ static void orderColumnsForFrame(OrderColumnsData order_data, GList *list, ZMapF
 static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points, 
                            ZMapContainerLevelType level, gpointer user_data);
 
-static gboolean order_debug_G = TRUE;
+static gboolean order_debug_G = FALSE;
+static gboolean frame_debug_G = FALSE;
 
 
+/* void zmapWindowColOrderColumns(ZMapWindow window)
+ *
+ * Ordering the columns in line with the contents of
+ * window->feature_set_names. The foocanvas 
+ */
 void zmapWindowColOrderColumns(ZMapWindow window)
 {
   FooCanvasGroup *super_root ;
-  OrderColumnsDataStruct order_data = {0} ;
+  OrderColumnsDataStruct order_data = {NULL} ;
 
   super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item,
 							   0,0,0,
@@ -77,6 +83,9 @@ void zmapWindowColOrderColumns(ZMapWindow window)
   order_data.window = window;
   order_data.strand = ZMAPSTRAND_FORWARD; /* makes things simpler */
 
+  if(order_debug_G)
+    printf("%s: starting column ordering\n", __PRETTY_FUNCTION__);
+
   zmapWindowContainerExecute(FOO_CANVAS_GROUP(super_root),
                              ZMAPCONTAINER_LEVEL_STRAND,
                              orderColumnsCB, &order_data);
@@ -84,6 +93,9 @@ void zmapWindowColOrderColumns(ZMapWindow window)
   /* If we've reversed the feature_set_names list, and left it like that, re-reverse. */
   if(order_data.strand == ZMAPSTRAND_REVERSE)
     window->feature_set_names = g_list_reverse(window->feature_set_names);
+
+  if(order_debug_G)
+    printf("%s: columns should now be in order\n", __PRETTY_FUNCTION__);
 
   return ;
 }
@@ -150,11 +162,16 @@ static gint matchFrameSensitiveColCB(gconstpointer list_data, gconstpointer user
     {
       style = set_data->style;
       /* style = zmapWindowStyleTableFind(set_data->style_table, feature_any->unique_id); */
-      
+
+      /* Using the set_data->style seems to work well here.  There are
+       * frame specific columns ONLY when 3 Frame display is on.  This 
+       * avoids looking at window->display_3_frame which is actaully 
+       * UNSET when drawing the 3 frame columns... */
+
       if(style->opts.frame_specific)
         {
           match = 0;
-          if(order_debug_G)
+          if(frame_debug_G)
             printf("%s: %s is frame sensitive\n", __PRETTY_FUNCTION__,
                    g_quark_to_string(feature_any->unique_id));
         }
@@ -167,14 +184,20 @@ static void sortByFSNList(gpointer list_data, gpointer user_data)
 {
   OrderColumnsData order_data = (OrderColumnsData)user_data;
   GList *column;
-  int position, positions_to_move;
+  int position, target, positions_to_move;
 
   order_data->feature_set_name = GPOINTER_TO_UINT(list_data);
 
   if((column = g_list_find_custom(order_data->item_list2order,
                                   order_data, columnWithNameAndFrame)))
     {
+      /* find position based on the difference between the 2 
+       * list lengths. Although there is a g_list_position
+       * function, it means passing in the original list and
+       * possibly longer list traversal... Not that is really 
+       * an issue. */
       position = g_list_length(column);
+      target   = order_data->current_list_number;
 
       if(order_debug_G)
         printf("%s: %s\n\tlist_length = %d\n\tgroup_length = %d\n\tposition = %d\n\ttarget = %d\n",
@@ -183,13 +206,13 @@ static void sortByFSNList(gpointer list_data, gpointer user_data)
                position,
                order_data->group_length,
                order_data->group_length - position,
-               order_data->current_list_number);
+               target);
 
       position = order_data->group_length - position;
 
-      if(position != order_data->current_list_number)
+      if(position != target)
         {
-          positions_to_move = order_data->current_list_number - position;
+          positions_to_move = target - position;
 
           if(order_debug_G)
             printf("%s: moving %d\n", __PRETTY_FUNCTION__, positions_to_move);
@@ -199,6 +222,7 @@ static void sortByFSNList(gpointer list_data, gpointer user_data)
           else if(positions_to_move < 0)
             foo_canvas_item_lower(column->data, positions_to_move * -1);
           
+          /* more glist tediousness */
           order_data->item_list2order = g_list_first(order_data->item_list2order);
         }
 
@@ -243,7 +267,7 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 
       /* check that g_list_length doesn't do g_list_first! */
       interface_check = g_list_length(strand_group->item_list_end);
-      //zMapAssert(interface_check == 1);
+      zMapAssert(interface_check == 1);
 
       strand = zmapWindowContainerGetStrand(data);
 
@@ -264,17 +288,16 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
       else
         zMapAssertNotReached(); /* What! */
 
-      if(window->display_3_frame)
+      if((frame_list = g_list_find(window->feature_set_names, 
+                                   GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)))))
         {
-          if((frame_list = g_list_find(window->feature_set_names, 
-                                       GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)))))
-            {
-              /* grep out the group->item_list frame sensitive columns */
-              sensitive_list = zMap_g_list_grep(&(strand_group->item_list),
-                                                order_data,
-                                                matchFrameSensitiveColCB);
-              sensitive_tmp = sensitive_list;
-            }
+          /* grep out the group->item_list frame sensitive columns */
+          /* This only produces a list when 3 frame is on 
+           * (see comment in matchFrameSensitiveColCB). */
+          sensitive_list = zMap_g_list_grep(&(strand_group->item_list),
+                                            order_data,
+                                            matchFrameSensitiveColCB);
+          sensitive_tmp = sensitive_list; /* hold on to a copy of ptr for later */
         }
 
       if(order_debug_G)
@@ -282,38 +305,64 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 
       /* order the non frame sensitive ones */
       orderColumnsForFrame(order_data, strand_group->item_list, ZMAPFRAME_NONE);
+      /* reset this. */
+      strand_group->item_list = g_list_first(strand_group->item_list);
 
+      /* Are we displaying any 3 frame columns */
       if(sensitive_list)
         {
           GList *tmp_list;
           int position = 0;
 
-          /* order the frame sensitive ones */
+          /* If so, order the frame sensitive ones */
+
+          /* This all works based on the g_list_find_custom function
+           * returning the first and only the first column with a name
+           * it finds. The orderColumnsForFrame then moves the column 
+           * only as far as the first column in the list.
+           */
+
+          /* start with Frame 0. */
           orderColumnsForFrame(order_data, sensitive_list, ZMAPFRAME_0);
           
-          /* need to move the place sensitive_list points to ... the first
-           * one of next strand... MUST keep hold of the list
-           * though!!!! */
+          /* list will have changed, find first... this is a pain ... */
           sensitive_list = tmp_list = g_list_first(sensitive_list);
+
+          /* alter the start of the list to be the first column with frame 1 */
           if((sensitive_list = g_list_find_custom(sensitive_list, 
                                                   GUINT_TO_POINTER(ZMAPFRAME_1),
                                                   columnWithFrame)))
-            orderColumnsForFrame(order_data, sensitive_list, ZMAPFRAME_1);
+            {
+              /* order this list of columns */
+              orderColumnsForFrame(order_data, sensitive_list, ZMAPFRAME_1);
+            }
           else
-            sensitive_list = tmp_list;
+            sensitive_list = tmp_list; /* reset list to not be NULL in case of no frame 1 cols */
 
-          /* need to move the place sensitive_list points to */
+          /* list will have changed, find first... this is a pain ... (still) */
           sensitive_list = tmp_list = g_list_first(sensitive_list);
+
+          /* alter the start of the list to be the first column with frame 2 */
           if((sensitive_list = g_list_find_custom(sensitive_list, 
                                                   GUINT_TO_POINTER(ZMAPFRAME_2),
                                                   columnWithFrame)))
-            orderColumnsForFrame(order_data, sensitive_list, ZMAPFRAME_2);
+            {
+              /* order this list of columns */
+              orderColumnsForFrame(order_data, sensitive_list, ZMAPFRAME_2);
+            }
           else
-            sensitive_list = tmp_list;
+            sensitive_list = tmp_list; /* reset list, although kinda redundant. */
 
+          /* agin reset the list everything has changed... */
           sensitive_list = g_list_first(sensitive_tmp);
 
           /* find where to insert the sensitive list. */
+          /* This is a little tedious and possibly the weakest point of this.
+           * frame_list is a GList member from the window->feature_set_names
+           * We step backwards through this until we get to the beginning 
+           * trying to find a column in the strand_group (not frame sensitive)
+           * which where we can insert the sensitive list.
+           */
           while(frame_list)
             {
               if((tmp_list = g_list_find_custom(strand_group->item_list,
@@ -321,6 +370,11 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
                                                 columnWithName)))
                 {
                   position = g_list_position(strand_group->item_list, tmp_list);
+                  if(frame_debug_G)
+                    printf("%s: inserting sensitive list after %s @ position %d\n",
+                           __PRETTY_FUNCTION__,
+                           g_quark_to_string(GPOINTER_TO_UINT(frame_list->data)),
+                           position);
                   break;
                 }
               frame_list = frame_list->prev;
@@ -331,7 +385,7 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
                                                                   sensitive_list, position);
         }
 
-      /* update foo_canvas list cache. */
+      /* update foo_canvas list cache. joy. */
       strand_group->item_list_end = g_list_last(strand_group->item_list);
     }
   
