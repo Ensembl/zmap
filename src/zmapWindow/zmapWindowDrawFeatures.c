@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec  5 16:10 2006 (edgrif)
+ * Last edited: Dec  6 10:11 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.165 2006-12-05 16:24:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.166 2006-12-06 10:14:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -798,6 +798,24 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
   return ;
 }
 
+static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
+{
+  gboolean event_handled = FALSE;
+
+  switch (event->type)
+    {
+    case GDK_BUTTON_PRESS:
+      {
+	GdkEventButton *but_event = (GdkEventButton *)event ;
+      }
+      break;
+    default:
+      break;
+    }
+
+  return event_handled;
+}
+
 /* Draw all the blocks within an alignment, these will vertically one below another and positioned
  * according to their alignment on the master sequence. If we are drawing the master sequence,
  * the code assumes this is represented by a single block that spans the entire master alignment. */
@@ -875,19 +893,8 @@ static void drawBlocks(gpointer data, gpointer user_data)
       rev_bg_colour = &(window->colour_qblock_rev) ;
     }
 
-  forward_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
-					    ZMAPCONTAINER_LEVEL_STRAND,
-					    window->config.column_spacing,
-					    for_bg_colour, &(canvas_data->window->canvas_border),
-					    window->long_items) ;
-
-  zmapWindowContainerSetStrand(forward_group, ZMAPSTRAND_FORWARD);
-
-  canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
-#ifdef RDS_DONT_INCLUDE
-  zmapWindowLongItemCheck(canvas_data->window->long_items, zmapWindowContainerGetBackground(forward_group),
-			  top, bottom) ;
-#endif /* RDS_DONT_INCLUDE */
+  /* Create the reverse group first.  It's then first in the list and
+   * so gets called first in container execute. e.g. reposition code */
   reverse_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
 					    ZMAPCONTAINER_LEVEL_STRAND,
 					    window->config.column_spacing,
@@ -896,9 +903,32 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   zmapWindowContainerSetStrand(reverse_group, ZMAPSTRAND_REVERSE);
 
+  g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(reverse_group)),
+                   "event", G_CALLBACK(strandBoundingBoxEventCB), 
+                   (gpointer)window);
+
   canvas_data->curr_reverse_group = zmapWindowContainerGetFeatures(reverse_group) ;
 #ifdef RDS_DONT_INCLUDE
   zmapWindowLongItemCheck(canvas_data->window->long_items, zmapWindowContainerGetBackground(reverse_group),
+			  top, bottom) ;
+#endif /* RDS_DONT_INCLUDE */
+
+
+  forward_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
+					    ZMAPCONTAINER_LEVEL_STRAND,
+					    window->config.column_spacing,
+					    for_bg_colour, &(canvas_data->window->canvas_border),
+					    window->long_items) ;
+
+  zmapWindowContainerSetStrand(forward_group, ZMAPSTRAND_FORWARD);
+
+  g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(forward_group)),
+                   "event", G_CALLBACK(strandBoundingBoxEventCB), 
+                   (gpointer)window);
+
+  canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
+#ifdef RDS_DONT_INCLUDE
+  zmapWindowLongItemCheck(canvas_data->window->long_items, zmapWindowContainerGetBackground(forward_group),
 			  top, bottom) ;
 #endif /* RDS_DONT_INCLUDE */
 
@@ -925,10 +955,11 @@ static void drawBlocks(gpointer data, gpointer user_data)
 				   canvas_data->curr_forward_group, canvas_data->curr_reverse_group) ;
     }
 
-
-  /* Now we must position all the columns as some columns will have been bumped. */
-  zmapWindowNewReposition(window) ;
-
+#ifdef RDS_NEWREPOSITION_DOES_THIS
+  /* If the strand groups are in the correct order in the parent_group->item_list 
+   * then zmapWindowNewReposition will do this for us, without the extra get_bounds
+   * calls on what is a large number of features...
+   */
 
   /* Now we've positioned all the columns we can set the backgrounds for the forward and
    * reverse strand groups and also set their positions within the block. */
@@ -937,7 +968,6 @@ static void drawBlocks(gpointer data, gpointer user_data)
 
   /* Here we need to position the forward/reverse column groups by taking their size and
    * resetting their positions....should we have a reverse group if there are no reverse cols ? */
-
   x1 = 0.0 ;
   my_foo_canvas_item_goto(FOO_CANVAS_ITEM(reverse_group), &x1, NULL) ;
 
@@ -946,16 +976,20 @@ static void drawBlocks(gpointer data, gpointer user_data)
   x2 = x2 + window->config.strand_spacing ;
   my_foo_canvas_item_goto(FOO_CANVAS_ITEM(forward_group), &x2, NULL) ;
 
-
   /* Set the size of background for the block now everything is positioned. */
   zmapWindowContainerSetBackgroundSize(block_parent, 0.0) ;
 
   /* Sort lists of children in block and column groups by their position.... */
   zmapWindowCanvasGroupChildSort(canvas_data->curr_block_group) ;
+#endif
 
-  zmapWindowCanvasGroupChildSort(canvas_data->curr_forward_group) ;
 
-  zmapWindowCanvasGroupChildSort(canvas_data->curr_reverse_group) ;
+  /* This shouldn't be required...
+   * zmapWindowColOrderColumns(window);
+   */
+
+  /* Now we must position all the columns as some columns will have been bumped. */
+  zmapWindowNewReposition(window) ;
 
   return ;
 }
@@ -1051,6 +1085,10 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
 				    window->config.feature_spacing,
 				    colour, &(window->canvas_border),
 				    window->long_items) ;
+
+  /* reverse the column ordering on the reverse strand */
+  if(strand == ZMAPSTRAND_REVERSE)
+    foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(group));
 
   /* By default we do not redraw our children which are the individual features, the canvas
    * should do this for us. */
