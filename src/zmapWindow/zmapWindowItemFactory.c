@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 30 11:56 2006 (edgrif)
+ * Last edited: Dec  7 10:10 2006 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.11 2006-11-30 12:07:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.12 2006-12-08 15:39:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,6 +80,7 @@ typedef struct _RunSetStruct
   ZMapFeatureAlignment  align;
   ZMapFeatureBlock      block;
   ZMapFeatureSet        set;
+  ZMapFrame             frame;
   FooCanvasGroup       *container;
 }RunSetStruct;
 
@@ -289,7 +290,8 @@ void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory,
 
 void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory, 
                                  ZMapFeatureSet set, 
-                                 FooCanvasGroup *container)
+                                 FooCanvasGroup *container,
+                                 ZMapFrame frame)
 {
   RunSetStruct run_data = {NULL};
 
@@ -303,6 +305,8 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
   run_data.context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)set, ZMAPFEATURE_STRUCT_CONTEXT);
   run_data.align   = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)set, ZMAPFEATURE_STRUCT_ALIGN);
   run_data.block   = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set, ZMAPFEATURE_STRUCT_BLOCK);
+
+  run_data.frame   = frame;
 
   g_datalist_foreach(&(set->features), datalistRun, &run_data);
 
@@ -524,8 +528,10 @@ static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpoi
   ZMapWindowFToIFactory factory_input = (ZMapWindowFToIFactory)user_data;
   ZMapFeatureSet feature_set = NULL;
   FooCanvasGroup *container_features = NULL;
+  ZMapWindowItemFeatureSetData set_data;
 
-  if(zmapWindowItemIsVisible(FOO_CANVAS_ITEM(container)))
+  if(zmapWindowItemIsVisible(FOO_CANVAS_ITEM(container)) && 
+     (set_data = (ZMapWindowItemFeatureSetData)g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA)))
     {
       tmp_factory = zmapWindowFToIFactoryOpen(factory_input->ftoi_hash, factory_input->long_items);
      
@@ -542,7 +548,7 @@ static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpoi
                                  factory_input->user_funcs, 
                                  factory_input->user_data);
       
-      zmapWindowFToIFactoryRunSet(tmp_factory, feature_set, container);
+      zmapWindowFToIFactoryRunSet(tmp_factory, feature_set, container, set_data->frame);
       
       zmapWindowFToIFactoryClose(tmp_factory);
     }
@@ -554,6 +560,11 @@ static void datalistRun(GQuark key_id, gpointer list_data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)list_data;
   RunSet run_data = (RunSet)user_data;
+
+  /* filter on frame! */
+  if((run_data->frame != ZMAPFRAME_NONE) &&
+     run_data->frame  != zmapWindowFeatureFrame(feature))
+    return ;
 
   zmapWindowFToIFactoryRunSingle(run_data->factory, 
                                  run_data->container,
