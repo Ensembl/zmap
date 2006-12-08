@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 13 21:54 2006 (rds)
+ * Last edited: Dec  8 11:47 2006 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.17 2006-11-14 10:30:32 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.18 2006-12-08 15:46:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,6 +94,8 @@ G_STMT_START{                                                      \
 
 #define zMapXMLAttributeValueToInt(ATTRIBUTE)       \
 (strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE)), (char **)NULL, 10))
+#define zMapXMLAttributeValueToDouble(ATTRIBUTE)       \
+(g_ascii_strtod(((char *)zMapXMLAttributeGetValue(ATTRIBUTE)), (char **)NULL))
 #define zMapXMLAttributeValueToBool(ATTRIBUTE)      \
 (zMapXMLStringToBool((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE))))
 
