@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 27 14:48 2006 (rds)
+ * Last edited: Dec  8 15:37 2006 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.12 2006-11-27 14:50:59 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.13 2006-12-08 15:40:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -717,7 +717,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
             container_feature_set = FOO_CANVAS_GROUP(item);
             zmapWindowFToIFactoryRunSet(draw_data->navigate->item_factory, 
                                         feature_set, 
-                                        container_feature_set);
+                                        container_feature_set, ZMAPFRAME_NONE);
             draw_data->navigate->draw_locator = TRUE;
           }
         else
