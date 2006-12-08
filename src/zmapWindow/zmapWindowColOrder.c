@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  6 09:56 2006 (rds)
+ * Last edited: Dec  8 08:34 2006 (rds)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.2 2006-12-06 09:56:45 rds Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.3 2006-12-08 15:37:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,10 @@ typedef struct
 
   GQuark feature_set_name;      /* columnWithNameAndFrame depends on this. */
   ZMapFrame frame;              /* columnWithNameAndFrame depends on this. */
+
+  GList *names_list;
+  gboolean quick_sort;
+  int three_frame_position;
 } OrderColumnsDataStruct, *OrderColumnsData;
 
 static gint columnWithName(gconstpointer list_data, gconstpointer user_data);
@@ -59,6 +63,8 @@ static void sortByFSNList(gpointer list_data, gpointer user_data);
 static void orderColumnsForFrame(OrderColumnsData order_data, GList *list, ZMapFrame frame);
 static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points, 
                            ZMapContainerLevelType level, gpointer user_data);
+static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user_data);
+
 
 static gboolean order_debug_G = FALSE;
 static gboolean frame_debug_G = FALSE;
@@ -82,6 +88,8 @@ void zmapWindowColOrderColumns(ZMapWindow window)
 
   order_data.window = window;
   order_data.strand = ZMAPSTRAND_FORWARD; /* makes things simpler */
+
+  order_data.quick_sort = TRUE;
 
   if(order_debug_G)
     printf("%s: starting column ordering\n", __PRETTY_FUNCTION__);
@@ -218,12 +226,10 @@ static void sortByFSNList(gpointer list_data, gpointer user_data)
             printf("%s: moving %d\n", __PRETTY_FUNCTION__, positions_to_move);
 
           if(positions_to_move > 0)
-            foo_canvas_item_raise(column->data, positions_to_move);
+            zMap_g_list_raise(column, positions_to_move);
           else if(positions_to_move < 0)
-            foo_canvas_item_lower(column->data, positions_to_move * -1);
+            zMap_g_list_lower(column, positions_to_move * -1);
           
-          /* more glist tediousness */
-          order_data->item_list2order = g_list_first(order_data->item_list2order);
         }
 
       order_data->current_list_number++;
@@ -288,106 +294,273 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
       else
         zMapAssertNotReached(); /* What! */
 
-      if((frame_list = g_list_find(window->feature_set_names, 
-                                   GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)))))
+      if(order_data->quick_sort)
         {
-          /* grep out the group->item_list frame sensitive columns */
-          /* This only produces a list when 3 frame is on 
-           * (see comment in matchFrameSensitiveColCB). */
-          sensitive_list = zMap_g_list_grep(&(strand_group->item_list),
-                                            order_data,
-                                            matchFrameSensitiveColCB);
-          sensitive_tmp = sensitive_list; /* hold on to a copy of ptr for later */
+          order_data->names_list = window->feature_set_names;
+          if((frame_list = g_list_find(window->feature_set_names, 
+                                       GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)))))
+            {
+              order_data->three_frame_position = g_list_position(order_data->names_list,
+                                                                 frame_list);
+              strand_group->item_list = 
+                g_list_sort_with_data(strand_group->item_list,
+                                      qsortColumnsCB, order_data);
+            }
         }
-
-      if(order_debug_G)
-        printf("%s: \n", __PRETTY_FUNCTION__);
-
-      /* order the non frame sensitive ones */
-      orderColumnsForFrame(order_data, strand_group->item_list, ZMAPFRAME_NONE);
-      /* reset this. */
-      strand_group->item_list = g_list_first(strand_group->item_list);
-
-      /* Are we displaying any 3 frame columns */
-      if(sensitive_list)
+      else
         {
-          GList *tmp_list;
-          int position = 0;
-
-          /* If so, order the frame sensitive ones */
-
-          /* This all works based on the g_list_find_custom function
-           * returning the first and only the first column with a name
-           * it finds. The orderColumnsForFrame then moves the column 
-           * only as far as the first column in the list.
-           */
-
-          /* start with Frame 0. */
-          orderColumnsForFrame(order_data, sensitive_list, ZMAPFRAME_0);
+          if((frame_list = g_list_find(window->feature_set_names, 
+                                       GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)))))
+            {
+              /* grep out the group->item_list frame sensitive columns */
+              /* This only produces a list when 3 frame is on 
+               * (see comment in matchFrameSensitiveColCB). */
+              sensitive_list = zMap_g_list_grep(&(strand_group->item_list),
+                                                order_data,
+                                                matchFrameSensitiveColCB);
+              sensitive_tmp = sensitive_list; /* hold on to a copy of ptr for later */
+            }
           
-          /* list will have changed, find first... this is a pain ... */
-          sensitive_list = tmp_list = g_list_first(sensitive_list);
-
-          /* alter the start of the list to be the first column with frame 1 */
-          if((sensitive_list = g_list_find_custom(sensitive_list, 
-                                                  GUINT_TO_POINTER(ZMAPFRAME_1),
-                                                  columnWithFrame)))
+          if(order_debug_G)
+            printf("%s: \n", __PRETTY_FUNCTION__);
+          
+          /* order the non frame sensitive ones */
+          orderColumnsForFrame(order_data, strand_group->item_list, ZMAPFRAME_NONE);
+          /* reset this. */
+          strand_group->item_list = g_list_first(strand_group->item_list);
+          
+          /* Are we displaying any 3 frame columns */
+          if(sensitive_list)
             {
-              /* order this list of columns */
-              orderColumnsForFrame(order_data, sensitive_list, ZMAPFRAME_1);
-            }
-          else
-            sensitive_list = tmp_list; /* reset list to not be NULL in case of no frame 1 cols */
-
-          /* list will have changed, find first... this is a pain ... (still) */
-          sensitive_list = tmp_list = g_list_first(sensitive_list);
-
-          /* alter the start of the list to be the first column with frame 2 */
-          if((sensitive_list = g_list_find_custom(sensitive_list, 
-                                                  GUINT_TO_POINTER(ZMAPFRAME_2),
-                                                  columnWithFrame)))
-            {
-              /* order this list of columns */
-              orderColumnsForFrame(order_data, sensitive_list, ZMAPFRAME_2);
-            }
-          else
-            sensitive_list = tmp_list; /* reset list, although kinda redundant. */
-
-          /* agin reset the list everything has changed... */
-          sensitive_list = g_list_first(sensitive_tmp);
-
-          /* find where to insert the sensitive list. */
-          /* This is a little tedious and possibly the weakest point of this.
-           * frame_list is a GList member from the window->feature_set_names
-           * We step backwards through this until we get to the beginning 
-           * trying to find a column in the strand_group (not frame sensitive)
-           * which where we can insert the sensitive list.
-           */
-          while(frame_list)
-            {
-              if((tmp_list = g_list_find_custom(strand_group->item_list,
-                                                frame_list->data,
-                                                columnWithName)))
+              GList *tmp_list;
+              int position = 0;
+              
+              /* If so, order the frame sensitive ones */
+              
+              /* This all works based on the g_list_find_custom function
+               * returning the first and only the first column with a name
+               * it finds. The orderColumnsForFrame then moves the column 
+               * only as far as the first column in the list.
+               */
+              
+              /* start with Frame 0. */
+              orderColumnsForFrame(order_data, sensitive_list, ZMAPFRAME_0);
+              
+              /* list will have changed, find first... this is a pain ... */
+              sensitive_list = tmp_list = g_list_first(sensitive_list);
+              
+              /* alter the start of the list to be the first column with frame 1 */
+              if((sensitive_list = g_list_find_custom(sensitive_list, 
+                                                      GUINT_TO_POINTER(ZMAPFRAME_1),
+                                                      columnWithFrame)))
                 {
-                  position = g_list_position(strand_group->item_list, tmp_list);
-                  if(frame_debug_G)
-                    printf("%s: inserting sensitive list after %s @ position %d\n",
-                           __PRETTY_FUNCTION__,
-                           g_quark_to_string(GPOINTER_TO_UINT(frame_list->data)),
-                           position);
-                  break;
+                  /* order this list of columns */
+                  orderColumnsForFrame(order_data, sensitive_list, ZMAPFRAME_1);
                 }
-              frame_list = frame_list->prev;
+              else
+                sensitive_list = tmp_list; /* reset list to not be NULL in case of no frame 1 cols */
+              
+              /* list will have changed, find first... this is a pain ... (still) */
+              sensitive_list = tmp_list = g_list_first(sensitive_list);
+              
+              /* alter the start of the list to be the first column with frame 2 */
+              if((sensitive_list = g_list_find_custom(sensitive_list, 
+                                                      GUINT_TO_POINTER(ZMAPFRAME_2),
+                                                      columnWithFrame)))
+                {
+                  /* order this list of columns */
+                  orderColumnsForFrame(order_data, sensitive_list, ZMAPFRAME_2);
+                }
+              else
+                sensitive_list = tmp_list; /* reset list, although kinda redundant. */
+              
+              /* again reset the list everything has changed... */
+              sensitive_list = g_list_first(sensitive_tmp);
+              
+              /* find where to insert the sensitive list. */
+              /* This is a little tedious and possibly the weakest point of this.
+               * frame_list is a GList member from the window->feature_set_names
+               * We step backwards through this until we get to the beginning 
+               * trying to find a column in the strand_group (not frame sensitive)
+               * which where we can insert the sensitive list.
+               */
+              while(frame_list)
+                {
+                  if((tmp_list = g_list_find_custom(strand_group->item_list,
+                                                    frame_list->data,
+                                                    columnWithName)))
+                    {
+                      position = g_list_position(strand_group->item_list, tmp_list);
+                      if(frame_debug_G)
+                        printf("%s: inserting sensitive list after %s @ position %d\n",
+                               __PRETTY_FUNCTION__,
+                               g_quark_to_string(GPOINTER_TO_UINT(frame_list->data)),
+                               position);
+                      break;
+                    }
+                  frame_list = frame_list->prev;
+                }
+              
+              /* insert the frame sensitive ones into the non frame sensitive list */
+              strand_group->item_list = zMap_g_list_insert_list_after(strand_group->item_list, 
+                                                                      sensitive_list, position);
             }
-
-          /* insert the frame sensitive ones into the non frame sensitive list */
-          strand_group->item_list = zMap_g_list_insert_list_after(strand_group->item_list, 
-                                                                  sensitive_list, position);
         }
-
       /* update foo_canvas list cache. joy. */
       strand_group->item_list_end = g_list_last(strand_group->item_list);
     }
   
   return ;
 }
+
+
+/* 
+ * Could all be done with quick sort in g_list_sort_with_data
+ * Not sure which is faster...
+ *
+ */
+
+static gboolean isFrameSensitive(gconstpointer col_data)
+{
+  FooCanvasGroup *col_group = FOO_CANVAS_GROUP(col_data);
+  ZMapFeatureAny feature_any;
+  ZMapWindowItemFeatureSetData set_data;
+  ZMapFeatureTypeStyle style ;
+  gboolean frame_sensitive = FALSE;
+
+  if((set_data = g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_SET_DATA)) &&
+     (feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_DATA))))
+    {
+      style = set_data->style;
+
+      if(style->opts.frame_specific)
+        {
+          frame_sensitive = TRUE;
+        }
+    }
+  
+  return frame_sensitive;
+}
+
+static int columnFSNListPosition(gconstpointer col_data, GList *feature_set_names)
+{
+  FooCanvasGroup *col_group = FOO_CANVAS_GROUP(col_data);
+  ZMapFeatureAny feature_any;
+  GList *list;
+  int position = 0;
+
+  if((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_DATA))))
+    {
+      list = g_list_find(feature_set_names, GUINT_TO_POINTER(feature_any->unique_id));
+      position = g_list_position(feature_set_names, list);
+    }
+
+  return position;
+}
+
+static ZMapFrame columnFrame(gconstpointer col_data)
+{
+  FooCanvasGroup *col_group = FOO_CANVAS_GROUP(col_data);
+  ZMapWindowItemFeatureSetData set_data;
+  ZMapFrame frame = ZMAPFRAME_NONE;
+
+  if((set_data = g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_SET_DATA)))
+    {
+      frame = set_data->frame;
+    }
+
+  return frame;
+}
+
+/*
+ * -1 if a is before b
+ * +1 if a is after  b
+ *  0 if equal
+ */
+static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user_data)
+{
+  OrderColumnsData order_data = (OrderColumnsData)user_data;
+  ZMapFrame frame_a, frame_b;
+  int pos_a, pos_b;
+  gboolean sens_a, sens_b;
+  gint order = 0;
+
+  if(colA == colB)
+    return order;
+
+  sens_a = isFrameSensitive(colA);
+  sens_b = isFrameSensitive(colB);
+
+  if(sens_a && sens_b)
+    {
+      /* Both are frame sensitive */
+      frame_a = columnFrame(colA);
+      frame_b = columnFrame(colB);
+
+      /* If frames are equal rely on position */
+      if(frame_a == frame_b)
+        {
+          pos_a = columnFSNListPosition(colA, order_data->names_list);
+          pos_b = columnFSNListPosition(colB, order_data->names_list);
+          if(pos_a > pos_b)
+            order = 1;
+          else if(pos_b < pos_b)
+            order = -1;
+          else
+            order = 0;
+        }
+      else
+        {
+          /* else use frame */
+          if(frame_a > frame_b)
+            order = 1;
+          else if(frame_a < frame_b)
+            order = -1;
+          else
+            order = 0;
+        }
+    }
+  else if(sens_a)
+    {
+      /* only a is frame sensitive. Does b come before or after the 3 Frame section */
+      pos_b = columnFSNListPosition(colB, order_data->names_list);
+      pos_a = order_data->three_frame_position;
+  
+      if(pos_a > pos_b)
+        order = 1;
+      else if(pos_a < pos_b)
+        order = -1;
+      else
+        order = 0;
+    }
+  else if(sens_b)
+    {
+      /* only b is frame sensitive. Does a come before or after the 3 Frame section */
+      pos_a = columnFSNListPosition(colA, order_data->names_list);
+      pos_b = order_data->three_frame_position;
+
+      if(pos_a > pos_b)
+        order = 1;
+      else if(pos_a < pos_b)
+        order = -1;
+      else
+        order = 0;      
+    }
+  else
+    {
+      pos_a = columnFSNListPosition(colA, order_data->names_list);
+      pos_b = columnFSNListPosition(colB, order_data->names_list);
+
+      if(pos_a > pos_b)
+        order = 1;
+      else if(pos_a < pos_b)
+        order = -1;
+      else
+        order = 0;
+    }
+
+  return order;
+}
+
+
+
