@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec  6 10:06 2006 (rds)
+ * Last edited: Dec  7 09:50 2006 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.47 2006-12-06 10:07:49 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.48 2006-12-08 15:38:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -255,7 +255,7 @@ void zMapWindowToggle3Frame(ZMapWindow window)
     {
       redrawAs3Frames(window) ;
 
-      zMapWindowToggleDNAProteinColumns(window, 0, 0, FALSE, TRUE, TRUE, TRUE) ;
+      //zMapWindowToggleDNAProteinColumns(window, 0, 0, FALSE, TRUE, TRUE, TRUE) ;
     }
 
   window->display_3_frame = !window->display_3_frame ;
@@ -2626,7 +2626,6 @@ static void create3FrameCols(gpointer data, gpointer user_data)
 	   && ((feature_set = zMapFeatureFindSetInBlock(redraw_data->block, feature_set_id))))
     {
       int forward_len, reverse_len, forward_incr, reverse_incr ;
-
 
       /* Create both forward and reverse columns. */
       zmapWindowCreateSetColumns(redraw_data->forward_group, redraw_data->reverse_group,
