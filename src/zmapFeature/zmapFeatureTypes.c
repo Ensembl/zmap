@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 30 11:31 2006 (edgrif)
+ * Last edited: Dec  6 14:04 2006 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.38 2006-11-30 12:05:45 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.39 2006-12-08 15:47:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -716,6 +716,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
       curr->description = ZMAP_FIXED_STYLE_3FT_NAME_TEXT ;
       curr->opts.hidden_now = TRUE ;
+      curr->opts.frame_specific = TRUE ;
       zMapStyleSetStrandAttrs(curr, TRUE, TRUE, FALSE, TRUE) ;
       curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
       
