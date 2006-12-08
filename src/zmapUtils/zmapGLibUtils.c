@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Dec  5 16:08 2006 (rds)
+ * Last edited: Dec  8 13:01 2006 (rds)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.14 2006-12-05 16:09:26 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.15 2006-12-08 15:47:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -290,6 +290,35 @@ GList *zMap_g_list_grep(GList **list_inout, gpointer data, GCompareFunc func)
   return matched;
 }
 
+/* donor should already no be part of recipient */
+void insert_after(GList *donor, GList *recipient)
+{
+  zMapAssert(recipient && recipient->next && donor);
+
+  /*
+   * This next bit of code is confusing so here is a desciption...
+   *
+   * recipient A -> <- B -> <- F 
+   * donor     C -> <- D -> <- E
+   * point = 2
+   *
+   * recipient[B]->next[F]->prev = g_list_last(donor)[E]
+   * recipient[B]->next[F]->prev[E]->next = recipient->next[F]
+   * recipient[B]->next = donor[C]
+   * donor[C]->prev = recipient[B]
+   *
+   * complete =  A -> <- B -> <- C -> <- D -> <- E -> <- F 
+   *                       |   |                   |   |
+   * so we've changed B->next, C->prev,      E->next & F->prev
+   */
+  recipient->next->prev = g_list_last(donor);
+  recipient->next->prev->next = recipient->next;
+  recipient->next = donor;
+  donor->prev = recipient;
+  
+  return ;
+}
+
 /* point is 0 based! */
 GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point)
 {
@@ -305,26 +334,7 @@ GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point)
   else if((recipient = g_list_nth(recipient, point)) &&
           recipient->next)
     {
-      /*
-       * This next bit of code is confusing so here is a desciption...
-       *
-       * recipient A -> <- B -> <- F 
-       * donor     C -> <- D -> <- E
-       * point = 2
-       *
-       * recipient[B]->next[F]->prev = g_list_last(donor)[E]
-       * recipient[B]->next[F]->prev[E]->next = recipient->next[F]
-       * recipient[B]->next = donor[C]
-       * donor[C]->prev = recipient[B]
-       *
-       * complete =  A -> <- B -> <- C -> <- D -> <- E -> <- F 
-       *                       |   |                   |   |
-       * so we've changed B->next, C->prev,      E->next & F->prev
-       */
-      recipient->next->prev = g_list_last(donor);
-      recipient->next->prev->next = recipient->next;
-      recipient->next = donor;
-      donor->prev = recipient;
+      insert_after(donor, recipient);
     }
   else if(recipient)
     recipient = g_list_concat(recipient, donor);
@@ -335,6 +345,49 @@ GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point)
 
   return complete;
 }
+
+GList *zMap_g_list_lower(GList *move, int positions)
+{
+  GList *before;
+
+  if(move->prev)
+    {
+      for(before = move->prev; positions && before; positions--)
+        before = before->prev;
+    }
+  else
+    before = NULL;
+
+  if(before)
+    {
+      g_list_remove_link(before, move);
+      insert_after(move, before);
+      zMapAssert(g_list_find(before, move->data));
+    }
+
+  return g_list_first(move);
+}
+
+GList *zMap_g_list_raise(GList *move, int positions)
+{
+  GList *before;
+
+  for(before = move; positions && before; positions--)
+    before = before->next;
+
+  if(!before)
+    before = g_list_last(move);
+
+  if(before)
+    {
+      g_list_remove_link(before, move);
+      insert_after(move, before);
+      zMapAssert(g_list_find(before, move->data));
+    }
+
+  return g_list_first(move);
+}
+
 
 /* 
  *                Additions to GArray
