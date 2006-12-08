@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 30 13:53 2006 (edgrif)
+ * Last edited: Dec  8 15:43 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.68 2006-12-04 13:42:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.69 2006-12-08 15:44:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -338,6 +338,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
       && zMapFeatureSetRemoveFeature(feature_set, feature))
     {
       /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
+      zmapWindowItemRemoveFocusItem(window->focus, feature_item);
       gtk_object_destroy(GTK_OBJECT(feature_item)) ;
       
       result = TRUE ;
@@ -390,21 +391,22 @@ ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature)
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature)
 {
   ZMapFrame frame = ZMAPFRAME_NONE ;
-  int start ;
+  int start, offset ;
 
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
-  start = (feature->x1 % 3) + 1 ;
+  offset = 1;
+  start  = ((feature->x1 - offset) % 3) + ZMAPFRAME_0 ;
 
   switch (start)
     {
-    case 1:
+    case ZMAPFRAME_0:
       frame = ZMAPFRAME_0 ;
       break ;
-    case 2:
+    case ZMAPFRAME_1:
       frame = ZMAPFRAME_1 ;
       break ;
-    case 3:
+    case ZMAPFRAME_2:
       frame = ZMAPFRAME_2 ;
       break ;
     default:
