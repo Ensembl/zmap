@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Dec  5 17:43 2006 (edgrif)
+ * Last edited: Dec 11 11:02 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.105 2006-12-06 08:57:42 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.106 2006-12-11 11:44:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -79,7 +79,7 @@ typedef enum {ZMAPFEATURE_INVALID = 0,
 	      ZMAPFEATURE_RAW_SEQUENCE, ZMAPFEATURE_PEP_SEQUENCE} ZMapFeatureType ;
 
 typedef enum {ZMAPFEATURE_SUBPART_INVALID = 0,
-	      ZMAPFEATURE_SUBPART_INTRON, ZMAPFEATURE_SUBPART_EXON,
+	      ZMAPFEATURE_SUBPART_INTRON, ZMAPFEATURE_SUBPART_EXON, ZMAPFEATURE_SUBPART_EXON_CDS,
 	      ZMAPFEATURE_SUBPART_GAP, ZMAPFEATURE_SUBPART_MATCH} ZMapFeatureSubpartType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;

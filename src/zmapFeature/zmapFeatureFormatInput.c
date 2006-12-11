@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 29 08:11 2006 (edgrif)
+ * Last edited: Dec 11 11:04 2006 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.11 2006-11-08 09:24:10 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.12 2006-12-11 11:44:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -261,11 +261,12 @@ char *zMapFeatureType2Str(ZMapFeatureType type)
 
 char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart)
 {
-  static char *subparts[] = {".", "Intron", "Exon", "Gap", "Match"} ;
+  static char *subparts[] = {".", "Intron", "Exon", "Exon (CDS)", "Gap", "Match"} ;
   char *subpart_str ;
 
   zMapAssert(subpart == ZMAPFEATURE_SUBPART_INVALID
 	     || subpart == ZMAPFEATURE_SUBPART_INTRON || subpart == ZMAPFEATURE_SUBPART_EXON
+	     || subpart == ZMAPFEATURE_SUBPART_EXON_CDS
 	     || subpart == ZMAPFEATURE_SUBPART_GAP || subpart == ZMAPFEATURE_SUBPART_MATCH) ;
 
   subpart_str = subparts[subpart] ;
