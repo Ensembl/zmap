@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  8 16:30 2006 (edgrif)
+ * Last edited: Dec  6 11:39 2006 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.19 2006-11-09 10:14:18 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.20 2006-12-11 11:43:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,6 +76,10 @@ static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void releaseNotesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void generalHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void releaseNotesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void keyboardHelpCB( gpointer data, guint callback_action, GtkWidget *w ) ;
+
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
 
 
@@ -105,6 +109,8 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
  { "/Help/About",    NULL,         aboutCB, 0, NULL },
  { "/Help/Release Notes", NULL,    releaseNotesCB, 0, NULL },
+ { "/Help/General Help", NULL,     generalHelpCB, 0, NULL },
+ { "/Help/Keyboard & Mouse", NULL, keyboardHelpCB, 0, NULL },
 };
 
 
@@ -199,6 +205,40 @@ static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 static void releaseNotesCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   char *web_page = ZMAPWEB_URL "/" ZMAPWEB_RELEASE_NOTES_DIR "/" ZMAPWEB_RELEASE_NOTES ;
+  gboolean result ;
+  GError *error = NULL ;
+
+  if (!(result = zMapLaunchWebBrowser(web_page, &error)))
+    {
+      zMapWarning("Error: %s\n", error->message) ;
+      
+      g_error_free(error) ;
+    }
+
+  return ;
+}
+
+/* Show the web page for general help. */
+static void generalHelpCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  char *web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC ;
+  gboolean result ;
+  GError *error = NULL ;
+
+  if (!(result = zMapLaunchWebBrowser(web_page, &error)))
+    {
+      zMapWarning("Error: %s\n", error->message) ;
+      
+      g_error_free(error) ;
+    }
+
+  return ;
+}
+
+/* Show the web page for keyboard/mouse help. */
+static void keyboardHelpCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  char *web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC "#" ZMAPWEB_HELP_KEYBOARD_SECTION ;
   gboolean result ;
   GError *error = NULL ;
 
