@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov  9 09:49 2006 (edgrif)
+ * Last edited: Dec 12 10:33 2006 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.35 2006-11-09 10:13:14 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.36 2006-12-13 08:36:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -258,6 +258,12 @@ GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_stran
 
   return block_id;
 }
+
+GQuark zMapFeatureSetCreateID(char *set_name)
+{
+  return zMapStyleCreateID(set_name);
+}
+
 /* Free return when finished! */
 char *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block)
 {
