@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Dec  4 12:41 2006 (edgrif)
+ * Last edited: Dec  7 10:48 2006 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.25 2006-12-04 13:41:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.26 2006-12-13 13:28:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -707,7 +707,7 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
     }
   else
     {
-      if (menu_data->window->range_item)
+      if (zmapWindowMarkIsSet(menu_data->window->mark))
 	bump_type = ZMAPOVERLAP_COMPLEX_RANGE ;
       else
 	bump_type = ZMAPOVERLAP_NO_INTERLEAVE ;
