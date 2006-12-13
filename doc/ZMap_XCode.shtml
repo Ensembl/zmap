@@ -50,10 +50,24 @@ assumes this setup (but can be used with the default multi-window setup).
 
 <h3>Setting up the project</h3>
 
+
+<hr>
+<font color=red>
+<p><b>***WARNING***</b>
+
+<p>This way of setting up XCode, copied from Fritz Anderson's book, means that the XCode project directory
+ends up residing in your programs build directory. If as part of your build you completely wipe the contents
+of this directory (e.g. perhaps as part of the <b>"clean"</b> target), you will lose the XCode directory and have wasted
+all the below effort !
+</font>
+<hr>
+
+
 <ol>
   <li>Set up the zmap build directories and do the autoconf bit as per usual and check its all compiling etc.
   <li>Start XCode and select <b>"File -> New Project"</b>, call the project what you like <b>BUT</b> make sure the
-      project directory is set to the zmap build directory, e.g. ZMap/src/build/macosx.
+      project directory is set to the zmap build directory, e.g. ZMap/src/build/macosx, otherwise you will
+      not easily be able to get XCode to find your makefile to do a build.
   <li>Drag the build directory from a Finder window onto the zmap project
       icon in the projects list.
   <li>Within the projects list you will see a ZMap.xcodeproj, delete this. also
