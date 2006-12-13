@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  8 08:34 2006 (rds)
+ * Last edited: Dec 13 14:43 2006 (rds)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.3 2006-12-08 15:37:53 rds Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.4 2006-12-13 15:13:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -432,11 +432,15 @@ static gboolean isFrameSensitive(gconstpointer col_data)
      (feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_DATA))))
     {
       style = set_data->style;
-
-      if(style->opts.frame_specific)
+      
+      if(set_data->frame != ZMAPFRAME_NONE && style->opts.frame_specific)
         {
           frame_sensitive = TRUE;
         }
+      if(order_debug_G)
+        printf("  column %s %s frame sensitive\n", 
+               g_quark_to_string(feature_any->original_id), 
+               (frame_sensitive ? "is" : "is not"));
     }
   
   return frame_sensitive;
@@ -487,6 +491,9 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
 
   if(colA == colB)
     return order;
+  
+  if(order_debug_G)
+    printf("enter colA and colB test\n");
 
   sens_a = isFrameSensitive(colA);
   sens_b = isFrameSensitive(colB);
@@ -496,6 +503,9 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
       /* Both are frame sensitive */
       frame_a = columnFrame(colA);
       frame_b = columnFrame(colB);
+
+      if(order_debug_G)
+        printf("    columns are both sensitive frame_a = %d, frame_b = %d\n", frame_a, frame_b);
 
       /* If frames are equal rely on position */
       if(frame_a == frame_b)
@@ -558,6 +568,8 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
       else
         order = 0;
     }
+
+  printf("returning order %d\n", order);
 
   return order;
 }
