@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Dec  6 10:15 2006 (rds)
+ * Last edited: Dec 12 14:09 2006 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.157 2006-12-06 10:16:12 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.158 2006-12-13 13:27:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -354,6 +354,8 @@ typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
 typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
 
+typedef struct _ZMapWindowMarkStruct *ZMapWindowMark ;
+
 typedef struct _ZMapWindowLongItemsStruct *ZMapWindowLongItems ;
 
 typedef struct _ZMapWindowFToIFactoryStruct *ZMapWindowFToIFactory;
@@ -393,8 +395,6 @@ typedef struct
 							       quality check. */
 
 } ZMapWindowStatsStruct, *ZMapWindowStats ;
-
-
 
 
 
@@ -541,12 +541,8 @@ typedef struct _ZMapWindowStruct
   GdkColor colour_column_highlight ;
 
 
-  /* User can set a range (perhaps by selecting an item) for operations like zooming
-   * and some bump options. */
-  FooCanvasItem *range_item ;
-  int range_top, range_bottom ;
-  GdkColor colour_item_mark ;
-
+  /* Holds the marked region or item. */
+  ZMapWindowMark mark ;
 
 
   /* We need to be able to find out if the user has done a revcomp for coordinate display
@@ -711,13 +707,16 @@ FooCanvasItem *zmapWindowFToIFindItemChild(GHashTable *feature_to_context_hash,
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
-void zmapWindowFeatureFactoryInit(ZMapWindow window);
 
+void zmapWindowFeatureFactoryInit(ZMapWindow window);
+void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory) ;
 
 void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowZoomToItems(ZMapWindow window, GList *items) ;
 void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
-				   double rootx1, double rootx2, double rooty1, double rooty2) ;
+				   double rootx1, double rooty1, double rootx2, double rooty2) ;
+void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
+				 double *rootx1, double *rooty1, double *rootx2, double *rooty2) ;
 
 FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item) ;
 FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
@@ -728,11 +727,22 @@ FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *featur
 gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame) ;
 void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 
+gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
+				   double wx1, double wy1, double wx2, double wy2,
+				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out) ;
+gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2) ;
+
+
 /* These should be in a separate file...and merged into foocanvas.... */
 void my_foo_canvas_item_w2i(FooCanvasItem *item, double *x, double *y) ;
 void my_foo_canvas_item_i2w(FooCanvasItem *item, double *x, double *y) ;
 void my_foo_canvas_item_goto(FooCanvasItem *item, double *x, double *y) ;
-
+void my_foo_canvas_item_get_world_bounds(FooCanvasItem *item,
+					 double *rootx1_out, double *rooty1_out,
+					 double *rootx2_out, double *rooty2_out) ;
+void my_foo_canvas_world_bounds_to_item(FooCanvasItem *item,
+					double *rootx1_inout, double *rooty1_inout,
+					double *rootx2_inout, double *rooty2_inout) ;
 void my_foo_canvas_item_lower_to(FooCanvasItem *item, int position) ;
 
 
@@ -806,9 +816,6 @@ void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel, ZMapWindowL
 void zmapWindowFeatureListRereadStoreList(GtkTreeView *tree_view, ZMapWindow window) ;
 gint zmapWindowFeatureListCountSelected(GtkTreeSelection *selection);
 gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
-
-
-
 
 
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
@@ -907,6 +914,22 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 				       gboolean alterScrollRegionSize,
 				       double boundaryAroundItem,
 				       double sub_start, double sub_end) ;
+
+
+ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window) ;
+gboolean zmapWindowMarkIsSet(ZMapWindowMark mark) ;
+void zmapWindowMarkReset(ZMapWindowMark mark) ;
+void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour) ;
+GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark) ;
+void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item) ;
+FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark) ;
+gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
+				     double world_x1, double world_y1, double world_x2, double world_y2) ;
+gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
+				     double *world_x1, double *world_y1,
+				     double *world_x2, double *world_y2) ;
+gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *end) ;
+void zmapWindowMarkDestroy(ZMapWindowMark mark) ;
 
 
 
