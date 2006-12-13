@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 09:43 2006 (edgrif)
+ * Last edited: Dec 13 08:25 2006 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.34 2006-11-09 10:16:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.35 2006-12-13 09:38:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,12 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapWindow_P.h>
+
+
+#define zmapWindowFToIFindAlignById(FTOI_HASH, ID)                                 \
+zmapWindowFToIFindItemFull(FTOI_HASH, ID, 0, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)
+#define zmapWindowFToIFindBlockById(FTOI_HASH, ALIGN, BLOCK)                              \
+zmapWindowFToIFindItemFull(FTOI_HASH, ALIGN, BLOCK, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)
 
 
 /* A small problemeto is that the GQuark interface does not allow the removal of strings
@@ -176,217 +182,140 @@ ZMapWindowFToIQuery zMapWindowFToINewQuery(void)
 
   query = g_new0(ZMapWindowFToIQueryStruct, 1);
   zMapAssert(query);
+  query->feature_in.struct_type = ZMAPFEATURE_STRUCT_FEATURE;
+  query->feature_in.type = ZMAPFEATURE_BASIC;
 
   return query;
 }
 
+static gboolean query_is_valid(ZMapWindowFToIQuery query)
+{
+  gboolean valid = TRUE;
+  ZMapStrand strand;
+  ZMapFrame  frame;
+
+  strand = query->feature_in.strand;
+  frame  = query->frame;
+
+  if(!(strand == ZMAPSTRAND_REVERSE || 
+       strand == ZMAPSTRAND_FORWARD ||
+       strand == ZMAPSTRAND_NONE))
+    valid = FALSE ;
+
+  if(!(frame == ZMAPFRAME_NONE || 
+       frame == ZMAPFRAME_0    ||
+       frame == ZMAPFRAME_1    ||
+       frame == ZMAPFRAME_2))
+    valid = FALSE ;
+
+  if(query->query_type == ZMAP_FTOI_QUERY_INVALID)
+    valid = FALSE;
+  
+  if(!(query->query_type == ZMAP_FTOI_QUERY_ALIGN_ITEM || 
+       query->query_type == ZMAP_FTOI_QUERY_BLOCK_ITEM || 
+       query->query_type == ZMAP_FTOI_QUERY_SET_ITEM   || 
+       query->query_type == ZMAP_FTOI_QUERY_FEATURE_ITEM))
+    valid = FALSE; 
+  
+  return valid;
+}
 
 gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query)
 {
-  gboolean query_valid = TRUE, found = FALSE, use_style = FALSE;
-  GQuark align_id, block_id, set_id, feature_id, valid_style, wild_card;
+  gboolean query_valid = FALSE, found = FALSE;
+  GQuark align_unique_id, block_unique_id, set_unique_id, 
+    style_unique_id, feature_unique_id, wild_card;
   ZMapStrand zmap_strand; char *strand_txt = "*";
   ZMapFrame zmap_frame; char *frame_txt = "*";
   ZMapFeatureAlignment master_alignment = NULL;
+  char *tmp;
 
   zMapAssert(window->feature_context);
-
-  /* Zero/Invalidate everything temporary */
-  query->return_type  = ZMAP_FTOI_RETURN_ERROR;
-  align_id = block_id = set_id = feature_id = 0;
-
-  /* set up the wildcard */
-  wild_card = g_quark_from_string("*");
-
-  /* translate strand */
-  if(query->strand == ZMAPSTRAND_REVERSE || 
-     query->strand == ZMAPSTRAND_FORWARD ||
-     query->strand == ZMAPSTRAND_NONE)
-    strand_txt = zMapFeatureStrand2Str(query->strand);
-  else
-    query_valid = FALSE ;
-
-  /* translate frame */
-  if(query->frame == ZMAPSTRAND_REVERSE || 
-     query->frame == ZMAPSTRAND_FORWARD ||
-     query->frame == ZMAPSTRAND_NONE)
-    frame_txt = zMapFeatureFrame2Str(query->frame) ;
-  else
-    query_valid = FALSE ;
-
-  if(!(master_alignment = window->feature_context->master_align))
-    query_valid = FALSE;
-
-  if(query_valid)
-    {    
-      /* check we have the absolute minimum in the query */
-      if(query->query_type == ZMAP_FTOI_QUERY_INVALID)
-        query_valid = FALSE;    /* Not Enough */
-
-      /* Always need alignment for queries! */
-      if(query_valid && query->alignId == 0)
-        {
-          if(!(query->alignId = master_alignment->unique_id))
-            query_valid = FALSE; 
-        }
-
-      if(query->query_type == ZMAP_FTOI_QUERY_ALIGN_ITEM || 
-         query->query_type == ZMAP_FTOI_QUERY_BLOCK_ITEM || 
-         query->query_type == ZMAP_FTOI_QUERY_SET_ITEM   || 
-         query->query_type == ZMAP_FTOI_QUERY_FEATURE_ITEM) 
-        query_valid = TRUE; 
-
-    }
-
-  if(query_valid)
+  zMapAssert((master_alignment = window->feature_context->master_align));
+  
+  /* Checking section */
+  if((query_valid = query_is_valid(query)))
     {
-      align_id = query->alignId; 
-      block_id = query->blockId;
-      set_id   = query->columnId;
-      zmap_strand = query->strand;
-      feature_id  = 0;
+      align_unique_id = block_unique_id = set_unique_id = feature_unique_id = 0;
+      
+      /* set up the wildcard */
+      wild_card   = g_quark_from_string("*");
+      
+      zmap_strand = query->feature_in.strand;
+      zmap_frame  = query->frame;
+      
+      /* translate strand & frame */
+      strand_txt = zMapFeatureStrand2Str(zmap_strand);
+      frame_txt  = zMapFeatureFrame2Str(zmap_frame) ;
 
-      if(query->blockId == 0)
+      if(query->align_original_id == 0)
+        query->align_original_id = master_alignment->unique_id;
+
+      if(query->block_original_id == 0)
         {
           ZMapFeatureBlock first_block = NULL;
           if(master_alignment &&
              master_alignment->blocks &&
              (first_block    = (ZMapFeatureBlock)(master_alignment->blocks->data)))
-            block_id = query->blockId = first_block->unique_id;
+            query->block_original_id = first_block->unique_id;
         }
+
+      if(query->set_original_id == 0)
+        query->set_original_id = query->style_original_id;
+
+      align_unique_id = query->align_original_id;
+      block_unique_id = query->block_original_id;
+      tmp             = (char *)g_quark_to_string(query->set_original_id);
+      set_unique_id   = zMapStyleCreateID(tmp);
+      tmp             = (char *)g_quark_to_string(query->style_original_id);
+      style_unique_id = zMapStyleCreateID(tmp);
+
+      feature_unique_id = query->feature_in.unique_id = 
+        zMapFeatureCreateID(query->feature_in.type,  
+                            (char *)(g_quark_to_string(query->feature_in.original_id)),
+                            query->feature_in.strand, 
+                            query->feature_in.x1, 
+                            query->feature_in.x2, 
+                            0, 0);
+
+    }
+
+  /* Searching section */
+  if(query_valid)
+    {
+      FooCanvasItem *item = NULL;
 
       switch(query->query_type)
         {
-        case ZMAP_FTOI_QUERY_ALIGN_LIST:
-          query->return_type = ZMAP_FTOI_RETURN_LIST;
-          block_id = set_id = feature_id = 0;
-          break;
-        case ZMAP_FTOI_QUERY_BLOCK_LIST:
-          query->return_type = ZMAP_FTOI_RETURN_LIST;
-          set_id = feature_id = 0;
-          break;
-        case ZMAP_FTOI_QUERY_SET_LIST:
-          query->return_type = ZMAP_FTOI_RETURN_LIST;
-          use_style  = TRUE;
-          feature_id = 0;
-          break;
-        case ZMAP_FTOI_QUERY_FEATURE_LIST:
-          if(query->blockId != 0 &&
-             query->styleId != 0 &&
-             query->strand)
-            {
-              if(query->originalId != wild_card)
-                {
-                  char *original_name = NULL;
-                  original_name = (char *)g_quark_to_string(query->originalId);
-                  feature_id = zMapFeatureCreateID(query->type,  original_name,
-                                                   query->strand, 
-                                                   query->start, query->end, 
-                                                   query->query_start, query->query_end);
-                }
-              else
-                {
-                  feature_id = query->originalId;
-                }
-              query->return_type = ZMAP_FTOI_RETURN_LIST;
-              use_style = TRUE;
-            }
-          else
-            query_valid = FALSE;
-          break;
-
         case ZMAP_FTOI_QUERY_ALIGN_ITEM:
-          query->return_type = ZMAP_FTOI_RETURN_ITEM;
-          block_id = 0;
+          block_unique_id = 0;
           break;
         case ZMAP_FTOI_QUERY_BLOCK_ITEM:
-          query->return_type = ZMAP_FTOI_RETURN_ITEM;
-          set_id = 0;
+          set_unique_id = 0;
           break;
         case ZMAP_FTOI_QUERY_SET_ITEM:
-          if(query->blockId != 0 &&
-             query->styleId != 0 &&
-             query->strand)
-            {
-              query->return_type = ZMAP_FTOI_RETURN_ITEM;
-              use_style  = TRUE;
-              feature_id = 0;
-            }
-          else
-            query_valid = FALSE;
+          feature_unique_id = 0;
           break;
         case ZMAP_FTOI_QUERY_FEATURE_ITEM:
-          if(query->originalId != 0     &&
-             query->strand              &&
-             query->start > 0           && 
-             query->end >= query->start &&
-             query->styleId != 0)
-            {
-              char *original_name = NULL;
-              original_name = (char *)g_quark_to_string(query->originalId);
-              feature_id = zMapFeatureCreateID(query->type,  original_name,
-                                               query->strand, 
-                                               query->start, query->end, 
-                                               query->query_start, query->query_end);
-              use_style = TRUE;
-              query->return_type = ZMAP_FTOI_RETURN_ITEM;
-            }
-          else{ query_valid = FALSE; }
           break;
-        case ZMAP_FTOI_QUERY_INVALID:
+        case ZMAP_FTOI_QUERY_ALIGN_LIST:
+        case ZMAP_FTOI_QUERY_BLOCK_LIST:
+        case ZMAP_FTOI_QUERY_SET_LIST:
+        case ZMAP_FTOI_QUERY_FEATURE_LIST:
         default:
-          query_valid = FALSE;
-          query->return_type = ZMAP_FTOI_RETURN_ERROR;
+          zMapLogCritical("%s", "Poor design. Change me.");
+          zMapAssertNotReached();
           break;
         }
-    }
-  /* 
-   * This is to deal with the multiple styles per column eventuality
-   * If we're doing {set,feature}_{item,list} query
-   * we need to enforce the column id == 0 then use style id 
-   * i.e. style id is the default but if a column id has been 
-   * specified use that.
-   */
-  if((query_valid == TRUE) && 
-     (query->styleId != 0) &&
-     (set_id == 0)         &&
-     (use_style == TRUE))
-    {
-     if((valid_style = zMapStyleCreateID((char *)g_quark_to_string(query->styleId))))
-       set_id = valid_style;
-     else
-       set_id = query->styleId;
-    }
-  else
-    query_valid = FALSE;
 
-  if(query_valid && query->return_type != ZMAP_FTOI_RETURN_ERROR)
-    {
-      switch(query->return_type)
+      item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                        align_unique_id, block_unique_id,
+                                        set_unique_id, zmap_strand,
+                                        zmap_frame, feature_unique_id);
+      if(item != NULL)
         {
-        case ZMAP_FTOI_RETURN_ITEM:
-          if((query->ans.item_answer = zmapWindowFToIFindItemFull(window->context_to_item,
-                                                                  align_id,
-                                                                  block_id,
-                                                                  set_id,
-                                                                  zmap_strand, zmap_frame,
-                                                                  feature_id)) != NULL)
-            found = TRUE;       /* Success */
-          break;
-        case ZMAP_FTOI_RETURN_LIST:
-          if((query->ans.list_answer = zmapWindowFToIFindItemSetFull(window->context_to_item,
-                                                                     align_id,
-                                                                     block_id,
-                                                                     set_id,
-                                                                     strand_txt, frame_txt,
-                                                                     feature_id,
-								     NULL, NULL)) != NULL)
-            found = TRUE;       /* Success */
-          break;
-        case ZMAP_FTOI_RETURN_ERROR:
-        default:
-          found = FALSE;        /* Unknown return type */
-          break;
+          query->ans.item_answer = item;
+          found = TRUE;
         }
     }
 
@@ -395,24 +324,7 @@ gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query
       query->return_type = ZMAP_FTOI_RETURN_ERROR;
       query->ans.list_answer = NULL; query->ans.item_answer = NULL;
     }
-#ifdef RDS_DONT_INCLUDE
-  else
-    {
-      /* We could possibly put a check in here to test the length of
-       * the GList return value and reset to be just a single item if 
-       * the list has only a single member, but I don't think this is
-       * good. The caller then needs to do more checking and write more 
-       * code. It's also just as easy to do one thing to an item as
-       * put that in a g_list_foreach function.
-       */
-      if(query->return_type == ZMAP_FTOI_RETURN_FEATURE_LIST &&
-         (((GList *)(query->ans.list_answer))->next == NULL))
-        {
-          query->ans.item_answer = (FooCanvasItem *)list->data;
-          query->return_type = ZMAP_FTOI_RETURN_ITEM;
-        }
-    }
-#endif
+
   return found;
 }
 
@@ -605,6 +517,11 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
   ID2Canvas align ;
   ID2Canvas block ;
 
+  if(set_id == g_quark_from_string("tata_box"))
+    {
+      printf("set_id is %s\n", g_quark_to_string(set_id));
+      zMapAssertNotReached();
+    }
 
   /* We need special quarks that incorporate strand/frame indication because any one feature set
    * may be displayed in multiple columns. */
@@ -615,6 +532,7 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
       && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
 						 GUINT_TO_POINTER(block_id))))
     {
+
       if (!(g_hash_table_lookup(block->hash_table, GUINT_TO_POINTER(set_id))))
 	{
 	  ID2Canvas set ;
@@ -1510,7 +1428,7 @@ gboolean filterOnRegExp(ItemSearch curr_search, gpointer user_data)
 
 static GQuark rootCanvasID(void)
 {
-  return g_quark_from_string("this should be completely random and unique and nowhere else in the hash");
+  return g_quark_from_string("ROOT_ID");
 }
 
 
