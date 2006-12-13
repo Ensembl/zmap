@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  7 10:10 2006 (rds)
+ * Last edited: Dec 12 14:12 2006 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.12 2006-12-08 15:39:40 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.13 2006-12-13 13:29:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1170,29 +1170,32 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
               zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
 
 
-              exon_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-	      exon_data->subpart = ZMAPFEATURE_SUBPART_EXON ;
+              exon_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+	      if (has_cds)
+		exon_data->subpart = ZMAPFEATURE_SUBPART_EXON_CDS ;
+	      else
+		exon_data->subpart = ZMAPFEATURE_SUBPART_EXON ;
               exon_data->start = exon_span->x1;
-	      exon_data->end   = exon_span->x2;
+	      exon_data->end = exon_span->x2;
 
               /* if cds boundary is within this exon we use the
                * foreground colour, else it's the background. 
                * If background is null though outline will need
                * to be set to what background would be and 
                * background should then = NULL */
-              if(has_cds && ((cds_start > bottom) || (cds_end < top)))
+              if (has_cds && ((cds_start > bottom) || (cds_end < top)))
                 {
                   if((exon_fill = background) == NULL)
                     exon_outline = outline;
                 }
-              else if(has_cds)
+              else if (has_cds)
                 { 
-                  if((exon_fill = background) == NULL)
+                  if ((exon_fill = background) == NULL)
                     exon_outline = foreground;
                   else
                     exon_fill = foreground;
                 }
-              else if((exon_fill = background) == NULL)
+              else if ((exon_fill = background) == NULL)
                 {
                   exon_outline = outline;
                 }
