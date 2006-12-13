@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec 12 18:20 2006 (rds)
+ * Last edited: Dec 13 09:23 2006 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.167 2006-12-13 08:27:07 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.168 2006-12-13 13:44:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -780,7 +780,6 @@ static void drawBlocks(gpointer data, gpointer user_data)
   ZMapCanvasData canvas_data = (ZMapCanvasData)user_data ;
   ZMapWindow window = canvas_data->window ;
   gboolean status ;
-  double x1, y1, x2, y2 ;
   GdkColor *for_bg_colour, *rev_bg_colour ;
   double top, bottom ;
   FooCanvasGroup *block_parent, *forward_group, *reverse_group ;
@@ -1590,8 +1589,11 @@ static void setColours(ZMapWindow window)
 			  &(window->colour_qreverse_col)) ;
 	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_column_highlight"),
 			  &(window->colour_column_highlight)) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_item_mark"),
-			  &(window->colour_item_mark)) ;
+
+	  if ((colour = zMapConfigGetElementString(next_colour, "colour_item_mark")))
+	    {
+	      zmapWindowMarkSetColour(window->mark, colour) ;
+	    }
 
 	  if ((colour = zMapConfigGetElementString(next_colour, "colour_item_highlight")))
 	    {
@@ -1622,7 +1624,6 @@ static void setColours(ZMapWindow window)
 	  gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &(window->colour_qforward_col)) ;
 	  gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &(window->colour_qreverse_col)) ;
 	  gdk_color_parse(ZMAP_WINDOW_COLUMN_HIGHLIGHT, &(window->colour_column_highlight)) ;
-	  gdk_color_parse(ZMAP_WINDOW_ITEM_MARK, &(window->colour_item_mark)) ;
 	  gdk_color_parse(ZMAP_WINDOW_FRAME_0, &(window->colour_frame_0)) ;
 	  gdk_color_parse(ZMAP_WINDOW_FRAME_1, &(window->colour_frame_1)) ;
 	  gdk_color_parse(ZMAP_WINDOW_FRAME_2, &(window->colour_frame_2)) ;
