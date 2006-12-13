@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec  8 15:45 2006 (rds)
+ * Last edited: Dec 12 17:39 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.70 2006-12-08 15:45:16 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.71 2006-12-13 08:28:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -229,6 +229,7 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
 				    FooCanvasGroup *feature_group, ZMapFeature feature)
 {
   FooCanvasItem *new_feature = NULL ;
+  ZMapWindowItemFeatureSetData set_data;
   ZMapFeatureSet feature_set ;
 
   zMapAssert(window && feature_group && feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
@@ -248,11 +249,12 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
 	  /* This function will add the new feature to the hash. */
 	  new_feature = zmapWindowFeatureDraw(window, FOO_CANVAS_GROUP(feature_group), feature) ;
 
-          /* Should this get the style from the feature set's set data??? */
-          /* In fact I forsee multiple "New Features don't always get bumped" tickets. */
-          if((bump_mode = zMapStyleGetOverlapMode(feature_set->style)) != ZMAPOVERLAP_COMPLETE)
+          if((set_data = g_object_get_data(G_OBJECT(feature_group), ITEM_FEATURE_SET_DATA)))
             {
-              zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
+              if((bump_mode = zMapStyleGetOverlapMode(set_data->style)) != ZMAPOVERLAP_COMPLETE)
+                {
+                  zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
+                }
             }
 	}
     }
@@ -261,6 +263,59 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
 }
 
 
+/* N.B. This function creates TWO columns.  One Forward (returned) and One Reverse.
+ * To get hold of the reverse one you'll need to use a FToI call.
+ * Also to note. If the feature_set_name is NOT in the window feature_set_names list
+ * the columns will NOT be created.
+ */
+FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
+                                       FooCanvasGroup *block_group,
+                                       char *feature_set_name)
+{
+  FooCanvasGroup *new_forward_set = NULL;
+  FooCanvasGroup *new_reverse_set;
+  ZMapFeatureSet     feature_set;
+  ZMapFeatureBlock feature_block;
+  FooCanvasGroup *forward_strand;
+  FooCanvasGroup *reverse_strand;
+  GQuark          feature_set_id;
+
+  feature_block = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_DATA);
+  zMapAssert(feature_block);
+  
+  feature_set_id = zMapFeatureSetCreateID(feature_set_name);
+
+  /* Make sure it's somewhere in our list of feature set names.... columns to draw. */
+  if(g_list_find(window->feature_set_names, GUINT_TO_POINTER(feature_set_id)))
+    {
+      /* Check feature set does not already exist. */
+      if(!zMapFeatureFindSetInBlock(feature_block, feature_set_id))
+        {
+          /* Create the new feature set... */
+          if((feature_set = zMapFeatureSetCreate(feature_set_name, NULL)))
+            {
+              /* Add it to the block */
+              zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+              /* Get the strand groups */
+              forward_strand = zmapWindowContainerGetStrandGroup(block_group, ZMAPSTRAND_FORWARD);
+              reverse_strand = zmapWindowContainerGetStrandGroup(block_group, ZMAPSTRAND_REVERSE);
+
+              /* Create the columns */
+              zmapWindowCreateSetColumns(forward_strand, reverse_strand,
+                                         feature_block, feature_set_id,
+                                         window, ZMAPFRAME_NONE, 
+                                         &new_forward_set, &new_reverse_set);
+            }
+          else
+            zMapAssertNotReached();
+        }
+    }
+
+  if(new_forward_set != NULL)
+    return FOO_CANVAS_ITEM(new_forward_set);
+  else 
+    return NULL;
+}
 
 /* THERE IS A PROBLEM HERE IN THAT WE REMOVE THE EXISTING FOOCANVAS ITEM FOR THE FEATURE
  * AND DRAW A NEW ONE, THIS WILL INVALIDATE ANY CODE THAT IS CACHING THE ITEM.
