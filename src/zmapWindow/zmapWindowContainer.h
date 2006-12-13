@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Nov 10 08:28 2006 (rds)
+ * Last edited: Dec 12 16:20 2006 (edgrif)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.15 2006-11-10 09:25:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.16 2006-12-13 13:40:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -43,6 +43,7 @@ typedef enum
     CONTAINER_INVALID,
     CONTAINER_ROOT,					    /* Root container has this instead of CONTAINER_PARENT */
     CONTAINER_PARENT,					    /* Container parent group */
+    CONTAINER_OVERLAYS,					    /* Overlay objects. */
     CONTAINER_FEATURES,					    /* Container subgroup containing features. */
     CONTAINER_BACKGROUND				    /* Rectangular item to form group background. */
   } ContainerType ;
@@ -89,11 +90,16 @@ void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup* featureset_container
 gboolean zmapWindowContainerIsChildRedrawRequired(FooCanvasGroup *container_parent);
 void zmapWindowContainerSetChildRedrawRequired(FooCanvasGroup *container_parent,
 					       gboolean redraw_required) ;
-
+gboolean zmapWindowContainerIsValid(FooCanvasGroup *any_group) ;
+FooCanvasGroup *zmapWindowContainerGetFromItem(FooCanvasItem *any_item) ;
+FooCanvasGroup *zmapWindowContainerGetParentLevel(FooCanvasItem *any_item, ZMapContainerLevelType level) ;
 FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_parent) ;
 FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *any_container_child) ;
-FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent) ;
 FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent) ;
+FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent) ;
+FooCanvasGroup *zmapWindowContainerGetOverlays(FooCanvasGroup *container_parent) ;
+void zmapWindowContainerSetOverlayResizing(FooCanvasGroup *container_parent,
+					   gboolean maximise_width, gboolean maximise_height) ;
 ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_parent) ;
 ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group) ;
 double zmapWindowContainerGetSpacing(FooCanvasGroup *column_group) ;

@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Dec 12 17:19 2006 (rds)
+ * Last edited: Dec 13 09:23 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.22 2006-12-13 08:26:14 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.23 2006-12-13 13:40:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,10 +60,21 @@ typedef struct
 
   double this_spacing ;         /* ... to save time ... see eachContainer & containerXAxisMove */
 
-  /* We cash this as some containers have their own special colours (e.g. 3 frame cols.). */
-  GdkColor orig_background ;
 
-  /* The long_item object, needed for freeing a record of long items. */
+  /* For background item processing (we should have flags for background as well). */
+  GdkColor orig_background ;				    /* We cash this as some containers
+							       have their own special colours (e.g. 3 frame cols.). */
+
+  /* For overlay processing. */
+  struct
+  {
+    unsigned int max_width : 1 ;			    /* maximise width of overlays. */
+    unsigned int max_height : 1 ;			    /* maximise height of overlays. */
+  } overlay_flags ;
+
+
+  /* The long_item object, needed for keeping a record of any long items we create including the
+   * background and overlays. */
   ZMapWindowLongItems long_items ;
   
 } ContainerDataStruct, *ContainerData ;
@@ -78,7 +89,7 @@ typedef struct
   double root_bound, align_bound, 
     block_bound, strand_bound, 
     set_bound;
-}ContainerPointsCacheStruct, *ContainerPointsCache;
+} ContainerPointsCacheStruct, *ContainerPointsCache;
 
 typedef struct ContainerRecursionDataStruct_
 {
@@ -121,6 +132,8 @@ static void containerMoveToZero(FooCanvasGroup *container);
 static void containerSetMaxBackground(FooCanvasGroup *container, 
                                       FooCanvasPoints *this_points, 
                                       ContainerData container_data);
+static void containerSetMaxOverlays(FooCanvasGroup *container, FooCanvasPoints *this_points, 
+				    ContainerData container_data) ;
 
 
 /* To cache the points when recursing ... */
@@ -141,20 +154,14 @@ static gboolean containerRootInvokeContainerBGEvent(FooCanvasItem *item, GdkEven
 /* Creates a "container" for our sequence features which consists of: 
  * 
  *                parent_group
- *                  /   |  \
- *                 /        \
- *                /     |    \
- *           background    sub_group of
- *             item     |  feature items
+ *              /     |        \
+ *             /      |         \
+ *            /       |          \
+ *  background   sub_group of     sub_group of
+ *      item     feature items    overlay items
  *
- *
- *    THIS IS NOT USED CURRENTLY, MAY USE IN FUTURE FOR OVERLAYS OF TEXT.
- *                      |
- *                Optional text  
- *                    group (dotted line)
- *
- * should change so parent - group of all sub_group features - sub_group feature items (including Optional text group!)
- *
+ * Note that this means that the the overlay items are above the feature items
+ * which are above the background item.
  *
  * The background item is used both as a visible background for the items but also
  * more importantly to catch events _anywhere_ in the space (e.g. column) where
@@ -169,7 +176,7 @@ static gboolean containerRootInvokeContainerBGEvent(FooCanvasItem *item, GdkEven
  * group then we make a container root, i.e. the top of the container tree.
  * 
  * Returns the container_parent.
-
+ *
  * CONTAINER_DATA is a property of the PARENT
  * ITEM_FEATURE_STRAND is a property of the ZMAPCONTAINER_LEVEL_STRAND PARENT.
  * 
@@ -184,7 +191,7 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  GdkColor *background_border_colour,
 					  ZMapWindowLongItems long_items)
 {
-  FooCanvasGroup *container_parent = NULL, *container_features, *parent_container;
+  FooCanvasGroup *container_parent = NULL, *container_overlays, *container_features, *parent_container;
   FooCanvasItem *container_background ;
   ContainerType parent_type = CONTAINER_INVALID, container_type ;
   ContainerData container_data, parent_data = NULL;
@@ -245,13 +252,15 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 		    GINT_TO_POINTER(container_type)) ;
   g_signal_connect(G_OBJECT(container_parent), "destroy", G_CALLBACK(containerDestroyCB), NULL) ;
 
+
   container_features = FOO_CANVAS_GROUP(foo_canvas_item_new(container_parent,
 							    foo_canvas_group_get_type(),
 							    NULL)) ;
-
   g_object_set_data(G_OBJECT(container_features), CONTAINER_TYPE_KEY,
 		    GINT_TO_POINTER(CONTAINER_FEATURES)) ;
 
+
+  /* WE SHOULD DO THIS FIRST SO ITS AUTOMATICALLY AT THE BOTTOM.... */
   /* We don't use the border colour at the moment but we may wish to later.... */
   container_background = zMapDrawSolidBox(FOO_CANVAS_ITEM(container_parent),
 					  0.0, 0.0, 0.0, 0.0, background_fill_colour) ;
@@ -265,8 +274,79 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
   foo_canvas_item_lower_to_bottom(container_background) ; 
 
 
+  container_overlays = FOO_CANVAS_GROUP(foo_canvas_item_new(container_parent,
+							    foo_canvas_group_get_type(),
+							    NULL)) ;
+  g_object_set_data(G_OBJECT(container_overlays), CONTAINER_TYPE_KEY,
+		    GINT_TO_POINTER(CONTAINER_OVERLAYS)) ;
+
+
   return container_parent ;
 }
+
+
+
+/* Check whether a given FooCanvasGroup is a valid container. */
+gboolean zmapWindowContainerIsValid(FooCanvasGroup *any_group)
+{
+  gboolean valid = FALSE ;
+  ContainerType container_type ;
+  ContainerData container_data ;
+
+  if (((container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(any_group), CONTAINER_TYPE_KEY)))
+       == CONTAINER_PARENT)
+      && (container_data = g_object_get_data(G_OBJECT(any_group), CONTAINER_DATA)))
+    {
+      valid = TRUE ;
+    }
+
+  return valid ;
+}
+
+
+/* If the item is a valid container then it is returned, otherwise its parent(s) are tested
+ * until a valid container is found or the root of the canvas is reached. */
+FooCanvasGroup *zmapWindowContainerGetFromItem(FooCanvasItem *any_item)
+{
+  FooCanvasGroup *container = NULL ;
+  gboolean result ;
+
+  while (!(result = zmapWindowContainerIsValid((FooCanvasGroup *)any_item)))
+    {
+      if (!(any_item = any_item->parent))
+	break ;
+    }
+
+  if (result)
+    container = (FooCanvasGroup *)any_item ;
+
+  return container ;
+}
+
+
+/* Return If the item is a valid container then it is returned, otherwise its parent(s) are tested
+ * until a valid container is found or the root of the canvas is reached. */
+FooCanvasGroup *zmapWindowContainerGetParentLevel(FooCanvasItem *any_item, ZMapContainerLevelType level)
+{
+  FooCanvasGroup *container = NULL ;
+  ZMapContainerLevelType curr_level ;
+
+  if ((container = zmapWindowContainerGetFromItem(any_item)))
+    {
+      while ((curr_level = zmapWindowContainerGetLevel(container)) != level)
+	{
+	  if (!(container = zmapWindowContainerGetSuperGroup(container)))
+	    break ;
+	}
+    }
+
+  return container ;
+}
+
+
+
+
+
 
 /* This is weak and immature ATM, but better than NO type checking for the callback as it was! */
 void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup *featureset_container,
@@ -277,10 +357,10 @@ void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup *featureset_container
   ContainerData container_data = NULL;
   ContainerType container_type = CONTAINER_INVALID;
 
-  if(((container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(featureset_container), 
+  if (((container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(featureset_container), 
                                                           CONTAINER_TYPE_KEY))) == CONTAINER_PARENT)
-     && (container_data = g_object_get_data(G_OBJECT(featureset_container), CONTAINER_DATA))
-     && container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET)
+      && (container_data = g_object_get_data(G_OBJECT(featureset_container), CONTAINER_DATA))
+      && container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET)
     {
       zmapWindowContainerSetChildRedrawRequired(featureset_container, TRUE) ;
       g_object_set_data(G_OBJECT(featureset_container), CONTAINER_REDRAW_CALLBACK,
@@ -457,6 +537,7 @@ FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *unknown_child)
 
   switch(type)
     {
+    case CONTAINER_OVERLAYS:
     case CONTAINER_FEATURES:
     case CONTAINER_BACKGROUND:
       container_parent = FOO_CANVAS_GROUP(unknown_child->parent) ;
@@ -489,21 +570,6 @@ FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_paren
 }
 
 
-/* Return the sub group of the container that contains all of the "features" where
- * features might be columns, column sets, blocks etc. */
-FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent)
-{
-  FooCanvasGroup *container_features ;
-  ContainerType type = CONTAINER_INVALID ;
-
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
-  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
-
-  container_features = FOO_CANVAS_GROUP((g_list_nth(container_parent->item_list, 1))->data) ;
-
-  return container_features ;
-}
-
 /* Return the background of the container which is used both to give colour to the
  * container and to allow event interception across the complete bounding rectangle
  * of the container. */
@@ -520,6 +586,58 @@ FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent
 
   return container_background ;
 }
+
+
+/* Return the sub group of the container that contains all of the "features" where
+ * features might be columns, column sets, blocks etc. */
+FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent)
+{
+  FooCanvasGroup *container_features ;
+  ContainerType type = CONTAINER_INVALID ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  container_features = FOO_CANVAS_GROUP((g_list_nth(container_parent->item_list, 1))->data) ;
+
+  return container_features ;
+}
+
+
+/* Return the sub group of the container that contains all of the "overlays" where
+ * overlays might be text, rectangles etc. */
+FooCanvasGroup *zmapWindowContainerGetOverlays(FooCanvasGroup *container_parent)
+{
+  FooCanvasGroup *container_overlays ;
+  ContainerType type = CONTAINER_INVALID ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  container_overlays = FOO_CANVAS_GROUP((g_list_nth(container_parent->item_list, 2))->data) ;
+
+  return container_overlays ;
+}
+
+/* Set overlay resizing policy. */
+void zmapWindowContainerSetOverlayResizing(FooCanvasGroup *container_parent,
+					   gboolean maximise_width, gboolean maximise_height)
+{
+  ContainerType type = CONTAINER_INVALID ;
+  ContainerData container_data = NULL;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA);
+  zMapAssert(container_data) ;
+
+  container_data->overlay_flags.max_width = maximise_width ;
+  container_data->overlay_flags.max_height = maximise_height ;
+
+  return ;
+}
+
 
 
 /* Note that each column has a style but then the features within it will have
@@ -549,12 +667,14 @@ ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group)
  * is taken from the child group.
  */
 
+/* Should I set the overlay size here as well...perhaps..... */
+
 /* THIS NEEDS TO DO A BORDER WIDTH AS WELL.... */
 
 void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
 					  double height)
 {
-  FooCanvasGroup *container_features ;
+  FooCanvasGroup *container_features, *container_overlays ;
   FooCanvasItem *container_background ;
   double x1, y1, x2, y2 ;
   ContainerType type = CONTAINER_INVALID ;
@@ -565,9 +685,13 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
 
   zMapAssert(height >= 0.0) ;
 
-  container_features   = zmapWindowContainerGetFeatures(container_parent) ;
 
   container_background = zmapWindowContainerGetBackground(container_parent) ;
+
+  container_features = zmapWindowContainerGetFeatures(container_parent) ;
+
+  container_overlays = zmapWindowContainerGetOverlays(container_parent) ;
+
 
   /* Either the caller sets the height or we get the height from the main group.
    * We do this because features may cover only part of the range of the group, e.g. transcripts
@@ -595,11 +719,16 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
                       "y2", y2,
                       NULL) ;
 
+
   if((container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA)) 
      && container_data->long_items)
     {
       zmapWindowLongItemCheck(container_data->long_items, container_background, y1, y2);
     }
+
+
+  /* Should long item check overlays here.... */
+
 
   return ;
 }
@@ -1101,6 +1230,10 @@ static void eachContainer(gpointer data, gpointer user_data)
         case ZMAPCONTAINER_LEVEL_BLOCK:
           containerMoveToZero(container);
           containerSetMaxBackground(container, this_points, container_data);
+
+	  /* I'm trying this for my overlays.... */
+          containerSetMaxOverlays(container, this_points, container_data);
+
           containerPointsCacheResetBound(all_data->cache, ZMAPCONTAINER_LEVEL_STRAND);
           break;
         case ZMAPCONTAINER_LEVEL_STRAND:
@@ -1363,9 +1496,9 @@ static void containerMoveToZero(FooCanvasGroup *container)
   return ;
 }
 
+
 /* This MUST update the long items!!! Hence container_data!!! */
-static void containerSetMaxBackground(FooCanvasGroup *container, 
-                                      FooCanvasPoints *this_points, 
+static void containerSetMaxBackground(FooCanvasGroup *container, FooCanvasPoints *this_points, 
                                       ContainerData container_data)
 {
   double nx1, nx2, ny1, ny2, size;
@@ -1382,8 +1515,7 @@ static void containerSetMaxBackground(FooCanvasGroup *container,
    * Should we update this_points???? Only if x changes...
    */
 
-  /* Also needs to set the background to the FULL height not 
-   * just limited to features... */
+  /* Also needs to set the background to the FULL height not just limited to features... */
   nx1 = 0.0;//this_points->coords[0];
   ny1 = 0.0;//this_points->coords[1];
   nx1 = this_points->coords[0];
@@ -1413,6 +1545,94 @@ static void containerSetMaxBackground(FooCanvasGroup *container,
 
   return ;
 }
+
+
+/* Set maximum size for overlays if required. */
+static void containerSetMaxOverlays(FooCanvasGroup *container, FooCanvasPoints *this_points, 
+				    ContainerData container_data)
+{
+  ContainerType type = CONTAINER_INVALID ;
+  double nx1, nx2, ny1, ny2, size ;
+  FooCanvasGroup *container_overlays ;
+  
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  container_overlays = zmapWindowContainerGetOverlays(container) ;
+
+  if (container_overlays->item_list
+      && (container_data->overlay_flags.max_width || container_data->overlay_flags.max_height))
+    {
+      GList *list_item ;
+
+      list_item = g_list_first(container_overlays->item_list) ;
+      do
+	{
+	  FooCanvasItem *overlay_item ;
+	  double item_x1, item_y1, item_x2, item_y2 ;
+
+	  overlay_item = FOO_CANVAS_ITEM(list_item->data) ;
+
+	  /* It is worth a get_bounds call here??
+	   * ************************************
+	   * foo_canvas_item_get_bounds(bg, &tx1, &ty1, &tx2, &ty2);
+	   * if(tx1 != nx1 && tx2 != nx2 && ty1 != ny1 && ty2 != ny2)
+	   *   item_set(...); longItemCheck(...)
+	   * ***********************************
+	   * Should we update this_points???? Only if x changes...
+	   */
+
+	  /* Also needs to set the background to the FULL height not 
+	   * just limited to features... */
+	  nx1 = 0.0;//this_points->coords[0];
+	  ny1 = 0.0;//this_points->coords[1];
+	  nx1 = this_points->coords[0];
+	  ny1 = this_points->coords[1];
+
+	  /* nx1 and ny1 aren't correct. They should be 0.0 and 0.0.
+	   * Bumping knocks this off though and this->points[0,1] 
+	   * are both negative then. */
+	  nx2 = this_points->coords[2];
+	  ny2 = this_points->coords[3];
+
+	  /* Get items actual coords. */
+	  foo_canvas_item_get_bounds(overlay_item, &item_x1, &item_y1, &item_x2, &item_y2) ;
+
+	  /* Decide which we want to change. */
+	  if (!(container_data->overlay_flags.max_width))
+	    {
+	      nx1 = item_x1 ;
+	      nx2 = item_x2 ;
+	    }
+	  if (!(container_data->overlay_flags.max_height))
+	    {
+	      ny1 = item_y1 ;
+	      ny2 = item_y2 ;
+	    }
+
+	  foo_canvas_item_set(overlay_item,
+			      "x1", nx1,
+			      "y1", ny1,
+			      "x2", nx2,
+			      "y2", ny2,
+			      NULL);
+  
+	  if ((size = (nx2 - nx1)) > (double)(1 << 15))
+	    zMapLogWarning("%s [%d < %f]", "Container background larger than 1 << 15 in x coords.", 1 << 15, size);
+
+	  if (container_data->long_items)
+	    {
+	      zmapWindowLongItemCheck(container_data->long_items, overlay_item, ny1, ny2);
+	    }
+
+	  list_item = g_list_next(list_item) ;
+
+	} while (list_item) ;
+    }
+  
+  return ;
+}
+
 
 static ContainerPointsCache containerPointsCacheCreate(void)
 {
