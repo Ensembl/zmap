@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 13 09:24 2006 (edgrif)
+ * Last edited: Dec 13 15:10 2006 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.72 2006-12-13 13:34:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.73 2006-12-13 15:16:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -235,7 +235,7 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
   zMapAssert(window && feature_group && feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
 
-  feature_set = g_object_get_data(G_OBJECT(feature_group), ITEM_FEATURE_DATA) ;
+  feature_set = zmapWindowContainerGetData(feature_group, ITEM_FEATURE_DATA) ;
   zMapAssert(feature_set) ;
 
 
@@ -280,7 +280,7 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
   FooCanvasGroup *reverse_strand;
   GQuark          feature_set_id;
 
-  feature_block = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_DATA);
+  feature_block = zmapWindowContainerGetData(block_group, ITEM_FEATURE_DATA);
   zMapAssert(feature_block);
   
   feature_set_id = zMapFeatureSetCreateID(feature_set_name);
@@ -301,10 +301,14 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
               reverse_strand = zmapWindowContainerGetStrandGroup(block_group, ZMAPSTRAND_REVERSE);
 
               /* Create the columns */
-              zmapWindowCreateSetColumns(forward_strand, reverse_strand,
-                                         feature_block, feature_set_id,
-                                         window, ZMAPFRAME_NONE, 
-                                         &new_forward_set, &new_reverse_set);
+              zmapWindowCreateSetColumns(window,
+                                         forward_strand, 
+                                         reverse_strand,
+                                         feature_block, 
+                                         feature_set,
+                                         ZMAPFRAME_NONE, 
+                                         &new_forward_set, 
+                                         &new_reverse_set);
             }
           else
             zMapAssertNotReached();

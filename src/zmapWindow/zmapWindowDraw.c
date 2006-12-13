@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 13 13:37 2006 (edgrif)
+ * Last edited: Dec 13 15:09 2006 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.49 2006-12-13 13:38:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.50 2006-12-13 15:15:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -864,6 +864,7 @@ void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style,
 void zmapWindowSortCols(GList *col_names, FooCanvasGroup *col_container, gboolean reverse)
 
 {
+#ifdef RDS_DONT_INCLUDE
   FooCanvasGroup *column_group ;
   GList *column_list ;
   GList *next ;
@@ -916,7 +917,7 @@ void zmapWindowSortCols(GList *col_names, FooCanvasGroup *col_container, gboolea
   column_group->item_list = column_list ;
   column_group->item_list_end = g_list_last(column_group->item_list) ;
 
-
+#endif
   return ;
 }
 
@@ -2335,6 +2336,10 @@ static void redraw3FrameNormal(ZMapWindow window)
                              ZMAPCONTAINER_LEVEL_BLOCK,
                              redraw3FrameCol, window);
 
+  zmapWindowColOrderColumns(window);
+  
+  zmapWindowNewReposition(window) ;
+
   return ;
 }
 
@@ -2379,8 +2384,6 @@ static void redraw3FrameCol(FooCanvasGroup *container, FooCanvasPoints *points,
 				       redraw_data.forward_group, redraw_data.reverse_group) ;
 	}
 
-      /* Redo positioning of columns. */
-      zmapWindowNewReposition(window) ;
     }
 
   return ;
@@ -2410,8 +2413,12 @@ static void createSetColumn(gpointer data, gpointer user_data)
     {
 
       /* Make the forward/reverse columns for this feature set. */
-      zmapWindowCreateSetColumns(redraw_data->forward_group, redraw_data->reverse_group,
-				 redraw_data->block, feature_set_id, window, ZMAPFRAME_NONE,
+      zmapWindowCreateSetColumns(window,
+                                 redraw_data->forward_group, 
+                                 redraw_data->reverse_group,
+				 redraw_data->block, 
+                                 feature_set,
+                                 ZMAPFRAME_NONE,
 				 &forward_col, &reverse_col) ;
 
       redraw_data->curr_forward_col = forward_col ;
@@ -2472,12 +2479,12 @@ static void drawSetFeatures(GQuark key_id, gpointer data, gpointer user_data)
   /* Record the feature sets on the column groups. */
   if (forward_col)
     {
-      g_object_set_data(G_OBJECT(forward_col), ITEM_FEATURE_DATA, feature_set) ;
+      zmapWindowContainerSetData(forward_col, ITEM_FEATURE_DATA, feature_set) ;
     }
 
   if (reverse_col)
     {
-      g_object_set_data(G_OBJECT(reverse_col), ITEM_FEATURE_DATA, feature_set) ;
+      zmapWindowContainerSetData(reverse_col, ITEM_FEATURE_DATA, feature_set) ;
     }
 
 
@@ -2488,8 +2495,8 @@ static void drawSetFeatures(GQuark key_id, gpointer data, gpointer user_data)
   style = feature_set->style ;
   if (!(style->opts.hidden_always) && style->opts.frame_specific)
     {
-      zmapWindowCreateFeatureSet(window, feature_set,
-				 forward_col, reverse_col, ZMAPFRAME_NONE) ;
+      zmapWindowDrawFeatureSet(window, feature_set,
+                               forward_col, reverse_col, ZMAPFRAME_NONE) ;
     }
 
   return ;
@@ -2629,8 +2636,12 @@ static void create3FrameCols(gpointer data, gpointer user_data)
 	   && ((feature_set = zMapFeatureFindSetInBlock(redraw_data->block, feature_set_id))))
     {
       /* Create both forward and reverse columns. */
-      zmapWindowCreateSetColumns(redraw_data->forward_group, redraw_data->reverse_group,
-				 redraw_data->block, feature_set_id, window, redraw_data->frame,
+      zmapWindowCreateSetColumns(window,
+                                 redraw_data->forward_group, 
+                                 redraw_data->reverse_group,
+				 redraw_data->block, 
+                                 feature_set, 
+                                 redraw_data->frame,
 				 &forward_col, &reverse_col) ;
 
       /* There was some column ordering code here, but that's now in the
@@ -2701,12 +2712,12 @@ static void draw3FrameSetFeatures(GQuark key_id, gpointer data, gpointer user_da
   /* Set the feature set data on the canvas group so we can get it from event handlers. */
   if (forward_col)
     {
-      g_object_set_data(G_OBJECT(forward_col), ITEM_FEATURE_DATA, feature_set) ;
+      zmapWindowContainerSetData(forward_col, ITEM_FEATURE_DATA, feature_set) ;
     }
 
   if (reverse_col)
     {
-      g_object_set_data(G_OBJECT(reverse_col), ITEM_FEATURE_DATA, feature_set) ;
+      zmapWindowContainerSetData(reverse_col, ITEM_FEATURE_DATA, feature_set) ;
     }
 
 
@@ -2715,8 +2726,9 @@ static void draw3FrameSetFeatures(GQuark key_id, gpointer data, gpointer user_da
   style = feature_set->style ;
   if (!(style->opts.hidden_always) && style->opts.frame_specific)
     {
-      zmapWindowCreateFeatureSet(window, feature_set,
-				 forward_col, reverse_col, redraw_data->frame) ;
+      zmapWindowDrawFeatureSet(window, feature_set,
+                               forward_col, reverse_col, 
+                               redraw_data->frame) ;
     }
 
   return ;

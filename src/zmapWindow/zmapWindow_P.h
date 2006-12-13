@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Dec 12 14:09 2006 (edgrif)
+ * Last edited: Dec 13 15:18 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.158 2006-12-13 13:27:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.159 2006-12-13 15:18:40 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -983,13 +983,19 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
 char *zmapWindowItemTextHighlightGetFullText(ZMapWindowItemHighlighter select_control);
 void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control);
 
-void zmapWindowCreateSetColumns(FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group,
-				ZMapFeatureBlock block, GQuark feature_set_id, ZMapWindow window,
-				ZMapFrame frame,
-				FooCanvasGroup **forward_col, FooCanvasGroup **reverse_col) ;
-void zmapWindowCreateFeatureSet(ZMapWindow window, ZMapFeatureSet feature_set,
-				FooCanvasGroup *forward_col, FooCanvasGroup *reverse_col,
-				ZMapFrame frame) ;
+gboolean zmapWindowCreateSetColumns(ZMapWindow window, 
+                                    FooCanvasGroup *forward_strand_group, 
+                                    FooCanvasGroup *reverse_strand_group,
+                                    ZMapFeatureBlock block, 
+                                    ZMapFeatureSet feature_set,
+                                    ZMapFrame frame,
+                                    FooCanvasGroup **forward_col_out, 
+                                    FooCanvasGroup **reverse_col_out);
+void zmapWindowDrawFeatureSet(ZMapWindow window, 
+                              ZMapFeatureSet feature_set,
+                              FooCanvasGroup *forward_col, 
+                              FooCanvasGroup *reverse_col,
+                              ZMapFrame frame) ;
 void zmapWindowRemoveEmptyColumns(ZMapWindow window,
 				  FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group) ;
 gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup *col_group) ;
