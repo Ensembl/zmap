@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec  5 17:37 2006 (edgrif)
+ * Last edited: Dec 13 10:57 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.160 2006-12-06 08:59:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.161 2006-12-13 13:43:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -842,6 +842,9 @@ void zMapWindowDestroy(ZMapWindow window)
   /* Get rid of the column configuration window. */
   zmapWindowColumnConfigureDestroy(window) ;
 
+  /* Do this before the toplevel destroy as we need refer to canvas items for the destroy. */
+  zmapWindowMarkDestroy(window->mark) ;
+  window->mark = zmapWindowMarkCreate(window) ;
 
   gtk_widget_destroy(window->toplevel) ;
 
@@ -1353,6 +1356,9 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   /* Init highlight colouring. */
   window->use_rev_video = TRUE ;
 
+  /* Init mark stuff. */
+  window->mark = zmapWindowMarkCreate(window) ;
+
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
   window->scrolled_window = gtk_scrolled_window_new(hadjustment, vadjustment) ;
   gtk_container_add(GTK_CONTAINER(window->parent_widget), window->toplevel) ;
@@ -1617,6 +1623,11 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
   
   if (window->feature_root_group)
     {
+      /* Reset mark object, must come before root group etc. is destroyed as we need to remove
+       * various canvas items. */
+      zmapWindowMarkDestroy(window->mark) ;
+      window->mark = zmapWindowMarkCreate(window) ;
+
       zmapWindowContainerDestroy(window->feature_root_group) ;
       window->feature_root_group = NULL ;
 
@@ -1636,6 +1647,8 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
   zmapWindowFToIDestroy(window->context_to_item) ;
   window->context_to_item = zmapWindowFToICreate() ;
 
+  zmapWindowFToIFactoryClose(window->item_factory) ;
+  window->item_factory = NULL;
 
   if (free_child_windows)
     {
@@ -2325,17 +2338,22 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	    {
 	      /* Oh dear, we would like to do a general back ground menu here but can't as we need
 	       * to pass the event along in case it goes to a canvas item....aggghhhh */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
               double ppuy, pixspan, y2, y1, x1, x2, c2wx, c2wy;
 
               foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
               ppuy    = window->canvas->pixels_per_unit_y;
               pixspan = (ppuy * (y2 - y1));
-              
+
               foo_canvas_c2w(window->canvas, but_event->x, but_event->y, &c2wx, &c2wy);
+
               printf("%s: Right Click - Details:\n", __PRETTY_FUNCTION__) ;
               printf("\tEvent @ %f,%f = %f,%f\n", but_event->x, but_event->y, c2wx, c2wy);
               printf("\tX - scroll region %f -> %f, pixel span %f\n", x1, x2, x2 - x1 + 1.0);
               printf("\tY - scroll region %f -> %f, pixel span %f\n", y1, y2, pixspan);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      event_handled = FALSE ;
 	      break ;
@@ -2449,7 +2467,7 @@ static void zoomToRubberBandArea(ZMapWindow window)
       foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
       foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
-      zmapWindowZoomToWorldPosition(window, border, rootx1, rootx2, rooty1, rooty2) ;
+      zmapWindowZoomToWorldPosition(window, border, rootx1, rooty1, rootx2, rooty2) ;
     }
 
   return ;
@@ -2468,7 +2486,24 @@ void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item)
   foo_canvas_item_i2w(item, &rootx1, &rooty1) ;
   foo_canvas_item_i2w(item, &rootx2, &rooty2) ;
 
-  zmapWindowZoomToWorldPosition(window, border, rootx1, rootx2, rooty1, rooty2) ;
+  zmapWindowZoomToWorldPosition(window, border, rootx1, rooty1, rootx2, rooty2) ;
+
+  return ;
+}
+
+
+/* Get max bounds of a set of items.... */
+void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
+				 double *rootx1, double *rooty1, double *rootx2, double *rooty2)
+{
+  MaxBoundsStruct max_bounds = {0.0} ;
+
+  g_list_foreach(items, getMaxBounds, &max_bounds) ;
+
+  *rootx1 = max_bounds.rootx1 ;
+  *rooty1 = max_bounds.rooty1 ;
+  *rootx2 = max_bounds.rootx2 ;
+  *rooty2 = max_bounds.rooty2 ;
 
   return ;
 }
@@ -2482,14 +2517,14 @@ void zmapWindowZoomToItems(ZMapWindow window, GList *items)
 
   g_list_foreach(items, getMaxBounds, &max_bounds) ;
 
-  zmapWindowZoomToWorldPosition(window, border, max_bounds.rootx1, max_bounds.rootx2,
-				max_bounds.rooty1, max_bounds.rooty2) ;
+  zmapWindowZoomToWorldPosition(window, border, max_bounds.rootx1, max_bounds.rooty1,
+				max_bounds.rootx2, max_bounds.rooty2) ;
 
   return ;
 }
 
 void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
-				   double rootx1, double rootx2, double rooty1, double rooty2)
+				   double rootx1, double rooty1, double rootx2, double rooty2)
 {
   GtkAdjustment *v_adjuster ;
   /* size of bound area */
@@ -2916,7 +2951,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      overlap_mode = ZMAPOVERLAP_COMPLETE ;
 	    else
 	      {
-		if (window->range_item)
+		if (zmapWindowMarkIsSet(window->mark))
 		  overlap_mode = ZMAPOVERLAP_COMPLEX_RANGE ;
 		else
 		  overlap_mode = ZMAPOVERLAP_NO_INTERLEAVE ;
@@ -2937,29 +2972,68 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	/* Mark an item for later zooming/column bumping etc. */
 	FooCanvasItem *focus_item ;
 
+	/* Force unmarking....is this ok, what if below mark fails ? */
+	zmapWindowMarkReset(window->mark) ;
+
+	/* If there's a focus item we mark that, otherwise we check if the user set
+	 * a rubber band area and use that. */
 	if ((focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
 	  {
+	    FooCanvasItem *parent ;
 	    ZMapFeature feature ;
 
-	    if (window->range_item)
+	    parent = zmapWindowItemGetTrueItem(focus_item) ;
+
+	    feature = g_object_get_data(G_OBJECT(parent), ITEM_FEATURE_DATA) ;
+	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+	    if (key_event->keyval == GDK_m)
 	      {
-		zmapWindowMarkItem(window, window->range_item, FALSE) ;
-		window->range_item = NULL ;
-		window->range_top = window->range_bottom = 0 ;
+		if (feature->type == ZMAPFEATURE_ALIGNMENT)
+		  {
+		    GList *list = NULL;
+		    ZMapStrand set_strand ;
+		    ZMapFrame set_frame ;
+		    gboolean result ;
+		    double rootx1, rooty1, rootx2, rooty2 ;
+		    
+		    result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
+		    zMapAssert(result) ;
+		    
+		    list = zmapWindowFToIFindSameNameItems(window->context_to_item,
+							   zMapFeatureStrand2Str(set_strand),
+							   zMapFeatureFrame2Str(set_frame),
+							   feature) ;
+		    
+		    zmapWindowGetMaxBoundsItems(window, list, &rootx1, &rooty1, &rootx2, &rooty2) ;
+		    
+		    zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
+
+		    g_list_free(list) ;
+		  }
+		else
+		  {
+		    zmapWindowMarkSetItem(window->mark, parent) ;
+		  }
 	      }
+	    else
+	      {
+		zmapWindowMarkSetItem(window->mark, focus_item) ;
+	      }
+	  }
+	else if (window->rubberband)
+	  {
+	    double rootx1, rootx2, rooty1, rooty2 ;
+	    
+	    /* REPLACE WITH SINGLE CALL i WROTE.... */
+	    /* Get size of item and convert to world coords. */
+	    foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
+	    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
+	    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
-	    window->range_item = focus_item ;
-
-	    feature = g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
-	    zMapAssert(feature) ;
-
-	    window->range_top = feature->x1 ;
-	    window->range_bottom = feature->x2 ;
-
-
-	    /* Show user which is marked item. */
-	    zmapWindowMarkItem(window, window->range_item, TRUE) ;
-
+	    /* We ignore any failure, perhaps we should warn the user ? If we colour
+	     * the region it will be ok though.... */
+	    zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
 	  }
 
 	break ;
@@ -2969,14 +3043,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_U:
       {
 	/* Unmark an item. */
-
-	if (window->range_item)
-	  {
-	    zmapWindowMarkItem(window, window->range_item, FALSE) ;
-
-	    window->range_item = NULL ;
-	    window->range_top = window->range_bottom = 0 ;
-	  }
+	zmapWindowMarkReset(window->mark) ;
 
 	break ;
       }
@@ -3002,19 +3069,32 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       {
 	/* Zoom to an item or subpart of an item. */
 	FooCanvasItem *focus_item ;
+	gboolean mark_set ;
+
+	mark_set = zmapWindowMarkIsSet(window->mark) ;
+	focus_item = zmapWindowMarkGetItem(window->mark) ;
 
 	/* I'm just going to try this and see how it works...if there is a marked range item we use that
 	 * for zooming, otherwise we use the focus item. */
-	if ((focus_item = window->range_item)
-	    || (focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
+	if (mark_set && !focus_item)
+	  {
+	    double rootx1, rooty1, rootx2, rooty2 ;
+
+	    zmapWindowMarkGetWorldRange(window->mark, &rootx1, &rooty1, &rootx2, &rooty2) ;
+
+	    zmapWindowZoomToWorldPosition(window, TRUE, rootx1, rooty1, rootx2, rooty2) ;
+	  }
+	else if (focus_item || (focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
 	  {
 	    ZMapFeature feature ;
 
 	    feature = g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
 	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
-	    if (key_event->keyval == GDK_z)
-	      zmapWindowZoomToItem(window, focus_item) ;
+	    if (key_event->keyval == GDK_Z)
+	      {
+		zmapWindowZoomToItem(window, focus_item) ;
+	      }
 	    else
 	      {
 		if (feature->type == ZMAPFEATURE_TRANSCRIPT)
