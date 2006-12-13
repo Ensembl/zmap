@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Dec  5 16:17 2006 (edgrif)
+ * Last edited: Dec 12 16:00 2006 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.70 2006-12-05 16:17:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.71 2006-12-13 08:34:26 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -153,6 +153,15 @@ typedef enum
 
 typedef struct _ZMapWindowFToIQueryStruct
 {
+
+  GQuark align_original_id;
+  GQuark block_original_id;
+  GQuark style_original_id;
+  GQuark set_original_id;
+
+  GQuark session_unique_id;
+
+#ifdef RDS_DONT_INCLUDE
   GQuark alignId,               /* alignment string as quark */
     blockId,                    /* block string as id */
     originalId,                 /* feature original id */
@@ -168,11 +177,14 @@ typedef struct _ZMapWindowFToIQueryStruct
   ZMapFeatureType type;         /* Feature type */
 
   ZMapStrand strand ;            /* Feature set strand */
+#endif
   ZMapFrame frame ;					    /* Feature set frame */
 
   ZMapFToIQueryType  query_type;
 
   ZMapFToIReturnType return_type;
+
+  ZMapFeatureStruct feature_in;
 
   union
   {
@@ -231,7 +243,6 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
 
 GtkWidget *zMapWindowGetWidget(ZMapWindow window);
 gboolean zMapWindowIsLocked(ZMapWindow window) ;
-GList *zMapWindowFeatureAllStyles(ZMapWindow window);
 void zMapWindowSiblingWasRemoved(ZMapWindow window);	    /* For when a window in the same view
 							       has a child removed */
 #ifdef RDS_DONT_INCLUDE
@@ -257,6 +268,9 @@ gboolean zMapWindowPrint(ZMapWindow window) ;
 /* Add, modify, draw, remove features from the canvas. */
 FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
 			      FooCanvasGroup *feature_group, ZMapFeature feature) ;
+FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
+                                       FooCanvasGroup *block_group, 
+                                       char *feature_set_name) ;
 FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 				 FooCanvasItem *curr_feature_item, ZMapFeature new_feature) ;
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item) ;
