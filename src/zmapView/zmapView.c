@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec  5 13:52 2006 (edgrif)
+ * Last edited: Dec 12 16:13 2006 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.94 2006-12-05 16:18:24 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.95 2006-12-13 08:35:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -687,6 +687,17 @@ ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view)
   return features ;
 }
 
+GList *zMapViewGetStyles(ZMapViewWindow view_window)
+{
+  ZMapView view = zMapViewGetView(view_window);
+  ZMapFeatureContext context;
+  GList *styles;
+  
+  if((context = zMapViewGetFeatures(view)))
+    styles = context->styles;
+
+  return styles;
+}
 
 gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end)
 {
