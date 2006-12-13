@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  9 14:00 2006 (rds)
+ * Last edited: Dec 13 15:24 2006 (rds)
  * Created: Thu Jul  8 12:54:27 2004 (edgrif)
- * CVS info:   $Id: zmapControlNavigator.c,v 1.29 2006-11-09 14:03:44 rds Exp $
+ * CVS info:   $Id: zmapControlNavigator.c,v 1.30 2006-12-13 16:34:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,7 +44,6 @@
 #define BOTTEXT_NO_SCALE ""
 
 
-static void valueCB(GtkAdjustment *adjustment, gpointer user_data) ;
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
 static void canvasValueCB(gpointer user_data, double top, double bottom) 
 {
@@ -191,7 +190,7 @@ int zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bo
 void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 			  double top, double bottom)
 {
-  GtkObject *region_adjuster, *window_adjuster ;
+  GtkObject *region_adjuster;
   gchar *region_top_str, *region_bot_str, *window_top_str, *window_bot_str ;
   region_adjuster = (GtkObject *)gtk_range_get_adjustment(GTK_RANGE(navigator->navVScroll)) ;
 
@@ -269,7 +268,7 @@ void zMapNavigatorDestroy(ZMapNavigator navigator)
  */
 
 
-
+#ifdef RDS_FIX_THIS
 static void valueCB(GtkAdjustment *adjustment, gpointer user_data)
 {
   ZMapNavigator navigator = (ZMapNavigator)user_data ;
@@ -286,16 +285,17 @@ static void valueCB(GtkAdjustment *adjustment, gpointer user_data)
 
   return ;
 }
-
+#endif
 
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data)
 {
+#ifdef RDS_FIX_THIS
   ZMapNavigator navigator = (ZMapNavigator)user_data;
   double width = 0.0;
   int current_position = 0, new_position = 0;
 
   /* record the current position */
-
+#endif
   return ;
 }
 
