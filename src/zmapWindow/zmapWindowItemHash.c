@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Dec 13 08:25 2006 (rds)
+ * Last edited: Dec 13 15:17 2006 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.35 2006-12-13 09:38:29 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.36 2006-12-13 15:17:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -516,12 +516,6 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
   gboolean result = FALSE ;
   ID2Canvas align ;
   ID2Canvas block ;
-
-  if(set_id == g_quark_from_string("tata_box"))
-    {
-      printf("set_id is %s\n", g_quark_to_string(set_id));
-      zMapAssertNotReached();
-    }
 
   /* We need special quarks that incorporate strand/frame indication because any one feature set
    * may be displayed in multiple columns. */
