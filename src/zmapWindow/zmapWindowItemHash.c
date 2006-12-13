@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Dec 13 15:17 2006 (rds)
+ * Last edited: Dec 13 16:34 2006 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.36 2006-12-13 15:17:32 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.37 2006-12-13 16:35:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -216,6 +216,19 @@ static gboolean query_is_valid(ZMapWindowFToIQuery query)
        query->query_type == ZMAP_FTOI_QUERY_SET_ITEM   || 
        query->query_type == ZMAP_FTOI_QUERY_FEATURE_ITEM))
     valid = FALSE; 
+
+  if(query->query_type == ZMAP_FTOI_QUERY_FEATURE_ITEM &&
+     query->feature_in.x1 > query->feature_in.x2)
+    {
+      if(strand == ZMAPSTRAND_REVERSE)
+        {
+          Coord tmp = query->feature_in.x1;
+          query->feature_in.x1 = query->feature_in.x2;
+          query->feature_in.x2 = tmp;
+        }
+      else
+        valid = FALSE;
+    }
   
   return valid;
 }
@@ -315,6 +328,7 @@ gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query
       if(item != NULL)
         {
           query->ans.item_answer = item;
+          query->return_type = ZMAP_FTOI_RETURN_ITEM;
           found = TRUE;
         }
     }
