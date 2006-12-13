@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec  4 13:11 2006 (edgrif)
+ * Last edited: Dec 13 11:16 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.54 2006-12-04 13:46:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.55 2006-12-13 13:33:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,35 @@
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
 
+
+
+/* User can set a range (perhaps by selecting an item) for operations like zooming and bump options. */
+typedef struct _ZMapWindowMarkStruct
+{
+  gboolean mark_set ;
+  ZMapWindow window ;
+  FooCanvasItem *range_item ;
+  FooCanvasGroup *block_group ;
+  ZMapFeatureBlock block ;
+  double world_x1, world_y1, world_x2, world_y2 ;
+  int range_top, range_bottom ;
+  GdkColor colour ;
+  GdkBitmap *stipple ;
+  FooCanvasGroup *range_group ;
+  FooCanvasItem  *top_range_item ;
+  FooCanvasItem  *bottom_range_item ;
+} ZMapWindowMarkStruct ;
+
+
+#define mark_bitmap_width 16
+#define mark_bitmap_height 4
+static char mark_bitmap_bits[] =
+  {
+    0x11, 0x11,
+    0x22, 0x22,
+    0x44, 0x44,
+    0x88, 0x88
+  } ;
 
 
 /* Used for window focus items and column.
@@ -62,6 +91,7 @@ typedef struct _ZMapWindowFocusStruct
 typedef struct
 {
   ZMapWindow window ;
+  ZMapWindowMark mark ;
   gboolean highlight ;
 } HighlightStruct, *Highlight ;
 
@@ -96,13 +126,18 @@ static void freeFocusItems(ZMapWindowFocus focus) ;
 static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
 static void highlightFuncCB(gpointer data, gpointer user_data);
 static void colourReverseVideo(GdkColor *colour_inout);
-static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight, gboolean bounding_box_only) ;
+static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
+static void setBoundingBoxColour(ZMapWindowMark mark, FooCanvasItem *item, gboolean highlight) ;
 
-
-static void markItem(ZMapWindow window, FooCanvasItem *item, gboolean mark) ;
+static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark) ;
 static void markFuncCB(gpointer data, gpointer user_data) ;
+static void markRange(ZMapWindowMark mark, double y1, double y2) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void checkScrollRegion(ZMapWindow window, double start, double end) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data);
 static void pointerIsOverItem(gpointer data, gpointer user_data);
@@ -114,6 +149,227 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
 
 
 
+
+
+/* 
+ *           Set of functions for handling the marked feature or region.
+ * 
+ * Essentially there are two ways to mark, either by marking a feature or
+ * by marking a region. The two are mutually exclusive.
+ * 
+ * If a feature is marked then it will be used in a number of window operations
+ * such as zooming and column bumping.
+ * 
+ * 
+ */
+
+ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
+{
+  ZMapWindowMark mark ;
+
+  zMapAssert(window) ;
+
+  mark = g_new0(ZMapWindowMarkStruct, 1) ;
+
+  mark->mark_set = FALSE ;
+
+  mark->window = window ;
+
+  mark->range_item = NULL ;
+
+  mark->range_top = mark->range_bottom = 0 ;
+
+  zmapWindowMarkSetColour(mark, ZMAP_WINDOW_ITEM_MARK) ;
+
+  mark->stipple = gdk_bitmap_create_from_data(NULL, &mark_bitmap_bits[0], mark_bitmap_width, mark_bitmap_height) ;
+
+  return mark ;
+}
+
+gboolean zmapWindowMarkIsSet(ZMapWindowMark mark)
+{
+  zMapAssert(mark) ;
+
+  return mark->mark_set ;
+}
+
+void zmapWindowMarkReset(ZMapWindowMark mark)
+{
+  zMapAssert(mark) ;
+
+  if (mark->mark_set)
+    {
+      if (mark->range_item)
+	{
+	  /* undo highlighting */
+	  markItem(mark, mark->range_item, FALSE) ;
+
+	  mark->range_item = NULL ;
+	}
+
+      mark->range_top = mark->range_bottom = 0 ;
+
+      if (mark->range_group)
+	{
+	  /* Do not destroy the range_group, its belongs to the block container ! */
+	  zmapWindowLongItemRemove(mark->window->long_items, mark->top_range_item) ;
+	  gtk_object_destroy(GTK_OBJECT(mark->top_range_item)) ;
+	  mark->top_range_item = NULL ;
+
+	  zmapWindowLongItemRemove(mark->window->long_items, mark->bottom_range_item) ;
+	  gtk_object_destroy(GTK_OBJECT(mark->bottom_range_item)) ;
+	  mark->bottom_range_item = NULL ;
+	}
+
+      mark->mark_set = FALSE ;
+    }
+
+  return ;
+}
+
+void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour)
+{
+  zMapAssert(mark) ;
+
+  gdk_color_parse(colour, &(mark->colour)) ;
+
+  return ;
+}
+
+GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark)
+{
+  zMapAssert(mark) ;
+
+  return &(mark->colour) ;
+}
+
+/* Mark an item, the marking must be done explicitly, it is unaffected by highlighting. 
+ * Note that the item must be a feature item.
+ *  */
+void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
+{
+  ZMapFeature feature ;
+  double x1, y1, x2, y2 ;
+
+  zMapAssert(mark && FOO_IS_CANVAS_ITEM(item)) ;
+
+  zmapWindowMarkReset(mark) ;
+
+  mark->range_item = item ;
+
+  /* We need to get the world coords because the item passed in is likely to be a child of a child
+   * of a.... */
+  my_foo_canvas_item_get_world_bounds(mark->range_item, &x1, &y1, &x2, &y2) ;
+
+  feature = g_object_get_data(G_OBJECT(mark->range_item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature) ;
+
+  mark->range_top = feature->x1 ;
+  mark->range_bottom = feature->x2 ;
+
+  mark->block_group = zmapWindowContainerGetParentLevel(mark->range_item, ZMAPCONTAINER_LEVEL_BLOCK) ;
+  mark->block = g_object_get_data(G_OBJECT(mark->block_group), ITEM_FEATURE_DATA) ;
+
+  markItem(mark, mark->range_item, TRUE) ;
+
+  markRange(mark, y1, y2) ;
+
+  mark->mark_set = TRUE ;
+
+  return ;
+}
+
+FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark)
+{
+  zMapAssert(mark) ;
+
+  return mark->range_item ;
+}
+
+gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
+				     double world_x1, double world_y1, double world_x2, double world_y2)
+{
+  gboolean result ;
+  FooCanvasGroup *block_grp_out ;
+  int y1_out, y2_out ;
+
+  zMapAssert(mark) ;
+
+  zmapWindowMarkReset(mark) ;
+  
+  y1_out = y2_out = 0 ;
+  if ((result = zmapWindowWorld2SeqCoords(mark->window, world_x1, world_y1, world_x2, world_y2,
+					  &block_grp_out, &y1_out, &y2_out)))
+    {
+      double y1, y2, dummy ;
+
+      mark->block_group = block_grp_out ;
+      mark->block = g_object_get_data(G_OBJECT(mark->block_group), ITEM_FEATURE_DATA) ;
+      mark->world_x1 = world_x1 ;
+      mark->world_y1 = world_y1 ;
+      mark->world_x2 = world_x2 ;
+      mark->world_y2 = world_y2 ;
+
+      mark->range_top = y1_out ;
+      mark->range_bottom = y2_out ;
+
+      y1 = mark->world_y1 ;
+      y2 = mark->world_y2 ;
+      foo_canvas_item_w2i(FOO_CANVAS_ITEM(mark->block_group), &dummy, &y1) ;
+      foo_canvas_item_w2i(FOO_CANVAS_ITEM(mark->block_group), &dummy, &y2) ;
+
+      markRange(mark, y1, y2) ;
+
+      mark->mark_set = TRUE ;
+    }
+
+  return result ;
+}
+
+gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
+				     double *world_x1, double *world_y1, double *world_x2, double *world_y2)
+{
+  gboolean result = FALSE ;
+
+  if (mark->mark_set)
+    {
+      *world_x1 = mark->world_x1 ;
+      *world_y1 = mark->world_y1 ;
+      *world_x2 = mark->world_x2 ;
+      *world_y2 = mark->world_y2 ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *end)
+{
+  gboolean result = FALSE ;
+
+  if (mark->mark_set)
+    {
+      *start = mark->range_top ;
+      *end = mark->range_bottom ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+void zmapWindowMarkDestroy(ZMapWindowMark mark)
+{
+  zmapWindowMarkReset(mark) ;
+
+  g_object_unref(G_OBJECT(mark->stipple)) ;		    /* This seems to be the only way to
+							       get rid of a drawable. */
+
+  g_free(mark) ;
+
+  return ;
+}
 
 
 
@@ -409,7 +665,9 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
 
 
 
-/* Feature Item highlighting.... */
+/*
+ *                     Feature Item highlighting.... 
+ */
 
 /* I'm not sure I understand the first part of this comment now...sigh... */
 /* Highlight a feature, note how this function should just take _any_ feature/item but it doesn't 
@@ -521,17 +779,6 @@ void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 {
   zmapWindowContainerResetBackgroundColour(column) ;
-
-  return ;
-}
-
-
-
-/* Mark an item, the marking must be done explicitly, it is unaffected by highlighting. 
- * If mark == TRUE the item is marked, if FALSE it is unmarked. */
-void zmapWindowMarkItem(ZMapWindow window, FooCanvasItem *item, gboolean mark)
-{
-  markItem(window, item, mark) ;
 
   return ;
 }
@@ -1414,10 +1661,150 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 }
 
 
+/* Returns the sequence coords that correspond to the given _world_ foocanvas coords.
+ * 
+ * NOTE that although we only return y coords, we need the world x coords as input
+ * in order to find the right foocanvas item from which to get the sequence coords. */
+gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
+				   double wx1, double wy1, double wx2, double wy2,
+				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out)
+{
+  gboolean result = FALSE ;
+  FooCanvasItem *item ;
+
+  /* Try to get the item at wx1, wy1... we have to start somewhere... */
+  if ((item = foo_canvas_get_item_at(window->canvas, wx1, wy1)))
+    {
+      FooCanvasGroup *block_container ;
+      ZMapFeatureBlock block ;
+      
+      /* Getting the block struct as well is a bit belt and braces...we could return it but
+       * its redundant info. really. */
+      if ((block_container = zmapWindowContainerGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK))
+	  && (block = g_object_get_data(G_OBJECT(block_container), ITEM_FEATURE_DATA)))
+	{
+	  double offset ;
+
+	  offset = (double)(block->block_to_sequence.q1 - 1) ; /* - 1 for 1 based coord system. */
+
+	  my_foo_canvas_world_bounds_to_item(FOO_CANVAS_ITEM(block_container), &wx1, &wy1, &wx2, &wy2) ;
+
+	  if (block_grp_out)
+	    *block_grp_out = block_container ;
+	  if (y1_out)
+	    *y1_out = floor(wy1 - offset + 0.5) ;
+	  if (y2_out)
+	    *y2_out = floor(wy2 - offset + 0.5) ;
+
+	  result = TRUE ;
+	}
+    }
+
+  return result ;
+}
+
+
+gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2)
+{
+  gboolean result = FALSE ;
+
+
+
+  return result ;
+}
+
+
+
+/**
+ * my_foo_canvas_item_get_world_bounds:
+ * @item: A canvas item.
+ * Last edited: Dec  6 13:10 2006 (edgrif)
+ * @rootx1_out: X left coord of item (output value).
+ * @rooty1_out: Y top coord of item (output value).
+ * @rootx2_out: X right coord of item (output value).
+ * @rootx2_out: Y bottom coord of item (output value).
+ *
+ * Returns the _world_ bounds of an item, no function exists in FooCanvas to do this.
+ **/
+void my_foo_canvas_item_get_world_bounds(FooCanvasItem *item,
+					 double *rootx1_out, double *rooty1_out,
+					 double *rootx2_out, double *rooty2_out)
+{
+  double rootx1, rootx2, rooty1, rooty2 ;
+
+  g_return_if_fail (FOO_IS_CANVAS_ITEM (item)) ;
+  g_return_if_fail (rootx1_out != NULL || rooty1_out != NULL || rootx2_out != NULL || rooty2_out != NULL ) ;
+
+  foo_canvas_item_get_bounds(item, &rootx1, &rooty1, &rootx2, &rooty2) ;
+  foo_canvas_item_i2w(item, &rootx1, &rooty1) ;
+  foo_canvas_item_i2w(item, &rootx2, &rooty2) ;
+
+  if (rootx1_out)
+    *rootx1_out = rootx1 ;
+  if (rooty1_out)
+    *rooty1_out = rooty1 ;
+  if (rootx2_out)
+    *rootx2_out = rootx2 ;
+  if (rooty2_out)
+    *rooty2_out = rooty2 ;
+
+  return ;
+}
+
+
+
+
+/**
+ * my_foo_canvas_world_bounds_to_item:
+ * @item: A canvas item.
+ * @rootx1_out: X left coord of item (input/output value).
+ * @rooty1_out: Y top coord of item (input/output value).
+ * @rootx2_out: X right coord of item (input/output value).
+ * @rootx2_out: Y bottom coord of item (input/output value).
+ *
+ * Returns the given _world_ bounds in the given item coord system, no function exists in FooCanvas to do this.
+ **/
+void my_foo_canvas_world_bounds_to_item(FooCanvasItem *item,
+					double *rootx1_inout, double *rooty1_inout,
+					double *rootx2_inout, double *rooty2_inout)
+{
+  double rootx1, rootx2, rooty1, rooty2 ;
+
+  g_return_if_fail (FOO_IS_CANVAS_ITEM (item)) ;
+  g_return_if_fail (rootx1_inout != NULL || rooty1_inout != NULL || rootx2_inout != NULL || rooty2_inout != NULL ) ;
+
+  rootx1 = rootx2 = rooty1 = rooty2 = 0.0 ;
+
+  if (rootx1_inout)
+    rootx1 = *rootx1_inout ;
+  if (rooty1_inout)
+    rooty1 = *rooty1_inout ;
+  if (rootx2_inout)
+    rootx2 = *rootx2_inout ;
+  if (rooty2_inout)
+    rooty2 = *rooty2_inout ;
+
+  foo_canvas_item_w2i(item, &rootx1, &rooty1) ;
+  foo_canvas_item_w2i(item, &rootx2, &rooty2) ;
+
+  if (rootx1_inout)
+    *rootx1_inout = rootx1 ;
+  if (rooty1_inout)
+    *rooty1_inout = rooty1 ;
+  if (rootx2_inout)
+    *rootx2_inout = rootx2 ;
+  if (rooty2_inout)
+    *rooty2_inout = rooty2 ;
+
+  return ;
+}
+
+
 
 
 /* I'M TRYING THESE TWO FUNCTIONS BECAUSE I DON'T LIKE THE BIT WHERE IT GOES TO THE ITEMS
- * PARENT IMMEDIATELY....WHAT IF THE ITEM IS ALREADY A GROUP ?????? */
+ * PARENT IMMEDIATELY....WHAT IF THE ITEM IS ALREADY A GROUP ?????? THE ORIGINAL FUNCTION
+ * CANNOT BE USED TO CONVERT A GROUPS POSITION CORRECTLY......S*/
 
 /**
  * my_foo_canvas_item_w2i:
@@ -1617,10 +2004,10 @@ static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highl
 	  item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
 
 	  if (item_data->twin_item)
-	    setItemColour(window, item_data->twin_item, highlight, FALSE) ;
+	    setItemColour(window, item_data->twin_item, highlight) ;
 	}
 
-      setItemColour(window, item, highlight, FALSE) ;
+      setItemColour(window, item, highlight) ;
 
     }
 
@@ -1634,33 +2021,33 @@ static void highlightFuncCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   Highlight highlight = (Highlight)user_data ;
 
-  setItemColour(highlight->window, item, highlight->highlight, FALSE) ;
+  setItemColour(highlight->window, item, highlight->highlight) ;
 
   return ;
 }
 
 
 
-/* Do the right thing with groups and items */
-static void markItem(ZMapWindow window, FooCanvasItem *item, gboolean mark)
+/* Mark/unmark an item with a highlight colour. */
+static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark)
 {
   FooCanvasItem *parent ;
 
-  parent = zmapWindowItemGetTrueItem(item) ;
+  parent = item ;
 
   if (FOO_IS_CANVAS_GROUP(parent))
     {
       HighlightStruct highlight_data = {NULL} ;
       FooCanvasGroup *group = FOO_CANVAS_GROUP(parent) ;
 
-      highlight_data.window = window ;
-      highlight_data.highlight = mark ;
+      highlight_data.mark = mark ;
+      highlight_data.highlight = set_mark ;
       
       g_list_foreach(group->item_list, markFuncCB, (void *)&highlight_data) ;
     }
   else
     {
-      setItemColour(window, parent, mark, TRUE) ;
+      setBoundingBoxColour(mark, parent, set_mark) ;
     }
 
   return ;
@@ -1673,7 +2060,7 @@ static void markFuncCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   Highlight highlight = (Highlight)user_data ;
 
-  setItemColour(highlight->window, item, highlight->highlight, TRUE) ;
+  setBoundingBoxColour(highlight->mark, item, highlight->highlight) ;
 
   return ;
 }
@@ -1727,17 +2114,13 @@ static void markFuncCB(gpointer data, gpointer user_data)
     }
  * It makes me want to extend foo canvas items, but I haven't got time.
  * 
- * The bounding_box_only flag is a bit of a hack to support marking objects,
- * a better way would be to use masks as overlays but I don't have time just
- * now.
- * 
  */
-static void setItemColour(ZMapWindow window, FooCanvasItem *item,
-			  gboolean highlight, gboolean bounding_box_only)
+static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight)
 {
   ZMapWindowItemFeatureType item_feature_type ;
   ZMapFeature item_feature = NULL;
   ZMapFeatureTypeStyle style = NULL;
+  ZMapWindowItemFeature exon_data ;
 
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
@@ -1749,54 +2132,48 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item,
   style = zmapWindowItemGetStyle(item) ;
   zMapAssert(style) ;
 
+  exon_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
+
   
   /* Ok we need to be item type specific here now */
   /* Item type     has fill color   has outline color 
    * ------------------------------------------------*/
   /* Text items        yes              no
    * Rectangle/        yes              yes
-   * Ellipse items
+   *   Ellipse items
    * Polygon items     yes              yes
    * Line items        yes              no
    * Widget and Pixel Buffer items have neither
    */
   
 
-  if ((!bounding_box_only && !(FOO_IS_CANVAS_GROUP(item)) && item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
-      || (bounding_box_only && item_feature_type == ITEM_FEATURE_BOUNDING_BOX))
+  if (!(FOO_IS_CANVAS_GROUP(item)) && item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
     {
       GdkColor *highlight_colour = NULL ;
       char *highlight_target ;
 
-
-      if (bounding_box_only)
-	{
-	  highlight_target = "fill_color_gdk" ;
-	}
+      /* If we definitely have a background or can only possibly have a background we'll use that */
+      if (style->colours.background_set || (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_TEXT(item)))
+	highlight_target = "fill_color_gdk" ;
+      else if (style->colours.outline_set && (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item)))
+	highlight_target = "outline_color_gdk" ;
       else
-	{
-	  /* If we definitely have a background or can only possibly have a background we'll use that */
-	  if (style->colours.background_set || (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_TEXT(item)))
-	    highlight_target = "fill_color_gdk" ;
-	  else if (style->colours.outline_set && (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item)))
-	    highlight_target = "outline_color_gdk" ;
-	  else
-	    zMapAssertNotReached() ;
-	}
+	zMapAssertNotReached() ;
 
       if (!(window->use_rev_video))
 	{
 	  if (highlight)
 	    {
-	      if (bounding_box_only)
-		highlight_colour = &(window->colour_item_mark) ;
-	      else
-		highlight_colour = &(window->colour_item_highlight) ;
+	      highlight_colour = &(window->colour_item_highlight) ;
 	    }
 	  else
 	    {
-	      if (bounding_box_only)
-		highlight_colour = NULL ;
+	      /* I'm just trying this for now...in the end we will need unified code for different
+		 types to decide how to colour stuff... */
+	      if (exon_data && exon_data->subpart == ZMAPFEATURE_SUBPART_EXON_CDS)
+		{
+		  highlight_colour = &(style->colours.foreground) ;
+		}
 	      else
 		{
 		  if (style->colours.background_set)
@@ -2067,6 +2444,107 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b)
 
 
 
+
+
+/* 
+ * The bounding_box is a bit of a hack to support marking objects,
+ * a better way would be to use masks as overlays but I don't have time just
+ * now.
+ * 
+ */
+static void setBoundingBoxColour(ZMapWindowMark mark, FooCanvasItem *item, gboolean highlight)
+{
+  ZMapWindowItemFeatureType item_feature_type ;
+  ZMapFeature item_feature = NULL;
+  ZMapFeatureTypeStyle style = NULL;
+
+
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+  zMapAssert(item_feature_type != ITEM_FEATURE_INVALID) ;
+
+  item_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  zMapAssert(item_feature) ;
+
+  style = zmapWindowItemGetStyle(item) ;
+  zMapAssert(style) ;
+
+  if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
+    {
+      GdkColor *highlight_colour = NULL ;
+      GdkBitmap *stipple ;
+      char *highlight_target, *highlight_stipple ;
+
+      highlight_target = "fill_color_gdk" ;
+      highlight_stipple = "fill_stipple" ;
+
+      if (highlight)
+	{
+	  highlight_colour = zmapWindowMarkGetColour(mark) ;
+	  stipple = mark->stipple ;
+	}
+      else
+	{
+	  highlight_colour = NULL ;
+	  stipple = NULL ;
+	}
+
+      foo_canvas_item_set(FOO_CANVAS_ITEM(item),
+			  highlight_target, highlight_colour,
+			  highlight_stipple, stipple,
+			  NULL) ;
+    }
+
+  return ;
+}
+
+
+/* The range markers are implemented as overlays in the block container. This makes sense because
+ * a mark is relevant only to its parent block. */
+static void markRange(ZMapWindowMark mark, double y1, double y2)
+{
+  double block_x1, block_y1, block_x2, block_y2 ;
+
+  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(mark->block_group), &block_x1, &block_y1, &block_x2, &block_y2) ;
+
+  zmapWindowExt2Zero(&block_x1, &block_x2) ;
+  zmapWindowExt2Zero(&block_y1, &block_y2) ;
+
+  /* Only maximise overlays width on resize, do not change height. */
+  zmapWindowContainerSetOverlayResizing(mark->block_group, TRUE, FALSE) ;
+
+  mark->range_group = zmapWindowContainerGetOverlays(mark->block_group) ;
+
+  mark->top_range_item = foo_canvas_item_new(FOO_CANVAS_GROUP(mark->range_group),
+					     foo_canvas_rect_get_type(),
+					     "x1", block_x1,
+					     "y1", block_y1,
+					     "x2", block_x2,
+					     "y2", y1,
+					     "fill_stipple", mark->stipple,
+					     "fill_color_gdk", &(mark->colour),
+					     NULL) ;
+
+  mark->bottom_range_item = foo_canvas_item_new(FOO_CANVAS_GROUP(mark->range_group),
+						foo_canvas_rect_get_type(),
+						"x1", block_x1,
+						"y1", y2,
+						"x2", block_x2,
+						"y2", block_y2,
+						"fill_stipple", mark->stipple,
+						"fill_color_gdk", &(mark->colour),
+						NULL) ;
+
+  foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(mark->range_group)) ;
+
+  return ;
+}
+
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* THIS FUNCTION HAS TOTALLY THE WRONG NAME, IT __SETS__ THE SCROLL REGION.... */
 /** \Brief Recalculate the scroll region.
  *
@@ -2132,5 +2610,7 @@ static void checkScrollRegion(ZMapWindow window, double start, double end)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
