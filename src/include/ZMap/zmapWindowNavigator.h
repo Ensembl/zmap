@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 10 19:58 2006 (rds)
+ * Last edited: Dec 12 16:14 2006 (rds)
  * Created: Thu Sep  7 09:10:32 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.h,v 1.4 2006-11-13 10:59:07 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.h,v 1.5 2006-12-13 08:34:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,6 +62,7 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
                                      ZMapFeatureContext full_context);
 void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
                                     double top, double bottom);
+void zMapWindowNavigatorReset(ZMapWindowNavigator navigate);
 void zMapWindowNavigatorDestroy(ZMapWindowNavigator navigate);
 
 
