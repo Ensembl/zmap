@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Dec 11 11:02 2006 (edgrif)
+ * Last edited: Dec 12 14:53 2006 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.106 2006-12-11 11:44:04 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.107 2006-12-13 08:31:36 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -617,10 +617,6 @@ typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
 
 
 
-#ifdef RDS_DONT_INCLUDE
-gboolean zmapFeatureContextDNA(ZMapFeatureContext context,
-			       char **seq_name, int *seq_len, char **sequence) ;
-#endif
 gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
                              char **seq_name, int *seq_len, char **sequence) ;
 
@@ -629,6 +625,7 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context) ;
 GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean query_sequence) ; 
 GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_strand,
                                 int non_start, int non_end, ZMapStrand non_strand);
+GQuark zMapFeatureSetCreateID(char *feature_set_name) ; 
 
 
 char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature_name,
