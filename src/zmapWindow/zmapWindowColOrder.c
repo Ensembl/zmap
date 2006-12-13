@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 13 14:43 2006 (rds)
+ * Last edited: Dec 13 16:09 2006 (rds)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.4 2006-12-13 15:13:29 rds Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.5 2006-12-13 16:35:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -569,7 +569,8 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
         order = 0;
     }
 
-  printf("returning order %d\n", order);
+  if(order_debug_G)
+    printf("returning order %d\n", order);
 
   return order;
 }
