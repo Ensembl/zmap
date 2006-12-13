@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec  7 09:50 2006 (rds)
+ * Last edited: Dec 13 13:37 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.48 2006-12-08 15:38:40 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.49 2006-12-13 13:38:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -180,7 +180,7 @@ static void moveItemsCB(gpointer data, gpointer user_data) ;
 static void moveItemCB(gpointer data, gpointer user_data) ;
 static void freeExtraItems(gpointer data, gpointer user_data) ;
 static void showItems(gpointer data, gpointer user_data) ;
-static gboolean removeNameListsByRange(GList **names_list, FooCanvasItem *feature_item) ;
+static gboolean removeNameListsByRange(GList **names_list, int start, int end) ;
 static void testRangeCB(gpointer data, gpointer user_data) ;
 static void hideItemsCB(gpointer data, gpointer user_data_unused) ;
 static void hashDataDestroyCB(gpointer data) ;
@@ -482,7 +482,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	ComplexBumpStruct complex = {NULL} ;
 	GList *names_list = NULL ;
 
-	if (bump_mode == ZMAPOVERLAP_COMPLEX_RANGE && !(set_data->window->range_item))
+	if (bump_mode == ZMAPOVERLAP_COMPLEX_RANGE && !(zmapWindowMarkIsSet(set_data->window->mark)))
 	  {
 	    /* For the range mode the user must have selected a feature for bump range. */
 	    bumped = FALSE ;
@@ -521,7 +521,13 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	     * names list.....that would be a much better way of doing it. */
 	    if (bump_mode == ZMAPOVERLAP_COMPLEX_RANGE)
 	      {
-		if (removeNameListsByRange(&names_list, set_data->window->range_item))
+		int start, end ;
+
+		/* we know mark is set so no need to check result of range check. But should check
+		 * that col to be bumped and mark are in same block ! */
+		zmapWindowMarkGetSequenceRange(set_data->window->mark, &start, &end) ;
+
+		if (removeNameListsByRange(&names_list, start, end))
 		  set_data->hidden_bump_features = TRUE ;
 	      }
 
@@ -1404,20 +1410,17 @@ static void sortListPosition(gpointer data, gpointer user_data)
  * Checks all the features in each feature list within names_list to see if they overlap the
  * given feature item, removes from names_list any that don't.
  * Returns TRUE if any items were _removed_. */
-static gboolean removeNameListsByRange(GList **names_list, FooCanvasItem *feature_item)
+static gboolean removeNameListsByRange(GList **names_list, int start, int end)
 {
   gboolean result = FALSE ;
   GList *new_list, *list_item ;
-  ZMapFeature feature ;
   RangeDataStruct range_data ;
 
-
-  feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
-  zMapAssert(feature) ;
-
   range_data.overlap = FALSE ;
-  range_data.start = feature->x1 ;
-  range_data.end = feature->x2 ;
+
+  range_data.start = start ;
+  range_data.end = end ;
+
   new_list = NULL ;
   list_item = *names_list ;
   while (list_item)
@@ -1674,7 +1677,7 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
 	{
 	  if ((list_item = g_list_next(list_item)))
 	    {
-	      int match_threshold ;
+	      unsigned int match_threshold ;
 
 	      item = (FooCanvasItem *)list_item->data ;
 
@@ -2625,8 +2628,6 @@ static void create3FrameCols(gpointer data, gpointer user_data)
 	   && (!(style->opts.hidden_always) && style->opts.frame_specific)
 	   && ((feature_set = zMapFeatureFindSetInBlock(redraw_data->block, feature_set_id))))
     {
-      int forward_len, reverse_len, forward_incr, reverse_incr ;
-
       /* Create both forward and reverse columns. */
       zmapWindowCreateSetColumns(redraw_data->forward_group, redraw_data->reverse_group,
 				 redraw_data->block, feature_set_id, window, redraw_data->frame,
