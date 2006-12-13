@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec  6 10:11 2006 (rds)
+ * Last edited: Dec 12 18:20 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.166 2006-12-06 10:14:00 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.167 2006-12-13 08:27:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -423,35 +423,12 @@ void zmapWindowCreateSetColumns(FooCanvasGroup *forward_group, FooCanvasGroup *r
     }
 
 
-  /* I'M NOT SURE THIS IS NEEDED ANY MORE.... */
-  /* if this is not here the remove column routine crashes...feels uncomfortable, I
-   * haven't tracked down why yet..... */
-  if(!(g_datalist_id_get_data(&(block->feature_sets), feature_set_id)))
-    {
-      ZMapFeatureSet fs ;
-
-      fs = zMapFeatureSetIDCreate(feature_set_id, feature_set_id, style, NULL) ;
-      zMapFeatureBlockAddFeatureSet(block, fs) ;
-    }
-
-
-
-
   /* We need the background column object to span the entire bottom of the alignment block. */
   top = block->block_to_sequence.t1 ;
   bottom = block->block_to_sequence.t2 ;
   zmapWindowSeq2CanExtZero(&top, &bottom) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  {
-    double x = canvas_data->curr_block->block_to_sequence.t1,
-      y = canvas_data->curr_block->block_to_sequence.t2 ;
 
-    foo_canvas_item_w2i(FOO_CANVAS_ITEM(canvas_data->curr_root_group), &x, &y) ;
-    my_foo_canvas_item_w2i(FOO_CANVAS_ITEM(canvas_data->curr_root_group), &x, &y) ;
-
-  }
-#endif
   if (forward_group)
     *forward_col = createColumn(FOO_CANVAS_GROUP(forward_group),
 				window,
@@ -482,12 +459,6 @@ void zmapWindowCreateFeatureSet(ZMapWindow window, ZMapFeatureSet feature_set,
 				ZMapFrame frame)
 {
   CreateFeatureSetDataStruct featureset_data = {NULL} ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  double x1, y1, x2, y2 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   featureset_data.window = window ;
 
   if (forward_col)
@@ -536,25 +507,9 @@ void zmapWindowCreateFeatureSet(ZMapWindow window, ZMapFeatureSet feature_set,
 
 
   /* TRY RESIZING BACKGROUND NOW.....get rid of debug info.... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(forward_col), &x1, &y1, &x2, &y2) ;
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(forward_col)),
-			     &x1, &y1, &x2, &y2) ;
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetBackground(forward_col)),
-			     &x1, &y1, &x2, &y2) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   if (forward_col)
     zmapWindowContainerMaximiseBackground(forward_col) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(forward_col), &x1, &y1, &x2, &y2) ;
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(forward_col)),
-			     &x1, &y1, &x2, &y2) ;
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(zmapWindowContainerGetBackground(forward_col)),
-			     &x1, &y1, &x2, &y2) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   if (reverse_col)
     zmapWindowContainerMaximiseBackground(reverse_col) ;
 
@@ -1098,10 +1053,8 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   zmapWindowContainerSetBackgroundSize(group, bot) ;
 
   bounding_box = zmapWindowContainerGetBackground(group) ;
-#ifdef RDS_DONT_INCLUDE
-  zmapWindowLongItemCheck(window->long_items, bounding_box, top, bot) ;
-#endif /* RDS_DONT_INCLUDE */
 
+#ifdef RDS_NEWREPOSITION_DOES_THIS
   /* I THINK THIS IS FOR EMPTY COLS ?????? */
   /* Ugh...what is this code.....??? should be done by a container call.... */
   foo_canvas_item_get_bounds(bounding_box, &x1, &y1, &x2, &y2) ;
@@ -1109,7 +1062,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
     foo_canvas_item_set(bounding_box,
 			"x2", width,
 			NULL) ;
-
+#endif
 
   /* THIS WOULD ALL GO IF WE DIDN'T ADD EMPTY COLS...... */
   /* We can't set the ITEM_FEATURE_DATA as we don't have the feature set at this point.
@@ -1126,6 +1079,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup *parent_group,
   set_data->frame = frame ;
   set_data->style = zMapFeatureStyleCopy(style) ;
   set_data->style_table = zmapWindowStyleTableCreate() ;
+
   g_object_set_data(G_OBJECT(group), ITEM_FEATURE_SET_DATA, set_data) ;
 
   g_signal_connect(G_OBJECT(group), "destroy", G_CALLBACK(containerDestroyCB), (gpointer)window) ;
