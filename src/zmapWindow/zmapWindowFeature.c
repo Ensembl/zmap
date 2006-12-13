@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 12 17:39 2006 (rds)
+ * Last edited: Dec 13 09:24 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.71 2006-12-13 08:28:35 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.72 2006-12-13 13:34:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1447,7 +1447,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
                           exon_data->start = non_end + offset;
 
 			  exon_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-			  exon_data->subpart = ZMAPFEATURE_SUBPART_EXON ;
+			  exon_data->subpart = ZMAPFEATURE_SUBPART_EXON_CDS ;
 			  exon_data->start = non_start + offset ;
 			  exon_data->end   = non_end + offset ;
 
@@ -1477,7 +1477,7 @@ static FooCanvasItem *drawTranscriptFeature(FooCanvasGroup *parent, ZMapFeature 
                           exon_data->end = non_start + offset;
 
 			  exon_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-			  exon_data->subpart = ZMAPFEATURE_SUBPART_EXON ;
+			  exon_data->subpart = ZMAPFEATURE_SUBPART_EXON_CDS ;
 			  exon_data->start = non_start + offset ;
 			  exon_data->end   = non_end + offset - 1 ; /* - 1 because non_end
 								       calculated from bottom
@@ -2449,7 +2449,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	break ;
       }
     case 7:
-      menu_data->window->range_item = menu_data->item ;
+      zmapWindowMarkSetItem(menu_data->window->mark, menu_data->item) ;
 
       break ;
     case 3:
