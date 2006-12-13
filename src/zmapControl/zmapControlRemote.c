@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Dec 12 16:12 2006 (rds)
+ * Last edited: Dec 13 16:33 2006 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.34 2006-12-13 08:30:57 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.35 2006-12-13 16:34:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,12 +83,6 @@ typedef struct {
 
 typedef struct
 {
-  ZMapWindowFToIQuery query;
-  ZMapFeature feature;
-} FeatureQueryFeatureStruct, *FeatureQueryFeature;
-
-typedef struct
-{
   GQuark sequence;
   gint   start, end;
   char *config;
@@ -101,8 +95,7 @@ typedef struct {
   controlClientObj  client;
   ZMapWindowFToIQuery set;   /* The current featureset */
   /* queries.... */
-  GList *featureQueries_first;
-  GList *featureQueries_last;
+  GList *query_list;
 
   GList *styles;                /* These should be ZMapFeatureTypeStyle */
   GList *locations;             /* This is just a list of ZMapSpan Structs */
@@ -352,6 +345,34 @@ static ZMapXMLParser setupControlRemoteXMLParser(void *data)
   return parser;
 }
 
+static gboolean feature_input_valid(ZMapFeature feature)
+{
+  gboolean valid = TRUE;
+  ZMapStrand strand;
+
+  strand = feature->strand;
+
+  if(!(strand == ZMAPSTRAND_REVERSE || 
+       strand == ZMAPSTRAND_FORWARD ||
+       strand == ZMAPSTRAND_NONE))
+    valid = FALSE ;
+
+  if(feature->x1 > feature->x2)
+    {
+      if(strand == ZMAPSTRAND_REVERSE)
+        {
+          Coord tmp   = feature->x1;
+          feature->x1 = feature->x2;
+          feature->x2 = tmp;
+        }
+      else
+        valid = FALSE;
+    }
+
+
+  return valid;
+}
+
 static void alterFeature(gpointer data, gpointer userdata)
 {
   return ;
@@ -359,11 +380,9 @@ static void alterFeature(gpointer data, gpointer userdata)
 
 static void deleteFeature(gpointer data, gpointer userdata)
 { 
-  FeatureQueryFeature feature_query = (FeatureQueryFeature)data;
   ResponseCodeZMap    response_data = (ResponseCodeZMap)userdata;
   FooCanvasItem *feature_item = NULL;
-  ZMapFeature         feature = feature_query->feature;
-  ZMapWindowFToIQuery   query = feature_query->query;
+  ZMapWindowFToIQuery   query = (ZMapWindowFToIQuery)data;
   ZMapWindow           window = NULL;
   ZMap                   zmap = response_data->zmap;
   gboolean removed = TRUE, 
@@ -379,11 +398,11 @@ static void deleteFeature(gpointer data, gpointer userdata)
   if(response_data->messages->len)
     g_string_append_printf(response_data->messages, "\n");
 
-  if((feature == NULL) || (query == NULL))
+  if((query == NULL) || !(feature_input_valid(&(query->feature_in))))
     {
       response_data->code = 412;
       g_string_append_printf(response_data->messages, 
-                             "XML Data Error. Not enough information.");
+                             "XML Data Error. Not enough or incorrect information.");
       error_recorded = TRUE;
     }
   else
@@ -424,15 +443,14 @@ static void deleteFeature(gpointer data, gpointer userdata)
 
 static void drawNewFeature(gpointer data, gpointer userdata)
 {
-  FeatureQueryFeature feature_query = (FeatureQueryFeature)data;
-  ResponseCodeZMap    response_data = (ResponseCodeZMap)userdata;
+  ResponseCodeZMap response_data = (ResponseCodeZMap)userdata;
   FooCanvasItem *feature_item;
   FooCanvasGroup *block_group;
   FooCanvasGroup   *col_group;
   ZMapWindow           window;
   ZMapFeatureTypeStyle  style;
-  ZMapFeature         feature = feature_query->feature;
-  ZMapWindowFToIQuery   query = feature_query->query;
+  ZMapFeature         feature;
+  ZMapWindowFToIQuery   query = (ZMapWindowFToIQuery)data;
   ZMap                   zmap = response_data->zmap;
   char *feature_set_name, *style_name;
   GList *style_list;
@@ -449,11 +467,11 @@ static void drawNewFeature(gpointer data, gpointer userdata)
   if(response_data->messages->len)
     g_string_append_printf(response_data->messages, "\n");
 
-  if((query == NULL))
+  if((query == NULL) || !(feature_input_valid(&(query->feature_in))))
     {
       response_data->code = 412;
       g_string_append_printf(response_data->messages, 
-                             "XML Data Error. Not enough information.");
+                             "XML Data Error. Not enough or incorrect information.");
       error_recorded = TRUE;
     }
   else
@@ -461,7 +479,8 @@ static void drawNewFeature(gpointer data, gpointer userdata)
       /* Get Block group! */
       query->query_type = ZMAP_FTOI_QUERY_BLOCK_ITEM;
 
-      if(zMapWindowFToIFetchByQuery(window, query))
+      if(zMapWindowFToIFetchByQuery(window, query) &&
+         (query->return_type == ZMAP_FTOI_RETURN_ITEM))
         {
           block_group = FOO_CANVAS_GROUP( query->ans.item_answer );
 
@@ -473,7 +492,8 @@ static void drawNewFeature(gpointer data, gpointer userdata)
           /* Check we've got the correct strand, possibly a new search... */
           query->query_type = ZMAP_FTOI_QUERY_SET_ITEM;
 
-          if(zMapWindowFToIFetchByQuery(window, query))
+          if(zMapWindowFToIFetchByQuery(window, query) &&
+             (query->return_type == ZMAP_FTOI_RETURN_ITEM))
             {
               col_group = FOO_CANVAS_GROUP( query->ans.item_answer );
               feature   = zMapFeatureCopy(&(query->feature_in));
@@ -604,15 +624,15 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
           code = ZMAPXREMOTE_OK;
           break;
         case ZMAP_CONTROL_ACTION_CREATE_FEATURE:
-          invoke_list_foreach(objdata.featureQueries_first,
+          invoke_list_foreach(objdata.query_list,
                               drawNewFeature, zmap);
           break;
         case ZMAP_CONTROL_ACTION_ALTER_FEATURE:
-          invoke_list_foreach(objdata.featureQueries_first,
+          invoke_list_foreach(objdata.query_list,
                               alterFeature, zmap);
           break;
         case ZMAP_CONTROL_ACTION_DELETE_FEATURE:
-          invoke_list_foreach(objdata.featureQueries_first,
+          invoke_list_foreach(objdata.query_list,
                               deleteFeature, zmap);
           break;
         case ZMAP_CONTROL_ACTION_HIGHLIGHT_FEATURE:
@@ -843,7 +863,6 @@ static gboolean featureStrtHndlr(gpointer userdata,
 {
   XMLData    data = (XMLData)userdata;
   ZMapXMLAttribute attr  = NULL;
-  FeatureQueryFeature fq = g_new0(FeatureQueryFeatureStruct, 1);
   ZMapWindowFToIQuery new_query = NULL, query;
 
   zMapXMLParserCheckIfTrueErrorReturn(data->set == NULL,
@@ -906,15 +925,7 @@ static gboolean featureStrtHndlr(gpointer userdata,
       new_query->session_unique_id = zMapXMLAttributeGetValue(attr);
     }
 
-  fq->query   = new_query;
-
-  if(data->featureQueries_first == NULL)
-    {
-      data->featureQueries_first = g_list_append(data->featureQueries_first, fq);
-      data->featureQueries_last  = data->featureQueries_first;
-    }
-  else
-    data->featureQueries_last = (g_list_append(data->featureQueries_last, fq))->next;
+  data->query_list = g_list_append(data->query_list, new_query);
 
   return FALSE;
 }
@@ -927,15 +938,14 @@ static gboolean featureEndHndlr(void *userData,
   XMLData   data = (XMLData)userData;
   ZMapFeature   feature = NULL;
   gboolean          bad = FALSE;
-  FeatureQueryFeature fqf;
+  ZMapWindowFToIQuery query;
 
-  zMapXMLParserCheckIfTrueErrorReturn(data->featureQueries_last == NULL, 
+  zMapXMLParserCheckIfTrueErrorReturn(data->query_list == NULL, 
                                       parser, 
                                       "a feature end tag without a created feature.");
 
-  fqf = (FeatureQueryFeature)(data->featureQueries_last->data);
-
-  feature = &(fqf->query->feature_in);
+  query   = (ZMapWindowFToIQuery)((g_list_last(data->query_list))->data);
+  feature = &(query->feature_in);
 
   if(!bad && (attr = zMapXMLElementGetAttributeByName(sub_element, "ontology")))
     {
@@ -1036,9 +1046,11 @@ static gboolean styleEndHndlr(gpointer userdata,
                               ZMapXMLElement element,
                               ZMapXMLParser parser)
 {
+#ifdef RDS_FIX_THIS
   ZMapFeatureTypeStyle style = NULL;
-  ZMapXMLAttribute      attr = NULL;
   XMLData               data = (XMLData)userdata;
+#endif
+  ZMapXMLAttribute      attr = NULL;
   GQuark id = 0;
 
   if((attr = zMapXMLElementGetAttributeByName(element, "id")))
