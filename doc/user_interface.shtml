@@ -23,15 +23,58 @@ focus column.)
 
 <p>While the focus facility is useful the focus changes every time you
 click on a new feature. Sometimes you want to more permanently select
-a "working" feature, to do this you can "mark" a feature and it will
-stay "marked" until you unmark it. Marking simply involves:
+a "working" feature or area, to do this you can "mark" the feature or area and it will
+stay "marked" until you unmark it.
 
+<p>Marking can be done in one of two ways:
+
+<p><b>To mark a feature:</b>
 <ol>
   <li>Select a feature to make it the focus feature.
-  <li>Press "m" to mark the feature (it will be highlighted in blue).
+  <li>Press "m" to mark the feature, the feature will be highlighted
+      with a blue overlay.
 </ol>
 
-To unmark it simply press "u".
+<p><b>To mark an area:</b>
+<ol>
+  <li>Select an area using <code>Cntl-left mouse button</code>.
+  <li>Press "m" to mark the area.
+</ol>
+
+<p>In either case the "marked" area is left clear while the unmarked
+area above and below is marked with a blue overlay.
+
+<p>Unmarking is by:
+
+<ul>
+  <li>Simply pressing "u" or "U".
+</ul>
+
+<p>Feature marking behaves differently according to the type of feature you
+highlighted prior to marking and according to whether you press "m" or "M" to do
+the marking:
+
+<p><b>Pressing "m":</b>
+<ul>
+  <li><b>Transcripts:</b> the whole transcript becomes the marked feature and the
+      marked area extends from the start to the end of the transcript.
+  <li><b>Alignments:</b> all the HSPs for that alignment become the marked feature and
+      the marked area extends from the start to the end of all the HSPs.
+  <li><b>All other features:</b> the feature becomes the marked feature and the
+      marked area extends from the start to the end of the feature.
+</ul>
+
+
+<p><b>Pressing "M":</b>
+<ul>
+  <li><b>Transcripts:</b> the individual intron or exon becomes the marked feature and the
+      marked area extends from the start to the end of the intron or exon.
+  <li><b>Alignments:</b> the individual HSP you originally highlighted becomes the marked feature and
+      the marked area extends from the start to the end of just that HSP.
+  <li><b>All other features:</b> the feature becomes the marked feature and the
+      marked area extends from the start to the end of the feature.
+</ul>
+
 
 
 <p><hr>
@@ -54,7 +97,7 @@ zoom in to it and examine evidence that overlaps that feature.
 <ol>
   <li>Click on the feature you are interested in (perhaps a transcript)
   <li>Mark it by pressing "m"
-  <li>Zoom in to the feature by pressing "Z" (that's a captial "z" !)
+  <li>Zoom in to the feature by pressing either "z" or "Z" (as described above).
 </ol>
 
 <p>Now when you bump an evidence column to look at matches that overlap the
@@ -131,26 +174,43 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
   <tr>
     <th colspan=3>control keys</th>
   </tr>
-  <tr><td><b>+</b> (or =), <b>-</b></td>         <td>zoom in/out a bit (XXX) </td></tr>
-  <tr><td><b>Cntl +</b> (or =), <b>Cntl -</b></td>    <td>zoom in a lot (XXXX)</td></tr>
+  <tr><td><b>+</b> (or =), <b>-</b></td>         <td>zoom in/out by 10%</td></tr>
+  <tr><td><b>Cntl +</b> (or =), <b>Cntl -</b></td>    <td>zoom in/out by 50%</td></tr>
   <tr><td><b>up-arrow</b>, <b>down-arrow</b></td>    <td>scroll up/down a bit</td></tr>
   <tr><td><b>Cntl up-arrow</b>, <b>Cntl down-arrow</b></td>    <td>scroll up/down a bit</td></tr>
   <tr><td><b>left-arrow</b>, <b>right-arrow</b></td>    <td>scroll left/right a bit</td></tr>
-  <tr><td><b>page-up</b>, <b>page-down</b></td>    <td>page up/down by XXXX</td></tr>
-  <tr><td><b>Cntl page-up</b>, <b>Cntl page-down</b></td>    <td>page up/down by XXXX</td></tr>
+  <tr><td><b>page-up</b>, <b>page-down</b></td>    <td>up/down by half a "page"</td></tr>
+  <tr><td><b>Cntl page-up</b>, <b>Cntl page-down</b></td>    <td>up/down by a whole "page"</td></tr>
   <tr><td><b>Home</b>, <b>End</b></td>    <td>Go to far left or right</td></tr>
   <tr><td><b>Cntl Home</b>, <b>Cntl End</b></td>    <td>Go to top or bottom</td></tr>
   <tr>
     <th colspan=3>alpha-numeric keys</th>
   </tr>
-  <tr><td><b>b or B</b></td>         <td>bump/umbump current column</td></tr>
-  <tr><td><b>m or M</b></td>         <td>mark a feature for zooming, smart bumping</td></tr>
-  <tr><td><b>u or U</b></td>         <td>unmark a feature for zooming, smart bumping</td></tr>
+  <tr>
+    <td><b>b or B</b></td>
+    <td>bump/umbump current column</td>
+  </tr>
+  <tr>
+    <td><b>m</b></td>
+    <td>mark the whole highlighted feature or all highlighted HSPs or a range, for zooming/smart bumping</td>
+  </tr>
+  <tr>
+    <td><b>M</b></td>
+    <td>mark an individual exon/intron or single HSP of highlighted feature or range
+	for zooming/smart bumping</td>
+  </tr>
+  <tr><td><b>u or U</b></td>         <td>unmark a feature
   <tr><td><b>w or W</b></td>         <td>zoom out to show whole sequence</td></tr>
-  <tr><td><b>z</b></td>         <td>zoom to exon/intron or single HSP of marked feature (or current feature
-  if none marked)</td></tr>
-  <tr><td><b>Z</b></td>         <td>zoom to whole transcript or all HSPs of marked feature (or current feature
-  if none marked)</td></tr>
+  <tr>
+    <td><b>z</b></td>
+    <td>zoom to whole transcript or all HSPs of marked feature or highlighted feature
+	if none marked</td>
+  </tr>
+  <tr>
+    <td><b>Z</b></td>
+    <td>zoom to an individual exon/intron or single HSP of marked feature or highlighted feature
+	if none marked</td>
+  </tr>
 
 </table>
 
