@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Nov 11 13:08 2006 (rds)
+ * Last edited: Dec 12 15:58 2006 (rds)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.32 2006-11-13 10:58:32 rds Exp $
+ * CVS info:   $Id: zmapView.h,v 1.33 2006-12-13 08:32:22 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -142,6 +142,7 @@ char *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
 gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
 ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
+GList *zMapViewGetStyles(ZMapViewWindow view_window) ;
 ZMapWindowNavigator zMapViewGetNavigator(ZMapView view);
 int zMapViewNumWindows(ZMapViewWindow view_window) ;
 
