@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Dec  5 14:54 2006 (rds)
+ * Last edited: Dec 12 17:19 2006 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.21 2006-12-05 16:14:18 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.22 2006-12-13 08:26:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -95,12 +95,6 @@ typedef struct ContainerRecursionDataStruct_
   ContainerPointsCache   cache;
 
 } ContainerRecursionDataStruct, *ContainerRecursionData;
-
-typedef struct
-{
-  FooCanvasGroup *container;
-  ZMapStrand strand;
-}ContainerToStrandStruct, *ContainerToStrand;
 
 static void containerDestroyCB(GtkObject *object, gpointer user_data) ;
 
@@ -200,16 +194,27 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
   zMapAssert(FOO_IS_CANVAS_GROUP(parent)) ;
 
   parent_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(parent), CONTAINER_TYPE_KEY)) ;
-  zMapAssert(parent_type == CONTAINER_INVALID || parent_type == CONTAINER_FEATURES) ;
+  zMapAssert(parent_type == CONTAINER_INVALID || 
+             parent_type == CONTAINER_FEATURES ||
+             parent_type == CONTAINER_PARENT) ;
 
   /* Is the parent a container itself, if not then make this the root container. */
+  /* Adding code to be a little more intelligent about what this function can accept. */
   if (parent_type == CONTAINER_FEATURES)
     {
       container_type   = CONTAINER_PARENT ;
       parent_container = zmapWindowContainerGetParent(FOO_CANVAS_ITEM( parent ));
-      parent_data  = g_object_get_data(G_OBJECT(parent_container), CONTAINER_DATA);
-      level = parent_data->level + 1;
-      this_spacing = parent_data->child_spacing;
+      parent_data      = g_object_get_data(G_OBJECT(parent_container), CONTAINER_DATA);
+      level            = parent_data->level + 1;
+      this_spacing     = parent_data->child_spacing;
+    }
+  else if(parent_type == CONTAINER_PARENT)
+    {
+      container_type = CONTAINER_PARENT;
+      parent_data    = g_object_get_data(G_OBJECT(parent), CONTAINER_DATA);
+      level          = parent_data->level + 1;
+      this_spacing   = parent_data->child_spacing;
+      parent         = zmapWindowContainerGetFeatures(parent);
     }
   else
     {
@@ -909,61 +914,6 @@ void zmapWindowContainerReposition(FooCanvasGroup *container)
   return ;
 }
 
-static void getStrandLevelWithStrand(FooCanvasGroup *container_parent, 
-                                     FooCanvasPoints *points, 
-                                     ZMapContainerLevelType level,
-                                     gpointer user_data)
-{
-  ContainerData container_data = NULL;
-  ContainerToStrand io_data = (ContainerToStrand)user_data;
-
-  container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA) ;
-
-  if(level == ZMAPCONTAINER_LEVEL_STRAND)
-    {
-      ZMapStrand strand = ZMAPSTRAND_NONE;
-
-      strand = zmapWindowContainerGetStrand(container_parent);
-      
-      if(strand == io_data->strand)
-        io_data->container = container_parent;
-      
-    }
-
-  return ;
-}
-
-FooCanvasItem *zmapWindowContainerBlockGetStrandContainer(FooCanvasGroup *block_container, 
-                                                          ZMapStrand strand)
-{
-  ContainerData container_data = NULL;
-  FooCanvasItem *item = NULL;
-  ZMapContainerLevelType level = ZMAPCONTAINER_LEVEL_INVALID;
-  ContainerToStrandStruct test = {0};
-
-  if((container_data = g_object_get_data(G_OBJECT(block_container), CONTAINER_DATA)))
-    level = container_data->level;
-
-  if(level == ZMAPCONTAINER_LEVEL_BLOCK)
-    {
-      ContainerType container_type = CONTAINER_INVALID ;
-
-      container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(block_container), CONTAINER_TYPE_KEY)) ;
-      zMapAssert(container_type == CONTAINER_PARENT || container_type == CONTAINER_ROOT) ;
-
-      test.strand = strand;
-  
-      zmapWindowContainerExecute(block_container,
-                                 ZMAPCONTAINER_LEVEL_STRAND,
-                                 getStrandLevelWithStrand, &test);
-
-    }
-
-  if(test.container != NULL)
-    item = FOO_CANVAS_ITEM( test.container );
-
-  return item;
-}
 
 FooCanvasGroup *zmapWindowContainerGetFeaturesContainerFromItem(FooCanvasItem *feature_item)
 {
