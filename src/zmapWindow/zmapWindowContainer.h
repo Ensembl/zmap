@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Dec 12 16:20 2006 (edgrif)
+ * Last edited: Dec 13 15:09 2006 (rds)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.16 2006-12-13 13:40:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.17 2006-12-13 15:14:50 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -146,6 +146,8 @@ void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window)
 void zmapWindowContainerPurge(FooCanvasGroup *unknown_child);
 void zmapWindowContainerDestroy(FooCanvasGroup *container_parent) ;
 
+void zmapWindowContainerSetData(FooCanvasGroup *container, const gchar *key, gpointer data);
+gpointer zmapWindowContainerGetData(FooCanvasGroup *container, const gchar *key);
 
 /* this should be somewhere else I think.... */
 void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout) ;
