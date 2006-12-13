@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Dec 13 09:23 2006 (edgrif)
+ * Last edited: Dec 13 15:09 2006 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.23 2006-12-13 13:40:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.24 2006-12-13 15:14:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -150,6 +150,7 @@ static void containerPointsCacheResetBound(ContainerPointsCache cache,
                                            ZMapContainerLevelType level);
 static gboolean containerRootInvokeContainerBGEvent(FooCanvasItem *item, GdkEvent *event, gpointer data);
 
+inline static GObject *containerGObject(FooCanvasGroup *container);
 
 /* Creates a "container" for our sequence features which consists of: 
  * 
@@ -542,6 +543,10 @@ FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *unknown_child)
     case CONTAINER_BACKGROUND:
       container_parent = FOO_CANVAS_GROUP(unknown_child->parent) ;
       break ;
+    case CONTAINER_PARENT:
+    case CONTAINER_ROOT:
+      container_parent = FOO_CANVAS_GROUP(unknown_child);
+      break;
     default:
       zMapAssertNotReached() ;
     }
@@ -1147,6 +1152,17 @@ void zmapWindowContainerPurge(FooCanvasGroup *unknown_child)
 }
 
 
+void zmapWindowContainerSetData(FooCanvasGroup *container, const gchar *key, gpointer data)
+{
+  g_object_set_data(containerGObject(container), key, data);
+
+  return ;
+}
+
+gpointer zmapWindowContainerGetData(FooCanvasGroup *container, const gchar *key)
+{
+  return g_object_get_data(containerGObject(container), key);
+}
 
 /* 
  *                Internal routines.
@@ -1796,4 +1812,13 @@ static gboolean containerRootInvokeContainerBGEvent(FooCanvasItem *item, GdkEven
   g_signal_emit(GTK_OBJECT(background), ids[item_event], detail, event, &event_handled);
 
   return event_handled;
+}
+
+inline static GObject *containerGObject(FooCanvasGroup *container)
+{
+  container = zmapWindowContainerGetParent(FOO_CANVAS_ITEM( container ));
+
+  zMapAssert(container);
+
+  return G_OBJECT(container);
 }
