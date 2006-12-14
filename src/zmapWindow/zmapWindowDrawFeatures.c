@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec 13 15:10 2006 (rds)
+ * Last edited: Dec 14 11:51 2006 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.169 2006-12-13 15:16:39 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.170 2006-12-14 11:55:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -107,9 +107,8 @@ typedef struct
 } CreateFeatureSetDataStruct, *CreateFeatureSetData ;
 
 
-static void newDrawZMap(ZMapCanvasData canvas_data, ZMapFeatureContext context);
+static void drawZMap(ZMapCanvasData canvas_data, ZMapFeatureContext context);
 
-static void drawZMap(ZMapCanvasData canvas_data, ZMapFeatureContext diff_context) ;
 static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data) ;
 static void drawBlocks(gpointer data, gpointer user_data) ;
 static void createSetColumn(gpointer data, gpointer user_data) ;
@@ -136,10 +135,6 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
 static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void setColours(ZMapWindow window) ;
-
-static void makeFeaturesGroupCB(gpointer key, gpointer value, gpointer user_data) ;
-static void destroyFeaturesList(gpointer data) ;
-
 
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 
@@ -333,19 +328,11 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   canvas_data.curr_x_offset = 0.0;
   canvas_data.full_context = full_context ;
 
-
-  newDrawZMap(&canvas_data, diff_context);
+  drawZMap(&canvas_data, diff_context);
   
   zmapWindowColOrderColumns(window);
 
   zmapWindowNewReposition(window);
-
-#ifdef RDS_DONT_INCLUDE
-  drawZMap(&canvas_data, diff_context) ;
-
-  /* Set the background object size now we have finished... */
-  zmapWindowContainerSetBackgroundSize(root_group, 0.0) ;
-#endif
 
 
   /* There may be a focus item if this routine is called as a result of splitting a window
@@ -510,15 +497,6 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
         }
     }	    
 
-#ifdef RDS_DONT_INCLUDE
-  /* TRY RESIZING BACKGROUND NOW.....get rid of debug info.... */
-  if (forward_col_wcp)
-    zmapWindowContainerMaximiseBackground(forward_col_wcp) ;
-
-  if (reverse_col_wcp)
-    zmapWindowContainerMaximiseBackground(reverse_col_wcp) ;
-#endif
-
   return ;
 }
 
@@ -549,13 +527,14 @@ void zmapWindowRemoveEmptyColumns(ZMapWindow window,
 }
 
 
-gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup *col_group)
+gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group)
 {
   gboolean removed = FALSE ;
 
-  if (!zmapWindowContainerHasFeatures(col_group))
+  if (!zmapWindowContainerHasFeatures(*col_group))
     {
-      zmapWindowContainerDestroy(col_group) ;
+      zmapWindowContainerDestroy(*col_group) ;
+      *col_group = NULL;
       removed = TRUE ;
     }
 
@@ -661,29 +640,6 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
  */
 
 
-/* NOTE THAT WHEN WE COME TO MERGE DATA FROM SEVERAL SOURCES WE ARE GOING TO HAVE TO
- * CHECK AT EACH STAGE WHETHER A PARTICULAR ALIGN, BLOCK OR SET ALREADY EXISTS... */
-
-
-static void drawZMap(ZMapCanvasData canvas_data, ZMapFeatureContext diff_context)
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (!canvas_data->window->alignments)
-    canvas_data->window->alignments = diff_context->alignments ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  g_datalist_foreach(&(diff_context->alignments), drawAlignments, canvas_data) ;
-
-
-  /* Reorder list of alignments based on their position. */
-  zmapWindowCanvasGroupChildSort(foo_canvas_root(canvas_data->window->canvas)) ;
-
-
-  return ;
-}
-
 
 /* Draw all the alignments in a context, one of these is special in that it is the master
  * sequence that all the other alignments are aligned to. Commonly zmap will only have
@@ -768,6 +724,10 @@ static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
     case GDK_BUTTON_PRESS:
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
+        if(but_event->button == 1)
+          {
+            
+          }
       }
       break;
     default:
@@ -887,6 +847,7 @@ static void drawBlocks(gpointer data, gpointer user_data)
                    (gpointer)window);
 
   canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
+
 #ifdef RDS_DONT_INCLUDE
   zmapWindowLongItemCheck(canvas_data->window->long_items, zmapWindowContainerGetBackground(forward_group),
 			  top, bottom) ;
@@ -961,11 +922,12 @@ static void drawBlocks(gpointer data, gpointer user_data)
  * the column does not have features at the moment, i.e. it is empty. */
 static void createSetColumn(gpointer data, gpointer user_data)
 {
+#ifdef RDS_DONT_INCLUDE
   GQuark feature_set_id = GPOINTER_TO_UINT(data) ;
   ZMapCanvasData canvas_data  = (ZMapCanvasData)user_data ;
   ZMapWindow window = canvas_data->window ;
   FooCanvasGroup *forward_col = NULL, *reverse_col = NULL ;
-#ifdef RDS_NEWREPOSITION_DOES_THIS
+
   zmapWindowCreateSetColumns(canvas_data->curr_forward_group, canvas_data->curr_reverse_group,
 			     canvas_data->curr_block, feature_set_id, window, ZMAPFRAME_NONE,
 			     &forward_col, &reverse_col) ;
@@ -999,7 +961,6 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
   FooCanvasGroup *group = NULL ;
   GdkColor *colour ;
   FooCanvasItem *bounding_box ;
-  double x1, x2, y1, y2 ;
   ZMapFeatureAlignment align ;
   ZMapFeatureBlock     block;
   gboolean status ;
@@ -1292,7 +1253,7 @@ static void removeEmptyColumnCB(gpointer data, gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
 
-  zmapWindowRemoveIfEmptyCol(container) ;
+  zmapWindowRemoveIfEmptyCol(&container) ;
 
   return ;
 }
@@ -1750,43 +1711,6 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 
 
 
-static void makeFeaturesGroupCB(gpointer key, gpointer value, gpointer user_data)
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GQuark feature_id = GPOINTER_TO_INT(key) ;		    /* unused currently... */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  GList *feature_item_list = (GList *)value ;
-  ZMapCanvasData canvas_data  = (ZMapCanvasData)user_data ;
-  guint list_length ;
-  FooCanvasGroup *new_group ;
-
-
-  list_length = g_list_length(feature_item_list) ;
-  zMapAssert(list_length) ;				    /* Should only get called if there is
-							       a list. */
-
-  if (list_length > 1)
-    {
-      new_group = zmapWindowFeatureItemsMakeGroup(canvas_data->window, feature_item_list) ;
-    }
-
-  return ;
-}
-
-
-static void destroyFeaturesList(gpointer data)
-{
-  GList *feature_list = (GList *)data ;
-
-  g_list_free(feature_list) ;
-
-  return ;
-}
-
-
-
 static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id, 
                                                          gpointer data, 
                                                          gpointer user_data,
@@ -1856,11 +1780,11 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
-        ZMapFeatureBlock feature_block = (ZMapFeatureBlock)feature_any;
         FooCanvasGroup *block_parent, *forward_group, *reverse_group ;
         GdkColor *for_bg_colour, *rev_bg_colour ;
         double x, y;
 
+        feature_block = (ZMapFeatureBlock)feature_any;
         canvas_data->curr_block = feature_block ;
 
         /* Always set y offset to be top of current block. */
@@ -1954,7 +1878,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         FooCanvasGroup *tmp_forward, *tmp_reverse;
-        ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any;
+        
+        feature_set = (ZMapFeatureSet)feature_any;
 
         if(zmapWindowCreateSetColumns(window,
                                       canvas_data->curr_forward_group,
@@ -1969,6 +1894,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                                      tmp_forward,
                                      tmp_reverse,
                                      ZMAPFRAME_NONE);
+            if(tmp_forward)
+              zmapWindowRemoveIfEmptyCol(&tmp_forward);
+            if(tmp_reverse)
+              zmapWindowRemoveIfEmptyCol(&tmp_reverse);
           }
       }
       break;
@@ -1987,7 +1916,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
   return status;
 }
 
-static void newDrawZMap(ZMapCanvasData canvas_data, ZMapFeatureContext context)
+static void drawZMap(ZMapCanvasData canvas_data, ZMapFeatureContext context)
 {
 
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)context,
