@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 15 07:33 2006 (edgrif)
+ * Last edited: Dec 15 09:23 2006 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.14 2006-12-15 09:20:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.15 2006-12-15 09:23:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1441,7 +1441,8 @@ static ZMapDrawTextIterator zmapDrawTextIteratorBuild(double feature_start, doub
 
   iterator->row_text   = g_string_sized_new(iterator->truncate_at);
   iterator->wrap_text  = full_text;
-  iterator->wrap_text += iterator->index_start = (int)feature_first_char;
+  /* make the index 0 based... */
+  iterator->wrap_text += iterator->index_start = (int)feature_first_char - (bases_per_char == 1 ? 1 : 0);
 
   iterator->row_data   = g_new0(ZMapDrawTextRowDataStruct, iterator->rows);
 
