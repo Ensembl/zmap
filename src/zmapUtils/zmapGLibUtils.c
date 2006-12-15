@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Dec  8 13:01 2006 (rds)
+ * Last edited: Dec 14 15:55 2006 (rds)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.15 2006-12-08 15:47:50 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.16 2006-12-15 08:05:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -350,6 +350,9 @@ GList *zMap_g_list_lower(GList *move, int positions)
 {
   GList *before;
 
+  if(positions < 1)
+    return move;
+
   if(move->prev)
     {
       for(before = move->prev; positions && before; positions--)
@@ -361,7 +364,10 @@ GList *zMap_g_list_lower(GList *move, int positions)
   if(before)
     {
       g_list_remove_link(before, move);
-      insert_after(move, before);
+      if(before->next)
+        insert_after(move, before);
+      else
+        g_list_concat(before, move);
       zMapAssert(g_list_find(before, move->data));
     }
 
@@ -372,6 +378,9 @@ GList *zMap_g_list_raise(GList *move, int positions)
 {
   GList *before;
 
+  if(positions < 1)
+    return move;
+
   for(before = move; positions && before; positions--)
     before = before->next;
 
@@ -381,7 +390,10 @@ GList *zMap_g_list_raise(GList *move, int positions)
   if(before)
     {
       g_list_remove_link(before, move);
-      insert_after(move, before);
+      if(before->next)
+        insert_after(move, before);
+      else
+        g_list_concat(before, move);
       zMapAssert(g_list_find(before, move->data));
     }
 
