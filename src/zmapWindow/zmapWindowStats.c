@@ -26,13 +26,13 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  7 10:19 2006 (edgrif)
+ * Last edited: Dec 15 07:32 2006 (edgrif)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.2 2006-11-08 09:25:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.3 2006-12-15 09:20:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-
+#include <string.h>
 #include <zmapWindow_P.h>
 
 
