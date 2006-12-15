@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Dec 15 09:42 2006 (edgrif)
+ * Last edited: Dec 15 11:37 2006 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.26 2006-12-15 09:43:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.27 2006-12-15 11:40:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1638,7 +1638,7 @@ static void containerSetMaxOverlays(FooCanvasGroup *container, FooCanvasPoints *
 
 	  if (container_data->long_items)
 	    {
-	      zmapWindowLongItemCheck(container_data->long_items, overlay_item, ny1, ny2);
+	      zmapWindowLongItemResized(container_data->long_items, overlay_item);
 	    }
 
 	  list_item = g_list_next(list_item) ;
