@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Dec 15 09:29 2006 (edgrif)
+ * Last edited: Dec 15 09:46 2006 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.56 2006-12-15 09:43:48 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.57 2006-12-15 09:59:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,15 @@ static void drawHighlightBackgroundInGroup(FooCanvasGroup *parent,
                                            double dlength);
 
 
-/* bitmap for doing the overlays, leads to diagonal lines allowing an element of "transparency". */
+/* bitmap for doing the overlays, leads to diagonal lines allowing an element of "transparency".
+ * 
+ * The only way to get rid of a bitmap (i.e. drawable) once allocated seems to be to do 
+ * 
+ *          g_object_unref(G_OBJECT(bitmap)) ;
+ * 
+ * the draw code doesn't need to do this so far.
+ * 
+ *  */
 #define overlay_bitmap_width 16
 #define overlay_bitmap_height 4
 static char overlay_bitmap_bits[] =
