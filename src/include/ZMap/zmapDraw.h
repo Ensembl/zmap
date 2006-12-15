@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Aug  4 08:38 2006 (edgrif)
+ * Last edited: Dec 14 19:26 2006 (edgrif)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.33 2006-11-08 09:23:12 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.34 2006-12-15 09:18:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -177,12 +177,18 @@ FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double 
 			    GdkColor *colour, guint line_width) ;
 FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
 				GdkColor *colour, guint line_width) ;
-FooCanvasItem *zMapDrawBox(FooCanvasItem *group, 
+FooCanvasItem *zMapDrawBox(FooCanvasGroup *group, 
 			   double x1, double y1, double x2, double y2, 
 			   GdkColor *line_colour, GdkColor *fill_colour, guint line_width) ;
-FooCanvasItem *zMapDrawSolidBox(FooCanvasItem *group, 
+FooCanvasItem *zMapDrawSolidBox(FooCanvasGroup *group, 
 				double x1, double y1, double x2, double y2, 
 				GdkColor *fill_colour) ;
+FooCanvasItem *zMapDrawBoxOverlay(FooCanvasGroup *group, 
+				  double x1, double y1, double x2, double y2, 
+				  GdkColor *fill_colour) ;
+void zMapDrawBoxChangeSize(FooCanvasItem *box, 
+			   double x1, double y1, double x2, double y2) ;
+
 FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 			       double x, double y) ;
 

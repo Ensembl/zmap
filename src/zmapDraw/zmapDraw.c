@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Oct 18 14:26 2006 (rds)
+ * Last edited: Dec 15 07:33 2006 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.54 2006-11-08 09:24:06 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.55 2006-12-15 09:18:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,20 @@ static void drawHighlightBackgroundInGroup(FooCanvasGroup *parent,
                                            double offsetX2, double offsetY2,
                                            double minX,     double maxX,
                                            double dlength);
+
+
+/* bitmap for doing the overlays, leads to diagonal lines allowing an element of "transparency". */
+#define overlay_bitmap_width 16
+#define overlay_bitmap_height 4
+static char overlay_bitmap_bits[] =
+  {
+    0x11, 0x11,
+    0x22, 0x22,
+    0x44, 0x44,
+    0x88, 0x88
+  } ;
+
+
 
 
 
@@ -86,7 +100,7 @@ FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
     {
       PangoLayout *layout = NULL;
       PangoContext *context = NULL;
-      const PangoMatrix matrix = PANGO_MATRIX_INIT;
+      PangoMatrix matrix = PANGO_MATRIX_INIT;
       
       layout  = FOO_CANVAS_TEXT(item)->layout;
       
@@ -142,7 +156,7 @@ FooCanvasItem *zMapDrawHighlightableText(FooCanvasGroup *group,
  * completely enclosed within the item. If you specify either width, you end
  * up with items that are larger than you expect because the outline is drawn
  * centred on the edge of the rectangle. */
-FooCanvasItem *zMapDrawBox(FooCanvasItem *group, 
+FooCanvasItem *zMapDrawBox(FooCanvasGroup *group, 
 			   double x1, double y1, double x2, double y2, 
 			   GdkColor *border_colour, GdkColor *fill_colour,
 			   guint line_width)
@@ -159,6 +173,61 @@ FooCanvasItem *zMapDrawBox(FooCanvasItem *group,
 			     NULL) ;
 
   return item;                                                                       
+}
+
+/* As above but we do not set outline.... */
+FooCanvasItem *zMapDrawSolidBox(FooCanvasGroup *group, 
+				double x1, double y1, double x2, double y2, 
+				GdkColor *fill_colour)
+{
+  FooCanvasItem *item = NULL ;
+
+  item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
+			     foo_canvas_rect_get_type(),
+			     "x1", x1, "y1", y1,
+			     "x2", x2, "y2", y2,
+			     "fill_color_gdk", fill_colour,
+			     NULL) ;
+
+  return item;                                                                       
+}
+
+/* Semi transparent box. */
+FooCanvasItem *zMapDrawBoxOverlay(FooCanvasGroup *group, 
+				  double x1, double y1, double x2, double y2, 
+				  GdkColor *fill_colour)
+{
+  FooCanvasItem *item = NULL ;
+  static GdkBitmap *overlay = NULL ;
+
+  if (!overlay)
+    overlay = gdk_bitmap_create_from_data(NULL, &overlay_bitmap_bits[0],
+					  overlay_bitmap_width, overlay_bitmap_height) ;
+
+  item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
+			     foo_canvas_rect_get_type(),
+			     "x1", x1, "y1", y1,
+			     "x2", x2, "y2", y2,
+			     "fill_color_gdk", fill_colour,
+			     "fill_stipple", overlay,
+			     NULL) ;
+
+  return item;                                                                       
+}
+
+
+void zMapDrawBoxChangeSize(FooCanvasItem *box, 
+			   double x1, double y1, double x2, double y2)
+{
+
+  foo_canvas_item_set(box,
+		      "x1", x1,
+		      "y1", y1,
+		      "x2", x2,
+		      "y2", y2,
+		      NULL) ;
+
+  return ;
 }
 
 
@@ -753,26 +822,6 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
 
   return item;
 }
-
-/* As above but we do not set outline.... */
-FooCanvasItem *zMapDrawSolidBox(FooCanvasItem *group, 
-				double x1, double y1, double x2, double y2, 
-				GdkColor *fill_colour)
-{
-  FooCanvasItem *item = NULL ;
-
-  item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
-			     foo_canvas_rect_get_type(),
-			     "x1", x1, "y1", y1,
-			     "x2", x2, "y2", y2,
-			     "fill_color_gdk", fill_colour,
-			     NULL) ;
-
-  return item;                                                                       
-}
-
-
-
 
 
 /* It may be good not to specify a width here as well (see zMapDrawBox) but I haven't
