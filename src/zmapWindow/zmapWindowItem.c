@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 13 11:16 2006 (edgrif)
+ * Last edited: Dec 15 09:57 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.55 2006-12-13 13:33:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.56 2006-12-15 10:00:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2449,7 +2449,8 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b)
 /* 
  * The bounding_box is a bit of a hack to support marking objects,
  * a better way would be to use masks as overlays but I don't have time just
- * now.
+ * now. ALSO....if you put highlighting over the top of the feature you won't
+ * be able to click on it any more....agh....something to solve.....
  * 
  */
 static void setBoundingBoxColour(ZMapWindowMark mark, FooCanvasItem *item, gboolean highlight)
@@ -2514,103 +2515,15 @@ static void markRange(ZMapWindowMark mark, double y1, double y2)
 
   mark->range_group = zmapWindowContainerGetOverlays(mark->block_group) ;
 
-  mark->top_range_item = foo_canvas_item_new(FOO_CANVAS_GROUP(mark->range_group),
-					     foo_canvas_rect_get_type(),
-					     "x1", block_x1,
-					     "y1", block_y1,
-					     "x2", block_x2,
-					     "y2", y1,
-					     "fill_stipple", mark->stipple,
-					     "fill_color_gdk", &(mark->colour),
-					     NULL) ;
+  mark->top_range_item = zMapDrawBoxOverlay(FOO_CANVAS_GROUP(mark->range_group), 
+					    block_x1, block_y1, block_x2, y1, 
+					    &(mark->colour)) ;
 
-  mark->bottom_range_item = foo_canvas_item_new(FOO_CANVAS_GROUP(mark->range_group),
-						foo_canvas_rect_get_type(),
-						"x1", block_x1,
-						"y1", y2,
-						"x2", block_x2,
-						"y2", block_y2,
-						"fill_stipple", mark->stipple,
-						"fill_color_gdk", &(mark->colour),
-						NULL) ;
-
-  foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(mark->range_group)) ;
+  mark->bottom_range_item = zMapDrawBoxOverlay(FOO_CANVAS_GROUP(mark->range_group), 
+					       block_x1, y2, block_x2, block_y2, 
+					       &(mark->colour)) ;
 
   return ;
 }
-
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* THIS FUNCTION HAS TOTALLY THE WRONG NAME, IT __SETS__ THE SCROLL REGION.... */
-/** \Brief Recalculate the scroll region.
- *
- * If the selected feature is outside the current scroll region, recalculate
- * the region to be the same size but with the selecte feature in the middle.
- */
-static void checkScrollRegion(ZMapWindow window, double start, double end)
-{
-  double x1, y1, x2, y2 ;
-
-  x1 = x2 = 0.0;
-  y1 = start;
-  y2 = end;
-  zmapWindowScrollRegionTool(window, &x1, &y1, &x2, &y2);
-  return ;
-  /* NOTE THAT THIS ROUTINE NEEDS TO CALL THE VISIBILITY CHANGE CALLBACK IF WE MOVE
-   * THE SCROLL REGION TO MAKE SURE THAT ZMAPCONTROL UPDATES ITS SCROLLBARS.... */
-
-  foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);  /* world coords */
-  if ( start < y1 || end > y2)
-    {
-      ZMapWindowVisibilityChangeStruct vis_change ;
-      int top, bot ;
-      double height ;
-
-
-      height = y2 - y1;
-
-      y1 = start - (height / 2.0) ;
-
-      if (y1 < window->min_coord)
-	y1 = window->min_coord ;
-
-      y2 = y1 + height;
-
-      /* this shouldn't happen */
-      if (y2 > window->max_coord)
-	y2 = window->max_coord ;
-
-      /* This should probably call zmapWindow_set_scroll_region */
-      foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2);
-
-      /* UGH, I'M NOT SURE I LIKE THE LOOK OF ALL THIS INT CONVERSION STUFF.... */
-
-      /* redraw the scale bar */
-      top = (int)y1;                   /* zmapDrawScale expects integer coordinates */
-      bot = (int)y2;
-      /* gtk_object_destroy(GTK_OBJECT(window->scaleBarGroup)); */
-
-      /* agh, this seems to be here because we move the scroll region...we need a function
-       * to do this all....... */
-      //      zmapWindowLongItemCrop(window) ;
-
-      /* Call the visibility change callback to notify our caller that our zoom/position has
-       * changed. */
-      vis_change.zoom_status = zMapWindowGetZoomStatus(window) ;
-      vis_change.scrollable_top = y1 ;
-      vis_change.scrollable_bot = y2 ;
-      (*(window->caller_cbs->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
-
-    }
-
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
