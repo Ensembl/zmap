@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Dec 14 11:32 2006 (rds)
+ * Last edited: Dec 15 11:30 2006 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.160 2006-12-14 11:55:46 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.161 2006-12-15 11:39:26 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -636,6 +636,7 @@ void   zmapWindowSetPageIncr    (ZMapWindow window);
 
 ZMapWindowLongItems zmapWindowLongItemCreate(double max_zoom) ;
 void zmapWindowLongItemSetMaxZoom(ZMapWindowLongItems long_item, double max_zoom) ;
+void zmapWindowLongItemResized(ZMapWindowLongItems long_items, FooCanvasItem *item);
 void zmapWindowLongItemCheck(ZMapWindowLongItems long_item, FooCanvasItem *item, double start, double end) ;
 void zmapWindowLongItemCrop(ZMapWindowLongItems long_items, double x1, double y1, double x2, double y2) ;
 gboolean zmapWindowLongItemRemove(ZMapWindowLongItems long_item, FooCanvasItem *item) ;

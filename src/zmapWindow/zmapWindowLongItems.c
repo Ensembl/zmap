@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 28 15:48 2006 (rds)
+ * Last edited: Dec 15 11:39 2006 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.7 2006-11-28 15:48:53 rds Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.8 2006-12-15 11:40:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -144,6 +144,36 @@ void zmapWindowLongItemSetMaxZoom(ZMapWindowLongItems long_item, double max_zoom
   return ;
 }
 
+void zmapWindowLongItemResized(ZMapWindowLongItems long_items, FooCanvasItem *item)
+{
+  double length, start, end ;
+  LongFeatureItem new_item = NULL;
+  gboolean created = FALSE;
+  GList *list_long_item = NULL;
+
+  foo_canvas_item_get_bounds(item, NULL, &start, NULL, &end);
+
+  if((list_long_item = g_list_find_custom(long_items->items, item, findLongItemCB)))
+    {
+      new_item = (LongFeatureItem)(list_long_item->data);
+      zMapAssert(new_item->item == item);
+
+      if(FOO_IS_CANVAS_RE(item))
+        {
+          new_item->pos.box.start = start;
+          new_item->pos.box.end   = end;
+        }
+      new_item->extreme.y1 = start;
+      new_item->extreme.y2 = end;
+
+    }
+  else
+    {
+      zmapWindowLongItemCheck(long_items, item, start, end);
+    }  
+
+  return ;  
+}
 
 /* n.b. we could get the start/end from the item but perhaps it doesn't matter...and it is
  * more efficient + the user could always get the start/end themselves before calling us. */
@@ -535,7 +565,7 @@ static void printLongItem(gpointer data, gpointer user_data)
     {
       printf("feature name: %s", g_quark_to_string(any_feature->unique_id)) ;
     }
-  else
+  else if(zmapWindowContainerIsValid(long_item->item))
     {
       parent = zmapWindowContainerGetParent(long_item->item) ;
 
@@ -546,6 +576,8 @@ static void printLongItem(gpointer data, gpointer user_data)
       else
 	printf("ugh, no feature data...BAD....") ;
     }
+  else
+    printf("Double ugh, no feature data, no container data ... BAD ....");
 
   if (any_feature && (strstr(g_quark_to_string(any_feature->unique_id), "wublast")))
     {
