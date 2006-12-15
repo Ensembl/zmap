@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 15 09:57 2006 (edgrif)
+ * Last edited: Dec 15 11:51 2006 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.56 2006-12-15 10:00:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.57 2006-12-15 11:51:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2153,7 +2153,7 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highl
       char *highlight_target ;
 
       /* If we definitely have a background or can only possibly have a background we'll use that */
-      if (style->colours.background_set || (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_TEXT(item)))
+      if (style->colours.background_set || (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_TEXT(item)) || FOO_IS_CANVAS_LINE_GLYPH(item))
 	highlight_target = "fill_color_gdk" ;
       else if (style->colours.outline_set && (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item)))
 	highlight_target = "outline_color_gdk" ;
