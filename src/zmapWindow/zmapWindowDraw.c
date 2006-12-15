@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 13 15:09 2006 (rds)
+ * Last edited: Dec 15 07:34 2006 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.50 2006-12-13 15:15:45 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.51 2006-12-15 09:19:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1571,7 +1571,7 @@ static void addBackgrounds(gpointer data, gpointer user_data)
 		      bump_data->feature_id = first_id ;
 		      bump_data->style = first_style ;
 
-		      background = zMapDrawBox(FOO_CANVAS_ITEM(first_item->parent),
+		      background = zMapDrawBox(FOO_CANVAS_GROUP(first_item->parent),
 					       (mid - half_width), y1, (mid + half_width), y2,
 					       &perfect, &perfect, 0.0) ;
 
@@ -1739,7 +1739,7 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
 		      else
 			box_colour = &perfect ;
 
-		      background = zMapDrawBox(FOO_CANVAS_ITEM(item->parent),
+		      background = zMapDrawBox(FOO_CANVAS_GROUP(item->parent),
 					       (mid - half_width), prev_y2, (mid + half_width), curr_y1,
 					       box_colour, box_colour, 0.0) ;
 

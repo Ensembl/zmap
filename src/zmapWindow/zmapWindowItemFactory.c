@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 12 14:12 2006 (edgrif)
+ * Last edited: Dec 15 07:33 2006 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.13 2006-12-13 13:29:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.14 2006-12-15 09:20:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -774,7 +774,7 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
     {
       zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
 
-      feature_item = zMapDrawBox(FOO_CANVAS_ITEM(parent),
+      feature_item = zMapDrawBox(parent,
 				 x1, y1, x2, y2,
 				 outline, background, line_width) ;
     }
