@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec 13 10:57 2006 (edgrif)
+ * Last edited: Dec 15 09:33 2006 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.161 2006-12-13 13:43:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.162 2006-12-15 11:37:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,7 @@
 #include <glib.h>
 #include <gdk/gdkkeysyms.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapConfig.h>
 #include <zmapWindow_P.h>
@@ -145,6 +146,7 @@ static void getMaxBounds(gpointer data, gpointer user_data) ;
 
 static void jumpFeature(ZMapWindow window, guint keyval) ;
 static void jumpColumn(ZMapWindow window, guint keyval) ;
+static void swapColumns(ZMapWindow window, guint keyval);
 
 
 
@@ -2902,6 +2904,14 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	  break ;
 	}
+      if(key_event->state & GDK_CONTROL_MASK)
+        {
+	  if (key_event->keyval == GDK_Left || key_event->keyval == GDK_Right)
+            {
+              swapColumns(window, key_event->keyval);
+            }
+          break;
+        }
     case GDK_Page_Up:
     case GDK_Page_Down:
     case GDK_Home:
@@ -2934,6 +2944,20 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       reversecomp ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+    case GDK_h:
+      {
+#ifdef RDS_DONT_INCLUDE
+        /* Hide column */
+        FooCanvasGroup *focus_column ;
+
+	if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+	  {
+            zmapWindowColumnHide(focus_column);
+            /* Need to move columns now... */
+          }
+#endif
+        break;
+      }
     case GDK_b:
     case GDK_B:
       {
@@ -3292,6 +3316,97 @@ static void jumpFeature(ZMapWindow window, guint keyval)
   return ;
 }
 
+static void swapColumns(ZMapWindow window, guint keyval)
+{
+  FooCanvasGroup *focus_column, *column, *other_column, *strand_group_features;
+  FooCanvasItem *col_as_item;
+  ZMapFeatureSet feature_set, other_feature_set;
+  GList *set_name, *other_set_name, *current_list, *other_list;
+  gboolean move_focus = FALSE;
+
+  /* We don't do anything if there is no current focus column, we could take an educated guess and
+   * start with the middle visible column but perhaps not worth it ? */
+  if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+    {
+      column      = zmapWindowContainerGetParent(FOO_CANVAS_ITEM( focus_column )) ;
+      col_as_item = FOO_CANVAS_ITEM(column);
+      feature_set = zmapWindowContainerGetData(column, ITEM_FEATURE_DATA);
+      set_name    = g_list_find(window->feature_set_names, 
+                                  GUINT_TO_POINTER(feature_set->unique_id));
+      strand_group_features = FOO_CANVAS_GROUP(col_as_item->parent);
+      current_list  = g_list_find(strand_group_features->item_list,
+                                  column);
+      other_list  = current_list;
+
+      while (TRUE)
+	{
+	  if (keyval == GDK_Left)
+            other_list = g_list_previous(other_list) ;
+	  else
+            other_list = g_list_next(other_list) ;
+
+	  /* Deal with hidden columns, we need to move over them until we find a visible one or
+	   * we reach the left/right end of the columns. */
+	  if (!other_list)
+	    break ;
+	  else if (zmapWindowItemIsShown((FooCanvasItem *)(other_list->data)))
+	    {
+	      move_focus = TRUE ;
+	      break ;
+	    }
+	}
+
+      if(move_focus && other_list)
+        {
+          int a, b, names_pos, cols_pos;
+          double x1, x2, f1, f2, spacing;
+
+          /* Most of this is just to update lists so the rest of our code works */
+          other_column = FOO_CANVAS_GROUP(other_list->data);
+          other_feature_set = zmapWindowContainerGetData(other_column, ITEM_FEATURE_DATA);
+          
+          other_set_name = g_list_find(window->feature_set_names,
+                                       GUINT_TO_POINTER(other_feature_set->unique_id));
+          
+          a = g_list_position(window->feature_set_names, set_name);
+          b = g_list_position(window->feature_set_names, other_set_name);
+          names_pos = ((a < b) ? (b - a) : (a - b));
+
+          a = g_list_position(strand_group_features->item_list, current_list);
+          b = g_list_position(strand_group_features->item_list, other_list);
+          cols_pos = ((a < b) ? (b - a) : (a - b));
+
+
+          f1 = f2 = 1.0;
+          if(keyval == GDK_Left)
+            {
+              f2 = -1.0;
+              foo_canvas_item_lower(FOO_CANVAS_ITEM(column), cols_pos);
+              zMap_g_list_lower(set_name, names_pos);
+            }
+          else
+            {
+              f1 = -1.0;
+              foo_canvas_item_raise(FOO_CANVAS_ITEM(column), cols_pos);
+              zMap_g_list_raise(set_name, names_pos);
+            }
+
+          spacing  = zmapWindowContainerGetSpacing(zmapWindowContainerGetParent(FOO_CANVAS_ITEM(strand_group_features)));
+          spacing /= 2.0;
+
+          foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(column), &x1, NULL, &x2, NULL);
+          x1 = x2 - x1 + 1.0;
+          foo_canvas_item_move(FOO_CANVAS_ITEM(other_column), f1 * (x1 + spacing), 0.0);
+
+          foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(other_column), &x1, NULL, &x2, NULL);
+          x1 = x2 - x1 + 1.0;
+          foo_canvas_item_move(FOO_CANVAS_ITEM(column), f2 * (x1 + spacing), 0.0);
+
+        }
+    }
+
+  return;
+}
 
 /* Jump to the previous/next column according to which arrow key was pressed. */
 static void jumpColumn(ZMapWindow window, guint keyval)
