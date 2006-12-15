@@ -26,21 +26,23 @@
  * Description: Shows a dialog window allowing user to choose a section
  *              of DNA to export. Initially the DNA section is that
  *              of the feature the user selected and they can add
- *              a +/- extra section to that.
+ *              a +/- extra section to that. The extent of the dna to
+ *              be exported is shown as an overlay box over the feature.
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 13 09:48 2006 (edgrif)
+ * Last edited: Dec 15 08:55 2006 (edgrif)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.1 2006-11-13 09:56:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.2 2006-12-15 09:22:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
+#include <gdk/gdkkeysyms.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapDNA.h>
 #include <zmapWindow_P.h>
-
+#include <zmapWindowContainer.h>
 
 typedef struct
 {
@@ -50,6 +52,17 @@ typedef struct
 
   GtkWidget *toplevel ;
   GtkWidget *dna_entry ;
+  GtkSpinButton *start_spin ;
+  GtkSpinButton *end_spin ;
+  GtkSpinButton *flanking_spin ;
+
+  gboolean dialog_response ;
+  int dialog_result ;
+
+  double item_x1, item_y1, item_x2, item_y2 ;
+  FooCanvasItem *overlay_box ;
+
+  gboolean enter_pressed ;
 
   char *entry_text ;
 
@@ -62,13 +75,17 @@ typedef struct
 } DNASearchDataStruct, *DNASearchData ;
 
 
-
+static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data) ;
 static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void startSpinCB(GtkSpinButton *spinbutton, gpointer user_data) ;
 static void endSpinCB(GtkSpinButton *spinbutton, gpointer user_data) ;
 static void flankingSpinCB(GtkSpinButton *spinbutton, gpointer user_data) ;
+
+static gboolean spinEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static void updateSpinners(DNASearchData dna_data) ;
+
 static GtkWidget *makeMenuBar(DNASearchData dna_data) ;
 static GtkWidget *makeSpinPanel(DNASearchData dna_data,
 				char *title,
@@ -99,16 +116,19 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   DNASearchData dna_data ;
   ZMapFeature feature ;
   ZMapFeatureBlock block ;
-  gint result ;
+  double x1, y1, x2, y2 ;
+  FooCanvasGroup *column_group, *overlay_group ;
+  FooCanvasItem *parent ;
   gint block_start, block_end ;
   char *button_text ;
+  GdkColor overlay_colour ;
+
 
   /* Need to check that there is any dna...n.b. we need the item that was clicked for us to check
    * the dna..... */
   feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
-  block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-						      ZMAPFEATURE_STRUCT_BLOCK) ;
+  block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
 
   if (block->sequence.type == ZMAPSEQUENCE_NONE)
     {
@@ -122,8 +142,9 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   block_start = block->block_to_sequence.q1 ;
   block_end = block->block_to_sequence.q2 ;
 
-  dna_data = g_new0(DNASearchDataStruct, 1) ;
 
+
+  dna_data = g_new0(DNASearchDataStruct, 1) ;
   dna_data->window = window ;
   dna_data->block = block ;
   dna_data->dna_start = feature->x1 ;
@@ -135,15 +156,33 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
     dna_data->revcomp = FALSE ;
     
 
+  /* Draw an overlay box over the feature to show the extent of the dna selected. */
+  column_group = zmapWindowItemGetParentContainer(feature_item) ;
+  overlay_group = zmapWindowContainerGetOverlays(column_group) ;
+
+  parent = zmapWindowItemGetTrueItem(feature_item) ;
+  foo_canvas_item_get_bounds(parent, &x1, &y1, &x2, &y2) ;
+
+  gdk_color_parse("red", &(overlay_colour)) ;
+  dna_data->item_x1 = x1 ;
+  dna_data->item_y1 = y1 ;
+  dna_data->item_x2 = x2 ;
+  dna_data->item_y2 = y2 ;
+  dna_data->overlay_box = zMapDrawBoxOverlay(overlay_group, 
+					     x1, y1, x2, y2,
+					     &overlay_colour) ;
+
+
   /* set up the top level window */
   button_text = zmapWindowGetDialogText(dialog_type) ;
-  flags |= GTK_DIALOG_MODAL ;
   dna_data->toplevel = toplevel = gtk_dialog_new_with_buttons("Choose DNA Extent", NULL, flags,
 							      button_text, GTK_RESPONSE_ACCEPT,
-							      "Close", GTK_RESPONSE_NONE,
+							      "Cancel", GTK_RESPONSE_NONE,
 							      NULL) ;
   g_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		   GTK_SIGNAL_FUNC(destroyCB), (gpointer)dna_data) ;
+  g_signal_connect(GTK_OBJECT(toplevel), "response",
+		   GTK_SIGNAL_FUNC(responseCB), (gpointer)dna_data) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
 
@@ -185,10 +224,10 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
   start_end = makeSpinPanel(dna_data,
 			    "Set Start/End coords for DNA export: ",
-			    "Start: ", block_start, block_end,
-			    feature->x1, GTK_SIGNAL_FUNC(startSpinCB),
-			    "End: ", block_start, block_end,
-			    feature->x2, GTK_SIGNAL_FUNC(endSpinCB),
+			    "Start: ", block_start, dna_data->dna_end,
+			    dna_data->dna_start, GTK_SIGNAL_FUNC(startSpinCB),
+			    "End: ", dna_data->dna_start, block_end,
+			    dna_data->dna_end, GTK_SIGNAL_FUNC(endSpinCB),
 			    "Flanking bases: ", 0, (block_end - 1),
 			    dna_data->dna_flanking, GTK_SIGNAL_FUNC(flankingSpinCB)) ;
   gtk_box_pack_start(GTK_BOX(hbox), start_end, TRUE, TRUE, 0) ;
@@ -197,21 +236,28 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   gtk_widget_show_all(toplevel) ;
 
 
+  /* MAKE THIS A FUNCTION SO WE HAVE OUR OWN NON-BLOCKING VERSION OF gtk_dialog_run() */
   /* block waiting for user to answer dialog. */
-  result = gtk_dialog_run(GTK_DIALOG(toplevel)) ;
-
+  /* We have to do our own event looping here because gtk_dialog_run() makes the dialog modal
+   * which is no good as we need the user to be able to interact with the main zmap window. */
+  dna_data->dialog_response = FALSE ;
+  while (dna_data->dialog_response == FALSE || gtk_events_pending())
+    gtk_main_iteration() ;
 
   /* Now get the dna and return it, note we must get entry text before destroying widgets. */
-  if (result == GTK_RESPONSE_ACCEPT)
+  if (dna_data->dialog_result == GTK_RESPONSE_ACCEPT)
     {
       dna_data->entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(dna_data->dna_entry)) ;
       getDNA(dna_data) ;
       dna = dna_data->dna ;
     }
 
+  /* and finally clear up ! */
   gtk_widget_destroy(toplevel) ;
 
   g_ptr_array_remove(window->dna_windows, (gpointer)toplevel) ;
+
+  gtk_object_destroy(GTK_OBJECT(dna_data->overlay_box)) ;
 
 
   return dna ;
@@ -266,7 +312,7 @@ static GtkWidget *makeSpinPanel(DNASearchData dna_data,
   gtk_container_add (GTK_CONTAINER (frame), topbox) ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_border_width(GTK_CONTAINER(hbox), 0);
+  gtk_container_border_width(GTK_CONTAINER(hbox), 5);
   gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
 
   label = gtk_label_new(spin_label) ;
@@ -295,14 +341,48 @@ static GtkWidget *makeSpinPanel(DNASearchData dna_data,
 
   flanking_spinbox = gtk_spin_button_new_with_range(min3, max3, 1.0) ;
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(flanking_spinbox), init3) ;
-  gtk_signal_connect(GTK_OBJECT(flanking_spinbox), "value-changed",
-		     GTK_SIGNAL_FUNC(func3), (gpointer)dna_data) ;
+  g_signal_connect(GTK_OBJECT(flanking_spinbox), "value-changed",
+		   G_CALLBACK(func3), (gpointer)dna_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), flanking_spinbox, FALSE, FALSE, 0) ;
+
+
+
+  g_signal_connect(GTK_OBJECT(start_spinbox), "event",
+		   GTK_SIGNAL_FUNC(spinEventCB), (gpointer)dna_data) ;
+  g_signal_connect(GTK_OBJECT(end_spinbox), "event",
+		   GTK_SIGNAL_FUNC(spinEventCB), (gpointer)dna_data) ;
+  g_signal_connect(GTK_OBJECT(flanking_spinbox), "event",
+		   GTK_SIGNAL_FUNC(spinEventCB), (gpointer)dna_data) ;
+
+
+
+  dna_data->start_spin = GTK_SPIN_BUTTON(start_spinbox) ;
+  dna_data->end_spin = GTK_SPIN_BUTTON(end_spinbox) ;
+  dna_data->flanking_spin = GTK_SPIN_BUTTON(flanking_spinbox) ;
 
 
   return frame ;
 }
 
+
+
+static gboolean checkCoords(DNASearchData dna_data)
+{
+  gboolean result = FALSE ;
+  int start, end ;
+
+  start = dna_data->dna_start - dna_data->dna_flanking ;
+  end = dna_data->dna_end + dna_data->dna_flanking ;
+
+  if (start <= end
+      && (start >= dna_data->block->block_to_sequence.q1
+	  && start <= dna_data->block->block_to_sequence.q2)
+      && (end >= dna_data->block->block_to_sequence.q1
+	  && end <= dna_data->block->block_to_sequence.q2))
+    result = TRUE ;
+
+  return result ;
+}
 
 
 static void getDNA(DNASearchData dna_data)
@@ -311,6 +391,9 @@ static void getDNA(DNASearchData dna_data)
   char *err_text = NULL ;
   char *dna ;
   int start, end, dna_len ;
+
+  if (!checkCoords(dna_data))
+    return ;
 
 
   /* Convert to relative coords.... */
@@ -346,6 +429,7 @@ static void getDNA(DNASearchData dna_data)
 
   if (err_text)
     g_free(err_text) ;
+
   g_free(feature_txt) ;
 
   return ;
@@ -361,9 +445,22 @@ static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
     "The ZMap DNA Export Window allows you to export a section of DNA from a block.\n"
     "The fields are filled in with the name and start/end coords of the feature you\n"
     "selected but you can type in your own values if you wish to change any of these fields.\n"
-    "You can specify an flanking sequence length." ;
+    "You can also specify a flanking sequence length which will be added to either end of the\n."
+    "feature coordinates to extend the dna sequence to be exported." ;
 
   zMapGUIShowText(title, help_text, FALSE) ;
+
+  return ;
+}
+
+
+/* Record the response from the dialog so we can detect it in our event hanlding loop. */
+static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data)
+{
+  DNASearchData dna_data = (DNASearchData)user_data ;
+
+  dna_data->dialog_result = arg1 ;
+  dna_data->dialog_response = TRUE ;
 
   return ;
 }
@@ -380,6 +477,7 @@ static void requestDestroyCB(gpointer cb_data, guint callback_action, GtkWidget 
 }
 
 
+/* Called once the widget receives a destroy signal. */
 static void destroyCB(GtkWidget *widget, gpointer cb_data)
 {
   DNASearchData dna_data = (DNASearchData)cb_data ;
@@ -390,11 +488,42 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+
+/* 
+ * You should read this before you alter these routines.....
+ * 
+ * Event and value handling is slightly complicated with the spinners.
+ * There seems to be no recognised way of asking to be called once the
+ * user stops spinning (releases the mouse pointer) so you have to fake
+ * it by catching the button release yourself.
+ * 
+ * Handling of when the user types in a value and presses the Return
+ * key is also difficult, you can't tell from the normal spinner callback
+ * that Return was pressed. If you use an event handler to catch the key press it's
+ * called _before_ the spinner has updated its data so the event
+ * handler does not see the value the user typed in. Hence the key
+ * press handler has to signal to the spin handler that its been called
+ * and then the spin handler can be made to call our update routine.
+ * 
+ * Note also that the spin handlers are not called if the new value in the
+ * spinner is the same as the old one, sounds crazy but this is _exactly_
+ * what happens when the user enters an out of range value and the spinner
+ * itself then resets the value. Do this twice in a row and the new value is the same
+ * as the old one. Its confusing...sigh...
+ * 
+ */
 static void startSpinCB(GtkSpinButton *spin_button, gpointer user_data)
 {
   DNASearchData dna_data = (DNASearchData)user_data ;
 
   dna_data->dna_start = gtk_spin_button_get_value_as_int(spin_button) ;
+
+  if (dna_data->enter_pressed == TRUE)
+    {
+      dna_data->enter_pressed = FALSE ;
+
+      updateSpinners(dna_data) ;
+    }
 
   return ;
 }
@@ -405,6 +534,14 @@ static void endSpinCB(GtkSpinButton *spin_button, gpointer user_data)
 
   dna_data->dna_end = gtk_spin_button_get_value_as_int(spin_button) ;
 
+  if (dna_data->enter_pressed == TRUE)
+    {
+      dna_data->enter_pressed = FALSE ;
+
+      updateSpinners(dna_data) ;
+    }
+
+
   return ;
 }
 
@@ -414,6 +551,106 @@ static void flankingSpinCB(GtkSpinButton *spin_button, gpointer user_data)
   DNASearchData dna_data = (DNASearchData)user_data ;
 
   dna_data->dna_flanking = gtk_spin_button_get_value_as_int(spin_button) ;
+
+  if (dna_data->enter_pressed == TRUE)
+    {
+      dna_data->enter_pressed = FALSE ;
+
+      updateSpinners(dna_data) ;
+    }
+
+  return ;
+}
+
+/* Detects either that the user was using the mouse to update the spinner values and has finished
+ * (button release) or that they typed in a value and pressed the Return key. If they pressed
+ * the return key we simply flag that this has happened because the spinner callback will
+ * be called next and its not until this happens that the spinner will have been updated with the new
+ * spinner value. */
+static gboolean spinEventCB(GtkWidget *widget, GdkEventClient *event, gpointer user_data)
+{
+  gboolean event_handled = FALSE ;			    /* FALSE means other handlers run. */
+  DNASearchData dna_data = (DNASearchData)user_data ;
+
+  switch (event->type)
+    {
+    case GDK_KEY_PRESS:
+      {
+	GdkEventKey *key_event = (GdkEventKey *)event ;
+
+	if (key_event->keyval == GDK_Return)
+	  {
+	    dna_data->enter_pressed = TRUE ;
+	  }
+
+	break ;
+      }
+    case GDK_BUTTON_RELEASE:
+      {
+	updateSpinners(dna_data) ;
+
+        break;
+      }
+    default:
+      {
+	break ;
+      }
+    }
+
+  return event_handled ;
+}
+
+
+/* This function is called every time the user _finishes_ updating a spinner, it is not
+ * called while the spinner is being spun. This is deliberate because the code as well
+ * as keeping spinner values consistent with each other, also draws the extent of the
+ * sequence selected by the user on the zmap window, we want this only to happen when
+ * the users has set their final values.
+ * 
+ * We know all we need to know to keep all the spinners logically consistent with each other,
+ * this is done in this routine and ensures that we don't end up coords outside the block or
+ * any other pathological values. */
+static void updateSpinners(DNASearchData dna_data)
+{
+  int start, end, flanking, start_flank, end_flank, flanking_max ;
+
+  /* Get current spin values. */
+  start = gtk_spin_button_get_value_as_int(dna_data->start_spin) ;
+  end = gtk_spin_button_get_value_as_int(dna_data->end_spin) ;
+  flanking = gtk_spin_button_get_value_as_int(dna_data->flanking_spin) ;
+
+
+  /* Set the ranges for all spin buttons according to current values, this causes the spinners
+   * to reset any wayward values entered by the user. */
+  gtk_spin_button_set_range(dna_data->start_spin,
+			    (double)(dna_data->block->block_to_sequence.q1),
+			    (double)end) ;
+
+  gtk_spin_button_set_range(dna_data->end_spin,
+			    (double)start,
+			    (double)(dna_data->block->block_to_sequence.q2)) ;
+
+  start_flank = (start - dna_data->block->block_to_sequence.q1 + 1) ;
+  end_flank = (end - dna_data->block->block_to_sequence.q1 + 1) ;
+  if (start_flank < end_flank)
+    flanking_max = start_flank ;
+  else
+    flanking_max = end_flank ;
+  gtk_spin_button_set_range(dna_data->flanking_spin,
+			    0.0,
+			    (double)(flanking_max - 1)) ;
+
+  /* Now get the new values which should be completely logically consistent. */
+  dna_data->dna_start =  gtk_spin_button_get_value_as_int(dna_data->start_spin) ;
+  dna_data->dna_end = gtk_spin_button_get_value_as_int(dna_data->end_spin) ;
+  dna_data->dna_flanking = gtk_spin_button_get_value_as_int(dna_data->flanking_spin) ;
+
+  /* Show the extent of the dna to be exported on the zmap window. */
+  zMapDrawBoxChangeSize(dna_data->overlay_box,
+			dna_data->item_x1,
+			dna_data->dna_start - dna_data->dna_flanking,
+			dna_data->item_x2,
+			dna_data->dna_end + dna_data->dna_flanking) ;
 
   return ;
 }
