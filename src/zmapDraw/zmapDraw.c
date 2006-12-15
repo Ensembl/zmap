@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Dec 15 07:33 2006 (edgrif)
+ * Last edited: Dec 15 09:29 2006 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.55 2006-12-15 09:18:11 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.56 2006-12-15 09:43:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -137,7 +137,7 @@ FooCanvasItem *zMapDrawHighlightableText(FooCanvasGroup *group,
     {
       double x1 = 0.0, y1 = 0.0, x2 = 0.0, y2 = 0.0;
       foo_canvas_item_get_bounds(text, &x1, &y1, &x2, &y2);
-      if((highlight_item = zMapDrawSolidBox(group, x1, y1, x2, y2, highlight)))
+      if((highlight_item = zMapDrawBoxSolid(group, x1, y1, x2, y2, highlight)))
         {
           foo_canvas_item_lower(highlight_item, 1);
           foo_canvas_item_hide(highlight_item);
@@ -176,7 +176,7 @@ FooCanvasItem *zMapDrawBox(FooCanvasGroup *group,
 }
 
 /* As above but we do not set outline.... */
-FooCanvasItem *zMapDrawSolidBox(FooCanvasGroup *group, 
+FooCanvasItem *zMapDrawBoxSolid(FooCanvasGroup *group, 
 				double x1, double y1, double x2, double y2, 
 				GdkColor *fill_colour)
 {

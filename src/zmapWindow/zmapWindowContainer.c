@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Dec 15 07:32 2006 (edgrif)
+ * Last edited: Dec 15 09:42 2006 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.25 2006-12-15 09:19:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.26 2006-12-15 09:43:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -263,7 +263,7 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 
   /* WE SHOULD DO THIS FIRST SO ITS AUTOMATICALLY AT THE BOTTOM.... */
   /* We don't use the border colour at the moment but we may wish to later.... */
-  container_background = zMapDrawSolidBox(container_parent,
+  container_background = zMapDrawBoxSolid(container_parent,
 					  0.0, 0.0, 0.0, 0.0, background_fill_colour) ;
   g_object_set_data(G_OBJECT(container_background), CONTAINER_TYPE_KEY,
 		    GINT_TO_POINTER(CONTAINER_BACKGROUND)) ;
