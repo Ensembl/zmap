@@ -239,7 +239,7 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
   </tr>
 
   <tr>
-    <th colspan=3>Shift + mouse button click</th>
+    <th colspan=3>Cntl + Alt + mouse button click</th>
   </tr>
   <tr>
     <td>horizontal ruler with sequence position displayed</td>
