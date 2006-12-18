@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 15 09:23 2006 (rds)
+ * Last edited: Dec 18 08:50 2006 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.15 2006-12-15 09:23:19 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.16 2006-12-18 11:40:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1018,6 +1018,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
   int i ;
   double offset ;
 
+
   zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
   line_width = factory->line_width;
 
@@ -1147,8 +1148,8 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 
       if (feature->feature.transcript.exons)
 	{
-          GdkColor *exon_fill = background, 
-            *exon_outline = outline;
+          GdkColor *exon_fill = background, *exon_outline = outline;
+
 	  for (i = 0; i < feature->feature.transcript.exons->len; i++)
 	    {
 	      ZMapSpan exon_span ;
@@ -1161,7 +1162,8 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
               top    = points_inout[1] = exon_span->x1;
               bottom = points_inout[3] = exon_span->x2;
 
-              if((factory->user_funcs->feature_size_request)(feature, &limits[0], &points_inout[0], factory->user_data))
+              if ((factory->user_funcs->feature_size_request)(feature, &limits[0],
+							      &points_inout[0], factory->user_data))
                 continue;
 
               top    = points_inout[1];
@@ -1169,32 +1171,33 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 
               zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
 
-
               exon_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-	      if (has_cds)
-		exon_data->subpart = ZMAPFEATURE_SUBPART_EXON_CDS ;
-	      else
-		exon_data->subpart = ZMAPFEATURE_SUBPART_EXON ;
               exon_data->start = exon_span->x1;
 	      exon_data->end = exon_span->x2;
 
-              /* if cds boundary is within this exon we use the
-               * foreground colour, else it's the background. 
-               * If background is null though outline will need
-               * to be set to what background would be and 
+	      /* If any of the cds is in this exon we colour the whole exon as a cds and then
+	       * overlay non-cds parts. For the cds part we use the foreground colour, else it's the background. 
+               * If background is null though outline will need to be set to what background would be and 
                * background should then = NULL */
-              if (has_cds && ((cds_start > bottom) || (cds_end < top)))
-                {
-                  if((exon_fill = background) == NULL)
-                    exon_outline = outline;
-                }
-              else if (has_cds)
-                { 
-                  if ((exon_fill = background) == NULL)
-                    exon_outline = foreground;
-                  else
-                    exon_fill = foreground;
-                }
+	      exon_data->subpart = ZMAPFEATURE_SUBPART_EXON ;
+              if (has_cds)
+		{
+		  if ((cds_start > bottom) || (cds_end < top))
+		    {
+		      if((exon_fill = background) == NULL)
+			exon_outline = outline;
+		    }
+		  else
+		    {
+		      /* At least some part of the exon is CDS... */
+		      exon_data->subpart = ZMAPFEATURE_SUBPART_EXON_CDS ;
+
+		      if ((exon_fill = background) == NULL)
+			exon_outline = foreground;
+		      else
+			exon_fill = foreground;
+		    }
+		}
               else if ((exon_fill = background) == NULL)
                 {
                   exon_outline = outline;
