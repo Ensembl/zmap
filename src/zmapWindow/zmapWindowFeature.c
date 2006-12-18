@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 13 15:10 2006 (rds)
+ * Last edited: Dec 18 10:58 2006 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.73 2006-12-13 15:16:52 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.74 2006-12-18 11:42:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2099,8 +2099,19 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		 * the root handler. */
 		if (but_event->button == 1 || but_event->button == 3)
 		  {
+		    FooCanvasItem *highlight_item ;
+
+		    if (zMapGUITestModifiers(but_event, GDK_SHIFT_MASK))
+		      {
+			highlight_item = real_item ;
+		      }
+		    else
+		      {
+			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
+		      }
+
 		    /* Pass information about the object clicked on back to the application. */
-		    zMapWindowUpdateInfoPanel(window, feature, real_item) ;
+		    zMapWindowUpdateInfoPanel(window, feature, real_item, highlight_item) ;
                     zmapWindowFeatureHighlightDNA(window, feature, real_item);
 
 		    if (but_event->button == 3)
