@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Oct 11 09:20 2006 (rds)
+ * Last edited: Dec 18 11:10 2006 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.16 2006-11-08 09:23:26 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.17 2006-12-18 11:36:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -122,6 +122,28 @@ typedef struct
   GQuark block_unique_id;
   gpointer original_data;
 }ZMapGUIMenuSubMenuDataStruct, *ZMapGUIMenuSubMenuData;
+
+
+
+/* A couple of macros to correctly test keyboard modifiers for events that include them:
+ * 
+ *       zMapGUITestModifiers() will return TRUE even if other modifiers are on (e.g. caps lock).
+ *   zMapGUITestModifiersOnly() the second will return TRUE _only_ if no other modifiers are on.
+ * 
+ * Use them like this:
+ * 
+ * if (zMapGUITestModifiers(but_event, (GDK_CONTROL_MASK | GDK_MOD1_MASK)))
+ *   {
+ *      doSomething() ;
+ *   }
+ *
+ *  */
+#define zMapGUITestModifiers(EVENT, MODS) \
+  (((EVENT)->state & (MODS)) == (MODS))
+
+#define zMapGUITestModifiersOnly(EVENT, MODS) \
+  (((EVENT)->state | (MODS)) == (MODS))
+
 
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
