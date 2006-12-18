@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec 15 09:33 2006 (rds)
+ * Last edited: Dec 18 11:45 2006 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.162 2006-12-15 11:37:23 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.163 2006-12-18 11:45:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,11 +118,11 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
 static gboolean getConfiguration(ZMapWindow window) ;
 static void sendClientEvent(ZMapWindow window, FeatureSets) ;
 
-static void moveWindow(ZMapWindow window, guint state, guint keyval) ;
-static void scrollWindow(ZMapWindow window, guint state, guint keyval) ;
+static void moveWindow(ZMapWindow window, GdkEventKey *key_event) ;
+static void scrollWindow(ZMapWindow window, GdkEventKey *key_event) ;
 static void changeRegion(ZMapWindow window, guint keyval) ;
 
-static void zoomWindow(ZMapWindow window, guint state, guint keyval) ;
+static void zoomWindow(ZMapWindow window, GdkEventKey *key_event) ;
 
 static void printGroup(FooCanvasGroup *group, int indent) ;
 
@@ -500,7 +500,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
        * originally highlighted feature...but only if its still visible if it ends up on the
        * reverse strand...for now we just blank it.... */
-      zMapWindowUpdateInfoPanel(window, NULL, NULL) ;
+      zMapWindowUpdateInfoPanel(window, NULL, NULL, NULL) ;
 
       adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
@@ -1010,10 +1010,18 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
 
 
 /* Sets up data that is passed back to our caller to give them information about the feature
- * the user has selected, perhaps by clicking on it in the zmap window. */
-
-/* To Reset the panel pass in a NULL pointer as feature_arg */
-void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCanvasItem *item)
+ * the user has selected, perhaps by clicking on it in the zmap window.
+ * 
+ * highlight_item allows the caller to specify perhaps a child or parent of say a transcript
+ * to be highlighted instead of the item originally clicked on. This function passes this
+ * item back to the caller which then tries to highlight it in all windows. If its NULL
+ * then the original item is passed back instead.
+ * 
+ * To Reset the panel pass in a NULL pointer as feature_arg
+ * 
+ *  */
+void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
+			       FooCanvasItem *item, FooCanvasItem *highlight_item)
 {
   ZMapWindowItemFeatureType type ;
   ZMapWindowItemFeature item_data ;
@@ -1127,8 +1135,12 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg, FooCa
                                           feature_start,
                                           feature_end,
                                           feature->x2 - feature->x1 + 1);
-  select.item = item ;
-  
+
+  if (highlight_item)
+    select.highlight_item = highlight_item ;
+  else
+    select.highlight_item = item ;
+
   /* We've set up the select data so now callback to the layer above with this data. */
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
@@ -1708,13 +1720,12 @@ static void printGroup(FooCanvasGroup *group, int indent)
 
 /* Moves can either be of the scroll bar within the scrolled window or of where the whole
  * scrolled region is within the canvas. */
-static void moveWindow(ZMapWindow window, guint state, guint keyval)
+static void moveWindow(ZMapWindow window, GdkEventKey *key_event)
 {
-
-  if ((state & GDK_CONTROL_MASK) && (state & GDK_MOD1_MASK))
-    changeRegion(window, keyval) ;
+  if (zMapGUITestModifiers(key_event, (GDK_CONTROL_MASK | GDK_MOD1_MASK)))
+    changeRegion(window, key_event->keyval) ;
   else
-    scrollWindow(window, state, keyval) ;
+    scrollWindow(window, key_event) ;
 
   return ;
 }
@@ -1723,11 +1734,15 @@ static void moveWindow(ZMapWindow window, guint state, guint keyval)
 
 /* Move the canvas within its current scroll region, i.e. this is exactly like the user scrolling
  * the canvas via the scrollbars. */
-static void scrollWindow(ZMapWindow window, guint state, guint keyval)
+static void scrollWindow(ZMapWindow window, GdkEventKey *key_event)
 {
   enum {OVERLAP_FACTOR = 10} ;
   int x_pos, y_pos ;
   int incr ;
+  guint state, keyval ;
+
+  state = key_event->state ;
+  keyval = key_event->keyval ;
 
   /* Retrieve current scroll position. */
   foo_canvas_get_scroll_offsets(window->canvas, &x_pos, &y_pos) ;
@@ -1745,7 +1760,7 @@ static void scrollWindow(ZMapWindow window, guint state, guint keyval)
 
 	if (keyval == GDK_Home)
 	  {
-	    if (state & GDK_CONTROL_MASK)
+	    if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
 	      y_pos = v_adjust->lower ;
 	    else
 	      x_pos = h_adjust->lower ;
@@ -1753,7 +1768,7 @@ static void scrollWindow(ZMapWindow window, guint state, guint keyval)
 
 	if (keyval == GDK_End)
 	  {
-	    if (state & GDK_CONTROL_MASK)
+	    if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
 	      y_pos = v_adjust->upper ;
 	    else
 	      x_pos = h_adjust->upper ;
@@ -1768,7 +1783,7 @@ static void scrollWindow(ZMapWindow window, guint state, guint keyval)
 
 	adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
-	if (state & GDK_CONTROL_MASK)
+	if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
 	  incr = adjust->page_size - (adjust->page_size / OVERLAP_FACTOR) ;
 	else
 	  incr = (adjust->page_size - (adjust->page_size / OVERLAP_FACTOR)) / 2 ;
@@ -1790,7 +1805,7 @@ static void scrollWindow(ZMapWindow window, guint state, guint keyval)
 	foo_canvas_c2w(window->canvas, x_pos, y_pos, &x_world, &y_world) ;
 
 	/* work out where we will be after we've scrolled the right amount. */
-	if (state & GDK_CONTROL_MASK)
+	if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
 	  new_y = 1000 ;				    /* window->major_scale_units */
 	else
 	  new_y = 100 ;					    /* window->minor_scale_units */
@@ -1826,21 +1841,21 @@ static void scrollWindow(ZMapWindow window, guint state, guint keyval)
 
 
 /* Zooms the window a little or a lot. */
-static void zoomWindow(ZMapWindow window, guint state, guint keyval)
+static void zoomWindow(ZMapWindow window, GdkEventKey *key_event)
 {
   double zoom_factor = 0.0 ;
 
-  switch (keyval)
+  switch (key_event->keyval)
     {
     case GDK_plus:
     case GDK_equal:
-      if (state & GDK_CONTROL_MASK)
+      if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
 	zoom_factor = 2.0 ;
       else
 	zoom_factor = 1.1 ;
       break ;
     case GDK_minus:
-      if (state & GDK_CONTROL_MASK)
+      if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
 	zoom_factor = 0.5 ;
       else
 	zoom_factor = 0.909090909 ;
@@ -2249,7 +2264,13 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
   return handled;
 }
 
-/* This gets run _BEFORE_ any of the canvas item handlers which is good because we can use it
+
+
+/* 
+ * Be careful when adding event handlers here, you could override a canvas item event
+ * handler.
+ * 
+ * This gets run _BEFORE_ any of the canvas item handlers which is good because we can use it
  * handle more general events such as "click to focus" etc. */
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
 {
@@ -2310,8 +2331,11 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
                                       * happen. Unless we _ARE_
                                       * handling here! 
                                       */
-              if(but_event->state & GDK_SHIFT_MASK)
-                {
+
+	      if (zMapGUITestModifiers(but_event, (GDK_CONTROL_MASK | GDK_MOD1_MASK)))
+		{
+		  /* Show a ruler and our exact position. */
+
                   guide = TRUE;
                   if(!window->horizon_guide_line)
                     window->horizon_guide_line = zMapDrawHorizonCreate(window->canvas);
@@ -2320,13 +2344,16 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
                   zMapDrawHorizonReposition(window->horizon_guide_line, origin_y);
                   event_handled = TRUE ; /* We _ARE_ handling */
                 }
-              else if(but_event->state & GDK_CONTROL_MASK)
+              else if (zMapGUITestModifiers(but_event, GDK_CONTROL_MASK))
                 {
-                  dragging = TRUE;  /* we can be dragging */
+		  /* Show a rubber band for zooming/marking. */
+
+                  dragging = TRUE;			    /* we can be dragging */
                   if(!window->rubberband)
                     window->rubberband = zMapDrawRubberbandCreate(window->canvas);
-                  event_handled = TRUE ; /* We _ARE_ handling */
+                  event_handled = TRUE ;		    /* We _ARE_ handling */
                 }
+
 	      break ;
 	    }
 	  case 2:
@@ -2377,7 +2404,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	GdkEventMotion *mot_event = (GdkEventMotion *)event ;
         event_handled = FALSE ;
 
-        if(!(mot_event->state & GDK_BUTTON1_MASK))
+        if (!(zMapGUITestModifiers(mot_event, GDK_BUTTON1_MASK)))
           break;
 
         /* work out the world of where we are */
@@ -2894,7 +2921,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_Left:
     case GDK_Right:
       /* Note that we fall through if shift mask is not on.... */
-      if (key_event->state & GDK_SHIFT_MASK)
+      if (zMapGUITestModifiers(key_event, GDK_SHIFT_MASK))
 	{
 	  /* Trial code to shift columns and features via cursor keys..... */
 	  if (key_event->keyval == GDK_Up || key_event->keyval == GDK_Down)
@@ -2904,7 +2931,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	  break ;
 	}
-      if(key_event->state & GDK_CONTROL_MASK)
+      if(zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
         {
 	  if (key_event->keyval == GDK_Left || key_event->keyval == GDK_Right)
             {
@@ -2917,7 +2944,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_Home:
     case GDK_End:
       {
-	moveWindow(window, key_event->state, key_event->keyval) ;
+	moveWindow(window, key_event) ;
 
 	event_handled = TRUE ;
 	break ;
@@ -2926,7 +2953,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_minus:
     case GDK_equal:
       {
-	zoomWindow(window, key_event->state, key_event->keyval) ;
+	zoomWindow(window, key_event) ;
 
 	event_handled = TRUE ;
 	break ;
