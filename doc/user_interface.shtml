@@ -176,9 +176,10 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
   </tr>
   <tr><td><b>+</b> (or =), <b>-</b></td>         <td>zoom in/out by 10%</td></tr>
   <tr><td><b>Cntl +</b> (or =), <b>Cntl -</b></td>    <td>zoom in/out by 50%</td></tr>
-  <tr><td><b>up-arrow</b>, <b>down-arrow</b></td>    <td>scroll up/down a bit</td></tr>
-  <tr><td><b>Cntl up-arrow</b>, <b>Cntl down-arrow</b></td>    <td>scroll up/down a bit</td></tr>
-  <tr><td><b>left-arrow</b>, <b>right-arrow</b></td>    <td>scroll left/right a bit</td></tr>
+  <tr><td><b>up-arrow</b>, <b>down-arrow</b></td>    <td>scroll up/down slowly bit</td></tr>
+  <tr><td><b>Cntl up-arrow</b>, <b>Cntl down-arrow</b></td>    <td>scroll up/down more quickly</td></tr>
+  <tr><td><b>left-arrow</b>, <b>right-arrow</b></td>    <td>scroll left/right slowly</td></tr>
+  <tr><td><b>Cntl left-arrow</b>, <b>Cntl right-arrow</b></td>    <td>scroll left/right more quickly</td></tr>
   <tr><td><b>page-up</b>, <b>page-down</b></td>    <td>up/down by half a "page"</td></tr>
   <tr><td><b>Cntl page-up</b>, <b>Cntl page-down</b></td>    <td>up/down by a whole "page"</td></tr>
   <tr><td><b>Home</b>, <b>End</b></td>    <td>Go to far left or right</td></tr>
