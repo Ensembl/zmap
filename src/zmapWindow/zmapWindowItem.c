@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 15 11:51 2006 (rds)
+ * Last edited: Dec 18 07:37 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.57 2006-12-15 11:51:41 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.58 2006-12-18 11:41:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1255,7 +1255,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
   /* Report the selected object to the layer above us. */
   if(window->caller_cbs->select != NULL)
     {
-      zMapWindowUpdateInfoPanel(window, feature, item) ;
+      zMapWindowUpdateInfoPanel(window, feature, item, NULL) ;
     }
 
   result = TRUE ;
@@ -1554,7 +1554,7 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
 	}
 
-      zMapWindowUpdateInfoPanel(window, modFeature, item);      
+      zMapWindowUpdateInfoPanel(window, modFeature, item, NULL);      
     }
   return;
 }
