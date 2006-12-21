@@ -31,9 +31,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 15 08:55 2006 (edgrif)
+ * Last edited: Dec 21 16:17 2006 (edgrif)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.2 2006-12-15 09:22:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.3 2006-12-21 16:19:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,9 +56,6 @@ typedef struct
   GtkSpinButton *end_spin ;
   GtkSpinButton *flanking_spin ;
 
-  gboolean dialog_response ;
-  int dialog_result ;
-
   double item_x1, item_y1, item_x2, item_y2 ;
   FooCanvasItem *overlay_box ;
 
@@ -75,7 +72,7 @@ typedef struct
 } DNASearchDataStruct, *DNASearchData ;
 
 
-static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data) ;
+
 static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
@@ -122,6 +119,7 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   gint block_start, block_end ;
   char *button_text ;
   GdkColor overlay_colour ;
+  gint dialog_result ;
 
 
   /* Need to check that there is any dna...n.b. we need the item that was clicked for us to check
@@ -181,8 +179,6 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
 							      NULL) ;
   g_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		   GTK_SIGNAL_FUNC(destroyCB), (gpointer)dna_data) ;
-  g_signal_connect(GTK_OBJECT(toplevel), "response",
-		   GTK_SIGNAL_FUNC(responseCB), (gpointer)dna_data) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
 
@@ -232,20 +228,14 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
 			    dna_data->dna_flanking, GTK_SIGNAL_FUNC(flankingSpinCB)) ;
   gtk_box_pack_start(GTK_BOX(hbox), start_end, TRUE, TRUE, 0) ;
 
-
   gtk_widget_show_all(toplevel) ;
 
-
-  /* MAKE THIS A FUNCTION SO WE HAVE OUR OWN NON-BLOCKING VERSION OF gtk_dialog_run() */
-  /* block waiting for user to answer dialog. */
-  /* We have to do our own event looping here because gtk_dialog_run() makes the dialog modal
-   * which is no good as we need the user to be able to interact with the main zmap window. */
-  dna_data->dialog_response = FALSE ;
-  while (dna_data->dialog_response == FALSE || gtk_events_pending())
-    gtk_main_iteration() ;
+  /* Run dialog in non-blocking mode so user can interact with the zmap window and even open
+   * another dna window. */
+  dialog_result = my_gtk_run_dialog_nonmodal(toplevel) ;
 
   /* Now get the dna and return it, note we must get entry text before destroying widgets. */
-  if (dna_data->dialog_result == GTK_RESPONSE_ACCEPT)
+  if (dialog_result == GTK_RESPONSE_ACCEPT)
     {
       dna_data->entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(dna_data->dna_entry)) ;
       getDNA(dna_data) ;
@@ -449,18 +439,6 @@ static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
     "feature coordinates to extend the dna sequence to be exported." ;
 
   zMapGUIShowText(title, help_text, FALSE) ;
-
-  return ;
-}
-
-
-/* Record the response from the dialog so we can detect it in our event hanlding loop. */
-static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data)
-{
-  DNASearchData dna_data = (DNASearchData)user_data ;
-
-  dna_data->dialog_result = arg1 ;
-  dna_data->dialog_response = TRUE ;
 
   return ;
 }
