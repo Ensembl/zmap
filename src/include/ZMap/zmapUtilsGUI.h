@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Dec 18 11:10 2006 (edgrif)
+ * Last edited: Dec 21 15:58 2006 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.17 2006-12-18 11:36:00 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.18 2006-12-21 16:18:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -145,6 +145,9 @@ typedef struct
   (((EVENT)->state | (MODS)) == (MODS))
 
 
+
+
+gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
 void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,

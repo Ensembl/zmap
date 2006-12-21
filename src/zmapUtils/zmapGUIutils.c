@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Dec 18 11:09 2006 (edgrif)
+ * Last edited: Dec 21 15:56 2006 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.24 2006-12-18 11:36:29 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.25 2006-12-21 16:18:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,8 +56,10 @@ static void store_filename(GtkWidget *widget, gpointer user_data) ;
 static void killFileDialog(GtkWidget *widget, gpointer user_data) ;
 /* ONLY NEEDED FOR OLD STYLE FILE SELECTOR, REMOVE WHEN WE CAN USE THE NEW CODE... */
 
-
 static void butClick(GtkButton *button, gpointer user_data) ;
+
+static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data) ;
+
 
 
 /*! @defgroup zmapguiutils   zMapGUI: set of utility functions for use in a GUI.
@@ -70,6 +72,46 @@ static void butClick(GtkButton *button, gpointer user_data) ;
  * (modal and not modal), text in a text widget, find fonts and font sizes etc.
  *
  *  */
+
+
+
+
+/*!
+ * Gtk provides a function called  gtk_dialog_run() which blocks until the user presses
+ * a button on the dialot, the function returns an int indicating which button was 
+ * pressed. The problem is though that this function blocks any user interaction with
+ * the rest of the application. This function is an attempt to get round this by
+ * continuing to service events while waiting for a response.
+ * 
+ * The code _relies_ on the response never being zero, no GTK predefined responses
+ * have this value and you should not use this value either (see gtk web page for dialogs).
+ * 
+ *
+ * @param toplevel     This must be the dialog widget itself.
+ * @return             an integer which corresponds to the button pressed.
+ *  */
+gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel)
+{
+  gint result = 0 ;
+  int *response_ptr ;
+
+  zMapAssert(GTK_IS_DIALOG(toplevel)) ;
+
+  response_ptr = g_new0(gint, 1) ;
+  *response_ptr = 0 ;
+
+  g_signal_connect(GTK_OBJECT(toplevel), "response",
+		   GTK_SIGNAL_FUNC(responseCB), (gpointer)response_ptr) ;
+
+  while (*response_ptr == 0 || gtk_events_pending())
+    gtk_main_iteration() ;
+
+  result = *response_ptr ;
+
+  g_free(response_ptr) ;
+
+  return result ;
+}
 
 
 
@@ -1019,4 +1061,17 @@ static void killFileDialog(GtkWidget *widget, gpointer user_data)
   return ;
 }
 
+
+
+/* Record the response from the dialog so we can detect it in our event hanlding loop. */
+static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data)
+{
+  int *response_ptr = (int *)user_data ;
+
+  zMapAssert(arg1 != 0) ;				    /* It will never exit if this is true... */
+
+  *response_ptr = arg1 ;
+
+  return ;
+}
 
