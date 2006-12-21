@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Dec  6 14:04 2006 (rds)
+ * Last edited: Dec 21 11:13 2006 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.39 2006-12-08 15:47:32 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.40 2006-12-21 12:14:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -263,6 +263,41 @@ void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag)
 
   if (max_mag && max_mag > 0.0)
     style->max_mag = max_mag ;
+
+  return ;
+}
+
+
+
+/* Set up graphing stuff, currently the basic code is copied from acedb but this will
+ * change if we add different graphing types.... */
+void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode,
+		       double min_score, double max_score, double baseline)
+{
+  zMapAssert(style) ;
+
+  style->graph_mode = mode ;
+
+  style->min_score = min_score ;
+  style->max_score = max_score ;
+  style->baseline = baseline ;
+
+  /* normalise the baseline */
+  if (style->min_score == style->max_score)
+    style->baseline = style->min_score ;
+  else
+    style->baseline = (style->baseline - style->min_score) / (style->max_score - style->min_score) ;
+
+  if (style->baseline < 0)
+    style->baseline = 0 ;
+  if (style->baseline > 1)
+    style->baseline = 1 ;
+      
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* fmax seems only to be used to obtain the final column width in acedb, we can get this from its size... */
+
+  bc->fmax = (bc->width * bc->histBase) + 0.2 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return ;
 }
