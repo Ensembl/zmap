@@ -23,13 +23,14 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Factory-object based set of functions for drawing
+ *              features.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Dec 18 08:50 2006 (edgrif)
+ * Last edited: Dec 21 11:13 2006 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.16 2006-12-18 11:40:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.17 2006-12-21 14:58:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,12 +54,14 @@ typedef struct
   ZMapWindowFToIFactoryInternalMethod method;
 }ZMapWindowFToIFactoryMethodsStruct, *ZMapWindowFToIFactoryMethods;
 
+
 typedef struct _ZMapWindowFToIFactoryStruct
 {
   guint line_width;            /* window->config.feature_line_width */
   ZMapWindowFToIFactoryMethodsStruct *methods;
   ZMapWindowFToIFactoryMethodsStruct *basic_methods;
   ZMapWindowFToIFactoryMethodsStruct *text_methods;
+  ZMapWindowFToIFactoryMethodsStruct *graph_methods;
   GHashTable                         *ftoi_hash;
   ZMapWindowLongItems                 long_items;
   ZMapWindowFToIFactoryProductionTeam user_funcs;
@@ -84,6 +87,9 @@ typedef struct _RunSetStruct
   FooCanvasGroup       *container;
 }RunSetStruct;
 
+
+static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *table_in, 
+                                 ZMapWindowFToIFactoryMethodsStruct       **table_out) ;
 
 static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpointer user_data);
 static void ZoomDataDestroy(gpointer data);
@@ -136,7 +142,10 @@ static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature featu
                                               double feature_offset, 
                                               double x1, double y1, double x2, double y2,
                                               ZMapFeatureTypeStyle style);
-
+static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature feature,
+					     double feature_offset, 
+					     double x1, double y1, double x2, double y2,
+					     ZMapFeatureTypeStyle style);
 
 static void null_item_created(FooCanvasItem            *new_item,
                               ZMapWindowItemFeatureType new_item_type,
@@ -145,7 +154,6 @@ static void null_item_created(FooCanvasItem            *new_item,
                               double                    new_item_y1,
                               double                    new_item_y2,
                               gpointer                  handler_data);
-
 static gboolean null_top_item_created(FooCanvasItem *top_item,
                                       ZMapFeatureContext context,
                                       ZMapFeatureAlignment align,
@@ -153,7 +161,6 @@ static gboolean null_top_item_created(FooCanvasItem *top_item,
                                       ZMapFeatureSet set,
                                       ZMapFeature feature,
                                       gpointer handler_data);
-
 static gboolean null_feature_size_request(ZMapFeature feature, 
                                           double *limits_array, 
                                           double *points_array_inout, 
@@ -165,6 +172,11 @@ static gboolean getTextOnCanvasDimensions(FooCanvas *canvas,
                                           double *height_out);
 
 
+
+/*
+ * Static function tables for drawing features in various ways.
+ */
+
 const static ZMapWindowFToIFactoryMethodsStruct factory_methods_G[] = {
   {ZMAPFEATURE_INVALID,      invalidFeature},
   {ZMAPFEATURE_BASIC,        drawSimpleFeature},
@@ -174,6 +186,7 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_methods_G[] = {
   {ZMAPFEATURE_PEP_SEQUENCE, drawPepFeature},
   {-1,                       NULL}
 };
+
 const static ZMapWindowFToIFactoryMethodsStruct factory_text_methods_G[] = {
   {ZMAPFEATURE_INVALID,      invalidFeature},
   {ZMAPFEATURE_BASIC,        drawSimpleAsTextFeature},
@@ -183,6 +196,17 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_text_methods_G[] = {
   {ZMAPFEATURE_PEP_SEQUENCE, drawPepFeature},
   {-1,                       NULL}
 };
+
+const static ZMapWindowFToIFactoryMethodsStruct factory_graph_methods_G[] = {
+  {ZMAPFEATURE_INVALID,      invalidFeature},
+  {ZMAPFEATURE_BASIC,        drawSimpleGraphFeature},
+  {ZMAPFEATURE_ALIGNMENT,    drawSimpleGraphFeature},
+  {ZMAPFEATURE_TRANSCRIPT,   drawSimpleGraphFeature},
+  {ZMAPFEATURE_RAW_SEQUENCE, drawSimpleGraphFeature},
+  {ZMAPFEATURE_PEP_SEQUENCE, drawSimpleGraphFeature},
+  {-1,                       NULL}
+};
+
 const static ZMapWindowFToIFactoryMethodsStruct factory_basic_methods_G[] = {
   {ZMAPFEATURE_INVALID,      invalidFeature},
   {ZMAPFEATURE_BASIC,        drawSimpleFeature},
@@ -193,41 +217,12 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_basic_methods_G[] = {
   {-1,                       NULL}
 };
 
-static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *table_in, 
-                                 ZMapWindowFToIFactoryMethodsStruct       **table_out)
-{
-  ZMapWindowFToIFactoryMethods methods = NULL;
-  int i = 0;
 
-  if(table_in && table_out && *table_out == NULL)
-    {  
-      /* copy factory_methods into factory->methods */
-      methods = (ZMapWindowFToIFactoryMethods)table_in;
-      while(methods && methods->method){ methods++; i++; } /* Get the size first! */
-      
-      /* Allocate */
-      *table_out = g_new0(ZMapWindowFToIFactoryMethodsStruct, ++i);
-      /* copy ... */
-      memcpy(table_out[0], table_in, 
-             sizeof(ZMapWindowFToIFactoryMethodsStruct) * i);
-      methods = *table_out;
-      i = 0;
-      /* check that all is going to be ok with methods... */
-      while(methods && methods->method)
-        {
-          if(!(methods->type == i))
-            {
-              zMapLogFatal("Bad Setup: expected %d, found %d\n", i, methods->type);
-            }
-          methods++;
-          i++;
-        }
-    }
-  else
-    zMapAssertNotReached();
 
-  return ;
-}
+
+
+
+
 
 ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash, 
                                                 ZMapWindowLongItems long_items)
@@ -247,9 +242,11 @@ ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash
                            &(factory->basic_methods));
       copyCheckMethodTable(&(factory_text_methods_G[0]), 
                            &(factory->text_methods));
+      copyCheckMethodTable(&(factory_graph_methods_G[0]), 
+                           &(factory->graph_methods));
 
-      user_funcs->item_created         = null_item_created;
-      user_funcs->top_item_created     = null_top_item_created;
+      user_funcs->item_created = null_item_created;
+      user_funcs->top_item_created = null_top_item_created;
       user_funcs->feature_size_request = null_feature_size_request;
       factory->user_funcs = user_funcs;
     }
@@ -395,6 +392,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         case ZMAPSTYLE_MODE_TEXT:
           method_table = factory->text_methods;
           break;
+        case ZMAPSTYLE_MODE_GRAPH:
+          method_table = factory->graph_methods;
+          break;
         case ZMAPSTYLE_MODE_NONE:
         default:
           method_table = factory->methods;
@@ -410,12 +410,12 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             method = &(method_table[feature_type]);
           break;
         case ZMAPFEATURE_ALIGNMENT:
-          if(feature->flags.has_score)
+          if (feature->flags.has_score)
             zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
 
           factory->stats->total_matches++;
 
-          if((!feature->feature.homol.align) || (!style->opts.align_gaps))
+          if ((!feature->feature.homol.align) || (!style->opts.align_gaps))
             {
               factory->stats->ungapped_matches++;
               factory->stats->ungapped_boxes++;
@@ -468,7 +468,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
                                   points[2], points[3],
                                   style);
       
-      if(item)
+      if (item)
         {
           gboolean status = FALSE;
           
@@ -520,7 +520,47 @@ void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory)
 }
 
 
-/* INTERNAL */
+
+/*
+ *                          INTERNAL
+ */
+
+static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *table_in, 
+                                 ZMapWindowFToIFactoryMethodsStruct       **table_out)
+{
+  ZMapWindowFToIFactoryMethods methods = NULL;
+  int i = 0;
+
+  if(table_in && table_out && *table_out == NULL)
+    {  
+      /* copy factory_methods into factory->methods */
+      methods = (ZMapWindowFToIFactoryMethods)table_in;
+      while(methods && methods->method){ methods++; i++; } /* Get the size first! */
+      
+      /* Allocate */
+      *table_out = g_new0(ZMapWindowFToIFactoryMethodsStruct, ++i);
+      /* copy ... */
+      memcpy(table_out[0], table_in, 
+             sizeof(ZMapWindowFToIFactoryMethodsStruct) * i);
+      methods = *table_out;
+      i = 0;
+      /* check that all is going to be ok with methods... */
+      while(methods && methods->method)
+        {
+          if(!(methods->type == i))
+            {
+              zMapLogFatal("Bad Setup: expected %d, found %d\n", i, methods->type);
+            }
+          methods++;
+          i++;
+        }
+    }
+  else
+    zMapAssertNotReached();
+
+  return ;
+}
+
 
 static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpointer user_data)
 {
@@ -1712,6 +1752,60 @@ static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature featu
     
   return item;
 }
+
+
+
+
+static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature feature,
+					     double feature_offset,
+					     double x1, double y1, double x2, double y2,
+					     ZMapFeatureTypeStyle style)
+{
+  ZMapWindowFToIFactory factory = run_data->factory;
+  FooCanvasGroup        *parent = run_data->container;
+  FooCanvasItem *feature_item ;
+  GdkColor *outline, *foreground, *background;
+  guint line_width;
+  double numerator, denominator, dx ;
+
+  line_width = factory->line_width;
+
+  zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
+
+  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
+
+  numerator = feature->score - style->min_score ;
+  denominator = style->max_score - style->min_score ;
+
+  if (denominator == 0)				    /* catch div by zero */
+    {
+      if (numerator < 0)
+	dx = 0 ;
+      else if (numerator > 1)
+	dx = 1 ;
+    }
+  else
+    {
+      dx = numerator / denominator ;
+      if (dx < 0)
+	dx = 0 ;
+      if (dx > 1)
+	dx = 1 ;
+    }
+  x1 = 0.0 + (style->width * style->baseline) ;
+  x2 = 0.0 + (style->width * dx) ;
+
+  feature_item = zMapDrawBox(parent,
+			     x1, y1, x2, y2,
+			     outline, background, line_width) ;
+
+  callItemHandler(factory, feature_item,
+                  ITEM_FEATURE_SIMPLE,
+                  feature, NULL, y1, y2);
+
+  return feature_item ;
+}
+
 
 
 static void null_item_created(FooCanvasItem            *new_item,
