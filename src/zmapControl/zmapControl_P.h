@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Nov 22 13:00 2006 (edgrif)
+ * Last edited: Dec 20 16:32 2006 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.57 2006-11-28 14:21:31 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.58 2006-12-21 12:08:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -41,8 +41,8 @@
 #include <ZMap/zmapXRemote.h>
 
 
-/* Windows are 95% of screen height by default... */
-#define ZMAPWINDOW_VERT_PROP 0.95
+/* Windows are 90% of screen height by default... */
+#define ZMAPWINDOW_VERT_PROP 0.90
 
 
 /* The overall state of the zmap, we need this because both the zmap window and the its threads

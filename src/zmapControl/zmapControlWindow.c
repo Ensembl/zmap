@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Nov 16 08:59 2006 (edgrif)
+ * Last edited: Dec 20 16:33 2006 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.29 2006-11-17 17:34:04 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.30 2006-12-21 12:08:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -294,8 +294,19 @@ static void makeStatusTooltips(ZMap zmap)
 
 
 
-/* This code was taken from the following gtk_maximise_window() to gdk_window_maximise() etc.
- * through...but it doesn't work that reliably....their code is given below...sigh.... */
+/* This code was taken from following the code through in gtk_maximise_window() to gdk_window_maximise() etc.
+ * But it doesn't work that reliably....under KDE it does the right thing, but not under GNOME
+ * where the window is maximised in both directions.
+ * 
+ * If the window manager supports the _NET_WM_ stuff then we use that to set the window max
+ * as it will automatically take into account any menubars etc. created by the window manager.
+ * 
+ * Otherwise we are back to guessing some kind of size.
+ * If someone displays a really short piece of dna this will make the window
+ * too big so really we should readjust the window size to fit the sequence
+ * but this will be rare.
+ * 
+ */
 static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 {
   GdkAtom max_atom_vert ;
@@ -308,16 +319,14 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 
   if (gdk_x11_screen_supports_net_wm_hint(screen, max_atom_vert))
     {
+      /* We construct an event that the window manager will see that will cause it to correctly
+       * maximise the window. */
+
       GtkWindow *gtk_window = GTK_WINDOW(toplevel) ;
       GdkDisplay *display = gtk_widget_get_display(toplevel) ;
       GdkWindow *window = toplevel->window ;
       GdkWindow *root_window = gtk_widget_get_root_window(toplevel) ;
       XEvent xev ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* If you do this stupid gtk just maximises in both directions.... */
-      gtk_window->maximize_initially = TRUE;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       if (gtk_window->frame)
 	window = gtk_window->frame;
@@ -332,12 +341,11 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
       xev.xclient.format = 32 ;
       xev.xclient.data.l[0] = TRUE ;
       xev.xclient.data.l[1] = gdk_x11_atom_to_xatom_for_display (display, max_atom_vert) ;
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* undefine for a window maximised in both directions.... */
       xev.xclient.data.l[2] = gdk_x11_atom_to_xatom_for_display (display, max_atom_horz) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       xev.xclient.data.l[2] = 0 ;
-
       xev.xclient.data.l[3] = 0;
       xev.xclient.data.l[4] = 0;
   
@@ -346,20 +354,18 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 		 False,
 		 SubstructureRedirectMask | SubstructureNotifyMask,
 		 &xev) ; 
-
     }
   else
     {
-      /* Set default window height, we try to maximise the height but if this fails then
-       * we will use this.
-       * If someone displays a really short piece of dna this will make the window
-       * too big so really we should readjust the window size to fit the sequence
-       * but this will be rare. */
-      int window_height ;
+      /* OK, here we just guess some appropriate size, note that the window width is kind
+       * of irrelevant, we just set it to be a bit less than it will finally be and the
+       * widgets will resize it to the correct width. We don't use gtk_window_set_default_size() 
+       * because it doesn't seem to work. */
+      int window_width_guess = 300, window_height_guess ;
 
-      window_height = (int)((float)(gdk_screen_get_height(screen)) * ZMAPWINDOW_VERT_PROP) ;
+      window_height_guess = (int)((float)(gdk_screen_get_height(screen)) * ZMAPWINDOW_VERT_PROP) ;
 
-      gtk_window_set_default_size(GTK_WINDOW(toplevel), -1, window_height) ;
+      gtk_window_resize(GTK_WINDOW(toplevel), window_width_guess, window_height_guess) ;
     }
 
   /* I think we need to disconnect this now otherwise we reset the window height every time we
