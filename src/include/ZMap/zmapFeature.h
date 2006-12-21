@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Dec 12 14:53 2006 (rds)
+ * Last edited: Dec 21 12:12 2006 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.107 2006-12-13 08:31:36 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.108 2006-12-21 12:14:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -315,10 +315,9 @@ typedef struct
 
   struct
   {
-    unsigned int perfect : 1 ;				    /* If align != NULL and perfect == TRUE
-							       then gaps array is a "perfect"
-							       alignment within style specified
-							       slop factor. */
+    /* If align != NULL and perfect == TRUE then gaps array is a "perfect"
+     * alignment with allowance for a style specified slop factor. */
+    unsigned int perfect : 1 ;
   } flags ;
 
 } ZMapHomolStruct, *ZMapHomol ;
@@ -453,9 +452,19 @@ typedef enum
     ZMAPSTYLE_MODE_BASIC,				    /* Basic box features. */
     ZMAPSTYLE_MODE_TRANSCRIPT,				    /* Usual transcript like structure. */
     ZMAPSTYLE_MODE_ALIGNMENT,				    /* Usual homology structure. */
-    ZMAPSTYLE_MODE_TEXT					    /* Text only display. */
+    ZMAPSTYLE_MODE_TEXT,				    /* Text only display. */
+    ZMAPSTYLE_MODE_GRAPH				    /* Graphs of various types. */
   } ZMapStyleMode ;
 
+
+
+/* Specifies the style of graph. */
+typedef enum
+  {
+    ZMAPSTYLE_GRAPH_INVALID,				    /* Initial setting. */
+    ZMAPSTYLE_GRAPH_LINE,				    /* Just points joining a line. */
+    ZMAPSTYLE_GRAPH_HISTOGRAM				    /* Usual blocky like graph. */
+  } ZMapStyleGraphMode ;
 
 
 
@@ -508,6 +517,9 @@ typedef struct ZMapFeatureTypeStyleStruct_
 
   ZMapStyleMode mode ;					    /* Specifies how features that
 							       reference this style will be processed. */
+
+  ZMapStyleGraphMode graph_mode ;			    /* Says how to draw a graph. */
+  double baseline ;
 
   struct
   {
@@ -766,6 +778,7 @@ gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out) ;
 void zMapStyleSetColours(ZMapFeatureTypeStyle style, char *outline, char *foreground, char *background) ;
 void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;
 void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score) ;
+void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode, double min, double max, double baseline) ;
 void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean strand_specific, gboolean frame_specific,
 			     gboolean show_rev_strand, gboolean show_as_3_frame) ;
