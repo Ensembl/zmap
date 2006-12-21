@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 18 07:37 2006 (edgrif)
+ * Last edited: Dec 21 13:41 2006 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.58 2006-12-18 11:41:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.59 2006-12-21 13:42:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -132,12 +132,6 @@ static void setBoundingBoxColour(ZMapWindowMark mark, FooCanvasItem *item, gbool
 static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark) ;
 static void markFuncCB(gpointer data, gpointer user_data) ;
 static void markRange(ZMapWindowMark mark, double y1, double y2) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void checkScrollRegion(ZMapWindow window, double start, double end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data);
 static void pointerIsOverItem(gpointer data, gpointer user_data);
@@ -736,10 +730,25 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean 
       break ;
     }
 
+
   zmapHighlightColumn(window, zmapWindowItemGetHotFocusColumn(window->focus)) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* We need to be more sophisticated with our raising of items...otherwise tabbing through them
+   * just looks ridiculous...you end up tabbing everywhere... */
+
   if (raise_item)
-    zmapWindowRaiseItem(item) ;
+    {
+      foo_canvas_item_get_bounds (FooCanvasItem *item,
+				  double *x1, double *y1, double *x2, double *y2);
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* FOR NOW i'VE LEFT THIS AS IT IS BECAUSE OTHERWISE THE USER MAY SEE ITEMS THEY HAVE SELECTED
+   * FROM ONE OF THE SEARCH WINDOWS. */
+  zmapWindowRaiseItem(item) ;
 
   return ;
 }
