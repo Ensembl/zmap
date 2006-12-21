@@ -22,12 +22,14 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Implements the method functions for a zmap server
+ *              by making the appropriate calls to the acedb server.
+ *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov 15 16:36 2006 (edgrif)
+ * Last edited: Dec 21 11:44 2006 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.79 2006-11-15 16:37:42 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.80 2006-12-21 12:15:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1602,7 +1604,10 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   ZMapStyleMode mode = ZMAPSTYLE_MODE_NONE ;
   gboolean hide_always = FALSE, init_hidden = FALSE ;
   double min_mag = 0.0, max_mag = 0.0 ;
+  gboolean score_set = FALSE ;
   double min_score = 0.0, max_score = 0.0 ;
+  gboolean score_by_histogram = FALSE ;
+  double histogram_baseline = 0.0 ;
   gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE, gaps = FALSE, join_aligns = FALSE ;
   int obj_lines ;
   int within_align_error = 0, between_align_error = 0 ;
@@ -1658,6 +1663,10 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       else if (g_ascii_strcasecmp(tag, "ZMap_mode_basic") == 0)
 	{
 	  mode = ZMAPSTYLE_MODE_BASIC ;
+	}
+      else if (g_ascii_strcasecmp(tag, "ZMap_mode_graph") == 0)
+	{
+	  mode = ZMAPSTYLE_MODE_GRAPH ;
 	}
       else if (g_ascii_strcasecmp(tag, "Outline") == 0)
 	{
@@ -1805,16 +1814,33 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	}
+      else if (g_ascii_strcasecmp(tag, "Score_by_histogram") == 0)
+	{
+	  char *value ;
+
+	  score_by_histogram = TRUE ;
+
+	  value = strtok_r(NULL, " ", &line_pos) ;
+
+	  if (!(status = zMapStr2Double(value, &histogram_baseline)))
+	    {
+	      zMapLogWarning("Bad value for \"Score_by_histogram\" specified in method: %s", name) ;
+	      
+	      break ;
+	    }
+	}
       else if (g_ascii_strcasecmp(tag, "Score_bounds") == 0)
 	{
 	  char *value ;
+
+	  score_set = TRUE ;
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
 	  if (!(status = zMapStr2Double(value, &min_score)))
 	    {
 	      zMapLogWarning("Bad value for \"Score_bounds\" specified in method: %s", name) ;
-	      
+	      score_set = FALSE ;
 	      break ;
 	    }
 	  else
@@ -1824,7 +1850,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	      if (!(status = zMapStr2Double(value, &max_score)))
 		{
 		  zMapLogWarning("Bad value for \"Score_bounds\" specified in method: %s", name) ;
-		  
+		  score_set = FALSE ;
 		  break ;
 		}
 	    }
@@ -1912,8 +1938,16 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       if (min_mag || max_mag)
 	zMapStyleSetMag(style, min_mag, max_mag) ;
 
-      if (min_score && max_score)
-	zMapStyleSetScore(style, min_score, max_score) ;
+      /* Note that we require bounds to be set for graphing.... */
+      if (score_set)
+	{
+	  ZMapStyleGraphMode graph_mode = ZMAPSTYLE_GRAPH_HISTOGRAM ; /* Hard coded for now. */
+
+	  if (score_by_histogram)
+	    zMapStyleSetGraph(style, graph_mode, min_score, max_score, histogram_baseline) ;
+	  else
+	    zMapStyleSetScore(style, min_score, max_score) ;
+	}
 
       zMapStyleSetStrandAttrs(style,
 			      strand_specific, frame_specific,
