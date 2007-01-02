@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Dec  5 17:09 2006 (edgrif)
+ * Last edited: Jan  2 12:24 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.49 2006-12-06 08:57:42 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.50 2007-01-02 14:20:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -454,7 +454,7 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
  *  */
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
 
   zMapAssert(feature && (boundary == ZMAPBOUNDARY_5_SPLICE || boundary == ZMAPBOUNDARY_3_SPLICE)) ;
 
