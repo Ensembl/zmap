@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Dec  5 17:21 2006 (edgrif)
+ * Last edited: Jan  2 12:23 2007 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.66 2006-12-06 08:58:21 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.67 2007-01-02 14:20:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1162,6 +1162,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	   result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_5_SPLICE) ;
 	 else if (g_ascii_strcasecmp(ontology, "splice3") == 0)
 	   result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_3_SPLICE) ;
+
+	 if (!result)
+	   *err_text = g_strdup_printf("feature ignored, could not set \"%s\" splice data.", ontology) ;
        }
    }
 
