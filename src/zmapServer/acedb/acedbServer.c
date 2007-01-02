@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Dec 21 11:44 2006 (edgrif)
+ * Last edited: Jan  2 10:55 2007 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.80 2006-12-21 12:15:36 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.81 2007-01-02 10:58:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1820,14 +1820,15 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
 	  score_by_histogram = TRUE ;
 
-	  value = strtok_r(NULL, " ", &line_pos) ;
-
-	  if (!(status = zMapStr2Double(value, &histogram_baseline)))
-	    {
-	      zMapLogWarning("Bad value for \"Score_by_histogram\" specified in method: %s", name) ;
-	      
-	      break ;
-	    }
+	  if((value = strtok_r(NULL, " ", &line_pos)))
+            {
+              if (!(status = zMapStr2Double(value, &histogram_baseline)))
+                {
+                  zMapLogWarning("Bad value for \"Score_by_histogram\" specified in method: %s", name) ;
+                  
+                  break ;
+                }
+            }
 	}
       else if (g_ascii_strcasecmp(tag, "Score_bounds") == 0)
 	{
