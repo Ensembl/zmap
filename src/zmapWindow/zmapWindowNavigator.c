@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 13 10:58 2006 (rds)
+ * Last edited: Jan  2 17:58 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.14 2006-12-13 15:18:02 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.15 2007-01-02 17:59:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -240,7 +240,7 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
       navigate->scaling_factor = 0.0;
       navigate->locator_bwidth = LOCATOR_LINE_WIDTH;
       navigate->locator_x1     = 0.0;
-      navigate->locator_x2     = 0.0;
+      navigate->locator_x2     = LOCATOR_LINE_WIDTH * 10.0;
 
       setupLocatorGroup(navigate);
 
@@ -378,51 +378,41 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
 void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
                                     double raw_top, double raw_bot)
 {
-  double rx1, ry1, rx2, ry2;
-  double top, bot;
+  double x1, y1, x2, y2;
   zMapAssert(navigate &&
              navigate->locator_group &&
              navigate->locator);
 
+  /* Always set these... */
+  navigate->locator_span.x1 = raw_top;
+  navigate->locator_span.x2 = raw_bot;
+
   if(navigate->draw_locator)
     {
-      rx1 = navigate->locator_x1; 
-      rx2 = navigate->locator_x2;
-      
-      navigate->locator_span.x1 = raw_top;
-      navigate->locator_span.x2 = raw_bot;
+      x1 = navigate->locator_x1; 
+      x2 = navigate->locator_x2;
 
-      if(raw_top == 0.0 && raw_top == raw_bot)
-        {
-          foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(navigate->locator_drag), 
-                                     NULL, &ry1, 
-                                     NULL, &ry2);
-          top = ry1;
-          bot = ry2;
-        }
-      else
-        {
-          top = raw_top;
-          bot = raw_bot;
-          clampWorld2Scaled(navigate, &top, &bot);
-        }
+      y1 = raw_top;
+      y2 = raw_bot;
+
+      clampWorld2Scaled(navigate, &y1, &y2);
       
       foo_canvas_item_set(FOO_CANVAS_ITEM(navigate->locator),
-                          "x1", rx1,
-                          "y1", top,
-                          "x2", rx2,
-                          "y2", bot,
+                          "x1", x1,
+                          "y1", y1,
+                          "x2", x2,
+                          "y2", y2,
                           NULL);
       
       foo_canvas_item_set(FOO_CANVAS_ITEM(navigate->locator_drag),
-                          "x1", rx1,
-                          "y1", top,
-                          "x2", rx2,
-                          "y2", bot,
+                          "x1", x1,
+                          "y1", y1,
+                          "x2", x2,
+                          "y2", y2,
                           NULL);
       
       if(locator_debug_G)
-        printCoordsInfo(navigate, __PRETTY_FUNCTION__, top, bot);
+        printCoordsInfo(navigate, __PRETTY_FUNCTION__, y1, y2);
 
       foo_canvas_item_show(FOO_CANVAS_ITEM(navigate->locator_group));
       foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(navigate->locator_group));
@@ -783,8 +773,10 @@ static void drawScale(NavigateDraw draw_data)
 
 static void lazyNeedsFixing(gpointer user_data)
 {
+
 #warning MEMORY LEAK
-  printf("fix this memory leak, especially why it doesn't get run!\n");
+  printf("fix this memory leak, especially why it doesn't always get run!\n");
+
   return ;
 }
 
@@ -1280,7 +1272,9 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
 static gboolean navCanvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 {
   //ZMapWindowNavigator navigate = (ZMapWindowNavigator)data;
-  printf("item got destroyed\n");
+  if(locator_debug_G)
+    printf("item got destroyed\n");
+
   return FALSE;
 }
 
