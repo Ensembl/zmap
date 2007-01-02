@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Dec 12 16:00 2006 (rds)
+ * Last edited: Dec 15 11:27 2006 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.71 2006-12-13 08:34:26 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.72 2007-01-02 09:24:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -83,7 +83,7 @@ typedef struct
 /* Data returned to the focus callback routine. */
 typedef struct
 {
-  FooCanvasItem *item ;					    /* The feature selected, may be null
+  FooCanvasItem *highlight_item ;			    /* The feature selected to be highlighted, may be null
 							       if a column was selected. */
 
   ZMapFeatureDescStruct feature_desc ;			    /* Text descriptions of selected feature. */
@@ -211,7 +211,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean busy) ;
 #ifdef __GNUC__
 #define zMapWindowBusy(WINDOW, BUSY)         \
-  zMapWindowBusyHidden(__FILE__, __PRETTY_FUNCTION__, (WINDOW), (BUSY))
+  zMapWindowBusyHidden(__FILE__, (char *)__PRETTY_FUNCTION__, (WINDOW), (BUSY))
 #else
 #define zMapWindowBusy(WINDOW, BUSY)         \
   zMapWindowBusyHidden(__FILE__, NULL, (WINDOW), (BUSY))
