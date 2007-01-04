@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Nov  7 16:06 2006 (edgrif)
+ * Last edited: Jan  4 10:28 2007 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.19 2006-11-08 09:24:53 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.20 2007-01-04 10:56:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -195,6 +195,19 @@ char *zMapGetCopyrightString(void)
 {
   return ZMAP_COPYRIGHT_STRING() ;
 }
+
+
+/*!
+ * Returns the ZMap website URL.
+ *
+ * @param void  None.
+ * @return      The website as a string.
+ *  */
+char *zMapGetWebSiteString(void)
+{
+  return ZMAP_WEBSITE_STRING() ;
+}
+
 
 /*!
  * Returns a comments string for the ZMap application.
