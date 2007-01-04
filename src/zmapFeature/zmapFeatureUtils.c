@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan  4 10:43 2007 (rds)
+ * Last edited: Jan  4 11:30 2007 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.38 2007-01-04 11:15:50 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.39 2007-01-04 11:42:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,6 +36,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapPeptide.h>
 #include <ZMap/zmapUtils.h>
 
 
