@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jan  2 12:24 2007 (edgrif)
+ * Last edited: Jan  4 11:17 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.50 2007-01-02 14:20:14 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.51 2007-01-04 11:18:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -110,131 +110,7 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
  * add functions from below. */
 
 
-
-/*!
- * Function to do some validity checking on a ZMapFeatureAny struct. Always more you
- * could do but this is better than nothing.
- * 
- * Returns TRUE if the struct is OK, FALSE otherwise.
- * 
- * @param   any_feature    The feature to validate.
- * @return  gboolean       TRUE if feature is valid, FALSE otherwise.
- *  */
-gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
-{
-  gboolean result = FALSE ;
-
-  if (any_feature
-      && zMapFeatureTypeIsValid(any_feature->struct_type)
-      && any_feature->unique_id != ZMAPFEATURE_NULLQUARK
-      && any_feature->original_id != ZMAPFEATURE_NULLQUARK)
-    result = TRUE ;
-
-  return result ;
-}
-
-gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type)
-{
-  gboolean result = FALSE ;
-
-  if (group_type >= ZMAPFEATURE_STRUCT_CONTEXT
-      && group_type <= ZMAPFEATURE_STRUCT_FEATURE)
-    result = TRUE ;
-
-  return result ;
-}
-
-
-
-/*!
- * Returns the original name of any feature type. The returned string belongs
- * to the feature and must _NOT_ be free'd. This function can never return
- * NULL as all features must have valid names.
- * 
- * @param   any_feature    The feature.
- * @return  char *         The name of the feature.
- *  */
-char *zMapFeatureName(ZMapFeatureAny any_feature)
-{
-  char *feature_name = NULL ;
-
-  zMapAssert(zMapFeatureIsValid(any_feature)) ;
-
-  feature_name = (char *)g_quark_to_string(any_feature->original_id) ;
-
-  return feature_name ;
-}
-
-
-
-/*!
- * Function to return the _parent_ group of group_type of the feature any_feature.
- * This is a generalised function to stop all the poking about through the context
- * hierachy that is otherwise required. Note you can only go _UP_ the tree with
- * this function because going down is a one-to-many mapping.
- * 
- * Returns the feature group or NULL if there is no parent group or there is some problem
- * with the arguments like asking for a group at or below the level of any_feature.
- * 
- * @param   any_feature    The feature for which you wish to find the parent group.
- * @param   group_type     The type/level of the parent group you want to find.
- * @return  ZMapFeatureAny The parent group or NULL.
- *  */
-ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type)
-{
-  ZMapFeatureAny result = NULL ;
-
-  zMapAssert(zMapFeatureIsValid(any_feature)
-	     && group_type >= ZMAPFEATURE_STRUCT_CONTEXT
-	     && group_type <= ZMAPFEATURE_STRUCT_FEATURE) ;
-
-  if (any_feature->struct_type >= group_type)
-    {
-      ZMapFeatureAny group = any_feature ;
-
-      while (group && group->struct_type > group_type)
-	{
-	  group = group->parent ;
-	}
-
-      result = group ;
-    }
-
-  return result ;
-}
-
-
-
-
-
-/*!
- * Returns TRUE if feature context has DNA, FALSE otherwise.
- * If the context has DNA then the name, length and sequence are returned.
- * 
- * @param   seq_name_out  The name of the sequence (e.g. a clone name).
- * @param   seq_len_out   The length of the sequence in bases.
- * @param   sequence_out  The actual dna sequence as a C string.
- * @return  gboolean      TRUE if context contained a sequence.
- *  */
-#ifdef RDS_DONT_INCLUDE
-gboolean zmapFeatureContextDNA(ZMapFeatureContext context,
-			       char **seq_name_out, int *seq_len_out, char **sequence_out)
-{
-  gboolean result = FALSE ;
-
-  zMapAssert(context && seq_len_out && seq_name_out) ;
-  if (context->sequence && context->sequence->sequence)
-    {
-      *seq_name_out = (char *)g_quark_to_string(context->sequence_name) ;
-      *seq_len_out  = context->sequence->length ;
-      *sequence_out = context->sequence->sequence ;
-      result = TRUE ;
-    }
-
-  return result ;
-}
-#endif
-
+/*! Fetch a Blocks DNA  */
 gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
                              char **seq_name_out, int *seq_len_out, char **sequence_out)
 {
@@ -863,76 +739,6 @@ void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data)
 
   return ;
 }
-
-gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatureSet *set_out)
-{
-  ZMapFeatureSet feature_set = NULL;
-  ZMapFeatureTypeStyle style = NULL;
-  ZMapFeatureContext context = NULL;
-  GQuark style_id = 0;
-  gboolean still_good = FALSE, created = FALSE;
-
-  style_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
-
-  if(block->sequence.length)
-    still_good = TRUE;
-
-  if(!(context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)block, 
-                                                                ZMAPFEATURE_STRUCT_CONTEXT))))
-    still_good = FALSE;
-
-  if((feature_set = (ZMapFeatureSet)(g_datalist_id_get_data(&(block->feature_sets), style_id))))
-    still_good = FALSE;         /* We've already got one */
-
-  if(still_good &&
-     (style = zMapFindStyle(context->styles, style_id)) != NULL)
-    {
-      feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_3FT_NAME, NULL);
-      feature_set->style = style;
-      created = TRUE;
-    }
-
-  if(still_good && feature_set)
-    {
-      int i;
-      char *seq = NULL, *f_name = NULL, *s_name;
-      ZMapFeature threeft = NULL; 
-      ZMapPeptide pep = NULL;
-
-      s_name = (char *)g_quark_to_string(block->original_id);
-
-      seq = block->sequence.sequence ;
-      seq += 2;                 /* We do it in this order so it looks sensible on the display */
-
-      for(i = 2; seq && *seq && i >= 0; i--, seq--)
-        {
-          threeft = zMapFeatureCreateEmpty();
-
-          f_name = g_strdup_printf("%s_phase_%d",
-				   g_quark_to_string(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)),
-				   i);
-
-          pep = zMapPeptideCreateSafely(NULL, NULL, seq, NULL, FALSE);
-          
-          threeft->text = g_strdup(zMapPeptideSequence(pep));
-          
-          zMapFeatureAddStandardData(threeft, f_name, f_name,
-                                     s_name, "sequence",
-                                     ZMAPFEATURE_PEP_SEQUENCE, style,
-                                     i+1, zMapPeptideLength(pep) * 3 + i + 1,
-                                     FALSE, 0.0,
-                                     ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
-
-          zMapFeatureSetAddFeature(feature_set, threeft);
-        }
-    }
-
-  if(set_out)
-    *set_out = feature_set;
-
-  return created;
-}
-
 
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
 					    GList *types, GList *set_names)
