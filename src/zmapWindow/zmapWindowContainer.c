@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Dec 15 11:37 2006 (rds)
+ * Last edited: Jan  4 14:31 2007 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.27 2006-12-15 11:40:17 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.28 2007-01-04 15:03:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1458,17 +1458,17 @@ static void containerXAxisMove(FooCanvasGroup  *container,
   double x1, x2, xpos, dx;
   double target = 0.0;
 
-  if(type != ZMAPCONTAINER_LEVEL_ROOT)
+  if (type != ZMAPCONTAINER_LEVEL_ROOT && type != ZMAPCONTAINER_LEVEL_BLOCK)
     {
-      if(FOO_CANVAS_ITEM(container)->object.flags & FOO_CANVAS_ITEM_VISIBLE)
+      if (FOO_CANVAS_ITEM(container)->object.flags & FOO_CANVAS_ITEM_VISIBLE)
         {
-          if(current_bound_inout)
+          if (current_bound_inout)
             {
               target = *current_bound_inout;
             }
 
           /* Are we the first container in this level, hokey... */
-          if(target == 0.0)
+          if (target == 0.0)
             {
               if(type == ZMAPCONTAINER_LEVEL_FEATURESET)
                 target += this_level_spacing;
@@ -1491,7 +1491,7 @@ static void containerXAxisMove(FooCanvasGroup  *container,
           container_points->coords[2] += dx; /* move by dx */
 
           /* update the current bound... */
-          if(current_bound_inout)
+          if (current_bound_inout)
             {
               *current_bound_inout = target + (x2 - x1);
             }
