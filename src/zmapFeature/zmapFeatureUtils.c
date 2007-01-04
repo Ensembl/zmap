@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan  3 09:01 2007 (rds)
+ * Last edited: Jan  4 10:43 2007 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.37 2007-01-04 10:08:44 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.38 2007-01-04 11:15:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -618,6 +618,79 @@ ZMapFeature zMapFeatureCopy(ZMapFeature feature)
 
   return newFeature;
 }
+
+
+gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatureSet *set_out)
+{
+  ZMapFeatureSet feature_set = NULL;
+  ZMapFeatureTypeStyle style = NULL;
+  ZMapFeatureContext context = NULL;
+  GQuark style_id = 0, feature_set_id = 0;
+  gboolean still_good = FALSE, created = FALSE;
+
+  feature_set_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+  style_id       = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+
+  if(block->sequence.length)
+    still_good = TRUE;
+
+  if(!(context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)block, 
+                                                                ZMAPFEATURE_STRUCT_CONTEXT))))
+    still_good = FALSE;
+
+  if((feature_set = (ZMapFeatureSet)(g_datalist_id_get_data(&(block->feature_sets), feature_set_id))))
+    still_good = FALSE;         /* We've already got one */
+
+  if(still_good &&
+     (style = zMapFindStyle(context->styles, style_id)) != NULL)
+    {
+      feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_3FT_NAME, NULL);
+      feature_set->style = style;
+      created = TRUE;
+    }
+
+  if(still_good && feature_set)
+    {
+      int i, frame_offset;
+      char *seq = NULL, *f_name = NULL, *s_name;
+      ZMapFeature threeft = NULL; 
+      ZMapPeptide pep = NULL;
+
+      s_name = (char *)g_quark_to_string(block->original_id);
+
+      seq = block->sequence.sequence ;
+
+      frame_offset = 0 - ZMAPFRAME_0; /* set this up ! */
+
+      for(i = ZMAPFRAME_0; seq && *seq && i <= ZMAPFRAME_2; i++, seq++)
+        {
+          threeft = zMapFeatureCreateEmpty();
+
+          f_name = g_strdup_printf("%s_frame_%d",
+				   g_quark_to_string(feature_set_id),
+				   i);
+
+          pep = zMapPeptideCreateSafely(NULL, NULL, seq, NULL, FALSE);
+          
+          threeft->text = g_strdup(zMapPeptideSequence(pep));
+          
+          zMapFeatureAddStandardData(threeft, f_name, f_name,
+                                     s_name, "sequence",
+                                     ZMAPFEATURE_PEP_SEQUENCE, style,
+                                     i, zMapPeptideLength(pep) * 3 + i,
+                                     FALSE, 0.0,
+                                     ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
+
+          zMapFeatureSetAddFeature(feature_set, threeft);
+        }
+    }
+
+  if(set_out)
+    *set_out = feature_set;
+
+  return created;
+}
+
 
 
 /* 
