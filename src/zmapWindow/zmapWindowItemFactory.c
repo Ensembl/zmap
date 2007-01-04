@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Dec 21 11:13 2006 (edgrif)
+ * Last edited: Jan  4 09:28 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.17 2006-12-21 14:58:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.18 2007-01-04 09:29:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1761,18 +1761,18 @@ static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature featur
 					     double x1, double y1, double x2, double y2,
 					     ZMapFeatureTypeStyle style)
 {
-  ZMapWindowFToIFactory factory = run_data->factory;
-  FooCanvasGroup        *parent = run_data->container;
+  ZMapWindowFToIFactory factory = run_data->factory ;
+  FooCanvasGroup *parent = run_data->container ;
   FooCanvasItem *feature_item ;
-  GdkColor *outline, *foreground, *background;
-  guint line_width;
+  GdkColor *outline, *foreground, *background ;
+  guint line_width ;
   double numerator, denominator, dx ;
 
   line_width = factory->line_width;
 
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
 
-  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
+  zMapFeatureTypeGetColours(style, &background, &foreground, &outline) ;
 
   numerator = feature->score - style->min_score ;
   denominator = style->max_score - style->min_score ;
@@ -1795,13 +1795,24 @@ static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature featur
   x1 = 0.0 + (style->width * style->baseline) ;
   x2 = 0.0 + (style->width * dx) ;
 
+  /* If the baseline is not zero then we can end up with x2 being less than x1 so swop them for
+   * drawing, perhaps the drawing code should take care of this. */
+  if (x1 > x2)
+    {
+      double tmp ;
+
+      tmp = x1 ;
+      x1 = x2 ;
+      x2 = tmp ;
+    }
+
   feature_item = zMapDrawBox(parent,
 			     x1, y1, x2, y2,
 			     outline, background, line_width) ;
 
   callItemHandler(factory, feature_item,
                   ITEM_FEATURE_SIMPLE,
-                  feature, NULL, y1, y2);
+                  feature, NULL, y1, y2) ;
 
   return feature_item ;
 }
