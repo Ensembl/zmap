@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Dec 12 10:33 2006 (rds)
+ * Last edited: Jan  3 09:01 2007 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.36 2006-12-13 08:36:16 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.37 2007-01-04 10:08:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,6 +83,96 @@ static void doFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 static int sortGapsByTarget(gconstpointer a, gconstpointer b) ;
 
 
+/*!
+ * Function to do some validity checking on a ZMapFeatureAny struct. Always more you
+ * could do but this is better than nothing.
+ * 
+ * Returns TRUE if the struct is OK, FALSE otherwise.
+ * 
+ * @param   any_feature    The feature to validate.
+ * @return  gboolean       TRUE if feature is valid, FALSE otherwise.
+ *  */
+gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
+{
+  gboolean result = FALSE ;
+
+  if (any_feature
+      && zMapFeatureTypeIsValid(any_feature->struct_type)
+      && any_feature->unique_id != ZMAPFEATURE_NULLQUARK
+      && any_feature->original_id != ZMAPFEATURE_NULLQUARK)
+    result = TRUE ;
+
+  return result ;
+}
+
+gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type)
+{
+  gboolean result = FALSE ;
+
+  if (group_type >= ZMAPFEATURE_STRUCT_CONTEXT
+      && group_type <= ZMAPFEATURE_STRUCT_FEATURE)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+
+/*!
+ * Returns the original name of any feature type. The returned string belongs
+ * to the feature and must _NOT_ be free'd. This function can never return
+ * NULL as all features must have valid names.
+ * 
+ * @param   any_feature    The feature.
+ * @return  char *         The name of the feature.
+ *  */
+char *zMapFeatureName(ZMapFeatureAny any_feature)
+{
+  char *feature_name = NULL ;
+
+  zMapAssert(zMapFeatureIsValid(any_feature)) ;
+
+  feature_name = (char *)g_quark_to_string(any_feature->original_id) ;
+
+  return feature_name ;
+}
+
+
+/*!
+ * Function to return the _parent_ group of group_type of the feature any_feature.
+ * This is a generalised function to stop all the poking about through the context
+ * hierachy that is otherwise required. Note you can only go _UP_ the tree with
+ * this function because going down is a one-to-many mapping.
+ * 
+ * Returns the feature group or NULL if there is no parent group or there is some problem
+ * with the arguments like asking for a group at or below the level of any_feature.
+ * 
+ * @param   any_feature    The feature for which you wish to find the parent group.
+ * @param   group_type     The type/level of the parent group you want to find.
+ * @return  ZMapFeatureAny The parent group or NULL.
+ *  */
+ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type)
+{
+  ZMapFeatureAny result = NULL ;
+
+  zMapAssert(zMapFeatureIsValid(any_feature)
+	     && group_type >= ZMAPFEATURE_STRUCT_CONTEXT
+	     && group_type <= ZMAPFEATURE_STRUCT_FEATURE) ;
+
+  if (any_feature->struct_type >= group_type)
+    {
+      ZMapFeatureAny group = any_feature ;
+
+      while (group && group->struct_type > group_type)
+	{
+	  group = group->parent ;
+	}
+
+      result = group ;
+    }
+
+  return result ;
+}
 
 /* Generalised dumping function, caller supplies a callback function that does the actual
  * output and a pointer to somewhere in the feature hierachy (alignment, block, set etc)
@@ -413,35 +503,6 @@ static void addTypeQuark(gpointer data, gpointer user_data)
 
   return ;
 }
-#ifdef RDS_DONT_INCLUDE_UNUSED
-ZMapFeature zMapFeatureFindFeatureInBlock(ZMapFeatureBlock feature_block,
-					  GQuark type_id, GQuark feature_id)
-{
-  ZMapFeature feature = NULL ;
-  ZMapFeatureSet feature_set ;
-
-  if ((feature_set = (ZMapFeatureSet)g_datalist_id_get_data(&(feature_block->feature_sets), type_id)))
-    {
-      feature = (ZMapFeature)g_datalist_id_get_data(&(feature_set->features), feature_id) ;
-    }
-
-  return feature ;
-}
-
-
-
-ZMapFeature zMapFeatureFindFeatureInSet(ZMapFeatureSet feature_set, GQuark feature_id)
-{
-  ZMapFeature feature ;
-
-  feature = (ZMapFeature)g_datalist_id_get_data(&(feature_set->features), feature_id) ;
-
-  return feature ;
-}
-
-
-#endif
-
 
 ZMapFeatureSet zMapFeatureFindSetInBlock(ZMapFeatureBlock feature_block, GQuark set_id)
 {
@@ -451,10 +512,6 @@ ZMapFeatureSet zMapFeatureFindSetInBlock(ZMapFeatureBlock feature_block, GQuark 
 
   return feature_set ;
 }
-
-
-
-
 
 /* Dump out a feature context. */
 gboolean zMapFeatureContextDump(GIOChannel *file,
@@ -473,8 +530,6 @@ gboolean zMapFeatureContextDump(GIOChannel *file,
 
   return result ;
 }
-
-
 
 /* For blocks within alignments other than the master alignment, it is not possible to simply
  * use the x1,x2 positions in the feature struct as these are the positions in the original
@@ -499,8 +554,6 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
 
   return ;
 }
-
-
 
 
 ZMapFeature zMapFeatureCopy(ZMapFeature feature)
