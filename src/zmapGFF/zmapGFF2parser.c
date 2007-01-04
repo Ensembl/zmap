@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jan  2 12:23 2007 (edgrif)
+ * Last edited: Jan  4 09:36 2007 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.67 2007-01-02 14:20:51 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.68 2007-01-04 09:37:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -100,6 +100,10 @@ static void stylePrintCB(gpointer data, gpointer user_data) ;
 
 
 static void mungeFeatureType(char *source, ZMapFeatureType *type_inout);
+static gboolean getNameFromNote(char *attributes, char **name) ;
+
+
+
 
 /* types is the list of methods/types, call it what you will that we want to see
  * in the output, we may need to filter the incoming data stream to get this.
@@ -1257,8 +1261,16 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
  *        B0250	GF_ATG	atg	38985	38987	1.8345	-	0
  *        etc.
  * 
- * For GFF v2 we must exclude the following types of attributes that are _not_ object names:
- *
+ * Some features have their name given in the "Note" field appended to some GFF records.
+ * This field is also used for general comments however so the code must attempt to
+ * deal with this, here are some examples:
+ * 
+ * Here's one that is a feature name:
+ * 
+ *        Note "RP5-931H19"
+ * 
+ * and here's some that aren't:
+ * 
  *        Note "Left: B0250"
  *        Note "7 copies of 31mer"
  * 
@@ -1302,9 +1314,22 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	   * clarity in the GFFv2 spec....needs some attention.... */
 	  if (g_str_has_prefix(attributes, "Note"))
 	    {
-	      *feature_name = g_strdup(sequence) ;
-	      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-						       start, end, query_start, query_end) ;
+	      char *name = NULL ;
+
+	      if (getNameFromNote(attributes, &name))
+		{
+		  *feature_name = g_strdup(name) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+
+		  has_name = TRUE ;
+		}
+	      else
+		{
+		  *feature_name = g_strdup(sequence) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
 	    }
 	  else if ((tag_pos = strstr(attributes, "Target")))
 	    {
@@ -1344,9 +1369,22 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	   * clarity in the GFFv2 spec....needs some attention.... */
 	  if (g_str_has_prefix(attributes, "Note"))
 	    {
-	      *feature_name = g_strdup(sequence) ;
-	      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-						       start, end, query_start, query_end) ;
+	      char *name = NULL ;
+
+	      if (getNameFromNote(attributes, &name))
+		{
+		  *feature_name = g_strdup(name) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+
+		  has_name = TRUE ;
+		}
+	      else
+		{
+		  *feature_name = g_strdup(sequence) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
 	    }
 	  else
 	    {
@@ -1719,4 +1757,60 @@ static void mungeFeatureType(char *source, ZMapFeatureType *type_inout)
     *type_inout = ZMAPFEATURE_BASIC;
 
   return ;
+}
+
+
+
+/* We get passed a string that should be of the form:
+ * 
+ *    Note "some variable amount of text...."
+ * 
+ * Returns TRUE if the note is of the form:
+ * 
+ *    Note "valid_feature_name"
+ * 
+ * where a valid name starts with a letter and contains only alphanumberics and '_' or ':'.
+ * 
+ *  */
+static gboolean getNameFromNote(char *attributes, char **name)
+{
+  gboolean result = FALSE ;
+  int attr_fields ;
+  char *note_format_str = "Note %*[\"]%5000[^\"]" ;
+  char note[GFF_MAX_FREETEXT_CHARS + 1] = {'\0'} ;
+  char *name_format_str = "%50s%50s" ;
+  char feature_name[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, rest[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+  /* I couldn't find a way to do this in one sscanf() so I do it in two, getting the note text
+   * first and then splitting out the name (hopefully). */
+  if ((attr_fields = sscanf(attributes, note_format_str, &note[0])) == 1)
+    {
+      attr_fields = sscanf(&note[0], name_format_str, &feature_name[0], &rest[0]) ;
+
+      if (attr_fields == 1)
+	{
+	  char *cptr ;
+
+	  cptr = &feature_name[0] ;
+
+	  if (g_ascii_isalpha(*cptr))
+	    {
+	      result = TRUE ;
+	      while (*cptr)
+		{
+		  if (!g_ascii_isalnum(*cptr) && *cptr != '_' && *cptr != ':')
+		    {
+		      result = FALSE ;
+		      break ;
+		    }
+		  cptr++ ;
+		}
+
+	      if (result)
+		*name = &(feature_name[0]) ;
+	    }
+	}
+    }
+
+  return result ;
 }
