@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan  4 11:30 2007 (edgrif)
+ * Last edited: Jan  5 10:04 2007 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.39 2007-01-04 11:42:39 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.40 2007-01-05 22:25:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -416,17 +416,6 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
 }
 
 
-
-ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature)
-{
-  ZMapFeatureSet feature_set ;
-
-  feature_set = (ZMapFeatureSet)feature->parent ;
-
-  return feature_set ;
-}
-
-
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature)
 {
   ZMapFeatureTypeStyle style ;
@@ -503,15 +492,6 @@ static void addTypeQuark(gpointer data, gpointer user_data)
   *quarks_out = quark_list ;
 
   return ;
-}
-
-ZMapFeatureSet zMapFeatureFindSetInBlock(ZMapFeatureBlock feature_block, GQuark set_id)
-{
-  ZMapFeatureSet feature_set ;
-
-  feature_set = g_datalist_id_get_data(&(feature_block->feature_sets), set_id) ;
-
-  return feature_set ;
 }
 
 /* Dump out a feature context. */
