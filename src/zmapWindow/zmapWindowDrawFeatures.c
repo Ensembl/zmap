@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec 14 11:51 2006 (rds)
+ * Last edited: Jan  5 22:21 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.170 2006-12-14 11:55:06 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.171 2007-01-05 22:27:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1727,6 +1727,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
 
   feature_type = feature_any->struct_type;
 
+  if(0)
+    printf("drawing %s\n", g_quark_to_string(feature_any->unique_id));
 
   switch(feature_type)
     {
@@ -1735,6 +1737,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
     case ZMAPFEATURE_STRUCT_ALIGN:
       {
         FooCanvasGroup *align_parent;
+        FooCanvasItem  *align_hash_item;
         double x, y;
         feature_align = (ZMapFeatureAlignment)feature_any;
         canvas_data->curr_alignment = feature_align ;
@@ -1747,17 +1750,27 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
         y = canvas_data->full_context->sequence_to_parent.c1 ;
         my_foo_canvas_item_w2i(FOO_CANVAS_ITEM(canvas_data->curr_root_group), &x, &y) ;
 
-        align_parent = zmapWindowContainerCreate(canvas_data->curr_root_group,
-                                                 ZMAPCONTAINER_LEVEL_ALIGN,
-                                                 window->config.block_spacing,
-                                                 &(window->colour_alignment),
-                                                 &(window->canvas_border),
-                                                 window->long_items) ;
-
-        g_signal_connect(G_OBJECT(align_parent), 
-                         "destroy", 
-                         G_CALLBACK(containerDestroyCB), 
-                         window) ;
+        if((align_hash_item = zmapWindowFToIFindItemFull(window->context_to_item, 
+                                                         feature_align->unique_id, 
+                                                         0, 0, ZMAPSTRAND_NONE, 
+                                                         ZMAPFRAME_NONE, 0)))
+          {
+            zMapAssert(FOO_IS_CANVAS_GROUP(align_hash_item));
+            align_parent = FOO_CANVAS_GROUP(align_hash_item);
+          }
+        else
+          {
+            align_parent = zmapWindowContainerCreate(canvas_data->curr_root_group,
+                                                     ZMAPCONTAINER_LEVEL_ALIGN,
+                                                     window->config.block_spacing,
+                                                     &(window->colour_alignment),
+                                                     &(window->canvas_border),
+                                                     window->long_items) ;
+            g_signal_connect(G_OBJECT(align_parent), 
+                             "destroy", 
+                             G_CALLBACK(containerDestroyCB), 
+                             window) ;
+          }
 
         canvas_data->curr_align_group = 
           zmapWindowContainerGetFeatures(align_parent) ;
@@ -1781,8 +1794,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         FooCanvasGroup *block_parent, *forward_group, *reverse_group ;
+        FooCanvasItem *block_hash_item;
         GdkColor *for_bg_colour, *rev_bg_colour ;
         double x, y;
+        gboolean block_created = FALSE;
 
         feature_block = (ZMapFeatureBlock)feature_any;
         canvas_data->curr_block = feature_block ;
@@ -1790,16 +1805,28 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
         /* Always set y offset to be top of current block. */
         canvas_data->curr_y_offset = feature_block->block_to_sequence.t1 ;
 
-        block_parent = zmapWindowContainerCreate(canvas_data->curr_align_group,
-                                                 ZMAPCONTAINER_LEVEL_BLOCK,
-                                                 window->config.strand_spacing,
-                                                 &(window->colour_block),
-                                                 &(canvas_data->window->canvas_border),
-                                                 window->long_items) ;
-        g_signal_connect(G_OBJECT(block_parent), 
-                         "destroy", 
-                         G_CALLBACK(containerDestroyCB), 
-                         window) ;
+        if((block_hash_item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                                         canvas_data->curr_alignment->unique_id,
+                                                         feature_block->unique_id, 0, ZMAPSTRAND_NONE,
+                                                         ZMAPFRAME_NONE, 0)))
+          {
+            zMapAssert(FOO_IS_CANVAS_GROUP(block_hash_item));
+            block_parent = FOO_CANVAS_GROUP(block_hash_item);
+          }
+        else
+          {
+            block_parent = zmapWindowContainerCreate(canvas_data->curr_align_group,
+                                                     ZMAPCONTAINER_LEVEL_BLOCK,
+                                                     window->config.strand_spacing,
+                                                     &(window->colour_block),
+                                                     &(canvas_data->window->canvas_border),
+                                                     window->long_items) ;
+            g_signal_connect(G_OBJECT(block_parent), 
+                             "destroy", 
+                             G_CALLBACK(containerDestroyCB), 
+                             window) ;
+            block_created = TRUE;
+          }
 
         canvas_data->curr_block_group = 
           zmapWindowContainerGetFeatures(block_parent) ;
@@ -1814,12 +1841,11 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
         
         zmapWindowContainerSetData(block_parent, ITEM_FEATURE_DATA, feature_block) ;
 
-
         /* Add this block to our hash for going from the feature context to its on screen item. */
         if(!(zmapWindowFToIAddBlock(canvas_data->window->context_to_item,
-                                    feature_block->parent->unique_id, 
-                                    key_id,
-                                    block_parent)))
+                                                      feature_block->parent->unique_id, 
+                                                      key_id,
+                                                      block_parent)))
           {
             status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
             *error_out = g_strdup_printf("Failed to add block '%s' to hash!", 
@@ -1841,44 +1867,53 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
             
             /* Create the reverse group first.  It's then first in the list and
              * so gets called first in container execute. e.g. reposition code */
-            reverse_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
-                                                      ZMAPCONTAINER_LEVEL_STRAND,
-                                                      window->config.column_spacing,
-                                                      rev_bg_colour, 
-                                                      &(canvas_data->window->canvas_border),
-                                                      window->long_items) ;
-        
-            zmapWindowContainerSetStrand(reverse_group, ZMAPSTRAND_REVERSE);
-            
-            g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(reverse_group)),
-                             "event", G_CALLBACK(strandBoundingBoxEventCB), 
-                             (gpointer)window);
-            
+            if(block_created ||
+               !(reverse_group = zmapWindowContainerGetStrandGroup(block_parent, ZMAPSTRAND_REVERSE)))
+              {
+                reverse_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
+                                                          ZMAPCONTAINER_LEVEL_STRAND,
+                                                          window->config.column_spacing,
+                                                          rev_bg_colour, 
+                                                          &(canvas_data->window->canvas_border),
+                                                          window->long_items) ;
+                
+                zmapWindowContainerSetStrand(reverse_group, ZMAPSTRAND_REVERSE);
+                
+                g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(reverse_group)),
+                                 "event", G_CALLBACK(strandBoundingBoxEventCB), 
+                                 (gpointer)window);
+              }
+
             canvas_data->curr_reverse_group = 
               zmapWindowContainerGetFeatures(reverse_group) ;
-            
-            forward_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
-                                                      ZMAPCONTAINER_LEVEL_STRAND,
-                                                      window->config.column_spacing,
-                                                      for_bg_colour, 
-                                                      &(canvas_data->window->canvas_border),
-                                                      window->long_items) ;
-        
-            zmapWindowContainerSetStrand(forward_group, ZMAPSTRAND_FORWARD);
-            
-            g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(forward_group)),
-                             "event", G_CALLBACK(strandBoundingBoxEventCB), 
-                             (gpointer)window);
-            
+
+            if(block_created ||
+               !(forward_group = zmapWindowContainerGetStrandGroup(block_parent, ZMAPSTRAND_FORWARD)))
+              {
+                forward_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
+                                                          ZMAPCONTAINER_LEVEL_STRAND,
+                                                          window->config.column_spacing,
+                                                          for_bg_colour, 
+                                                          &(canvas_data->window->canvas_border),
+                                                          window->long_items) ;
+                
+                zmapWindowContainerSetStrand(forward_group, ZMAPSTRAND_FORWARD);
+                
+                g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(forward_group)),
+                                 "event", G_CALLBACK(strandBoundingBoxEventCB), 
+                                 (gpointer)window);
+              }
+
             canvas_data->curr_forward_group = 
               zmapWindowContainerGetFeatures(forward_group) ;
-          }
+
+          }      
       }
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         FooCanvasGroup *tmp_forward, *tmp_reverse;
-        
+
         feature_set = (ZMapFeatureSet)feature_any;
 
         if(zmapWindowCreateSetColumns(window,
