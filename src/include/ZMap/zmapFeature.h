@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Dec 21 12:12 2006 (edgrif)
+ * Last edited: Jan  5 12:32 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.108 2006-12-21 12:14:03 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.109 2007-01-05 22:23:37 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -629,90 +629,21 @@ typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
 
 
 
-gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
-                             char **seq_name, int *seq_len, char **sequence) ;
+/* ***************
+ * FEATURE METHODS 
+ */
 
-void zMapFeatureReverseComplement(ZMapFeatureContext context) ;
-
-GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean query_sequence) ; 
-GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_strand,
-                                int non_start, int non_end, ZMapStrand non_strand);
-GQuark zMapFeatureSetCreateID(char *feature_set_name) ; 
-
-
-char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature_name,
-			    ZMapStrand strand, int start, int end, int query_start, int query_end) ;
-GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature_name,
-			   ZMapStrand strand, int start, int end,
+char *zMapFeatureCreateName(ZMapFeatureType feature_type, 
+                            char *feature_name,
+			    ZMapStrand strand, 
+                            int start, int end, 
+                            int query_start, int query_end) ;
+GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, 
+                           char *feature_name,
+			   ZMapStrand strand, 
+                           int start, int end,
 			   int query_start, int query_end) ;
-char *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block);
-gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
-			      int *query_start, int *query_end) ;
-void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
-
-
-ZMapFeature zMapFeatureFindFeatureInContext(ZMapFeatureContext feature_context,
-					    GQuark type_id, GQuark feature_id) ;
-
-ZMapFeature zMapFeatureFindFeatureInSet(ZMapFeatureSet feature_set, GQuark feature_id) ;
-
-GData *zMapFeatureFindSetInContext(ZMapFeatureContext feature_context, GQuark set_id) ;
-
-ZMapFeatureSet zMapFeatureFindSetInBlock(ZMapFeatureBlock feature_block, GQuark set_id) ;
-
-gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
-gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type) ;
-ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
-char *zMapFeatureName(ZMapFeatureAny any_feature) ;
-char *zMapFeatureCanonName(char *feature_name) ;
-
-
-ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
-					    GList *styles, GList *feature_set_names) ;
-gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
-				 ZMapFeatureContext new_context,
-				 ZMapFeatureContext *diff_context_out) ;
-void zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
-				    ZMapFeatureAlignment alignment, gboolean master) ;
-
-/* Probably should be merged at some time.... */
-gboolean zMapFeatureContextDump(GIOChannel *file,
-				ZMapFeatureContext feature_context, GError **error_out) ;
-gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
-				 ZMapFeatureDumpFeatureCallbackFunc dump_func,
-				 gpointer user_data,
-				 GError **error) ;
-void zMapFeatureContextExecute(ZMapFeatureAny feature_any, 
-                               ZMapFeatureStructType stop, 
-                               ZMapGDataRecurseFunc callback, 
-                               gpointer data);
-void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any, 
-                                   ZMapFeatureStructType stop, 
-                                   ZMapGDataRecurseFunc callback, 
-                                   gpointer data);
-void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any, 
-                                       ZMapFeatureStructType stop, 
-                                       ZMapGDataRecurseFunc start_callback, 
-                                       ZMapGDataRecurseFunc end_callback, 
-                                       gpointer data);
-void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any, 
-                                     ZMapFeatureStructType stop, 
-                                     ZMapGDataRecurseFunc callback, 
-                                     gpointer data);
-
-void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
-
-ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;
-void zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatureBlock block) ;
-void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment) ;
-
-ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
-					int ref_start, int ref_end, ZMapStrand ref_strand,
-					int non_start, int non_end, ZMapStrand non_strand) ;
-void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set) ;
-gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
-void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;
-
+ZMapFeature zMapFeatureCopy(ZMapFeature feature) ;
 ZMapFeature zMapFeatureCreateEmpty(void) ;
 ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
                                               ZMapFeatureType feature_type, 
@@ -720,7 +651,7 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
                                               int start, int end,
                                               gboolean has_score, double score,
                                               ZMapStrand strand, ZMapPhase phase);
-ZMapFeature zMapFeatureCopy(ZMapFeature feature) ;
+
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
 				    char *sequence, char *ontology,
 				    ZMapFeatureType feature_type, ZMapFeatureTypeStyle style,
@@ -740,36 +671,146 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapStrand target_strand, ZMapPhase target_phase,
 				     int query_start, int query_end, int query_length,
 				     GArray *gaps) ;
-ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature) ;
-ZMapFeatureSet zMapFeatureGetSet(ZMapFeature feature) ;
+char    *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block);
+gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
+			      int *query_start, int *query_end) ;
+void     zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
+void     zMapFeatureReverseComplement(ZMapFeatureContext context) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
-void zMapFeatureSortGaps(GArray *gaps) ;
-int zMapFeatureLength(ZMapFeature feature) ;
-void zmapFeatureDestroy(ZMapFeature feature) ;
+void     zMapFeatureSortGaps(GArray *gaps) ;
+int      zMapFeatureLength(ZMapFeature feature) ;
+void     zMapFeatureDestroy(ZMapFeature feature) ;
 
+
+/* ******************* 
+ * FEATURE SET METHODS 
+ */
+
+GQuark zMapFeatureSetCreateID(char *feature_set_name) ; 
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
 				      ZMapFeatureTypeStyle style, GData *features) ;
-void zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
-gboolean zMapFeatureSetAddStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle new_style) ;
-ZMapFeatureTypeStyle zMapFeatureSetFindStyle(ZMapFeatureSet feature_set, GQuark style_id) ;
 gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
-gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
-char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
-void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
+ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set, 
+                                         GQuark feature_id);
+gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
+void     zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
+void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
+char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 
 
-ZMapFeatureAny zMapFeatureGetGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
+/* *********************
+ * FEATURE BLOCK METHODS 
+ */
 
+GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_strand,
+                                int non_start, int non_end, ZMapStrand non_strand);
+ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
+					int ref_start, int ref_end, ZMapStrand ref_strand,
+					int non_start, int non_end, ZMapStrand non_strand) ;
+
+void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set) ;
+gboolean zMapFeatureBlockFindFeatureSet(ZMapFeatureBlock feature_block,
+                                        ZMapFeatureSet   feature_set);
+ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, 
+                                          GQuark set_id) ;
+gboolean zMapFeatureBlockRemoveFeatureSet(ZMapFeatureBlock feature_block,
+                                          ZMapFeatureSet   feature_set);
+gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
+void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;
+
+gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
+                             char **seq_name, int *seq_len, char **sequence) ;
+
+
+/* *************************
+ * FEATURE ALIGNMENT METHODS
+ */
+
+
+GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean query_sequence) ; 
+ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;
+void zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment feature_align, 
+                                  ZMapFeatureBlock     feature_block) ;
+gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align, 
+                                       ZMapFeatureBlock     feature_block);
+ZMapFeatureBlock zMapFeatureAlignmentGetBlockByID(ZMapFeatureAlignment feature_align, 
+                                                  GQuark block_id);
+gboolean zMapFeatureAlignmentRemoveBlock(ZMapFeatureAlignment feature_align,
+                                         ZMapFeatureBlock     feature_block);
+void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_data) ;
+
+
+/* ***********************
+ * FEATURE CONTEXT METHODS
+ */
+
+
+ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
+					    GList *styles, GList *feature_set_names) ;
+gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
+				 ZMapFeatureContext new_context,
+				 ZMapFeatureContext *diff_context_out) ;
+void zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
+				    ZMapFeatureAlignment alignment, 
+                                    gboolean master) ;
+gboolean zMapFeatureContextFindAlignment(ZMapFeatureContext   feature_context,
+                                         ZMapFeatureAlignment feature_align);
+ZMapFeatureAlignment zMapFeatureContextGetAlignmentByID(ZMapFeatureContext feature_context,
+                                                        GQuark align_id);
+gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext   feature_context,
+                                           ZMapFeatureAlignment feature_align);
+void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
+
+
+/* THOSE IN FEATURECONTEXT.C */
+
+void zMapFeatureContextExecute(ZMapFeatureAny feature_any, 
+                               ZMapFeatureStructType stop, 
+                               ZMapGDataRecurseFunc callback, 
+                               gpointer data);
+void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any, 
+                                   ZMapFeatureStructType stop, 
+                                   ZMapGDataRecurseFunc callback, 
+                                   gpointer data);
+void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any, 
+                                       ZMapFeatureStructType stop, 
+                                       ZMapGDataRecurseFunc start_callback, 
+                                       ZMapGDataRecurseFunc end_callback, 
+                                       gpointer data);
+void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any, 
+                                     ZMapFeatureStructType stop, 
+                                     ZMapGDataRecurseFunc callback, 
+                                     gpointer data);
+
+
+
+/* UTILITY METHODS */
+
+
+gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
+gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type) ;
+ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
+char *zMapFeatureName(ZMapFeatureAny any_feature) ;
+char *zMapFeatureCanonName(char *feature_name) ;
+ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
+/* Probably should be merged at some time.... */
+gboolean zMapFeatureContextDump(GIOChannel *file,
+				ZMapFeatureContext feature_context, GError **error_out) ;
+gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
+				 ZMapFeatureDumpFeatureCallbackFunc dump_func,
+				 gpointer user_data,
+				 GError **error) ;
 
 
 /* 
  *     Style functions, name should all be rationalised to just use "style", not "type".
  */
+
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description, ZMapStyleMode mode,
 					   char *outline, char *foreground, char *background,
 					   double width) ;
