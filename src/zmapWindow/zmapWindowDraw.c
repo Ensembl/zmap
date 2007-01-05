@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 21 14:55 2006 (edgrif)
+ * Last edited: Jan  4 14:48 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.52 2006-12-21 14:57:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.53 2007-01-05 22:27:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2744,7 +2744,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
     }
   else if (feature_set_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)
 	   && (!(style->opts.hidden_always) && style->opts.frame_specific)
-	   && ((feature_set = zMapFeatureFindSetInBlock(redraw_data->block, feature_set_id))))
+	   && ((feature_set = zMapFeatureBlockGetSetByID(redraw_data->block, feature_set_id))))
     {
 
       /* Make the forward/reverse columns for this feature set. */
@@ -2968,7 +2968,7 @@ static void create3FrameCols(gpointer data, gpointer user_data)
     }
   else if (feature_set_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)
 	   && (!(style->opts.hidden_always) && style->opts.frame_specific)
-	   && ((feature_set = zMapFeatureFindSetInBlock(redraw_data->block, feature_set_id))))
+	   && ((feature_set = zMapFeatureBlockGetSetByID(redraw_data->block, feature_set_id))))
     {
       /* Create both forward and reverse columns. */
       zmapWindowCreateSetColumns(window,
