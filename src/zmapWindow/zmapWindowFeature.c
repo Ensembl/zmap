@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 18 10:58 2006 (edgrif)
+ * Last edited: Jan  4 14:48 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.74 2006-12-18 11:42:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.75 2007-01-05 22:29:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -289,7 +289,7 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
   if(g_list_find(window->feature_set_names, GUINT_TO_POINTER(feature_set_id)))
     {
       /* Check feature set does not already exist. */
-      if(!zMapFeatureFindSetInBlock(feature_block, feature_set_id))
+      if(!zMapFeatureBlockGetSetByID(feature_block, feature_set_id))
         {
           /* Create the new feature set... */
           if((feature_set = zMapFeatureSetCreate(feature_set_name, NULL)))
@@ -389,18 +389,31 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;    
 
-
   /* Need to delete the feature from the feature set and from the hash and destroy the
    * canvas item....NOTE this is very order dependent. */
+
+  /* I'm still not sure this is all correct.  
+   * canvasItemDestroyCB has a FToIRemove! 
+   */
+
+  /* Firstly remove from the FToI hash... */
   if (zmapWindowFToIRemoveFeature(zmap_window->context_to_item,
-				  set_data->strand, set_data->frame, feature)
-      && zMapFeatureSetRemoveFeature(feature_set, feature))
+				  set_data->strand, set_data->frame, feature))
     {
-      /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
-      zmapWindowItemRemoveFocusItem(zmap_window->focus, feature_item);
-      gtk_object_destroy(GTK_OBJECT(feature_item)) ;
-      
-      result = TRUE ;
+      /* check the feature is in featureset. */
+      if(zMapFeatureSetFindFeature(feature_set, feature))
+        {
+          /* remove the item from the focus items list. */
+          zmapWindowItemRemoveFocusItem(zmap_window->focus, feature_item);
+
+          /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
+          gtk_object_destroy(GTK_OBJECT(feature_item)) ;
+
+          /* destroy the feature... deletes record in the featureset. */
+          zMapFeatureDestroy(feature);
+
+          result = TRUE ;
+        }
     }
 
   return result ;
