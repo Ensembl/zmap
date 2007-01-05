@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 10 14:34 2006 (edgrif)
+ * Last edited: Jan  3 11:40 2007 (rds)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.29 2006-11-08 09:25:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.30 2007-01-05 22:28:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1055,9 +1055,9 @@ static void undoChangesCB(GtkWidget *widget, gpointer data)
 
   if (editor_data->applyPressed == TRUE)
     {
-      zmapFeatureDestroy(editor_data->wcopyFeature);
+      zMapFeatureDestroy(editor_data->wcopyFeature);
       //editor_data->wcopyFeature = zMapFeatureCopy(editor_data->appliedFeature);
-      //      zmapFeatureDestroy(editor_data->appliedFeature);
+      //      zMapFeatureDestroy(editor_data->appliedFeature);
       editor_data->applyPressed = FALSE;
     }
 
@@ -1123,7 +1123,7 @@ static void saveChangesCB(GtkWidget *widget, gpointer data)
 
   if (valid == TRUE)
     {
-      zmapFeatureDestroy(editor_data->origFeature);
+      zMapFeatureDestroy(editor_data->origFeature);
 
       editor_data->origFeature = zMapFeatureCopy(editor_data->wcopyFeature);
 
@@ -1328,7 +1328,7 @@ static gboolean applyChangesCB(GtkWidget *widget, gpointer data)
 	}
 
       if (editor_data->applyPressed == TRUE)
-	zmapFeatureDestroy(editor_data->wcopyFeature); /* was appliedFeature */
+	zMapFeatureDestroy(editor_data->wcopyFeature); /* was appliedFeature */
 
       //      editor_data->appliedFeature = zMapFeatureCopy(editor_data->wcopyFeature);
       editor_data->applyPressed = TRUE;
