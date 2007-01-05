@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Dec 13 16:34 2006 (rds)
+ * Last edited: Jan  4 15:24 2007 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.37 2006-12-13 16:35:40 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.38 2007-01-05 22:22:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -793,7 +793,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(GHashTable *feature_to_context_hash,
 	    }
 	}
     }
-  else
+  else if(!align_id)
     {
       /* We just want the root_group of our columns. Not the canvas
        * root_group, get that by foo_canvas_root(canvas)! */
