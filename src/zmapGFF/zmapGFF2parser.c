@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jan  4 09:36 2007 (edgrif)
+ * Last edited: Jan  5 10:05 2007 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.68 2007-01-04 09:37:18 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.69 2007-01-05 22:26:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,12 +43,12 @@
 
 /* THIS FILE NEEDS WORK TO COPE WITH ALIGN/BLOCK/COORD INFO..... */
 
-
+#ifdef RDS_NO_TO_HACKED_CODE
 /* HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
 static void setBlock(GQuark key_id, gpointer data, gpointer user_data) ;
 static void setSet(GQuark key_id, gpointer data, gpointer user_data) ;
 /* END OF HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
-
+#endif
 
 typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE} NameFindType ;
 
@@ -372,19 +372,8 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
        * for parse_only.... */
       if (!parser->parse_only && parser->feature_sets)
 	{
-	  g_datalist_init(&(feature_block->feature_sets)) ;
-
-	  g_datalist_foreach(&(parser->feature_sets), getFeatureArray,
-			     &(feature_block->feature_sets)) ;
-
-
-	  /* OK, THIS IS A HACK, REALLY THIS PARSER CODE SHOULD JUST USE THE FEATURE.H
-	   * HEADER AND NOT DELVE INTO THE FEATURE BLOCK STUFF BY FOR NOW WE HAVE TO FIX
-	   * UP ALL THE LINKS "BY HAND"..... */
-	  g_datalist_foreach(&(feature_block->feature_sets), setBlock,
+          g_datalist_foreach(&(parser->feature_sets), getFeatureArray,
 			     feature_block) ;
-
-
 	}
 
       result = TRUE ;
@@ -394,14 +383,17 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 }
 
 
-
+#ifdef RDS_NO_TO_HACKED_CODE
 /* HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
 static void setBlock(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
+#ifdef RDS_DONT_INCLUDE
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)user_data ;
 
   feature_set->parent = (ZMapFeatureAny)feature_block ;
+  zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+#endif
 
   g_datalist_foreach(&(feature_set->features), setSet, feature_set) ;
 
@@ -413,13 +405,15 @@ static void setSet(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeature feature = (ZMapFeature)data ;
   ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data ;
 
+#ifdef RDS_DONT_INCLUDE
   feature->parent = (ZMapFeatureAny)feature_set ;
+#endif
+  zMapFeatureSetAddFeature(feature_set, feature);
 
   return ;
 }
-
 /* END OF HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
-
+#endif
 
 
 
@@ -1075,9 +1069,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	  parser_feature_set->parser = parser ;		    /* We need parser flags in the destroy
 							       function for the feature_set list. */
 	}
-
+#ifdef RDS_USES_FEATURE_SET_ADD_FEATURE
       /* Always add every new feature to the final set.... */
       g_datalist_set_data(&(feature_set->features), feature_name_id, new_feature) ;
+#endif
 
       feature = new_feature ;
 
@@ -1100,6 +1095,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 					  has_score, score,
 					  strand, phase)))
    {
+     zMapFeatureSetAddFeature(feature_set, feature);
+
      if (url)
        zMapFeatureAddURL(feature, url) ;
 
@@ -1180,7 +1177,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   /* If we are only parsing then free any stuff allocated by addDataToFeature() */
   if (parser->parse_only)
     {
-      zmapFeatureDestroy(feature) ;
+      zMapFeatureDestroy(feature) ;
     }
 
 
@@ -1712,9 +1709,9 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
   ZMapFeatureSet feature_set = parser_feature_set->feature_set ;
-  GData **features = (GData **)user_data ;
+  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)user_data ;
 
-  g_datalist_id_set_data(features, feature_set->unique_id, feature_set) ;
+  zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
 
   return ;
 }
