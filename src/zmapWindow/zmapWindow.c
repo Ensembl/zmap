@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec 18 11:45 2006 (edgrif)
+ * Last edited: Jan  5 22:18 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.163 2006-12-18 11:45:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.164 2007-01-05 22:26:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -395,7 +395,7 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_feature
 
       sendClientEvent(window, feature_sets) ;
     }
-  else
+  else if(!window->exposeHandlerCB)
     {
       RealiseData realiseData ;
       
@@ -407,7 +407,18 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_feature
 						 GTK_SIGNAL_FUNC(exposeHandlerCB),
 						 (gpointer)realiseData) ;
     }
-
+  else
+    {
+      /* There's a problem here.
+       *-------------------------
+       * first call to displaydata sets the first exposeHandler
+       * second call sets the second...
+       * first handler gets run, removes the second handler (window->exposeHandlerCB id)
+       * meanwhile when the first handler finishes it destroys its data.
+       * first one gets run on next expose. BANG.
+       */
+      printf("If we've merged some contexts before being exposed\n");
+    }
   return ;
 }
 
@@ -1028,6 +1039,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
   ZMapWindowSelectStruct select = {NULL} ;
+  ZMapFeatureSet set;
   int feature_start, feature_end ;
 
   /* If feature_arg is NULL then this implies "reset the info data/panel". */
@@ -1124,8 +1136,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 
   select.feature_desc.feature_type = zMapFeatureType2Str(feature->type) ;
 
-  select.feature_desc.feature_set
-    = (char *)g_quark_to_string((zMapFeatureGetSet(feature))->original_id) ;
+  if((set = zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
+    select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
 
   select.feature_desc.feature_style
     = zMapStyleGetName(zMapFeatureGetStyle(feature)) ;
