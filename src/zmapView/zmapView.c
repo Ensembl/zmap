@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec 15 11:22 2006 (edgrif)
+ * Last edited: Jan  8 08:52 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.96 2006-12-18 11:37:15 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.97 2007-01-08 10:34:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1839,27 +1839,33 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 
   zMapPrintTimer(NULL, "Got Features from Thread") ;
 
-
   /* Merge new data with existing data (if any). */
-  new_features = feature_req->feature_context_out ;
-
-  if (!zMapFeatureContextMerge(&(zmap_view->features), new_features, &diff_context))
-    zMapLogCritical("%s", "Cannot merge feature data from....") ;
-  else
+  if((new_features = feature_req->feature_context_out))
     {
-      /* We should free the new_features context here....actually better
-       * would to have a "free" flag on the above merge call. */
-
-      zMapPrintTimer(NULL, "Merged Features into context and about to display") ;
-
-      /* Signal the ZMap that there is work to be done. */
-      displayDataWindows(zmap_view, zmap_view->features, diff_context) ;
-
-      zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features);
-
-      /* signal our caller that we have data. */
-      (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
-
+      if (!zMapFeatureContextMerge(&(zmap_view->features), new_features, &diff_context))
+        zMapLogCritical("%s", "Cannot merge feature data from....") ;
+      else
+        {
+          /* We should free the new_features context here....actually better
+           * would to have a "free" flag on the above merge call. */
+          
+          zMapPrintTimer(NULL, "Merged Features into context and about to display") ;
+          
+          /* Signal the ZMap that there is work to be done. */
+          displayDataWindows(zmap_view, zmap_view->features, diff_context) ;
+          
+          zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features);
+          
+          /* signal our caller that we have data. */
+          (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
+          
+          /* Free the diff context, if there indeed was one. */
+          if(diff_context != NULL)
+            zMapFeatureContextDestroy(diff_context, TRUE);
+        }
+      
+      if(zmap_view->features != new_features)
+        zMapFeatureContextDestroy(new_features, TRUE);
     }
 
   return ;
