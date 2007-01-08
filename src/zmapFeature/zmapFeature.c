@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jan  5 22:20 2007 (rds)
+ * Last edited: Jan  8 08:57 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.52 2007-01-05 22:25:29 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.53 2007-01-08 10:32:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -137,7 +137,8 @@ static ZMapFeatureContextExecuteStatus mergeContextCB(GQuark key,
                                                       char **err_out);
 
 
-static gboolean merge_debug_G = TRUE;
+static gboolean merge_debug_G   = FALSE;
+static gboolean destroy_debug_G = FALSE;
 
 /* !
  * A set of functions for allocating, populating and destroying features.
@@ -1181,7 +1182,8 @@ static void printDestroyDebugInfo(GData *datalist, char *who)
 
   g_datalist_foreach(&datalist, getDataListLength, &length);
 
-  printf("%s: datalist size %d\n", who, length.length);
+  if(destroy_debug_G)
+    printf("%s: datalist size %d\n", who, length.length);
 
   return ;
 }
@@ -1193,7 +1195,8 @@ static void destroyFeatureSet(gpointer data)
 {
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
   
-  printDestroyDebugInfo(feature_set->features, __PRETTY_FUNCTION__);
+  if(destroy_debug_G)
+    printDestroyDebugInfo(feature_set->features, __PRETTY_FUNCTION__);
 
   g_datalist_clear(&(feature_set->features)) ;
 
@@ -1206,7 +1209,8 @@ static void destroyBlock(gpointer block_data)
 {
   ZMapFeatureBlock block = (ZMapFeatureBlock)block_data;
 
-  printDestroyDebugInfo(block->feature_sets, __PRETTY_FUNCTION__);
+  if(destroy_debug_G)
+    printDestroyDebugInfo(block->feature_sets, __PRETTY_FUNCTION__);
 
   g_datalist_clear(&(block->feature_sets));
 
@@ -1219,7 +1223,8 @@ static void destroyAlign(gpointer align_data)
 {
   ZMapFeatureAlignment align = (ZMapFeatureAlignment)align_data;
 
-  printf("%s: glist size %d\n", __PRETTY_FUNCTION__, g_list_length(align->blocks));
+  if(destroy_debug_G)
+    printf("%s: glist size %d\n", __PRETTY_FUNCTION__, g_list_length(align->blocks));
   
   g_list_foreach(align->blocks, freeBlocks, NULL);
 
@@ -1232,7 +1237,8 @@ static void destroyContext(gpointer context_data)
 {
   ZMapFeatureContext context = (ZMapFeatureContext)context_data;
 
-  printDestroyDebugInfo(context->alignments, __PRETTY_FUNCTION__);
+  if(destroy_debug_G)
+    printDestroyDebugInfo(context->alignments, __PRETTY_FUNCTION__);
 
   g_datalist_clear(&(context->alignments));
 
