@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan  5 22:21 2007 (rds)
+ * Last edited: Jan  8 10:28 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.171 2007-01-05 22:27:55 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.172 2007-01-08 10:35:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1770,6 +1770,11 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                              "destroy", 
                              G_CALLBACK(containerDestroyCB), 
                              window) ;
+
+            /* Only set this here, other wise we possibly set the
+             * version from the diff context which will get
+             * destroyed. */
+            zmapWindowContainerSetData(align_parent, ITEM_FEATURE_DATA, feature_align) ;
           }
 
         canvas_data->curr_align_group = 
@@ -1779,9 +1784,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                             "x", x,
                             "y", y,
                             NULL) ;
-
-        g_object_set_data(G_OBJECT(align_parent), 
-                          ITEM_FEATURE_DATA, feature_align) ;
 
         if(!(zmapWindowFToIAddAlign(window->context_to_item, key_id, align_parent)))
           {
@@ -1826,6 +1828,11 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                              G_CALLBACK(containerDestroyCB), 
                              window) ;
             block_created = TRUE;
+
+            /* Only set this here, other wise we possibly set the
+             * version from the diff context which will get
+             * destroyed. */
+            zmapWindowContainerSetData(block_parent, ITEM_FEATURE_DATA, feature_block) ;
           }
 
         canvas_data->curr_block_group = 
@@ -1839,7 +1846,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                             "y", y,
                             NULL) ;
         
-        zmapWindowContainerSetData(block_parent, ITEM_FEATURE_DATA, feature_block) ;
 
         /* Add this block to our hash for going from the feature context to its on screen item. */
         if(!(zmapWindowFToIAddBlock(canvas_data->window->context_to_item,
