@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  4 14:48 2007 (rds)
+ * Last edited: Jan  9 15:26 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.75 2007-01-05 22:29:12 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.76 2007-01-09 15:26:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -384,10 +384,11 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
   feature_set = (ZMapFeatureSet)(feature->parent) ;
 
-  set_group = zmapWindowItemGetParentContainer(feature_item) ;
+  set_group = zmapWindowContainerGetParentContainerFromItem(feature_item) ;
   zMapAssert(set_group) ;
   set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;    
+
 
   /* Need to delete the feature from the feature set and from the hash and destroy the
    * canvas item....NOTE this is very order dependent. */
@@ -415,6 +416,8 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
           result = TRUE ;
         }
     }
+
+
 
   return result ;
 }
@@ -1994,7 +1997,7 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
   /* We may not have a parent group if we are being called as a result of a
    * parent/superparent being destroyed. In this case our parent pointer is
    * set to NULL before we are called. */
-  if ((set_group = zmapWindowItemGetParentContainer(feature_item)))
+  if ((set_group = zmapWindowContainerGetParentContainerFromItem(feature_item)))
     {
       ZMapFeature feature ;
       ZMapWindowItemFeatureSetData set_data ;
@@ -2112,9 +2115,17 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		 * the root handler. */
 		if (but_event->button == 1 || but_event->button == 3)
 		  {
+		    gboolean replace_highlight = TRUE ;
 		    FooCanvasItem *highlight_item ;
 
 		    if (zMapGUITestModifiers(but_event, GDK_SHIFT_MASK))
+		      {
+			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
+
+			if (zmapWindowItemInFocusColumn(window->focus, highlight_item))
+			  replace_highlight = FALSE ;
+		      }
+		    else if (zMapGUITestModifiers(but_event, GDK_CONTROL_MASK))
 		      {
 			highlight_item = real_item ;
 		      }
@@ -2124,8 +2135,10 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		      }
 
 		    /* Pass information about the object clicked on back to the application. */
-		    zMapWindowUpdateInfoPanel(window, feature, real_item, highlight_item) ;
-                    zmapWindowFeatureHighlightDNA(window, feature, real_item);
+		    zMapWindowUpdateInfoPanel(window, feature, real_item, highlight_item, replace_highlight) ;
+
+		    zmapWindowFeatureHighlightDNA(window, feature, real_item);
+
 
 		    if (but_event->button == 3)
 		      {
