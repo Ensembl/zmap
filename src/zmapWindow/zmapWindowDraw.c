@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  4 14:48 2007 (rds)
+ * Last edited: Jan  9 10:35 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.53 2007-01-05 22:27:17 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.54 2007-01-09 14:36:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -396,7 +396,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
       != ITEM_FEATURE_INVALID)
     {
       column = FALSE ;
-      column_group = zmapWindowItemGetParentContainer(column_item) ;
+      column_group = zmapWindowContainerGetParentContainerFromItem(column_item) ;
     }
   else if ((container_type = zmapWindowContainerGetLevel(FOO_CANVAS_GROUP(column_item)))
 	   == ZMAPCONTAINER_LEVEL_FEATURESET)
@@ -431,7 +431,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   /* Some features may have been hidden for bumping, unhide them now. */
   if (set_data->hidden_bump_features)
     {
-      g_list_foreach(column_features->item_list, showItems, NULL) ;
+      g_list_foreach(column_features->item_list, showItems, set_data) ;
       set_data->hidden_bump_features = FALSE ;
     }
 
@@ -1581,6 +1581,7 @@ static void addBackgrounds(gpointer data, gpointer user_data)
 		      foo_canvas_item_get_bounds(last_item, NULL, NULL, NULL, &y2);
 
 		      bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
+		      bump_data->first_item = first_item ;
 		      bump_data->feature_id = first_id ;
 		      bump_data->style = first_style ;
 
@@ -1713,6 +1714,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	  if (start > 1)
 	    {
 	      bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
+	      bump_data->first_item = item ;
 	      bump_data->feature_id = curr_id ;
 	      bump_data->style = curr_style ;
 
@@ -1778,6 +1780,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	      if (curr_y1 > prev_y2)
 		{
 		  bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
+		  bump_data->first_item = item ;
 		  bump_data->feature_id = prev_id ;
 		  bump_data->style = prev_style ;
 
@@ -1823,7 +1826,6 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	    {
 	      start = prev_feature->feature.homol.y2 ;
 	      end = prev_feature->feature.homol.y1 ;
-	      printf("found one\n") ;
 	    }
 	  else
 	    {
@@ -1834,6 +1836,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	  if (end < prev_feature->feature.homol.length)
 	    {
 	      bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
+	      bump_data->first_item = item ;
 	      bump_data->feature_id = prev_feature->original_id ;
 	      bump_data->style = prev_feature->style ;
 
@@ -2128,11 +2131,13 @@ static void freeExtraItems(gpointer data, gpointer user_data_unused)
 
 
 
-static void showItems(gpointer data, gpointer user_data_unused)
+static void showItems(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
+  ZMapWindowItemFeatureSetData set_data = (ZMapWindowItemFeatureSetData)user_data ;
 
-  foo_canvas_item_show(item) ;
+  if (!(g_list_find(set_data->user_hidden_items, item)))
+    foo_canvas_item_show(item) ;
 
   return ;
 }
@@ -3084,31 +3089,48 @@ static gboolean bumpBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gpoi
     {
     case GDK_BUTTON_PRESS:
       {
-	ZMapWindowItemFeatureType item_feature_type ;
-	ZMapWindowItemFeatureBumpData bump_data ;
-	ZMapWindowSelectStruct select = {NULL} ;
+	GdkEventButton *but_event = (GdkEventButton *)event ;
 
-	item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							      ITEM_FEATURE_TYPE)) ;
-	zMapAssert(item_feature_type == ITEM_FEATURE_GROUP_BACKGROUND) ;
+	/* Button 1 is handled, button 3 is not as there is no applicable item menu,
+	 * 2 is left for a general handler which could be the root handler. */
+	if (but_event->button == 1)
+	  {
+	    ZMapWindowItemFeatureType item_feature_type ;
+	    ZMapWindowItemFeatureBumpData bump_data ;
+	    ZMapWindowSelectStruct select = {NULL} ;
+	    gboolean replace_highlight = TRUE ;
+
+	    if (zMapGUITestModifiers(but_event, (GDK_SHIFT_MASK | GDK_MOD1_MASK)))
+	      {
+		if (zmapWindowItemInFocusColumn(window->focus, item))
+		  replace_highlight = FALSE ;
+	      }
+
+	    item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
+								  ITEM_FEATURE_TYPE)) ;
+	    zMapAssert(item_feature_type == ITEM_FEATURE_GROUP_BACKGROUND) ;
 
 
-	/* Retrieve the feature item info from the canvas item. */
-	bump_data = (ZMapWindowItemFeatureBumpData)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_BUMP_DATA) ;  
-	zMapAssert(bump_data) ;
+	    /* Retrieve the feature item info from the canvas item. */
+	    bump_data = (ZMapWindowItemFeatureBumpData)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_BUMP_DATA) ;  
+	    zMapAssert(bump_data) ;
 
-	/* Pass back details for display to the user to our caller. */
-	select.feature_desc.feature_name = (char *)g_quark_to_string(bump_data->feature_id) ;
+	    /* Pass back details for display to the user to our caller. */
+	    select.feature_desc.feature_name = (char *)g_quark_to_string(bump_data->feature_id) ;
 
-	select.feature_desc.feature_set = (char *)g_quark_to_string(bump_data->style->original_id) ;
+	    select.feature_desc.feature_set = (char *)g_quark_to_string(bump_data->style->original_id) ;
 
-	select.secondary_text = zmapWindowFeatureSetDescription(bump_data->style->original_id, bump_data->style) ;
+	    select.secondary_text = zmapWindowFeatureSetDescription(bump_data->style->original_id, bump_data->style) ;
 
-	(*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+	    select.highlight_item = bump_data->first_item ;
+	    select.replace_highlight_item = replace_highlight ;
 
-	g_free(select.secondary_text) ;
+	    (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
-	event_handled = TRUE ;
+	    g_free(select.secondary_text) ;
+
+	    event_handled = TRUE ;
+	  }
 
 	break ;
       }
