@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan  2 17:58 2007 (rds)
+ * Last edited: Jan  9 12:14 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.15 2007-01-02 17:59:27 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.16 2007-01-09 13:54:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -134,6 +134,7 @@ static void positioningCB(FooCanvasGroup *container, FooCanvasPoints *points,
 
 static FooCanvas *fetchCanvas(ZMapWindowNavigator navigate);
 
+static void initialiseScaleIfNotExists(ZMapFeatureBlock block);
 static void drawScale(NavigateDraw draw_data);
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget);
 static gboolean navExposeHandlerCB(GtkWidget *widget, 
@@ -687,6 +688,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
                                                                 &(navigate->strand_background), NULL, NULL);
 
         /* create a column per set ... */
+        initialiseScaleIfNotExists(draw_data->current_block);
         g_list_foreach(draw_data->navigate->feature_set_names, createColumnCB, (gpointer)draw_data);
         drawScale(draw_data);
       }
@@ -729,7 +731,19 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
   return status;
 }
 
+static void initialiseScaleIfNotExists(ZMapFeatureBlock block)
+{
+  ZMapFeatureSet scale;
+  char *scale_id = ZMAP_FIXED_STYLE_SCALE_NAME;
 
+  if(!(scale = zMapFeatureBlockGetSetByID(block, g_quark_from_string(scale_id))))
+    {
+      scale = zMapFeatureSetCreate(scale_id, NULL);
+      zMapFeatureBlockAddFeatureSet(block, scale);
+    }
+
+  return ;
+}
 static void drawScale(NavigateDraw draw_data)
 {
   ZMapFeatureTypeStyle style  = NULL;
@@ -793,7 +807,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
 
   /* assuming set name == style name !!! */
   if((style = zMapFindStyle(draw_data->context->styles, set_id)) &&
-     (draw_data->current_set = g_datalist_id_get_data(&(draw_data->current_block->feature_sets), set_id)))
+     (draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_id)))
     {
       zMapAssert(draw_data->current_set);
 
@@ -815,6 +829,11 @@ static void createColumnCB(gpointer data, gpointer user_data)
       set_data->frame  = ZMAPFRAME_NONE ;
       set_data->style  = zMapFeatureStyleCopy(style) ;
       set_data->style_table = zmapWindowStyleTableCreate() ;
+
+      set_data->window = draw_data->navigate->current_window;
+
+      zMapAssert(set_data->window);
+
       g_object_set_data_full(G_OBJECT(draw_data->container_feature_set), 
                              ITEM_FEATURE_SET_DATA, set_data, lazyNeedsFixing) ;
       
@@ -822,9 +841,11 @@ static void createColumnCB(gpointer data, gpointer user_data)
 
       container_background = zmapWindowContainerGetBackground(draw_data->container_feature_set);
 
-      g_signal_connect(G_OBJECT(container_background), "event",
-                       G_CALLBACK(columnBackgroundEventCB), 
-                       (gpointer)draw_data->navigate);
+      /* scale doesn't need this. */
+      if(set_id != g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME))
+        g_signal_connect(G_OBJECT(container_background), "event",
+                         G_CALLBACK(columnBackgroundEventCB), 
+                         (gpointer)draw_data->navigate);
     }
   else if(!style)
     printf("Failed to find style with id %s\n", g_quark_to_string(set_id));
