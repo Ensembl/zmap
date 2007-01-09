@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 11 10:32 2006 (edgrif)
+ * Last edited: Jan  5 17:47 2007 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.2 2006-11-08 09:25:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.3 2007-01-09 14:34:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -353,7 +353,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
 
 	  /* Need to convert coords back to block coords here.... */
-	  g_list_foreach(match_list, remapCoords, search_data->block) ;
+	  g_list_foreach(match_list, remapCoords, search_data) ;
 
 	  zmapWindowDNAListCreate(search_data->window, match_list, title, search_data->block) ;
 
@@ -453,10 +453,22 @@ static void nSpinCB(GtkSpinButton *spin_button, gpointer user_data)
 static void remapCoords(gpointer data, gpointer user_data)
 {
   ZMapDNAMatch match_data = (ZMapDNAMatch)data ;
-  ZMapFeatureBlock block = (ZMapFeatureBlock)user_data ;
+  DNASearchData search_data = (DNASearchData)user_data ;
+  ZMapFeatureBlock block = (ZMapFeatureBlock)search_data->block ;
 
   match_data->start = match_data->start + block->block_to_sequence.q1 ;
   match_data->end = match_data->end + block->block_to_sequence.q1 ;
+
+  if (search_data->window->display_forward_coords)
+    {
+      match_data->screen_start = zmapWindowCoordFromOrigin(search_data->window, match_data->start) ;
+      match_data->screen_end = zmapWindowCoordFromOrigin(search_data->window, match_data->end) ;
+    }
+  else
+    {
+      match_data->screen_start = match_data->start ;
+      match_data->screen_end = match_data->end ;
+    }
 
   return ;
 }
