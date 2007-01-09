@@ -18,6 +18,7 @@
 	<li> <A HREF="issues.html">Current issues</A>
 	<li> <A HREF="lace.changes">Integration with lace system</A>
 	<li> <A HREF="talks/index.shtml">Talks</A>
+	<li> <A HREF="ZMap_XCode.shtml">Setting up an autoconf project in Apple Mac XCode.</A>
       </ul>
   <li><b>ZMap User Guides</b>
       <ul>
