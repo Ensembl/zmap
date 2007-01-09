@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 21 13:41 2006 (edgrif)
+ * Last edited: Jan  9 14:30 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.59 2006-12-21 13:42:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.60 2007-01-09 14:32:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -143,8 +143,6 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
 
 
 
-
-
 /* 
  *           Set of functions for handling the marked feature or region.
  * 
@@ -239,6 +237,9 @@ GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark)
 
 /* Mark an item, the marking must be done explicitly, it is unaffected by highlighting. 
  * Note that the item must be a feature item.
+ * 
+ * The coords are all -1 or +1 to make sure we don't clip the given item with the
+ * marking.
  *  */
 void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
 {
@@ -258,15 +259,15 @@ void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
   feature = g_object_get_data(G_OBJECT(mark->range_item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
 
-  mark->range_top = feature->x1 ;
-  mark->range_bottom = feature->x2 ;
+  mark->range_top = feature->x1 - 1 ;
+  mark->range_bottom = feature->x2 + 1 ;
 
   mark->block_group = zmapWindowContainerGetParentLevel(mark->range_item, ZMAPCONTAINER_LEVEL_BLOCK) ;
   mark->block = g_object_get_data(G_OBJECT(mark->block_group), ITEM_FEATURE_DATA) ;
 
   markItem(mark, mark->range_item, TRUE) ;
 
-  markRange(mark, y1, y2) ;
+  markRange(mark, y1 - 1, y2 + 1) ;
 
   mark->mark_set = TRUE ;
 
@@ -392,7 +393,7 @@ gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_stran
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature && feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
 
-  set_group = zmapWindowItemGetParentContainer(item) ;
+  set_group = zmapWindowContainerGetParentContainerFromItem(item) ;
 
   /* These should go in container some time.... */
   set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
@@ -663,26 +664,19 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
  *                     Feature Item highlighting.... 
  */
 
-/* I'm not sure I understand the first part of this comment now...sigh... */
-/* Highlight a feature, note how this function should just take _any_ feature/item but it doesn't 
- * and so needs redoing....sigh....it should also be called something like focusOnItem()
- * 
- * This function will need some attention if we get to the stage of allowing multiple selections
- * as in the Mac and other interfaces...usually achieved by holding done the shift key while
- * selecting items.
+
+/* Highlight a feature or list of related features (e.g. all hits for same query sequence).
  * 
  *  */
-void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item)
+void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean replace_highlight_item)
 {                                               
-  zmapWindowHighlightObject(window, item, TRUE) ;
+  zmapWindowHighlightObject(window, item, replace_highlight_item) ;
 
   return ;
 }
 
 
-/* raise_item is temporary and must go...replace with more sophisticated raise....i.e. only
- * raise if item is obscured... */
-void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean raise_item)
+void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean replace_highlight_item)
 {                                               
   ZMapFeature feature ;
   ZMapWindowItemFeatureType item_feature_type ;
@@ -697,7 +691,8 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean 
 
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
-  zMapWindowUnHighlightFocusItems(window) ;
+  if (replace_highlight_item)
+    zMapWindowUnHighlightFocusItems(window) ;
 
 
   /* For some types of feature we want to highlight all the ones with the same name in that column. */
@@ -730,28 +725,19 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean 
       break ;
     }
 
-
   zmapHighlightColumn(window, zmapWindowItemGetHotFocusColumn(window->focus)) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
   /* We need to be more sophisticated with our raising of items...otherwise tabbing through them
    * just looks ridiculous...you end up tabbing everywhere... */
-
-  if (raise_item)
-    {
-      foo_canvas_item_get_bounds (FooCanvasItem *item,
-				  double *x1, double *y1, double *x2, double *y2);
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   /* FOR NOW i'VE LEFT THIS AS IT IS BECAUSE OTHERWISE THE USER MAY SEE ITEMS THEY HAVE SELECTED
    * FROM ONE OF THE SEARCH WINDOWS. */
-  zmapWindowRaiseItem(item) ;
+  if (replace_highlight_item)
+    zmapWindowRaiseItem(item) ;
+
 
   return ;
 }
+
 
 
 
@@ -843,16 +829,12 @@ void zmapWindowRaiseItem(FooCanvasItem *item)
 
 
 
-/* THIS SHOULD BE MOVED TO THE CONTAINER CODE..... */
-/* Returns the container parent of the given feature. */
+
+/* Returns the container parent of the given canvas item which may not be feature, it might be
+   some decorative box, e.g. as in the alignment colinear bars. */
 FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
 {
   FooCanvasGroup *parent_container = NULL ;
-
-  parent_container = zmapWindowContainerGetParentContainerFromItem(feature_item);
-
-  return parent_container;
-#ifdef RDS_MOVED_CODE
   ZMapWindowItemFeatureType item_feature_type ;
   FooCanvasItem *parent_item = NULL ;
 
@@ -879,7 +861,6 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
     }
 
   return parent_container ;
-#endif
 }
 
 
@@ -945,7 +926,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
 							ITEM_FEATURE_TYPE)) ;
 
-  set_group = zmapWindowItemGetParentContainer(item) ;
+  set_group = zmapWindowContainerGetParentContainerFromItem(item) ;
 
   /* These should go in container some time.... */
   set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
@@ -995,7 +976,7 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature) ;
 
-  set_group = zmapWindowItemGetParentContainer(item) ;
+  set_group = zmapWindowContainerGetParentContainerFromItem(item) ;
 
   /* These should go in container some time.... */
   set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
@@ -1259,12 +1240,12 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
   }
 
   /* highlight the item, which also does raise_to_top! */
-  zMapWindowHighlightObject(window, item) ;
+  zMapWindowHighlightObject(window, item, TRUE) ;
   
   /* Report the selected object to the layer above us. */
   if(window->caller_cbs->select != NULL)
     {
-      zMapWindowUpdateInfoPanel(window, feature, item, NULL) ;
+      zMapWindowUpdateInfoPanel(window, feature, item, NULL, TRUE) ;
     }
 
   result = TRUE ;
@@ -1336,6 +1317,23 @@ void zmapWindowItemAddFocusItems(ZMapWindowFocus focus, GList *item_list)
 }
 
 
+/* Is the given item in the hot focus column ? */
+/* SHOULD BE RENAMED TO BE _ANY_ ITEM AS IT CAN INCLUDE BACKGROUND ITEMS.... */
+gboolean zmapWindowItemInFocusColumn(ZMapWindowFocus focus, FooCanvasItem *item)
+{
+  gboolean result = FALSE ;
+
+  if (focus->focus_column)
+    {
+      if (focus->focus_column == zmapWindowItemGetParentContainer(item))
+	result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
 void zmapWindowItemSetHotFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
 {
   /* always try to remove, if item is not in list then list is unchanged. */
@@ -1345,7 +1343,7 @@ void zmapWindowItemSetHotFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
   focus->focus_item_set = g_list_prepend(focus->focus_item_set, item) ;
 
   /* Set the focus items column as the focus column. */
-  focus->focus_column = zmapWindowItemGetParentContainer(item) ;
+  focus->focus_column = zmapWindowContainerGetParentContainerFromItem(item) ;
 
   return ;
 }
@@ -1563,7 +1561,7 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
 	}
 
-      zMapWindowUpdateInfoPanel(window, modFeature, item, NULL);      
+      zMapWindowUpdateInfoPanel(window, modFeature, item, NULL, TRUE) ;
     }
   return;
 }
