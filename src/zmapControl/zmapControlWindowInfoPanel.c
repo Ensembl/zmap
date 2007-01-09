@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Dec  6 09:05 2006 (edgrif)
+ * Last edited: Jan  8 08:01 2007 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.11 2006-12-06 09:13:10 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.12 2007-01-09 14:27:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -230,9 +230,12 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
     }
 
   /* Do some clearing up.... */
-  g_free(text[0]) ;
-  g_free(text[2]) ;
-  g_free(text[3]) ;
+  if (feature_desc)
+    {
+      g_free(text[0]) ;
+      g_free(text[2]) ;
+      g_free(text[3]) ;
+    }
 
   /* I don't know if we need to do this each time....or if it does any harm.... */
   if (feature_desc)
