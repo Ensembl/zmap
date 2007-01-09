@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 15 11:39 2006 (rds)
+ * Last edited: Jan  9 14:50 2007 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.8 2006-12-15 11:40:03 rds Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.9 2007-01-09 14:50:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -225,18 +225,16 @@ void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item
               memcpy(new_item->pos.points->coords,
                      item_points->coords,
                      ((item_points->num_points * 2) * sizeof(double))) ;
+
+              new_item->extreme.y1 = start;
+              new_item->extreme.y2 = end;
             }
           else
             {
-              new_item->pos.box.start = start ;
-              new_item->pos.box.end = end ;
+              new_item->extreme.y1 = new_item->pos.box.start = start ;
+              new_item->extreme.y2 = new_item->pos.box.end = end ;
             }
         }
-
-      if(start < new_item->extreme.y1)
-        new_item->extreme.y1 = start;
-      if(end   > new_item->extreme.y2)
-        new_item->extreme.y2 = end;
       
       if(created)
         {
