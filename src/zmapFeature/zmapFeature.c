@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jan  8 08:57 2007 (rds)
+ * Last edited: Jan  9 09:25 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.53 2007-01-08 10:32:37 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.54 2007-01-09 09:25:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1530,6 +1530,7 @@ static ZMapFeatureContextExecuteStatus destroyContextCB(GQuark key,
  * destroyed
  
  * There could be some more error stuff...
+ * We could memcpy the diff "empty" copies.
  */
 static ZMapFeatureContextExecuteStatus mergeContextCB(GQuark key, 
                                                       gpointer data, 
@@ -1665,6 +1666,10 @@ static ZMapFeatureContextExecuteStatus mergeContextCB(GQuark key,
 
               if((diff_block = g_new0(ZMapFeatureBlockStruct, 1)))
                 {
+                  if(!(merge_data->current_current_block->sequence.sequence))
+                    merge_data->current_current_block->sequence = 
+                      ((ZMapFeatureBlock)feature_any)->sequence;
+
                   diff_block->unique_id   = feature_block->unique_id;
                   diff_block->original_id = feature_block->original_id;
                   diff_block->parent      = (ZMapFeatureAny)(merge_data->current_diff_align);
@@ -1673,8 +1678,6 @@ static ZMapFeatureContextExecuteStatus mergeContextCB(GQuark key,
                   diff_block->block_to_sequence = 
                     feature_block->block_to_sequence; /* struct copy */
 
-                  diff_block->sequence    = feature_block->sequence;
-                  
                   zMapFeatureAlignmentAddBlock(merge_data->current_diff_align,
                                                diff_block);
                   merge_data->destroy_block = TRUE;
