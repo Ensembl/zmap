@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  7 08:39 2006 (rds)
+ * Last edited: Jan  9 10:39 2007 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.19 2006-11-08 09:25:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.20 2007-01-09 14:27:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -877,7 +877,7 @@ static void setFilterDefaults(SearchData search_data)
 
       if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	{
-	  featureset_group = zmapWindowItemGetParentContainer(search_data->feature_item) ;
+	  featureset_group = zmapWindowContainerGetParentContainerFromItem(search_data->feature_item) ;
 	}
       else
 	featureset_group = FOO_CANVAS_GROUP(search_data->feature_item) ;

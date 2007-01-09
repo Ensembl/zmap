@@ -31,9 +31,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 21 16:17 2006 (edgrif)
+ * Last edited: Jan  9 10:35 2007 (edgrif)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.3 2006-12-21 16:19:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.4 2007-01-09 14:25:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -155,7 +155,7 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
     
 
   /* Draw an overlay box over the feature to show the extent of the dna selected. */
-  column_group = zmapWindowItemGetParentContainer(feature_item) ;
+  column_group = zmapWindowContainerGetParentContainerFromItem(feature_item) ;
   overlay_group = zmapWindowContainerGetOverlays(column_group) ;
 
   parent = zmapWindowItemGetTrueItem(feature_item) ;
