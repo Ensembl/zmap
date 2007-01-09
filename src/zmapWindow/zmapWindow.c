@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan  5 22:18 2007 (rds)
+ * Last edited: Jan  9 15:09 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.164 2007-01-05 22:26:57 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.165 2007-01-09 15:24:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -148,6 +148,9 @@ static void jumpFeature(ZMapWindow window, guint keyval) ;
 static void jumpColumn(ZMapWindow window, guint keyval) ;
 static void swapColumns(ZMapWindow window, guint keyval);
 
+
+static void hideItemsCB(gpointer data, gpointer user_data_unused) ;
+static void unhideItemsCB(gpointer data, gpointer user_data) ;
 
 
 /* Callbacks we make back to the level above us. This structure is static
@@ -419,6 +422,7 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_feature
        */
       printf("If we've merged some contexts before being exposed\n");
     }
+
   return ;
 }
 
@@ -511,7 +515,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
        * originally highlighted feature...but only if its still visible if it ends up on the
        * reverse strand...for now we just blank it.... */
-      zMapWindowUpdateInfoPanel(window, NULL, NULL, NULL) ;
+      zMapWindowUpdateInfoPanel(window, NULL, NULL, NULL, TRUE) ;
 
       adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
@@ -1032,7 +1036,8 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
  * 
  *  */
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
-			       FooCanvasItem *item, FooCanvasItem *highlight_item)
+			       FooCanvasItem *item,
+			       FooCanvasItem *highlight_item, gboolean replace_highlight_item)
 {
   ZMapWindowItemFeatureType type ;
   ZMapWindowItemFeature item_data ;
@@ -1139,6 +1144,14 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
   if((set = zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
     select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* CHECK IF ROYS LOGIC IS CORRECT..... */
+  select.feature_desc.feature_set
+    = (char *)g_quark_to_string((zMapFeatureGetSet(feature))->original_id) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   select.feature_desc.feature_style
     = zMapStyleGetName(zMapFeatureGetStyle(feature)) ;
 
@@ -1152,6 +1165,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
     select.highlight_item = highlight_item ;
   else
     select.highlight_item = item ;
+
+  select.replace_highlight_item = replace_highlight_item ;
 
   /* We've set up the select data so now callback to the layer above with this data. */
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
@@ -2328,11 +2343,11 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	(*(window_cbs_G->focus))(window, window->app_data, NULL) ;
 
 
-	/* Button 2 is handled, we centre on that position, 1 and 3 are passed on as they may
-	 * be clicks on canvas items/columns. */
+	/* Button 2 is handled, we centre on that position, 1 and 3 are used only with
+	 * modifiers are passed on as they may be clicks on canvas items/columns. */
 	switch (but_event->button)
 	  {
-	    /* We don't do anything for button 1 or any buttons > 3. */
+	    /* We don't do anything for any buttons > 3. */
 	  default:
 	  case 1:
 	    {
@@ -2344,22 +2359,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
                                       * handling here! 
                                       */
 
-	      if (zMapGUITestModifiers(but_event, (GDK_CONTROL_MASK | GDK_MOD1_MASK)))
-		{
-		  /* Show a ruler and our exact position. */
-
-                  guide = TRUE;
-                  if(!window->horizon_guide_line)
-                    window->horizon_guide_line = zMapDrawHorizonCreate(window->canvas);
-                  if(!window->tooltip)
-                    window->tooltip = zMapDrawToolTipCreate(window->canvas);
-                  zMapDrawHorizonReposition(window->horizon_guide_line, origin_y);
-                  event_handled = TRUE ; /* We _ARE_ handling */
-                }
-              else if (zMapGUITestModifiers(but_event, GDK_CONTROL_MASK))
+	      /* Show a rubber band for zooming/marking. */
+              if (zMapGUITestModifiers(but_event, GDK_MOD1_MASK))
                 {
-		  /* Show a rubber band for zooming/marking. */
-
                   dragging = TRUE;			    /* we can be dragging */
                   if(!window->rubberband)
                     window->rubberband = zMapDrawRubberbandCreate(window->canvas);
@@ -2377,26 +2379,19 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	    }
 	  case 3:
 	    {
-	      /* Oh dear, we would like to do a general back ground menu here but can't as we need
-	       * to pass the event along in case it goes to a canvas item....aggghhhh */
+	      /* Show a ruler and our exact position. */
+	      if (zMapGUITestModifiers(but_event, GDK_MOD1_MASK))
+		{
+                  guide = TRUE;
+                  if(!window->horizon_guide_line)
+                    window->horizon_guide_line = zMapDrawHorizonCreate(window->canvas);
+                  if(!window->tooltip)
+                    window->tooltip = zMapDrawToolTipCreate(window->canvas);
+                  zMapDrawHorizonReposition(window->horizon_guide_line, origin_y);
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-              double ppuy, pixspan, y2, y1, x1, x2, c2wx, c2wy;
+                  event_handled = TRUE ; /* We _ARE_ handling */
+                }
 
-              foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
-              ppuy    = window->canvas->pixels_per_unit_y;
-              pixspan = (ppuy * (y2 - y1));
-
-              foo_canvas_c2w(window->canvas, but_event->x, but_event->y, &c2wx, &c2wy);
-
-              printf("%s: Right Click - Details:\n", __PRETTY_FUNCTION__) ;
-              printf("\tEvent @ %f,%f = %f,%f\n", but_event->x, but_event->y, c2wx, c2wy);
-              printf("\tX - scroll region %f -> %f, pixel span %f\n", x1, x2, x2 - x1 + 1.0);
-              printf("\tY - scroll region %f -> %f, pixel span %f\n", y1, y2, pixspan);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-	      event_handled = FALSE ;
 	      break ;
 	    }
 	  }
@@ -2416,7 +2411,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	GdkEventMotion *mot_event = (GdkEventMotion *)event ;
         event_handled = FALSE ;
 
-        if (!(zMapGUITestModifiers(mot_event, GDK_BUTTON1_MASK)))
+        if (!(zMapGUITestModifiers(mot_event, GDK_BUTTON1_MASK))
+	    && !(zMapGUITestModifiers(mot_event, GDK_BUTTON3_MASK)))
           break;
 
         /* work out the world of where we are */
@@ -2971,6 +2967,43 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	break ;
       }
 
+    case GDK_Delete:
+      /* case GDK_BackSpace: */
+      {
+        FooCanvasGroup *focus_column ;
+
+	/* there is hackiness here in that if we allow user to select items from other columns
+	 * then we have to rebump all columns...so we should disallow that.... */
+	if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+	  {
+	    ZMapWindowItemFeatureSetData set_data ;
+	    ZMapStyleOverlapMode curr_overlap_mode ;
+		
+	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
+
+	    if (zMapGUITestModifiers(key_event, GDK_SHIFT_MASK))
+	      {
+		g_list_foreach(set_data->user_hidden_items, unhideItemsCB, set_data) ;
+		g_list_free(set_data->user_hidden_items) ;
+		set_data->user_hidden_items = NULL ;
+	      }
+	    else
+	      {
+		zmapWindowItemForEachFocusItem(window->focus, hideItemsCB, set_data) ;
+	      }
+
+	    curr_overlap_mode = zMapStyleGetOverlapMode(set_data->style) ;
+
+	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), curr_overlap_mode) ;
+	    
+	    zmapWindowNewReposition(window) ;
+	  }
+
+	event_handled = TRUE ;
+
+	break ;
+      }
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_d:
       put dna on ....;
@@ -3329,7 +3362,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 
 	  focus_item = (FooCanvasItem *)(feature_ptr->data) ;
 
-	  zmapWindowHighlightObject(window, focus_item, FALSE) ;
+	  zmapWindowHighlightObject(window, focus_item, TRUE) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -3525,4 +3558,34 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 
   return ;
 }
+
+
+
+/* GFunc() to hide the given item and record it in the user hidden list. */
+static void hideItemsCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ZMapWindowItemFeatureSetData set_data = (ZMapWindowItemFeatureSetData)user_data ;
+
+  set_data->user_hidden_items = g_list_append(set_data->user_hidden_items, item) ;
+
+  foo_canvas_item_hide(item) ;
+
+  return ;
+}
+
+
+
+/* GFunc() to hide the given item and record it in the user hidden list. */
+static void unhideItemsCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ZMapWindowItemFeatureSetData set_data = (ZMapWindowItemFeatureSetData)user_data ;
+
+  foo_canvas_item_show(item) ;
+
+  return ;
+}
+
+
 
