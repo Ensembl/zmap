@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan  8 10:28 2007 (rds)
+ * Last edited: Jan  9 08:23 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.172 2007-01-08 10:35:37 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.173 2007-01-09 08:35:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -427,30 +427,57 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 
   if(created)
     {
+      FooCanvasItem *set_group_item;
       /* We need the background column object to span the entire bottom of the alignment block. */
       top = block->block_to_sequence.t1 ;
       bottom = block->block_to_sequence.t2 ;
       zmapWindowSeq2CanExtZero(&top, &bottom) ;
       
       if (forward_strand_group)
-        *forward_col_out = createColumn(FOO_CANVAS_GROUP(forward_strand_group),
-                                        window,
-                                        feature_set,
-                                        style,
-                                        ZMAPSTRAND_FORWARD, 
-                                        frame,
-                                        style->width,
-                                        top, bottom) ;
+        {
+          if((set_group_item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                                          block->parent->unique_id,
+                                                          block->unique_id,
+                                                          feature_set->unique_id, 
+                                                          ZMAPSTRAND_FORWARD,
+                                                          frame, 0)))
+            {
+              zMapAssert(set_group_item && FOO_IS_CANVAS_GROUP(set_group_item));
+              *forward_col_out = FOO_CANVAS_GROUP(set_group_item);
+            }
+          else
+            *forward_col_out = createColumn(FOO_CANVAS_GROUP(forward_strand_group),
+                                            window,
+                                            feature_set,
+                                            style,
+                                            ZMAPSTRAND_FORWARD, 
+                                            frame,
+                                            style->width,
+                                            top, bottom) ;
+        }
       
       if (reverse_strand_group)
-        *reverse_col_out = createColumn(FOO_CANVAS_GROUP(reverse_strand_group),
-                                        window,
-                                        feature_set,
-                                        style,
-                                        ZMAPSTRAND_REVERSE, 
-                                        frame,
-                                        style->width,
-                                        top, bottom) ;
+        {
+          if((set_group_item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                                          block->parent->unique_id,
+                                                          block->unique_id,
+                                                          feature_set->unique_id, 
+                                                          ZMAPSTRAND_REVERSE,
+                                                          frame, 0)))
+            {
+              zMapAssert(set_group_item && FOO_IS_CANVAS_GROUP(set_group_item));
+              *reverse_col_out = FOO_CANVAS_GROUP(set_group_item);
+            }
+          else
+            *reverse_col_out = createColumn(FOO_CANVAS_GROUP(reverse_strand_group),
+                                            window,
+                                            feature_set,
+                                            style,
+                                            ZMAPSTRAND_REVERSE, 
+                                            frame,
+                                            style->width,
+                                            top, bottom) ;
+        }
     }
 
   return created;
@@ -1045,7 +1072,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
   zmapWindowContainerSetData(group, ITEM_FEATURE_SET_DATA, set_data);
 
   zmapWindowContainerSetData(group, ITEM_FEATURE_DATA, feature_set);
-  
+
   g_signal_connect(G_OBJECT(group), "destroy", G_CALLBACK(containerDestroyCB), (gpointer)window) ;
 
   bounding_box = zmapWindowContainerGetBackground(group) ;
