@@ -146,10 +146,21 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
 
 
 
+<h3>Selecting Multiple Features and Hiding/Showing them</h3>
+
+<p>Multiple features can be selected and then hidden/shown by:
+
+<ul>
+  <li>Select the features by holding the Shift key down and left clicking with mouse (same as for
+      multi select on the Mac, Windows etc). Note that for alignments displayed with the bars that
+      join up mulitple hits you can click on the hit _or_ the bar.
+  <li>Remove the selected features by pressing Delete and restore them by pressing Shift-Delete
+</ul>
+
 
 <p><hr>
 <h2 id="keyboard_mouse">Keyboard and Mouse Usage</h2>
-
+<p>
 
 <h3 id="all_windows">All Windows</h3>
 
@@ -184,6 +195,7 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
   <tr><td><b>Cntl page-up</b>, <b>Cntl page-down</b></td>    <td>up/down by a whole "page"</td></tr>
   <tr><td><b>Home</b>, <b>End</b></td>    <td>Go to far left or right</td></tr>
   <tr><td><b>Cntl Home</b>, <b>Cntl End</b></td>    <td>Go to top or bottom</td></tr>
+  <tr><td><b>Delete</b>, <b>Shift Delete</b></td>    <td>Hide/Show selected features.</td></tr>
   <tr>
     <th colspan=3>alpha-numeric keys</th>
   </tr>
@@ -240,10 +252,10 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
   </tr>
 
   <tr>
-    <th colspan=3>Cntl + Alt + mouse button click</th>
+    <th colspan=3>Shift + mouse button click</th>
   </tr>
   <tr>
-    <td>horizontal ruler with sequence position displayed</td>
+    <td>Multiple highlight/select of features</td>
     <td><i>same as single click</i></td>
     <td><i>same as single click</i></td>
   </tr>
@@ -252,10 +264,21 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
     <th colspan=3>Cntl + mouse button click</th>
   </tr>
   <tr>
-    <td>mark a rectangle and zoom in to it</td>
+    <td>Highlight a subpart of a feature (e.g. a single exon or alignment match).</td>
     <td><i>same as single click</i></td>
     <td><i>same as single click</i></td>
   </tr>
+
+  
+  <tr>
+    <th colspan=3>Alt + mouse button click</th>
+  </tr>
+  <tr>
+    <td>Mark a rectangle and zoom in to it</td>
+    <td><i>same as single click</i></td>
+    <td>Horizontal ruler with sequence position displayed</td>
+  </tr>
+
 
 </table>
 
