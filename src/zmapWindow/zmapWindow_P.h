@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Dec 18 07:38 2006 (edgrif)
+ * Last edited: Jan  5 18:04 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.163 2006-12-18 11:37:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.164 2007-01-09 15:28:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -72,8 +72,12 @@ typedef struct
   GHashTable *style_table ;
 
   /* These fields are used for some of the more exotic column bumping. */
+  gboolean hidden_bump_features ;			    /* Features were hidden because they
+							       were of poor quality. */
+
+  GList *user_hidden_items ;				    /* Features hidden by user, should stay hidden. */
   GList *extra_items ;					    /* Match backgrounds etc. */
-  gboolean hidden_bump_features ;			    /* Have any features been hidden for bumping ? */
+
 } ZMapWindowItemFeatureSetDataStruct, *ZMapWindowItemFeatureSetData ;
 
 
@@ -83,6 +87,7 @@ typedef struct
 typedef struct
 {
   ZMapWindow window ;
+  FooCanvasItem *first_item ;
   GQuark feature_id ;
   ZMapFeatureTypeStyle style ;
 } ZMapWindowItemFeatureBumpDataStruct, *ZMapWindowItemFeatureBumpData ;
@@ -233,12 +238,14 @@ typedef enum
 /* Controls what data is displayed in the dna list window. */
 typedef enum
   { 
-    ZMAP_WINDOW_LIST_DNA_START,				    /* match start coord */
-    ZMAP_WINDOW_LIST_DNA_END,				    /* match end coord */
+    ZMAP_WINDOW_LIST_DNA_SCREEN_START,			    /* match screen start coord */
+    ZMAP_WINDOW_LIST_DNA_SCREEN_END,			    /* match screen end coord */
     ZMAP_WINDOW_LIST_DNA_LENGTH,			    /* match length */
     ZMAP_WINDOW_LIST_DNA_MATCH,				    /* match */
     ZMAP_WINDOW_LIST_DNA_NOSHOW,			    /* cols after this are not displayed. */
     ZMAP_WINDOW_LIST_DNA_BLOCK = ZMAP_WINDOW_LIST_DNA_NOSHOW, /* block. */
+    ZMAP_WINDOW_LIST_DNA_START,				    /* Actual match start coord. */
+    ZMAP_WINDOW_LIST_DNA_END,				    /* Actual match end coord. */
     ZMAP_WINDOW_LIST_DNA_NUMBER				    /* number of columns, must be last.  */
   } zmapWindowDNAListColumn ;
 
@@ -780,7 +787,7 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 			       gboolean isExon);
 
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
-			       FooCanvasItem *item, FooCanvasItem *highlight_item);
+			       FooCanvasItem *item, FooCanvasItem *highlight_item, gboolean replace_highlight_item) ;
 
 void zmapWindowDrawZoom(ZMapWindow window) ;
 
@@ -952,13 +959,14 @@ void zmapWindowItemResetFocusItem(ZMapWindowFocus focus) ;
 void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
 void zmapWindowItemSetHotFocusItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowItemGetHotFocusItem(ZMapWindowFocus focus) ;
+gboolean zmapWindowItemInFocusColumn(ZMapWindowFocus focus, FooCanvasItem *item) ;
 void zmapWindowItemSetHotFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
 FooCanvasGroup *zmapWindowItemGetHotFocusColumn(ZMapWindowFocus focus) ;
 void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
 void zmapWindowItemFreeFocusItems(ZMapWindowFocus focus) ;
 void zmapWindowItemDestroyFocus(ZMapWindowFocus focus) ;
 
-void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean raise_item) ;
+void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean replace_highlight_item) ;
 void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 
