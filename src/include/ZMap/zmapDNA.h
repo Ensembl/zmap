@@ -25,9 +25,9 @@
  * Description: DNA manipulation functions.
  *
  * HISTORY:
- * Last edited: Oct 18 11:22 2006 (edgrif)
+ * Last edited: Jan  5 16:58 2007 (edgrif)
  * Created: Fri Oct  6 14:26:08 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.h,v 1.3 2006-11-08 09:23:11 edgrif Exp $
+ * CVS info:   $Id: zmapDNA.h,v 1.4 2007-01-09 14:33:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DNA_H
@@ -46,6 +46,8 @@ typedef struct
   char *match ;
   int start ;
   int end ;
+  int screen_start ;
+  int screen_end ;
 } ZMapDNAMatchStruct, *ZMapDNAMatch ;
 
 
