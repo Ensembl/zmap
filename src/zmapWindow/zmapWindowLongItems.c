@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  9 14:50 2007 (rds)
+ * Last edited: Jan  9 14:55 2007 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.9 2007-01-09 14:50:57 rds Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.10 2007-01-09 14:57:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,9 +146,8 @@ void zmapWindowLongItemSetMaxZoom(ZMapWindowLongItems long_item, double max_zoom
 
 void zmapWindowLongItemResized(ZMapWindowLongItems long_items, FooCanvasItem *item)
 {
-  double length, start, end ;
+  double start, end ;
   LongFeatureItem new_item = NULL;
-  gboolean created = FALSE;
   GList *list_long_item = NULL;
 
   foo_canvas_item_get_bounds(item, NULL, &start, NULL, &end);
@@ -563,7 +562,7 @@ static void printLongItem(gpointer data, gpointer user_data)
     {
       printf("feature name: %s", g_quark_to_string(any_feature->unique_id)) ;
     }
-  else if(zmapWindowContainerIsValid(long_item->item))
+  else if(zmapWindowContainerIsValid(FOO_CANVAS_GROUP(long_item->item)))
     {
       parent = zmapWindowContainerGetParent(long_item->item) ;
 
