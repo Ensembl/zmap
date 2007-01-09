@@ -28,9 +28,9 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Oct 10 14:22 2006 (edgrif)
+ * Last edited: Jan  9 10:36 2007 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.11 2006-11-08 09:25:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.12 2007-01-09 15:27:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -150,7 +150,7 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type)
 
 	list = gtk_list_store_new(ZMAP_WINDOW_LIST_DNA_NUMBER,
 				  G_TYPE_INT, G_TYPE_INT, G_TYPE_INT,
-				  G_TYPE_STRING, G_TYPE_POINTER) ;
+				  G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_INT, G_TYPE_INT) ;
 	
 	treeModel = GTK_TREE_MODEL(list);
 	break ;
@@ -339,7 +339,7 @@ void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel, ZMapWindowL
 	    feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
 	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
-	    set_group = zmapWindowItemGetParentContainer(item) ;
+	    set_group = zmapWindowContainerGetParentContainerFromItem(item) ;
 
 	    /* These should go in container some time.... */
 	    set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
@@ -731,6 +731,8 @@ static void addDNAItemToStore(GtkTreeModel *treeModel, ZMapDNAMatch match, ZMapF
 		     ZMAP_WINDOW_LIST_DNA_LENGTH, (match->end - match->start + 1),
 		     ZMAP_WINDOW_LIST_DNA_MATCH, match->match,
 		     ZMAP_WINDOW_LIST_DNA_BLOCK, block,
+		     ZMAP_WINDOW_LIST_DNA_SCREEN_START, match->screen_start, 
+		     ZMAP_WINDOW_LIST_DNA_SCREEN_END, match->screen_end,
 		     -1) ;
 
   return ;
