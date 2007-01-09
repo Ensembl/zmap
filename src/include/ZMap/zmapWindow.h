@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Dec 15 11:27 2006 (edgrif)
+ * Last edited: Jan  4 17:17 2007 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.72 2007-01-02 09:24:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.73 2007-01-09 15:19:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -85,6 +85,11 @@ typedef struct
 {
   FooCanvasItem *highlight_item ;			    /* The feature selected to be highlighted, may be null
 							       if a column was selected. */
+
+  gboolean replace_highlight_item ;			    /* TRUE means highlight item replaces
+							       existing highlighted item, FALSE
+							       means its added to the list of
+							       highlighted items. */
 
   ZMapFeatureDescStruct feature_desc ;			    /* Text descriptions of selected feature. */
 
@@ -283,7 +288,7 @@ gboolean zMapWindowMaxWindowPos(ZMapWindow window,
 				double *x1_out, double *y1_out, double *x2_out, double *y2_out) ;
 gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) ;
 
-void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature) ;
+void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature, gboolean replace_highlight_item) ;
 void zMapWindowUnHighlightFocusItems(ZMapWindow window) ;
 
 void zMapWindowDestroyLists(ZMapWindow window) ;
