@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jan  4 14:31 2007 (edgrif)
+ * Last edited: Jan  9 14:53 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.28 2007-01-04 15:03:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.29 2007-01-09 14:56:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1636,10 +1636,12 @@ static void containerSetMaxOverlays(FooCanvasGroup *container, FooCanvasPoints *
 	  if ((size = (nx2 - nx1)) > (double)(1 << 15))
 	    zMapLogWarning("%s [%d < %f]", "Container background larger than 1 << 15 in x coords.", 1 << 15, size);
 
+#ifdef RDS_DONT_INCLUDE
 	  if (container_data->long_items)
 	    {
 	      zmapWindowLongItemResized(container_data->long_items, overlay_item);
 	    }
+#endif
 
 	  list_item = g_list_next(list_item) ;
 
