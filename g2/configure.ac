@@ -1,10 +1,10 @@
 
 AC_PREREQ(2.59)
 dnl Some package information...
-AC_INIT([g2], [0.70] ,[g2@g2.sourceforge.net])
+AC_INIT([g2], [0.70], [g2@g2.sourceforge.net])
 
 AC_CONFIG_SRCDIR([src/g2_device.c])
-AC_CONFIG_HEADER([src/config.h])
+AC_CONFIG_HEADER(src/config.h)
 
 dnl libtool version-info http://www.gnu.org/software/libtool/manual.html#Updating-version-info
 G2_CURRENT=0
@@ -39,7 +39,6 @@ AC_PROG_CXX
 
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
-AC_PROG_RANLIB
 
 #
 # check cannonical system name,
@@ -66,6 +65,8 @@ esac
 AC_CHECK_LIB(dl, dlopen, have_dl=yes, have_dl=no)
 
 AM_INIT_AUTOMAKE
+
+AC_LANG(C)
 
 dnl
 dnl Try to locate the X Window System include files and libraries
@@ -135,12 +136,13 @@ AC_CHECK_HEADERS(limits.h)
 echo
 echo "* Tests complete... Creating output..."
 echo
-AC_CONFIG_FILES(
-  [Makefile 
-   src/Makefile 
-   demo/Makefile 
-   doc/Makefile 
-   g2_perl/Makefile.PL])
+AC_CONFIG_FILES([Makefile 
+demo/Makefile 
+doc/Makefile 
+g2_perl/Makefile
+g2_perl/Makefile.PL
+perl/Makefile
+src/Makefile])
 AC_OUTPUT
 
 echo

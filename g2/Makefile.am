@@ -12,8 +12,9 @@ G2_VERSION = 0.70
 #LIBDIR = @prefix@/lib
 #INCDIR = @prefix@/include
 
-DIST_SUBDIRS = src perl demo g2_perl doc
 SUBDIRS = src
+DIST_SUBDIRS = src perl demo g2_perl doc
+
 
 
 

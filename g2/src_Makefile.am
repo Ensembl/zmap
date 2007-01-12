@@ -43,8 +43,8 @@ else
 endif
 
 if GD
-  GD_SOURCEFILES = $(GD_DIR)/g2_GD.c
-  GD_HEADERFILES = $(GD_DIR)/g2_GD.h
+  GD_SOURCEFILES = $(GD_DIR)/g2_gd.c
+  GD_HEADERFILES = $(GD_DIR)/g2_gd.h
 else
   GD_SOURCEFILES = $(NULL)
   GD_HEADERFILES = $(NULL)
