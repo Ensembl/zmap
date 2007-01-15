@@ -26,15 +26,27 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Dec 15 09:29 2006 (edgrif)
+ * Last edited: Jan 15 11:58 2007 (edgrif)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.35 2006-12-15 09:43:48 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.36 2007-01-15 15:28:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
 #define ZMAP_DRAW_H
 
 #include <libfoocanvas/libfoocanvas.h>
+
+
+/* Some basic drawing types. */
+typedef enum
+  {
+    ZMAPDRAW_OBJECT_INVALID,
+    ZMAPDRAW_OBJECT_LINE,
+    ZMAPDRAW_OBJECT_GLYPH,
+    ZMAPDRAW_OBJECT_BOX,
+    ZMAPDRAW_OBJECT_POLYGON,
+    ZMAPDRAW_OBJECT_TEXT
+  } ZMapDrawObjectType ;
 
 
 /* Different simple shapes that can be drawn on to the canvas. */
