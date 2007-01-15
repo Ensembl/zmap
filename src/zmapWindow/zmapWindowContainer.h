@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Dec 13 15:09 2006 (rds)
+ * Last edited: Jan 15 14:25 2007 (edgrif)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.17 2006-12-13 15:14:50 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.18 2007-01-15 15:30:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -118,6 +118,7 @@ void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_pa
                                                     double height, 
                                                     double border);
 void zmapWindowContainerSetBackgroundColour(FooCanvasGroup *container_parent, GdkColor *background_fill_colour) ;
+GdkColor *zmapWindowContainerGetBackgroundColour(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerResetBackgroundColour(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent) ;
 

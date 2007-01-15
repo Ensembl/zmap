@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jan  9 14:53 2007 (rds)
+ * Last edited: Jan 15 14:26 2007 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.29 2007-01-09 14:56:54 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.30 2007-01-15 15:30:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -825,6 +825,22 @@ void zmapWindowContainerSetBackgroundColour(FooCanvasGroup *container_parent,
                       NULL) ;
 
   return ;
+}
+
+
+GdkColor *zmapWindowContainerGetBackgroundColour(FooCanvasGroup *container_parent)
+{
+  GdkColor *background_colour = NULL ;
+  ContainerType type ;
+
+  zMapAssert(FOO_IS_CANVAS_GROUP(container_parent)) ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  background_colour = g_object_get_data(G_OBJECT(container_parent), "fill_color_gdk") ;
+
+  return background_colour ;
 }
 
 
