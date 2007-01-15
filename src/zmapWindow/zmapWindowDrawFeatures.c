@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan  9 08:23 2007 (rds)
+ * Last edited: Jan 12 17:27 2007 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.173 2007-01-09 08:35:22 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.174 2007-01-15 15:42:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -137,6 +137,8 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 static void setColours(ZMapWindow window) ;
 
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
+
+static void removeList(gpointer data, gpointer user_data_unused) ;
 
 
 extern GTimer *view_timer_G ;
@@ -1068,6 +1070,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
   set_data->frame       = frame ;
   set_data->style       = zMapFeatureStyleCopy(style) ;
   set_data->style_table = zmapWindowStyleTableCreate() ;
+  set_data->user_hidden_stack = g_queue_new() ;
 
   zmapWindowContainerSetData(group, ITEM_FEATURE_SET_DATA, set_data);
 
@@ -1713,6 +1716,11 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	    zMapFeatureTypeDestroy(set_data->style) ;
 	    zmapWindowStyleTableDestroy(set_data->style_table) ;
 
+	    /* Get rid of stack or user hidden items. */
+	    if (!g_queue_is_empty(set_data->user_hidden_stack))
+	      g_queue_foreach(set_data->user_hidden_stack, removeList, NULL) ;
+	    g_queue_free(set_data->user_hidden_stack) ;
+
 	    g_free(set_data) ;
 
 	    break ;
@@ -1992,6 +2000,19 @@ static void drawZMap(ZMapCanvasData canvas_data, ZMapFeatureContext context)
                                     windowDrawContext,
                                     NULL,
                                     canvas_data);
+
+  return ;
+}
+
+
+
+
+
+static void removeList(gpointer data, gpointer user_data_unused)
+{
+  GList *user_hidden_items = (GList *)data ;
+
+  g_list_free(user_hidden_items) ;
 
   return ;
 }
