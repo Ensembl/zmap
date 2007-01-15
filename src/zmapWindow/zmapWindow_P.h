@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan  5 18:04 2007 (edgrif)
+ * Last edited: Jan 12 17:53 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.164 2007-01-09 15:28:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.165 2007-01-15 15:46:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -75,7 +75,7 @@ typedef struct
   gboolean hidden_bump_features ;			    /* Features were hidden because they
 							       were of poor quality. */
 
-  GList *user_hidden_items ;				    /* Features hidden by user, should stay hidden. */
+  GQueue *user_hidden_stack ;				    /* Features hidden by user, should stay hidden. */
   GList *extra_items ;					    /* Match backgrounds etc. */
 
 } ZMapWindowItemFeatureSetDataStruct, *ZMapWindowItemFeatureSetData ;
@@ -957,6 +957,7 @@ void zmapWindowItemAddFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
 void zmapWindowItemForEachFocusItem(ZMapWindowFocus focus, GFunc callback, gpointer user_data) ;
 void zmapWindowItemResetFocusItem(ZMapWindowFocus focus) ;
 void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
+void zmapWindowItemRemoveAllFocusItems(ZMapWindowFocus focus) ;
 void zmapWindowItemSetHotFocusItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowItemGetHotFocusItem(ZMapWindowFocus focus) ;
 gboolean zmapWindowItemInFocusColumn(ZMapWindowFocus focus, FooCanvasItem *item) ;
