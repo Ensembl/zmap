@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan  9 15:09 2007 (edgrif)
+ * Last edited: Jan 15 10:09 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.165 2007-01-09 15:24:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.166 2007-01-15 15:30:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1851,10 +1851,17 @@ static void scrollWindow(ZMapWindow window, GdkEventKey *key_event)
     case GDK_Left:
     case GDK_Right:
       {
-	if (keyval == GDK_Left)
-	  x_pos-- ;
+	double incr ;
+
+	if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
+	  incr = 10 ;
 	else
-	  x_pos++ ;
+	  incr = 1 ;
+
+	if (keyval == GDK_Left)
+	  x_pos -= incr ;
+	else
+	  x_pos += incr ;
 
 	break ;
       }
@@ -2929,6 +2936,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_Left:
     case GDK_Right:
       /* Note that we fall through if shift mask is not on.... */
+
       if (zMapGUITestModifiers(key_event, GDK_SHIFT_MASK))
 	{
 	  /* Trial code to shift columns and features via cursor keys..... */
@@ -2939,7 +2947,12 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	  break ;
 	}
-      if(zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* NEEDS TO USE A DIFFERENT MODIFIER.... */
+
+      if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
         {
 	  if (key_event->keyval == GDK_Left || key_event->keyval == GDK_Right)
             {
@@ -2947,6 +2960,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
             }
           break;
         }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
     case GDK_Page_Up:
     case GDK_Page_Down:
     case GDK_Home:
@@ -2957,6 +2973,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	event_handled = TRUE ;
 	break ;
       }
+
     case GDK_plus:
     case GDK_minus:
     case GDK_equal:
@@ -2972,8 +2989,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       {
         FooCanvasGroup *focus_column ;
 
-	/* there is hackiness here in that if we allow user to select items from other columns
-	 * then we have to rebump all columns...so we should disallow that.... */
 	if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
@@ -2983,13 +2998,28 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    if (zMapGUITestModifiers(key_event, GDK_SHIFT_MASK))
 	      {
-		g_list_foreach(set_data->user_hidden_items, unhideItemsCB, set_data) ;
-		g_list_free(set_data->user_hidden_items) ;
-		set_data->user_hidden_items = NULL ;
+		GList *hidden_items = NULL ;
+
+		if ((hidden_items = g_queue_pop_head(set_data->user_hidden_stack)))
+		  {
+		    g_list_foreach(hidden_items, unhideItemsCB, window) ;
+		    g_list_free(hidden_items) ;
+		  }
 	      }
 	    else
 	      {
-		zmapWindowItemForEachFocusItem(window->focus, hideItemsCB, set_data) ;
+		GList *hidden_items = NULL ;
+
+		zmapWindowItemForEachFocusItem(window->focus, hideItemsCB, &hidden_items) ;
+
+		g_queue_push_head(set_data->user_hidden_stack, hidden_items) ;
+
+
+		/* This all feels really clumsy...we have the focus/highlight stuff the wrong way
+		   round, we should be dealing with focus, not with highlight at this level... */
+		zMapWindowUnHighlightFocusItems(window) ;
+		zmapWindowItemSetHotFocusColumn(window->focus, focus_column) ;
+		zmapHighlightColumn(window, focus_column) ;
 	      }
 
 	    curr_overlap_mode = zMapStyleGetOverlapMode(set_data->style) ;
@@ -3565,11 +3595,14 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 static void hideItemsCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
-  ZMapWindowItemFeatureSetData set_data = (ZMapWindowItemFeatureSetData)user_data ;
-
-  set_data->user_hidden_items = g_list_append(set_data->user_hidden_items, item) ;
+  GList **list_ptr = (GList **)user_data ;
+  GList *user_hidden_items = *list_ptr ;
 
   foo_canvas_item_hide(item) ;
+
+  user_hidden_items = g_list_append(user_hidden_items, item) ;
+
+  *list_ptr = user_hidden_items ;
 
   return ;
 }
@@ -3580,9 +3613,12 @@ static void hideItemsCB(gpointer data, gpointer user_data)
 static void unhideItemsCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
-  ZMapWindowItemFeatureSetData set_data = (ZMapWindowItemFeatureSetData)user_data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
 
   foo_canvas_item_show(item) ;
+
+  zmapWindowHighlightObject(window, item, FALSE) ;
+
 
   return ;
 }
