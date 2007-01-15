@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  9 10:35 2007 (edgrif)
+ * Last edited: Jan 15 15:39 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.54 2007-01-09 14:36:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.55 2007-01-15 15:41:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -177,7 +177,7 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data) ;
 
 static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data) ;
 
-static FooCanvasItem *makeMatchItem(FooCanvasGroup *parent,
+static FooCanvasItem *makeMatchItem(FooCanvasGroup *parent, ZMapDrawObjectType shape,
 				    double x1, double y1, double x2, double y2,
 				    GdkColor *colour, gpointer item_data, gpointer event_data) ;
 static gboolean listsOverlap(GList *curr_features, GList *new_features) ;
@@ -216,6 +216,9 @@ static void create3FrameCols(gpointer data, gpointer user_data) ;
 static void draw3FrameSetFeatures(GQuark key_id, gpointer data, gpointer user_data) ;
 
 static gint compareNameToColumn(gconstpointer list_data, gconstpointer user_data) ;
+
+static gint findItemInQueueCB(gconstpointer a, gconstpointer b) ;
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printChild(gpointer data, gpointer user_data) ;
@@ -548,7 +551,8 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 		 * by name and to some extent by score. */
 		complex.window = set_data->window ;
 		complex.curr_offset = 0.0 ;
-		complex.incr = (style->width * COMPLEX_BUMP_COMPRESS) + spacing ;
+		complex.incr = (style->width * COMPLEX_BUMP_COMPRESS) ;
+
 		if (bump_mode == ZMAPOVERLAP_COMPLEX)
 		  complex.overlap_func = listsOverlap ;
 		else if (bump_mode == ZMAPOVERLAP_NO_INTERLEAVE || ZMAPOVERLAP_COMPLEX_RANGE)
@@ -1648,18 +1652,16 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
   char *perfect_colour = ZMAP_WINDOW_MATCH_PERFECT ;
   char *colinear_colour = ZMAP_WINDOW_MATCH_COLINEAR ;
   char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
-
   GList *backgrounds = NULL ;
   GList *list_item ;
-  double mid, half_width = COLUMN_BACKGROUND_SPACING ;
+  double mid, half_width ;
   FooCanvasItem *item ;
   FooCanvasItem *background ;
-
   ZMapFeature prev_feature = NULL, curr_feature = NULL ;
   ZMapFeatureTypeStyle prev_style = NULL, curr_style = NULL ;
   GQuark prev_id = 0, curr_id = 0 ;
   int prev_end = 0, curr_start = 0 ;
-  double x1, prev_y1, x2, prev_y2, curr_y1, curr_y2 ;
+  double x1, x2, prev_y2, curr_y1, curr_y2 ;
 
 
   if (!colour_init)
@@ -1686,6 +1688,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
    * N.B. this works because the items have already been positioned in the column. */
   mid = (x2 + x1) * 0.5 ;
 
+  half_width = curr_style->width * 0.5 ;
 
 
   /* CODE HERE WORKS BUT IS NOT CORRECT IN THAT IT IS USING THE CANVAS BOX COORDS WHEN IT
@@ -1719,9 +1722,9 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	      bump_data->style = curr_style ;
 
 	      box_colour = &noncolinear ;
-	      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent),
-					 (mid - (3 * half_width)), curr_y1,
-					 (mid + (3 * half_width)), (curr_y1 + 10),
+	      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
+					 (mid - (half_width - 2)), curr_y1,
+					 (mid + (half_width - 2)), (curr_y1 + 10),
 					 box_colour, bump_data, col_data->window) ;
 
 	      backgrounds = g_list_append(backgrounds, background) ;
@@ -1795,8 +1798,10 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 		  else
 		    box_colour = &perfect ;
 
-		  background = makeMatchItem(FOO_CANVAS_GROUP(item->parent),
-					     (mid - half_width), prev_y2, (mid + half_width), curr_y1,
+
+		  /* Make line... */
+		  background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_LINE,
+					     mid, prev_y2, mid, curr_y1,
 					     box_colour, bump_data, col_data->window) ;
 
 		  zmapWindowLongItemCheck(col_data->window->long_items, background, prev_y2, curr_y1) ;
@@ -1807,6 +1812,30 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 		  foo_canvas_item_lower_to_bottom(background) ;
 
 		  backgrounds = g_list_append(backgrounds, background) ;
+
+
+		  /* Make invisible box.... */
+		  bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
+		  bump_data->first_item = item ;
+		  bump_data->feature_id = prev_id ;
+		  bump_data->style = prev_style ;
+
+		  background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
+					     (mid - half_width), prev_y2, (mid + half_width), curr_y1,
+					     NULL,
+					     bump_data, col_data->window) ;
+
+		  zmapWindowLongItemCheck(col_data->window->long_items, background, prev_y2, curr_y1) ;
+
+		  extra_items = g_list_append(extra_items, background) ;
+
+		  /* Make sure these backgrounds are drawn behind the feature items. */
+		  foo_canvas_item_lower_to_bottom(background) ;
+
+		  backgrounds = g_list_append(backgrounds, background) ;
+
+
+
 		}
 
 	      /* make curr into prev */
@@ -1841,9 +1870,9 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	      bump_data->style = prev_feature->style ;
 
 	      box_colour = &noncolinear ;
-	      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent),
-					 (mid - (3 * half_width)), (prev_y2 - 10),
-					 (mid + (3 * half_width)), prev_y2, 
+	      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
+					 (mid - (half_width - 2)), (prev_y2 - 10),
+					 (mid + (half_width - 2)), prev_y2, 
 					 box_colour, bump_data, col_data->window) ;
 
 	      backgrounds = g_list_append(backgrounds, background) ;
@@ -1984,7 +2013,7 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
 		      bump_data->style = prev_style ;
 
 		      box_colour = &noncolinear ;
-		      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent),
+		      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
 						 (mid - (3 * half_width)), (prev_y2 - 10),
 						 (mid + (3 * half_width)), prev_y2,
 						 box_colour, bump_data, col_data->window) ;
@@ -2024,7 +2053,7 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
 		      bump_data->style = feature->style ;
 
 		      box_colour = &noncolinear ;
-		      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent),
+		      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
 						 (mid - (3 * half_width)), curr_y1,
 						 (mid + (3 * half_width)), (curr_y1 + 10), 
 						 box_colour, bump_data, col_data->window) ;
@@ -2063,7 +2092,7 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
 		      else
 			box_colour = &perfect ;
 
-		      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent),
+		      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
 						 (mid - half_width), prev_y2, (mid + half_width), curr_y1,
 						 box_colour, bump_data, col_data->window) ;
 
@@ -2097,16 +2126,24 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
 }
 
 
-static FooCanvasItem *makeMatchItem(FooCanvasGroup *parent,
+static FooCanvasItem *makeMatchItem(FooCanvasGroup *parent, ZMapDrawObjectType shape,
 				    double x1, double y1, double x2, double y2,
 				    GdkColor *colour,
 				    gpointer item_data, gpointer event_data)
 {
   FooCanvasItem *match_item ;
 
-  match_item = zMapDrawBox(parent,
-			   x1, y1, x2, y2,
-			   colour, colour, 0.0) ;
+  if (shape == ZMAPDRAW_OBJECT_LINE)
+    {
+      match_item = zMapDrawLine(parent, x1, y1, x2, y2, 
+				colour, 2.0) ;
+    }
+  else
+    {
+      match_item = zMapDrawBox(parent,
+			       x1, y1, x2, y2,
+			       colour, colour, 0.0) ;
+    }
 
   g_object_set_data(G_OBJECT(match_item), ITEM_FEATURE_TYPE,
 		    GINT_TO_POINTER(ITEM_FEATURE_GROUP_BACKGROUND)) ;
@@ -2131,16 +2168,36 @@ static void freeExtraItems(gpointer data, gpointer user_data_unused)
 
 
 
+/* We only reshow items if they were hidden by our code, any user hidden items are kept hidden.
+ * Code is slightly complex here because the user hidden items are a stack of lists of hidden items. */
 static void showItems(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
   ZMapWindowItemFeatureSetData set_data = (ZMapWindowItemFeatureSetData)user_data ;
+  GList *found_item = NULL ;
 
-  if (!(g_list_find(set_data->user_hidden_items, item)))
+  if (!(found_item = g_queue_find_custom( set_data->user_hidden_stack, item, findItemInQueueCB)))
     foo_canvas_item_show(item) ;
 
   return ;
 }
+
+static gint findItemInQueueCB(gconstpointer a, gconstpointer b)
+{
+  gint result = -1 ;
+  GList *item_list = (GList *)a ;
+  FooCanvasItem *item = (FooCanvasItem *) b ;
+  GList *found_item = NULL ;
+
+  if ((found_item = g_list_find(item_list, item)))
+    result = 0 ;
+
+  return result ;
+}
+
+
+
+
 
 
 
@@ -2307,7 +2364,7 @@ static void listSpanCB(gpointer data, gpointer user_data)
 
 
 /* GFunc() to try to combine lists of features, if the lists have any overlapping features,
- * then the new list must go in a new column. */
+ * then the new list must be placed at a new offset in the column. */
 static void setOffsetCB(gpointer data, gpointer user_data)
 {
   GList **name_list_ptr = (GList **)data ;
@@ -3100,7 +3157,7 @@ static gboolean bumpBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gpoi
 	    ZMapWindowSelectStruct select = {NULL} ;
 	    gboolean replace_highlight = TRUE ;
 
-	    if (zMapGUITestModifiers(but_event, (GDK_SHIFT_MASK | GDK_MOD1_MASK)))
+	    if (zMapGUITestModifiers(but_event, GDK_SHIFT_MASK))
 	      {
 		if (zmapWindowItemInFocusColumn(window->focus, item))
 		  replace_highlight = FALSE ;
