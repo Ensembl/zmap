@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  9 14:30 2007 (edgrif)
+ * Last edited: Jan 15 15:45 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.60 2007-01-09 14:32:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.61 2007-01-15 15:45:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -140,6 +140,7 @@ static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select,
                                       double currentY); /* These are WORLD coords */
 
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
+
 
 
 
@@ -1401,6 +1402,15 @@ void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
 
   if (focus->focus_item_set)
     focus->focus_item_set = g_list_remove(focus->focus_item_set, item) ;
+
+  return ;
+}
+
+
+/* Remove all focus items. */
+void zmapWindowItemRemoveAllFocusItems(ZMapWindowFocus focus)
+{
+  freeFocusItems(focus) ;
 
   return ;
 }
