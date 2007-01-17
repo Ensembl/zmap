@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 13 09:50 2006 (edgrif)
+ * Last edited: Jan 17 10:34 2007 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.36 2006-11-13 09:55:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.37 2007-01-17 10:34:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,29 +55,54 @@ static void styleTableHashCB(gpointer key, gpointer value, gpointer user_data) ;
 
 
 
-/* A couple of simple coord calculation routines, if these prove too expensive they
+/* Some simple coord calculation routines, if these prove too expensive they
  * can be replaced with macros. */
 
 
-/* Users sometimes want to see coords from a different origin e.g. perhaps as though for the
- * forward strand even though they have revcomped the sequence. */
-int zmapWindowCoordFromOrigin(ZMapWindow window, int start)
+
+/* Transforming coordinates for a revcomp'd sequence:
+ * 
+ * Users sometimes want to see coords transformed to a "negative" version of the forward
+ * coords when viewing a revcomp'd sequence, i.e. 1 -> 365700 becomes -365700 -> -1
+ * 
+ * These functions take care of this for zmap where we don't actually change the
+ * underlying sequence coords of features to be negative but simply display them
+ * as negatives to the user.
+ * 
+ *  */
+int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
 {
-  int new_start ;
+  int new_coord ;
 
-  new_start = start - window->origin + 1 ;
+  new_coord = coord - (window->origin - 1) ;
 
-  return new_start ;
+  return new_coord ;
 }
 
-/* Use if you have no window.... */
-int zmapWindowCoordFromOriginRaw(int origin, int start)
+int zmapWindowCoordFromDisplay(ZMapWindow window, int coord)
 {
-  int new_start ;
+  int new_coord ;
+  int origin ;
 
-  new_start = start - origin + 1 ;
+  if (window->revcomped_features && window->display_forward_coords)
+    origin = (window->origin - 2) * -1 ;
+  else
+    origin = window->origin ;
 
-  return new_start ;
+  new_coord = coord - (origin - 1) ;
+
+  return new_coord ;
+}
+
+
+/* Use if you have no window.... */
+int zmapWindowCoordFromOriginRaw(int origin, int coord)
+{
+  int new_coord ;
+
+  new_coord = coord - (origin - 1) ;
+
+  return new_coord ;
 }
 
 

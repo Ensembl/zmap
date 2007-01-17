@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 12 17:53 2007 (edgrif)
+ * Last edited: Jan 17 10:33 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.165 2007-01-15 15:46:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.166 2007-01-17 10:34:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -560,6 +560,7 @@ typedef struct _ZMapWindowStruct
   gboolean display_forward_coords ;
   int origin ;
 
+
   /* Are the "3 frame" columns displayed currently ? If show_3_frame_reverse == TRUE then
    * they are displayed on forward and reverse strands. */
   gboolean display_3_frame ;
@@ -656,8 +657,11 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
 
-int zmapWindowCoordFromOrigin(ZMapWindow window, int start) ;
+
+int zmapWindowCoordToDisplay(ZMapWindow window, int coord) ;
+int zmapWindowCoordFromDisplay(ZMapWindow window, int coord) ;
 int zmapWindowCoordFromOriginRaw(int origin, int start) ;
+
 double zmapWindowExt(double start, double end) ;
 void zmapWindowSeq2CanExt(double *start_inout, double *end_inout) ;
 void zmapWindowExt2Zero(double *start_inout, double *end_inout) ;
