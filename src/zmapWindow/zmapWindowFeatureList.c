@@ -28,9 +28,9 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Jan  9 10:36 2007 (edgrif)
+ * Last edited: Jan 17 10:13 2007 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.12 2007-01-09 15:27:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.13 2007-01-17 10:33:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapDNA.h>
 #include <zmapWindow_P.h>
+#include <zmapWindowContainer.h>
 
 
 enum { USE_TREE_STORE = 0 } ;
