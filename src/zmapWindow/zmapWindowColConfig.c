@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  7 08:41 2006 (rds)
+ * Last edited: Jan 17 09:58 2007 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.12 2006-11-08 09:25:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.13 2007-01-17 10:32:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,7 +69,6 @@ static void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode config
 
 static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
-static void applyCB(GtkWidget *widget, gpointer cb_data) ;
 static void noHelpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void showButCB(GtkToggleButton *togglebutton, gpointer user_data) ;
 static void killButCB(gpointer user_data, GClosure *ignored) ;
