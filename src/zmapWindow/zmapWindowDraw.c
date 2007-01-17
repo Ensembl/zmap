@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 15 15:39 2007 (edgrif)
+ * Last edited: Jan 17 11:53 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.55 2007-01-15 15:41:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.56 2007-01-17 11:56:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,6 +85,7 @@ typedef struct
   double curr_offset ;
   double incr ;
   OverLapListFunc overlap_func ;
+  gboolean protein ;
 } ComplexBumpStruct, *ComplexBump ;
 
 
@@ -392,8 +393,6 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   gboolean bumped = TRUE ;
 
 
-
-
   /* Decide if the column_item is a column group or a feature within that group. */
   if ((feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_TYPE)))
       != ITEM_FEATURE_INVALID)
@@ -419,6 +418,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   zMapAssert(set_data) ;
 
   zMapWindowBusy(set_data->window, TRUE) ;
+
 
   /* We may have created extra items for some bump modes to show all matches from the same query
    * etc. so now we need to get rid of them before redoing the bump. */
@@ -521,10 +521,11 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	    /* Sort the top list using the combined normalised scores of the sublists so higher
 	     * scoring matches come first. */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    names_list = g_list_sort(names_list, sortByScoreCB) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	    names_list = g_list_sort(names_list, sortBySpanCB) ;
+	    /* Lets try different sorting for proteins vs. dna. */
+	    if (complex.protein)
+	      names_list = g_list_sort(names_list, sortByScoreCB) ;
+	    else
+	      names_list = g_list_sort(names_list, sortBySpanCB) ;
 
 
 	    /* for the range stuff I should hide non-overlapping ranges here and remove them from the
@@ -1360,6 +1361,14 @@ static void makeNameListCB(gpointer data, gpointer user_data)
 
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
+
+
+  /* Try doing this here.... */
+  if (feature->type == ZMAPFEATURE_ALIGNMENT
+      && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+    complex->protein = TRUE ;
+
+
 
   /* If a list of features with this features name already exists in the hash then simply
    * add this feature to it. Otherwise make a new entry in the hash. */
