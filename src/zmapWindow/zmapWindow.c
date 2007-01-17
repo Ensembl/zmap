@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 15 10:09 2007 (edgrif)
+ * Last edited: Jan 17 09:58 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.166 2007-01-15 15:30:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.167 2007-01-17 10:32:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1076,8 +1076,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 
       if (window->display_forward_coords)
 	{
-	  start = zmapWindowCoordFromOrigin(window, item_data->start) ;
-	  end = zmapWindowCoordFromOrigin(window, item_data->end) ;
+	  start = zmapWindowCoordToDisplay(window, item_data->start) ;
+	  end = zmapWindowCoordToDisplay(window, item_data->end) ;
 	}
       else
 	{
@@ -1111,8 +1111,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 
   if (window->display_forward_coords)
     {
-      feature_start = zmapWindowCoordFromOrigin(window, feature->x1) ;
-      feature_end = zmapWindowCoordFromOrigin(window, feature->x2) ;
+      feature_start = zmapWindowCoordToDisplay(window, feature->x1) ;
+      feature_end = zmapWindowCoordToDisplay(window, feature->x2) ;
     }
   else
     {
@@ -1141,7 +1141,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 
   select.feature_desc.feature_type = zMapFeatureType2Str(feature->type) ;
 
-  if((set = zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
+  if((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
     select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -2449,7 +2449,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
                 bp = (int)floor(wy);
 		if (window->display_forward_coords)
-		  bp = zmapWindowCoordFromOrigin(window, bp) ;
+		  bp = zmapWindowCoordToDisplay(window, bp) ;
 
                 tip = g_strdup_printf("%d bp", bp);
                 zMapDrawToolTipSetPosition(window->tooltip, wx, wy, tip);
