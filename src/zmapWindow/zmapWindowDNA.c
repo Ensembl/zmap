@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  5 17:47 2007 (edgrif)
+ * Last edited: Jan 16 16:17 2007 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.3 2007-01-09 14:34:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.4 2007-01-17 10:37:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +50,9 @@ typedef struct
 
   int search_start ;
   int search_end ;
+
+  int screen_search_start ;
+  int screen_search_end ;
 
   int max_errors ;
   int max_Ns ;
@@ -122,6 +125,10 @@ void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
   search_data->search_start = block->block_to_sequence.q1 ;
   search_data->search_end = block->block_to_sequence.q2 ;
 
+  search_data->screen_search_start = zmapWindowCoordToDisplay(search_data->window, search_data->search_start) ;
+  search_data->screen_search_end = zmapWindowCoordToDisplay(search_data->window, search_data->search_end) ;
+
+
   /* Clamp to length of sequence, useless to do that but possible.... */
   max_errors = max_Ns = block->block_to_sequence.q2 - block->block_to_sequence.q1 + 1 ;
 
@@ -172,10 +179,10 @@ void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
   start_end = makeSpinPanel(search_data,
 			    "Set Start/End coords of search: ",
-			    "Start :", search_data->search_start, search_data->search_end,
-			    search_data->search_start, GTK_SIGNAL_FUNC(startSpinCB),
-			    "End :", search_data->search_start, search_data->search_end,
-			    search_data->search_end, GTK_SIGNAL_FUNC(endSpinCB)) ;
+			    "Start :", search_data->screen_search_start, search_data->screen_search_end,
+			    search_data->screen_search_start, GTK_SIGNAL_FUNC(startSpinCB),
+			    "End :", search_data->screen_search_start, search_data->screen_search_end,
+			    search_data->screen_search_end, GTK_SIGNAL_FUNC(endSpinCB)) ;
   gtk_box_pack_start(GTK_BOX(hbox), start_end, TRUE, TRUE, 0) ;
 
 
@@ -304,6 +311,11 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   int start, end, dna_len ;
 
 
+  search_data->search_start = zmapWindowCoordFromDisplay(search_data->window, search_data->screen_search_start) ;
+
+  search_data->search_end = zmapWindowCoordFromDisplay(search_data->window, search_data->screen_search_end) ;
+
+
   /* NEED TO SORT WHOLE COORD JUNK OUT....USER SHOULD SEE BLOCK COORDS WE SHOULD DO RELATIVE COORDS... */
   /* Convert to relative coords.... */
   start = search_data->search_start - search_data->block->block_to_sequence.q1 ;
@@ -325,7 +337,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	   || (end < 0 || end > dna_len)
 	   || (search_data->max_errors < 0 || search_data->max_errors > dna_len)
 	   || (search_data->max_Ns < 0 || search_data->max_Ns > dna_len))
-    err_text = g_strdup_printf("start/end/max errors/max Ns must all be within range %d -> %d",
+    err_text = g_strdup_printf("start/end/max errors/max Ns\n must all be within range %d -> %d",
 			       search_data->block->block_to_sequence.q1,
 			       search_data->block->block_to_sequence.q2) ;
 
@@ -415,7 +427,7 @@ static void startSpinCB(GtkSpinButton *spin_button, gpointer user_data)
 {
   DNASearchData search_data = (DNASearchData)user_data ;
 
-  search_data->search_start = gtk_spin_button_get_value_as_int(spin_button) ;
+  search_data->screen_search_start = gtk_spin_button_get_value_as_int(spin_button) ;
 
   return ;
 }
@@ -424,7 +436,7 @@ static void endSpinCB(GtkSpinButton *spin_button, gpointer user_data)
 {
   DNASearchData search_data = (DNASearchData)user_data ;
 
-  search_data->search_end = gtk_spin_button_get_value_as_int(spin_button) ;
+  search_data->screen_search_end = gtk_spin_button_get_value_as_int(spin_button) ;
 
   return ;
 }
@@ -461,8 +473,8 @@ static void remapCoords(gpointer data, gpointer user_data)
 
   if (search_data->window->display_forward_coords)
     {
-      match_data->screen_start = zmapWindowCoordFromOrigin(search_data->window, match_data->start) ;
-      match_data->screen_end = zmapWindowCoordFromOrigin(search_data->window, match_data->end) ;
+      match_data->screen_start = zmapWindowCoordToDisplay(search_data->window, match_data->start) ;
+      match_data->screen_end = zmapWindowCoordToDisplay(search_data->window, match_data->end) ;
     }
   else
     {
