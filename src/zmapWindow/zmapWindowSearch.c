@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  9 10:39 2007 (edgrif)
+ * Last edited: Jan 18 16:26 2007 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.20 2007-01-09 14:27:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.21 2007-01-19 10:21:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -729,7 +729,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	{
 	  zmapWindowListWindowCreate(search_data->window, search_result, 
 				     g_strdup_printf("Results '%s'", feature_txt), 
-				     NULL) ;
+				     NULL, TRUE) ;
 	}
       else
 	{

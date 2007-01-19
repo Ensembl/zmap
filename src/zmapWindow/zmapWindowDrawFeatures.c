@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 12 17:27 2007 (edgrif)
+ * Last edited: Jan 18 16:24 2007 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.174 2007-01-15 15:42:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.175 2007-01-19 10:21:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1496,7 +1496,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 	
         zmapWindowListWindowCreate(menu_data->window, list, 
                                    (char *)g_quark_to_string(feature->original_id), 
-                                   NULL) ;
+                                   NULL, TRUE) ;
 
 	break ;
       }

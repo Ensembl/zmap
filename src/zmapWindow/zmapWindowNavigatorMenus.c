@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 28 14:43 2006 (rds)
+ * Last edited: Jan 18 16:30 2007 (edgrif)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.7 2006-11-28 14:45:11 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.8 2007-01-19 10:21:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -99,7 +99,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
   if(result)
     {
       zmapWindowListWindowCreate(window, result,
-                                 (char *)(g_quark_to_string(feature->original_id)), item);
+                                 (char *)(g_quark_to_string(feature->original_id)), item, TRUE);
       g_list_free(result);  /* clean up list. */
     }
 
@@ -240,7 +240,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
 	
         zmapWindowListWindowCreate(menu_data->navigate->current_window, list, 
                                    (char *)g_quark_to_string(feature->original_id), 
-                                   NULL) ;
+                                   NULL, TRUE) ;
 
 	break ;
       }
