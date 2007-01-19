@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jan  4 09:28 2007 (edgrif)
+ * Last edited: Jan 18 22:18 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.18 2007-01-04 09:29:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.19 2007-01-19 10:25:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -994,8 +994,9 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 
                   gap_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
 		  gap_data->subpart = ZMAPFEATURE_SUBPART_GAP ;
-                  gap_data->start = align_span->t1 ;
-                  gap_data->end   = prev_align_span->t2 ;
+                  gap_data->start = prev_align_span->t2 + 1 ;
+                  gap_data->end   = align_span->t1 - 1 ;
+
 
                   bottom = prev_align_span->t2;
                   zmapWindowSeq2CanOffset(&dummy, &bottom, offset);
