@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jan 18 22:18 2007 (edgrif)
+ * Last edited: Jan 19 12:53 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.19 2007-01-19 10:25:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.20 2007-01-19 12:53:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -847,6 +847,9 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   unsigned int match_threshold = 0 ;
 
 
+  if (strcasecmp(g_quark_to_string(style->original_id), "ditag_GIS_PET") == 0)
+    printf("found it\n") ;
+
 
   if (!colour_init)
     {
@@ -967,7 +970,7 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 		  int diff ;
 
 		  /* Colour gap lines according to colinearity. */
-		  diff = abs(prev_align_span->q2 - align_span->q1) ;
+		  diff = abs(prev_align_span->q2 - align_span->q1) - 1 ;
 		  if (diff > match_threshold)
 		    {
 		      if (align_span->q1 < prev_align_span->q2)
@@ -979,24 +982,23 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 		    line_colour = &perfect ;
 
 
-                  lastBoxWeDrew = 
-                    align_box = zMapDrawSSPolygon(feature_item, ZMAP_POLYGON_SQUARE,
-                                                  x1, x2,
-                                                  top, bottom,
-                                                  outline, background,
-						  line_width,
-                                                  feature->strand);
+                  lastBoxWeDrew = align_box = zMapDrawSSPolygon(feature_item, ZMAP_POLYGON_SQUARE,
+								x1, x2,
+								top, bottom,
+								outline, background,
+								line_width,
+								feature->strand) ;
                   callItemHandler(factory, align_box, ITEM_FEATURE_CHILD, feature, align_data, y1, y2);
 
                   box_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+		  box_data->subpart = ZMAPFEATURE_SUBPART_GAP ;
                   box_data->start = align_span->t1 ;
                   box_data->end   = prev_align_span->t2 ;
 
                   gap_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
 		  gap_data->subpart = ZMAPFEATURE_SUBPART_GAP ;
-                  gap_data->start = prev_align_span->t2 + 1 ;
-                  gap_data->end   = align_span->t1 - 1 ;
-
+                  gap_data->start = align_span->t1 ;
+                  gap_data->end   = prev_align_span->t2 ;
 
                   bottom = prev_align_span->t2;
                   zmapWindowSeq2CanOffset(&dummy, &bottom, offset);
@@ -1017,7 +1019,13 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 						     feature->strand);
                   callItemHandler(factory, gap_line, ITEM_FEATURE_CHILD, feature, gap_data, bottom, top);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		  /* Why does it do this....???????????? it doesn't seem to have any good effect... */
+
                   foo_canvas_item_lower(gap_line, 2);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
                   gap_data->twin_item = gap_line_box;
                   box_data->twin_item = gap_line;
                 }
