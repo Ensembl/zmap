@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 17 11:53 2007 (edgrif)
+ * Last edited: Jan 18 10:53 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.56 2007-01-17 11:56:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.57 2007-01-19 10:20:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1796,7 +1796,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 		  bump_data->feature_id = prev_id ;
 		  bump_data->style = prev_style ;
 
-		  diff = abs(prev_end - curr_start) ;
+		  diff = abs(prev_end - curr_start) - 1 ;
 		  if (diff > match_threshold)
 		    {
 		      if (curr_start < prev_end)
