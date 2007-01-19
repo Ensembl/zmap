@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 15 15:43 2007 (edgrif)
+ * Last edited: Jan 19 10:23 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.77 2007-01-15 15:44:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.78 2007-01-19 10:24:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -148,8 +148,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data) ;
 
 static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
-
-static gboolean makeFeatureEditWindow(ZMapWindow window, ZMapFeature feature) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printItem(gpointer data, gpointer user_data) ;
@@ -2088,6 +2086,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	GdkEventButton *but_event = (GdkEventButton *)event ;
 	ZMapWindowItemFeatureType item_feature_type ;
 	FooCanvasItem *real_item ;
+	FooCanvasItem *highlight_item ;
 
 	item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
 							      ITEM_FEATURE_TYPE)) ;
@@ -2116,7 +2115,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		if (but_event->button == 1 || but_event->button == 3)
 		  {
 		    gboolean replace_highlight = TRUE ;
-		    FooCanvasItem *highlight_item ;
 
 		    if (zMapGUITestModifiers(but_event, GDK_SHIFT_MASK))
 		      {
@@ -2156,13 +2154,21 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	    /* Handle second click of a double click. */
 	    if (but_event->button == 1)
 	      {
-		gboolean result, externally_handled = FALSE ;
+		gboolean externally_handled = FALSE ;
+
+		highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
 		
-                if(!(externally_handled = zmapWindowUpdateXRemoteData(window, feature, real_item)))
+                if(!(externally_handled = zmapWindowUpdateXRemoteData(window, feature, highlight_item)))
                   {
-                    result = makeFeatureEditWindow(window, feature) ;
-                    /* v. bad news if we can't find this item. */
-                    zMapAssert(result) ;
+
+		    if (feature->type == ZMAPFEATURE_ALIGNMENT)
+		      zmapWindowListWindowCreate(window, zmapWindowItemGetHotFocusItems(window->focus), 
+						 (char *)g_quark_to_string(feature->parent->original_id), 
+						 zmapWindowItemGetHotFocusItem(window->focus), FALSE) ;
+		    else
+		      zmapWindowEditorCreate(window, highlight_item, window->edittable_features) ;
+
+
                   }
 
 		event_handled = TRUE ;
@@ -2457,7 +2463,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
         zmapWindowListWindowCreate(menu_data->window, list, 
                                    (char *)g_quark_to_string(feature->parent->original_id), 
-                                   menu_data->item) ;
+                                   menu_data->item, TRUE) ;
 	break ;
       }
     case 9:
@@ -2476,15 +2482,12 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
         zmapWindowListWindowCreate(menu_data->window, list, 
                                    (char *)g_quark_to_string(feature->parent->original_id), 
-                                   menu_data->item) ;
+                                   menu_data->item, FALSE) ;
 	break ;
       }
     case 2:
       {
-	gboolean result ;
-	    
-	result = makeFeatureEditWindow(menu_data->window, feature) ;
-	zMapAssert(result) ;				    /* v. bad news if we can't find this item. */
+	zmapWindowEditorCreate(menu_data->window, menu_data->item, menu_data->window->edittable_features) ;
 
 	break ;
       }
@@ -2748,30 +2751,6 @@ static void removeLongItemCB(gpointer data, gpointer user_data)
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-/* Returns TRUE if item found, FALSE otherwise.  */
-static gboolean makeFeatureEditWindow(ZMapWindow window, ZMapFeature feature)
-{
-  gboolean result = FALSE ;
-  FooCanvasItem *item ;
-  ZMapStrand strand ;
-
-  strand = zmapWindowFeatureStrand(feature) ;
-
-  if ((item = zmapWindowFToIFindItemFull(window->context_to_item, 
-					 feature->parent->parent->parent->unique_id,
-					 feature->parent->parent->unique_id,
-					 feature->parent->unique_id,
-					 strand, ZMAPFRAME_NONE,
-					 feature->unique_id)))
-    {
-      zmapWindowEditorCreate(window, item, window->edittable_features) ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
 
 /* Function to check whether any of the blocks has dna */
 static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key, 
