@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 15 15:45 2007 (edgrif)
+ * Last edited: Jan 18 16:01 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.61 2007-01-15 15:45:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.62 2007-01-19 10:24:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1371,6 +1371,17 @@ FooCanvasItem *zmapWindowItemGetHotFocusItem(ZMapWindowFocus focus)
     item = (FooCanvasItem *)(first->data) ;
 
   return item ;
+}
+
+
+GList *zmapWindowItemGetHotFocusItems(ZMapWindowFocus focus)
+{
+  GList *items = NULL ;
+
+  if (focus->focus_item_set)
+    items = g_list_first(focus->focus_item_set) ;
+
+  return items ;
 }
 
 
