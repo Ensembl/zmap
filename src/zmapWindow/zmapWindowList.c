@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan  4 17:22 2007 (edgrif)
+ * Last edited: Jan 18 18:54 2007 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.55 2007-01-09 14:28:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.56 2007-01-19 10:26:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,6 +53,8 @@ typedef struct _ZMapWindowListStruct
   GtkWidget     *toplevel ;
 
   GtkTreeModel *treeModel ;
+
+  gboolean zoom_to_item ;
 
   int cb_action ;					    /* transient: filled in for callback. */
 } ZMapWindowListStruct, *ZMapWindowList ;
@@ -176,7 +178,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
 void zmapWindowListWindowCreate(ZMapWindow zmapWindow, 
 				GList *itemList,
 				char *title,
-				FooCanvasItem *current_item)
+				FooCanvasItem *current_item, gboolean zoom_to_item)
 {
   ZMapWindowList window_list = NULL;
 
@@ -186,6 +188,8 @@ void zmapWindowListWindowCreate(ZMapWindow zmapWindow,
   window_list->title      = title;
 
   window_list->treeModel = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_LIST) ;
+
+  window_list->zoom_to_item = zoom_to_item ;
 
   zmapWindowFeatureListPopulateStoreList(window_list->treeModel, ZMAPWINDOWLIST_FEATURE_LIST, itemList, NULL) ;
 
@@ -380,13 +384,16 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 					   feature) ;
       zMapAssert(item) ;
 
-      if(!path_currently_selected && item)
+      if (!path_currently_selected && item)
         {
           ZMapWindow window = windowList->zmapWindow;
 
           gtk_tree_view_scroll_to_cell(treeView, path, NULL, FALSE, 0.0, 0.0);
 
-          zmapWindowZoomToWorldPosition(window, TRUE, 0.0, feature->x1, 100.0, feature->x2);
+	  if (windowList->zoom_to_item)
+	    zmapWindowZoomToWorldPosition(window, TRUE, 0.0, feature->x1, 100.0, feature->x2);
+	  else
+	    zmapWindowItemCentreOnItem(window, item, FALSE, FALSE) ;
 
           zMapWindowHighlightObject(window, item, TRUE);
           zMapWindowUpdateInfoPanel(window, feature, item, NULL, TRUE);
