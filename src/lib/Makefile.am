@@ -96,12 +96,14 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures_P.h \
 	$(top_srcdir)/zmapWindow/zmapWindowEditor.c \
+	$(top_srcdir)/zmapWindow/zmapWindowFocus.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFrame.c \
 	$(top_srcdir)/zmapWindow/zmapWindowItemHighlight.c \
 	$(top_srcdir)/zmapWindow/zmapWindowItemFactory.c \
 	$(top_srcdir)/zmapWindow/zmapWindowItemHash.c \
 	$(top_srcdir)/zmapWindow/zmapWindowList.c \
 	$(top_srcdir)/zmapWindow/zmapWindowLongItems.c \
+	$(top_srcdir)/zmapWindow/zmapWindowMark.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFeature.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFeatureList.c \
 	$(top_srcdir)/zmapWindow/zmapWindowSearch.c \
@@ -122,6 +124,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowPrint.c \
 	$(top_srcdir)/zmapWindow/zmapWindowRuler.c \
 	$(top_srcdir)/zmapWindow/zmapWindowStats.c \
+	$(top_srcdir)/zmapWindow/zmapWindowTextPositioner.c \
 	$(top_srcdir)/zmapWindow/zmapWindowContainer.c \
 	$(top_srcdir)/zmapWindow/zmapWindowContainer.h \
 	$(top_srcdir)/zmapWindow/zmapWindowZoomControl.c \
