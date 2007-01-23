@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 18 16:30 2007 (edgrif)
+ * Last edited: Jan 23 16:53 2007 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.8 2007-01-19 10:21:42 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.9 2007-01-23 16:54:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,7 @@
 
 static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data);
 static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data);
+
 
 static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
 {
@@ -64,6 +65,48 @@ static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
   
   return match;
 }
+
+void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvasItem *item)
+{
+  ZMapWindow window = NULL;
+  ZMapFeature feature = NULL;
+  ZMapWindowFToIPredFuncCB callback = NULL ;
+  GList *result = NULL, *feature_list;
+  GQuark locus_quark = 0;
+  char *wild_card = "*";
+
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+  zMapAssert(feature);
+
+  window = navigate->current_window;
+
+  callback    = searchLocusSetCB;
+  locus_quark = g_quark_from_string(wild_card);
+  
+  if((result = zmapWindowFToIFindItemSetFull(window->context_to_item,
+                                             feature->parent->parent->parent->unique_id,
+                                             feature->parent->parent->unique_id,
+                                             locus_quark, // feature->parent->unique_id, 
+                                             wild_card, wild_card, locus_quark,
+                                             callback, GUINT_TO_POINTER(feature->original_id))))
+    {
+      int start, end;
+      if((feature_list = zmapWindowItemListToFeatureList(result)))
+        {
+          /* x coords are HACKED!!!! */
+          if(zMapFeatureGetFeatureListExtent(feature_list, &start, &end))
+            zmapWindowZoomToWorldPosition(window, TRUE, 0.0, start, 100.0, end);
+          g_list_free(feature_list);
+        }
+    }
+  else
+    {
+      zMapAssertNotReached();
+    }
+
+  return ;
+}
+
 
 void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvasItem *item)
 {
