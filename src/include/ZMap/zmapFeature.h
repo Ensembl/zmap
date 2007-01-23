@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jan  5 12:32 2007 (rds)
+ * Last edited: Jan 17 13:50 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.109 2007-01-05 22:23:37 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.110 2007-01-23 16:42:01 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -806,6 +806,7 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
 				 gpointer user_data,
 				 GError **error) ;
 
+gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out);
 
 /* 
  *     Style functions, name should all be rationalised to just use "style", not "type".
