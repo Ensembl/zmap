@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 17 09:58 2007 (edgrif)
+ * Last edited: Jan 23 17:11 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.167 2007-01-17 10:32:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.168 2007-01-23 17:12:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3594,7 +3594,8 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 /* GFunc() to hide the given item and record it in the user hidden list. */
 static void hideItemsCB(gpointer data, gpointer user_data)
 {
-  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ZMapWindowFocusItemArea item_area = (ZMapWindowFocusItemArea)data;
+  FooCanvasItem *item = (FooCanvasItem *)item_area->focus_item ;
   GList **list_ptr = (GList **)user_data ;
   GList *user_hidden_items = *list_ptr ;
 
