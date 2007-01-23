@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jan 19 12:53 2007 (edgrif)
+ * Last edited: Jan 23 17:57 2007 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.20 2007-01-19 12:53:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.21 2007-01-23 18:02:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1563,9 +1563,10 @@ static FooCanvasItem *drawSeqFeature(RunSet run_data,  ZMapFeature feature,
       zmapWindowContainerSetZoomEventHandler(column_parent, ZoomEventHandler, 
                                              (gpointer)zoom_data, ZoomDataDestroy);
     }
-
+#ifdef RDS_BREAKING_STUFF
   if((hlght = zmapWindowItemTextHighlightCreateData(FOO_CANVAS_GROUP(feature_parent))))
     zmapWindowItemTextHighlightSetFullText(hlght, feature_block->sequence.sequence, FALSE);
+#endif
 
   if(!factory->font_desc)
     getTextOnCanvasDimensions(FOO_CANVAS_ITEM(feature_parent)->canvas, 
