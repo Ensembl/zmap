@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 18 16:24 2007 (edgrif)
+ * Last edited: Jan 23 17:40 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.175 2007-01-19 10:21:42 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.176 2007-01-23 17:59:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -340,7 +340,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   /* There may be a focus item if this routine is called as a result of splitting a window
    * or adding more features, make sure we scroll to the same point as we were
    * at in the previously. */
-  if ((fresh_focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
+  if ((fresh_focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
       zMapWindowScrollToItem(window, fresh_focus_item) ;
     }
@@ -1326,7 +1326,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	/* Swop focus from previous item(s)/columns to this column. */
 	zMapWindowUnHighlightFocusItems(window) ;
 
-	zmapWindowItemSetHotFocusColumn(window->focus, container_parent);
+	zmapWindowFocusSetHotColumn(window->focus, container_parent);
 	zmapHighlightColumn(window, container_parent) ;
         
 	/* Button 1 and 3 are handled, 2 is passed on to a general handler which could be
@@ -1697,8 +1697,8 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 
 
 	    /* If the focus column goes then so should the focus items as they should be in step. */
-	    if (zmapWindowItemGetHotFocusColumn(window->focus) == group)
-	      zmapWindowItemResetFocusItem(window->focus) ;
+	    if (zmapWindowFocusGetHotColumn(window->focus) == group)
+	      zmapWindowFocusReset(window->focus) ;
 
 
 	    /* These should go in container some time.... */

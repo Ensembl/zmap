@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 23 17:11 2007 (rds)
+ * Last edited: Jan 23 17:28 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.168 2007-01-23 17:12:28 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.169 2007-01-23 17:59:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1392,7 +1392,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->editor_windows = g_ptr_array_new() ;
 
   /* Init focus item/column stuff. */
-  window->focus = zmapWindowItemCreateFocus() ;
+  window->focus = zmapWindowFocusCreate() ;
 
   /* Init highlight colouring. */
   window->use_rev_video = TRUE ;
@@ -1711,8 +1711,8 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
     }
 
   /* Recreate focus object. */
-  zmapWindowItemDestroyFocus(window->focus) ;
-  window->focus = zmapWindowItemCreateFocus() ;
+  zmapWindowFocusDestroy(window->focus) ;
+  window->focus = zmapWindowFocusCreate() ;
 
   return ; 
 }
@@ -2989,7 +2989,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       {
         FooCanvasGroup *focus_column ;
 
-	if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
 	    ZMapStyleOverlapMode curr_overlap_mode ;
@@ -3010,7 +3010,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      {
 		GList *hidden_items = NULL ;
 
-		zmapWindowItemForEachFocusItem(window->focus, hideItemsCB, &hidden_items) ;
+		zmapWindowFocusForEachFocusItem(window->focus, hideItemsCB, &hidden_items) ;
 
 		g_queue_push_head(set_data->user_hidden_stack, hidden_items) ;
 
@@ -3018,7 +3018,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		/* This all feels really clumsy...we have the focus/highlight stuff the wrong way
 		   round, we should be dealing with focus, not with highlight at this level... */
 		zMapWindowUnHighlightFocusItems(window) ;
-		zmapWindowItemSetHotFocusColumn(window->focus, focus_column) ;
+		zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
 		zmapHighlightColumn(window, focus_column) ;
 	      }
 
@@ -3052,7 +3052,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         /* Hide column */
         FooCanvasGroup *focus_column ;
 
-	if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
             zmapWindowColumnHide(focus_column);
             /* Need to move columns now... */
@@ -3065,7 +3065,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       {
 	FooCanvasGroup *focus_column ;
 
-	if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
 	    ZMapStyleOverlapMode curr_overlap_mode, overlap_mode ;
@@ -3103,7 +3103,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	/* If there's a focus item we mark that, otherwise we check if the user set
 	 * a rubber band area and use that. */
-	if ((focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
 	    FooCanvasItem *parent ;
 	    ZMapFeature feature ;
@@ -3210,7 +3210,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    zmapWindowZoomToWorldPosition(window, TRUE, rootx1, rooty1, rootx2, rooty2) ;
 	  }
-	else if (focus_item || (focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
+	else if (focus_item || (focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
 	    ZMapFeature feature ;
 
@@ -3342,7 +3342,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 
   /* We don't do anything if there is no current focus item, we could take an educated guess and
    * start with the middle visible item or perhaps the bottom or top one, but perhaps not worth it ? */
-  if ((focus_item = zmapWindowItemGetHotFocusItem(window->focus)))
+  if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
       gboolean move_focus ;
 
@@ -3428,7 +3428,7 @@ static void swapColumns(ZMapWindow window, guint keyval)
 
   /* We don't do anything if there is no current focus column, we could take an educated guess and
    * start with the middle visible column but perhaps not worth it ? */
-  if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+  if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
     {
       column      = zmapWindowContainerGetParent(FOO_CANVAS_ITEM( focus_column )) ;
       col_as_item = FOO_CANVAS_ITEM(column);
@@ -3519,7 +3519,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 
   /* We don't do anything if there is no current focus column, we could take an educated guess and
    * start with the middle visible column but perhaps not worth it ? */
-  if ((focus_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+  if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
     {
       column_parent = zmapWindowContainerGetSuperGroup(focus_column) ;
 
@@ -3564,9 +3564,9 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 
 	  zMapWindowUnHighlightFocusItems(window) ;
 
-	  zmapWindowItemSetHotFocusColumn(window->focus, focus_column) ;
+	  zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
 
-	  zmapHighlightColumn(window, zmapWindowItemGetHotFocusColumn(window->focus)) ;
+	  zmapHighlightColumn(window, zmapWindowFocusGetHotColumn(window->focus)) ;
 
 
 	  /* These should go in container some time.... */

@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 18 10:53 2007 (edgrif)
+ * Last edited: Jan 23 17:56 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.57 2007-01-19 10:20:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.58 2007-01-23 17:59:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3168,7 +3168,7 @@ static gboolean bumpBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gpoi
 
 	    if (zMapGUITestModifiers(but_event, GDK_SHIFT_MASK))
 	      {
-		if (zmapWindowItemInFocusColumn(window->focus, item))
+		if (zmapWindowFocusIsItemInHotColumn(window->focus, item))
 		  replace_highlight = FALSE ;
 	      }
 
