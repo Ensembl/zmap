@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan  5 10:04 2007 (rds)
+ * Last edited: Jan 17 13:53 2007 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.40 2007-01-05 22:25:54 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.41 2007-01-23 16:43:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,6 +59,7 @@ typedef struct
 } NewDumpFeaturesStruct, *NewDumpFeatures ;
 
 
+static void get_feature_list_extent(gpointer list_data, gpointer span_data);
 
 
 static gboolean printLine(DumpFeatures dump, gchar *line) ;
@@ -673,10 +674,47 @@ gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatu
 }
 
 
+gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out)
+{
+  gboolean done = FALSE;
+  ZMapSpanStruct span = {0};
+  ZMapFeature feature;
+
+  if(feature_list && (feature = (ZMapFeature)(g_list_nth_data(feature_list, 0))))
+    {
+      span.x1 = feature->x1;
+      span.x2 = feature->x2;
+
+      g_list_foreach(feature_list, get_feature_list_extent, &span);
+
+      if(start_out)
+        *start_out = span.x1;
+      
+      if(end_out)
+        *end_out = span.x2;
+
+      done = TRUE;
+    }
+
+  return done;
+}
 
 /* 
  *              Internal routines.
  */
+
+static void get_feature_list_extent(gpointer list_data, gpointer span_data)
+{
+  ZMapFeature feature = (ZMapFeature)list_data;
+  ZMapSpan span = (ZMapSpan)span_data;
+
+  if(feature->x1 < span->x1)
+    span->x1 = feature->x1;
+  if(feature->x2 > span->x2)
+    span->x2 = feature->x2;
+
+  return ;
+}
 
 
 /* Should have a prefix level ?? */
