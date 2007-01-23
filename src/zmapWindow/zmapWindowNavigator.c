@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan  9 12:14 2007 (rds)
+ * Last edited: Jan 23 09:21 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.16 2007-01-09 13:54:46 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.17 2007-01-23 16:55:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,6 +91,7 @@ typedef struct
   ZMapFeature feature;
 } LocusEntryStruct, *LocusEntry;
 
+
 /* We need this because the locator is drawn as a foo_canvas_rect with
  * a transparent background, that will not receive events! Therefore as
  * a work around we set up a handler on the root background and test 
@@ -106,6 +107,7 @@ typedef struct
 {
   ZMapWindowNavigator navigate;
   FooCanvasItem *item;
+  ZMapWindowTextPositioner positioner;
   double wheight;
 }RepositionTextDataStruct, *RepositionTextData;
 
@@ -573,6 +575,8 @@ static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_
       
       foo_canvas_w2c(item->canvas, dummy_x, wy1, &cx, &(cy1));
       foo_canvas_w2c(item->canvas, dummy_x, wy2, &cx, &(cy2));
+
+      zmapWindowTextPositionerAddItem(data->positioner, item);
     }
   
   return ;
@@ -580,7 +584,7 @@ static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_
 
 static void repositionText(ZMapWindowNavigator navigate)
 {
-  RepositionTextDataStruct locus_gh_data = {NULL};
+  RepositionTextDataStruct repos_data = {NULL};
 
   if(navigate->locus_display_hash)
     {
@@ -588,14 +592,18 @@ static void repositionText(ZMapWindowNavigator navigate)
 
       canvas = fetchCanvas(navigate);
 
-      locus_gh_data.navigate = navigate;
+      repos_data.navigate = navigate;
+      repos_data.positioner = zmapWindowTextPositionerCreate();
 
       zmapWindowNavigatorTextSize(GTK_WIDGET(canvas), 
-                                  NULL, &(locus_gh_data.wheight));
+                                  NULL, &(repos_data.wheight));
 
       g_hash_table_foreach(navigate->locus_display_hash,
                            locus_gh_func,
-                           &locus_gh_data);
+                           &repos_data);
+
+      zmapWindowTextPositionerUnOverlap(repos_data.positioner, TRUE);
+      zmapWindowTextPositionerDestroy(repos_data.positioner);
     }
   
   return ;
@@ -610,11 +618,11 @@ static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
                                     ZMAPFEATURE_STRUCT_FEATURE, 
                                     drawContext, 
                                     NULL, nav_draw);
+
+  repositionText(navigate);
   
   zmapWindowNavigatorPositioning(navigate);
   
-  repositionText(navigate);
-
   zmapWindowNavigatorFillWidget(widget);
 
   return ;
@@ -734,11 +742,18 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 static void initialiseScaleIfNotExists(ZMapFeatureBlock block)
 {
   ZMapFeatureSet scale;
+  ZMapFeatureTypeStyle style;
   char *scale_id = ZMAP_FIXED_STYLE_SCALE_NAME;
 
   if(!(scale = zMapFeatureBlockGetSetByID(block, g_quark_from_string(scale_id))))
     {
       scale = zMapFeatureSetCreate(scale_id, NULL);
+
+      if(!(style = zMapFindStyle(((ZMapFeatureContext)(block->parent->parent))->styles, g_quark_from_string(scale_id))))
+        {
+          style = NULL;
+        }
+      zMapFeatureSetStyle(scale, style);
       zMapFeatureBlockAddFeatureSet(block, scale);
     }
 
@@ -1277,7 +1292,7 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
           {
             if(button->button == 1)
               {
-                zmapWindowNavigatorShowSameNameList(navigate, item);
+                zmapWindowNavigatorGoToLocusExtents(navigate, item);
                 event_handled = TRUE;
               }
           }
