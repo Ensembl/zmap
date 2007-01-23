@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jan 15 14:26 2007 (edgrif)
+ * Last edited: Jan 18 11:25 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.30 2007-01-15 15:30:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.31 2007-01-23 16:44:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1529,13 +1529,13 @@ static void containerMoveToZero(FooCanvasGroup *container)
 }
 
 
-/* This MUST update the long items!!! Hence container_data!!! */
 static void containerSetMaxBackground(FooCanvasGroup *container, FooCanvasPoints *this_points, 
                                       ContainerData container_data)
 {
   double nx1, nx2, ny1, ny2, size;
-  FooCanvasItem *container_background = NULL;
-  
+  FooCanvasItem *container_background;
+  FooCanvasGroup *container_features;
+
   container_background = zmapWindowContainerGetBackground(container);
 
   /* It is worth a get_bounds call here??
@@ -1559,6 +1559,25 @@ static void containerSetMaxBackground(FooCanvasGroup *container, FooCanvasPoints
 
   nx2 = this_points->coords[2];
   ny2 = this_points->coords[3];
+
+  /* ....................................................... */
+  /* Should we just add a span to the container data struct? */
+  if(container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET)
+    {
+#ifdef RDS_DONT_INCLUDE
+      container_features = zmapWindowContainerGetFeatures(container);
+      if((feature = get_a_feature(container_features)) && 
+         (block   = get_its_block(feature)))
+        {
+          get_blocks_extent(block, &start, &end);
+          ny1 = 0.0;
+          ny2 = end - start + 1.0;
+          zmapWindowSeq2CanExt(&ny1, &ny2);
+        }
+
+#endif
+    }
+
   foo_canvas_item_set(container_background,
                       "x1", 0.0,
                       "y1", 0.0,
@@ -1604,15 +1623,6 @@ static void containerSetMaxOverlays(FooCanvasGroup *container, FooCanvasPoints *
 	  double item_x1, item_y1, item_x2, item_y2 ;
 
 	  overlay_item = FOO_CANVAS_ITEM(list_item->data) ;
-
-	  /* It is worth a get_bounds call here??
-	   * ************************************
-	   * foo_canvas_item_get_bounds(bg, &tx1, &ty1, &tx2, &ty2);
-	   * if(tx1 != nx1 && tx2 != nx2 && ty1 != ny1 && ty2 != ny2)
-	   *   item_set(...); longItemCheck(...)
-	   * ***********************************
-	   * Should we update this_points???? Only if x changes...
-	   */
 
 	  /* Also needs to set the background to the FULL height not 
 	   * just limited to features... */
