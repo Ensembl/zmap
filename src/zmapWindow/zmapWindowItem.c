@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 18 16:01 2007 (edgrif)
+ * Last edited: Jan 23 17:55 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.62 2007-01-19 10:24:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.63 2007-01-23 18:01:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,53 +37,7 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
-
-
-
-/* User can set a range (perhaps by selecting an item) for operations like zooming and bump options. */
-typedef struct _ZMapWindowMarkStruct
-{
-  gboolean mark_set ;
-  ZMapWindow window ;
-  FooCanvasItem *range_item ;
-  FooCanvasGroup *block_group ;
-  ZMapFeatureBlock block ;
-  double world_x1, world_y1, world_x2, world_y2 ;
-  int range_top, range_bottom ;
-  GdkColor colour ;
-  GdkBitmap *stipple ;
-  FooCanvasGroup *range_group ;
-  FooCanvasItem  *top_range_item ;
-  FooCanvasItem  *bottom_range_item ;
-} ZMapWindowMarkStruct ;
-
-
-#define mark_bitmap_width 16
-#define mark_bitmap_height 4
-static char mark_bitmap_bits[] =
-  {
-    0x11, 0x11,
-    0x22, 0x22,
-    0x44, 0x44,
-    0x88, 0x88
-  } ;
-
-
-/* Used for window focus items and column.
- * 
- * Note that if only a column has been selected then focus_item_set may be NULL, BUT
- * if an item has been selected then focus_column will that items parent.
- * 
- *  */
-typedef struct _ZMapWindowFocusStruct
-{
-  /* the selected/focused items. Interesting operations on these should be possible... */
-  GList *focus_item_set ; 
-
-  FooCanvasGroup *focus_column ;
-
-} ZMapWindowFocusStruct ;
-
+#include <zmapWindowArea.h>
 
 
 
@@ -95,7 +49,7 @@ typedef struct
   gboolean highlight ;
 } HighlightStruct, *Highlight ;
 
-
+#ifdef RDS_BREAKING_STUFF
 /* text group selection stuff for the highlighting of dna, etc... */
 typedef struct _ZMapWindowItemHighlighterStruct
 {
@@ -113,25 +67,20 @@ typedef struct _ZMapWindowItemHighlighterStruct
 
   char *data;
 
+  FooCanvasPoints static_points[32], *points;
+
   GString *tooltip_text;
 } ZMapWindowItemHighlighterStruct;
-
+#endif
 
 static void highlightCB(gpointer data, gpointer user_data) ;
 static void unhighlightCB(gpointer data, gpointer user_data) ;
-
-static void addFocusItemCB(gpointer data, gpointer user_data) ;
-static void freeFocusItems(ZMapWindowFocus focus) ;
 
 static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
 static void highlightFuncCB(gpointer data, gpointer user_data);
 static void colourReverseVideo(GdkColor *colour_inout);
 static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
-static void setBoundingBoxColour(ZMapWindowMark mark, FooCanvasItem *item, gboolean highlight) ;
 
-static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark) ;
-static void markFuncCB(gpointer data, gpointer user_data) ;
-static void markRange(ZMapWindowMark mark, double y1, double y2) ;
 
 static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data);
 static void pointerIsOverItem(gpointer data, gpointer user_data);
@@ -140,233 +89,7 @@ static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select,
                                       double currentY); /* These are WORLD coords */
 
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
-
-
-
-
-/* 
- *           Set of functions for handling the marked feature or region.
- * 
- * Essentially there are two ways to mark, either by marking a feature or
- * by marking a region. The two are mutually exclusive.
- * 
- * If a feature is marked then it will be used in a number of window operations
- * such as zooming and column bumping.
- * 
- * 
- */
-
-ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
-{
-  ZMapWindowMark mark ;
-
-  zMapAssert(window) ;
-
-  mark = g_new0(ZMapWindowMarkStruct, 1) ;
-
-  mark->mark_set = FALSE ;
-
-  mark->window = window ;
-
-  mark->range_item = NULL ;
-
-  mark->range_top = mark->range_bottom = 0 ;
-
-  zmapWindowMarkSetColour(mark, ZMAP_WINDOW_ITEM_MARK) ;
-
-  mark->stipple = gdk_bitmap_create_from_data(NULL, &mark_bitmap_bits[0], mark_bitmap_width, mark_bitmap_height) ;
-
-  return mark ;
-}
-
-gboolean zmapWindowMarkIsSet(ZMapWindowMark mark)
-{
-  zMapAssert(mark) ;
-
-  return mark->mark_set ;
-}
-
-void zmapWindowMarkReset(ZMapWindowMark mark)
-{
-  zMapAssert(mark) ;
-
-  if (mark->mark_set)
-    {
-      if (mark->range_item)
-	{
-	  /* undo highlighting */
-	  markItem(mark, mark->range_item, FALSE) ;
-
-	  mark->range_item = NULL ;
-	}
-
-      mark->range_top = mark->range_bottom = 0 ;
-
-      if (mark->range_group)
-	{
-	  /* Do not destroy the range_group, its belongs to the block container ! */
-	  zmapWindowLongItemRemove(mark->window->long_items, mark->top_range_item) ;
-	  gtk_object_destroy(GTK_OBJECT(mark->top_range_item)) ;
-	  mark->top_range_item = NULL ;
-
-	  zmapWindowLongItemRemove(mark->window->long_items, mark->bottom_range_item) ;
-	  gtk_object_destroy(GTK_OBJECT(mark->bottom_range_item)) ;
-	  mark->bottom_range_item = NULL ;
-	}
-
-      mark->mark_set = FALSE ;
-    }
-
-  return ;
-}
-
-void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour)
-{
-  zMapAssert(mark) ;
-
-  gdk_color_parse(colour, &(mark->colour)) ;
-
-  return ;
-}
-
-GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark)
-{
-  zMapAssert(mark) ;
-
-  return &(mark->colour) ;
-}
-
-/* Mark an item, the marking must be done explicitly, it is unaffected by highlighting. 
- * Note that the item must be a feature item.
- * 
- * The coords are all -1 or +1 to make sure we don't clip the given item with the
- * marking.
- *  */
-void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
-{
-  ZMapFeature feature ;
-  double x1, y1, x2, y2 ;
-
-  zMapAssert(mark && FOO_IS_CANVAS_ITEM(item)) ;
-
-  zmapWindowMarkReset(mark) ;
-
-  mark->range_item = item ;
-
-  /* We need to get the world coords because the item passed in is likely to be a child of a child
-   * of a.... */
-  my_foo_canvas_item_get_world_bounds(mark->range_item, &x1, &y1, &x2, &y2) ;
-
-  feature = g_object_get_data(G_OBJECT(mark->range_item), ITEM_FEATURE_DATA) ;
-  zMapAssert(feature) ;
-
-  mark->range_top = feature->x1 - 1 ;
-  mark->range_bottom = feature->x2 + 1 ;
-
-  mark->block_group = zmapWindowContainerGetParentLevel(mark->range_item, ZMAPCONTAINER_LEVEL_BLOCK) ;
-  mark->block = g_object_get_data(G_OBJECT(mark->block_group), ITEM_FEATURE_DATA) ;
-
-  markItem(mark, mark->range_item, TRUE) ;
-
-  markRange(mark, y1 - 1, y2 + 1) ;
-
-  mark->mark_set = TRUE ;
-
-  return ;
-}
-
-FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark)
-{
-  zMapAssert(mark) ;
-
-  return mark->range_item ;
-}
-
-gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
-				     double world_x1, double world_y1, double world_x2, double world_y2)
-{
-  gboolean result ;
-  FooCanvasGroup *block_grp_out ;
-  int y1_out, y2_out ;
-
-  zMapAssert(mark) ;
-
-  zmapWindowMarkReset(mark) ;
-  
-  y1_out = y2_out = 0 ;
-  if ((result = zmapWindowWorld2SeqCoords(mark->window, world_x1, world_y1, world_x2, world_y2,
-					  &block_grp_out, &y1_out, &y2_out)))
-    {
-      double y1, y2, dummy ;
-
-      mark->block_group = block_grp_out ;
-      mark->block = g_object_get_data(G_OBJECT(mark->block_group), ITEM_FEATURE_DATA) ;
-      mark->world_x1 = world_x1 ;
-      mark->world_y1 = world_y1 ;
-      mark->world_x2 = world_x2 ;
-      mark->world_y2 = world_y2 ;
-
-      mark->range_top = y1_out ;
-      mark->range_bottom = y2_out ;
-
-      y1 = mark->world_y1 ;
-      y2 = mark->world_y2 ;
-      foo_canvas_item_w2i(FOO_CANVAS_ITEM(mark->block_group), &dummy, &y1) ;
-      foo_canvas_item_w2i(FOO_CANVAS_ITEM(mark->block_group), &dummy, &y2) ;
-
-      markRange(mark, y1, y2) ;
-
-      mark->mark_set = TRUE ;
-    }
-
-  return result ;
-}
-
-gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
-				     double *world_x1, double *world_y1, double *world_x2, double *world_y2)
-{
-  gboolean result = FALSE ;
-
-  if (mark->mark_set)
-    {
-      *world_x1 = mark->world_x1 ;
-      *world_y1 = mark->world_y1 ;
-      *world_x2 = mark->world_x2 ;
-      *world_y2 = mark->world_y2 ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
-gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *end)
-{
-  gboolean result = FALSE ;
-
-  if (mark->mark_set)
-    {
-      *start = mark->range_top ;
-      *end = mark->range_bottom ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
-void zmapWindowMarkDestroy(ZMapWindowMark mark)
-{
-  zmapWindowMarkReset(mark) ;
-
-  g_object_unref(G_OBJECT(mark->stipple)) ;		    /* This seems to be the only way to
-							       get rid of a drawable. */
-
-  g_free(mark) ;
-
-  return ;
-}
-
+static void extract_feature_from_item(gpointer list_data, gpointer user_data);
 
 
 
@@ -408,7 +131,16 @@ gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_stran
   return result ;
 }
 
+GList *zmapWindowItemListToFeatureList(GList *item_list)
+{
+  GList *feature_list = NULL;
 
+  g_list_foreach(item_list, extract_feature_from_item, &feature_list);
+
+  return feature_list;
+}
+
+#ifdef RDS_BREAKING_STUFF
 
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(FooCanvasGroup *group)
 {
@@ -418,21 +150,6 @@ ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(FooCanvasGroup *
   if(!(selection = (ZMapWindowItemHighlighter)g_object_get_data(G_OBJECT(group), 
                                                                 ITEM_HIGHLIGHT_DATA)))
     {
-#ifdef RDS_DONT_INCLUDE
-      /* I thought this might be a good idea... 
-       * The highlight _isn't_ part of a feature so messes everything up! 
-       * However, other issues arise when this is done.
-       * - origin of this group.
-       * - position of this group in the stack!
-
-       * As a stopgap I've just moved 1 up (out of the feature) and it seems 2 work.
-       */
-      FooCanvasGroup *root_child = NULL;
-      root_child = FOO_CANVAS_GROUP(foo_canvas_item_new(foo_canvas_root(group_as_item->canvas),
-                                                        foo_canvas_group_get_type(), 
-                                                        "y", group->ypos,
-                                                        NULL));
-#endif
       selection  = (ZMapWindowItemHighlighter)g_new0(ZMapWindowItemHighlighterStruct, 1);
       selection->tooltip      = zMapDrawToolTipCreate(group_as_item->canvas);
       selection->tooltip_text = g_string_sized_new(40);
@@ -488,6 +205,7 @@ gboolean zmapWindowItemTextHighlightGetIndices(ZMapWindowItemHighlighter select_
     }
   return set;
 }
+
 void zmapWindowItemTextHighlightFinish(ZMapWindowItemHighlighter select_control)
 {
   GtkClipboard *clip = NULL;
@@ -513,6 +231,9 @@ void zmapWindowItemTextHighlightFinish(ZMapWindowItemHighlighter select_control)
   select_control->seqFirstIdx = select_control->seqLastIdx = -1;
 #endif
 
+  testAreaCode(select_control);
+
+
   return ;
 }
 
@@ -526,12 +247,14 @@ gboolean zmapWindowItemTextHighlightValidForMotion(ZMapWindowItemHighlighter sel
 void zmapWindowItemTextHighlightDraw(ZMapWindowItemHighlighter select_control,
                                      FooCanvasItem *item_receiving_event)
 {
+#ifdef RDS_DONT_INCLUDE
   zMapDrawHighlightTextRegion(select_control->highlight,
                               select_control->x1,
                               select_control->y1,
                               select_control->x2,
                               select_control->y2,
                               item_receiving_event);
+#endif
   return ;
 }
 gboolean zmapWindowItemTextHighlightBegin(ZMapWindowItemHighlighter select_control,
@@ -658,6 +381,7 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
   return ;
 }
 
+#endif /* RDS_BREAKING_STUFF */
 
 
 
@@ -712,21 +436,21 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean 
 	  zmapWindowFToIPrintList(set_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	g_list_foreach(set_items, highlightCB, window) ;
+	zmapWindowFocusAddItems(window->focus, set_items);
 
-	zmapWindowItemSetHotFocusItem(window->focus, item) ;
+	zmapWindowFocusSetHotItem(window->focus, item) ;
 
 	break ;
       }
     default:
       {
 	/* Try highlighting both the item and its column. */
-	highlightCB((gpointer)item, (gpointer)window) ;
+        zmapWindowFocusAddItem(window->focus, item);
       }
       break ;
     }
 
-  zmapHighlightColumn(window, zmapWindowItemGetHotFocusColumn(window->focus)) ;
+  zMapWindowHighlightFocusItems(window);
 
   /* We need to be more sophisticated with our raising of items...otherwise tabbing through them
    * just looks ridiculous...you end up tabbing everywhere... */
@@ -740,6 +464,21 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean 
 }
 
 
+void zMapWindowHighlightFocusItems(ZMapWindow window)
+{                                               
+  FooCanvasItem *hot_item ;
+  FooCanvasGroup *hot_column = NULL;
+
+  /* If any other feature(s) is currently in focus, revert it to its std colours */
+  if ((hot_column = zmapWindowFocusGetHotColumn(window->focus)))
+    zmapHighlightColumn(window, hot_column) ;
+
+  if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
+    zmapWindowFocusForEachFocusItem(window->focus, highlightCB, window) ;
+
+  return ;
+}
+
 
 
 void zMapWindowUnHighlightFocusItems(ZMapWindow window)
@@ -748,14 +487,14 @@ void zMapWindowUnHighlightFocusItems(ZMapWindow window)
   FooCanvasGroup *hot_column ;
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
-  if ((hot_column = zmapWindowItemGetHotFocusColumn(window->focus)))
+  if ((hot_column = zmapWindowFocusGetHotColumn(window->focus)))
     zmapUnHighlightColumn(window, hot_column) ;
 
-  if ((hot_item = zmapWindowItemGetHotFocusItem(window->focus)))
-    zmapWindowItemForEachFocusItem(window->focus, unhighlightCB, window) ;
+  if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
+    zmapWindowFocusForEachFocusItem(window->focus, unhighlightCB, window) ;
 
   if (hot_column || hot_item)
-    zmapWindowItemResetFocusItem(window->focus) ;    
+    zmapWindowFocusReset(window->focus) ;    
 
   return ;
 }
@@ -864,7 +603,95 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
   return parent_container ;
 }
 
+FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item)
+{
+  ZMapFeature feature;
+  ZMapFeatureBlock block = NULL;
+  FooCanvasItem *dna_item = NULL;
+  GQuark feature_set_unique = 0, dna_id = 0;
+  char *feature_name = NULL;
 
+  feature_set_unique = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
+
+  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+    {
+      if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK))) && 
+         (feature_name = zMapFeatureMakeDNAFeatureName(block)))
+        {
+          dna_id = zMapFeatureCreateID(ZMAPFEATURE_RAW_SEQUENCE, 
+                                       feature_name, 
+                                       ZMAPSTRAND_FORWARD, /* ALWAYS FORWARD */
+                                       block->block_to_sequence.q1,
+                                       block->block_to_sequence.q2,
+                                       0,0);
+          g_free(feature_name);
+        }
+      
+      if(!(dna_item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                                 block->parent->unique_id,
+                                                 block->unique_id,
+                                                 feature_set_unique,
+                                                 ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
+                                                 ZMAPFRAME_NONE,/* NO STRAND */
+                                                 dna_id)) != NULL)
+        {
+          dna_item = NULL;
+        }
+    }
+  else
+    {
+      zMapAssertNotReached();
+    }
+
+  return dna_item;
+}
+
+FooCanvasItem *zmapWindowItemGetTranslationItem(ZMapWindow window, FooCanvasItem *item)
+{
+  ZMapFeature feature;
+  ZMapFeatureBlock block = NULL;
+  FooCanvasItem *tr_item = NULL;
+  GQuark feature_set_unique = 0, dna_id = 0;
+  char *feature_name = NULL;
+  ZMapFrame frame = ZMAPFRAME_NONE; 
+
+  feature_set_unique = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+
+  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+    {
+      /* Implement this bit! */
+      /* frame = getFrameFromFeature(feature); */
+
+      if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK))) && 
+         (feature_name = zMapFeatureMakeDNAFeatureName(block)))
+        {
+          dna_id = zMapFeatureCreateID(ZMAPFEATURE_RAW_SEQUENCE, 
+                                       feature_name, 
+                                       ZMAPSTRAND_FORWARD, /* ALWAYS FORWARD */
+                                       block->block_to_sequence.q1,
+                                       block->block_to_sequence.q2,
+                                       0,0);
+          g_free(feature_name);
+        }
+      
+      if(!(tr_item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                                 block->parent->unique_id,
+                                                 block->unique_id,
+                                                 feature_set_unique,
+                                                 ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
+                                                 frame,
+                                                 dna_id)) != NULL)
+        {
+          tr_item = NULL;
+        }
+    }
+  else
+    {
+      zMapAssertNotReached();
+    }
+
+  return tr_item;
+}
 
 
 /* Returns a features style. We need this function because we only attach the style
@@ -1172,288 +999,9 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
   zmapWindowItemCentreOnItem(window, item, FALSE, 100.0);
 
-#ifdef RDS_DONT_INCLUDE_UNUSED
-  /* highlight the item, which also does raise_to_top! */
-  zMapWindowHighlightObject(window, item) ;
-  
-  /* Report the selected object to the layer above us. */
-  if(window->caller_cbs->select != NULL)
-    {
-      ZMapWindowSelectStruct select = {NULL} ;
-
-      /* Really we should create some text here as well.... */
-      select.item = item ;
-      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-    }
-#endif
-
-
   /* UMMMM, What's going on here ????? */
   return TRUE;
-
-
-
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
-  zMapAssert(feature) ;
-  
-  /* Get the features canvas coords (may be very different for align block features... */
-  zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2);
-  /* May need to move scroll region if object is outside it. */
-  //  checkScrollRegion(window, feature_x1, feature_x2) ;
-  
-  /* scroll up or down to user's selection. */
-  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2); /* world coords */
-  /* Fix the numbers to make sense. */
-  foo_canvas_item_i2w(item, &x1, &y1);
-  foo_canvas_item_i2w(item, &x2, &y2);
-
-  if (y1 <= 0.0)    /* we might be dealing with a multi-box item, eg transcript */
-    {
-      double px1, py1, px2, py2;
-      /* Is this used? */
-      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(item->parent),
-				 &px1, &py1, &px2, &py2); 
-      if (py1 > 0.0)
-	y1 = py1;
-    }
-  
-  /* convert to canvas pixels */
-  foo_canvas_w2c(window->canvas, x1, y1, &cx1, &cy1); 
-  foo_canvas_w2c(window->canvas, x2, y2, &cx2, &cy2); 
-  {
-    int cx, cy, tmpx, tmpy, cheight, cwidth;
-    tmpx = cx2 - cx1; tmpy = cy2 - cy1;
-    if(tmpx & 1)
-      tmpx += 1;
-    if(tmpy & 1)
-      tmpy += 1;
-    cx = cx1 + (tmpx / 2);
-    cy = cy1 + (tmpy / 2);
-    tmpx = GTK_WIDGET(window->canvas)->allocation.width;
-    tmpy = GTK_WIDGET(window->canvas)->allocation.height;
-    if(tmpx & 1)
-      tmpx -= 1;
-    if(tmpy & 1)
-      tmpy -= 1;
-    cwidth = tmpx / 2; cheight = tmpy / 2;
-    cx -= cwidth; cy -= cheight;
-    foo_canvas_scroll_to(window->canvas, cx, cy);
-  }
-
-  /* highlight the item, which also does raise_to_top! */
-  zMapWindowHighlightObject(window, item, TRUE) ;
-  
-  /* Report the selected object to the layer above us. */
-  if(window->caller_cbs->select != NULL)
-    {
-      zMapWindowUpdateInfoPanel(window, feature, item, NULL, TRUE) ;
-    }
-
-  result = TRUE ;
-
-  return result ;
 }
-
-
-
-/* 
- *              Set of routines to handle focus items.
- * 
- * Holds a list of items that are highlighted/focussed, one of these is the "hot" item
- * which is the last one selected by the user.
- * 
- * The first item in the list is always the "hot" item.
- * 
- * The "add" functions just append item(s) to the list, they do not remove any items from it.
- * 
- * The "hot" item must be set with a separate call.
- * 
- * To replace the list you need to free it first then add new item(s).
- * 
- * Note that these routines do not handle highlighting of items, that must be done with
- * a separate call.
- * 
- */
-
-ZMapWindowFocus zmapWindowItemCreateFocus(void)
-{
-  ZMapWindowFocus focus ;
-
-  focus = g_new0(ZMapWindowFocusStruct, 1) ;
-
-  return focus ;
-}
-
-
-
-/* N.B. unless there are no items, then item is added to end of list,
- * it is _not_ the new hot item so we do not reset the focus column for instance. */
-void zmapWindowItemAddFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
-{
-
-  if (!focus->focus_item_set)
-    zmapWindowItemSetHotFocusItem(focus, item) ;
-  else
-    addFocusItemCB((gpointer)item, (gpointer)focus) ;
-
-  return ;
-}
-
-/* Same remark applies to this routine as to zmapWindowItemAddFocusItem() */
-void zmapWindowItemAddFocusItems(ZMapWindowFocus focus, GList *item_list)
-{
-
-  /* If there is no focus item, make the first item in the list the hot focus item and
-   * move the list on one. */
-  if (!focus->focus_item_set)
-    {
-      zmapWindowItemSetHotFocusItem(focus, (FOO_CANVAS_ITEM(item_list->data))) ;
-      item_list = g_list_next(item_list) ;
-    }
-
-  if (item_list)
-    g_list_foreach(item_list, addFocusItemCB, focus) ;
-
-  return ;
-}
-
-
-/* Is the given item in the hot focus column ? */
-/* SHOULD BE RENAMED TO BE _ANY_ ITEM AS IT CAN INCLUDE BACKGROUND ITEMS.... */
-gboolean zmapWindowItemInFocusColumn(ZMapWindowFocus focus, FooCanvasItem *item)
-{
-  gboolean result = FALSE ;
-
-  if (focus->focus_column)
-    {
-      if (focus->focus_column == zmapWindowItemGetParentContainer(item))
-	result = TRUE ;
-    }
-
-  return result ;
-}
-
-
-
-void zmapWindowItemSetHotFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
-{
-  /* always try to remove, if item is not in list then list is unchanged. */
-  focus->focus_item_set = g_list_remove(focus->focus_item_set, item) ;
-
-  /* Stick the item on the front. */
-  focus->focus_item_set = g_list_prepend(focus->focus_item_set, item) ;
-
-  /* Set the focus items column as the focus column. */
-  focus->focus_column = zmapWindowContainerGetParentContainerFromItem(item) ;
-
-  return ;
-}
-
-
-/* this one is different, a new column can be set _without_ setting a new item, so we
- * need to get rid of the old items. */
-void zmapWindowItemSetHotFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column)
-{
-  freeFocusItems(focus) ;
-
-  focus->focus_column = column ;
-  
-  return ;
-}
-
-
-FooCanvasItem *zmapWindowItemGetHotFocusItem(ZMapWindowFocus focus)
-{
-  FooCanvasItem *item = NULL ;
-  GList *first ;
-
-  if (focus->focus_item_set && (first = g_list_first(focus->focus_item_set)))
-    item = (FooCanvasItem *)(first->data) ;
-
-  return item ;
-}
-
-
-GList *zmapWindowItemGetHotFocusItems(ZMapWindowFocus focus)
-{
-  GList *items = NULL ;
-
-  if (focus->focus_item_set)
-    items = g_list_first(focus->focus_item_set) ;
-
-  return items ;
-}
-
-
-FooCanvasGroup *zmapWindowItemGetHotFocusColumn(ZMapWindowFocus focus)
-{
-  FooCanvasGroup *column = NULL ;
-
-  column = focus->focus_column ;
-
-  return column ;
-}
-
-
-/* Call given user function for all highlighted items. */
-void zmapWindowItemForEachFocusItem(ZMapWindowFocus focus, GFunc callback, gpointer user_data)
-{
-  if (focus->focus_item_set)
-    g_list_foreach(focus->focus_item_set, callback, user_data) ;
-
-  return ;
-}
-
-
-
-/* Remove single item, a side effect is that if this is the hot item then we simply
- * make the next item in the list a hot item. */
-void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
-{
-
-  if (focus->focus_item_set)
-    focus->focus_item_set = g_list_remove(focus->focus_item_set, item) ;
-
-  return ;
-}
-
-
-/* Remove all focus items. */
-void zmapWindowItemRemoveAllFocusItems(ZMapWindowFocus focus)
-{
-  freeFocusItems(focus) ;
-
-  return ;
-}
-
-
-void zmapWindowItemResetFocusItem(ZMapWindowFocus focus)
-{
-  freeFocusItems(focus) ;
-
-  focus->focus_column = NULL ;
-
-  return ;
-}
-
-
-
-void zmapWindowItemDestroyFocus(ZMapWindowFocus focus)
-{
-  zMapAssert(focus) ;
-
-  freeFocusItems(focus) ;
-
-  focus->focus_column = NULL ;
-
-  g_free(focus) ;
-
-  return ;
-}
-
-
-
-
 
 
 void zmapWindowShowItem(FooCanvasItem *item)
@@ -1938,6 +1486,7 @@ gboolean zmapWindowItemIsVisible(FooCanvasItem *item)
 
   visible = zmapWindowItemIsShown(item);
 
+#ifdef RDS_DONT
   /* we need to check out our parents :( */
   /* we would like not to do this */
   if(visible)
@@ -1951,6 +1500,7 @@ gboolean zmapWindowItemIsVisible(FooCanvasItem *item)
           parent  = FOO_CANVAS_GROUP(FOO_CANVAS_ITEM(parent)->parent); 
         }
     }
+#endif
 
   return visible;
 }
@@ -1977,27 +1527,30 @@ gboolean zmapWindowItemIsShown(FooCanvasItem *item)
  */
 
 
-
-static void highlightCB(gpointer data, gpointer user_data)
+static void highlightCB(gpointer list_data, gpointer user_data)
 {
-  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ZMapWindowFocusItemArea data = (ZMapWindowFocusItemArea)list_data;
+  FooCanvasItem *item = (FooCanvasItem *)data->focus_item ;
   ZMapWindow window = (ZMapWindow)user_data ;
 
-  highlightItem(window, item, TRUE) ;
-
-  zmapWindowItemAddFocusItem(window->focus, item) ;
+  if(!data->highlighted)
+    {
+      highlightItem(window, item, TRUE) ;
+      data->highlighted = TRUE;
+    }
 
   return ;
 }
 
-static void unhighlightCB(gpointer data, gpointer user_data)
+static void unhighlightCB(gpointer list_data, gpointer user_data)
 {
-  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ZMapWindowFocusItemArea data = (ZMapWindowFocusItemArea)list_data;
+  FooCanvasItem *item = (FooCanvasItem *)data->focus_item ;
   ZMapWindow window = (ZMapWindow)user_data ;
 
   highlightItem(window, item, FALSE) ;
 
-  zmapWindowItemRemoveFocusItem(window->focus, item) ;
+  zmapWindowFocusRemoveFocusItem(window->focus, item);
 
   return ;
 }
@@ -2054,44 +1607,6 @@ static void highlightFuncCB(gpointer data, gpointer user_data)
   return ;
 }
 
-
-
-/* Mark/unmark an item with a highlight colour. */
-static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark)
-{
-  FooCanvasItem *parent ;
-
-  parent = item ;
-
-  if (FOO_IS_CANVAS_GROUP(parent))
-    {
-      HighlightStruct highlight_data = {NULL} ;
-      FooCanvasGroup *group = FOO_CANVAS_GROUP(parent) ;
-
-      highlight_data.mark = mark ;
-      highlight_data.highlight = set_mark ;
-      
-      g_list_foreach(group->item_list, markFuncCB, (void *)&highlight_data) ;
-    }
-  else
-    {
-      setBoundingBoxColour(mark, parent, set_mark) ;
-    }
-
-  return ;
-}
-
-
-/* This is a g_datalist callback function. */
-static void markFuncCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-  Highlight highlight = (Highlight)user_data ;
-
-  setBoundingBoxColour(highlight->mark, item, highlight->highlight) ;
-
-  return ;
-}
 
 
 
@@ -2246,6 +1761,7 @@ static void colourReverseVideo(GdkColor *colour_inout)
 
 static void pointerIsOverItem(gpointer data, gpointer user_data)
 {
+#ifdef RDS_BREAKING_STUFF
   FooCanvasItem *item = (FooCanvasItem *)data;
   ZMapWindowItemHighlighter select = (ZMapWindowItemHighlighter)user_data;
   ZMapDrawTextRowData trd = NULL;
@@ -2345,7 +1861,7 @@ static void pointerIsOverItem(gpointer data, gpointer user_data)
     }
   else if(select->need_update)
     zMapLogWarning("%s", "Error: No Text Row Data");
-
+#endif
   return ;
 }
 
@@ -2353,6 +1869,7 @@ static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select,
                                       double currentX,
                                       double currentY) /* These are WORLD coords */
 {
+#ifdef RDS_BREAKING_STUFF
   GList *listStart = NULL;
   FooCanvasItem *origin;
   ZMapGListDirection forward = ZMAP_GLIST_FORWARD;
@@ -2384,12 +1901,13 @@ static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select,
   if(select->need_update)
     zMap_g_list_foreach_directional(listStart, pointerIsOverItem, 
                                     (gpointer)select, forward);
-
+#endif
   return TRUE;
 }
  
 static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data)
 {
+#ifdef RDS_BREAKING_STUFF
   ZMapWindowItemHighlighter select_control = NULL;
 
   if((select_control = (ZMapWindowItemHighlighter)g_object_get_data(G_OBJECT(item), ITEM_HIGHLIGHT_DATA)))
@@ -2402,45 +1920,9 @@ static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data)
       
       g_free(select_control);
     }
-
+#endif
   return ;
 }
-
-
-
-/* A GFunc() to add all items in a list to the windows focus item list. We don't want duplicates
- * so we try to remove an item first and then append it. This is a potential performance
- * problem if there is a _huge_ list of focus items....
- * 
- *  */
-static void addFocusItemCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-  ZMapWindowFocus focus = (ZMapWindowFocus)user_data ;
-
-  /* always try to remove, if item is not in list then list is unchanged. */
-  if (focus->focus_item_set)
-    focus->focus_item_set = g_list_remove(focus->focus_item_set, item) ;
-
-  focus->focus_item_set = g_list_append(focus->focus_item_set, item) ;
-
-  return ;
-}
-
-
-
-static void freeFocusItems(ZMapWindowFocus focus)
-{
-  if (focus->focus_item_set)
-    {
-      g_list_free(focus->focus_item_set) ;
-
-      focus->focus_item_set = NULL ;
-    }
-
-  return ;
-}
-
 
 
 
@@ -2471,85 +1953,18 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b)
 
 
 
-
-
-
-/* 
- * The bounding_box is a bit of a hack to support marking objects,
- * a better way would be to use masks as overlays but I don't have time just
- * now. ALSO....if you put highlighting over the top of the feature you won't
- * be able to click on it any more....agh....something to solve.....
- * 
- */
-static void setBoundingBoxColour(ZMapWindowMark mark, FooCanvasItem *item, gboolean highlight)
+static void extract_feature_from_item(gpointer list_data, gpointer user_data)
 {
-  ZMapWindowItemFeatureType item_feature_type ;
-  ZMapFeature item_feature = NULL;
-  ZMapFeatureTypeStyle style = NULL;
+  GList **list = (GList **)user_data;
+  FooCanvasItem *item = (FooCanvasItem *)list_data;
+  ZMapFeature feature;
 
-
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type != ITEM_FEATURE_INVALID) ;
-
-  item_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
-  zMapAssert(item_feature) ;
-
-  style = zmapWindowItemGetStyle(item) ;
-  zMapAssert(style) ;
-
-  if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
+  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
     {
-      GdkColor *highlight_colour = NULL ;
-      GdkBitmap *stipple ;
-      char *highlight_target, *highlight_stipple ;
-
-      highlight_target = "fill_color_gdk" ;
-      highlight_stipple = "fill_stipple" ;
-
-      if (highlight)
-	{
-	  highlight_colour = zmapWindowMarkGetColour(mark) ;
-	  stipple = mark->stipple ;
-	}
-      else
-	{
-	  highlight_colour = NULL ;
-	  stipple = NULL ;
-	}
-
-      foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-			  highlight_target, highlight_colour,
-			  highlight_stipple, stipple,
-			  NULL) ;
+      *list = g_list_append(*list, feature);
     }
-
-  return ;
-}
-
-
-/* The range markers are implemented as overlays in the block container. This makes sense because
- * a mark is relevant only to its parent block. */
-static void markRange(ZMapWindowMark mark, double y1, double y2)
-{
-  double block_x1, block_y1, block_x2, block_y2 ;
-
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(mark->block_group), &block_x1, &block_y1, &block_x2, &block_y2) ;
-
-  zmapWindowExt2Zero(&block_x1, &block_x2) ;
-  zmapWindowExt2Zero(&block_y1, &block_y2) ;
-
-  /* Only maximise overlays width on resize, do not change height. */
-  zmapWindowContainerSetOverlayResizing(mark->block_group, TRUE, FALSE) ;
-
-  mark->range_group = zmapWindowContainerGetOverlays(mark->block_group) ;
-
-  mark->top_range_item = zMapDrawBoxOverlay(FOO_CANVAS_GROUP(mark->range_group), 
-					    block_x1, block_y1, block_x2, y1, 
-					    &(mark->colour)) ;
-
-  mark->bottom_range_item = zMapDrawBoxOverlay(FOO_CANVAS_GROUP(mark->range_group), 
-					       block_x1, y2, block_x2, block_y2, 
-					       &(mark->colour)) ;
+  else
+    zMapAssertNotReached();
 
   return ;
 }
