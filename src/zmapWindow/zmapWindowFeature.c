@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 19 10:23 2007 (edgrif)
+ * Last edited: Jan 23 17:52 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.78 2007-01-19 10:24:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.79 2007-01-23 18:00:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -274,17 +274,24 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
   FooCanvasGroup *new_reverse_set;
   ZMapFeatureSet     feature_set;
   ZMapFeatureBlock feature_block;
+  ZMapFeatureContext     context;
+  ZMapFeatureTypeStyle     style;
   FooCanvasGroup *forward_strand;
   FooCanvasGroup *reverse_strand;
-  GQuark          feature_set_id;
+  GQuark style_id,feature_set_id;
 
   feature_block = zmapWindowContainerGetData(block_group, ITEM_FEATURE_DATA);
   zMapAssert(feature_block);
   
+  context = zMapFeatureGetParentGroup(feature_block, ZMAPFEATURE_STRUCT_CONTEXT);
+  zMapAssert(context);
+
   feature_set_id = zMapFeatureSetCreateID(feature_set_name);
+  style_id = zMapStyleCreateID(feature_set_name);
 
   /* Make sure it's somewhere in our list of feature set names.... columns to draw. */
-  if(g_list_find(window->feature_set_names, GUINT_TO_POINTER(feature_set_id)))
+  if(g_list_find(window->feature_set_names, GUINT_TO_POINTER(feature_set_id)) &&
+     (style = zMapFindStyle(context->styles, style_id)))
     {
       /* Check feature set does not already exist. */
       if(!zMapFeatureBlockGetSetByID(feature_block, feature_set_id))
@@ -292,6 +299,8 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
           /* Create the new feature set... */
           if((feature_set = zMapFeatureSetCreate(feature_set_name, NULL)))
             {
+              /* Setup the style */
+              zMapFeatureSetStyle(feature_set, style);
               /* Add it to the block */
               zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
               /* Get the strand groups */
@@ -403,7 +412,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
       if(zMapFeatureSetFindFeature(feature_set, feature))
         {
           /* remove the item from the focus items list. */
-          zmapWindowItemRemoveFocusItem(zmap_window->focus, feature_item);
+          zmapWindowFocusRemoveFocusItem(zmap_window->focus, feature_item);
 
           /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
           gtk_object_destroy(GTK_OBJECT(feature_item)) ;
@@ -775,15 +784,17 @@ void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature feature, FooCa
     {
       if((zmapWindowItemIsShown(dna_item)))
         {
-          ZMapWindowItemHighlighter dna_highlight = NULL;
-          /* Only now is it worth highlighting */
 
-          current_zoom = zMapWindowGetZoomFactor(window);
-          dna_zoom     = zMapWindowGetZoomMaxDNAInWrappedColumn(window);
+#ifdef RDS_BREAKING_STUFF
+          ZMapWindowItemHighlighter dna_highlight = NULL;
+          ZMapWindowAreaSet set;
+          /* Only now is it worth highlighting */
+          set = window->area_set;
 
           if((dna_highlight = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP( dna_item ))))
             zmapWindowItemTextHighlightRegion(dna_highlight, dna_item, 
                                               feature->x1, feature->x2);
+#endif
         }
     }
 
@@ -2026,7 +2037,7 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
       /* Check to see if there is an entry in long items for this feature.... */
       zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
 
-      zmapWindowItemRemoveFocusItem(window->focus, feature_item);
+      zmapWindowFocusRemoveFocusItem(window->focus, feature_item);
     }
   else /* ITEM_FEATURE_PARENT */
     {
@@ -2057,7 +2068,7 @@ static void cleanUpFeatureCB(gpointer data, gpointer user_data)
   /* Check to see if there is an entry in long items for this feature.... */
   zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
 
-  zmapWindowItemRemoveFocusItem(window->focus, feature_item);
+  zmapWindowFocusRemoveFocusItem(window->focus, feature_item);
 
   return ;
 }
@@ -2115,12 +2126,13 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		if (but_event->button == 1 || but_event->button == 3)
 		  {
 		    gboolean replace_highlight = TRUE ;
+		    FooCanvasItem *highlight_item, *dna_item, *trans_item;
 
 		    if (zMapGUITestModifiers(but_event, GDK_SHIFT_MASK))
 		      {
 			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
 
-			if (zmapWindowItemInFocusColumn(window->focus, highlight_item))
+			if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item))
 			  replace_highlight = FALSE ;
 		      }
 		    else if (zMapGUITestModifiers(but_event, GDK_CONTROL_MASK))
@@ -2162,9 +2174,9 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                   {
 
 		    if (feature->type == ZMAPFEATURE_ALIGNMENT)
-		      zmapWindowListWindowCreate(window, zmapWindowItemGetHotFocusItems(window->focus), 
+		      zmapWindowListWindowCreate(window, zmapWindowFocusGetFocusItems(window->focus), 
 						 (char *)g_quark_to_string(feature->parent->original_id), 
-						 zmapWindowItemGetHotFocusItem(window->focus), FALSE) ;
+						 zmapWindowFocusGetHotItem(window->focus), FALSE) ;
 		    else
 		      zmapWindowEditorCreate(window, highlight_item, window->edittable_features) ;
 
@@ -2214,10 +2226,12 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 #ifndef DONTGRABPOINTER
             foo_canvas_item_ungrab(item, button->time);
 #endif 
+#ifdef RDS_BREAKING_STUFF
             highlighObj = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP(item->parent));
             zMapAssert(highlighObj);
 
             zmapWindowItemTextHighlightFinish(highlighObj);
+#endif
             event_handled = TRUE;
           }
         else if(button->button == 1)
@@ -2235,16 +2249,19 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
             gdk_cursor_destroy(xterm);
 #endif
 
+#ifdef RDS_BREAKING_STUFF
             if((highlighObj = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP(item->parent)))
                && zmapWindowItemTextHighlightBegin(highlighObj, FOO_CANVAS_GROUP(item->parent), item))
               zmapWindowItemTextHighlightUpdateCoords(highlighObj, 
                                                       event->button.x, 
                                                       event->button.y);
+#endif
             event_handled = TRUE;
           }
         else if(button->button == 3)
           {
             unsigned int firstIdx, lastIdx;
+#ifdef RDS_BREAKING_STUFF
             highlighObj = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP(item->parent));
             if(zmapWindowItemTextHighlightGetIndices(highlighObj, &firstIdx, &lastIdx))
               {
@@ -2252,13 +2269,14 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                 makeTextItemMenu(button, window, item->parent);
                 event_handled = TRUE;
               }
+#endif
           }
       }
       break;
     case GDK_MOTION_NOTIFY:
       {
         ZMapDrawTextRowData trd = NULL;
-        
+#ifdef RDS_BREAKING_STUFF  
         highlighObj = zmapWindowItemTextHighlightRetrieve(FOO_CANVAS_GROUP(item->parent));
         zMapAssert(highlighObj);
         
@@ -2271,6 +2289,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
             zmapWindowItemTextHighlightDraw(highlighObj, item);
             event_handled = TRUE;
           }    
+#endif
       }
       break;
     case GDK_LEAVE_NOTIFY:
@@ -2596,6 +2615,7 @@ static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
 
 static void textSelectCB(int menu_item_id, gpointer callback_data) 
 {
+#ifdef RDS_BREAKING_STUFF
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowItemHighlighter hlght = NULL;
 
@@ -2611,7 +2631,7 @@ static void textSelectCB(int menu_item_id, gpointer callback_data)
     zMapWarning("%s", "Unimplemented feature");
     break;
   }
-
+#endif
   return ;
 }
 
