@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 18 16:16 2007 (edgrif)
+ * Last edited: Jan 23 18:05 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.167 2007-01-22 12:06:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.168 2007-01-23 18:06:51 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -551,7 +551,6 @@ typedef struct _ZMapWindowStruct
   /* Holds the marked region or item. */
   ZMapWindowMark mark ;
 
-
   /* We need to be able to find out if the user has done a revcomp for coordinate display
    * and other reasons, the display_forward_coords flag controls whether coords are displayed
    * always as if for the original forward strand or for the whichever is the current forward
@@ -565,8 +564,6 @@ typedef struct _ZMapWindowStruct
    * they are displayed on forward and reverse strands. */
   gboolean display_3_frame ;
   gboolean show_3_frame_reverse ;
-
-  GList *highlight_areas;       /* ... */
 
   gboolean interrupt_expose;
 } ZMapWindowStruct ;
@@ -596,6 +593,12 @@ typedef struct _zmapWindowFeatureListCallbacksStruct
 
 typedef struct _ZMapWindowItemHighlighterStruct *ZMapWindowItemHighlighter;
 
+typedef struct _ZMapWindowFocusItemAreaStruct
+{
+  FooCanvasItem  *focus_item;
+  GList          *area_highlights;
+  gboolean        highlighted;
+} ZMapWindowFocusItemAreaStruct,  *ZMapWindowFocusItemArea;
 
 typedef void (*ZMapWindowStyleTableCallback)(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
@@ -956,21 +959,25 @@ void zmapWindowMarkDestroy(ZMapWindowMark mark) ;
  *| item in the list is the most recent.  I call this the "hot" item, |
  *| like a hot potato.                                                |
  *!-------------------------------------------------------------------!*/
-ZMapWindowFocus zmapWindowItemCreateFocus(void) ;
-void zmapWindowItemAddFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
-void zmapWindowItemForEachFocusItem(ZMapWindowFocus focus, GFunc callback, gpointer user_data) ;
-void zmapWindowItemResetFocusItem(ZMapWindowFocus focus) ;
-void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
-void zmapWindowItemRemoveAllFocusItems(ZMapWindowFocus focus) ;
-void zmapWindowItemSetHotFocusItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
-FooCanvasItem *zmapWindowItemGetHotFocusItem(ZMapWindowFocus focus) ;
-GList *zmapWindowItemGetHotFocusItems(ZMapWindowFocus focus) ;
-gboolean zmapWindowItemInFocusColumn(ZMapWindowFocus focus, FooCanvasItem *item) ;
-void zmapWindowItemSetHotFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
-FooCanvasGroup *zmapWindowItemGetHotFocusColumn(ZMapWindowFocus focus) ;
-void zmapWindowItemRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
-void zmapWindowItemFreeFocusItems(ZMapWindowFocus focus) ;
-void zmapWindowItemDestroyFocus(ZMapWindowFocus focus) ;
+
+ZMapWindowFocus zmapWindowFocusCreate(void) ;
+void zmapWindowFocusAddItem(ZMapWindowFocus focus, FooCanvasItem *item);
+void zmapWindowFocusForEachFocusItem(ZMapWindowFocus focus, GFunc callback, gpointer user_data) ;
+void zmapWindowFocusReset(ZMapWindowFocus focus) ;
+void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
+void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
+FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus) ;
+GList *zmapWindowFocusGetHotItems(ZMapWindowFocus focus) ;
+gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *item) ;
+void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
+FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
+void zmapWindowFocusDestroy(ZMapWindowFocus focus) ;
+
+ZMapWindowFocusItemArea zmapWindowFocusItemAreaCreate(FooCanvasItem *item);
+void zmapWindowFocusItemAreaDestroy(ZMapWindowFocusItemArea item_area);
+
+
+GList *zmapWindowItemListToFeatureList(GList *item_list);
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean replace_highlight_item) ;
 void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
@@ -1052,5 +1059,15 @@ char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type) ;
 
 void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
+
+
+typedef struct _ZMapWindowTextPositionerStruct *ZMapWindowTextPositioner;
+ZMapWindowTextPositioner zmapWindowTextPositionerCreate(void);
+void zmapWindowTextPositionerAddItem(ZMapWindowTextPositioner positioner, 
+                                     FooCanvasItem *item);
+void zmapWindowTextPositionerUnOverlap(ZMapWindowTextPositioner positioner,
+                                       gboolean draw_lines);
+void zmapWindowTextPositionerDestroy(ZMapWindowTextPositioner positioner);
+
 
 #endif /* !ZMAP_WINDOW_P_H */
