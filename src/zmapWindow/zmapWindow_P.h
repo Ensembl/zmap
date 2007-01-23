@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 23 18:05 2007 (rds)
+ * Last edited: Jan 23 18:11 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.168 2007-01-23 18:06:51 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.169 2007-01-23 18:13:12 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -962,12 +962,13 @@ void zmapWindowMarkDestroy(ZMapWindowMark mark) ;
 
 ZMapWindowFocus zmapWindowFocusCreate(void) ;
 void zmapWindowFocusAddItem(ZMapWindowFocus focus, FooCanvasItem *item);
+void zmapWindowFocusAddItems(ZMapWindowFocus focus, GList *item_list);
 void zmapWindowFocusForEachFocusItem(ZMapWindowFocus focus, GFunc callback, gpointer user_data) ;
 void zmapWindowFocusReset(ZMapWindowFocus focus) ;
 void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
 void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus) ;
-GList *zmapWindowFocusGetHotItems(ZMapWindowFocus focus) ;
+GList *zmapWindowFocusGetFocusItems(ZMapWindowFocus focus) ;
 gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *item) ;
 void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
 FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
