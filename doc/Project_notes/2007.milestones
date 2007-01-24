@@ -1,0 +1,21 @@
+
+These milestones will be put into the January MAR report for Informatics which can be found under
+the informatics homepage on intweb.
+
+
+
+1) Completely replace xace as the annotation interface within the lace system for sanger havana
+group
+
+2) Completely replace xace as the annotation interface within the lace system for sanger zebrafish
+group
+
+3) Become a commonly used viewer for sanger wormbase group
+
+4) allow display of multiple sequences/feature blocks aligned to one another in one window, these
+sequences might be different species, different haplotypes, races or whatever.
+
+5) produce a standalone zmap/lace package that can be used for annotation no the Mac or a linux
+box.
+
+
