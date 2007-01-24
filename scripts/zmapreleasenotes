@@ -1,0 +1,225 @@
+#!/bin/bash
+#
+# Builds the release notes as much as is possible. Currently it does
+# not seem possible to automate the Request Tracker queries that get
+# the tickets that have been resolved after a certain date.
+#
+
+# How to run the script:
+#
+# zmapreleasenotes <last_release_date> <target_dir>
+#
+# e.g.
+#
+# 
+#
+#
+
+
+#
+# main routine
+#
+
+# set up common functions.
+. ZBfunctions $0
+
+# Setting this variable means fatal messages also get mailed to the zmap developers
+# mail alias.
+#
+# uncomment when I've finished testing...sigh...
+#
+#ZBmailOnExit="true"
+
+
+# set up usage strings.
+cmdstring='[ -a -z ] <target_release_notes_directory>'
+descstring='
+   -a   do acedb and zmap release notes
+
+   -z   only do zmap release notes
+
+   <target_release_notes_directory> 
+        specifies the directory where the release notes will be copied to.'
+
+build='zmap'
+
+targetdir=''
+builddir='RELEASE_NOTES'
+
+zmap_repository=$ZBcvsRoot
+zmap_src_dir='ZMap/src'
+zmap_doc_dir='ZMap/doc'
+release_notes_dir="$zmap_doc_dir/Release_notes"
+
+acedb_repository=~acedb/CVS_ACEDB
+acedb_src_dir='acedb'
+
+rel_template='release_notes_template.shtml'
+rel_prefix='release_notes'
+rel_suffix='shtml'
+
+
+
+
+#
+# Get the cmd line stuff...
+#
+
+while getopts ":az" opt ; do
+  case $opt in
+    a  ) build="all"       ;;
+    z  ) build="zmap"      ;;
+    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
+  esac
+done
+
+
+# Get the source directory for the build.
+shift $(($OPTIND - 1))
+if [ -z "$1" ] ; then
+  ZBusage "$cmdstring" "$descstring" "No target directory specified."
+fi
+targetdir=$1
+
+
+#
+# Now we've got everything signal that the build has started.
+#
+ZBlogmsg "Build release notes started"
+
+
+ZBGotoDir $targetdir
+
+
+mkdir $builddir || ZBmsgAndExit "Cannot make build directory: $builddir"
+
+
+ZBGotoDir $builddir
+
+cvs -d $zmap_repository checkout $zmap_doc_dir || ZBmsgAndExit "Cannot checkout release notes directory: $zmap_doc_dir"
+
+cvs -d $zmap_repository checkout $zmap_src_dir || ZBmsgAndExit "Cannot checkout source code directory: $release_notes_dir"
+
+cvs -d $acedb_repository checkout $acedb_src_dir || ZBmsgAndExit "Cannot checkout source code directory: $release_notes_dir"
+
+
+# Set up the release file....
+today=`date "+%Y_%m_%d"`
+release_file="$rel_prefix.$today.$rel_suffix"
+touch $release_file || ZBmsgAndExit "Cannot touch $release_file"
+chmod u+rw $release_file || ZBmsgAndExit "Cannot make $release_file readable/writeable"
+
+
+# Get todays date...
+text_date=`date "+%e %B %Y"`
+
+
+#
+# Write the proper header for sanger pages
+# oops some stuff to construct here...the date !!
+#
+echo '<!--#set var="banner" value="ZMap Release Notes For '$text_date'"-->' >> $release_file
+echo '<!--#include virtual="/perl/header"-->' >> $release_file
+echo '<!--#set var="author" value="edgrif@sanger.ac.uk" -->' >> $release_file
+echo  >> $release_file
+
+
+
+# Extract the zmap version from the header.
+#
+zmap_version=`grep ZMAP_VERSION ZMap/src/zmapUtils/zmapUtils_P.h`
+set $zmap_version
+zmap_version=$3
+zmap_release=`grep ZMAP_RELEASE ZMap/src/zmapUtils/zmapUtils_P.h`
+set $zmap_release
+zmap_release=$3
+zmap_update=`grep ZMAP_UPDATE  ZMap/src/zmapUtils/zmapUtils_P.h`
+set $zmap_update
+zmap_update=$3
+echo "zmap version: $zmap_version $zmap_release $zmap_update"
+
+zmap_version_txt="$zmap_version.$zmap_release.$zmap_update"
+echo "<h3>Release Version: ZMap $zmap_version_txt</h3>" >> $release_file
+
+
+
+echo  >> $release_file
+echo "<h3>Release Date: $text_date</h3>" >> $release_file
+echo  >> $release_file
+
+
+echo  >> $release_file
+echo "<h3>Request Tracker Tickets Resolved</h3>" >> $release_file
+echo  >> $release_file
+
+
+echo  >> $release_file
+echo "<h4>ZMap</h4>" >> $release_file
+echo  >> $release_file
+
+echo  >> $release_file
+echo "<PRE>" >> $release_file
+
+echo 'RT CONTENT TO GO HERE....' >> $release_file
+
+echo "</PRE>" >> $release_file
+echo  >> $release_file
+
+
+
+echo  >> $release_file
+echo "<h4>Acedb</h4>" >> $release_file
+echo  >> $release_file
+
+echo  >> $release_file
+echo "<PRE>" >> $release_file
+
+echo 'RT CONTENT TO GO HERE....' >> $release_file
+
+echo "</PRE>" >> $release_file
+echo  >> $release_file
+
+
+year=`date "+%Y"`					    # Used for filtering cvschanges output.
+
+
+
+echo  >> $release_file
+echo "<h3>ZMap Changes/Fixes</h3>" >> $release_file
+echo  >> $release_file
+
+# crapness here...need to find cvschanges more reliably
+change_file='ZMAP.CHANGEFILE'
+../cvschanges -o$change_file -z '2007-01-01<2007-01-22' ./ZMap
+cat $change_file | grep -v $year | perl -lne 's/\*/<p>/; print' >> $release_file
+rm -f $change_file || ZBmsgAndExit "Cannot remove change file: $change_file"
+echo  >> $release_file
+
+
+
+echo  >> $release_file
+echo "<h3>Acedb Changes/Fixes</h3>" >> $release_file
+echo  >> $release_file
+
+# crapness here...need to find cvschanges more reliably
+change_file='ACEDB.CHANGEFILE'
+../cvschanges -o$change_file -a '2007-01-01<2007-01-22' ./acedb
+cat $change_file | grep -v $year | perl -lne 's/\*/<p>/; print' >> $release_file
+rm -f $change_file || ZBmsgAndExit "Cannot remove change file: $change_file"
+echo  >> $release_file
+
+
+#
+# Add the proper html footer for sanger pages.
+#
+echo >> $release_file
+echo '<!--#include virtual="/perl/footer"-->' >> $release_file
+echo >> $release_file
+
+
+# Record end of build.
+#
+ZBlogmsg "Build release notes finished"
+
+
+exit 0
