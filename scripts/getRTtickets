@@ -1,0 +1,34 @@
+#!/usr/local/bin/bash
+
+# Just add blank separated queues here if more are required.
+#OPS_QUEUES="zmap"
+
+OPS_QUEUES="$*"
+
+SingleQueue () {
+for QUEUE in $*
+do
+
+# a good way to work out what the params should look like is to try them out in web search interface.
+#
+# queries can be very complex:
+#
+#echo -n -e `rt-3.4 search -i  "(Queue = '$QUEUE') and  ( status='open' or status='new') and created > '-1 week'"`
+
+echo -n -e `rt-3.4 search -i  "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '01/01/2007'"`
+echo
+
+done
+}
+
+for TICKET in `SingleQueue $OPS_QUEUES` 
+do
+
+#echo $TICKET
+
+echo
+
+# You can add stuff to the -f flag like Created and so on.
+rt show -t ticket -f Queue,Subject,Requestors $TICKET
+
+done
