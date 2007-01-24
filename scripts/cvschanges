@@ -5,33 +5,104 @@
 #
 # Note that you can get help on cvs2cl using:   "perldoc cvs2cl"
 #
-# Script should be invoked like this: cvschanges '2004-03-01<2004-04-01'
+# Script should be invoked like this: cvschanges '2004-03-01<2004-04-01' target_dir
 #
 # Some day I will add user friendly options to do months automatically....note from
 # the above that you need to include the first day of the _next_ month to get all of
 # the current month...a cvs date range oddity.
 #
 
-changes_file=`pwd`
 
-# We need to run it on several directories.....
-#zmap_cvs="$HOME/ZMap/ZMap_Curr/ZMap"
-zmap_cvs="."
+# set up common functions.
+. ZBfunctions $0
+
+
+# set up usage strings.
+cmdstring='[ -a -o -z ] <date_range> <target_release_notes_directory>'
+descstring='
+   -a   do acedb cvs changes
+
+   -o   output filename (default is XXXX.ChangeLog
+
+   -z   do zmap cvs changes
+
+
+   <date_range>
+        should be in the format "2004-03-01<2004-04-01", note that you need
+        to specify one day _past_ the final day you want.
+
+   <target_release_notes_directory> 
+        specifies the directory where the release notes will be copied to.'
+
+
+changes_dir=`pwd`
+changename='ChangeLog'
+
 zmap_dirs='doc src'
+acedb_dirs='w*'
+
+
+cvs='zmap'
+dirs=$zmap_dirs
+change_suffix=$cvs
+changes_filename="$cvs.$changename"
+
+
+#
+# Get the cmd line stuff...
+#
+
+while getopts ":ao:z" opt ; do
+  case $opt in
+    a  ) cvs="acedb"
+         dirs=$acedb_dirs
+         change_suffix=$cvs
+         changes_filename="$cvs.$changename" ;;
+    o  ) filename_set=$OPTARG ;;
+    z  ) cvs="zmap"
+         dirs=$zmap_dirs
+         change_suffix=$cvs
+         changes_filename="$cvs.$changename" ;;
+    \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
+  esac
+done
+
+
+if [ ! -z "$filename_set" ] ; then
+  changes_filename=$filename_set
+fi
+
+
+# Get the date
+shift $(($OPTIND - 1))
+if [ -z "$1" ] ; then
+  ZBusage "$cmdstring" "$descstring" "No date specified."
+fi
+date=$1
+
+# Get the source directory for the build.
+#
+shift
+if [ -z "$1" ] ; then
+  ZBusage "$cmdstring" "$descstring" "No cvs directory specified."
+fi
+cvs_dir=$1
+
+
+changes_file="$changes_dir/$changes_filename"
+
 
 # Need to make sure the date stuff is passed correctly to cvs, format must be:
 #
 # cvs2cl.pl  -l "-d'2004-03-01<2004-04-01'"  [other args]
 #
 
-date="-d'"$1"'"
+date="-d'"$date"'"
 
-#do Zmap stuf...
-#  could use "--accum" to put zmap stuff in same change file....
+cd $cvs_dir
+print "Issuing: cvs2cl --chrono -f $changes_file -l $date $zmap_dirs"
 
-cd $zmap_cvs
-print "Issuing: cvs2cl --chrono -f $changes_file'/ChangeLog.ZMAP'  -l $date $zmap_dirs"
+cvs2cl --chrono -f $changes_file  -l $date $dirs
 
-cvs2cl --chrono -f $changes_file'/ChangeLog.ZMAP'  -l $date $zmap_dirs
 
 exit 0
