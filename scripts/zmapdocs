@@ -31,7 +31,7 @@ foocanvasDocs ()
 {
   foocanvas_docs="foo-canvas.h foo-canvas-widget.h foo-canvas-util.h foo-canvas-text.h \
 foo-canvas-rect-ellipse.h foo-canvas-polygon.h foo-canvas-pixbuf.h \
-foo-canvas-line.h foo-canvas-i18n.h"
+foo-canvas-line.h"
   src_dir=$1
   dest_dir=$2
 
@@ -104,7 +104,7 @@ web_site=$1
 # we need to run whatever scripts to create some of the dynamic pages, maybe these should be in
 # a special makefile somewhere....
 
-foocanvas_src_dir="$ZBBaseDir/prefix/packages/foocanvas/libfoocanvas"
+foocanvas_src_dir="$ZBacedb/prefix/LINUX/include/libfoocanvas-1.0/libfoocanvas"
 foocanvas_dest_dir="$web_site/foocanvas"
 foocanvasDocs $foocanvas_src_dir $foocanvas_dest_dir
 
