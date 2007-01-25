@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 23 17:55 2007 (rds)
+ * Last edited: Jan 25 08:56 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.63 2007-01-23 18:01:28 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.64 2007-01-25 08:56:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,6 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
-#include <zmapWindowArea.h>
 
 
 
