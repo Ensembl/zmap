@@ -1,9 +1,35 @@
 #!/usr/local/bin/bash
+#
+# Cribbed from systems who use it to look at tickets.
+#
+# NOTE that currently this script will only run on scratchy as rt is only installed
+# there.
+#
+#
+#
 
-# Just add blank separated queues here if more are required.
-#OPS_QUEUES="zmap"
+usage=" $0 <date> <list of queues>
 
+    date is in the format dd/mm/yyyy
+
+    queues should be a blank separated list of valid RT queues.
+"
+
+
+start_date=$1
+if [ -z "$start_date" ] ; then
+  echo $usage
+  exit 1
+fi
+shift
+
+# A list of blank separated queues is allowed.
 OPS_QUEUES="$*"
+if  [ -z "$OPS_QUEUES" ] ; then
+  echo $usage
+  exit 1
+fi
+
 
 SingleQueue () {
 for QUEUE in $*
@@ -15,20 +41,24 @@ do
 #
 #echo -n -e `rt-3.4 search -i  "(Queue = '$QUEUE') and  ( status='open' or status='new') and created > '-1 week'"`
 
-echo -n -e `rt-3.4 search -i  "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '01/01/2007'"`
+echo -n -e `rt-3.4 search -i  "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '$start_date'"`
 echo
 
 done
 }
+
 
 for TICKET in `SingleQueue $OPS_QUEUES` 
 do
 
 #echo $TICKET
 
+# You can add stuff to the -f flag like Created and so on.
+rt show -t ticket -f Queue,Subject,Requestors,Resolved $TICKET
+
 echo
 
-# You can add stuff to the -f flag like Created and so on.
-rt show -t ticket -f Queue,Subject,Requestors $TICKET
-
 done
+
+
+exit 0
