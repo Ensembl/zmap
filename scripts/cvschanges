@@ -100,7 +100,7 @@ changes_file="$changes_dir/$changes_filename"
 date="-d'"$date"'"
 
 cd $cvs_dir
-print "Issuing: cvs2cl --chrono -f $changes_file -l $date $zmap_dirs"
+print "Issuing: cvs2cl --chrono -f $changes_file -l $date $dirs"
 
 cvs2cl --chrono -f $changes_file  -l $date $dirs
 
