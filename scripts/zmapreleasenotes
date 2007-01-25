@@ -32,14 +32,20 @@
 
 
 # set up usage strings.
-cmdstring='[ -a -z ] <target_release_notes_directory>'
+cmdstring='[ -a -c -d<date> -z ] <target_release_notes_directory>'
 descstring='
    -a   do acedb and zmap release notes
+
+   -d   specify date from which changes/tickets should be extracted,
+        date must be in form "dd/mm/yyyy"
+
+   -n   DO NOT put the release notes in cvs or update the date file there
 
    -z   only do zmap release notes
 
    <target_release_notes_directory> 
         specifies the directory where the release notes will be copied to.'
+
 
 build='zmap'
 
@@ -58,6 +64,7 @@ rel_template='release_notes_template.shtml'
 rel_prefix='release_notes'
 rel_suffix='shtml'
 
+last_release_file="$release_notes_dir/LAST_RELEASE_DATE.txt"
 
 
 
@@ -65,21 +72,24 @@ rel_suffix='shtml'
 # Get the cmd line stuff...
 #
 
-while getopts ":az" opt ; do
+while getopts ":acz" opt ; do
   case $opt in
     a  ) build="all"       ;;
+    d  ) prev_date=$OPTARG ;;
+    n  ) no_cvs="true"     ;;
     z  ) build="zmap"      ;;
     \? ) ZBusage "$cmdstring" "$descstring" "Bad command line flag"
   esac
 done
+shift $(($OPTIND - 1))					    # Move on to rest of cmdline args.
 
 
-# Get the source directory for the build.
-shift $(($OPTIND - 1))
+# Get the target directory for the build.
 if [ -z "$1" ] ; then
   ZBusage "$cmdstring" "$descstring" "No target directory specified."
 fi
 targetdir=$1
+
 
 
 #
@@ -88,14 +98,14 @@ targetdir=$1
 ZBlogmsg "Build release notes started"
 
 
+# Set up the build directory.
 ZBGotoDir $targetdir
-
-
 mkdir $builddir || ZBmsgAndExit "Cannot make build directory: $builddir"
-
-
 ZBGotoDir $builddir
 
+
+# check out zmap and acedb source, note, we don't need all of the zmap source stuff....
+#
 cvs -d $zmap_repository checkout $zmap_doc_dir || ZBmsgAndExit "Cannot checkout release notes directory: $zmap_doc_dir"
 
 cvs -d $zmap_repository checkout $zmap_src_dir || ZBmsgAndExit "Cannot checkout source code directory: $release_notes_dir"
@@ -103,15 +113,44 @@ cvs -d $zmap_repository checkout $zmap_src_dir || ZBmsgAndExit "Cannot checkout 
 cvs -d $acedb_repository checkout $acedb_src_dir || ZBmsgAndExit "Cannot checkout source code directory: $release_notes_dir"
 
 
-# Set up the release file....
-today=`date "+%Y_%m_%d"`
-release_file="$rel_prefix.$today.$rel_suffix"
+
+# Get the date to use for looking for cvs changes and RT tickets and set up
+# dates for RT and cvschanges. If the user didn't specify one, we use the date
+# in the cvs file LAST_RELEASE_DATE.txt in doc/Release_notes
+#
+# Note how cvs needs tomorrows date in order to return todays changes...sigh...
+if [ -z "$prev_date" ] ; then
+  prev_date=`cat $last_release_file` || ZBmsgAndExit "Cannot access date from date file $last_release_file"
+fi
+
+
+rt_date=$prev_date
+rt_todays_date=`date "+%d/%m/%Y"`
+
+
+sep=$IFS
+IFS='/'
+set $prev_date
+prev_date="$3-$2-$1"
+IFS=$sep
+tomorrows_date=`date -d"tomorrow" "+%Y-%m-%d"`
+cvs_date="$prev_date<$tomorrows_date"
+
+#echo $rt_date
+#echo $cvs_date
+
+
+
+# Set up the release notes file....
+file_date=`date "+%Y_%m_%d"`
+release_file="$rel_prefix.$file_date.$rel_suffix"
 touch $release_file || ZBmsgAndExit "Cannot touch $release_file"
 chmod u+rw $release_file || ZBmsgAndExit "Cannot make $release_file readable/writeable"
 
 
-# Get todays date...
+# We need a human readable date in several places in the html.
 text_date=`date "+%e %B %Y"`
+
 
 
 #
@@ -125,7 +164,7 @@ echo  >> $release_file
 
 
 
-# Extract the zmap version from the header.
+# Extract the zmap version from the code header.
 #
 zmap_version=`grep ZMAP_VERSION ZMap/src/zmapUtils/zmapUtils_P.h`
 set $zmap_version
@@ -136,7 +175,7 @@ zmap_release=$3
 zmap_update=`grep ZMAP_UPDATE  ZMap/src/zmapUtils/zmapUtils_P.h`
 set $zmap_update
 zmap_update=$3
-echo "zmap version: $zmap_version $zmap_release $zmap_update"
+#echo "zmap version: $zmap_version $zmap_release $zmap_update"
 
 zmap_version_txt="$zmap_version.$zmap_release.$zmap_update"
 echo "<h3>Release Version: ZMap $zmap_version_txt</h3>" >> $release_file
@@ -153,60 +192,75 @@ echo "<h3>Request Tracker Tickets Resolved</h3>" >> $release_file
 echo  >> $release_file
 
 
+# do zmap RT tickets
+#
 echo  >> $release_file
 echo "<h4>ZMap</h4>" >> $release_file
 echo  >> $release_file
 
-echo  >> $release_file
 echo "<PRE>" >> $release_file
 
-echo 'RT CONTENT TO GO HERE....' >> $release_file
+change_file='ZMap.cvschanges'
+ssh scratchy /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/scripts/getRTtickets $rt_date zmap > $change_file
+
+cat $change_file | grep -v 'sysmandir' | grep -v 'Queue' >> $release_file
+
+rm -f $change_file || ZBmsgAndExit "Cannot remove changes file: $change_file"
 
 echo "</PRE>" >> $release_file
 echo  >> $release_file
 
 
-
+# do zmap RT tickets
+#
 echo  >> $release_file
 echo "<h4>Acedb</h4>" >> $release_file
 echo  >> $release_file
 
-echo  >> $release_file
 echo "<PRE>" >> $release_file
 
-echo 'RT CONTENT TO GO HERE....' >> $release_file
+change_file='acedb.cvschanges'
+
+ssh scratchy /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/scripts/getRTtickets $rt_date acedb > $change_file
+
+cat $change_file | grep -v 'sysmandir' | grep -v 'Queue' >> $release_file
+
+rm -f $change_file || ZBmsgAndExit "Cannot remove changes file: $change_file"
 
 echo "</PRE>" >> $release_file
 echo  >> $release_file
 
 
+
 year=`date "+%Y"`					    # Used for filtering cvschanges output.
 
-
-
+# do zmap cvs changes
+#
 echo  >> $release_file
 echo "<h3>ZMap Changes/Fixes</h3>" >> $release_file
 echo  >> $release_file
 
-# crapness here...need to find cvschanges more reliably
 change_file='ZMAP.CHANGEFILE'
-../cvschanges -o$change_file -z '2007-01-01<2007-01-22' ./ZMap
+cvschanges -o$change_file -z $cvs_date ./ZMap
 cat $change_file | grep -v $year | perl -lne 's/\*/<p>/; print' >> $release_file
 rm -f $change_file || ZBmsgAndExit "Cannot remove change file: $change_file"
+# don't remove local copy of zmap cvs yet, needed below.
 echo  >> $release_file
 
 
-
+# do acedb cvs changes
+#
 echo  >> $release_file
 echo "<h3>Acedb Changes/Fixes</h3>" >> $release_file
 echo  >> $release_file
 
-# crapness here...need to find cvschanges more reliably
 change_file='ACEDB.CHANGEFILE'
-../cvschanges -o$change_file -a '2007-01-01<2007-01-22' ./acedb
+cvschanges -o$change_file -a $cvs_date ./acedb
 cat $change_file | grep -v $year | perl -lne 's/\*/<p>/; print' >> $release_file
 rm -f $change_file || ZBmsgAndExit "Cannot remove change file: $change_file"
+rm -rf ./acedb || ZBmsgAndExit "Cannot remove local copy of acedb"
 echo  >> $release_file
+
 
 
 #
@@ -215,6 +269,31 @@ echo  >> $release_file
 echo >> $release_file
 echo '<!--#include virtual="/perl/footer"-->' >> $release_file
 echo >> $release_file
+
+
+
+#
+# Optionally stick the notes in cvs and update the last release data file.....
+#
+if [ -z "$no_cvs" ] ; then
+  mv $release_file ./ZMap/doc/Release_notes || ZBmsgAndExit "Cannot move $release_file to ./ZMap/doc/Release_notes"
+  cvs add ./ZMap/doc/Release_notes/$release_file || ZBmsgAndExit "Cannot cvs add $release_file to ./ZMap/doc/Release_notes"
+  cvs commit -m "new zmap release notes for $text_date" ./ZMap/doc/Release_notes/$release_file || ZBmsgAndExit "Cannot cvs commit $release_file to ./ZMap/doc/Release_notes"
+
+  cvs edit $last_release_file || ZBmsgAndExit "Cannot cvs edit $last_release_file"
+  echo $rt_todays_date > $last_release_file || ZBmsgAndExit "Cannot read date from $last_release_file"
+  cvs commit -m "update last release notes to $rt_date" $last_release_file || ZBmsgAndExit "Cannot cvs commit $last_release_file"
+fi
+
+
+# Now we can remove our local cvs copy of zmap.
+rm -rf ./ZMap || ZBmsgAndExit "Cannot remove local copy of ZMap"
+
+
+
+# Mail us to remind us to edit the release notes as there will be some editting to do...
+#
+ZBmsgMail "ZMap $zmap_version_txt release notes in $release_file need editting." 'Release Notes Created'
 
 
 # Record end of build.
