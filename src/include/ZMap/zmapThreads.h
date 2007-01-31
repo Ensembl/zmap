@@ -25,9 +25,9 @@
  * Description: Interface to sub threads of the ZMap GUI thread.
  *              
  * HISTORY:
- * Last edited: Apr 15 19:07 2005 (edgrif)
+ * Last edited: Jan 31 11:55 2007 (edgrif)
  * Created: Thu Jan 27 11:16:13 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.h,v 1.5 2006-11-08 09:23:22 edgrif Exp $
+ * CVS info:   $Id: zmapThreads.h,v 1.6 2007-01-31 14:01:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_H
@@ -108,7 +108,7 @@ gboolean zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state) ;
 void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state) ;
 gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
 				    void **data, char **err_msg) ;
-pthread_t zMapThreadGetThreadid(ZMapThread thread) ;
+char *zMapThreadGetThreadID(ZMapThread thread) ;
 char *zMapThreadGetRequestString(ZMapThreadRequest signalled_state) ;
 char *zMapThreadGetReplyString(ZMapThreadReply signalled_state) ;
 void zMapThreadKill(ZMapThread thread) ;

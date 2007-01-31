@@ -29,9 +29,9 @@
  *              
  * Exported functions: See ZMap/zmapThread.h
  * HISTORY:
- * Last edited: Feb  3 10:36 2005 (edgrif)
+ * Last edited: Jan 31 11:50 2007 (edgrif)
  * Created: Thu Jan 27 11:25:37 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.c,v 1.3 2006-11-08 09:24:35 edgrif Exp $
+ * CVS info:   $Id: zmapThreads.c,v 1.4 2007-01-31 14:01:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -172,11 +172,24 @@ gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
 }
 
 
-
-pthread_t zMapThreadGetThreadid(ZMapThread thread)
+/* User must free returned string, note that we need this routine because pthread_t is defined
+ * in very different ways on different systems...... */
+char *zMapThreadGetThreadID(ZMapThread thread)
 {
-  return thread->thread_id ;
+  char *thread_id = NULL ;
+#ifdef LINUX
+  char *format = "%ul" ;
+#elif DARWIN
+  char *format = "%p" ;
+#else
+  char *format = "%d" ;
+#endif
+
+  thread_id = g_strdup_printf(format, thread->thread_id) ;
+
+  return thread_id ;
 }
+
 
 
 /* Must be kept in step with declaration of ZMapThreadRequest enums in zmapThread_P.h */
