@@ -28,9 +28,9 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Jan 17 10:13 2007 (edgrif)
+ * Last edited: Jan 31 13:13 2007 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.13 2007-01-17 10:33:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.14 2007-01-31 14:04:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -517,7 +517,7 @@ static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *it
         gtk_tree_store_set(store, iter, 
                            ZMAP_WINDOW_LIST_COL_STRAND, zMapFeatureStrand2Str(feature->strand),
                            ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
-                           ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
+                           ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)),
                            ZMAP_WINDOW_LIST_COL_FEATURE, feature,
                            -1) ;
 
@@ -536,7 +536,7 @@ static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *it
                          ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
                          ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
                          ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
-                         ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
+                         ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)),
                          ZMAP_WINDOW_LIST_COL_FEATURE, feature,
                          ZMAP_WINDOW_LIST_COL_SORT_PHASE,   feature->phase,
                          ZMAP_WINDOW_LIST_COL_SORT_TYPE,    feature->type,
@@ -675,7 +675,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
         gtk_tree_store_set(store, &append, 
                            ZMAP_WINDOW_LIST_COL_STRAND, zMapFeatureStrand2Str(feature->strand),
                            ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
-                           ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
+                           ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)),
                            ZMAP_WINDOW_LIST_COL_FEATURE, feature,
 			   ZMAP_WINDOW_LIST_COL_SET_STRAND, set_strand,
 			   ZMAP_WINDOW_LIST_COL_SET_FRAME, set_frame,
@@ -699,7 +699,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                          ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
                          ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
                          ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
-                         ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle(feature)),
+                         ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)),
                          ZMAP_WINDOW_LIST_COL_FEATURE, feature,
 			 ZMAP_WINDOW_LIST_COL_SET_STRAND, set_strand,
 			 ZMAP_WINDOW_LIST_COL_SET_FRAME, set_frame,

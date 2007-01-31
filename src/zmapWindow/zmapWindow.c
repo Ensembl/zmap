@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 23 17:28 2007 (rds)
+ * Last edited: Jan 31 13:13 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.169 2007-01-23 17:59:35 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.170 2007-01-31 14:04:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1097,7 +1097,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
       select.feature_desc.sub_feature_length = g_strdup_printf("%d", (end - start + 1)) ;
     }
 
-  style = zMapFeatureGetStyle(feature) ;
+  style = zMapFeatureGetStyle((ZMapFeatureAny)feature) ;
   select.feature_desc.feature_description = zmapWindowFeatureSetDescription(style->original_id, style) ;
 
   if (feature->locus_id)
@@ -1153,7 +1153,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 
 
   select.feature_desc.feature_style
-    = zMapStyleGetName(zMapFeatureGetStyle(feature)) ;
+    = zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)) ;
 
   select.secondary_text = g_strdup_printf("\"%s\"    %d %d (%d)",
                                           (char *)g_quark_to_string(feature->original_id),

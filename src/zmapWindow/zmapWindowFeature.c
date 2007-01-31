@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 24 10:17 2007 (rds)
+ * Last edited: Jan 31 13:13 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.80 2007-01-24 10:17:55 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.81 2007-01-31 14:04:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -283,7 +283,7 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
   feature_block = zmapWindowContainerGetData(block_group, ITEM_FEATURE_DATA);
   zMapAssert(feature_block);
   
-  context = zMapFeatureGetParentGroup(feature_block, ZMAPFEATURE_STRUCT_CONTEXT);
+  context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, ZMAPFEATURE_STRUCT_CONTEXT);
   zMapAssert(context);
 
   feature_set_id = zMapFeatureSetCreateID(feature_set_name);
