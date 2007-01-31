@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jan 17 13:50 2007 (rds)
+ * Last edited: Jan 31 11:24 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.110 2007-01-23 16:42:01 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.111 2007-01-31 11:32:23 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -448,7 +448,9 @@ typedef struct
 /* Specifies how features that reference this style will be processed. */
 typedef enum
   {
-    ZMAPSTYLE_MODE_NONE,				    /* Features are not processed or for meta=style. */
+    ZMAPSTYLE_MODE_INVALID,				    /* invalid this is bad. */
+    ZMAPSTYLE_MODE_NONE,
+    ZMAPSTYLE_MODE_META,                                    /* Feature to be processed as meta */
     ZMAPSTYLE_MODE_BASIC,				    /* Basic box features. */
     ZMAPSTYLE_MODE_TRANSCRIPT,				    /* Usual transcript like structure. */
     ZMAPSTYLE_MODE_ALIGNMENT,				    /* Usual homology structure. */
@@ -730,7 +732,7 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
  */
 
 
-GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean query_sequence) ; 
+GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean master_alignment) ; 
 ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;
 void zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment feature_align, 
                                   ZMapFeatureBlock     feature_block) ;
@@ -750,9 +752,13 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
 
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
 					    GList *styles, GList *feature_set_names) ;
+ZMapFeatureContext zMapFeatureContextCreateEmptyCopy(ZMapFeatureContext feature_context);
 gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext new_context,
 				 ZMapFeatureContext *diff_context_out) ;
+gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
+				 ZMapFeatureContext remove_context,
+				 ZMapFeatureContext *diff_context_out);
 void zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
 				    ZMapFeatureAlignment alignment, 
                                     gboolean master) ;
@@ -795,7 +801,7 @@ gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type) ;
 ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
 char *zMapFeatureName(ZMapFeatureAny any_feature) ;
 char *zMapFeatureCanonName(char *feature_name) ;
-ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeature feature) ;
+ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeatureAny feature) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
 /* Probably should be merged at some time.... */

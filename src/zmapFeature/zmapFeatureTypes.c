@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Dec 21 11:13 2006 (edgrif)
+ * Last edited: Jan 31 11:23 2007 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.40 2006-12-21 12:14:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.41 2007-01-31 11:31:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -307,7 +307,7 @@ void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode,
 void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode)
 {
   zMapAssert(style
-	     && (mode >= ZMAPSTYLE_MODE_NONE || mode <= ZMAPSTYLE_MODE_TEXT)) ;
+	     && (mode >= ZMAPSTYLE_MODE_INVALID || mode <= ZMAPSTYLE_MODE_TEXT)) ;
 
   style->mode = mode ;
 
@@ -319,7 +319,7 @@ void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode)
 gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out)
 {
   gboolean result = FALSE ;
-  ZMapFeatureStr2EnumStruct mode_table [] = {{"NONE", ZMAPSTYLE_MODE_NONE},
+  ZMapFeatureStr2EnumStruct mode_table [] = {{"INVALID", ZMAPSTYLE_MODE_INVALID},
 					     {"BASIC", ZMAPSTYLE_MODE_BASIC},
 					     {"TRANSCRIPT", ZMAPSTYLE_MODE_TRANSCRIPT},
 					     {"ALIGNMENT", ZMAPSTYLE_MODE_ALIGNMENT},
@@ -539,7 +539,14 @@ void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode ov
 
 ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style)
 {
-  return style->overlap_mode ;
+  ZMapStyleOverlapMode mode = ZMAPOVERLAP_COMPLETE;
+
+  if(style)
+    mode = style->overlap_mode ;
+  else
+    zMapLogCritical("%s", "Style is NULL!");
+
+  return mode;
 }
 
 
@@ -742,6 +749,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME) ;
       curr->description = ZMAP_FIXED_STYLE_3FRAME_TEXT ;
+      curr->mode = ZMAPSTYLE_MODE_META;
       curr->opts.hidden_always = TRUE ;
       curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
 
@@ -750,6 +758,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
       curr->description = ZMAP_FIXED_STYLE_3FT_NAME_TEXT ;
+      curr->mode = ZMAPSTYLE_MODE_TEXT;
       curr->opts.hidden_now = TRUE ;
       curr->opts.frame_specific = TRUE ;
       zMapStyleSetStrandAttrs(curr, TRUE, TRUE, FALSE, TRUE) ;
@@ -760,6 +769,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_DNA_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
       curr->description = ZMAP_FIXED_STYLE_DNA_NAME_TEXT ;
+      curr->mode = ZMAPSTYLE_MODE_TEXT;
       curr->opts.hidden_now = TRUE ;
       curr->width = 10.0 ;
       zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, FALSE) ;
@@ -771,6 +781,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
       curr->description = ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT ;
+      curr->mode = ZMAPSTYLE_MODE_TEXT;
       curr->opts.hidden_now = TRUE ;
       curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
 
@@ -780,6 +791,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_GFF_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_GFF_NAME) ;
       curr->description = ZMAP_FIXED_STYLE_GFF_NAME_TEXT ;
+      curr->mode = ZMAPSTYLE_MODE_META;
       curr->opts.hidden_always = TRUE ;
       curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
       
@@ -788,6 +800,7 @@ GList *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
       curr->unique_id   = zMapStyleCreateID(ZMAP_FIXED_STYLE_SCALE_NAME);
       curr->description = ZMAP_FIXED_STYLE_SCALE_TEXT;
+      curr->mode = ZMAPSTYLE_MODE_META;
       curr->opts.hidden_always = TRUE;
       curr->overlap_mode     = ZMAPOVERLAP_COMPLETE ;
     }
