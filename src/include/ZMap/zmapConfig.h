@@ -24,9 +24,9 @@
  *
  * Description:
  * HISTORY:
- * Last edited: May 28 14:28 2006 (rds)
+ * Last edited: Jan 31 07:57 2007 (edgrif)
  * Created: Fri Jan 23 13:10:06 2004 (edgrif)
- * CVS info:   $Id: zmapConfig.h,v 1.12 2006-11-08 09:23:04 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.h,v 1.13 2007-01-31 11:28:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_H
@@ -125,6 +125,11 @@ typedef struct _ZMapConfigStanzaSetStruct *ZMapConfigStanzaSet ;
  * Used both to specify a stanza to retrieve from a config and to return stanzas found in the config. */
 typedef struct _ZMapConfigStanzaStruct *ZMapConfigStanza ;
 
+
+/*!
+ * Note that currently the package does _not_ support having multiple elements within a stanza
+ * with the same name.
+ *  */
 
 
 /*! @} end of zmapconfig docs. */
