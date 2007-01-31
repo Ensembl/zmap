@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jan  9 09:45 2007 (edgrif)
+ * Last edited: Jan 31 12:53 2007 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.98 2007-01-09 14:27:35 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.99 2007-01-31 14:08:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,7 @@
 #include <zmapView_P.h>
 
 
-static ZMapView createZMapView(char *sequence, int start, int end, void *app_data) ;
+static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data) ;
 static void destroyZMapView(ZMapView zmap) ;
 
 static gint zmapIdleCB(gpointer cb_data) ;
@@ -104,8 +104,14 @@ ZMapAlignBlock zMapAlignBlockCreate(char *ref_seq, int ref_start, int ref_end, i
 				    char *non_seq, int non_start, int non_end, int non_strand) ;
 static void addAlignments(ZMapFeatureContext context) ;
 
+static gboolean getSequenceServers(ZMapView zmap_view) ;
+static void destroySeq2ServerCB(gpointer data, gpointer user_data_unused) ;
+static ZMapViewSequence2Server createSeq2Server(char *sequence, char *server) ;
+static void destroySeq2Server(ZMapViewSequence2Server seq_2_server) ;
+static gboolean checkSequenceToServerMatch(GList *seq_2_server, ZMapViewSequence2Server target_seq_server) ;
+static gint findSequence(gconstpointer a, gconstpointer b) ;
 
-
+static void threadDebugMsg(ZMapThread thread, char *format_str, char *msg) ;
 
 
 /* These callback routines are static because they are set just once for the lifetime of the
@@ -178,6 +184,9 @@ ZMapViewWindow zMapViewCreate(GtkWidget *parent_widget,
   ZMapViewWindow view_window = NULL ;
   ZMapView zmap_view = NULL ;
   gboolean debug ;
+  ZMapViewSequenceMap sequence_fetch ;
+  GList *sequences_list = NULL ;
+  char *view_name ;
 
   /* No callbacks, then no view creation. */
   zMapAssert(view_cbs_G && GTK_IS_WIDGET(parent_widget) && sequence && start > 0 && (end == 0 || end >= start)) ;
@@ -187,7 +196,16 @@ ZMapViewWindow zMapViewCreate(GtkWidget *parent_widget,
   if (zMapUtilsConfigDebug(ZMAPTHREAD_CONFIG_DEBUG_STR, &debug))
     zmap_thread_debug_G = debug ;
 
-  zmap_view = createZMapView(sequence, start, end, app_data) ; /* N.B. this step can't fail. */
+  /* Set up sequence to be fetched, in this case server defaults to whatever is set in config. file. */
+  sequence_fetch = g_new0(ZMapViewSequenceMapStruct, 1) ;
+  sequence_fetch->sequence = g_strdup(sequence) ;
+  sequence_fetch->start = start ;
+  sequence_fetch->end = end ;
+  sequences_list = g_list_append(sequences_list, sequence_fetch) ;
+
+  view_name = sequence ;
+
+  zmap_view = createZMapView(view_name, sequences_list, app_data) ; /* N.B. this step can't fail. */
 
   zmap_view->state = ZMAPVIEW_INIT ;
 
@@ -233,8 +251,8 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
       zmap_view->state = ZMAPVIEW_CONNECTING ;
 
       config_file = zMapConfigDirGetFile() ;
-      if ((config_str != NULL && (config = zMapConfigCreateFromBuffer(config_str))) || 
-          (config_str == NULL && (config = zMapConfigCreateFromFile(config_file))))
+      if ((config_str != NULL && (config = zMapConfigCreateFromBuffer(config_str)))
+	  || (config_str == NULL && (config = zMapConfigCreateFromFile(config_file))))
 	{
 	  ZMapConfigStanza server_stanza ;
 	  ZMapConfigStanzaElementStruct server_elements[] = {{ZMAPSTANZA_SOURCE_URL,     ZMAPCONFIG_STRING, {NULL}},
@@ -271,7 +289,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	  int connections = 0 ;
 	  ZMapConfigStanza next_server ;
 
-
 	  /* Current error handling policy is to connect to servers that we can and
 	   * report errors for those where we fail but to carry on and set up the ZMap
 	   * as long as at least one connection succeeds. */
@@ -284,6 +301,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
               zMapURL urlObj;
 	      gboolean sequence_server, writeback_server, acedb_styles ;
 	      ZMapViewConnection view_con ;
+	      ZMapViewSequence2ServerStruct tmp_seq = {NULL} ;
 
 	      url     = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_URL) ;
 	      format  = zMapConfigGetElementString(next_server, "format") ;
@@ -294,11 +312,22 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
               navigatorsets = zMapConfigGetElementString(next_server, "navigator_sets");
 	      acedb_styles = zMapConfigGetElementBool(next_server, ZMAPSTANZA_SOURCE_STYLE) ;
 
-              /* url is absolutely required. Go on to next stanza if there isn't one.
-               * Done before anything else so as not to set seq/write servers to invalid locations  */
-              if(!url)
+	      tmp_seq.sequence = zmap_view->sequence ;
+	      tmp_seq.server = url ;
+
+              if (!url)
 		{
+		  /* url is absolutely required. Go on to next stanza if there isn't one.
+		   * Done before anything else so as not to set seq/write servers to invalid locations  */
+
 		  zMapLogWarning("GUI: %s", "computer says no url specified") ;
+		  continue ;
+		}
+	      else if (!checkSequenceToServerMatch(zmap_view->sequence_2_server, &tmp_seq))
+		{
+		  /* If certain sequences must only be fetched from certain servers then make sure
+		   * we only make those connections. */
+
 		  continue ;
 		}
 
@@ -318,15 +347,14 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
                                  url,
                                  url_error(url_parse_error)) ;
                 }
-              else if (urlObj
-		       && (view_con = createConnection(zmap_view, urlObj,
-						       format,
-						       timeout, version,
-						       styles_file,
-						       featuresets, navigatorsets,
-						       sequence_server, writeback_server,
-						       zmap_view->sequence,
-						       zmap_view->start, zmap_view->end)))
+              else if ((view_con = createConnection(zmap_view, urlObj,
+						    format,
+						    timeout, version,
+						    styles_file,
+						    featuresets, navigatorsets,
+						    sequence_server, writeback_server,
+						    zmap_view->sequence,
+						    zmap_view->start, zmap_view->end)))
 		{
 		  /* Update now we have successfully created a connection. */
 		  zmap_view->connection_list = g_list_append(zmap_view->connection_list, view_con) ;
@@ -1103,20 +1131,38 @@ static void splitMagic(gpointer data, gpointer user_data)
   return ;
 }
 
-static ZMapView createZMapView(char *sequence, int start, int end, void *app_data)
+static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data)
 {
   ZMapView zmap_view = NULL ;
+  GList *first ;
+  ZMapViewSequenceMap master_seq ;
+
+  first = g_list_first(sequences) ;
+  master_seq = (ZMapViewSequenceMap)(first->data) ;
 
   zmap_view = g_new0(ZMapViewStruct, 1) ;
 
   zmap_view->state = ZMAPVIEW_INIT ;
   zmap_view->busy = FALSE ;
 
+  zmap_view->view_name = g_strdup(view_name) ;
 
-  /* Set the region we want to display. */
-  zmap_view->sequence = g_strdup(sequence) ;
-  zmap_view->start = start ;
-  zmap_view->end = end ;
+  /* TEMP CODE...UNTIL I GET THE MULTIPLE SEQUENCES IN ONE VIEW SORTED OUT..... */
+  /* TOTAL HACK UP MESS.... */
+  zmap_view->sequence = g_strdup(master_seq->sequence) ;
+  zmap_view->start = master_seq->start ;
+  zmap_view->end = master_seq->end ;
+
+
+  /* TOTAL LASH UP FOR NOW..... */
+  if (!(zmap_view->sequence_2_server))
+    {
+      getSequenceServers(zmap_view) ;
+    }
+
+
+  /* Set the regions we want to display. */
+  zmap_view->sequence_mapping = sequences ;
 
   zmap_view->window_list = zmap_view->connection_list = NULL ;
 
@@ -1177,6 +1223,14 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 static void destroyZMapView(ZMapView zmap_view)
 {
   g_free(zmap_view->sequence) ;
+
+  if (zmap_view->sequence_2_server)
+    {
+      g_list_foreach(zmap_view->sequence_2_server, destroySeq2ServerCB, NULL) ;
+      g_list_free(zmap_view->sequence_2_server) ;
+      zmap_view->sequence_2_server = NULL ;
+    }
+
 
   g_free(zmap_view) ;
 
@@ -1257,12 +1311,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  view_con = list_item->data ;
 	  thread = view_con->thread ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  ZMAP_DEBUG("GUI: checking connection for thread %lu\n",
-		     zMapConnGetThreadid(connection)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 	  /* NOTE HOW THE FACT THAT WE KNOW NOTHING ABOUT WHERE THIS DATA CAME FROM
 	   * MEANS THAT WE SHOULD BE PASSING A HEADER WITH THE DATA SO WE CAN SAY WHERE
 	   * THE INFORMATION CAME FROM AND WHAT SORT OF REQUEST IT WAS.....ACTUALLY WE
@@ -1272,8 +1320,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  err_msg = NULL ;
 	  if (!(zMapThreadGetReplyWithData(thread, &reply, &data, &err_msg)))
 	    {
-	      zMapDebug("GUI: thread %lu, cannot access reply from thread - %s\n",
-			zMapThreadGetThreadid(thread), err_msg) ;
+	      threadDebugMsg(thread, "GUI: thread %s, cannot access reply from thread - %s\n", err_msg) ;
 
 	      /* should abort or dump here....or at least kill this connection. */
 
@@ -1282,9 +1329,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      zMapDebug("GUI: thread %lu, thread reply = %s\n",
-			zMapThreadGetThreadid(thread),
-			zMapVarGetReplyString(reply)) ;
+	      threadDebugMsg(thread, "GUI: thread %s, thread reply = %s\n", zMapVarGetReplyString(reply)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	      
@@ -1301,8 +1346,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    {
 		      ZMapServerReqAny req_any = (ZMapServerReqAny)data ;
 
-		      zMapDebug("GUI: thread %lu, got data\n",
-				zMapThreadGetThreadid(thread)) ;
+		      threadDebugMsg(thread, "GUI: thread %s, got data\n", NULL) ;
 
 		      /* Reset the reply from the slave. */
 		      zMapThreadSetReply(thread, ZMAPTHREAD_REPLY_WAIT) ;
@@ -1347,9 +1391,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      g_free(data) ;
 		    }
 		  else
-		    zMapDebug("GUI: thread %lu, got data but ZMap state is - %s\n",
-			      zMapThreadGetThreadid(thread),
-			      zmapViewGetStatusAsStr(zMapViewGetStatus(zmap_view))) ;
+		    threadDebugMsg(thread, "GUI: thread %s, got data but ZMap state is - %s\n",
+				   zmapViewGetStatusAsStr(zMapViewGetStatus(zmap_view))) ;
 
 		}
 	      else if (reply == ZMAPTHREAD_REPLY_REQERROR)
@@ -1363,8 +1406,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  zMapThreadSetReply(thread, ZMAPTHREAD_REPLY_WAIT) ;
 
 		  /* This means the request failed for some reason. */
-		  zMapDebug("GUI: thread %lu, request to server failed....\n",
-			    zMapThreadGetThreadid(thread)) ;
+		  threadDebugMsg(thread, "GUI: thread %s, request to server failed....\n", NULL) ;
 
 		  g_free(err_msg) ;
 		}
@@ -1377,8 +1419,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		  threads_have_died = TRUE ;
 
-		  zMapDebug("GUI: thread %lu has died so cleaning up....\n",
-			    zMapThreadGetThreadid(thread)) ;
+		  threadDebugMsg(thread, "GUI: thread %s has died so cleaning up....\n", NULL) ;
 		  
 		  /* We are going to remove an item from the list so better move on from
 		   * this item. */
@@ -1393,8 +1434,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		   * replying to say that they have now died. */
 
 		  /* This means the thread was cancelled so we should clean up..... */
-		  zMapDebug("GUI: thread %lu has been cancelled so cleaning up....\n",
-			    zMapThreadGetThreadid(thread)) ;
+		  threadDebugMsg(thread, "GUI: thread %s has been cancelled so cleaning up....\n", NULL) ;
 
 		  /* We are going to remove an item from the list so better move on from
 		   * this item. */
@@ -1610,6 +1650,8 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
 
   return ;
 }
+
+
 /* Allocate a connection and send over the request to get the sequence displayed. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   zMapURL url, char *format,
@@ -1659,14 +1701,15 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
 
     }
-  if(navigator_set_names)
+
+  if (navigator_set_names)
     {
       tmp_navigator_sets = zmap_view->navigator_set_names = string2StyleQuarks(navigator_set_names);
       if(zmap_view->navigator_window)
         zMapWindowNavigatorMergeInFeatureSetNames(zmap_view->navigator_window, tmp_navigator_sets);
     }
 
-  if(req_featuresets && tmp_navigator_sets)
+  if (req_featuresets && tmp_navigator_sets)
     {
       /* We should do a proper merge here! */
       req_featuresets = g_list_concat(req_featuresets, tmp_navigator_sets);
@@ -2122,4 +2165,153 @@ static void addAlignments(ZMapFeatureContext context)
 
   return ;
 }
+
+/* Read list of sequence to server mappings (i.e. which sequences must be fetched from which
+ * servers) from the zmap config file. */
+static gboolean getSequenceServers(ZMapView zmap_view)
+{
+  gboolean result = FALSE ;
+  ZMapConfig config ;
+  ZMapConfigStanzaSet zmap_list = NULL ;
+  ZMapConfigStanza zmap_stanza ;
+  char *zmap_stanza_name = ZMAPSTANZA_APP_CONFIG ;
+  ZMapConfigStanzaElementStruct zmap_elements[] = {{ZMAPSTANZA_APP_SEQUENCE_SERVERS, ZMAPCONFIG_STRING, {NULL}},
+						   {NULL, -1, {NULL}}} ;
+
+  if ((config = zMapConfigCreate()))
+    {
+      zmap_stanza = zMapConfigMakeStanza(zmap_stanza_name, zmap_elements) ;
+
+      if (zMapConfigFindStanzas(config, zmap_stanza, &zmap_list))
+	{
+	  ZMapConfigStanza next_zmap = NULL ;
+
+	  /* We only read the first of these stanzas.... */
+	  if ((next_zmap = zMapConfigGetNextStanza(zmap_list, next_zmap)) != NULL)
+	    {
+	      char *server_seq_str ;
+
+	      if ((server_seq_str
+		   = zMapConfigGetElementString(next_zmap, ZMAPSTANZA_APP_SEQUENCE_SERVERS)))
+		{
+		  char *sequence, *server ;
+		  ZMapViewSequence2Server seq_2_server ;
+		  char *search_str ;
+
+		  search_str = server_seq_str ;
+		  while ((sequence = strtok(search_str, " ")))
+		    {
+		      search_str = NULL ;
+		      server = strtok(NULL, " ") ;
+
+		      seq_2_server = createSeq2Server(sequence, server) ;
+
+		      zmap_view->sequence_2_server = g_list_append(zmap_view->sequence_2_server, seq_2_server) ;
+		    }
+		}
+	    }
+
+	  zMapConfigDeleteStanzaSet(zmap_list) ;		    /* Not needed anymore. */
+	}
+      
+      zMapConfigDestroyStanza(zmap_stanza) ;
+      
+      zMapConfigDestroy(config) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+static void destroySeq2ServerCB(gpointer data, gpointer user_data_unused)
+{
+  ZMapViewSequence2Server seq_2_server = (ZMapViewSequence2Server)data ;
+
+  destroySeq2Server(seq_2_server) ;
+
+  return ;
+}
+
+static ZMapViewSequence2Server createSeq2Server(char *sequence, char *server)
+{
+  ZMapViewSequence2Server seq_2_server = NULL ;
+
+  seq_2_server = g_new0(ZMapViewSequence2ServerStruct, 1) ;
+  seq_2_server->sequence = g_strdup(sequence) ;
+  seq_2_server->server = g_strdup(server) ;
+
+  return seq_2_server ;
+}
+
+
+static void destroySeq2Server(ZMapViewSequence2Server seq_2_server)
+{
+  g_free(seq_2_server->sequence) ;
+  g_free(seq_2_server->server) ;
+  g_free(seq_2_server) ;
+
+  return ;
+}
+
+
+/* Check to see if a sequence/server pair match any in the list mapping sequences to servers held
+ * in the view. NOTE that if the sequence is not in the list at all then this function returns
+ * TRUE as it is assumed by default that sequences can be fetched from any servers.
+ * */
+static gboolean checkSequenceToServerMatch(GList *seq_2_server, ZMapViewSequence2Server target_seq_server)
+{
+  gboolean result = FALSE ;
+  GList *server_item ;
+    
+  /* If the sequence is in the list then check the server names. */
+  if ((server_item = g_list_find_custom(seq_2_server, target_seq_server, findSequence)))
+    {
+      ZMapViewSequence2Server curr_seq_2_server = (ZMapViewSequence2Server)server_item->data ;
+
+      if ((g_ascii_strcasecmp(curr_seq_2_server->server, target_seq_server->server) == 0))
+	result = TRUE ;
+    }
+  else
+    {
+      /* Return TRUE if sequence not in list. */
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+/* A GCompareFunc to check whether servers match in the sequence to server mapping. */
+static gint findSequence(gconstpointer a, gconstpointer b)
+{
+  gint result = -1 ;
+  ZMapViewSequence2Server seq_2_server = (ZMapViewSequence2Server)a ;
+  ZMapViewSequence2Server target_fetch = (ZMapViewSequence2Server)b ;
+    
+  if ((g_ascii_strcasecmp(seq_2_server->sequence, target_fetch->sequence) == 0))
+    result = 0 ;
+
+  return result ;
+}
+
+
+/* Hacky...sorry.... */
+static void threadDebugMsg(ZMapThread thread, char *format_str, char *msg)
+{
+  char *thread_id ;
+  char *full_msg ;
+
+  thread_id = zMapThreadGetThreadID(thread) ;
+  full_msg = g_strdup_printf(format_str, thread_id, msg ? msg : "") ;
+
+  zMapDebug("%s", full_msg) ;
+
+  g_free(full_msg) ;
+  g_free(thread_id) ;
+
+  return ;
+}
+
 

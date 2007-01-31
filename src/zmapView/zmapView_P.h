@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Oct 13 15:04 2006 (rds)
+ * Last edited: Jan 29 17:50 2007 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.23 2006-11-08 09:24:59 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.24 2007-01-31 14:08:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -84,19 +84,36 @@ typedef struct _ZMapViewStruct
   gboolean busy ;					    /* Records when we are busy so can
 							       block user interaction. */
 
+  guint idle_handle ;
+
   void *app_data ;					    /* Passed back to caller from view
 							       callbacks. */
 
+  char *view_name ;					    /* An overall label for the view,
+							       defaults to the master sequence name. */
 
+  /* THIS NEEDS TO GO I THINK, IT WILL BE REDUNDANT IN THE WORLD OF MULTIPLE BLOCKS ETC....
+   * WE NEED A VIEW NAME INSTEAD.... */
   /* NOTE TO EG....DO WE NEED THESE HERE ANY MORE ???? */
   /* This specifies the "context" of the view, i.e. which section of virtual sequence we are
    * interested in. */
   gchar *sequence ;
   int start, end ;
 
-  guint idle_handle ;
+
+  /* This will need to be a full mapping of sequences, blocks etc in the end which will
+   * be used both to set up the feature context so the right bits of feature get fetched
+   * but also to control the display of the blocks so they appear in the correct positions
+   * on the screen. */
+  GList *sequence_mapping ;				    /* Of ZMapViewSequenceFetch, i.e. list
+							       of sequences to be displayed. */
+
+  GList *sequence_2_server ;				    /* Some sequences may only be
+							       fetchable from some servers. */
+
 
   GList *window_list ;					    /* Of ZMapViewWindow. */
+  ZMapWindowNavigator navigator_window ;
 
   int connections_loaded ;				    /* Record of number of connections
 							     * loaded so for each reload. */
@@ -105,14 +122,13 @@ typedef struct _ZMapViewStruct
 							       sequence from. */
   ZMapViewConnection writeback_server ;			    /* Which connection to send edits to. */
 
-  ZMapWindowNavigator navigator_window;
+
+  /* The features....needs thought as to how this updated/constructed..... */
+  ZMapFeatureContext features ;
 
   /* We need to know if the user has done a revcomp for a few reasons to do with coord
    * transforms and the way annotation is done....*/
   gboolean revcomped_features ;
-
-  /* The features....needs thought as to how this updated/constructed..... */
-  ZMapFeatureContext features ;
 
 #ifdef RDS_DONT_INCLUDE_UNUSED
   /* In DAS2 terminology methods are types...easy to change if we don't like the name.

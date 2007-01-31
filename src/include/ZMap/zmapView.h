@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Dec 12 15:58 2006 (rds)
+ * Last edited: Jan 31 14:06 2007 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.33 2006-12-13 08:32:22 rds Exp $
+ * CVS info:   $Id: zmapView.h,v 1.34 2007-01-31 14:08:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -74,6 +74,24 @@ typedef struct _ZMapViewCallbacksStruct
   ZMapViewCallbackFunc state_change ;
   ZMapViewCallbackFunc destroy ;
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
+
+
+/* Holds a sequence to be fetched, in the end this will include aligns/blocks etc. */
+typedef struct
+{
+  char *sequence ;					    /* Sequence + start/end coords. */
+  int start, end ;
+} ZMapViewSequenceMapStruct, *ZMapViewSequenceMap ;
+
+
+/* Holds a sequence to be fetched and the server it should be fetched from. */
+typedef struct
+{
+  char *sequence ;					    /* Sequence + start/end coords. */
+  char *server ;					    /* Server to fetch sequence from. */
+} ZMapViewSequence2ServerStruct, *ZMapViewSequence2Server ;
+
+
 
 
 /* Holds structs/strings describing the selected item, this data actually comes from the
@@ -121,6 +139,16 @@ void zMapViewInit(ZMapViewCallbacks callbacks) ;
 ZMapViewWindow zMapViewCreate(GtkWidget *parent_widget,
 			      char *sequence, int start, int end,
 			      void *app_data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* THIS IS WHERE I'M HEADED...ONE CALL TO PREPARE MULTIPLE SEQUENCES/FEATURES.... */
+
+ZMapViewWindow zMapViewCreateFull(GtkWidget *parent_widget,
+				  char *view_name,
+				  GList *sequences,	    /* of ZMapViewSequenceFetch */
+				  void *app_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 void zMapViewSetupNavigator(ZMapView zmap_view, GtkWidget *canvas_widget);
 ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
