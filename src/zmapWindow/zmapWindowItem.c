@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 25 08:56 2007 (rds)
+ * Last edited: Jan 31 13:12 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.64 2007-01-25 08:56:42 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.65 2007-01-31 14:05:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -614,7 +614,7 @@ FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item)
 
   if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
     {
-      if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK))) && 
+      if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK))) && 
          (feature_name = zMapFeatureMakeDNAFeatureName(block)))
         {
           dna_id = zMapFeatureCreateID(ZMAPFEATURE_RAW_SEQUENCE, 
@@ -626,16 +626,13 @@ FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item)
           g_free(feature_name);
         }
       
-      if(!(dna_item = zmapWindowFToIFindItemFull(window->context_to_item,
-                                                 block->parent->unique_id,
-                                                 block->unique_id,
-                                                 feature_set_unique,
-                                                 ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
-                                                 ZMAPFRAME_NONE,/* NO STRAND */
-                                                 dna_id)) != NULL)
-        {
-          dna_item = NULL;
-        }
+      dna_item = zmapWindowFToIFindItemFull(window->context_to_item,
+					    block->parent->unique_id,
+					    block->unique_id,
+					    feature_set_unique,
+					    ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
+					    ZMAPFRAME_NONE,/* NO STRAND */
+					    dna_id) ;
     }
   else
     {
@@ -661,7 +658,7 @@ FooCanvasItem *zmapWindowItemGetTranslationItem(ZMapWindow window, FooCanvasItem
       /* Implement this bit! */
       /* frame = getFrameFromFeature(feature); */
 
-      if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK))) && 
+      if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK))) && 
          (feature_name = zMapFeatureMakeDNAFeatureName(block)))
         {
           dna_id = zMapFeatureCreateID(ZMAPFEATURE_RAW_SEQUENCE, 
@@ -673,16 +670,13 @@ FooCanvasItem *zmapWindowItemGetTranslationItem(ZMapWindow window, FooCanvasItem
           g_free(feature_name);
         }
       
-      if(!(tr_item = zmapWindowFToIFindItemFull(window->context_to_item,
-                                                 block->parent->unique_id,
-                                                 block->unique_id,
-                                                 feature_set_unique,
-                                                 ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
-                                                 frame,
-                                                 dna_id)) != NULL)
-        {
-          tr_item = NULL;
-        }
+      tr_item = zmapWindowFToIFindItemFull(window->context_to_item,
+					   block->parent->unique_id,
+					   block->unique_id,
+					   feature_set_unique,
+					   ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
+					   frame,
+					   dna_id) ;
     }
   else
     {
