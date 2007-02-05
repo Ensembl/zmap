@@ -36,7 +36,7 @@ case $opsys in
     export PKG_CONFIG_PATH ;;
 
   Linux )
-    locals=/nfs/team71/acedb/zmap/prefix/LINUX
+    locals=~zmap/prefix/LINUX
     PATH="$locals/bin:$PATH"
     export PATH
 
@@ -47,7 +47,8 @@ case $opsys in
 
     cc_args='CFLAGS=-Wall'
     cflags_args=''
-    ld_args='' ;;
+    # make sure zmap executable has path to foocanvas library.
+    ld_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" ;;
 
  Darwin )
     # SET PATH TO INCLUDE ~zmap/prefix && /sw/bin in that order
@@ -63,7 +64,7 @@ case $opsys in
 
     cc_args=""
     cflags_args="CFLAGS=-Wall -I$ZMAP_PREFIX/include"
-    ld_args=''
+    ld_args='LDFLAGS=-Xlinker -bind_at_load'
     LD_LIBRARY_PATH=$ZMAP_PREFIX/lib:$LD_LIBRARY_PATH
 
     linkCMD=linkZMap
