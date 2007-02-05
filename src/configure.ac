@@ -219,7 +219,7 @@ AC_TYPE_SIZE_T
 AC_FUNC_STAT
 AC_CHECK_FUNCS([gethostname memmove memset mkdir strcasecmp strstr strtol])
 
-LDFLAGS="$FOOCANVAS_LIBS $ACECONN_LIBS"
+LDFLAGS="$LDFLAGS $FOOCANVAS_LIBS $ACECONN_LIBS"
 AC_CHECK_LIB(foocanvas, foo_canvas_zmap,:, AC_MSG_ERROR(no patched libfoocanvas!))
 # HAVE_LIBFOOCANVAS is now defined
 
