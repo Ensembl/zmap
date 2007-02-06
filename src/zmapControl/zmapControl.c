@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jan 24 14:02 2007 (rds)
+ * Last edited: Feb  6 16:21 2007 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.74 2007-02-06 10:56:32 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.75 2007-02-06 16:34:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -671,11 +671,10 @@ static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *vi
             gtk_clipboard_set_text(clip, vselect->secondary_text, -1);
         }
     }
-  else                          /* Better be a double! */
-    {
-      vselect->handled = zmapControlRemoteAlertClients(zmap, vselect->xml_events, "edit");        
-    }
 
+  if(vselect->zmap_action && vselect->xml_events)
+    vselect->handled = zmapControlRemoteAlertClients(zmap, vselect->xml_events, vselect->zmap_action);        
+  
   return ;
 }
 
