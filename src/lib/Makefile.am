@@ -39,6 +39,8 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapControl/zmapControl.c \
 	$(top_srcdir)/zmapControl/zmapControlNavigator.c \
 	$(top_srcdir)/zmapControl/zmapControlRemote.c \
+	$(top_srcdir)/zmapControl/zmapControlRemote_P.h \
+	$(top_srcdir)/zmapControl/zmapControlRemoteXML.c \
 	$(top_srcdir)/zmapControl/zmapControlViews.c \
 	$(top_srcdir)/zmapControl/zmapControlWindow.c \
 	$(top_srcdir)/zmapControl/zmapControlWindowButtons.c \
