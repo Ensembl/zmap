@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  1 08:29 2007 (rds)
+ * Last edited: Feb  6 11:15 2007 (rds)
  * Created: Thu Feb  1 00:12:49 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteXML.c,v 1.1 2007-02-06 11:00:00 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteXML.c,v 1.2 2007-02-06 11:30:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,8 +48,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_element,
                                     ZMapXMLParser parser);
 /* ends */
-static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
-                                   ZMapXMLParser parser);
+static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
+                                      ZMapXMLParser parser);
 static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
                                    ZMapXMLParser parser);
 static gboolean xml_location_end_cb(gpointer user_data, ZMapXMLElement zmap_element,
@@ -102,11 +102,11 @@ ZMapXMLParser zmapControlRemoteXMLInitialise(void *data)
     { NULL, NULL }
   };
   ZMapXMLObjTagFunctionsStruct ends[] = {
-    { "zmap",       xml_zmap_end_cb     },
-    { "segment",    xml_segment_end_cb  },
-    { "subfeature", xml_feature_end_cb  },
-    { "location",   xml_location_end_cb },
-    { "style",      xml_style_end_cb    },
+    { "zmap",       xml_zmap_end_cb       },
+    { "segment",    xml_segment_end_cb    },
+    { "subfeature", xml_subfeature_end_cb },
+    { "location",   xml_location_end_cb   },
+    { "style",      xml_style_end_cb      },
     { NULL, NULL }
   };
 
@@ -403,8 +403,8 @@ static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_el
   return FALSE;
 }
 
-static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
-                                   ZMapXMLParser parser)
+static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
+                                      ZMapXMLParser parser)
 {
   ZMapXMLAttribute attr = NULL;
   XMLData   xml_data = (XMLData)user_data;
@@ -452,8 +452,6 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
         zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr);
 
     }
-
-  xml_data->feature = NULL;     /* Reset this */
 
   return TRUE;                  /* tell caller to clean us up. */
 }
