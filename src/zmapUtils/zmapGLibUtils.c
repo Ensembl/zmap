@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Feb  6 18:12 2007 (rds)
+ * Last edited: Feb  6 18:13 2007 (rds)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.19 2007-02-06 18:12:33 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.20 2007-02-06 18:13:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -413,7 +413,7 @@ gpointer zMap_g_datalist_first(GData **datalist)
   DatalistFirstIDStruct key = {0};
   gpointer data;
 
-  g_datalist_foreach(datalist, get_first_pointer, &key);
+  g_datalist_foreach(datalist, get_first_datalist_key, &key);
 
   data = g_datalist_id_get_data(datalist, key.id);
 
