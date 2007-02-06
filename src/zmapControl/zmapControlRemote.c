@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb  5 11:21 2007 (rds)
+ * Last edited: Feb  6 11:30 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.36 2007-02-06 10:51:49 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.37 2007-02-06 11:30:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,6 +82,9 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
                                  ZMapXMLParser parser);
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
                                 ZMapXMLParser parser);
+
+static gboolean control_execute_debug_G = FALSE;
+static gboolean alert_client_debug_G    = FALSE;
 
 void zMapSetClient(ZMap zmap, void *client_data)
 {
@@ -342,7 +345,9 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
   xml_reply   = g_strdup(zmap->info->message);
   *statusCode = zmap->info->code; /* use the code from the info (GError) */
 
-  zMapLogWarning("Destroying created/copied context (0x0%lx)", objdata.context);
+  if(control_execute_debug_G)
+    zMapLogWarning("Destroying created/copied context (%p)", objdata.context);
+
   zMapFeatureContextDestroy(objdata.context, TRUE);
   zMapXMLParserDestroy(parser);
   
@@ -561,7 +566,8 @@ static void drawNewFeatures(ZMap zmap, XMLData xml_data)
   if(g_list_length(xml_data->feature_list))
     g_list_foreach(xml_data->feature_list, draw_failed_make_message, &foreach_data);
 
-  zMapLogWarning("Destroying diff context (0x0%lx)", tmp);
+  if(control_execute_debug_G)
+    zMapLogWarning("Destroying diff context (%p)", tmp);
 
   zMapFeatureContextDestroy(tmp, TRUE);
 
@@ -592,8 +598,11 @@ static void alertClientToMessage(gpointer client_data, gpointer message_data) /*
 
   command = message->full_text->str;
 
-  zMapLogWarning("xremote sending cmd with length %d", message->full_text->len);
-  zMapLogWarning("xremote cmd = %s", command);
+  if(alert_client_debug_G)
+    {
+      zMapLogWarning("xremote sending cmd with length %d", message->full_text->len);
+      zMapLogWarning("xremote cmd = %s", command);
+    }
 
   if((result = zMapXRemoteSendRemoteCommand(client, command, &response)) == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
     {
@@ -621,7 +630,8 @@ static void alertClientToMessage(gpointer client_data, gpointer message_data) /*
                                                xml_only, 
                                                strlen(xml_only))) != TRUE)
         {
-          zMapLogWarning("Parsing error : %s", zMapXMLParserLastErrorMsg(message->parser));
+          if(alert_client_debug_G)
+            zMapLogWarning("Parsing error : %s", zMapXMLParserLastErrorMsg(message->parser));
         }
       else if(error_response == TRUE)
         zMapWarning("Failed to get successful response from external program.\n"
@@ -629,7 +639,7 @@ static void alertClientToMessage(gpointer client_data, gpointer message_data) /*
                     code, 
                     (message->error_message ? message->error_message : xml_only));
     }
-  else
+  else if(alert_client_debug_G)
     zMapLogWarning("Failed sending xremote command. Code = %d", result);
 
   return ;
@@ -647,7 +657,8 @@ static int xml_event_to_buffer(ZMapXMLWriter writer, char *xml, int len, gpointe
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
                                   ZMapXMLParser parser)
 {
-  zMapLogWarning("%s", "In zmap Start Handler");
+  if(alert_client_debug_G)
+    zMapLogWarning("%s", "In zmap Start Handler");
   return TRUE;
 }
 
@@ -687,6 +698,7 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
                                 ZMapXMLParser parser)
 {
-  zMapLogWarning("In zmap %s Handler.", "End");
+  if(alert_client_debug_G)
+    zMapLogWarning("In zmap %s Handler.", "End");
   return TRUE;
 }
