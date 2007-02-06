@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Sep 26 14:33 2006 (edgrif)
+ * Last edited: Feb  6 14:50 2007 (rds)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.23 2006-11-08 09:24:30 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.24 2007-02-06 17:06:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -474,7 +474,7 @@ static gboolean destroyConnection(void *server_in)
  * everything to be the same for child/parent... */
 static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header)
 {
-  ZMapFeatureBlock feature_block = feature_context->master_align->blocks->data ;
+  ZMapFeatureBlock feature_block = NULL;//feature_context->master_align->blocks->data ;
 
   /* We just override whatever is already there...this may not be the thing to do if there
    * are several files.... */
