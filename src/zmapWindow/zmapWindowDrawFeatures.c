@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb  6 10:58 2007 (rds)
+ * Last edited: Feb  6 14:41 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.177 2007-02-06 10:58:26 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.178 2007-02-06 16:43:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -108,9 +108,10 @@ typedef struct
 
 
 static void drawZMap(ZMapCanvasData canvas_data, ZMapFeatureContext context);
-
+#ifdef RDS_DONT_INCLUDE
 static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data) ;
 static void drawBlocks(gpointer data, gpointer user_data) ;
+#endif
 static void createSetColumn(gpointer data, gpointer user_data) ;
 static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
 				    ZMapWindow           window,
@@ -668,7 +669,7 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
  */
 
 
-
+#ifdef RDS_DONT_INCLUDE
 /* Draw all the alignments in a context, one of these is special in that it is the master
  * sequence that all the other alignments are aligned to. Commonly zmap will only have
  * the master alignment for many users as they will just view the features on a single
@@ -742,7 +743,7 @@ static void drawAlignments(GQuark key_id, gpointer data, gpointer user_data)
 
   return ;
 }
-
+#endif
 static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE;
