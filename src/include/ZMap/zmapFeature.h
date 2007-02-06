@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jan 31 11:24 2007 (rds)
+ * Last edited: Feb  6 16:46 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.111 2007-01-31 11:32:23 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.112 2007-02-06 16:46:29 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -41,6 +41,8 @@
 /* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
  * can surmise from the code that zero is not a valid quark. */
 enum {ZMAPFEATURE_NULLQUARK = 0} ;
+
+enum { ZMAPFEATURE_XML_XREMOTE = 2 };
 
 
 /* A unique ID for each feature created, can be used to unabiguously query for that feature
