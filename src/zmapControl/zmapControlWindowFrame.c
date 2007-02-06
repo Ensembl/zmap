@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 24 12:06 2006 (rds)
+ * Last edited: Jan 24 09:31 2007 (rds)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.21 2006-11-24 13:42:00 rds Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.22 2007-02-06 15:34:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,7 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent) ;
 
 static void valueCB(void *user_data, double start, double end) ;
 
+static void controlWindowFramePanePositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
 
 GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 {
@@ -84,6 +85,12 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
   /* Set left hand (sliders) pane closed by default. */
   gtk_paned_set_position(GTK_PANED(zmap->hpane), 0) ;
 
+  g_object_connect(G_OBJECT(zmap->hpane), 
+                   "signal::notify::position", 
+                   G_CALLBACK(controlWindowFramePanePositionCB), 
+                   (gpointer)zmap,
+                   NULL);
+
 
   gtk_widget_show_all(zmap->hpane);
 
@@ -102,6 +109,23 @@ static void valueCB(void *user_data, double start, double end)
 
       zMapWindowMove(window, start, end) ;
     }  
+
+  return ;
+}
+
+static void controlWindowFramePanePositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data)
+{
+  ZMap zmap = (ZMap)user_data;
+  gint pos;
+
+  /* we need to get the position... */
+  pos = gtk_paned_get_position(GTK_PANED(pane));
+
+  /* find the position of the navigator pane + the width of the navigator canvas. */
+
+  /* test if someone's making it bigger than max... */
+
+  /* printf("%s: position = %d\n", __PRETTY_FUNCTION__, pos); */
 
   return ;
 }
