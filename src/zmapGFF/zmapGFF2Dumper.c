@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov  7 13:36 2006 (edgrif)
+ * Last edited: Feb  6 14:54 2007 (rds)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.5 2006-11-08 09:24:16 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.6 2007-02-06 17:05:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -90,9 +90,9 @@ gboolean zMapGFFDump(GIOChannel *file, ZMapFeatureAny dump_set, GError **error_o
 	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_BLOCK
 	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
 	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
-
+#ifdef RDS_DONT_INCLUDE
   result = dumpHeader(file, dump_set, error_out) ;
-
+#endif
 
   if (result)
     {
@@ -100,15 +100,15 @@ gboolean zMapGFFDump(GIOChannel *file, ZMapFeatureAny dump_set, GError **error_o
       GString *buffer ;
 
       buffer = g_string_sized_new(GFF_BUF_SIZE) ;
-
+#ifdef RDS_DONT_INCLUDE
       result = zMapFeatureDumpFeatures(file, dump_set, dumpFeature, (gpointer)buffer, error_out) ;
-
+#endif
       g_string_free(buffer, TRUE) ;
     }
 
   return result ;
 }
-
+#ifdef RDS_DONT_INCLUDE
 
 
 static gboolean dumpHeader(GIOChannel *file, ZMapFeatureAny any_feature, GError **error_out)
@@ -501,3 +501,5 @@ static char phase2Char(ZMapPhase phase)
 
   return phase_char ;
 }
+
+#endif
