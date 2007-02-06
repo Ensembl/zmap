@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Feb  6 10:34 2007 (rds)
+ * Last edited: Feb  6 16:13 2007 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.75 2007-02-06 10:56:04 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.76 2007-02-06 16:33:36 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -103,6 +103,7 @@ typedef struct
   char *secondary_text ;				    /* Simple string description. */
 
   GArray *xml_events;
+  char *zmap_action;
   gboolean handled;
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
 

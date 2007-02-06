@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Feb  6 10:34 2007 (rds)
+ * Last edited: Feb  6 16:13 2007 (rds)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.35 2007-02-06 10:55:36 rds Exp $
+ * CVS info:   $Id: zmapView.h,v 1.36 2007-02-06 16:33:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -101,6 +101,7 @@ typedef struct _ZMapViewSelectStruct
   ZMapFeatureDescStruct feature_desc ;
   char                 *secondary_text;
   GArray               *xml_events;
+  char                 *zmap_action;
   gboolean              handled;
 } ZMapViewSelectStruct, *ZMapViewSelect ;
 
