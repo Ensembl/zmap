@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jan 31 13:02 2007 (edgrif)
+ * Last edited: Feb  6 10:34 2007 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.74 2007-01-31 14:04:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.75 2007-02-06 10:56:04 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -79,10 +79,17 @@ typedef struct
   double scrollable_bot ;
 } ZMapWindowVisibilityChangeStruct, *ZMapWindowVisibilityChange ;
 
-
+typedef enum
+  {
+    ZMAPWINDOW_SELECT_SINGLE,
+    ZMAPWINDOW_SELECT_DOUBLE,
+  }ZMapWindowSelectType;
 /* Data returned to the focus callback routine. */
+
 typedef struct
 {
+  ZMapWindowSelectType type;    /* SINGLE or DOUBLE */
+
   FooCanvasItem *highlight_item ;			    /* The feature selected to be highlighted, may be null
 							       if a column was selected. */
 
@@ -95,14 +102,10 @@ typedef struct
 
   char *secondary_text ;				    /* Simple string description. */
 
-} ZMapWindowSelectStruct, *ZMapWindowSelect ;
-
-
-typedef struct _ZMapWindowDoubleSelectStruct
-{
   GArray *xml_events;
   gboolean handled;
-}ZMapWindowDoubleSelectStruct, *ZMapWindowDoubleSelect;
+} ZMapWindowSelectStruct, *ZMapWindowSelect ;
+
 
 typedef struct
 {
@@ -125,7 +128,6 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc scroll ;
   ZMapWindowCallbackFunc focus ;
   ZMapWindowCallbackFunc select ;
-  ZMapWindowCallbackFunc doubleSelect ;
   ZMapWindowCallbackFunc splitToPattern;
   ZMapWindowCallbackFunc setZoomStatus;
   ZMapWindowCallbackFunc visibilityChange ;
@@ -224,6 +226,9 @@ void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean bu
 
 void zMapWindowDisplayData(ZMapWindow window,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features) ;
+void zMapWindowUnDisplayData(ZMapWindow window, 
+                             ZMapFeatureContext current_features,
+                             ZMapFeatureContext new_features);
 void zMapWindowMove(ZMapWindow window, double start, double end) ;
 void zMapWindowReset(ZMapWindow window) ;
 void zMapWindowRedraw(ZMapWindow window) ;

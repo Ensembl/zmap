@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Nov 17 09:38 2006 (edgrif)
+ * Last edited: Jan 24 14:02 2007 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.73 2006-11-17 17:32:11 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.74 2007-02-06 10:56:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,8 +54,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data) ;
 static void enterCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
-static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
-static void controlDoubleSelectCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void controlVisibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data) ;
@@ -71,9 +70,12 @@ static ZMapCallbacks zmap_cbs_G = NULL ;
 
 /* Holds callbacks we set in the level below us to be called back on. */
 ZMapViewCallbacksStruct view_cbs_G = {enterCB, leaveCB,
-				      dataLoadCB, focusCB, selectCB, 
-                                      controlDoubleSelectCB, controlSplitToPatternCB,
-				      controlVisibilityChangeCB, viewStateChangeCB, viewKilledCB} ;
+				      dataLoadCB, focusCB, 
+                                      controlSelectCB, 
+                                      controlSplitToPatternCB,
+				      controlVisibilityChangeCB, 
+                                      viewStateChangeCB, 
+                                      viewKilledCB} ;
 
 
 
@@ -647,35 +649,32 @@ static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data_
 /* This routine gets called when someone clicks in one of the zmap window items, i.e.
  * a feature, a column etc. It gets passed text which this routine then displays.
  */
-static void selectCB(ZMapViewWindow view_window, void *app_data, void *view_data)
+static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
   ZMapViewSelect vselect = (ZMapViewSelect)view_data ;
   GtkClipboard* clip = NULL;
 
-  /* Display the feature details in the info. panel. */
-  if (vselect)
-    zmapControlInfoPanelSetText(zmap, &(vselect->feature_desc)) ;
-  else
-    zmapControlInfoPanelSetText(zmap, NULL) ;
-
-  /* We also set this to the primary X selection to the secondary_text, confused? */
-  if(vselect && vselect->secondary_text)
+  if(vselect->type == ZMAPWINDOW_SELECT_SINGLE)
     {
-      if((clip = gtk_widget_get_clipboard(GTK_WIDGET(zmap->toplevel), 
-                                          GDK_SELECTION_PRIMARY)) != NULL)
-        gtk_clipboard_set_text(clip, vselect->secondary_text, -1);
+      /* Display the feature details in the info. panel. */
+      if (vselect)
+        zmapControlInfoPanelSetText(zmap, &(vselect->feature_desc)) ;
+      else
+        zmapControlInfoPanelSetText(zmap, NULL) ;
+      
+      /* We also set this to the primary X selection to the secondary_text, confused? */
+      if(vselect && vselect->secondary_text)
+        {
+          if((clip = gtk_widget_get_clipboard(GTK_WIDGET(zmap->toplevel), 
+                                              GDK_SELECTION_PRIMARY)) != NULL)
+            gtk_clipboard_set_text(clip, vselect->secondary_text, -1);
+        }
     }
-
-  return ;
-}
-
-static void controlDoubleSelectCB(ZMapViewWindow view_window, void *app_data, void *view_data)
-{
-  ZMap zmap = (ZMap)app_data;
-  ZMapViewDoubleSelect double_select = (ZMapViewDoubleSelect)view_data;
-
-  double_select->handled = zmapControlRemoteAlertClients(zmap, double_select->xml_events, "edit");  
+  else                          /* Better be a double! */
+    {
+      vselect->handled = zmapControlRemoteAlertClients(zmap, vselect->xml_events, "edit");        
+    }
 
   return ;
 }

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 31 13:13 2007 (edgrif)
+ * Last edited: Feb  6 10:40 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.170 2007-01-31 14:04:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.171 2007-02-06 10:57:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -184,7 +184,7 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   zMapAssert(callbacks
 	     && callbacks->enter && callbacks->leave
 	     && callbacks->scroll && callbacks->focus && callbacks->select
-             && callbacks->doubleSelect && callbacks->splitToPattern
+             && callbacks->splitToPattern
 	     && callbacks->visibilityChange && callbacks->destroy) ;
 
   window_cbs_G = g_new0(ZMapWindowCallbacksStruct, 1) ;
@@ -194,7 +194,6 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   window_cbs_G->scroll  = callbacks->scroll ;
   window_cbs_G->focus   = callbacks->focus ;
   window_cbs_G->select  = callbacks->select ;
-  window_cbs_G->doubleSelect   = callbacks->doubleSelect ;
   window_cbs_G->setZoomStatus  = callbacks->setZoomStatus;
   window_cbs_G->splitToPattern = callbacks->splitToPattern;
   window_cbs_G->visibilityChange = callbacks->visibilityChange ;
@@ -426,6 +425,47 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_feature
   return ;
 }
 
+static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key, 
+                                                           gpointer data, 
+                                                           gpointer user_data,
+                                                           char **err_out)
+{
+  ZMapWindow window = (ZMapWindow)user_data;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeature feature;
+  FooCanvasItem *feature_item;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      feature = (ZMapFeature)feature_any;
+      if((feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+                                                       feature->strand,
+                                                       ZMAPFRAME_NONE,
+                                                       feature)))
+        zMapWindowFeatureRemove(window, feature_item);
+      break;
+    default:
+      /* nothing to do for most of it while we only have single blocks and aligns... */
+      break;
+    }
+
+  return ZMAP_CONTEXT_EXEC_STATUS_OK;
+}
+
+void zMapWindowUnDisplayData(ZMapWindow window, 
+                             ZMapFeatureContext current_features,
+                             ZMapFeatureContext new_features)
+{
+  /* we have no issues here with realising, hopefully */
+  
+  zMapFeatureContextExecute((ZMapFeatureAny)new_features,
+                            ZMAPFEATURE_STRUCT_FEATURE,
+                            undisplayFeaturesCB,
+                            window);
+
+  return ;
+}
 
 /* completely reset window. */
 void zMapWindowReset(ZMapWindow window)
@@ -1043,9 +1083,11 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
   ZMapWindowItemFeature item_data ;
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
-  ZMapWindowSelectStruct select = {NULL} ;
+  ZMapWindowSelectStruct select = {0} ;
   ZMapFeatureSet set;
   int feature_start, feature_end ;
+
+  select.type = ZMAPWINDOW_SELECT_SINGLE;
 
   /* If feature_arg is NULL then this implies "reset the info data/panel". */
   if (!feature_arg)
@@ -1055,7 +1097,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
       return ;
     }
 
-
+  
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
 
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
@@ -1192,7 +1234,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 
 gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeature feature, FooCanvasItem *real_item)
 {
-  ZMapWindowDoubleSelectStruct double_select = {NULL};
+  ZMapWindowSelectStruct double_select = {0};
   ZMapFeatureSetStruct feature_set = {0};
 
   /* This is a quick HACK! */
@@ -1204,11 +1246,12 @@ gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeature feature, Foo
   g_datalist_init(&(feature_set.features));
   g_datalist_id_set_data(&(feature_set.features), feature->unique_id, feature);
 
+  double_select.type       = ZMAPWINDOW_SELECT_DOUBLE;
   double_select.xml_events = zMapFeatureAnyAsXMLEvents((ZMapFeatureAny)(&feature_set), 3);
 
   g_datalist_clear(&(feature_set.features));
 
-  (*(window->caller_cbs->doubleSelect))(window, window->app_data, &double_select) ;
+  (*(window->caller_cbs->select))(window, window->app_data, &double_select) ;
 
   if(double_select.xml_events)
     g_array_free(double_select.xml_events, TRUE);
@@ -3405,7 +3448,8 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 	  select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
 
 	  select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
-
+          select.type = ZMAPWINDOW_SELECT_SINGLE;
+          
 	  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
 	  g_free(select.secondary_text) ;
@@ -3556,7 +3600,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
       if (move_focus)
 	{
 	  ZMapWindowItemFeatureSetData set_data ;
-	  ZMapWindowSelectStruct select = {NULL} ;
+	  ZMapWindowSelectStruct select = {0} ;
 	  GQuark feature_set_id ;
 
 
@@ -3578,6 +3622,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 	  select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
 
 	  select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
+          select.type = ZMAPWINDOW_SELECT_SINGLE;
 
 	  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 

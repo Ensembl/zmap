@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 23 17:56 2007 (rds)
+ * Last edited: Jan 24 14:20 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.58 2007-01-23 17:59:43 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.59 2007-02-06 10:57:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3163,7 +3163,7 @@ static gboolean bumpBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gpoi
 	  {
 	    ZMapWindowItemFeatureType item_feature_type ;
 	    ZMapWindowItemFeatureBumpData bump_data ;
-	    ZMapWindowSelectStruct select = {NULL} ;
+	    ZMapWindowSelectStruct select = {0} ;
 	    gboolean replace_highlight = TRUE ;
 
 	    if (zMapGUITestModifiers(but_event, GDK_SHIFT_MASK))
@@ -3190,6 +3190,7 @@ static gboolean bumpBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gpoi
 
 	    select.highlight_item = bump_data->first_item ;
 	    select.replace_highlight_item = replace_highlight ;
+            select.type = ZMAPWINDOW_SELECT_SINGLE;
 
 	    (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 

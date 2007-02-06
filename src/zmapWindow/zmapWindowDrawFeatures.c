@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 23 17:40 2007 (rds)
+ * Last edited: Feb  6 10:58 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.176 2007-01-23 17:59:54 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.177 2007-02-06 10:58:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -554,7 +554,6 @@ void zmapWindowRemoveEmptyColumns(ZMapWindow window,
 
   return ;
 }
-
 
 gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group)
 {
@@ -1335,7 +1334,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  {
 	  case 1:
 	    {
-	      ZMapWindowSelectStruct select = {NULL} ;
+	      ZMapWindowSelectStruct select = {0} ;
 	      GQuark feature_set_id ;
 
 	      if (feature_set)
@@ -1355,6 +1354,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
 
               select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
+              select.type = ZMAPWINDOW_SELECT_SINGLE;
 
 	      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
@@ -1639,8 +1639,6 @@ static void setColours(ZMapWindow window)
   return ;
 }
 
-
-
 /* Should this be a FooCanvasItem* of a gpointer GObject ??? The documentation is lacking here! 
  * well it compiles.... The wonders of the G_CALLBACK macro. */
 static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
@@ -1691,7 +1689,6 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	case ZMAPFEATURE_STRUCT_FEATURESET:
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
-
 
 	    feature_set = (ZMapFeatureSet)feature_any ;
 
@@ -1837,7 +1834,9 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
         gboolean block_created = FALSE;
 
         feature_block = (ZMapFeatureBlock)feature_any;
-        canvas_data->curr_block = feature_block ;
+        /* record the full_context current block, not the diff block which will get destroyed! */
+        canvas_data->curr_block = zMapFeatureAlignmentGetBlockByID(canvas_data->curr_alignment, 
+                                                                   feature_block->unique_id);
 
         /* Always set y offset to be top of current block. */
         canvas_data->curr_y_offset = feature_block->block_to_sequence.t1 ;
