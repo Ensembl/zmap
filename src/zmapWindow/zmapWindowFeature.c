@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  6 10:42 2007 (rds)
+ * Last edited: Feb  6 16:15 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.82 2007-02-06 10:46:01 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.83 2007-02-06 16:44:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -294,7 +294,7 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
   feature_block = zmapWindowContainerGetData(block_group, ITEM_FEATURE_DATA);
   zMapAssert(feature_block);
   
-  context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, ZMAPFEATURE_STRUCT_CONTEXT);
+  context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, ZMAPFEATURE_STRUCT_CONTEXT));
   zMapAssert(context);
 
   feature_set_id = zMapFeatureSetCreateID(feature_set_name);
@@ -2185,7 +2185,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 		highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
 		
-                if(!(externally_handled = zmapWindowUpdateXRemoteData(window, feature, highlight_item)))
+                if(!(externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "edit", highlight_item)))
                   {
 
 		    if (feature->type == ZMAPFEATURE_ALIGNMENT)
