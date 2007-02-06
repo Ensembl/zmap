@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb  6 14:50 2007 (rds)
+ * Last edited: Feb  6 18:15 2007 (rds)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.24 2007-02-06 17:06:24 rds Exp $
+ * CVS info:   $Id: fileServer.c,v 1.25 2007-02-06 18:15:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,7 @@
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapGFF.h>
 #include <zmapServerPrototype.h>
 #include <fileServer_P.h>
@@ -83,7 +84,7 @@ static gboolean destroyConnection(void *server) ;
 
 static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header) ;
 static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
-static void eachBlock(gpointer data, gpointer user_data) ;
+static void eachBlock(GQuark key, gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString* gff_line,
 				ZMapFeatureBlock feature_block) ;
 static void setLastErrorMsg(FileServer server, GError **gff_file_err_inout) ;
@@ -476,6 +477,8 @@ static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header)
 {
   ZMapFeatureBlock feature_block = NULL;//feature_context->master_align->blocks->data ;
 
+  feature_block = (ZMapFeatureBlock)(zMap_g_datalist_first(&(feature_context->master_align->blocks)));
+
   /* We just override whatever is already there...this may not be the thing to do if there
    * are several files.... */
   feature_context->parent_name = feature_context->sequence_name ;
@@ -527,13 +530,13 @@ static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data)
   GetFeatures get_features = (GetFeatures)user_data ;
 
   if (get_features->result == ZMAP_SERVERRESPONSE_OK)
-    g_list_foreach(alignment->blocks, eachBlock, (gpointer)get_features) ;
+    g_datalist_foreach(&(alignment->blocks), eachBlock, (gpointer)get_features) ;
 
   return ;
 }
 
 
-static void eachBlock(gpointer data, gpointer user_data)
+static void eachBlock(GQuark key, gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
   GetFeatures get_features = (GetFeatures)user_data ;
