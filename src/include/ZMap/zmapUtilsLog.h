@@ -25,9 +25,9 @@
  * Description: Contains macros, functions etc. for logging.
  *              
  * HISTORY:
- * Last edited: Nov  7 15:37 2006 (edgrif)
+ * Last edited: Jan 31 12:27 2007 (rds)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsLog.h,v 1.4 2006-11-08 09:23:28 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsLog.h,v 1.5 2007-02-06 10:53:52 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_LOG_H
@@ -101,5 +101,7 @@
 	       __VA_ARGS__,					   \
 	       g_strerror(ERRNO))
 
+/* make logging from totalview evaluations a lot easier... */
+void zMapLogQuark(GQuark quark);
 
 #endif /* ZMAP_UTILS_LOG_H */
