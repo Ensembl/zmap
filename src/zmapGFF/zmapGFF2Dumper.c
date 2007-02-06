@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb  6 14:54 2007 (rds)
+ * Last edited: Feb  6 17:55 2007 (rds)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.6 2007-02-06 17:05:42 rds Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.7 2007-02-06 17:55:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@ typedef struct
 static gboolean dumpHeader(GIOChannel *file, ZMapFeatureAny any_feature, GError **error_out) ;
 static gboolean dumpSeqHeaders(GIOChannel *file, ZMapFeatureAny any_feature, GError **error_out) ;
 static void doAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
-static void doBlock(gpointer data, gpointer user_data) ;
+static void doBlock(GQuark key_id, gpointer data, gpointer user_data) ;
 static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
 			    ZMapFeatureTypeStyle style,
 			    char *parent_name,
@@ -90,9 +90,8 @@ gboolean zMapGFFDump(GIOChannel *file, ZMapFeatureAny dump_set, GError **error_o
 	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_BLOCK
 	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
 	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
-#ifdef RDS_DONT_INCLUDE
+
   result = dumpHeader(file, dump_set, error_out) ;
-#endif
 
   if (result)
     {
@@ -100,15 +99,14 @@ gboolean zMapGFFDump(GIOChannel *file, ZMapFeatureAny dump_set, GError **error_o
       GString *buffer ;
 
       buffer = g_string_sized_new(GFF_BUF_SIZE) ;
-#ifdef RDS_DONT_INCLUDE
+
       result = zMapFeatureDumpFeatures(file, dump_set, dumpFeature, (gpointer)buffer, error_out) ;
-#endif
+
       g_string_free(buffer, TRUE) ;
     }
 
   return result ;
 }
-#ifdef RDS_DONT_INCLUDE
 
 
 static gboolean dumpHeader(GIOChannel *file, ZMapFeatureAny any_feature, GError **error_out)
@@ -221,13 +219,13 @@ static void doAlignment(GQuark key_id, gpointer data, gpointer user_data)
   else
     {
       /* Do all the blocks within the alignment. */
-      g_list_foreach(alignment->blocks, doBlock, dump_data) ;
+      g_datalist_foreach(&(alignment->blocks), doBlock, dump_data) ;
     }
 
   return ;
 }
 
-static void doBlock(gpointer data, gpointer user_data)
+static void doBlock(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock block = (ZMapFeatureBlock)data ;
   NewDumpFeatures dump_data = (NewDumpFeatures)user_data ;
@@ -502,4 +500,3 @@ static char phase2Char(ZMapPhase phase)
   return phase_char ;
 }
 
-#endif
