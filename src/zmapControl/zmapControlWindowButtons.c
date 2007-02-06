@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  8 15:16 2006 (edgrif)
+ * Last edited: Feb  6 11:44 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.43 2006-11-08 15:20:27 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.44 2007-02-06 11:45:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,8 +42,8 @@ typedef struct
   ZMapWindow window ;
 } ZoomMenuCBDataStruct, *ZoomMenuCBData ;
 
-
-enum {ZOOM_MAX, ZOOM_ALLDNA, ZOOM_10, ZOOM_1000, ZOOM_MIN} ;
+/* fMap has 1/10/100/1000 bp per line and whole, here we replicate + ALL DNA */
+enum {ZOOM_MAX, ZOOM_ALLDNA, ZOOM_10, ZOOM_100, ZOOM_1000, ZOOM_MIN} ;
 
 enum{ SHOW_DNA, HIDE_DNA, SHOW_3FT, HIDE_3FT };
 
@@ -593,10 +593,9 @@ static ZMapGUIMenuItem makeMenuZoomOps(int *start_index_inout,
     {
       {ZMAPGUI_MENU_NORMAL, "Max (1 bp line)",           ZOOM_MAX,     zoomMenuCB, NULL},
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       {ZMAPGUI_MENU_NORMAL, "10 bp line",                ZOOM_10,      zoomMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "100 bp line",               ZOOM_100,     zoomMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "1000 bp line",              ZOOM_1000,    zoomMenuCB, NULL},
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       {ZMAPGUI_MENU_NORMAL, "All DNA",                   ZOOM_ALLDNA,  zoomMenuCB, NULL},
 
@@ -624,6 +623,24 @@ static void zoomMenuCB(int menu_item_id, gpointer callback_data)
       {
 	zoom_factor = zMapWindowGetZoomMax(window) ;
 	break ;
+      }
+    case ZOOM_10:
+      {
+        zoom_factor  = zMapWindowGetZoomMax(window);
+        zoom_factor /= 10;
+        break;
+      }
+    case ZOOM_100:
+      {
+        zoom_factor  = zMapWindowGetZoomMax(window);
+        zoom_factor /= 100;
+        break;
+      }
+    case ZOOM_1000:
+      {
+        zoom_factor  = zMapWindowGetZoomMax(window);
+        zoom_factor /= 1000;
+        break;
       }
     case ZOOM_ALLDNA:
       {
