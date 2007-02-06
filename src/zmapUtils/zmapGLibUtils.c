@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Feb  6 15:21 2007 (rds)
+ * Last edited: Feb  6 18:12 2007 (rds)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.18 2007-02-06 15:33:11 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.19 2007-02-06 18:12:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,10 +70,16 @@ struct _GRealArray
 #define g_array_elt_pos(array,i) ((array)->data + g_array_elt_len((array),(i)))
 
 
+typedef struct
+{
+  GQuark id;
+}DatalistFirstIDStruct, *DatalistFirstID;
+
 static inline GQuark g_quark_new(ZMapQuarkSet quark_set, gchar *string) ;
 static void printCB(gpointer data, gpointer user_data) ;
 static gint caseCompareFunc(gconstpointer a, gconstpointer b) ;
 static void get_datalist_length(GQuark key, gpointer data, gpointer user_data);
+static void get_first_datalist_key(GQuark id, gpointer data, gpointer user_data);
 
 
 /*! @defgroup zmapGLibutils   zMapGLibUtils: glib-derived utilities for ZMap
@@ -401,32 +407,17 @@ GList *zMap_g_list_raise(GList *move, int positions)
   return g_list_first(move);
 }
 
-typedef struct
-{
-  GQuark id;
-}datalist_id_struct, *datalist_id;
-
-static void get_first_pointer(GQuark id, gpointer data, gpointer user_data)
-{
-  datalist_id key = (datalist_id)user_data;
-
-  if(!key->id)
-    {
-      key->id = id;      
-    }
-
-  return ;
-}
 
 gpointer zMap_g_datalist_first(GData **datalist)
 {
-  datalist_id_struct key = {0};
-  gpointer out;
+  DatalistFirstIDStruct key = {0};
+  gpointer data;
+
   g_datalist_foreach(datalist, get_first_pointer, &key);
 
-  out = g_datalist_id_get_data(datalist, key.id);
+  data = g_datalist_id_get_data(datalist, key.id);
 
-  return out;
+  return data;
 }
 
 gint zMap_g_datalist_length(GData **datalist)
@@ -714,6 +705,16 @@ static void get_datalist_length(GQuark key, gpointer data, gpointer user_data)
   gint *length = (gint *)user_data;
 
   (*length)++;
+
+  return ;
+}
+
+static void get_first_datalist_key(GQuark id, gpointer data, gpointer user_data)
+{
+  DatalistFirstID key = (DatalistFirstID)user_data;
+
+  if(!key->id)
+    key->id = id;      
 
   return ;
 }
