@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Jan 31 09:44 2007 (rds)
+ * Last edited: Feb  6 15:21 2007 (rds)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.17 2007-02-06 10:48:59 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.18 2007-02-06 15:33:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -401,6 +401,33 @@ GList *zMap_g_list_raise(GList *move, int positions)
   return g_list_first(move);
 }
 
+typedef struct
+{
+  GQuark id;
+}datalist_id_struct, *datalist_id;
+
+static void get_first_pointer(GQuark id, gpointer data, gpointer user_data)
+{
+  datalist_id key = (datalist_id)user_data;
+
+  if(!key->id)
+    {
+      key->id = id;      
+    }
+
+  return ;
+}
+
+gpointer zMap_g_datalist_first(GData **datalist)
+{
+  datalist_id_struct key = {0};
+  gpointer out;
+  g_datalist_foreach(datalist, get_first_pointer, &key);
+
+  out = g_datalist_id_get_data(datalist, key.id);
+
+  return out;
+}
 
 gint zMap_g_datalist_length(GData **datalist)
 {

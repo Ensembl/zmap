@@ -26,9 +26,9 @@
  *              glib but not included with their distribution.
  *
  * HISTORY:
- * Last edited: Jan 31 08:26 2007 (rds)
+ * Last edited: Feb  6 15:01 2007 (rds)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.14 2007-02-06 10:54:09 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.15 2007-02-06 15:32:52 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -103,6 +103,7 @@ GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string);
 gchar *zMap_g_quark_to_string(ZMapQuarkSet quark_set, GQuark quark) ;
 void zMap_g_quark_destroy_set(ZMapQuarkSet quark_set) ;
 
+gpointer zMap_g_datalist_first(GData **datalist);
 gint zMap_g_datalist_length(GData **datalist);
 
 #endif /* !ZMAP_GLIBUTILS_H */
