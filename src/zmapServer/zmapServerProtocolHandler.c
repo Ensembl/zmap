@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Oct  6 10:32 2006 (edgrif)
+ * Last edited: Feb  6 15:01 2007 (rds)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.13 2006-11-08 09:24:23 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.14 2007-02-06 17:05:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -344,12 +344,12 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
       /* The start/end for the master alignment may have been specified as start = 1 and end = 0
        * so we may need to fill in the start/end for the master align block. */
 
-      GList *block_list = context->context->master_align->blocks ;
+      GData *blocks = context->context->master_align->blocks ;
       ZMapFeatureBlock block ;
 
-      zMapAssert(g_list_length(block_list) == 1) ;
+      zMapAssert(zMap_g_datalist_length(&blocks) == 1) ;
 
-      block = block_list->data ;
+      block = (ZMapFeatureBlock)(zMap_g_datalist_first(&blocks));
       block->block_to_sequence.q1 = block->block_to_sequence.t1
 	= context->context->sequence_to_parent.c1 ;
       block->block_to_sequence.q2 = block->block_to_sequence.t2

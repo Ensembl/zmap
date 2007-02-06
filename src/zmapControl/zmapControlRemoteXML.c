@@ -27,13 +27,14 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  6 11:15 2007 (rds)
+ * Last edited: Feb  6 16:27 2007 (rds)
  * Created: Thu Feb  1 00:12:49 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteXML.c,v 1.2 2007-02-06 11:30:54 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteXML.c,v 1.3 2007-02-06 17:04:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapControlRemote_P.h>
+#include <ZMap/zmapGLibUtils.h>
 
 static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature, 
                             GList *styles,      GQuark style_id);
@@ -247,7 +248,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   else
     {
       /* Get the first one! */
-      xml_data->block = (ZMapFeatureBlock)(xml_data->align->blocks->data);
+      xml_data->block = zMap_g_datalist_first(&(xml_data->align->blocks));
     }
 
   if((attr = zMapXMLElementGetAttributeByName(set_element, "set")))

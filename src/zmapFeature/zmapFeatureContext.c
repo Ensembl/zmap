@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 17 09:40 2006 (edgrif)
+ * Last edited: Feb  6 13:04 2007 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.17 2006-11-17 17:35:54 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.18 2007-02-06 17:04:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -640,11 +640,11 @@ static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data
               break;
             case ZMAPFEATURE_STRUCT_ALIGN:
               feature_align = (ZMapFeatureAlignment)feature_any;
-              g_list_foreach(feature_align->blocks, executeListForeachFunc, full_data);
-#ifdef RDS_WHEN_BLOCKS_ARE_GDATA
+              //g_list_foreach(feature_align->blocks, executeListForeachFunc, full_data);
+              //#ifdef RDS_WHEN_BLOCKS_ARE_GDATA
               /* If blocks is a GData use this instead */
               g_datalist_foreach(&(feature_align->blocks), executeDataForeachFunc, full_data);
-#endif /* RDS_WHEN_BLOCKS_ARE_GDATA */
+              //#endif /* RDS_WHEN_BLOCKS_ARE_GDATA */
               if(full_data->end_callback)
                 {
                   if((full_data->status = (full_data->end_callback)(key, data, 

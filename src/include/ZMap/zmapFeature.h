@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Feb  6 16:46 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.112 2007-02-06 16:46:29 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.113 2007-02-06 17:03:46 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -253,7 +253,7 @@ typedef struct ZMapFeatureAlignmentStruct_
 
   /* Can we change this to be a gdata ? then we would have consistency..... */
 
-  GList *blocks ;					    /* A set of ZMapFeatureStruct. */
+  GData *blocks ;					    /* A set of ZMapFeatureStruct. */
 
 } ZMapFeatureAlignmentStruct;
 

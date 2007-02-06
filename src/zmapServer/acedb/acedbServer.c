@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jan  2 10:55 2007 (rds)
+ * Last edited: Feb  6 16:36 2007 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.81 2007-01-02 10:58:08 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.82 2007-02-06 17:06:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2532,7 +2532,11 @@ int getFoundObj(char *text)
   return num_obj ;
 }
 
-
+static void eachBlockSequenceRequestDataList(GQuark id, gpointer data, gpointer user_data)
+{
+  eachBlockSequenceRequest(data, user_data);
+  return ;
+}
 
 /* Process all the alignments in a context. */
 static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data)
@@ -2541,7 +2545,8 @@ static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data)
   DoAllAlignBlocks do_allalignblocks = (DoAllAlignBlocks)user_data ;
 
   if (do_allalignblocks->result == ZMAP_SERVERRESPONSE_OK && do_allalignblocks->eachBlock)
-    g_list_foreach(alignment->blocks, do_allalignblocks->eachBlock, (gpointer)do_allalignblocks) ;
+    //g_list_foreach(alignment->blocks, do_allalignblocks->eachBlock, (gpointer)do_allalignblocks) ;
+    g_datalist_foreach(&(alignment->blocks), eachBlockSequenceRequestDataList, do_allalignblocks);
 
   return ;
 }

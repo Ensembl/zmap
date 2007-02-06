@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  6 11:46 2007 (rds)
+ * Last edited: Feb  6 14:53 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.56 2007-02-06 11:47:06 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.57 2007-02-06 17:04:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,6 +123,9 @@ static void contextAddAlignment(ZMapFeatureContext   feature_context,
                                 ZMapFeatureAlignment alignment, 
                                 gboolean             master, 
                                 GDestroyNotify       notify);
+static void alignmentAddBlock(ZMapFeatureAlignment alignment, 
+                              ZMapFeatureBlock     block,
+                              GDestroyNotify       notify);
 static void blockAddFeatureSet(ZMapFeatureBlock feature_block,
                                ZMapFeatureSet   feature_set, 
                                GDestroyNotify   notify);
@@ -735,9 +738,8 @@ ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean maste
 
 void zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatureBlock block)
 {
-  block->parent = (ZMapFeatureAny)alignment ;
 
-  alignment->blocks = g_list_append(alignment->blocks, block) ;
+  alignmentAddBlock(alignment, block, destroyFeatureAny);
 
   return ;
 }
@@ -749,7 +751,7 @@ gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align,
   GList *stored   = NULL;
   zMapAssert(feature_align && feature_block);
 
-  if((stored = g_list_find(feature_align->blocks, feature_block)))
+  if((stored = g_datalist_id_get_data(&(feature_align->blocks), feature_block)))
     result = TRUE;
 
   return result;
@@ -758,14 +760,8 @@ gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align,
 ZMapFeatureBlock zMapFeatureAlignmentGetBlockByID(ZMapFeatureAlignment feature_align, GQuark block_id)
 {
   ZMapFeatureBlock feature_block = NULL;
-  GList *block_list;
   
-  if((block_list = g_list_find_custom(feature_align->blocks, 
-                                      GUINT_TO_POINTER(block_id),
-                                      blockWithID)))
-    {
-      feature_block = (ZMapFeatureBlock)(block_list->data);
-    }
+  feature_block = g_datalist_id_get_data(&(feature_align->blocks), block_id) ;
 
   return feature_block ;
 }
@@ -778,7 +774,8 @@ gboolean zMapFeatureAlignmentRemoveBlock(ZMapFeatureAlignment feature_align,
 
   if(zMapFeatureAlignmentFindBlock(feature_align, feature_block))
     {
-      removeBlockFromAlignsList(feature_block, feature_align);
+      g_datalist_id_remove_no_notify(&(feature_align->blocks), 
+                                     feature_block->unique_id);
       feature_block->parent = NULL;
       result = TRUE;
     }
@@ -798,7 +795,7 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
         {
           g_datalist_id_remove_no_notify(&(context->alignments), alignment->unique_id);
           
-          g_list_foreach(alignment->blocks, removeBlockFromAlignsList, (gpointer)alignment);
+          g_datalist_foreach(&(alignment->blocks), withdrawFeatureAny, (gpointer)alignment);
           
           destroyFeatureAny((gpointer)alignment);
         }
@@ -809,7 +806,7 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
     }
   else if(!free_data)
     {
-      g_list_foreach(alignment->blocks, removeBlockFromAlignsList, (gpointer)alignment);
+      g_datalist_foreach(&(alignment->blocks), withdrawFeatureAny, (gpointer)alignment);
 
       destroyFeatureAny((gpointer)alignment);
     }
@@ -914,7 +911,8 @@ void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data)
       if(!free_data)
         {
           /* GList stuff ... recreate the logic of g_datalist_id_remove_no_notify */
-          removeBlockFromAlignsList(block, align);
+          g_datalist_id_remove_no_notify(&(align->blocks), block->unique_id);
+          //removeBlockFromAlignsList(block, align);
 
           /* empty the datalist, without destroying lower level objects... */
           g_datalist_foreach(&(block->feature_sets), withdrawFeatureAny, (gpointer)block);
@@ -924,7 +922,8 @@ void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data)
       else
         {
           /* GList stuff ... recreate the logic of g_datalist_id_remove_data */
-          clearBlockFromAlignsList(block, align);
+          //clearBlockFromAlignsList(block, align);
+          g_datalist_id_remove_data(&(align->blocks), block->unique_id);
         }
     }
   else if(!free_data)
@@ -1253,6 +1252,26 @@ static void contextAddAlignment(ZMapFeatureContext   feature_context,
   return ;
 }
 
+static void alignmentAddBlock(ZMapFeatureAlignment alignment, 
+                              ZMapFeatureBlock     block,
+                              GDestroyNotify       notify)
+{
+  zMapAssert(alignment && block) ;
+
+  if(!zMapFeatureAlignmentFindBlock(alignment, block))
+    {
+      if(notify)
+        block->parent = (ZMapFeatureAny)alignment;
+      
+      g_datalist_id_set_data_full(&(alignment->blocks), 
+                                  block->unique_id, 
+                                  block, notify) ;
+
+    }
+
+  return ;
+}
+
 static void blockAddFeatureSet(ZMapFeatureBlock feature_block,
                                ZMapFeatureSet   feature_set, 
                                GDestroyNotify   notify)
@@ -1418,9 +1437,9 @@ static void destroyAlign(gpointer align_data)
     }
 
   if(destroy_debug_G)
-    zMapLogWarning("%s: (%p) '%s' glist size %d", __PRETTY_FUNCTION__, align, g_quark_to_string(align->unique_id), g_list_length(align->blocks));
+    printDestroyDebugInfo((ZMapFeatureAny)align, align->blocks, __PRETTY_FUNCTION__);
   
-  g_list_foreach(align->blocks, freeBlocks, NULL);
+  g_datalist_clear(&(align->blocks));
 
   g_free(align);
 
@@ -1488,8 +1507,7 @@ static void withdrawFeatureAny(GQuark key_id, gpointer data, gpointer user_data)
     case ZMAPFEATURE_STRUCT_ALIGN:
       {
         ZMapFeatureAlignment align = (ZMapFeatureAlignment)feature_any;
-        /* children_datalist = align->blocks; // Blocks is a GList ! */
-        removeBlockFromAlignsList(align, data); /* So this does it instead */
+        children_datalist = align->blocks;
       }
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
@@ -1518,7 +1536,7 @@ static void withdrawFeatureAny(GQuark key_id, gpointer data, gpointer user_data)
   return ;
 }
 
-
+#ifdef RDS_DONT_INCLUDE
 static void removeBlockFromAlignsList(gpointer block_data, gpointer user_data)
 {
   ZMapFeatureAlignment feature_align = (ZMapFeatureAlignment)user_data;
@@ -1559,7 +1577,7 @@ static gint blockWithID(gconstpointer block_data, gconstpointer id_data)
 
   return match;
 }
-
+#endif
 /* Returns TRUE if the target blocks match coords are within align_error bases of each other, if
  * there are less than two blocks then FALSE is returned.
  * 
@@ -1633,10 +1651,14 @@ static void safe_destroy_block(gpointer quark_data, gpointer user_data)
   ZMapFeatureAlignment align = (ZMapFeatureAlignment)user_data;
   ZMapFeatureBlock block;
 
+  g_datalist_id_remove_data(&(align->blocks), key);
+
+#ifdef RDS_DONT_INCLUDE
   if((block = zMapFeatureAlignmentGetBlockByID(align, key)))
     {
       clearBlockFromAlignsList(block, align);
     }
+#endif
 
   return ;
 }
@@ -1944,10 +1966,8 @@ static ZMapFeatureContextExecuteStatus mergeContextCB(GQuark key,
               zMapFeatureAlignmentAddBlock(merge_data->current_current_align, 
                                            feature_block);
 
-              /* no destroy handler for the diff context!!!
-               * BIG ERROR HERE! There's no automatic destroy/_no_destroy_ for this */
-              merge_data->current_diff_align->blocks = 
-                g_list_append(merge_data->current_diff_align->blocks, feature_block);
+              /* no destroy handler for the diff context!!! */
+              alignmentAddBlock(merge_data->current_diff_align, feature_block, NULL);
               
               merge_data->current_current_block = feature_block;
               merge_data->current_diff_block    = feature_block;
@@ -2350,7 +2370,7 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
       break;
     case ZMAPFEATURE_STRUCT_ALIGN:
       feature_align = (ZMapFeatureAlignment)feature_any;
-      if(g_list_length(feature_align->blocks) == 0)
+      if(zMap_g_datalist_length(&(feature_align->blocks)) == 0)
         {
           if(merge_debug_G)
             zMapLogWarning("%s","\tempty align ... destroying");
@@ -2427,9 +2447,28 @@ static ZMapFeatureContextExecuteStatus mergeWithoutDiffPreCB(GQuark key,
       else
         {
           /* ... align already exists, but new blocks might be below ... */
+          /* children need reparenting if they don't exist. */
         }
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
+      if(!(merge_data->current_current_block = zMapFeatureAlignmentGetBlockByID(merge_data->current_current_align,
+                                                                                feature_any->unique_id)))
+        {
+          ZMapFeatureAlignment server_align = (ZMapFeatureAlignment)(feature_any->parent);
+          feature_block = (ZMapFeatureBlock)(feature_any);
+          
+          zMapFeatureAlignmentRemoveBlock(server_align, feature_block);
+
+          zMapFeatureAlignmentAddBlock(merge_data->current_current_align, feature_block);
+
+          alignmentAddBlock(server_align, feature_block, NULL);
+
+          merge_data->current_current_block = feature_block;
+        }
+      else
+        {
+          /* block already exists, but  */
+        }
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
       break;
