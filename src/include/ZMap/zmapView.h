@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Jan 31 14:06 2007 (edgrif)
+ * Last edited: Feb  6 10:34 2007 (rds)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.34 2007-01-31 14:08:24 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.35 2007-02-06 10:55:36 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -68,7 +68,6 @@ typedef struct _ZMapViewCallbacksStruct
   ZMapViewCallbackFunc load_data ;
   ZMapViewWindowCallbackFunc focus ;
   ZMapViewWindowCallbackFunc select ;
-  ZMapViewWindowCallbackFunc double_select ;
   ZMapViewWindowCallbackFunc split_to_pattern;
   ZMapViewWindowCallbackFunc visibility_change ;
   ZMapViewCallbackFunc state_change ;
@@ -98,15 +97,12 @@ typedef struct
  * zmapWindow layer and is just passed on through view. */
 typedef struct _ZMapViewSelectStruct
 {
+  ZMapWindowSelectType  type;
   ZMapFeatureDescStruct feature_desc ;
-  char *secondary_text;
+  char                 *secondary_text;
+  GArray               *xml_events;
+  gboolean              handled;
 } ZMapViewSelectStruct, *ZMapViewSelect ;
-
-typedef struct _ZMapViewDoubleSelectStruct
-{
-  GArray *xml_events;
-  gboolean handled;
-}ZMapViewDoubleSelectStruct, *ZMapViewDoubleSelect;
 
 typedef struct _ZMapViewSplittingStruct
 {
@@ -179,7 +175,12 @@ void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
 
+ZMapFeatureContext zMapViewMergeInContext(ZMapView replace_me, ZMapFeatureContext context_inout);
+void zMapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
+
 gboolean zMapViewDestroy(ZMapView zmap_view) ;
 
+/* HACK! not really to be used... */
+ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
 
 #endif /* !ZMAPVIEW_H */
