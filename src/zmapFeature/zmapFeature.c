@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  6 10:49 2007 (rds)
+ * Last edited: Feb  6 11:46 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.55 2007-02-06 10:50:22 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.56 2007-02-06 11:47:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -738,8 +738,6 @@ void zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatureBlo
   block->parent = (ZMapFeatureAny)alignment ;
 
   alignment->blocks = g_list_append(alignment->blocks, block) ;
-
-  block->destroy_notify = TRUE;
 
   return ;
 }
@@ -1456,12 +1454,7 @@ static void destroyFeatureAny(gpointer any_data)
       destroyAlign(feature_any);
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
-      {
-        ZMapFeatureBlock block = (ZMapFeatureBlock)feature_any;
-        /* cheap way to get destroynotify for lists :( */
-        if(block->destroy_notify)
-          destroyBlock(feature_any);
-      }
+      destroyBlock(feature_any);
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
       destroyFeatureSet(feature_any);
@@ -2092,8 +2085,8 @@ static ZMapFeatureContextExecuteStatus mergeContextCB(GQuark key,
             {
               ZMapFeatureTypeStyle style;
 
-              zMapWarning("Feature set %s has no style... Looking for style in context", 
-                          g_quark_to_string(feature_set->unique_id));
+              zMapLogWarning("Feature set %s has no style... Looking for style in context", 
+                             g_quark_to_string(feature_set->unique_id));
 
               if((style = zMapFindStyle(merge_data->current_context->styles, feature_set->unique_id)))
                 zMapFeatureSetStyle(feature_set, style);
