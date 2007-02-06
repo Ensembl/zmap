@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Dec 14 15:55 2006 (rds)
+ * Last edited: Jan 31 09:44 2007 (rds)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.16 2006-12-15 08:05:22 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.17 2007-02-06 10:48:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,6 +73,7 @@ struct _GRealArray
 static inline GQuark g_quark_new(ZMapQuarkSet quark_set, gchar *string) ;
 static void printCB(gpointer data, gpointer user_data) ;
 static gint caseCompareFunc(gconstpointer a, gconstpointer b) ;
+static void get_datalist_length(GQuark key, gpointer data, gpointer user_data);
 
 
 /*! @defgroup zmapGLibutils   zMapGLibUtils: glib-derived utilities for ZMap
@@ -401,6 +402,16 @@ GList *zMap_g_list_raise(GList *move, int positions)
 }
 
 
+gint zMap_g_datalist_length(GData **datalist)
+{
+  gint length = 0;
+
+  g_datalist_foreach(datalist, get_datalist_length, &length);
+
+  return length;
+}
+
+
 /* 
  *                Additions to GArray
  */
@@ -671,3 +682,11 @@ static gint caseCompareFunc(gconstpointer a, gconstpointer b)
   return result ;
 }
 
+static void get_datalist_length(GQuark key, gpointer data, gpointer user_data)
+{
+  gint *length = (gint *)user_data;
+
+  (*length)++;
+
+  return ;
+}
