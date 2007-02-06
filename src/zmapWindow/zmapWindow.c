@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  6 10:40 2007 (rds)
+ * Last edited: Feb  6 16:22 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.171 2007-02-06 10:57:21 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.172 2007-02-06 16:37:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1232,29 +1232,48 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 }
 
 
-gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeature feature, FooCanvasItem *real_item)
+gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any, char *action, FooCanvasItem *real_item)
 {
   ZMapWindowSelectStruct double_select = {0};
   ZMapFeatureSetStruct feature_set = {0};
+  ZMapFeatureSet multi_set;
+  ZMapFeature feature;
+  
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      feature = (ZMapFeature)feature_any;
+      /* This is a quick HACK! */
+      feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
+      feature_set.parent      = feature->parent->parent;
+      feature_set.unique_id   = feature->parent->unique_id;
+      feature_set.original_id = feature->parent->original_id;
+      
+      g_datalist_init(&(feature_set.features));
+      g_datalist_id_set_data(&(feature_set.features), feature->unique_id, feature);
+      multi_set = &feature_set;
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      multi_set = (ZMapFeatureSet)feature_any;
+      break;
+    default:
+      break;
+    }
+  
+  double_select.type        = ZMAPWINDOW_SELECT_DOUBLE;
+  double_select.xml_events  = zMapFeatureAnyAsXMLEvents((ZMapFeatureAny)(multi_set), ZMAPFEATURE_XML_XREMOTE);
+  double_select.zmap_action = g_strdup(action);
 
-  /* This is a quick HACK! */
-  feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
-  feature_set.parent      = feature->parent->parent;
-  feature_set.unique_id   = feature->parent->unique_id;
-  feature_set.original_id = feature->parent->original_id;
-
-  g_datalist_init(&(feature_set.features));
-  g_datalist_id_set_data(&(feature_set.features), feature->unique_id, feature);
-
-  double_select.type       = ZMAPWINDOW_SELECT_DOUBLE;
-  double_select.xml_events = zMapFeatureAnyAsXMLEvents((ZMapFeatureAny)(&feature_set), 3);
-
-  g_datalist_clear(&(feature_set.features));
+  if(feature_set.unique_id)
+    g_datalist_clear(&(feature_set.features));
 
   (*(window->caller_cbs->select))(window, window->app_data, &double_select) ;
 
   if(double_select.xml_events)
     g_array_free(double_select.xml_events, TRUE);
+
+  if(double_select.zmap_action)
+    g_free(double_select.zmap_action);
 
   return double_select.handled;
 }
