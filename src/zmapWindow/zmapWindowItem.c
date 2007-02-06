@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 31 13:12 2007 (edgrif)
+ * Last edited: Feb  6 10:44 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.65 2007-01-31 14:05:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.66 2007-02-06 10:44:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1018,7 +1018,7 @@ void zmapWindowShowItem(FooCanvasItem *item)
 	 "item_x1: %d,  item_x1: %d\n",
 	 (char *)g_quark_to_string(feature->original_id),
 	 zMapFeatureType2Str(feature->type),
-	 zMapStyleGetName(zMapFeatureGetStyle(feature)),
+	 zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)),
 	 feature->x1,
 	 feature->x2,
 	 item_subfeature_data->start, item_subfeature_data->end) ;
