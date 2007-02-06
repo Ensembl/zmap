@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 31 13:13 2007 (edgrif)
+ * Last edited: Feb  6 10:42 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.81 2007-01-31 14:04:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.82 2007-02-06 10:46:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -229,6 +229,8 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
   FooCanvasItem *new_feature = NULL ;
   ZMapWindowItemFeatureSetData set_data;
   ZMapFeatureSet feature_set ;
+  gboolean column_is_empty = FALSE;
+  FooCanvasGroup *container_features;
 
   zMapAssert(window && feature_group && feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
@@ -244,6 +246,11 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
       if (zMapFeatureSetAddFeature(feature_set, feature))
 	{
           ZMapStyleOverlapMode bump_mode;
+          
+          container_features = zmapWindowContainerGetFeatures(feature_group);
+          
+          column_is_empty = !(container_features->item_list);
+            
 	  /* This function will add the new feature to the hash. */
 	  new_feature = zmapWindowFeatureDraw(window, FOO_CANVAS_GROUP(feature_group), feature) ;
 
@@ -254,6 +261,10 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
                   zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
                 }
             }
+
+          if(column_is_empty)
+            zmapWindowColOrderPositionColumns(window);
+
 	}
     }
 
@@ -294,7 +305,7 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
      (style = zMapFindStyle(context->styles, style_id)))
     {
       /* Check feature set does not already exist. */
-      if(!zMapFeatureBlockGetSetByID(feature_block, feature_set_id))
+      if(!(feature_set = zMapFeatureBlockGetSetByID(feature_block, feature_set_id)))
         {
           /* Create the new feature set... */
           if((feature_set = zMapFeatureSetCreate(feature_set_name, NULL)))
@@ -303,25 +314,27 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
               zMapFeatureSetStyle(feature_set, style);
               /* Add it to the block */
               zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
-              /* Get the strand groups */
-              forward_strand = zmapWindowContainerGetStrandGroup(block_group, ZMAPSTRAND_FORWARD);
-              reverse_strand = zmapWindowContainerGetStrandGroup(block_group, ZMAPSTRAND_REVERSE);
-
-              /* Create the columns */
-              zmapWindowCreateSetColumns(window,
-                                         forward_strand, 
-                                         reverse_strand,
-                                         feature_block, 
-                                         feature_set,
-                                         ZMAPFRAME_NONE, 
-                                         &new_forward_set, 
-                                         &new_reverse_set);
-              /* reorder the columns... [This takes some time... :( ] */
-              zmapWindowColOrderPositionColumns(window);
             }
           else
             zMapAssertNotReached();
         }
+
+      /* Get the strand groups */
+      forward_strand = zmapWindowContainerGetStrandGroup(block_group, ZMAPSTRAND_FORWARD);
+      reverse_strand = zmapWindowContainerGetStrandGroup(block_group, ZMAPSTRAND_REVERSE);
+      
+      /* Create the columns */
+      zmapWindowCreateSetColumns(window,
+                                 forward_strand, 
+                                 reverse_strand,
+                                 feature_block, 
+                                 feature_set,
+                                 ZMAPFRAME_NONE, 
+                                 &new_forward_set, 
+                                 &new_reverse_set);
+      
+      zmapWindowColOrderColumns(window);
+
     }
 
   if(new_forward_set != NULL)
