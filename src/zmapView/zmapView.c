@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jan 31 12:53 2007 (edgrif)
+ * Last edited: Feb  6 10:38 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.99 2007-01-31 14:08:24 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.100 2007-02-06 10:57:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,13 +50,12 @@ static void enterCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void leaveCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void scrollCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void focusCB(ZMapWindow window, void *caller_data, void *window_data) ;
-static void selectCB(ZMapWindow window, void *caller_data, void *window_data) ;
+static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data);
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data);
 static void destroyCB(ZMapWindow window, void *caller_data, void *window_data) ;
 
 static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data);
-static void viewDoubleSelectCB(ZMapWindow window, void *caller_data, void *window_data);
 
 static void setZoomStatus(gpointer data, gpointer user_data);
 static void splitMagic(gpointer data, gpointer user_data);
@@ -84,7 +83,9 @@ static void destroyConnection(ZMapViewConnection *view_conn) ;
 
 static void resetWindows(ZMapView zmap_view) ;
 static void displayDataWindows(ZMapView zmap_view,
-			       ZMapFeatureContext all_features, ZMapFeatureContext new_features) ;
+			       ZMapFeatureContext all_features, 
+                               ZMapFeatureContext new_features,
+                               gboolean undisplay) ;
 static void killAllWindows(ZMapView zmap_view) ;
 
 static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window) ;
@@ -103,6 +104,9 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 ZMapAlignBlock zMapAlignBlockCreate(char *ref_seq, int ref_start, int ref_end, int ref_strand,
 				    char *non_seq, int non_start, int non_end, int non_strand) ;
 static void addAlignments(ZMapFeatureContext context) ;
+
+static ZMapFeatureContext mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_inout);
+static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inout);
 
 static gboolean getSequenceServers(ZMapView zmap_view) ;
 static void destroySeq2ServerCB(gpointer data, gpointer user_data_unused) ;
@@ -123,7 +127,8 @@ static ZMapViewCallbacks view_cbs_G = NULL ;
 
 /* Callbacks back we set in the level below us, i.e. zMapWindow. */
 ZMapWindowCallbacksStruct window_cbs_G = {enterCB, leaveCB,
-					  scrollCB, focusCB, selectCB, viewDoubleSelectCB, 
+					  scrollCB, focusCB, 
+                                          viewSelectCB, 
                                           viewSplitToPatternCB,
 					  setZoomStatusCB, viewVisibilityChangeCB, destroyCB} ;
 
@@ -155,7 +160,6 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
   view_cbs_G->load_data = callbacks->load_data ;
   view_cbs_G->focus = callbacks->focus ;
   view_cbs_G->select = callbacks->select ;
-  view_cbs_G->double_select = callbacks->double_select ;
   view_cbs_G->split_to_pattern = callbacks->split_to_pattern;
   view_cbs_G->visibility_change = callbacks->visibility_change ;
   view_cbs_G->state_change = callbacks->state_change ;
@@ -534,8 +538,58 @@ void zMapViewRemoveWindow(ZMapViewWindow view_window)
   return ;
 }
 
+/* This is a big hack, but a worthwhile one for the moment.
+ * Only zmapControlRemote.c uses it. See there for why..... */
+ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use)
+{
+  ZMapFeatureContext context;
+  ZMapView view = do_not_use;
+
+  context = zMapFeatureContextCreateEmptyCopy(view->features);
+
+  return context;
+}
 
 
+
+/*!
+ * Erases the supplied context from the view's context and instructs
+ * the window to delete the old features.
+ *
+ * @param                The ZMap View
+ * @param                The Context to erase.  Those features which
+ *                       match will be removed from this context and
+ *                       the view's own context. They will also be 
+ *                       removed from the display windows. Those that
+ *                       don't match will be left in this context.
+ * @return               void
+ *************************************************** */
+void zMapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout)
+{
+  /* should replace_me be a view or a view_window???? */
+  eraseAndUndrawContext(replace_me, context_inout);
+    
+  return;
+}
+
+/*!
+ * Merges the supplied context with the view's context and instructs
+ * the window to draw the new features.
+ *
+ * @param                The ZMap View
+ * @param                The Context to merge in.  This will be emptied
+ *                       but needs destroying...
+ * @return               The diff context.  This needs destroying.
+ *************************************************** */
+ZMapFeatureContext zMapViewMergeInContext(ZMapView replace_me, ZMapFeatureContext context_inout)
+{
+  ZMapFeatureContext diff_context = NULL;
+
+  /* should replace_me be a view or a view_window???? */
+  diff_context = mergeAndDrawContext(replace_me, context_inout);
+
+  return diff_context;
+}
 
 /* Force a redraw of all the windows in a view, may be reuqired if it looks like
  * drawing has got out of whack due to an overloaded network etc etc. */
@@ -1012,16 +1066,19 @@ static void focusCB(ZMapWindow window, void *caller_data, void *window_data)
 
 /* Called when some sequence window feature (e.g. column, actual feature etc.)
  * has been selected. */
-static void selectCB(ZMapWindow window, void *caller_data, void *window_data)
+static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
-  ZMapWindowSelect select_item = (ZMapWindowSelect)window_data ;
-  ZMapViewSelectStruct vselect = {{0}} ;
-  void *vselect_ptr = NULL ;
+  ZMapWindowSelect window_select = (ZMapWindowSelect)window_data ;
+  ZMapViewSelectStruct view_select = {0} ;
 
-  if (select_item)
+  /* Check we've got a window_select! */
+  if(!window_select)
+    return ;                    /* !!! RETURN !!! */
+
+  if((view_select.type = window_select->type) == ZMAPWINDOW_SELECT_SINGLE)
     {
-      if (select_item->highlight_item)
+      if (window_select->highlight_item)
 	{
 	  GList* list_item ;
 
@@ -1036,22 +1093,27 @@ static void selectCB(ZMapWindow window, void *caller_data, void *window_data)
 
 	      view_window = list_item->data ;
 
-	      if ((item = zMapWindowFindFeatureItemByItem(view_window->window, select_item->highlight_item)))
-		zMapWindowHighlightObject(view_window->window, item, select_item->replace_highlight_item) ;
+	      if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
+		zMapWindowHighlightObject(view_window->window, item, window_select->replace_highlight_item) ;
 	    }
 	  while ((list_item = g_list_next(list_item))) ;
 	}
 
 
-      vselect.feature_desc = select_item->feature_desc ;
-      vselect.secondary_text = select_item->secondary_text ;
+      view_select.feature_desc   = window_select->feature_desc ;
+      view_select.secondary_text = window_select->secondary_text ;
 
-      vselect_ptr = (void *)&vselect ;
+    }
+  else                          /* Better be a double select.... */
+    {
+      view_select.xml_events = window_select->xml_events;
     }
 
   /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
-  (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, vselect_ptr) ;
+  (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, &view_select) ;
 
+  window_select->handled = view_select.handled;
+  
   return ;
 }
 
@@ -1070,19 +1132,7 @@ static void destroyCB(ZMapWindow window, void *caller_data, void *window_data)
 
   return ;
 }
-static void viewDoubleSelectCB(ZMapWindow window, void *caller_data, void *window_data)
-{
-  ZMapViewWindow view_window = (ZMapViewWindow)caller_data;
-  ZMapWindowDoubleSelect window_select = (ZMapWindowDoubleSelect)window_data;
-  ZMapViewDoubleSelectStruct double_select = {NULL};
-  
-  double_select.xml_events = window_select->xml_events;
 
-  (*(view_cbs_G->double_select))(view_window, view_window->parent_view->app_data, &double_select);
-
-  window_select->handled   = double_select.handled;
-  return ;
-}
 static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data;
@@ -1805,7 +1855,9 @@ static void resetWindows(ZMapView zmap_view)
 
 /* Signal all windows there is data to draw. */
 static void displayDataWindows(ZMapView zmap_view,
-			       ZMapFeatureContext all_features, ZMapFeatureContext new_features)
+			       ZMapFeatureContext all_features, 
+                               ZMapFeatureContext new_features,
+                               gboolean undisplay)
 {
   GList* list_item ;
 
@@ -1816,8 +1868,10 @@ static void displayDataWindows(ZMapView zmap_view,
       ZMapViewWindow view_window ;
 
       view_window = list_item->data ;
-
-      zMapWindowDisplayData(view_window->window, all_features, new_features) ;
+      if(!undisplay)
+        zMapWindowDisplayData(view_window->window, all_features, new_features) ;
+      else
+        zMapWindowUnDisplayData(view_window->window, all_features, new_features);
     }
   while ((list_item = g_list_next(list_item))) ;
 
@@ -1874,41 +1928,69 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
  * free any replicated data...yes, that is what should happen. Then when it comes to
  * the diff we should not free the data but should free all our structs...
  * 
+ * We should free the context_inout context here....actually better
+ * would to have a "free" flag............ 
  *  */
+static ZMapFeatureContext mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_inout)
+{
+  ZMapFeatureContext diff_context = NULL;
+
+  if (!zMapFeatureContextMerge(&(view->features), context_inout, &diff_context))
+    zMapLogCritical("%s", "Cannot merge feature data from....") ;
+  else
+    {
+      zMapPrintTimer(NULL, "Merged Features into context and about to display") ;
+
+      /* Signal the ZMap that there is work to be done. */
+      displayDataWindows(view, view->features, diff_context, FALSE) ;
+      
+      zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features);
+      
+      /* signal our caller that we have data. */
+      (*(view_cbs_G->load_data))(view, view->app_data, NULL) ;
+      
+    }
+  
+  return diff_context;
+}
+
+static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inout)
+{                               /*  */
+  ZMapFeatureContext diff_context = NULL;
+
+  if(!zMapFeatureContextErase(&(view->features), context_inout, &diff_context))
+    zMapLogCritical("%s", "Cannot erase feature data from...");
+  else
+    {
+      displayDataWindows(view, view->features, diff_context, TRUE);
+
+      zMapFeatureContextDestroy(diff_context, TRUE);
+    }
+
+  return ;
+}
+
 static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req)
 {
-  ZMapFeatureContext new_features = NULL, diff_context = NULL ;
-
+  ZMapFeatureContext new_features = NULL, diff_context;
 
   zMapPrintTimer(NULL, "Got Features from Thread") ;
 
   /* Merge new data with existing data (if any). */
   if((new_features = feature_req->feature_context_out))
     {
-      if (!zMapFeatureContextMerge(&(zmap_view->features), new_features, &diff_context))
-        zMapLogCritical("%s", "Cannot merge feature data from....") ;
-      else
+      diff_context = mergeAndDrawContext(zmap_view, new_features);
+      /* Free the diff context, if there indeed was one. */
+      if(diff_context != NULL)
         {
-          /* We should free the new_features context here....actually better
-           * would to have a "free" flag on the above merge call. */
-          
-          zMapPrintTimer(NULL, "Merged Features into context and about to display") ;
-          
-          /* Signal the ZMap that there is work to be done. */
-          displayDataWindows(zmap_view, zmap_view->features, diff_context) ;
-          
-          zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features);
-          
-          /* signal our caller that we have data. */
-          (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
-          
-          /* Free the diff context, if there indeed was one. */
-          if(diff_context != NULL)
-            zMapFeatureContextDestroy(diff_context, TRUE);
+          zMapFeatureContextDestroy(diff_context, TRUE);
         }
-      
-      if(zmap_view->features != new_features)
-        zMapFeatureContextDestroy(new_features, TRUE);
+    }
+
+  /* Free the context if it wasn't directly copied... */
+  if(zmap_view->features != new_features)
+    {
+      zMapFeatureContextDestroy(new_features, TRUE);
     }
 
   return ;
