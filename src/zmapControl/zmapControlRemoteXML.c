@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  6 16:27 2007 (rds)
+ * Last edited: Feb  7 15:37 2007 (rds)
  * Created: Thu Feb  1 00:12:49 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteXML.c,v 1.3 2007-02-06 17:04:12 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteXML.c,v 1.4 2007-02-07 15:57:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_element,
                                     ZMapXMLParser parser);
 /* ends */
+static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
+                                   ZMapXMLParser parser);
 static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
                                       ZMapXMLParser parser);
 static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
@@ -104,6 +106,7 @@ ZMapXMLParser zmapControlRemoteXMLInitialise(void *data)
   };
   ZMapXMLObjTagFunctionsStruct ends[] = {
     { "zmap",       xml_zmap_end_cb       },
+    { "feature",    xml_feature_end_cb    },
     { "segment",    xml_segment_end_cb    },
     { "subfeature", xml_subfeature_end_cb },
     { "location",   xml_location_end_cb   },
@@ -523,6 +526,11 @@ static gboolean xml_style_end_cb(gpointer user_data, ZMapXMLElement element,
 
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
                                 ZMapXMLParser parser)
+{
+  return TRUE;
+}
+static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
+                                   ZMapXMLParser parser)
 {
   return TRUE;
 }
