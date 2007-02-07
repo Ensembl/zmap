@@ -157,3 +157,40 @@ linked exons instead of just the highlighted one?
 thanks
 
 Sarah
+
+
+
+Actions:
+--------
+
+1) Investigate checking out from ~zmap/CVS for anacode users. EG
+
+2) Create a synopsis  document to accompany the xsd  document and keep
+   them up to date. RDS
+
+3) Add zoom_to to  the xremote protocol.  This should  accpet either a
+   simple range or a feature to which zmap should add a border. RDS
+
+4) otterlace needs to be notified when a zmap view is closed. RDS
+
+5) Although zmap  understands the action new_view, this  is not enough
+   for all the alternatives that exist.  It should also be possible to
+   close each individual  view. Also the open command  is very similar
+   if not identical so we need to merge these. RDS
+
+6) Views need  to be addressable by  otterlace.  The reply  to an open
+   command should contain the addressable id. RDS
+
+7) register_client  and  create_client should  be  merged  to only  be
+   register_client. RDS, JGRG
+
+8) Single and multiple selects are to be transferred a click at a time
+   and will be  distinguishable by an attribute.  The  cut buffer will
+   be  additively  extended  for   multiple  selects.   This  will  be
+   bi-directional,  so that  selections will  be mirrored  in  the two
+   progams. RDS, JGRG
+
+9) Check copy / paste from zmap info boxes. EG
+
+10) build a new zmap RDS, EG
+
