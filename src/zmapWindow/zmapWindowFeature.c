@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  6 16:15 2007 (rds)
+ * Last edited: Feb  7 13:01 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.83 2007-02-06 16:44:32 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.84 2007-02-07 13:03:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2113,6 +2113,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	ZMapWindowItemFeatureType item_feature_type ;
 	FooCanvasItem *real_item ;
 	FooCanvasItem *highlight_item ;
+        GList *focus_items;
 
 	item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
 							      ITEM_FEATURE_TYPE)) ;
@@ -2189,9 +2190,16 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                   {
 
 		    if (feature->type == ZMAPFEATURE_ALIGNMENT)
-		      zmapWindowListWindowCreate(window, zmapWindowFocusGetFocusItems(window->focus), 
-						 (char *)g_quark_to_string(feature->parent->original_id), 
-						 zmapWindowFocusGetHotItem(window->focus), FALSE) ;
+                      {
+                        if((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
+                          {
+                            zmapWindowListWindowCreate(window, focus_items, 
+                                                       (char *)g_quark_to_string(feature->parent->original_id), 
+                                                       zmapWindowFocusGetHotItem(window->focus), FALSE) ;
+                            g_list_free(focus_items);
+                            focus_items = NULL;
+                          }
+                      }
 		    else
 		      zmapWindowEditorCreate(window, highlight_item, window->edittable_features) ;
 

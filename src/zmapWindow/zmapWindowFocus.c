@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 23 18:11 2007 (rds)
+ * Last edited: Feb  7 12:52 2007 (rds)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.1 2007-01-24 08:08:50 rds Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.2 2007-02-07 13:04:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,7 +112,7 @@ void zmapWindowFocusAddItems(ZMapWindowFocus focus, GList *item_list)
    * move the list on one. */
   if (!focus->focus_item_set)
     {
-      zmapWindowFocusSetHotItem(focus, (FOO_CANVAS_ITEM(item_list->data))) ;
+      zmapWindowFocusSetHotItem(focus, FOO_CANVAS_ITEM(item_list->data)) ;
       item_list = g_list_next(item_list) ;
     }
 
@@ -185,10 +185,19 @@ FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus)
 
 GList *zmapWindowFocusGetFocusItems(ZMapWindowFocus focus)
 {
-  GList *items = NULL ;
+  GList *areas = NULL, *items = NULL;
+  ZMapWindowFocusItemArea area = NULL;
 
   if (focus->focus_item_set)
-    items = g_list_first(focus->focus_item_set) ;
+    {
+      areas = g_list_first(focus->focus_item_set) ;
+      while(areas)
+        {
+          area = (ZMapWindowFocusItemArea)(areas->data);
+          items = g_list_append(items, area->focus_item);
+          areas = areas->next;
+        }
+    }
 
   return items ;
 }
