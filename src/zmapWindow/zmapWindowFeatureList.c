@@ -28,9 +28,9 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Jan 31 13:13 2007 (edgrif)
+ * Last edited: Feb  7 12:24 2007 (rds)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.14 2007-01-31 14:04:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.15 2007-02-07 13:04:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -334,7 +334,7 @@ void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel, ZMapWindowL
 	    FooCanvasGroup *set_group ;
 	    ZMapWindowItemFeatureSetData set_data ;
 
-	    item = (FooCanvasItem *)list->data;
+	    item = FOO_CANVAS_ITEM(list->data);
 
 	    /* do we need some kind of type check on feature here? */
 	    feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
