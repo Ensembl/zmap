@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  6 15:53 2007 (rds)
+ * Last edited: Feb  8 11:14 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.101 2007-02-06 16:36:51 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.102 2007-02-08 11:34:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -105,7 +105,7 @@ ZMapAlignBlock zMapAlignBlockCreate(char *ref_seq, int ref_start, int ref_end, i
 				    char *non_seq, int non_start, int non_end, int non_strand) ;
 static void addAlignments(ZMapFeatureContext context) ;
 
-static ZMapFeatureContext mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_inout);
+static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext *context_inout);
 static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inout);
 
 static gboolean getSequenceServers(ZMapView zmap_view) ;
@@ -581,14 +581,12 @@ void zMapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_in
  *                       but needs destroying...
  * @return               The diff context.  This needs destroying.
  *************************************************** */
-ZMapFeatureContext zMapViewMergeInContext(ZMapView replace_me, ZMapFeatureContext context_inout)
+ZMapFeatureContext zMapViewMergeInContext(ZMapView replace_me, ZMapFeatureContext context)
 {
-  ZMapFeatureContext diff_context = NULL;
-
   /* should replace_me be a view or a view_window???? */
-  diff_context = mergeAndDrawContext(replace_me, context_inout);
+  mergeAndDrawContext(replace_me, &context);
 
-  return diff_context;
+  return context;
 }
 
 /* Force a redraw of all the windows in a view, may be reuqired if it looks like
@@ -1930,27 +1928,34 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
  * We should free the context_inout context here....actually better
  * would to have a "free" flag............ 
  *  */
-static ZMapFeatureContext mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_inout)
+static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext *context_inout)
 {
-  ZMapFeatureContext diff_context = NULL;
+  ZMapFeatureContext new_features;
+  gboolean merged = FALSE;
 
-  if (!zMapFeatureContextMerge(&(view->features), context_inout, &diff_context))
+  zMapAssert(context_inout && *context_inout);
+
+  new_features = *context_inout;
+
+  if (!(merged = zMapFeatureContextMerge(&(view->features), new_features)))
     zMapLogCritical("%s", "Cannot merge feature data from....") ;
   else
     {
       zMapPrintTimer(NULL, "Merged Features into context and about to display") ;
 
       /* Signal the ZMap that there is work to be done. */
-      displayDataWindows(view, view->features, diff_context, FALSE) ;
+      displayDataWindows(view, view->features, new_features, FALSE) ;
       
       zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features);
       
       /* signal our caller that we have data. */
       (*(view_cbs_G->load_data))(view, view->app_data, NULL) ;
-      
+
     }
   
-  return diff_context;
+  *context_inout = new_features;
+
+  return merged;
 }
 
 static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inout)
@@ -1971,25 +1976,20 @@ static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inou
 
 static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req)
 {
-  ZMapFeatureContext new_features = NULL, diff_context;
+  ZMapFeatureContext new_features = NULL;
 
   zMapPrintTimer(NULL, "Got Features from Thread") ;
 
   /* Merge new data with existing data (if any). */
   if((new_features = feature_req->feature_context_out))
     {
-      diff_context = mergeAndDrawContext(zmap_view, new_features);
-      /* Free the diff context, if there indeed was one. */
-      if(diff_context != NULL)
-        {
-          zMapFeatureContextDestroy(diff_context, TRUE);
-        }
-    }
+      mergeAndDrawContext(zmap_view, &new_features);
 
-  /* Free the context if it wasn't directly copied... */
-  if(zmap_view->features != new_features)
-    {
-      zMapFeatureContextDestroy(new_features, TRUE);
+      if(zmap_view->features != new_features)
+        {
+          zMapFeatureContextDestroy(new_features, TRUE);
+          new_features = feature_req->feature_context_out = NULL;
+        }
     }
 
   return ;

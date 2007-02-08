@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  6 14:53 2007 (rds)
+ * Last edited: Feb  8 11:28 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.57 2007-02-06 17:04:34 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.58 2007-02-08 11:33:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -102,6 +102,8 @@ typedef struct
   gboolean copied_align, copied_block, copied_set;
   gboolean destroy_align, destroy_block, destroy_set, destroy_feature;
 
+  /* sizes for the servers children */
+  gint aligns, blocks, sets, features;
   GList *destroy_aligns_list, *destroy_blocks_list, 
     *destroy_sets_list, *destroy_features_list;
 } MergeContextDataStruct, *MergeContextData;
@@ -141,12 +143,6 @@ static void destroyAlign(gpointer data) ;
 static void destroyContext(gpointer data) ;
 static void withdrawFeatureAny(GQuark key_id, gpointer data, gpointer user_data) ;
 
-/* Because Blocks have to be different... some GFunc for the GList foreach calls... */
-static void removeBlockFromAlignsList(gpointer block_data, gpointer user_data);
-static void clearBlockFromAlignsList(gpointer block_data, gpointer user_data);
-static void freeBlocks(gpointer block_data, gpointer unused);
-static gint blockWithID(gconstpointer block_data, gconstpointer id_data);
-
 /* datalist debug stuff */
 static void getDataListLength(GQuark id, gpointer data, gpointer user_data);
 static void printDestroyDebugInfo(ZMapFeatureAny any, GData *datalist, char *who);
@@ -172,10 +168,20 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
                                                                gpointer data, 
                                                                gpointer user_data,
                                                                char **err_out);
+static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key, 
+                                                  gpointer data, 
+                                                  gpointer user_data,
+                                                  char **err_out);
+static ZMapFeatureContextExecuteStatus mergePostCB(GQuark key, 
+                                                   gpointer data, 
+                                                   gpointer user_data,
+                                                   char **err_out);
 
 
-static gboolean merge_debug_G   = FALSE;
-static gboolean destroy_debug_G = FALSE;
+
+static gboolean merge_debug_G   = TRUE;
+static gboolean destroy_debug_G = TRUE;
+static gboolean merge_use_safe_destroy = TRUE;
 
 /* !
  * A set of functions for allocating, populating and destroying features.
@@ -751,7 +757,7 @@ gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align,
   GList *stored   = NULL;
   zMapAssert(feature_align && feature_block);
 
-  if((stored = g_datalist_id_get_data(&(feature_align->blocks), feature_block)))
+  if((stored = g_datalist_id_get_data(&(feature_align->blocks), feature_block->unique_id)))
     result = TRUE;
 
   return result;
@@ -1042,7 +1048,7 @@ gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext feature_context,
   return result;
 }
 
-
+#ifdef RDS_USE_MERGE
 /* Merge two feature contexts, the contexts must be for the same sequence.
  * The merge works by:
  *
@@ -1085,9 +1091,9 @@ gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext feature_context,
  * 
  * 
  * Returns TRUE if the merge was successful, FALSE otherwise. */
-gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
-				 ZMapFeatureContext new_context,
-				 ZMapFeatureContext *diff_context_out)
+gboolean zMapFeatureContextMergeWithDiff(ZMapFeatureContext *current_context_inout,
+                                         ZMapFeatureContext new_context,
+                                         ZMapFeatureContext *diff_context_out)
 {
   gboolean result = FALSE ;
   ZMapFeatureContext current_context ;
@@ -1101,6 +1107,8 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
    * set to NULL, otherwise we need to do a merge of the new and current feature sets. */
   if (!current_context)
     {
+      if(merge_debug_G)
+        zMapLogWarning("%s", "No current context, returning complete new...");
       current_context = new_context ;
       diff_context = NULL ;
 
@@ -1116,7 +1124,7 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
       merge_data.servers_context = new_context;
       merge_data.diff_context    = diff_context = zMapFeatureContextCreate(NULL, 0, 0, NULL, NULL);
       merge_data.status          = ZMAP_CONTEXT_EXEC_STATUS_OK;
-
+      
       diff_context->feature_set_names = new_context->feature_set_names;
       current_context->feature_set_names = g_list_concat(current_context->feature_set_names,
                                                          new_context->feature_set_names);
@@ -1128,13 +1136,19 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
       diff_context->original_id = 
         diff_context->unique_id = g_quark_from_string(diff_context_string);
 
+      g_datalist_init(&(diff_context->alignments));
       g_free(diff_context_string);
-      
+      if(merge_debug_G)
+        zMapLogWarning("%s", "merging ...");
+
       zMapFeatureContextExecuteComplete((ZMapFeatureAny)new_context, ZMAPFEATURE_STRUCT_FEATURE,
                                         mergeContextCB, destroyContextCB, &merge_data);
 
+      if(merge_debug_G)
+        zMapLogWarning("%s", "finished ...");
+
       /* Something's wrong if there is still a master alignment */
-      if(new_context->master_align)
+      if(new_context->master_align && 0)
         zMapAssertNotReached();
 
       if(merge_data.status == ZMAP_CONTEXT_EXEC_STATUS_OK)
@@ -1145,6 +1159,62 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
     {
       *current_context_inout = current_context ;
       *diff_context_out = diff_context ;
+      if(diff_context)
+        *diff_context_out = new_context;
+    }
+
+  return result ;
+}
+#endif /* RDS_USE_MERGE */
+
+gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
+                                 ZMapFeatureContext new_context)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureContext current_context ;
+
+  zMapAssert(current_context_inout && new_context) ;
+
+  current_context = *current_context_inout ;
+
+  /* If there are no current features we just return the new ones and the diff is
+   * set to NULL, otherwise we need to do a merge of the new and current feature sets. */
+  if (!current_context)
+    {
+      if(merge_debug_G)
+        zMapLogWarning("%s", "No current context, returning complete new...");
+      current_context = new_context ;
+      result = TRUE ;
+    }
+  else
+    {
+      /* Here we need to merge for all alignments and all blocks.... */
+      MergeContextDataStruct merge_data = {NULL};
+
+      merge_data.current_context = current_context;
+      merge_data.servers_context = new_context;
+      merge_data.status          = ZMAP_CONTEXT_EXEC_STATUS_OK;
+      
+      current_context->feature_set_names = g_list_concat(current_context->feature_set_names,
+                                                         new_context->feature_set_names);
+
+
+      if(merge_debug_G)
+        zMapLogWarning("%s", "merging ...");
+
+      zMapFeatureContextExecuteComplete((ZMapFeatureAny)new_context, ZMAPFEATURE_STRUCT_FEATURE,
+                                        mergePreCB, mergePostCB, &merge_data);
+
+      if(merge_debug_G)
+        zMapLogWarning("%s", "finished ...");
+
+      if(merge_data.status == ZMAP_CONTEXT_EXEC_STATUS_OK)
+        result = TRUE;
+    }
+
+  if (result)
+    {
+      *current_context_inout = current_context ;
     }
 
   return result ;
@@ -1344,7 +1414,7 @@ static void destroyFeature(gpointer data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
 
-  if(merge_debug_G)
+  if(destroy_debug_G)
     zMapLogWarning("%s: (%p) '%s'", __PRETTY_FUNCTION__, feature, g_quark_to_string(feature->unique_id));
 
   if (feature->url)
@@ -1536,48 +1606,6 @@ static void withdrawFeatureAny(GQuark key_id, gpointer data, gpointer user_data)
   return ;
 }
 
-#ifdef RDS_DONT_INCLUDE
-static void removeBlockFromAlignsList(gpointer block_data, gpointer user_data)
-{
-  ZMapFeatureAlignment feature_align = (ZMapFeatureAlignment)user_data;
-
-  feature_align->blocks = g_list_remove(feature_align->blocks, block_data);
-
-  return ;
-}
-
-static void clearBlockFromAlignsList(gpointer block_data, gpointer user_data)
-{
-  ZMapFeatureAlignment feature_align = (ZMapFeatureAlignment)user_data;
-
-  feature_align->blocks = g_list_remove(feature_align->blocks, block_data);
-
-  destroyFeatureAny(block_data);
-
-  return ;
-}
-
-static void freeBlocks(gpointer block_data, gpointer unused)
-{
-  /* Call what should be the GDestroyNotify, but we're still using a GList :( */
-
-  destroyFeatureAny(block_data);
-
-  return ;
-}
-
-static gint blockWithID(gconstpointer block_data, gconstpointer id_data)
-{
-  ZMapFeatureBlock block = (ZMapFeatureBlock)block_data;
-  GQuark  id = GPOINTER_TO_UINT(id_data);
-  gint match = -1;
-
-  if(block->unique_id == id)
-    match = 0;
-
-  return match;
-}
-#endif
 /* Returns TRUE if the target blocks match coords are within align_error bases of each other, if
  * there are less than two blocks then FALSE is returned.
  * 
@@ -1649,16 +1677,8 @@ static void safe_destroy_block(gpointer quark_data, gpointer user_data)
 {
   GQuark key = GPOINTER_TO_UINT(quark_data);
   ZMapFeatureAlignment align = (ZMapFeatureAlignment)user_data;
-  ZMapFeatureBlock block;
 
   g_datalist_id_remove_data(&(align->blocks), key);
-
-#ifdef RDS_DONT_INCLUDE
-  if((block = zMapFeatureAlignmentGetBlockByID(align, key)))
-    {
-      clearBlockFromAlignsList(block, align);
-    }
-#endif
 
   return ;
 }
@@ -1788,7 +1808,7 @@ static ZMapFeatureContextExecuteStatus destroyContextCB(GQuark key,
  * I'm not sure which is the best way to jump here.  There are other
  * ways to do this and the most promissing is probably without a diff
  * context and just removing/deleting from the new context, but for
- * now we're using the diff context... (See mergeWithoutDiffPreCB)
+ * now we're using the diff context... (See mergePreCB)
 
  * So here's what goes on...
 
@@ -2378,6 +2398,7 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
         }
       merge_data->current_diff_align = 
         merge_data->current_current_align = NULL;
+      merge_data->copied_align = FALSE;
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
       feature_block = (ZMapFeatureBlock)feature_any;
@@ -2389,6 +2410,7 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
         }
       merge_data->current_diff_block =
         merge_data->current_current_block = NULL;
+      merge_data->copied_block = FALSE;
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
       feature_set = (ZMapFeatureSet)feature_any;
@@ -2400,6 +2422,7 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
         }
       merge_data->current_diff_set =
         merge_data->current_current_set = NULL;
+      merge_data->copied_set = FALSE;
       break;
     case ZMAPFEATURE_STRUCT_FEATURE:
       break;
@@ -2412,10 +2435,10 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
 }
 
 
-static ZMapFeatureContextExecuteStatus mergeWithoutDiffPreCB(GQuark key, 
-                                                             gpointer data, 
-                                                             gpointer user_data,
-                                                             char **err_out)
+static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key, 
+                                                  gpointer data, 
+                                                  gpointer user_data,
+                                                  char **err_out)
 {
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   MergeContextData        merge_data = (MergeContextData)user_data;
@@ -2423,18 +2446,22 @@ static ZMapFeatureContextExecuteStatus mergeWithoutDiffPreCB(GQuark key,
   ZMapFeatureAlignment feature_align;
   ZMapFeatureBlock     feature_block;
   ZMapFeatureSet         feature_set;
+  ZMapFeature                feature;
+  gboolean new = TRUE;
 
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_CONTEXT:
       break;
     case ZMAPFEATURE_STRUCT_ALIGN:
+      merge_data->aligns++;
       if(!(merge_data->current_current_align = zMapFeatureContextGetAlignmentByID(merge_data->current_context, 
                                                                                   feature_any->unique_id)))
         {
           ZMapFeatureContext server_context = (ZMapFeatureContext)(feature_any->parent);
           feature_align = (ZMapFeatureAlignment)(feature_any);
 
+          merge_data->copied_align = TRUE;
           /* remove from the server context */
           zMapFeatureContextRemoveAlignment(server_context, feature_align);
           /* add to the full context */
@@ -2444,35 +2471,111 @@ static ZMapFeatureContextExecuteStatus mergeWithoutDiffPreCB(GQuark key,
 
           merge_data->current_current_align = feature_align;
         }
-      else
+      else if(merge_debug_G)
         {
           /* ... align already exists, but new blocks might be below ... */
           /* children need reparenting if they don't exist. */
+          /* add to list for destruction on the way back up. */
+          new = FALSE;
         }
+
+      if(merge_debug_G)
+        zMapLogWarning("Align (%p) '%s' is %s", feature_any, g_quark_to_string(feature_any->unique_id), (new == TRUE ? "new" : "old"));
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
+      merge_data->blocks++;
       if(!(merge_data->current_current_block = zMapFeatureAlignmentGetBlockByID(merge_data->current_current_align,
-                                                                                feature_any->unique_id)))
+                                                                                feature_any->unique_id)) &&
+         !(merge_data->copied_align))
         {
           ZMapFeatureAlignment server_align = (ZMapFeatureAlignment)(feature_any->parent);
           feature_block = (ZMapFeatureBlock)(feature_any);
-          
+          merge_data->copied_block = TRUE;
+          /* remove from server align */
           zMapFeatureAlignmentRemoveBlock(server_align, feature_block);
-
+          /* add to the full context align */
           zMapFeatureAlignmentAddBlock(merge_data->current_current_align, feature_block);
-
+          /* re-add loosely to the server align */
           alignmentAddBlock(server_align, feature_block, NULL);
 
           merge_data->current_current_block = feature_block;
         }
-      else
+      else if(merge_data->copied_align)
         {
-          /* block already exists, but  */
+          merge_data->copied_block = TRUE;
         }
+      else if(merge_debug_G)
+        {
+          new = FALSE;
+          /* block already exists, but  */
+          /* add to list for destruction on the way back up. */
+        }
+
+      if(merge_debug_G)
+        zMapLogWarning("Block (%p) '%s' is %s", feature_any, g_quark_to_string(feature_any->unique_id), (new == TRUE ? "new" : "old"));
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
+      merge_data->sets++;
+      if(!(merge_data->current_current_set = zMapFeatureBlockGetSetByID(merge_data->current_current_block,
+                                                                        feature_any->unique_id)) &&
+         !(merge_data->copied_block))
+        {
+          ZMapFeatureBlock server_block = (ZMapFeatureBlock)(feature_any->parent);
+          feature_set = (ZMapFeatureSet)(feature_any);
+
+          merge_data->copied_set = TRUE;
+          /* remove from the server block */
+          zMapFeatureBlockRemoveFeatureSet(server_block, feature_set);
+          /* add to the full context block */
+          zMapFeatureBlockAddFeatureSet(merge_data->current_current_block, feature_set);
+          /* re-add loosely to the server block */
+          blockAddFeatureSet(server_block, feature_set, NULL);
+
+          merge_data->current_current_set = feature_set;
+        }
+      else if(merge_data->copied_block)
+        {
+          merge_data->copied_set = TRUE;
+        }
+      else if(merge_debug_G)
+        {
+          /* set already exists, but some of children might be new... */
+          /* add to list for destruction on the way back up. */
+          new = FALSE;
+        }
+
+      if(merge_debug_G)
+        zMapLogWarning("Set (%p) '%s' is %s", feature_any, g_quark_to_string(feature_any->unique_id), (new == TRUE ? "new" : "old"));
       break;
     case ZMAPFEATURE_STRUCT_FEATURE:
+      merge_data->features++;
+      if(!(zMapFeatureSetGetFeatureByID(merge_data->current_current_set,
+                                        feature_any->unique_id)) &&
+         !(merge_data->copied_set))
+        {
+          ZMapFeatureSet server_set = (ZMapFeatureSet)(feature_any->parent);
+          feature = (ZMapFeature)(feature_any);
+          
+          /* remove from the server set */
+          zMapFeatureSetRemoveFeature(server_set, feature);
+          /* add to the full context set */
+          zMapFeatureSetAddFeature(merge_data->current_current_set, feature);
+          /* re-add loosely to the server set */
+          featuresetAddFeature(server_set, feature, NULL);
+          zMapLogWarning("feature(%p)->parent = %p. current_current_set = %p", feature, feature->parent, merge_data->current_current_set);
+        }
+      else if(!merge_data->copied_set)
+        {
+          if(merge_use_safe_destroy)
+            merge_data->destroy_features_list = g_list_prepend(merge_data->destroy_features_list, GUINT_TO_POINTER(key));
+          else
+            zMapFeatureDestroy((ZMapFeature)feature_any);
+          merge_data->features--;
+          new = FALSE;
+        }
+        
+      if(merge_debug_G)
+        zMapLogWarning("Feature (%p) '%s' is %s", feature_any, g_quark_to_string(feature_any->unique_id), (new == TRUE ? "new" : "old"));
       break;
     default:
       break;
@@ -2481,34 +2584,139 @@ static ZMapFeatureContextExecuteStatus mergeWithoutDiffPreCB(GQuark key,
   return status;
 }
 
-static ZMapFeatureContextExecuteStatus mergeWithoutDiffPostCB(GQuark key, 
-                                                              gpointer data, 
-                                                              gpointer user_data,
-                                                              char **err_out)
+static ZMapFeatureContextExecuteStatus mergePostCB(GQuark key, 
+                                                   gpointer data, 
+                                                   gpointer user_data,
+                                                   char **err_out)
 {
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   MergeContextData        merge_data = (MergeContextData)user_data;
   ZMapFeatureAny         feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureContext feature_context;
   ZMapFeatureAlignment feature_align;
   ZMapFeatureBlock     feature_block;
   ZMapFeatureSet         feature_set;
+  int datalist_length = 0;
 
+  if(merge_debug_G)
+    zMapLogWarning("checking %s", g_quark_to_string(feature_any->unique_id));
+
+  
   switch(feature_any->struct_type)
     {
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      break;
-    case ZMAPFEATURE_STRUCT_BLOCK:
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+      feature_context = (ZMapFeatureContext)feature_any;
+
+      if(merge_debug_G)
+        {
+          datalist_length = zMap_g_datalist_length(&(feature_context->alignments));
+          zMapLogWarning("Context (%p) '%s' ... (cache=%d, length=%d)... Destroying", 
+                         feature_any, g_quark_to_string(feature_any->unique_id),
+                         merge_data->aligns, datalist_length);
+        }
+
+      if(merge_use_safe_destroy && merge_data->destroy_aligns_list)
+        {
+          g_list_foreach(merge_data->destroy_aligns_list, safe_destroy_align, feature_any);
+          g_list_free(merge_data->destroy_aligns_list);
+          merge_data->destroy_aligns_list = NULL;
+        }
+
+      merge_data->aligns = 0;
       break;
     case ZMAPFEATURE_STRUCT_ALIGN:
+      feature_align = (ZMapFeatureAlignment)feature_any;
+      if(merge_data->blocks == 0)
+        {
+          if(merge_debug_G)
+            {
+              datalist_length = zMap_g_datalist_length(&(feature_align->blocks));
+              zMapLogWarning("Align (%p) '%s' is empty (cache=%d, length=%d)... Destroying", 
+                             feature_any, g_quark_to_string(feature_any->unique_id),
+                             merge_data->blocks, datalist_length);
+            }
+          if(merge_use_safe_destroy)
+            merge_data->destroy_aligns_list = g_list_prepend(merge_data->destroy_aligns_list, GUINT_TO_POINTER(key));
+          else
+            zMapFeatureAlignmentDestroy(feature_align, TRUE);
+          merge_data->aligns--;
+        }
+
+      if(merge_use_safe_destroy && merge_data->destroy_blocks_list)
+        {
+          g_list_foreach(merge_data->destroy_blocks_list, safe_destroy_block, feature_any);
+          g_list_free(merge_data->destroy_blocks_list);
+          merge_data->destroy_blocks_list = NULL;
+        }
+
+      merge_data->current_diff_align = merge_data->current_current_align = NULL;
+      merge_data->copied_align = FALSE;
+      merge_data->blocks = 0;
       break;
-    case ZMAPFEATURE_STRUCT_CONTEXT:
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      feature_block = (ZMapFeatureBlock)feature_any;
+      if(merge_data->sets == 0)
+        {
+          if(merge_debug_G)
+            {
+              datalist_length = zMap_g_datalist_length(&(feature_block->feature_sets));
+              zMapLogWarning("Block (%p) '%s' is empty (cache=%d, length=%d)... Destroying", 
+                             feature_any, g_quark_to_string(feature_any->unique_id),
+                             merge_data->sets, datalist_length);
+            }
+          if(merge_use_safe_destroy)
+            merge_data->destroy_blocks_list = g_list_prepend(merge_data->destroy_blocks_list, GUINT_TO_POINTER(key));
+          else
+            zMapFeatureBlockDestroy(feature_block, TRUE);
+          merge_data->blocks--;
+        }
+
+      if(merge_use_safe_destroy && merge_data->destroy_sets_list)
+        {
+          g_list_foreach(merge_data->destroy_sets_list, safe_destroy_set, feature_any);
+          g_list_free(merge_data->destroy_sets_list);
+          merge_data->destroy_sets_list = NULL;
+        }
+
+      merge_data->current_diff_block = merge_data->current_current_block = NULL;
+      merge_data->copied_block = FALSE;
+      merge_data->sets = 0;
       break;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      feature_set = (ZMapFeatureSet)feature_any;
+
+      if(merge_data->features == 0)
+        {
+          if(merge_debug_G)
+            {
+              datalist_length = zMap_g_datalist_length(&(feature_set->features));
+              zMapLogWarning("FeatureSet (%p) '%s' is empty (cache=%d, length=%d)... Destroying", 
+                             feature_any, g_quark_to_string(feature_any->unique_id),
+                             merge_data->features, datalist_length);
+            }
+          if(merge_use_safe_destroy)
+            merge_data->destroy_sets_list = g_list_prepend(merge_data->destroy_sets_list, GUINT_TO_POINTER(key));
+          else
+            zMapFeatureSetDestroy(feature_set, TRUE);
+          merge_data->sets--;
+        }
+
+      if(merge_use_safe_destroy && merge_data->destroy_features_list)
+        {
+          g_list_foreach(merge_data->destroy_features_list, safe_destroy_feature, feature_any);
+          g_list_free(merge_data->destroy_features_list);
+          merge_data->destroy_features_list = NULL;
+        }
+
+      merge_data->current_diff_set = merge_data->current_current_set = NULL;
+      merge_data->copied_set = FALSE;
+      merge_data->features = 0;
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURE:
     default:
+      zMapAssertNotReached();
       break;
     }
-
 
   return status;
 }

@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb  6 11:30 2007 (rds)
+ * Last edited: Feb  8 08:55 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.37 2007-02-06 11:30:40 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.38 2007-02-08 11:35:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -557,9 +557,9 @@ static void drawNewFeatures(ZMap zmap, XMLData xml_data)
 
   view = zMapViewGetView(zmap->focus_viewwindow);
 
-  tmp  = zMapViewMergeInContext(view, xml_data->context);
+  xml_data->context = zMapViewMergeInContext(view, xml_data->context);
 
-  zMapFeatureContextExecute((ZMapFeatureAny)tmp, ZMAPFEATURE_STRUCT_FEATURE,
+  zMapFeatureContextExecute((ZMapFeatureAny)xml_data->context, ZMAPFEATURE_STRUCT_FEATURE,
                             delete_from_list,
                             &(xml_data->feature_list));
 
@@ -568,8 +568,6 @@ static void drawNewFeatures(ZMap zmap, XMLData xml_data)
 
   if(control_execute_debug_G)
     zMapLogWarning("Destroying diff context (%p)", tmp);
-
-  zMapFeatureContextDestroy(tmp, TRUE);
 
   if(foreach_data.messages->str)
     zmapControlInfoSet(zmap, 

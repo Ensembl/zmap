@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb  6 16:46 2007 (rds)
+ * Last edited: Feb  8 11:13 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.113 2007-02-06 17:03:46 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.114 2007-02-08 11:33:46 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -755,9 +755,11 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
 					    GList *styles, GList *feature_set_names) ;
 ZMapFeatureContext zMapFeatureContextCreateEmptyCopy(ZMapFeatureContext feature_context);
+gboolean zMapFeatureContextMergeWithDiff(ZMapFeatureContext *current_context_inout,
+                                         ZMapFeatureContext new_context,
+                                         ZMapFeatureContext *diff_context_out) ;
 gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
-				 ZMapFeatureContext new_context,
-				 ZMapFeatureContext *diff_context_out) ;
+                                 ZMapFeatureContext new_context);
 gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext remove_context,
 				 ZMapFeatureContext *diff_context_out);
