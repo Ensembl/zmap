@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  6 16:22 2007 (rds)
+ * Last edited: Feb  8 16:13 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.172 2007-02-06 16:37:36 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.173 2007-02-08 16:17:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1085,7 +1085,9 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
   ZMapFeatureTypeStyle style ;
   ZMapWindowSelectStruct select = {0} ;
   ZMapFeatureSet set;
-  int feature_start, feature_end ;
+  int feature_start, feature_end, feature_length ;
+  int sel_start, sel_end, sel_length ;
+
 
   select.type = ZMAPWINDOW_SELECT_SINGLE;
 
@@ -1108,13 +1110,12 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 
   if (type == ITEM_FEATURE_CHILD)
     {
-      int start, end ;
+      int start, end, length ;
 
       item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
       zMapAssert(item_data) ;
 
       select.feature_desc.subpart_type = item_data->subpart ;
-
 
       if (window->display_forward_coords)
 	{
@@ -1126,6 +1127,14 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 	  start = item_data->start ;
 	  end = item_data->end ;
 	}
+      length = (item_data->end - item_data->start + 1) ;
+
+      if (item == highlight_item)
+	{
+	  sel_start = start ;
+	  sel_end = end ;
+	  sel_length = length ;
+	}
 
       select.feature_desc.sub_feature_start = g_strdup_printf("%d", start) ;
       select.feature_desc.sub_feature_end = g_strdup_printf("%d", end) ;
@@ -1136,7 +1145,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 	  select.feature_desc.sub_feature_query_end = g_strdup_printf("%d", item_data->query_end) ;
 	}
 
-      select.feature_desc.sub_feature_length = g_strdup_printf("%d", (end - start + 1)) ;
+      select.feature_desc.sub_feature_length = g_strdup_printf("%d", length) ;
     }
 
   style = zMapFeatureGetStyle((ZMapFeatureAny)feature) ;
@@ -1161,6 +1170,15 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
       feature_start = feature->x1 ;
       feature_end = feature->x2 ;
     }
+  feature_length = zMapFeatureLength(feature) ;
+
+  if (type != ITEM_FEATURE_CHILD || item != highlight_item)
+    {
+      sel_start = feature->x1 ;
+      sel_end = feature->x2 ;
+      sel_length = feature_length ;
+    }
+
 
   select.feature_desc.feature_start = g_strdup_printf("%d", feature_start) ;
   select.feature_desc.feature_end = g_strdup_printf("%d", feature_end) ;
@@ -1171,7 +1189,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
       if (feature->feature.homol.length)
 	select.feature_desc.feature_query_length = g_strdup_printf("%d", feature->feature.homol.length) ;
     }
-  select.feature_desc.feature_length = g_strdup_printf("%d", zMapFeatureLength(feature)) ;
+  select.feature_desc.feature_length = g_strdup_printf("%d", feature_length) ;
 
   select.feature_desc.feature_strand = zMapFeatureStrand2Str(feature->strand) ;
 
@@ -1197,11 +1215,10 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
   select.feature_desc.feature_style
     = zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)) ;
 
+
   select.secondary_text = g_strdup_printf("\"%s\"    %d %d (%d)",
-                                          (char *)g_quark_to_string(feature->original_id),
-                                          feature_start,
-                                          feature_end,
-                                          feature->x2 - feature->x1 + 1);
+					  (char *)g_quark_to_string(feature->original_id),
+					  sel_start, sel_end, sel_length) ;
 
   if (highlight_item)
     select.highlight_item = highlight_item ;
