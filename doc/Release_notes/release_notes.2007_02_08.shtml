@@ -6,6 +6,52 @@
 
 <h3>Release Date:  8 February 2007</h3>
 
+<h3>Release Overview</h3>
+
+<p>First, apologies for the huge lists of changes that follow, I've automated
+the whole release note production so I will do them more often in future and
+they will be shorted and more compact.
+
+<p>You don't need to read all of the below, probably just skimming the request tracker
+tickets will be enough. On that subject please try to give your request tracker tickets
+short but meaningful "Subject2 lines as that is what gets reported below !
+
+<p>Please also remember to see the user documentation at
+<A HREF="http://wwwdev.sanger.ac.uk/Software/analysis/ZMap/doc/user_interface.shtml">
+http://wwwdev.sanger.ac.uk/Software/analysis/ZMap/doc/user_interface.shtml</A> for tips
+on how to use ZMap and the definitive guide to keyboard shortcuts.
+
+<p>This release sees a lot of fixes and changes, the major ones being:
+
+<ul>
+  <li><b>Bumping:</b>
+      <ul>
+	<li>bumping alignments is now ordered by score for protein hits and by longest match for dna hits.
+	<li>bumping of alignments now shows whether mutliple matches are colinear/perfect matches and whether
+	    the start/end of the match is missing.
+      </ul>
+  <li><b>3 Frame:</b> should be working as in fmap now, the backgrounds of the columns in each frame can
+      be coloured to make it more obvious which columns are which frames.
+  <li><b>Alignments:</b>
+      <ul>
+	<li><b>Info:</b> all matches for a particular alignment are now highlighted and when double-clicked
+	    get displayed in a scrolled window. The length of the alignment sequence is now shown in the feature
+	    information bar at the top of the zmap window when you click on the alignment.
+	<li><b>Multiple Select and Hide:</b> multiple alignments can now be selected and hidden or reshown.
+      </ul>
+  <li><b>Performance:</b> Redrawing has been substantially speeded up when zooming in/out.
+  <li><b>Rev Comp Bugs:</b> a number of bugs in the reverse complement code have been fixed including
+      coordinate display on the scale bar, coordinate passing to Blixem and navigator panel display.
+  <li><b>Feature Creation:</b> bugs in new feature creation/editing/display are now fixed.
+  <li><b>Locus Name Display:</b> Locus names are now displayed so that they do not overlap in the
+      navigator and are clickable to enable you to zoom to locus positions on zmap.
+</ul>
+
+
+<p>This is not an exhaustive list so do come and see the ZMap developers or email them if your
+bug or something you want seems to be missing.
+
+
 
 <h3>Request Tracker Tickets Resolved</h3>
 
