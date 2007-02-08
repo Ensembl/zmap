@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Dec 15 09:46 2006 (edgrif)
+ * Last edited: Feb  8 11:56 2007 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.57 2006-12-15 09:59:08 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.58 2007-02-08 11:57:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,6 +68,16 @@ static char overlay_bitmap_bits[] =
     0x22, 0x22,
     0x44, 0x44,
     0x88, 0x88
+  } ;
+
+#define make_clickable_bmp_width 16
+#define make_clickable_bmp_height 4
+static char make_clickable_bmp_bits[] =
+  {
+    0x00, 0x00,
+    0x00, 0x00,
+    0x00, 0x00,
+    0x00, 0x00
   } ;
 
 
@@ -170,15 +180,34 @@ FooCanvasItem *zMapDrawBox(FooCanvasGroup *group,
 			   guint line_width)
 {
   FooCanvasItem *item = NULL ;
+  static GdkBitmap *make_clickable_bmp = NULL ;
 
-  item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
-			     foo_canvas_rect_get_type(),
-			     "x1", x1, "y1", y1,
-			     "x2", x2, "y2", y2,
-			     "outline_color_gdk", border_colour,
-			     "fill_color_gdk", fill_colour,
-			     "width_pixels", line_width,
-			     NULL) ;
+  if(fill_colour == NULL)
+    {
+      if (!make_clickable_bmp)
+        make_clickable_bmp = gdk_bitmap_create_from_data(NULL, &make_clickable_bmp_bits[0],
+                                                         make_clickable_bmp_width, make_clickable_bmp_height) ;
+      
+      item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
+                                 foo_canvas_rect_get_type(),
+                                 "x1", x1, "y1", y1,
+                                 "x2", x2, "y2", y2,
+                                 "outline_color_gdk", border_colour,
+                                 "fill_stipple", make_clickable_bmp,
+                                 "fill_color_gdk", border_colour,
+                                 "width_pixels", line_width,
+                                 NULL) ;
+    }
+  else
+      item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
+                                 foo_canvas_rect_get_type(),
+                                 "x1", x1, "y1", y1,
+                                 "x2", x2, "y2", y2,
+                                 "outline_color_gdk", border_colour,
+                                 "fill_color_gdk", fill_colour,
+                                 "width_pixels", line_width,
+                                 NULL) ;
+
 
   return item;                                                                       
 }
