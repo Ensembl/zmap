@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Feb  8 11:56 2007 (rds)
+ * Last edited: Feb  8 12:02 2007 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.58 2007-02-08 11:57:34 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.59 2007-02-08 12:02:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -184,6 +184,11 @@ FooCanvasItem *zMapDrawBox(FooCanvasGroup *group,
 
   if(fill_colour == NULL)
     {
+      /* If fill_colour is NULL then a simple box is not clickable.  
+       * Events are never received on it. */
+      /* Adding an empty stipple and using the border colour sorts
+       * this out.  If the border colour is NULL too then we can't
+       * help it, but you wouldn't see the box anyway! */
       if (!make_clickable_bmp)
         make_clickable_bmp = gdk_bitmap_create_from_data(NULL, &make_clickable_bmp_bits[0],
                                                          make_clickable_bmp_width, make_clickable_bmp_height) ;
