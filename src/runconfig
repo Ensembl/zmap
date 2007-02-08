@@ -36,19 +36,42 @@ case $opsys in
     export PKG_CONFIG_PATH ;;
 
   Linux )
-    locals=~zmap/prefix/LINUX
-    PATH="$locals/bin:$PATH"
-    export PATH
 
-    PKG_CONFIG_PATH="$locals/lib/pkgconfig"
-    export PKG_CONFIG_PATH
-    LD_LIBRARY_PATH="$locals/lib"
-    export LD_LIBRARY_PATH
+    case `uname -m` in
+      
+      x86_64 )
 
-    cc_args='CFLAGS=-Wall'
-    cflags_args=''
-    # make sure zmap executable has path to foocanvas library.
-    ld_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" ;;
+         locals=~zmap/prefix/LINUX_64
+         PATH="$locals/bin:$PATH"
+         export PATH
+
+         PKG_CONFIG_PATH="$locals/lib/pkgconfig"
+         export PKG_CONFIG_PATH
+         LD_LIBRARY_PATH="$locals/lib"
+         export LD_LIBRARY_PATH
+
+         cc_args='CFLAGS=-Wall'
+         cflags_args=''
+         # make sure zmap executable has path to foocanvas library.
+         ld_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" ;;
+
+       * )
+
+         locals=~zmap/prefix/LINUX
+         PATH="$locals/bin:$PATH"
+         export PATH
+
+         PKG_CONFIG_PATH="$locals/lib/pkgconfig"
+         export PKG_CONFIG_PATH
+         LD_LIBRARY_PATH="$locals/lib"
+         export LD_LIBRARY_PATH
+
+         cc_args='CFLAGS=-Wall'
+         cflags_args=''
+         # make sure zmap executable has path to foocanvas library.
+         ld_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" ;;
+
+    esac ;;
 
  Darwin )
     # SET PATH TO INCLUDE ~zmap/prefix && /sw/bin in that order

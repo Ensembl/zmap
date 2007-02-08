@@ -22,9 +22,20 @@ case $opsys in
     export PATH ;;
 
   Linux )
-    locals=~zmap/prefix/LINUX/bin
-    PATH="$locals:$PATH"
-    export PATH ;;
+
+    case `uname -m` in
+      
+      x86_64 )
+         locals=~zmap/prefix/LINUX_64/bin
+         PATH="$locals:$PATH"
+         export PATH ;;
+
+       * )
+         locals=~zmap/prefix/LINUX/bin
+         PATH="$locals:$PATH"
+         export PATH ;;
+
+    esac ;;
 
   Darwin )
     # This is for our Mac laptop....
