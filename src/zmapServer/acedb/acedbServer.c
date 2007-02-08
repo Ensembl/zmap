@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Feb  6 16:36 2007 (rds)
+ * Last edited: Feb  8 15:18 2007 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.82 2007-02-06 17:06:04 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.83 2007-02-08 15:33:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,7 +67,7 @@ typedef struct
 {
   ZMapServerResponseType result ;
   AcedbServer server ;
-  GFunc eachBlock;
+  GDataForeachFunc eachBlock;
 } DoAllAlignBlocksStruct, *DoAllAlignBlocks ;
 
 
@@ -138,8 +138,8 @@ int getFoundObj(char *text) ;
 
 static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
 
-static void eachBlockSequenceRequest(gpointer data, gpointer user_data) ;
-static void eachBlockDNARequest(gpointer data, gpointer user_data);
+static void eachBlockSequenceRequest(GQuark key_id, gpointer data, gpointer user_data) ;
+static void eachBlockDNARequest(GQuark key_id, gpointer data, gpointer user_data);
 
 static char *getAcedbColourSpec(char *acedb_colour_name) ;
 static void freeMethodHash(gpointer data) ;
@@ -411,7 +411,7 @@ static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext fe
   return get_sequence.result;
 }
 
-static void eachBlockDNARequest(gpointer data, gpointer user_data)
+static void eachBlockDNARequest(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
   DoAllAlignBlocks get_sequence = (DoAllAlignBlocks)user_data ;
@@ -2532,27 +2532,20 @@ int getFoundObj(char *text)
   return num_obj ;
 }
 
-static void eachBlockSequenceRequestDataList(GQuark id, gpointer data, gpointer user_data)
-{
-  eachBlockSequenceRequest(data, user_data);
-  return ;
-}
-
 /* Process all the alignments in a context. */
 static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
-  DoAllAlignBlocks do_allalignblocks = (DoAllAlignBlocks)user_data ;
+  DoAllAlignBlocks all_data = (DoAllAlignBlocks)user_data ;
 
-  if (do_allalignblocks->result == ZMAP_SERVERRESPONSE_OK && do_allalignblocks->eachBlock)
-    //g_list_foreach(alignment->blocks, do_allalignblocks->eachBlock, (gpointer)do_allalignblocks) ;
-    g_datalist_foreach(&(alignment->blocks), eachBlockSequenceRequestDataList, do_allalignblocks);
+  if (all_data->result == ZMAP_SERVERRESPONSE_OK && all_data->eachBlock)
+    g_datalist_foreach(&(alignment->blocks), all_data->eachBlock, (gpointer)all_data) ;
 
   return ;
 }
 
 
-static void eachBlockSequenceRequest(gpointer data, gpointer user_data)
+static void eachBlockSequenceRequest(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
   DoAllAlignBlocks get_features = (DoAllAlignBlocks)user_data ;
