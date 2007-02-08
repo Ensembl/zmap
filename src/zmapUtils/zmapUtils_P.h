@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: Jan  4 10:25 2007 (edgrif)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
- * CVS info:   $Id: zmapUtils_P.h,v 1.57 2007-02-07 16:14:53 zmap Exp $
+ * CVS info:   $Id: zmapUtils_P.h,v 1.58 2007-02-08 16:30:42 zmap Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_P_H
@@ -40,7 +40,7 @@
 #define ZMAP_DESCRIPTION "A multi-threaded genome browser and annotation tool."
 #define ZMAP_VERSION 0
 #define ZMAP_RELEASE 1
-#define ZMAP_UPDATE 19
+#define ZMAP_UPDATE 20
 
 
 /* Make a single version number out of the version, release and update numbers. */
