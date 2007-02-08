@@ -46,6 +46,11 @@ case $ACEDB_MACHINE in
     ACEDB_MACHINE='ALPHA_5_THR'
     export ACEDB_MACHINE ;;
 
+  LINUX_64 )
+    target_dir='LINUX_64'
+    ACEDB_MACHINE='LINUX_64_THR'
+    export ACEDB_MACHINE ;;
+
   LINUX_* )
     target_dir='LINUX'
     ACEDB_MACHINE='LINUX_4_THR'
