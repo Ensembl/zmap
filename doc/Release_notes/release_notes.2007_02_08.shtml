@@ -1,0 +1,318 @@
+<!--#set var="banner" value="ZMap Release Notes For  8 February 2007"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h3>Release Version: ZMap 0.1.19</h3>
+
+<h3>Release Date:  8 February 2007</h3>
+
+
+<h3>Request Tracker Tickets Resolved</h3>
+
+
+<h4>ZMap</h4>
+
+<PRE>
+id: ticket/20936
+Subject: allow different clones to be fetched from different servers.
+Requestors: edgrif@sanger.ac.uk
+Resolved: Mon Feb 05 11:26:43 2007
+
+id: ticket/20956
+Subject: Linker flags
+Requestors: edgrif@sanger.ac.uk
+Resolved: Mon Feb 05 11:24:01 2007
+
+</PRE>
+
+
+<h4>Acedb</h4>
+
+<PRE>
+id: ticket/21462
+Subject: text editor window
+Requestors: hks@sanger.ac.uk
+Resolved: Wed Jan 31 17:33:18 2007
+
+id: ticket/22759
+Subject: SANGER website feedback
+Requestors: jc3@sanger.ac.uk
+Resolved: Wed Feb 07 16:50:38 2007
+
+</PRE>
+
+
+<h3>ZMap Changes/Fixes</h3>
+
+
+	<p> src/zmapWindow/zmapWindowItem.c: remove ref to non-existent
+	  header
+
+
+
+
+	  release notes script
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: file recording the date
+	  of the last set of release notes, used by
+	  scripts/zmapreleasenotes script.
+
+
+
+
+
+
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+
+
+
+
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: correct date stamp.
+
+
+
+
+
+
+	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+
+
+
+
+	<p> src/include/ZMap/zmapConfig.h: add comment to say we don't
+	  currently support repeated elements within a stanza.
+
+
+	<p> src/include/ZMap/zmapConfigStrings.h: add sequence to server
+	  stanza keyword.
+
+
+	<p> src/: zmapFeature/zmapFeatureTypes.c, include/ZMap/zmapFeature.h:
+	  sort out style modes
+
+
+	<p> src/: include/ZMap/zmapThreads.h, zmapThreads/zmapThreads.c:
+	  pthread_t is defined very differently on different systems,
+	  return a string as a thread id.
+
+
+	<p> src/zmapFeature/zmapFeatureUtils.c: fix up zMapFeatureGetStyle()
+	  to return feature or featureset style.
+
+
+	<p> src/zmapWindow/: zmapWindow.c, zmapWindowFeatureList.c,
+	  zmapWindowFeature.c: fix compiler warnings about lack of casts.
+
+
+	<p> src/include/ZMap/zmapWindow.h: add missing declare of
+	  zMapWindowHighlightFocusItems()
+
+
+	<p> src/zmapWindow/zmapWindowItem.c: fix up some missing casts and a
+	  faulty int->pointer comparison.
+
+
+	<p> src/: include/ZMap/zmapView.h, zmapView/zmapView.c,
+	  zmapView/zmapView_P.h: add code to allow user to specify which
+	  sequence comes from which server, needed for lace. Fix stupid
+	  thread id defines.
+
+
+	<p> src/configure.ac: make LDFLAGS assignment _additive_ rather than
+	  replacing.
+
+
+	<p> src/runconfig: add linker flags to mac and linux builds
+
+
+	<p> src/include/ZMap/zmapSeqMatcher.h: functions to find dna or
+	  peptide sequence matches.
+
+
+	<p> src/zmapUtils/zmapSeqMatcher.c: functions to find dna or peptide
+	  matches.
+
+
+	<p> src/zmapFeature/zmapFeatureUtils.c: [no log message]
+
+
+	<p> src/zmapWindow/zmapWindowItem.c: [no log message]
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: zmapWindowFeatureAdd/Remove
+	  changes
+
+
+	<p> src/zmapUtils/zmapUtils.c: log a quak + its string
+
+
+	<p> src/zmapUtils/zmapGLibUtils.c: get a g_datalist's length ;)
+
+
+	<p> src/zmapFeature/zmapFeature.c: better merging and other new
+	  functions
+
+
+	<p> src/zmapControl/zmapControlRemote.c: moving xml parsing code out
+	  better drawing and deleting of features
+
+
+	<p> src/lib/Makefile.am: added files... bootstrap req.
+
+
+	<p> src/include/ZMap/zmapUtilsLog.h: log a quak + its string
+
+
+	<p> src/include/ZMap/zmapGLibUtils.h: get a g_datalist's length ;)
+
+
+	<p> src/include/Makefile.am: add my seqmatcher header.
+
+
+	<p> src/include/ZMap/zmapView.h: better context merge/draw and
+	  erase/undraw
+
+
+	<p> src/: include/ZMap/zmapWindow.h, zmapControl/zmapControl.c,
+	  zmapWindow/zmapWindow.c, zmapWindow/zmapWindowDraw.c,
+	  zmapWindow/zmapWindowDrawFeatures.c: changes to the select
+	  callbacks, back to original style...
+
+
+	<p> src/lib/Makefile.am: add my seqmatcher code.
+
+
+	<p> src/zmapView/zmapView.c: changes to the select callbacks, back to
+	  original style...  better context merge/draw and erase/undraw
+
+
+	<p> src/zmapControl/zmapControlRemoteXML.c: xml event callbacks...
+	  moved from ControlRemote.c
+
+
+	<p> src/zmapControl/zmapControlRemote_P.h: private header
+
+
+	<p> src/zmapControl/zmapControlRemote.c: quieter...
+
+
+	<p> src/zmapControl/zmapControlRemoteXML.c: xml parsing fix
+
+
+	<p> src/zmapControl/zmapControlWindowButtons.c: zoom menu additions
+
+
+	<p> src/zmapFeature/zmapFeature.c: warning -> logwarning and removed
+	  reference to non-existent struct member
+
+
+	<p> src/: include/ZMap/zmapGLibUtils.h, zmapUtils/zmapGLibUtils.c:
+	  get the first member of a datalist.
+
+
+	<p> src/zmapControl/zmapControlWindowFrame.c: small addition
+
+
+	<p> src/include/ZMap/: zmapView.h, zmapWindow.h: small addition to
+	  the select struct
+
+
+	<p> src/zmapControl/zmapControl.c: alert xremote clients if action
+	  was set
+
+
+	<p> src/zmapFeature/zmapFeatureXML.c: moved enum to be public
+
+
+	<p> src/zmapView/zmapView.c: copy over the action member in select
+
+
+	<p> src/zmapWindow/zmapWindow.c: make the updateXremote handle a
+	  featureset as well as a single feature...  ready for multiple
+	  selects -> otterlace
+
+
+	<p> src/zmapWindow/: zmapWindowDrawFeatures.c, zmapWindowItemHash.c:
+	  remove unused code
+
+
+	<p> src/zmapWindow/zmapWindowFeature.c: handle alterations to code in
+	  zmapWindow.c (updateXremote)
+
+
+	<p> src/: zmapWindow/zmapWindow_P.h, include/ZMap/zmapFeature.h: [no
+	  log message]
+
+
+	<p> src/: include/ZMap/zmapFeature.h,
+	  zmapControl/zmapControlRemoteXML.c, zmapFeature/zmapFeature.c,
+	  zmapFeature/zmapFeatureContext.c, zmapFeature/zmapFeatureUtils.c,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/acedb/acedbServer.c: change blocks GList -> GData
+
+
+	<p> src/zmapGFF/zmapGFF2Dumper.c: change blocks GList -> GData (some
+	  functionality removed. RDS to sort out)
+
+
+	<p> src/zmapServer/file/fileServer.c: change blocks GList -> GData
+	  (some functionality removed. RDS to sort out)
+
+
+	<p> src/zmapWindow/zmapWindowDrawFeatures.c: removed unused code
+
+
+	<p> src/zmapGFF/zmapGFF2Dumper.c: fixed what I'd broken
+
+
+	<p> src/zmapUtils/: zmapGLibUtils.c: reorganisation
+
+
+	<p> src/zmapServer/file/fileServer.c: fixed what I'd broken
+
+
+
+
+
+
+	<p> src/zmapWindow/: zmapWindowFeature.c, zmapWindowFocus.c: fix
+	  problem with focus items
+
+
+	<p> src/zmapWindow/zmapWindowFeatureList.c: use FOO_CANVAS_ITEM()
+
+
+	<p> src/zmapControl/zmapControlRemoteXML.c: stop us running out of
+	  memory...
+
+
+	<p> src/zmapUtils/zmapUtils_P.h:
+	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
+
+
+
+<h3>Acedb Changes/Fixes</h3>
+
+
+	<p> wh/gex.h, w6/treedisp.c: trivial text format change.
+
+
+	<p> w2/gex.c: fix null text bug, fix text wrapping in window to work
+	  as most things do.
+
+
+	<p> wnq/aceversion.c: bump up the update number for next set of
+	  development.
+
+
+
+<!--#include virtual="/perl/footer"-->
+
