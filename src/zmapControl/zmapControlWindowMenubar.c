@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Dec  6 11:39 2006 (edgrif)
+ * Last edited: Feb  8 10:32 2007 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.20 2006-12-11 11:43:13 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.21 2007-02-08 10:38:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -204,7 +204,7 @@ static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 /* Show the web page of release notes. */
 static void releaseNotesCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  char *web_page = ZMAPWEB_URL "/" ZMAPWEB_RELEASE_NOTES_DIR "/" ZMAPWEB_RELEASE_NOTES ;
+  char *web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_RELEASE_NOTES_DIR "/" ZMAPWEB_RELEASE_NOTES ;
   gboolean result ;
   GError *error = NULL ;
 
