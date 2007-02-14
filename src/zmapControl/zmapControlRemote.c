@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb  8 08:55 2007 (rds)
+ * Last edited: Feb 14 15:09 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.38 2007-02-08 11:35:10 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.39 2007-02-14 17:04:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -148,7 +148,16 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap, GArray *xml_events, char *acti
   ZMapXMLWriter xml_creator = NULL;
   AlertClientMessageStruct message_data = {0};
   ZMapXMLWriterEventStruct zmap_event = {0};
-  
+  ZMapXMLUtilsEventStack wrap_ptr;
+  static ZMapXMLUtilsEventStackStruct wrap_start[] = {
+    {ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+    {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+    {0}
+  }, wrap_end[] = {
+    {ZMAPXML_END_ELEMENT_EVENT,   "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+    {0}
+  };
+
   /* Making this a GList, I can't afford time to make the
    * zmap->clients a glist, but this will make it easier when I do */
   if(zmap->client)
@@ -163,17 +172,11 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap, GArray *xml_events, char *acti
       if(!xml_events)
         xml_events = g_array_sized_new(FALSE, FALSE, sizeof(ZMapXMLWriterEventStruct), 5);
 
-      zmap_event.type = ZMAPXML_ATTRIBUTE_EVENT;
-      zmap_event.data.comp.name        = g_quark_from_string("action");
-      zmap_event.data.comp.value.quark = g_quark_from_string(action);
-      g_array_prepend_val(xml_events, zmap_event);
-      
-      zmap_event.type = ZMAPXML_START_ELEMENT_EVENT;
-      zmap_event.data.simple = g_quark_from_string("zmap");
-      g_array_prepend_val(xml_events, zmap_event);
-      
-      zmap_event.type = ZMAPXML_END_ELEMENT_EVENT;
-      g_array_append_val(xml_events, zmap_event);
+      wrap_ptr = &wrap_start[1];
+      wrap_ptr->value.s = action;
+
+      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(&wrap_start[0], xml_events);
+      xml_events = zMapXMLUtilsAddStackToEventsArray(&wrap_end[0], xml_events);
       
       xml_creator = zMapXMLWriterCreate(xml_event_to_buffer, message_data.full_text);
       if((zMapXMLWriterProcessEvents(xml_creator, xml_events)) == ZMAPXMLWRITER_OK)
