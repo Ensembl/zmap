@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  6 16:08 2007 (rds)
+ * Last edited: Feb 14 15:43 2007 (rds)
  * Created: Fri Jul 21 14:48:18 2006 (rds)
- * CVS info:   $Id: zmapFeatureXML.c,v 1.4 2007-02-06 16:35:26 rds Exp $
+ * CVS info:   $Id: zmapFeatureXML.c,v 1.5 2007-02-14 17:04:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -100,6 +100,8 @@ gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any,
     xmlDumpData.doEndTag.block = 
     xmlDumpData.doEndTag.featureset =
     xmlDumpData.doEndTag.feature = 0;
+
+  xmlDumpData.status = ZMAPXMLWRITER_OK;
   
   if(xml_events_out && xml_writer)
     zMapLogWarning("Both xml_events and xml_writer specified."
@@ -286,6 +288,7 @@ void generateAlignXMLEvents(ZMapFeatureAlignment feature_align,
 #ifdef RDS_KEEP_GCC_QUIET
   ZMapXMLWriterEventStruct event = {0};
 #endif /* RDS_KEEP_GCC_QUIET */
+
   switch(xml_data->xml_type)
     {
     case ZMAPFEATURE_XML_XREMOTE:
@@ -342,16 +345,17 @@ void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,
         ZMapFeatureAny feature_any = NULL;
 
         event.type = ZMAPXML_START_ELEMENT_EVENT;
-        event.data.simple = g_quark_from_string("featureset");
-        g_array_append_val(xml_data->xml_events_out, event);
+        event.data.name = g_quark_from_string("featureset");
+        xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
         
         if((feature_any = zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set,
                                                     ZMAPFEATURE_STRUCT_BLOCK)))
           {
             event.type = ZMAPXML_ATTRIBUTE_EVENT;
             event.data.comp.name  = g_quark_from_string("block");
+            event.data.comp.data  = ZMAPXML_EVENT_DATA_QUARK;
             event.data.comp.value.quark = feature_any->unique_id;
-            g_array_append_val(xml_data->xml_events_out, event);
+            xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
           }
 
         if(feature_any && 
@@ -359,8 +363,9 @@ void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,
           {
             event.type = ZMAPXML_ATTRIBUTE_EVENT;
             event.data.comp.name  = g_quark_from_string("align");
+            event.data.comp.data  = ZMAPXML_EVENT_DATA_QUARK;
             event.data.comp.value.quark = feature_any->unique_id;
-            g_array_append_val(xml_data->xml_events_out, event);
+            xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
           }
       }
       break;
@@ -388,37 +393,37 @@ void generateFeatureXMLEvents(ZMapFeature feature,
     case ZMAPFEATURE_XML_XREMOTE:
       {
         event.type = ZMAPXML_START_ELEMENT_EVENT;
-        event.data.simple = g_quark_from_string("feature");
-        g_array_append_val(xml_data->xml_events_out, event);
+        event.data.name = g_quark_from_string("feature");
+        xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
 
         event.type = ZMAPXML_ATTRIBUTE_EVENT;
         event.data.comp.name = g_quark_from_string("name");
         event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
         event.data.comp.value.quark = feature->original_id;
-        g_array_append_val(xml_data->xml_events_out, event);
+        xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
 
         event.data.comp.name = g_quark_from_string("strand");
         event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
         event.data.comp.value.quark = g_quark_from_string(zMapFeatureStrand2Str(feature->strand));
-        g_array_append_val(xml_data->xml_events_out, event);
+        xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
 
         if(feature->style)
           {
             event.data.comp.name = g_quark_from_string("style");
             event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
             event.data.comp.value.quark = feature->style->original_id;
-            g_array_append_val(xml_data->xml_events_out, event);
+            xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
           }
 
         event.data.comp.name = g_quark_from_string("start");
         event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
         event.data.comp.value.integer = feature->x1;
-        g_array_append_val(xml_data->xml_events_out, event);
+        xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
 
         event.data.comp.name = g_quark_from_string("end");
         event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
         event.data.comp.value.integer = feature->x2;
-        g_array_append_val(xml_data->xml_events_out, event);
+        xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
 #ifdef RDS_DONT_INCLUDE_UNUSED
         if(feature->type == ZMAPFEATURE_ALIGNMENT)
           generateFeatureAlignmentEventsXremote();
@@ -444,89 +449,62 @@ void generateFeatureXMLEvents(ZMapFeature feature,
 void generateFeatureSpanEventsXremote(ZMapFeature feature, 
                                       XMLContextDump xml_data)
 {
-  ZMapXMLWriterEventStruct event = {0};
   GArray *span_array = NULL;
-  GQuark intron_quark, exon_quark, element_quark, ontology_quark, start_quark, end_quark;
+  static ZMapXMLUtilsEventStackStruct elements[] = 
+    {
+      {ZMAPXML_START_ELEMENT_EVENT, "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
+      {ZMAPXML_END_ELEMENT_EVENT,   "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
+      {0}
+    };
+  ZMapXMLUtilsEventStack event;
   int i;
-
-  element_quark  = g_quark_from_string("subfeature");
-  ontology_quark = g_quark_from_string("ontology");
-  start_quark = g_quark_from_string("start");
-  end_quark   = g_quark_from_string("end");
 
   if ((span_array = feature->feature.transcript.exons))
     {
-      exon_quark = g_quark_from_string("exon");
-
       for(i = 0; i < span_array->len; i++)
         {
           ZMapSpan exon;
           exon = &(g_array_index(span_array, ZMapSpanStruct, i));
 
-          event.type = ZMAPXML_START_ELEMENT_EVENT;
-          event.data.simple = element_quark;
-          g_array_append_val(xml_data->xml_events_out, event);
+          /* start */
+          event = &elements[1];
+          event->value.i = exon->x1;
+
+          /* end */
+          event = &elements[2];
+          event->value.i = exon->x2;
 
           /* ontology */
-          event.type = ZMAPXML_ATTRIBUTE_EVENT;
-          event.data.comp.name = ontology_quark;
-          event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
-          event.data.comp.value.quark = exon_quark;
-          g_array_append_val(xml_data->xml_events_out, event);
-          /* start */
-          event.type = ZMAPXML_ATTRIBUTE_EVENT;
-          event.data.comp.name = start_quark;
-          event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
-          event.data.comp.value.integer = exon->x1;
-          g_array_append_val(xml_data->xml_events_out, event);
-          /* end */
-          event.type = ZMAPXML_ATTRIBUTE_EVENT;
-          event.data.comp.name = end_quark;
-          event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
-          event.data.comp.value.integer = exon->x2;
-          g_array_append_val(xml_data->xml_events_out, event);
-                    
-          event.type = ZMAPXML_END_ELEMENT_EVENT;
-          event.data.simple = element_quark;
-          g_array_append_val(xml_data->xml_events_out, event);
+          event = &elements[3];
+          event->value.s = "exon";
+          
+          xml_data->xml_events_out = zMapXMLUtilsAddStackToEventsArray(&elements[0], xml_data->xml_events_out);
         }
     }
 
   if((span_array = feature->feature.transcript.introns))
     {
-      intron_quark = g_quark_from_string("intron");
-
       for(i = 0; i < span_array->len; i++)
         {
           ZMapSpan intron;
           intron = &(g_array_index(span_array, ZMapSpanStruct, i));
 
-          event.type = ZMAPXML_START_ELEMENT_EVENT;
-          event.data.simple = element_quark;
-          g_array_append_val(xml_data->xml_events_out, event);
+          /* start */
+          event = &elements[1];
+          event->value.i = intron->x1;
+
+          /* end */
+          event = &elements[2];
+          event->value.i = intron->x2;
 
           /* ontology */
-          event.type = ZMAPXML_ATTRIBUTE_EVENT;
-          event.data.comp.name = ontology_quark;
-          event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
-          event.data.comp.value.quark = intron_quark;
-          g_array_append_val(xml_data->xml_events_out, event);
-          /* start */
-          event.type = ZMAPXML_ATTRIBUTE_EVENT;
-          event.data.comp.name = start_quark;
-          event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
-          event.data.comp.value.integer = intron->x1;
-          g_array_append_val(xml_data->xml_events_out, event);
-          /* end */
-          event.type = ZMAPXML_ATTRIBUTE_EVENT;
-          event.data.comp.name = end_quark;
-          event.data.comp.data = ZMAPXML_EVENT_DATA_INTEGER;
-          event.data.comp.value.integer = intron->x2;
-          g_array_append_val(xml_data->xml_events_out, event);
-                    
-          event.type = ZMAPXML_END_ELEMENT_EVENT;
-          event.data.simple = element_quark;
-          g_array_append_val(xml_data->xml_events_out, event);
+          event = &elements[3];
+          event->value.s = "intron";
+          
+          xml_data->xml_events_out = zMapXMLUtilsAddStackToEventsArray(&elements[0], xml_data->xml_events_out);
         }
     }
 
@@ -596,8 +574,8 @@ void generateFeatureSetXMLEndEvent(XMLContextDump xml_data)
   switch(xml_data->xml_type)
     {
     case ZMAPFEATURE_XML_XREMOTE:
-      event.data.simple = g_quark_from_string("featureset");
-      g_array_append_val(xml_data->xml_events_out, event);
+      event.data.name = g_quark_from_string("featureset");
+      xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
       break;
     default:
       zMapLogWarning("%s", "What type of xml did you want?");
@@ -616,8 +594,8 @@ void generateFeatureXMLEndEvent(XMLContextDump xml_data)
   switch(xml_data->xml_type)
     {
     case ZMAPFEATURE_XML_XREMOTE:
-      event.data.simple = g_quark_from_string("feature");
-      g_array_append_val(xml_data->xml_events_out, event);
+      event.data.name = g_quark_from_string("feature");
+      xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
       break;
     default:
       zMapLogWarning("%s", "What type of xml did you want?");
