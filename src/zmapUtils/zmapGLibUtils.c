@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Feb  6 18:13 2007 (rds)
+ * Last edited: Feb 14 17:05 2007 (rds)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.20 2007-02-06 18:13:43 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.21 2007-02-14 17:05:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -407,14 +407,15 @@ GList *zMap_g_list_raise(GList *move, int positions)
   return g_list_first(move);
 }
 
+G_LOCK_DEFINE_STATIC(datalist_first);
 
 gpointer zMap_g_datalist_first(GData **datalist)
 {
   DatalistFirstIDStruct key = {0};
   gpointer data;
-
+  G_LOCK(datalist_first);
   g_datalist_foreach(datalist, get_first_datalist_key, &key);
-
+  G_UNLOCK(datalist_first);
   data = g_datalist_id_get_data(datalist, key.id);
 
   return data;
@@ -423,9 +424,9 @@ gpointer zMap_g_datalist_first(GData **datalist)
 gint zMap_g_datalist_length(GData **datalist)
 {
   gint length = 0;
-
+  G_LOCK(datalist_first);
   g_datalist_foreach(datalist, get_datalist_length, &length);
-
+  G_UNLOCK(datalist_first);
   return length;
 }
 
@@ -454,8 +455,6 @@ GArray* zMap_g_array_element (GArray *farray, guint index, gpointer *element_out
 
   return farray;
 }
-
-
 
 
 /*! 
