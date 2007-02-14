@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 12 16:37 2006 (rds)
+ * Last edited: Feb 14 17:01 2007 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.19 2006-12-13 08:35:05 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.20 2007-02-14 17:02:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -135,8 +135,8 @@ typedef struct _ZMapXMLWriterStruct    *ZMapXMLWriter;
 
 typedef enum 
   {
-    ZMAPXMLWRITER_OK, 
-    ZMAPXMLWRITER_FAILED_FLUSHING,
+    ZMAPXMLWRITER_OK                = 0, 
+    ZMAPXMLWRITER_FAILED_FLUSHING   = 101,
     ZMAPXMLWRITER_INCOMPLETE_FLUSH,
     ZMAPXMLWRITER_BAD_POSITION,
     ZMAPXMLWRITER_DUPLICATE_ATTRIBUTE,
@@ -160,10 +160,26 @@ typedef enum
 
 typedef enum
   {
+    ZMAPXML_EVENT_DATA_NONE,
     ZMAPXML_EVENT_DATA_QUARK,
     ZMAPXML_EVENT_DATA_INTEGER,
-    ZMAPXML_EVENT_DATA_DOUBLE
+    ZMAPXML_EVENT_DATA_DOUBLE,
+    ZMAPXML_EVENT_DATA_INVALID
   } ZMapXMLWriterEventDataType;
+
+typedef struct _ZMapXMLUtilsEventStackStruct
+{
+  ZMapXMLWriterEventType event_type;
+  char *name;
+  ZMapXMLWriterEventDataType data_type;
+  union
+  {
+    char  *s;
+    int    i;
+    double d;
+  }value;
+
+}ZMapXMLUtilsEventStackStruct, *ZMapXMLUtilsEventStack;
 
 typedef struct _ZMapXMLWriterEventStruct
 {
@@ -171,7 +187,7 @@ typedef struct _ZMapXMLWriterEventStruct
 
   union
   {
-    GQuark simple;              /* simple string for element names etc... */
+    GQuark name;              /* simple string for element names etc... */
 
     struct
     {
@@ -336,6 +352,17 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndDocument(ZMapXMLWriter writer);
 ZMapXMLWriterErrorCode zMapXMLWriterStartDocument(ZMapXMLWriter writer, char *document_root_tag);
 ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events);
 ZMapXMLWriterErrorCode zMapXMLWriterDestroy(ZMapXMLWriter writer);
+char *zMapXMLWriterErrorMsg(ZMapXMLWriter writer);
+char *zMapXMLWriterVerboseErrorMsg(ZMapXMLWriter writer);
+
+/* UTILS */
+
+GArray *zMapXMLUtilsCreateEventsArray(void);
+GArray *zMapXMLUtilsAddStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack,
+                                          GArray *events_array);
+GArray *zMapXMLUtilsAddStackToEventsArrayStart(ZMapXMLUtilsEventStackStruct *event_stack,
+                                               GArray *events_array);
+GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack);
 
 #endif /* ZMAP_XML_H */
 
