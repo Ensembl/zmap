@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  7 15:37 2007 (rds)
+ * Last edited: Feb 14 17:30 2007 (rds)
  * Created: Thu Feb  1 00:12:49 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteXML.c,v 1.4 2007-02-07 15:57:18 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteXML.c,v 1.5 2007-02-14 17:31:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -187,7 +187,8 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
         obj->action = ZMAP_CONTROL_ACTION_HIGHLIGHT_FEATURE;
       else if(action == g_quark_from_string("unhighlight_feature"))
         obj->action = ZMAP_CONTROL_ACTION_UNHIGHLIGHT_FEATURE;
-      else if(action == g_quark_from_string("create_client"))
+      else if(action == g_quark_from_string("register_client") ||
+              action == g_quark_from_string("create_client"))
         obj->action = ZMAP_CONTROL_ACTION_REGISTER_CLIENT;
       else if(action == g_quark_from_string("new_view"))
         obj->action = ZMAP_CONTROL_ACTION_NEW_VIEW;
