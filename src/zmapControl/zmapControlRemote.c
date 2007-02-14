@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 14 15:09 2007 (rds)
+ * Last edited: Feb 14 17:31 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.39 2007-02-14 17:04:34 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.40 2007-02-14 17:31:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -147,7 +147,6 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap, GArray *xml_events, char *acti
   GList *clients = NULL;
   ZMapXMLWriter xml_creator = NULL;
   AlertClientMessageStruct message_data = {0};
-  ZMapXMLWriterEventStruct zmap_event = {0};
   ZMapXMLUtilsEventStack wrap_ptr;
   static ZMapXMLUtilsEventStackStruct wrap_start[] = {
     {ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
@@ -283,9 +282,10 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
               if(!(insertView(zmap, &(objdata.new_view))))
                 code = ZMAPXREMOTE_PRECOND;
             }
-          zmapControlInfoSet(zmap, code,
-                             "%s",
-                             "a quick message about the new view");
+          else
+            zmapControlInfoSet(zmap, code,
+                               "%s",
+                               "Missing sequence parameter.");
           break;
         case ZMAP_CONTROL_ACTION_INSERT_VIEW_DATA:
           break;
@@ -419,9 +419,16 @@ static gboolean insertView(ZMap zmap, ViewConnectData new_view)
           if(!(zmapConnectViewConfig(zmap, view, new_view->config)))
             zMapDeleteView(zmap, view); /* Need 2 do more here. */
           else
-            inserted = TRUE;
+            {
+              zmapControlInfoSet(zmap, ZMAPXREMOTE_OK,
+                                 "new_view=%s", sequence);
+              inserted = TRUE;
+            }
         }
     }
+
+  if(!inserted)
+    zmapControlInfoSet(zmap, ZMAPXREMOTE_PRECOND, "%s", "Failed to add view");
 
   return inserted;
 }
