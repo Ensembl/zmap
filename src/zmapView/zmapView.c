@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  8 11:14 2007 (rds)
+ * Last edited: Feb 19 14:24 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.102 2007-02-08 11:34:13 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.103 2007-02-19 14:25:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -545,7 +545,10 @@ ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use)
   ZMapFeatureContext context;
   ZMapView view = do_not_use;
 
-  context = zMapFeatureContextCreateEmptyCopy(view->features);
+  if(view->features)
+    context = zMapFeatureContextCreateEmptyCopy(view->features);
+  else
+    context = NULL;
 
   return context;
 }
