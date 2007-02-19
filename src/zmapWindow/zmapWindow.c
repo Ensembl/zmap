@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  8 16:13 2007 (edgrif)
+ * Last edited: Feb 15 11:05 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.173 2007-02-08 16:17:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.174 2007-02-19 09:29:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2643,6 +2643,29 @@ void zmapWindowZoomToItems(ZMapWindow window, GList *items)
   zmapWindowZoomToWorldPosition(window, border, max_bounds.rootx1, max_bounds.rooty1,
 				max_bounds.rootx2, max_bounds.rooty2) ;
 
+  return ;
+}
+
+void zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature)
+{
+  FooCanvasItem *feature_item;
+
+  if((feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+                                                   feature->strand,
+                                                   ZMAPFRAME_NONE,
+                                                   feature)))
+    {
+      zmapWindowZoomToItem(window, feature_item);
+    }
+
+  return ;
+}
+
+void zMapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
+				   double rootx1, double rooty1, 
+                                   double rootx2, double rooty2)
+{
+  zmapWindowZoomToWorldPosition(window, border, rootx1, rooty1, rootx2, rooty2);
   return ;
 }
 
