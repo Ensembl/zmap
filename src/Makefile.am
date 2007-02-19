@@ -42,7 +42,7 @@ pkgconfig_DATA = zmap.pc
 ################################################################################
 ################################################################################
 
-bin_PROGRAMS = zmap gffparser
+bin_PROGRAMS = zmap gffparser xml_writer xremote_gui
 
 # should this be zmap_OBJECTS ??????
 zmap_SOURCES = $(top_srcdir)/zmapApp/zmapApp_P.h 
@@ -80,6 +80,31 @@ gffparser_LDFLAGS = -L$(top_builddir)/lib \
 gffparser_LDADD        = -lZMap
 gffparser_DEPENDENCIES = $(LIBS_ZMAP)
 gffparser_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
+
+xml_writer_SOURCES = $(top_srcdir)/zmapXML/example_xml_writer.c
+xml_writer_LDFLAGS = -L$(top_builddir)/lib \
+	@GTK_LIBS@ \
+	@FOOCANVAS_LIBS@ \
+	@LIBCURL@ \
+	@X_PRE_LIBS@ \
+        @X_LIBS@ \
+	$(NULL)
+xml_writer_LDADD        = -lZMap -lZMapXML
+xml_writer_DEPENDENCIES = $(LIBS_ZMAP)
+xml_writer_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
+
+
+xremote_gui_SOURCES = $(top_srcdir)/zmapControl/remote/xremote_gui_test.c
+xremote_gui_LDFLAGS = -L$(top_builddir)/lib -lZMapXML -lexpat -lpopt -lg2 -lgd \
+	@GTK_LIBS@ \
+	@FOOCANVAS_LIBS@ \
+	@LIBCURL@ \
+	@X_PRE_LIBS@ \
+        @X_LIBS@ \
+	$(NULL)
+xremote_gui_LDADD        = -lZMap -lZMapXML
+xremote_gui_DEPENDENCIES = $(LIBS_ZMAP)
+xremote_gui_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 
 ################################################################################
