@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb  6 11:44 2007 (rds)
+ * Last edited: Feb 16 12:55 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.44 2007-02-06 11:45:17 rds Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.45 2007-02-19 09:29:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -315,10 +315,6 @@ gboolean zmapControlWindowDoTheZoom(ZMap zmap, double zoom)
 
   zMapWindowZoom(window, zoom) ;
 
-  factor = 1.0;                 /* Fudge for now */
-  zmapControlInfoOverwrite(zmap, 200,
-                           "<magnification>%f</magnification>",
-                           factor);
   return TRUE;
 }
 
