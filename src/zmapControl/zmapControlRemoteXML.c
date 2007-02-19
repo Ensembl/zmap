@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 14 17:30 2007 (rds)
+ * Last edited: Feb 15 11:20 2007 (rds)
  * Created: Thu Feb  1 00:12:49 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteXML.c,v 1.5 2007-02-14 17:31:48 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteXML.c,v 1.6 2007-02-19 09:29:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -161,37 +161,37 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
                                   ZMapXMLParser parser)
 {
   ZMapXMLAttribute attr = NULL;
-  XMLData   obj  = (XMLData)user_data;
+  XMLData xml_data = (XMLData)user_data;
 
   if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
     {
       GQuark action = zMapXMLAttributeGetValue(attr);
       if(action == g_quark_from_string("zoom_in"))
-        obj->action = ZMAP_CONTROL_ACTION_ZOOM_IN;
+        xml_data->action = ZMAP_CONTROL_ACTION_ZOOM_IN;
       else if(action == g_quark_from_string("zoom_out"))
-        obj->action = ZMAP_CONTROL_ACTION_ZOOM_OUT;
+        xml_data->action = ZMAP_CONTROL_ACTION_ZOOM_OUT;
       else if(action == g_quark_from_string("zoom_to"))
-        obj->action = ZMAP_CONTROL_ACTION_ZOOM_TO;  
+        xml_data->action = ZMAP_CONTROL_ACTION_ZOOM_TO;  
       else if(action == g_quark_from_string("find_feature"))
-        obj->action = ZMAP_CONTROL_ACTION_FIND_FEATURE;
+        xml_data->action = ZMAP_CONTROL_ACTION_FIND_FEATURE;
       else if(action == g_quark_from_string("create_feature"))
-        obj->action = ZMAP_CONTROL_ACTION_CREATE_FEATURE;
+        xml_data->action = ZMAP_CONTROL_ACTION_CREATE_FEATURE;
       /********************************************************
        * delete and create will have to do
        * else if(action == g_quark_from_string("alter_feature"))
-       * obj->action = ZMAP_CONTROL_ACTION_ALTER_FEATURE;
+       * xml_data->action = ZMAP_CONTROL_ACTION_ALTER_FEATURE;
        *******************************************************/
       else if(action == g_quark_from_string("delete_feature"))
-        obj->action = ZMAP_CONTROL_ACTION_DELETE_FEATURE;
+        xml_data->action = ZMAP_CONTROL_ACTION_DELETE_FEATURE;
       else if(action == g_quark_from_string("highlight_feature"))
-        obj->action = ZMAP_CONTROL_ACTION_HIGHLIGHT_FEATURE;
+        xml_data->action = ZMAP_CONTROL_ACTION_HIGHLIGHT_FEATURE;
       else if(action == g_quark_from_string("unhighlight_feature"))
-        obj->action = ZMAP_CONTROL_ACTION_UNHIGHLIGHT_FEATURE;
+        xml_data->action = ZMAP_CONTROL_ACTION_UNHIGHLIGHT_FEATURE;
       else if(action == g_quark_from_string("register_client") ||
               action == g_quark_from_string("create_client"))
-        obj->action = ZMAP_CONTROL_ACTION_REGISTER_CLIENT;
+        xml_data->action = ZMAP_CONTROL_ACTION_REGISTER_CLIENT;
       else if(action == g_quark_from_string("new_view"))
-        obj->action = ZMAP_CONTROL_ACTION_NEW_VIEW;
+        xml_data->action = ZMAP_CONTROL_ACTION_NEW_VIEW;
     }
   else
     zMapXMLParserRaiseParsingError(parser, "action is a required attribute for zmap.");
@@ -288,6 +288,10 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   char *feature_name, *style_name;
   int start = 0, end = 0;
   double score = 0.0;
+
+  /* hack so that there's no need to have featureset around a single feature for zoom_to */
+  if(xml_data->action == ZMAP_CONTROL_ACTION_ZOOM_TO)
+    xml_featureset_start_cb(user_data, feature_element, parser);
 
   zMapXMLParserCheckIfTrueErrorReturn(xml_data->block == NULL,
                                       parser, 
@@ -487,7 +491,26 @@ static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement segment,
 static gboolean xml_location_end_cb(gpointer user_data, ZMapXMLElement zmap_element,
                                     ZMapXMLParser parser)
 {
-  /* we only allow one of these objects???? */
+  XMLData xml_data = (XMLData)user_data;
+  ZMapSpan location;
+  ZMapXMLAttribute attr;
+
+  if((attr = zMapXMLElementGetAttributeByName(zmap_element, "start")))
+    {
+      if((location = g_new0(ZMapSpanStruct, 1)))
+        {
+          location->x1 = zMapXMLAttributeValueToInt(attr);
+          if((attr = zMapXMLElementGetAttributeByName(zmap_element, "end")))
+            location->x2 = zMapXMLAttributeValueToInt(attr);
+          else
+            {
+              location->x2 = location->x1;
+              zMapXMLParserRaiseParsingError(parser, "end is required as well as start");
+            }
+          xml_data->locations = g_list_append(xml_data->locations, location);
+        }
+    }
+
   return TRUE;
 }
 static gboolean xml_style_end_cb(gpointer user_data, ZMapXMLElement element,
