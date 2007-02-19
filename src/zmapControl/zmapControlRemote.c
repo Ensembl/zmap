@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 14 17:31 2007 (rds)
+ * Last edited: Feb 18 22:32 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.40 2007-02-14 17:31:28 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.41 2007-02-19 09:28:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,6 +54,7 @@ static void  destroyNotifyData(gpointer destroy_data); /* free attached pointer 
 
 static gboolean createClient(ZMap zmap, controlClientObj data);
 static gboolean insertView(ZMap zmap, ViewConnectData new_view);
+static gboolean controlZoomTo(ZMap zmap, XMLData xml_data);
 
 static void drawNewFeatures(ZMap zmap, XMLData xml_data);
 static void eraseFeatures(ZMap zmap, XMLData xml_data);
@@ -243,7 +244,10 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
             code = ZMAPXREMOTE_PRECOND;
           break;
         case ZMAP_CONTROL_ACTION_ZOOM_TO:
-          code = ZMAPXREMOTE_OK;
+          if(controlZoomTo(zmap, &objdata) == TRUE)
+            code = ZMAPXREMOTE_OK;
+          else
+            code = ZMAPXREMOTE_PRECOND;
           break;
         case ZMAP_CONTROL_ACTION_FIND_FEATURE:
           code = ZMAPXREMOTE_OK;
@@ -594,6 +598,33 @@ static void drawNewFeatures(ZMap zmap, XMLData xml_data)
 }
 
 
+static gboolean controlZoomTo(ZMap zmap, XMLData xml_data)
+{
+  ZMapWindow window;
+  ZMapFeature feature;
+  gboolean status = TRUE;
+  GList *list;
+  ZMapSpan span;
+
+  window = zMapViewGetWindow(zmap->focus_viewwindow);
+
+  if((list = g_list_first(xml_data->feature_list)))
+    {
+      feature = (ZMapFeature)(list->data);
+      zMapWindowZoomToFeature(window, feature);
+    }
+  else if((list = g_list_first(xml_data->locations)))
+    {
+      span = (ZMapSpan)(list->data);
+      zMapWindowZoomToWorldPosition(window, FALSE, 
+                                    0.0, span->x1,
+                                    100.0, span->x2);
+    }
+  else
+    status = FALSE;
+
+  return status;
+}
 
 
 
