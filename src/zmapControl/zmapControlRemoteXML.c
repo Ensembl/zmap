@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 15 11:20 2007 (rds)
+ * Last edited: Feb 19 13:22 2007 (rds)
  * Created: Thu Feb  1 00:12:49 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteXML.c,v 1.6 2007-02-19 09:29:01 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteXML.c,v 1.7 2007-02-20 12:53:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -393,7 +393,7 @@ static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_el
 {
   controlClientObj clientObj = (controlClientObj)g_new0(controlClientObjStruct, 1);
   ZMapXMLAttribute xid_attr, req_attr, res_attr;
-  if((xid_attr = zMapXMLElementGetAttributeByName(client_element, "id")) != NULL)
+  if((xid_attr = zMapXMLElementGetAttributeByName(client_element, "xwid")) != NULL)
     {
       char *xid;
       xid = (char *)g_quark_to_string(zMapXMLAttributeGetValue(xid_attr));
@@ -402,9 +402,9 @@ static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_el
   else
     zMapXMLParserRaiseParsingError(parser, "id is a required attribute for client.");
 
-  if((req_attr  = zMapXMLElementGetAttributeByName(client_element, "request")) != NULL)
+  if((req_attr  = zMapXMLElementGetAttributeByName(client_element, "request_atom")) != NULL)
     clientObj->request = zMapXMLAttributeGetValue(req_attr);
-  if((res_attr  = zMapXMLElementGetAttributeByName(client_element, "response")) != NULL)
+  if((res_attr  = zMapXMLElementGetAttributeByName(client_element, "response_atom")) != NULL)
     clientObj->response = zMapXMLAttributeGetValue(res_attr);
 
   ((XMLData)user_data)->client = clientObj;
