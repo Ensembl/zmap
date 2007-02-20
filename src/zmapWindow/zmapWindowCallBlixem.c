@@ -31,15 +31,14 @@
  *
  * Exported functions: see zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 30 11:35 2006 (edgrif)
+ * Last edited: Feb 20 10:07 2007 (rds)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.25 2006-11-08 09:25:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.26 2007-02-20 12:58:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <unistd.h>					    /* for getlogin() */
 #include <string.h>					    /* for memcpy */
-#include <sys/wait.h>					    /* for WIFEXITED */
 #include <glib.h>
 #include <zmapWindow_P.h>
 #include <ZMap/zmapUtils.h>
@@ -48,7 +47,23 @@
 
 #define ZMAP_BLIXEM_CONFIG "blixem"
 
-
+/* ARGV positions for building argv to pass to g_spawn_async*/
+enum
+  {
+    BLX_ARGV_PROGRAM,           /* blixem */
+    BLX_ARGV_NETID_PORT_FLAG,   /* -P */
+    BLX_ARGV_NETID_PORT,        /* [hostname:port] */
+    BLX_ARGV_RM_TMP_FILES,      /* -r */
+    BLX_ARGV_START_FLAG,        /* -S */
+    BLX_ARGV_START,             /* [start] */
+    BLX_ARGV_OFFSET_FLAG,       /* -O */
+    BLX_ARGV_OFFSET,            /* [offset] */
+    BLX_ARGV_OPTIONS_FLAG,      /* -o */
+    BLX_ARGV_OPTIONS,           /* [options] */
+    BLX_ARGV_FASTA_FILE,        /* [fasta file] */
+    BLX_ARGV_EXBLX_FILE,        /* [exblx file] */
+    BLX_ARGV_ARGC               /* argc ;) */
+  };
 
 typedef struct BlixemDataStruct 
 {
@@ -88,7 +103,7 @@ typedef struct BlixemDataStruct
 static gboolean getUserPrefs     (blixemData blixem_data);
 static gboolean makeTmpfiles(blixemData blixem_data) ;
 gboolean makeTmpfile(char *tmp_dir, char **tmp_file_name_out) ;
-static char    *buildParamString (blixemData blixem_data);
+static gboolean buildParamString (blixemData blixem_data, char **paramString);
 static gboolean writeExblxFile   (blixemData blixem_data);
 static void     processFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
 static void     writeExblxLine   (GQuark key_id, gpointer data, gpointer user_data);
@@ -101,13 +116,12 @@ static void     freeBlixemData   (blixemData blixem_data);
 
 
 
-gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType)
+gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType, GPid *child_pid)
 {
   ZMapFeature feature = NULL;
   ZMapFeatureBlock block = NULL;
   gboolean status = TRUE ;
-  char *commandString ;
-  char *paramString = NULL ;
+  char *argv[BLX_ARGV_ARGC + 1] = {NULL};
   blixemDataStruct blixem_data = {0} ;
   char *err_msg = "error in zmapWindowCallBlixem()" ;
 
@@ -142,8 +156,7 @@ gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean o
 
   if (status)
     {
-      if (!(paramString = buildParamString(&blixem_data)))
-	status = FALSE ;
+      status = buildParamString(&blixem_data, &argv[0]);
     }
 
   if (status)
@@ -156,8 +169,27 @@ gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean o
   /* Finally launch blixem passing it the temporary files. */
   if (status)
     {
-      int sysrc ;
+      char *cwd = NULL, **envp = NULL; /* inherit from parent */
+      GSpawnFlags flags = G_SPAWN_SEARCH_PATH;
+      GSpawnChildSetupFunc pre_exec = NULL;
+      gpointer pre_exec_data = NULL;
+      GPid spawned_pid;
+      GError *error = NULL;
+      
+      argv[BLX_ARGV_PROGRAM] = g_strdup_printf("%s", blixem_data.Script);
 
+      if(!(g_spawn_async(cwd, &argv[0], envp, flags, pre_exec, pre_exec_data, &spawned_pid, &error)))
+        {
+          status = FALSE;
+          err_msg = error->message;
+        }
+      else
+        zMapLogMessage("Blixem process spawned successfully. PID = '%d'", spawned_pid);
+
+      if(status && child_pid)
+        *child_pid = spawned_pid;
+
+#ifdef RDS_SYSTEM_VERSION
       commandString = g_strdup_printf("%s %s &", blixem_data.Script, paramString) ;
       sysrc = system(commandString) ;
 
@@ -170,10 +202,16 @@ gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean o
 	err_msg = "System call failed: blixem not invoked." ;
       
       g_free(commandString);
+#endif
     }
-   
+
+#ifdef RDS_SYSTEM_VERSION
   if (paramString)   
-    g_free(paramString) ;
+    {
+      /* we need to free these strings... */
+      g_free(paramString) ;
+    }
+#endif
 
   freeBlixemData(&blixem_data) ;
 
@@ -298,12 +336,11 @@ static gboolean makeTmpfiles(blixemData blixem_data)
 }
 
 
-
-static char *buildParamString(blixemData blixem_data)
+static gboolean buildParamString(blixemData blixem_data, char **paramString)
 {
   ZMapFeature feature;
   gboolean    status = TRUE;
-  char       *paramString = NULL;
+  //  char       *paramString[BLX_ARGV_ARGC] = {NULL};
   int         start;
   int         scope = 40000;          /* set from user prefs */
   int         x1, x2;
@@ -355,8 +392,52 @@ static char *buildParamString(blixemData blixem_data)
 
   if (status)
    {
-     /* For testing purposes remove the "-r" flag to leave the temporary files. */
+     int missed = 0;            /* keep track of options we don't specify */
+     /* we need to do this as blixem has pretty simple argv processing */
 
+     if(blixem_data->Netid && blixem_data->Port)
+       {
+         paramString[BLX_ARGV_NETID_PORT_FLAG] = g_strdup("-P");
+         paramString[BLX_ARGV_NETID_PORT]      = g_strdup_printf("%s:%d", blixem_data->Netid, blixem_data->Port);
+       }
+     else
+       missed += 2;
+
+     /* For testing purposes remove the "-r" flag to leave the temporary files. 
+      * (keep_tempfiles = true in blixem stanza of ZMap file) */
+     if(!blixem_data->keep_tmpfiles)
+       paramString[BLX_ARGV_RM_TMP_FILES - missed] = g_strdup("-r");
+     else
+       missed += 1;
+
+     if(start)
+       {
+         paramString[BLX_ARGV_START_FLAG - missed] = g_strdup("-S");
+         paramString[BLX_ARGV_START - missed]      = g_strdup_printf("%d", start);
+       }
+     else
+       missed += 2;
+     
+     if(offset)
+       {
+         paramString[BLX_ARGV_OFFSET_FLAG - missed] = g_strdup("-O");
+         paramString[BLX_ARGV_OFFSET - missed]      = g_strdup_printf("%d", offset);
+       }
+     else
+       missed += 2;
+
+     if(blixem_data->opts)
+       {
+         paramString[BLX_ARGV_OPTIONS_FLAG - missed] = g_strdup("-o");
+         paramString[BLX_ARGV_OPTIONS - missed]      = g_strdup_printf("%s", blixem_data->opts);
+       }
+     else 
+       missed += 2;
+
+     paramString[BLX_ARGV_FASTA_FILE - missed] = g_strdup_printf("%s", blixem_data->fastAFile);
+     paramString[BLX_ARGV_EXBLX_FILE - missed] = g_strdup_printf("%s", blixem_data->exblxFile);
+
+#ifdef RDS_SYSTEM_VERSION
      paramString = g_strdup_printf("-P %s:%d %s -S %d -O %d -o %s %s %s",
 				   blixem_data->Netid,
 				   blixem_data->Port,
@@ -366,12 +447,13 @@ static char *buildParamString(blixemData blixem_data)
 				   blixem_data->opts,
 				   blixem_data->fastAFile,
 				   blixem_data->exblxFile) ;
+#endif
      /* debugging code     
      printf("paramString: %s\n", paramString);
      */
    }
 
-  return paramString ;
+  return status ;
 }
 
 
