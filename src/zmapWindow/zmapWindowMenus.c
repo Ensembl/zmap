@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Dec  7 10:48 2006 (edgrif)
+ * Last edited: Feb 20 10:11 2007 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.26 2006-12-13 13:28:14 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.27 2007-02-20 12:59:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -863,6 +863,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   gboolean single_homol_type = FALSE ;
   gboolean status ;
+  GPid blixem_pid;
 
   switch (menu_item_id)
     {
@@ -877,8 +878,10 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       break ;
     }
 
-  status = zmapWindowCallBlixem(menu_data->window, menu_data->item, single_homol_type) ;
-  
+  /* some architectures have pointers for pids, this might need addressing */
+  if((status = zmapWindowCallBlixem(menu_data->window, menu_data->item, single_homol_type, &blixem_pid)))
+    menu_data->window->blixem_windows = g_list_append(menu_data->window->blixem_windows, GINT_TO_POINTER(blixem_pid));
+
   g_free(menu_data) ;
 
   return ;
