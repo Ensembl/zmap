@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb  6 16:14 2007 (rds)
+ * Last edited: Feb 20 11:57 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.170 2007-02-06 16:45:20 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.171 2007-02-20 12:59:53 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -368,7 +368,6 @@ typedef struct _ZMapWindowLongItemsStruct *ZMapWindowLongItems ;
 typedef struct _ZMapWindowFToIFactoryStruct *ZMapWindowFToIFactory;
 
 
-
 /* My intention is to gradually put all configuration data (spacing, borders, colours etc)
  * in this struct. */
 typedef struct
@@ -536,6 +535,8 @@ typedef struct _ZMapWindowStruct
   GPtrArray *editor_windows ;				    /* popup feature editor/display windows. */
 
   GtkWidget *col_config_window ;			    /* column configuration window. */
+
+  GList *blixem_windows;        /* blixem pids */
 
   ZMapWindowRulerCanvas ruler ;
 
@@ -766,7 +767,7 @@ void my_foo_canvas_item_lower_to(FooCanvasItem *item, int position) ;
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
 void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 
-gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType);
+gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType, GPid *child_pid);
 
 
 ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow,
@@ -1062,6 +1063,7 @@ char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type) ;
 void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
+void zmapWindowContextExplorerCreate(ZMapWindow window, ZMapFeatureAny feature_any);
 
 typedef struct _ZMapWindowTextPositionerStruct *ZMapWindowTextPositioner;
 ZMapWindowTextPositioner zmapWindowTextPositionerCreate(void);
