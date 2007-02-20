@@ -25,13 +25,15 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb 19 14:24 2007 (rds)
+ * Last edited: Feb 20 12:35 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.103 2007-02-19 14:25:37 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.104 2007-02-20 12:52:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
+#include <sys/types.h>
+#include <signal.h>             /* kill() */
 #include <gtk/gtk.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -116,6 +118,8 @@ static gboolean checkSequenceToServerMatch(GList *seq_2_server, ZMapViewSequence
 static gint findSequence(gconstpointer a, gconstpointer b) ;
 
 static void threadDebugMsg(ZMapThread thread, char *format_str, char *msg) ;
+
+static void killAllSpawned(ZMapView zmap_view);
 
 
 /* These callback routines are static because they are set just once for the lifetime of the
@@ -1112,6 +1116,7 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
   /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
   (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, &view_select) ;
 
+  
   window_select->handled = view_select.handled;
   
   return ;
@@ -1265,13 +1270,32 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
   return view_window ;
 }
 
+static void killAllSpawned(ZMapView zmap_view)
+{
+  GPid pid;
+  GList *processes = zmap_view->spawned_processes;
 
+  while(processes)
+    {
+      pid = GPOINTER_TO_INT(processes->data);
+      g_spawn_close_pid(pid);
+      kill(pid, 9);
+      processes = processes->next;
+    }
+
+  if(zmap_view->spawned_processes)
+    g_list_free(zmap_view->spawned_processes);
+  zmap_view->spawned_processes = NULL ;
+
+  return ;
+}
 
 /* Should only do this after the window and all threads have gone as this is our only handle
  * to these resources. The lists of windows and thread connections are dealt with somewhat
  * asynchronously by killAllWindows() & checkConnections() */
 static void destroyZMapView(ZMapView zmap_view)
 {
+
   g_free(zmap_view->sequence) ;
 
   if (zmap_view->sequence_2_server)
@@ -1281,6 +1305,7 @@ static void destroyZMapView(ZMapView zmap_view)
       zmap_view->sequence_2_server = NULL ;
     }
 
+  killAllSpawned(zmap_view);
 
   g_free(zmap_view) ;
 
@@ -1908,10 +1933,35 @@ static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window)
   return view_window ;
 }
 
+static void store_unique_pids(gpointer list_data, gpointer user_data)
+{
+  ZMapView view = (ZMapView)user_data;
+
+  if(!(g_list_find(view->spawned_processes, list_data)))
+    {
+      view->spawned_processes = g_list_prepend(view->spawned_processes, list_data);
+    }
+
+  return ;
+}
+
+static void copyPIDList(ZMapView view, GList *pid_list)
+{
+
+  g_list_foreach(pid_list, store_unique_pids, view);
+
+  return ;
+}
 
 static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
 {
+  GList *pid_list = NULL;
   zmap_view->window_list = g_list_remove(zmap_view->window_list, view_window) ;
+
+  /* steal ZMapWindow blixem_windows list */
+  pid_list = zMapWindowGetSpawnedPIDList(view_window->window);
+
+  copyPIDList(zmap_view, pid_list);
 
   zMapWindowDestroy(view_window->window) ;
 

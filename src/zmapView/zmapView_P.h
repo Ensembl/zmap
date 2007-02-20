@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jan 29 17:50 2007 (edgrif)
+ * Last edited: Feb 20 11:57 2007 (rds)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.24 2007-01-31 14:08:24 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.25 2007-02-20 12:52:11 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -138,7 +138,8 @@ typedef struct _ZMapViewStruct
 #endif
 
   GList *navigator_set_names;
-
+  
+  GList *spawned_processes;
 } ZMapViewStruct ;
 
 
