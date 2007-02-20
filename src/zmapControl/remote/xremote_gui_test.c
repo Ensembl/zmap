@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 19 00:35 2007 (rds)
+ * Last edited: Feb 19 15:56 2007 (rds)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.1 2007-02-19 09:26:51 rds Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.2 2007-02-20 12:54:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,6 +82,7 @@ static void quitCB(GtkWidget *button, gpointer user_data);
 static void clearCB(GtkWidget *button, gpointer user_data);
 static void parseCB(GtkWidget *button, gpointer user_data);
 static void sendCommandCB(GtkWidget *button, gpointer user_data);
+static void listClientsCB(GtkWidget *button, gpointer user_data);
 static void runZMapCB(GtkWidget *button, gpointer user_data);
 
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
@@ -280,6 +281,8 @@ static GtkWidget *entry_box_widgets(XRemoteTestSuiteData suite)
   label = gtk_label_new("sequence :");
   suite->sequence = sequence = gtk_entry_new();
 
+  gtk_entry_set_text(GTK_ENTRY(sequence), "20.3013641-3258367");
+
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
   gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5);
 
@@ -324,19 +327,22 @@ static GtkWidget *message_box(XRemoteTestSuiteData suite)
 
 static GtkWidget *button_bar(XRemoteTestSuiteData suite)
 {
-  GtkWidget *button_bar, *run_zmap, *send_command, *clear, *parse, *exit;
+  GtkWidget *button_bar, *run_zmap, *send_command, 
+    *clear, *parse, *list_clients, *exit;
 
   button_bar   = gtk_hbutton_box_new();
   run_zmap     = gtk_button_new_with_label("Run ZMap");
   clear        = gtk_button_new_with_label("Clear XML");
   parse        = gtk_button_new_with_label("Check XML");
   send_command = gtk_button_new_with_label("Send Command");
+  list_clients = gtk_button_new_with_label("List Clients");
   exit         = gtk_button_new_with_label("Exit");
 
   gtk_container_add(GTK_CONTAINER(button_bar), clear);
   gtk_container_add(GTK_CONTAINER(button_bar), parse);
   gtk_container_add(GTK_CONTAINER(button_bar), run_zmap);
   gtk_container_add(GTK_CONTAINER(button_bar), send_command);
+  gtk_container_add(GTK_CONTAINER(button_bar), list_clients);
   gtk_container_add(GTK_CONTAINER(button_bar), exit);
 
   g_signal_connect(G_OBJECT(clear), "clicked",
@@ -350,6 +356,9 @@ static GtkWidget *button_bar(XRemoteTestSuiteData suite)
 
   g_signal_connect(G_OBJECT(send_command), "clicked",
                    G_CALLBACK(sendCommandCB), suite);
+
+  g_signal_connect(G_OBJECT(list_clients), "clicked",
+                   G_CALLBACK(listClientsCB), suite);
 
   g_signal_connect(G_OBJECT(exit), "clicked",
                    G_CALLBACK(quitCB), suite);
@@ -400,6 +409,7 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
   }, feature[] = {
     {ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
     {ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
+    {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {""}},
     {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
     {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
     {ZMAPXML_ATTRIBUTE_EVENT,     "strand",     ZMAPXML_EVENT_DATA_QUARK,   {"+|-"}},
@@ -414,7 +424,7 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
     {0}
   }, segment[] = {
     {ZMAPXML_START_ELEMENT_EVENT, "segment",  ZMAPXML_EVENT_DATA_NONE,    {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "sequence", ZMAPXML_EVENT_DATA_QUARK,   {""}},
+    {ZMAPXML_ATTRIBUTE_EVENT,     "sequence", ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
     {ZMAPXML_ATTRIBUTE_EVENT,     "start",    ZMAPXML_EVENT_DATA_INTEGER, {(char *)1}},
     {ZMAPXML_ATTRIBUTE_EVENT,     "end",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
     {ZMAPXML_END_ELEMENT_EVENT,   "segment",  ZMAPXML_EVENT_DATA_NONE,    {0}},
@@ -454,6 +464,7 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
     case XREMOTE_NEW:
       *action  = "new";
       data_ptr = &segment[0];
+      segment[1].value.s = (char *)gtk_entry_get_text(GTK_ENTRY(suite->sequence));
       break;
     case XREMOTE_SHUTDOWN:
       *action  = "shutdown";
@@ -570,7 +581,10 @@ static gint send_command_cb(gpointer key, gpointer hash_data, gpointer user_data
     }
   else
     {
-      zMapGUIShowMsg(ZMAP_MSG_WARNING, "send command failed, deleting client...");
+      char *message;
+      message = g_strdup_printf("send command failed, deleting client (0x%x)...", GPOINTER_TO_INT(key));
+      zMapGUIShowMsg(ZMAP_MSG_WARNING, message);
+      g_free(message);
       dead_client = 1;
     }
 
@@ -593,6 +607,39 @@ static void sendCommandCB(GtkWidget *button, gpointer user_data)
       
       g_hash_table_foreach_remove(suite->xremote_clients, send_command_cb, &send_data);
     }
+
+  return ;
+}
+
+static void list_clients_cb(gpointer key, gpointer hash_data, gpointer user_data)
+{
+  GString *string = (GString *)user_data;
+
+  g_string_append_printf(string, "Window id = 0x%x\n", GPOINTER_TO_INT(key));
+
+  return ;
+}
+
+static void listClientsCB(GtkWidget *button, gpointer user_data)
+{
+  XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
+  GString *client_list;
+  client_list = g_string_sized_new(512);
+  g_string_append_printf(client_list, "%s", "Clients:\n");
+
+  g_hash_table_foreach(suite->xremote_clients, list_clients_cb, client_list);
+
+  /* This is a bit simple at the moment, we should really have a list
+   * store which does a similar thing to the manager bit of zmap. windows
+   * could then be raised on selection and a little more info displayed.
+   * To do this XQueryTree, gdk_window_foreign_new_for_display, 
+   * gdk_window_raise or similar should be used.  The id is not neccessarily
+   * the toplevel I guess.
+   */
+
+  zMapGUIShowMsg(ZMAP_MSG_INFORMATION, client_list->str);
+
+  g_string_free(client_list, TRUE);
 
   return ;
 }
