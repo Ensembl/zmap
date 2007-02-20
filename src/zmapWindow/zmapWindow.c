@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 15 11:05 2007 (rds)
+ * Last edited: Feb 20 12:02 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.174 2007-02-19 09:29:58 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.175 2007-02-20 12:58:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -869,9 +869,13 @@ void zMapWindowMergeInFeatureSetNames(ZMapWindow window, GList *feature_set_name
   return ;
 }
 
+GList *zMapWindowGetSpawnedPIDList(ZMapWindow window)
+{
+  return window->blixem_windows;
+}
+
 void zMapWindowDestroy(ZMapWindow window)
 {
-
   zMapDebug("%s", "GUI: in window destroy...\n") ;
 
   if (window->locked_display)
@@ -917,6 +921,9 @@ void zMapWindowDestroy(ZMapWindow window)
 
   if (window->sequence)
     g_free(window->sequence) ;
+
+  if(window->blixem_windows)
+    g_list_free(window->blixem_windows);
 
   g_free(window) ;
   
@@ -1251,7 +1258,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 
 gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any, char *action, FooCanvasItem *real_item)
 {
-  ZMapWindowSelectStruct double_select = {0};
+  ZMapWindowSelectStruct select = {0};
   ZMapFeatureSetStruct feature_set = {0};
   ZMapFeatureSet multi_set;
   ZMapFeature feature;
@@ -1277,22 +1284,22 @@ gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_a
       break;
     }
   
-  double_select.type        = ZMAPWINDOW_SELECT_DOUBLE;
-  double_select.xml_events  = zMapFeatureAnyAsXMLEvents((ZMapFeatureAny)(multi_set), ZMAPFEATURE_XML_XREMOTE);
-  double_select.zmap_action = g_strdup(action);
+  select.type        = ZMAPWINDOW_SELECT_DOUBLE;
+  select.xml_events  = zMapFeatureAnyAsXMLEvents((ZMapFeatureAny)(multi_set), ZMAPFEATURE_XML_XREMOTE);
+  select.zmap_action = g_strdup(action);
 
   if(feature_set.unique_id)
     g_datalist_clear(&(feature_set.features));
 
-  (*(window->caller_cbs->select))(window, window->app_data, &double_select) ;
+  (*(window->caller_cbs->select))(window, window->app_data, &select) ;
 
-  if(double_select.xml_events)
-    g_array_free(double_select.xml_events, TRUE);
+  if(select.xml_events)
+    g_array_free(select.xml_events, TRUE);
 
-  if(double_select.zmap_action)
-    g_free(double_select.zmap_action);
+  if(select.zmap_action)
+    g_free(select.zmap_action);
 
-  return double_select.handled;
+  return select.handled;
 }
 
 /* I'm not convinced of this. */
