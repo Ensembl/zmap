@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 18 22:32 2007 (rds)
+ * Last edited: Feb 19 14:33 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.41 2007-02-19 09:28:37 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.42 2007-02-20 12:53:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -355,7 +355,8 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
   if(control_execute_debug_G)
     zMapLogWarning("Destroying created/copied context (%p)", objdata.context);
 
-  zMapFeatureContextDestroy(objdata.context, TRUE);
+  if(objdata.context)
+    zMapFeatureContextDestroy(objdata.context, TRUE);
   zMapXMLParserDestroy(parser);
   
   return xml_reply;
@@ -597,6 +598,27 @@ static void drawNewFeatures(ZMap zmap, XMLData xml_data)
   return ;
 }
 
+static ZMapFeatureContextExecuteStatus zoomToFeatureCB(GQuark key, 
+                                                       gpointer data, 
+                                                       gpointer user_data,
+                                                       char **error_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapWindow window = (ZMapWindow)user_data;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      zMapWindowZoomToFeature(window, (ZMapFeature)feature_any);      
+      break;
+    default:
+      break;
+    }
+
+  return status;
+}
+
 
 static gboolean controlZoomTo(ZMap zmap, XMLData xml_data)
 {
@@ -610,8 +632,8 @@ static gboolean controlZoomTo(ZMap zmap, XMLData xml_data)
 
   if((list = g_list_first(xml_data->feature_list)))
     {
-      feature = (ZMapFeature)(list->data);
-      zMapWindowZoomToFeature(window, feature);
+      zMapFeatureContextExecute(xml_data->context, ZMAPFEATURE_STRUCT_FEATURE,
+                                zoomToFeatureCB, window);
     }
   else if((list = g_list_first(xml_data->locations)))
     {
