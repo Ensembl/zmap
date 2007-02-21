@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  8 11:28 2007 (rds)
+ * Last edited: Feb 21 16:53 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.58 2007-02-08 11:33:54 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.59 2007-02-21 17:32:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -980,6 +980,11 @@ ZMapFeatureContext zMapFeatureContextCreateEmptyCopy(ZMapFeatureContext feature_
       empty_data.context->unique_id =
         empty_data.context->original_id = g_quark_from_string(tmp);
       g_free(tmp);
+
+      empty_data.context->parent_span        = feature_context->parent_span; /* struct copy */
+      empty_data.context->sequence_to_parent = feature_context->sequence_to_parent; /* struct copy */
+      empty_data.context->length             = feature_context->length;
+
       zMapFeatureContextExecute((ZMapFeatureAny)feature_context,
                                 ZMAPFEATURE_STRUCT_FEATURESET,
                                 emptyCopyCB,
