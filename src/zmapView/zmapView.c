@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb 20 12:35 2007 (rds)
+ * Last edited: Feb 21 14:54 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.104 2007-02-20 12:52:06 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.105 2007-02-21 17:33:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -550,7 +550,11 @@ ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use)
   ZMapView view = do_not_use;
 
   if(view->features)
-    context = zMapFeatureContextCreateEmptyCopy(view->features);
+    {
+      context = zMapFeatureContextCreateEmptyCopy(view->features);
+      if(context && view->revcomped_features)
+        zMapFeatureReverseComplement(context);
+    }
   else
     context = NULL;
 
@@ -1989,6 +1993,9 @@ static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext *context_i
   zMapAssert(context_inout && *context_inout);
 
   new_features = *context_inout;
+
+  if(view->revcomped_features)
+    zMapFeatureReverseComplement(new_features);
 
   if (!(merged = zMapFeatureContextMerge(&(view->features), new_features)))
     zMapLogCritical("%s", "Cannot merge feature data from....") ;
