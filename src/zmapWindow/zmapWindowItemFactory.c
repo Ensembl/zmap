@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jan 23 17:57 2007 (rds)
+ * Last edited: Feb 22 09:42 2007 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.21 2007-01-23 18:02:21 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.22 2007-02-22 09:44:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1355,13 +1355,14 @@ static void fuzzyTableDimensions(double region_range, double trunc_col,
   double orig_height, final_height, fl_height, cl_height;
   double temp_rows, temp_cols, text_height, tmp_mod = 0.0;
   gboolean row_precedence = FALSE;
+  int tmp;
 
   region_range--;
   region_range *= chars_per_base;
 
   orig_height = text_height = *height_inout * chars_per_base;
   temp_rows   = region_range / orig_height     ;
-  fl_height   = region_range / floor(temp_rows);
+  fl_height   = region_range / (((tmp = floor(temp_rows)) > 0) ? tmp : 1);
   cl_height   = region_range / ceil(temp_rows) ;
 
   if(((region_range / temp_rows) > trunc_col))
