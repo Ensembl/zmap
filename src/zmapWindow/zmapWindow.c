@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 20 12:02 2007 (rds)
+ * Last edited: Feb 26 12:29 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.175 2007-02-20 12:58:15 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.176 2007-02-26 12:30:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -152,6 +152,25 @@ static void swapColumns(ZMapWindow window, guint keyval);
 static void hideItemsCB(gpointer data, gpointer user_data_unused) ;
 static void unhideItemsCB(gpointer data, gpointer user_data) ;
 
+
+static gboolean possiblyPopulateWithChildData(ZMapWindow window, 
+                                              FooCanvasItem *feature_item,
+                                              FooCanvasItem *highlight_item,
+                                              int *sub_feature_start, int *sub_feature_end,
+                                              int *sub_feature_length, ZMapFeatureSubpartType *sub_type,
+                                              int *query_start, int *query_end,
+                                              int *selected_start, int *selected_end,
+                                              int *selected_length);
+static gboolean possiblyPopulateWithFullData(ZMapWindow window,
+                                             ZMapFeature feature,
+                                             FooCanvasItem *feature_item,
+                                             FooCanvasItem *highlight_item,
+                                             int *feature_start, int *feature_end,
+                                             int *feature_length,
+                                             int *selected_start, int *selected_end,
+                                             int *selected_length);
+static char *makePrimarySelectionText(ZMapWindow window,
+                                      FooCanvasItem *highlight_item);
 
 /* Callbacks we make back to the level above us. This structure is static
  * because the callback routines are set just once for the lifetime of the
@@ -1070,7 +1089,6 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
   return ;
 }
 
-
 /* Sets up data that is passed back to our caller to give them information about the feature
  * the user has selected, perhaps by clicking on it in the zmap window.
  * 
@@ -1087,13 +1105,13 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 			       FooCanvasItem *highlight_item, gboolean replace_highlight_item)
 {
   ZMapWindowItemFeatureType type ;
-  ZMapWindowItemFeature item_data ;
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
   ZMapWindowSelectStruct select = {0} ;
   ZMapFeatureSet set;
-  int feature_start, feature_end, feature_length ;
-  int sel_start, sel_end, sel_length ;
+  int feature_start, feature_end, feature_length, query_start, query_end ;
+  int sub_feature_start, sub_feature_end, sub_feature_length;
+  int selected_start, selected_end, selected_length ;
 
 
   select.type = ZMAPWINDOW_SELECT_SINGLE;
@@ -1113,50 +1131,29 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
   zMapAssert(feature_arg == feature);
 
   select.feature_desc.struct_type = feature->struct_type ;
-  select.feature_desc.type = feature->type ;
+  select.feature_desc.type        = feature->type ;
+  style = zMapFeatureGetStyle((ZMapFeatureAny)feature) ;
+  select.feature_desc.feature_description = 
+    zmapWindowFeatureSetDescription(style->original_id, style) ;
 
-  if (type == ITEM_FEATURE_CHILD)
+  if(possiblyPopulateWithChildData(window, item, highlight_item, 
+                                   &sub_feature_start, &sub_feature_end, 
+                                   &sub_feature_length, &(select.feature_desc.subpart_type),
+                                   &query_start, &query_end,
+                                   &selected_start, &selected_end, 
+                                   &selected_length))
     {
-      int start, end, length ;
-
-      item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
-      zMapAssert(item_data) ;
-
-      select.feature_desc.subpart_type = item_data->subpart ;
-
-      if (window->display_forward_coords)
-	{
-	  start = zmapWindowCoordToDisplay(window, item_data->start) ;
-	  end = zmapWindowCoordToDisplay(window, item_data->end) ;
-	}
-      else
-	{
-	  start = item_data->start ;
-	  end = item_data->end ;
-	}
-      length = (item_data->end - item_data->start + 1) ;
-
-      if (item == highlight_item)
-	{
-	  sel_start = start ;
-	  sel_end = end ;
-	  sel_length = length ;
-	}
-
-      select.feature_desc.sub_feature_start = g_strdup_printf("%d", start) ;
-      select.feature_desc.sub_feature_end = g_strdup_printf("%d", end) ;
+      select.feature_desc.sub_feature_start = g_strdup_printf("%d", sub_feature_start) ;
+      select.feature_desc.sub_feature_end   = g_strdup_printf("%d", sub_feature_end) ;
 
       if (feature->type == ZMAPFEATURE_ALIGNMENT)
 	{
-	  select.feature_desc.sub_feature_query_start = g_strdup_printf("%d", item_data->query_start) ;
-	  select.feature_desc.sub_feature_query_end = g_strdup_printf("%d", item_data->query_end) ;
+	  select.feature_desc.sub_feature_query_start = g_strdup_printf("%d", query_start) ;
+	  select.feature_desc.sub_feature_query_end   = g_strdup_printf("%d", query_end) ;
 	}
 
-      select.feature_desc.sub_feature_length = g_strdup_printf("%d", length) ;
+      select.feature_desc.sub_feature_length = g_strdup_printf("%d", sub_feature_length) ;
     }
-
-  style = zMapFeatureGetStyle((ZMapFeatureAny)feature) ;
-  select.feature_desc.feature_description = zmapWindowFeatureSetDescription(style->original_id, style) ;
 
   if (feature->locus_id)
     select.feature_desc.feature_locus = (char *)g_quark_to_string(feature->locus_id) ;
@@ -1166,37 +1163,25 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 
   select.feature_desc.feature_name = (char *)g_quark_to_string(feature->original_id) ;
 
-
-  if (window->display_forward_coords)
+  if(possiblyPopulateWithFullData(window, feature, item, highlight_item,
+                                  &feature_start, &feature_end,
+                                  &feature_length,
+                                  &selected_start, &selected_end,
+                                  &selected_length))
     {
-      feature_start = zmapWindowCoordToDisplay(window, feature->x1) ;
-      feature_end = zmapWindowCoordToDisplay(window, feature->x2) ;
-    }
-  else
-    {
-      feature_start = feature->x1 ;
-      feature_end = feature->x2 ;
-    }
-  feature_length = zMapFeatureLength(feature) ;
+      select.feature_desc.feature_start  = g_strdup_printf("%d", feature_start) ;
+      select.feature_desc.feature_end    = g_strdup_printf("%d", feature_end) ;
+      select.feature_desc.feature_length = g_strdup_printf("%d", feature_length) ;
 
-  if (type != ITEM_FEATURE_CHILD || item != highlight_item)
-    {
-      sel_start = feature->x1 ;
-      sel_end = feature->x2 ;
-      sel_length = feature_length ;
+      if (feature->type == ZMAPFEATURE_ALIGNMENT)
+        {
+          select.feature_desc.feature_query_start = g_strdup_printf("%d", feature->feature.homol.y1) ;
+          select.feature_desc.feature_query_end   = g_strdup_printf("%d", feature->feature.homol.y2) ;
+          if (feature->feature.homol.length)
+            select.feature_desc.feature_query_length = 
+              g_strdup_printf("%d", feature->feature.homol.length) ;
+        }
     }
-
-
-  select.feature_desc.feature_start = g_strdup_printf("%d", feature_start) ;
-  select.feature_desc.feature_end = g_strdup_printf("%d", feature_end) ;
-  if (feature->type == ZMAPFEATURE_ALIGNMENT)
-    {
-      select.feature_desc.feature_query_start = g_strdup_printf("%d", feature->feature.homol.y1) ;
-      select.feature_desc.feature_query_end = g_strdup_printf("%d", feature->feature.homol.y2) ;
-      if (feature->feature.homol.length)
-	select.feature_desc.feature_query_length = g_strdup_printf("%d", feature->feature.homol.length) ;
-    }
-  select.feature_desc.feature_length = g_strdup_printf("%d", feature_length) ;
 
   select.feature_desc.feature_strand = zMapFeatureStrand2Str(feature->strand) ;
 
@@ -1211,21 +1196,17 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
   if((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
     select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* CHECK IF ROYS LOGIC IS CORRECT..... */
-  select.feature_desc.feature_set
-    = (char *)g_quark_to_string((zMapFeatureGetSet(feature))->original_id) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   select.feature_desc.feature_style
     = zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)) ;
 
-
+#ifdef RDS_DONT_INCLUDE
+  /* Sort this out for all the selected features.... */
   select.secondary_text = g_strdup_printf("\"%s\"    %d %d (%d)",
 					  (char *)g_quark_to_string(feature->original_id),
-					  sel_start, sel_end, sel_length) ;
+					  selected_start, selected_end, selected_length) ;
+
+#endif
+  select.secondary_text = makePrimarySelectionText(window, highlight_item);
 
   if (highlight_item)
     select.highlight_item = highlight_item ;
@@ -3735,5 +3716,168 @@ static void unhideItemsCB(gpointer data, gpointer user_data)
   return ;
 }
 
+
+
+static gboolean possiblyPopulateWithChildData(ZMapWindow window, 
+                                              FooCanvasItem *feature_item,
+                                              FooCanvasItem *highlight_item,
+                                              int *sub_feature_start, int *sub_feature_end,
+                                              int *sub_feature_length, ZMapFeatureSubpartType *sub_type,
+                                              int *query_start, int *query_end,
+                                              int *selected_start, int *selected_end,
+                                              int *selected_length)
+{
+  ZMapWindowItemFeature item_data;
+  ZMapWindowItemFeatureType type ;
+  int fstart, fend, flength;
+  int sstart, send, slength;
+  gboolean populated = FALSE;
+
+  zMapAssert(sub_feature_start && sub_feature_end &&
+             query_start       && query_end       &&
+             selected_start    && selected_end    &&
+             selected_length   && sub_feature_length && sub_type);
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
+
+  if (type == ITEM_FEATURE_CHILD)
+    {
+      item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
+      zMapAssert(item_data) ;
+
+      if (window->display_forward_coords)
+	{
+	  fstart = zmapWindowCoordToDisplay(window, item_data->start) ;
+	  fend   = zmapWindowCoordToDisplay(window, item_data->end) ;
+	}
+      else
+	{
+	  fstart = item_data->start ;
+	  fend   = item_data->end ;
+	}
+
+      flength = (item_data->end - item_data->start + 1) ;
+
+      /* If the canvas item's match... */
+      if (feature_item == highlight_item)
+	{
+	  sstart  = fstart ;
+	  send    = fend ;
+	  slength = flength ;
+	}
+
+      if((populated = TRUE))
+        {
+          *sub_feature_start  = fstart;
+          *sub_feature_end    = fend;
+          *sub_feature_length = flength;
+          *query_start        = item_data->query_start;
+          *query_end          = item_data->query_end;
+          *selected_start     = sstart;
+          *selected_end       = send;
+          *selected_length    = slength;
+          *sub_type           = item_data->subpart;
+        }
+      
+    }
+
+
+  return populated;
+}
+
+static gboolean possiblyPopulateWithFullData(ZMapWindow window,
+                                             ZMapFeature feature,
+                                             FooCanvasItem *feature_item,
+                                             FooCanvasItem *highlight_item,
+                                             int *feature_start, int *feature_end,
+                                             int *feature_length,
+                                             int *selected_start, int *selected_end,
+                                             int *selected_length)
+{
+  ZMapWindowItemFeatureType type;
+  gboolean populated = TRUE;
+  
+  zMapAssert(feature_start  && feature_end  &&
+             selected_start && selected_end &&
+             feature_length && selected_length);
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
+
+  if (window->display_forward_coords)
+    {
+      *feature_start = zmapWindowCoordToDisplay(window, feature->x1) ;
+      *feature_end   = zmapWindowCoordToDisplay(window, feature->x2) ;
+    }
+  else
+    {
+      *feature_start = feature->x1 ;
+      *feature_end   = feature->x2 ;
+    }
+
+  *feature_length = zMapFeatureLength(feature) ;
+
+  if (type != ITEM_FEATURE_CHILD || feature_item != highlight_item)
+    {
+      if(window->display_forward_coords)
+        {
+          *selected_start  = zmapWindowCoordToDisplay(window, feature->x1);
+          *selected_end    = zmapWindowCoordToDisplay(window, feature->x2);
+        }
+      else
+        {
+          *selected_start  = feature->x1;
+          *selected_end    = feature->x2;
+        }
+      *selected_length = *feature_length;
+    }
+
+  return populated;
+}
+
+
+static char *makePrimarySelectionText(ZMapWindow window,
+                                      FooCanvasItem *highlight_item)
+{
+  GList *selected = zmapWindowFocusGetFocusItems(window->focus);
+  GString *text   = g_string_sized_new(512);
+  gint length     = g_list_length(selected), i = 0;
+  char *selection;
+  int selected_start, selected_end, selected_length;
+
+  while(selected)
+    {
+      FooCanvasItem *item;
+      ZMapWindowItemFeatureType item_type;
+      ZMapFeature item_feature;
+      int dummy;
+
+      item = FOO_CANVAS_ITEM(selected->data);
+      item_feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+
+      possiblyPopulateWithChildData(window, item, highlight_item,
+                                    &dummy, &dummy, &dummy, &item_type,
+                                    &dummy, &dummy, &selected_start,
+                                    &selected_end, &selected_length);
+      possiblyPopulateWithFullData(window, item_feature, item, highlight_item,
+                                   &dummy, &dummy, &dummy, &selected_start,
+                                   &selected_end, &selected_length);
+
+      g_string_append_printf(text, "\"%s\"    %d %d (%d)%s",
+                             (char *)g_quark_to_string(item_feature->original_id),
+                             selected_start, selected_end, selected_length,
+                             (i < (length - 1) ? "\n" : ""));
+
+      selected = selected->next;
+      i++;
+    }
+  
+  selected = g_list_first(selected);
+  g_list_free(selected);
+
+  selection = text->str;
+  g_string_free(text, FALSE);
+
+  return selection;
+}
 
 
