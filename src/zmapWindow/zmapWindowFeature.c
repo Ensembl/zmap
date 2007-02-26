@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 26 11:46 2007 (rds)
+ * Last edited: Feb 26 12:40 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.85 2007-02-26 12:23:42 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.86 2007-02-26 12:54:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2188,10 +2188,13 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		      {
 			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
 
-                        externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "multiple_select", highlight_item);
-
 			if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item))
-			  replace_highlight = FALSE ;
+                          {
+                            replace_highlight = FALSE ;
+                            externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "multiple_select", highlight_item);
+                          }
+                        else
+                          externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "single_select", highlight_item);
 		      }
                     /* sub selections */
 		    else if (zMapGUITestModifiers(but_event, GDK_CONTROL_MASK))
