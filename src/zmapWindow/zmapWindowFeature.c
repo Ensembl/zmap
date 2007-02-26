@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  7 13:01 2007 (rds)
+ * Last edited: Feb 26 11:46 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.84 2007-02-07 13:03:51 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.85 2007-02-26 12:23:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2088,7 +2088,44 @@ static void cleanUpFeatureCB(gpointer data, gpointer user_data)
   return ;
 }
 
+static void featureCopySelectedItem(ZMapFeature feature_in, 
+                                    ZMapFeature feature_out, 
+                                    FooCanvasItem *selected)
+{
+  ZMapWindowItemFeature item_feature_data;
+  ZMapSpanStruct span = {0};
+  ZMapAlignBlockStruct alignBlock = {0};
 
+  if((item_feature_data = g_object_get_data(G_OBJECT(selected), ITEM_SUBFEATURE_DATA)))
+    {
+      memcpy(feature_out, feature_in, sizeof(ZMapFeatureStruct));
+      
+      if(feature_out->type == ZMAPFEATURE_TRANSCRIPT)
+        {
+          feature_out->feature.transcript.exons   = NULL;
+          feature_out->feature.transcript.introns = NULL;
+          /* copy the selected intron/exon */
+          span.x1 = item_feature_data->start;
+          span.x2 = item_feature_data->end;
+          if(item_feature_data->subpart == ZMAPFEATURE_SUBPART_EXON || 
+             item_feature_data->subpart == ZMAPFEATURE_SUBPART_EXON_CDS)
+            zMapFeatureAddTranscriptExonIntron(feature_out, &span, NULL);
+          else
+            zMapFeatureAddTranscriptExonIntron(feature_out, NULL, &span);
+        }
+      else if(feature_out->type == ZMAPFEATURE_ALIGNMENT && 
+              item_feature_data->subpart == ZMAPFEATURE_SUBPART_MATCH)
+        {
+          feature_out->feature.homol.align = NULL;
+          /* copy the selected align */
+          alignBlock.q1 = item_feature_data->start;
+          alignBlock.q2 = item_feature_data->end;
+          feature_out->feature.homol.align = g_array_sized_new(FALSE, TRUE, sizeof(ZMapAlignBlockStruct), 1);
+        }
+    }
+
+  return ;
+}
 
 
 /* Callback for any events that happen on individual canvas items.
@@ -2102,7 +2139,9 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
   gboolean event_handled = FALSE ;
   ZMapWindow window = (ZMapWindowStruct*)data ;
   ZMapFeature feature ;
+  ZMapFeatureStruct feature_copy = {};
   static guint32 last_but_press = 0 ;			    /* Used for double clicks... */
+  
 
   switch (event->type)
     {
@@ -2141,24 +2180,37 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		 * the root handler. */
 		if (but_event->button == 1 || but_event->button == 3)
 		  {
-		    gboolean replace_highlight = TRUE ;
+		    gboolean replace_highlight = TRUE, externally_handled = FALSE;
 		    FooCanvasItem *highlight_item, *dna_item, *trans_item;
 
+                    /* multiple selections */
 		    if (zMapGUITestModifiers(but_event, GDK_SHIFT_MASK))
 		      {
 			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
 
+                        externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "multiple_select", highlight_item);
+
 			if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item))
 			  replace_highlight = FALSE ;
 		      }
+                    /* sub selections */
 		    else if (zMapGUITestModifiers(but_event, GDK_CONTROL_MASK))
 		      {
 			highlight_item = real_item ;
+                        /* monkey around to get feature_copy to be the right correct data */
+                        featureCopySelectedItem(feature, &feature_copy,
+                                                highlight_item);
+                        externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "single_select", highlight_item);
 		      }
 		    else
 		      {
+                        /* single select */
 			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
+                        externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "single_select", highlight_item);
 		      }
+
+                    /* highlight object in this window.... */
+                    zmapWindowHighlightObject(window, highlight_item, replace_highlight);
 
 		    /* Pass information about the object clicked on back to the application. */
 		    zMapWindowUpdateInfoPanel(window, feature, real_item, highlight_item, replace_highlight) ;
@@ -2188,7 +2240,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		
                 if(!(externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "edit", highlight_item)))
                   {
-
 		    if (feature->type == ZMAPFEATURE_ALIGNMENT)
                       {
                         if((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
@@ -2202,8 +2253,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                       }
 		    else
 		      zmapWindowEditorCreate(window, highlight_item, window->edittable_features) ;
-
-
                   }
 
 		event_handled = TRUE ;
@@ -2564,6 +2613,9 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	break ;
       }
 
+    case 101:
+      zmapWindowContextExplorerCreate(menu_data->window, (ZMapFeatureAny)feature);
+      break;
     default:
       zMapAssertNotReached() ;				    /* exits... */
       break ;
@@ -2607,6 +2659,9 @@ static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
+#ifdef DEBUG_CONTEXT_FTOI_VIEWER
+      {ZMAPGUI_MENU_NORMAL, "Debug Feature Context & FToI", 101, itemMenuCB, NULL},
+#endif
       {ZMAPGUI_MENU_NORMAL, "List All Column Features",       1, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "List This Name Column Features", 9, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Feature Search Window",          3, itemMenuCB, NULL},
