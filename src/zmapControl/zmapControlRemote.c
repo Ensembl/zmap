@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 19 14:33 2007 (rds)
+ * Last edited: Feb 26 16:13 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.42 2007-02-20 12:53:21 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.43 2007-02-26 16:14:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -623,7 +623,6 @@ static ZMapFeatureContextExecuteStatus zoomToFeatureCB(GQuark key,
 static gboolean controlZoomTo(ZMap zmap, XMLData xml_data)
 {
   ZMapWindow window;
-  ZMapFeature feature;
   gboolean status = TRUE;
   GList *list;
   ZMapSpan span;
@@ -632,7 +631,7 @@ static gboolean controlZoomTo(ZMap zmap, XMLData xml_data)
 
   if((list = g_list_first(xml_data->feature_list)))
     {
-      zMapFeatureContextExecute(xml_data->context, ZMAPFEATURE_STRUCT_FEATURE,
+      zMapFeatureContextExecute((ZMapFeatureAny)(xml_data->context), ZMAPFEATURE_STRUCT_FEATURE,
                                 zoomToFeatureCB, window);
     }
   else if((list = g_list_first(xml_data->locations)))
