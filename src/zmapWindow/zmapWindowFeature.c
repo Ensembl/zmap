@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 26 15:28 2007 (rds)
+ * Last edited: Feb 26 16:20 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.87 2007-02-26 15:46:00 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.88 2007-02-26 16:21:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2616,10 +2616,11 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	  }
 	break ;
       }
-
+#ifdef RDS_DONT_INCLUDE
     case 101:
       zmapWindowContextExplorerCreate(menu_data->window, (ZMapFeatureAny)feature);
       break;
+#endif
     default:
       zMapAssertNotReached() ;				    /* exits... */
       break ;
