@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 26 12:40 2007 (rds)
+ * Last edited: Feb 26 15:28 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.86 2007-02-26 12:54:47 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.87 2007-02-26 15:46:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -371,7 +371,7 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
   if (zMapFeatureSetFindFeature(feature_set, curr_feature))
     {
       /* Remove it completely. */
-      if (zMapWindowFeatureRemove(zmap_window, curr_feature_item))
+      if (zMapWindowFeatureRemove(zmap_window, curr_feature_item, TRUE))
 	{
 	  FooCanvasItem *set_item ;
 
@@ -393,7 +393,7 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 /* Remove an existing feature from the displayed feature context.
  * 
  * Returns FALSE if the feature does not exist. */
-gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item)
+gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item, gboolean destroy_feature)
 {
   gboolean result = FALSE ;
   ZMapFeature feature ;
@@ -432,8 +432,9 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
           /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
           gtk_object_destroy(GTK_OBJECT(feature_item)) ;
 
-          /* destroy the feature... deletes record in the featureset. */
-          zMapFeatureDestroy(feature);
+          if(destroy_feature)
+            /* destroy the feature... deletes record in the featureset. */
+            zMapFeatureDestroy(feature);
 
           result = TRUE ;
         }
