@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 26 12:29 2007 (rds)
+ * Last edited: Feb 26 15:41 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.176 2007-02-26 12:30:59 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.177 2007-02-26 15:59:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -462,7 +462,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
                                                        feature->strand,
                                                        ZMAPFRAME_NONE,
                                                        feature)))
-        zMapWindowFeatureRemove(window, feature_item);
+        zMapWindowFeatureRemove(window, feature_item, FALSE);
       break;
     default:
       /* nothing to do for most of it while we only have single blocks and aligns... */
@@ -2200,9 +2200,7 @@ static void sendClientEvent(ZMapWindow window, FeatureSets feature_sets)
 static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_data)
 {
   gboolean event_handled = FALSE ;
-#ifdef RDS_DONT_INCLUDE
-  ZMapWindow window = (ZMapWindow)cb_data ;
-#endif
+
   if (event->type != GDK_CLIENT_EVENT)
     zMapLogFatal("%s", "dataEventCB() received non-GdkEventClient event") ;
   
@@ -2211,30 +2209,16 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       zmapWindowData window_data = NULL ;
       ZMapWindow window = NULL ;
       FeatureSets feature_sets ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      gpointer data = NULL ;
-      ZMapFeatureContext feature_context ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       ZMapFeatureContext diff_context ;
 
 
       /* Retrieve the data pointer from the event struct */
       memmove(&window_data, &(event->data.b[0]), sizeof(void *)) ;
 
-      window = window_data->window ;
+      window       = window_data->window ;
       feature_sets = window_data->data ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      data = (gpointer)(window_data->data) ;
-      feature_context = (ZMapFeatureContext)data ;	    /* Data from a server... */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
       /* ****Remember that someone needs to free the data passed over....****  */
-
 
       /* We need to validate the feature_context at this point, we should be sure it contains
        * some features before continuing. */
