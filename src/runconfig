@@ -82,20 +82,24 @@ case $opsys in
     # The compile of AceConn using the make as setup didn't run ranlib!
     # Simply run ranlib /sw/lib/libAceConn.a && ranlib /sw/lib/libmd5.a
     # foocanvas is currently installed in below location...
+
+    echo "*** WARNING *** "
+    echo "*** WARNING *** : Are MAC_MOUNT_POINT && ZMAP_PREFIX set correctly? Edit $0"
+    echo "*** WARNING *** "
+
+    # MAC_MOUNT_POINT should be /Users/zmap on laptop and /Users/zmap/nfs_mount on desktop!
     MAC_MOUNT_POINT=/Users/zmap/nfs_mount
+    # ZMAP_PREFIX Should be $MAC_MOUNT_POINT/prefix on laptop and $MAC_MOUNT_POINT/prefix/MACOSX on desktop!
     ZMAP_PREFIX=$MAC_MOUNT_POINT/prefix/MACOSX
 
-    #PKG_CONFIG="pkg-config --define-variable=MOUNT_POINT=$MAC_MOUNT_POINT"
     PKG_CONFIG_PATH=$ZMAP_PREFIX/lib/pkgconfig:/usr/local/gtk2/lib/pkgconfig:/sw/lib/pkgconfig
 
     cc_args=""
     cflags_args="CFLAGS=-Wall -I$ZMAP_PREFIX/include"
-    ld_args='LDFLAGS=-Xlinker -bind_at_load'
-    LD_LIBRARY_PATH=$ZMAP_PREFIX/lib:$LD_LIBRARY_PATH
+    ld_args='LDFLAGS=-Xlinker -bind_at_load -L/sw/lib' # added -L/sw/lib for the imac desktop
 
-    #export PKG_CONFIG
-    export PKG_CONFIG_PATH
-    ;;
+
+    export PKG_CONFIG_PATH;;
   * )
     msgAndExit "unsupported operating system: $opsys" ;;
 

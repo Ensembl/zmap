@@ -23,6 +23,7 @@ echo "*   CC               : $CC"
 echo "*   PATH             : $PATH"
 echo "*   PACKAGE_CFG      : $PKG_CONFIG"
 echo "*   PACKAGE_CFG_PATH : $PKG_CONFIG_PATH"
+echo "*   LD_LIBRARY_PATH  : $LD_LIBRARY_PATH"
 echo "* continuing..."
 echo "*"
 
