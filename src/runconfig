@@ -88,9 +88,17 @@ case $opsys in
     echo "*** WARNING *** "
 
     # MAC_MOUNT_POINT should be /Users/zmap on laptop and /Users/zmap/nfs_mount on desktop!
-    MAC_MOUNT_POINT=/Users/zmap/nfs_mount
+    if [ -d /Users/zmap/nfs_mount ]; then
+        MAC_MOUNT_POINT=/Users/zmap/nfs_mount
+    else
+        MAC_MOUNT_POINT=/Users/zmap
+    fi
     # ZMAP_PREFIX Should be $MAC_MOUNT_POINT/prefix on laptop and $MAC_MOUNT_POINT/prefix/MACOSX on desktop!
-    ZMAP_PREFIX=$MAC_MOUNT_POINT/prefix/MACOSX
+    if [ -d $MAC_MOUNT_POINT/prefix/MACOSX ] ; then 
+        ZMAP_PREFIX=$MAC_MOUNT_POINT/prefix/MACOSX
+    else
+        ZMAP_PREFIX=$MAC_MOUNT_POINT/prefix
+    fi
 
     PKG_CONFIG_PATH=$ZMAP_PREFIX/lib/pkgconfig:/usr/local/gtk2/lib/pkgconfig:/sw/lib/pkgconfig
 

@@ -142,7 +142,7 @@ GTK2_MODULES="pango >= 0.1 gtk+-2.0 >= 2.4.0 glib-2.0 gthread-2.0"
 PKG_CHECK_MODULES([GTK], [${GTK2_MODULES}])
 
 dnl This has to go here for our nfs mounted mac....    
-if test "$zmap_os_type" = "darwin" ; then
+if test "$zmap_os_type" = "darwin" && -d /Users/zmap/nfs_mount; then
   PKG_CONFIG="$PKG_CONFIG --define-variable=MOUNT_POINT=/Users/zmap/nfs_mount"
 fi
 
