@@ -6,7 +6,7 @@
 ################################################################################
 ################################################################################
 
-AC_PREREQ(2.57)
+AC_PREREQ(2.59)
 AC_INIT([ZMap],[0.1],[zmap@sanger.ac.uk])
 
 # check we can find the source
@@ -17,11 +17,15 @@ echo "************************************************************"
 echo "* Welcome to ./configure for $PACKAGE_STRING"
 echo "* Cmd: $0 $@"
 echo "* Environment:"
-echo "*   LDFLAGS: $LDFLAGS"
-echo "*   CFLAGS : $CFLAGS"
-echo "*   CC     : $CC"
+echo "*   LDFLAGS          : $LDFLAGS"
+echo "*   CFLAGS           : $CFLAGS"
+echo "*   CC               : $CC"
+echo "*   PATH             : $PATH"
+echo "*   PACKAGE_CFG      : $PKG_CONFIG"
+echo "*   PACKAGE_CFG_PATH : $PKG_CONFIG_PATH"
 echo "* continuing..."
 echo "*"
+
 
 # what are we building on?
 AC_CANONICAL_BUILD
@@ -40,6 +44,7 @@ if test "$zmap_os_type" = "Linux" ; then
 elif test "$zmap_os_type" = "darwin" ; then
    AC_MSG_RESULT([Got OS type of Darwin])
    AC_DEFINE(DARWIN, [], [Operating System is DARWIN.  See zmapThreads/zmapThreads_P.h])
+
    # this is pretty evil NEED to find a better method
    ALPHA_POPT=-I/sw/include
    AC_SUBST(ALPHA_POPT)
@@ -64,7 +69,7 @@ DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([AC_PACKAGE_NAME], Doxyfile, docs/[AC_PACKAGE_NAME])
 
 AC_ARG_ENABLE(shtml-doc,
-        AC_HELP_STRING([--enable-shtml-doc], [enable shtml documentation info compilation (no)]),
+        AS_HELP_STRING(--enable-shtml-doc,enable shtml documentation info compilation (no)),
         shtml=$enableval, shtml=no)
 
 ZMAP_DOXY_HTML_FILE_EXT=".html"
@@ -92,11 +97,11 @@ AC_PATH_XTRA
 X_LIBS="$X_LIBS -lX11"
 
 AC_ARG_ENABLE(debug,
-        AC_HELP_STRING([--enable-debug], [enable debug info compilation (no)]),
+        AS_HELP_STRING(--enable-debug,enable debug info compilation (no)),
         deb=$enableval, deb=no)
 
 AC_ARG_ENABLE(profile,
-        AC_HELP_STRING([--enable-profile], [enable profiling debug info compilation (no)]),
+        AS_HELP_STRING(--enable-profile,enable profiling debug info compilation (no)),
         prof=$enableval, prof=no)
 
 if test "x$prof" = "xyes"; then
@@ -107,7 +112,7 @@ else
    CFLAGS="$CFLAGS -O2";
 fi
 
-
+AC_SUBST(PKG_CONFIG)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
@@ -134,6 +139,11 @@ AC_PROG_LN_S
 
 GTK2_MODULES="pango >= 0.1 gtk+-2.0 >= 2.4.0 glib-2.0 gthread-2.0"
 PKG_CHECK_MODULES([GTK], [${GTK2_MODULES}])
+
+dnl This has to go here for our nfs mounted mac....    
+if test "$zmap_os_type" = "darwin" ; then
+  PKG_CONFIG="$PKG_CONFIG --define-variable=MOUNT_POINT=/Users/zmap/nfs_mount"
+fi
 
 # now foocanvas
 # really we want to allow foocanvas and foocanvas-patched(our version)
