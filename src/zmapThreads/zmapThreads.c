@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jan 31 11:50 2007 (edgrif)
  * Created: Thu Jan 27 11:25:37 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.c,v 1.4 2007-01-31 14:01:44 edgrif Exp $
+ * CVS info:   $Id: zmapThreads.c,v 1.5 2007-02-27 10:37:40 zmap Exp $
  *-------------------------------------------------------------------
  */
 
@@ -179,7 +179,7 @@ char *zMapThreadGetThreadID(ZMapThread thread)
   char *thread_id = NULL ;
 #ifdef LINUX
   char *format = "%ul" ;
-#elif DARWIN
+#elif defined DARWIN
   char *format = "%p" ;
 #else
   char *format = "%d" ;
