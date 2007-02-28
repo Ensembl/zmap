@@ -2,7 +2,7 @@
 <!--#include virtual="/perl/header"-->
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
-<h3>Release Version: ZMap 0.1.21</h3>
+<h3>Release Version: ZMap 0.1.20</h3>
 
 <h3>Release Date: 28 February 2007</h3>
 
@@ -46,10 +46,7 @@ Resolved: Thu Feb 22 09:45:20 2007
 <h4>Acedb</h4>
 
 <PRE>
-id: ticket/22951
-Subject: View Our Wholesale Rolex Replica Watches Today
-Requestors: dpfedzheb@acetechnologies.com
-Resolved: Fri Feb 09 12:09:56 2007
+None this time
 
 </PRE>
 
@@ -57,20 +54,6 @@ Resolved: Fri Feb 09 12:09:56 2007
 <h3>ZMap Changes/Fixes</h3>
 
 
-
-
-	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
-
-
-
-
-	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: fix last release date
-
-
-
-
-	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
-	  notes to 19/10/2006
 
 
 	<p> src/include/ZMap/zmapWebPages.h: update for latest release notes
@@ -88,10 +71,6 @@ Resolved: Fri Feb 09 12:09:56 2007
 	<p> src/zmapDraw/zmapDraw.c: slight hack to make single exon genes
 	  clickable...
 
-
-	  release notes.
-
-
 	<p> src/zmapDraw/zmapDraw.c: slight hack to make single exon genes
 	  clickable...	some explanation
 
@@ -103,10 +82,6 @@ Resolved: Fri Feb 09 12:09:56 2007
 
 	<p> src/zmapWindow/zmapWindow.c: make sure we paste feature sub
 	  coords into the selection buffer if they are selected.
-
-
-	<p> src/zmapUtils/zmapUtils_P.h:
-	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
 
 
 	<p> src/: runbootstrap, runconfig: add defines for 64 bit linux.
@@ -143,9 +118,6 @@ Resolved: Fri Feb 09 12:09:56 2007
 
 
 	<p> src/zmapControl/zmapControlRemoteXML.c: parse location tag
-
-
-	<p> src/zmapControl/zmapControlWindowButtons.c: remove some rubbish
 
 
 	<p> src/zmapWindow/zmapWindow.c: more zoom to position/feature
@@ -234,20 +206,6 @@ Resolved: Fri Feb 09 12:09:56 2007
 	<p> src/zmapControl/zmapControlRemote.c: keep gcc quiet
 
 
-	<p> src/zmapWindow/zmapWindowFeature.c: remove undefined reference to
-	  blah blah
-
-
-	<p> src/zmapUtils/zmapUtils_P.h:
-	  /nfs/team71/acedb/zmap/prefix/scripts/versioner run by zmap
-
-
-	<p> src/runconfig: mac stuff
-
-
-	<p> src/configure.ac: mac changes...
-
-
 	<p> src/zmapUtils/: zmapGUIutils.c: correct minimum version for
 	  dialog...
 
@@ -259,20 +217,12 @@ Resolved: Fri Feb 09 12:09:56 2007
 	  dialog...
 
 
-	<p> src/: configure.ac, runconfig: imac ...
-
-
-	<p> src/: configure.ac, runconfig: both macs ...
-
-
 
 <h3>Acedb Changes/Fixes</h3>
 
 
 	<p> w6/asubs.c: prevented listing dna after a dns kill operation in
 	  rare cases
-	  ----------------------------------------------------------------------
-
 
 
 <!--#include virtual="/perl/footer"-->
