@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jan  4 10:25 2007 (edgrif)
+ * Last edited: Feb 28 15:32 2007 (edgrif)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
- * CVS info:   $Id: zmapUtils_P.h,v 1.59 2007-02-26 16:31:51 zmap Exp $
+ * CVS info:   $Id: zmapUtils_P.h,v 1.60 2007-02-28 15:33:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_P_H
@@ -61,7 +61,7 @@ TITLE " - " ZMAP_MAKE_VERSION_STRING(VERSION, RELEASE, UPDATE)
 
 /* Create a copyright string for dialogs etc. */
 #define ZMAP_COPYRIGHT_STRING()                                  \
-"Copyright (c):   Sanger Institute, 2006"
+"Copyright (c) 2007: Genome Research Ltd."
 
 
 /* Create a website string for dialogs etc. */
