@@ -26,9 +26,9 @@
  *              code release.
  *
  * HISTORY:
- * Last edited: Feb 28 09:54 2007 (edgrif)
+ * Last edited: Feb 28 10:12 2007 (edgrif)
  * Created: Wed Oct 18 11:19:12 2006 (edgrif)
- * CVS info:   $Id: zmapWebPages.h,v 1.6 2007-02-28 09:55:29 edgrif Exp $
+ * CVS info:   $Id: zmapWebPages.h,v 1.7 2007-02-28 10:12:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WEBPAGES_H
@@ -42,6 +42,8 @@
 
 #define ZMAPWEB_RELEASE_NOTES_DIR "Release_notes"
 
+/* This line is parsed/updated by ZMap/scripts/zmapreleasenotes, do not alter its format without
+ * updating that script as well. */
 #define ZMAPWEB_RELEASE_NOTES "release_notes.2007_02_28.shtml"
 
 #define ZMAPWEB_HELP_DOC  "user_interface.shtml"
