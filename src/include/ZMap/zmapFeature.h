@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb  8 11:13 2007 (rds)
+ * Last edited: Mar  1 10:07 2007 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.114 2007-02-08 11:33:46 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.115 2007-03-01 10:08:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -36,6 +36,10 @@
 #include <gdk/gdkcolor.h>
 #include <ZMap/zmapConfigStyleDefaults.h>
 #include <ZMap/zmapXML.h>
+
+/* IN the end all style stuff should disappear from this file apart from this header.... */
+#include <ZMap/zmapStyle.h>
+
 
 
 /* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
@@ -163,8 +167,6 @@ typedef struct
 
 typedef struct ZMapFeatureAlignmentStruct_ *ZMapFeatureAlignment ;
 
-typedef struct ZMapFeatureTypeStyleStruct_ *ZMapFeatureTypeStyle ;
-
 typedef struct ZMapFeatureAnyStruct_ *ZMapFeatureAny ;
 
 /* WARNING: READ THIS BEFORE CHANGING ANY FEATURE STRUCTS:
@@ -228,10 +230,11 @@ typedef struct ZMapFeatureContextStruct_
 							       _only_ these sets are loaded into
 							       the context. */
 
-  GList *styles ;					    /* Global list of all styles, some of
+  GData *styles ;					    /* Global list of all styles, some of
 							       these styles may not be used if not
 							       required for the list given by
 							       feature_set_names. */
+
 
   ZMapFeatureAlignment master_align ;			    /* The target/master alignment out of
 							       the below set. */
@@ -441,168 +444,6 @@ typedef struct
 
 
 
-
-/* 
- *      Styles: specifies how a feature should be drawn/processed.
- */
-
-
-/* Specifies how features that reference this style will be processed. */
-typedef enum
-  {
-    ZMAPSTYLE_MODE_INVALID,				    /* invalid this is bad. */
-    ZMAPSTYLE_MODE_NONE,
-    ZMAPSTYLE_MODE_META,                                    /* Feature to be processed as meta */
-    ZMAPSTYLE_MODE_BASIC,				    /* Basic box features. */
-    ZMAPSTYLE_MODE_TRANSCRIPT,				    /* Usual transcript like structure. */
-    ZMAPSTYLE_MODE_ALIGNMENT,				    /* Usual homology structure. */
-    ZMAPSTYLE_MODE_TEXT,				    /* Text only display. */
-    ZMAPSTYLE_MODE_GRAPH				    /* Graphs of various types. */
-  } ZMapStyleMode ;
-
-
-
-/* Specifies the style of graph. */
-typedef enum
-  {
-    ZMAPSTYLE_GRAPH_INVALID,				    /* Initial setting. */
-    ZMAPSTYLE_GRAPH_LINE,				    /* Just points joining a line. */
-    ZMAPSTYLE_GRAPH_HISTOGRAM				    /* Usual blocky like graph. */
-  } ZMapStyleGraphMode ;
-
-
-
-/* Specifies how wide features should be in relation to their score. */
-typedef enum
-  {
-    ZMAPSCORE_WIDTH,					    /* Use column width only - default. */
-    ZMAPSCORE_OFFSET,
-    ZMAPSCORE_HISTOGRAM,
-    ZMAPSCORE_PERCENT
-  } ZMapStyleScoreMode ;
-
-
-/* Specifies how features in columns should be overlapped for compact display. */
-typedef enum
-  {
-    ZMAPOVERLAP_START,
-    ZMAPOVERLAP_COMPLETE,				    /* draw on top - default */
-    ZMAPOVERLAP_OVERLAP,				    /* bump if feature coords overlap. */
-    ZMAPOVERLAP_POSITION,				    /* bump if features start at same coord. */
-    ZMAPOVERLAP_NAME,					    /* one column per homol target */
-    ZMAPOVERLAP_COMPLEX,				    /* all features with same name in a
-							       single column, several names in one
-							       column but no 2 features overlap. */
-    ZMAPOVERLAP_NO_INTERLEAVE,				    /* all features with same name in a
-							       single column, several names in one
-							       column but no interleaving of sets
-							       of features. */
-    ZMAPOVERLAP_COMPLEX_RANGE,				    /* All features with same name in a
-							       single column if they overlap the
-							       focus range, all other features in
-							       a single column.  */
-    ZMAPOVERLAP_ITEM_OVERLAP,                               /* bump if item coords overlap in canvas space... */
-    ZMAPOVERLAP_SIMPLE,					    /* one column per feature, for testing... */
-    ZMAPOVERLAP_END
-  } ZMapStyleOverlapMode ;
-
-
-
-/* Lets change all these names to just be zmapFeatureStyle, i.e. lose the type bit.....
- * could even lose the feature bit and just go straight to style, would be better. */
-
-typedef struct ZMapFeatureTypeStyleStruct_
-{
-  GQuark original_id ;					    /* Original name. */
-  GQuark unique_id ;					    /* Name normalised to be unique. */
-
-  char *description ;					    /* Description of what this style
-							       represents. */
-
-  ZMapStyleMode mode ;					    /* Specifies how features that
-							       reference this style will be processed. */
-
-  ZMapStyleGraphMode graph_mode ;			    /* Says how to draw a graph. */
-  double baseline ;
-
-  struct
-  {
-    /* I don't want a general show/hide flag here because we should
-     * get that dynamically from the state of the column canvas
-     * item.  */
-    unsigned int hidden_always   : 1 ;			    /* Column always hidden. */
-
-    unsigned int hidden_now      : 1 ;			    /* Column hidden now ? */
-
-    unsigned int show_when_empty : 1 ;			    /* If TRUE, features' column is
-							       displayed even if there are no features. */
-
-    unsigned int showText        : 1 ;			    /* Should feature text be displayed. */
-
-    unsigned int parse_gaps      : 1 ;
-    unsigned int align_gaps      : 1 ;			    /* TRUE: gaps within alignment are displayed,
-							       FALSE: alignment is displayed as a single block. */
-
-    unsigned int join_aligns     : 1 ;			    /* TRUE: joins aligns if between_align_error not exceeded,
-							       FALSE: does not joing aligns. */
-
-
-
-    /* These are all linked, if strand_specific is FALSE, then so are
-     * frame_specific and show_rev_strand. */
-    unsigned int strand_specific : 1 ;			    /* Feature that is on one strand of the dna. */
-    unsigned int show_rev_strand : 1 ;			    /* Only display the feature on the
-							       reverse strand if this is set. */
-    unsigned int frame_specific  : 1 ;			    /* Feature that is in some way linked
-							       to the reading frame of the dna. */
-    unsigned int show_only_as_3_frame : 1 ;		    /* frame specific feature that should
-							       only be displayed when all 3 frames
-							       are shown. */
-
-    unsigned int directional_end : 1 ;			    /* Display pointy ends on exons etc. */
-
-  } opts ;
-
-  struct
-  {
-    unsigned int background_set : 1;
-    unsigned int foreground_set : 1;
-    unsigned int outline_set    : 1;
-    GdkColor  foreground ;      /* Overlaid on background. */
-    GdkColor  background ;      /* Fill colour. */
-    GdkColor  outline ;         /* Surround/line colour. */
-  } colours;
-
-  ZMapStyleOverlapMode overlap_mode ;			    /* Controls how features are grouped
-							       into sub columns within a column. */
-
-  double min_mag ;					    /* Don't display if fewer bases/line */
-  double max_mag ;					    /* Don't display if more bases/line */
-
-  double   width ;					    /* column width */
-  double bump_width;
-
-  ZMapStyleScoreMode   score_mode ;			    /* Controls width of features that
-							       have scores. */
-  double    min_score, max_score ;			    /* Min/max for score width calc. */
-
-
-  /* Allowable align errors, used to decide whether a match should be classified as "perfect".
-   *   within_align_error   is used to assess the blocks in a single gapped alignment if align_gaps = TRUE
-   *  between_align_error   is used to assess several alignments (e.g. for exon matches) if join_homols = TRUE
-   * 
-   * Number is allowable number of missing bases between blocks/alignments, default is 0. */
-  unsigned int within_align_error ;
-  unsigned int between_align_error ;
-
-  /* GFF feature dumping, allows specifying of source/feature types independently of feature
-   * attributes. */
-  GQuark gff_source ;
-  GQuark gff_feature ;
-
-} ZMapFeatureTypeStyleStruct ;
-
-
 typedef enum
   {
     ZMAP_CONTEXT_EXEC_STATUS_OK,
@@ -647,14 +488,15 @@ GQuark zMapFeatureCreateID(ZMapFeatureType feature_type,
 			   ZMapStrand strand, 
                            int start, int end,
 			   int query_start, int query_end) ;
-ZMapFeature zMapFeatureCopy(ZMapFeature feature) ;
+
 ZMapFeature zMapFeatureCreateEmpty(void) ;
 ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
                                               ZMapFeatureType feature_type, 
                                               ZMapFeatureTypeStyle style,
                                               int start, int end,
                                               gboolean has_score, double score,
-                                              ZMapStrand strand, ZMapPhase phase);
+					      ZMapStrand strand, ZMapPhase phase);
+ZMapFeature zMapFeatureCopy(ZMapFeature feature) ;
 
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
 				    char *sequence, char *ontology,
@@ -753,7 +595,7 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
 
 
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
-					    GList *styles, GList *feature_set_names) ;
+					    GData *styles, GList *feature_set_names) ;
 ZMapFeatureContext zMapFeatureContextCreateEmptyCopy(ZMapFeatureContext feature_context);
 gboolean zMapFeatureContextMergeWithDiff(ZMapFeatureContext *current_context_inout,
                                          ZMapFeatureContext new_context,
@@ -818,61 +660,6 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
 
 gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out);
 
-/* 
- *     Style functions, name should all be rationalised to just use "style", not "type".
- */
-
-ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description, ZMapStyleMode mode,
-					   char *outline, char *foreground, char *background,
-					   double width) ;
-void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
-gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out) ;
-void zMapStyleSetColours(ZMapFeatureTypeStyle style, char *outline, char *foreground, char *background) ;
-void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;
-void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score) ;
-void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode, double min, double max, double baseline) ;
-void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
-			     gboolean strand_specific, gboolean frame_specific,
-			     gboolean show_rev_strand, gboolean show_as_3_frame) ;
-void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
-			     gboolean *strand_specific, gboolean *frame_specific,
-			     gboolean *show_rev_strand, gboolean *show_as_3_frame) ;
-void zMapStyleSetHideAlways(ZMapFeatureTypeStyle style, gboolean hide_always) ;
-void zMapStyleSetHidden(ZMapFeatureTypeStyle style, gboolean hidden) ;
-gboolean zMapStyleGetHidden(ZMapFeatureTypeStyle style) ;
-void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
-void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
-			      unsigned int within_align_error) ;
-gboolean zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, unsigned int *within_align_error) ;
-void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, unsigned int between_align_error) ;
-gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *between_align_error) ;
-char *zMapStyleCreateName(char *style_name) ;
-GQuark zMapStyleCreateID(char *style_name) ;
-char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
-void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
-ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
-gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
-void zMapFeatureTypeGetColours(ZMapFeatureTypeStyle style,
-                               GdkColor **background,
-                               GdkColor **foreground,
-                               GdkColor **outline) ;
-void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
-ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style) ;
-void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode) ;
-
-ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
-gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style) ;
-
-void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
-void zMapFeatureStylePrintAll(GList *styles, char *user_string) ;
-GList *zMapFeatureTypeGetFromFile(char *types_file) ;
-gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
-ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id) ;
-GList *zMapStylesGetNames(GList *styles) ;
-GList *zMapStyleGetAllPredefined(void) ;
-GList *zMapStyleMergeStyles(GList *curr_styles, GList *new_styles) ;
-void zMapStyleDestroyStyles(GList *styles) ;
-
 
 /* ================================================================= */
 /* functions in zmapFeatureFormatInput.c */
@@ -909,6 +696,156 @@ gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any,
                              ZMapXMLWriter xml_writer,
                              GArray **xml_events_out,
                              int xml_type);
+
+
+
+/* 
+ *     Style functions, name should all be rationalised to just use "style", not "type".
+ */
+
+
+/* ALL THIS STYLE STUFF NEEDS TO GO IN A SEPARATE HEADER..... */
+
+/* 
+ *      Styles: specifies how a feature should be drawn/processed.
+ */
+
+
+
+
+
+/* Specifies the style of graph. */
+typedef enum
+  {
+    ZMAPSTYLE_GRAPH_INVALID,				    /* Initial setting. */
+    ZMAPSTYLE_GRAPH_LINE,				    /* Just points joining a line. */
+    ZMAPSTYLE_GRAPH_HISTOGRAM				    /* Usual blocky like graph. */
+  } ZMapStyleGraphMode ;
+
+
+
+/* Specifies how wide features should be in relation to their score. */
+typedef enum
+  {
+    ZMAPSCORE_WIDTH,					    /* Use column width only - default. */
+    ZMAPSCORE_OFFSET,
+    ZMAPSCORE_HISTOGRAM,
+    ZMAPSCORE_PERCENT
+  } ZMapStyleScoreMode ;
+
+
+/* Specifies how features in columns should be overlapped for compact display. */
+typedef enum
+  {
+    ZMAPOVERLAP_START,
+    ZMAPOVERLAP_COMPLETE,				    /* draw on top - default */
+    ZMAPOVERLAP_OVERLAP,				    /* bump if feature coords overlap. */
+    ZMAPOVERLAP_POSITION,				    /* bump if features start at same coord. */
+    ZMAPOVERLAP_NAME,					    /* one column per homol target */
+    ZMAPOVERLAP_COMPLEX,				    /* all features with same name in a
+							       single column, several names in one
+							       column but no 2 features overlap. */
+    ZMAPOVERLAP_NO_INTERLEAVE,				    /* all features with same name in a
+							       single column, several names in one
+							       column but no interleaving of sets
+							       of features. */
+    ZMAPOVERLAP_COMPLEX_RANGE,				    /* All features with same name in a
+							       single column if they overlap the
+							       focus range, all other features in
+							       a single column.  */
+    ZMAPOVERLAP_ITEM_OVERLAP,                               /* bump if item coords overlap in canvas space... */
+    ZMAPOVERLAP_SIMPLE,					    /* one column per feature, for testing... */
+    ZMAPOVERLAP_END
+  } ZMapStyleOverlapMode ;
+
+
+
+
+/* Lets change all these names to just be zmapStyle, i.e. lose the featuretype bit..... */
+
+
+
+ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description) ;
+
+void zMapStyleSetParent(ZMapFeatureTypeStyle style, char *parent_name) ;
+void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
+ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width) ;
+double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out) ;
+
+void zMapStyleSetColours(ZMapFeatureTypeStyle style, char *outline, char *foreground, char *background) ;
+gboolean zMapStyleIsBackgroundColour(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleIsForegroundColour(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleIsOutlineColour(ZMapFeatureTypeStyle style) ;
+GdkColor *zMapStyleGetColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext colour_context) ;
+
+
+
+void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;
+void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score) ;
+void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode, double min, double max, double baseline) ;
+void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
+			     gboolean strand_specific, gboolean frame_specific,
+			     gboolean show_rev_strand, gboolean show_as_3_frame) ;
+void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
+			     gboolean *strand_specific, gboolean *frame_specific,
+			     gboolean *show_rev_strand, gboolean *show_as_3_frame) ;
+void zMapStyleSetHideAlways(ZMapFeatureTypeStyle style, gboolean hide_always) ;
+void zMapStyleSetHidden(ZMapFeatureTypeStyle style, gboolean hidden) ;
+gboolean zMapStyleGetHidden(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
+void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
+			      unsigned int within_align_error) ;
+gboolean zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, unsigned int *within_align_error) ;
+void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, unsigned int between_align_error) ;
+gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *between_align_error) ;
+gboolean zMapStyleGetParseGaps(ZMapFeatureTypeStyle style) ;
+
+char *zMapStyleGetGFFSource(ZMapFeatureTypeStyle style) ;
+char *zMapStyleGetGFFFeature(ZMapFeatureTypeStyle style) ;
+
+
+char *zMapStyleCreateName(char *style_name) ;
+GQuark zMapStyleCreateID(char *style_name) ;
+char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
+GQuark zMapStyleGetID(ZMapFeatureTypeStyle style) ;
+
+void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
+ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
+gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
+void zMapFeatureTypeGetColours(ZMapFeatureTypeStyle style,
+                               GdkColor **background,
+                               GdkColor **foreground,
+                               GdkColor **outline) ;
+void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
+ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode) ;
+
+ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style) ;
+
+unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
+
+
+GData *zMapFeatureTypeGetFromFile(char *types_file) ;
+
+
+
+
+
+/* Style set functions... */
+
+void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
+void zMapFeatureStylePrintAll(GList *styles, char *user_string) ;
+gboolean zMapStyleInheritAllStyles(GData **style_set) ;
+gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
+ZMapFeatureTypeStyle zMapFindStyle(GData *styles, GQuark style_id) ;
+GList *zMapStylesGetNames(GData *styles) ;
+GData *zMapStyleGetAllPredefined(void) ;
+GData *zMapStyleMergeStyles(GData *curr_styles, GData *new_styles) ;
+void zMapStyleDestroyStyles(GData *styles) ;
+
 
 
 
