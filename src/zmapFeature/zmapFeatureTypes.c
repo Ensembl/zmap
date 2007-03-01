@@ -27,16 +27,20 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan 31 11:23 2007 (rds)
+ * Last edited: Mar  1 10:03 2007 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.41 2007-01-31 11:31:42 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.42 2007-03-01 10:03:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfig.h>
+
+/* This should go in the end..... */
 #include <zmapFeature_P.h>
+
+#include <zmapStyle_P.h>
 
 
 /* Think about defaults, how should they be set, should we force user to set them ? */
@@ -54,9 +58,25 @@ typedef struct
 
 typedef struct
 {
-  GList *curr_styles ;
+  GData *curr_styles ;
 
 } MergeStyleCBStruct, *MergeStyleCB ;
+
+
+typedef struct
+{
+  gboolean error ;
+  ZMapFeatureTypeStyle inherited_style ;
+} InheritStyleCBStruct, *InheritStyleCB ;
+
+
+typedef struct
+{
+  gboolean errors ;
+  GData *style_set ;
+  GData *inherited_styles ;
+  ZMapFeatureTypeStyle prev_style ;
+} InheritAllCBStruct, *InheritAllCB ;
 
 
 
@@ -68,8 +88,56 @@ static void stylePrintFunc(gpointer data, gpointer user_data) ;
 static void checkListName(gpointer data, gpointer user_data) ;
 static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data) ;
 
-static void mergeStyle(gpointer data, gpointer user_data_unused) ;
-static void destroyStyle(gpointer data, gpointer user_data_unused) ;
+static void mergeStyle(GQuark style_id, gpointer data, gpointer user_data_unused) ;
+
+static void destroyStyle(GQuark style_id, gpointer data, gpointer user_data_unused) ;
+
+static ZMapFeatureTypeStyle createInheritedStyle(GData *style_set, char *parent_style) ;
+static void inheritStyleCB(gpointer data, gpointer user_data) ;
+
+
+
+static void inheritCB(GQuark key_id, gpointer data, gpointer user_data) ;
+static gboolean doStyleInheritance(GData **style_set, GData **inherited_styles, ZMapFeatureTypeStyle curr_style) ;
+static void inheritAllFunc(gpointer data, gpointer user_data) ;
+
+
+
+
+/* Keep in step with enum.... */
+char *style_mode_str_G[] = {
+    "ZMAPSTYLE_MODE_INVALID",
+    "ZMAPSTYLE_MODE_NONE",
+    "ZMAPSTYLE_MODE_META",
+    "ZMAPSTYLE_MODE_BASIC",
+    "ZMAPSTYLE_MODE_TRANSCRIPT",
+    "ZMAPSTYLE_MODE_ALIGNMENT",
+    "ZMAPSTYLE_MODE_TEXT",
+    "ZMAPSTYLE_MODE_GRAPH"} ;
+
+
+char *style_overlapmode_str_G[] = {
+    "ZMAPOVERLAP_START",
+    "ZMAPOVERLAP_COMPLETE",
+    "ZMAPOVERLAP_OVERLAP",
+    "ZMAPOVERLAP_POSITION",
+    "ZMAPOVERLAP_NAME",
+    "ZMAPOVERLAP_COMPLEX",
+    "ZMAPOVERLAP_NO_INTERLEAVE",
+    "ZMAPOVERLAP_COMPLEX_RANGE",
+    "ZMAPOVERLAP_ITEM_OVERLAP",
+    "ZMAPOVERLAP_SIMPLE",
+    "ZMAPOVERLAP_END"
+} ;
+
+
+char *style_scoremode_str_G[] = {
+    "ZMAPSCORE_WIDTH",					    /* Use column width only - default. */
+    "ZMAPSCORE_OFFSET",
+    "ZMAPSCORE_HISTOGRAM",
+    "ZMAPSCORE_PERCENT"
+} ;
+
 
 
 /*! @defgroup zmapstyles   zMapStyle: Feature Style handling for ZMap
@@ -85,25 +153,92 @@ static void destroyStyle(gpointer data, gpointer user_data_unused) ;
 
 
 
+/* Sets up all the inheritance for the set of styles.
+ * 
+ * The method is to record each style that we have inherited as we go, we then
+ * check the set of inherited styles to see if we need to do one each time
+ * we do through the list.
+ * 
+ * If there are errors in trying to inherit styles (e.g. non-existent parents)
+ * then this function returns FALSE and there will be log messages identifying
+ * the errors.
+ * 
+ *  */
+gboolean zMapStyleInheritAllStyles(GData **style_set)
+{
+  gboolean result = FALSE ;
+  GData *inherited_styles ;
+  InheritAllCBStruct cb_data = {FALSE} ;
+
+  g_datalist_init(&inherited_styles) ;
+  cb_data.style_set = *style_set ;
+  cb_data.inherited_styles = inherited_styles ;
+
+  g_datalist_foreach(style_set, inheritCB, &cb_data) ;
+
+  /* We always return the inherited set since the style set is inherited in place
+   * but we signal that there were errors. */
+  *style_set = cb_data.style_set ;
+  result = !cb_data.errors ;
+  g_datalist_clear(&inherited_styles) ;
+
+  return result ;
+}
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Creates a new style which has inherited properties from existing styles, the styles
+ * are tied together in parent/child tree relationship by the parent_id tag in the style. */
+ZMapFeatureTypeStyle zMapStyleCreateFull(GData *style_set, char *parent_style,
+					 char *name, char *description, ZMapStyleMode mode,
+					 char *outline, char *foreground, char *background,
+					 double width)
+{
+  ZMapFeatureTypeStyle new_style = NULL ;
+  ZMapFeatureTypeStyle inherited_style ;
+
+  /* If we can create an inherited style then overload it with the supplied style params. */
+  if ((inherited_style = createInheritedStyle(style_set, parent_style)))
+    {
+      ZMapFeatureTypeStyle tmp_style ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      tmp_style = zMapFeatureTypeCreate(name, description, mode,
+					outline, foreground, background,
+					width) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      tmp_style = zMapFeatureTypeCreate(name, description) ;
+      zMapStyleSetMode(tmp_style, mode) ;
+      zMapStyleSetColours(tmp_style, outline, foreground, background) ;
+      zMapStyleSetWidth(tmp_style, width) ;
+
+
+      /* This will leave the fully merged style in inherited_style, so we throw new_style
+       * away. */
+      if (zMapStyleMerge(inherited_style, tmp_style))
+	new_style = inherited_style ;
+
+      zMapFeatureTypeDestroy(tmp_style) ;
+    }
+
+  return new_style ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
 
 /* Create a new type for displaying features. */
-ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description, ZMapStyleMode mode,
-					   char *outline, char *foreground, char *background,
-					   double width)
+ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description)
 {
   ZMapFeatureTypeStyle new_type = NULL ;
   char *name_lower ;
 
-  /* I am unsure if this is a good thing to do here, I'm attempting to make sure the type is
-   * "sane" but no more than that. */
-  zMapAssert(name && *name && width >= 0.0) ;
-
-  /* Is this overridden by acedb stuff ?? Should rationalise all this..... */
-  if (width == 0)
-    width = 5 ;
+  zMapAssert(name && *name) ;
 
   new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
 
@@ -113,21 +248,21 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description, ZMapSt
   g_free(name_lower) ;
 
   if (description)
-    new_type->description = g_strdup(description) ;
-
-  new_type->mode = mode ;
-
-  new_type->width = width ;
+    {
+      new_type->description = g_strdup(description) ;
+      new_type->fields_set.description = TRUE ;
+    }
 
   new_type->min_mag = new_type->max_mag = 0.0 ;
+  new_type->fields_set.min_mag = new_type->fields_set.max_mag = TRUE ;
 
-  zMapStyleSetColours(new_type, outline, foreground, background);
 
   /* By default we always parse homology gaps, important for stuff like passing this
    * information to blixem. */
   new_type->opts.parse_gaps = TRUE ;
 
   new_type->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+  new_type->fields_set.overlap_mode = TRUE ;
 
   new_type->opts.hidden_always = new_type->opts.hidden_now = FALSE ;
 
@@ -162,10 +297,13 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style)
 
 
 /*!
- * Merge one style into another. Values in curr_style are overwritten with those
+ * Overload one style with another. Values in curr_style are overwritten with those
  * in the new_style. new_style is not altered.
  * 
- * Returns TRUE if merege ok, FALSE if there was a problem, e.g. different style names.
+ * <b>NOTE</b> that both styles will have the same unique id so if you add the new_style
+ * to a style set the reference to the old style will be removed.
+ * 
+ * Returns TRUE if merge ok, FALSE if there was a problem.
  * 
  * @param   curr_style          The style to be overwritten.
  * @param   new_style           The style to used for overwriting.
@@ -173,47 +311,222 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style)
  *  */
 gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;				    /* There is nothing to fail currently. */
+
 
   zMapAssert(curr_style && new_style) ;
 
-  if (new_style->unique_id == curr_style->unique_id)
+  curr_style->original_id = new_style->original_id ;
+  curr_style->unique_id = new_style->unique_id ;
+
+  if (new_style->fields_set.parent_style)
     {
-      /* You can't just do a simple struct copy here so we do it by steam.... */
-      if (new_style->description)
-	{
-	  g_free(curr_style->description) ;
-	  curr_style->description = g_strdup(new_style->description) ;
-	}
-
-      curr_style->mode = new_style->mode ;
-
-      curr_style->opts = new_style->opts ;		    /* struct copy ok here I think.... */
-
-      if (new_style->colours.background_set)
-	curr_style->colours.background = new_style->colours.background ;
-      if (new_style->colours.foreground_set)
-	curr_style->colours.foreground = new_style->colours.foreground ;
-      if (new_style->colours.outline_set)
-	curr_style->colours.outline = new_style->colours.outline ;
-
-      curr_style->overlap_mode = new_style->overlap_mode ;
-      curr_style->min_mag = new_style->min_mag ;
-      curr_style->max_mag = new_style->max_mag ;
-      curr_style->width = new_style->width ;
-      curr_style->bump_width = new_style->bump_width ;
-      curr_style->score_mode = new_style->score_mode ;
-      curr_style->min_score = new_style->min_score ;
-      curr_style->max_score = new_style->max_score ;
-      curr_style->gff_source = new_style->gff_source ;
-      curr_style->gff_feature = new_style->gff_feature ;
+      curr_style->fields_set.parent_style = TRUE ;
+      curr_style->parent_id = new_style->parent_id ;
     }
+
+  if (new_style->fields_set.description)
+    {
+      if (curr_style->fields_set.description)
+	g_free(curr_style->description) ;
+
+      curr_style->description = g_strdup(new_style->description) ;
+      curr_style->fields_set.description = TRUE ;
+    }
+
+  if (new_style->fields_set.mode)
+    {
+      curr_style->mode = new_style->mode ;
+      curr_style->fields_set.mode = TRUE ;
+    }
+
+  if (new_style->fields_set.background_set)
+    {
+      curr_style->normal_colours.background = new_style->normal_colours.background ;
+      curr_style->fields_set.background_set = TRUE ;
+    }
+  if (new_style->fields_set.foreground_set)
+    {
+      curr_style->normal_colours.foreground = new_style->normal_colours.foreground ;
+      curr_style->fields_set.foreground_set = TRUE ;
+    }
+  if (new_style->fields_set.outline_set)
+    {
+      curr_style->normal_colours.outline = new_style->normal_colours.outline ;
+      curr_style->fields_set.outline_set = TRUE ;
+    }
+
+  if (new_style->fields_set.min_mag)
+    {
+      curr_style->min_mag = new_style->min_mag ;
+      curr_style->fields_set.min_mag = TRUE ;
+    }
+
+  if (new_style->fields_set.max_mag)
+    {
+      curr_style->max_mag = new_style->max_mag ;
+      curr_style->fields_set.max_mag = TRUE ;
+    }
+
+  if (new_style->fields_set.overlap_mode)
+    {
+      curr_style->overlap_mode = new_style->overlap_mode ;
+      curr_style->fields_set.overlap_mode = TRUE ;
+    }
+
+  if (new_style->fields_set.bump_width)
+    {
+      curr_style->bump_width = new_style->bump_width ;
+      curr_style->fields_set.bump_width = TRUE ;
+    }
+
+  if (new_style->fields_set.width)
+    {
+      curr_style->width = new_style->width ;
+      curr_style->fields_set.width = TRUE ;
+    }
+
+  if (new_style->fields_set.score_mode)
+    {
+      curr_style->score_mode = new_style->score_mode ;
+      curr_style->fields_set.score_mode = TRUE ;
+    }
+
+  if (new_style->fields_set.min_score)
+    {
+      curr_style->min_score = new_style->min_score ;
+      curr_style->fields_set.min_score = TRUE ;
+    }
+
+  if (new_style->fields_set.max_score)
+    {
+      curr_style->max_score = new_style->max_score ;
+      curr_style->fields_set.max_score = TRUE ;
+    }
+
+  if (new_style->fields_set.gff_source)
+    {
+      curr_style->gff_source = new_style->gff_source ;
+      curr_style->fields_set.gff_source = TRUE ;
+    }
+
+  if (new_style->fields_set.gff_feature)
+    {
+      curr_style->gff_feature = new_style->gff_feature ;
+      curr_style->fields_set.gff_feature = TRUE ;
+    }
+
+  curr_style->opts = new_style->opts ;		    /* struct copy of all opts. */
 
   return result ;
 }
 
 
+#define ZMAPSTYLEPRINTOPT(STYLE_FIELD_DATA, STYLE_FIELD)	\
+  printf("\tOpt " #STYLE_FIELD ": %s\n", ((STYLE_FIELD_DATA) ? "TRUE" : "FALSE"))
 
+#define ZMAPSTYLEPRINTCOLOUR(GDK_COLOUR_PTR, COLOUR_NAME)	\
+  printf("\tColour " #COLOUR_NAME ":\tpixel %d\tred %d green %d blue %d\n", \
+	 (GDK_COLOUR_PTR).pixel, (GDK_COLOUR_PTR).red, (GDK_COLOUR_PTR).green, (GDK_COLOUR_PTR).blue)
+
+/*!
+ * Print out a style.
+ *
+ * @param   style               The style to be printed.
+ * @return   <nothing>
+ *  */
+void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
+{
+  zMapAssert(style) ;
+
+  printf("%s Style: %s (%s)\n", (prefix ? prefix : ""),
+	 g_quark_to_string(style->original_id), g_quark_to_string(style->unique_id)) ;
+
+  if (style->fields_set.parent_style)
+    printf("\tParent style: %s\n", g_quark_to_string(style->parent_id)) ;
+
+  if (style->fields_set.description)
+    printf("\tDescription: %s\n", style->description) ;
+
+  if (style->fields_set.mode)
+    printf("Feature mode: %s\n", style_mode_str_G[style->mode]) ;
+
+  if (style->fields_set.background_set)
+    ZMAPSTYLEPRINTCOLOUR(style->normal_colours.background, background) ;
+
+  if (style->fields_set.foreground_set)
+    ZMAPSTYLEPRINTCOLOUR(style->normal_colours.foreground, foreground) ;
+
+  if (style->fields_set.outline_set)
+    ZMAPSTYLEPRINTCOLOUR(style->normal_colours.outline, outline) ;
+
+  if (style->fields_set.min_mag)
+    printf("\tMin mag: %g\n", style->min_mag) ;
+
+  if (style->fields_set.max_mag)
+    printf("\tMax mag: %g\n", style->max_mag) ;
+
+  if (style->fields_set.overlap_mode)
+    printf("\tOverlap mode: %s\n", style_overlapmode_str_G[style->mode]) ;
+
+  if (style->fields_set.bump_width)
+    printf("\tBump width: %g\n", style->bump_width) ;
+
+  if (style->fields_set.width)
+    printf("\tWidth: %g\n", style->width) ;
+
+  if (style->fields_set.score_mode)
+    printf("Score mode: %s\n", style_scoremode_str_G[style->mode]) ;
+
+  if (style->fields_set.min_score)
+    printf("\tMin score: %g\n", style->min_score) ;
+
+  if (style->fields_set.max_score)
+    printf("\tMax score: %g\n", style->max_score) ;
+
+  if (style->fields_set.gff_source)
+    printf("\tGFF source: %s\n", g_quark_to_string(style->gff_source)) ;
+
+  if (style->fields_set.gff_feature)
+    printf("\tGFF feature: %s\n", g_quark_to_string(style->gff_feature)) ;
+
+  ZMAPSTYLEPRINTOPT(style->opts.hidden_always, hidden_always) ;
+  ZMAPSTYLEPRINTOPT(style->opts.hidden_now, hidden_now) ;
+  ZMAPSTYLEPRINTOPT(style->opts.show_when_empty, show_when_empty) ;
+  ZMAPSTYLEPRINTOPT(style->opts.showText, showText) ;
+  ZMAPSTYLEPRINTOPT(style->opts.parse_gaps, parse_gaps) ;
+  ZMAPSTYLEPRINTOPT(style->opts.align_gaps, align_gaps) ;
+  ZMAPSTYLEPRINTOPT(style->opts.join_aligns, join_aligns) ;
+  ZMAPSTYLEPRINTOPT(style->opts.strand_specific, strand_specific) ;
+  ZMAPSTYLEPRINTOPT(style->opts.show_rev_strand, show_rev_strand) ;
+  ZMAPSTYLEPRINTOPT(style->opts.frame_specific, frame_specific) ;
+  ZMAPSTYLEPRINTOPT(style->opts.show_only_as_3_frame, show_only_as_3_frame) ;
+  ZMAPSTYLEPRINTOPT(style->opts.directional_end, directional_end) ;
+
+  return ;
+}
+
+
+
+void zMapStyleSetParent(ZMapFeatureTypeStyle style, char *parent_name)
+{
+  zMapAssert(style && parent_name && *parent_name) ;
+
+  style->fields_set.parent_style = TRUE ;
+  style->parent_id = zMapStyleCreateID(parent_name) ;
+
+  return ;
+}
+
+void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width)
+{
+  zMapAssert(style && width > 0.0) ;
+
+  style->fields_set.width = TRUE ;
+  style->width = width ;
+
+  return ;
+}
 
 
 
@@ -236,18 +549,18 @@ void zMapStyleSetColours(ZMapFeatureTypeStyle style,
 
   if(outline && *outline)
     {
-      gdk_color_parse(outline, &style->colours.outline) ;
-      style->colours.outline_set = TRUE;
+      gdk_color_parse(outline, &style->normal_colours.outline) ;
+      style->fields_set.outline_set = TRUE;
     }
   if(foreground && *foreground)
     {
-      gdk_color_parse(foreground, &style->colours.foreground) ;
-      style->colours.foreground_set = TRUE;
+      gdk_color_parse(foreground, &style->normal_colours.foreground) ;
+      style->fields_set.foreground_set = TRUE;
     }
   if(background && *background)
     {
-      gdk_color_parse(background, &style->colours.background) ;
-      style->colours.background_set = TRUE;
+      gdk_color_parse(background, &style->normal_colours.background) ;
+      style->fields_set.background_set = TRUE;
     }
   
   return ;
@@ -259,10 +572,17 @@ void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag)
   zMapAssert(style) ;
 
   if (min_mag && min_mag > 0.0)
-    style->min_mag = min_mag ;
+    {
+      style->min_mag = min_mag ;
+      style->fields_set.min_mag = TRUE ;
+    }
 
   if (max_mag && max_mag > 0.0)
-    style->max_mag = max_mag ;
+    {
+      style->max_mag = max_mag ;
+      style->fields_set.max_mag = TRUE ;
+    }
+
 
   return ;
 }
@@ -299,6 +619,9 @@ void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode,
   bc->fmax = (bc->width * bc->histBase) + 0.2 ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  style->fields_set.graph_mode = style->fields_set.baseline
+    = style->fields_set.min_score = style->fields_set.max_score = TRUE ;
+
   return ;
 }
 
@@ -310,6 +633,7 @@ void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode)
 	     && (mode >= ZMAPSTYLE_MODE_INVALID || mode <= ZMAPSTYLE_MODE_TEXT)) ;
 
   style->mode = mode ;
+  style->fields_set.mode = TRUE ;
 
   return ;
 }
@@ -340,8 +664,9 @@ void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_
   zMapAssert(style) ;
 
   style->min_score = min_score ;
-
   style->max_score = max_score ;
+
+  style->fields_set.min_score = style->fields_set.max_score = TRUE ;
 
   return ;
 }
@@ -352,6 +677,7 @@ void zMapStyleSetHideAlways(ZMapFeatureTypeStyle style, gboolean hide_always)
   zMapAssert(style) ;
 
   style->opts.hidden_always = hide_always ;
+
 
   return ;
 }
@@ -425,6 +751,8 @@ void zMapStyleSetScore(ZMapFeatureTypeStyle style, char *score_str,
   if (!(style->width))
     style->width = 2.0 ;
 
+  style->fields_set.score_mode = style->fields_set.min_score = style->fields_set.max_score = TRUE ;
+
   return ;
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -487,10 +815,16 @@ void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_fea
   zMapAssert(style) ;
 
   if (gff_source && *gff_source)
-    style->gff_source = g_quark_from_string(gff_source) ;
+    {
+      style->gff_source = g_quark_from_string(gff_source) ;
+      style->fields_set.gff_source = TRUE ;
+    }
 
   if (gff_feature && *gff_feature)
-    style->gff_feature = g_quark_from_string(gff_feature) ;
+    {
+      style->gff_feature = g_quark_from_string(gff_feature) ;
+      style->fields_set.gff_feature = TRUE ;
+    }
 
   return ;
 }
@@ -521,6 +855,7 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
     }
 
   style->overlap_mode = bump ;
+  style->fields_set.overlap_mode = TRUE ;
 
   return ;
 }
@@ -532,6 +867,7 @@ void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode ov
   zMapAssert(overlap_mode > ZMAPOVERLAP_START && overlap_mode < ZMAPOVERLAP_END) ;
 
   style->overlap_mode = overlap_mode ;
+  style->fields_set.overlap_mode = TRUE ;
 
   return ;
 }
@@ -541,10 +877,9 @@ ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style)
 {
   ZMapStyleOverlapMode mode = ZMAPOVERLAP_COMPLETE;
 
-  if(style)
-    mode = style->overlap_mode ;
-  else
-    zMapLogCritical("%s", "Style is NULL!");
+  zMapAssert(style) ;
+
+  mode = style->overlap_mode ;
 
   return mode;
 }
@@ -560,6 +895,7 @@ void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gb
   style->opts.align_gaps = show_gaps ;
   style->opts.parse_gaps = parse_gaps ;
   style->within_align_error = within_align_error ;
+  style->fields_set.within_align_error = TRUE ;
 
   return ;
 }
@@ -583,6 +919,7 @@ void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, un
 
   style->opts.join_aligns = join_aligns ;
   style->between_align_error = between_align_error ;
+  style->fields_set.between_align_error = TRUE ;
 
   return ;
 }
@@ -708,14 +1045,14 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles)
  * overloads curr_style.
  * 
  *  */
-GList *zMapStyleMergeStyles(GList *curr_styles, GList *new_styles)
+GData *zMapStyleMergeStyles(GData *curr_styles, GData *new_styles)
 {
-  GList *merged_styles = NULL ;
+  GData *merged_styles = NULL ;
   MergeStyleCBStruct merge_data = {NULL} ;
 
   merge_data.curr_styles = curr_styles ;
 
-  g_list_foreach(new_styles, mergeStyle, &merge_data) ;
+  g_datalist_foreach(&new_styles, mergeStyle, &merge_data) ;
   
   merged_styles = merge_data.curr_styles ;
 
@@ -723,11 +1060,11 @@ GList *zMapStyleMergeStyles(GList *curr_styles, GList *new_styles)
 }
 
 
-/* Returns a Glist of all predefined styles, the user should free the list AND the styles when
+/* Returns a GData of all predefined styles, the user should free the list AND the styles when
  * they have finished with them. */
-GList *zMapStyleGetAllPredefined(void)
+GData *zMapStyleGetAllPredefined(void)
 {
-  GList *style_list = NULL ;
+  GData *style_list = NULL ;
   ZMapFeatureTypeStyle curr = NULL ;
   static ZMapFeatureTypeStyleStruct predefined_styles[] =
     {
@@ -812,7 +1149,7 @@ GList *zMapStyleGetAllPredefined(void)
 
       style = zMapFeatureStyleCopy(curr) ;
 
-      style_list = g_list_append(style_list, style) ;
+      g_datalist_id_set_data(&style_list, style->unique_id, style) ;
 
       curr++ ;
     }
@@ -847,12 +1184,11 @@ ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name)
 
 
 /* need a func to free a styles list here..... */
-void zMapStyleDestroyStyles(GList *styles)
+void zMapStyleDestroyStyles(GData *styles)
 {
+  g_datalist_foreach(&styles, destroyStyle, NULL) ;
 
-  g_list_foreach(styles, destroyStyle, NULL) ;
-
-  g_list_free(styles) ;
+  g_datalist_clear(&styles) ;
 
   return ;
 }
@@ -865,18 +1201,18 @@ void zMapStyleDestroyStyles(GList *styles)
 
 /* Read the type/method/source (call it what you will) information from the given file
  * which currently must reside in the users $HOME/.ZMap directory. */
-GList *zMapFeatureTypeGetFromFile(char *types_file_name)
+GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 {
-  GList *types = NULL ;
+  GData *styles = NULL ;
   gboolean result = FALSE ;
-  ZMapConfigStanzaSet types_list = NULL ;
+  ZMapConfigStanzaSet styles_list = NULL ;
   ZMapConfig config ;
 
 
-  if ((config = zMapConfigCreateFromFile(types_file_name)))
+  if ((config = zMapConfigCreateFromFile(styles_file_name)))
     {
-      ZMapConfigStanza types_stanza ;
-      ZMapConfigStanzaElementStruct types_elements[]
+      ZMapConfigStanza styles_stanza ;
+      ZMapConfigStanzaElementStruct styles_elements[]
 	= {{"name"        , ZMAPCONFIG_STRING, {NULL}},
 	   {"description" , ZMAPCONFIG_STRING, {NULL}},
 	   {"outline"     , ZMAPCONFIG_STRING, {NULL}},
@@ -899,35 +1235,35 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	   {NULL, -1, {NULL}}} ;
 
       /* Init fields that cannot default to string NULL. */
-      zMapConfigGetStructFloat(types_elements, "width") = ZMAPFEATURE_DEFAULT_WIDTH ;
+      zMapConfigGetStructFloat(styles_elements, "width") = ZMAPFEATURE_DEFAULT_WIDTH ;
 
-      types_stanza = zMapConfigMakeStanza("Type", types_elements) ;
+      styles_stanza = zMapConfigMakeStanza("Type", styles_elements) ;
 
-      if (!zMapConfigFindStanzas(config, types_stanza, &types_list))
+      if (!zMapConfigFindStanzas(config, styles_stanza, &styles_list))
 	result = FALSE ;
       else
 	result = TRUE ;
     }
 
-  /* Set up connections to the named types. */
+  /* Set up connections to the named styles. */
   if (result)
     {
-      int num_types = 0 ;
-      ZMapConfigStanza next_types ;
+      int num_styles = 0 ;
+      ZMapConfigStanza next_styles ;
 
-      types = NULL ;
+      styles = NULL ;
 
       /* Current error handling policy is to connect to servers that we can and
        * report errors for those where we fail but to carry on and set up the ZMap
        * as long as at least one connection succeeds. */
-      next_types = NULL ;
+      next_styles = NULL ;
       while (result
-	     && ((next_types = zMapConfigGetNextStanza(types_list, next_types)) != NULL))
+	     && ((next_styles = zMapConfigGetNextStanza(styles_list, next_styles)) != NULL))
 	{
 	  char *name ;
 
 	  /* Name must be set so if its not found then don't make a struct.... */
-	  if ((name = zMapConfigGetElementString(next_types, "name")))
+	  if ((name = zMapConfigGetElementString(next_styles, "name")))
 	    {
 	      ZMapFeatureTypeStyle new_type ;
 #ifdef RDS_DONT_INCLUDE
@@ -937,67 +1273,74 @@ GList *zMapFeatureTypeGetFromFile(char *types_file_name)
 	      ZMapStyleMode mode = ZMAPSTYLE_MODE_NONE ;
 
 	      
-	      if (!zMapStyleFormatMode(zMapConfigGetElementString(next_types, "description"), &mode))
+	      if (!zMapStyleFormatMode(zMapConfigGetElementString(next_styles, "description"), &mode))
 		zMapLogWarning("config file \"%s\" has a \"Type\" stanza which has no \"name\" element, "
-			       "the stanza has been ignored.", types_file_name) ;
+			       "the stanza has been ignored.", styles_file_name) ;
+
 
 	      new_type = zMapFeatureTypeCreate(name,
-					       zMapConfigGetElementString(next_types, "description"),
-					       mode,
-					       zMapConfigGetElementString(next_types, "outline"),
-					       zMapConfigGetElementString(next_types, "foreground"),
-					       zMapConfigGetElementString(next_types, "background"),
-					       zMapConfigGetElementFloat(next_types, "width")) ;
+					       zMapConfigGetElementString(next_styles, "description")) ;
+
+	      zMapStyleSetMode(new_type, mode) ;
+
+	      zMapStyleSetColours(new_type,
+				  zMapConfigGetElementString(next_styles, "outline"),
+				  zMapConfigGetElementString(next_styles, "foreground"),
+				  zMapConfigGetElementString(next_styles, "background")) ;
+
+	      zMapStyleSetWidth(new_type, zMapConfigGetElementFloat(next_styles, "width")) ;
+
 
 	      zMapStyleSetMag(new_type,
-			      zMapConfigGetElementInt(next_types, "minmag"),
-			      zMapConfigGetElementInt(next_types, "maxmag")) ;
+			      zMapConfigGetElementInt(next_styles, "minmag"),
+			      zMapConfigGetElementInt(next_styles, "maxmag")) ;
 
 	      zMapStyleSetStrandAttrs(new_type,
-				      zMapConfigGetElementBool(next_types, "strand_specific"),
-				      zMapConfigGetElementBool(next_types, "frame_specific"),
-				      zMapConfigGetElementBool(next_types, "show_reverse"),
-				      zMapConfigGetElementBool(next_types, "show_only_as_3_frame")) ;
+				      zMapConfigGetElementBool(next_styles, "strand_specific"),
+				      zMapConfigGetElementBool(next_styles, "frame_specific"),
+				      zMapConfigGetElementBool(next_styles, "show_reverse"),
+				      zMapConfigGetElementBool(next_styles, "show_only_as_3_frame")) ;
 
-	      zMapStyleSetBump(new_type, zMapConfigGetElementString(next_types, "bump")) ;
+	      zMapStyleSetBump(new_type, zMapConfigGetElementString(next_styles, "bump")) ;
 
               /* Not good to hard code the TRUE here, but I guess blixem requires the gaps array. */
               zMapStyleSetGappedAligns(new_type, 
-                                       zMapConfigGetElementBool(next_types, "gapped_align"),
+                                       zMapConfigGetElementBool(next_styles, "gapped_align"),
                                        TRUE,
-				       zMapConfigGetElementBool(next_types, "gapped_error")) ;
-              zMapStyleSetHidden(new_type, zMapConfigGetElementBool(next_types, "hidden_now"));
-              zMapStyleSetEndStyle(new_type, zMapConfigGetElementBool(next_types, "directional_end"));
-	      types = g_list_append(types, new_type) ;
+				       zMapConfigGetElementBool(next_styles, "gapped_error")) ;
+              zMapStyleSetHidden(new_type, zMapConfigGetElementBool(next_styles, "hidden_now"));
+              zMapStyleSetEndStyle(new_type, zMapConfigGetElementBool(next_styles, "directional_end"));
 
-	      num_types++ ;
+	      g_datalist_id_set_data(&styles, new_type->unique_id, new_type) ;
+
+	      num_styles++ ;
 	    }
 	  else
 	    {
 	      zMapLogWarning("config file \"%s\" has a \"Type\" stanza which has no \"name\" element, "
-			     "the stanza has been ignored.", types_file_name) ;
+			     "the stanza has been ignored.", styles_file_name) ;
 	    }
 	}
 
-      /* Found no valid types.... */
-      if (!num_types)
+      /* Found no valid styles.... */
+      if (!num_styles)
 	result = FALSE ;
     }
 
   /* clean up. */
-  if (types_list)
-    zMapConfigDeleteStanzaSet(types_list) ;
+  if (styles_list)
+    zMapConfigDeleteStanzaSet(styles_list) ;
 
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* debug.... */
-  printAllTypes(types, "getTypesFromFile()") ;
+  printAllTypes(styles, "getTypesFromFile()") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
-  return types ;
+  return styles ;
 }
 
 
@@ -1008,24 +1351,24 @@ void zMapFeatureTypeGetColours(ZMapFeatureTypeStyle style,
 {
   if(background)
     {
-      if(style->colours.background_set)
-        *background = &(style->colours.background);
+      if(style->fields_set.background_set)
+        *background = &(style->normal_colours.background);
       else
         *background = NULL;
     }
 
   if(foreground)
     {
-      if(style->colours.foreground_set)
-        *foreground = &(style->colours.foreground);
+      if(style->fields_set.foreground_set)
+        *foreground = &(style->normal_colours.foreground);
       else
         *foreground = NULL;
     }
 
   if(outline)
     {
-      if(style->colours.outline_set)
-        *outline = &(style->colours.outline);
+      if (style->fields_set.outline_set)
+        *outline = &(style->normal_colours.outline);
       else
         *outline = NULL;
     }
@@ -1152,11 +1495,11 @@ static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data
 
 
 /* Either merges a new style or adds it to current list. */
-static void mergeStyle(gpointer data, gpointer user_data)
+static void mergeStyle(GQuark style_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle new_style = (ZMapFeatureTypeStyle)data ;
   MergeStyleCB merge_data = (MergeStyleCB)user_data ;
-  GList *curr_styles = merge_data->curr_styles ;
+  GData *curr_styles = merge_data->curr_styles ;
   ZMapFeatureTypeStyle curr_style = NULL ;
 
   /* If we find the style then merge it, if not then add a copy to the curr_styles. */
@@ -1166,7 +1509,9 @@ static void mergeStyle(gpointer data, gpointer user_data)
     }
   else
     {
-      curr_styles = g_list_append(curr_styles, zMapFeatureStyleCopy(new_style)) ;
+      g_datalist_id_set_data(&curr_styles, new_style->unique_id, zMapFeatureStyleCopy(new_style)) ;
+
+      merge_data->curr_styles = curr_styles ;
     }
 
   return ;
@@ -1175,7 +1520,7 @@ static void mergeStyle(gpointer data, gpointer user_data)
 
 
 /* Destroy the given style. */
-static void destroyStyle(gpointer data, gpointer user_data_unused)
+static void destroyStyle(GQuark style_id, gpointer data, gpointer user_data_unused)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
 
@@ -1183,3 +1528,239 @@ static void destroyStyle(gpointer data, gpointer user_data_unused)
 
   return ;
 }
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static ZMapFeatureTypeStyle createInheritedStyle(GData *style_set, char *parent_style)
+
+{
+  ZMapFeatureTypeStyle inherited_style = NULL ;
+  GQuark parent_id ;
+
+  if ((parent_id = zMapStyleCreateID(parent_style)))
+    {
+      GQueue *style_queue ;
+      gboolean parent, error ;
+      ZMapFeatureTypeStyle curr_style ;
+      GQuark curr_id ;
+
+      style_queue = g_queue_new() ;
+
+      curr_id = parent_id ;
+      parent = TRUE ;
+      error = FALSE ;
+      do
+	{
+	  if ((curr_style = zMapFindStyle(style_set, curr_id)))
+	    {
+	      g_queue_push_head(style_queue, curr_style) ;
+
+	      if (!curr_style->fields_set.parent_style)
+		parent = FALSE ;
+	      else
+		curr_id = curr_style->parent_id ;
+	    }
+	  else
+	    {
+	      error = TRUE ;
+	    }
+	} while (parent && !error) ;
+
+      if (!error && !g_queue_is_empty(style_queue))
+	{
+	  InheritStyleCBStruct new_style = {FALSE, NULL} ;
+
+	  g_queue_foreach(style_queue, inheritStyleCB, &new_style) ;
+
+	  if (!(new_style.error))
+	    inherited_style = new_style.inherited_style ;
+	}
+
+      g_queue_free(style_queue) ;			    /* We only hold pointers here so no
+							       data to free. */
+    }
+
+  return inherited_style ;
+}
+
+
+/* A GFunc to merge styles.
+ * 
+ * Note that if there is an error at any stage in processing the styles then we return NULL. */
+static void inheritStyleCB(gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle child_style = (ZMapFeatureTypeStyle)data ;
+  InheritStyleCB inherited = (InheritStyleCB)user_data ;
+
+  if (!(inherited->inherited_style))
+    {
+      inherited->inherited_style = child_style ;
+    }
+  else
+    {
+      ZMapFeatureTypeStyle curr_style = inherited->inherited_style ;
+
+      if (zMapStyleMerge(curr_style, child_style))
+	inherited->inherited_style = curr_style ;
+      else
+	{
+	  zMapFeatureTypeDestroy(curr_style) ;
+	  inherited->inherited_style = NULL ;
+	  inherited->error = TRUE ;
+	}
+    }
+
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+/* Functions to sort out the inheritance of styles by copying and overloading. */
+
+/* A GDataForeachFunc() to ..... */
+static void inheritCB(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle curr_style = (ZMapFeatureTypeStyle)data ;
+  InheritAllCB cb_data = (InheritAllCB)user_data ;
+
+  zMapAssert(key_id == curr_style->unique_id) ;
+
+  /* If we haven't done this style yet then we need to do its inheritance. */
+  if (!(g_datalist_id_get_data(&(cb_data->inherited_styles), key_id)))
+    {
+      if (!doStyleInheritance(&(cb_data->style_set), &(cb_data->inherited_styles), curr_style))
+	{
+	  cb_data->errors = TRUE ;
+	}
+
+      /* record that we have now done this style. */
+      g_datalist_id_set_data(&(cb_data->inherited_styles), key_id, curr_style) ;
+    }
+
+  return ;
+}
+
+
+
+static gboolean doStyleInheritance(GData **style_set_inout, GData **inherited_styles_inout,
+				   ZMapFeatureTypeStyle style)
+{
+  gboolean result = TRUE ;
+  GData *style_set, *inherited_styles ;
+  GQueue *style_queue ;
+  gboolean parent ;
+  ZMapFeatureTypeStyle curr_style ;
+  GQuark prev_id, curr_id ;
+
+  style_set = *style_set_inout ;
+  inherited_styles = *inherited_styles_inout ;
+
+  style_queue = g_queue_new() ;
+
+  prev_id = curr_id = style->unique_id ;
+  parent = TRUE ;
+  do
+    {
+      if ((curr_style = zMapFindStyle(style_set, curr_id)))
+	{
+	  g_queue_push_head(style_queue, curr_style) ;
+
+	  if (!curr_style->fields_set.parent_style)
+	    parent = FALSE ;
+	  else
+	    {
+	      prev_id = curr_id ;
+	      curr_id = curr_style->parent_id ;
+	    }
+	}
+      else
+	{
+	  result = FALSE ;
+
+	  zMapLogWarning("Style \"%s\" has the the parent style \"%s\" "
+			 "but the latter cannot be found in the styles set so cannot be inherited.",
+			 g_quark_to_string(prev_id), g_quark_to_string(curr_id)) ;
+	}
+    } while (parent && result) ;
+
+  /* If we only recorded the current style in our inheritance queue then there is no inheritance tree
+   * so no need to do the inheritance. */
+  if (result && g_queue_get_length(style_queue) > 1)
+    {
+      InheritAllCBStruct new_style = {FALSE} ;
+
+      new_style.style_set = style_set ;
+      new_style.inherited_styles = inherited_styles ;
+      g_queue_foreach(style_queue, inheritAllFunc, &new_style) ;
+      style_set = new_style.style_set ;
+      inherited_styles = new_style.inherited_styles ;
+
+      result = !new_style.errors ;
+    }
+
+  g_queue_free(style_queue) ;			    /* We only hold pointers here so no
+						       data to free. */
+
+  *style_set_inout = style_set ;
+  *inherited_styles_inout = inherited_styles ;
+
+  return result ;
+}
+
+
+/* A GFunc to take a style and replace it with one inherited from its parent.
+ * 
+ * Note that if there is an error at any stage in processing the styles then we return NULL. */
+static void inheritAllFunc(gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle curr_style = (ZMapFeatureTypeStyle)data ;
+  InheritAllCB inherited = (InheritAllCB)user_data ;
+
+  if (!inherited->errors)
+    {
+      ZMapFeatureTypeStyle prev_style = inherited->prev_style, tmp_style ;
+
+      if (!prev_style)
+	{
+	  inherited->prev_style = curr_style ;
+	}
+      else
+	{
+	  tmp_style = zMapFeatureStyleCopy(prev_style) ;
+
+	  zMapStylePrint(tmp_style, "Parent") ;
+
+	  if (zMapStyleMerge(tmp_style, curr_style))
+	    {
+	      zMapStylePrint(tmp_style, "child") ;
+
+	      inherited->prev_style = tmp_style ;
+	      
+	      /* The g_datalist call overwrites the old style reference with the new one, we then
+	       * delete the old one. */
+	      g_datalist_id_set_data(&(inherited->style_set), tmp_style->unique_id, tmp_style) ;
+	      tmp_style = curr_style ;			    /* Make sure we destroy the old style. */
+
+	    }
+	  else
+	    {
+	      inherited->errors = TRUE ;
+
+	      zMapLogWarning("Merge of style \"%s\" into style \"%s\" failed.",
+			     g_quark_to_string(curr_style->original_id), g_quark_to_string(tmp_style->original_id)) ;
+	    }
+
+	  zMapFeatureTypeDestroy(tmp_style) ;
+	}
+    }
+
+  return ;
+}
+
+
