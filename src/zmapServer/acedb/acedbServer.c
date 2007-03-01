@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Feb  8 15:18 2007 (rds)
+ * Last edited: Mar  1 09:48 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.83 2007-02-08 15:33:54 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.84 2007-03-01 09:49:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -98,7 +98,7 @@ static gboolean createConnection(void **server_out,
 				 zMapURL url, char *format, 
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
-static ZMapServerResponseType getStyles(void *server, GList **styles_out) ;
+static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
 ZMapFeatureContext copyContext(void *server) ;
@@ -126,7 +126,7 @@ static gboolean checkServerVersion(AcedbServer server) ;
 static gboolean findSequence(AcedbServer server) ;
 static gboolean setQuietMode(AcedbServer server) ;
 
-static gboolean parseTypes(AcedbServer server, GList **styles_out) ;
+static gboolean parseTypes(AcedbServer server, GData **styles_out) ;
 static ZMapServerResponseType findMethods(AcedbServer server) ;
 static ZMapServerResponseType getStyleNames(AcedbServer server, GList **style_names_out) ;
 static ZMapFeatureTypeStyle parseMethod(char *method_str_in,
@@ -269,7 +269,7 @@ static ZMapServerResponseType openConnection(void *server_in)
 
 
 
-static ZMapServerResponseType getStyles(void *server_in, GList **styles_out)
+static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -569,7 +569,7 @@ static void addTypeName(gpointer data, gpointer user_data)
   if (types_data->name_list)
     key_id = GPOINTER_TO_UINT(data) ;
   else
-    key_id = ((ZMapFeatureTypeStyle)(data))->original_id ;
+    key_id = zMapStyleGetID((ZMapFeatureTypeStyle)data) ;
 
   type_name = (char *)g_quark_to_string(key_id) ;
 
@@ -624,7 +624,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
   void *reply = NULL ;
   int reply_len = 0 ;
   char *methods = "" ;
-  GList *styles ;
+  GData *styles ;
   gboolean no_clip = TRUE ;
 
 
@@ -1398,14 +1398,14 @@ static gboolean setQuietMode(AcedbServer server)
  * 
  *
  *  */
-static gboolean parseTypes(AcedbServer server, GList **types_out)
+static gboolean parseTypes(AcedbServer server, GData **types_out)
 {
   gboolean result = FALSE ;
   char *command ;
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
-  GList *types = NULL ;
+  GData *types = NULL ;
 
 
   /* Get all the methods and then filter them if there are requested types. */
@@ -1441,7 +1441,7 @@ static gboolean parseTypes(AcedbServer server, GList **types_out)
 	      
 	      if ((style = (parse_func)(next_line, &curr_pos, &col_group)))
 		{
-		  types = g_list_append(types, style) ;
+		  g_datalist_id_set_data(&types, zMapStyleGetUniqueID(style), style) ;
 		  num_types++ ;
 
 		  if (col_group)
@@ -1451,7 +1451,7 @@ static gboolean parseTypes(AcedbServer server, GList **types_out)
 		      method_list = g_hash_table_lookup(server->method_2_featureset,
 							GINT_TO_POINTER(col_group->feature_set)) ;
 
-		      method_list = g_list_append(method_list, GINT_TO_POINTER(style->original_id)) ;
+		      method_list = g_list_append(method_list, GINT_TO_POINTER(zMapStyleGetID(style))) ;
 
 		      g_hash_table_insert(server->method_2_featureset, 
 					  GINT_TO_POINTER(col_group->feature_set), method_list) ;
@@ -1593,12 +1593,14 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   ZMapFeatureTypeStyle style = NULL ;
   char *method_str = method_str_in ;
   char *next_line = method_str ;
-  char *name = NULL, *remark = NULL, 
+  char *name = NULL, *remark = NULL, *parent = NULL,
     *colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL,
     *gff_source = NULL, *gff_feature = NULL,
     *column_group = NULL, *orig_style = NULL,
     *overlap = NULL ;
-  double width = ACEDB_DEFAULT_WIDTH ;
+  double width = -999.0 ;				    /* this is going to cause problems.... */
+
+
   gboolean strand_specific = FALSE, show_up_strand = FALSE,
     frame_specific = FALSE, show_only_as_3_frame = FALSE ;
   ZMapStyleMode mode = ZMAPSTYLE_MODE_NONE ;
@@ -1642,6 +1644,11 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
 	  remark = strtok_r(NULL, "\"", &line_pos) ;
 	  remark = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Parent") == 0)
+	{
+	  parent = strtok_r(NULL, "\"", &line_pos) ;
+	  parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 	}
       else if (g_ascii_strcasecmp(tag, "Colour") == 0)
 	{
@@ -1900,10 +1907,6 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   if (status)
     {
 
-      /* acedb widths are wider on the screen than zmaps, so scale them up. */
-      width = width * ACEDB_MAG_FACTOR ;
-
-
       /* In acedb methods the colour is interpreted differently according to the type of the
        * feature which we have to intuit here from the GFF type. acedb also has colour names
        * that don't exist in X Windows. */
@@ -1932,9 +1935,24 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
        * names are independent of method names, they may or may not be the same.
        * Also, there is no way of deriving the mode from the acedb method object
        * currently, we have to set it later. */
-      style = zMapFeatureTypeCreate(name, remark, mode,
-				    outline, foreground, background,
-				    width) ;
+      style = zMapFeatureTypeCreate(name, remark) ;
+
+      if (mode != ZMAPSTYLE_MODE_NONE)
+	zMapStyleSetMode(style, mode) ;
+
+      if (colour)
+	zMapStyleSetColours(style, outline, foreground, background) ;
+
+      if (width != -999.0)
+	{
+	  /* acedb widths are wider on the screen than zmaps, so scale them up. */
+	  width = width * ACEDB_MAG_FACTOR ;
+
+	  zMapStyleSetWidth(style, width) ;
+	}
+
+      if (parent)
+	zMapStyleSetParent(style, parent) ;
 
       if (min_mag || max_mag)
 	zMapStyleSetMag(style, min_mag, max_mag) ;
@@ -1980,6 +1998,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   /* Clean up, note g_free() does nothing if given NULL. */
   g_free(name) ;
   g_free(remark) ;
+  g_free(parent) ;
   g_free(colour) ;
   g_free(foreground) ;
   g_free(column_group) ;
@@ -2026,7 +2045,7 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
   ZMapFeatureTypeStyle style = NULL ;
   char *method_str = method_str_in ;
   char *next_line = method_str ;
-  char *name = NULL, *remark = NULL, 
+  char *name = NULL, *remark = NULL, *parent = NULL,
     *colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL,
     *gff_source = NULL, *gff_feature = NULL,
     *column_group = NULL, *orig_style = NULL,
@@ -2078,6 +2097,11 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 
 	  remark = strtok_r(NULL, "\"", &line_pos) ;
 	  remark = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Parent") == 0)
+	{
+	  parent = strtok_r(NULL, "\"", &line_pos) ;
+	  parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 	}
       else if (g_ascii_strcasecmp(tag, "Colour") == 0)
 	{
@@ -2344,9 +2368,24 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
        * names are independent of method names, they may or may not be the same.
        * Also, there is no way of deriving the mode from the acedb method object
        * currently, we have to set it later. */
-      style = zMapFeatureTypeCreate(name, remark, mode,
-				    outline, foreground, background,
-				    width) ;
+      style = zMapFeatureTypeCreate(name, remark) ;
+
+      if (mode != ZMAPSTYLE_MODE_NONE)
+	zMapStyleSetMode(style, mode) ;
+
+      if (colour)
+	zMapStyleSetColours(style, outline, foreground, background) ;
+
+      if (width != -999.0)
+	{
+	  /* acedb widths are wider on the screen than zmaps, so scale them up. */
+	  width = width * ACEDB_MAG_FACTOR ;
+
+	  zMapStyleSetWidth(style, width) ;
+	}
+
+      if (parent)
+	zMapStyleSetParent(style, parent) ;
 
       if (min_mag || max_mag)
 	zMapStyleSetMag(style, min_mag, max_mag) ;
@@ -2496,8 +2535,8 @@ gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data)
   GList *style_list = (GList *)user_data ;
   gint pos_a, pos_b ;
   
-  pos_a = g_list_index(style_list, GUINT_TO_POINTER(style_a->unique_id)) ;
-  pos_b = g_list_index(style_list, GUINT_TO_POINTER(style_b->unique_id)) ;
+  pos_a = g_list_index(style_list, GUINT_TO_POINTER(zMapStyleGetUniqueID(style_a))) ;
+  pos_b = g_list_index(style_list, GUINT_TO_POINTER(zMapStyleGetUniqueID(style_b))) ;
   zMapAssert(pos_a >= 0 && pos_b >= 0 && pos_a != pos_b) ;
 
   if (pos_a < pos_b)
@@ -2720,7 +2759,8 @@ static void stylePrintCB(gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
 
-  printf("%s (%s)\n", g_quark_to_string(style->original_id), g_quark_to_string(style->unique_id)) ;
+  printf("%s (%s)\n", g_quark_to_string(zMapStyleGetID(style)),
+	 g_quark_to_string(zMapStyleGetUniqueID(style))) ;
 
   return ;
 }
