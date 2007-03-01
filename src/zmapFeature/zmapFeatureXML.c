@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 14 15:43 2007 (rds)
+ * Last edited: Feb 26 11:03 2007 (edgrif)
  * Created: Fri Jul 21 14:48:18 2006 (rds)
- * CVS info:   $Id: zmapFeatureXML.c,v 1.5 2007-02-14 17:04:14 rds Exp $
+ * CVS info:   $Id: zmapFeatureXML.c,v 1.6 2007-03-01 10:06:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -411,7 +411,7 @@ void generateFeatureXMLEvents(ZMapFeature feature,
           {
             event.data.comp.name = g_quark_from_string("style");
             event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
-            event.data.comp.value.quark = feature->style->original_id;
+            event.data.comp.value.quark = zMapStyleGetID(feature->style) ;
             xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
           }
 
