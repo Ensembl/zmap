@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  6 10:44 2007 (rds)
+ * Last edited: Feb 26 16:26 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.66 2007-02-06 10:44:51 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.67 2007-03-01 09:54:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -81,11 +81,15 @@ static void colourReverseVideo(GdkColor *colour_inout);
 static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data);
 static void pointerIsOverItem(gpointer data, gpointer user_data);
 static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select, 
                                       double currentX,
                                       double currentY); /* These are WORLD coords */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
 static void extract_feature_from_item(gpointer list_data, gpointer user_data);
@@ -980,20 +984,17 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 {
   gboolean result = FALSE ;
-  int cx1, cy1, cx2, cy2;
-  double feature_x1 = 0.0, feature_x2 = 0.0 ;
-  double x1, y1, x2, y2;
-  ZMapFeature feature;
 
   zMapAssert(window && item) ;
 
-  if(!(result = zmapWindowItemIsShown(item)))
-    return result;
+  if ((result = zmapWindowItemIsShown(item)))
+    {
+      zmapWindowItemCentreOnItem(window, item, FALSE, 100.0) ;
 
-  zmapWindowItemCentreOnItem(window, item, FALSE, 100.0);
+      result = TRUE ;
+    }
 
-  /* UMMMM, What's going on here ????? */
-  return TRUE;
+  return result ;
 }
 
 
@@ -1689,9 +1690,11 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highl
       char *highlight_target ;
 
       /* If we definitely have a background or can only possibly have a background we'll use that */
-      if (style->colours.background_set || (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_TEXT(item)) || FOO_IS_CANVAS_LINE_GLYPH(item))
+      if (zMapStyleIsColour(style, ZMAPSTYLE_DRAW_BACKGROUND)
+	  || (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_TEXT(item)) || FOO_IS_CANVAS_LINE_GLYPH(item))
 	highlight_target = "fill_color_gdk" ;
-      else if (style->colours.outline_set && (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item)))
+      else if (zMapStyleIsColour(style, ZMAPSTYLE_DRAW_OUTLINE)
+	       && (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item)))
 	highlight_target = "outline_color_gdk" ;
       else
 	zMapAssertNotReached() ;
@@ -1708,14 +1711,14 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highl
 		 types to decide how to colour stuff... */
 	      if (exon_data && exon_data->subpart == ZMAPFEATURE_SUBPART_EXON_CDS)
 		{
-		  highlight_colour = &(style->colours.foreground) ;
+		  highlight_colour = zMapStyleGetColour(style, ZMAPSTYLE_DRAW_FOREGROUND) ;
 		}
 	      else
 		{
-		  if (style->colours.background_set)
-		    highlight_colour = &(style->colours.background) ;
+		  if (zMapStyleIsColour(style, ZMAPSTYLE_DRAW_BACKGROUND))
+		    highlight_colour = zMapStyleGetColour(style, ZMAPSTYLE_DRAW_BACKGROUND) ;
 		  else
-		    highlight_colour = &(style->colours.outline) ;
+		    highlight_colour = zMapStyleGetColour(style, ZMAPSTYLE_DRAW_OUTLINE) ;
 		}
 	    }
 	}
@@ -1752,6 +1755,8 @@ static void colourReverseVideo(GdkColor *colour_inout)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void pointerIsOverItem(gpointer data, gpointer user_data)
 {
 #ifdef RDS_BREAKING_STUFF
@@ -1857,7 +1862,11 @@ static void pointerIsOverItem(gpointer data, gpointer user_data)
 #endif
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select, 
                                       double currentX,
                                       double currentY) /* These are WORLD coords */
@@ -1897,7 +1906,12 @@ static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select,
 #endif
   return TRUE;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
  
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data)
 {
 #ifdef RDS_BREAKING_STUFF
@@ -1916,6 +1930,8 @@ static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data)
 #endif
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
