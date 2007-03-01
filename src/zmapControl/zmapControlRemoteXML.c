@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 19 13:22 2007 (rds)
+ * Last edited: Feb 26 08:50 2007 (edgrif)
  * Created: Thu Feb  1 00:12:49 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteXML.c,v 1.7 2007-02-20 12:53:44 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteXML.c,v 1.8 2007-03-01 09:22:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,7 @@
 #include <ZMap/zmapGLibUtils.h>
 
 static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature, 
-                            GList *styles,      GQuark style_id);
+                            GData *styles, GQuark style_id) ;
 /* xml event callbacks ... */
 /* starts */
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, 
@@ -127,7 +127,7 @@ ZMapXMLParser zmapControlRemoteXMLInitialise(void *data)
 /* INTERNALS */
 
 static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature, 
-                            GList *styles,      GQuark style_id)
+                            GData *styles, GQuark style_id)
 {
   ZMapFeatureTypeStyle style, set_style;
   gboolean got_style = TRUE;

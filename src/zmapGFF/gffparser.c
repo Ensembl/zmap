@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 11 16:02 2006 (rds)
+ * Last edited: Feb 19 13:56 2007 (edgrif)
  * Created: Wed Jan 11 11:30:39 2006 (rds)
- * CVS info:   $Id: gffparser.c,v 1.2 2006-11-08 09:24:15 edgrif Exp $
+ * CVS info:   $Id: gffparser.c,v 1.3 2007-03-01 09:20:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -197,7 +197,7 @@ static gboolean readFeatures(parserFile data)
   return result;
 }
 
-static int parseFile(char *filename, GList *styles)
+static int parseFile(char *filename, GData *styles)
 {
   parserFileStruct data = {NULL};
 
@@ -218,7 +218,7 @@ static int parseFile(char *filename, GList *styles)
 int main(int argc, char *argv[])
 {
   int main_rc ;
-  GList *styles = NULL;
+  GData *styles = NULL;
   
   styles  = zMapFeatureTypeGetFromFile("ZMapTypes");
   main_rc = parseFile("huge.gff", styles);

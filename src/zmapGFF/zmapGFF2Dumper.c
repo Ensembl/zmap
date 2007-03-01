@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb  6 17:55 2007 (rds)
+ * Last edited: Feb 26 11:20 2007 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.7 2007-02-06 17:55:58 rds Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.8 2007-03-01 09:20:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -280,7 +280,7 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
   GIOStatus status ;
   gsize bytes_written ;
   GString *buffer = (GString *)user_data ;
-  const char *gff_source = NULL, *gff_feature = NULL ;
+  const char *gff_source, *gff_feature ;
 
 
   /* Don't dump some features...this will go when dna is not longer a feature... */
@@ -289,10 +289,8 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
 
 
   /* Set up GFF output specials from style. */
-  if (style->gff_source)
-    gff_source = g_quark_to_string(style->gff_source) ;
-  if (style->gff_feature)
-    gff_feature = g_quark_to_string(style->gff_feature) ;
+  gff_source = zMapStyleGetGFFSource(style) ;
+  gff_feature = zMapStyleGetGFFFeature(style) ;
 
   /* Fields are: <seqname> <source> <feature> <start> <end> <score> <strand> <frame> */
 

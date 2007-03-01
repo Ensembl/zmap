@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  1 08:57 2007 (rds)
+ * Last edited: Feb 19 10:32 2007 (edgrif)
  * Created: Thu Feb  1 00:29:43 2007 (rds)
- * CVS info:   $Id: zmapControlRemote_P.h,v 1.1 2007-02-06 11:00:15 rds Exp $
+ * CVS info:   $Id: zmapControlRemote_P.h,v 1.2 2007-03-01 09:22:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -103,7 +103,7 @@ typedef struct {
 
   controlClientObj  client;
 
-  GList *styles;                /* These should be ZMapFeatureTypeStyle */
+  GData *styles;                /* These should be ZMapFeatureTypeStyle */
   GList *locations;             /* This is just a list of ZMapSpan Structs */
 
   ViewConnectDataStruct new_view;

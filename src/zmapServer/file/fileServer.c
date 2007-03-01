@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb  6 18:15 2007 (rds)
+ * Last edited: Feb 19 14:05 2007 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.25 2007-02-06 18:15:47 rds Exp $
+ * CVS info:   $Id: fileServer.c,v 1.26 2007-03-01 09:23:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,7 +72,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout) ;
 
 static ZMapServerResponseType openConnection(void *server) ;
-static ZMapServerResponseType getStyles(void *server, GList **styles_out) ;
+static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
 static ZMapFeatureContext copyContext(void *server_conn) ;
@@ -213,7 +213,7 @@ static ZMapServerResponseType openConnection(void *server_in)
  * something has gone wrong.
  * 
  *  */
-static ZMapServerResponseType getStyles(void *server_in, GList **styles_out)
+static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;

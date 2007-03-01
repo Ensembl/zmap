@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jan  5 10:05 2007 (rds)
+ * Last edited: Mar  1 09:20 2007 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.69 2007-01-05 22:26:23 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.70 2007-03-01 09:20:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,22 +82,11 @@ static void destroyFeatureArray(gpointer data) ;
 static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
 static gboolean loadGaps(char *currentPos, GArray *gaps);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static int sortGapsByTarget(gconstpointer a, gconstpointer b);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-static void initSources(GData **datalist, GList *sources);
-
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void stylePrintCB(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 static void mungeFeatureType(char *source, ZMapFeatureType *type_inout);
 static gboolean getNameFromNote(char *attributes, char **name) ;
@@ -112,7 +101,7 @@ static gboolean getNameFromNote(char *attributes, char **name) ;
  * _not_ create any features. This means the parser can be tested/used on huge datasets
  * without having to have huge amounts of memory to hold the feature structs.
  * You can only set parse_only when you create the parser, it cannot be set later. */
-ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only)
+ZMapGFFParser zMapGFFCreateParser(GData *sources, gboolean parse_only)
 {
   ZMapGFFParser parser ;
   GQuark locus_id ;
@@ -144,14 +133,11 @@ ZMapGFFParser zMapGFFCreateParser(GList *sources, gboolean parse_only)
   parser->done_sequence_region = FALSE ;
   parser->sequence_name = NULL ;
   parser->features_start = parser->features_end = 0 ;
-
-  initSources(&(parser->sources), sources);
+  parser->sources = sources ;
 
   /* Check for Locus as one of the sources as this needs to be constructed as we go along. */
   locus_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
-  if (!(parser->locus_set_style = zMapFindStyle(g_datalist_id_get_data(&(parser->sources),
-								       locus_id), 
-						locus_id)))
+  if (!(parser->locus_set_style = zMapFindStyle(parser->sources, locus_id)))
     {
       zMapLogWarning("Locus set will not be created, "
 		     "could not find style \"%s\" for feature set \"%s\".",
@@ -546,9 +532,6 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
    * us to, see destroyFeatureArray() */
   if (!parser->parse_only && parser->feature_sets)
     g_datalist_clear(&(parser->feature_sets)) ;
-
-  if(parser->sources)
-    g_datalist_clear(&(parser->sources));
 
   g_free(parser) ;
 
@@ -972,9 +955,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
   /* If a feature set style or a feature style is missing then we can't carry on.
    * NOTE the feature sets style has the same name as the feature set. */
-  if (!(feature_set_style = zMapFindStyle(g_datalist_id_get_data(&(parser->sources),
-								 feature_set_style_id), 
-					  feature_set_style_id)))
+  if (!(feature_set_style = zMapFindStyle(parser->sources, feature_set_style_id)))
     {
       *err_text = g_strdup_printf("feature ignored, could not find style \"%s\" for feature set \"%s\".",
 				  feature_set_name, feature_set_name) ;
@@ -983,9 +964,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       return result ;
     }
 
-  if (!(feature_style = zMapFindStyle(g_datalist_id_get_data(&(parser->sources),
-							     feature_style_id), 
-				      feature_style_id)))
+  if (!(feature_style = zMapFindStyle(parser->sources, feature_style_id)))
     {
       *err_text = g_strdup_printf("feature ignored, could not find its style \"%s\".",
 				  g_quark_to_string(feature_style_id)) ;
@@ -1142,7 +1121,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
      else if (feature_type == ZMAPFEATURE_ALIGNMENT)
        {
 	 /* I am not sure if we ever have target_strand, target_phase from GFF output.... */
-         if(feature_style->opts.parse_gaps && 
+         if(zMapStyleIsParseGaps(feature_style) && 
             ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL)) 
            {
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
@@ -1430,32 +1409,6 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 
   return has_name ;
 }
-
-/* This should speed things up a little as the look up will be quicker.
- * We store the actual list item at the moment.  This is deliberate so
- * we can use the zMapFindStyle function with the list that we get
- * from our g_dataset_id_get lookup...
- */
-static void initSources(GData **datalist, GList *sources)
-{
-  GList *list = NULL;
-
-  list = g_list_first(sources);
-
-  g_datalist_init(datalist);
-
-  while(list)
-    {
-      g_datalist_id_set_data_full(datalist, 
-				  ((ZMapFeatureTypeStyle)list->data)->unique_id, 
-				  list,
-				  NULL); /* MUST NOT Destroy when g_dataset_clear called */
-      list = list->next;
-    }
-
-  return ;
-}
-
 
 
 /* Format of column group attribute section is:
