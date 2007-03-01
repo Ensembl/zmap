@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 23 09:21 2007 (rds)
+ * Last edited: Mar  1 10:18 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.17 2007-01-23 16:55:48 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.18 2007-03-01 11:18:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1189,7 +1189,11 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
           style = zmapWindowItemGetStyle(item) ;
           menu_data->item_cb  = TRUE;
           /* This is the variant filter... Shouldn't be in the menu code too! */
+#ifdef RDS_OLD_LOCUS_TEST
           if(feature->parent && feature->parent->unique_id == locus_id_G)
+            {}
+#endif
+          if(feature->locus_id != 0)
             {
               menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusOps(NULL, NULL, menu_data));
               menu_sets = g_list_append(menu_sets, separator);
@@ -1290,7 +1294,7 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
           }
         else
           {
-            if(button->button == 1)
+            if(button->button == 1 && feature->locus_id != 0)
               {
                 zmapWindowNavigatorGoToLocusExtents(navigate, item);
                 event_handled = TRUE;
