@@ -20,6 +20,7 @@ ZMap/zmapUtilsDebug.h \
 ZMap/zmapUtils.h \
 ZMap/zmapDNA.h \
 ZMap/zmapSeqMatcher.h \
+ZMap/zmapStyle.h \
 ZMap/zmapWebPages.h \
 ZMap/zmapUtilsLog.h \
 ZMap/zmapUtilsMesg.h \
