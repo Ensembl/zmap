@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Feb  6 15:01 2007 (rds)
+ * Last edited: Mar  1 09:43 2007 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.14 2007-02-06 17:05:55 rds Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.15 2007-03-01 09:43:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,10 @@
  * BETWEEN pthread.h AND gtk.h SUCH THAT IF pthread.h COMES FIRST THEN gtk.h INCLUDES GET MESSED
  * UP AND THIS FILE WILL NOT COMPILE.... */
 #include <pthread.h>
+
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h>
+
 
 #include <ZMap/zmapThreads.h>
 #include <ZMap/zmapServerProtocol.h>
@@ -124,6 +127,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
         protocolGlobalInitFunc(&protocol_init_G, open_load->open.url, &global_init_data) ;
 
         thread_rc = openServerAndLoad(open_load, &server, err_msg_out, global_init_data) ;
+
         break ;
       }
     case ZMAP_SERVERREQ_TERMINATE:
@@ -133,6 +137,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
       zMapCheck(1, "Coding error, unknown request type number: %d", request->type) ;
       break ;
     }
+
 
 
   /* Return server. */
@@ -285,6 +290,10 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
 	      zMapStyleDestroyStyles(styles->styles) ;
 	      styles->styles = NULL ;
+
+	      /* Now we have all the styles do the inheritance for them all. */
+	      if (!zMapStyleInheritAllStyles(&(context->context->styles)))
+		zMapLogWarning("There were errors in inheritiing styles.") ;
 	    }
 	}
     }
@@ -359,8 +368,6 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
     }
 
-
-
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && (features->type == ZMAP_SERVERREQ_FEATURES
 	  || features->type == ZMAP_SERVERREQ_FEATURE_SEQUENCE)
@@ -376,7 +383,6 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     }
-
 
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && (features->type == ZMAP_SERVERREQ_SEQUENCE
@@ -394,7 +400,6 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
     }
 
-
   /* error handling...if there is a server we should get rid of it....and sever connection if
    * required.... */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
@@ -403,8 +408,6 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
       features->feature_context_out = context->context ;
     }
-
-
 
   return thread_rc ;
 }
