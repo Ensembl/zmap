@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Mar  1 09:43 2007 (edgrif)
+ * Last edited: Mar  1 10:18 2007 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.15 2007-03-01 09:43:53 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.16 2007-03-01 10:20:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -293,7 +293,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
 	      /* Now we have all the styles do the inheritance for them all. */
 	      if (!zMapStyleInheritAllStyles(&(context->context->styles)))
-		zMapLogWarning("There were errors in inheritiing styles.") ;
+		zMapLogWarning("%s", "There were errors in inheriting styles.") ;
 	    }
 	}
     }
