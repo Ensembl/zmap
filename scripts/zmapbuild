@@ -16,8 +16,10 @@ ZBmailOnExit="true"
 
 
 # set up usage strings.
-cmdstring='[-v -r -u -m <machine> -I -n <notify@email> -i ] <target_build_directory>'
+cmdstring='[-d -v -r -u -m <machine> -I -n <notify@email> -i ] <target_build_directory>'
 descstring='
+   -d   call zmapreleasenotes script to construct a set of release notes
+
    -I   initialise the directory (rm -rf target, cvs co) also makes the docs
 
    -v   do the build replacing target_build_directory name with "ZMap.<version>.BUILD"
@@ -52,8 +54,9 @@ notify=""
 pinstall=""
 prefix=""
 
-while getopts ":ruvm:n:Ii" opt ; do
+while getopts ":druvm:n:Ii" opt ; do
   case $opt in
+    d  ) release_notes='TRUE' ;;
     r  ) tag="release"    ;;
     u  ) tag="update"     ;;
     v  ) version="true"    ;;
@@ -85,6 +88,19 @@ ZBRemoteDirectories $machine
 remote_builddir=$ZBRbuildBase
 remote_targetdir=$remote_builddir/$targetdir
 remote_cvscopy=$remote_targetdir
+
+
+#
+# If user requested release notes then these must be done _before_ the build/tag
+# so that they contain the correct zmap release version.
+#
+if [ "$release_notes" ] ; then
+  ZBlogmsg 'Making release notes'
+
+  zmapreleasenotes $local_builddir || ZBmsgAndExit "zmapreleasenotes script failed."
+fi
+
+
 
 #
 # move to the generic build directory and do a cvs checkout of the source
