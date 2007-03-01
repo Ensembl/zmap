@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Dec 20 16:33 2006 (edgrif)
+ * Last edited: Mar  1 14:23 2007 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.30 2006-12-21 12:08:45 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.31 2007-03-01 14:24:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -294,13 +294,22 @@ static void makeStatusTooltips(ZMap zmap)
 
 
 
-/* This code was taken from following the code through in gtk_maximise_window() to gdk_window_maximise() etc.
- * But it doesn't work that reliably....under KDE it does the right thing, but not under GNOME
- * where the window is maximised in both directions.
+
+/* Users have asked us to make the zmap window as big as possible vertically, the horizontal size
+ * is not usually an issue, we can set it small and then gtk will expand it to accomodate all the
+ * buttons etc along the top of the window which results in a good horizontal size. The vertical
+ * size is more tricky as lots of window managers provide tool bars etc which take up screen
+ * space. We try various ways to deal with this:
  * 
- * If the window manager supports the _NET_WM_ stuff then we use that to set the window max
+ * If the window manager supports _NET_WORKAREA then we get that property and use it to
+ * set the height/width.
+ * 
+ * Otherwise if the window manager supports the _NET_WM_ stuff then we use that to set the window max
  * as it will automatically take into account any menubars etc. created by the window manager.
- * 
+ * But it doesn't work that reliably....under KDE it does the right thing, but _not_ under GNOME
+ * where the window is maximised in both directions which is very annoying. Later versions of
+ * GNOME do work correctly though.
+ *
  * Otherwise we are back to guessing some kind of size.
  * If someone displays a really short piece of dna this will make the window
  * too big so really we should readjust the window size to fit the sequence
@@ -309,19 +318,91 @@ static void makeStatusTooltips(ZMap zmap)
  */
 static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 {
-  GdkAtom max_atom_vert ;
+  GdkAtom geometry_atom, workarea_atom, max_atom_vert ;
   GdkScreen *screen ;
 
-  /* This all needs the tests/tidying that the gtk routines have.... */
+
+  /* Get the atoms for _NET_* properties. */
+  geometry_atom = gdk_atom_intern("_NET_DESKTOP_GEOMETRY", FALSE) ;
+  workarea_atom = gdk_atom_intern("_NET_WORKAREA", FALSE) ;
   max_atom_vert = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_VERT", FALSE) ;
 
   screen = gtk_widget_get_screen(toplevel) ;
 
-  if (gdk_x11_screen_supports_net_wm_hint(screen, max_atom_vert))
+  if (gdk_x11_screen_supports_net_wm_hint(screen, geometry_atom)
+      && gdk_x11_screen_supports_net_wm_hint(screen, workarea_atom))
     {
-      /* We construct an event that the window manager will see that will cause it to correctly
-       * maximise the window. */
+      /* We want to get these properties....
+       *   _NET_DESKTOP_GEOMETRY(CARDINAL) = 1600, 1200
+       *   _NET_WORKAREA(CARDINAL) = 0, 0, 1600, 1154, 0, 0, 1600, 1154,...repeated for all workspaces.
+       * 
+       * In fact we don't use the geometry (i.e. screen size) but its useful
+       * to see it.
+       */
+      int window_width_guess = 300, window_height_guess ;
+      gboolean result ;
+      GdkWindow *root_window ;
+      gulong offset, length ;
+      gint pdelete = FALSE ;				    /* Never delete the property data. */
+      GdkAtom actual_property_type ;
+      gint actual_format, actual_length ;
+      guchar *data ;
+      guint width, height, left, top, right, bottom ;
 
+      root_window = gdk_screen_get_root_window(screen) ;
+
+      offset = 0 ;
+      length = 2 * 4 ;					    /* Get two unsigned ints worth of data. */
+      actual_format = actual_length = 0 ;
+      data = NULL ;
+      result = gdk_property_get(root_window,
+				geometry_atom,
+				GDK_NONE,
+				offset,
+				length,
+				pdelete,
+				&actual_property_type,
+				&actual_format,
+				&actual_length,
+				&data) ;
+
+      memcpy(&width, data, 4) ;
+      memcpy(&height, (data + 4), 4) ;
+      g_free(data) ;
+
+      offset = 0 ;
+      length = 4 * 4 ;					    /* Get four unsigned ints worth of data. */
+      actual_format = actual_length = 0 ;
+      data = NULL ;
+      result = gdk_property_get(root_window,
+				workarea_atom,
+				GDK_NONE,
+				offset,
+				length,
+				pdelete,
+				&actual_property_type,
+				&actual_format,
+				&actual_length,
+				&data) ;
+      memcpy(&left, data, 4) ;
+      memcpy(&top, (data + 4), 4) ;
+      memcpy(&right, (data + 8), 4) ;
+      memcpy(&bottom, (data + 12), 4) ;
+      g_free(data) ;
+
+      window_height_guess = bottom - top ;
+
+      /* We now know the screen size and the work area size so we can set the window accordingly,
+       * note how we set the width small knowing that gtk will make it only as big as it needs
+       * to be. */
+      gtk_window_resize(GTK_WINDOW(toplevel), window_width_guess, window_height_guess) ;
+    }
+  else if (gdk_x11_screen_supports_net_wm_hint(screen, max_atom_vert))
+    {
+      /* This code was taken from following the code through in gtk_maximise_window()
+       * to gdk_window_maximise() etc.
+       * We construct an event that the window manager will see that will cause it to correctly
+       * maximise the window. */
       GtkWindow *gtk_window = GTK_WINDOW(toplevel) ;
       GdkDisplay *display = gtk_widget_get_display(toplevel) ;
       GdkWindow *window = toplevel->window ;
@@ -370,88 +451,10 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 
   /* I think we need to disconnect this now otherwise we reset the window height every time we
    * are re-mapped. */
-  g_signal_handler_disconnect (zmap->toplevel, zmap->map_handler) ;
+  g_signal_handler_disconnect(zmap->toplevel, zmap->map_handler) ;
 
 
   return ;
 }
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void my_gtk_window_maximize (GtkWindow *window)
-{
-  GtkWidget *widget;
-  GdkWindow *toplevel;
-  
-  g_return_if_fail (GTK_IS_WINDOW (window));
-
-  widget = GTK_WIDGET (window);
-
-  window->maximize_initially = TRUE;
-
-  if (window->frame)
-    toplevel = window->frame;
-  else
-    toplevel = widget->window;
-  
-  if (toplevel != NULL)
-    my_gdk_window_maximize (toplevel);
-}
-
-
-static void my_gdk_window_maximize(GdkWindow *window)
-{
-  g_return_if_fail (GDK_IS_WINDOW (window));
-
-  if (GDK_WINDOW_DESTROYED (window))
-    return;
-
-  if (GDK_WINDOW_IS_MAPPED (window))
-    gdk_wmspec_change_state (TRUE, window,
-			     gdk_atom_intern ("_NET_WM_STATE_MAXIMIZED_VERT", FALSE),
-			     gdk_atom_intern ("_NET_WM_STATE_MAXIMIZED_HORZ", FALSE));
-  else
-    gdk_synthesize_window_state (window,
-				 0,
-				 GDK_WINDOW_STATE_MAXIMIZED);
-}
-
-
-
-static void
-gdk_wmspec_change_state (gboolean   add,
-			 GdkWindow *window,
-			 GdkAtom    state1,
-			 GdkAtom    state2)
-{
-  GdkDisplay *display = GDK_WINDOW_DISPLAY (window);
-  XEvent xev;
-  
-#define _NET_WM_STATE_REMOVE        0    /* remove/unset property */
-#define _NET_WM_STATE_ADD           1    /* add/set property */
-#define _NET_WM_STATE_TOGGLE        2    /* toggle property  */  
-  
-  xev.xclient.type = ClientMessage;
-  xev.xclient.serial = 0;
-  xev.xclient.send_event = True;
-  xev.xclient.window = GDK_WINDOW_XID (window);
-  xev.xclient.message_type = gdk_x11_get_xatom_by_name_for_display (display, "_NET_WM_STATE");
-  xev.xclient.format = 32;
-  xev.xclient.data.l[0] = add ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE;
-  xev.xclient.data.l[1] = gdk_x11_atom_to_xatom_for_display (display, state1);
-  xev.xclient.data.l[2] = gdk_x11_atom_to_xatom_for_display (display, state2);
-  xev.xclient.data.l[3] = 0;
-  xev.xclient.data.l[4] = 0;
-  
-  XSendEvent (GDK_WINDOW_XDISPLAY (window), GDK_WINDOW_XROOTWIN (window), False,
-	      SubstructureRedirectMask | SubstructureNotifyMask,
-	      &xev);
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
 
