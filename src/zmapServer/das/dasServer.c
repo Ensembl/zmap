@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Sep 26 14:32 2006 (edgrif)
+ * Last edited: Mar  1 09:27 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.24 2006-11-08 09:24:28 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.25 2007-03-01 09:27:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,7 @@ typedef struct
 {
   ZMapServerResponseType result ;
   DasServer server;
-  GList *output;
+  GData *output;
 }DasServerTypesStruct, *DasServerTypes;
 
 typedef struct
@@ -82,7 +82,7 @@ static gboolean createConnection(void **server_out,
 				 zMapURL url, char *format, 
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
-static ZMapServerResponseType getStyles(void *server, GList **styles_out) ;
+static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
 static ZMapFeatureContext copyContext(void *server_conn) ;
@@ -103,8 +103,10 @@ static void initialiseXMLParser(DasServer server);
 static void getFeatures4Aligns(GQuark key,
                                gpointer data,
                                gpointer userData);
-static void getFeatures4Blocks(gpointer data, gpointer userData);
+static void getFeatures4Blocks(GQuark block_id, gpointer data, gpointer userData) ;
+
 static gboolean fetchFeatures(DasServer server, ZMapFeatureBlock block);
+
 
 /* curl required */
 static size_t WriteHeaderCallback(void *ptr, size_t size, size_t nmemb, void *data) ;
@@ -117,7 +119,8 @@ static void entryFilter      (ZMapDAS1EntryPoint entry_point, gpointer user_data
 static void typesFilter      (ZMapDAS1Type type,              gpointer user_data);
 static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data);
 static void stylesheetFilter (ZMapDAS1Stylesheet style,       gpointer user_data);
-static void applyGlyphToEachType(gpointer data, gpointer user_data);
+
+static void applyGlyphToEachType(GQuark style_id, gpointer data, gpointer user_data) ;
 
 static gboolean getRequestedDSN(DasServer das, ZMapDAS1DSN *dsn_out);
 
@@ -348,7 +351,7 @@ static ZMapServerResponseType openConnection(void *server_in)
 
 
 
-static ZMapServerResponseType getStyles(void *server_in, GList **types)
+static ZMapServerResponseType getStyles(void *server_in, GData **types)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
   DasServer server = (DasServer)server_in;
@@ -377,7 +380,7 @@ static ZMapServerResponseType getStyles(void *server_in, GList **types)
       if(!requestAndParseOverHTTP(server, &detail))
         result = ZMAP_SERVERRESPONSE_REQFAIL;
       else
-        *types = server_types.output;
+        *types = server_types.output ;
     }
 
   if(detail.url)
@@ -905,11 +908,13 @@ static void getFeatures4Aligns(GQuark key,
   GetFeatures getFeaturesPtr = (GetFeatures)userData;
 
   if(getFeaturesPtr->result == ZMAP_SERVERRESPONSE_OK)
-    g_list_foreach(align->blocks, getFeatures4Blocks, (gpointer)getFeaturesPtr);
+    g_datalist_foreach(&(align->blocks), getFeatures4Blocks, (gpointer)getFeaturesPtr);
+
 
   return ;
 }
-static void getFeatures4Blocks(gpointer data, gpointer userData)
+
+static void getFeatures4Blocks(GQuark block_id, gpointer data, gpointer userData)
 {
   ZMapFeatureBlock block = (ZMapFeatureBlock)data;
   GetFeatures getFeaturesPtr = (GetFeatures)userData;
@@ -1213,6 +1218,7 @@ static void typesFilter      (ZMapDAS1Type type,              gpointer user_data
   GQuark tmp_quark;
   char *name, *desc, *outline, *fg, *bg;
   double width = 5.0;           /* pass sanity check in featuretypecreate */
+  ZMapStyleMode mode = ZMAPSTYLE_MODE_NONE ;
 
   tmp_quark = type->type_id;
   name = (char *)g_quark_to_string(tmp_quark);
@@ -1221,9 +1227,16 @@ static void typesFilter      (ZMapDAS1Type type,              gpointer user_data
   outline = fg = bg = NULL;
 
   /* Mode is currently hard-coded, don't know if das will address this. */
-  style = zMapFeatureTypeCreate(name, desc, ZMAPSTYLE_MODE_NONE, outline, fg, bg, width);
-  style->opts.strand_specific = style->opts.show_rev_strand = 1;
-  server_types->output = g_list_append(server_types->output, style);
+  style = zMapFeatureTypeCreate(name, desc) ;
+
+  if (mode != ZMAPSTYLE_MODE_NONE)
+    zMapStyleSetMode(style, mode) ;
+
+  zMapStyleSetColours(style, outline, fg, bg) ;
+
+  zMapStyleSetWidth(style, width) ;
+
+  g_datalist_id_set_data(&(server_types->output), zMapStyleGetID(style), style) ;
 
   return ;
 }
@@ -1246,7 +1259,7 @@ static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data
   ZMapFeatureType feature_type = ZMAPFEATURE_INVALID;
   /* gdouble        feature_score = 0.0; */
   gboolean has_score = TRUE; 
-  GList  *all_styles = NULL;
+  GData  *all_styles = NULL;
   char *feature_name = NULL,
     *short_ft_name   = NULL,
     *type_name       = NULL,
@@ -1319,7 +1332,7 @@ static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data
   return ;
 }
 
-static void applyGlyphToEachType(gpointer data, gpointer user_data)
+static void applyGlyphToEachType(GQuark style_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data;
   ZMapDAS1Glyph glyph = (ZMapDAS1Glyph)user_data;
@@ -1335,14 +1348,13 @@ static void applyGlyphToEachType(gpointer data, gpointer user_data)
   return ;
 }
 
-static void stylesheetFilter (ZMapDAS1Stylesheet style,       gpointer user_data)
+static void stylesheetFilter (ZMapDAS1Stylesheet style, gpointer user_data)
 {
   DasServerTypes server_types = (DasServerTypes)user_data;
   ZMapDAS1Glyph glyph = NULL;   /* What we're interested in */
   ZMapDAS1StyleCategory category = NULL; /* we need it's id */
   ZMapDAS1StyleType type = NULL; /* We need it's id */
   GQuark default_id = g_quark_from_string("default");
-  GList *styles_subset = NULL;
 
   /* Get them out of the stylesheet */
   category = (ZMapDAS1StyleCategory)(style->categories->data);
@@ -1352,7 +1364,7 @@ static void stylesheetFilter (ZMapDAS1Stylesheet style,       gpointer user_data
   if(category->id == default_id) /* apply to all categories */
     {
       if(type->id == default_id) /* apply to all types in all categories*/
-        g_list_foreach(server_types->output, applyGlyphToEachType, (gpointer)glyph);
+	g_datalist_foreach(&(server_types->output), applyGlyphToEachType, (gpointer)glyph);
       else                      /* apply to just the specific type in all categories */
         printf("[dasServer] Applying type '%s' to like types in all categories\n", 
                (char *)g_quark_to_string(type->id));
@@ -1372,11 +1384,6 @@ static void stylesheetFilter (ZMapDAS1Stylesheet style,       gpointer user_data
   else
     zMapAssertNotReached();
 
-  if(styles_subset)
-    {
-      g_list_foreach(styles_subset, applyGlyphToEachType, (gpointer)glyph);
-      g_list_free(styles_subset);
-    }
 
   return ;
 }
@@ -1487,8 +1494,8 @@ static void fixFeatureCache(GQuark key_id,
   /* add feature to the correct set! Not just this block! To do this: */
   /* find the feature_set.  If it doesn't exist create it.  
    * I haven't got time to work out why */
-  style_id  = feature->style->unique_id;
-  type_name = (char *)g_quark_to_string(feature->style->original_id);
+  style_id  = zMapStyleGetUniqueID(feature->style) ;
+  type_name = (char *)g_quark_to_string(zMapStyleGetID(feature->style));
   if((feature_set = g_datalist_id_get_data(&(block->feature_sets), style_id)) == NULL)
     {
       feature_set  = zMapFeatureSetCreate(type_name, NULL);

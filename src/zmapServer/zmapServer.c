@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Jun  8 15:31 2006 (edgrif)
+ * Last edited: Feb 19 13:26 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.27 2006-11-08 09:24:21 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.28 2007-03-01 09:28:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -167,7 +167,7 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server)
 }
 
 
-ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GList **styles_out)
+ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GData **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
