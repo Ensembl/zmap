@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb 21 14:54 2007 (rds)
+ * Last edited: Mar  1 09:14 2007 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.105 2007-02-21 17:33:39 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.106 2007-03-01 09:14:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -99,7 +99,7 @@ static GList *string2StyleQuarks(char *feature_sets) ;
 static gboolean nextIsQuoted(char **text) ;
 
 static ZMapFeatureContext createContext(char *sequence, int start, int end,
-					GList *types, GList *feature_set_names) ;
+					GData *types, GList *feature_set_names) ;
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 
 /* this surely needs to end up somewhere else in the end... */
@@ -778,11 +778,11 @@ ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view)
   return features ;
 }
 
-GList *zMapViewGetStyles(ZMapViewWindow view_window)
+GData *zMapViewGetStyles(ZMapViewWindow view_window)
 {
+  GData *styles = NULL ;
   ZMapView view = zMapViewGetView(view_window);
   ZMapFeatureContext context;
-  GList *styles;
   
   if((context = zMapViewGetFeatures(view)))
     styles = context->styles;
@@ -1741,7 +1741,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   char *sequence, int start, int end)
 {
   ZMapViewConnection view_con = NULL ;
-  GList *types = NULL ;
+  GData *types = NULL ;
   GList *req_featuresets = NULL, *tmp_navigator_sets = NULL ;
   ZMapThread thread ;
   gboolean status = TRUE ;
@@ -2040,8 +2040,9 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 
   zMapPrintTimer(NULL, "Got Features from Thread") ;
 
+
   /* Merge new data with existing data (if any). */
-  if((new_features = feature_req->feature_context_out))
+  if ((new_features = feature_req->feature_context_out))
     {
       mergeAndDrawContext(zmap_view, &new_features);
 
@@ -2166,7 +2167,7 @@ static gboolean nextIsQuoted(char **text)
 
 /* Trial code to get alignments from a file and create a context...... */
 static ZMapFeatureContext createContext(char *sequence, int start, int end,
-					GList* types, GList *feature_set_names)
+					GData *types, GList *feature_set_names)
 {
   ZMapFeatureContext context = NULL ;
   gboolean master = TRUE ;

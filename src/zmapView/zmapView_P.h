@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Feb 20 11:57 2007 (rds)
+ * Last edited: Feb 26 08:51 2007 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.25 2007-02-20 12:52:11 rds Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.26 2007-03-01 09:14:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -57,7 +57,7 @@ typedef struct _ZMapViewConnectionStruct
   gboolean sequence_server ;
   gboolean writeback_server ;
 
-  GList *types ;					    /* The "methods", "types" call them
+  GData *types ;					    /* The "methods", "types" call them
 							       what you will. */
 
   ZMapView parent_view ;

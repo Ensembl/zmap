@@ -28,9 +28,9 @@
  *              give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Jun  8 09:57 2006 (edgrif)
+ * Last edited: Feb 19 11:28 2007 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.9 2006-11-08 09:23:21 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.10 2007-03-01 09:11:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -102,7 +102,7 @@ typedef struct
 {
   ZMapServerReqType type ;
 
-  GList *styles ;					    /* List of prespecified styles or NULL
+  GData *styles ;					    /* List of prespecified styles or NULL
 							       to get all available styles. */
 } ZMapServerReqStylesStruct, *ZMapServerReqStyles ;
 
