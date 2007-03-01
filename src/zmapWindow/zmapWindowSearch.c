@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 18 16:26 2007 (edgrif)
+ * Last edited: Mar  1 09:52 2007 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.21 2007-01-19 10:21:42 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.22 2007-03-01 09:52:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@ typedef struct
   ZMapWindow window ;
   FooCanvasItem *feature_item ;
   ZMapFeatureAny feature_any ;
-  GList *styles ;
+  GData *styles ;
 
 
 
@@ -141,8 +141,8 @@ static void fetchAllComboLists(ZMapFeatureAny feature_any,
 static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer data, 
                                                         gpointer user_data, char **err_out);
 
-static GList *getStyleQuarks(GList *styles) ;
-static void getQuark(gpointer data, gpointer user_data) ;
+static GList *getStyleQuarks(GData *styles) ;
+static void getQuark(GQuark style_id, gpointer data, gpointer user_data) ;
 
 gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data) ;
 
@@ -353,7 +353,8 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label, *combo ;
   ZMapFeatureContext context ;
-  GList *styles, *style_quarks ;
+  GData *styles ;
+  GList *style_quarks ;
 
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup(search_data->feature_any,
 							  ZMAPFEATURE_STRUCT_CONTEXT) ;
@@ -760,6 +761,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* debugging aid, prints results to stdout. */
 static void displayResult(GList *search_result)
 {
@@ -767,6 +770,8 @@ static void displayResult(GList *search_result)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void printListDataCB(gpointer data, gpointer user_data_unused)
 {
@@ -1146,22 +1151,23 @@ static void locusCB(GtkToggleButton *toggle_button, gpointer cb_data)
 
 
 
-static GList *getStyleQuarks(GList *styles)
+static GList *getStyleQuarks(GData *styles)
 {
   GList *style_quarks = NULL ;
 
-  g_list_foreach(styles, getQuark, &style_quarks) ;
+  g_datalist_foreach(&styles, getQuark, &style_quarks) ;
 
   return style_quarks ;
 }
 
 
-static void getQuark(gpointer data, gpointer user_data)
+
+static void getQuark(GQuark style_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   GList *style_quarks = *((GList **)user_data) ;
 
-  style_quarks = g_list_append(style_quarks, GINT_TO_POINTER(style->original_id)) ;
+  style_quarks = g_list_append(style_quarks, GINT_TO_POINTER(zMapStyleGetID(style))) ;
 
   *((GList **)user_data) = style_quarks ;
 
