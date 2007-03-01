@@ -29,15 +29,17 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 23 16:50 2007 (rds)
+ * Last edited: Mar  1 11:15 2007 (rds)
  * Created: Thu Jan 18 16:19:10 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.1 2007-01-23 16:51:20 rds Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.2 2007-03-01 11:16:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
+
+#define ZMAPWINDOWTEXT_ITEM_TO_LINE "zmapWindowTextPositioner.c" "text_item_to_line"
 
 enum
   {
@@ -333,8 +335,8 @@ static TextItem itemCreate(FooCanvasItem *text)
   foo_canvas_item_get_bounds(text,&x1, &y1, &x2, &y2);
 
   /* FOO_CANVAS_TEXT_PLACE_WEST or whatever it is*/
-  item->original_point.x1 = x1;
-  item->original_point.x2 = y1; //getCenterPoint(y1, y2);
+  item->original_point.x1 = 0.0; /* was x1, but this causes endless movement east of the line ???  */
+  item->original_point.x2 = y1; /* getCenterPoint(y1, y2); */
 
   item->text = text;
 
@@ -746,28 +748,46 @@ static void draw_line_for_item(gpointer text_item_data, gpointer draw_data)
   TextItem text_item = (TextItem)text_item_data;
   DrawOverlayLineData draw = (DrawOverlayLineData)draw_data;
   FooCanvasPoints *points;
+  FooCanvasItem *line;
   double right = 10.0;
 
   points = draw->line_points;
 
   if(draw->container_overlay)
     {
-      foo_canvas_item_move(text_item->text, right, 0.0);
-      foo_canvas_item_get_bounds(text_item->text, 
-                                 &(points->coords[0]), &(points->coords[1]), 
-                                 &(points->coords[2]), &(points->coords[3]));
-      
-      points->coords[3] = getCenterPoint(points->coords[1], points->coords[3]);
-      
-      points->coords[0] = text_item->original_point.x1;
-      points->coords[1] = text_item->original_point.x2;
-      points->coords[2] = right;
-      
-      foo_canvas_item_new(FOO_CANVAS_GROUP(draw->container_overlay),
-                          foo_canvas_line_get_type(),
-                          "points",       points,
-                          "width_pixels", 1,
-                          NULL);
+      if((line = g_object_get_data(G_OBJECT(text_item->text), ZMAPWINDOWTEXT_ITEM_TO_LINE)))
+        {
+          gtk_object_destroy(GTK_OBJECT(line));
+          line = NULL;
+        }
+
+      if(!line)
+        {
+          foo_canvas_item_get_bounds(text_item->text, 
+                                     &(points->coords[0]), &(points->coords[1]), 
+                                     &(points->coords[2]), &(points->coords[3]));
+          /* only move right the once.  needs a better method really... */
+          if(points->coords[0] == 0.0)
+            {
+              foo_canvas_item_move(text_item->text, right, 0.0);
+              foo_canvas_item_get_bounds(text_item->text, 
+                                         &(points->coords[0]), &(points->coords[1]), 
+                                         &(points->coords[2]), &(points->coords[3]));
+            }
+
+          points->coords[3] = getCenterPoint(points->coords[1], points->coords[3]);
+          
+          points->coords[0] = text_item->original_point.x1;
+          points->coords[1] = text_item->original_point.x2;
+          points->coords[2] = right;
+          
+          line = foo_canvas_item_new(FOO_CANVAS_GROUP(draw->container_overlay),
+                                     foo_canvas_line_get_type(),
+                                     "points",       points,
+                                     "width_pixels", 1,
+                                     NULL);
+          g_object_set_data(G_OBJECT(text_item->text), ZMAPWINDOWTEXT_ITEM_TO_LINE, line);
+        }
     }
 
   return ;
