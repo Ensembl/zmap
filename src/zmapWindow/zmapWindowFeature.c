@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 26 16:20 2007 (rds)
+ * Last edited: Feb 27 09:06 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.88 2007-02-26 16:21:30 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.89 2007-03-01 09:56:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -207,7 +207,7 @@ static void cleanUpFeatureCB(gpointer data, gpointer user_data) ;
 
 
 
-GList *zMapWindowFeatureAllStyles(ZMapWindow window)
+GData *zMapWindowFeatureAllStyles(ZMapWindow window)
 {
   zMapAssert(window && window->feature_context);
 
@@ -468,7 +468,7 @@ ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature)
   ZMapFeatureTypeStyle style = feature->style ;
 
 
-  if (!(style->opts.strand_specific)
+  if (!(zMapStyleIsStrandSpecific(style))
       || (feature->strand == ZMAPSTRAND_FORWARD || feature->strand == ZMAPSTRAND_NONE))
     strand = ZMAPSTRAND_FORWARD ;
   else
@@ -548,7 +548,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   
 
   /* Get the styles table from the column and look for the features style.... */
-  if (!(style = zmapWindowStyleTableFind(set_data->style_table, feature->style->unique_id)))
+  if (!(style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style))))
     {
       style = zMapFeatureStyleCopy(feature->style) ;  
       zmapWindowStyleTableAdd(set_data->style_table, style) ;
@@ -558,8 +558,8 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
 
   /* Users will often not want to see what is on the reverse strand, style specifies what should
    * be shown. */
-  if (style->opts.strand_specific
-      && (feature->strand == ZMAPSTRAND_REVERSE && style->opts.show_rev_strand == FALSE))
+  if (zMapStyleIsStrandSpecific(style)
+      && (feature->strand == ZMAPSTRAND_REVERSE && !zMapStyleIsShowReverseStrand(style)))
     {
       return NULL ;
     }
@@ -729,14 +729,16 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
  * must make a number of decisions which we can't.... */
 char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyle style)
 {
-  char *description =  NULL ;
+  char *description = NULL ;
 
   zMapAssert(feature_set_id && style) ;
 
+  description = zMapStyleGetGFFSource(style) ;
+
   description = g_strdup_printf("%s  :  %s%s%s", (char *)g_quark_to_string(feature_set_id),
-				style->description ? "\"" : "",
-				style->description ? style->description : "<no description available>",
-				style->description ? "\"" : "") ;
+				description ? "\"" : "",
+				description ? description : "<no description available>",
+				description ? "\"" : "") ;
 
   return description ;
 }
@@ -2917,6 +2919,8 @@ static void reparentItemCB(gpointer data, gpointer user_data)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static double getWidthFromScore(ZMapFeatureTypeStyle style, double score)
 {
   double tmp, width = 0.0 ;
@@ -2955,6 +2959,8 @@ static double getWidthFromScore(ZMapFeatureTypeStyle style, double score)
 
   return width ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 

@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 24 14:20 2007 (rds)
+ * Last edited: Feb 26 16:06 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.59 2007-02-06 10:57:35 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.60 2007-03-01 09:57:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -318,16 +318,22 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
   style = set_data->style ;
 
   /* Only check the mag factor if the column is visible. */
-  if (!style->opts.hidden_now)
+  if (!zMapStyleIsHiddenNow(style))
     {
-      if (style->min_mag > 0.0 || style->max_mag > 0.0)
+      double min_mag, max_mag ;
+
+      min_mag = zMapStyleGetMinMag(style) ;
+      max_mag = zMapStyleGetMaxMag(style) ;
+
+
+      if (min_mag > 0.0 || max_mag > 0.0)
 	{
 	  double curr_zoom ;
 
 	  curr_zoom = zMapWindowGetZoomMagnification(window) ;
 
-	  if ((style->min_mag && curr_zoom < style->min_mag)
-	      || (style->max_mag && curr_zoom > style->max_mag))
+	  if ((min_mag && curr_zoom < min_mag)
+	      || (max_mag && curr_zoom > max_mag))
 	    {
 	      zmapWindowColumnHide(col_group) ;
 	    }
@@ -383,7 +389,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   BumpColStruct bump_data = {NULL} ;
   FooCanvasGroup *column_features ;
   ZMapFeatureTypeStyle column_style ;
-  double spacing ;
+  double spacing, width ;
   ZMapFeatureTypeStyle style ;
   ZMapWindowItemFeatureType feature_type ;
   ZMapContainerLevelType container_type ;
@@ -464,7 +470,8 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   /* All bump modes except ZMAPOVERLAP_COMPLEX share common data/code as they are essentially
    * simple variants. The complex mode requires more processing so uses its own structs/lists. */
   bump_data.bumped_style = style ;
-  bump_data.incr = style->width + spacing ;
+  width = zMapStyleGetWidth(style) ;
+  bump_data.incr = width + spacing ;
 
   switch (bump_mode)
     {
@@ -552,7 +559,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 		 * by name and to some extent by score. */
 		complex.window = set_data->window ;
 		complex.curr_offset = 0.0 ;
-		complex.incr = (style->width * COMPLEX_BUMP_COMPRESS) ;
+		complex.incr = (width * COMPLEX_BUMP_COMPRESS) ;
 
 		if (bump_mode == ZMAPOVERLAP_COMPLEX)
 		  complex.overlap_func = listsOverlap ;
@@ -837,20 +844,26 @@ void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style,
 {
   double dx = 0.0 ;
   double numerator, denominator ;
+  double max_score, min_score ;
 
   zMapAssert(style && curr_x1_inout && curr_x2_out) ;
 
+  min_score = zMapStyleGetMinScore(style) ;
+  max_score = zMapStyleGetMaxScore(style) ;
+
   /* We only do stuff if there are both min and max scores to work with.... */
-  if (style->max_score && style->min_score)
+  if (max_score && min_score)
     {
       double start = *curr_x1_inout ;
-      double half_width, mid_way ;
+      double width, half_width, mid_way ;
 
-      half_width = style->width / 2 ;
+      width = zMapStyleGetWidth(style) ;
+
+      half_width = width / 2 ;
       mid_way = start + half_width ;
 
-      numerator = score - style->min_score ;
-      denominator = style->max_score - style->min_score ;
+      numerator = score - min_score ;
+      denominator = max_score - min_score ;
 
       if (denominator == 0)				    /* catch div by zero */
 	{
@@ -1145,7 +1158,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
   /* Some features are drawn with different widths to indicate things like score. In this case
    * their offset needs to be corrected to place them centrally. (We always do this which
    * seems inefficient but its a toss up whether it would be quicker to test (dx == 0). */
-  dx = (feature->style->width - (x2 - x1)) / 2 ;
+  dx = (zMapStyleGetWidth(feature->style) - (x2 - x1)) / 2 ;
   offset += dx ;
 
   /* Not having something like this appears to be part of the cause of the oddness. Not all though */
@@ -1663,7 +1676,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
   char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
   GList *backgrounds = NULL ;
   GList *list_item ;
-  double mid, half_width ;
+  double width, mid, half_width ;
   FooCanvasItem *item ;
   FooCanvasItem *background ;
   ZMapFeature prev_feature = NULL, curr_feature = NULL ;
@@ -1695,9 +1708,11 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 
   /* Calculate mid point of this column of matches from the first item,
    * N.B. this works because the items have already been positioned in the column. */
+  width = zMapStyleGetWidth(curr_style) ;
+
   mid = (x2 + x1) * 0.5 ;
 
-  half_width = curr_style->width * 0.5 ;
+  half_width = width * 0.5 ;
 
 
   /* CODE HERE WORKS BUT IS NOT CORRECT IN THAT IT IS USING THE CANVAS BOX COORDS WHEN IT
@@ -2608,7 +2623,7 @@ static void moveItemCB(gpointer data, gpointer user_data)
   /* Some features are drawn with different widths to indicate things like score. In this case
    * their offset needs to be corrected to place them centrally. (We always do this which
    * seems inefficient but its a toss up whether it would be quicker to test (dx == 0). */
-  dx = ((feature->style->width * COMPLEX_BUMP_COMPRESS) - (x2 - x1)) / 2 ;
+  dx = ((zMapStyleGetWidth(feature->style) * COMPLEX_BUMP_COMPRESS) - (x2 - x1)) / 2 ;
 
   offset = col_data->offset + dx ;
 
@@ -2814,10 +2829,9 @@ static void createSetColumn(gpointer data, gpointer user_data)
 		      name, name) ;
     }
   else if (feature_set_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)
-	   && (!(style->opts.hidden_always) && style->opts.frame_specific)
+	   && (!zMapStyleIsHiddenAlways(style) && zMapStyleIsFrameSpecific(style))
 	   && ((feature_set = zMapFeatureBlockGetSetByID(redraw_data->block, feature_set_id))))
     {
-
       /* Make the forward/reverse columns for this feature set. */
       zmapWindowCreateSetColumns(window,
                                  redraw_data->forward_group, 
@@ -2899,7 +2913,7 @@ static void drawSetFeatures(GQuark key_id, gpointer data, gpointer user_data)
    * means the frame will be ignored and the features will all be in one column on the.
    * forward or reverse strand. */
   style = feature_set->style ;
-  if (!(style->opts.hidden_always) && style->opts.frame_specific)
+  if (!zMapStyleIsHiddenAlways(style) && zMapStyleIsFrameSpecific(style))
     {
       zmapWindowDrawFeatureSet(window, feature_set,
                                forward_col, reverse_col, ZMAPFRAME_NONE) ;
@@ -3038,7 +3052,7 @@ static void create3FrameCols(gpointer data, gpointer user_data)
 		      name, name) ;
     }
   else if (feature_set_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)
-	   && (!(style->opts.hidden_always) && style->opts.frame_specific)
+	   && (!zMapStyleIsHiddenAlways(style) && zMapStyleIsFrameSpecific(style))
 	   && ((feature_set = zMapFeatureBlockGetSetByID(redraw_data->block, feature_set_id))))
     {
       /* Create both forward and reverse columns. */
@@ -3130,7 +3144,7 @@ static void draw3FrameSetFeatures(GQuark key_id, gpointer data, gpointer user_da
   /* need to get style and check for 3 frame and if column should be displayed and then
    * draw features. */
   style = feature_set->style ;
-  if (!(style->opts.hidden_always) && style->opts.frame_specific)
+  if (!zMapStyleIsHiddenAlways(style) && zMapStyleIsFrameSpecific(style))
     {
       zmapWindowDrawFeatureSet(window, feature_set,
                                forward_col, reverse_col, 
@@ -3184,9 +3198,10 @@ static gboolean bumpBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gpoi
 	    /* Pass back details for display to the user to our caller. */
 	    select.feature_desc.feature_name = (char *)g_quark_to_string(bump_data->feature_id) ;
 
-	    select.feature_desc.feature_set = (char *)g_quark_to_string(bump_data->style->original_id) ;
+	    select.feature_desc.feature_set = (char *)g_quark_to_string(zMapStyleGetID(bump_data->style)) ;
 
-	    select.secondary_text = zmapWindowFeatureSetDescription(bump_data->style->original_id, bump_data->style) ;
+	    select.secondary_text = zmapWindowFeatureSetDescription(zMapStyleGetID(bump_data->style),
+								    bump_data->style) ;
 
 	    select.highlight_item = bump_data->first_item ;
 	    select.replace_highlight_item = replace_highlight ;

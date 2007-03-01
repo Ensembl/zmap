@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb 21 16:53 2007 (rds)
+ * Last edited: Mar  1 09:59 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.59 2007-02-21 17:32:44 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.60 2007-03-01 10:00:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -447,7 +447,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
       feature->feature.homol.align = gaps ;
 
       feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align,
-								  feature->style->within_align_error) ;
+								  zmapStyleGetWithinAlignError(feature->style)) ;
     }
 	  
   return result ;
@@ -944,7 +944,7 @@ void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data)
 }
 
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
-					    GList *types, GList *set_names)
+					    GData *styles, GList *set_names)
 {
   ZMapFeatureContext feature_context ;
 
@@ -960,7 +960,7 @@ ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
       feature_context->sequence_to_parent.c2 = end ;
     }
 
-  feature_context->styles = types ;
+  feature_context->styles = styles ;
   feature_context->feature_set_names = set_names ;
 
   g_datalist_init(&(feature_context->alignments)) ;

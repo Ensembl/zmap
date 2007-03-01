@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 26 15:41 2007 (rds)
+ * Last edited: Feb 27 09:05 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.177 2007-02-26 15:59:51 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.178 2007-03-01 09:58:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1133,8 +1133,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
   select.feature_desc.struct_type = feature->struct_type ;
   select.feature_desc.type        = feature->type ;
   style = zMapFeatureGetStyle((ZMapFeatureAny)feature) ;
-  select.feature_desc.feature_description = 
-    zmapWindowFeatureSetDescription(style->original_id, style) ;
+  select.feature_desc.feature_description = zmapWindowFeatureSetDescription(zMapStyleGetID(style), style) ;
 
   if(possiblyPopulateWithChildData(window, item, highlight_item, 
                                    &sub_feature_start, &sub_feature_end, 
@@ -1185,7 +1184,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 
   select.feature_desc.feature_strand = zMapFeatureStrand2Str(feature->strand) ;
 
-  if (style->opts.frame_specific)
+  if (zMapStyleIsFrameSpecific(style))
     select.feature_desc.feature_frame = zMapFeatureFrame2Str(zmapWindowFeatureFrame(feature)) ;
 
   if (feature->flags.has_score)
@@ -3648,7 +3647,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 	  set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
 	  zMapAssert(set_data) ;
 
-	  feature_set_id = set_data->style->original_id ;
+	  feature_set_id = zMapStyleGetID(set_data->style) ;
 
 	  select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
 

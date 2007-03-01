@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 17 10:34 2007 (edgrif)
+ * Last edited: Feb 26 14:14 2007 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.37 2007-01-17 10:34:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.38 2007-03-01 09:50:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -352,9 +352,9 @@ gboolean zmapWindowStyleTableAdd(GHashTable *style_table, ZMapFeatureTypeStyle n
 
   zMapAssert(style_table && new_style) ;
 
-  if (!(style = g_hash_table_lookup(style_table, GINT_TO_POINTER(new_style->unique_id))))
+  if (!(style = g_hash_table_lookup(style_table, GINT_TO_POINTER(zMapStyleGetUniqueID(new_style)))))
     {
-      g_hash_table_insert(style_table, GINT_TO_POINTER(new_style->unique_id), new_style) ;
+      g_hash_table_insert(style_table, GINT_TO_POINTER(zMapStyleGetUniqueID(new_style)), new_style) ;
 
       result = TRUE ;
     }

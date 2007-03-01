@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Feb 22 09:42 2007 (rds)
+ * Last edited: Feb 26 16:23 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.22 2007-02-22 09:44:15 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.23 2007-03-01 09:53:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -349,27 +349,27 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
       style_table = set_data->style_table;
       /* Get the styles table from the column and look for the features style.... */
-      if (!(style = zmapWindowStyleTableFind(style_table, feature->style->unique_id)))
+      if (!(style = zmapWindowStyleTableFind(style_table, zMapStyleGetUniqueID(feature->style))))
         {
           style = zMapFeatureStyleCopy(feature->style) ;  
           zmapWindowStyleTableAdd(style_table, style) ;
         }
 
 
-      if (style->opts.strand_specific
-          && (feature->strand == ZMAPSTRAND_REVERSE && style->opts.show_rev_strand == FALSE))
+      if (zMapStyleIsStrandSpecific(style)
+          && (feature->strand == ZMAPSTRAND_REVERSE && !zMapStyleIsShowReverseStrand(style)))
         goto undrawn;
 
       /* Note: for object to _span_ "width" units, we start at zero and end at "width". */
       limits[0] = 0.0;
       limits[1] = block->block_to_sequence.q1;
-      limits[2] = style->width;
+      limits[2] = zMapStyleGetWidth(style);
       limits[3] = block->block_to_sequence.q2;
 
       /* Set these to this for normal main window use. */
       points[0] = 0.0;
       points[1] = feature->x1;
-      points[2] = style->width;
+      points[2] = zMapStyleGetWidth(style);
       points[3] = feature->x2;
 
       /* inline static void normalSizeReq(ZMapFeature f, ... ){ return ; } */
@@ -377,7 +377,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       if((no_points_in_block = (factory->user_funcs->feature_size_request)(feature, &limits[0], &points[0], factory->user_data)) == TRUE)
         goto undrawn;
 
-      style_mode = style->mode;
+      style_mode = zMapStyleGetMode(style) ;
 
       switch(style_mode)
         {
@@ -415,7 +415,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
           factory->stats->total_matches++;
 
-          if ((!feature->feature.homol.align) || (!style->opts.align_gaps))
+          if ((!feature->feature.homol.align) || (!zMapStyleIsAlignGaps(style)))
             {
               factory->stats->ungapped_matches++;
               factory->stats->ungapped_boxes++;
@@ -686,16 +686,20 @@ static FooCanvasItem *createParentGroup(FooCanvasGroup *parent,
 static double getWidthFromScore(ZMapFeatureTypeStyle style, double score)
 {
   double tmp, width = 0.0 ;
-  double fac ;
+  double fac, max_score, min_score ;
 
-  fac = style->width / (style->max_score - style->min_score) ;
+  width = zMapStyleGetWidth(style) ;
+  min_score = zMapStyleGetMinScore(style) ;
+  max_score = zMapStyleGetMaxScore(style) ;
 
-  if (score <= style->min_score)
+  fac = width / (max_score - min_score) ;
+
+  if (score <= min_score)
     tmp = 0 ;
-  else if (score >= style->max_score) 
-    tmp = style->width ;
+  else if (score >= max_score) 
+    tmp = width ;
   else 
-    tmp = fac * (score - style->min_score) ;
+    tmp = fac * (score - min_score) ;
 
   width = tmp ;
 
@@ -741,6 +745,7 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
     {
       static GdkColor splice_background ;
       double width, origin, start ;
+      double style_width, max_score, min_score ;
       ZMapDrawGlyphType glyph_type ;
       char *colour ;
       ZMapFrame frame ;
@@ -774,11 +779,14 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
 	  glyph_type = ZMAPDRAW_GLYPH_UP_BRACKET ;
 	}
 
+      style_width = zMapStyleGetWidth(feature->style) ;
+      min_score = zMapStyleGetMinScore(feature->style) ;
+      max_score = zMapStyleGetMaxScore(feature->style) ;
 
-      if (feature->style->min_score < 0 && 0 < feature->style->max_score)
+      if (min_score < 0 && 0 < max_score)
 	origin = 0 ;
       else
-	origin = style->width * (feature->style->min_score / (feature->style->max_score - feature->style->min_score)) ;
+	origin = style_width * (min_score / (max_score - min_score)) ;
 
 
       /* Adjust width to score....NOTE that to do acedb like stuff we really need to set an origin
@@ -847,7 +855,7 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   unsigned int match_threshold = 0 ;
 
 
-  if (strcasecmp(g_quark_to_string(style->original_id), "ditag_GIS_PET") == 0)
+  if (strcasecmp(g_quark_to_string(zMapStyleGetID(style)), "ditag_GIS_PET") == 0)
     printf("found it\n") ;
 
 
@@ -1253,7 +1261,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
                 }
 
               exon_box = zMapDrawSSPolygon(feature_item, 
-                                           (style->opts.directional_end ? ZMAP_POLYGON_POINTING : ZMAP_POLYGON_SQUARE), 
+                                           (zMapStyleIsDirectionalEnd(style) ? ZMAP_POLYGON_POINTING : ZMAP_POLYGON_SQUARE), 
                                            x1, x2,
                                            top, bottom,
                                            exon_outline, 
@@ -1778,6 +1786,11 @@ static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature featur
   GdkColor *outline, *foreground, *background ;
   guint line_width ;
   double numerator, denominator, dx ;
+  double width, max_score, min_score ;
+
+  width = zMapStyleGetWidth(style) ;
+  min_score = zMapStyleGetMinScore(style) ;
+  max_score = zMapStyleGetMaxScore(style) ;
 
   line_width = factory->line_width;
 
@@ -1785,8 +1798,8 @@ static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature featur
 
   zMapFeatureTypeGetColours(style, &background, &foreground, &outline) ;
 
-  numerator = feature->score - style->min_score ;
-  denominator = style->max_score - style->min_score ;
+  numerator = feature->score - min_score ;
+  denominator = max_score - min_score ;
 
   if (denominator == 0)				    /* catch div by zero */
     {
@@ -1803,8 +1816,8 @@ static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature featur
       if (dx > 1)
 	dx = 1 ;
     }
-  x1 = 0.0 + (style->width * style->baseline) ;
-  x2 = 0.0 + (style->width * dx) ;
+  x1 = 0.0 + (width * zMapStyleBaseline(style)) ;
+  x2 = 0.0 + (width * dx) ;
 
   /* If the baseline is not zero then we can end up with x2 being less than x1 so swop them for
    * drawing, perhaps the drawing code should take care of this. */

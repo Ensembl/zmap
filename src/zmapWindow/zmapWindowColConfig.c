@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 17 09:58 2007 (edgrif)
+ * Last edited: Feb 26 14:14 2007 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.13 2007-01-17 10:32:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.14 2007-03-01 09:57:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -346,7 +346,7 @@ GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *columns_li
       col_box = gtk_hbox_new(FALSE, 0) ;
       gtk_box_pack_start(GTK_BOX(column_box), col_box, TRUE, TRUE, 0);
 
-      button = gtk_check_button_new_with_label(g_quark_to_string(set_data->style->original_id)) ;
+      button = gtk_check_button_new_with_label(g_quark_to_string(zMapStyleGetID(set_data->style))) ;
 
       button_list = g_list_prepend(button_list, button) ;
 

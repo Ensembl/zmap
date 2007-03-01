@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb  6 17:23 2007 (rds)
+ * Last edited: Feb 26 16:22 2007 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.179 2007-02-06 17:38:04 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.180 2007-03-01 09:56:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -207,6 +207,10 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
   zMapAssert(window && full_context && diff_context) ;
+
+
+  zMapFeatureTypePrintAll(full_context->styles, "createSetCols: ") ;
+
 
   if(!window->item_factory)
     {
@@ -395,6 +399,10 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
   double top, bottom ;
   gboolean created = TRUE;
 
+
+  zMapFeatureTypePrintAll(context->styles, "createSetCols: ") ;
+
+
   /* Look up the overall column style, its possible the style for the column may not have
    * have been found either because styles may be on a separate server or more often because
    * the style for a feature set isn't known until the features have been read. Then if we don't
@@ -414,7 +422,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 		      name, name) ;
       created = FALSE;
     }
-  else if (style->opts.hidden_always)
+  else if (zMapStyleIsHiddenAlways(style))
     {
       /* some styles should not be shown, e.g. they may be "meta" styles like "3 Frame". */
       created = FALSE;
@@ -450,7 +458,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                             style,
                                             ZMAPSTRAND_FORWARD, 
                                             frame,
-                                            style->width,
+                                            zMapStyleGetWidth(style),
                                             top, bottom) ;
         }
       
@@ -473,7 +481,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                             style,
                                             ZMAPSTRAND_REVERSE, 
                                             frame,
-                                            style->width,
+                                            zMapStyleGetWidth(style),
                                             top, bottom) ;
         }
     }
@@ -973,7 +981,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	      if (feature_set)
 		feature_set_id = feature_set->original_id ;
 	      else
-		feature_set_id = set_data->style->original_id ;
+		feature_set_id = zMapStyleGetID(set_data->style) ;
 
 	      select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
 
