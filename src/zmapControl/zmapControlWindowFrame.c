@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 24 09:31 2007 (rds)
+ * Last edited: Feb 19 11:43 2007 (edgrif)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.22 2007-02-06 15:34:10 rds Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.23 2007-03-01 09:22:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -113,9 +113,8 @@ static void valueCB(void *user_data, double start, double end)
   return ;
 }
 
-static void controlWindowFramePanePositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data)
+static void controlWindowFramePanePositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data_unused)
 {
-  ZMap zmap = (ZMap)user_data;
   gint pos;
 
   /* we need to get the position... */
