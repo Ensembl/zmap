@@ -26,12 +26,13 @@
  *              
  * Exported functions: See ZMap/zmapThreads.h
  * HISTORY:
- * Last edited: Feb  1 09:57 2005 (edgrif)
+ * Last edited: Feb 21 15:15 2007 (edgrif)
  * Created: Thu Jan 27 11:50:01 2005 (edgrif)
- * CVS info:   $Id: zmapThreadsUtils.c,v 1.2 2006-11-08 09:24:36 edgrif Exp $
+ * CVS info:   $Id: zmapThreadsUtils.c,v 1.3 2007-03-01 09:15:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <stdio.h>
 #include <errno.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapThreads_P.h>

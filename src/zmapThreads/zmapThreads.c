@@ -29,12 +29,13 @@
  *              
  * Exported functions: See ZMap/zmapThread.h
  * HISTORY:
- * Last edited: Jan 31 11:50 2007 (edgrif)
+ * Last edited: Feb 21 15:06 2007 (edgrif)
  * Created: Thu Jan 27 11:25:37 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.c,v 1.5 2007-02-27 10:37:40 zmap Exp $
+ * CVS info:   $Id: zmapThreads.c,v 1.6 2007-03-01 09:15:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapThreads_P.h>
@@ -220,7 +221,7 @@ void zMapThreadKill(ZMapThread thread)
 {
   int status ;
 
-  ZMAPTHREAD_DEBUG(("GUI: killing and destroying thread for thread %lu\n", thread->thread_id)) ;
+  ZMAPTHREAD_DEBUG(("GUI: killing and destroying thread for thread %s\n", zMapThreadGetThreadID(thread))) ;
 
   /* we could signal an exit here by setting a condvar of EXIT...but that might lead to 
    * deadlocks, think about this bit.. */
@@ -238,7 +239,7 @@ void zMapThreadKill(ZMapThread thread)
 /* Release the threads resources, don't do this until the slave thread has gone. */
 void zMapThreadDestroy(ZMapThread thread)
 {
-  ZMAPTHREAD_DEBUG(("GUI: destroying thread for thread %lu\n", thread->thread_id)) ;
+  ZMAPTHREAD_DEBUG(("GUI: destroying thread for thread %s\n", zMapThreadGetThreadID(thread))) ;
 
   zmapVarDestroy(&thread->reply) ;
   zmapCondVarDestroy(&(thread->request)) ;
