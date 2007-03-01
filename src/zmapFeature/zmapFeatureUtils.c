@@ -26,18 +26,20 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  6 14:38 2007 (rds)
+ * Last edited: Mar  1 10:04 2007 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.44 2007-02-06 17:04:59 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.45 2007-03-01 10:05:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapPeptide.h>
 #include <ZMap/zmapUtils.h>
+#include <zmapStyle_P.h>
 
 
 typedef struct
@@ -73,7 +75,8 @@ static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 
 static gint findStyle(gconstpointer list_data, gconstpointer user_data) ;
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
-static void addTypeQuark(gpointer data, gpointer user_data) ;
+
+static void addTypeQuark(GQuark style_id, gpointer data, gpointer user_data) ;
 
 
 static ZMapFeatureContextExecuteStatus printFeatureContextCB(GQuark key_id,
@@ -467,13 +470,11 @@ char *zMapFeatureSetGetName(ZMapFeatureSet feature_set)
 
 
 /* Retrieve a style struct for the given style id. */
-ZMapFeatureTypeStyle zMapFindStyle(GList *styles, GQuark style_id)
+ZMapFeatureTypeStyle zMapFindStyle(GData *styles, GQuark style_id)
 {
   ZMapFeatureTypeStyle style = NULL ;
-  GList *list ;
 
-  if ((list = g_list_find_custom(styles, GUINT_TO_POINTER(style_id), findStyle)))
-    style = list->data ;
+  style = (ZMapFeatureTypeStyle)g_datalist_id_get_data(&styles, style_id) ;
 
   return style ;
 }
@@ -497,20 +498,20 @@ gboolean zMapStyleNameExists(GList *style_name_list, char *style_name)
 
 
 /* Retrieve a Glist of the names of all the styles... */
-GList *zMapStylesGetNames(GList *styles)
+GList *zMapStylesGetNames(GData *styles)
 {
   GList *quark_list = NULL ;
 
   zMapAssert(styles) ;
 
-  g_list_foreach(styles, addTypeQuark, (void *)&quark_list) ;
+  g_datalist_foreach(&styles, addTypeQuark, (void *)&quark_list) ;
 
   return quark_list ;
 }
 
 /* GFunc() callback function, appends style names to a string, its called for lists
  * of either style name GQuarks or lists of style structs. */
-static void addTypeQuark(gpointer data, gpointer user_data)
+static void addTypeQuark(GQuark style_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   GList **quarks_out = (GList **)user_data ;
@@ -656,8 +657,7 @@ gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatu
   if((feature_set = (ZMapFeatureSet)(g_datalist_id_get_data(&(block->feature_sets), feature_set_id))))
     still_good = FALSE;         /* We've already got one */
 
-  if(still_good &&
-     (style = zMapFindStyle(context->styles, style_id)) != NULL)
+  if (still_good && (style = zMapFindStyle(context->styles, style_id)) != NULL)
     {
       feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_3FT_NAME, NULL);
       feature_set->style = style;
@@ -890,6 +890,9 @@ static ZMapFeatureContextExecuteStatus printFeatureContextCB(GQuark key_id,
         g_string_free(string_line, FALSE);
       }
       break;
+
+    default:
+      zMapAssertNotReached() ;
     }
 
   if(!(dump->status = printLine(dump, line)))
