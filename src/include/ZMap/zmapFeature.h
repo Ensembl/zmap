@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Mar  1 10:07 2007 (edgrif)
+ * Last edited: Mar  2 11:50 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.115 2007-03-01 10:08:04 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.116 2007-03-02 14:27:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -553,6 +553,9 @@ char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 
 GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_strand,
                                 int non_start, int non_end, ZMapStrand non_strand);
+gboolean zMapFeatureBlockDecodeID(GQuark id, 
+                                  int *ref_start, int *ref_end, ZMapStrand *ref_strand,
+                                  int *non_start, int *non_end, ZMapStrand *non_strand);
 ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
 					int ref_start, int ref_end, ZMapStrand ref_strand,
 					int non_start, int non_end, ZMapStrand non_strand) ;
