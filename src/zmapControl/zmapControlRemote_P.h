@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 19 10:32 2007 (edgrif)
+ * Last edited: Mar  1 11:29 2007 (rds)
  * Created: Thu Feb  1 00:29:43 2007 (rds)
- * CVS info:   $Id: zmapControlRemote_P.h,v 1.2 2007-03-01 09:22:26 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemote_P.h,v 1.3 2007-03-02 14:29:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,7 @@ typedef enum {
   ZMAP_CONTROL_ACTION_DELETE_FEATURE,
   ZMAP_CONTROL_ACTION_FIND_FEATURE,  
   ZMAP_CONTROL_ACTION_HIGHLIGHT_FEATURE,
+  ZMAP_CONTROL_ACTION_HIGHLIGHT2_FEATURE,
   ZMAP_CONTROL_ACTION_UNHIGHLIGHT_FEATURE,
   ZMAP_CONTROL_ACTION_REGISTER_CLIENT,
 
@@ -113,7 +114,7 @@ typedef struct
 {
   ZMap zmap;
   int  code;
-  gboolean persist;
+  gboolean handled;
   GString *messages;
 } ResponseCodeZMapStruct, *ResponseCodeZMap;
 
