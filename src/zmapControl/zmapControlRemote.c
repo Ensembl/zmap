@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 26 16:13 2007 (rds)
+ * Last edited: Mar  1 19:00 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.43 2007-02-26 16:14:01 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.44 2007-03-02 14:28:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,10 +54,11 @@ static void  destroyNotifyData(gpointer destroy_data); /* free attached pointer 
 
 static gboolean createClient(ZMap zmap, controlClientObj data);
 static gboolean insertView(ZMap zmap, ViewConnectData new_view);
-static gboolean controlZoomTo(ZMap zmap, XMLData xml_data);
+static gboolean controlZoomTo(ZMap zmap, XMLData xml_data, ResponseCodeZMap rc_data);
 
-static void drawNewFeatures(ZMap zmap, XMLData xml_data);
-static void eraseFeatures(ZMap zmap, XMLData xml_data);
+static void drawNewFeatures(ZMap zmap, XMLData xml_data, ResponseCodeZMap rc_data);
+static void eraseFeatures(ZMap zmap, XMLData xml_data, ResponseCodeZMap rc_data);
+static void highlightFeatures(ZMap zmap, XMLData xml_data, ResponseCodeZMap rc_data);
 static void delete_failed_make_message(gpointer list_data, gpointer user_data);
 static void draw_failed_make_message(gpointer list_data, gpointer user_data);
 static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data);
@@ -205,6 +206,7 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
 {
   char *xml_reply = NULL ;
   int code        = ZMAPXREMOTE_INTERNAL;
+  ResponseCodeZMapStruct foreach_data = {NULL};
   XMLDataStruct objdata = {0, NULL};
   ZMapXMLParser parser = NULL;
   gboolean parse_ok    = FALSE;
@@ -227,41 +229,54 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
                                           command_text, 
                                           strlen(command_text))) == TRUE)
     {
+      foreach_data.code     = ZMAPXREMOTE_OK;
+      foreach_data.zmap     = zmap;
+      foreach_data.handled  = FALSE;
+      foreach_data.messages = g_string_sized_new(512);
+
       /* Check which action  */
       switch(objdata.action)
         {
           /* PRECOND falls through to default below, so info gets set there. */
         case ZMAP_CONTROL_ACTION_ZOOM_IN:
-          if(zmapControlWindowDoTheZoom(zmap, 2.0) == TRUE)
-            code = ZMAPXREMOTE_OK;
+          if((foreach_data.handled = zmapControlWindowDoTheZoom(zmap, 2.0)) == TRUE)
+            {
+              foreach_data.code = ZMAPXREMOTE_OK;
+              g_string_append_printf(foreach_data.messages, "zoomed in x 2");
+            }
           else
-            code = ZMAPXREMOTE_PRECOND;
+            foreach_data.code = ZMAPXREMOTE_PRECOND;
           break;
         case ZMAP_CONTROL_ACTION_ZOOM_OUT:
-          if(zmapControlWindowDoTheZoom(zmap, 0.5) == TRUE)
-            code = ZMAPXREMOTE_OK;
+          if((foreach_data.handled = zmapControlWindowDoTheZoom(zmap, 0.5)) == TRUE)
+            {
+              foreach_data.code = ZMAPXREMOTE_OK;
+              g_string_append_printf(foreach_data.messages, "zoomed out x 2");
+            }
           else
-            code = ZMAPXREMOTE_PRECOND;
+            foreach_data.code = ZMAPXREMOTE_PRECOND;
           break;
         case ZMAP_CONTROL_ACTION_ZOOM_TO:
-          if(controlZoomTo(zmap, &objdata) == TRUE)
-            code = ZMAPXREMOTE_OK;
+          if((foreach_data.handled = controlZoomTo(zmap, &objdata, &foreach_data)) == TRUE)
+            foreach_data.code = ZMAPXREMOTE_OK;
           else
-            code = ZMAPXREMOTE_PRECOND;
+            foreach_data.code = ZMAPXREMOTE_PRECOND;
           break;
         case ZMAP_CONTROL_ACTION_FIND_FEATURE:
-          code = ZMAPXREMOTE_OK;
+          foreach_data.code = ZMAPXREMOTE_OK;
           break;
         case ZMAP_CONTROL_ACTION_CREATE_FEATURE:
-          drawNewFeatures(zmap, &objdata);
+          drawNewFeatures(zmap, &objdata, &foreach_data);
           break;
         case ZMAP_CONTROL_ACTION_ALTER_FEATURE:
-
+          foreach_data.code = ZMAPXREMOTE_PRECOND;
           break;
         case ZMAP_CONTROL_ACTION_DELETE_FEATURE:
-          eraseFeatures(zmap, &objdata);
+          eraseFeatures(zmap, &objdata, &foreach_data);
           break;
         case ZMAP_CONTROL_ACTION_HIGHLIGHT_FEATURE:
+        case ZMAP_CONTROL_ACTION_HIGHLIGHT2_FEATURE:
+          highlightFeatures(zmap, &objdata, &foreach_data);
           code = ZMAPXREMOTE_OK;
           break;
         case ZMAP_CONTROL_ACTION_UNHIGHLIGHT_FEATURE:
@@ -270,41 +285,53 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
         case ZMAP_CONTROL_ACTION_REGISTER_CLIENT:
           if(objdata.client != NULL)
             {
-              if(createClient(zmap, objdata.client) == TRUE)
-                code = ZMAPXREMOTE_OK;
+              if((foreach_data.handled = createClient(zmap, objdata.client)) == TRUE)
+                foreach_data.code = ZMAPXREMOTE_OK;
               else
-                code = ZMAPXREMOTE_BADREQUEST;
+                foreach_data.code = ZMAPXREMOTE_BADREQUEST;
             }
           else
-            code = ZMAPXREMOTE_BADREQUEST;
+            foreach_data.code = ZMAPXREMOTE_BADREQUEST;
           break;
         case ZMAP_CONTROL_ACTION_NEW_VIEW:
-          code = ZMAPXREMOTE_BADREQUEST;
+          foreach_data.code = ZMAPXREMOTE_BADREQUEST;
           if(objdata.new_view.sequence != 0)
             {
-              code = ZMAPXREMOTE_OK;
-              if(!(insertView(zmap, &(objdata.new_view))))
-                code = ZMAPXREMOTE_PRECOND;
+              foreach_data.code = ZMAPXREMOTE_OK;
+              if(!(foreach_data.handled = insertView(zmap, &(objdata.new_view))))
+                foreach_data.code = ZMAPXREMOTE_PRECOND;
             }
           else
-            zmapControlInfoSet(zmap, code,
-                               "%s",
+            zmapControlInfoSet(zmap, code, "%s",
                                "Missing sequence parameter.");
           break;
         case ZMAP_CONTROL_ACTION_INSERT_VIEW_DATA:
           break;
         default:
-          code = ZMAPXREMOTE_INTERNAL;
+          foreach_data.handled = FALSE;
+          foreach_data.code    = ZMAPXREMOTE_BADREQUEST;
           break;
         }
+
+      if(foreach_data.messages->str)
+        zmapControlInfoSet(zmap, foreach_data.code, 
+                           "%s", foreach_data.messages->str);
+      else if(foreach_data.handled)
+        zmapControlInfoSet(zmap, 412, "%s", 
+                           "Request handled, but no message set. Probably a data error.");
+      else
+        { zMapLogWarning("%s", "Request not handled!"); }
+
+      code = foreach_data.code;
+      g_string_free(foreach_data.messages, TRUE);
+
+      memset(&foreach_data, 0, sizeof(ResponseCodeZMapStruct));
     }
   else if(!parse_ok)
     {
       code = ZMAPXREMOTE_BADREQUEST;
-      zmapControlInfoSet(zmap, code,
-                         "%s",
-                         zMapXMLParserLastErrorMsg(parser)
-                         );
+      zmapControlInfoSet(zmap, code, "%s",
+                         zMapXMLParserLastErrorMsg(parser));
     }
 
   /* Now check what the status is */
@@ -357,6 +384,7 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
 
   if(objdata.context)
     zMapFeatureContextDestroy(objdata.context, TRUE);
+
   zMapXMLParserDestroy(parser);
   
   return xml_reply;
@@ -523,15 +551,9 @@ static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
   return ZMAP_CONTEXT_EXEC_STATUS_OK;
 }
 
-static void eraseFeatures(ZMap zmap, XMLData xml_data)
+static void eraseFeatures(ZMap zmap, XMLData xml_data, ResponseCodeZMap rc_data)
 {
   ZMapView view;
-  ResponseCodeZMapStruct foreach_data = {NULL};
-
-  foreach_data.code     = ZMAPXREMOTE_OK;
-  foreach_data.zmap     = zmap;
-  foreach_data.persist  = TRUE;
-  foreach_data.messages = g_string_sized_new(200);
 
   view = zMapViewGetView(zmap->focus_viewwindow);
 
@@ -543,32 +565,16 @@ static void eraseFeatures(ZMap zmap, XMLData xml_data)
                             &(xml_data->feature_list));
 
   if(g_list_length(xml_data->feature_list))
-    g_list_foreach(xml_data->feature_list, delete_failed_make_message, &foreach_data);
+    g_list_foreach(xml_data->feature_list, delete_failed_make_message, rc_data);
 
-  if(foreach_data.messages->str)
-    zmapControlInfoSet(zmap, 
-                       foreach_data.code, 
-                       "%s", foreach_data.messages->str);
-  else
-    zmapControlInfoSet(zmap, 
-                       412, 
-                       "%s", "Nothing happened. Probably a data error.");
-
-  g_string_free(foreach_data.messages, TRUE);
+  rc_data->handled = TRUE;
 
   return ;
 }
 
-static void drawNewFeatures(ZMap zmap, XMLData xml_data)
+static void drawNewFeatures(ZMap zmap, XMLData xml_data, ResponseCodeZMap rc_data)
 {
   ZMapView view;
-  ZMapFeatureContext tmp;
-  ResponseCodeZMapStruct foreach_data = {NULL};
-
-  foreach_data.code     = ZMAPXREMOTE_OK;
-  foreach_data.zmap     = zmap;
-  foreach_data.persist  = TRUE;
-  foreach_data.messages = g_string_sized_new(200);
 
   view = zMapViewGetView(zmap->focus_viewwindow);
 
@@ -579,21 +585,25 @@ static void drawNewFeatures(ZMap zmap, XMLData xml_data)
                             &(xml_data->feature_list));
 
   if(g_list_length(xml_data->feature_list))
-    g_list_foreach(xml_data->feature_list, draw_failed_make_message, &foreach_data);
+    g_list_foreach(xml_data->feature_list, draw_failed_make_message, rc_data);
 
-  if(control_execute_debug_G)
-    zMapLogWarning("Destroying diff context (%p)", tmp);
+  rc_data->handled = TRUE;
 
-  if(foreach_data.messages->str)
-    zmapControlInfoSet(zmap, 
-                       foreach_data.code, 
-                       "%s", foreach_data.messages->str);
-  else
-    zmapControlInfoSet(zmap, 
-                       412, 
-                       "%s", "Nothing happened. Probably a data error.");
+  return ;
+}
 
-  g_string_free(foreach_data.messages, TRUE);
+static void highlightFeatures(ZMap zmap, XMLData xml_data, ResponseCodeZMap rc_data)
+{
+  ZMapView view;
+
+  view = zMapViewGetView(zmap->focus_viewwindow);
+
+  zMapViewHighlightFeatures(view, NULL, xml_data->context, 
+                            (xml_data->action == ZMAP_CONTROL_ACTION_HIGHLIGHT2_FEATURE ? TRUE : FALSE));
+
+  g_string_append_printf(rc_data->messages, "Highlighted objects");
+
+  rc_data->handled = TRUE;
 
   return ;
 }
@@ -620,7 +630,7 @@ static ZMapFeatureContextExecuteStatus zoomToFeatureCB(GQuark key,
 }
 
 
-static gboolean controlZoomTo(ZMap zmap, XMLData xml_data)
+static gboolean controlZoomTo(ZMap zmap, XMLData xml_data, ResponseCodeZMap foreach_data)
 {
   ZMapWindow window;
   gboolean status = TRUE;
