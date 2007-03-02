@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar  1 09:14 2007 (edgrif)
+ * Last edited: Mar  2 11:23 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.106 2007-03-01 09:14:41 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.107 2007-03-02 14:57:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -752,6 +752,27 @@ void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom)
   return ;
 }
 
+void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFeatureContext context, gboolean multiple)
+{
+  GList *list;
+
+  if(view_window)
+    {
+      zMapLogWarning("%s", "What were you thinking");
+    }
+  else
+    {
+      list = g_list_first(view->window_list);
+      do
+        {
+          view_window = list->data;
+          zMapWindowHighlightObjects(view_window->window, context, multiple);
+        }
+      while((list = g_list_next(list)));
+    }
+
+  return ;
+}
 
 
 /*

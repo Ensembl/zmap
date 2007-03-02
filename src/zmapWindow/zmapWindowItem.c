@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 26 16:26 2007 (edgrif)
+ * Last edited: Mar  1 18:42 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.67 2007-03-01 09:54:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.68 2007-03-02 14:58:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -403,6 +403,66 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean 
   return ;
 }
 
+typedef struct
+{
+  ZMapWindow window;
+  gboolean multiple_select;
+  gint highlighted;
+  gint feature_count;
+}HighlightContextStruct, *HighlightContext;
+
+static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer data, gpointer user_data, char **error_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  HighlightContext highlight_data = (HighlightContext)user_data;
+  ZMapFeature feature;
+  FooCanvasItem *feature_item;
+  gboolean replace_highlight = TRUE;
+
+  if(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      feature = (ZMapFeature)feature_any;
+      if(highlight_data->multiple_select || highlight_data->highlighted == 0)
+        {
+          replace_highlight = !(highlight_data->multiple_select);
+          
+          if((feature_item = zmapWindowFToIFindFeatureItem(highlight_data->window->context_to_item,
+                                                           feature->strand, ZMAPFRAME_NONE,
+                                                           feature)))
+            {
+              if(highlight_data->multiple_select)
+                replace_highlight = !(zmapWindowFocusIsItemInHotColumn(highlight_data->window->focus, feature_item));
+              
+              /* need to do something to find sub feature items??? */
+              zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight);
+              
+              if(replace_highlight)
+                highlight_data->highlighted = 0;
+              else
+                highlight_data->highlighted++;
+            }
+        }
+      highlight_data->feature_count++;
+    }
+
+  return status;
+}
+
+void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select)
+{
+  HighlightContextStruct highlight_data = {NULL};
+
+  highlight_data.window          = window;
+  highlight_data.multiple_select = multiple_select;
+  highlight_data.highlighted     = 
+    highlight_data.feature_count = 0;
+
+  zMapFeatureContextExecute(context, ZMAPFEATURE_STRUCT_FEATURE,
+                            highlight_feature, &highlight_data);
+
+  return ;
+}
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean replace_highlight_item)
 {                                               
