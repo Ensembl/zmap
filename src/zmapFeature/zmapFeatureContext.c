@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  6 13:04 2007 (rds)
+ * Last edited: Feb 27 16:00 2007 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.18 2007-02-06 17:04:45 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.19 2007-03-02 14:29:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -724,9 +724,9 @@ static void postExecuteProcess(ContextExecute execute_data)
 
   if(execute_data->status >= ZMAP_CONTEXT_EXEC_STATUS_ERROR)
     {
-      printf("ContextExecute: Error, function stopped @ level %d, message = %s\n", 
-             execute_data->stopped_at,
-             execute_data->error_string);
+      zMapLogCritical("ContextExecute: Error, function stopped @ level %d, message = %s\n", 
+                      execute_data->stopped_at,
+                      execute_data->error_string);
     }
 
   return ;
