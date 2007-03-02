@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb 26 16:22 2007 (edgrif)
+ * Last edited: Mar  2 14:58 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.180 2007-03-01 09:56:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.181 2007-03-02 14:58:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -138,7 +138,7 @@ static void removeList(gpointer data, gpointer user_data_unused) ;
 
 
 extern GTimer *view_timer_G ;
-
+static gboolean window_draw_context_debug_G = FALSE;
 
 
 /* Drawing coordinates: PLEASE READ THIS BEFORE YOU START MESSING ABOUT WITH ANYTHING...
@@ -1400,8 +1400,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
 
   feature_type = feature_any->struct_type;
 
-  if(0)
-    printf("drawing %s\n", g_quark_to_string(feature_any->unique_id));
+  if(window_draw_context_debug_G)
+    zMapLogWarning("windowDrawContext: drawing %s", g_quark_to_string(feature_any->unique_id));
 
   switch(feature_type)
     {
