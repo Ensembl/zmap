@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar  1 10:04 2007 (edgrif)
+ * Last edited: Mar  2 11:50 2007 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.45 2007-03-01 10:05:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.46 2007-03-02 14:57:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -365,6 +365,38 @@ GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_stran
   g_free(id_base) ;
 
   return block_id;
+}
+
+gboolean zMapFeatureBlockDecodeID(GQuark id, 
+                                  int *ref_start, int *ref_end, ZMapStrand *ref_strand,
+                                  int *non_start, int *non_end, ZMapStrand *non_strand)
+{
+  gboolean valid = FALSE;
+  char *block_id;
+  char *format_str = "%d.%d.%1s_%d.%d.%1s";
+  char *ref_strand_str, *non_strand_str;
+  int fields;
+  enum {EXPECTED_FIELDS = 6};
+
+  block_id = (char *)g_quark_to_string(id);
+
+  if((fields = sscanf(block_id, format_str, 
+                      ref_start, ref_end, &ref_strand_str[0],
+                      non_start, non_end, &non_strand_str[0])) != EXPECTED_FIELDS)
+    {
+      *ref_start = 0;
+      *ref_end   = 0;
+      *non_start = 0;
+      *non_end   = 0;
+    }
+  else
+    {
+      zMapFeatureFormatStrand(ref_strand_str, ref_strand);
+      zMapFeatureFormatStrand(non_strand_str, non_strand);
+      valid = TRUE;
+    }
+
+  return valid;
 }
 
 GQuark zMapFeatureSetCreateID(char *set_name)
