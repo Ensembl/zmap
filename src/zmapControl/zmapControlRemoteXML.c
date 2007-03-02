@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 26 08:50 2007 (edgrif)
+ * Last edited: Mar  2 12:22 2007 (rds)
  * Created: Thu Feb  1 00:12:49 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteXML.c,v 1.8 2007-03-01 09:22:26 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemoteXML.c,v 1.9 2007-03-02 14:29:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -183,9 +183,11 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
        *******************************************************/
       else if(action == g_quark_from_string("delete_feature"))
         xml_data->action = ZMAP_CONTROL_ACTION_DELETE_FEATURE;
-      else if(action == g_quark_from_string("highlight_feature"))
+      else if(action == g_quark_from_string("single_select"))
         xml_data->action = ZMAP_CONTROL_ACTION_HIGHLIGHT_FEATURE;
-      else if(action == g_quark_from_string("unhighlight_feature"))
+      else if(action == g_quark_from_string("multiple_select"))
+        xml_data->action = ZMAP_CONTROL_ACTION_HIGHLIGHT2_FEATURE;
+      else if(action == g_quark_from_string("unselect"))
         xml_data->action = ZMAP_CONTROL_ACTION_UNHIGHLIGHT_FEATURE;
       else if(action == g_quark_from_string("register_client") ||
               action == g_quark_from_string("create_client"))
@@ -233,19 +235,27 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
   if((attr = zMapXMLElementGetAttributeByName(set_element, "block")))
     {
-      block_id  = zMapXMLAttributeGetValue(attr);
-      block_seq = (char *)g_quark_to_string(block_id);
-      /* This is blatantly wrong! */
-      block_id  = zMapFeatureBlockCreateID(1, 1, ZMAPSTRAND_FORWARD,
-                                           1, 1, ZMAPSTRAND_FORWARD);
+      int ref_start, ref_end, non_start, non_end;
+      ZMapStrand ref_strand, non_strand;
 
-      if(!(block = zMapFeatureAlignmentGetBlockByID(xml_data->align, block_id)))
+      block_id  = zMapXMLAttributeGetValue(attr);
+
+      if(zMapFeatureBlockDecodeID(block_id, &ref_start, &ref_end, &ref_strand,
+                                  &non_start, &non_end, &non_strand))
         {
-          /* As is this! */
-          block = zMapFeatureBlockCreate(block_seq,
-                                         1, 1, ZMAPSTRAND_FORWARD,
-                                         1, 1, ZMAPSTRAND_FORWARD);
-          zMapFeatureAlignmentAddBlock(xml_data->align, block);
+          if(!(block = zMapFeatureAlignmentGetBlockByID(xml_data->align, block_id)))
+            {
+              block_seq = (char *)g_quark_to_string(xml_data->align->original_id);
+              block = zMapFeatureBlockCreate(block_seq,
+                                             ref_start, ref_end, ref_strand,
+                                             non_start, non_end, non_strand);
+              zMapFeatureAlignmentAddBlock(xml_data->align, block);
+            }
+        }
+      else
+        {
+          /* Get the first one! */
+          block = zMap_g_datalist_first(&(xml_data->align->blocks));
         }
       xml_data->block = block;
     }
@@ -289,99 +299,114 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   int start = 0, end = 0;
   double score = 0.0;
 
-  /* hack so that there's no need to have featureset around a single feature for zoom_to */
-  if(xml_data->action == ZMAP_CONTROL_ACTION_ZOOM_TO)
-    xml_featureset_start_cb(user_data, feature_element, parser);
-
-  zMapXMLParserCheckIfTrueErrorReturn(xml_data->block == NULL,
-                                      parser, 
-                                      "feature tag not contained within featureset tag");
-  
-  if((attr = zMapXMLElementGetAttributeByName(feature_element, "name")))
+  switch(xml_data->action)
     {
-      feature_name_q = zMapXMLAttributeGetValue(attr);
-    }
-  else
-    zMapXMLParserRaiseParsingError(parser, "name is a required attribute for feature.");
-
-  if((attr = zMapXMLElementGetAttributeByName(feature_element, "style")))
-    {
-      style_q = zMapXMLAttributeGetValue(attr);
-    }
-  else
-    zMapXMLParserRaiseParsingError(parser, "style is a required attribute for feature.");
-
-  if((attr = zMapXMLElementGetAttributeByName(feature_element, "start")))
-    {
-      start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
-                                      (char **)NULL, 10);
-    }
-  else
-    zMapXMLParserRaiseParsingError(parser, "start is a required attribute for feature.");
-
-  if((attr = zMapXMLElementGetAttributeByName(feature_element, "end")))
-    {
-      end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
-                                      (char **)NULL, 10);
-    }
-  else
-    zMapXMLParserRaiseParsingError(parser, "end is a required attribute for feature.");
-
-  if((attr = zMapXMLElementGetAttributeByName(feature_element, "strand")))
-    {
-      zMapFeatureFormatStrand((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-                              &(strand));
-    }
-
-  if((attr = zMapXMLElementGetAttributeByName(feature_element, "score")))
-    {
-      score = zMapXMLAttributeValueToDouble(attr);
-      has_score = TRUE;
-    }
-
-  if((attr = zMapXMLElementGetAttributeByName(feature_element, "suid")))
-    {
-      /* Nothing done here yet. */
-      zMapXMLAttributeGetValue(attr);
-    }
-
-  if(!zMapXMLParserLastErrorMsg(parser))
-    {
-      style_name = (char *)g_quark_to_string(style_q);
-      style_id   = zMapStyleCreateID(style_name);
-      feature_name = (char *)g_quark_to_string(feature_name_q);
-
-      if(!(xml_data->feature_set = zMapFeatureBlockGetSetByID(xml_data->block, style_id)))
-        {
-          xml_data->feature_set = zMapFeatureSetCreate(style_name , NULL);
-          zMapFeatureBlockAddFeatureSet(xml_data->block, xml_data->feature_set);
-        }
-      
-      if((xml_data->feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "", 
-                                                                ZMAPFEATURE_BASIC, NULL,
-                                                                start, end, has_score,
-                                                                score, strand, ZMAPPHASE_NONE)))
-        {
-          if(setupStyles(xml_data->feature_set, xml_data->feature, 
-                         xml_data->styles, zMapStyleCreateID(style_name)))
-            zMapFeatureSetAddFeature(xml_data->feature_set, xml_data->feature);
-          else
-            {
-              char *error;
-              error = g_strdup_printf("Valid style is required. Nothing known of '%s'.", style_name);
-              zMapFeatureDestroy(xml_data->feature);
-              zMapXMLParserRaiseParsingError(parser, error);
-              g_free(error);
-            }
-        }
-
-      if((feature_any = g_new0(ZMapFeatureAnyStruct, 1)))
-        {
-          feature_any->unique_id   = xml_data->feature->unique_id;
-          feature_any->original_id = feature_name_q;
-          feature_any->struct_type = ZMAPFEATURE_STRUCT_FEATURE;
-          xml_data->feature_list   = g_list_prepend(xml_data->feature_list, feature_any);
-        }
+    case ZMAP_CONTROL_ACTION_ZOOM_TO:
+    case ZMAP_CONTROL_ACTION_HIGHLIGHT_FEATURE:
+    case ZMAP_CONTROL_ACTION_HIGHLIGHT2_FEATURE:
+      /* hack so that there's no need to have featureset around a single feature for zoom_to */
+      xml_featureset_start_cb(user_data, feature_element, parser);
+      /* N.B. we are meant to fall through. */
+    case ZMAP_CONTROL_ACTION_CREATE_FEATURE:
+    case ZMAP_CONTROL_ACTION_ALTER_FEATURE:
+    case ZMAP_CONTROL_ACTION_DELETE_FEATURE:
+    case ZMAP_CONTROL_ACTION_FIND_FEATURE:
+      {
+        zMapXMLParserCheckIfTrueErrorReturn(xml_data->block == NULL,
+                                            parser, 
+                                            "feature tag not contained within featureset tag");
+        
+        if((attr = zMapXMLElementGetAttributeByName(feature_element, "name")))
+          {
+            feature_name_q = zMapXMLAttributeGetValue(attr);
+          }
+        else
+          zMapXMLParserRaiseParsingError(parser, "name is a required attribute for feature.");
+        
+        if((attr = zMapXMLElementGetAttributeByName(feature_element, "style")))
+          {
+            style_q = zMapXMLAttributeGetValue(attr);
+          }
+        else
+          zMapXMLParserRaiseParsingError(parser, "style is a required attribute for feature.");
+        
+        if((attr = zMapXMLElementGetAttributeByName(feature_element, "start")))
+          {
+            start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
+                           (char **)NULL, 10);
+          }
+        else
+          zMapXMLParserRaiseParsingError(parser, "start is a required attribute for feature.");
+        
+        if((attr = zMapXMLElementGetAttributeByName(feature_element, "end")))
+          {
+            end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
+                         (char **)NULL, 10);
+          }
+        else
+          zMapXMLParserRaiseParsingError(parser, "end is a required attribute for feature.");
+        
+        if((attr = zMapXMLElementGetAttributeByName(feature_element, "strand")))
+          {
+            zMapFeatureFormatStrand((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+                                    &(strand));
+          }
+        
+        if((attr = zMapXMLElementGetAttributeByName(feature_element, "score")))
+          {
+            score = zMapXMLAttributeValueToDouble(attr);
+            has_score = TRUE;
+          }
+        
+        if((attr = zMapXMLElementGetAttributeByName(feature_element, "suid")))
+          {
+            /* Nothing done here yet. */
+            zMapXMLAttributeGetValue(attr);
+          }
+        
+        if(!zMapXMLParserLastErrorMsg(parser))
+          {
+            style_name = (char *)g_quark_to_string(style_q);
+            style_id   = zMapStyleCreateID(style_name);
+            feature_name = (char *)g_quark_to_string(feature_name_q);
+            
+            if(!(xml_data->feature_set = zMapFeatureBlockGetSetByID(xml_data->block, style_id)))
+              {
+                xml_data->feature_set = zMapFeatureSetCreate(style_name , NULL);
+                zMapFeatureBlockAddFeatureSet(xml_data->block, xml_data->feature_set);
+              }
+            
+            if((xml_data->feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "", 
+                                                                      ZMAPFEATURE_BASIC, NULL,
+                                                                      start, end, has_score,
+                                                                      score, strand, ZMAPPHASE_NONE)))
+              {
+                if(setupStyles(xml_data->feature_set, xml_data->feature, 
+                               xml_data->styles, zMapStyleCreateID(style_name)))
+                  zMapFeatureSetAddFeature(xml_data->feature_set, xml_data->feature);
+                else
+                  {
+                    char *error;
+                    error = g_strdup_printf("Valid style is required. Nothing known of '%s'.", style_name);
+                    zMapFeatureDestroy(xml_data->feature);
+                    zMapXMLParserRaiseParsingError(parser, error);
+                    g_free(error);
+                  }
+              }
+            
+            if((feature_any = g_new0(ZMapFeatureAnyStruct, 1)))
+              {
+                feature_any->unique_id   = xml_data->feature->unique_id;
+                feature_any->original_id = feature_name_q;
+                feature_any->struct_type = ZMAPFEATURE_STRUCT_FEATURE;
+                xml_data->feature_list   = g_list_prepend(xml_data->feature_list, feature_any);
+              }
+          }
+      }
+      break;
+    default:
+      zMapXMLParserRaiseParsingError(parser, "Unexpected element for action");
+      break;
     }
 
   return FALSE;
@@ -553,6 +578,7 @@ static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
 {
   return TRUE;
 }
+
 static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
                                    ZMapXMLParser parser)
 {
