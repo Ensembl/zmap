@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 26 16:06 2007 (edgrif)
+ * Last edited: Mar  1 12:18 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.60 2007-03-01 09:57:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.61 2007-03-05 13:05:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1765,7 +1765,12 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
       /* make curr in to prev item */
       prev_feature = curr_feature ;
       prev_id = curr_feature->original_id ;
-      prev_end = curr_feature->feature.homol.y2 ;
+
+      if (col_data->window->revcomped_features)
+	prev_end = curr_feature->feature.homol.y1 ;
+      else
+	prev_end = curr_feature->feature.homol.y2 ;
+
       prev_style = curr_feature->style ;
       prev_y2 = curr_y2 ;
 
@@ -1780,7 +1785,13 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	  curr_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
 	  zMapAssert(curr_feature) ;
 	  curr_id = curr_feature->original_id ;
-	  curr_start = curr_feature->feature.homol.y1 ;
+
+	  if (col_data->window->revcomped_features)
+	    curr_start = curr_feature->feature.homol.y2 ;
+	  else
+	    curr_start = curr_feature->feature.homol.y1 ;
+
+
 	  curr_style = curr_feature->style ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1865,7 +1876,12 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	      /* make curr into prev */
 	      prev_feature = curr_feature ;
 	      prev_id = curr_feature->original_id ;
-	      prev_end = curr_feature->feature.homol.y2 ;
+
+	      if (col_data->window->revcomped_features)
+		prev_end = curr_feature->feature.homol.y1 ;
+	      else
+		prev_end = curr_feature->feature.homol.y2 ;
+
 	      prev_style = curr_feature->style ;
 	      prev_y2 = curr_y2 ;
 	    }
