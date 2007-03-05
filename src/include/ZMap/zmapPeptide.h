@@ -26,9 +26,9 @@
  * Description: Functions to translate dna to peptide.
  *
  * HISTORY:
- * Last edited: Mar 31 12:59 2006 (rds)
+ * Last edited: Mar  5 14:17 2007 (edgrif)
  * Created: Tue Mar 14 13:55:27 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.h,v 1.3 2006-11-08 09:23:19 edgrif Exp $
+ * CVS info:   $Id: zmapPeptide.h,v 1.4 2007-03-05 14:37:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PEPTIDE_H
@@ -47,6 +47,7 @@ ZMapPeptide zMapPeptideCreateSafely(char *sequence_name, char *gene_name,
                                     char *dna, GArray *translation_table, 
                                     gboolean include_stop) ;
 int zMapPeptideLength(ZMapPeptide peptide) ;
+gboolean zMapPeptideHasStopCodon(ZMapPeptide peptide) ;
 char *zMapPeptideSequence(ZMapPeptide peptide) ;
 char *zMapPeptideSequenceName(ZMapPeptide peptide) ;
 char *zMapPeptideGeneName(ZMapPeptide peptide) ;

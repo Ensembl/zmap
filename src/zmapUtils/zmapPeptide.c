@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: Mar  5 12:55 2007 (edgrif)
+ * Last edited: Mar  5 14:17 2007 (edgrif)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.6 2007-03-05 13:05:40 edgrif Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.7 2007-03-05 14:37:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,6 +57,7 @@ typedef struct _ZMapPeptideStruct
   GQuark sequence_name ;				    /* As in the FASTA sense. */
   GQuark gene_name ;					    /* If peptide is a gene translation. */
   int start, end ;					    /* e.g. coords of gene in sequence. */
+  gboolean stop_codon ;					    /* TRUE means there is a final stop codon. */
   GArray *peptide ;					    /* The peptide string. */
 } ZMapPeptideStruct, *ZMapPeptide ;
 
@@ -484,6 +485,8 @@ ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
 
   pep->peptide = doDNATranslation(translation_table, dna_array, FALSE, include_stop) ;
 
+  if (include_stop && g_array_index(pep->peptide, char, (pep->peptide->len - 2)) == '*')
+    pep->stop_codon = TRUE ;
 
   return pep ;
 }
@@ -514,6 +517,10 @@ int zMapPeptideLength(ZMapPeptide peptide)
   return length ;
 }
 
+gboolean zMapPeptideHasStopCodon(ZMapPeptide peptide)
+{
+  return peptide->stop_codon ;
+}
 
 char *zMapPeptideSequence(ZMapPeptide peptide)
 {
