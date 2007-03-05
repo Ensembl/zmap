@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar  2 14:58 2007 (rds)
+ * Last edited: Mar  5 10:40 2007 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.181 2007-03-02 14:58:22 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.182 2007-03-05 13:03:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -207,9 +207,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
   zMapAssert(window && full_context && diff_context) ;
-
-
-  zMapFeatureTypePrintAll(full_context->styles, "createSetCols: ") ;
 
 
   if(!window->item_factory)
@@ -398,9 +395,6 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
   ZMapFeatureTypeStyle style ;
   double top, bottom ;
   gboolean created = TRUE;
-
-
-  zMapFeatureTypePrintAll(context->styles, "createSetCols: ") ;
 
 
   /* Look up the overall column style, its possible the style for the column may not have
