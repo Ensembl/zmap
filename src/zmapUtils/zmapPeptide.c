@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: Nov  7 13:40 2006 (edgrif)
+ * Last edited: Mar  5 12:55 2007 (edgrif)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.5 2006-11-08 09:24:50 edgrif Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.6 2007-03-05 13:05:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -185,16 +185,25 @@ char complementBase[] =
  { 0, T_,A_,W_,C_,Y_,M_,H_,G_,K_,R_,D_,S_,B_,V_,N_ } ;
 
 
-char dnaEncodeChar[] =
-{  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+/* I have added a '-' to ASCII position 45 for '-' which is used to pad incomplete
+ * sequences. If you don't have this then on encountering a '-' the code will
+ * insert a NULL char which terminates the sequence as C string !
+ * 
+ * I've also added '-' to dnaDecodeChar[] which is populated in the function
+ * that uses it....why it does that is an acedb mystery... */
 
-   0,  A_,  B_,  C_,  D_,   0,   0,  G_,  H_,   0,   0,  K_,   0,  M_,  N_,   0,
-   0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
-   0,  A_,  B_,  C_,  D_,   0,   0,  G_,  H_,   0,   0,  K_,   0,  M_,  N_,   0,
-   0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
+
+char dnaEncodeChar[] =
+{
+  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   '-', 0,   0,
+  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+
+  0,  A_,  B_,  C_,  D_,   0,   0,  G_,  H_,   0,   0,  K_,   0,  M_,  N_,   0,
+  0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
+  0,  A_,  B_,  C_,  D_,   0,   0,  G_,  H_,   0,   0,  K_,   0,  M_,  N_,   0,
+  0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
 } ;
 
 char dnaDecodeChar[1<<4] = { 0 }; 
@@ -475,6 +484,7 @@ ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
 
   pep->peptide = doDNATranslation(translation_table, dna_array, FALSE, include_stop) ;
 
+
   return pep ;
 }
 
@@ -493,6 +503,8 @@ ZMapPeptide zMapPeptideCreateSafely(char *sequence_name, char *gene_name,
 
   return pep;
 }
+
+
 int zMapPeptideLength(ZMapPeptide peptide)
 {
   int length ;
@@ -791,10 +803,11 @@ static void printTranslationTable(KEY genetic_code_key, GArray *translationTable
  * dna to this format before translating it. */
 static void dnaEncodeString(char *cp)
 {
-
   --cp ;
   while(*++cp)
-    *cp = dnaEncodeChar[((int)*cp) & 0x7f] ;
+    {
+      *cp = dnaEncodeChar[((int)*cp) & 0x7f] ;
+    }
 
   return ;
 }
@@ -820,8 +833,13 @@ static void dnaDecodeString(char *cp)
 
   dnaDecodeChar[N_] = 'n';
 
+  dnaDecodeChar[45] = '-';				    /* Needed for padded sequences. */
+
   --cp;
   while(*++cp)
-    *cp = dnaDecodeChar[((int)*cp)];
+    {
+      *cp = dnaDecodeChar[((int)*cp)];
+    }
+
   return ;
 }
