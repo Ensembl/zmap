@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Feb 26 16:23 2007 (edgrif)
+ * Last edited: Mar  5 14:09 2007 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.23 2007-03-01 09:53:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.24 2007-03-05 14:17:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -404,9 +404,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       switch(feature_type)
         {
         case ZMAPFEATURE_TRANSCRIPT:
+#ifdef RDS_SIMPLE_FEATURES_NOT_GOOD_ENOUGH
           if(!feature->feature.transcript.introns && !feature->feature.transcript.introns)
             method = &(method_table[ZMAPFEATURE_BASIC]);
           else
+#endif /* RDS_SIMPLE_FEATURES_NOT_GOOD_ENOUGH */
             method = &(method_table[feature_type]);
           break;
         case ZMAPFEATURE_ALIGNMENT:
@@ -1060,6 +1062,141 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   return feature_item ;
 }
 
+static void drawFeatureExon(ZMapWindowFToIFactory factory, 
+                            FooCanvasItem *parent,
+                            ZMapFeature feature, 
+                            ZMapSpan exon_span,
+                            ZMapFeatureTypeStyle style,
+                            int left, int right,
+                            int top, int bottom, int offset,
+                            int cds_start, int cds_end,
+                            int line_width,
+                            GdkColor *background,
+                            GdkColor *foreground,
+                            GdkColor *outline,
+                            gboolean has_cds)
+{
+  ZMapWindowItemFeature exon_data_ptr, tmp_data_ptr; 
+  FooCanvasItem *exon_box, *utr_box;
+  GdkColor *exon_fill, *exon_outline;
+  int non_start, non_end ;
+  
+  /* create a ZMapWindowItemFeature for the exon, this will be attached later */
+  tmp_data_ptr = exon_data_ptr = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+  /* tmp_data_ptr == exon_data_ptr for original box in case 
+   * cds_start > exon_start && cds_end < exon_end  */
+  exon_data_ptr->start   = exon_span->x1;
+  exon_data_ptr->end     = exon_span->x2;
+  exon_data_ptr->subpart = ZMAPFEATURE_SUBPART_EXON ;
+  
+  /* If any of the cds is in this exon we colour the whole exon as a cds and then
+   * overlay non-cds parts. For the cds part we use the foreground colour, else it's the background. 
+   * If background is null though outline will need to be set to what background would be and 
+   * background should then = NULL */
+  if (has_cds)
+    {
+      if ((cds_start > bottom) || (cds_end < top))
+        {
+          has_cds = FALSE;      /* This exon is not a exon of the CDS */
+          if((exon_fill = background) == NULL)
+            exon_outline = outline;
+        }
+      else
+        {
+          /* At least some part of the exon is CDS... */
+          exon_data_ptr->subpart = ZMAPFEATURE_SUBPART_EXON_CDS ;
+          
+          if ((exon_fill = background) == NULL)
+            exon_outline = foreground;
+          else
+            exon_fill = foreground;
+        }
+    }
+  else if ((exon_fill = background) == NULL)
+    {
+      exon_outline = outline;
+    }
+  
+  exon_box = zMapDrawSSPolygon(parent, 
+                               (zMapStyleIsDirectionalEnd(style) ? ZMAP_POLYGON_POINTING : ZMAP_POLYGON_SQUARE), 
+                               left, right,
+                               top, bottom,
+                               exon_outline, 
+                               exon_fill,
+                               line_width,
+                               feature->strand);
+  callItemHandler(factory, exon_box, ITEM_FEATURE_CHILD, feature, exon_data_ptr, top, bottom);
+  
+  if (has_cds)
+    {
+      utr_box = NULL;
+
+      /* Watch out for the conditions on the start/end here... */
+      if ((cds_start > top) && (cds_start <= bottom))
+        {
+          utr_box = zMapDrawAnnotatePolygon(exon_box,
+                                            (feature->strand == ZMAPSTRAND_REVERSE ? 
+                                             ZMAP_ANNOTATE_UTR_LAST
+                                             : ZMAP_ANNOTATE_UTR_FIRST),
+                                            outline,
+                                            background,
+                                            cds_start,
+                                            line_width,
+                                            feature->strand) ;
+          
+          if (utr_box)
+            {
+              non_start = top ;
+              non_end = top + (cds_start - top) - 1 ;
+              
+              /* set the cds box's exon_data_ptr while we still have ptr 2 it */
+              /* Without this the cds part retains the coords of the FULL exon! */
+              tmp_data_ptr->start = non_end + offset;
+              
+              exon_data_ptr        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+              exon_data_ptr->subpart = ZMAPFEATURE_SUBPART_EXON ;
+              exon_data_ptr->start = non_start + offset ;
+              exon_data_ptr->end   = non_end + offset ;
+              
+              callItemHandler(factory, utr_box, ITEM_FEATURE_CHILD, feature, exon_data_ptr, non_start, non_end);
+            }
+        }
+      if ((cds_end >= top) && (cds_end < bottom))
+        {
+          utr_box = zMapDrawAnnotatePolygon(exon_box,
+                                            (feature->strand == ZMAPSTRAND_REVERSE ? 
+                                             ZMAP_ANNOTATE_UTR_FIRST
+                                             : ZMAP_ANNOTATE_UTR_LAST),
+                                            outline,
+                                            background,
+                                            cds_end,
+                                            line_width,
+                                            feature->strand) ;
+          
+          if (utr_box)
+            {
+              non_start = bottom - (bottom - cds_end) + 1 ;
+              non_end = bottom ;
+              
+              /* set the cds box's exon_data_ptr while we still have ptr 2 it */
+              /* Without this the cds part retains the coords of the FULL exon! */
+              tmp_data_ptr->end = non_start + offset;
+              
+              exon_data_ptr = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+              exon_data_ptr->subpart = ZMAPFEATURE_SUBPART_EXON ;
+              exon_data_ptr->start = non_start + offset ;
+              exon_data_ptr->end   = non_end + offset - 1 ; /* - 1 because non_end
+                                                           calculated from bottom
+                                                           which covers the last base. */
+              
+              callItemHandler(factory, utr_box, ITEM_FEATURE_CHILD, feature, exon_data_ptr, non_start, non_end);
+            }
+        }
+    }
+
+  return;
+}
+
 static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature feature,
                                             double feature_offset,
                                             double x1, double y1, double x2, double y2,
@@ -1075,16 +1212,12 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
   int i ;
   double offset ;
 
-
   zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
   line_width = factory->line_width;
 
   if((intron_fill = background) == NULL)
     intron_fill   = outline;
   
-  /* If there are no exons/introns then just draw a simple box. Can happen for putative
-   * transcripts or perhaps where user has a single exon object but does not give an exon,
-   * only an overall extent. */
   if (feature->feature.transcript.introns && feature->feature.transcript.exons)
     {
       double feature_start, feature_end;
@@ -1205,13 +1338,10 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 
       if (feature->feature.transcript.exons)
 	{
-          GdkColor *exon_fill = background, *exon_outline = outline;
 
 	  for (i = 0; i < feature->feature.transcript.exons->len; i++)
 	    {
 	      ZMapSpan exon_span ;
-	      FooCanvasItem *exon_box ;
-	      ZMapWindowItemFeature exon_data ;
 	      double top, bottom ;
 
 	      exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
@@ -1228,120 +1358,73 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 
               zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
 
-              exon_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-              exon_data->start = exon_span->x1;
-	      exon_data->end = exon_span->x2;
-
-	      /* If any of the cds is in this exon we colour the whole exon as a cds and then
-	       * overlay non-cds parts. For the cds part we use the foreground colour, else it's the background. 
-               * If background is null though outline will need to be set to what background would be and 
-               * background should then = NULL */
-	      exon_data->subpart = ZMAPFEATURE_SUBPART_EXON ;
-              if (has_cds)
-		{
-		  if ((cds_start > bottom) || (cds_end < top))
-		    {
-		      if((exon_fill = background) == NULL)
-			exon_outline = outline;
-		    }
-		  else
-		    {
-		      /* At least some part of the exon is CDS... */
-		      exon_data->subpart = ZMAPFEATURE_SUBPART_EXON_CDS ;
-
-		      if ((exon_fill = background) == NULL)
-			exon_outline = foreground;
-		      else
-			exon_fill = foreground;
-		    }
-		}
-              else if ((exon_fill = background) == NULL)
-                {
-                  exon_outline = outline;
-                }
-
-              exon_box = zMapDrawSSPolygon(feature_item, 
-                                           (zMapStyleIsDirectionalEnd(style) ? ZMAP_POLYGON_POINTING : ZMAP_POLYGON_SQUARE), 
-                                           x1, x2,
-                                           top, bottom,
-                                           exon_outline, 
-                                           exon_fill,
-					   line_width,
-                                           feature->strand);
-              callItemHandler(factory, exon_box, ITEM_FEATURE_CHILD, feature, exon_data, top, bottom);
-
-              if (has_cds)
-		{
-		  FooCanvasItem *utr_box = NULL ;
-		  int non_start, non_end ;
-
-		  /* Watch out for the conditions on the start/end here... */
-		  if ((cds_start > top) && (cds_start <= bottom))
-		    {
-		      utr_box = zMapDrawAnnotatePolygon(exon_box,
-							(feature->strand == ZMAPSTRAND_REVERSE ? 
-							 ZMAP_ANNOTATE_UTR_LAST
-							 : ZMAP_ANNOTATE_UTR_FIRST),
-							outline,
-							background,
-							cds_start,
-                                                        line_width,
-							feature->strand) ;
-
-		      if (utr_box)
-			{
-			  non_start = top ;
-			  non_end = top + (cds_start - top) - 1 ;
-
-                          /* set the cds box's exon_data while we still have ptr 2 it */
-                          /* Without this the cds part retains the coords of the FULL exon! */
-                          exon_data->start = non_end + offset;
-
-			  exon_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-			  exon_data->subpart = ZMAPFEATURE_SUBPART_EXON ;
-			  exon_data->start = non_start + offset ;
-			  exon_data->end   = non_end + offset ;
-
-                          callItemHandler(factory, utr_box, ITEM_FEATURE_CHILD, feature, exon_data, non_start, non_end);
-			}
-		    }
-		  if ((cds_end >= top) && (cds_end < bottom))
-		    {
-		      utr_box = zMapDrawAnnotatePolygon(exon_box,
-							(feature->strand == ZMAPSTRAND_REVERSE ? 
-							 ZMAP_ANNOTATE_UTR_FIRST
-							 : ZMAP_ANNOTATE_UTR_LAST),
-                                                        outline,
-                                                        background,
-                                                        cds_end,
-                                                        line_width,
-                                                        feature->strand) ;
-
-		      if (utr_box)
-			{
-			  non_start = bottom - (bottom - cds_end) + 1 ;
-			  non_end = bottom ;
-
-                          /* set the cds box's exon_data while we still have ptr 2 it */
-                          /* Without this the cds part retains the coords of the FULL exon! */
-                          exon_data->end = non_start + offset;
-
-			  exon_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-			  exon_data->subpart = ZMAPFEATURE_SUBPART_EXON ;
-			  exon_data->start = non_start + offset ;
-			  exon_data->end   = non_end + offset - 1 ; /* - 1 because non_end
-								       calculated from bottom
-								       which covers the last base. */
-
-                          callItemHandler(factory, utr_box, ITEM_FEATURE_CHILD, feature, exon_data, non_start, non_end);
-			}
-		    }
-		}
-
+              drawFeatureExon(factory, feature_item, feature, 
+                              exon_span, style, 
+                              x1, x2, top, bottom, offset,
+                              cds_start, cds_end, line_width, 
+                              background, foreground, outline, has_cds);
             }
 	}
+    }
+  else
+    {
+      ZMapSpanStruct exon_span = {0,0};
+      double top, bottom, feature_start;
+      double *limits        = factory->limits;
+      double points_inout[] = {0.0, 0.0, 0.0, 0.0};
+      double cds_start = 0.0, cds_end = 0.0; /* cds_start < cds_end */
+      gboolean has_cds = FALSE;
+      float line_width = 1.5 ;
 
+      feature_start = exon_span.x1 = feature->x1;
+      exon_span.x2  = feature->x2;
+      feature_item  = createParentGroup(parent, feature, feature_start);
 
+      offset = feature_start + feature_offset ;
+      top    = points_inout[1] = exon_span.x1;
+      bottom = points_inout[3] = exon_span.x2;
+      
+      if (!(factory->user_funcs->feature_size_request)(feature, &limits[0],
+                                                      &points_inout[0], factory->user_data))
+        {
+      
+      top    = points_inout[1];
+      bottom = points_inout[3];
+      
+      zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
+
+      /* Set up the cds coords if there is one. */
+      if(feature->feature.transcript.flags.cds)
+        {
+          cds_start = points_inout[1] = feature->feature.transcript.cds_start ;
+          cds_end   = points_inout[3] = feature->feature.transcript.cds_end ;
+          zMapAssert(cds_start < cds_end);
+          has_cds   = TRUE;
+          
+          /* I think this is correct...???? */
+          if(!((factory->user_funcs->feature_size_request)(feature, &limits[0], 
+                                                           &points_inout[0], 
+                                                           factory->user_data)))
+            {
+              cds_start = points_inout[1];
+              cds_end   = points_inout[3];
+              zmapWindowSeq2CanOffset(&cds_start, &cds_end, offset) ;
+            }
+
+        }
+
+      
+      /* This is a single exon transcript.  We can't just get away
+       * with using the simple feature code.. Single exons may have a
+       * cds */
+
+      /* need to sort out top and bottom! */
+      drawFeatureExon(factory, feature_item, feature, 
+                      &exon_span, style,
+                      x1, x2, top, bottom, offset,
+                      cds_start, cds_end, line_width, 
+                      background, foreground, outline, has_cds);
+        }
     }
 
   return feature_item ;
@@ -1533,7 +1616,7 @@ static FooCanvasItem *drawSeqFeature(RunSet run_data,  ZMapFeature feature,
   double feature_start, feature_end;
   FooCanvasItem  *feature_parent = NULL;
   FooCanvasGroup *column_parent  = NULL;
-  ZMapWindowItemHighlighter hlght= NULL;
+  /*ZMapWindowItemHighlighter hlght= NULL;*/
   GdkColor *outline, *foreground, *background;
   ZMapDrawTextIterator iterator  = NULL;
   double txt_height;
