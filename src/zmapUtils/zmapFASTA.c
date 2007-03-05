@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapFASTA.h
  * HISTORY:
- * Last edited: Mar 22 09:48 2006 (edgrif)
+ * Last edited: Mar  5 14:33 2007 (edgrif)
  * Created: Fri Mar 17 16:24:30 2006 (edgrif)
- * CVS info:   $Id: zmapFASTA.c,v 1.4 2006-11-08 09:24:43 edgrif Exp $
+ * CVS info:   $Id: zmapFASTA.c,v 1.5 2007-03-05 14:39:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,11 +44,15 @@
 enum {FASTA_CHARS = 50} ;
 
 
+/* NOTE that in all these calls "seq_len" is the length reported in the FASTA header, the code
+ * writes out all of the supplied sequence. */
+
+
 /* This code is modified from acedb code (www.acedb.org)
  * 
  * Given a sequence name and its dna sequence, will dump the data in FastA
  * format. */
-gboolean zMapFASTAFile(GIOChannel *file, char *seq_name, int seq_len, char *dna,
+gboolean zMapFASTAFile(GIOChannel *file, ZMapFASTASeqType seq_type, char *seq_name, int seq_len, char *dna,
 		       char *molecule_type, char *gene_name, GError **error_out)
 {
   gboolean result = TRUE ;
@@ -63,7 +67,7 @@ gboolean zMapFASTAFile(GIOChannel *file, char *seq_name, int seq_len, char *dna,
 
   zMapAssert(file && seq_name && seq_len > 0 && dna && error_out) ;
 
-  header = zMapFASTATitle(seq_name, molecule_type, gene_name, seq_len) ;
+  header = zMapFASTATitle(seq_type, seq_name, molecule_type, gene_name, seq_len) ;
 
   if ((status = g_io_channel_write_chars(file, header, -1, &bytes_written, error_out))
       != G_IO_STATUS_NORMAL)
@@ -114,7 +118,7 @@ gboolean zMapFASTAFile(GIOChannel *file, char *seq_name, int seq_len, char *dna,
 /* Returns the "title" of a FASTA file, i.e. the text that forms the first line
  * of a FASTA file (note that the string _does_ end with a newline).
  * Result should be freed using g_free() by caller. */
-char *zMapFASTATitle(char *seq_name, char *molecule_type, char *gene_name,
+char *zMapFASTATitle(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_type, char *gene_name,
 		     int sequence_length)
 {
   char *title = NULL ;
@@ -122,11 +126,13 @@ char *zMapFASTATitle(char *seq_name, char *molecule_type, char *gene_name,
   zMapAssert(seq_name && *seq_name && sequence_length > 0) ;
 
   /* We should add more info. really.... */
-  title = g_strdup_printf(">%s %s %s %d bp\n",
+  title = g_strdup_printf(">%s %s %s %d %s\n",
 			  seq_name,
 			  molecule_type ? molecule_type : "",
 			  gene_name ? gene_name : "",
-			  sequence_length) ;
+			  sequence_length,
+			  seq_type == ZMAPFASTA_SEQTYPE_DNA ? "bp" : "AA"
+			  ) ;
 
   return title ;
 }
@@ -138,7 +144,7 @@ char *zMapFASTATitle(char *seq_name, char *molecule_type, char *gene_name,
  * supplied sequence and adds to it....so not good for dumping a huge dna
  * sequence to file, use zMapFASTAFile() instead.
  */
-char *zMapFASTAString(char *seq_name, char *molecule_type, char *gene_name,
+char *zMapFASTAString(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_type, char *gene_name,
 		      int sequence_length, char *sequence)
 {
   char *fasta_string = NULL ;
@@ -149,21 +155,23 @@ char *zMapFASTAString(char *seq_name, char *molecule_type, char *gene_name,
   int lines = 0, chars_left = 0 ;
   char *cp = NULL ;
   int i ;
+  int true_sequence_length ;
 
   zMapAssert(seq_name && sequence_length > 0 && sequence) ;
 
 
   /* We should add more info. really.... */
-  title = zMapFASTATitle(seq_name, molecule_type, gene_name, sequence_length) ;
+  title = zMapFASTATitle(seq_type, seq_name, molecule_type, gene_name, sequence_length) ;
 
   header_length = strlen(title) + 1 ;			    /* + 1 for newline. */
-  
-  lines = sequence_length / FASTA_CHARS ;
-  chars_left = sequence_length % FASTA_CHARS ;
+
+  true_sequence_length = strlen(sequence) ;
+  lines = true_sequence_length / FASTA_CHARS ;
+  chars_left = true_sequence_length % FASTA_CHARS ;
 
   /* Make the string big enough to hold the whole of the FASTA formatted string, the + 10 is
    * a fudge factor to avoid reallocation. */
-  str = g_string_sized_new(header_length + sequence_length + (lines + 1) + 10) ;
+  str = g_string_sized_new(header_length + true_sequence_length + (lines + 1) + 10) ;
 
 
   g_string_append_printf(str, "%s", title) ;

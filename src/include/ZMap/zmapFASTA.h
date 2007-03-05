@@ -25,9 +25,9 @@
  * Description: Interface to FASTA routines.
  *
  * HISTORY:
- * Last edited: Mar 22 09:24 2006 (edgrif)
+ * Last edited: Mar  5 13:55 2007 (edgrif)
  * Created: Fri Mar 17 16:59:08 2006 (edgrif)
- * CVS info:   $Id: zmapFASTA.h,v 1.4 2006-11-08 09:23:13 edgrif Exp $
+ * CVS info:   $Id: zmapFASTA.h,v 1.5 2007-03-05 14:39:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DNA_H
@@ -35,11 +35,13 @@
 
 #include <glib.h>
 
-gboolean zMapFASTAFile(GIOChannel *file, char *seqname, int seq_len, char *dna,
+typedef enum {ZMAPFASTA_SEQTYPE_INVALID, ZMAPFASTA_SEQTYPE_DNA, ZMAPFASTA_SEQTYPE_AA} ZMapFASTASeqType ;
+
+gboolean zMapFASTAFile(GIOChannel *file, ZMapFASTASeqType seq_type, char *seqname, int seq_len, char *dna,
 		       char *molecule_type, char *gene_name, GError **error_out) ;
-char *zMapFASTAString(char *seq_name, char *molecule_type, char *gene_name,
+char *zMapFASTAString(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_type, char *gene_name,
 		      int sequence_length, char *sequence) ;
-char *zMapFASTATitle(char *seq_name, char *molecule_type, char *gene_name,
+char *zMapFASTATitle(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_type, char *gene_name,
 		     int sequence_length) ;
 
 #endif /* ZMAP_UTILS_DNA_H */
