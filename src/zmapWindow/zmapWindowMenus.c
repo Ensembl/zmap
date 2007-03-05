@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Feb 20 10:11 2007 (rds)
+ * Last edited: Mar  5 14:11 2007 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.27 2007-02-20 12:59:37 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.28 2007-03-05 14:38:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -104,7 +104,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static FooCanvasGroup *getItemsColGroup(FooCanvasItem *item) ;
 
-static void dumpFASTA(ZMapWindow window, char *seq, char *seq_name, int seq_len,
+static void dumpFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *seq, char *seq_name, int seq_len,
 		      char *molecule_name, char *gene_name) ;
 static void dumpFeatures(ZMapWindow window, ZMapFeatureAny feature) ;
 static void dumpContext(ZMapWindow window) ;
@@ -391,7 +391,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
 	  char *title ;
 	  char *dna_fasta ;
 
-	  dna_fasta = zMapFASTAString(seq_name, molecule_type, gene_name, seq_len, dna) ;
+	  dna_fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA, seq_name, molecule_type, gene_name, seq_len, dna) ;
 
 	  title = g_strdup_printf("%s%s%s",
 				  seq_name,
@@ -404,7 +404,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
 	}
       else
 	{
-	  dumpFASTA(menu_data->window, dna, seq_name, seq_len, molecule_type, gene_name) ;
+	  dumpFASTA(menu_data->window, ZMAPFASTA_SEQTYPE_DNA, dna, seq_name, seq_len, molecule_type, gene_name) ;
 	}
 
       g_free(dna) ;
@@ -563,6 +563,8 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
   ZMapPeptide peptide ;
   ZMapFeatureContext context ;
   char *seq_name, *molecule_type = NULL, *gene_name = NULL ;
+  int pep_length ;
+
 
   feature = (ZMapFeature)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
 
@@ -599,14 +601,18 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
 
   peptide = zMapPeptideCreate(seq_name, gene_name, dna, NULL, TRUE) ;
 
+  /* Note that we do not include the "Stop" in the peptide length, is this the norm ? */
+  pep_length = zMapPeptideLength(peptide) ;
+  if (zMapPeptideHasStopCodon(peptide))
+    pep_length-- ;
+
   if (menu_item_id == ZMAPCDS || menu_item_id == ZMAPTRANSCRIPT || menu_item_id == ZMAPUNSPLICED)
     {
       char *title ;
       char *peptide_fasta ;
 
-      peptide_fasta = zMapFASTAString(seq_name, molecule_type, gene_name,
-				      zMapPeptideLength(peptide),
-				      zMapPeptideSequence(peptide)) ;
+      peptide_fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, seq_name, molecule_type, gene_name,
+				      pep_length, zMapPeptideSequence(peptide)) ;
 
       title = g_strdup_printf("%s%s%s",
 			      seq_name,
@@ -619,9 +625,9 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
     }
   else
     {
-      dumpFASTA(menu_data->window,
-		zMapPeptideSequence(peptide), seq_name, zMapPeptideLength(peptide),
-		molecule_type, gene_name) ;
+      dumpFASTA(menu_data->window, ZMAPFASTA_SEQTYPE_AA,
+		zMapPeptideSequence(peptide), seq_name,
+		pep_length, molecule_type, gene_name) ;
     }
 
   zMapPeptideDestroy(peptide) ;
@@ -772,7 +778,7 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data)
 	int seq_len = 0 ;
 
 	if (zMapFeatureBlockDNA((ZMapFeatureBlock)(feature->parent->parent), &seq_name, &seq_len, &sequence))
-	  dumpFASTA(menu_data->window, sequence, seq_name, seq_len, "DNA", NULL) ;
+	  dumpFASTA(menu_data->window, ZMAPFASTA_SEQTYPE_DNA, sequence, seq_name, seq_len, "DNA", NULL) ;
 	else
 	  zMapShowMsg(ZMAP_MSG_WARNING, "%s", "Context contains no DNA.") ;
 	    
@@ -923,7 +929,7 @@ static FooCanvasGroup *getItemsColGroup(FooCanvasItem *item)
 
 
 
-static void dumpFASTA(ZMapWindow window, char *sequence, char *seq_name, int seq_len,
+static void dumpFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *sequence, char *seq_name, int seq_len,
 		      char *molecule_name, char *gene_name)
 {
   char *filepath = NULL ;
@@ -933,7 +939,7 @@ static void dumpFASTA(ZMapWindow window, char *sequence, char *seq_name, int seq
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "FASTA filename ?", NULL, NULL))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapFASTAFile(file, seq_name, seq_len, sequence,
+      || !zMapFASTAFile(file, seq_type, seq_name, seq_len, sequence,
 			molecule_name, gene_name, &error))
     {
       char *err_msg = NULL ;
