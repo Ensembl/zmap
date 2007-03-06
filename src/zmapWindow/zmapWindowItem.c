@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  1 18:42 2007 (rds)
+ * Last edited: Mar  5 15:02 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.68 2007-03-02 14:58:41 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.69 2007-03-06 08:49:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -416,26 +416,62 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   HighlightContext highlight_data = (HighlightContext)user_data;
-  ZMapFeature feature;
+  ZMapFeature feature_in, feature_current;
   FooCanvasItem *feature_item;
   gboolean replace_highlight = TRUE;
 
   if(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
     {
-      feature = (ZMapFeature)feature_any;
+      feature_in = (ZMapFeature)feature_any;
       if(highlight_data->multiple_select || highlight_data->highlighted == 0)
         {
           replace_highlight = !(highlight_data->multiple_select);
           
           if((feature_item = zmapWindowFToIFindFeatureItem(highlight_data->window->context_to_item,
-                                                           feature->strand, ZMAPFRAME_NONE,
-                                                           feature)))
+                                                           feature_in->strand, ZMAPFRAME_NONE,
+                                                           feature_in)))
             {
               if(highlight_data->multiple_select)
                 replace_highlight = !(zmapWindowFocusIsItemInHotColumn(highlight_data->window->focus, feature_item));
               
-              /* need to do something to find sub feature items??? */
-              zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight);
+              feature_current = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA);
+              zMapAssert(feature_current);
+
+              if(feature_in->type == ZMAPFEATURE_TRANSCRIPT && 
+                 feature_in->feature.transcript.exons->len > 0 &&
+                 feature_in->feature.transcript.exons->len != feature_current->feature.transcript.exons->len)
+                {
+                  ZMapSpan span;
+                  int i;
+                  
+                  /* need to do something to find sub feature items??? */
+                  for(i = 0; i < feature_in->feature.transcript.exons->len; i++)
+                    {
+                      if(replace_highlight && i > 0)
+                        replace_highlight = FALSE;
+
+                      span = &g_array_index(feature_in->feature.transcript.exons, ZMapSpanStruct, i) ;
+
+                      if((feature_item = zmapWindowFToIFindItemChild(highlight_data->window->context_to_item,
+                                                                     feature_in->strand, ZMAPFRAME_NONE,
+                                                                     feature_in, span->x1, span->x2)))
+                        zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight);
+                    }
+                  for(i = 0; i < feature_in->feature.transcript.introns->len; i++)
+                    {
+                      span = &g_array_index(feature_in->feature.transcript.introns, ZMapSpanStruct, i) ;
+
+                      if((feature_item = zmapWindowFToIFindItemChild(highlight_data->window->context_to_item,
+                                                                     feature_in->strand, ZMAPFRAME_NONE,
+                                                                     feature_in, span->x1, span->x2)))
+                        zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight);
+                    }
+
+                  replace_highlight = !(highlight_data->multiple_select);
+                }
+              else
+                /* we need to highlight the full feature */
+                zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight);
               
               if(replace_highlight)
                 highlight_data->highlighted = 0;
