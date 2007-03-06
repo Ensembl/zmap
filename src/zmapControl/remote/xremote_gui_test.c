@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 19 15:56 2007 (rds)
+ * Last edited: Mar  5 17:58 2007 (rds)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.2 2007-02-20 12:54:32 rds Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.3 2007-03-06 08:50:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -653,7 +653,7 @@ static void runZMapCB(GtkWidget *button, gpointer user_data)
                      NULL,       /* 2 toplevel id  */
                      NULL};      /* 3 terminating NULL */
 
-  if((zmap_path = (char *)gtk_entry_get_text(GTK_ENTRY(suite->zmap_path))) == NULL || (zmap_path[1] == NULL))
+  if((zmap_path = (char *)gtk_entry_get_text(GTK_ENTRY(suite->zmap_path))) == NULL || (*zmap_path == '\0'))
     zmap_path = "./zmap";       /* make sure we get the CWD zmap */
 
   if((command[0] = g_strdup_printf("%s", zmap_path)) &&
