@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: Nov 15 16:45 2006 (edgrif)
+ * Last edited: Mar  6 10:23 2007 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.19 2006-11-15 16:46:07 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.20 2007-03-06 10:24:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -219,7 +219,7 @@ gboolean zMapManagerDestroy(ZMapManager zmaps)
  */
 
 
-/* Gets called when ZMap quits from "under our feet" as a result of user interaction,
+/* Gets called when a single ZMap window closes from "under our feet" as a result of user interaction,
  * we then make sure we clean up. */
 static void destroyedCB(ZMap zmap, void *cb_data)
 {
@@ -232,8 +232,8 @@ static void destroyedCB(ZMap zmap, void *cb_data)
 
 
 
-/* Gets called when ZMap requests that the application "quits" as a result of user interaction,
- * we then make sure we clean up. */
+/* Gets called when a ZMap requests that the application "quits" as a result of user interaction,
+ * we then make sure we clean up everything including the zmap that requested the quit. */
 static void exitCB(ZMap zmap, void *cb_data)
 {
   ZMapManager zmaps = (ZMapManager)cb_data ;
