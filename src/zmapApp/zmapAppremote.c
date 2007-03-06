@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Mar  6 10:16 2007 (edgrif)
+ * Last edited: Mar  6 12:11 2007 (edgrif)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.22 2007-03-06 10:20:10 edgrif Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.23 2007-03-06 12:16:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -237,8 +237,7 @@ static void remoteCloseDestroyNotify(gpointer data)
       tc->app_context = NULL;
       g_free(tc);
 
-      /* Causes the destroy callback to be invoked which then cleans up. */
-      gtk_widget_destroy(app_context->app_widg) ;
+      zmapAppExit(app_context) ;
     }
 
   return ;

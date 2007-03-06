@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  6 10:16 2007 (edgrif)
+ * Last edited: Mar  6 12:09 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.33 2007-03-06 10:20:10 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.34 2007-03-06 12:16:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,6 +48,7 @@
 static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer data) ;
+static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 static void removeZMapCB(void *app_data, void *zmap) ;
 static void infoSetCB(void *app_data, void *zmap) ;
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
@@ -303,26 +304,16 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
 
+
 void zmapAppExit(ZMapAppContext app_context)
 {
 
-  /* Destroy any ZMap windows. */
-  zMapManagerDestroy(app_context->zmap_manager) ;
+  /* Causes the destroy callback to be invoked which then cleans up. */
+  gtk_widget_destroy(app_context->app_widg);
 
-  /* If we have a client object, clean it up */
-  if(app_context->xremoteClient != NULL)
-    zMapXRemoteDestroy(app_context->xremoteClient);
-
-  /* This should probably be the last thing before exitting... */
-  if (app_context->logger)
-    {
-      zMapLogMessage("%s", "Goodbye cruel world !") ;
-
-      zMapLogDestroy(app_context->logger) ;
-    }
-
-  zMapExit(EXIT_SUCCESS) ;
+  return ;
 }
+
 
 
 
@@ -384,14 +375,30 @@ static ZMapAppContext createAppContext(void)
 
 /* This function gets called whenever there is a gtk_widget_destroy() to the top level
  * widget. Sometimes this is because of window manager action, sometimes one of our exit
- * routines does a gtk_widget_destroy() on the top level widget. */
+ * routines does a gtk_widget_destroy() on the top level widget.
+ * 
+ * NOTE that we do not need to destroy the widget tree, it has already been destroyed.
+ *  */
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  app_context->app_widg = NULL ;
+  /* Destroy any ZMap windows. */
+  zMapManagerDestroy(app_context->zmap_manager) ;
 
-  zmapAppExit(app_context) ;
+  /* If we have a client object, clean it up */
+  if(app_context->xremoteClient != NULL)
+    zMapXRemoteDestroy(app_context->xremoteClient);
+
+  /* This should probably be the last thing before exitting... */
+  if (app_context->logger)
+    {
+      zMapLogMessage("%s", "Goodbye cruel world !") ;
+
+      zMapLogDestroy(app_context->logger) ;
+    }
+
+  zMapExit(EXIT_SUCCESS) ;
 
   return ;
 }
@@ -402,8 +409,7 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  /* Causes the destroy callback to be invoked which then cleans up. */
-  gtk_widget_destroy(app_context->app_widg);
+  zmapAppExit(app_context) ;
 
   return ;
 }
@@ -426,9 +432,8 @@ void removeZMapCB(void *app_data, void *zmap_data)
   if (app_context->selected_zmap == zmap)
     app_context->selected_zmap = NULL ;
 
-  /* Causes the destroy callback to be invoked which then cleans up. */
   if((!(app_context->show_mainwindow)) && ((zMapManagerCount(app_context->zmap_manager)) == 0))
-    gtk_widget_destroy(app_context->app_widg);
+    zmapAppExit(app_context) ;
 
   return ;
 }
@@ -575,22 +580,6 @@ void exitCB(void *app_data, void *zmap_data_unused)
 
   return ;
 }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void appExit(ZMapAppContext app_context)
-{
-  zMapManagerDestroy(app_context->zmap_manager) ;
-
-  zmapAppExit(app_context) ;				    /* Does not return. */
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
 
 
