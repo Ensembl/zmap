@@ -19,16 +19,15 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *	Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 15:05 2006 (rds)
+ * Last edited: Mar  6 10:16 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.32 2006-11-08 09:23:43 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.33 2007-03-06 10:20:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +47,7 @@
 
 static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
-static void quitCB(GtkWidget *widget, gpointer data) ;
+static void toplevelDestroyCB(GtkWidget *widget, gpointer data) ;
 static void removeZMapCB(void *app_data, void *zmap) ;
 static void infoSetCB(void *app_data, void *zmap) ;
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
@@ -59,7 +58,6 @@ static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
 
 void exitCB(void *app_data, void *zmap_data_unused) ;
-static void appExit(ZMapAppContext app_context) ;
 static gboolean getConfiguration(ZMapAppContext app_context) ;
 
 
@@ -244,7 +242,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
                    (gpointer)app_context);
   
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
-		     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
+		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)app_context) ;
 
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
@@ -304,8 +302,13 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 }
 
 
+
 void zmapAppExit(ZMapAppContext app_context)
 {
+
+  /* Destroy any ZMap windows. */
+  zMapManagerDestroy(app_context->zmap_manager) ;
+
   /* If we have a client object, clean it up */
   if(app_context->xremoteClient != NULL)
     zMapXRemoteDestroy(app_context->xremoteClient);
@@ -378,11 +381,29 @@ static ZMapAppContext createAppContext(void)
 }
 
 
+
+/* This function gets called whenever there is a gtk_widget_destroy() to the top level
+ * widget. Sometimes this is because of window manager action, sometimes one of our exit
+ * routines does a gtk_widget_destroy() on the top level widget. */
+static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)cb_data ;
+
+  app_context->app_widg = NULL ;
+
+  zmapAppExit(app_context) ;
+
+  return ;
+}
+
+
+
 static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  appExit(app_context) ;
+  /* Causes the destroy callback to be invoked which then cleans up. */
+  gtk_widget_destroy(app_context->app_widg);
 
   return ;
 }
@@ -405,8 +426,8 @@ void removeZMapCB(void *app_data, void *zmap_data)
   if (app_context->selected_zmap == zmap)
     app_context->selected_zmap = NULL ;
 
-  if((!(app_context->show_mainwindow)) && 
-     ((zMapManagerCount(app_context->zmap_manager)) == 0))
+  /* Causes the destroy callback to be invoked which then cleans up. */
+  if((!(app_context->show_mainwindow)) && ((zMapManagerCount(app_context->zmap_manager)) == 0))
     gtk_widget_destroy(app_context->app_widg);
 
   return ;
@@ -544,17 +565,20 @@ static void infoSetCB(void *app_data, void *zmap)
 }
 
 
-
+/* Called from layers to below when they need to exit. */
 void exitCB(void *app_data, void *zmap_data_unused)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_data ;
 
-  appExit(app_context) ;
+  /* Causes the destroy callback to be invoked which then cleans up. */
+  gtk_widget_destroy(app_context->app_widg) ;
 
   return ;
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void appExit(ZMapAppContext app_context)
 {
   zMapManagerDestroy(app_context->zmap_manager) ;
@@ -563,6 +587,8 @@ static void appExit(ZMapAppContext app_context)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
