@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar  2 11:23 2007 (rds)
+ * Last edited: Mar  7 14:20 2007 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.107 2007-03-02 14:57:42 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.108 2007-03-07 14:20:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@
 
 
 static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data) ;
-static void destroyZMapView(ZMapView zmap) ;
+static void destroyZMapView(ZMapView *zmap) ;
 
 static gint zmapIdleCB(gpointer cb_data) ;
 static void enterCB(ZMapWindow window, void *caller_data, void *window_data) ;
@@ -55,7 +55,6 @@ static void focusCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data);
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data);
-static void destroyCB(ZMapWindow window, void *caller_data, void *window_data) ;
 
 static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data);
 
@@ -130,11 +129,14 @@ static ZMapViewCallbacks view_cbs_G = NULL ;
 
 
 /* Callbacks back we set in the level below us, i.e. zMapWindow. */
-ZMapWindowCallbacksStruct window_cbs_G = {enterCB, leaveCB,
-					  scrollCB, focusCB, 
-                                          viewSelectCB, 
-                                          viewSplitToPatternCB,
-					  setZoomStatusCB, viewVisibilityChangeCB, destroyCB} ;
+ZMapWindowCallbacksStruct window_cbs_G = 
+{
+  enterCB, leaveCB,
+  scrollCB, focusCB, 
+  viewSelectCB, 
+  viewSplitToPatternCB,
+  setZoomStatusCB, viewVisibilityChangeCB,
+} ;
 
 
 
@@ -170,10 +172,8 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
   view_cbs_G->destroy = callbacks->destroy ;
 
 
-
   /* Init windows.... */
   zMapWindowInit(&window_cbs_G) ;
-
 
   return ;
 }
@@ -934,9 +934,8 @@ gboolean zMapViewDestroy(ZMapView zmap_view)
 	{
 	  /* For init we simply need to signal to our parent layer that we have died,
 	   * we will then be cleaned up immediately. */
-	  zmap_view->state = ZMAPVIEW_DYING ;
 
-	  (*(view_cbs_G->destroy))(zmap_view, zmap_view->app_data, NULL) ;
+	  zmap_view->state = ZMAPVIEW_DYING ;
 	}
       else
 	{
@@ -1148,20 +1147,6 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 }
 
 
-/* DOES THIS EVER ACTUALLY HAPPEN........... */
-/* Called when an underlying window is destroyed. */
-static void destroyCB(ZMapWindow window, void *caller_data, void *window_data)
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  printf("In View, in window destroyed callback\n") ;
-
-  return ;
-}
 
 static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data)
 {
@@ -1318,8 +1303,9 @@ static void killAllSpawned(ZMapView zmap_view)
 /* Should only do this after the window and all threads have gone as this is our only handle
  * to these resources. The lists of windows and thread connections are dealt with somewhat
  * asynchronously by killAllWindows() & checkConnections() */
-static void destroyZMapView(ZMapView zmap_view)
+static void destroyZMapView(ZMapView *zmap_view_out)
 {
+  ZMapView zmap_view = *zmap_view_out ;
 
   g_free(zmap_view->sequence) ;
 
@@ -1333,6 +1319,8 @@ static void destroyZMapView(ZMapView zmap_view)
   killAllSpawned(zmap_view);
 
   g_free(zmap_view) ;
+
+  *zmap_view_out = NULL ;
 
   return ;
 }
@@ -1612,11 +1600,17 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	}
       else if (zmap_view->state == ZMAPVIEW_DYING)
 	{
-	  /* Signal layer above us that view has died. */
-	  (*(view_cbs_G->destroy))(zmap_view, zmap_view->app_data, NULL) ;
+	  /* Tricky coding here: we need to destroy the view _before_ we notify the layer above us
+	   * that the zmap_view has gone but we need to pass information from the view back, so we
+	   * keep a temporary record of certain parts of the view. */
+	  ZMapView zmap_view_ref = zmap_view ;
+	  void *app_data = zmap_view->app_data ;
 
-	  /* zmap was waiting for threads to die, now they have we can free everything and stop. */
-	  destroyZMapView(zmap_view) ;
+	  /* view was waiting for threads to die, now they have we can free everything. */
+	  destroyZMapView(&zmap_view) ;
+
+	  /* Signal layer above us that view has died. */
+	  (*(view_cbs_G->destroy))(zmap_view_ref, app_data, NULL) ;
 
 	  call_again = FALSE ;
 	}
@@ -1663,43 +1657,6 @@ static void loadDataConnections(ZMapView zmap_view)
 }
 
 
-/* SOME ORDER ISSUES NEED TO BE ATTENDED TO HERE...WHEN SHOULD THE IDLE ROUTINE BE REMOVED ? */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* destroys the window if this has not happened yet and then destroys the slave threads
- * if there are any.
- */
-static void killZMapView(ZMapView zmap_view)
-{
-  /* precise order is not straight forward...bound to be some race conditions here but...
-   * 
-   * - should inactivate GUI as this should be cheap and prevents further interactions, needs
-   *   to inactivate ZMap _and_ controlling GUI.
-   * - then should kill the threads so we can then wait until they have all died _before_
-   *   freeing up data etc. etc.
-   * - then we should stop checking the threads once they have died.
-   * - then GUI should disappear so user cannot interact with it anymore.
-   * Then we should kill the threads */
-
-
-  if (zmap_view->window_list != NULL)
-    {
-      killGUI(zmap_view) ;
-    }
-
-  /* NOTE, we do a _kill_ here, not a destroy. This just signals the thread to die, it
-   * will actually die sometime later...check clean up sequence..... */
-  if (zmap_view->connection_list != NULL)
-    {
-      killConnections(zmap_view) ;
-    }
-		  
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 /* Calls the control window callback to remove any reference to the zmap and then destroys
  * the actual zmap itself.
@@ -1735,6 +1692,10 @@ static void killConnections(ZMapView zmap_view)
 
   return ;
 }
+
+
+
+
 
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
 {
