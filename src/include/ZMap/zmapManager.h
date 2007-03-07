@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Nov 15 11:20 2006 (edgrif)
+ * Last edited: Mar  7 07:51 2007 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapManager.h,v 1.10 2006-11-15 16:46:23 edgrif Exp $
+ * CVS info:   $Id: zmapManager.h,v 1.11 2007-03-07 14:13:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_MANAGER_H
@@ -65,7 +65,7 @@ typedef struct
 {
   ZMapManagerCallbackFunc zmap_deleted_func ;
   ZMapManagerCallbackFunc zmap_set_info_func ;
-  ZMapManagerCallbackFunc exit_func ;
+  ZMapManagerCallbackFunc quit_req_func ;
 } ZMapManagerCallbacksStruct, *ZMapManagerCallbacks ;
 
 

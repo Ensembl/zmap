@@ -22,12 +22,14 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: 
+ * Description: Handles a list of zmaps which it can delete and add
+ *              to.
+ *              
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: Mar  6 10:23 2007 (edgrif)
+ * Last edited: Mar  7 14:12 2007 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.20 2007-03-06 10:24:21 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.21 2007-03-07 14:13:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -35,9 +37,8 @@
 #include <zmapManager_P.h>
 
 
-
 static void destroyedCB(ZMap zmap, void *cb_data) ;
-static void exitCB(ZMap zmap, void *cb_data) ;
+static void quitReqCB(ZMap zmap, void *cb_data) ;
 static void removeZmapEntry(ZMapManager zmaps, ZMap zmap) ;
 
 
@@ -45,9 +46,8 @@ static void removeZmapEntry(ZMapManager zmaps, ZMap zmap) ;
 static ZMapManagerCallbacks manager_cbs_G = NULL ;
 
 
-
 /* Holds callbacks we set in the level below us (ZMap window) to be called back on. */
-ZMapCallbacksStruct zmap_cbs_G = {destroyedCB, exitCB} ;
+ZMapCallbacksStruct zmap_cbs_G = {destroyedCB, quitReqCB} ;
 
 
 
@@ -62,14 +62,15 @@ void zMapManagerInit(ZMapManagerCallbacks callbacks)
   zMapAssert(!manager_cbs_G) ;
 
   zMapAssert(callbacks && callbacks->zmap_deleted_func && callbacks->zmap_set_info_func
-	     && callbacks->exit_func) ;
+	     && callbacks->quit_req_func) ;
 
   manager_cbs_G = g_new0(ZMapManagerCallbacksStruct, 1) ;
 
-  manager_cbs_G->zmap_deleted_func  = callbacks->zmap_deleted_func ; /* called when zmaps close */
+  manager_cbs_G->zmap_deleted_func  = callbacks->zmap_deleted_func ; /* called when a zmap closes */
   manager_cbs_G->zmap_set_info_func = callbacks->zmap_set_info_func ;
 							    /* called when zmap does something that gui needs to know about (remote calls) */
-  manager_cbs_G->exit_func = callbacks->exit_func ;		    /* called when zmap app must exit. */
+  manager_cbs_G->quit_req_func = callbacks->quit_req_func ; /* called when layer below requests
+							       that zmap app exits. */
 
 
   /* Init control callbacks.... */
@@ -167,14 +168,13 @@ gboolean zMapManagerRaise(ZMap zmap)
 }
 
 
-
+/* Note the zmap will get removed from managers list once it signals via destroyedCB()
+ * that it has died. */
 gboolean zMapManagerKill(ZMapManager zmaps, ZMap zmap)
 {
   gboolean result = TRUE ;
 
   result = zMapDestroy(zmap) ;
-
-  removeZmapEntry(zmaps, zmap) ;
 
   return result ;
 }
@@ -185,26 +185,25 @@ gboolean zMapManagerKillAllZMaps(ZMapManager zmaps)
     {
       GList *next_zmap ;
 
-      /* The "while" seems counterintuitive but the kill removes zmaps from the list
-       * so we keep fetching the new head of the list. */
       next_zmap = g_list_first(zmaps->zmap_list) ;
       do
 	{
 	  zMapManagerKill(zmaps, (ZMap)(next_zmap->data)) ;
 	}
-      while ((next_zmap = g_list_first(zmaps->zmap_list))) ;
+      while ((next_zmap = g_list_next(next_zmap))) ;
     }
 
   return TRUE;
 }
 
-/* Frees all resources held by a zmapmanager and then frees the manager itself. */
+/* Frees zmapmanager, the list of zmaps is expected to already have been
+ * free'd. This needs to be done separately because the zmaps are threaded and
+ * may take some time to die. */
 gboolean zMapManagerDestroy(ZMapManager zmaps)
 {
   gboolean result = TRUE ;
 
-  /* Free all the existing zmaps. */
-  zMapManagerKillAllZMaps(zmaps);
+  zMapAssert(!(zmaps->zmap_list)) ;
 
   g_free(zmaps) ;
 
@@ -233,18 +232,18 @@ static void destroyedCB(ZMap zmap, void *cb_data)
 
 
 /* Gets called when a ZMap requests that the application "quits" as a result of user interaction,
- * we then make sure we clean up everything including the zmap that requested the quit. */
-static void exitCB(ZMap zmap, void *cb_data)
+ * we signal the layer above us to start the clean up prior to quitting. */
+static void quitReqCB(ZMap zmap, void *cb_data)
 {
   ZMapManager zmaps = (ZMapManager)cb_data ;
 
-  (*(manager_cbs_G->exit_func))(zmaps->gui_data, zmap) ;
+  (*(manager_cbs_G->quit_req_func))(zmaps->gui_data, zmap) ;
 
   return ;
 }
 
 
-
+/* Removes a zmap entry from the managers list and signals the layer above that it has gone. */
 static void removeZmapEntry(ZMapManager zmaps, ZMap zmap)
 {
   zmaps->zmap_list = g_list_remove(zmaps->zmap_list, zmap) ;
