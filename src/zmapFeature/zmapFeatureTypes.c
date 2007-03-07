@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar  1 10:03 2007 (edgrif)
+ * Last edited: Mar  7 13:34 2007 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.42 2007-03-01 10:03:53 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.43 2007-03-07 14:21:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1734,11 +1734,19 @@ static void inheritAllFunc(gpointer data, gpointer user_data)
 	{
 	  tmp_style = zMapFeatureStyleCopy(prev_style) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMapStylePrint(tmp_style, "Parent") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  if (zMapStyleMerge(tmp_style, curr_style))
 	    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      zMapStylePrint(tmp_style, "child") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      inherited->prev_style = tmp_style ;
 	      
