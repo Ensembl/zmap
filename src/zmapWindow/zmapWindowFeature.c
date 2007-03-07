@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  7 12:02 2007 (rds)
+ * Last edited: Mar  7 14:30 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.90 2007-03-07 12:25:36 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.91 2007-03-07 14:34:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -426,11 +426,17 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
       /* check the feature is in featureset. */
       if(zMapFeatureSetFindFeature(feature_set, feature))
         {
+          double x1, x2, y1, y2;
           /* remove the item from the focus items list. */
           zmapWindowFocusRemoveFocusItem(zmap_window->focus, feature_item);
 
-          if(zmapWindowMarkIsSet(zmap_window->mark) && feature_item == zmapWindowMarkGetItem(zmap_window->mark))
-            zmapWindowMarkReset(zmap_window->mark);
+          if(zmapWindowMarkIsSet(zmap_window->mark) && 
+             feature_item == zmapWindowMarkGetItem(zmap_window->mark) &&
+             zmapWindowMarkGetWorldRange(zmap_window->mark, &x1, &y1, &x2, &y2))
+            {
+              zmapWindowMarkSetWorldRange(zmap_window->mark, x1, y1, x2, y2);
+            }
+
           /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
           gtk_object_destroy(GTK_OBJECT(feature_item)) ;
 
