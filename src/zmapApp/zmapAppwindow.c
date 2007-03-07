@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Mar  7 14:06 2007 (edgrif)
+ * Last edited: Mar  7 14:43 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.35 2007-03-07 14:07:46 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.36 2007-03-07 14:45:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -372,7 +372,8 @@ void removeZMapCB(void *app_data, void *zmap_data)
     app_context->selected_zmap = NULL ;
 
   /* When the last zmap has gone and we are dying then exit. */
-  if (app_context->state == ZMAPAPP_DYING && ((zMapManagerCount(app_context->zmap_manager)) == 0))
+  if ((app_context->state == ZMAPAPP_DYING || !(app_context->show_mainwindow))
+      && ((zMapManagerCount(app_context->zmap_manager)) == 0))
     exitApp(app_context) ;
 
   return ;
