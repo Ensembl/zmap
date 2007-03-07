@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: Mar  5 14:17 2007 (edgrif)
+ * Last edited: Mar  7 12:16 2007 (edgrif)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.7 2007-03-05 14:37:35 edgrif Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.8 2007-03-07 12:19:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -461,6 +461,7 @@ ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
   ZMapPeptide pep = NULL ;
   GArray *dna_array ;
   int dna_len ;
+  char *data ;
 
   pep = g_new0(ZMapPeptideStruct, 1) ;
 
@@ -487,6 +488,9 @@ ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
 
   if (include_stop && g_array_index(pep->peptide, char, (pep->peptide->len - 2)) == '*')
     pep->stop_codon = TRUE ;
+
+  /* Tidy up, note how we just leave the dna as it is still the original data. */
+  data = g_array_free(dna_array, FALSE) ;
 
   return pep ;
 }
