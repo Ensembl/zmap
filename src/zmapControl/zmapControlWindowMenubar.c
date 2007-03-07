@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb  8 10:32 2007 (edgrif)
+ * Last edited: Mar  7 07:22 2007 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.21 2007-02-08 10:38:57 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.22 2007-03-07 14:36:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -259,7 +259,7 @@ static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = (ZMap)cb_data ;
 
-  zmapControlTopLevelKillCB(zmap) ;
+  zmapControlSignalKill(zmap) ;
 
   return ;
 }
@@ -272,7 +272,7 @@ static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   ZMap zmap = (ZMap)cb_data ;
 
   /* Call the application exit callback to get everything killed...including this zmap. */
-  (*(zmap->zmap_cbs_G->exit))(zmap, zmap->app_data) ;
+  (*(zmap->zmap_cbs_G->quit_req))(zmap, zmap->app_data) ;
 
   return ;
 }

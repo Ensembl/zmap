@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Mar  1 14:23 2007 (edgrif)
+ * Last edited: Mar  7 14:25 2007 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.31 2007-03-01 14:24:57 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.32 2007-03-07 14:36:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,7 @@
 static void setTooltips(ZMap zmap) ;
 static void makeStatusTooltips(ZMap zmap) ;
 static GtkWidget *makeStatusPanel(ZMap zmap) ;
-static void quitCB(GtkWidget *widget, gpointer cb_data) ;
+static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap) ;
 
@@ -75,7 +75,7 @@ gboolean zmapControlWindowCreate(ZMap zmap)
 
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
-		     GTK_SIGNAL_FUNC(quitCB), (gpointer)zmap) ;
+		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)zmap) ;
 
 
   vbox = gtk_vbox_new(FALSE, 0) ;
@@ -121,7 +121,7 @@ gboolean zmapControlWindowCreate(ZMap zmap)
 
 void zmapControlWindowDestroy(ZMap zmap)
 {
-  /* We must disconnect the "destroy" callback otherwise we will enter quitCB()
+  /* We must disconnect the "destroy" callback otherwise we will enter toplevelDestroyCB()
    * below and that will try to call our callers destroy routine which has already
    * called this routine...i.e. a circularity which results in attempts to
    * destroy already destroyed windows etc. */
@@ -240,17 +240,17 @@ static GtkWidget *makeStatusPanel(ZMap zmap)
 }
 
 
-/* Probably needs renaming to exitCB, Need to check with Ed as not
- * 100% on all possiblities, esp threads... */
-static void quitCB(GtkWidget *widget, gpointer cb_data)
+
+/* Called when a destroy signal has been sent to the top level window/widget,
+ * this may have been by the user clicking a button or maybe by zmapControl
+ * code. */
+static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
 
-  /* this is hacky, I don't like this, if we don't do this then end up trying to kill a
-   * non-existent top level window because gtk already seems to have done this...  */
   zmap->toplevel = NULL ; 
-  
-  zmapControlTopLevelKillCB(zmap) ;
+
+  zmapControlDoKill(zmap) ;
 
   return ;
 }

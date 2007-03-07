@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Feb  6 16:21 2007 (rds)
+ * Last edited: Mar  7 14:24 2007 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.75 2007-02-06 16:34:29 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.76 2007-03-07 14:35:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,8 +44,7 @@
 
 static ZMap createZMap(void *app_data) ;
 static void destroyZMap(ZMap zmap) ;
-static void killZMap(ZMap zmap) ;
-static void killFinal(ZMap zmap) ;
+static void killFinal(ZMap *zmap) ;
 static void killViews(ZMap zmap) ;
 static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
 static void updateControl(ZMap zmap, ZMapView view) ;
@@ -97,12 +96,12 @@ void zMapInit(ZMapCallbacks callbacks)
 {
   zMapAssert(!zmap_cbs_G) ;
 
-  zMapAssert(callbacks && callbacks->destroy && callbacks->exit) ;
+  zMapAssert(callbacks && callbacks->destroy && callbacks->quit_req) ;
 
   zmap_cbs_G = g_new0(ZMapCallbacksStruct, 1) ;
 
   zmap_cbs_G->destroy = callbacks->destroy ;
-  zmap_cbs_G->exit = callbacks->exit ;
+  zmap_cbs_G->quit_req = callbacks->quit_req ;
 
   /* Init view.... */
   zMapViewInit(&view_cbs_G) ;
@@ -213,9 +212,9 @@ gboolean zMapDeleteView(ZMap zmap, ZMapView view)
 
   zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
 
-  zmap->view_list = g_list_remove(zmap->view_list, view) ;
-
   zMapViewDestroy(view) ;
+
+  zmap->view_list = g_list_remove(zmap->view_list, view) ;
 
   if (!zmap->view_list)
     zmap->state = ZMAP_INIT ;
@@ -289,7 +288,7 @@ char *zMapGetZMapStatus(ZMap zmap)
 gboolean zMapDestroy(ZMap zmap)
 {
 
-  killZMap(zmap) ;
+  zmapControlDoKill(zmap) ;
 
   return TRUE ;
 }
@@ -351,7 +350,7 @@ void zmapControlClose(ZMap zmap)
       if (zMapGUIShowChoice(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING,
 			    "Closing this window will close this zmap window, "
 			    "do you really want to do this ?"))
-	killZMap(zmap) ;
+	zmapControlDoKill(zmap) ;
     }
   else
     {
@@ -415,18 +414,47 @@ void zmapControlSetGUIVisChange(ZMap zmap, ZMapWindowVisibilityChange vis_change
 
 
 /* Called when the user kills the toplevel window of the ZMap either by clicking the "quit"
- * button or by using the window manager frame menu to kill the window. */
-void zmapControlTopLevelKillCB(ZMap zmap)
+ * button or by using the window manager frame menu to kill the window.
+ * 
+ * Really this function just signals the zmap to be killed. */
+void zmapControlSignalKill(ZMap zmap)
 {
-  /* this is not strictly correct, there may be complications if we are resetting, sort this
-   * out... */
 
-  if (zmap->state != ZMAP_DYING)
-    killZMap(zmap) ;
+  gtk_widget_destroy(zmap->toplevel) ;
 
   return ;
 }
 
+
+/* This routine gets called when, either via a direct call or a callback (user action) the ZMap
+ * needs to be destroyed. It does not do the whole destroy but instead signals all the Views
+ * to die, when they die they call our view_detroyed_cb and this will eventually destroy the rest
+ * of the ZMap when all the views have gone. At this point we will be able to signal to the
+ * layer above us that we have died. */
+void zmapControlDoKill(ZMap zmap)
+{
+  /* no action, if dying already.... */
+  if (zmap->state != ZMAP_DYING)
+    {
+      /* If there are no views we can just go ahead and kill everything, otherwise we just
+       * signal all the views to die. */
+      if (zmap->state == ZMAP_INIT || zmap->state == ZMAP_RESETTING)
+	{
+	  killFinal(&zmap) ;
+	}
+      else if (zmap->state == ZMAP_VIEWS)
+	{
+	  /* set our state to DYING....so we don't respond to anything anymore.... */
+	  /* Must set this as this will prevent any further interaction with the ZMap as
+	   * a result of both the ZMap window and the threads dying asynchronously.  */
+	  zmap->state = ZMAP_DYING ;
+
+	  killViews(zmap) ;
+	}
+    }
+
+  return ;
+}
 
 
 void zmapControlLoadCB(ZMap zmap)
@@ -553,42 +581,6 @@ static void destroyZMap(ZMap zmap)
   return ;
 }
 
-
-
-
-/* This routine gets called when, either via a direct call or a callback (user action) the ZMap
- * needs to be destroyed. It does not do the whole destroy but instead signals all the Views
- * to die, when they die they call our view_detroyed_cb and this will eventually destroy the rest
- * of the ZMap (top level window etc.) when all the views have gone. */
-static void killZMap(ZMap zmap)
-{
-  /* no action, if dying already.... */
-  if (zmap->state != ZMAP_DYING)
-    {
-      /* Call the application callback first so that there will be no more interaction with us */
-      (*(zmap_cbs_G->destroy))(zmap, zmap->app_data) ;
-
-      /* If there are no views we can just go ahead and kill everything, otherwise we just
-       * signal all the views to die. */
-      if (zmap->state == ZMAP_INIT || zmap->state == ZMAP_RESETTING)
-	{
-	  killFinal(zmap) ;
-	}
-      else if (zmap->state == ZMAP_VIEWS)
-	{
-	  killViews(zmap) ;
-	}
-
-
-      /* set our state to DYING....so we don't respond to anything anymore.... */
-      /* Must set this as this will prevent any further interaction with the ZMap as
-       * a result of both the ZMap window and the threads dying asynchronously.  */
-      zmap->state = ZMAP_DYING ;
-
-    }
-
-  return ;
-}
 
 
 
@@ -817,41 +809,29 @@ static void viewKilledCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
-  /* We should test to see if the view is still in the list, if so we should kill it off.... */
   if (findViewInZMap(zmap, view))
-    {
-      zMapDeleteView(zmap, view) ;
-
-      /* do we need to update the focus window here ??? */
-
-
-    }
-  else
-    {
-      /* A View has died so we should clean up its stuff.... */
-      zmap->view_list = g_list_remove(zmap->view_list, view) ;
-    }
-
+    zmap->view_list = g_list_remove(zmap->view_list, view) ;
 
   if (!zmap->view_list)
     {
-      /* Call the application callback first so that there will be no more interaction with us */
-      (*(zmap_cbs_G->destroy))(zmap, zmap->app_data) ;
+      ZMap zmap_ref = zmap ;
+      void *app_data = zmap->app_data ;
 
-      killFinal(zmap) ;
+      killFinal(&zmap) ;
 
-      zmap->state = ZMAP_DYING ;
+      /* Call the application callback so that they know we have finally died. */
+      (*(zmap_cbs_G->destroy))(zmap_ref, app_data) ;
     }
-
-
 
   return ;
 }
 
 
 /* This MUST only be called once all the views have gone. */
-static void killFinal(ZMap zmap)
+static void killFinal(ZMap *zmap_out)
 {
+  ZMap zmap = *zmap_out ;
+
   zMapAssert(zmap->state != ZMAP_VIEWS) ;
 
   /* Free the top window */
@@ -863,11 +843,10 @@ static void killFinal(ZMap zmap)
 
   destroyZMap(zmap) ;
 
+  *zmap_out = NULL ;
+
   return ;
 }
-
-
-
 
 
 static void killViews(ZMap zmap)
@@ -884,8 +863,13 @@ static void killViews(ZMap zmap)
       view = list_item->data ;
 
       zMapViewDestroy(view) ;
+
     }
   while ((list_item = g_list_next(list_item))) ;
+
+  /* Surely we should empty the view_list here ???? */
+  g_list_free(zmap->view_list) ;
+  zmap->view_list = NULL ;
 
   return ;
 }
