@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  7 12:14 2007 (edgrif)
+ * Last edited: Mar  7 13:59 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.179 2007-03-07 12:15:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.180 2007-03-07 13:59:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -204,7 +204,7 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
 	     && callbacks->enter && callbacks->leave
 	     && callbacks->scroll && callbacks->focus && callbacks->select
              && callbacks->splitToPattern
-	     && callbacks->visibilityChange && callbacks->destroy) ;
+	     && callbacks->visibilityChange) ;
 
   window_cbs_G = g_new0(ZMapWindowCallbacksStruct, 1) ;
 
@@ -216,8 +216,6 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   window_cbs_G->setZoomStatus  = callbacks->setZoomStatus;
   window_cbs_G->splitToPattern = callbacks->splitToPattern;
   window_cbs_G->visibilityChange = callbacks->visibilityChange ;
-
-  window_cbs_G->destroy = callbacks->destroy ;
 
   return ;
 }
