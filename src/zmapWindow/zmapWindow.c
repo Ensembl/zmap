@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 27 09:05 2007 (edgrif)
+ * Last edited: Mar  7 12:14 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.178 2007-03-01 09:58:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.179 2007-03-07 12:15:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -333,14 +333,22 @@ void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean bu
 {
   static GdkCursor* busy_cursor = NULL ;
   GdkWindow *gdk_window ;
-  gboolean debug = FALSE ;
+  gboolean debug = TRUE ;
 
   zMapAssert(window) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* This code erractically causes zmap to crash with an invalid cursor X error,
+   * it must be flawed in some way and needs looking at again. */
+
 
   if (busy_cursor == NULL)
     {
       busy_cursor = gdk_cursor_new(GDK_WATCH) ;
     }
+
 
   /* Need to guard against toplevel window not being realised yet. */
   if ((gdk_window = window->toplevel->window))
@@ -376,6 +384,9 @@ void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean bu
       if (!busy && window->cursor_busy_count == 0)
 	gdk_window_set_cursor(gdk_window, NULL) ;	    /* NULL => use parents cursor. */
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   return ;
 }
