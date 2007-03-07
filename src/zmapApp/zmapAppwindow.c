@@ -22,12 +22,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
  *	Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Creates the first toplevel window in the zmap app.
+ *              
+ * Exported functions: None
  * HISTORY:
- * Last edited: Mar  6 12:09 2007 (edgrif)
+ * Last edited: Mar  7 14:06 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.34 2007-03-06 12:16:09 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.35 2007-03-07 14:07:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,12 +46,9 @@
 #include <zmapApp_P.h>
 
 
-static void initGnomeGTK(int argc, char *argv[]) ;
-static ZMapAppContext createAppContext(void) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer data) ;
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
-static void removeZMapCB(void *app_data, void *zmap) ;
-static void infoSetCB(void *app_data, void *zmap) ;
+
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArgs(int argc, char *argv[],
 					char **sequence_out, int *start_out, int *end_out) ;
@@ -58,11 +56,17 @@ static void checkConfigDir(void) ;
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
 
-void exitCB(void *app_data, void *zmap_data_unused) ;
+static void infoSetCB(void *app_data, void *zmap) ;
+static void removeZMapCB(void *app_data, void *zmap) ;
+void quitReqCB(void *app_data, void *zmap_data_unused) ;
+
+static void initGnomeGTK(int argc, char *argv[]) ;
+static ZMapAppContext createAppContext(void) ;
+static void exitApp(ZMapAppContext app_context) ;
 static gboolean getConfiguration(ZMapAppContext app_context) ;
 
 
-ZMapManagerCallbacksStruct app_window_cbs_G = {removeZMapCB, infoSetCB, exitCB} ;
+ZMapManagerCallbacksStruct app_window_cbs_G = {removeZMapCB, infoSetCB, quitReqCB} ;
 
 int test_global = 10 ;
 int test_overlap = 0 ;
@@ -77,69 +81,7 @@ char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
 						  ZMAP_DESCRIPTION) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#ifdef RDS_DONT_INCLUDE_TESTING
-typedef struct
-{
-  ZMapAppContext app_context;
-  gulong signal_id;
-}AppRealiseDataStruct, *AppRealiseData;
 
-static gboolean exposeWorkAroundRealiseHandler(GtkWidget *widget, 
-                                               GdkEventExpose *expose, 
-                                               gpointer user_data)
-{
-  gboolean handled = TRUE;
-  AppRealiseData app_data = (AppRealiseData)user_data;
-  ZMapAppContext app_context = NULL;
-
-  printf("[zmapAppwindow] Expose workaround callback\n");
-  
-  zMapAssert(GTK_WIDGET_REALIZED(widget));
-  zMapAssert(app_data && app_data->signal_id);
-  app_context = app_data->app_context;
-  g_signal_handler_disconnect(G_OBJECT(widget), app_data->signal_id);
-
-  zmapAppRemoteInstaller(widget, app_context);
-
-  return handled;
-}
-
-static void appRealiseDataDestroy(gpointer user_data)
-{
-  AppRealiseData app_data = (AppRealiseData)user_data;
-
-  app_data->app_context = NULL;
-  app_data->signal_id   = 0;
-
-  g_free(app_data);
-
-  return ;
-}
-
-static gboolean appExposeCallback(GtkWidget *widget, 
-                                  GdkEventExpose *expose, 
-                                  gpointer user_data)
-{
-  printf("[zmapAppwindow] Expose callback\n");  
-  return FALSE;
-}
-static void appRealizeCallback(GtkWidget *widget, gpointer user_data)
-{
-  printf("[zmapAppwindow] Realize callback\n");
-  return ;
-}
-static void appMapCallback(GtkWidget *widget, gpointer user_data)
-{
-  printf("[zmapAppwindow] Map callback\n");
-  return ;
-}
-static gboolean appMapEventCallback(GtkWidget *widget, GdkEvent *event, gpointer user_data)
-{
-  gboolean handled = FALSE;
-  printf("[zmapAppwindow] Map Event callback\n");
-  return handled;
-}
-#endif /* RDS_DONT_INCLUDE_TESTING */
 
 int zmapMainMakeAppWindow(int argc, char *argv[])
 {
@@ -182,7 +124,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   zMapManagerInit(&app_window_cbs_G) ;
 
   /* app_data->app_context = */
-    app_context = createAppContext() ;
+  app_context = createAppContext() ;
 
   /* Set up logging for application. */
   app_context->logger = zMapLogCreate(NULL) ;
@@ -235,6 +177,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
                    NULL);
 #endif /* RDS_DONT_INCLUDE_TESTING */
 
+
   /* This ensures that the widget *really* has a X Window id when it
    * comes to doing XChangeProperty.  Using realize doesn't and the 
    * expose_event means we can't hide the mainwindow. */
@@ -264,17 +207,14 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
 
-
-
-
-
   /* Always create the widget. */
   gtk_widget_show_all(toplevel) ;
 
-  /* We don't always want to show this window, for lace users it is useless.... */
 
+  /* We don't always want to show this window, for lace users it is useless.... */
   if (!(app_context->show_mainwindow))
     gtk_widget_unmap(toplevel) ;
+
 
   /* If user specifyed a sequence in the config. file or on the command line then
    * display it straight away. */
@@ -290,9 +230,13 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       zmapAppCreateZMap(app_context, sequence, start, end) ;
     }
 
+  app_context->state = ZMAPAPP_RUNNING ;
 
-  /*             Start the GUI.                */
+
+
+  /* Start the GUI. */
   gtk_main() ;
+
 
 
   zMapExit(EXIT_SUCCESS) ;				    /* exits.... */
@@ -304,10 +248,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
 
-
+/* Signals zmap to clean up and exit, this is asynchronous because of the underlying
+ * threads. */
 void zmapAppExit(ZMapAppContext app_context)
 {
-
   /* Causes the destroy callback to be invoked which then cleans up. */
   gtk_widget_destroy(app_context->app_widg);
 
@@ -360,6 +304,8 @@ static ZMapAppContext createAppContext(void)
 
   app_context = g_new0(ZMapAppContextStruct, 1) ;
 
+  app_context->state = ZMAPAPP_INIT ;
+
   app_context->app_widg = app_context->sequence_widg = NULL ;
   app_context->tree_store_widg = NULL ;
 
@@ -383,28 +329,20 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  /* Destroy any ZMap windows. */
-  zMapManagerDestroy(app_context->zmap_manager) ;
+  /* Record we are dying so we know when to quit as last zmap dies. */
+  app_context->state = ZMAPAPP_DYING ;
+
+  zMapManagerKillAllZMaps(app_context->zmap_manager) ;
 
   /* If we have a client object, clean it up */
   if(app_context->xremoteClient != NULL)
     zMapXRemoteDestroy(app_context->xremoteClient);
 
-  /* This should probably be the last thing before exitting... */
-  if (app_context->logger)
-    {
-      zMapLogMessage("%s", "Goodbye cruel world !") ;
-
-      zMapLogDestroy(app_context->logger) ;
-    }
-
-  zMapExit(EXIT_SUCCESS) ;
-
   return ;
 }
 
 
-
+/* Called when user clicks the big "Quit" button in the main window. */
 static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
@@ -415,6 +353,7 @@ static void quitCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+/* Called every time a zmap window signals that it has gone. */
 void removeZMapCB(void *app_data, void *zmap_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_data ;
@@ -432,8 +371,9 @@ void removeZMapCB(void *app_data, void *zmap_data)
   if (app_context->selected_zmap == zmap)
     app_context->selected_zmap = NULL ;
 
-  if((!(app_context->show_mainwindow)) && ((zMapManagerCount(app_context->zmap_manager)) == 0))
-    zmapAppExit(app_context) ;
+  /* When the last zmap has gone and we are dying then exit. */
+  if (app_context->state == ZMAPAPP_DYING && ((zMapManagerCount(app_context->zmap_manager)) == 0))
+    exitApp(app_context) ;
 
   return ;
 }
@@ -447,7 +387,8 @@ static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
   gtk_tree_model_get(model, iter, 
                      ZMAPDATA_COLUMN, &row_zmap,
                      -1);
-  if(zmap == row_zmap)
+
+  if (zmap == row_zmap)
     {
       gtk_tree_store_remove(GTK_TREE_STORE(model), iter);
       return TRUE;
@@ -570,13 +511,33 @@ static void infoSetCB(void *app_data, void *zmap)
 }
 
 
-/* Called from layers to below when they need to exit. */
-void exitCB(void *app_data, void *zmap_data_unused)
+/* Called from layers below when they want zmap to exit. */
+void quitReqCB(void *app_data, void *zmap_data_unused)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_data ;
 
-  /* Causes the destroy callback to be invoked which then cleans up. */
-  gtk_widget_destroy(app_context->app_widg) ;
+  zmapAppExit(app_context) ;
+
+  return ;
+}
+
+
+
+/* Final clean up of zmap. */
+static void exitApp(ZMapAppContext app_context)
+{
+  /* Destroy the manager. */
+  zMapManagerDestroy(app_context->zmap_manager) ;
+
+  /* This should probably be the last thing before exitting... */
+  if (app_context->logger)
+    {
+      zMapLogMessage("%s", "Goodbye cruel world !") ;
+
+      zMapLogDestroy(app_context->logger) ;
+    }
+
+  zMapExit(EXIT_SUCCESS) ;
 
   return ;
 }
@@ -638,4 +599,68 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 }
 
 
+
+#ifdef RDS_DONT_INCLUDE_TESTING
+typedef struct
+{
+  ZMapAppContext app_context;
+  gulong signal_id;
+}AppRealiseDataStruct, *AppRealiseData;
+
+static gboolean exposeWorkAroundRealiseHandler(GtkWidget *widget, 
+                                               GdkEventExpose *expose, 
+                                               gpointer user_data)
+{
+  gboolean handled = TRUE;
+  AppRealiseData app_data = (AppRealiseData)user_data;
+  ZMapAppContext app_context = NULL;
+
+  printf("[zmapAppwindow] Expose workaround callback\n");
+  
+  zMapAssert(GTK_WIDGET_REALIZED(widget));
+  zMapAssert(app_data && app_data->signal_id);
+  app_context = app_data->app_context;
+  g_signal_handler_disconnect(G_OBJECT(widget), app_data->signal_id);
+
+  zmapAppRemoteInstaller(widget, app_context);
+
+  return handled;
+}
+
+static void appRealiseDataDestroy(gpointer user_data)
+{
+  AppRealiseData app_data = (AppRealiseData)user_data;
+
+  app_data->app_context = NULL;
+  app_data->signal_id   = 0;
+
+  g_free(app_data);
+
+  return ;
+}
+
+static gboolean appExposeCallback(GtkWidget *widget, 
+                                  GdkEventExpose *expose, 
+                                  gpointer user_data)
+{
+  printf("[zmapAppwindow] Expose callback\n");  
+  return FALSE;
+}
+static void appRealizeCallback(GtkWidget *widget, gpointer user_data)
+{
+  printf("[zmapAppwindow] Realize callback\n");
+  return ;
+}
+static void appMapCallback(GtkWidget *widget, gpointer user_data)
+{
+  printf("[zmapAppwindow] Map callback\n");
+  return ;
+}
+static gboolean appMapEventCallback(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+  gboolean handled = FALSE;
+  printf("[zmapAppwindow] Map Event callback\n");
+  return handled;
+}
+#endif /* RDS_DONT_INCLUDE_TESTING */
 

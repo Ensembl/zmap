@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 15:06 2006 (rds)
+ * Last edited: Mar  7 07:35 2007 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.15 2006-11-08 09:23:37 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.16 2007-03-07 14:07:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -41,11 +41,24 @@
 
 
 /* Minimum GTK version supported. */
-enum {ZMAP_GTK_MAJOR = 2, ZMAP_GTK_MINOR = 2, ZMAP_GTK_MICRO = 1} ;
+enum {ZMAP_GTK_MAJOR = 2, ZMAP_GTK_MINOR = 2, ZMAP_GTK_MICRO = 4} ;
+
+
+/* States for the application, needed especially because we can be waiting for threads to die. */
+typedef enum
+  {
+    ZMAPAPP_INIT,					    /* Initialising, no threads. */
+    ZMAPAPP_RUNNING,					    /* Normal execution. */
+    ZMAPAPP_DYING					    /* Waiting for child ZMaps to dies so
+							       app can exit. */
+  } ZMapAppState ;
+
 
 /* Overall application control struct. */
 typedef struct _ZMapAppContextStruct
 {
+  ZMapAppState state ;					    /* Needed to control exit in a clean way. */
+
   GtkWidget *app_widg ;
 
   GtkWidget *sequence_widg ;
