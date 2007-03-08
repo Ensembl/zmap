@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  7 13:59 2007 (edgrif)
+ * Last edited: Mar  8 12:33 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.180 2007-03-07 13:59:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.181 2007-03-08 12:35:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -329,14 +329,14 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
  * defined in the public header zmapWindow.h */
 void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean busy)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
   static GdkCursor* busy_cursor = NULL ;
   GdkWindow *gdk_window ;
   gboolean debug = TRUE ;
 
   zMapAssert(window) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
   /* This code erractically causes zmap to crash with an invalid cursor X error,
    * it must be flawed in some way and needs looking at again. */
@@ -2367,14 +2367,15 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
  * handle more general events such as "click to focus" etc. */
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
 {
-  gboolean event_handled ;
+  gboolean event_handled = FALSE ;			    /* FALSE means other handlers run. */
   ZMapWindow window = (ZMapWindow)data ;
-  static double origin_x, origin_y; /* The world coords of the source of the button 1 event */
-  static gboolean dragging = FALSE, guide = FALSE;
+  static double origin_x, origin_y;			    /* The world coords of the source of the button 1 event */
+  static gboolean dragging = FALSE, guide = FALSE ;	    /* Rubber banding or cursor lining ? */
+  static gboolean in_window = FALSE ;			    /* Still in window while cursor lining
+							       or rubber banding ? */
+  double wx, wy;					    /* These hold the current world coords of the event */
 
-  double wx, wy; /* These hold the current world coords of the event */
 
-  event_handled = FALSE ; /* FALSE means other handlers run. */
 
   /* PLEASE be very careful when altering this function, as I've
    * already messed stuff up when working on it! The event_handled
@@ -2390,6 +2391,15 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
   /* We need to check that canvas is mapped here (slow connections) */
 
+
+  /* We record whether we are inside the window to enable user to cancel certain mouse related
+   *  actions by moving outside the window. */
+  if (event->type == GDK_ENTER_NOTIFY)
+    in_window = TRUE ;
+  else if (event->type == GDK_LEAVE_NOTIFY)
+    in_window = FALSE ;
+
+
   switch (event->type)
     {
     case GDK_BUTTON_PRESS:
@@ -2400,6 +2410,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	printf("GENERAL event handler - CLICK\n") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
 	/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
 	 * (i.e. short cuts) will be delivered to some other widget. */
 	gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
@@ -2409,55 +2420,58 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	(*(window_cbs_G->focus))(window, window->app_data, NULL) ;
 
 
+	foo_canvas_window_to_world(window->canvas, 
+				   but_event->x, but_event->y, 
+				   &origin_x, &origin_y);
+
+
 	/* Button 2 is handled, we centre on that position, 1 and 3 are used only with
 	 * modifiers are passed on as they may be clicks on canvas items/columns. */
 	switch (but_event->button)
 	  {
-	    /* We don't do anything for any buttons > 3. */
-	  default:
 	  case 1:
 	    {
-              foo_canvas_window_to_world(window->canvas, 
-                                         but_event->x, but_event->y, 
-                                         &origin_x, &origin_y);
-              event_handled = FALSE; /* false so item events
-                                      * happen. Unless we _ARE_
-                                      * handling here! 
-                                      */
-
-	      /* Show a rubber band for zooming/marking. */
-              if (zMapGUITestModifiers(but_event, GDK_MOD1_MASK))
-                {
-                  dragging = TRUE;			    /* we can be dragging */
-                  if(!window->rubberband)
-                    window->rubberband = zMapDrawRubberbandCreate(window->canvas);
-                  event_handled = TRUE ;		    /* We _ARE_ handling */
-                }
+	      /* Selects item or column only, this is done by the focus callback above. */
 
 	      break ;
 	    }
 	  case 2:
 	    {
-	      zMapWindowScrollToWindowPos(window, but_event->y) ;
+              if (zMapGUITestModifiers(but_event, GDK_SHIFT_MASK))
+                {
+		  /* Show a rubber band for zooming/marking. */
+                  dragging = TRUE;
 
-	      event_handled = TRUE ;
+                  if(!window->rubberband)
+                    window->rubberband = zMapDrawRubberbandCreate(window->canvas);
+                }
+	      else
+		{
+		  /* Show a ruler and our exact position. */
+		  guide = TRUE;
+
+		  if(!window->horizon_guide_line)
+		    window->horizon_guide_line = zMapDrawHorizonCreate(window->canvas);
+
+		  if(!window->tooltip)
+		    window->tooltip = zMapDrawToolTipCreate(window->canvas);
+
+		  zMapDrawHorizonReposition(window->horizon_guide_line, origin_y);
+		}
+
+	      event_handled = TRUE ;		    /* We _ARE_ handling */
+
 	      break ;
 	    }
 	  case 3:
 	    {
-	      /* Show a ruler and our exact position. */
-	      if (zMapGUITestModifiers(but_event, GDK_MOD1_MASK))
-		{
-                  guide = TRUE;
-                  if(!window->horizon_guide_line)
-                    window->horizon_guide_line = zMapDrawHorizonCreate(window->canvas);
-                  if(!window->tooltip)
-                    window->tooltip = zMapDrawToolTipCreate(window->canvas);
-                  zMapDrawHorizonReposition(window->horizon_guide_line, origin_y);
+	      /* Nothing to do, menu callbacks are set on canvas items, not here. */
 
-                  event_handled = TRUE ; /* We _ARE_ handling */
-                }
-
+	      break ;
+	    }
+	  default:
+	    {
+	      /* We don't do anything for any buttons > 3. */
 	      break ;
 	    }
 	  }
@@ -2474,68 +2488,89 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
       }
     case GDK_MOTION_NOTIFY:
       {
-	GdkEventMotion *mot_event = (GdkEventMotion *)event ;
-        event_handled = FALSE ;
+	if (dragging || guide)
+	  {
+	    GdkEventMotion *mot_event = (GdkEventMotion *)event ;
+	    event_handled = FALSE ;
 
-        if (!(zMapGUITestModifiers(mot_event, GDK_BUTTON1_MASK))
-	    && !(zMapGUITestModifiers(mot_event, GDK_BUTTON3_MASK)))
-          break;
+	    if (!(zMapGUITestModifiers(mot_event, GDK_BUTTON2_MASK)))
+	      {
+		/* Leave this in for now.... */
+		printf("canvas_error on motion...\n") ;
+	      }
 
-        /* work out the world of where we are */
-        foo_canvas_window_to_world(window->canvas,
-                                   mot_event->x, mot_event->y,
-                                   &wx, &wy);
-        if(dragging)
-          {
-            /* I wanted to change the cursor for this, 
-             * but foo_canvas_item_grab/ungrab specifically the ungrab didn't work */
-            zMapDrawRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
-            event_handled = TRUE; /* We _ARE_ handling */
-          }
-        else if(guide)
-          {
-            double y1, y2;
-            foo_canvas_get_scroll_region(window->canvas, /* ok, but like to change */
-                                         NULL, &y1, NULL, &y2);
-            zmapWindowClampedAtStartEnd(window, &y1, &y2);
-            zMapDrawHorizonReposition(window->horizon_guide_line, wy);
-            /* We floor the value here as it works with the way we draw our bases. */
-            /* This test is FLAWED ATM it needs to test for displayed seq start & end */
-            if(y1 <= wy && y2 >= wy)
-              {
-		int bp = 0;
-		char *tip = NULL;
+	    /* work out the world of where we are */
+	    foo_canvas_window_to_world(window->canvas,
+				       mot_event->x, mot_event->y,
+				       &wx, &wy);
+	    if (dragging)
+	      {
+		/* I wanted to change the cursor for this, 
+		 * but foo_canvas_item_grab/ungrab specifically the ungrab didn't work */
+		zMapDrawRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
 
-                bp = (int)floor(wy);
-		if (window->display_forward_coords)
-		  bp = zmapWindowCoordToDisplay(window, bp) ;
+		event_handled = TRUE; /* We _ARE_ handling */
+	      }
+	    else if (guide)
+	      {
+		double y1, y2;
 
-                tip = g_strdup_printf("%d bp", bp);
-                zMapDrawToolTipSetPosition(window->tooltip, wx, wy, tip);
-                g_free(tip);
-              }
-            else
-              foo_canvas_item_hide(FOO_CANVAS_ITEM(window->tooltip));
-            event_handled = TRUE ; /* We _ARE_ handling */
-          }
+		foo_canvas_get_scroll_region(window->canvas, /* ok, but like to change */
+					     NULL, &y1, NULL, &y2);
+
+		zmapWindowClampedAtStartEnd(window, &y1, &y2);
+		zMapDrawHorizonReposition(window->horizon_guide_line, wy);
+
+		/* We floor the value here as it works with the way we draw our bases. */
+		/* This test is FLAWED ATM it needs to test for displayed seq start & end */
+		if (y1 <= wy && y2 >= wy)
+		  {
+		    int bp = 0;
+		    char *tip = NULL;
+
+		    bp = (int)floor(wy);
+		    if (window->display_forward_coords)
+		      bp = zmapWindowCoordToDisplay(window, bp) ;
+
+		    tip = g_strdup_printf("%d bp", bp);
+		    zMapDrawToolTipSetPosition(window->tooltip, wx, wy, tip);
+		    g_free(tip);
+		  }
+		else
+		  foo_canvas_item_hide(FOO_CANVAS_ITEM(window->tooltip));
+
+		event_handled = TRUE ;			    /* We _ARE_ handling */
+	      }
+	  }
+
         break;
       }
     case GDK_BUTTON_RELEASE:
       {
-        event_handled = FALSE;
-        if(dragging)
+	GdkEventButton *but_event = (GdkEventButton *)event ;
+
+        if (dragging)
           {
             foo_canvas_item_hide(window->rubberband);
-            zoomToRubberBandArea(window);
-            event_handled = TRUE; /* We _ARE_ handling */
+
+	    if (in_window)
+	      zoomToRubberBandArea(window);
+
+	    dragging = FALSE ;
+            event_handled = TRUE;			    /* We _ARE_ handling */
           }
-        else if(guide)
+        else if (guide)
           {
             foo_canvas_item_hide(window->horizon_guide_line);
             foo_canvas_item_hide(FOO_CANVAS_ITEM( window->tooltip ));
-            event_handled = TRUE; /* We _ARE_ handling */
+
+	    if (in_window)
+	      zMapWindowScrollToWindowPos(window, but_event->y) ;
+
+	    guide = FALSE ;
+            event_handled = TRUE ;			    /* We _ARE_ handling */
           }
-        dragging = guide = FALSE;
+
         
         break;
       }
@@ -2546,6 +2581,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	break ;
       }
     }
+
 
   return event_handled ;
 }
