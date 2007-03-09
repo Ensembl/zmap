@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Mar  1 09:59 2007 (edgrif)
+ * Last edited: Mar  9 12:40 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.60 2007-03-01 10:00:15 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.61 2007-03-09 12:44:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -179,8 +179,8 @@ static ZMapFeatureContextExecuteStatus mergePostCB(GQuark key,
 
 
 
-static gboolean merge_debug_G   = TRUE;
-static gboolean destroy_debug_G = TRUE;
+static gboolean merge_debug_G   = FALSE;
+static gboolean destroy_debug_G = FALSE;
 static gboolean merge_use_safe_destroy = TRUE;
 
 /* !
