@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar  8 17:21 2007 (rds)
+ * Last edited: Mar  9 14:13 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.45 2007-03-09 08:25:33 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.46 2007-03-09 14:22:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -215,7 +215,10 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
   ZMapView view;
 
   g_clear_error(&(zmap->info)); /* Clear the info */
-  
+
+  if(zMapXRemoteIsPingCommand(command_text, statusCode, &xml_reply) != 0)
+    return xml_reply;         /* to short circuit some of this... */  
+
   /* Create and setup the parser */
   parser = zmapControlRemoteXMLInitialise(&objdata);
 

@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Mar  9 12:37 2007 (rds)
+ * Last edited: Mar  9 14:13 2007 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.26 2007-03-09 12:39:38 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.27 2007-03-09 14:24:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -197,6 +197,8 @@ static char *appexecuteCommand(char *command_text, gpointer app_context_data, in
     {NULL, NULL}
   };
 
+  if(zMapXRemoteIsPingCommand(command_text, statusCode, &xml_reply) != 0)
+    return xml_reply;           /* to short circuit some of this... */
 
   parser  = zMapXMLParserCreate(&request_data, FALSE, cmd_debug);
 
