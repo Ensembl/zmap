@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Jan 30 16:42 2007 (edgrif)
+ * Last edited: Mar  9 11:11 2007 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.7 2007-01-31 11:29:10 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.8 2007-03-09 11:37:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -135,6 +135,13 @@
  *      feature windows themselves.</td>
  *  </tr>
  *  <tr>
+ *  <th>"exit_timeout"</th>
+ *  <td>Int</td>
+ *  <td>5</td>
+ *  <td>Time in seconds to wait for zmap to finish clearing up server connections before exiting.
+ *      After this zmap will exit and some connections may not have been clearly terminated.</td>
+ *  </tr>
+ *  <tr>
  *  <th>"default_sequence"</th>
  *  <td>String</td>
  *  <td>""</td>
@@ -152,6 +159,7 @@
  *  */
 #define ZMAPSTANZA_APP_CONFIG     "ZMap"
 #define ZMAPSTANZA_APP_MAINWINDOW "show_mainwindow"
+#define ZMAPSTANZA_APP_EXIT_TIMEOUT "exit_timeout"
 #define ZMAPSTANZA_APP_SEQUENCE   "default_sequence"
 #define ZMAPSTANZA_APP_PRINTER    "default_printer"
 #define ZMAPSTANZA_APP_SEQUENCE_SERVERS  "sequence_server"
