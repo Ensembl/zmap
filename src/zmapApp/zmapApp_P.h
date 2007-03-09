@@ -20,14 +20,14 @@
  * This file is part of the ZMap genome database package
  * and was written by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *
- * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Private header for application level of zmap.
+ * 
  * HISTORY:
- * Last edited: Mar  7 07:35 2007 (edgrif)
+ * Last edited: Mar  9 11:14 2007 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.16 2007-03-07 14:07:46 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.17 2007-03-09 11:37:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -54,10 +54,16 @@ typedef enum
   } ZMapAppState ;
 
 
+/* Default time out (in seconds) for exitting zmap. */
+enum {ZMAP_DEFAULT_EXIT_TIMEOUT = 5} ;
+
+
 /* Overall application control struct. */
 typedef struct _ZMapAppContextStruct
 {
   ZMapAppState state ;					    /* Needed to control exit in a clean way. */
+
+  int exit_timeout ;					    /* time (s) to wait before forced exit. */
 
   GtkWidget *app_widg ;
 
@@ -75,15 +81,16 @@ typedef struct _ZMapAppContextStruct
 
   ZMapLog logger ;
 
-  gulong propertyNotifyEventId;
-  zMapXRemoteNotifyData propertyNotifyData;
-  zMapXRemoteObj xremoteClient; /* May well be NULL */
+  gulong propertyNotifyEventId ;
+  zMapXRemoteNotifyData propertyNotifyData ;
+  zMapXRemoteObj xremote_client ;			    /* The external program we are sending
+							       commands to. */
 
   gboolean show_mainwindow ;				    /* Should main window be displayed. */
 
   char *default_sequence ;				    /* Was a default sequence specified in
 							       the config. file.*/
-  /* char *event_model ;*/
+
 } ZMapAppContextStruct, *ZMapAppContext ;
 
 
