@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Mar  9 10:29 2007 (edgrif)
+ * Last edited: Mar  9 13:06 2007 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.15 2007-03-09 10:29:10 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.16 2007-03-09 14:24:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,9 +48,10 @@
 #include <X11/Xatom.h>
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.15 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.16 $"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
+#define ZMAPXREMOTE_PING_COMMAND          "ping"
 
 /* In HTTP the break between Header and body is \n\n, here we'll use : */
 /* Everything before will be a status code (int), everything after response (str [xml]) */
@@ -164,6 +165,7 @@ GdkAtom zMapXRemoteGdkResponseAtom(zMapXRemoteObj object);
 
 void zMapXRemoteResponseSplit(zMapXRemoteObj object, char *full_response, int *code, char **response);
 gboolean zMapXRemoteResponseIsError(zMapXRemoteObj object, char *response);
+int zMapXRemoteIsPingCommand(char *command, int *statusCode, char **reply);
 
 void zMapXRemoteDestroy(zMapXRemoteObj object);
 /* ================================================ */

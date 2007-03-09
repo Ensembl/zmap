@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Mar  9 10:28 2007 (edgrif)
+ * Last edited: Mar  9 13:05 2007 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.22 2007-03-09 10:29:10 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.23 2007-03-09 14:22:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -452,6 +452,19 @@ void zMapXRemoteResponseSplit(zMapXRemoteObj object, char *full_response, int *c
   return ;
 }
 
+int zMapXRemoteIsPingCommand(char *command, int *statusCode, char **reply)
+{
+  int is = 0;
+
+  if(strncmp(command, ZMAPXREMOTE_PING_COMMAND, 4) == 0)
+    {
+      is = 1;
+      *statusCode = ZMAPXREMOTE_OK;
+      *reply = g_strdup("echo");
+    }
+
+  return is;
+}
 
 /* Get the window id. */
 Window zMapXRemoteGetWindowID(zMapXRemoteObj object)
