@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  5 17:58 2007 (rds)
+ * Last edited: Mar  9 10:23 2007 (edgrif)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.3 2007-03-06 08:50:35 rds Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.4 2007-03-09 10:25:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -537,6 +537,15 @@ static void parseCB(GtkWidget *button, gpointer user_data)
   return ;
 }
 
+
+/* Just results in the entry being removed from the hash table, the destroy func
+ * does the real work. */
+static gboolean remove_cb(gpointer key, gpointer hash_data, gpointer user_data)
+{
+  return TRUE ;
+}
+
+
 static gint send_command_cb(gpointer key, gpointer hash_data, gpointer user_data)
 {
   HashEntry entry = (HashEntry)hash_data;
@@ -701,6 +710,13 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
         suite->is_register_client = TRUE;
       else
         suite->is_register_client = FALSE;
+
+      /* When we get this it means the zmap is exitting so clean up the client
+       * connection. */
+      if (action == g_quark_from_string("finalised"))
+	{
+	  g_hash_table_foreach_remove(suite->xremote_clients, remove_cb, NULL) ;
+	}
     }
 
   return FALSE;
