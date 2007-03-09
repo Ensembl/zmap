@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Mar  9 11:19 2007 (edgrif)
+ * Last edited: Mar  9 12:37 2007 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.25 2007-03-09 11:41:09 edgrif Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.26 2007-03-09 12:39:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,6 +94,8 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
   zMapAssert(GTK_WIDGET_REALIZED(widget));
 
   id = (Window)GDK_DRAWABLE_XID(widget->window);
+
+  externalPerl = FALSE;
   
   /* Set ourselves up to receive requests _from_ an external program. */
   if((xremote = zMapXRemoteNew()) != NULL)
@@ -342,7 +344,7 @@ static gboolean finalExit(gpointer data)
   char *response = NULL;
 
   /* Send the final quit, after this we can exit. */
-  if (!zMapXRemoteSendRemoteCommand(app_context->xremote_client, request, &response))
+  if (zMapXRemoteSendRemoteCommand(app_context->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
     zMapLogWarning("Final Quit to client program failed: \"%s\"", response) ;
 
   /* Remove the notify handler. */
