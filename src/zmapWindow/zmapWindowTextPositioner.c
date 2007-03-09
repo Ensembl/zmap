@@ -29,9 +29,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  1 11:15 2007 (rds)
+ * Last edited: Mar  9 12:23 2007 (rds)
  * Created: Thu Jan 18 16:19:10 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.2 2007-03-01 11:16:17 rds Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.3 2007-03-09 14:57:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,6 +67,7 @@ typedef struct _ZMapWindowTextPositionerStruct
 {
   FooCanvasGroup *container_overlay;
   int maximum_iterations;
+  double col_min, col_max;
   GList *groups;
 }ZMapWindowTextPositionerStruct;
 
@@ -75,6 +76,7 @@ typedef  struct
 {
   int list_length;
   GList *text_objects;
+  double col_min, col_max;
 }TextPositionerGroupStruct, *TextPositionerGroup;
 
 /* each group a list of entries which = a line of text. */
@@ -151,7 +153,7 @@ static gboolean debug_positioner_G = FALSE;
  *
  * @return              A New ZMapWindowTextPositioner
  ***************************************************** */
-ZMapWindowTextPositioner zmapWindowTextPositionerCreate(void)
+ZMapWindowTextPositioner zmapWindowTextPositionerCreate(double column_min, double column_max)
 {
   ZMapWindowTextPositioner positioner;
 
@@ -161,6 +163,11 @@ ZMapWindowTextPositioner zmapWindowTextPositionerCreate(void)
     }
 
   positioner->maximum_iterations = MAXIMUM_ITERATIONS;
+  positioner->col_min = column_min;
+  positioner->col_max = column_max;
+
+  if(debug_positioner_G)
+    printf(" ** positioner created, column extremes %f %f\n", column_min, column_max);
 
   return positioner;
 }
@@ -193,6 +200,8 @@ void zmapWindowTextPositionerAddItem(ZMapWindowTextPositioner positioner,
       if(debug_positioner_G)
         printf(" creating new group ...");
       group = groupCreate();
+      group->col_min = positioner->col_min;
+      group->col_max = positioner->col_max;
       positioner->groups = g_list_append(positioner->groups, group);
     }
 
@@ -695,7 +704,8 @@ static void unoverlap_groups(gpointer group_data, gpointer user_data)
 {
   TextPositionerGroup group = (TextPositionerGroup)group_data;
   UnOverlapItemsDataStruct full_data = {NULL};
-  double real = 0.0, original = 0.0, size, y1, y2;
+  double real = 0.0, original = 0.0, size, y1, y2, real_max;
+  int both = 0;
 
   /* Set up the data needed by the child foreach */
   full_data.list_item   = g_list_first(group->text_objects);
@@ -720,10 +730,31 @@ static void unoverlap_groups(gpointer group_data, gpointer user_data)
        * 
        * original = groupOriginalMedian(group);
        */
-      real     = getCenterPoint(full_data.min, full_data.max - full_data.line_height);
+      real_max = full_data.max - full_data.line_height;
+      real     = getCenterPoint(full_data.min, real_max);
       groupOriginalSpan(group, NULL, &y1, NULL, &y2);
       original = getCenterPoint(y1, y2);
       size     = original - real;
+
+      /* here we're checking if the text is going to be drawn outside the visible canvas area.
+       * for this we use the supplied column min and max, - & + (rsp.), the text height (the border). */
+      if(real_max > (group->col_max + full_data.line_height))
+        {
+          both++;
+          size -= (real_max - (group->col_max + full_data.line_height));
+          if(debug_positioner_G)
+            printf(" ** real_max %f > %f col_max\n", real_max, group->col_max + full_data.line_height);
+        }
+      if(full_data.min < (group->col_min - full_data.line_height))
+        {
+          both++;
+          size += ((group->col_min - full_data.line_height) - full_data.min);
+          if(debug_positioner_G)
+            printf(" ** real_min %f < %f col_min\n", full_data.min, group->col_min - full_data.line_height);
+        }
+
+      if(both == 2)
+        zMapLogWarning("%s", "Text is out of bounds in both directions...");
 
       if(debug_positioner_G && full_data.center)
         printf(" ** current center %f, original %f, difference %f\n", real, original, size);

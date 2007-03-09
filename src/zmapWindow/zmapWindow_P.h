@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb 20 11:57 2007 (rds)
+ * Last edited: Mar  9 11:21 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.171 2007-02-20 12:59:53 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.172 2007-03-09 14:57:36 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1066,7 +1066,7 @@ void zmapWindowColOrderPositionColumns(ZMapWindow window);
 void zmapWindowContextExplorerCreate(ZMapWindow window, ZMapFeatureAny feature_any);
 
 typedef struct _ZMapWindowTextPositionerStruct *ZMapWindowTextPositioner;
-ZMapWindowTextPositioner zmapWindowTextPositionerCreate(void);
+ZMapWindowTextPositioner zmapWindowTextPositionerCreate(double column_min, double column_max);
 void zmapWindowTextPositionerAddItem(ZMapWindowTextPositioner positioner, 
                                      FooCanvasItem *item);
 void zmapWindowTextPositionerUnOverlap(ZMapWindowTextPositioner positioner,
