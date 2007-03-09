@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Mar  9 08:23 2007 (rds)
+ * Last edited: Mar  9 10:28 2007 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.21 2007-03-09 08:23:48 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.22 2007-03-09 10:29:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -279,12 +279,13 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
   XSelectInput(object->display, object->window_id, event_mask);
 
   result = zmapXRemoteChangeProperty(object, object->request_atom, command);
-  
+
   zmapXDebug("sent '%s'...\n", command);
 
   while (!isDone && !windowError)
     {
       zmapXDebug("%s"," - while: I'm still waiting...\n");
+
 
       //      if(XPending(dpy))
       XNextEvent (object->display, &event);
@@ -449,6 +450,15 @@ void zMapXRemoteResponseSplit(zMapXRemoteObj object, char *full_response, int *c
     *response = tmp_out;
 
   return ;
+}
+
+
+/* Get the window id. */
+Window zMapXRemoteGetWindowID(zMapXRemoteObj object)
+{
+  zMapAssert(object) ;
+
+  return object->window_id ;
 }
 
 /*! zMapXRemoteGetResponse 
