@@ -27,15 +27,15 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jul 28 11:18 2006 (rds)
+ * Last edited: Mar  9 08:23 2007 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.20 2006-11-08 09:24:01 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.21 2007-03-09 08:23:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include "zmapXRemote_P.h"
 
-gboolean externalPerl = FALSE;
+gboolean externalPerl = TRUE;
 
 zMapXRemoteObj zMapXRemoteNew(void)
 {
