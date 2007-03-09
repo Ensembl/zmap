@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar  1 19:00 2007 (rds)
+ * Last edited: Mar  8 17:21 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.44 2007-03-02 14:28:39 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.45 2007-03-09 08:25:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -102,6 +102,8 @@ void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap_data)
 {
   ZMap zmap = (ZMap)zmap_data;
   zMapXRemoteObj xremote;
+
+  externalPerl = FALSE;
 
   if((xremote = zMapXRemoteNew()) != NULL)
     {

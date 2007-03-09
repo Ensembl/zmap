@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Jul 19 12:41 2006 (rds)
+ * Last edited: Mar  8 17:17 2007 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.13 2006-11-08 09:23:36 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.14 2007-03-09 08:24:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@
 #include <X11/Xatom.h>
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.13 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.14 $"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
 
@@ -145,6 +145,7 @@ typedef enum {
 
 } zMapXRemoteStatus ;
 
+extern gboolean externalPerl;
 
 /* ================================================ */
 /* COMMON MODE METHODS */
