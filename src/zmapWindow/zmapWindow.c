@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  8 12:33 2007 (edgrif)
+ * Last edited: Mar  9 08:37 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.181 2007-03-08 12:35:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.182 2007-03-09 08:40:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1763,8 +1763,11 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
   zmapWindowFToIDestroy(window->context_to_item) ;
   window->context_to_item = zmapWindowFToICreate() ;
 
-  zmapWindowFToIFactoryClose(window->item_factory) ;
-  window->item_factory = NULL;
+  if(window->item_factory)
+    {
+      zmapWindowFToIFactoryClose(window->item_factory) ;
+      window->item_factory = NULL;
+    }
 
   if (free_child_windows)
     {
