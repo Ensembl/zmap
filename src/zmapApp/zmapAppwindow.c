@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Mar  7 14:43 2007 (edgrif)
+ * Last edited: Mar  9 11:34 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.36 2007-03-07 14:45:35 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.37 2007-03-09 11:39:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,16 +60,17 @@ static void infoSetCB(void *app_data, void *zmap) ;
 static void removeZMapCB(void *app_data, void *zmap) ;
 void quitReqCB(void *app_data, void *zmap_data_unused) ;
 
+static void exitApp(ZMapAppContext app_context) ;
+
 static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
-static void exitApp(ZMapAppContext app_context) ;
 static gboolean getConfiguration(ZMapAppContext app_context) ;
+
+static gboolean timeoutHandler(gpointer data) ;
+
 
 
 ZMapManagerCallbacksStruct app_window_cbs_G = {removeZMapCB, infoSetCB, quitReqCB} ;
-
-int test_global = 10 ;
-int test_overlap = 0 ;
 
 
 
@@ -252,6 +253,12 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
  * threads. */
 void zmapAppExit(ZMapAppContext app_context)
 {
+  guint timeout_func_id ;
+  int interval = app_context->exit_timeout * 1000 ;	    /* glib needs time in milliseconds. */
+
+  timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
+  zMapAssert(timeout_func_id) ;
+
   /* Causes the destroy callback to be invoked which then cleans up. */
   gtk_widget_destroy(app_context->app_widg);
 
@@ -306,6 +313,8 @@ static ZMapAppContext createAppContext(void)
 
   app_context->state = ZMAPAPP_INIT ;
 
+  app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT ;
+
   app_context->app_widg = app_context->sequence_widg = NULL ;
   app_context->tree_store_widg = NULL ;
 
@@ -315,6 +324,24 @@ static ZMapAppContext createAppContext(void)
   app_context->logger = NULL ;
 
   return app_context ;
+}
+
+
+static void destroyAppContext(ZMapAppContext app_context)
+{
+  if (app_context->zmap_manager)
+    zMapManagerDestroy(app_context->zmap_manager) ;
+
+  if (app_context->xremote_client)
+    zMapXRemoteDestroy(app_context->xremote_client) ;
+
+  /* This should probably be the last thing before exitting... */
+  if (app_context->logger)
+    zMapLogDestroy(app_context->logger) ;
+
+  g_free(app_context) ;
+
+  return ;
 }
 
 
@@ -335,8 +362,8 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
   zMapManagerKillAllZMaps(app_context->zmap_manager) ;
 
   /* If we have a client object, clean it up */
-  if(app_context->xremoteClient != NULL)
-    zMapXRemoteDestroy(app_context->xremoteClient);
+  if(app_context->xremote_client != NULL)
+    zMapXRemoteDestroy(app_context->xremote_client);
 
   return ;
 }
@@ -372,8 +399,7 @@ void removeZMapCB(void *app_data, void *zmap_data)
     app_context->selected_zmap = NULL ;
 
   /* When the last zmap has gone and we are dying then exit. */
-  if ((app_context->state == ZMAPAPP_DYING || !(app_context->show_mainwindow))
-      && ((zMapManagerCount(app_context->zmap_manager)) == 0))
+  if (app_context->state == ZMAPAPP_DYING && ((zMapManagerCount(app_context->zmap_manager)) == 0))
     exitApp(app_context) ;
 
   return ;
@@ -527,16 +553,10 @@ void quitReqCB(void *app_data, void *zmap_data_unused)
 /* Final clean up of zmap. */
 static void exitApp(ZMapAppContext app_context)
 {
-  /* Destroy the manager. */
-  zMapManagerDestroy(app_context->zmap_manager) ;
-
-  /* This should probably be the last thing before exitting... */
   if (app_context->logger)
-    {
-      zMapLogMessage("%s", "Goodbye cruel world !") ;
+    zMapLogMessage("%s", "Goodbye cruel world !") ;
 
-      zMapLogDestroy(app_context->logger) ;
-    }
+  destroyAppContext(app_context) ;
 
   zMapExit(EXIT_SUCCESS) ;
 
@@ -555,14 +575,17 @@ static gboolean getConfiguration(ZMapAppContext app_context)
   char *zmap_stanza_name = ZMAPSTANZA_APP_CONFIG ;
   ZMapConfigStanzaElementStruct zmap_elements[] = {{ZMAPSTANZA_APP_MAINWINDOW, ZMAPCONFIG_BOOL,   {NULL}},
 						   {ZMAPSTANZA_APP_SEQUENCE,   ZMAPCONFIG_STRING, {NULL}},
+						   {ZMAPSTANZA_APP_EXIT_TIMEOUT,   ZMAPCONFIG_INT, {NULL}},
                                                    /* {"event_model", ZMAPCONFIG_STRING, {NULL}}, */
 						   {NULL, -1, {NULL}}} ;
 
 
-
+  /* Set stanza defaults. */
   app_context->show_mainwindow
     = zMapConfigGetStructBool(zmap_elements, ZMAPSTANZA_APP_MAINWINDOW) = TRUE ;
 							    /* By default show main window. */
+  app_context->exit_timeout
+    = zMapConfigGetStructInt(zmap_elements, ZMAPSTANZA_APP_EXIT_TIMEOUT) = ZMAP_DEFAULT_EXIT_TIMEOUT ;
 
   if ((config = zMapConfigCreate()))
     {
@@ -576,6 +599,11 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 	  next_zmap = zMapConfigGetNextStanza(zmap_list, NULL) ;
 	  
 	  app_context->show_mainwindow = zMapConfigGetElementBool(next_zmap, ZMAPSTANZA_APP_MAINWINDOW) ;
+
+	  app_context->exit_timeout = zMapConfigGetElementInt(next_zmap, ZMAPSTANZA_APP_EXIT_TIMEOUT) ;
+	  if (app_context->exit_timeout < 0)
+	    app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT ;
+	  
 	  if ((app_context->default_sequence
 	       = zMapConfigGetElementString(next_zmap, ZMAPSTANZA_APP_SEQUENCE)))
 	    app_context->default_sequence = g_strdup_printf(app_context->default_sequence) ;
@@ -597,6 +625,17 @@ static gboolean getConfiguration(ZMapAppContext app_context)
     }
 
   return result ;
+}
+
+
+/* A GSourceFunc, called if we take too long to exit, in which case we force the exit. */
+static gboolean timeoutHandler(gpointer data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)data ;
+
+  exitApp(app_context) ;
+
+  return FALSE ;
 }
 
 
@@ -664,4 +703,9 @@ static gboolean appMapEventCallback(GtkWidget *widget, GdkEvent *event, gpointer
   return handled;
 }
 #endif /* RDS_DONT_INCLUDE_TESTING */
+
+
+
+
+
 
