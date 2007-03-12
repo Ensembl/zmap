@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 18 18:54 2007 (edgrif)
+ * Last edited: Mar 12 13:08 2007 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.56 2007-01-19 10:26:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.57 2007-03-12 16:24:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,7 +146,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
  { "/View/Order By/Strand",  NULL, orderByCB, ZMAP_WINDOW_LIST_COL_STRAND,       NULL,          NULL},
  { "/View/Order By/Phase",   NULL, orderByCB, ZMAP_WINDOW_LIST_COL_PHASE,        NULL,          NULL},
  { "/View/Order By/Score",   NULL, orderByCB, ZMAP_WINDOW_LIST_COL_SCORE,        NULL,          NULL},
- { "/View/Order By/Method",  NULL, orderByCB, ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, NULL,          NULL},
+ { "/View/Order By/Feature Set",    NULL, orderByCB, ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, NULL,          NULL},
  { "/View/Order By/1------", NULL, NULL,      0,                                 "<Separator>", NULL},
  { "/View/Order By/Reverse", NULL, orderByCB, ZMAP_WINDOW_LIST_COL_NUMBER,       NULL,          NULL},
  /* Operate */

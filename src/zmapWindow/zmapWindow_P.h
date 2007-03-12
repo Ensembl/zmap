@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 12 11:15 2007 (edgrif)
+ * Last edited: Mar 12 15:16 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.173 2007-03-12 12:29:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.174 2007-03-12 16:24:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -221,6 +221,8 @@ typedef enum
     ZMAP_WINDOW_LIST_COL_STRAND,			    /*!< feature strand  */
     ZMAP_WINDOW_LIST_COL_START,				    /*!< feature start */
     ZMAP_WINDOW_LIST_COL_END,				    /*!< feature end  */
+    ZMAP_WINDOW_LIST_COL_QUERY_START,				    /*!< feature start */
+    ZMAP_WINDOW_LIST_COL_QUERY_END,				    /*!< feature end  */
     ZMAP_WINDOW_LIST_COL_PHASE,				    /*!< feature phase  */
     ZMAP_WINDOW_LIST_COL_SCORE,				    /*!< feature score  */
     ZMAP_WINDOW_LIST_COL_FEATURE_TYPE,			    /*!< feature method  */

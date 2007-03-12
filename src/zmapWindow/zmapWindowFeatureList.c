@@ -28,9 +28,9 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Feb  7 12:24 2007 (rds)
+ * Last edited: Mar 12 15:33 2007 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.15 2007-02-07 13:04:23 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.16 2007-03-12 16:24:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,14 +92,15 @@ static int columnSortIDs[ZMAP_WINDOW_LIST_COL_NUMBER] =
     ZMAP_WINDOW_LIST_COL_NAME,
     ZMAP_WINDOW_LIST_COL_SORT_TYPE,
     ZMAP_WINDOW_LIST_COL_SORT_STRAND,
-    ZMAP_WINDOW_LIST_COL_START, ZMAP_WINDOW_LIST_COL_END,
+    ZMAP_WINDOW_LIST_COL_START,
+    ZMAP_WINDOW_LIST_COL_END,
+    ZMAP_WINDOW_LIST_COL_QUERY_START,
+    ZMAP_WINDOW_LIST_COL_QUERY_END,
     ZMAP_WINDOW_LIST_COL_SORT_PHASE,
     ZMAP_WINDOW_LIST_COL_SCORE,
     ZMAP_WINDOW_LIST_COL_FEATURE_TYPE,
     -1, -1, -1, -1, -1, -1
   } ;
-
-
 
 
 
@@ -119,7 +120,10 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type)
 				   G_TYPE_STRING,
 				   G_TYPE_STRING,
 				   G_TYPE_STRING,
-				   G_TYPE_INT, G_TYPE_INT,
+				   G_TYPE_INT,
+				   G_TYPE_INT,
+				   G_TYPE_INT,
+				   G_TYPE_INT,
 				   G_TYPE_STRING,
 				   G_TYPE_FLOAT,
 				   G_TYPE_STRING,
@@ -136,7 +140,10 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type)
 				  G_TYPE_STRING,
 				  G_TYPE_STRING,
 				  G_TYPE_STRING,
-				  G_TYPE_INT, G_TYPE_INT,
+				  G_TYPE_INT,
+				  G_TYPE_INT,
+				  G_TYPE_INT,
+				  G_TYPE_INT,
 				  G_TYPE_STRING,
 				  G_TYPE_FLOAT,
 				  G_TYPE_STRING,
@@ -203,24 +210,35 @@ GtkWidget *zmapWindowFeatureListCreateView(ZMapWindowListType list_type,
     case ZMAPWINDOWLIST_FEATURE_TREE:
     case ZMAPWINDOWLIST_FEATURE_LIST:
       {
-	char *column_titles[ZMAP_WINDOW_LIST_COL_NUMBER] = {"Name", "Type", "Strand", 
-							    "Start", "End", "Phase",
-							    "Score", "Method", "FEATURE_ITEM",
-							    "", "", "", "", ""};
+	char *column_titles[ZMAP_WINDOW_LIST_COL_NUMBER] =
+	  {
+	    "Name",
+	    "Type",
+	    "Strand", 
+	    "Start",
+	    "End",
+	    "Query Start",
+	    "Query End",
+	    "Phase",
+	    "Score",
+	    "Feature Set",
+	    "FEATURE_ITEM", "", "", "", "", ""
+	  } ;
+
 
 	/* Add it to all of them, not sure we need to add it to all, just the visible ones... */
-	for(colNo = 0; colNo < ZMAP_WINDOW_LIST_COL_NUMBER; colNo++)
+	for (colNo = 0 ; colNo < ZMAP_WINDOW_LIST_COL_NUMBER ; colNo++)
 	  {
-	    GtkTreeViewColumn *column = NULL;
+	    GtkTreeViewColumn *column = NULL ;
 
 	    column = gtk_tree_view_column_new_with_attributes(column_titles[colNo],
 							      renderer,
 							      "text", colNo,
-							      NULL);
+							      NULL) ;
 	    g_object_set_data_full(G_OBJECT(column),
 				   ZMAP_WINDOW_FEATURE_LIST_COL_NUMBER_KEY, 
 				   GINT_TO_POINTER(colNo),
-				   NULL);
+				   NULL) ;
 
 	    /* The order of the next two calls IS IMPORTANT.  With the
 	     * signal_connect FIRST the callback is called BEFORE the
@@ -232,7 +250,7 @@ GtkWidget *zmapWindowFeatureListCreateView(ZMapWindowListType list_type,
 	    if(callbacks->columnClickedCB)
 	      g_signal_connect(G_OBJECT(column), "clicked",
 			       G_CALLBACK(callbacks->columnClickedCB), 
-			       user_data);
+			       user_data) ;
 
 	    /* set the pointer and data rows to be invisible */
 	    if(colNo >= ZMAP_WINDOW_LIST_COL_FEATURE)
@@ -435,7 +453,7 @@ static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *it
   ZMapFeature feature ;
   ZMapStrand set_strand ;
   ZMapFrame set_frame ;
-
+  int q_start = 0, q_end = 0 ;
 
   /* Get the feature struct... */
   gtk_tree_model_get(model, iter,
@@ -443,6 +461,13 @@ static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *it
 		     ZMAP_WINDOW_LIST_COL_SET_STRAND, &set_strand,
 		     ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
 		     -1) ;
+
+  if (feature->type == ZMAPFEATURE_ALIGNMENT)
+    {
+      q_start = feature->feature.homol.y1 ;
+      q_end = feature->feature.homol.y2 ;
+    }
+
 
   if (GTK_IS_TREE_STORE(model))
     {
@@ -467,12 +492,15 @@ static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *it
         { 
         case ITEM_FEATURE_SIMPLE: 
         case ITEM_FEATURE_PARENT: 
-          appended = TRUE;
+
+	  appended = TRUE ;
 
           gtk_tree_store_set(store, iter, 
                              ZMAP_WINDOW_LIST_COL_NAME,   (char *)g_quark_to_string(feature->original_id),
                              ZMAP_WINDOW_LIST_COL_START,  feature->x1,
                              ZMAP_WINDOW_LIST_COL_END,    feature->x2,
+			     ZMAP_WINDOW_LIST_COL_QUERY_START,  q_start,
+			     ZMAP_WINDOW_LIST_COL_QUERY_END,    q_end,
                              ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
 			     ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
                              -1);
@@ -492,6 +520,7 @@ static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *it
                 }
             }
           break;
+
         case ITEM_FEATURE_CHILD: 
           {
             ZMapWindowItemFeature subfeature;
@@ -522,7 +551,7 @@ static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *it
                            -1) ;
 
     }
-  else if(GTK_IS_LIST_STORE(model))
+  else if (GTK_IS_LIST_STORE(model))
     {
       GtkListStore *store = NULL;
 
@@ -533,6 +562,8 @@ static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *it
                          ZMAP_WINDOW_LIST_COL_STRAND, zMapFeatureStrand2Str(feature->strand),
                          ZMAP_WINDOW_LIST_COL_START,  feature->x1,
                          ZMAP_WINDOW_LIST_COL_END,    feature->x2,
+                         ZMAP_WINDOW_LIST_COL_QUERY_START,  q_start,
+                         ZMAP_WINDOW_LIST_COL_QUERY_END,    q_end,
                          ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
                          ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
                          ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
@@ -608,8 +639,15 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                                   GtkTreeIter *parent)
 {
   GtkTreeIter append;
+  int q_start = 0, q_end = 0 ;
 
   zMapAssert(feature && item);
+
+  if (feature->type == ZMAPFEATURE_ALIGNMENT)
+    {
+      q_start = feature->feature.homol.y1 ;
+      q_end = feature->feature.homol.y2 ;
+    }
 
   if (GTK_IS_TREE_STORE(treeModel))
     {
@@ -631,6 +669,8 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                              ZMAP_WINDOW_LIST_COL_NAME,   (char *)g_quark_to_string(feature->original_id),
                              ZMAP_WINDOW_LIST_COL_START,  feature->x1,
                              ZMAP_WINDOW_LIST_COL_END,    feature->x2,
+			     ZMAP_WINDOW_LIST_COL_QUERY_START,  q_start,
+			     ZMAP_WINDOW_LIST_COL_QUERY_END,    q_end,
                              ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
 			     ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
                              -1);
@@ -696,6 +736,8 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                          ZMAP_WINDOW_LIST_COL_STRAND, zMapFeatureStrand2Str(feature->strand),
                          ZMAP_WINDOW_LIST_COL_START,  feature->x1,
                          ZMAP_WINDOW_LIST_COL_END,    feature->x2,
+			 ZMAP_WINDOW_LIST_COL_QUERY_START,  q_start,
+			 ZMAP_WINDOW_LIST_COL_QUERY_END,    q_end,
                          ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
                          ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
                          ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
@@ -780,6 +822,8 @@ static gint sortByFunc (GtkTreeModel *model,
       break;
     case ZMAP_WINDOW_LIST_COL_END:
     case ZMAP_WINDOW_LIST_COL_START:
+    case ZMAP_WINDOW_LIST_COL_QUERY_END:
+    case ZMAP_WINDOW_LIST_COL_QUERY_START:
     case ZMAP_WINDOW_LIST_COL_SORT_PHASE:
     case ZMAP_WINDOW_LIST_COL_SORT_TYPE:
     case ZMAP_WINDOW_LIST_COL_SORT_STRAND:
