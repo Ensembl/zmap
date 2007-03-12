@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar 12 16:17 2007 (edgrif)
+ * Last edited: Mar 12 16:25 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.25 2007-03-12 16:23:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.26 2007-03-12 16:25:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -855,10 +855,6 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   char *colinear_colour = ZMAP_WINDOW_MATCH_COLINEAR ;
   char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
   unsigned int match_threshold = 0 ;
-
-
-  if (strcasecmp(g_quark_to_string(zMapStyleGetID(style)), "ditag_GIS_PET") == 0)
-    printf("found it\n") ;
 
 
   if (!colour_init)
