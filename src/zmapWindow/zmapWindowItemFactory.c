@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar  5 14:09 2007 (rds)
+ * Last edited: Mar 12 16:17 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.24 2007-03-05 14:17:22 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.25 2007-03-12 16:23:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1081,6 +1081,11 @@ static void drawFeatureExon(ZMapWindowFToIFactory factory,
   GdkColor *exon_fill, *exon_outline;
   int non_start, non_end ;
   
+
+  if (strcmp(g_quark_to_string(zMapStyleGetID(style)), "Known_CDS") == 0)
+    printf("found it\n") ;
+
+
   /* create a ZMapWindowItemFeature for the exon, this will be attached later */
   tmp_data_ptr = exon_data_ptr = g_new0(ZMapWindowItemFeatureStruct, 1) ;
   /* tmp_data_ptr == exon_data_ptr for original box in case 
@@ -1151,7 +1156,7 @@ static void drawFeatureExon(ZMapWindowFToIFactory factory,
               
               /* set the cds box's exon_data_ptr while we still have ptr 2 it */
               /* Without this the cds part retains the coords of the FULL exon! */
-              tmp_data_ptr->start = non_end + offset;
+              tmp_data_ptr->start = non_end + offset + 1 ;
               
               exon_data_ptr        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
               exon_data_ptr->subpart = ZMAPFEATURE_SUBPART_EXON ;
@@ -1175,12 +1180,12 @@ static void drawFeatureExon(ZMapWindowFToIFactory factory,
           
           if (utr_box)
             {
-              non_start = bottom - (bottom - cds_end) + 1 ;
+              non_start = bottom - (bottom - cds_end) - 1 ;
               non_end = bottom ;
               
               /* set the cds box's exon_data_ptr while we still have ptr 2 it */
               /* Without this the cds part retains the coords of the FULL exon! */
-              tmp_data_ptr->end = non_start + offset;
+              tmp_data_ptr->end = non_start + offset - 1 ;
               
               exon_data_ptr = g_new0(ZMapWindowItemFeatureStruct, 1) ;
               exon_data_ptr->subpart = ZMAPFEATURE_SUBPART_EXON ;
