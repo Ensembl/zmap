@@ -31,9 +31,9 @@
  *
  * Exported functions: see zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 20 10:07 2007 (rds)
+ * Last edited: Mar 12 12:24 2007 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.26 2007-02-20 12:58:50 rds Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.27 2007-03-12 12:30:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,19 +79,28 @@ typedef struct BlixemDataStruct
   char          *exblxFile;
   gboolean      keep_tmpfiles ;
   char          *opts;
-  gboolean       oneType;                                  /* show stuff for just this type */
+
   GIOChannel    *channel;
   char          *errorMsg;
-
 
   ZMapWindow     window;
   FooCanvasItem *item ;
   ZMapFeature feature ;
   ZMapFeatureBlock block ;
 
+
+
   /* Used for processing individual features. */
   ZMapFeatureType required_feature_type ;		    /* specifies what type of feature
 							     * needs to be processed. */
+
+  /* User can specify sets of homologies that can be passed to blixem, if the set they selected
+   * is in one of these sets then all the features in all the sets are sent to blixem. */
+  ZMapHomolType align_type ;				    /* What type of alignment are we doing ? */
+  GList *dna_sets ;
+  GList *protein_sets ;
+  GList *transcript_sets ;
+
   int min, max ;
   int qstart, qend ; 
   GString *line ;
@@ -105,7 +114,10 @@ static gboolean makeTmpfiles(blixemData blixem_data) ;
 gboolean makeTmpfile(char *tmp_dir, char **tmp_file_name_out) ;
 static gboolean buildParamString (blixemData blixem_data, char **paramString);
 static gboolean writeExblxFile   (blixemData blixem_data);
+
 static void     processFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
+static void processSetList(gpointer data, gpointer user_data) ;
+
 static void     writeExblxLine   (GQuark key_id, gpointer data, gpointer user_data);
 static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data) ;
 static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data) ;
@@ -116,7 +128,7 @@ static void     freeBlixemData   (blixemData blixem_data);
 
 
 
-gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType, GPid *child_pid)
+gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, GPid *child_pid)
 {
   ZMapFeature feature = NULL;
   ZMapFeatureBlock block = NULL;
@@ -129,24 +141,20 @@ gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean o
 
   blixem_data.window  = window;
   blixem_data.item    = item;
-  blixem_data.oneType = oneType;
 
   feature = g_object_get_data(G_OBJECT(blixem_data.item), ITEM_FEATURE_DATA);
   zMapAssert(feature) ;					    /* something badly wrong if no feature. */
   blixem_data.feature = feature ;
 
-  if(!(block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-                                                           ZMAPFEATURE_STRUCT_BLOCK)))
-    {
-      status = FALSE;
-      err_msg = "feature has parental issues so cannot call blixem.";
-    }
-  else if(!(zMapFeatureBlockDNA(block, NULL, NULL, NULL)))
+  block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
+  zMapAssert(block) ;
+  blixem_data.block = block ;
+
+  if (!(zMapFeatureBlockDNA(block, NULL, NULL, NULL)))
     {
       status = FALSE;
       err_msg = "No DNA attached to feature's parent so cannot call blixem." ;
     }
-  blixem_data.block = block ;
 
   if (status)
     status = getUserPrefs(&blixem_data) ;
@@ -236,9 +244,14 @@ static gboolean getUserPrefs(blixemData blixem_data)
 					      {"keep_tempfiles", ZMAPCONFIG_BOOL, {NULL}},
 					      {"scope"     , ZMAPCONFIG_INT   , {NULL}},
 					      {"homol_max" , ZMAPCONFIG_INT   , {NULL}},
+					      {"dna_featuresets", ZMAPCONFIG_STRING, {NULL}},
+					      {"protein_featuresets", ZMAPCONFIG_STRING, {NULL}},
+					      {"transcript_featuresets", ZMAPCONFIG_STRING, {NULL}},
 					      {NULL, -1, {NULL}}} ;
   if ((config = zMapConfigCreate()))
     {
+      char *dnaset_string, *proteinset_string, *transcriptset_string ;
+
       /* get blixem user prefs from config file. */
       stanza = zMapConfigMakeStanza(stanza_name, elements) ;
 
@@ -254,6 +267,18 @@ static gboolean getUserPrefs(blixemData blixem_data)
 	  blixem_data->Script   = g_strdup(zMapConfigGetElementString(next, "script"   ));
 	  blixem_data->Scope    = zMapConfigGetElementInt            (next, "scope"     );
 	  blixem_data->HomolMax = zMapConfigGetElementInt            (next, "homol_max" );
+	  dnaset_string = zMapConfigGetElementString(next, "dna_featuresets") ;
+	  proteinset_string = zMapConfigGetElementString(next, "protein_featuresets") ;
+	  transcriptset_string = zMapConfigGetElementString(next, "transcript_featuresets") ;
+
+	  if (dnaset_string)
+	    blixem_data->dna_sets = zMapFeatureString2QuarkList(dnaset_string) ;
+
+	  if (proteinset_string)
+	    blixem_data->protein_sets = zMapFeatureString2QuarkList(proteinset_string) ;
+
+	  if (transcriptset_string)
+	    blixem_data->transcript_sets = zMapFeatureString2QuarkList(transcriptset_string) ;
 
 	  blixem_data->keep_tmpfiles = zMapConfigGetElementBool(next, "keep_tempfiles") ;
 	  
@@ -477,11 +502,12 @@ static gboolean writeExblxFile(blixemData blixem_data)
 
       if (status)
 	{
-	  ZMapFeatureBlock feature_block ;
+	  ZMapFeatureSet feature_set ;
+	  GList *set_list ;
 
-	  blixem_data->errorMsg = NULL;
+	  blixem_data->errorMsg = NULL ;
 
-	  feature_block = (ZMapFeatureBlock)(feature->parent->parent) ;
+	  feature_set = (ZMapFeatureSet)(feature->parent) ;
 
 	  /* There is no way to interrupt g_datalist_foreach(), so instead,
 	   * if printLine() encounters a problem, we store the error message
@@ -490,21 +516,34 @@ static gboolean writeExblxFile(blixemData blixem_data)
 
 	  /* Do requested Homology data first. */
 	  blixem_data->required_feature_type = ZMAPFEATURE_ALIGNMENT ;
-	  if (blixem_data->oneType)
-	    {
-	      ZMapFeatureSet feature_set = (ZMapFeatureSet)(feature->parent) ;
 
-	      g_datalist_foreach(&(feature_set->features), writeExblxLine, blixem_data) ;
+	  blixem_data->align_type = feature->feature.homol.type ;
+	  if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
+	    set_list = blixem_data->dna_sets ;
+	  else
+	    set_list = blixem_data->protein_sets ;
+
+
+	  if (set_list && (g_list_find(set_list, GUINT_TO_POINTER(feature_set->unique_id))))
+	    {
+	      g_list_foreach(set_list, processSetList, blixem_data) ;
 	    }
 	  else
 	    {
-	      g_datalist_foreach(&(feature_block->feature_sets), processFeatureSet, blixem_data) ;
+	      g_datalist_foreach(&(feature_set->features), writeExblxLine, blixem_data) ;
 	    }
 
 
 	  /* Now do transcripts (may need to filter further..... */
 	  blixem_data->required_feature_type = ZMAPFEATURE_TRANSCRIPT ;
-	  g_datalist_foreach(&(feature_block->feature_sets), processFeatureSet, blixem_data) ;
+	  if (blixem_data->transcript_sets)
+	    {
+	      g_list_foreach(blixem_data->transcript_sets, processSetList, blixem_data) ;
+	    }
+	  else
+	    {
+	      g_datalist_foreach(&(blixem_data->block->feature_sets), processFeatureSet, blixem_data) ;
+	    }
 	}
 
 
@@ -547,16 +586,39 @@ static void processFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
   g_datalist_foreach(&(feature_set->features), writeExblxLine, blixem_data);
 
-  return;
+  return ;
+}
+
+
+/* A GFunc() to step through the named feature sets and write them out for passing
+ * to blixem. */
+static void processSetList(gpointer data, gpointer user_data)
+{
+  GQuark set_id = GPOINTER_TO_UINT(data) ;
+  blixemData blixem_data = (blixemData)user_data ;
+  ZMapFeatureSet feature_set ;
+
+  if (!(feature_set = g_datalist_id_get_data(&(blixem_data->block->feature_sets), set_id)))
+    {
+      zMapLogWarning("Could not find %s feature set \"%s\" in context feature sets.",
+		     (blixem_data->required_feature_type == ZMAPFEATURE_ALIGNMENT
+		      ? "alignment" : "transcript"),
+		     g_quark_to_string(set_id)) ;
+    }
+  else
+    {
+      g_datalist_foreach(&(feature_set->features), writeExblxLine, blixem_data);
+    }
+
+  return ;
 }
 
 
 
 static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 {
-  ZMapFeature feature     = (ZMapFeature)data ;
+  ZMapFeature feature = (ZMapFeature)data ;
   blixemData  blixem_data = (blixemData)user_data ;
-
 
   /* If errorMsg is set then it means there was an error earlier on in processing so we don't
    * process any more records. */
@@ -573,12 +635,15 @@ static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
 	    {
 	    case ZMAPFEATURE_ALIGNMENT:
 	      {
-		if ((feature->x1 >= blixem_data->min && feature->x1 <= blixem_data->max)
-		    && (feature->x2 >= blixem_data->min && feature->x2 <= blixem_data->max))
+		if (feature->feature.homol.type == blixem_data->align_type)
 		  {
-		    if ((*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
-			|| (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
-		      status = printAlignment(feature, blixem_data) ;
+		    if ((feature->x1 >= blixem_data->min && feature->x1 <= blixem_data->max)
+			&& (feature->x2 >= blixem_data->min && feature->x2 <= blixem_data->max))
+		      {
+			if ((*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+			    || (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
+			  status = printAlignment(feature, blixem_data) ;
+		      }
 		  }
 		break ;
 	      }
@@ -1065,9 +1130,15 @@ static void freeBlixemData(blixemData blixem_data)
   g_free(blixem_data->tmpDir);
   g_free(blixem_data->fastAFile);
   g_free(blixem_data->exblxFile);
-
   g_free(blixem_data->Netid);
   g_free(blixem_data->Script);
+
+  if (blixem_data->dna_sets)
+    g_list_free(blixem_data->dna_sets) ;
+  if (blixem_data->protein_sets)
+    g_list_free(blixem_data->protein_sets) ;
+  if (blixem_data->transcript_sets)
+    g_list_free(blixem_data->transcript_sets) ;
 
   return;
 }
