@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar  9 11:21 2007 (rds)
+ * Last edited: Mar 12 11:15 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.172 2007-03-09 14:57:36 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.173 2007-03-12 12:29:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -767,7 +767,7 @@ void my_foo_canvas_item_lower_to(FooCanvasItem *item, int position) ;
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
 void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 
-gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, gboolean oneType, GPid *child_pid);
+gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, GPid *child_pid);
 
 
 ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow,
