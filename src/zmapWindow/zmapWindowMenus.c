@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Mar  5 14:11 2007 (edgrif)
+ * Last edited: Mar 12 12:02 2007 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.28 2007-03-05 14:38:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.29 2007-03-12 12:29:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -814,16 +814,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
 					   ZMapGUIMenuItemCallbackFunc callback_func,
 					   gpointer callback_data)
 {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-      {ZMAPGUI_MENU_BRANCH, "_Blixem",      0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Blixem/Show multiple dna alignment",                                 1, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Blixem/Show multiple dna alignment for just this type of homology",  2, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                                                          0, NULL,         NULL}
-    } ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NORMAL, "Blixem (DNA alignments)",  2, blixemMenuCB, NULL},
@@ -840,17 +830,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 					       ZMapGUIMenuItemCallbackFunc callback_func,
 					       gpointer callback_data)
 {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-      {ZMAPGUI_MENU_BRANCH,  "_Blixem",      0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Blixem/Show multiple protein alignment",                                 1, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Blixem/Show multiple protein alignment for just this type of homology",  2, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE,  NULL, 0, NULL,         NULL}
-    } ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NORMAL, "Blixem (Protein alignments)",  2, blixemMenuCB, NULL},
@@ -867,10 +846,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  gboolean single_homol_type = FALSE ;
   gboolean status ;
   GPid blixem_pid;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* only one way to call blixem now but this may change... */
   switch (menu_item_id)
     {
     case 1:
@@ -883,9 +865,11 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
       break ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* some architectures have pointers for pids, this might need addressing */
-  if((status = zmapWindowCallBlixem(menu_data->window, menu_data->item, single_homol_type, &blixem_pid)))
+  if((status = zmapWindowCallBlixem(menu_data->window, menu_data->item, &blixem_pid)))
     menu_data->window->blixem_windows = g_list_append(menu_data->window->blixem_windows, GINT_TO_POINTER(blixem_pid));
 
   g_free(menu_data) ;
