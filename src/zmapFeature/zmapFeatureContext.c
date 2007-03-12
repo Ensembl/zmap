@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb 27 16:00 2007 (rds)
+ * Last edited: Mar 12 09:11 2007 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.19 2007-03-02 14:29:54 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.20 2007-03-12 12:26:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -221,6 +221,46 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
 
   return dna ;
 }
+
+
+
+
+/* Take a string containing space separated context names (e.g. perhaps a list
+ * of featuresets: "coding fgenes codon") and convert it to a list of
+ * proper context id quarks. */
+GList *zMapFeatureString2QuarkList(char *string_list)
+{
+  GList *context_quark_list = NULL ;
+  char *list_pos = NULL ;
+  char *next_context = NULL ;
+  char *target ;
+
+  target = string_list ;
+  do
+    {
+      GQuark context_id ;
+
+      if (next_context)
+	{
+	  target = NULL ;
+	  context_id = zMapStyleCreateID(next_context) ;
+	  context_quark_list = g_list_append(context_quark_list, GUINT_TO_POINTER(context_id)) ;
+	}
+      else
+	list_pos = target ;
+    }
+  while (((list_pos && nextIsQuoted(&list_pos))
+	  && (next_context = strtok_r(target, "\"", &list_pos)))
+	 || (next_context = strtok_r(target, " \t", &list_pos))) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMap_g_quark_list_print(context_quark_list) ;	    /* debug.... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  return context_quark_list ;
+}
+
+
 
 
 /*!
@@ -882,4 +922,35 @@ static void doFeatureAnyCB(ZMapFeatureAny any_feature, gpointer user_data)
   return ;
 }
 #endif
+
+
+
+
+/* Look through string to see if next non-space char is a quote mark, if it is return TRUE
+ * and set *text to point to the quote mark, otherwise return FALSE and leave *text unchanged. */
+static gboolean nextIsQuoted(char **text)
+{
+  gboolean quoted = FALSE ;
+  char *text_ptr = *text ;
+
+  while (*text_ptr)
+    {
+      if (!(g_ascii_isspace(*text_ptr)))
+	{
+	  if (*text_ptr == '"')
+	    {
+	      quoted = TRUE ;
+	      *text = text_ptr ;
+	    }
+	  break ;
+	}
+
+      text_ptr++ ;
+    }
+
+  return quoted ;
+}
+
+
+
 
