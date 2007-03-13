@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Mar 12 09:11 2007 (edgrif)
+ * Last edited: Mar 13 15:47 2007 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.117 2007-03-12 12:26:37 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.118 2007-03-13 16:07:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -542,6 +542,7 @@ gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set, ZMapFeature featu
 ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set, 
                                          GQuark feature_id);
 gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
+void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set) ;
 void     zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
@@ -773,11 +774,15 @@ typedef enum
 
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description) ;
 
+void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
 void zMapStyleSetParent(ZMapFeatureTypeStyle style, char *parent_name) ;
 void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
 ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width) ;
 double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetBumpWidth(ZMapFeatureTypeStyle style, double bump_width) ;
+double zMapStyleGetBumpWidth(ZMapFeatureTypeStyle style) ;
+
 gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out) ;
 
 void zMapStyleSetColours(ZMapFeatureTypeStyle style, char *outline, char *foreground, char *background) ;
