@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar 12 16:25 2007 (edgrif)
+ * Last edited: Mar 13 15:02 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.26 2007-03-12 16:25:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.27 2007-03-13 16:06:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1725,7 +1725,7 @@ static FooCanvasItem *drawPepFeature(RunSet run_data,  ZMapFeature feature,
   FooCanvasGroup *column_parent  = NULL;
   GdkColor *outline, *foreground, *background;
   ZMapDrawTextIterator iterator  = NULL;
-  double txt_height, new_x;
+  double txt_height, new_x ;
   int i;
 
   zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
@@ -1737,11 +1737,16 @@ static FooCanvasItem *drawPepFeature(RunSet run_data,  ZMapFeature feature,
 
     /* bump the feature BEFORE drawing */
   if(parent->item_list_end && (prev_trans = FOO_CANVAS_ITEM(parent->item_list_end->data)))
-    foo_canvas_item_get_bounds(prev_trans, NULL, NULL, &new_x, NULL);
-  
+    {
+      foo_canvas_item_get_bounds(prev_trans, NULL, NULL, &new_x, NULL);
+
+      new_x += zMapStyleGetBumpWidth(style) ;
+    }
+  else
+    new_x = 0.0 ;
+
   feature_parent = createParentGroup(parent, feature, feature_start);
 
-  new_x += COLUMN_SPACING;
   my_foo_canvas_item_goto(feature_parent, &new_x, NULL);
 
   /* -------------------------------------------------
