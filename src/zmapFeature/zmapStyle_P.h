@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Feb 26 09:27 2007 (edgrif)
+ * Last edited: Mar 13 14:47 2007 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_P.h,v 1.1 2007-02-28 18:15:51 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_P.h,v 1.2 2007-03-13 16:06:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_P_H
@@ -129,7 +129,7 @@ typedef struct ZMapFeatureTypeStyleStruct_
   double max_mag ;					    /* Don't display if more bases/line */
 
   double   width ;					    /* column width */
-  double bump_width;					    /* gap between bumped columns. */
+  double bump_width;					    /* gap between bumped features. */
 
   ZMapStyleScoreMode   score_mode ;			    /* Controls width of features that
 							       have scores. */
