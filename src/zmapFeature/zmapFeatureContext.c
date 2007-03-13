@@ -27,12 +27,13 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 12 09:11 2007 (edgrif)
+ * Last edited: Mar 13 16:09 2007 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.20 2007-03-12 12:26:37 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.21 2007-03-13 16:10:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <string.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapFeature_P.h>
@@ -78,6 +79,9 @@ static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data
 static void executeListForeachFunc(gpointer data, gpointer user_data);
 
 static void postExecuteProcess(ContextExecute execute_data);
+
+static gboolean nextIsQuoted(char **text) ;
+
 
 /* Reverse complement a feature context.
  * 
@@ -542,13 +546,26 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         ZMapFeatureBlock feature_block = NULL;
+	ZMapFeatureSet three_ft ;
         
         feature_block = (ZMapFeatureBlock)feature_any;
+
+	/* Complement the dna. */
         if (feature_block->sequence.sequence)
 	  revcompDNA(feature_block->sequence.sequence, feature_block->sequence.length) ;
         zmapFeatureRevComp(Coord, cb_data->end,
                            feature_block->block_to_sequence.t1, 
                            feature_block->block_to_sequence.t2) ;
+
+	/* Now redo the 3 frame translations from the dna (if they exist). */
+	if ((three_ft = zMapFeatureBlockGetSetByID(feature_block, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
+	  {
+	    if (!(zMapFeatureBlockThreeFrameTranslation(feature_block, &three_ft)))
+	      {
+		zMapFeatureSetDestroy(three_ft, TRUE) ;
+		zMapLogWarning("%s", "Cannot create 3 frame translation, feature set has been removed.") ;
+	      }
+	  }
       }
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
@@ -561,8 +578,10 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
         ZMapFeature feature_ft = NULL;
+
         feature_ft = (ZMapFeature)feature_any;
-        revCompFeature(feature_ft, cb_data->end);
+
+	revCompFeature(feature_ft, cb_data->end);
       }
       break;
     case ZMAPFEATURE_STRUCT_INVALID:
