@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar  7 13:34 2007 (edgrif)
+ * Last edited: Mar 13 15:58 2007 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.43 2007-03-07 14:21:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.44 2007-03-13 16:11:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -518,6 +518,16 @@ void zMapStyleSetParent(ZMapFeatureTypeStyle style, char *parent_name)
   return ;
 }
 
+void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description)
+{
+  zMapAssert(style && description && *description) ;
+
+  style->fields_set.description = TRUE ;
+  style->description = g_strdup(description) ;
+
+  return ;
+}
+
 void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width)
 {
   zMapAssert(style && width > 0.0) ;
@@ -527,6 +537,29 @@ void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width)
 
   return ;
 }
+
+void zMapStyleSetBumpWidth(ZMapFeatureTypeStyle style, double bump_width)
+{
+  zMapAssert(style && bump_width > 0.0) ;
+
+  style->fields_set.bump_width = TRUE ;
+  style->bump_width = bump_width ;
+
+  return ;
+}
+
+double zMapStyleGetBumpWidth(ZMapFeatureTypeStyle style)
+{
+  double bump_width = 0.0 ;
+
+  zMapAssert(style) ;
+
+  if (style->fields_set.bump_width)
+    bump_width = style->bump_width ;
+
+  return  bump_width ;
+}
+
 
 
 
@@ -1085,61 +1118,63 @@ GData *zMapStyleGetAllPredefined(void)
       /* 3 Frame */
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME) ;
-      curr->description = ZMAP_FIXED_STYLE_3FRAME_TEXT ;
-      curr->mode = ZMAPSTYLE_MODE_META;
-      curr->opts.hidden_always = TRUE ;
-      curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+      zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_3FRAME_TEXT) ;
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
+      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleSetHideAlways(curr, TRUE) ;
+
 
       /* 3 Frame Translation */
       curr++ ;
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
-      curr->description = ZMAP_FIXED_STYLE_3FT_NAME_TEXT ;
-      curr->mode = ZMAPSTYLE_MODE_TEXT;
-      curr->opts.hidden_now = TRUE ;
-      curr->opts.frame_specific = TRUE ;
+      zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_3FT_NAME_TEXT) ;
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
+      zMapStyleSetHidden(curr, TRUE) ;
       zMapStyleSetStrandAttrs(curr, TRUE, TRUE, FALSE, TRUE) ;
-      curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
-      
+      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleSetBumpWidth(curr, 10.0) ;
+
+
       /* DNA */
       curr++ ;
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_DNA_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
-      curr->description = ZMAP_FIXED_STYLE_DNA_NAME_TEXT ;
-      curr->mode = ZMAPSTYLE_MODE_TEXT;
-      curr->opts.hidden_now = TRUE ;
-      curr->width = 10.0 ;
+      zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_DNA_NAME_TEXT) ;
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
+      zMapStyleSetHidden(curr, TRUE) ;
+      zMapStyleSetWidth(curr, 10.0) ;
       zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, FALSE) ;
       zMapStyleSetColours(curr, NULL, "black", "white") ;
-      curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
 
       /* Locus */
       curr++ ;
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
-      curr->description = ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT ;
-      curr->mode = ZMAPSTYLE_MODE_TEXT;
-      curr->opts.hidden_now = TRUE ;
-      curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+      zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT) ;
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
+      zMapStyleSetHidden(curr, TRUE) ;
+      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
 
 
       /* GeneFinderFeatures */
       curr++ ;
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_GFF_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_GFF_NAME) ;
-      curr->description = ZMAP_FIXED_STYLE_GFF_NAME_TEXT ;
-      curr->mode = ZMAPSTYLE_MODE_META;
-      curr->opts.hidden_always = TRUE ;
-      curr->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+      zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_GFF_NAME_TEXT);
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
+      zMapStyleSetHideAlways(curr, TRUE) ;
+      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
       
       /* Scale bar */
       curr++;
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
       curr->unique_id   = zMapStyleCreateID(ZMAP_FIXED_STYLE_SCALE_NAME);
-      curr->description = ZMAP_FIXED_STYLE_SCALE_TEXT;
-      curr->mode = ZMAPSTYLE_MODE_META;
-      curr->opts.hidden_always = TRUE;
-      curr->overlap_mode     = ZMAPOVERLAP_COMPLETE ;
+      zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_SCALE_TEXT) ;
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
+      zMapStyleSetHideAlways(curr, TRUE) ;
+      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
     }
 
   curr = &(predefined_styles[0]) ;
@@ -1227,6 +1262,7 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 	   {"minmag"      , ZMAPCONFIG_INT, {NULL}},
 	   {"maxmag"      , ZMAPCONFIG_INT, {NULL}},
 	   {"bump"        , ZMAPCONFIG_STRING, {NULL}},
+	   {"bump_width"  , ZMAPCONFIG_FLOAT , {NULL}},
 	   {"gapped_align", ZMAPCONFIG_BOOL, {NULL}},
 	   {"gapped_error", ZMAPCONFIG_INT, {NULL}},
 	   {"read_gaps"   , ZMAPCONFIG_BOOL, {NULL}},
@@ -1290,7 +1326,6 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 
 	      zMapStyleSetWidth(new_type, zMapConfigGetElementFloat(next_styles, "width")) ;
 
-
 	      zMapStyleSetMag(new_type,
 			      zMapConfigGetElementInt(next_styles, "minmag"),
 			      zMapConfigGetElementInt(next_styles, "maxmag")) ;
@@ -1302,6 +1337,7 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 				      zMapConfigGetElementBool(next_styles, "show_only_as_3_frame")) ;
 
 	      zMapStyleSetBump(new_type, zMapConfigGetElementString(next_styles, "bump")) ;
+	      zMapStyleSetBumpWidth(new_type, zMapConfigGetElementFloat(next_styles, "bump_width")) ;
 
               /* Not good to hard code the TRUE here, but I guess blixem requires the gaps array. */
               zMapStyleSetGappedAligns(new_type, 
