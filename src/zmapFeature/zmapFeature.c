@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Mar  9 12:40 2007 (rds)
+ * Last edited: Mar 13 12:25 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.61 2007-03-09 12:44:53 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.62 2007-03-13 16:07:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -142,6 +142,7 @@ static void destroyBlock(gpointer data) ;
 static void destroyAlign(gpointer data) ;
 static void destroyContext(gpointer data) ;
 static void withdrawFeatureAny(GQuark key_id, gpointer data, gpointer user_data) ;
+static void destroyAllFeatureAny(GQuark key_id, gpointer data, gpointer user_data) ;
 
 /* datalist debug stuff */
 static void getDataListLength(GQuark id, gpointer data, gpointer user_data);
@@ -706,6 +707,18 @@ void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
 
   return ;
 }
+
+
+void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set)
+{
+  zMapAssert(feature_set) ;
+
+  g_datalist_clear(&(feature_set->features)) ;
+
+  return ;
+}
+
+
 
 GQuark zMapFeatureAlignmentCreateID(char *align_name, gboolean master_alignment)
 {
@@ -1610,6 +1623,7 @@ static void withdrawFeatureAny(GQuark key_id, gpointer data, gpointer user_data)
 
   return ;
 }
+
 
 /* Returns TRUE if the target blocks match coords are within align_error bases of each other, if
  * there are less than two blocks then FALSE is returned.
