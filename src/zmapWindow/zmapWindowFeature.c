@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  7 14:30 2007 (rds)
+ * Last edited: Mar 14 08:34 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.91 2007-03-07 14:34:42 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.92 2007-03-14 08:46:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -783,7 +783,6 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
 void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature feature, FooCanvasItem *item)
 {
   ZMapFeatureBlock block = NULL;
-  double dna_zoom = 0.0, current_zoom = 0.0;
   FooCanvasItem *dna_item = NULL;
   GQuark feature_set_unique = 0, dna_id = 0;
   char *feature_name = NULL;
@@ -2191,12 +2190,12 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		 * the root handler. */
 		if (but_event->button == 1 || but_event->button == 3)
 		  {
-		    gboolean replace_highlight = TRUE, externally_handled = FALSE;
+		    gboolean replace_highlight = TRUE, highlight_same_names = TRUE, externally_handled = FALSE;
 		    FooCanvasItem *highlight_item, *dna_item, *trans_item;
 
-                    /* multiple selections */
-		    if (zMapGUITestModifiers(but_event, GDK_SHIFT_MASK))
+		    if (zMapGUITestModifiersOnly(but_event, GDK_SHIFT_MASK))
 		      {
+			/* multiple selections */
 			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
 
 			if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item))
@@ -2207,14 +2206,34 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                         else
                           externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "single_select", highlight_item);
 		      }
-                    /* sub selections */
-		    else if (zMapGUITestModifiers(but_event, GDK_CONTROL_MASK))
+		    else if (zMapGUITestModifiersOnly(but_event, GDK_CONTROL_MASK))
 		      {
+			/* sub selections */
 			highlight_item = real_item ;
+			highlight_same_names = FALSE ;
+
                         /* monkey around to get feature_copy to be the right correct data */
                         featureCopySelectedItem(feature, &feature_copy,
                                                 highlight_item);
                         externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "single_select", highlight_item);
+		      }
+		    else if (zMapGUITestModifiersOnly(but_event, GDK_CONTROL_MASK | GDK_SHIFT_MASK))
+		      {
+			/* sub selections + multiple selections */
+			highlight_item = real_item ;
+			highlight_same_names = FALSE ;
+
+                        /* monkey around to get feature_copy to be the right correct data */
+                        featureCopySelectedItem(feature, &feature_copy,
+                                                highlight_item);
+
+			if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item))
+                          {
+                            replace_highlight = FALSE ;
+                            externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "multiple_select", highlight_item);
+                          }
+                        else
+                          externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "single_select", highlight_item);
 		      }
 		    else
 		      {
@@ -2224,10 +2243,11 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		      }
 
                     /* highlight object in this window.... */
-                    zmapWindowHighlightObject(window, highlight_item, replace_highlight);
+                    zmapWindowHighlightObject(window, highlight_item, replace_highlight, highlight_same_names);
 
 		    /* Pass information about the object clicked on back to the application. */
-		    zMapWindowUpdateInfoPanel(window, feature, real_item, highlight_item, replace_highlight) ;
+		    zMapWindowUpdateInfoPanel(window, feature, real_item, highlight_item,
+					      replace_highlight, highlight_same_names) ;
 
 		    zmapWindowFeatureHighlightDNA(window, feature, highlight_item);
 
