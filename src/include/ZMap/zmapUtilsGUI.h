@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Dec 21 15:58 2006 (edgrif)
+ * Last edited: Mar 14 08:34 2007 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.18 2006-12-21 16:18:46 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.19 2007-03-14 08:40:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -142,7 +142,7 @@ typedef struct
   (((EVENT)->state & (MODS)) == (MODS))
 
 #define zMapGUITestModifiersOnly(EVENT, MODS) \
-  (((EVENT)->state | (MODS)) == (MODS))
+  (((EVENT)->state | (MODS)) == ((EVENT)->state & (MODS)))
 
 
 
