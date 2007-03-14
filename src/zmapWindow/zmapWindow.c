@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  9 08:37 2007 (rds)
+ * Last edited: Mar 13 17:25 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.182 2007-03-09 08:40:43 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.183 2007-03-14 08:44:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -583,7 +583,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
        * originally highlighted feature...but only if its still visible if it ends up on the
        * reverse strand...for now we just blank it.... */
-      zMapWindowUpdateInfoPanel(window, NULL, NULL, NULL, TRUE) ;
+      zMapWindowUpdateInfoPanel(window, NULL, NULL, NULL, TRUE, FALSE) ;
 
       adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
@@ -1111,7 +1111,8 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
  *  */
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 			       FooCanvasItem *item,
-			       FooCanvasItem *highlight_item, gboolean replace_highlight_item)
+			       FooCanvasItem *highlight_item,
+			       gboolean replace_highlight_item, gboolean highlight_same_names)
 {
   ZMapWindowItemFeatureType type ;
   ZMapFeature feature = NULL;
@@ -1222,6 +1223,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
     select.highlight_item = item ;
 
   select.replace_highlight_item = replace_highlight_item ;
+
+  select.highlight_same_names = highlight_same_names ;
 
   /* We've set up the select data so now callback to the layer above with this data. */
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
@@ -3513,7 +3516,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 
 	  focus_item = (FooCanvasItem *)(feature_ptr->data) ;
 
-	  zmapWindowHighlightObject(window, focus_item, TRUE) ;
+	  zmapWindowHighlightObject(window, focus_item, TRUE, FALSE) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -3741,7 +3744,7 @@ static void unhideItemsCB(gpointer data, gpointer user_data)
 
   foo_canvas_item_show(item) ;
 
-  zmapWindowHighlightObject(window, item, FALSE) ;
+  zmapWindowHighlightObject(window, item, FALSE, TRUE) ;
 
 
   return ;

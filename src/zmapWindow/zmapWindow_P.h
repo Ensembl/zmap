@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 12 15:16 2007 (edgrif)
+ * Last edited: Mar 13 17:22 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.174 2007-03-12 16:24:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.175 2007-03-14 08:44:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -797,7 +797,8 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 			       gboolean isExon);
 
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
-			       FooCanvasItem *item, FooCanvasItem *highlight_item, gboolean replace_highlight_item) ;
+			       FooCanvasItem *item, FooCanvasItem *highlight_item,
+			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
 
 void zmapWindowDrawZoom(ZMapWindow window) ;
 
@@ -984,7 +985,8 @@ void zmapWindowFocusItemAreaDestroy(ZMapWindowFocusItemArea item_area);
 
 GList *zmapWindowItemListToFeatureList(GList *item_list);
 
-void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean replace_highlight_item) ;
+void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
+			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
 void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 

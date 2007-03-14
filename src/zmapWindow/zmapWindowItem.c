@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  5 15:02 2007 (rds)
+ * Last edited: Mar 13 17:25 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.69 2007-03-06 08:49:23 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.70 2007-03-14 08:44:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -396,9 +396,10 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
 /* Highlight a feature or list of related features (e.g. all hits for same query sequence).
  * 
  *  */
-void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean replace_highlight_item)
+void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
+			       gboolean replace_highlight_item, gboolean highlight_same_names)
 {                                               
-  zmapWindowHighlightObject(window, item, replace_highlight_item) ;
+  zmapWindowHighlightObject(window, item, replace_highlight_item, highlight_same_names) ;
 
   return ;
 }
@@ -455,7 +456,8 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
                       if((feature_item = zmapWindowFToIFindItemChild(highlight_data->window->context_to_item,
                                                                      feature_in->strand, ZMAPFRAME_NONE,
                                                                      feature_in, span->x1, span->x2)))
-                        zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight);
+                        zmapWindowHighlightObject(highlight_data->window, feature_item,
+						  replace_highlight, TRUE) ;
                     }
                   for(i = 0; i < feature_in->feature.transcript.introns->len; i++)
                     {
@@ -464,14 +466,15 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
                       if((feature_item = zmapWindowFToIFindItemChild(highlight_data->window->context_to_item,
                                                                      feature_in->strand, ZMAPFRAME_NONE,
                                                                      feature_in, span->x1, span->x2)))
-                        zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight);
+                        zmapWindowHighlightObject(highlight_data->window, feature_item,
+						  replace_highlight, TRUE);
                     }
 
                   replace_highlight = !(highlight_data->multiple_select);
                 }
               else
                 /* we need to highlight the full feature */
-                zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight);
+                zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight, TRUE);
               
               if(replace_highlight)
                 highlight_data->highlighted = 0;
@@ -500,7 +503,8 @@ void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, g
   return ;
 }
 
-void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean replace_highlight_item)
+void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
+			       gboolean replace_highlight_item, gboolean highlight_same_names)
 {                                               
   ZMapFeature feature ;
   ZMapWindowItemFeatureType item_feature_type ;
@@ -510,8 +514,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean 
   /* Retrieve the feature item info from the canvas item. */
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature) ;
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							ITEM_FEATURE_TYPE)) ;
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),	ITEM_FEATURE_TYPE)) ;
 
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
@@ -524,20 +527,25 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item, gboolean 
     {
     case ZMAPFEATURE_ALIGNMENT:
       {
-	char *set_strand, *set_frame ;
+	if (highlight_same_names)
+	  {
+	    char *set_strand, *set_frame ;
 	
-	set_strand = set_frame = "*" ;
+	    set_strand = set_frame = "*" ;
 
-	set_items = zmapWindowFToIFindSameNameItems(window->context_to_item, set_strand, set_frame, feature) ;
+	    set_items = zmapWindowFToIFindSameNameItems(window->context_to_item, set_strand, set_frame, feature) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	if (set_items)
-	  zmapWindowFToIPrintList(set_items) ;
+	    if (set_items)
+	      zmapWindowFToIPrintList(set_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	zmapWindowFocusAddItems(window->focus, set_items);
+	    zmapWindowFocusAddItems(window->focus, set_items);
 
-	zmapWindowFocusSetHotItem(window->focus, item) ;
+	    zmapWindowFocusSetHotItem(window->focus, item) ;
+	  }
+	else
+	  zmapWindowFocusAddItem(window->focus, item);
 
 	break ;
       }
@@ -1220,7 +1228,7 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
 	}
 
-      zMapWindowUpdateInfoPanel(window, modFeature, item, NULL, TRUE) ;
+      zMapWindowUpdateInfoPanel(window, modFeature, item, NULL, TRUE, TRUE) ;
     }
   return;
 }
