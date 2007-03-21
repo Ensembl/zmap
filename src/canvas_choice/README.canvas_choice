@@ -1,0 +1,123 @@
+foo-canvas
+----------
+current and not really good enough
+
+It falls over @ not doing 
+
+- MVC split *
+
+- cope with very long items transparently *
+
+- handle for us any amount of zooming/scrolling +
+
+- subclassing to  create new  drawing types...in particular  it allows
+you to easily create types that are _not_ scaled (like the gene finder
+features) as you zoom. *
+
+- freezing redrawing until all drawing/zooming/scrolling has been done +
+
+- not drawing stuff thats hidden *
+
+* very important
++ slightly less important, but still important
+
+So the alternatives....
+1) geocanvas [http://geocanvas.sourceforge.net/]
+An extension to the existing foocanvas. Handles long items.
+
+2) goocanvas [http://sourceforge.net/projects/goocanvas]
+GooCanvas is a new canvas widget for GTK+ that uses the cairo 2D library
+for drawing. It has a model/view split, and uses interfaces for canvas
+items and views, so you can easily turn any application object into
+canvas items.
+
+3) crcanvas [http://geocanvas.sourceforge.net/crcanvas/index.html]
+Also a cairo solution.
+
+
+1) geocanvas
+------------
+just an extension to the foocanvas. 
+
+Problems
+- seems to lack MVC
+- still requires patching to do assymmetric zooming
+- demo apps show possible signs of being slow...
+
+Benefits
+- simple change
+- does clipping
+
+
+2) goocanvas
+------------
+built on cairo after the foocanvas, uses MVC.
+
+The demo apps are similar to  the foocanvas ones.  A demo of MVC seems
+to do  as you'd expect.  There's no need  to use MVC, indeed  using it
+slows  things down,  but  really  only during  creation.   There is  a
+scalability demo app, which draws 100500 items on a canvas.  The times
+are as follows:
+
+                          Simple version       MVC version
+creating 100500 items     1.25                 4.66
+drawing  100500 items     5.20                 5.23
+
+problems...
+
+groups aren't positionable like the foocanvas groups..
+
+e.g. foo_canvas_item_new(parent, group_type(), "x" 105.0, "y", 0.0, NULL);
+
+The GroupModel might be the solution here as cascading properties seem
+to be the idea in this canvas.
+
+
+3) crcanvas
+-----------
+
+built on cairo, loosely following foocanvas and from the same place as
+the geocanvas.  Claims infinite scrolling,  but I haven't  tested this
+except in the demo apps which ...
+
+The demo apps are simple, but there's nothing to show scalability. The
+zooming also appears very slow and uses a _lot_ of resources, although
+this may be  down to very basic cairo usage! However  , looking at the
+other demo it appears that there's a callback for every paint of every
+item. This  means you basically need  to implement the  model layer of
+the goocanvas yourself, incorporating the cairo calls in doing so. 
+
+problems/caveats...
+
+There doesn't  seem to be  a group object  as such, but  the crinverse
+item might be their equivalent.
+
+This is a simple rectangle  path. Note: that the CrItem:x and CrItem:y
+coordinates   refer  to   the  center   of  the   rectangle   and  the
+CrRectangle:width and CrRectangle:height  properties are taken half to
+either side of the x, y position.
+
+documentation is absent for setting colours...
+
+plethora of callbacks.
+
+
+What I've done
+--------------
+
+created this file to hold info on the 3 canvases...
+
+built the cr canvas (version 0.12)
+built the goocanvas (version 0.7)
+installed code into /software/acedb
+copied tar.gz dists into /software/acedb/src/
+
+see /software/acedb/src/build_against_here.sh
+
+created a directory canvas_choice in ZMap/src and integrated this into
+the ZMap ./configure stuff (uncomitted).
+
+directory contains 3 simple gui  apps using the same gui and container
+code using callbacks to the  three interfaces.  Borrowing the ideas of
+the window  container code,  which we probably  want to keep,  the gui
+draws random columns of items and allows zooming and scrolling...

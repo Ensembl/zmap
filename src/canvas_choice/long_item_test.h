@@ -1,0 +1,47 @@
+/*  File: crcanvas_demo.h
+ *  Author: Roy Storey (rds@sanger.ac.uk)
+ *  Copyright (c) 2007: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originally written by:
+ *
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *
+ * Description: 
+ *
+ * Exported functions: See XXXXXXXXXXXXX.h
+ * HISTORY:
+ * Last edited: Mar 20 15:48 2007 (rds)
+ * Created: Fri Mar 16 09:21:47 2007 (rds)
+ * CVS info:   $Id: long_item_test.h,v 1.1 2007-03-21 12:28:32 rds Exp $
+ *-------------------------------------------------------------------
+ */
+
+#ifndef LONG_ITEM_TEST_H
+#define LONG_ITEM_TEST_H
+
+#include <utils.h>
+#include <goocanvas.h>
+
+#define LONG_ITEM_TEST_TITLE "Long Items on the GooCanvas ;)"
+#define LONG_ITEM_TEST_BORDER (5)
+
+
+
+#endif /* LONG_ITEM_TEST_H */
