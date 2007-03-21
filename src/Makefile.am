@@ -17,7 +17,7 @@ include $(srcdir)/am_doxygen.am
 
 # ZMAP_SRC_DIRS See configure.ac
 
-SUBDIRS = $(ZMAP_SRC_DIRS) include lib
+SUBDIRS = $(ZMAP_SRC_DIRS) include lib $(CANVAS_TESTING)
 
 CLEANFILES = $(pkgconfig_DATA)
 

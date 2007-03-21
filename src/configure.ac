@@ -141,6 +141,29 @@ AC_PROG_LN_S
 GTK2_MODULES="pango >= 0.1 gtk+-2.0 >= 2.4.0 glib-2.0 gthread-2.0"
 PKG_CHECK_MODULES([GTK], [${GTK2_MODULES}])
 
+CANVAS_TESTING=""
+GTK2_MODULES="gtk+-2.0 >= 2.10.0"
+PKG_CHECK_MODULES([LATESTGTK], [${GTK2_MODULES}], [
+  CANVAS_TESTING="canvas_choice"
+  AC_MSG_RESULT([Found GTK 2.10])
+], [
+  CANVAS_TESTING=""
+  AC_MSG_RESULT([GTK 2.10 not found.])
+])
+
+AC_SUBST([CANVAS_TESTING])
+
+DEMO_CANVAS_MODULES="crcanvas >= 0.12 goocanvas >= 0.7 geocanvas >= 1.0.7"
+PKG_CHECK_MODULES([DEMO_CANVAS], [${DEMO_CANVAS_MODULES}], [
+  AC_MSG_RESULT([Found Canvases])
+], [
+  if test "x$CANVAS_TESTING" != "x"; then
+    AC_MSG_ERROR([Are you sure?])
+  else
+    AC_MSG_RESULT([Canvases not found, but neither was GTK 2.10])
+  fi                               
+])
+
 dnl This has to go here for our nfs mounted mac....    
 if test "$zmap_os_type" = "darwin" && -d /Users/zmap/nfs_mount; then
   PKG_CONFIG="$PKG_CONFIG --define-variable=MOUNT_POINT=/Users/zmap/nfs_mount"
@@ -185,6 +208,9 @@ AC_SUBST(ACECONN_CFLAGS)
 AC_SUBST(ACECONN_LIBS)
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
+AC_SUBST(DEMO_CANVAS_CFLAGS)
+AC_SUBST(DEMO_CANVAS_LIBS)
+
 # keep track for rpath
 #RPATH=""
 #full_paths="${FOOCANVAS_LIBS} ${ACECONN_LIBS} ${GTK_LIBS}"
@@ -276,6 +302,7 @@ done
 AC_SUBST(ZMAP_SRC_DIRS_DOXYGEN)
 
 AC_CONFIG_FILES([Makefile
+canvas_choice/Makefile
 zmapApp/Makefile
 zmapConfig/Makefile
 zmapControl/Makefile
