@@ -58,12 +58,18 @@ case $opsys in
        * )
 
          locals=~zmap/prefix/LINUX
-         PATH="$locals/bin:$PATH"
+         software=/software/acedb
+         PATH="$locals/bin:$PATH" # comment out 4 gtk 2.10
+         #PATH="$software/bin:$locals/bin:$PATH" # uncomment 4 gtk 2.10
          export PATH
 
+         #PKG_CONFIG=$software/bin/pkg-config # uncomment 4 gtk 2.10
+
          PKG_CONFIG_PATH="$locals/lib/pkgconfig"
+         #PKG_CONFIG_PATH="$software/lib/pkgconfig:/usr/lib/pkgconfig:$locals/lib/pkgconfig" # uncomment 4 gtk 2.10
          export PKG_CONFIG_PATH
          LD_LIBRARY_PATH="$locals/lib"
+         #LD_LIBRARY_PATH="$software/lib:$locals/lib" # uncomment 4 gtk 2.10
          export LD_LIBRARY_PATH
 
          cc_args='CFLAGS=-Wall'
