@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Mar  9 11:34 2007 (edgrif)
+ * Last edited: Mar 20 11:59 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.37 2007-03-09 11:39:20 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.38 2007-03-21 12:03:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,44 +139,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_window_set_title(GTK_WINDOW(toplevel), "ZMap - Son of FMap !") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
-
-#ifdef RDS_DONT_INCLUDE_TESTING
-  if(app_context->event_model &&
-     (g_ascii_strncasecmp(app_context->event_model, "realize", 7)) == 0)
-    g_signal_connect_after(G_OBJECT(toplevel), "realize",
-                           G_CALLBACK(zmapAppRemoteInstaller), 
-                           (gpointer)app_context);
-  else if(app_context->event_model &&
-          (g_ascii_strncasecmp(app_context->event_model, "expose_event", 12)) == 0)
-    app_data->signal_id =  
-      g_signal_connect_data(G_OBJECT(toplevel), "expose_event",
-                            G_CALLBACK(exposeWorkAroundRealiseHandler), 
-                            (gpointer)app_data,
-                            (GClosureNotify)(appRealiseDataDestroy), 
-                            0);
-  else if(app_context->event_model &&
-          (g_ascii_strncasecmp(app_context->event_model, "map", 3)) == 0)
-    g_signal_connect(G_OBJECT(toplevel), "map",
-                     G_CALLBACK(zmapAppRemoteInstaller), 
-                     (gpointer)app_context);
-  else
-    g_signal_connect_after(G_OBJECT(toplevel), "realize",
-                           G_CALLBACK(zmapAppRemoteInstaller), 
-                           (gpointer)app_context);
-
-  g_signal_connect(G_OBJECT(toplevel), "realize",
-                   G_CALLBACK(appRealizeCallback), 
-                   NULL);
-  g_signal_connect(G_OBJECT(toplevel), "expose_event",
-                   G_CALLBACK(appExposeCallback), 
-                   NULL);
-  g_signal_connect(G_OBJECT(toplevel), "map",
-                   G_CALLBACK(appMapCallback), 
-                   (gpointer)app_context);
-  g_signal_connect(G_OBJECT(toplevel), "map_event",
-                   G_CALLBACK(appMapEventCallback), 
-                   NULL);
-#endif /* RDS_DONT_INCLUDE_TESTING */
 
 
   /* This ensures that the widget *really* has a X Window id when it
