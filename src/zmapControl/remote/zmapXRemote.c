@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Mar  9 13:05 2007 (rds)
+ * Last edited: Mar 27 13:15 2007 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.23 2007-03-09 14:22:25 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.24 2007-03-27 12:23:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -962,17 +962,66 @@ static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
     return 1;                   /* This is ignored by the server */
 }
 
+/* 
+
+ * If store == TRUE, store e unless stored != NULL or e ==
+ * zmapXErrorHandler
+ * If clear == TRUE, reset stored to NULL
+
+ */
+static XErrorHandler stored_xerror_handler(XErrorHandler e, 
+                                           gboolean store,
+                                           gboolean clear)
+{
+  static XErrorHandler stored = NULL;
+
+  if(e == zmapXErrorHandler)
+    store = FALSE;              /* We mustn't store this */
+
+  if(clear)
+    stored = NULL;
+
+  if(store)
+    {
+      if(stored == NULL)
+        stored = e;
+      else
+        {
+          zmapXDebug("I'm not forgetting %p, but not storing %p either!\n", stored, e);
+          if(!externalPerl)
+            zMapLogWarning("I'm not forgetting %p, but not storing %p either!\n", stored, e);
+        }
+    }
+
+  return stored;
+}
+
 static void zmapXTrapErrors(void)
 {
+  XErrorHandler current = NULL;
   windowError = False;
-  XSetErrorHandler(zmapXErrorHandler);
+
+  if((current = XSetErrorHandler(zmapXErrorHandler)))
+    {
+      stored_xerror_handler(current, TRUE, FALSE);
+    }
+
   return ;
 }
+
 static void zmapXUntrapErrors(void)
 {
-  XSetErrorHandler(NULL);
+  XErrorHandler restore = NULL;
+
+  restore = stored_xerror_handler(NULL, FALSE, FALSE);
+
+  XSetErrorHandler(restore);
+
+  stored_xerror_handler(NULL, TRUE, TRUE);
+
   if(!windowError)
     zmapXRemoteErrorStatus = ZMAPXREMOTE_INTERNAL;
+
   return ;
 }
 
