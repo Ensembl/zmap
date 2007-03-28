@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Mar  1 09:27 2007 (edgrif)
+ * Last edited: Mar 27 15:58 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.25 2007-03-01 09:27:57 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.26 2007-03-28 16:04:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,6 +83,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
+static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
 static ZMapFeatureContext copyContext(void *server_conn) ;
@@ -95,7 +96,11 @@ static gboolean destroyConnection(void *server) ;
 /* Internal */
 static gboolean segmentsFindCurrent(gpointer data, gpointer user_data);
 static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_context);
+
+#ifdef RDS_DONT_INCLUDE
 static gboolean searchAssembly(DasServer server, ZMapDAS1DSN dsn);
+#endif
+
 static char *makeCurrentSegmentString(DasServer das, ZMapFeatureContext fc);
 
 static void initialiseXMLParser(DasServer server);
@@ -114,7 +119,9 @@ static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *da
 
 
 static void dsnFilter        (ZMapDAS1DSN dsn,                gpointer user_data);
+#ifdef RDS_DONT_INCLUDE
 static void dnaFilter        (ZMapDAS1DNA dna,                gpointer user_data);
+#endif
 static void entryFilter      (ZMapDAS1EntryPoint entry_point, gpointer user_data);
 static void typesFilter      (ZMapDAS1Type type,              gpointer user_data);
 static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data);
@@ -128,10 +135,11 @@ static gboolean getRequestedDSN(DasServer das, ZMapDAS1DSN *dsn_out);
 static char *dsnRequestURL(DasServer server);
 static char *dsnFullURL(DasServer server, 
                         char *query);
+#ifdef RDS_DONT_INCLUDE
 static gboolean serverHasCapabilityLevel(DasServer server, 
                                   char *capability, 
                                   double minimum);
-
+#endif
 static gint compareExonCoords(gconstpointer a, gconstpointer b, gpointer feature_data);
 static void fixFeatureCache(GQuark key_id,
                             gpointer data,
@@ -161,6 +169,7 @@ void dasGetServerFuncs(ZMapServerFuncs das_funcs)
   das_funcs->create       = createConnection ;
   das_funcs->open         = openConnection ;
   das_funcs->get_styles = getStyles ;
+  das_funcs->have_modes = haveModes ;
   das_funcs->get_feature_sets = getFeatureSets ;
   das_funcs->set_context  = setContext ;
   das_funcs->copy_context = copyContext ;
@@ -388,6 +397,23 @@ static ZMapServerResponseType getStyles(void *server_in, GData **types)
 
   return result;
 }
+
+
+/* DAS styles do not include a mode (e.g. transcript etc) so this function
+ * always returns FALSE.
+ */
+static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+  DasServer server = (DasServer)server_in ;
+
+  *have_mode = FALSE ;
+
+  return result ;
+}
+
+
+
 
 
 /* Roy, this function is supposed to get a list of the _names_ of all the feature
@@ -862,6 +888,8 @@ static gboolean requestAndParseOverHTTP(DasServer server,
 }
 
 
+#ifdef RDS_DONT_INCLUDE
+
 /* We might get asked for a sequence which is quite a valid reference
  * sequence (clone/contig) that isn't listed in the entry_points query.
  * In order to get round this we must request all of the features of 
@@ -899,6 +927,9 @@ static gboolean searchAssembly(DasServer server, ZMapDAS1DSN dsn)
 
   return res;
 }
+
+#endif
+
 
 static void getFeatures4Aligns(GQuark key,
                                gpointer data,
@@ -1072,6 +1103,7 @@ static char *dsnFullURL(DasServer server, char *query)
   return url;
 }
 
+#ifdef RDS_DONT_INCLUDE
 static gboolean serverHasCapabilityLevel(DasServer server, char *capability, double minimum)
 {
   GList *list = NULL;
@@ -1091,6 +1123,7 @@ static gboolean serverHasCapabilityLevel(DasServer server, char *capability, dou
     }
   return hasLevel;
 }
+#endif
 
 static void initialiseXMLParser(DasServer server)
 {  
@@ -1170,12 +1203,16 @@ static void dsnFilter        (ZMapDAS1DSN dsn,                gpointer user_data
 
   return ;
 }
+
+#ifdef RDS_DONT_INCLUDE
 static void dnaFilter        (ZMapDAS1DNA dna,                gpointer user_data)
 {
   DasServer server = (DasServer)user_data;
   printf("dnaFilter %p\n", (void *)server);
   return ;
 }
+#endif
+
 static void entryFilter      (ZMapDAS1EntryPoint entry_point, gpointer user_data)
 {
   DasServer server = (DasServer)user_data;
@@ -1232,7 +1269,7 @@ static void typesFilter      (ZMapDAS1Type type,              gpointer user_data
   if (mode != ZMAPSTYLE_MODE_NONE)
     zMapStyleSetMode(style, mode) ;
 
-  zMapStyleSetColours(style, outline, fg, bg) ;
+  zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, bg, fg, outline) ;
 
   zMapStyleSetWidth(style, width) ;
 
@@ -1343,7 +1380,7 @@ static void applyGlyphToEachType(GQuark style_id, gpointer data, gpointer user_d
   if(glyph->bg)
     bg = (char *)g_quark_to_string(glyph->bg);
 
-  zMapStyleSetColours(style, outline, fg, bg);
+  zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, bg, fg, outline);
 
   return ;
 }

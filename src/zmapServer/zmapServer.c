@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Feb 19 13:26 2007 (edgrif)
+ * Last edited: Mar 27 16:01 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.28 2007-03-01 09:28:33 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.29 2007-03-28 16:05:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,6 +87,8 @@ gboolean zMapServerGlobalInit(zMapURL url, void **server_global_data_out)
   /* All functions MUST be specified. */
   zMapAssert(serverfuncs->global_init
 	     && serverfuncs->create && serverfuncs->open
+	     && serverfuncs->get_styles && serverfuncs->have_modes
+	     && serverfuncs->get_feature_sets
 	     && serverfuncs->set_context
 	     && serverfuncs->get_features && serverfuncs->get_sequence
 	     && serverfuncs->errmsg
@@ -180,6 +182,22 @@ ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GData **styles_out
 
   return result ;
 }
+
+
+ZMapServerResponseType zMapServerStylesHaveMode(ZMapServer server, gboolean *have_mode)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+  result = server->last_response = (server->funcs->have_modes)(server->server_conn, have_mode) ;
+
+  if (result != ZMAP_SERVERRESPONSE_OK)
+    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                    server->url->host, "%s",
+						    (server->funcs->errmsg)(server->server_conn)) ;
+
+  return result ;
+}
+
 
 
 ZMapServerResponseType zMapServerGetFeatureSets(ZMapServer server, GList **feature_sets_out)

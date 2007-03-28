@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb 19 14:05 2007 (edgrif)
+ * Last edited: Mar 27 15:58 2007 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.26 2007-03-01 09:23:34 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.27 2007-03-28 16:04:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,6 +73,7 @@ static gboolean createConnection(void **server_out,
 
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
+static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
 static ZMapFeatureContext copyContext(void *server_conn) ;
@@ -103,6 +104,7 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs)
   file_funcs->create = createConnection ;
   file_funcs->open = openConnection ;
   file_funcs->get_styles = getStyles ;
+  file_funcs->have_modes = haveModes ;
   file_funcs->get_feature_sets = getFeatureSets ;
   file_funcs->set_context = setContext ;
   file_funcs->copy_context = copyContext ;
@@ -225,6 +227,20 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 		 "%s", server->last_err_msg) ;
 
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+
+  return result ;
+}
+
+
+/* GFF File styles do not include a mode (e.g. transcript etc) so this function
+ * always returns FALSE.
+ */
+static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+  FileServer server = (FileServer)server_in ;
+
+  *have_mode = FALSE ;
 
   return result ;
 }
