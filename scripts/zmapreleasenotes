@@ -54,7 +54,7 @@ zmap_CVSROOT=$ZBCVSRoot
 zmap_src_dir='ZMap/src'
 zmap_doc_dir='ZMap/doc'
 release_notes_dir="$zmap_doc_dir/Release_notes"
-webpagefile="$zmap_src_dir/include/ZMap/zmapWebPages.h"
+webpagefile="include/ZMap/zmapWebPages.h"
 
 
 acedb_release_dir="$ZBAcedbHOME/RELEASE."$ZBAcedbVersion'.BUILD'
@@ -258,7 +258,8 @@ echo "<h3>ZMap Changes/Fixes</h3>" >> $release_file
 echo  >> $release_file
 
 change_file='ZMAP.CHANGEFILE'
-cvschanges -o$change_file -z $cvs_date ./ZMap
+cvschanges -o$change_file -z $cvs_date ./ZMap || ZBmsgAndExit "cvschanges for zmap did not complete"
+cat $change_file > /dev/null || ZBmsgAndExit "$change_file does not exist"
 cat $change_file | grep -v $year | perl -lne 's/\*/<p>/; print' >> $release_file
 rm -f $change_file || ZBmsgAndExit "Cannot remove change file: $change_file"
 # don't remove local copy of zmap cvs yet, needed below.
@@ -274,7 +275,8 @@ echo "<h3>Acedb Changes/Fixes</h3>" >> $release_file
 echo  >> $release_file
 
 change_file='ACEDB.CHANGEFILE'
-cvschanges -o$change_file -a $cvs_date $acedb_release_dir
+cvschanges -o$change_file -a $cvs_date $acedb_release_dir || ZBmsgAndExit "cvschanges for acedb did not complete"
+cat $change_file > /dev/null || ZBmsgAndExit "$change_file does not exist"
 cat $change_file | grep -v $year | perl -lne 's/\*/<p>/; print' >> $release_file
 rm -f $change_file || ZBmsgAndExit "Cannot remove change file: $change_file"
 #rm -rf ./acedb || ZBmsgAndExit "Cannot remove local copy of acedb"
@@ -313,6 +315,10 @@ if [ -z "$no_cvs" ] ; then
   # so the code is tied to the release notes.
   # We want to edit this line:    #define ZMAPWEB_RELEASE_NOTES "release_notes.2007_02_28.shtml"
   #
+
+  ZBGotoDir $builddir
+  ZBGotoDir $zmap_src_dir
+
   cvs edit $webpagefile || ZBmsgAndExit "Cannot cvs edit $webpagefile"
   perl -i -lne 's/(\#define\sZMAPWEB_RELEASE_NOTES\s)(.+)/$1"'$release_file'"/; print' $webpagefile || ZBmsgAndExit "Cannot perl edit $webpagefile"
   cvs commit -m "update release notes file to $release_file" $webpagefile || ZBmsgAndExit "Cannot cvs commit $webpagefile"
