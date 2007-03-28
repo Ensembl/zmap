@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Mar 13 12:25 2007 (edgrif)
+ * Last edited: Mar 26 16:30 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.62 2007-03-13 16:07:58 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.63 2007-03-28 16:38:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -142,7 +142,11 @@ static void destroyBlock(gpointer data) ;
 static void destroyAlign(gpointer data) ;
 static void destroyContext(gpointer data) ;
 static void withdrawFeatureAny(GQuark key_id, gpointer data, gpointer user_data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void destroyAllFeatureAny(GQuark key_id, gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* datalist debug stuff */
 static void getDataListLength(GQuark id, gpointer data, gpointer user_data);
