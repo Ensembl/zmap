@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar  1 09:48 2007 (edgrif)
+ * Last edited: Mar 28 09:55 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.84 2007-03-01 09:49:31 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.85 2007-03-28 16:33:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,6 +85,22 @@ typedef struct
 } MethodFetchStruct, *MethodFetch ;
 
 
+typedef struct
+{
+  char *draw ;
+  char *fill ;
+  char *border ;
+} StyleColourStruct, *StyleColour ;
+
+typedef struct
+{
+  StyleColourStruct normal ;
+  StyleColourStruct selected ;
+} StyleFeatureColoursStruct, *StyleFeatureColours ;
+
+
+
+
 
 typedef ZMapFeatureTypeStyle (*ParseMethodFunc)(char *method_str_in,
 						char **end_pos, ZMapColGroupData *col_group_data) ;
@@ -99,6 +115,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
+static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
 ZMapFeatureContext copyContext(void *server) ;
@@ -111,7 +128,7 @@ static gboolean destroyConnection(void *server) ;
 
 /* general internal routines. */
 static char *getMethodString(GList *styles_or_style_names,
-			     gboolean style_name_list, gboolean find_string) ;
+			     gboolean style_name_list, gboolean find_string, gboolean old_methods) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
 static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
@@ -131,8 +148,6 @@ static ZMapServerResponseType findMethods(AcedbServer server) ;
 static ZMapServerResponseType getStyleNames(AcedbServer server, GList **style_names_out) ;
 static ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 					char **end_pos, ZMapColGroupData *col_group_data) ;
-static ZMapFeatureTypeStyle parseStyle(char *method_str_in,
-				       char **end_pos, ZMapColGroupData *col_group_data) ;
 gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data) ;
 int getFoundObj(char *text) ;
 
@@ -153,6 +168,10 @@ static void stylePrintCB(gpointer data, gpointer user_data) ;
 static void readConfigFile(AcedbServer server) ;
 
 
+static ZMapFeatureTypeStyle parseStyle(char *method_str_in,
+				       char **end_pos, ZMapColGroupData *col_group_data) ;
+static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_pos) ;
+
 
 
 /* 
@@ -170,9 +189,14 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->create = createConnection ;
   acedb_funcs->open = openConnection ;
   acedb_funcs->get_styles = getStyles ;
+  acedb_funcs->have_modes = haveModes ;
   acedb_funcs->get_feature_sets = getFeatureSets ;
   acedb_funcs->set_context = setContext ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   acedb_funcs->copy_context = copyContext ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   acedb_funcs->get_features = getFeatures ;
   acedb_funcs->get_sequence = getSequence ;
   acedb_funcs->errmsg = lastErrorMsg ;
@@ -290,6 +314,29 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
   return result ;
 }
 
+
+/* acedb Method objects do not usually have any mode information (e.g. transcript etc),
+ * Zmap_Style objects do.
+ * 
+ * We can't test for this until the config file is read which happens when we make
+ * the connection. */
+static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  AcedbServer server = (AcedbServer)server_in ;
+
+  if (server->connection)
+    {
+      if (server->acedb_styles)
+	*have_mode = TRUE ;
+      else
+	*have_mode = FALSE ;
+
+      result = ZMAP_SERVERRESPONSE_OK ;
+    }
+
+  return result ;
+}
 
 
 static ZMapServerResponseType getFeatureSets(void *server_in, GList **feature_sets)
@@ -523,7 +570,7 @@ static gboolean destroyConnection(void *server_in)
  * We may be passed either a list of style names in GQuark form (style_name_list == TRUE)
  * or a list of the actual styles. */
 static char *getMethodString(GList *styles_or_style_names,
-			     gboolean style_name_list, gboolean find_string)
+			     gboolean style_name_list, gboolean find_string, gboolean old_methods)
 {
   char *type_names = NULL ;
   ZMapTypesStringStruct types_data ;
@@ -535,7 +582,12 @@ static char *getMethodString(GList *styles_or_style_names,
   str = g_string_new("") ;
 
   if (find_string)
-    str = g_string_append(str, "query find method ") ;
+    {
+      if (old_methods)
+	str = g_string_append(str, "query find method ") ;
+      else
+	str = g_string_append(str, "query find zmap_style ") ;
+    }
   else
     str = g_string_append(str, "+method ") ;
 
@@ -1593,13 +1645,13 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   ZMapFeatureTypeStyle style = NULL ;
   char *method_str = method_str_in ;
   char *next_line = method_str ;
-  char *name = NULL, *remark = NULL, *parent = NULL,
-    *colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL,
-    *gff_source = NULL, *gff_feature = NULL,
-    *column_group = NULL, *orig_style = NULL,
-    *overlap = NULL ;
-  double width = -999.0 ;				    /* this is going to cause problems.... */
+  char *name = NULL, *remark = NULL, *parent = NULL ;
+  char *colour = NULL, *cds_colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL ;
+  char *gff_source = NULL, *gff_feature = NULL ;
+  char *column_group = NULL, *orig_style = NULL ;
+  char *overlap = NULL ;
 
+  double width = -999.0 ;				    /* this is going to cause problems.... */
 
   gboolean strand_specific = FALSE, show_up_strand = FALSE,
     frame_specific = FALSE, show_only_as_3_frame = FALSE ;
@@ -1687,10 +1739,10 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
 	  /* Is colour one of the standard acedb colours ? It's really an acedb bug if it
 	   * isn't.... */
-	  if (!(foreground = getAcedbColourSpec(tmp_colour)))
-	    foreground = tmp_colour ;
+	  if (!(cds_colour = getAcedbColourSpec(tmp_colour)))
+	    cds_colour = tmp_colour ;
 	  
-	  foreground = g_strdup(foreground) ;
+	  cds_colour = g_strdup(cds_colour) ;
 	}
       /* The link between bump mode and what actually happens to the column is not straight
        * forward in acedb. */
@@ -1906,31 +1958,6 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   /* Set some final method stuff and create the ZMap style. */
   if (status)
     {
-
-      /* In acedb methods the colour is interpreted differently according to the type of the
-       * feature which we have to intuit here from the GFF type. acedb also has colour names
-       * that don't exist in X Windows. */
-      if (colour)
-	{
-	  /* THIS IS REALLY THE PLACE THAT WE SHOULD SET UP THE ACEDB SPECIFIC DISPLAY STUFF... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* this doesn't work because it messes up the rev. video.... */
-	  if (gff_type && (g_ascii_strcasecmp(gff_type, "\"similarity\"") == 0
-			   || g_ascii_strcasecmp(gff_type, "\"repeat\"")
-			   || g_ascii_strcasecmp(gff_type, "\"experimental\"")))
-	    background = colour ;
-	  else
-	    outline = colour ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-          if (outline_flag)
-            outline = colour;
-          else
-            background = colour ;
-	}
-
-
       /* NOTE that style is created with the method name, NOT the column_group, column
        * names are independent of method names, they may or may not be the same.
        * Also, there is no way of deriving the mode from the acedb method object
@@ -1940,8 +1967,49 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       if (mode != ZMAPSTYLE_MODE_NONE)
 	zMapStyleSetMode(style, mode) ;
 
-      if (colour)
-	zMapStyleSetColours(style, outline, foreground, background) ;
+
+      /* In acedb methods the colour is interpreted differently according to the type of the
+       * feature which we have to intuit here from the GFF type. acedb also has colour names
+       * that don't exist in X Windows. */
+      if (colour || cds_colour)
+	{
+	  /* When it comes to colours acedb has some built in rules which we have to simulate,
+	   * e.g. "Colour" when applied to transcripts means "outline", not "fill".
+	   *  */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* THIS IS REALLY THE PLACE THAT WE SHOULD SET UP THE ACEDB SPECIFIC DISPLAY STUFF... */
+
+	  /* this doesn't work because it messes up the rev. video.... */
+	  if (gff_type && (g_ascii_strcasecmp(gff_type, "\"similarity\"") == 0
+			   || g_ascii_strcasecmp(gff_type, "\"repeat\"")
+			   || g_ascii_strcasecmp(gff_type, "\"experimental\"")))
+	    background = colour ;
+	  else
+	    outline = colour ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  /* Set default acedb colours. */
+	  background = colour ;
+	  outline = "black" ;
+
+	  /* If there's a cds then it must be a transcript which are shown in outline. */
+	  if (cds_colour
+	      || g_ascii_strcasecmp(name, "coding_transcript") == 0)
+	    {
+	      outline = colour ;
+	      background = NULL ;
+	    }
+
+
+	  if (colour)
+	    zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				background, foreground, outline) ;
+
+	  if (cds_colour)
+	    zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				NULL, NULL, cds_colour) ;
+	}
+
 
       if (width != -999.0)
 	{
@@ -2011,62 +2079,93 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 }
 
 
-/* The method string should be of the form:
+/* The style string should be of the form:
  *
- * Method : "wublastx_briggsae"
- * Remark	 "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
- * Colour	 LIGHTGREEN
- * Frame_sensitive	
- * Show_up_strand	
+ * ZMap_style : "Allele"
+ * Remark	 "Alleles in WormBase represent small sequence mutations...etc"
+ * Colours	 Normal Fill "ORANGE"
+ * Width	 1.100000
+ * Strand_sensitive	
+ * GFF	 Source "Allele"
+ * GFF	 Feature "Allele"
  * <white space only line>
- * more methods....
+ * more styles....
  * 
- * This parses the method using it to create a style struct which it returns.
+ * This parses the style using it to create a style struct which it returns.
  * The function also returns a pointer to the blank line that ends the current
- * method. 
+ * style. 
  *
- * If the method name is not in the list of methods in requested_types
- * then NULL is returned. NOTE that this is not just dependent on comparing method
+ * If the style name is not in the list of styles in requested_types
+ * then NULL is returned. NOTE that this is not just dependent on comparing style
  * name to the requested list we have to look in column group as well.
  * 
  * Acedb had the concept of empty objects, these are objects whose name/class can
  * be looked up but which do not have an instance in the database. The code will NOT
  * produce styles for these objects.
  * 
- * Acedb methods can also contain a "No_display" tag which says "do not display this
+ * Acedb styles can also contain a "No_display" tag which says "do not display this
  * object at all", if we find this tag we honour it. NOTE however that this can lead
  * to error messages during zmap display if the feature_set erroneously tries to
- * display features with this method.
+ * display features with this style.
  * 
  */
-ZMapFeatureTypeStyle parseStyle(char *method_str_in,
+ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 				char **end_pos, ZMapColGroupData *col_group_data_out)
 {
   ZMapFeatureTypeStyle style = NULL ;
-  char *method_str = method_str_in ;
-  char *next_line = method_str ;
-  char *name = NULL, *remark = NULL, *parent = NULL,
-    *colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL,
-    *gff_source = NULL, *gff_feature = NULL,
-    *column_group = NULL, *orig_style = NULL,
-    *overlap = NULL ;
-  double width = ACEDB_DEFAULT_WIDTH ;
-  gboolean strand_specific = FALSE, show_up_strand = FALSE,
-    frame_specific = FALSE, show_only_as_3_frame = FALSE ;
-  ZMapStyleMode mode = ZMAPSTYLE_MODE_NONE ;
-  gboolean hide_always = FALSE, init_hidden = FALSE ;
-  double min_mag = 0.0, max_mag = 0.0 ;
-  double min_score = 0.0, max_score = 0.0 ;
-  gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE, gaps = FALSE, join_aligns = FALSE ;
+  gboolean status = TRUE ;
   int obj_lines ;
+  char *style_str = style_str_in ;
+  char *next_line = style_str ;
+
+  char *name = NULL, *remark = NULL, *parent = NULL,
+    *colour = NULL, *foreground = NULL,
+    *gff_source = NULL, *gff_feature = NULL,
+    *column_group = NULL, *orig_style = NULL ;
+
+  gboolean width_set = FALSE ;
+  double width = 0.0 ;
+
+
+  gboolean strand_set = FALSE, strand_specific = FALSE, show_up_strand = FALSE,
+    frame_specific = FALSE, show_only_as_3_frame = FALSE ;
+
+  ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID ;
+
+  ZMapStyleGlyphMode glyph_mode = ZMAPSTYLE_GLYPH_INVALID ;
+
+  gboolean hide_always_set = FALSE, hide_always = FALSE,
+    hidden_set = FALSE, hidden = FALSE,
+    show_when_empty_set = FALSE, show_when_empty = FALSE ;
+
+  double min_mag = 0.0, max_mag = 0.0 ;
+
+  gboolean directional_end_set = FALSE, directional_end = FALSE ;
+
+  gboolean internal = FALSE, external = FALSE ;
   int within_align_error = 0, between_align_error = 0 ;
 
+  gboolean bump_set = FALSE ;
+  char *overlap = NULL ;
 
-  /* NEEDS COMPLETELY REDOING TO PARSE STYLES INSTEAD OF METHODS..... */
+  gboolean some_colours = FALSE ;
+  StyleFeatureColoursStruct style_colours = {{NULL}, {NULL}} ;
+  gboolean some_frame0_colours = FALSE, some_frame1_colours = FALSE, some_frame2_colours = FALSE ;
+  StyleFeatureColoursStruct frame0_style_colours = {{NULL}, {NULL}},
+    frame1_style_colours = {{NULL}, {NULL}}, frame2_style_colours = {{NULL}, {NULL}} ;
+  gboolean some_CDS_colours = FALSE ;
+  StyleFeatureColoursStruct CDS_style_colours = {{NULL}, {NULL}} ;
+
+  double min_score = 0.0, max_score = 0.0 ;
+  gboolean score_by_width, score_is_percent ;
+
+  gboolean histogram = FALSE ;
+  double histogram_baseline = 0.0 ;
 
 
-  if (!g_str_has_prefix(method_str, "Method : "))
+  if (!g_str_has_prefix(style_str, "ZMap_style : "))
     return style ;
+
 
   obj_lines = 0 ;				    /* Used to detect empty objects. */
   do
@@ -2077,17 +2176,17 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
 	break ;
 
-      /* We don't formally test this but Method _MUST_ be the first line of the acedb output
+      /* We don't formally test this but Style _MUST_ be the first line of the acedb output
        * representing an object. */
-      if (g_ascii_strcasecmp(tag, "Method") == 0)
+      if (g_ascii_strcasecmp(tag, "ZMap_style") == 0)
 	{
-	  /* Line format:    Method : "possibly long method name"  */
+	  /* Line format:    ZMap_style : "possibly long style name"  */
 
 	  name = strtok_r(NULL, "\"", &line_pos) ;
 	  name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("Method:  %s\n", name) ;		    /* debug... */
+	  printf("ZMap_style:  %s\n", name) ;		    /* debug... */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	}
 
@@ -2103,63 +2202,191 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 	  parent = strtok_r(NULL, "\"", &line_pos) ;
 	  parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 	}
-      else if (g_ascii_strcasecmp(tag, "Colour") == 0)
-	{
-	  char *tmp_colour ;
-
-	  tmp_colour = strtok_r(NULL, " ", &line_pos) ;
-
-	  /* Is colour one of the standard acedb colours ? It's really an acedb bug if it
-	   * isn't.... */
-	  if (!(colour = getAcedbColourSpec(tmp_colour)))
-	    colour = tmp_colour ;
-	  
-	  colour = g_strdup(colour) ;
-	}
-      else if (g_ascii_strcasecmp(tag, "ZMap_mode_text") == 0)
-	{
-	  mode = ZMAPSTYLE_MODE_TEXT ;
-	}
-      else if (g_ascii_strcasecmp(tag, "ZMap_mode_basic") == 0)
+      else if (g_ascii_strcasecmp(tag, "Basic") == 0)
 	{
 	  mode = ZMAPSTYLE_MODE_BASIC ;
 	}
-      else if (g_ascii_strcasecmp(tag, "Outline") == 0)
+      else if (g_ascii_strcasecmp(tag, "Transcript") == 0)
 	{
-          outline_flag = TRUE;
+	  char *tmp_next_tag ;
+
+	  mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
+
+	  if ((tmp_next_tag = strtok_r(NULL, " ", &line_pos)))
+	    {
+	      if (strcmp(tmp_next_tag, "CDS_colour") == 0)
+		{
+		  gboolean colour_parse ;
+		  
+		  if ((colour_parse = getStyleColour(&CDS_style_colours, &line_pos)))
+		    some_CDS_colours = TRUE ;
+		  else
+		    zMapLogWarning("Style \"%s\": Bad CDS colour spec: %s", name, next_line) ;
+		}
+	      /* OTHER THINGS WILL NEED TO BE PARSED HERE AS WE EXPAND THIS.... */
+	    }
 	}
-      else if (g_ascii_strcasecmp(tag, "CDS_colour") == 0)
+      else if (g_ascii_strcasecmp(tag, "Alignment") == 0)
 	{
-	  char *tmp_colour ;
+	  char *align_type ;
+	  char *value ;
 
-	  tmp_colour = strtok_r(NULL, " ", &line_pos) ;
+	  mode = ZMAPSTYLE_MODE_ALIGNMENT ;
 
-	  /* Is colour one of the standard acedb colours ? It's really an acedb bug if it
-	   * isn't.... */
-	  if (!(foreground = getAcedbColourSpec(tmp_colour)))
-	    foreground = tmp_colour ;
-	  
-	  foreground = g_strdup(foreground) ;
+	  if ((align_type = strtok_r(NULL, " ", &line_pos)))
+	    {
+	      if (g_ascii_strcasecmp(align_type, "Internal") == 0)
+		internal = TRUE ;
+	      else if (g_ascii_strcasecmp(align_type, "External") == 0)
+		external = TRUE ;
+	      else
+		zMapLogWarning("Style \"%s\": Bad tag \"%s\" for \"Alignment\" specified in style: %s",
+			       name, align_type, name) ;
+
+	      if (internal || external)
+		{
+		  int *target ;
+
+		  if (internal)
+		    target = &within_align_error ;
+		  else
+		    target = &between_align_error ;
+
+		  value = strtok_r(NULL, " ", &line_pos) ;
+
+		  /* If no value is set then the error margin is set to 0 */
+		  if (!value)
+		    *target = 0 ;
+		  else if (!(status = zMapStr2Int(value, target)))
+		    {
+		      zMapLogWarning("Style \"%s\": Bad error factor for \"Alignment   %s\" specified in style: %s",
+				     name, (internal ? "Internal" : "External"), name) ;
+		      break ;
+		    }
+		}
+	    }
 	}
-      /* The link between bump mode and what actually happens to the column is not straight
-       * forward in acedb. */
-      else if (g_ascii_strcasecmp(tag, "Overlap") == 0)
+      else if (g_ascii_strcasecmp(tag, "Plain_text") == 0)
+	{
+	  mode = ZMAPSTYLE_MODE_TEXT ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Graph") == 0)
+	{
+	  char *tmp_next_tag ;
+
+	  mode = ZMAPSTYLE_MODE_GRAPH ;
+
+	  tmp_next_tag = strtok_r(NULL, " ", &line_pos) ;
+
+	  if (g_ascii_strcasecmp(tmp_next_tag, "Histogram") == 0)
+	    {
+	      histogram = TRUE ;
+	    }
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Baseline") == 0)
+	    {
+	      char *value ;
+
+	      value = strtok_r(NULL, " ", &line_pos) ;
+
+	      if (!(status = zMapStr2Double(value, &histogram_baseline)))
+		{
+		  zMapLogWarning("Style \"%s\": No value for \"Baseline\".", name) ;
+		  break ;
+		}
+	    }
+	}
+      else if (g_ascii_strcasecmp(tag, "Glyph") == 0)
+	{
+	  char *tmp_next_tag ;
+
+	  mode = ZMAPSTYLE_MODE_GLYPH ;
+
+	  tmp_next_tag = strtok_r(NULL, " ", &line_pos) ;
+
+	  if (tmp_next_tag && g_ascii_strcasecmp(tmp_next_tag, "Splice") == 0)
+	    {
+	      glyph_mode = ZMAPSTYLE_GLYPH_SPLICE ;
+	    }
+	}
+      else if (g_ascii_strcasecmp(tag, "Column_group") == 0)
+	{
+	  /* Format for this tag:   Column_group "eds_column" "wublastx_fly" */
+	  column_group = g_ascii_strdown(strtok_r(NULL, ": \"", &line_pos), -1) ; /* Skip ': "' */
+	  orig_style = g_ascii_strdown(strtok_r(NULL, ": \"", &line_pos), -1) ; /* Skip ': "' */
+
+	}
+      else if (g_ascii_strcasecmp(tag, "Colours") == 0)
+	{
+	  gboolean colour_parse ;
+
+	  if ((colour_parse = getStyleColour(&style_colours, &line_pos)))
+	    some_colours = TRUE ;
+	  else
+	    zMapLogWarning("Style \"%s\": Bad colour spec: %s", name, next_line) ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Frame_0") == 0
+	       || g_ascii_strcasecmp(tag, "Frame_1") == 0
+	       || g_ascii_strcasecmp(tag, "Frame_2") == 0)
+	{
+	  StyleFeatureColours colours = NULL ;
+	  gboolean *set = NULL ;
+
+	  if (g_ascii_strcasecmp(tag, "Frame_0") == 0)
+	    {
+	      colours = &frame0_style_colours ;
+	      set = &some_frame0_colours ;
+	    }
+	  else if (g_ascii_strcasecmp(tag, "Frame_1") == 0)
+	    {
+	      colours = &frame1_style_colours ;
+	      set = &some_frame1_colours ;
+	    }
+	  else if (g_ascii_strcasecmp(tag, "Frame_2") == 0)
+	    {
+	      colours = &frame2_style_colours ;
+	      set = &some_frame2_colours ;
+	    }
+
+	  if (!colours)
+	    {
+	      zMapLogWarning("Style \"%s\": Bad Frame name: %s", name, next_line) ;
+	    }
+	  else
+	    {
+	      gboolean colour_parse ;
+	      
+	      if ((colour_parse = getStyleColour(colours, &line_pos)))
+		*set = TRUE ;
+	      else
+		zMapLogWarning("Style \"%s\": Bad colour spec: %s", name, next_line) ;
+	    }
+	}
+      /* Bumping types */
+      else if (g_ascii_strcasecmp(tag, "Unbumped") == 0)
 	{
 	  overlap = g_strdup("complete") ;
+	  bump_set = TRUE ;
 	}
-      else if (g_ascii_strcasecmp(tag, "Bumpable") == 0
-	       || g_ascii_strcasecmp(tag, "Cluster") == 0)
+      else if (g_ascii_strcasecmp(tag, "Cluster") == 0)
 	{
 	  overlap = g_strdup("smart") ;
+	  bump_set = TRUE ;
 	}
+      else if (g_ascii_strcasecmp(tag, "Compact_Cluster") == 0)
+	{
+	  overlap = g_strdup("interleave") ;
+	  bump_set = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(tag, "GFF") == 0)
+	{
+	  char *gff_type ;
 
-      else if (g_ascii_strcasecmp(tag, "GFF_source") == 0)
-	{
-	  gff_source = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
-	}
-      else if (g_ascii_strcasecmp(tag, "GFF_feature") == 0)
-	{
-	  gff_feature = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
+	  gff_type = strtok_r(NULL, " ", &line_pos) ;
+
+	  if (g_ascii_strcasecmp(tag, "Source") == 0)
+	    gff_source = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
+	  else if (g_ascii_strcasecmp(tag, "Feature") == 0)
+	    gff_feature = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
 	}
       else if (g_ascii_strcasecmp(tag, "Width") == 0)
 	{
@@ -2167,72 +2394,55 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (!(status = zMapStr2Double(value, &width)))
+	  if ((status = zMapStr2Double(value, &width)))
 	    {
-	      zMapLogWarning("No value for \"Width\" specified in method: %s", name) ;
+	      width_set = TRUE ;
+	    }
+	  else
+	    {
+	      zMapLogWarning("Style \"%s\": No value for \"Width\".", name) ;
 	      break ;
 	    }
 	}
       else if (g_ascii_strcasecmp(tag, "Frame_sensitive") == 0)
 	{
+	  strand_set = TRUE ;
 	  frame_specific = TRUE ;
 	  strand_specific = TRUE ;
 	}
-      else if (g_ascii_strcasecmp(tag, "show_only_as_3_frame") == 0)
+      else if (g_ascii_strcasecmp(tag, "Show_only_as_3_frame") == 0)
 	{
+	  strand_set = TRUE ;
 	  show_only_as_3_frame = TRUE ;
 	}
       else if (g_ascii_strcasecmp(tag, "Strand_sensitive") == 0)
-	strand_specific = TRUE ;
+	{
+	  strand_set = TRUE ;
+	  strand_specific = TRUE ;
+	}
       else if (g_ascii_strcasecmp(tag, "Show_up_strand") == 0)
 	{
 	  show_up_strand = TRUE ;
 	  strand_specific = TRUE ;
 	}
-      else if (g_ascii_strcasecmp(tag, "No_display") == 0)
+      else if (g_ascii_strcasecmp(tag, "Always") == 0)
 	{
 	  /* Objects that have the No_display tag set should not be shown at all. */
-	  hide_always = TRUE ;
+	  hide_always_set = hide_always = TRUE ;
 
 	  break ;
 	}
-      else if (g_ascii_strcasecmp(tag, "init_hidden") == 0)
+      else if (g_ascii_strcasecmp(tag, "Initially") == 0)
 	{
-	  init_hidden = TRUE ;
+	  hidden_set = hidden = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Show_when_empty") == 0)
+	{
+	  show_when_empty_set = show_when_empty = TRUE ;
 	}
       else if (g_ascii_strcasecmp(tag, "Directional_ends") == 0)
 	{
-	  directional_end = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(tag, "Gapped") == 0)
-	{
-	  char *value ;
-
-	  gaps = TRUE ;
-
-	  value = strtok_r(NULL, " ", &line_pos) ;
-
-	  if (!(value && (status = zMapStr2Int(value, &within_align_error))))
-	    {
-	      zMapLogWarning("Bad value for \"Gapped\" align error specified in method: %s", name) ;
-	      
-	      break ;
-	    }
-	}
-      else if (g_ascii_strcasecmp(tag, "Join_aligns") == 0)
-	{
-	  char *value ;
-
-	  join_aligns = TRUE ;
-
-	  value = strtok_r(NULL, " ", &line_pos) ;
-
-	  if (!(value && (status = zMapStr2Int(value, &between_align_error))))
-	    {
-	      zMapLogWarning("Bad value for \"Join_aligns\" align error specified in method: %s", name) ;
-	      
-	      break ;
-	    }
+	  directional_end_set = directional_end = TRUE ;
 	}
       else if (g_ascii_strcasecmp(tag, "Min_mag") == 0)
 	{
@@ -2244,7 +2454,7 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (!(status = zMapStr2Double(value, &min_mag)))
 	    {
-	      zMapLogWarning("Bad value for \"Min_mag\" specified in method: %s", name) ;
+	      zMapLogWarning("Style \"%s\": Bad value for \"Min_mag\"", name) ;
 	      
 	      break ;
 	    }
@@ -2261,12 +2471,20 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (!(status = zMapStr2Double(value, &max_mag)))
 	    {
-	      zMapLogWarning("Bad value for \"Max_mag\" specified in method: %s", name) ;
+	      zMapLogWarning("Style \"%s\": Bad value for \"Max_mag\".", name) ;
 	      
 	      break ;
 	    }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+	}
+      else if (g_ascii_strcasecmp(tag, "Score_by_width") == 0)
+	{
+	  score_by_width = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Score_percent") == 0)
+	{
+	  score_is_percent = TRUE ;
 	}
       else if (g_ascii_strcasecmp(tag, "Score_bounds") == 0)
 	{
@@ -2276,7 +2494,7 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 
 	  if (!(status = zMapStr2Double(value, &min_score)))
 	    {
-	      zMapLogWarning("Bad value for \"Score_bounds\" specified in method: %s", name) ;
+	      zMapLogWarning("Style \"%s\": Bad value for \"Score_bounds\".", name) ;
 	      
 	      break ;
 	    }
@@ -2286,18 +2504,11 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 
 	      if (!(status = zMapStr2Double(value, &max_score)))
 		{
-		  zMapLogWarning("Bad value for \"Score_bounds\" specified in method: %s", name) ;
+		  zMapLogWarning("Style \"%s\": Bad value for \"Score_bounds\".", name) ;
 		  
 		  break ;
 		}
 	    }
-	}
-       else if (g_ascii_strcasecmp(tag, "Column_group") == 0)
-	{
-	  /* Format for this tag:   Column_group "eds_column" "wublastx_fly" */
-	  column_group = g_ascii_strdown(strtok_r(NULL, ": \"", &line_pos), -1) ; /* Skip ': "' */
-	  orig_style = g_ascii_strdown(strtok_r(NULL, ": \"", &line_pos), -1) ; /* Skip ': "' */
-
 	}
 
     }
@@ -2310,8 +2521,8 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
     }
 
   
-  /* If we failed while processing a method we won't have reached the end of the current
-   * method paragraph so we need to skip to the end so the next method can be processed. */
+  /* If we failed while processing a style we won't have reached the end of the current
+   * style paragraph so we need to skip to the end so the next style can be processed. */
   if (!status)
     {
       while (**end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
@@ -2332,91 +2543,110 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 	}
     }
 
-  /* Set some final method stuff and create the ZMap style. */
+  /* Create the style and add all the bits to it. */
   if (status)
     {
-
-      /* acedb widths are wider on the screen than zmaps, so scale them up. */
-      width = width * ACEDB_MAG_FACTOR ;
-
-
-      /* In acedb methods the colour is interpreted differently according to the type of the
-       * feature which we have to intuit here from the GFF type. acedb also has colour names
-       * that don't exist in X Windows. */
-      if (colour)
-	{
-	  /* THIS IS REALLY THE PLACE THAT WE SHOULD SET UP THE ACEDB SPECIFIC DISPLAY STUFF... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* this doesn't work because it messes up the rev. video.... */
-	  if (gff_type && (g_ascii_strcasecmp(gff_type, "\"similarity\"") == 0
-			   || g_ascii_strcasecmp(gff_type, "\"repeat\"")
-			   || g_ascii_strcasecmp(gff_type, "\"experimental\"")))
-	    background = colour ;
-	  else
-	    outline = colour ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-          if (outline_flag)
-            outline = colour;
-          else
-            background = colour ;
-	}
-
-
-      /* NOTE that style is created with the method name, NOT the column_group, column
-       * names are independent of method names, they may or may not be the same.
-       * Also, there is no way of deriving the mode from the acedb method object
+      /* NOTE that style is created with the style name, NOT the column_group, column
+       * names are independent of style names, they may or may not be the same.
+       * Also, there is no way of deriving the mode from the acedb style object
        * currently, we have to set it later. */
       style = zMapFeatureTypeCreate(name, remark) ;
 
-      if (mode != ZMAPSTYLE_MODE_NONE)
+      if (mode != ZMAPSTYLE_MODE_INVALID)
 	zMapStyleSetMode(style, mode) ;
 
-      if (colour)
-	zMapStyleSetColours(style, outline, foreground, background) ;
-
-      if (width != -999.0)
-	{
-	  /* acedb widths are wider on the screen than zmaps, so scale them up. */
-	  width = width * ACEDB_MAG_FACTOR ;
-
-	  zMapStyleSetWidth(style, width) ;
-	}
+      if (glyph_mode != ZMAPSTYLE_GLYPH_INVALID)
+	zMapStyleSetGlyphMode(style, glyph_mode) ;
 
       if (parent)
 	zMapStyleSetParent(style, parent) ;
 
+      if (some_colours)
+	{
+	  /* May need to put some checking code here to test which colours set. */
+	  zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+			      style_colours.normal.fill, style_colours.normal.draw, style_colours.normal.border) ;
+	  zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
+			      style_colours.selected.fill, style_colours.selected.draw, style_colours.selected.border) ;
+	}
+
+      if (some_frame0_colours || some_frame1_colours || some_frame2_colours)
+	{
+	  if (some_frame0_colours && some_frame1_colours && some_frame2_colours)
+	    {
+	      /* May need to put some checking code here to test which colours set. */
+	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				  frame0_style_colours.normal.fill, frame0_style_colours.normal.draw, frame0_style_colours.normal.border) ;
+	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_SELECTED,
+				  frame0_style_colours.selected.fill, frame0_style_colours.selected.draw, frame0_style_colours.selected.border) ;
+
+	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				  frame1_style_colours.normal.fill, frame1_style_colours.normal.draw, frame1_style_colours.normal.border) ;
+	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_SELECTED,
+				  frame1_style_colours.selected.fill, frame1_style_colours.selected.draw, frame1_style_colours.selected.border) ;
+
+	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				  frame2_style_colours.normal.fill, frame2_style_colours.normal.draw, frame2_style_colours.normal.border) ;
+	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_SELECTED,
+				  frame2_style_colours.selected.fill, frame2_style_colours.selected.draw, frame2_style_colours.selected.border) ;
+	    }
+	  else
+	    zMapLogWarning("Style \"%s\": Bad frame colour spec, following were not set:%s%s%s", name, 
+			   (some_frame0_colours ? "" : " frame0"),
+			   (some_frame1_colours ? "" : " frame1"),
+			   (some_frame2_colours ? "" : " frame2")) ;
+	}
+
+      if (some_CDS_colours)
+	{
+	  /* May need to put some checking code here to test which colours set. */
+	  zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+			      CDS_style_colours.normal.fill, CDS_style_colours.normal.draw, CDS_style_colours.normal.border) ;
+	  zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+			      CDS_style_colours.selected.fill, CDS_style_colours.selected.draw, CDS_style_colours.selected.border) ;
+	}
+
+      if (width_set)
+	zMapStyleSetWidth(style, width) ;
+
+
       if (min_mag || max_mag)
 	zMapStyleSetMag(style, min_mag, max_mag) ;
+
+
+      /* OTHER SCORE STUFF MUST BE SET HERE.... */
 
       if (min_score && max_score)
 	zMapStyleSetScore(style, min_score, max_score) ;
 
-      zMapStyleSetStrandAttrs(style,
-			      strand_specific, frame_specific,
-			      show_up_strand, show_only_as_3_frame) ;
+      if (strand_set)
+	zMapStyleSetStrandAttrs(style,
+				strand_specific, frame_specific,
+				show_up_strand, show_only_as_3_frame) ;
 
-      zMapStyleSetBump(style, overlap) ;
+      if (bump_set)
+	zMapStyleSetBump(style, overlap) ;
 
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
 
-      zMapStyleSetHideAlways(style, hide_always) ;
+      if (hide_always_set)
+	zMapStyleSetHideAlways(style, hide_always) ;
 
-      if (init_hidden)
-	zMapStyleSetHidden(style, init_hidden) ;
+      if (hidden_set)
+	zMapStyleSetHidden(style, hidden) ;
 
-      if(directional_end)
+      if (show_when_empty_set)
+	zMapStyleSetShowWhenEmpty(style, show_when_empty) ;
+
+      if(directional_end_set)
         zMapStyleSetEndStyle(style, directional_end);
 
-      if (gaps)
+      if (internal)
 	zMapStyleSetGappedAligns(style, TRUE, TRUE, within_align_error) ;
 
-      if (join_aligns)
+      if (external)
 	zMapStyleSetJoinAligns(style, TRUE, between_align_error) ;
-
-
     }
 
 
@@ -2435,7 +2665,7 @@ ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 }
 
 
-/* Gets a list of all styles by name on the server (this is the list of acedb methods).
+/* Gets a list of all styles by name on the server (this is the list of acedb methods/styles).
  * Returns TRUE and the list if database contained any methods, FALSE otherwise.
  * 
  * 
@@ -2713,7 +2943,7 @@ static char *getMethodFetchStr(GList *feature_sets, GHashTable *method_2_feature
   g_list_foreach(feature_sets, methodFetchCB, &method_data) ;
 
   /* use the routine I've already written to get the final string.... */
-  method_fetch_str = getMethodString(method_data.fetch_methods, TRUE, FALSE) ;
+  method_fetch_str = getMethodString(method_data.fetch_methods, TRUE, FALSE, FALSE) ;
 
   return method_fetch_str ;
 }
@@ -2771,7 +3001,7 @@ static void readConfigFile(AcedbServer server)
   ZMapConfigStanzaSet server_list = NULL ;
   ZMapConfig config ;
   char *config_file = NULL ;
-
+  gboolean result ;
 
   config_file = zMapConfigDirGetFile() ;
   if ((config = zMapConfigCreateFromFile(config_file)))
@@ -2786,12 +3016,8 @@ static void readConfigFile(AcedbServer server)
 
       server_stanza = zMapConfigMakeStanza(ZMAPSTANZA_SOURCE_CONFIG, server_elements) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if (!zMapConfigFindStanzas(config, server_stanza, &server_list))
 	result = FALSE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
       zMapConfigDestroyStanza(server_stanza) ;
       server_stanza = NULL ;
@@ -2825,6 +3051,9 @@ static void readConfigFile(AcedbServer server)
 	    {
 	      server->acedb_styles = zMapConfigGetElementBool(next_server, ZMAPSTANZA_SOURCE_STYLE) ;
 	      
+
+
+
 	      break ;					    /* only look at first stanza that is us. */
 	    }
 	}
@@ -2841,3 +3070,54 @@ static void readConfigFile(AcedbServer server)
 
   return ;
 }
+
+
+
+static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_pos)
+{
+  gboolean result = FALSE ;
+  char *colour_type ;
+  char *colour_target ;
+  char *colour ;
+  StyleColour style_colour = NULL ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if ((colour_type = strtok_r(NULL, " ", line_pos))
+      && (colour_target = strtok_r(NULL, " ", line_pos))
+      && (colour = strtok_r(NULL, "\"", line_pos))
+      && (colour = strtok_r(NULL, "\"", line_pos)))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    colour_type = strtok_r(NULL, " ", line_pos) ;
+  colour_target = strtok_r(NULL, " ", line_pos) ;
+  colour = strtok_r(NULL, "\"", line_pos) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  colour = strtok_r(NULL, "\"", line_pos) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  if (colour)
+    {
+      if (g_ascii_strcasecmp(colour_type, "Normal") == 0)
+	style_colour = &(style_colours->normal) ;
+      else if (g_ascii_strcasecmp(colour_type, "Selected") == 0)
+	style_colour = &(style_colours->selected) ;
+
+      if (style_colour)
+	{
+	  result = TRUE ;
+	  if (g_ascii_strcasecmp(colour_target, "Draw") == 0)
+	    style_colour->draw = g_strdup(colour) ;
+	  else if (g_ascii_strcasecmp(colour_target, "Fill") == 0)
+	    style_colour->fill = g_strdup(colour) ;
+	  else if (g_ascii_strcasecmp(colour_target, "Border") == 0)
+	    style_colour->border = g_strdup(colour) ;
+	  else
+	    result = FALSE ;
+	}
+    }
+
+  return result ;
+}
+
