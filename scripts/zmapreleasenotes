@@ -48,23 +48,22 @@ descstring='
 build='all'
 
 targetdir=''
-builddir='RELEASE_NOTES'
+builddir=$ZBReleaseBase
 
-zmap_repository=$ZBcvsRoot
+zmap_CVSROOT=$ZBCVSRoot
 zmap_src_dir='ZMap/src'
 zmap_doc_dir='ZMap/doc'
 release_notes_dir="$zmap_doc_dir/Release_notes"
 webpagefile="$zmap_src_dir/include/ZMap/zmapWebPages.h"
 
 
-acedb_repository=~acedb/CVS_ACEDB
-acedb_src_dir='acedb'
+acedb_release_dir="$ZBAcedbHOME/RELEASE."$ZBAcedbVersion'.BUILD'
 
 rel_template='release_notes_template.shtml'
 rel_prefix='release_notes'
 rel_suffix='shtml'
 
-last_release_file="$release_notes_dir/LAST_RELEASE_DATE.txt"
+last_release_file="LAST_RELEASE_DATE.txt"
 
 
 
@@ -100,19 +99,23 @@ ZBlogmsg "Build release notes started"
 
 # Set up the build directory.
 ZBGotoDir $targetdir
-mkdir $builddir || ZBmsgAndExit "Cannot make build directory: $builddir"
+mkdir -p $builddir || ZBmsgAndExit "Cannot make build directory: $builddir"
 ZBGotoDir $builddir
 
 
 # check out zmap and if requested, acedb source, note, we don't need all of the zmap source stuff....
 #
-cvs -d $zmap_repository checkout $zmap_doc_dir || ZBmsgAndExit "Cannot checkout release notes directory: $zmap_doc_dir"
 
-cvs -d $zmap_repository checkout $zmap_src_dir || ZBmsgAndExit "Cannot checkout source code directory: $release_notes_dir"
+CVSROOT="$ZBCVSLogin$zmap_CVSROOT"
+ZBlogmsg "Checking out from $CVSROOT"
+cvs checkout $zmap_doc_dir || ZBmsgAndExit "Cannot checkout release notes directory: $zmap_doc_dir"
+
+cvs checkout $zmap_src_dir || ZBmsgAndExit "Cannot checkout source code directory: $release_notes_dir"
 
 
 if [ $build = 'all' ] ; then
-cvs -d $acedb_repository checkout $acedb_src_dir || ZBmsgAndExit "Cannot checkout source code directory: $release_notes_dir"
+    ZBlogmsg "Using Acedb Source in $acedb_release_dir rather than checking out local copy"
+    #cvs export $acedb_src_dir || ZBmsgAndExit "Cannot checkout source code directory: $release_notes_dir"
 fi
 
 
@@ -122,7 +125,7 @@ fi
 # in the cvs file LAST_RELEASE_DATE.txt in doc/Release_notes
 #
 if [ -z "$prev_date" ] ; then
-  prev_date=`cat $last_release_file` || ZBmsgAndExit "Cannot access date from date file $last_release_file"
+  prev_date=`cat $release_notes_dir/$last_release_file` || ZBmsgAndExit "Cannot access date from date file $last_release_file"
 fi
 
 
@@ -154,7 +157,6 @@ chmod u+rw $release_file || ZBmsgAndExit "Cannot make $release_file readable/wri
 
 # We need a human readable date in several places in the html.
 text_date=`date "+%e %B %Y"`
-
 
 #
 # Write the proper header for sanger pages
@@ -198,8 +200,11 @@ echo "<h3>Request Tracker Tickets Resolved</h3>" >> $release_file
 echo  >> $release_file
 
 
+RTSERVER=scratchy
+
 # do zmap RT tickets
 #
+
 echo  >> $release_file
 echo "<h4>ZMap</h4>" >> $release_file
 echo  >> $release_file
@@ -207,7 +212,9 @@ echo  >> $release_file
 echo "<PRE>" >> $release_file
 
 change_file='ZMap.cvschanges'
-ssh scratchy /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/scripts/getRTtickets $rt_date zmap > $change_file
+
+ZBlogmsg $ZBgetRTtickets $rt_date zmap
+ssh $RTSERVER "$ZBgetRTtickets $rt_date zmap" > $change_file
 
 cat $change_file | grep -v 'sysmandir' | grep -v 'Queue' >> $release_file
 
@@ -229,7 +236,8 @@ echo "<PRE>" >> $release_file
 
 change_file='acedb.cvschanges'
 
-ssh scratchy /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/scripts/getRTtickets $rt_date acedb > $change_file
+ZBlogmsg $ZBgetRTtickets $rt_date acedb
+ssh $RTSERVER $ZBgetRTtickets $rt_date acedb > $change_file
 
 cat $change_file | grep -v 'sysmandir' | grep -v 'Queue' >> $release_file
 
@@ -266,10 +274,10 @@ echo "<h3>Acedb Changes/Fixes</h3>" >> $release_file
 echo  >> $release_file
 
 change_file='ACEDB.CHANGEFILE'
-cvschanges -o$change_file -a $cvs_date ./acedb
+cvschanges -o$change_file -a $cvs_date $acedb_release_dir
 cat $change_file | grep -v $year | perl -lne 's/\*/<p>/; print' >> $release_file
 rm -f $change_file || ZBmsgAndExit "Cannot remove change file: $change_file"
-rm -rf ./acedb || ZBmsgAndExit "Cannot remove local copy of acedb"
+#rm -rf ./acedb || ZBmsgAndExit "Cannot remove local copy of acedb"
 echo  >> $release_file
 
 fi
@@ -283,14 +291,18 @@ echo '<!--#include virtual="/perl/footer"-->' >> $release_file
 echo >> $release_file
 
 
-
 #
 # Optionally stick the notes in cvs and update the last release data file.....
 #
 if [ -z "$no_cvs" ] ; then
-  mv $release_file ./ZMap/doc/Release_notes || ZBmsgAndExit "Cannot move $release_file to ./ZMap/doc/Release_notes"
-  cvs add ./ZMap/doc/Release_notes/$release_file || ZBmsgAndExit "Cannot cvs add $release_file to ./ZMap/doc/Release_notes"
-  cvs commit -m "new zmap release notes for $text_date" ./ZMap/doc/Release_notes/$release_file || ZBmsgAndExit "Cannot cvs commit $release_file to ./ZMap/doc/Release_notes"
+
+  ZBCVSacceptDuplicates=false
+
+  mv -f $release_file $release_notes_dir/ || ZBmsgAndExit "Cannot move $release_file to $release_notes/"
+  ZBGotoDir $release_notes_dir
+
+  ZBsafeCVSadd $release_file
+  cvs commit -m "new zmap release notes for $text_date" $release_file || ZBmsgAndExit "Cannot cvs commit $release_file in $release_notes_dir/"
 
   cvs edit $last_release_file || ZBmsgAndExit "Cannot cvs edit $last_release_file"
   echo $rt_todays_date > $last_release_file || ZBmsgAndExit "Cannot read date from $last_release_file"
