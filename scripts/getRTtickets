@@ -8,6 +8,8 @@
 #
 #
 
+RTUSER=rds
+
 usage=" $0 <date> <list of queues>
 
     date is in the format dd/mm/yyyy
@@ -41,7 +43,7 @@ do
 #
 #echo -n -e `rt-3.4 search -i  "(Queue = '$QUEUE') and  ( status='open' or status='new') and created > '-1 week'"`
 
-echo -n -e `rt-3.4 search -i  "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '$start_date'"`
+echo -n -e `sudo -u $RTUSER rt search -i "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '$start_date'"`
 echo
 
 done
@@ -54,7 +56,7 @@ do
 #echo $TICKET
 
 # You can add stuff to the -f flag like Created and so on.
-rt show -t ticket -f Queue,Subject,Requestors,Resolved $TICKET
+sudo -u $RTUSER rt show -t ticket -f Queue,Subject,Requestors,Resolved $TICKET
 
 echo
 
