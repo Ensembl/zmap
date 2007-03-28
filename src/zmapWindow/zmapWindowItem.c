@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 13 17:25 2007 (edgrif)
+ * Last edited: Mar 28 17:27 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.70 2007-03-14 08:44:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.71 2007-03-28 16:27:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,7 +77,6 @@ static void unhighlightCB(gpointer data, gpointer user_data) ;
 
 static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
 static void highlightFuncCB(gpointer data, gpointer user_data);
-static void colourReverseVideo(GdkColor *colour_inout);
 static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
 
 
@@ -497,7 +496,7 @@ void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, g
   highlight_data.highlighted     = 
     highlight_data.feature_count = 0;
 
-  zMapFeatureContextExecute(context, ZMAPFEATURE_STRUCT_FEATURE,
+  zMapFeatureContextExecute((ZMapFeatureAny)context, ZMAPFEATURE_STRUCT_FEATURE,
                             highlight_feature, &highlight_data);
 
   return ;
@@ -1756,6 +1755,29 @@ static void highlightFuncCB(gpointer data, gpointer user_data)
  * It makes me want to extend foo canvas items, but I haven't got time.
  * 
  */
+
+
+/* 
+ * 
+ * Complex stuff....sigh....
+ *
+ * y = always set
+ * n = never set
+ * . = don't care
+ * ? = one or other set
+ * 
+ * style mode            fill      draw     border
+ * -----------------------------------------------
+ * basic                   ?         .        ?
+ * transcript              ?         .        ?
+ * alignment               ?         .        ?
+ * text                    y         .        y
+ * graph                   y         .        n
+ * glyph                   y         .        n
+ * 
+ * 
+ * 
+ *  */
 static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight)
 {
   ZMapWindowItemFeatureType item_feature_type ;
@@ -1791,60 +1813,137 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highl
   if (!(FOO_IS_CANVAS_GROUP(item)) && item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
     {
       GdkColor *highlight_colour = NULL ;
-      char *highlight_target ;
+      GdkColor *fill_style = NULL, *draw_style = NULL, *border_style = NULL ;
+      GdkColor *fill_colour = NULL, *draw_colour = NULL, *border_colour = NULL ;
+      ZMapStyleColourTarget target ;
+      ZMapStyleColourType type ;
+      gboolean status ;
+      ZMapStyleMode mode ;
 
-      /* If we definitely have a background or can only possibly have a background we'll use that */
-      if (zMapStyleIsColour(style, ZMAPSTYLE_DRAW_BACKGROUND)
-	  || (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_TEXT(item)) || FOO_IS_CANVAS_LINE_GLYPH(item))
-	highlight_target = "fill_color_gdk" ;
-      else if (zMapStyleIsColour(style, ZMAPSTYLE_DRAW_OUTLINE)
-	       && (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item)))
-	highlight_target = "outline_color_gdk" ;
-      else
-	zMapAssertNotReached() ;
-
-      if (!(window->use_rev_video))
+      /* Set a default highlight if there is one. */
+      if (highlight && window->highlights_set.item)
 	{
-	  if (highlight)
+	  highlight_colour = &(window->colour_item_highlight) ;
+	}
+
+      /* Get the normal or selected colours from the style according to feature type. */
+      if (highlight)
+	type = ZMAPSTYLE_COLOURTYPE_SELECTED ;
+      else
+	type = ZMAPSTYLE_COLOURTYPE_NORMAL ;
+
+      mode = zMapStyleGetMode(style) ;
+
+      switch (mode)
+	{
+	case ZMAPSTYLE_MODE_TRANSCRIPT:
+	  {
+	    if (exon_data && exon_data->subpart == ZMAPFEATURE_SUBPART_EXON_CDS)
+	      target = ZMAPSTYLE_COLOURTARGET_CDS ;
+	    else
+	      target = ZMAPSTYLE_COLOURTARGET_NORMAL ;	    
+
+	    break ;
+	  }
+
+	case ZMAPSTYLE_MODE_GLYPH:
+	  {
+	    switch(zmapWindowFeatureFrame(item_feature))
+	      {
+	      case ZMAPFRAME_0:
+		target = ZMAPSTYLE_COLOURTARGET_FRAME0 ;
+		break ;
+	      case ZMAPFRAME_1:
+		target = ZMAPSTYLE_COLOURTARGET_FRAME1 ;
+		break ;
+	      case ZMAPFRAME_2:
+		target = ZMAPSTYLE_COLOURTARGET_FRAME2 ;
+		break ;
+	      default:
+		target = ZMAPSTYLE_COLOURTARGET_NORMAL ;
+	      }
+	    break ;
+	  }
+
+	case ZMAPSTYLE_MODE_ALIGNMENT:
+	case ZMAPSTYLE_MODE_BASIC:
+	case ZMAPSTYLE_MODE_TEXT:
+	case ZMAPSTYLE_MODE_GRAPH:
+	  {
+	    target = ZMAPSTYLE_COLOURTARGET_NORMAL ;	    
+	    break ;
+	  }
+
+	default:
+	  {
+	    zMapAssertNotReached() ;
+	  }
+	}
+
+      status = zMapStyleGetColours(style, target, type, &fill_style, &draw_style, &border_style) ;
+
+
+      /* Choose what to colour according the canvas item type we are colouring. */
+      if (status)
+	{
+	  if (FOO_IS_CANVAS_LINE(item))
 	    {
-	      highlight_colour = &(window->colour_item_highlight) ;
+	      if (mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+		fill_colour = fill_style ;
+	      else
+		fill_colour = border_style ;
+	    }
+	  else if (FOO_IS_CANVAS_TEXT(item))
+	    {
+	      fill_colour = draw_style ;
+	    }
+	  else if (FOO_IS_CANVAS_LINE_GLYPH(item))
+	    {
+	      fill_colour = fill_style ;
+	    }
+	  else if (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item))
+	    {
+	      fill_colour = fill_style ;
+	      border_colour = border_style ;
 	    }
 	  else
 	    {
-	      /* I'm just trying this for now...in the end we will need unified code for different
-		 types to decide how to colour stuff... */
-	      if (exon_data && exon_data->subpart == ZMAPFEATURE_SUBPART_EXON_CDS)
-		{
-		  highlight_colour = zMapStyleGetColour(style, ZMAPSTYLE_DRAW_FOREGROUND) ;
-		}
-	      else
-		{
-		  if (zMapStyleIsColour(style, ZMAPSTYLE_DRAW_BACKGROUND))
-		    highlight_colour = zMapStyleGetColour(style, ZMAPSTYLE_DRAW_BACKGROUND) ;
-		  else
-		    highlight_colour = zMapStyleGetColour(style, ZMAPSTYLE_DRAW_OUTLINE) ;
-		}
+	      zMapAssertNotReached() ;
 	    }
 	}
-      else
-	{
-	  g_object_get(G_OBJECT(item), 
-		       highlight_target, &highlight_colour,
-		       NULL);
 
-	  colourReverseVideo(highlight_colour) ;
-	}
+
+      /* Use default colour if set. */
+      if (highlight && !fill_colour && highlight_colour)
+	fill_colour = highlight_colour ;
+
 
       foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-			  highlight_target, highlight_colour,
+			  "fill_color_gdk", fill_colour,
 			  NULL) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* CANVAS WIDGETS DON'T SUPPORT THIS IN FACT.... */
+      if (draw_colour)
+	foo_canvas_item_set(FOO_CANVAS_ITEM(item),
+			    "XXXXX", draw_colour,
+			    NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      if (border_colour)
+	foo_canvas_item_set(FOO_CANVAS_ITEM(item),
+			    "outline_color_gdk", border_colour,
+			    NULL) ;
     }
+
 
   return ;
 }
 
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* WE DON'T NEED THIS JUST NOW....OR PERHAPS EVER AGAIN ??? */
 static void colourReverseVideo(GdkColor *colour_inout)
 {
   zMapAssert(colour_inout) ;
@@ -1855,6 +1954,8 @@ static void colourReverseVideo(GdkColor *colour_inout)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
