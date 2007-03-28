@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  1 12:18 2007 (edgrif)
+ * Last edited: Mar 28 17:08 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.61 2007-03-05 13:05:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.62 2007-03-28 16:08:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -318,7 +318,7 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
   style = set_data->style ;
 
   /* Only check the mag factor if the column is visible. */
-  if (!zMapStyleIsHiddenNow(style))
+  if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(col_group)))
     {
       double min_mag, max_mag ;
 
