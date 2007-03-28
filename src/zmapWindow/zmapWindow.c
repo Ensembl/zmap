@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 13 17:25 2007 (edgrif)
+ * Last edited: Mar 26 11:23 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.183 2007-03-14 08:44:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.184 2007-03-28 16:07:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1471,9 +1471,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   /* Init focus item/column stuff. */
   window->focus = zmapWindowFocusCreate() ;
-
-  /* Init highlight colouring. */
-  window->use_rev_video = TRUE ;
 
   /* Init mark stuff. */
   window->mark = zmapWindowMarkCreate(window) ;
