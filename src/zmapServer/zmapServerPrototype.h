@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Feb 19 13:20 2007 (edgrif)
+ * Last edited: Mar 27 14:55 2007 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.17 2007-03-01 09:38:45 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.18 2007-03-28 16:31:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -55,6 +55,8 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetStyles)(void *server_in, GData **styles_out) ;
+
+typedef ZMapServerResponseType (*ZMapServerStylesHaveModes)(void *server_in, gboolean *have_modes_out) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in, GList **feature_sets_out) ;
 
@@ -85,9 +87,14 @@ typedef struct _ZMapServerFuncsStruct
   ZMapServerCreateFunc create ;
   ZMapServerOpenFunc open ;
   ZMapServerGetStyles get_styles ;
+  ZMapServerStylesHaveModes have_modes ;
   ZMapServerGetFeatureSets get_feature_sets ;
   ZMapServerSetContextFunc set_context ;
+
+  /* I don't think this is used so should go... */
   ZMapServerCopyContextFunc copy_context ;
+
+
   ZMapServerGetFeatures get_features ;
   ZMapServerGetSequence get_sequence ;
   ZMapServerGetErrorMsgFunc errmsg ;
