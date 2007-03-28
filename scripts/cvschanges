@@ -42,7 +42,7 @@ zmap_dirs='doc src'
 acedb_dirs='w*'
 
 
-cvs='zmap'
+cvs=$ZBReleaseBase/ZMap
 dirs=$zmap_dirs
 change_suffix=$cvs
 changes_filename="$cvs.$changename"
