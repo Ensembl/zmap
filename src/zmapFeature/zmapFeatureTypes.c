@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 13 15:58 2007 (edgrif)
+ * Last edited: Mar 28 09:08 2007 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.44 2007-03-13 16:11:22 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.45 2007-03-28 16:38:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -253,18 +253,24 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description)
       new_type->fields_set.description = TRUE ;
     }
 
+
   new_type->min_mag = new_type->max_mag = 0.0 ;
-  new_type->fields_set.min_mag = new_type->fields_set.max_mag = TRUE ;
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* By default we always parse homology gaps, important for stuff like passing this
    * information to blixem. */
   new_type->opts.parse_gaps = TRUE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+  /* I don't really want to do this but need to just to get stuff up and running.... */
   new_type->overlap_mode = ZMAPOVERLAP_COMPLETE ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   new_type->fields_set.overlap_mode = TRUE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  new_type->opts.hidden_always = new_type->opts.hidden_now = FALSE ;
+  new_type->opts.hidden_always = new_type->opts.hidden_init = FALSE ;
 
   return new_type ;
 }
@@ -340,20 +346,20 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
       curr_style->fields_set.mode = TRUE ;
     }
 
-  if (new_style->fields_set.background_set)
+  if (new_style->colours.normal.fields_set.fill)
     {
-      curr_style->normal_colours.background = new_style->normal_colours.background ;
-      curr_style->fields_set.background_set = TRUE ;
+      curr_style->colours.normal.fill = new_style->colours.normal.fill ;
+      curr_style->colours.normal.fields_set.fill = TRUE ;
     }
-  if (new_style->fields_set.foreground_set)
+  if (new_style->colours.normal.fields_set.draw)
     {
-      curr_style->normal_colours.foreground = new_style->normal_colours.foreground ;
-      curr_style->fields_set.foreground_set = TRUE ;
+      curr_style->colours.normal.draw = new_style->colours.normal.draw ;
+      curr_style->colours.normal.fields_set.draw = TRUE ;
     }
-  if (new_style->fields_set.outline_set)
+  if (new_style->colours.normal.fields_set.border)
     {
-      curr_style->normal_colours.outline = new_style->normal_colours.outline ;
-      curr_style->fields_set.outline_set = TRUE ;
+      curr_style->colours.normal.border = new_style->colours.normal.border ;
+      curr_style->colours.normal.fields_set.border = TRUE ;
     }
 
   if (new_style->fields_set.min_mag)
@@ -374,10 +380,10 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
       curr_style->fields_set.overlap_mode = TRUE ;
     }
 
-  if (new_style->fields_set.bump_width)
+  if (new_style->fields_set.bump_spacing)
     {
-      curr_style->bump_width = new_style->bump_width ;
-      curr_style->fields_set.bump_width = TRUE ;
+      curr_style->bump_spacing = new_style->bump_spacing ;
+      curr_style->fields_set.bump_spacing = TRUE ;
     }
 
   if (new_style->fields_set.width)
@@ -451,14 +457,14 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
   if (style->fields_set.mode)
     printf("Feature mode: %s\n", style_mode_str_G[style->mode]) ;
 
-  if (style->fields_set.background_set)
-    ZMAPSTYLEPRINTCOLOUR(style->normal_colours.background, background) ;
+  if (style->colours.normal.fields_set.fill)
+    ZMAPSTYLEPRINTCOLOUR(style->colours.normal.fill, background) ;
 
-  if (style->fields_set.foreground_set)
-    ZMAPSTYLEPRINTCOLOUR(style->normal_colours.foreground, foreground) ;
+  if (style->colours.normal.fields_set.draw)
+    ZMAPSTYLEPRINTCOLOUR(style->colours.normal.draw, foreground) ;
 
-  if (style->fields_set.outline_set)
-    ZMAPSTYLEPRINTCOLOUR(style->normal_colours.outline, outline) ;
+  if (style->colours.normal.fields_set.border)
+    ZMAPSTYLEPRINTCOLOUR(style->colours.normal.border, outline) ;
 
   if (style->fields_set.min_mag)
     printf("\tMin mag: %g\n", style->min_mag) ;
@@ -469,8 +475,8 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
   if (style->fields_set.overlap_mode)
     printf("\tOverlap mode: %s\n", style_overlapmode_str_G[style->mode]) ;
 
-  if (style->fields_set.bump_width)
-    printf("\tBump width: %g\n", style->bump_width) ;
+  if (style->fields_set.bump_spacing)
+    printf("\tBump width: %g\n", style->bump_spacing) ;
 
   if (style->fields_set.width)
     printf("\tWidth: %g\n", style->width) ;
@@ -491,7 +497,7 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
     printf("\tGFF feature: %s\n", g_quark_to_string(style->gff_feature)) ;
 
   ZMAPSTYLEPRINTOPT(style->opts.hidden_always, hidden_always) ;
-  ZMAPSTYLEPRINTOPT(style->opts.hidden_now, hidden_now) ;
+  ZMAPSTYLEPRINTOPT(style->opts.hidden_init, hidden_init) ;
   ZMAPSTYLEPRINTOPT(style->opts.show_when_empty, show_when_empty) ;
   ZMAPSTYLEPRINTOPT(style->opts.showText, showText) ;
   ZMAPSTYLEPRINTOPT(style->opts.parse_gaps, parse_gaps) ;
@@ -538,66 +544,30 @@ void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width)
   return ;
 }
 
-void zMapStyleSetBumpWidth(ZMapFeatureTypeStyle style, double bump_width)
+void zMapStyleSetBumpWidth(ZMapFeatureTypeStyle style, double bump_spacing)
 {
-  zMapAssert(style && bump_width > 0.0) ;
+  zMapAssert(style && bump_spacing > 0.0) ;
 
-  style->fields_set.bump_width = TRUE ;
-  style->bump_width = bump_width ;
+  style->fields_set.bump_spacing = TRUE ;
+  style->bump_spacing = bump_spacing ;
 
   return ;
 }
 
 double zMapStyleGetBumpWidth(ZMapFeatureTypeStyle style)
 {
-  double bump_width = 0.0 ;
+  double bump_spacing = 0.0 ;
 
   zMapAssert(style) ;
 
-  if (style->fields_set.bump_width)
-    bump_width = style->bump_width ;
+  if (style->fields_set.bump_spacing)
+    bump_spacing = style->bump_spacing ;
 
-  return  bump_width ;
+  return  bump_spacing ;
 }
 
 
 
-
-void zMapStyleSetColours(ZMapFeatureTypeStyle style, 
-                         char *outline, 
-                         char *foreground, 
-                         char *background)
-{
-  zMapAssert(style);
-
-  /* Set some default colours.... */
-  if (!outline)
-    outline = "black" ;
-#ifdef RDS_NO_DEFAULT_COLOURS
-  if (!foreground)
-    foreground = "white" ;
-  if (!background)
-    background = "white" ;
-#endif
-
-  if(outline && *outline)
-    {
-      gdk_color_parse(outline, &style->normal_colours.outline) ;
-      style->fields_set.outline_set = TRUE;
-    }
-  if(foreground && *foreground)
-    {
-      gdk_color_parse(foreground, &style->normal_colours.foreground) ;
-      style->fields_set.foreground_set = TRUE;
-    }
-  if(background && *background)
-    {
-      gdk_color_parse(background, &style->normal_colours.background) ;
-      style->fields_set.background_set = TRUE;
-    }
-  
-  return ;
-}
 
 /* Set magnification limits for displaying columns. */
 void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag)
@@ -629,22 +599,22 @@ void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode,
 {
   zMapAssert(style) ;
 
-  style->graph_mode = mode ;
+  style->mode_data.graph.mode = mode ;
 
   style->min_score = min_score ;
   style->max_score = max_score ;
-  style->baseline = baseline ;
+  style->mode_data.graph.baseline = baseline ;
 
   /* normalise the baseline */
   if (style->min_score == style->max_score)
-    style->baseline = style->min_score ;
+    style->mode_data.graph.baseline = style->min_score ;
   else
-    style->baseline = (style->baseline - style->min_score) / (style->max_score - style->min_score) ;
+    style->mode_data.graph.baseline = (style->mode_data.graph.baseline - style->min_score) / (style->max_score - style->min_score) ;
 
-  if (style->baseline < 0)
-    style->baseline = 0 ;
-  if (style->baseline > 1)
-    style->baseline = 1 ;
+  if (style->mode_data.graph.baseline < 0)
+    style->mode_data.graph.baseline = 0 ;
+  if (style->mode_data.graph.baseline > 1)
+    style->mode_data.graph.baseline = 1 ;
       
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* fmax seems only to be used to obtain the final column width in acedb, we can get this from its size... */
@@ -652,43 +622,14 @@ void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode,
   bc->fmax = (bc->width * bc->histBase) + 0.2 ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  style->fields_set.graph_mode = style->fields_set.baseline
-    = style->fields_set.min_score = style->fields_set.max_score = TRUE ;
+  style->mode_data.graph.fields_set.mode = style->mode_data.graph.fields_set.baseline = TRUE ;
+
+  style->fields_set.min_score = style->fields_set.max_score = TRUE ;
 
   return ;
 }
 
 
-
-void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode)
-{
-  zMapAssert(style
-	     && (mode >= ZMAPSTYLE_MODE_INVALID || mode <= ZMAPSTYLE_MODE_TEXT)) ;
-
-  style->mode = mode ;
-  style->fields_set.mode = TRUE ;
-
-  return ;
-}
-
-
-
-gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out)
-{
-  gboolean result = FALSE ;
-  ZMapFeatureStr2EnumStruct mode_table [] = {{"INVALID", ZMAPSTYLE_MODE_INVALID},
-					     {"BASIC", ZMAPSTYLE_MODE_BASIC},
-					     {"TRANSCRIPT", ZMAPSTYLE_MODE_TRANSCRIPT},
-					     {"ALIGNMENT", ZMAPSTYLE_MODE_ALIGNMENT},
-					     {"TEXT", ZMAPSTYLE_MODE_TEXT},
-					     {NULL, 0}} ;
-
-  zMapAssert(mode_str && *mode_str && mode_out) ;
-
-  result = zmapStr2Enum(&(mode_table[0]), mode_str, (int *)mode_out) ;
-
-  return result ;
-}
 
 
 /* Set score bounds for displaying column with width related to score. */
@@ -704,33 +645,6 @@ void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_
   return ;
 }
 
-
-void zMapStyleSetHideAlways(ZMapFeatureTypeStyle style, gboolean hide_always)
-{
-  zMapAssert(style) ;
-
-  style->opts.hidden_always = hide_always ;
-
-
-  return ;
-}
-
-/* Controls whether the feature set is displayed initially. */
-void zMapStyleSetHidden(ZMapFeatureTypeStyle style, gboolean hidden)
-{
-  zMapAssert(style) ;
-
-  style->opts.hidden_now = hidden ;
-
-  return ;
-}
-
-gboolean zMapStyleGetHidden(ZMapFeatureTypeStyle style)
-{
-  zMapAssert(style) ;
-
-  return style->opts.hidden_now ;
-}
 
 
 
@@ -873,7 +787,9 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
 
   if (bump_str && *bump_str)
     {
-      if (g_ascii_strcasecmp(bump_str, "smart") == 0)
+      if (g_ascii_strcasecmp(bump_str, "complete") == 0)
+	bump = ZMAPOVERLAP_COMPLETE ;
+      else if (g_ascii_strcasecmp(bump_str, "smart") == 0)
 	bump = ZMAPOVERLAP_NO_INTERLEAVE ;
       else if (g_ascii_strcasecmp(bump_str, "interleave") == 0)
 	bump = ZMAPOVERLAP_COMPLEX ;
@@ -927,8 +843,8 @@ void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gb
 
   style->opts.align_gaps = show_gaps ;
   style->opts.parse_gaps = parse_gaps ;
-  style->within_align_error = within_align_error ;
-  style->fields_set.within_align_error = TRUE ;
+  style->mode_data.alignment.within_align_error = within_align_error ;
+  style->mode_data.alignment.fields_set.within_align_error = TRUE ;
 
   return ;
 }
@@ -939,7 +855,7 @@ gboolean zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, unsigned int *with
   zMapAssert(style);
 
   if (style->opts.align_gaps)
-    *within_align_error = style->within_align_error ;
+    *within_align_error = style->mode_data.alignment.within_align_error ;
 
   return style->opts.align_gaps ;
 }
@@ -951,8 +867,8 @@ void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, un
   zMapAssert(style);
 
   style->opts.join_aligns = join_aligns ;
-  style->between_align_error = between_align_error ;
-  style->fields_set.between_align_error = TRUE ;
+  style->mode_data.alignment.between_align_error = between_align_error ;
+  style->mode_data.alignment.fields_set.between_align_error = TRUE ;
 
   return ;
 }
@@ -965,7 +881,7 @@ gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *betwee
   zMapAssert(style);
 
   if (style->opts.join_aligns)
-    *between_align_error = style->between_align_error ;
+    *between_align_error = style->mode_data.alignment.between_align_error ;
 
   return style->opts.join_aligns ;
 }
@@ -1133,6 +1049,7 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetHidden(curr, TRUE) ;
       zMapStyleSetStrandAttrs(curr, TRUE, TRUE, FALSE, TRUE) ;
       zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleSetBumpWidth(curr, 10.0) ;
 
 
@@ -1145,7 +1062,7 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetHidden(curr, TRUE) ;
       zMapStyleSetWidth(curr, 10.0) ;
       zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, FALSE) ;
-      zMapStyleSetColours(curr, NULL, "black", "white") ;
+      zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
 
       /* Locus */
@@ -1155,8 +1072,8 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
       zMapStyleSetHidden(curr, TRUE) ;
+      zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
-
 
       /* GeneFinderFeatures */
       curr++ ;
@@ -1262,12 +1179,12 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 	   {"minmag"      , ZMAPCONFIG_INT, {NULL}},
 	   {"maxmag"      , ZMAPCONFIG_INT, {NULL}},
 	   {"bump"        , ZMAPCONFIG_STRING, {NULL}},
-	   {"bump_width"  , ZMAPCONFIG_FLOAT , {NULL}},
+	   {"bump_spacing"  , ZMAPCONFIG_FLOAT , {NULL}},
 	   {"gapped_align", ZMAPCONFIG_BOOL, {NULL}},
 	   {"gapped_error", ZMAPCONFIG_INT, {NULL}},
 	   {"read_gaps"   , ZMAPCONFIG_BOOL, {NULL}},
 	   {"directional_end", ZMAPCONFIG_BOOL, {NULL}},
-           {"hidden_now", ZMAPCONFIG_BOOL, {NULL}},
+           {"hidden_init", ZMAPCONFIG_BOOL, {NULL}},
 	   {NULL, -1, {NULL}}} ;
 
       /* Init fields that cannot default to string NULL. */
@@ -1319,10 +1236,10 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 
 	      zMapStyleSetMode(new_type, mode) ;
 
-	      zMapStyleSetColours(new_type,
-				  zMapConfigGetElementString(next_styles, "outline"),
+	      zMapStyleSetColours(new_type, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				  zMapConfigGetElementString(next_styles, "foreground"),
-				  zMapConfigGetElementString(next_styles, "background")) ;
+				  zMapConfigGetElementString(next_styles, "background"),
+				  zMapConfigGetElementString(next_styles, "outline")) ;
 
 	      zMapStyleSetWidth(new_type, zMapConfigGetElementFloat(next_styles, "width")) ;
 
@@ -1337,14 +1254,14 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 				      zMapConfigGetElementBool(next_styles, "show_only_as_3_frame")) ;
 
 	      zMapStyleSetBump(new_type, zMapConfigGetElementString(next_styles, "bump")) ;
-	      zMapStyleSetBumpWidth(new_type, zMapConfigGetElementFloat(next_styles, "bump_width")) ;
+	      zMapStyleSetBumpWidth(new_type, zMapConfigGetElementFloat(next_styles, "bump_spacing")) ;
 
               /* Not good to hard code the TRUE here, but I guess blixem requires the gaps array. */
               zMapStyleSetGappedAligns(new_type, 
                                        zMapConfigGetElementBool(next_styles, "gapped_align"),
                                        TRUE,
 				       zMapConfigGetElementBool(next_styles, "gapped_error")) ;
-              zMapStyleSetHidden(new_type, zMapConfigGetElementBool(next_styles, "hidden_now"));
+              zMapStyleSetHidden(new_type, zMapConfigGetElementBool(next_styles, "hidden_init"));
               zMapStyleSetEndStyle(new_type, zMapConfigGetElementBool(next_styles, "directional_end"));
 
 	      g_datalist_id_set_data(&styles, new_type->unique_id, new_type) ;
@@ -1379,38 +1296,6 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
   return styles ;
 }
 
-
-void zMapFeatureTypeGetColours(ZMapFeatureTypeStyle style, 
-                               GdkColor **background, 
-                               GdkColor **foreground, 
-                               GdkColor **outline)
-{
-  if(background)
-    {
-      if(style->fields_set.background_set)
-        *background = &(style->normal_colours.background);
-      else
-        *background = NULL;
-    }
-
-  if(foreground)
-    {
-      if(style->fields_set.foreground_set)
-        *foreground = &(style->normal_colours.foreground);
-      else
-        *foreground = NULL;
-    }
-
-  if(outline)
-    {
-      if (style->fields_set.outline_set)
-        *outline = &(style->normal_colours.outline);
-      else
-        *outline = NULL;
-    }
-
-  return ;
-}
 
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string)
 {
@@ -1473,10 +1358,8 @@ static void doTypeSets(GQuark key_id, gpointer data, gpointer user_data)
 static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
-  char *style_name = (char *)g_quark_to_string(key_id) ;
-  
-  printf("\t%s: \t%f \t%s\n", style_name, style->width,
-	 (style->opts.show_rev_strand ? "show_rev_strand" : "!show_rev_strand")) ;
+
+  zMapStylePrint(style, "Style:") ;
 
   return ;
 }
@@ -1485,10 +1368,8 @@ static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data)
 static void stylePrintFunc(gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
-  char *style_name = (char *)g_quark_to_string(style->original_id) ;
-  
-  printf("\t%s: \t%f \t%s\n", style_name, style->width,
-	 (style->opts.show_rev_strand ? "show_rev_strand" : "!show_rev_strand")) ;
+
+  zMapStylePrint(style, "Style:") ;
 
   return ;
 }
@@ -1771,17 +1652,21 @@ static void inheritAllFunc(gpointer data, gpointer user_data)
 	  tmp_style = zMapFeatureStyleCopy(prev_style) ;
 
 
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMapStylePrint(tmp_style, "Parent") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
 	  if (zMapStyleMerge(tmp_style, curr_style))
 	    {
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      zMapStylePrint(tmp_style, "child") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 	      inherited->prev_style = tmp_style ;
