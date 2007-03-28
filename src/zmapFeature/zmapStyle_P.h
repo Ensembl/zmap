@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Mar 13 14:47 2007 (edgrif)
+ * Last edited: Mar 21 13:32 2007 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_P.h,v 1.2 2007-03-13 16:06:53 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_P.h,v 1.3 2007-03-28 16:34:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_P_H
@@ -41,6 +41,98 @@
 
 
 #include <ZMap/zmapStyle.h>
+
+
+/* Substructs within a style. */
+
+typedef struct
+{
+  struct
+  {
+    unsigned int draw : 1 ;
+    unsigned int fill : 1 ;
+    unsigned int border : 1 ;
+  } fields_set ;
+
+  GdkColor  draw ;					    /* Overlaid on background. */
+  GdkColor  fill ;					    /* Fill colour. */
+  GdkColor  border ;					    /* Surround/line colour. */
+} ZMapStyleColourStruct, *ZMapStyleColour ;
+
+
+typedef struct
+{
+  ZMapStyleColourStruct normal ;
+  ZMapStyleColourStruct selected ;
+} ZMapStyleFullColourStruct, *ZMapStyleFullColour ;
+
+
+/* Styles have different modes, e.g. graph, alignment etc, information specific to a particular
+ * style is held in its own struct. */
+
+typedef struct
+{
+  struct
+  {
+    unsigned int mode : 1 ;
+    unsigned int baseline : 1 ;
+  } fields_set ;
+
+  ZMapStyleGraphMode mode ;				    /* Says how to draw a graph. */
+
+  double baseline ;
+
+} ZMapStyleGraphStruct, *ZMapStyleGraph ;
+
+
+typedef struct
+{
+  struct
+  {
+    unsigned int unused : 1 ;
+  } fields_set ;
+
+  ZMapStyleGlyphMode mode ;				    /* Says how to draw a graph. */
+
+} ZMapStyleGlyphStruct, *ZMapStyleGlyph ;
+
+
+typedef struct
+{
+  struct
+  {
+    unsigned int within_align_error : 1 ;
+    unsigned int between_align_error : 1 ;
+  } fields_set ;
+
+  /* Allowable align errors, used to decide whether a match should be classified as "perfect".
+   *   within_align_error   is used to assess the blocks in a single gapped alignment if align_gaps = TRUE
+   *  between_align_error   is used to assess several alignments (e.g. for exon matches) if join_homols = TRUE
+   * 
+   * Number is allowable number of missing bases between blocks/alignments, default is 0. */
+  unsigned int within_align_error ;
+  unsigned int between_align_error ;
+
+  /* Colours for bars joining up intra/inter alignment gaps. */
+  ZMapStyleFullColourStruct perfect ;
+  ZMapStyleFullColourStruct colinear ;
+  ZMapStyleFullColourStruct noncolinear ;
+
+} ZMapStyleAlignmentStruct, *ZMapStyleAlignment ;
+
+
+typedef struct
+{
+  struct
+  {
+    unsigned int unused : 1 ;
+  } fields_set ;
+
+
+  ZMapStyleFullColourStruct CDS_colours ;		    /* Colour for CDS part of feature. */
+
+
+} ZMapStyleTranscriptStruct, *ZMapStyleTranscript ;
 
 
 
@@ -66,27 +158,18 @@ typedef struct ZMapFeatureTypeStyleStruct_
 
     unsigned int mode : 1 ;
 
-    unsigned int graph_mode : 1 ;
-    unsigned int baseline : 1 ;
     unsigned int min_score : 1 ;
     unsigned int max_score : 1 ;
 
-    unsigned int foreground_set : 1 ;
-    unsigned int background_set : 1 ;
-    unsigned int outline_set    : 1 ;
-
     unsigned int overlap_mode : 1 ;
+    unsigned int bump_spacing : 1 ;
 
     unsigned int min_mag : 1 ;
     unsigned int max_mag : 1 ;
 
     unsigned int width : 1 ;
-    unsigned int bump_width : 1 ;
 
     unsigned int score_mode : 1 ;
-
-    unsigned int within_align_error : 1 ;
-    unsigned int between_align_error : 1 ;
 
     unsigned int gff_source : 1 ;
     unsigned int gff_feature : 1 ;
@@ -108,41 +191,27 @@ typedef struct ZMapFeatureTypeStyleStruct_
   ZMapStyleMode mode ;					    /* Specifies how features that
 							       reference this style will be processed. */
 
-  /* graph parameters. */
-  ZMapStyleGraphMode graph_mode ;			    /* Says how to draw a graph. */
+  ZMapStyleFullColourStruct colours ;			    /* Main feature colours. */
 
-  double baseline ;
-
-
-  struct
-  {
-    GdkColor  foreground ;      /* Overlaid on background. */
-    GdkColor  background ;      /* Fill colour. */
-    GdkColor  outline ;         /* Surround/line colour. */
-  } normal_colours ;
+  /* Colours for when feature is shown in frames. */
+  ZMapStyleFullColourStruct frame0_colours ;
+  ZMapStyleFullColourStruct frame1_colours ;
+  ZMapStyleFullColourStruct frame2_colours ;
 
 
   ZMapStyleOverlapMode overlap_mode ;			    /* Controls how features are grouped
 							       into sub columns within a column. */
+  double bump_spacing ;					    /* gap between bumped features. */
 
   double min_mag ;					    /* Don't display if fewer bases/line */
   double max_mag ;					    /* Don't display if more bases/line */
 
-  double   width ;					    /* column width */
-  double bump_width;					    /* gap between bumped features. */
+  double width ;					    /* column width */
 
-  ZMapStyleScoreMode   score_mode ;			    /* Controls width of features that
+  ZMapStyleScoreMode score_mode ;			    /* Controls width of features that
 							       have scores. */
-  double    min_score, max_score ;			    /* Min/max for score width calc. */
+  double min_score, max_score ;				    /* Min/max for score width calc. */
 
-
-  /* Allowable align errors, used to decide whether a match should be classified as "perfect".
-   *   within_align_error   is used to assess the blocks in a single gapped alignment if align_gaps = TRUE
-   *  between_align_error   is used to assess several alignments (e.g. for exon matches) if join_homols = TRUE
-   * 
-   * Number is allowable number of missing bases between blocks/alignments, default is 0. */
-  unsigned int within_align_error ;
-  unsigned int between_align_error ;
 
   /* GFF feature dumping, allows specifying of source/feature types independently of feature
    * attributes. */
@@ -153,14 +222,9 @@ typedef struct ZMapFeatureTypeStyleStruct_
   /* State information for the style. */
   struct
   {
-    /* I don't want a general show/hide flag here because we should
-     * get that dynamically from the state of the column canvas
-     * item.                     ummm, doesn't fit with the hidden_now flag ??????  */
-    unsigned int hidden_always   : 1 ;			    /* Column always hidden. */
-
-    unsigned int hidden_now      : 1 ;			    /* Column hidden now ? */
-
-    unsigned int show_when_empty : 1 ;			    /* If TRUE, features' column is
+    unsigned int hidden_always   : 1 ;		    /* Column always hidden. */
+    unsigned int hidden_init     : 1 ;		    /* Column hidden initially */
+    unsigned int show_when_empty : 1 ;		    /* If FALSE, features' column is
 							       displayed even if there are no features. */
 
     unsigned int showText        : 1 ;			    /* Should feature text be displayed. */
@@ -168,7 +232,6 @@ typedef struct ZMapFeatureTypeStyleStruct_
     unsigned int parse_gaps      : 1 ;
     unsigned int align_gaps      : 1 ;			    /* TRUE: gaps within alignment are displayed,
 							       FALSE: alignment is displayed as a single block. */
-
     unsigned int join_aligns     : 1 ;			    /* TRUE: joins aligns if between_align_error not exceeded,
 							       FALSE: does not joing aligns. */
 
@@ -189,9 +252,24 @@ typedef struct ZMapFeatureTypeStyleStruct_
 
   } opts ;
 
+  
+  union
+  {
+    ZMapStyleTranscriptStruct transcript ;
+    ZMapStyleAlignmentStruct alignment ;
+    ZMapStyleGraphStruct graph ;
+    ZMapStyleGlyphStruct glyph ;
+  } mode_data ;
+
+
+
 } ZMapFeatureTypeStyleStruct ;
 
 
+
+
+#define IS_COLOURSET(COLOUR_PTR) \
+  ((COLOUR_PTR)->colours_set.draw || (COLOUR_PTR)->colours_set.fill || (COLOUR_PTR)->colours_set.border)
 
 
 
