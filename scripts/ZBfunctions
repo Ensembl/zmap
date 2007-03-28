@@ -224,7 +224,7 @@ ZBmachines='deskpro16113'
 
 # Add new acedb binaries to this list, separate with a blank within the single string.
 ZBAcedbHOME=~acedb
-ZBAcedbBinaries='tace xace sgifaceserver giface makeUserPasswd blixem dotter'
+ZBAcedbBinaries='tace xace sgifaceserver giface makeUserPasswd blixem dotter xremote'
 ZBAcedbVersion=DEVELOPMENT
 ZBAcedbCVSRoot=$ZBAcedbHOME/CVS_ACEDB
 
