@@ -121,7 +121,7 @@ if [ -n "$initialise" ] ; then
 
   ZBGotoDir $targetdir
 
-  cvs -d $ZBcvsRoot checkout $zmapcvstarget || ZBmsgAndExit "Cannot cvs checkout: $zmapcvstarget"
+  cvs -d $ZBCVSRoot checkout $zmapcvstarget || ZBmsgAndExit "Cannot cvs checkout: $zmapcvstarget"
 
 else
   ZBGotoDir $targetdir
