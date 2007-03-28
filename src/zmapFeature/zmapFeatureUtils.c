@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 13 13:48 2007 (edgrif)
+ * Last edited: Mar 26 16:30 2007 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.47 2007-03-13 16:12:36 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.48 2007-03-28 16:36:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -200,11 +200,15 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
 {
   gboolean result = FALSE ;
   NewDumpFeaturesStruct dump_data ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   GDataForeachFunc dataset_start_func = NULL ;
   GData **dataset = NULL ;
   GFunc list_start_func = NULL ;
   GList *list = NULL ;
   ZMapFeature feature = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   zMapAssert(file && dump_set && dump_func && error_out) ;
@@ -1159,6 +1163,8 @@ static void printFeature(GQuark key_id, gpointer data, gpointer user_data)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* GCompareFunc function, called for each member of a list of styles to see if the supplied 
  * style id matches the that in the style. */
 static gint findStyle(gconstpointer list_data, gconstpointer user_data)
@@ -1177,6 +1183,8 @@ static gint findStyle(gconstpointer list_data, gconstpointer user_data)
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* GCompareFunc function, called for each member of a list of styles ids to see if the supplied 
