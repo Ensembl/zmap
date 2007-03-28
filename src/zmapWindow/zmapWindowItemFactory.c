@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar 13 15:02 2007 (edgrif)
+ * Last edited: Mar 28 10:56 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.27 2007-03-13 16:06:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.28 2007-03-28 16:29:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -321,7 +321,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
                                               ZMapFeature           feature)
 {
   RunSetStruct run_data = {NULL};
-  int feature_type = (int)(feature->type);
+  int feature_type ;
   FooCanvasItem *item = NULL, *return_item = NULL;
   FooCanvasGroup *features_container = NULL;
   ZMapWindowItemFeatureSetData set_data = NULL;
@@ -336,6 +336,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
              factory->user_funcs->item_created &&
              factory->user_funcs->top_item_created);
 
+
+  feature_type = (int)(feature->type) ;
   if(feature_type >=0 && feature_type <= FACTORY_METHOD_COUNT)
     {
       double *limits = factory->limits;
@@ -382,36 +384,18 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       switch(style_mode)
         {
         case ZMAPSTYLE_MODE_BASIC:
+        case ZMAPSTYLE_MODE_GLYPH:
           method_table = factory->basic_methods;
-          break;
-        case ZMAPSTYLE_MODE_TRANSCRIPT:
-        case ZMAPSTYLE_MODE_ALIGNMENT:
-          printf("SORT THIS OUT ROY\n");
-          zMapAssertNotReached();
-          break;
-        case ZMAPSTYLE_MODE_TEXT:
-          method_table = factory->text_methods;
-          break;
-        case ZMAPSTYLE_MODE_GRAPH:
-          method_table = factory->graph_methods;
-          break;
-        case ZMAPSTYLE_MODE_NONE:
-        default:
-          method_table = factory->methods;
-          break;
-        }
 
-      switch(feature_type)
-        {
-        case ZMAPFEATURE_TRANSCRIPT:
-#ifdef RDS_SIMPLE_FEATURES_NOT_GOOD_ENOUGH
-          if(!feature->feature.transcript.introns && !feature->feature.transcript.introns)
-            method = &(method_table[ZMAPFEATURE_BASIC]);
-          else
-#endif /* RDS_SIMPLE_FEATURES_NOT_GOOD_ENOUGH */
-            method = &(method_table[feature_type]);
+          if(feature->flags.has_score)
+            zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
+
+          method = &(method_table[feature_type]);
           break;
-        case ZMAPFEATURE_ALIGNMENT:
+
+        case ZMAPSTYLE_MODE_ALIGNMENT:
+          method_table = factory->methods;
+
           if (feature->flags.has_score)
             zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
 
@@ -449,7 +433,83 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             zMapAssertNotReached();
 
           break;
+
+        case ZMAPSTYLE_MODE_TEXT:
+          method_table = factory->text_methods;
+          break;
+
+        case ZMAPSTYLE_MODE_GRAPH:
+          method_table = factory->graph_methods;
+          break;
+
+        case ZMAPSTYLE_MODE_TRANSCRIPT:
+          method_table = factory->methods;
+	  method = &(method_table[feature_type]);
+	  break ;
+
+
+        case ZMAPSTYLE_MODE_NONE:
+        default:
+          method_table = factory->methods;
+          break;
+        }
+
+      switch(feature_type)
+        {
+        case ZMAPFEATURE_TRANSCRIPT:
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+            method = &(method_table[feature_type]);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          break;
+
+
+        case ZMAPFEATURE_ALIGNMENT:
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          if (feature->flags.has_score)
+            zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
+
+          factory->stats->total_matches++;
+
+          if ((!feature->feature.homol.align) || (!zMapStyleIsAlignGaps(style)))
+            {
+              factory->stats->ungapped_matches++;
+              factory->stats->ungapped_boxes++;
+              factory->stats->total_boxes++;
+
+              method = &(method_table[ZMAPFEATURE_BASIC]);              
+            }
+          else if(feature->feature.homol.align)
+            {
+              if(feature->feature.homol.flags.perfect)
+                {
+                  factory->stats->gapped_matches++;
+                  factory->stats->total_boxes  += feature->feature.homol.align->len ;
+                  factory->stats->gapped_boxes += feature->feature.homol.align->len ;
+
+                  method = &(method_table[feature_type]);
+                }
+              else
+                {
+                  factory->stats->not_perfect_gapped_matches++;
+                  factory->stats->total_boxes++;
+                  factory->stats->ungapped_boxes++;
+                  factory->stats->imperfect_boxes += feature->feature.homol.align->len;
+
+                  method = &(method_table[ZMAPFEATURE_BASIC]);
+                }
+            }
+          else
+            zMapAssertNotReached();
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+          break;
+
+        case ZMAPSTYLE_MODE_GLYPH:
         case ZMAPFEATURE_BASIC:
+	  break ;
+
         default:
           if(feature->flags.has_score)
             zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
@@ -736,8 +796,10 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
   ZMapWindowFToIFactory factory = run_data->factory;
   FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem *feature_item ;
-  GdkColor *outline, *foreground, *background;
+  GdkColor *outline = NULL, *foreground = NULL, *background = NULL ;
   guint line_width;
+
+
 
   line_width = factory->line_width;
 
@@ -745,32 +807,33 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
 
   if (feature->flags.has_boundary)
     {
-      static GdkColor splice_background ;
+      GdkColor *splice_background ;
       double width, origin, start ;
       double style_width, max_score, min_score ;
       ZMapDrawGlyphType glyph_type ;
-      char *colour ;
       ZMapFrame frame ;
+      gboolean status ;
+      ZMapStyleColourTarget target ;
 
       frame = zmapWindowFeatureFrame(feature) ;
 
-      /* colouring is temporary until I get styles fixed up....then we need to allow stuff like
-       * splice/frame specific colouring.... */
       switch (frame)
 	{
 	case ZMAPFRAME_0:
-	  colour = "red" ;
+	  target = ZMAPSTYLE_COLOURTARGET_FRAME0 ;
 	  break ;
 	case ZMAPFRAME_1:
-	  colour = "blue" ;
+	  target = ZMAPSTYLE_COLOURTARGET_FRAME1 ;
 	  break ;
 	case ZMAPFRAME_2:
-	  colour = "green" ;
+	  target = ZMAPSTYLE_COLOURTARGET_FRAME2 ;
 	  break ;
 	default:
 	  zMapAssertNotReached() ;
 	}
-      gdk_color_parse(colour, &splice_background) ;
+
+      status = zMapStyleGetColours(style, target, ZMAPSTYLE_COLOURTYPE_NORMAL, &splice_background, NULL, NULL) ;
+      zMapAssert(status) ;
 
       if (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE)
 	{
@@ -817,12 +880,16 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
 
       feature_item = zMapDrawGlyph(parent, start, (y2 + y1) * 0.5,
 				   glyph_type,
-				   &splice_background, width, 2) ;
+				   splice_background, width, 2) ;
 
     }
   else
     {
-      zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
+      gboolean status ;
+
+      status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				   &background, &foreground, &outline) ;
+      zMapAssert(status) ;
 
       feature_item = zMapDrawBox(parent,
 				 x1, y1, x2, y2,
@@ -841,13 +908,14 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
                                        double x1, double y1, double x2, double y2,
                                        ZMapFeatureTypeStyle style)
 {
+  FooCanvasItem *feature_item = NULL ;
+  gboolean status ;
   ZMapWindowFToIFactory factory = run_data->factory;
   ZMapFeatureBlock        block = run_data->block;
   FooCanvasGroup        *parent = run_data->container;
-  FooCanvasItem *feature_item ;
   double offset ;
   int i ;
-  GdkColor *outline, *foreground, *background;
+  GdkColor *outline = NULL, *foreground = NULL, *background = NULL ;
   guint line_width;
   static gboolean colour_init = FALSE ;
   static GdkColor perfect, colinear, noncolinear ;
@@ -855,6 +923,14 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   char *colinear_colour = ZMAP_WINDOW_MATCH_COLINEAR ;
   char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
   unsigned int match_threshold = 0 ;
+
+
+  /* Get the colours, it's an error at this stage if none set we don't draw. */
+  /* We could speed performance by caching these colours and only changing them when the style
+   * quark changes. */
+  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+			       &background, &foreground, &outline) ;
+  zMapAssert(status) ;					    /* If we are here, style should be ok for display. */
 
 
   if (!colour_init)
@@ -869,7 +945,6 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   zMapStyleGetGappedAligns(style, &match_threshold) ;
 
 
-  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
   line_width = factory->line_width;
 
   if(feature->feature.homol.align)
@@ -1070,7 +1145,10 @@ static void drawFeatureExon(ZMapWindowFToIFactory factory,
                             GdkColor *background,
                             GdkColor *foreground,
                             GdkColor *outline,
-                            gboolean has_cds)
+                            gboolean has_cds,
+                            GdkColor *cds_fill,
+                            GdkColor *cds_draw,
+                            GdkColor *cds_border)
 {
   ZMapWindowItemFeature exon_data_ptr, tmp_data_ptr; 
   FooCanvasItem *exon_box, *utr_box;
@@ -1078,8 +1156,12 @@ static void drawFeatureExon(ZMapWindowFToIFactory factory,
   int non_start, non_end ;
   
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (strcmp(g_quark_to_string(zMapStyleGetID(style)), "Known_CDS") == 0)
     printf("found it\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* create a ZMapWindowItemFeature for the exon, this will be attached later */
@@ -1099,25 +1181,43 @@ static void drawFeatureExon(ZMapWindowFToIFactory factory,
       if ((cds_start > bottom) || (cds_end < top))
         {
           has_cds = FALSE;      /* This exon is not a exon of the CDS */
-          if((exon_fill = background) == NULL)
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          if ((exon_fill = background) == NULL)
             exon_outline = outline;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  exon_fill = background ;
+	  exon_outline = outline ;
         }
       else
         {
           /* At least some part of the exon is CDS... */
           exon_data_ptr->subpart = ZMAPFEATURE_SUBPART_EXON_CDS ;
           
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           if ((exon_fill = background) == NULL)
             exon_outline = foreground;
           else
             exon_fill = foreground;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  exon_fill = cds_fill ;
+	  exon_outline = cds_border ;
         }
     }
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   else if ((exon_fill = background) == NULL)
     {
       exon_outline = outline;
     }
-  
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  else
+    {
+      exon_fill = background ;
+      exon_outline = outline ;
+    }
+
   exon_box = zMapDrawSSPolygon(parent, 
                                (zMapStyleIsDirectionalEnd(style) ? ZMAP_POLYGON_POINTING : ZMAP_POLYGON_SQUARE), 
                                left, right,
@@ -1207,24 +1307,47 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
   /*  ZMapFeatureBlock        block = run_data->block; */
   FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem *feature_item ;
-  GdkColor *outline, *foreground, *background;
+  gboolean has_cds = FALSE;
+  gboolean status ;
+  GdkColor *outline = NULL, *foreground = NULL, *background = NULL ;
+  GdkColor *cds_border = NULL, *cds_draw = NULL, *cds_fill = NULL ;
   guint line_width;
   GdkColor *intron_fill = NULL;
   int i ;
   double offset ;
 
-  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
-  line_width = factory->line_width;
 
-  if((intron_fill = background) == NULL)
-    intron_fill   = outline;
+  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+			       &background, &foreground, &outline) ;
+  zMapAssert(status) ;
+
+
+  if (feature->feature.transcript.flags.cds)
+    has_cds = TRUE ;
+
+  if (has_cds)
+    {
+      /* cds will default to normal colours if its own colours are not set. */
+      status = zMapStyleGetColoursCDSDefault(style, &cds_fill, &cds_draw, &cds_border) ;
+      zMapAssert(status) ;
+    }
+
+
+  line_width = factory->line_width ;
+
+
+
+  if (background)
+    intron_fill = background ;
+  else
+    intron_fill = outline ;
+
   
   if (feature->feature.transcript.introns && feature->feature.transcript.exons)
     {
       double feature_start, feature_end;
-      double cds_start = 0.0, cds_end = 0.0; /* cds_start < cds_end */
+      double cds_start = 0.0, cds_end = 0.0 ; /* cds_start < cds_end */
       FooCanvasGroup *feature_group ;
-      gboolean has_cds = FALSE;
       double *limits        = factory->limits;
       double points_inout[] = {0.0, 0.0, 0.0, 0.0};
 
@@ -1241,15 +1364,14 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
       offset = feature_start + feature_offset ;
 
       /* Set up the cds coords if there is one. */
-      if(feature->feature.transcript.flags.cds)
+      if (feature->feature.transcript.flags.cds)
         {
           cds_start = points_inout[1] = feature->feature.transcript.cds_start ;
           cds_end   = points_inout[3] = feature->feature.transcript.cds_end ;
           zMapAssert(cds_start < cds_end);
-          has_cds   = TRUE;
           
           /* I think this is correct...???? */
-          if(!((factory->user_funcs->feature_size_request)(feature, &limits[0], 
+          if (!((factory->user_funcs->feature_size_request)(feature, &limits[0], 
                                                            &points_inout[0], 
                                                            factory->user_data)))
             {
@@ -1363,7 +1485,8 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
                               exon_span, style, 
                               x1, x2, top, bottom, offset,
                               cds_start, cds_end, line_width, 
-                              background, foreground, outline, has_cds);
+                              background, foreground, outline,
+			      has_cds, cds_fill, cds_draw, cds_border);
             }
 	}
     }
@@ -1389,45 +1512,46 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
                                                       &points_inout[0], factory->user_data))
         {
       
-      top    = points_inout[1];
-      bottom = points_inout[3];
+	  top    = points_inout[1];
+	  bottom = points_inout[3];
       
-      zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
+	  zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
 
-      /* Set up the cds coords if there is one. */
-      if(feature->feature.transcript.flags.cds)
-        {
-          cds_start = points_inout[1] = feature->feature.transcript.cds_start ;
-          cds_end   = points_inout[3] = feature->feature.transcript.cds_end ;
-          zMapAssert(cds_start < cds_end);
-          has_cds   = TRUE;
+	  /* Set up the cds coords if there is one. */
+	  if(feature->feature.transcript.flags.cds)
+	    {
+	      cds_start = points_inout[1] = feature->feature.transcript.cds_start ;
+	      cds_end   = points_inout[3] = feature->feature.transcript.cds_end ;
+	      zMapAssert(cds_start < cds_end);
+	      has_cds   = TRUE;
           
-          /* I think this is correct...???? */
-          if(!((factory->user_funcs->feature_size_request)(feature, &limits[0], 
-                                                           &points_inout[0], 
-                                                           factory->user_data)))
-            {
-              cds_start = points_inout[1];
-              cds_end   = points_inout[3];
-              zmapWindowSeq2CanOffset(&cds_start, &cds_end, offset) ;
-            }
-
-        }
+	      /* I think this is correct...???? */
+	      if(!((factory->user_funcs->feature_size_request)(feature, &limits[0], 
+							       &points_inout[0], 
+							       factory->user_data)))
+		{
+		  cds_start = points_inout[1];
+		  cds_end   = points_inout[3];
+		  zmapWindowSeq2CanOffset(&cds_start, &cds_end, offset) ;
+		}
+	      
+	    }
 
       
-      /* This is a single exon transcript.  We can't just get away
-       * with using the simple feature code.. Single exons may have a
-       * cds */
+	  /* This is a single exon transcript.  We can't just get away
+	   * with using the simple feature code.. Single exons may have a
+	   * cds */
 
-      /* need to sort out top and bottom! */
-      drawFeatureExon(factory, feature_item, feature, 
-                      &exon_span, style,
-                      x1, x2, top, bottom, offset,
-                      cds_start, cds_end, line_width, 
-                      background, foreground, outline, has_cds);
+	  /* need to sort out top and bottom! */
+	  drawFeatureExon(factory, feature_item, feature, 
+			  &exon_span, style,
+			  x1, x2, top, bottom, offset,
+			  cds_start, cds_end, line_width, 
+			  background, foreground, outline,
+			  has_cds, cds_fill, cds_draw, cds_border);
         }
     }
-
+  
   return feature_item ;
 }
 
@@ -1611,6 +1735,7 @@ static FooCanvasItem *drawSeqFeature(RunSet run_data,  ZMapFeature feature,
                                      double x1, double y1, double x2, double y2,
                                      ZMapFeatureTypeStyle style)
 {
+  gboolean status ;
   ZMapWindowFToIFactory  factory = run_data->factory;
   ZMapFeatureBlock feature_block = run_data->block;
   FooCanvasGroup         *parent = run_data->container;
@@ -1618,12 +1743,14 @@ static FooCanvasItem *drawSeqFeature(RunSet run_data,  ZMapFeature feature,
   FooCanvasItem  *feature_parent = NULL;
   FooCanvasGroup *column_parent  = NULL;
   /*ZMapWindowItemHighlighter hlght= NULL;*/
-  GdkColor *outline, *foreground, *background;
+  GdkColor *outline = NULL, *foreground = NULL, *background = NULL;
   ZMapDrawTextIterator iterator  = NULL;
   double txt_height;
   int i;
 
-  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
+  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+			       &background, &foreground, &outline);
+  zMapAssert(status) ;
 
   feature_start  = feature->x1;
   feature_end    = feature->x2;
@@ -1717,18 +1844,21 @@ static FooCanvasItem *drawPepFeature(RunSet run_data,  ZMapFeature feature,
                                      ZMapFeatureTypeStyle style)
 {
   ZMapWindowFToIFactory  factory = run_data->factory;
+  gboolean status ;
   /* ZMapFeatureBlock feature_block = run_data->block; */
   FooCanvasGroup         *parent = run_data->container;
   double feature_start, feature_end;
   FooCanvasItem  *prev_trans     = NULL;
   FooCanvasItem  *feature_parent = NULL;
   FooCanvasGroup *column_parent  = NULL;
-  GdkColor *outline, *foreground, *background;
+  GdkColor *outline = NULL, *foreground = NULL, *background = NULL;
   ZMapDrawTextIterator iterator  = NULL;
   double txt_height, new_x ;
   int i;
 
-  zMapFeatureTypeGetColours(style, &background, &foreground, &outline);
+  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+			       &background, &foreground, &outline);
+  zMapAssert(status) ;
 
   feature_start  = feature->x1;
   feature_end    = feature->x2;
@@ -1870,9 +2000,10 @@ static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature featur
 					     ZMapFeatureTypeStyle style)
 {
   ZMapWindowFToIFactory factory = run_data->factory ;
+  gboolean status ;
   FooCanvasGroup *parent = run_data->container ;
   FooCanvasItem *feature_item ;
-  GdkColor *outline, *foreground, *background ;
+  GdkColor *outline = NULL, *foreground = NULL, *background = NULL ;
   guint line_width ;
   double numerator, denominator, dx ;
   double width, max_score, min_score ;
@@ -1885,7 +2016,9 @@ static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature featur
 
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
 
-  zMapFeatureTypeGetColours(style, &background, &foreground, &outline) ;
+  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+			       &background, &foreground, &outline) ;
+  zMapAssert(status) ;
 
   numerator = feature->score - min_score ;
   denominator = max_score - min_score ;
