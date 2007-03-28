@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Mar  1 10:18 2007 (edgrif)
+ * Last edited: Mar 28 09:44 2007 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.16 2007-03-01 10:20:01 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.17 2007-03-28 16:30:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,6 +80,11 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
 
+static gboolean addModesToStyles(ZMapFeatureContext context) ;
+static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id, 
+						 gpointer data, 
+						 gpointer user_data,
+						 char **error_out) ;
 
 
 /* Set up the list, note the special pthread macro that makes sure mutex is set up before
@@ -261,6 +266,8 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
     }
 
+
+  /* Open the connection. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && zMapServerOpenConnection(server) != ZMAP_SERVERRESPONSE_OK)
     {
@@ -269,7 +276,8 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     }
 
 
-  /* If there are no styles then retrieve all available styles from the server. */
+  /* We may have been supplied with the styles by the caller, if not then retrieve all
+   * available styles from the server. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
       if (!(styles->styles))
@@ -295,6 +303,18 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	      if (!zMapStyleInheritAllStyles(&(context->context->styles)))
 		zMapLogWarning("%s", "There were errors in inheriting styles.") ;
 	    }
+	}
+    }
+
+
+  /* Find out if the styles will need to have their mode set from the features. */
+  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
+    {
+      if (zMapServerStylesHaveMode(server, &(styles->server_styles_have_mode))
+	  != ZMAP_SERVERRESPONSE_OK)
+	{
+	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	}
     }
 
@@ -400,6 +420,17 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
     }
 
+  /* If the style modes need to be set from features then do that now. */
+  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK && !(styles->server_styles_have_mode))
+    {
+      if (!addModesToStyles(context->context))
+	{
+	  *err_msg_out = g_strdup_printf("Inferring Style modes from Features failed.") ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	}
+    }
+
+
   /* error handling...if there is a server we should get rid of it....and sever connection if
    * required.... */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
@@ -430,3 +461,108 @@ static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_o
 
   return thread_rc ;
 }
+
+
+/* go through all the feature sets in a context and find out what type of features are in the
+ * set and set the style mode from that...a bit hacky really...think about this.... */
+static gboolean addModesToStyles(ZMapFeatureContext context)
+{
+  gboolean result = TRUE ;
+
+
+  zMapFeatureContextExecute((ZMapFeatureAny)context,
+			    ZMAPFEATURE_STRUCT_FEATURESET,
+			    addModeCB,
+			    &result) ;
+
+  return result ;
+}
+
+
+static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id, 
+						 gpointer data, 
+						 gpointer user_data,
+						 char **error_out)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
+  gboolean *error_ptr = (gboolean *)user_data ;
+  ZMapFeatureStructType feature_type ;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
+  feature_type = feature_any->struct_type ;
+
+  switch(feature_type)
+    {
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+    case ZMAPFEATURE_STRUCT_ALIGN:
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      {
+	break ;
+      }
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      {
+	ZMapFeatureSet feature_set ;
+	ZMapFeature feature ;
+	ZMapStyleMode mode ;
+
+        feature_set = (ZMapFeatureSet)feature_any ;
+	feature = (ZMapFeature)zMap_g_datalist_first(&(feature_set->features)) ;
+
+	if (!zMapStyleHasMode(feature->style))
+	  {
+	    switch (feature->type)
+	      {
+	      case ZMAPFEATURE_BASIC:
+		mode = ZMAPSTYLE_MODE_BASIC ;
+
+		if (g_ascii_strcasecmp(g_quark_to_string(zMapStyleGetID(feature->style)), "GF_splice") == 0)
+		  {
+		    mode = ZMAPSTYLE_MODE_GLYPH ;
+		    zMapStyleSetGlyphMode(feature->style, ZMAPSTYLE_GLYPH_SPLICE) ;
+
+		    zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_NORMAL,
+					"red", NULL, NULL) ;
+		    zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_NORMAL,
+					"blue", NULL, NULL) ;
+		    zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_NORMAL,
+					"green", NULL, NULL) ;
+		  }
+		break ;
+	      case ZMAPFEATURE_ALIGNMENT:
+		mode = ZMAPSTYLE_MODE_ALIGNMENT ;
+		break ;
+	      case ZMAPFEATURE_TRANSCRIPT:
+		mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
+		break ;
+	      case ZMAPFEATURE_RAW_SEQUENCE:
+		mode = ZMAPSTYLE_MODE_TEXT ;
+		break ;
+	      case ZMAPFEATURE_PEP_SEQUENCE:
+		mode = ZMAPSTYLE_MODE_TEXT ;
+		break ;
+		/* What about glyph and graph..... */
+
+	      default:
+		zMapAssertNotReached() ;
+		break ;
+	      }
+
+	    zMapStyleSetMode(feature_set->style, mode) ;
+	  }
+
+	break;
+      }
+    case ZMAPFEATURE_STRUCT_FEATURE:
+    case ZMAPFEATURE_STRUCT_INVALID:
+    default:
+      {
+	status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
+	zMapAssertNotReached();
+	break;
+      }
+    }
+
+  return status ;
+}
+
+
