@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 13 17:22 2007 (edgrif)
+ * Last edited: Mar 28 10:53 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.175 2007-03-14 08:44:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.176 2007-03-28 16:29:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -545,8 +545,13 @@ typedef struct _ZMapWindowStruct
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
 
-  /* TRUE => highlight using rev. video, FALSE => use focus_colour  for focus item highlighting. */
-  gboolean use_rev_video ;
+  /* Highlighting colours for items/columns. The item colour is used only if a select colour
+   * was not specificed in the features style. */
+  struct
+  {
+    unsigned int item : 1 ;
+    unsigned int column : 1 ;
+  } highlights_set ;
   GdkColor colour_item_highlight ;
   GdkColor colour_column_highlight ;
 
