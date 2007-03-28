@@ -56,7 +56,7 @@ ZBGotoDir ()
 {
 
   cd $1 || ZBmsgAndExit "Cannot cd to ZMap build directory: $1"
-  echo "$0: now in "`pwd`
+  echo "$0: now in "`pwd` >&2
 }
 
 # If the global variable ZMmailOnExit is set then the error message is sent
