@@ -56,7 +56,7 @@ ZBGotoDir ()
 {
 
   cd $1 || ZBmsgAndExit "Cannot cd to ZMap build directory: $1"
-
+  echo "$0: now in "`pwd`
 }
 
 # If the global variable ZMmailOnExit is set then the error message is sent
@@ -189,6 +189,20 @@ esac
 # END OF INSANE BIT
 
 
+ZBsafeCVSadd ()
+{
+    file_to_add=$1
+    if [ "x$ZBCVSacceptDuplicates" = "xtrue" ]; then
+       cvs add $file_to_add 2>&1 | \
+            grep -v 'No xauth data' | \
+            tee cvs.log && \
+            perl -ne 'END{ unlink "cvs.log"; } exit 1 unless (/already exists/)' cvs.log || \
+            ZBmsgAndExit "Failed to cvs add $file_to_add"
+    else
+      cvs add $file_to_add || ZBmsgAndExit "Failed to cvs add $file_to_add"
+    fi
+}
+
 
 # all variables must be after functions...
 #
@@ -196,6 +210,7 @@ ZBscript=`basename $1`
 
 ZBBaseDir=$real_home
 ZBbuildBase=$ZBBaseDir/BUILDS
+ZBReleaseBase=$ZBbuildBase/RELEASE_NOTES
 ZBOverDir="$ZBBaseDir/BUILD.OVERNIGHT"
 ZBOverBinDir="$ZBBaseDir/BIN.OVERNIGHT"
 ZBDevDir="$ZBBaseDir/BUILD.DEVELOPMENT"
@@ -208,10 +223,18 @@ ZBDevBinDir="$ZBBaseDir/BIN.DEVELOPMENT"
 ZBmachines='deskpro16113'
 
 # Add new acedb binaries to this list, separate with a blank within the single string.
+ZBAcedbHOME=~acedb
 ZBAcedbBinaries='tace xace sgifaceserver giface makeUserPasswd blixem dotter'
+ZBAcedbVersion=DEVELOPMENT
+ZBAcedbCVSRoot=$ZBAcedbHOME/CVS_ACEDB
 
-ZBcvsRoot=/nfs/team71/acedb/zmap/CVS
+CVSROOT=DESPOT
+CVS_RSH=ssh
+export CVS_RSH CVSROOT
 
+ZBCVSLogin=:ext:zmap@cbi4:
+ZBCVSRoot=~zmap/CVS
+ZBgetRTtickets=getRTtickets
 
 # REMOTE DIRECTORIES
 ZBRbuildBase=""
