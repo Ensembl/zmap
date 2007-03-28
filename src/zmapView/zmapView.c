@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar 13 17:22 2007 (edgrif)
+ * Last edited: Mar 27 14:45 2007 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.110 2007-03-14 08:44:26 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.111 2007-03-28 16:06:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,12 +62,20 @@ static void setZoomStatus(gpointer data, gpointer user_data);
 static void splitMagic(gpointer data, gpointer user_data);
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void stopStateConnectionChecking(ZMapView zmap_view) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static gboolean checkStateConnections(ZMapView zmap_view) ;
 
 static void loadDataConnections(ZMapView zmap_view) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void killZMapView(ZMapView zmap_view) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void killGUI(ZMapView zmap_view) ;
 static void killConnections(ZMapView zmap_view) ;
 
@@ -94,8 +102,13 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 
 static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GList *string2StyleQuarks(char *feature_sets) ;
 static gboolean nextIsQuoted(char **text) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 static ZMapFeatureContext createContext(char *sequence, int start, int end,
 					GData *types, GList *feature_set_names) ;
