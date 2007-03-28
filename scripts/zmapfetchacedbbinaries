@@ -11,9 +11,8 @@ ZBExportOSVars
 source_acedb=$1
 dest_zmap=$2
 
-acedb=~acedb
 target=$ZBBaseDir/BIN.$dest_zmap/$ZBbuildOSCanon/bin
-source=$acedb'/RELEASE.'$source_acedb'/bin.'$ZBbuildOSCanon'_4/'
+source=$ZBAcedbHOME'/RELEASE.'$source_acedb'/bin.'$ZBbuildOSCanon'_4/'
 
 # copy all the files from acedb release
 
