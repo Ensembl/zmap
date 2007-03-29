@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 21 12:12 2007 (rds)
+ * Last edited: Mar 29 15:52 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.93 2007-03-29 08:13:41 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.94 2007-03-29 14:53:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -748,7 +748,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
   ZMapFeature feature ;
   ZMapFeatureStruct feature_copy = {};
   static guint32 last_but_press = 0 ;			    /* Used for double clicks... */
-  
 
   switch (event->type)
     {
@@ -889,6 +888,45 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	  }
 	break ;
       }
+#ifdef RDS_TESTING_TOOLTIPS
+      /* One might think that this might work, and it does, after a fashion.
+       * The problem is though the tooltips interface isn't quite rich enough yet.
+       * gtk_tooltips_{en,dis}able aren't immediate, they require a enter/leave of the
+       * widget cycle to occur, before you see the effect.  GTK version 2.12 has some 
+       * widget signal/property additions that might help...
+       */
+  static GtkTooltips *tooltip = NULL; /* should be defined earlier! ^^^ */
+  static GString *tip_string = NULL;
+    case GDK_ENTER_NOTIFY:
+      if(!tooltip)
+        {
+          tip_string = g_string_sized_new(1024);
+          tooltip = gtk_tooltips_new();
+          gtk_tooltips_set_delay(tooltip, 5);
+        }
+
+      feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
+
+      g_string_append_printf(tip_string,
+                             "Feature %s\nType %d\n(unique) %s", 
+                             g_quark_to_string(feature->original_id),
+                             feature->type,
+                             g_quark_to_string(feature->unique_id));
+      
+      gtk_tooltips_set_tip(tooltip, 
+                           GTK_WIDGET(FOO_CANVAS_ITEM(item)->canvas), 
+                           tip_string->str, tip_string->str);
+      //gtk_tooltips_enable(tooltip);
+      event_handled = TRUE;
+      break;
+    case GDK_LEAVE_NOTIFY:
+      
+      g_string_truncate(tip_string, 0);
+      //gtk_tooltips_disable(GTK_TOOLTIPS(tooltip));
+
+      event_handled = TRUE;
+      break;
+#endif /* RDS_TESTING_TOOLTIPS */
     default:
       {
 	/* By default we _don't_handle events. */
