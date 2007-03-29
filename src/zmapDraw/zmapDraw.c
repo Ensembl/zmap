@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Mar 20 10:10 2007 (edgrif)
+ * Last edited: Mar 29 09:46 2007 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.60 2007-03-28 16:02:47 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.61 2007-03-29 08:58:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -182,7 +182,7 @@ FooCanvasItem *zMapDrawBox(FooCanvasGroup *group,
   FooCanvasItem *item = NULL ;
   static GdkBitmap *make_clickable_bmp = NULL ;
 
-  zMapAssert(FOO_IS_CANVAS_GROUP(group) && (border_colour || fill_colour)) ;
+  zMapAssert(FOO_IS_CANVAS_GROUP(group)) ;
 
   if (fill_colour == NULL)
     {
