@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 28 09:08 2007 (edgrif)
+ * Last edited: Mar 29 09:00 2007 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.45 2007-03-28 16:38:10 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.46 2007-03-29 08:59:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,8 +92,12 @@ static void mergeStyle(GQuark style_id, gpointer data, gpointer user_data_unused
 
 static void destroyStyle(GQuark style_id, gpointer data, gpointer user_data_unused) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapFeatureTypeStyle createInheritedStyle(GData *style_set, char *parent_style) ;
 static void inheritStyleCB(gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1223,7 +1227,7 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 	      gboolean strand_specific, frame_specific, show_rev_strand ;
 	      int min_mag, max_mag ;
 #endif /* RDS_DONT_INCLUDE */
-	      ZMapStyleMode mode = ZMAPSTYLE_MODE_NONE ;
+	      ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID ;
 
 	      
 	      if (!zMapStyleFormatMode(zMapConfigGetElementString(next_styles, "description"), &mode))
