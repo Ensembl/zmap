@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 26 16:30 2007 (edgrif)
+ * Last edited: Mar 29 09:00 2007 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.48 2007-03-28 16:36:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.49 2007-03-29 08:59:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,7 +73,11 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 #endif
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gint findStyle(gconstpointer list_data, gconstpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
 
 static void addTypeQuark(GQuark style_id, gpointer data, gpointer user_data) ;
