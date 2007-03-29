@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar 28 09:55 2007 (edgrif)
+ * Last edited: Mar 29 09:02 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.85 2007-03-28 16:33:47 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.86 2007-03-29 09:00:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1655,7 +1655,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
   gboolean strand_specific = FALSE, show_up_strand = FALSE,
     frame_specific = FALSE, show_only_as_3_frame = FALSE ;
-  ZMapStyleMode mode = ZMAPSTYLE_MODE_NONE ;
+  ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID ;
   gboolean hide_always = FALSE, init_hidden = FALSE ;
   double min_mag = 0.0, max_mag = 0.0 ;
   gboolean score_set = FALSE ;
@@ -1964,7 +1964,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
        * currently, we have to set it later. */
       style = zMapFeatureTypeCreate(name, remark) ;
 
-      if (mode != ZMAPSTYLE_MODE_NONE)
+      if (mode != ZMAPSTYLE_MODE_INVALID)
 	zMapStyleSetMode(style, mode) ;
 
 

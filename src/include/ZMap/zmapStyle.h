@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Mar 26 16:28 2007 (edgrif)
+ * Last edited: Mar 29 08:54 2007 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.2 2007-03-28 16:02:00 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.3 2007-03-29 09:01:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -66,7 +66,6 @@ typedef enum
 
 #define ZMAP_MODE_METADEFS(DEF_MACRO) \
   DEF_MACRO(ZMAPSTYLE_MODE_INVALID)\
-  DEF_MACRO(ZMAPSTYLE_MODE_NONE)\
   DEF_MACRO(ZMAPSTYLE_MODE_META)\
   DEF_MACRO(ZMAPSTYLE_MODE_BASIC)\
   DEF_MACRO(ZMAPSTYLE_MODE_TRANSCRIPT)\

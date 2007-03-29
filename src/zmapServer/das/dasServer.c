@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Mar 27 15:58 2007 (edgrif)
+ * Last edited: Mar 29 09:02 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.26 2007-03-28 16:04:40 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.27 2007-03-29 09:01:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1255,7 +1255,7 @@ static void typesFilter      (ZMapDAS1Type type,              gpointer user_data
   GQuark tmp_quark;
   char *name, *desc, *outline, *fg, *bg;
   double width = 5.0;           /* pass sanity check in featuretypecreate */
-  ZMapStyleMode mode = ZMAPSTYLE_MODE_NONE ;
+  ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID ;
 
   tmp_quark = type->type_id;
   name = (char *)g_quark_to_string(tmp_quark);
@@ -1266,7 +1266,7 @@ static void typesFilter      (ZMapDAS1Type type,              gpointer user_data
   /* Mode is currently hard-coded, don't know if das will address this. */
   style = zMapFeatureTypeCreate(name, desc) ;
 
-  if (mode != ZMAPSTYLE_MODE_NONE)
+  if (mode != ZMAPSTYLE_MODE_INVALID)
     zMapStyleSetMode(style, mode) ;
 
   zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, bg, fg, outline) ;
