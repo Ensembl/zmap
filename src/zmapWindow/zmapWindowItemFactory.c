@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar 28 10:56 2007 (edgrif)
+ * Last edited: Mar 29 09:56 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.28 2007-03-28 16:29:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.29 2007-03-29 09:02:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -326,7 +326,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
   FooCanvasGroup *features_container = NULL;
   ZMapWindowItemFeatureSetData set_data = NULL;
   ZMapFeatureTypeStyle style = NULL;
-  ZMapStyleMode style_mode = ZMAPSTYLE_MODE_NONE;
+  ZMapStyleMode style_mode = ZMAPSTYLE_MODE_INVALID ;
   GHashTable *style_table = NULL;
   gboolean no_points_in_block = TRUE;
   /* check here before they get called.  I'd prefer to only do this
@@ -336,9 +336,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
              factory->user_funcs->item_created &&
              factory->user_funcs->top_item_created);
 
-
   feature_type = (int)(feature->type) ;
-  if(feature_type >=0 && feature_type <= FACTORY_METHOD_COUNT)
+
+  if (feature_type >=0 && feature_type <= FACTORY_METHOD_COUNT)
     {
       double *limits = factory->limits;
       double *points = factory->points;
@@ -381,6 +381,10 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
       style_mode = zMapStyleGetMode(style) ;
 
+
+      /* NOTE TO ROY: I have probably not got the best logic below...I am sure that we
+       * have not handled/thought about all the combinations of style modes and feature
+       * types that might occur so will need to revisit this.... */
       switch(style_mode)
         {
         case ZMAPSTYLE_MODE_BASIC:
@@ -448,73 +452,30 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	  break ;
 
 
-        case ZMAPSTYLE_MODE_NONE:
         default:
-          method_table = factory->methods;
+	  zMapAssertNotReached() ;
           break;
         }
 
       switch(feature_type)
         {
         case ZMAPFEATURE_TRANSCRIPT:
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-            method = &(method_table[feature_type]);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
           break;
-
 
         case ZMAPFEATURE_ALIGNMENT:
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          if (feature->flags.has_score)
-            zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
-
-          factory->stats->total_matches++;
-
-          if ((!feature->feature.homol.align) || (!zMapStyleIsAlignGaps(style)))
-            {
-              factory->stats->ungapped_matches++;
-              factory->stats->ungapped_boxes++;
-              factory->stats->total_boxes++;
-
-              method = &(method_table[ZMAPFEATURE_BASIC]);              
-            }
-          else if(feature->feature.homol.align)
-            {
-              if(feature->feature.homol.flags.perfect)
-                {
-                  factory->stats->gapped_matches++;
-                  factory->stats->total_boxes  += feature->feature.homol.align->len ;
-                  factory->stats->gapped_boxes += feature->feature.homol.align->len ;
-
-                  method = &(method_table[feature_type]);
-                }
-              else
-                {
-                  factory->stats->not_perfect_gapped_matches++;
-                  factory->stats->total_boxes++;
-                  factory->stats->ungapped_boxes++;
-                  factory->stats->imperfect_boxes += feature->feature.homol.align->len;
-
-                  method = &(method_table[ZMAPFEATURE_BASIC]);
-                }
-            }
-          else
-            zMapAssertNotReached();
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
           break;
 
-        case ZMAPSTYLE_MODE_GLYPH:
         case ZMAPFEATURE_BASIC:
+          method = &(method_table[feature_type]);
 	  break ;
 
-        default:
-          if(feature->flags.has_score)
-            zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
-
+	case ZMAPFEATURE_RAW_SEQUENCE:
+	case ZMAPFEATURE_PEP_SEQUENCE:
           method = &(method_table[feature_type]);
+          break;
+
+        default:
+	  zMapAssertNotReached() ;
           break;
         }
       
