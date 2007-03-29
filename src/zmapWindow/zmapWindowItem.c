@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 28 17:27 2007 (edgrif)
+ * Last edited: Mar 29 09:00 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.71 2007-03-28 16:27:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.72 2007-03-29 09:02:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1814,7 +1814,11 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highl
     {
       GdkColor *highlight_colour = NULL ;
       GdkColor *fill_style = NULL, *draw_style = NULL, *border_style = NULL ;
-      GdkColor *fill_colour = NULL, *draw_colour = NULL, *border_colour = NULL ;
+      GdkColor *fill_colour = NULL,
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	*draw_colour = NULL,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	*border_colour = NULL ;
       ZMapStyleColourTarget target ;
       ZMapStyleColourType type ;
       gboolean status ;
