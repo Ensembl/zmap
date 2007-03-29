@@ -6,48 +6,9 @@
 
 <h3>Release Date: 28 March 2007</h3>
 
-<P>
-(Last release was on 28/03/2007)
+<p>(Last release was on 28/02/2007)</p>
 
-<h3>Request Tracker Tickets Resolved</h3>
-
-
-<h4>ZMap</h4>
-
-<PRE>
-</PRE>
-
-
-<h4>Acedb</h4>
-
-<PRE>
-</PRE>
-
-
-<h3>ZMap Changes/Fixes</h3>
-
-
-
-
-
-
-	<p> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h3>Acedb Changes/Fixes</h3>
-
-
+actually they're <a href="release_notes.2007_03_29.shtml">here...</a>
 
 <!--#include virtual="/perl/footer"-->
 
