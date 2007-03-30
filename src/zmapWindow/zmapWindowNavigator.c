@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  9 11:54 2007 (rds)
+ * Last edited: Mar 30 18:38 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.19 2007-03-09 14:57:22 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.20 2007-03-30 17:40:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -593,8 +593,8 @@ static void repositionText(ZMapWindowNavigator navigate)
       canvas = fetchCanvas(navigate);
 
       repos_data.navigate = navigate;
-      repos_data.positioner = zmapWindowTextPositionerCreate(navigate->locator_span.x1 * navigate->scaling_factor, 
-                                                             navigate->locator_span.x2 * navigate->scaling_factor);
+      repos_data.positioner = zmapWindowTextPositionerCreate(navigate->full_span.x1 * navigate->scaling_factor, 
+                                                             navigate->full_span.x2 * navigate->scaling_factor);
 
       zmapWindowNavigatorTextSize(GTK_WIDGET(canvas), 
                                   NULL, &(repos_data.wheight));
