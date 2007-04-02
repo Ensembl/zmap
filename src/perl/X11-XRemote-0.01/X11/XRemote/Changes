@@ -1,6 +1,0 @@
-Revision history for Perl extension X11::XRemote.
-
-0.01  Thu Mar 24 07:52:31 2005
-	- original version; created by h2xs 1.21 with options
-		-A -n X11::XRemote
-
