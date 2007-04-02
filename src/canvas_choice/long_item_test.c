@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 21 11:14 2007 (rds)
+ * Last edited: Mar 22 08:24 2007 (rds)
  * Created: Tue Mar 20 14:51:37 2007 (rds)
- * CVS info:   $Id: long_item_test.c,v 1.1 2007-03-21 12:28:32 rds Exp $
+ * CVS info:   $Id: long_item_test.c,v 1.2 2007-04-02 10:38:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -191,44 +191,85 @@ static GtkWidget *createCanvas(void)
   return canvas_widget;
 }
 
+typedef void (*RecurseNodeFunc)(GooCanvas *canvas, GooCanvasBounds *canvas_bounds,
+                                GooCanvasItem *item, GooCanvasBounds *item_bounds,
+                                gint depth, gpointer user_data);
+
 typedef struct
 {
-  GooCanvas *canvas;
-  GooCanvasBounds *bounds;
-  GString *string;
-  int depth;
-}DescribeItemDataStruct, *DescribeItemData;
+  GooCanvas       *canvas;
+  GooCanvasBounds *canvas_bounds;
+  GooCanvasBounds *item_bounds;
+  RecurseNodeFunc  cb_func;
+  gpointer         cb_data;
+  int              depth;
+  gboolean         result;
+}RecurseItemDataStruct, *RecurseItemData;
 
-static void recursive_describe_items(GooCanvasItem *item, DescribeItemData user_data)
+static void recurse_tree(GooCanvasItem *item, RecurseItemData rec_data)
 {
   int i;
 
   if(!goo_canvas_item_is_container(item))
     {
-      for(i = 0; i < user_data->depth; i++)
-        g_string_append_printf(user_data->string, " ");
-
-      goo_canvas_item_get_bounds(item, user_data->bounds);
-
-      g_string_append_printf(user_data->string, 
-                             "item bounds: %f, %f -> %f, %f\n", 
-                             user_data->bounds->x1,
-                             user_data->bounds->y1,
-                             user_data->bounds->x2,
-                             user_data->bounds->y2);
+      goo_canvas_item_get_bounds(item, rec_data->item_bounds);
+      (rec_data->cb_func)(rec_data->canvas, rec_data->canvas_bounds, item, rec_data->item_bounds, rec_data->depth, rec_data->cb_data);
     }
   else
     {
       gint child_count;
       child_count = goo_canvas_item_get_n_children(item);
-      user_data->depth++;
+
+      rec_data->depth++;
+
       for(i = 0; i < child_count; i++)
-        {
-          recursive_describe_items(goo_canvas_item_get_child(item, i), user_data);
-        }
-      user_data->depth--;
+        recurse_tree(goo_canvas_item_get_child(item, i), rec_data);
+
+      rec_data->depth--;
     }
 
+  return ;
+}
+
+static gboolean LongItemRecurseItemTree(GooCanvas *canvas, GooCanvasItem *item, RecurseNodeFunc user_func, gpointer user_data)
+{
+  RecurseItemDataStruct rec_data = {NULL};
+  GooCanvasBounds item_bounds = {0.0}; /* save some stack space */
+  GooCanvasBounds canvas_bounds = {0.0};
+
+  rec_data.canvas        = canvas;
+  rec_data.canvas_bounds = &canvas_bounds;
+  rec_data.item_bounds   = &item_bounds;
+  rec_data.cb_func       = user_func;
+  rec_data.cb_data       = user_data;
+  rec_data.depth         = 0;
+  rec_data.result        = FALSE;
+
+  goo_canvas_get_bounds(canvas, 
+                        &(canvas_bounds.x1), &(canvas_bounds.y1),
+                        &(canvas_bounds.x2), &(canvas_bounds.y2));
+
+  recurse_tree(item, &rec_data);
+  
+  return rec_data.result;
+}
+
+static void describe_node_func(GooCanvas *canvas, GooCanvasBounds *cbounds,
+                               GooCanvasItem *item, GooCanvasBounds *ibounds, 
+                               gint depth, gpointer user_data)
+{
+  GString *string = (GString *)user_data;
+  int i;
+
+  for(i = 0; i < depth; i++)
+    g_string_append_printf(string, " ");
+
+  g_string_append_printf(string, 
+                         "item bounds: %f, %f -> %f, %f\n", 
+                         ibounds->x1,
+                         ibounds->y1,
+                         ibounds->x2,
+                         ibounds->y2);
   return ;
 }
 
@@ -237,7 +278,6 @@ static void describe_items(GooCanvas *canvas, GString *string)
   GooCanvasItemModel *root_model;
   GooCanvasItem *item;
   GooCanvasBounds bounds = {0.0};
-  DescribeItemDataStruct desc_data = {NULL};
 
   root_model = goo_canvas_get_root_item_model(canvas);
 
@@ -247,12 +287,7 @@ static void describe_items(GooCanvas *canvas, GString *string)
 
   g_string_append_printf(string, "root item bounds: %f, %f -> %f, %f\n", bounds.x1, bounds.y1, bounds.x2, bounds.y2);
 
-  desc_data.canvas = canvas;
-  desc_data.string = string;
-  desc_data.bounds = &bounds;
-  desc_data.depth  = 0;
-
-  recursive_describe_items(item, &desc_data);
+  LongItemRecurseItemTree(canvas, item, describe_node_func, string);
 
   return ;
 }
@@ -287,12 +322,53 @@ static char *describe_canvas(GooCanvas *canvas)
   return ret_val;
 }
 
+typedef struct
+{
+  GString *clip_path;
+  
+}ClipItemsDataStruct, *ClipItemsData;
+
+static void set_clip_path(GooCanvas *canvas, GooCanvasBounds *cbounds,
+                          GooCanvasItem *item, GooCanvasBounds *ibounds,
+                          gint depth, gpointer user_data)
+{
+  GooCanvasItemModel *model;
+  ClipItemsData clip_data = (ClipItemsData)user_data;
+
+  if((model = goo_canvas_item_get_model(item)))
+    g_object_set(G_OBJECT(model), 
+                 "clip-path", clip_data->clip_path->str, 
+                 "clip-fill-rule", CAIRO_FILL_RULE_EVEN_ODD,
+                 NULL);
+  else
+    g_object_set(G_OBJECT(item), "clip-path", clip_data->clip_path->str, NULL);
+
+  return ;
+}
+
 static void set_scroll_region(GooCanvas *canvas, GooCanvasBounds *bounds)
 {
+  ClipItemsDataStruct clip_data = {NULL};
 
   goo_canvas_set_bounds(canvas, bounds->x1, bounds->y1, bounds->x2, bounds->y2);
 
+  clip_data.clip_path = g_string_sized_new(256);
+
+  g_string_append_printf(clip_data.clip_path, 
+                         "M %d %d h %d v %d h %d Z", 
+                         (int)(bounds->x1), 
+                         (int)(bounds->y1), 
+                         (int)(bounds->x2 - bounds->x1 + 1), 
+                         (int)(bounds->y2 - bounds->y1 + 1),
+                         (int)(bounds->x2 - bounds->x1 + 1) * -1);
+
+  printf("Using clip-path %s\n", clip_data.clip_path->str);
+
+  LongItemRecurseItemTree(canvas, goo_canvas_get_root_item(canvas), set_clip_path, &clip_data);
+
   goo_canvas_request_redraw(canvas, bounds);
+
+  g_string_free(clip_data.clip_path, TRUE);
 
   return ;
 }
@@ -301,8 +377,8 @@ static void drawAllItems(GooCanvas *canvas)
 {
   GooCanvasItemModel *root, *group_model, *rect_model;
   GooCanvasBounds bounds[] = {
-    {10.0, 0.0, 15.0, 512.0},
-    {0.0, 0.0, 20.0, 1024.0},
+    {0.0, -512.0, 20.0, 512.0},
+    {30.0, 0.0, 20.0, 1024.0},
 #ifdef RDS_DONT_INCLUDE
     {0.0, 0.0, 20.0, 1024.0},
     {0.0, 0.0, 20.0, 1024.0},
