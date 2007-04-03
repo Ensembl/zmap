@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Mar 26 16:30 2007 (edgrif)
+ * Last edited: Apr  3 15:20 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.63 2007-03-28 16:38:38 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.64 2007-04-03 14:21:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1226,6 +1226,21 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 
       zMapFeatureContextExecuteComplete((ZMapFeatureAny)new_context, ZMAPFEATURE_STRUCT_FEATURE,
                                         mergePreCB, mergePostCB, &merge_data);
+
+      /* For the time being while we have acedb methods and zmap styles.
+       * Issue workaround for server code.  
+       *  - One thread gets all the styles
+       *  - fixes up any missing MODE values, only for the features in context!
+       *  - creates the view context
+       *  - thread two gets all the styles
+       *  - fixes up any missing MODE values, only for the features in context!
+       *  - calls this code to merge context with view context...
+       * The fixed up styles fromt he 2nd thread don't get merged into the view
+       * unless we do this here.
+       * I have a feeling this will be the case for the first gene created too!
+       */
+      current_context->styles = zMapStyleMergeStyles(current_context->styles, 
+                                                     new_context->styles);
 
       if(merge_debug_G)
         zMapLogWarning("%s", "finished ...");
