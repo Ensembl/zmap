@@ -25,9 +25,9 @@
  * Description: Private header for application level of zmap.
  * 
  * HISTORY:
- * Last edited: Mar  9 11:14 2007 (edgrif)
+ * Last edited: Apr  4 08:45 2007 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.17 2007-03-09 11:37:55 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.18 2007-04-05 14:18:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -54,9 +54,13 @@ typedef enum
   } ZMapAppState ;
 
 
-/* Default time out (in seconds) for exitting zmap. */
+/* Default time out (in seconds) for exitting zmap, different systems seem to take very times to
+ * kill threads. */
+#ifdef DARWIN
+enum {ZMAP_DEFAULT_EXIT_TIMEOUT = 10} ;
+#else
 enum {ZMAP_DEFAULT_EXIT_TIMEOUT = 5} ;
-
+#endif
 
 /* Overall application control struct. */
 typedef struct _ZMapAppContextStruct

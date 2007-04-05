@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Mar 20 11:59 2007 (rds)
+ * Last edited: Apr  3 10:58 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.38 2007-03-21 12:03:28 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.39 2007-04-05 14:18:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,6 +61,7 @@ static void removeZMapCB(void *app_data, void *zmap) ;
 void quitReqCB(void *app_data, void *zmap_data_unused) ;
 
 static void exitApp(ZMapAppContext app_context) ;
+static void crashExitApp(ZMapAppContext app_context) ;
 
 static void initGnomeGTK(int argc, char *argv[]) ;
 static ZMapAppContext createAppContext(void) ;
@@ -291,9 +292,6 @@ static ZMapAppContext createAppContext(void)
 
 static void destroyAppContext(ZMapAppContext app_context)
 {
-  if (app_context->zmap_manager)
-    zMapManagerDestroy(app_context->zmap_manager) ;
-
   if (app_context->xremote_client)
     zMapXRemoteDestroy(app_context->xremote_client) ;
 
@@ -515,12 +513,30 @@ void quitReqCB(void *app_data, void *zmap_data_unused)
 /* Final clean up of zmap. */
 static void exitApp(ZMapAppContext app_context)
 {
+  /* This must be done here as manager checks to see if all its zmaps have gone. */
+  if (app_context->zmap_manager)
+    zMapManagerDestroy(app_context->zmap_manager) ;
+
   if (app_context->logger)
-    zMapLogMessage("%s", "Goodbye cruel world !") ;
+    zMapLogMessage("%s", "ZMap Exit Clean - goodbye cruel world !") ;
 
   destroyAppContext(app_context) ;
 
   zMapExit(EXIT_SUCCESS) ;
+
+  return ;
+}
+
+/* Called when clean up of zmaps and their threads times out, stuff is not
+ * cleaned up and the application does not exit cleanly. */
+static void crashExitApp(ZMapAppContext app_context)
+{
+  if (app_context->logger)
+    zMapLogMessage("%s", "ZMap Exit Timeout - WARNING: Zmap clean up of threads timed out, exit has been forced !") ;
+
+  destroyAppContext(app_context) ;
+
+  zMapExit(EXIT_FAILURE) ;
 
   return ;
 }
@@ -595,7 +611,7 @@ static gboolean timeoutHandler(gpointer data)
 {
   ZMapAppContext app_context = (ZMapAppContext)data ;
 
-  exitApp(app_context) ;
+  crashExitApp(app_context) ;
 
   return FALSE ;
 }
