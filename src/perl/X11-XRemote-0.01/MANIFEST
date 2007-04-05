@@ -3,5 +3,5 @@ Makefile.PL
 MANIFEST
 README
 test.pl
-XRemote.pm
-XRemote.xs
+X11/XRemote.pm
+X11/XRemote.xs

@@ -12,7 +12,12 @@ use Getopt::Long;
 
 { # scope these
 
-my $opt = { "help" => \&usage, "pkgconfig" => 'pkg-config'};
+my $opt = {
+    help          => \&usage,
+    pkgconfig     => 'pkg-config',
+    'with-x-libs' => '/usr/X11R6/lib',
+    'with-x-inc'  => '/usr/X11R6/include',
+    };
 
 Getopt::Long::GetOptions(
                          $opt, 
@@ -35,10 +40,10 @@ configure($opt, \@includes, \@libraries);
 
 ExtUtils::MakeMaker::WriteMakefile(
     'NAME'		=> 'X11::XRemote',
-    'VERSION_FROM'	=> 'XRemote.pm', 
+    'VERSION_FROM'	=> 'X11/XRemote.pm', 
     'PREREQ_PM'		=> {}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?    
-     ('ABSTRACT_FROM' => 'XRemote.pm', 
+     ('ABSTRACT_FROM' => 'X11/XRemote.pm', 
       'AUTHOR'        => 'ZMap developers <zmap@sanger.ac.uk>'
       ) : ()
      ),
@@ -92,19 +97,19 @@ sub configure{
         
     }
     if(exists($opt->{'with-x-libs'})){
-        unshift(@$lib, $opt->{'with-x-libs'});
+        unshift(@$lib, '-L' . $opt->{'with-x-libs'});
     }
     if(exists($opt->{'with-x-inc'})){
-        unshift(@$inc, $opt->{'with-x-inc'});
+        unshift(@$inc, '-I' . $opt->{'with-x-inc'});
     }
     if(exists($opt->{'with-zmap-libs'})){
-        unshift(@$lib, $opt->{'with-zmap-libs'});
+        unshift(@$lib, '-L' . $opt->{'with-zmap-libs'});
     }else{
         warn "Without specifying --with-zmap-libs= you probably won't find the -lZMap.\n";
         #unshift(@$lib, '-L../../../../build/alpha/lib');
     }
     if(exists($opt->{'with-zmap-inc'})){
-        unshift(@$inc, $opt->{'with-zmap-inc'});
+        unshift(@$inc, '-I' . $opt->{'with-zmap-inc'});
     }else{
         unshift(@$inc, '-I../../../../include'); # default, should be in ZMap checkout
     }
@@ -115,18 +120,26 @@ sub configure{
 
 sub get_output{
     my ($cmd) = @_;
+
     local *PIPE;
     my $str;
     eval{
-        open(PIPE, "$cmd 2>&1 |") or die "can't do $cmd";
-    };
-    unless($@){
-        while(my $line = <PIPE>){
-            chomp($line);
-            $str .= $line;
+        open(PIPE, "$cmd 2>&1 |") or die "Failed to open command: $cmd : $!";
+        my @out;
+        while (<PIPE>){
+            chomp;
+            push @out, $_;
         }
+        close PIPE or die "Error (exit $?) running '$cmd' : ",
+            map("$_\n", @out);
+        $str = join " ", @out;
+    };
+    if ($@) {
+        warn $@;
+        return "";
+    } else {
+        return $str;
     }
-    return $str || (warn "Error: $@" && "");
 }
 
 
