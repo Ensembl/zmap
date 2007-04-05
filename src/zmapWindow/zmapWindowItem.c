@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 29 09:00 2007 (edgrif)
+ * Last edited: Apr  5 14:59 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.72 2007-03-29 09:02:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.73 2007-04-05 14:20:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -627,6 +627,26 @@ void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 
 
 
+
+gboolean zmapWindowItemIsCompound(FooCanvasItem *item)
+{
+  gboolean result = FALSE ;
+
+  if (FOO_IS_CANVAS_GROUP(item))
+    {
+      ZMapWindowItemFeatureType item_feature_type ;
+      
+      /* Retrieve the feature item info from the canvas item. */
+      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+      zMapAssert(item_feature_type == ITEM_FEATURE_PARENT) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
 /* Get "parent" item of feature, for simple features, this is just the item itself but
  * for compound features we need the parent group.
  *  */
@@ -647,6 +667,28 @@ FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item)
   return true_item ;
 }
 
+
+/* Get nth child of a compound feature (e.g. transcript, alignment etc), index starts
+ * at zero for the first child. */
+FooCanvasItem *zmapWindowItemGetNthChild(FooCanvasGroup *compound_item, int child_index)
+{
+  FooCanvasItem *nth_item = NULL ;
+
+  if (FOO_IS_CANVAS_GROUP(compound_item))
+    {
+      ZMapWindowItemFeatureType item_feature_type ;
+      GList *nth ;
+      
+      /* Retrieve the feature item info from the canvas item. */
+      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(compound_item), ITEM_FEATURE_TYPE)) ;
+      zMapAssert(item_feature_type == ITEM_FEATURE_PARENT) ;
+
+      if ((nth = g_list_nth(compound_item->item_list, child_index)))
+	nth_item = (FooCanvasItem *)(nth->data) ;
+    }
+
+  return nth_item ;
+}
 
 /* Need to test whether this works for groups...it should do....
  * 

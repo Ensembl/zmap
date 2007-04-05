@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 28 10:53 2007 (edgrif)
+ * Last edited: Apr  5 14:58 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.176 2007-03-28 16:29:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.177 2007-04-05 14:21:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -742,8 +742,18 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
 				 double *rootx1, double *rooty1, double *rootx2, double *rooty2) ;
 
+gboolean zmapWindowItemIsCompound(FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item) ;
+FooCanvasItem *zmapWindowItemGetNthChild(FooCanvasGroup *compound_item, int child_index) ;
 FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+gboolean zmapWindowItemIsGetSize(FooCanvasItem *item) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
 void zmapWindowRaiseItem(FooCanvasItem *item) ;
 GList *zmapWindowItemSortByPostion(GList *feature_item_list) ;
