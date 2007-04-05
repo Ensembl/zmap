@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Mar 28 09:44 2007 (edgrif)
+ * Last edited: Apr  5 14:07 2007 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.17 2007-03-28 16:30:52 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.18 2007-04-05 14:22:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -547,7 +547,14 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 		break ;
 	      }
 
+	    /* Tricky....we can have features within a single feature set that have _different_
+	     * styles, if this is the case we must be sure to set the mode in feature_set style
+	     * (where in fact its kind of useless as this is a style for the whole column) _and_
+	     * we must set it in the features own style. */
 	    zMapStyleSetMode(feature_set->style, mode) ;
+
+	    if (feature_set->style != feature->style)
+	      zMapStyleSetMode(feature->style, mode) ;
 	  }
 
 	break;
