@@ -2,7 +2,7 @@ Changes
 compile_test.sh
 debug_test.pl
 lib/X11/XRemote.pm
-lib/X11/XRemote.xs
+XRemote.xs
 Makefile.PL
 MANIFEST
 README

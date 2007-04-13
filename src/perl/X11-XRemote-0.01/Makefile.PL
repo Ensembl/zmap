@@ -40,7 +40,7 @@ configure($opt, \@includes, \@libraries);
 
 
 ExtUtils::MakeMaker::WriteMakefile(
-    'NAME'		=> 'X11::XRemote',
+    'NAME'		    => 'X11::XRemote',
     'VERSION_FROM'	=> 'lib/X11/XRemote.pm', 
     'PREREQ_PM'		=> {}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?    
