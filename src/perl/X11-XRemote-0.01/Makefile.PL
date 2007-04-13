@@ -13,10 +13,11 @@ use Getopt::Long;
 { # scope these
 
 my $opt = {
-    help          => \&usage,
-    pkgconfig     => 'pkg-config',
-    'with-x-libs' => '/usr/X11R6/lib',
-    'with-x-inc'  => '/usr/X11R6/include',
+    help            => \&usage,
+    pkgconfig       => 'pkg-config',
+    'with-x-libs'   => '/usr/X11R6/lib',
+    'with-x-inc'    => '/usr/X11R6/include',
+    'with-symbols"' => 1
     };
 
 Getopt::Long::GetOptions(
@@ -40,10 +41,10 @@ configure($opt, \@includes, \@libraries);
 
 ExtUtils::MakeMaker::WriteMakefile(
     'NAME'		=> 'X11::XRemote',
-    'VERSION_FROM'	=> 'X11/XRemote.pm', 
+    'VERSION_FROM'	=> 'lib/X11/XRemote.pm', 
     'PREREQ_PM'		=> {}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?    
-     ('ABSTRACT_FROM' => 'X11/XRemote.pm', 
+     ('ABSTRACT_FROM' => 'lib/X11/XRemote.pm', 
       'AUTHOR'        => 'ZMap developers <zmap@sanger.ac.uk>'
       ) : ()
      ),
@@ -138,6 +139,7 @@ sub get_output{
         warn $@;
         return "";
     } else {
+        warn "$cmd = $str";
         return $str;
     }
 }

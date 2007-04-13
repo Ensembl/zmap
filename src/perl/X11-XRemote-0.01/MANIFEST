@@ -1,7 +1,13 @@
 Changes
+compile_test.sh
+debug_test.pl
+lib/X11/XRemote.pm
+lib/X11/XRemote.xs
 Makefile.PL
 MANIFEST
 README
+test
+test.c
 test.pl
-X11/XRemote.pm
-X11/XRemote.xs
+tk_test.pl
+typemap
