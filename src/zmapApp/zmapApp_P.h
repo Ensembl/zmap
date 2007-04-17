@@ -25,9 +25,9 @@
  * Description: Private header for application level of zmap.
  * 
  * HISTORY:
- * Last edited: Apr  4 08:45 2007 (edgrif)
+ * Last edited: Apr 17 13:43 2007 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.18 2007-04-05 14:18:25 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.19 2007-04-17 14:57:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -82,8 +82,6 @@ typedef struct _ZMapAppContextStruct
                                  * remote control simple IPC stuff */
   ZMapManager zmap_manager ;
   ZMap selected_zmap ;
-
-  ZMapLog logger ;
 
   gulong propertyNotifyEventId ;
   zMapXRemoteNotifyData propertyNotifyData ;

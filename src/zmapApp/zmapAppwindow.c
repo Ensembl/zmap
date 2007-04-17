@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Apr  3 10:58 2007 (edgrif)
+ * Last edited: Apr 17 13:44 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.39 2007-04-05 14:18:25 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.40 2007-04-17 14:57:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -129,7 +129,13 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context = createAppContext() ;
 
   /* Set up logging for application. */
-  app_context->logger = zMapLogCreate(NULL) ;
+  if (!zMapLogCreate(NULL))
+    {
+      printf("Zmap cannot create log file.\n") ;
+
+      exit(EXIT_FAILURE) ;
+    }
+
 
   getConfiguration(app_context) ;
 
@@ -284,8 +290,6 @@ static ZMapAppContext createAppContext(void)
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
   app_context->selected_zmap = NULL ;
 
-  app_context->logger = NULL ;
-
   return app_context ;
 }
 
@@ -296,8 +300,7 @@ static void destroyAppContext(ZMapAppContext app_context)
     zMapXRemoteDestroy(app_context->xremote_client) ;
 
   /* This should probably be the last thing before exitting... */
-  if (app_context->logger)
-    zMapLogDestroy(app_context->logger) ;
+  zMapLogDestroy() ;
 
   g_free(app_context) ;
 
@@ -517,8 +520,7 @@ static void exitApp(ZMapAppContext app_context)
   if (app_context->zmap_manager)
     zMapManagerDestroy(app_context->zmap_manager) ;
 
-  if (app_context->logger)
-    zMapLogMessage("%s", "ZMap Exit Clean - goodbye cruel world !") ;
+  zMapLogMessage("%s", "Exit clean - goodbye cruel world !") ;
 
   destroyAppContext(app_context) ;
 
@@ -531,8 +533,7 @@ static void exitApp(ZMapAppContext app_context)
  * cleaned up and the application does not exit cleanly. */
 static void crashExitApp(ZMapAppContext app_context)
 {
-  if (app_context->logger)
-    zMapLogMessage("%s", "ZMap Exit Timeout - WARNING: Zmap clean up of threads timed out, exit has been forced !") ;
+  zMapLogFatal("%s", "Exit timed out - WARNING: Zmap clean up of threads timed out, exit has been forced !") ;
 
   destroyAppContext(app_context) ;
 
