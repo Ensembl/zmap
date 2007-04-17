@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Jan  4 10:29 2007 (edgrif)
+ * Last edited: Apr 17 13:38 2007 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.26 2007-01-04 10:56:02 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.27 2007-04-17 15:00:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -40,13 +40,13 @@
 
 #ifdef __GNUC__	
 
-#define ZMAP_MSG_FORMAT_STRING  "(%s, %s(), line %d) - "
+#define ZMAP_MSG_FORMAT_STRING  "%s:%s:%d"
 
 #define ZMAP_MSG_FUNCTION_MACRO __FILE__, __PRETTY_FUNCTION__, __LINE__
 
 #else /* __GNUC__ */
 
-#define ZMAP_MSG_FORMAT_STRING  "(%s, line %d) - "
+#define ZMAP_MSG_FORMAT_STRING  "%s:%d"
 
 #define ZMAP_MSG_FUNCTION_MACRO __FILE__, __LINE__
 
@@ -102,10 +102,10 @@ typedef enum
 #define ZMAPLOG_STANZA  "logging"			    /* Does this need to be public ? */
 
 
-ZMapLog zMapLogCreate(char *logname) ;
-gboolean zMapLogStart(ZMapLog log) ;
-gboolean zMapLogStop(ZMapLog log) ;
-void zMapLogDestroy(ZMapLog log) ;
+gboolean zMapLogCreate(char *logname) ;
+gboolean zMapLogStart(void) ;
+gboolean zMapLogStop(void) ;
+void zMapLogDestroy(void) ;
 
 char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) ;
 char *zMapGetFile(char *directory, char *filename, gboolean make_file) ;
