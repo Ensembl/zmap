@@ -25,16 +25,15 @@
  * Description: Contains macros, functions etc. for logging.
  *              
  * HISTORY:
- * Last edited: Jan 31 12:27 2007 (rds)
+ * Last edited: Apr 17 15:01 2007 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsLog.h,v 1.5 2007-02-06 10:53:52 rds Exp $
+ * CVS info:   $Id: zmapUtilsLog.h,v 1.6 2007-04-17 14:58:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_LOG_H
 #define ZMAP_UTILS_LOG_H
 
 #include <stdlib.h>
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* We would need this for the glog convenience macros to work.... but would have to fiddle
@@ -48,6 +47,42 @@
 #include <glib.h>
 
 
+
+#define ZMAPLOG_DOMAIN "ZMap"
+
+
+/* ZMap log records are tab separated tuples of information of the form:
+ * 
+ * ZMap_XXXX:info:info:etc
+ * 
+ * The following defines enumerate the XXXX
+ * 
+ *  */
+#define ZMAPLOG_PROCESS_TUPLE "ZMAP_PROCESS"
+#define ZMAPLOG_CODE_TUPLE    "ZMAP_CODE"
+#define ZMAPLOG_MESSAGE_TUPLE "ZMAP_MESSAGE"
+
+
+/* Some compilers give more information than others so set up compiler dependant defines. */
+#ifdef __GNUC__	
+
+#define ZMAP_LOG_CODE_PARAMS __FILE__, __PRETTY_FUNCTION__, __LINE__
+
+#else /* __GNUC__ */
+
+#define ZMAP_LOG_CODE_PARAMS __FILE__, NULL, __LINE__
+
+#endif /* __GNUC__ */
+
+
+
+/* The base logging routine, you should use the below macros which automatically
+ * include the stuff you need instead of this routine. */
+void zMapLogMsg(char *domain, GLogLevelFlags log_level,
+		char *file, char *function, int line,
+		char *format, ...) ;
+
+
 /* Use these macros like this:
  * 
  *    zMapLogXXXX("%s is about to %s", str, str) ;
@@ -57,35 +92,34 @@
  * otherwise our logging callback routines will not work.
  * 
  * */
-#define ZMAPLOG_DOMAIN "ZMap"
+#define zMapLogMessage(FORMAT, ...)		\
+  zMapLogMsg(ZMAPLOG_DOMAIN,			\
+	     G_LOG_LEVEL_MESSAGE,		\
+	     ZMAP_LOG_CODE_PARAMS,	        \
+	     FORMAT,	                        \
+	     __VA_ARGS__)
 
-#define zMapLogMessage(FORMAT, ...)                       \
-	 g_log(ZMAPLOG_DOMAIN,				  \
-	       G_LOG_LEVEL_MESSAGE,			  \
-	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
-	       ZMAP_MSG_FUNCTION_MACRO,			  \
-	       __VA_ARGS__)
+#define zMapLogWarning(FORMAT, ...)		\
+  zMapLogMsg(ZMAPLOG_DOMAIN,			\
+	     G_LOG_LEVEL_WARNING,		\
+	     ZMAP_LOG_CODE_PARAMS,	        \
+	     FORMAT,                  		\
+	     __VA_ARGS__)
 
-#define zMapLogWarning(FORMAT, ...)                       \
-	 g_log(ZMAPLOG_DOMAIN,				  \
-	       G_LOG_LEVEL_WARNING,			  \
-	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
-	       ZMAP_MSG_FUNCTION_MACRO,			  \
-	       __VA_ARGS__)
-
-#define zMapLogCritical(FORMAT, ...)                      \
-	 g_log(ZMAPLOG_DOMAIN,				  \
-	       G_LOG_LEVEL_CRITICAL,			  \
-	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
-	       ZMAP_MSG_FUNCTION_MACRO,			  \
-	       __VA_ARGS__)
+#define zMapLogCritical(FORMAT, ...)		\
+  zMapLogMsg(ZMAPLOG_DOMAIN,			\
+	     G_LOG_LEVEL_CRITICAL,		\
+	     ZMAP_LOG_CODE_PARAMS,	        \
+	     FORMAT,             		\
+	     __VA_ARGS__)
      
-#define zMapLogFatal(FORMAT, ...)                         \
-	 g_log(ZMAPLOG_DOMAIN,				  \
-	       G_LOG_LEVEL_ERROR,			  \
-	       ZMAP_MSG_FORMAT_STRING FORMAT,             \
-	       ZMAP_MSG_FUNCTION_MACRO,			  \
-	       __VA_ARGS__)
+#define zMapLogFatal(FORMAT, ...)		\
+  zMapLogMsg(ZMAPLOG_DOMAIN,			\
+	     G_LOG_LEVEL_ERROR,			\
+	     ZMAP_LOG_CODE_PARAMS,	        \
+	     FORMAT,                            \
+	     __VA_ARGS__)
+
 
 
 /* Use this macro like this:
@@ -94,12 +128,13 @@
  * 
  */
 #define zMapLogFatalSysErr(ERRNO, FORMAT, ...)            \
-	 g_log(ZMAPLOG_DOMAIN,				  \
-	       G_LOG_LEVEL_ERROR,			  \
-	       ZMAP_MSG_FORMAT_STRING FORMAT " (errno = \"%s\")",  \
-	       ZMAP_MSG_FUNCTION_MACRO,				   \
-	       __VA_ARGS__,					   \
-	       g_strerror(ERRNO))
+  zMapLogMsg(ZMAPLOG_DOMAIN,				  \
+	     G_LOG_LEVEL_ERROR,				  \
+	     ZMAP_LOG_CODE_PARAMS,			  \
+	     FORMAT " (errno = \"%s\")",			   \
+	     __VA_ARGS__,					   \
+	     g_strerror(ERRNO))
+
 
 /* make logging from totalview evaluations a lot easier... */
 void zMapLogQuark(GQuark quark);

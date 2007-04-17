@@ -1,6 +1,6 @@
 /*  File: zmapLogging.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2007: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,16 +18,20 @@
  * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ * originally written by:
  *
- * Description: 
- * Exported functions: See ZMap/zmapUtils.h
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *
+ * Description: Log functions for zmap app. Allows start/stop, switching
+ *              on/off. Currently there is just one global log for the
+ *              whole application.
+ *
+ * Exported functions: See zmapUtilsLog.h
  * HISTORY:
- * Last edited: Nov 15 14:04 2005 (edgrif)
- * Created: Thu Apr 29 14:59:37 2004 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.10 2006-11-08 09:24:49 edgrif Exp $
+ * Last edited: Apr 17 15:50 2007 (edgrif)
+ * Created: Tue Apr 17 15:47:10 2007 (edgrif)
+ * CVS info:   $Id: zmapLogging.c,v 1.11 2007-04-17 14:58:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +46,8 @@
 
 #define ZMAPLOG_FILENAME "zmap.log"
 
+
+/* Common struct for all log handlers, we use these to turn logging on/off. */
 typedef struct
 {
   guint cb_id ;						    /* needed by glib to install/uninstall
@@ -53,24 +59,27 @@ typedef struct
   char *log_path ;
   GIOChannel* logfile ;
 
-
 } zmapLogHandlerStruct, *zmapLogHandler ;
 
 
+/* State for the logger as a whole. */
 typedef struct  _ZMapLogStruct
 {
   GMutex*  log_lock ;					    /* Ensure only single threading in log
 							       handler routine. */
 
+  /* Logging action. */
   gboolean logging ;					    /* logging on or off ? */
   zmapLogHandlerStruct active_handler ;			    /* Used when logging is on. */
   zmapLogHandlerStruct inactive_handler ;		    /* Used when logging is off. */
-
   gboolean log_to_file ;				    /* log to file or leave glib to log to
 							       stdout/err ? */
-
+  /* Log record content. */
+  gchar *userid ;
   gchar *nodeid ;
   int pid ;
+  gboolean show_code_details ;				    /* If TRUE then the file, function and
+							       line are displayed for every message. */
 
 } ZMapLogStruct ;
 
@@ -97,14 +106,23 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 		       gpointer user_data) ;
 
 
+
+/* We only ever have one log so its kept internally here. */
+static ZMapLog log_G = NULL ; 
+
+
+
 /* This function is NOT thread safe, you should not call this from individual threads. The log
- * package expects you to call this outside of threads then you should be safe to use the thread
- * packages inside threads.
+ * package expects you to call this outside of threads then you should be safe to use the log
+ * routines inside threads.
  * Note that the package expects the caller to have called  g_thread_init() before calling this
  * function. */
-ZMapLog zMapLogCreate(char *logname)
+gboolean zMapLogCreate(char *logname)
 {
-  ZMapLog log = NULL ; 
+  gboolean result = FALSE ;
+  ZMapLog log = log_G ;
+
+  zMapAssert(!log) ;
 
   log = createLog() ;
 
@@ -114,9 +132,13 @@ ZMapLog zMapLogCreate(char *logname)
       log = NULL ;
     }
   else
-    writeStartOrStopMessage(TRUE) ;
+    {
+      log_G = log ;
+      writeStartOrStopMessage(TRUE) ;
+      result = TRUE ;
+    }
 
-  return log ;
+  return result ;
 }
 
 
@@ -124,9 +146,12 @@ ZMapLog zMapLogCreate(char *logname)
 /* The log and Start and Stop routines write out a record to the log to show start and stop
  * of the log but there is a window where a thread could get in and write to the log 
  * before/after they do. We'll just have to live with this... */
-gboolean zMapLogStart(ZMapLog log)
+gboolean zMapLogStart()
 {
   gboolean result = FALSE ;
+  ZMapLog log = log_G ;
+
+  zMapAssert(log) ;
 
   g_mutex_lock(log->log_lock) ;
 
@@ -138,11 +163,69 @@ gboolean zMapLogStart(ZMapLog log)
 }
 
 
+void zMapLogMsg(char *domain, GLogLevelFlags log_level,
+		char *file, char *function, int line,
+		char *format, ...)
+{
+  ZMapLog log = log_G ;
+  va_list args ;
+  GString *format_str ;
+  char *msg_level = NULL ;
 
 
-gboolean zMapLogStop(ZMapLog log)
+  zMapAssert(log) ;
+  zMapAssert(domain && *domain && file && *file && format && *format) ;
+
+  format_str = g_string_sized_new(2000) ;		    /* Not too many records longer than this. */
+
+  /* All messages have the nodeid and pid as qualifiers to help with logfile analysis. */
+  g_string_append_printf(format_str, "%s:%s:%s:%d",
+			 ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
+
+
+  /* If code details are wanted then output them in the log. */
+  if (log->show_code_details)
+    g_string_append_printf(format_str, "\t%s:%s:%s:%d", 
+			   ZMAPLOG_CODE_TUPLE, file, (function ? function : ""), line) ;
+
+
+  switch(log_level)
+    {
+    case G_LOG_LEVEL_MESSAGE:
+      msg_level = "Information" ;
+      break ;
+    case G_LOG_LEVEL_WARNING:
+      msg_level = "Warning" ;
+      break ;
+    case G_LOG_LEVEL_CRITICAL:
+      msg_level = "Critical" ;
+      break ;
+    case G_LOG_LEVEL_ERROR:
+      msg_level = "Fatal" ;
+      break ;
+    default:
+      zMapAssertNotReached() ;
+      break ;
+    }
+  g_string_append_printf(format_str, "\t%s:%s:%s\n",
+			 ZMAPLOG_MESSAGE_TUPLE, msg_level, format) ;
+
+  va_start(args, format) ;
+  g_logv(domain, log_level, format_str->str, args) ;
+  va_end(args) ;
+
+  g_string_free(format_str, TRUE) ;
+
+ return ;
+}
+
+
+gboolean zMapLogStop(void)
 {
   gboolean result = FALSE ;
+  ZMapLog log = log_G ;
+
+  zMapAssert(log) ;
 
   g_mutex_lock(log->log_lock) ;
 
@@ -159,8 +242,12 @@ gboolean zMapLogStop(ZMapLog log)
  * This should be ok because logging calls in the code go via g_log and know nothing about
  * the ZMapLog log struct.
  */
-void zMapLogDestroy(ZMapLog log)
+void zMapLogDestroy(void)
 {
+  ZMapLog log = log_G ;
+
+  zMapAssert(log) ;
+
   writeStartOrStopMessage(FALSE) ;
 
   g_mutex_lock(log->log_lock) ;
@@ -170,6 +257,8 @@ void zMapLogDestroy(ZMapLog log)
   g_mutex_unlock(log->log_lock) ;
 
   destroyLog(log) ;
+
+  log_G = NULL ;
 
   return ;
 }
@@ -211,6 +300,7 @@ static ZMapLog createLog(void)
   log->inactive_handler.log_path = NULL ;
   log->inactive_handler.logfile = NULL ;
 
+  log->userid = g_strdup(g_get_user_name()) ;
 
   log->nodeid = g_malloc0(MAXHOSTNAMELEN + 2) ;		    /* + 2 for safety, interface not clear. */
   if (gethostname(log->nodeid, (MAXHOSTNAMELEN + 1)) == -1)
@@ -229,9 +319,11 @@ static void destroyLog(ZMapLog log)
   if (log->active_handler.log_path)
     g_free(log->active_handler.log_path) ;
 
-  g_mutex_free(log->log_lock) ;
+  g_free(log->userid) ;
 
   g_free(log->nodeid) ;
+
+  g_mutex_free(log->log_lock) ;
 
   g_free(log) ;
 
@@ -370,13 +462,15 @@ static gboolean getLogConf(ZMapLog log)
   char *logging_stanza_name = "logging" ;
   ZMapConfigStanzaElementStruct logging_elements[] = {{"logging", ZMAPCONFIG_BOOL, {NULL}},
 						      {"file", ZMAPCONFIG_BOOL, {NULL}},
+						      {"show_code", ZMAPCONFIG_BOOL, {NULL}},
 						      {"directory", ZMAPCONFIG_STRING, {NULL}},
 						      {"filename", ZMAPCONFIG_STRING, {NULL}},
 						      {NULL, -1, {NULL}}} ;
 
   /* Set default values in stanza, keep this in synch with initialisation of logging_elements array. */
-  logging_elements[0].data.b = TRUE ;			    /* logging "on" */
-  logging_elements[1].data.b = TRUE ;			    /* use a file. */
+  zMapConfigGetStructBool(logging_elements, "logging") = TRUE ;
+  zMapConfigGetStructBool(logging_elements, "file") = TRUE ;
+
 
   if ((config = zMapConfigCreate()))
     {
@@ -393,6 +487,7 @@ static gboolean getLogConf(ZMapLog log)
 	  
 	  log->logging = zMapConfigGetElementBool(next_log, "logging") ;
 	  log->log_to_file = zMapConfigGetElementBool(next_log, "file") ;
+	  log->show_code_details = zMapConfigGetElementBool(next_log, "show_code") ;
 	  if ((log_dir = zMapConfigGetElementString(next_log, "directory")))
 	    log_dir = g_strdup(log_dir) ;
 	  if ((log_name = zMapConfigGetElementString(next_log, "filename")))
@@ -484,7 +579,7 @@ static void writeStartOrStopMessage(gboolean start)
 
   time_str = zMapGetTimeString(ZMAPTIME_STANDARD, NULL) ;
 
-  zMapLogMessage("****  Logging %s at: %s  ****", (start ? "started" : "stopped"), time_str) ;
+  zMapLogMessage("****  ZMap Session %s %s  ****", (start ? "started" : "stopped"), time_str) ;
   
   g_free(time_str) ;
 
@@ -518,32 +613,29 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 		       gpointer user_data)
 {
   ZMapLog log = (ZMapLog)user_data ;
-  char *msg ;
   GError *g_error = NULL ;
   gsize bytes_written = 0 ;
 
+
+  /* glib logging routines are not thread safe so must lock here. */
   g_mutex_lock(log->log_lock) ;
 
 
   zMapAssert(log->logging) ;				    /* logging must be on.... */
 
-  /* All messages have the nodeid and pid as qualifiers to help with logfile analysis, we
-   * may need to add userid as well. */
-  msg = g_strdup_printf("(%s:%d)  %s\n", log->nodeid, log->pid, message) ;
-
-  if ((g_io_channel_write_chars(log->active_handler.logfile, msg, -1, &bytes_written, &g_error)
+  if ((g_io_channel_write_chars(log->active_handler.logfile, message, -1, &bytes_written, &g_error)
        != G_IO_STATUS_NORMAL)
       || (g_io_channel_flush(log->active_handler.logfile, &g_error) != G_IO_STATUS_NORMAL))
     {
-      /* We should unregister our handler and go back to the default handler and issue
-       * a warning message using the g_error. */
+      g_log_remove_handler(ZMAPLOG_DOMAIN, log->active_handler.cb_id) ;
+      log->active_handler.cb_id = 0 ;
 
-      printf("failed to write to log file\n") ;
-
+      zMapLogCritical("Unable to log to file %s, logging to this file has been turned off.",
+		      log->active_handler.log_path) ;
     }
 
-  g_free(msg) ;
 
+  /* now unlock. */
   g_mutex_unlock(log->log_lock) ;
 
   return ;
