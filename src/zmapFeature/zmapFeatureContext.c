@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 13 16:09 2007 (edgrif)
+ * Last edited: Apr 18 10:23 2007 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.21 2007-03-13 16:10:09 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.22 2007-04-18 09:25:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,6 +153,42 @@ char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature)
   return dna ;
 }
 
+gboolean zmapDNA_strup(char *string, int length)
+{
+  gboolean good = TRUE;
+  char up;
+
+  while(length > 0 && good && string && *string)
+    {
+      switch(string[0])
+        {
+        case 'a':
+          up = 'A';
+          break;
+        case 't':
+          up = 'T';
+          break;
+        case 'g':
+          up = 'G';
+          break;
+        case 'c':
+          up = 'C';
+          break;
+        default:
+          good = FALSE;
+          break;
+        }
+      if(good)
+        {
+          string[0] = up;
+            
+          string++;
+        }
+      length--;
+    }
+
+  return good;
+}
 
 /* Get a transcripts DNA, this will probably mean extracting snipping out the dna for
  * each exon. */
@@ -167,57 +203,97 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
 
   exons = transcript->feature.transcript.exons ;
 
-  if (!spliced || !exons)
-    dna = zMapFeatureGetFeatureDNA(context, transcript) ;
-  else if(fetchBlockDNAPtr((ZMapFeatureAny)transcript, &tmp))
+  if(fetchBlockDNAPtr((ZMapFeatureAny)transcript, &tmp))
     {
-      GString *dna_str ;
-      int i, cds_start, cds_end ;
-      int seq_length = 0 ;
-      gboolean has_cds = FALSE;
+      gboolean revcomp = FALSE;
 
-      dna_str = g_string_sized_new(1000) ;		    /* Average length of human proteins is
-							       apparently around 500 amino acids. */
-  
-      if(cds_only && (has_cds = transcript->feature.transcript.flags.cds))
+      if(transcript->strand == ZMAPSTRAND_REVERSE)
+        revcomp = TRUE;
+
+      if (!spliced || !exons)
         {
-          cds_start = transcript->feature.transcript.cds_start;
-          cds_end   = transcript->feature.transcript.cds_end;
-        }
-
-      for (i = 0 ; i < exons->len ; i++)
-	{
-	  ZMapSpan exon_span ;
-	  int offset, length, start, end ;
-
-	  exon_span = &g_array_index(exons, ZMapSpanStruct, i) ;
-
-          start = exon_span->x1;
-          end   = exon_span->x2;
-
-          if(cds_only && has_cds)
+          int i, start, end, offset, length;
+          gboolean upcase_exons = TRUE;
+          
+          dna = getDNA(tmp, transcript->x1, transcript->x2, revcomp);
+          
+          if(upcase_exons)
             {
-              /* prune out exons not within cds boundaries  */
-              if(((cds_start > end) || (cds_end < (start - 1))))
-                continue;       /* USING continue here rather than a flag! */
-              if((cds_start > start - 1) &&(cds_start < end))
-                start = cds_start;
-              if((cds_end > start - 1) && (cds_end < end))
-                end   = cds_end;
+              if(exons)
+                {
+                  tmp = dna;
+                  
+                  for(i = 0 ; i < exons->len ; i++)
+                    {
+                      ZMapSpan exon_span;
+                      
+                      exon_span = &(g_array_index(exons, ZMapSpanStruct, i));
+                      
+                      start = exon_span->x1;
+                      end   = exon_span->x2;
+                      
+                      offset  = dna - tmp;
+                      offset += start - transcript->x1;
+                      tmp    += offset;
+                      length  = end - start + 1;
+                      
+                      zmapDNA_strup(tmp, length);
+                    }
+                }
+              else
+                zmapDNA_strup(dna, strlen(dna));
             }
-
-	  offset = start - 1 ;
-	  length = end - start + 1 ;
-	  seq_length += length ;
-
-	  dna_str = g_string_append_len(dna_str, (tmp + offset), length) ;
-	}
-
-      dna = g_string_free(dna_str, FALSE) ;
-
-
-      if (transcript->strand == ZMAPSTRAND_REVERSE)
-	revcompDNA(dna, seq_length) ;
+        }
+      else
+        {
+          GString *dna_str ;
+          int i, cds_start, cds_end ;
+          int seq_length = 0 ;
+          gboolean has_cds = FALSE;
+          
+          dna_str = g_string_sized_new(1000) ;		    /* Average length of human proteins is
+							       apparently around 500 amino acids. */
+          
+          if(cds_only && (has_cds = transcript->feature.transcript.flags.cds))
+            {
+              cds_start = transcript->feature.transcript.cds_start;
+              cds_end   = transcript->feature.transcript.cds_end;
+            }
+          
+          for (i = 0 ; i < exons->len ; i++)
+            {
+              ZMapSpan exon_span ;
+              int offset, length, start, end ;
+              
+              exon_span = &g_array_index(exons, ZMapSpanStruct, i) ;
+              
+              start = exon_span->x1;
+              end   = exon_span->x2;
+              
+              if(cds_only && has_cds)
+                {
+                  /* prune out exons not within cds boundaries  */
+                  if(((cds_start > end) || (cds_end < (start - 1))))
+                    continue;       /* USING continue here rather than a flag! */
+                  if((cds_start > start - 1) &&(cds_start < end))
+                    start = cds_start;
+                  if((cds_end > start - 1) && (cds_end < end))
+                    end   = cds_end;
+                }
+              
+              offset = start - 1 ;
+              length = end - start + 1 ;
+              seq_length += length ;
+              
+              dna_str = g_string_append_len(dna_str, (tmp + offset), length) ;
+              
+            }
+          
+          dna = g_string_free(dna_str, FALSE) ;
+          
+          if (revcomp)
+            revcompDNA(dna, seq_length) ;
+        }
     }
 
   if(!dna && NO_DNA_STRING)
