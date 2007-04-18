@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 29 15:52 2007 (rds)
+ * Last edited: Apr 18 10:37 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.94 2007-03-29 14:53:30 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.95 2007-04-18 09:38:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1050,7 +1050,7 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   GList *menu_sets = NULL ;
   ItemMenuCBData menu_data ;
   ZMapFeature feature ;
-  	ZMapFeatureTypeStyle style ;
+  ZMapFeatureTypeStyle style ;
 
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
@@ -1058,8 +1058,21 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
 
-  style = zmapWindowItemGetStyle(item) ;
-  zMapAssert(style) ;
+  {
+    GHashTable *style_table = NULL;
+    FooCanvasGroup *column_group =  NULL ;
+    ZMapWindowItemFeatureSetData set_data = NULL;
+
+    
+    column_group = zmapWindowContainerGetParentContainerFromItem(item) ;
+    set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA);
+    zMapAssert(set_data);
+    
+    style_table = set_data->style_table;
+    /* Get the styles table from the column and look for the features style.... */
+    style = zmapWindowStyleTableFind(style_table, zMapStyleGetUniqueID(feature->style)) ;
+  }
+
 
   menu_title = zMapFeatureName((ZMapFeatureAny)feature) ;
 

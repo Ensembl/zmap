@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr  5 15:00 2007 (edgrif)
+ * Last edited: Apr 18 10:36 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.63 2007-04-05 14:24:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.64 2007-04-18 09:38:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -477,7 +477,14 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
   /* Get the style for the selected item. */
   if (!column)
-    style = zmapWindowItemGetStyle(column_item) ;
+    {
+      ZMapFeature feature ;
+
+      feature = g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_DATA) ;
+      zMapAssert(feature) ;
+
+      style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style)) ;
+    }
   else
     style = set_data->style ;
 
@@ -1087,18 +1094,28 @@ static void bumpColCB(gpointer data, gpointer user_data)
   if(!(zmapWindowItemIsShown(item)))
     return ;
 
-  /* If we not bumping all features, then only bump the features who have the bumped style. */
-  if (!(bump_data->bump_all)
-      && bump_data->bumped_style != g_object_get_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE))
-    return ;
-
-
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
   zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
 
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
 
+  /* If we not bumping all features, then only bump the features who have the bumped style. */
+  {
+    FooCanvasGroup *column_group =  NULL ;
+    ZMapWindowItemFeatureSetData set_data ;
+    ZMapFeatureTypeStyle style ;
+
+    column_group = zmapWindowContainerGetParentContainerFromItem(item) ;
+
+    set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+    zMapAssert(set_data) ;
+
+    style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style)) ;
+
+    if (!(bump_data->bump_all) && bump_data->bumped_style != style)
+      return ;
+  }
 
   /* x1, x2 always needed so might as well get y coords as well because foocanvas will have
    * calculated them anyway. */
@@ -1429,11 +1446,26 @@ static void makeNameListCB(gpointer data, gpointer user_data)
   style = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE) ;
   zMapAssert(style) ;
 
-  if (!complex->bump_all && style != complex->bumped_style)
-    return ;
-
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
+
+  /* If we are not bumping all the features then only bump those for the specified style. */
+  {
+    FooCanvasGroup *column_group =  NULL ;
+    ZMapWindowItemFeatureSetData set_data ;
+    ZMapFeatureTypeStyle style ;
+
+    column_group = zmapWindowContainerGetParentContainerFromItem(item) ;
+
+    set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+    zMapAssert(set_data) ;
+
+    style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style)) ;
+
+    if (!(complex->bump_all) && complex->bumped_style != style)
+      return ;
+  }
+
 
 
   /* Try doing this here.... */
@@ -1501,11 +1533,26 @@ static void makeNameListStrandedCB(gpointer data, gpointer user_data)
   style = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE) ;
   zMapAssert(style) ;
 
-  if (!complex->bump_all && style != complex->bumped_style)
-    return ;
 
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
+
+  /* If we not bumping all features, then only bump the features who have the bumped style. */
+  {
+    FooCanvasGroup *column_group =  NULL ;
+    ZMapWindowItemFeatureSetData set_data ;
+    ZMapFeatureTypeStyle style ;
+
+    column_group = zmapWindowContainerGetParentContainerFromItem(item) ;
+
+    set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+    zMapAssert(set_data) ;
+
+    style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style)) ;
+
+    if (!(bump_data->bump_all) && bump_data->bumped_style != style)
+      return ;
+  }
 
 
   /* Try doing this here.... */
