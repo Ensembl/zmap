@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Mar  9 14:13 2007 (rds)
+ * Last edited: Apr 18 09:40 2007 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.27 2007-03-09 14:24:24 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.28 2007-04-18 08:44:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,7 +139,7 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 
           if((app_context->xremote_client = client = zMapXRemoteNew()) != NULL)
             {
-              char *req = NULL;
+              char *req = NULL, *resp = NULL;
               int ret_code = 0;
 
               zMapXRemoteInitClient(client, clientId);
@@ -154,9 +154,16 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
                                     ZMAP_DEFAULT_RESPONSE_ATOM_NAME
                                     );
 
-              if ((ret_code = zMapXRemoteSendRemoteCommand(client, req, NULL)) != 0)
+              if ((ret_code = zMapXRemoteSendRemoteCommand(client, req, &resp)) != 0)
                 {
                   zMapLogWarning("Could not communicate with client '0x%lx'. code %d", clientId, ret_code);
+                  if(resp)
+                    {
+                      zMapLogWarning("Full response was %s", resp);
+                      g_free(resp);
+                    }
+                  else
+                    zMapLogWarning("%s", "No response was received!");
                   app_context->xremote_client = NULL;
                   zMapXRemoteDestroy(client);
                 }
@@ -228,6 +235,11 @@ static char *appexecuteCommand(char *command_text, gpointer app_context_data, in
 	    g_string_append_printf(response_data.message, "zmap is closing, wait for finalised request.") ;
 	    response_data.handled = TRUE ;
 	    response_data.code = ZMAPXREMOTE_OK;
+
+  /* Remove the notify handler. */
+  if(app_context->propertyNotifyEventId)
+    g_signal_handler_disconnect(app_context->app_widg, app_context->propertyNotifyEventId);
+  app_context->propertyNotifyEventId = 0 ;
 
 	    /* Attach an idle handler from which we send the final quit, we must do this because
 	     * otherwise we end up exitting before the external program sees the final quit. */
@@ -348,11 +360,6 @@ static gboolean finalExit(gpointer data)
   /* Send the final quit, after this we can exit. */
   if (zMapXRemoteSendRemoteCommand(app_context->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
     zMapLogWarning("Final Quit to client program failed: \"%s\"", response) ;
-
-  /* Remove the notify handler. */
-  if(app_context->propertyNotifyEventId)
-    g_signal_handler_disconnect(app_context->app_widg, app_context->propertyNotifyEventId);
-  app_context->propertyNotifyEventId = 0 ;
 
   /* Signal zmap we want to exit now. */
   zmapAppExit(app_context) ;
