@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 29 09:00 2007 (edgrif)
+ * Last edited: Apr 18 11:42 2007 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.46 2007-03-29 08:59:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.47 2007-04-18 10:50:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -550,7 +550,7 @@ void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width)
 
 void zMapStyleSetBumpWidth(ZMapFeatureTypeStyle style, double bump_spacing)
 {
-  zMapAssert(style && bump_spacing > 0.0) ;
+  zMapAssert(style && bump_spacing >= 0.0) ;
 
   style->fields_set.bump_spacing = TRUE ;
   style->bump_spacing = bump_spacing ;
