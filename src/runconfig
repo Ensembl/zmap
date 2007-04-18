@@ -75,8 +75,9 @@ case $opsys in
          cc_args='CFLAGS=-Wall'
          cflags_args=''
          # make sure zmap executable has path to foocanvas library.
-         ld_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" ;;
-
+         ld_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" 
+         #ld_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib -Xlinker -rpath -Xlinker $software/lib"  # uncomment 4 gtk 2.10
+        ;;
     esac ;;
 
  Darwin )
