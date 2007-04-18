@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 19 13:56 2007 (edgrif)
+ * Last edited: Apr 18 11:38 2007 (edgrif)
  * Created: Wed Jan 11 11:30:39 2006 (rds)
- * CVS info:   $Id: gffparser.c,v 1.3 2007-03-01 09:20:51 edgrif Exp $
+ * CVS info:   $Id: gffparser.c,v 1.4 2007-04-18 10:50:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,6 +44,65 @@ typedef struct
   GIOChannel   *file;
   GString      *gff_line;
 } parserFileStruct, *parserFile ;
+
+
+
+static int parseFile(char *filename, GData *styles) ;
+static GIOChannel *openFileOrDie(char *filename) ;
+static int readHeader(parserFile data) ;
+static gboolean readFeatures(parserFile data) ;
+
+
+int main(int argc, char *argv[])
+{
+  int main_rc ;
+  GData *styles = NULL;
+
+#if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
+#error "Cannot compile, threads not properly enabled."
+#endif
+
+  g_thread_init(NULL) ;
+  if (!g_thread_supported())
+    g_thread_init(NULL);
+
+  zMapConfigDirCreate(NULL, NULL) ;
+  
+  zMapLogCreate(NULL) ;
+
+  styles  = zMapFeatureTypeGetFromFile(argv[2]) ;
+  main_rc = parseFile(argv[1], styles) ;
+
+  zMapLogDestroy() ;
+
+  return(main_rc) ;
+}
+
+
+
+
+
+/* 
+ *                  Internal routines. 
+ */
+
+
+static int parseFile(char *filename, GData *styles)
+{
+  parserFileStruct data = {NULL};
+
+  data.file     = openFileOrDie(filename);
+  data.parser   = zMapGFFCreateParser(styles, FALSE);
+  data.gff_line = g_string_sized_new(2000);
+
+  if(!(readHeader(&data)))
+     readFeatures(&data);
+  
+  zMapGFFDestroyParser(data.parser) ;
+  g_string_free(data.gff_line, TRUE) ;
+
+  return 0 ;
+}
 
 
 static GIOChannel *openFileOrDie(char *filename)
@@ -197,33 +256,6 @@ static gboolean readFeatures(parserFile data)
   return result;
 }
 
-static int parseFile(char *filename, GData *styles)
-{
-  parserFileStruct data = {NULL};
 
-  data.file     = openFileOrDie(filename);
-  data.parser   = zMapGFFCreateParser(styles, FALSE);
-  data.gff_line = g_string_sized_new(2000);
-
-  if(!(readHeader(&data)))
-     readFeatures(&data);
-  
-
-  zMapGFFDestroyParser(data.parser) ;
-  g_string_free(data.gff_line, TRUE) ;
-
-  return 0;
-}
-
-int main(int argc, char *argv[])
-{
-  int main_rc ;
-  GData *styles = NULL;
-  
-  styles  = zMapFeatureTypeGetFromFile("ZMapTypes");
-  main_rc = parseFile("huge.gff", styles);
-
-  return(main_rc) ;
-}
 
 
