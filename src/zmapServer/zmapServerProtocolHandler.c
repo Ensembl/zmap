@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Apr  5 14:07 2007 (edgrif)
+ * Last edited: Apr 18 08:10 2007 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.18 2007-04-05 14:22:14 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.19 2007-04-18 09:29:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,7 +85,7 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 						 gpointer data, 
 						 gpointer user_data,
 						 char **error_out) ;
-
+static void addFeatureModeCB(GQuark key_id, gpointer data, gpointer user_data) ;
 
 /* Set up the list, note the special pthread macro that makes sure mutex is set up before
  * any threads can use it. */
@@ -502,60 +502,10 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
 	ZMapFeatureSet feature_set ;
-	ZMapFeature feature ;
-	ZMapStyleMode mode ;
 
         feature_set = (ZMapFeatureSet)feature_any ;
-	feature = (ZMapFeature)zMap_g_datalist_first(&(feature_set->features)) ;
 
-	if (!zMapStyleHasMode(feature->style))
-	  {
-	    switch (feature->type)
-	      {
-	      case ZMAPFEATURE_BASIC:
-		mode = ZMAPSTYLE_MODE_BASIC ;
-
-		if (g_ascii_strcasecmp(g_quark_to_string(zMapStyleGetID(feature->style)), "GF_splice") == 0)
-		  {
-		    mode = ZMAPSTYLE_MODE_GLYPH ;
-		    zMapStyleSetGlyphMode(feature->style, ZMAPSTYLE_GLYPH_SPLICE) ;
-
-		    zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_NORMAL,
-					"red", NULL, NULL) ;
-		    zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_NORMAL,
-					"blue", NULL, NULL) ;
-		    zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_NORMAL,
-					"green", NULL, NULL) ;
-		  }
-		break ;
-	      case ZMAPFEATURE_ALIGNMENT:
-		mode = ZMAPSTYLE_MODE_ALIGNMENT ;
-		break ;
-	      case ZMAPFEATURE_TRANSCRIPT:
-		mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
-		break ;
-	      case ZMAPFEATURE_RAW_SEQUENCE:
-		mode = ZMAPSTYLE_MODE_TEXT ;
-		break ;
-	      case ZMAPFEATURE_PEP_SEQUENCE:
-		mode = ZMAPSTYLE_MODE_TEXT ;
-		break ;
-		/* What about glyph and graph..... */
-
-	      default:
-		zMapAssertNotReached() ;
-		break ;
-	      }
-
-	    /* Tricky....we can have features within a single feature set that have _different_
-	     * styles, if this is the case we must be sure to set the mode in feature_set style
-	     * (where in fact its kind of useless as this is a style for the whole column) _and_
-	     * we must set it in the features own style. */
-	    zMapStyleSetMode(feature_set->style, mode) ;
-
-	    if (feature_set->style != feature->style)
-	      zMapStyleSetMode(feature->style, mode) ;
-	  }
+	g_datalist_foreach(&(feature_set->features), addFeatureModeCB, feature_set) ;
 
 	break;
       }
@@ -573,3 +523,66 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 }
 
 
+
+/* A GDataForeachFunc() to add a mode to the styles for all features in a set, note that
+ * this is not efficient as we go through all features but we would need more information
+ * stored in the feature set to avoid this. */
+static void addFeatureModeCB(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeature feature = (ZMapFeature)data ;
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data ;
+
+  if (!zMapStyleHasMode(feature->style))
+    {
+      ZMapStyleMode mode ;
+
+      switch (feature->type)
+	{
+	case ZMAPFEATURE_BASIC:
+	  mode = ZMAPSTYLE_MODE_BASIC ;
+
+	  if (g_ascii_strcasecmp(g_quark_to_string(zMapStyleGetID(feature->style)), "GF_splice") == 0)
+	    {
+	      mode = ZMAPSTYLE_MODE_GLYPH ;
+	      zMapStyleSetGlyphMode(feature->style, ZMAPSTYLE_GLYPH_SPLICE) ;
+
+	      zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				  "red", NULL, NULL) ;
+	      zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				  "blue", NULL, NULL) ;
+	      zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				  "green", NULL, NULL) ;
+	    }
+	  break ;
+	case ZMAPFEATURE_ALIGNMENT:
+	  mode = ZMAPSTYLE_MODE_ALIGNMENT ;
+	  break ;
+	case ZMAPFEATURE_TRANSCRIPT:
+	  mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
+	  break ;
+	case ZMAPFEATURE_RAW_SEQUENCE:
+	  mode = ZMAPSTYLE_MODE_TEXT ;
+	  break ;
+	case ZMAPFEATURE_PEP_SEQUENCE:
+	  mode = ZMAPSTYLE_MODE_TEXT ;
+	  break ;
+	  /* What about glyph and graph..... */
+
+	default:
+	  zMapAssertNotReached() ;
+	  break ;
+	}
+
+      /* Tricky....we can have features within a single feature set that have _different_
+       * styles, if this is the case we must be sure to set the mode in feature_set style
+       * (where in fact its kind of useless as this is a style for the whole column) _and_
+       * we must set it in the features own style. */
+      zMapStyleSetMode(feature_set->style, mode) ;
+
+      if (feature_set->style != feature->style)
+	zMapStyleSetMode(feature->style, mode) ;
+    }
+
+
+  return ;
+}
