@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jan 18 11:25 2007 (rds)
+ * Last edited: Apr 23 14:58 2007 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.31 2007-01-23 16:44:57 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.32 2007-04-23 13:58:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1263,8 +1263,12 @@ static void eachContainer(gpointer data, gpointer user_data)
           containerMoveToZero(container);
           containerSetMaxBackground(container, this_points, container_data);
 
+
+	  /* THIS SEEMS COMPLETELY WRONG, WE SHOULDN'T NEED TO ZOOM THE OVERLAYS AT ALL.... */
+
 	  /* I'm trying this for my overlays.... */
           containerSetMaxOverlays(container, this_points, container_data);
+
 
           containerPointsCacheResetBound(all_data->cache, ZMAPCONTAINER_LEVEL_STRAND);
           break;
@@ -1616,6 +1620,12 @@ static void containerSetMaxOverlays(FooCanvasGroup *container, FooCanvasPoints *
     {
       GList *list_item ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      printf("in container item resizing...\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
       list_item = g_list_first(container_overlays->item_list) ;
       do
 	{
@@ -1658,6 +1668,8 @@ static void containerSetMaxOverlays(FooCanvasGroup *container, FooCanvasPoints *
 			      "x2", nx2,
 			      "y2", ny2,
 			      NULL);
+
+	  
   
 	  if ((size = (nx2 - nx1)) > (double)(1 << 15))
 	    zMapLogWarning("%s [%d < %f]", "Container background larger than 1 << 15 in x coords.", 1 << 15, size);
