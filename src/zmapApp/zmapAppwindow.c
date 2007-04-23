@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Apr 17 13:44 2007 (edgrif)
+ * Last edited: Apr 19 17:22 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.40 2007-04-17 14:57:45 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.41 2007-04-23 13:51:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -533,7 +533,7 @@ static void exitApp(ZMapAppContext app_context)
  * cleaned up and the application does not exit cleanly. */
 static void crashExitApp(ZMapAppContext app_context)
 {
-  zMapLogFatal("%s", "Exit timed out - WARNING: Zmap clean up of threads timed out, exit has been forced !") ;
+  zMapLogCritical("%s", "Exit timed out - WARNING: Zmap clean up of threads timed out, exit has been forced !") ;
 
   destroyAppContext(app_context) ;
 
