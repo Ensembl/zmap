@@ -25,9 +25,9 @@
  * Description: Contains macros, functions etc. for logging.
  *              
  * HISTORY:
- * Last edited: Apr 17 15:01 2007 (edgrif)
+ * Last edited: Apr 19 17:25 2007 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsLog.h,v 1.6 2007-04-17 14:58:40 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsLog.h,v 1.7 2007-04-23 13:51:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_LOG_H
@@ -79,7 +79,7 @@
 /* The base logging routine, you should use the below macros which automatically
  * include the stuff you need instead of this routine. */
 void zMapLogMsg(char *domain, GLogLevelFlags log_level,
-		char *file, char *function, int line,
+		char *file, const char *function, int line,
 		char *format, ...) ;
 
 

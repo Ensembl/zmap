@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapUtilsLog.h
  * HISTORY:
- * Last edited: Apr 17 15:50 2007 (edgrif)
+ * Last edited: Apr 19 17:28 2007 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.11 2007-04-17 14:58:40 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.12 2007-04-23 13:51:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -164,7 +164,7 @@ gboolean zMapLogStart()
 
 
 void zMapLogMsg(char *domain, GLogLevelFlags log_level,
-		char *file, char *function, int line,
+		char *file, const char *function, int line,
 		char *format, ...)
 {
   ZMapLog log = log_G ;
