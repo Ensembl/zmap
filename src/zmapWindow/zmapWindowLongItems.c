@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  9 14:55 2007 (rds)
+ * Last edited: Apr 23 14:59 2007 (edgrif)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.10 2007-01-09 14:57:58 rds Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.11 2007-04-23 13:59:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,16 +93,16 @@ typedef struct
       double         start ;
       double         end ;
     } box ;
-
+    
     FooCanvasPoints *points ;
   } pos ;
-
+  
   struct
   {
-    double y1;
-    double y2;
-  }extreme;
-
+    double y1 ;
+    double y2 ;
+  } extreme ;
+  
 } LongFeatureItemStruct, *LongFeatureItem ;
 
 
@@ -152,19 +152,18 @@ void zmapWindowLongItemResized(ZMapWindowLongItems long_items, FooCanvasItem *it
 
   foo_canvas_item_get_bounds(item, NULL, &start, NULL, &end);
 
-  if((list_long_item = g_list_find_custom(long_items->items, item, findLongItemCB)))
+  if ((list_long_item = g_list_find_custom(long_items->items, item, findLongItemCB)))
     {
       new_item = (LongFeatureItem)(list_long_item->data);
       zMapAssert(new_item->item == item);
 
-      if(FOO_IS_CANVAS_RE(item))
+      if (FOO_IS_CANVAS_RE(item))
         {
           new_item->pos.box.start = start;
           new_item->pos.box.end   = end;
         }
       new_item->extreme.y1 = start;
       new_item->extreme.y2 = end;
-
     }
   else
     {
@@ -268,13 +267,12 @@ void zmapWindowLongItemCrop(ZMapWindowLongItems long_items,
       func_data.y1 = y1;
       func_data.y2 = y2;
 
-      if(!((last_region->y1 == y1) &&
-           (last_region->y2 == y2)))
+      if (!((last_region->y1 == y1) && (last_region->y2 == y2)))
         {
           if(debug_G)
             printf("Cropping Long Items: Region %f %f %f %f\n", x1, y1, x2, y2);
           
-          if(long_items->items)
+          if (long_items->items)
             {
               LongFeatureItem first_long_item = (LongFeatureItem)(long_items->items->data);
               FooCanvasItem *item = NULL;
@@ -463,8 +461,7 @@ static void cropLongItem(gpointer data, gpointer user_data)
     }
 
   /* Now clip anything that overlaps the boundaries of the scrolled region. */
-  if (!(end < scroll_y1) && !(start > scroll_y2)
-      && ((start < scroll_y1) || (end > scroll_y2)))
+  if (!(end < scroll_y1) && !(start > scroll_y2) && ((start < scroll_y1) || (end > scroll_y2)))
     {
       if(debug_G)
         {
@@ -488,8 +485,7 @@ static void cropLongItem(gpointer data, gpointer user_data)
           foo_canvas_item_w2i(long_item->item, &dummy_x, &end);
         }
 
-      if(FOO_IS_CANVAS_POLYGON(long_item->item) ||
-         FOO_IS_CANVAS_LINE(long_item->item))
+      if (FOO_IS_CANVAS_POLYGON(long_item->item) || FOO_IS_CANVAS_LINE(long_item->item))
         {
           FooCanvasPoints *item_points ;
           int i, last_idx;
@@ -562,7 +558,16 @@ static void printLongItem(gpointer data, gpointer user_data)
     {
       printf("feature name: %s", g_quark_to_string(any_feature->unique_id)) ;
     }
-  else if(zmapWindowContainerIsValid(FOO_CANVAS_GROUP(long_item->item)))
+  else if (FOO_IS_CANVAS_ITEM(long_item->item))
+    {
+      char *text ;
+
+      if ((text = g_object_get_data(G_OBJECT(long_item->item), "my_range_key")))
+	printf("MARK ITEM FOUND:\n") ;
+      else
+	printf("some kind of canvas item that is not a feature\n") ;
+    }
+  else if (zmapWindowContainerIsValid(FOO_CANVAS_GROUP(long_item->item)))
     {
       parent = zmapWindowContainerGetParent(long_item->item) ;
 
