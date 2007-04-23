@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  7 14:23 2007 (rds)
+ * Last edited: Apr 19 10:25 2007 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.2 2007-03-07 14:35:18 rds Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.3 2007-04-23 14:00:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -365,9 +365,18 @@ static void markRange(ZMapWindowMark mark, double y1, double y2)
 					    block_x1, block_y1, block_x2, y1, 
 					    &(mark->colour)) ;
 
+  zmapWindowLongItemCheck(mark->window->long_items, mark->top_range_item, block_y1, y1) ;
+
+  g_object_set_data(G_OBJECT(mark->top_range_item), "my_range_key", "top range item") ;
+
+
   mark->bottom_range_item = zMapDrawBoxOverlay(FOO_CANVAS_GROUP(mark->range_group), 
 					       block_x1, y2, block_x2, block_y2, 
 					       &(mark->colour)) ;
+
+  zmapWindowLongItemCheck(mark->window->long_items, mark->bottom_range_item, y2, block_y2) ;
+
+  g_object_set_data(G_OBJECT(mark->top_range_item), "my_range_key", "bottom range item") ;
 
   mark->world_y1 = y1;
   mark->world_y2 = y2;
