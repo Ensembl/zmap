@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Apr  4 17:38 2007 (edgrif)
+ * Last edited: Apr 23 14:15 2007 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.30 2007-04-05 14:20:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.31 2007-04-23 14:01:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -152,19 +152,19 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
     {
       {ZMAPGUI_MENU_TOGGLE, "Column Bump",                 ZMAPOVERLAP_COMPLETE, bumpToggleMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Hide",                 ZMAPWWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
-      {ZMAPGUI_MENU_BRANCH, "Column Bump Opts", 0, NULL, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Feature Overlap", ZMAPOVERLAP_COMPLEX_RANGE,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/FMap Test Bump", ZMAPOVERLAP_ENDS_RANGE,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Compact + No Interleave", ZMAPOVERLAP_NO_INTERLEAVE,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Compact + Interleave", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Cluster",    ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/No Overlap", ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Bump on Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Bump everything",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Opts/Unbump",     ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
       {ZMAPGUI_MENU_BRANCH, "Column Configure", 0, NULL, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column",  ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns",  ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "Column Bump Test Opts", 0, NULL, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Compact Best", ZMAPOVERLAP_ENDS_RANGE,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Feature Overlap", ZMAPOVERLAP_COMPLEX_RANGE,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Compact + No Interleave", ZMAPOVERLAP_NO_INTERLEAVE,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Compact + Interleave", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Cluster",    ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/No Overlap", ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Bump on Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Bump everything",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Unbump",     ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
   ZMapGUIMenuItem item ;
@@ -173,7 +173,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
    * NOTE logic, this button is either "no bump" or "Name + No Overlap", the latter should be
    * selectable whatever.... */
   item = &(menu[0]) ;
-  if (curr_overlap == ZMAPOVERLAP_NO_INTERLEAVE || curr_overlap == ZMAPOVERLAP_COMPLEX_RANGE)
+  if (curr_overlap == ZMAPOVERLAP_ENDS_RANGE)
     {
       item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
       item->id = curr_overlap ;
@@ -708,16 +708,13 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
   FooCanvasGroup *column_group ;
   FooCanvasItem *style_item ;
 
-  if (bump_type == ZMAPOVERLAP_NO_INTERLEAVE || bump_type == ZMAPOVERLAP_COMPLEX_RANGE)
+  if (bump_type == ZMAPOVERLAP_ENDS_RANGE)
     {
       bump_type = ZMAPOVERLAP_COMPLETE ;
     }
   else
     {
-      if (zmapWindowMarkIsSet(menu_data->window->mark))
-	bump_type = ZMAPOVERLAP_COMPLEX_RANGE ;
-      else
-	bump_type = ZMAPOVERLAP_NO_INTERLEAVE ;
+      bump_type = ZMAPOVERLAP_ENDS_RANGE ;
     }
 
   if (menu_data->item_cb)
