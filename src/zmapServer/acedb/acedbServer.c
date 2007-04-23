@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar 29 09:02 2007 (edgrif)
+ * Last edited: Apr 23 12:59 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.86 2007-03-29 09:00:52 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.87 2007-04-23 13:53:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1753,7 +1753,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       else if (g_ascii_strcasecmp(tag, "Bumpable") == 0
 	       || g_ascii_strcasecmp(tag, "Cluster") == 0)
 	{
-	  overlap = g_strdup("smart") ;
+	  overlap = g_strdup("smartest") ;
 	}
 
       else if (g_ascii_strcasecmp(tag, "GFF_source") == 0)
@@ -2369,7 +2369,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	}
       else if (g_ascii_strcasecmp(tag, "Cluster") == 0)
 	{
-	  overlap = g_strdup("smart") ;
+	  overlap = g_strdup("smartest") ;
 	  bump_set = TRUE ;
 	}
       else if (g_ascii_strcasecmp(tag, "Compact_Cluster") == 0)

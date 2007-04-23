@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 26 11:23 2007 (edgrif)
+ * Last edited: Apr 23 14:53 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.184 2007-03-28 16:07:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.185 2007-04-23 13:54:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3194,15 +3194,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
 
 	    curr_overlap_mode = zMapStyleGetOverlapMode(set_data->style) ;
-	    if (curr_overlap_mode == ZMAPOVERLAP_NO_INTERLEAVE ||curr_overlap_mode == ZMAPOVERLAP_COMPLEX_RANGE)
+
+	    if (curr_overlap_mode != ZMAPOVERLAP_COMPLETE)
 	      overlap_mode = ZMAPOVERLAP_COMPLETE ;
 	    else
-	      {
-		if (zmapWindowMarkIsSet(window->mark))
-		  overlap_mode = ZMAPOVERLAP_COMPLEX_RANGE ;
-		else
-		  overlap_mode = ZMAPOVERLAP_NO_INTERLEAVE ;
-	      }
+	      overlap_mode = ZMAPOVERLAP_ENDS_RANGE ;
 	
 	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), overlap_mode) ;
 	    

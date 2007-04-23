@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 18 10:36 2007 (edgrif)
+ * Last edited: Apr 23 14:56 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.64 2007-04-18 09:38:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.65 2007-04-23 13:57:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -536,133 +536,126 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
       {
 	ComplexBumpStruct complex = {NULL} ;
 	GList *names_list = NULL ;
+	gboolean mark_set ;
 
-	if ((bump_mode == ZMAPOVERLAP_COMPLEX_RANGE || bump_mode == ZMAPOVERLAP_ENDS_RANGE)
-	    && !(zmapWindowMarkIsSet(set_data->window->mark)))
+	mark_set = zmapWindowMarkIsSet(set_data->window->mark) ;
+
+	complex.bumped_style = style ;
+
+	if (column)
+	  complex.bump_all = TRUE ;
+
+	/* Make a hash table of feature names which are hashed to lists of features with that name. */
+	complex.name_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash/comparison. */
+						  NULL, hashDataDestroyCB) ;
+
+	g_list_foreach(column_features->item_list, makeNameListCB, &complex) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	g_list_foreach(column_features->item_list, makeNameListStrandedCB, &complex) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	/* Extract the lists of features into a list of lists for sorting. */
+	g_hash_table_foreach(complex.name_hash, getListFromHash, &names_list) ;
+
+
+	/* Sort each sub list of features by position for simpler position sorting later. */
+	g_list_foreach(names_list, sortListPosition, NULL) ;
+
+
+	/* Sort the top list using the combined normalised scores of the sublists so higher
+	 * scoring matches come first. */
+
+	/* Lets try different sorting for proteins vs. dna. */
+	if (complex.protein)
+	  names_list = g_list_sort(names_list, sortByScoreCB) ;
+	else
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  names_list = g_list_sort(names_list, sortBySpanCB) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	names_list = g_list_sort(names_list, sortByStrandSpanCB) ;
+
+
+	/* Remove any lists that do not overlap with the range set by the user. */
+	if (mark_set)
 	  {
-	    /* For the range mode the user must have selected a feature for bump range. */
+	    int start, end ;
+
+	    /* we know mark is set so no need to check result of range check. But should check
+	     * that col to be bumped and mark are in same block ! */
+	    zmapWindowMarkGetSequenceRange(set_data->window->mark, &start, &end) ;
+
+	    if (bump_mode == ZMAPOVERLAP_ENDS_RANGE)
+	      {
+		RangeDataStruct range = {FALSE} ;
+
+		range.start = start ;
+		range.end = end ;
+
+		names_list = g_list_sort_with_data(names_list, sortByOverlapCB, &range) ;
+	      }
+
+	    if (removeNameListsByRange(&names_list, start, end))
+	      set_data->hidden_bump_features = TRUE ;
+	  }
+
+	if (!names_list)
+	  {
 	    bumped = FALSE ;
 	  }
 	else
 	  {
-	    complex.bumped_style = style ;
+	    /* Merge the lists into the min. number of non-overlapping lists of features arranged
+	     * by name and to some extent by score. */
+	    complex.window = set_data->window ;
+	    complex.curr_offset = 0.0 ;
+	    complex.incr = (width * COMPLEX_BUMP_COMPRESS) ;
 
-	    if (column)
-	      complex.bump_all = TRUE ;
+	    if (bump_mode == ZMAPOVERLAP_COMPLEX)
+	      complex.overlap_func = listsOverlap ;
+	    else if (bump_mode == ZMAPOVERLAP_NO_INTERLEAVE || bump_mode == ZMAPOVERLAP_ENDS_RANGE
+		     || bump_mode == ZMAPOVERLAP_COMPLEX_RANGE)
+	      complex.overlap_func = listsOverlapNoInterleave ;
 
-	    /* Make a hash table of feature names which are hashed to lists of features with that name. */
-	    complex.name_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash/comparison. */
-						      NULL, hashDataDestroyCB) ;
-
-	    g_list_foreach(column_features->item_list, makeNameListCB, &complex) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    g_list_foreach(column_features->item_list, makeNameListStrandedCB, &complex) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-	    /* Extract the lists of features into a list of lists for sorting. */
-	    g_hash_table_foreach(complex.name_hash, getListFromHash, &names_list) ;
-
-
-	    /* Sort each sub list of features by position for simpler position sorting later. */
-	    g_list_foreach(names_list, sortListPosition, NULL) ;
-
-
-	    /* Sort the top list using the combined normalised scores of the sublists so higher
-	     * scoring matches come first. */
-
-	    /* Lets try different sorting for proteins vs. dna. */
-	    if (complex.protein)
-	      names_list = g_list_sort(names_list, sortByScoreCB) ;
+	    if (bump_mode == ZMAPOVERLAP_ENDS_RANGE)
+	      g_list_foreach(names_list, setAllOffsetCB, &complex) ;
 	    else
+	      g_list_foreach(names_list, setOffsetCB, &complex) ;
+
+
+	    /* we reverse the offsets for reverse strand cols so as to mirror the forward strand. */
+	    set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+	    if (set_data->strand == ZMAPSTRAND_REVERSE)
+	      reverseOffsets(complex.bumpcol_list) ;
+
+
+	    /* Bump all the features to their correct offsets. */
+	    g_list_foreach(complex.bumpcol_list, moveItemsCB, NULL) ;
+
+
+	    /* for no interleave add background items.... */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      names_list = g_list_sort(names_list, sortBySpanCB) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	    names_list = g_list_sort(names_list, sortByStrandSpanCB) ;
-
-
-	    /* Remove any lists that do not overlap with the range set by the user. */
-	    if (bump_mode == ZMAPOVERLAP_COMPLEX_RANGE || bump_mode == ZMAPOVERLAP_ENDS_RANGE)
-	      {
-		int start, end ;
-
-		/* we know mark is set so no need to check result of range check. But should check
-		 * that col to be bumped and mark are in same block ! */
-		zmapWindowMarkGetSequenceRange(set_data->window->mark, &start, &end) ;
-
-		if (bump_mode == ZMAPOVERLAP_ENDS_RANGE)
-		  {
-		    RangeDataStruct range = {FALSE} ;
-
-		    range.start = start ;
-		    range.end = end ;
-
-		    names_list = g_list_sort_with_data(names_list, sortByOverlapCB, &range) ;
-		  }
-
-		if (removeNameListsByRange(&names_list, start, end))
-		  set_data->hidden_bump_features = TRUE ;
-	      }
-
-	    if (!names_list)
-	      {
-		bumped = FALSE ;
-	      }
-	    else
-	      {
-		/* Merge the lists into the min. number of non-overlapping lists of features arranged
-		 * by name and to some extent by score. */
-		complex.window = set_data->window ;
-		complex.curr_offset = 0.0 ;
-		complex.incr = (width * COMPLEX_BUMP_COMPRESS) ;
-
-		if (bump_mode == ZMAPOVERLAP_COMPLEX)
-		  complex.overlap_func = listsOverlap ;
-		else if (bump_mode == ZMAPOVERLAP_NO_INTERLEAVE || bump_mode == ZMAPOVERLAP_ENDS_RANGE
-			 || bump_mode == ZMAPOVERLAP_COMPLEX_RANGE)
-		  complex.overlap_func = listsOverlapNoInterleave ;
-
-		if (bump_mode == ZMAPOVERLAP_ENDS_RANGE)
-		  g_list_foreach(names_list, setAllOffsetCB, &complex) ;
-		else
-		  g_list_foreach(names_list, setOffsetCB, &complex) ;
-
-
-		/* we reverse the offsets for reverse strand cols so as to mirror the forward strand. */
-		set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
-		if (set_data->strand == ZMAPSTRAND_REVERSE)
-		  reverseOffsets(complex.bumpcol_list) ;
-
-
-		/* Bump all the features to their correct offsets. */
-		g_list_foreach(complex.bumpcol_list, moveItemsCB, NULL) ;
-
-
-		/* for no interleave add background items.... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		g_list_foreach(complex.bumpcol_list, addBackgrounds, &set_data->extra_items) ;
+	    g_list_foreach(complex.bumpcol_list, addBackgrounds, &set_data->extra_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		g_list_foreach(complex.bumpcol_list, addMultiBackgrounds, &set_data->extra_items) ;
+	    g_list_foreach(complex.bumpcol_list, addMultiBackgrounds, &set_data->extra_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-		g_list_foreach(complex.bumpcol_list, NEWaddMultiBackgrounds, &set_data->extra_items) ;
+	    g_list_foreach(complex.bumpcol_list, NEWaddMultiBackgrounds, &set_data->extra_items) ;
 
-	      }
-
-	    /* Clear up. */
-	    if (complex.bumpcol_list)
-	      g_list_foreach(complex.bumpcol_list, listDataDestroyCB, NULL) ;
-	    if (complex.name_hash)
-	      g_hash_table_destroy(complex.name_hash) ;
-	    if (names_list)
-	      g_list_free(names_list) ;
 	  }
 
+	/* Clear up. */
+	if (complex.bumpcol_list)
+	  g_list_foreach(complex.bumpcol_list, listDataDestroyCB, NULL) ;
+	if (complex.name_hash)
+	  g_hash_table_destroy(complex.name_hash) ;
+	if (names_list)
+	  g_list_free(names_list) ;
+	 
 	break ;
       }
     default:
