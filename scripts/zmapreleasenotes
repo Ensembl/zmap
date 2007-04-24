@@ -106,7 +106,7 @@ ZBGotoDir $builddir
 # check out zmap and if requested, acedb source, note, we don't need all of the zmap source stuff....
 #
 
-CVSROOT="$ZBCVSLogin$zmap_CVSROOT"
+CVSROOT="$zmap_CVSROOT"
 ZBlogmsg "Checking out from $CVSROOT"
 cvs checkout $zmap_doc_dir || ZBmsgAndExit "Cannot checkout release notes directory: $zmap_doc_dir"
 

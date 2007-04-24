@@ -226,14 +226,14 @@ ZBmachines='deskpro16113'
 ZBAcedbHOME=~acedb
 ZBAcedbBinaries='tace xace sgifaceserver giface makeUserPasswd blixem dotter xremote'
 ZBAcedbVersion=DEVELOPMENT
-ZBAcedbCVSRoot=$ZBAcedbHOME/CVS_ACEDB
+#ZBAcedbCVSRoot=$ZBAcedbHOME/CVS_ACEDB
 
 CVSROOT=DESPOT
 CVS_RSH=ssh
 export CVS_RSH CVSROOT
 
-ZBCVSLogin=:ext:zmap@cbi4:
-ZBCVSRoot=~zmap/CVS
+#ZBCVSLogin=:ext:zmap@cbi4:
+ZBCVSRoot=':ext:cvs.internal.sanger.ac.uk:/repos/cvs/zmap'
 ZBgetRTtickets=getRTtickets
 
 # REMOTE DIRECTORIES
