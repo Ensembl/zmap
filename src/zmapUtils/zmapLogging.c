@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapUtilsLog.h
  * HISTORY:
- * Last edited: Apr 19 17:28 2007 (edgrif)
+ * Last edited: Apr 26 09:42 2007 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.12 2007-04-23 13:51:15 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.13 2007-04-26 08:48:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -124,16 +124,15 @@ gboolean zMapLogCreate(char *logname)
 
   zMapAssert(!log) ;
 
-  log = createLog() ;
+  log_G = log = createLog() ;
 
   if (!configureLog(log))
     {
       destroyLog(log) ;
-      log = NULL ;
+      log_G = log = NULL ;
     }
   else
     {
-      log_G = log ;
       writeStartOrStopMessage(TRUE) ;
       result = TRUE ;
     }
@@ -174,6 +173,7 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
 
 
   zMapAssert(log) ;
+
   zMapAssert(domain && *domain && file && *file && format && *format) ;
 
   format_str = g_string_sized_new(2000) ;		    /* Not too many records longer than this. */
