@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 19 10:25 2007 (edgrif)
+ * Last edited: May  3 11:48 2007 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.3 2007-04-23 14:00:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.4 2007-05-03 13:46:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -333,7 +333,7 @@ static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark
 }
 
 
-/* This is a g_datalist callback function. */
+/* This is a g_list callback function. */
 static void markFuncCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;

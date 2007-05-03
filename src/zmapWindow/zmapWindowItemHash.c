@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Feb  6 12:49 2007 (rds)
+ * Last edited: May  3 11:48 2007 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.39 2007-02-06 16:44:50 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.40 2007-05-03 13:47:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -996,7 +996,7 @@ static void destroyIDHash(gpointer data)
 
 
 
-/* This is a g_datalist callback function. */
+/* This is a g_list callback function. */
 static void childSearchCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;

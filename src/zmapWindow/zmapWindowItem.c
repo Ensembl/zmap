@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr  5 14:59 2007 (edgrif)
+ * Last edited: May  3 11:46 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.73 2007-04-05 14:20:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.74 2007-05-03 13:47:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1735,7 +1735,7 @@ static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highl
 }
 
 
-/* This is a g_datalist callback function. */
+/* This is a g_list callback function. */
 static void highlightFuncCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
