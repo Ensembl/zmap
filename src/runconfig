@@ -25,11 +25,11 @@ case $opsys in
     # NOTE that currently the LDFLAGS stuff does not get through the configure step
     # and so does not work....not sure why....
     popt=/nfs/team71/acedb/zmap/prefix/ALPHA
-    cc_args='CC=cc'
+    CC_args='CC=cc'
 
     # N.B. level5 messages just produces too much output for everyday use....
-    cflags_args="CFLAGS=-I$popt/include -msg_enable level4"
-    ld_args="LDFLAGS=-rpath /usr/local/gtk2/lib:$popt/lib"
+    CFLAGS_args="CFLAGS=-I$popt/include -msg_enable level4"
+    LDFLAGS_args="LDFLAGS=-rpath /usr/local/gtk2/lib:$popt/lib"
 
     locals=/nfs/team71/acedb/zmap/prefix/ALPHA/lib/pkgconfig
     PKG_CONFIG_PATH="$locals:/usr/local/gtk2/lib/pkgconfig"
@@ -50,34 +50,35 @@ case $opsys in
          LD_LIBRARY_PATH="$locals/lib"
          export LD_LIBRARY_PATH
 
-         cc_args='CFLAGS=-Wall'
-         cflags_args=''
+         CC_args=''
+         CFLAGS_args='CFLAGS=-Wall'
          # make sure zmap executable has path to foocanvas library.
-         ld_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" ;;
+         LDFLAGS_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" ;;
 
        * )
 
          locals=~zmap/prefix/LINUX
          software=/software/acedb
-         PATH="$locals/bin:$PATH" # comment out 4 gtk 2.10
-         #PATH="$software/bin:$locals/bin:$PATH" # uncomment 4 gtk 2.10
+         #PATH="$locals/bin:$PATH" # comment out 4 gtk 2.10
+         PATH="$software/bin:$locals/bin:$PATH" # uncomment 4 gtk 2.10
          export PATH
 
-         #PKG_CONFIG=$software/bin/pkg-config # uncomment 4 gtk 2.10
+         PKG_CONFIG=$software/bin/pkg-config # uncomment 4 gtk 2.10
 
-         PKG_CONFIG_PATH="$locals/lib/pkgconfig"
-         #PKG_CONFIG_PATH="$software/lib/pkgconfig:/usr/lib/pkgconfig:$locals/lib/pkgconfig" # uncomment 4 gtk 2.10
+         #PKG_CONFIG_PATH="$locals/lib/pkgconfig"
+         PKG_CONFIG_PATH="$software/lib/pkgconfig:/usr/lib/pkgconfig:$locals/lib/pkgconfig" # uncomment 4 gtk 2.10
          export PKG_CONFIG_PATH
-         LD_LIBRARY_PATH="$locals/lib"
-         #LD_LIBRARY_PATH="$software/lib:$locals/lib" # uncomment 4 gtk 2.10
+         #LD_LIBRARY_PATH="$locals/lib"
+         LD_LIBRARY_PATH="$software/lib:$locals/lib" # uncomment 4 gtk 2.10
          export LD_LIBRARY_PATH
 
-         cc_args='CFLAGS=-Wall'
-         cflags_args=''
+         CC_args=''
+         CFLAGS_args='CFLAGS=-Wall -pg'
          # make sure zmap executable has path to foocanvas library.
-         ld_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" 
-         #ld_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib -Xlinker -rpath -Xlinker $software/lib"  # uncomment 4 gtk 2.10
-        ;;
+         #LDFLAGS_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" ;;
+#         LDFLAGS_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib -L$software/lib" ;;
+         LDFLAGS_args="LDFLAGS=-pg -Xlinker -rpath -Xlinker $locals/lib  -Xlinker -rpath -Xlinker $software/lib  -L$software/lib" ;;
+
     esac ;;
 
  Darwin )
@@ -109,9 +110,9 @@ case $opsys in
 
     PKG_CONFIG_PATH=$ZMAP_PREFIX/lib/pkgconfig:/usr/local/gtk2/lib/pkgconfig:/sw/lib/pkgconfig
 
-    cc_args=""
-    cflags_args="CFLAGS=-Wall -I$ZMAP_PREFIX/include"
-    ld_args='LDFLAGS=-Xlinker -bind_at_load -L/sw/lib' # added -L/sw/lib for the imac desktop
+    CC_args=""
+    CFLAGS_args="CFLAGS=-Wall -I$ZMAP_PREFIX/include"
+    LDFLAGS_args='LDFLAGS=-Xlinker -bind_at_load -L/sw/lib' # added -L/sw/lib for the imac desktop
 
 
     export PKG_CONFIG_PATH;;
@@ -120,14 +121,14 @@ case $opsys in
 
 esac
 
-echo "$script : Running " $root/configure --enable-debug --enable-shtml-doc $cc_args "$cflags_args" "$ld_args" "$@"
+echo "$script : Running " $root/configure --enable-debug --enable-shtml-doc $CC_args "$CFLAGS_args" "$LDFLAGS_args" "$@"
 echo "=========================================================================="
 
 
 # run the configure.......watch out for the quoting, sometimes we want the variable to
 # be interpreted as a single cmdline arg, sometimes as multiple ones.
 
-$root/configure --enable-debug --enable-shtml-doc $cc_args "$cflags_args" "$ld_args" "$@" || msgAndExit "configure script failed"
+$root/configure --enable-debug --enable-shtml-doc $CC_args "$CFLAGS_args" "$LDFLAGS_args" "$@" || msgAndExit "configure script failed"
 
 
 exit 0
