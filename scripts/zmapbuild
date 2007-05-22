@@ -223,7 +223,10 @@ if [ -n "$version" ] ; then
 
   ln -s $ZBbuildBase/$releasedir $ZBDevDir || ZBmsgAndExit "Could not create new link"
 
-  zmapfetchacedbbinaries DEVELOPMENT DEVELOPMENT || ZBmsgAndExit "Failed to fetch all the binaries"
+  zmapfetchacedbbinaries DEVELOPMENT DEVELOPMENT LINUX || ZBmsgAndExit "Failed to fetch all the binaries"
+
+  zmapfetchacedbbinaries DEVELOPMENT DEVELOPMENT DARWIN || ZBmsgAndExit "Failed to fetch all the binaries"
+  
 
   if [ -n "$notify" ] ; then
       release_notes_from_cvs=""
