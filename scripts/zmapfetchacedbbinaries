@@ -8,11 +8,40 @@ ZBExportOSVars
 # $1 should be DEVELOPMENT, EXPERIMENTAL or SUPPORTED
 # $2 should be DEVELOPMENT, OVERNIGHT
 
+# $3 should be LINUX, DARWIN
+# This is all because we can't get a mac on the network with nfs mounts ;)
+# if we do it'll all go away ;)
+# hmm, would this help? http://www.bresink.de/osx/nis.html
+
 source_acedb=$1
 dest_zmap=$2
 
-target=$ZBBaseDir/BIN.$dest_zmap/$ZBbuildOSCanon/bin
-source=$ZBAcedbHOME'/RELEASE.'$source_acedb'/bin.'$ZBbuildOSCanon'_4/'
+zmap_arch=$3
+acedb_arch=$3
+
+if [ "x$zmap_arch" == "x" ]; then
+    zmap_arch=$ZBbuildOSCanon
+    acedb_arch=$ZBbuildOSCanon
+    ZBlogmsg "Defaulting to machine architecture"
+fi
+
+if [ "x$acedb_arch" == "xMACOSX" ]; then
+    ZBlogmsg "switching MACOSX to DARWIN for acedb..."
+    acedb_arch="DARWIN"
+fi
+
+if [ "x$zmap_arch" == "xDARWIN" ]; then
+    ZBlogmsg "switching DARWIN to MACOSX for zmap..."
+    zmap_arch="MACOSX"
+fi
+
+ZBlogmsg "Using '$zmap_arch' for zmap architecture dir."
+ZBlogmsg "Using '$acedb_arch' for acedb architecture dir."
+
+acedb=~acedb
+target=$ZBBaseDir/BIN.$dest_zmap/$zmap_arch/bin
+source=$ZBAcedbHOME'/RELEASE.'$source_acedb'/bin.'$acedb_arch'_4/'
+
 
 # copy all the files from acedb release
 
