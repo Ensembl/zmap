@@ -58,6 +58,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapDraw/zmapDraw.c \
 	$(top_srcdir)/zmapDraw/zmapDraw_P.h \
 	$(top_srcdir)/zmapFeature/zmapFeature.c \
+	$(top_srcdir)/zmapFeature/zmapFeatureContextUtils.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureContext.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureTypes.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureUtils.c \
@@ -175,13 +176,10 @@ libZMapThr_a_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(top_srcdir)/zmapServer/file \
 	-I$(top_srcdir)/zmapThreads
 
-libZMapApp_a_DEPENDENCIES = src-link
-libZMap_a_DEPENDENCIES = src-link libZMapXML.a
-libZMapThr_a_DEPENDENCIES = src-link libZMapXML.a
+libZMapApp_a_DEPENDENCIES = example_dep
+libZMap_a_DEPENDENCIES = libZMapXML.a
+libZMapThr_a_DEPENDENCIES = libZMapXML.a
 
-
-src-link: 
-	echo " ---------- INTENTIONALLY BLANK $@"
-##	@test -L $(builddir)/$@ || ln -s `pwd`/$@ $(BINDIR)
+example_dep:
 
 forcemake: 
