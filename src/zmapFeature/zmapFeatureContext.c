@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 18 10:23 2007 (rds)
+ * Last edited: May 24 11:16 2007 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.22 2007-04-18 09:25:43 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.23 2007-05-24 10:33:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,12 +65,6 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
                                                          gpointer data, 
                                                          gpointer user_data,
                                                          char **error_out);
-#ifdef RDS_DONT_INCLUDE_UNUSED
-static void revcompFeatures(ZMapFeatureContext context) ;
-static void doFeatureAnyCB(ZMapFeatureAny any_feature, gpointer user_data) ;
-static void datasetCB(GQuark key_id, gpointer data, gpointer user_data) ;
-static void listCB(gpointer data, gpointer user_data) ;
-#endif
 static void revcompSpan(GArray *spans, int seq_end) ;
 static gboolean fetchBlockDNAPtr(ZMapFeatureAny feature, char **dna);
 
@@ -347,7 +341,7 @@ GList *zMapFeatureString2QuarkList(char *string_list)
  * \brief A similar call to g_datalist_foreach. However there are a number of differences.
  *
  * - 1 - There's more than one GData * involved
- * - 2 - There's more than just GData's involved (Blocks are still GLists)
+ * - 2 - There's more than just GData's involved (Blocks are still GLists) (No longer true)
  * - 3 - Because there is a hierarchy you can specify a stop level
  * - 4 - You get multiple Feature types in your GDataForeachFunc, which you have to handle.
  *
@@ -628,20 +622,32 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 
 	/* Complement the dna. */
         if (feature_block->sequence.sequence)
-	  revcompDNA(feature_block->sequence.sequence, feature_block->sequence.length) ;
+          {
+            revcompDNA(feature_block->sequence.sequence, feature_block->sequence.length) ;
+
+            /* Now redo the 3 frame translations from the dna (if they exist). */
+            if ((three_ft = zMapFeatureBlockGetSetByID(feature_block, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
+              {
+                if (!(zMapFeatureBlockThreeFrameTranslation(feature_block, &three_ft)))
+                  {
+                    zMapFeatureSetDestroy(three_ft, TRUE) ;
+                    zMapLogWarning("%s", "Cannot create 3 frame translation, feature set has been removed.") ;
+                  }
+              }
+          }
+        else
+          {
+            /* paranoia makes me want to check we haven't got a three frame translation... */
+            if ((three_ft = zMapFeatureBlockGetSetByID(feature_block, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
+              {
+                zMapFeatureSetDestroy(three_ft, TRUE);
+              }
+          }
+
         zmapFeatureRevComp(Coord, cb_data->end,
                            feature_block->block_to_sequence.t1, 
                            feature_block->block_to_sequence.t2) ;
 
-	/* Now redo the 3 frame translations from the dna (if they exist). */
-	if ((three_ft = zMapFeatureBlockGetSetByID(feature_block, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
-	  {
-	    if (!(zMapFeatureBlockThreeFrameTranslation(feature_block, &three_ft)))
-	      {
-		zMapFeatureSetDestroy(three_ft, TRUE) ;
-		zMapLogWarning("%s", "Cannot create 3 frame translation, feature set has been removed.") ;
-	      }
-	  }
       }
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
