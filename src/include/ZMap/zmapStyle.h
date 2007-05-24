@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Apr  4 17:37 2007 (edgrif)
+ * Last edited: May 24 11:24 2007 (rds)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.4 2007-04-05 14:05:42 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.5 2007-05-24 10:44:47 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -250,6 +250,7 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description) ;
 void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
 void zMapStyleSetParent(ZMapFeatureTypeStyle style, char *parent_name) ;
 void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
+gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width) ;
 double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
