@@ -65,7 +65,7 @@ zmap_LDFLAGS = -L$(top_builddir)/lib -lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML
 
 zmap_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
-zmap_DEPENDENCIES = $(LIBS_ZMAP) src-copy
+zmap_DEPENDENCIES = $(LIBS_ZMAP)
 
 # DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
 
@@ -123,5 +123,21 @@ docs: mkdocdir doxygen-doc
 maintainer-clean-local:
 	rm -rf cleanDir
 
-src-copy: 
-	@echo This is src-copy
+# the next two targets are required for installing the static
+# libraries.  Not something we should be doing I'm sure, but
+# rebuilding the xremote perl code requires them.
+install-data-local: install-binPROGRAMS install-zmap-static-libs
+
+install-zmap-static-libs: 
+	@$(NORMAL_INSTALL)
+	@echo "************************************************************"
+	@echo "* Installing $@"
+	test -z "$(libdir)" || $(mkdir_p) "$(DESTDIR)$(libdir)"
+	@list='$(LIBS_ZMAP)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)/$(libdir)/$$f'"; \
+	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)/$(libdir)/$$f"; \
+	done
+	@echo "************************************************************"
+
