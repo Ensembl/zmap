@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Apr 23 14:58 2007 (edgrif)
+ * Last edited: May 24 13:32 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.32 2007-04-23 13:58:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.33 2007-05-24 12:38:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -117,7 +117,7 @@ static void printItem(FooCanvasItem *item, int indent, char *prefix) ;
 
 static void itemDestroyCB(gpointer data, gpointer user_data);
 
-static void redrawColumn(FooCanvasGroup *container, ContainerData data);
+static void redrawColumn(FooCanvasGroup *container, FooCanvasPoints *points_inout, ContainerData data);
 
 
 static void printFeatureSet(gpointer data, gpointer user_data) ;
@@ -1285,15 +1285,18 @@ static void eachContainer(gpointer data, gpointer user_data)
           /* If this featureset requires a redraw... */
           if (children && container_data->child_redraw_required)
             {
-              redrawColumn(container, container_data);
+              redrawColumn(container, this_points, container_data);
             }
-          
-          containerMoveToZero(container);
-          foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container),
-                                     &(this_points->coords[0]),
-                                     &(this_points->coords[1]),
-                                     &(this_points->coords[2]),
-                                     &(this_points->coords[3]));
+          else
+            {
+              containerMoveToZero(container);
+              foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container),
+                                         &(this_points->coords[0]),
+                                         &(this_points->coords[1]),
+                                         &(this_points->coords[2]),
+                                         &(this_points->coords[3]));
+            }
+
           containerSetMaxBackground(container, this_points, container_data);
           break;
         case ZMAPCONTAINER_LEVEL_INVALID:
@@ -1411,26 +1414,30 @@ static void printItem(FooCanvasItem *item, int indent, char *prefix)
 }
 
 
-static void redrawColumn(FooCanvasGroup *container, ContainerData data)
+static void redrawColumn(FooCanvasGroup *container_parent, FooCanvasPoints *points_inout, ContainerData data)
 {
-  zmapWindowContainerZoomChangedCallback redraw_cb = NULL;
+  zmapWindowContainerZoomChangedCallback redraw_cb;
+  FooCanvasItem *container_features;
 
   zMapAssert(data->child_redraw_required);
+  /* zMapAssert(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY) == CONTAINER_PARENT); */
 
-  if((redraw_cb = g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_CALLBACK )))
+  if((redraw_cb = g_object_get_data(G_OBJECT(container_parent), CONTAINER_REDRAW_CALLBACK )))
     {
-#ifdef RDS_DONT_INCLUDE
-      ZMapWindow window = NULL;
-
-      window = (ZMapWindow)g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_DATA);
-
-      /* do the callback.... */
-      redraw_cb(container, zMapWindowGetZoomFactor(window), window) ;
-#endif
       gpointer redraw_data = NULL;
-      redraw_data = g_object_get_data(G_OBJECT(container), CONTAINER_REDRAW_DATA);
+
+      redraw_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_REDRAW_DATA);
+
       /* do the callback.... */
-      redraw_cb(container, 0.0, redraw_data) ;
+      redraw_cb(container_parent, 0.0, redraw_data) ;
+
+      containerMoveToZero(container_parent);
+      container_features = FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(container_parent));
+      foo_canvas_item_get_bounds(container_features,
+                                 &(points_inout->coords[0]),
+                                 &(points_inout->coords[1]),
+                                 &(points_inout->coords[2]),
+                                 &(points_inout->coords[3]));
     }
 
   return ;
@@ -1538,7 +1545,6 @@ static void containerSetMaxBackground(FooCanvasGroup *container, FooCanvasPoints
 {
   double nx1, nx2, ny1, ny2, size;
   FooCanvasItem *container_background;
-  FooCanvasGroup *container_features;
 
   container_background = zmapWindowContainerGetBackground(container);
 
