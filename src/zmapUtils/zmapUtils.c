@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Jan 31 12:28 2007 (rds)
+ * Last edited: May 24 16:20 2007 (rds)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.21 2007-02-06 10:48:35 rds Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.22 2007-05-24 15:36:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -504,7 +504,12 @@ gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out)
   return result ;
 }
 
-
+/* make printing from totalview evaluations a lot easier... */
+void zMapPrintQuark(GQuark quark)
+{
+  printf("GQuark (%d) = '%s'\n", quark, g_quark_to_string(quark));
+  return ;  
+}
 
 /* make logging from totalview evaluations a lot easier... */
 void zMapLogQuark(GQuark quark)
