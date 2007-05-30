@@ -31,9 +31,9 @@
  *
  * Exported functions: see zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 12 12:24 2007 (edgrif)
+ * Last edited: May  3 16:24 2007 (edgrif)
  * Created: Tue May  9 14:30 2005 (rnc)
- * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.27 2007-03-12 12:30:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCallBlixem.c,v 1.28 2007-05-30 13:32:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -115,10 +115,10 @@ gboolean makeTmpfile(char *tmp_dir, char **tmp_file_name_out) ;
 static gboolean buildParamString (blixemData blixem_data, char **paramString);
 static gboolean writeExblxFile   (blixemData blixem_data);
 
-static void     processFeatureSet(GQuark key_id, gpointer data, gpointer user_data);
+static void     processFeatureSet(gpointer key_id, gpointer data, gpointer user_data);
 static void processSetList(gpointer data, gpointer user_data) ;
 
-static void     writeExblxLine   (GQuark key_id, gpointer data, gpointer user_data);
+static void     writeExblxLine(gpointer key_id, gpointer data, gpointer user_data);
 static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data) ;
 static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data) ;
 static gboolean printLine        (blixemData blixem_data, char *line);
@@ -509,7 +509,7 @@ static gboolean writeExblxFile(blixemData blixem_data)
 
 	  feature_set = (ZMapFeatureSet)(feature->parent) ;
 
-	  /* There is no way to interrupt g_datalist_foreach(), so instead,
+	  /* There is no way to interrupt g_hash_table_foreach(), so instead,
 	   * if printLine() encounters a problem, we store the error message
 	   * in blixem_data and skip all further processing, displaying the
 	   * error when we get back to writeExblxFile().  */
@@ -530,7 +530,7 @@ static gboolean writeExblxFile(blixemData blixem_data)
 	    }
 	  else
 	    {
-	      g_datalist_foreach(&(feature_set->features), writeExblxLine, blixem_data) ;
+	      g_hash_table_foreach(feature_set->features, writeExblxLine, blixem_data) ;
 	    }
 
 
@@ -542,7 +542,7 @@ static gboolean writeExblxFile(blixemData blixem_data)
 	    }
 	  else
 	    {
-	      g_datalist_foreach(&(blixem_data->block->feature_sets), processFeatureSet, blixem_data) ;
+	      g_hash_table_foreach(blixem_data->block->feature_sets, processFeatureSet, blixem_data) ;
 	    }
 	}
 
@@ -579,12 +579,12 @@ static gboolean writeExblxFile(blixemData blixem_data)
 
 
 /* Called when we need to process multiple sets of alignments. */
-static void processFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
+static void processFeatureSet(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data;
   blixemData     blixem_data = (blixemData)user_data;
 
-  g_datalist_foreach(&(feature_set->features), writeExblxLine, blixem_data);
+  g_hash_table_foreach(feature_set->features, writeExblxLine, blixem_data) ;
 
   return ;
 }
@@ -598,7 +598,7 @@ static void processSetList(gpointer data, gpointer user_data)
   blixemData blixem_data = (blixemData)user_data ;
   ZMapFeatureSet feature_set ;
 
-  if (!(feature_set = g_datalist_id_get_data(&(blixem_data->block->feature_sets), set_id)))
+  if (!(feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(set_id))))
     {
       zMapLogWarning("Could not find %s feature set \"%s\" in context feature sets.",
 		     (blixem_data->required_feature_type == ZMAPFEATURE_ALIGNMENT
@@ -607,7 +607,7 @@ static void processSetList(gpointer data, gpointer user_data)
     }
   else
     {
-      g_datalist_foreach(&(feature_set->features), writeExblxLine, blixem_data);
+      g_hash_table_foreach(feature_set->features, writeExblxLine, blixem_data);
     }
 
   return ;
@@ -615,7 +615,7 @@ static void processSetList(gpointer data, gpointer user_data)
 
 
 
-static void writeExblxLine(GQuark key_id, gpointer data, gpointer user_data)
+static void writeExblxLine(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
   blixemData  blixem_data = (blixemData)user_data ;

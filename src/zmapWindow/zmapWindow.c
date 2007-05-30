@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 23 14:53 2007 (edgrif)
+ * Last edited: May  3 16:28 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.185 2007-04-23 13:54:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.186 2007-05-30 13:31:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,7 +146,11 @@ static void getMaxBounds(gpointer data, gpointer user_data) ;
 
 static void jumpFeature(ZMapWindow window, guint keyval) ;
 static void jumpColumn(ZMapWindow window, guint keyval) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void swapColumns(ZMapWindow window, guint keyval);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static void hideItemsCB(gpointer data, gpointer user_data_unused) ;
@@ -1265,8 +1269,9 @@ gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_a
       feature_set.unique_id   = feature->parent->unique_id;
       feature_set.original_id = feature->parent->original_id;
       
-      g_datalist_init(&(feature_set.features));
-      g_datalist_id_set_data(&(feature_set.features), feature->unique_id, feature);
+      feature_set.features = g_hash_table_new(NULL, NULL) ;
+      g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature->unique_id), feature);
+
       multi_set = &feature_set;
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
@@ -1281,7 +1286,10 @@ gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_a
   select.zmap_action = g_strdup(action);
 
   if(feature_set.unique_id)
-    g_datalist_clear(&(feature_set.features));
+    {
+      g_hash_table_destroy(feature_set.features) ;
+      feature_set.features = NULL ;
+    }
 
   (*(window->caller_cbs->select))(window, window->app_data, &select) ;
 
@@ -3536,6 +3544,8 @@ static void jumpFeature(ZMapWindow window, guint keyval)
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void swapColumns(ZMapWindow window, guint keyval)
 {
   FooCanvasGroup *focus_column, *column, *other_column, *strand_group_features;
@@ -3627,6 +3637,8 @@ static void swapColumns(ZMapWindow window, guint keyval)
 
   return;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* Jump to the previous/next column according to which arrow key was pressed. */
 static void jumpColumn(ZMapWindow window, guint keyval)

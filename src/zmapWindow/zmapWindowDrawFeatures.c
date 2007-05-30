@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar 28 17:10 2007 (edgrif)
+ * Last edited: May 22 10:40 2007 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.183 2007-03-28 16:12:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.184 2007-05-30 13:33:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -120,7 +120,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
 				    ZMapStrand           strand, 
                                     ZMapFrame            frame,
 				    double width, double top, double bot);
-static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data) ;
+static void ProcessFeature(gpointer key, gpointer data, gpointer user_data) ;
 
 static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
@@ -137,7 +137,11 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void setColours(ZMapWindow window) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void removeList(gpointer data, gpointer user_data_unused) ;
 
@@ -536,7 +540,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
   featureset_data.frame = frame ;
 
   /* Now draw all the features in the column. */
-  g_datalist_foreach(&(feature_set->features), ProcessFeature, &featureset_data) ;
+  g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
 
   /* We should be bumping columns here if required... */
   if (bump_required)
@@ -875,8 +879,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
             
             /* Create the reverse group first.  It's then first in the list and
              * so gets called first in container execute. e.g. reposition code */
-            if(block_created ||
-               !(reverse_group = zmapWindowContainerGetStrandGroup(block_parent, ZMAPSTRAND_REVERSE)))
+            if (block_created
+	       || !(reverse_group = zmapWindowContainerGetStrandGroup(block_parent, ZMAPSTRAND_REVERSE)))
               {
                 reverse_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
                                                           ZMAPCONTAINER_LEVEL_STRAND,
@@ -892,11 +896,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                                  (gpointer)window);
               }
 
-            canvas_data->curr_reverse_group = 
-              zmapWindowContainerGetFeatures(reverse_group) ;
+            canvas_data->curr_reverse_group = zmapWindowContainerGetFeatures(reverse_group) ;
 
-            if(block_created ||
-               !(forward_group = zmapWindowContainerGetStrandGroup(block_parent, ZMAPSTRAND_FORWARD)))
+            if (block_created
+	       || !(forward_group = zmapWindowContainerGetStrandGroup(block_parent, ZMAPSTRAND_FORWARD)))
               {
                 forward_group = zmapWindowContainerCreate(canvas_data->curr_block_group,
                                                           ZMAPCONTAINER_LEVEL_STRAND,
@@ -1103,6 +1106,8 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Debug. */
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 {
@@ -1112,11 +1117,13 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
 /* Called to draw each individual feature. */
-static void ProcessFeature(GQuark key_id, gpointer data, gpointer user_data)
+static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ; 
   CreateFeatureSetData featureset_data = (CreateFeatureSetData)user_data ;
