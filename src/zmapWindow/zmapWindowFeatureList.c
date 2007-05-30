@@ -28,9 +28,9 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Mar 12 15:33 2007 (edgrif)
+ * Last edited: May  4 13:39 2007 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.16 2007-03-12 16:24:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.17 2007-05-30 13:35:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -222,7 +222,11 @@ GtkWidget *zmapWindowFeatureListCreateView(ZMapWindowListType list_type,
 	    "Phase",
 	    "Score",
 	    "Feature Set",
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    "FEATURE_ITEM", "", "", "", "", ""
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	    "", "", "", "", "", ""
 	  } ;
 
 
