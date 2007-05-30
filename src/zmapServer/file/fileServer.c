@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Mar 27 15:58 2007 (edgrif)
+ * Last edited: May 30 14:23 2007 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.27 2007-03-28 16:04:40 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.28 2007-05-30 13:23:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,8 +84,8 @@ static ZMapServerResponseType closeConnection(void *server_in) ;
 static gboolean destroyConnection(void *server) ;
 
 static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header) ;
-static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
-static void eachBlock(GQuark key, gpointer data, gpointer user_data) ;
+static void eachAlignment(gpointer key, gpointer data, gpointer user_data) ;
+static void eachBlock(gpointer key, gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString* gff_line,
 				ZMapFeatureBlock feature_block) ;
 static void setLastErrorMsg(FileServer server, GError **gff_file_err_inout) ;
@@ -238,7 +238,9 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   FileServer server = (FileServer)server_in ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   *have_mode = FALSE ;
 
@@ -292,12 +294,9 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 static ZMapFeatureContext copyContext(void *server_in)
 {
   ZMapFeatureContext context = NULL ;
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   FileServer server = (FileServer)server_in ;		    /* Not needed just now. */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   return context ;
 }
@@ -398,7 +397,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 
   /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
    * we would have to parse and reparse the file....can be done but not needed this second. */
-  g_datalist_foreach(&(feature_context->alignments), eachAlignment, (gpointer)&get_features) ;
+  g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)&get_features) ;
 
 
   /* Clear up. */
@@ -493,7 +492,7 @@ static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header)
 {
   ZMapFeatureBlock feature_block = NULL;//feature_context->master_align->blocks->data ;
 
-  feature_block = (ZMapFeatureBlock)(zMap_g_datalist_first(&(feature_context->master_align->blocks)));
+  feature_block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(feature_context->master_align->blocks, 0)) ;
 
   /* We just override whatever is already there...this may not be the thing to do if there
    * are several files.... */
@@ -540,19 +539,20 @@ static void setLastErrorMsg(FileServer server, GError **gff_file_err_inout)
 
 
 /* Process all the alignments in a context. */
-static void eachAlignment(GQuark key_id, gpointer data, gpointer user_data)
+static void eachAlignment(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
   GetFeatures get_features = (GetFeatures)user_data ;
 
   if (get_features->result == ZMAP_SERVERRESPONSE_OK)
-    g_datalist_foreach(&(alignment->blocks), eachBlock, (gpointer)get_features) ;
+    g_hash_table_foreach(alignment->blocks, eachBlock, (gpointer)get_features) ;
 
   return ;
 }
 
 
-static void eachBlock(GQuark key, gpointer data, gpointer user_data)
+
+static void eachBlock(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
   GetFeatures get_features = (GetFeatures)user_data ;

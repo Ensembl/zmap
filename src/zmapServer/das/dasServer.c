@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Mar 29 09:02 2007 (edgrif)
+ * Last edited: May 30 14:21 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.27 2007-03-29 09:01:08 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.28 2007-05-30 13:22:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -105,10 +105,8 @@ static char *makeCurrentSegmentString(DasServer das, ZMapFeatureContext fc);
 
 static void initialiseXMLParser(DasServer server);
 
-static void getFeatures4Aligns(GQuark key,
-                               gpointer data,
-                               gpointer userData);
-static void getFeatures4Blocks(GQuark block_id, gpointer data, gpointer userData) ;
+static void getFeatures4Aligns(gpointer key, gpointer data, gpointer userData);
+static void getFeatures4Blocks(gpointer key, gpointer data, gpointer userData) ;
 
 static gboolean fetchFeatures(DasServer server, ZMapFeatureBlock block);
 
@@ -141,9 +139,7 @@ static gboolean serverHasCapabilityLevel(DasServer server,
                                   double minimum);
 #endif
 static gint compareExonCoords(gconstpointer a, gconstpointer b, gpointer feature_data);
-static void fixFeatureCache(GQuark key_id,
-                            gpointer data,
-                            gpointer user_data);
+static void fixFeatureCache(gpointer key, gpointer data, gpointer user_data);
 static void fixUpFeaturesAndClearCache(DasServer server, ZMapFeatureBlock block);
 static gboolean mergeWithGroupFeature(ZMapFeature grp_feature, 
                                       ZMapDAS1Feature das_sub_feature,
@@ -301,7 +297,7 @@ static gboolean createConnection(void **server_out,
       result = FALSE;
     }
 
-  g_datalist_init(&(server->feature_cache));
+  server->feature_cache = g_hash_table_new(NULL, NULL) ;
   
   if(result)
     *server_out = (void *)server ;
@@ -405,7 +401,9 @@ static ZMapServerResponseType getStyles(void *server_in, GData **types)
 static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   DasServer server = (DasServer)server_in ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   *have_mode = FALSE ;
 
@@ -467,9 +465,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
   get_features.result = result;
   get_features.server = server;
 
-  g_datalist_foreach(&(feature_context->alignments), 
-                     getFeatures4Aligns, 
-                     (gpointer)&get_features);
+  g_hash_table_foreach(feature_context->alignments, getFeatures4Aligns, (gpointer)&get_features);
 
   return get_features.result;
 }
@@ -628,13 +624,16 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
             }
           else if(0) /* now we need to do some complex sh1 te work it all out */
             {
-              GData *datalist = NULL;
+              GHashTable *datalist = NULL;
               dasOneFeature feature = NULL;
               printf("FIX ME NOW!!\n");
 
               result = FALSE;   /* unless we find the sequence and we
                                    get it's location correctly */
-              if((feature = (dasOneFeature)g_datalist_id_get_data(&(datalist), feature_context->sequence_name)) != NULL)
+
+              if((feature = (dasOneFeature)g_hash_table_lookup(datalist,
+							       GINT_TO_POINTER(feature_context->sequence_name)))
+		 != NULL)
                 {
                   /* We found the matching sequence */
                   if(dasOneFeature_getLocation(feature, &(seq2p.p1), &(seq2p.p2)) &&
@@ -931,21 +930,24 @@ static gboolean searchAssembly(DasServer server, ZMapDAS1DSN dsn)
 #endif
 
 
-static void getFeatures4Aligns(GQuark key,
-                               gpointer data,
-                               gpointer userData)
+static void getFeatures4Aligns(gpointer key, gpointer data, gpointer userData)
 {
   ZMapFeatureAlignment align = (ZMapFeatureAlignment)data;
   GetFeatures getFeaturesPtr = (GetFeatures)userData;
 
   if(getFeaturesPtr->result == ZMAP_SERVERRESPONSE_OK)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     g_datalist_foreach(&(align->blocks), getFeatures4Blocks, (gpointer)getFeaturesPtr);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    g_hash_table_foreach(align->blocks, getFeatures4Blocks, (gpointer)getFeaturesPtr);
 
 
   return ;
 }
 
-static void getFeatures4Blocks(GQuark block_id, gpointer data, gpointer userData)
+
+static void getFeatures4Blocks(gpointer key, gpointer data, gpointer userData)
 {
   ZMapFeatureBlock block = (ZMapFeatureBlock)data;
   GetFeatures getFeaturesPtr = (GetFeatures)userData;
@@ -1333,11 +1335,12 @@ static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data
                                             feature_strand, feature->start, feature->end, 0, 0);
       feature_id = g_quark_from_string(feature_name);
 
-      if(!(new_feature = g_datalist_id_get_data(&(server->feature_cache), group_id)))
+
+      if(!(new_feature = g_hash_table_lookup(server->feature_cache, GINT_TO_POINTER(group_id))))
         {
           new_feature = zMapFeatureCreateEmpty();
-          g_datalist_id_set_data_full(&(server->feature_cache), group_id, 
-                                      (gpointer)new_feature, NULL);
+
+	  g_hash_table_insert(server->feature_cache, GINT_TO_POINTER(group_id), (gpointer)new_feature) ;
 
           zMapFeatureAddStandardData(new_feature, feature_name, 
                                      short_ft_name, NULL, method_name, 
@@ -1352,7 +1355,7 @@ static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data
   else
     {
       /* No group information for this feature */
-      if(!(new_feature = g_datalist_id_get_data(&(feature_set->features), feature_id)))
+      if(!(new_feature = g_hash_table_lookup(feature_set->features, GINT_TO_POINTER(group_id))))
         {
           new_feature = zMapFeatureCreateEmpty();
           
@@ -1477,9 +1480,8 @@ static gboolean mergeWithGroupFeature(ZMapFeature grp_feature,
   return bad;
 }
 
-static void fixFeatureCache(GQuark key_id,
-                            gpointer data,
-                            gpointer user_data)
+
+static void fixFeatureCache(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeature        feature = (ZMapFeature)data;
   ZMapFeatureBlock     block = (ZMapFeatureBlock)user_data;
@@ -1533,7 +1535,8 @@ static void fixFeatureCache(GQuark key_id,
    * I haven't got time to work out why */
   style_id  = zMapStyleGetUniqueID(feature->style) ;
   type_name = (char *)g_quark_to_string(zMapStyleGetID(feature->style));
-  if((feature_set = g_datalist_id_get_data(&(block->feature_sets), style_id)) == NULL)
+
+  if((feature_set = g_hash_table_lookup(block->feature_sets, GINT_TO_POINTER(style_id))) == NULL)
     {
       feature_set  = zMapFeatureSetCreate(type_name, NULL);
       zMapFeatureBlockAddFeatureSet(block, feature_set);
@@ -1545,9 +1548,9 @@ static void fixFeatureCache(GQuark key_id,
 
 static void fixUpFeaturesAndClearCache(DasServer server, ZMapFeatureBlock block)
 {
-  g_datalist_foreach(&(server->feature_cache), fixFeatureCache, (gpointer)block);
+  g_hash_table_foreach(server->feature_cache, fixFeatureCache, (gpointer)block);
 
-  g_datalist_clear(&(server->feature_cache));
+  g_hash_table_destroy(server->feature_cache) ;
 
   return ;
 }
