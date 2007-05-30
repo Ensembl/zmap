@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: May 24 11:28 2007 (rds)
+ * Last edited: May 30 14:47 2007 (edgrif)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.47 2007-05-24 10:31:28 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.48 2007-05-30 13:48:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -208,8 +208,8 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
 {
   char *xml_reply = NULL ;
   int code        = ZMAPXREMOTE_INTERNAL;
-  ResponseCodeZMapStruct foreach_data = {NULL};
-  XMLDataStruct objdata = {0, NULL};
+  ResponseCodeZMapStruct foreach_data = {NULL} ;
+  XMLDataStruct objdata = {NULL} ;
   ZMapXMLParser parser = NULL;
   gboolean parse_ok    = FALSE;
   ZMapView view;
@@ -223,16 +223,19 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
   parser = zmapControlRemoteXMLInitialise(&objdata);
 
   objdata.window = zMapViewGetWindow(zmap->focus_viewwindow);
+
   view = zMapViewGetView(zmap->focus_viewwindow);
 
-  /* this might need to change.... */
-  objdata.context = zMapViewGetContextAsEmptyCopy(view);
-  objdata.styles  = zMapViewGetStyles(zmap->focus_viewwindow);
+  objdata.orig_context = zMapViewGetFeatures(view) ;
+
+  /* Copy basics of original context. */
+  objdata.context = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(objdata.orig_context)) ;
+  objdata.context->styles = NULL ;
+
+  objdata.styles  = objdata.orig_context->styles ;
 
   /* Do the parsing and check all ok */
-  if((parse_ok = zMapXMLParserParseBuffer(parser, 
-                                          command_text, 
-                                          strlen(command_text))) == TRUE)
+  if((parse_ok = zMapXMLParserParseBuffer(parser, command_text, strlen(command_text))) == TRUE)
     {
       foreach_data.code     = ZMAPXREMOTE_OK;
       foreach_data.zmap     = zmap;
@@ -387,8 +390,10 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
   if(control_execute_debug_G)
     zMapLogWarning("Destroying created/copied context (%p)", objdata.context);
 
+
   if(objdata.context)
     zMapFeatureContextDestroy(objdata.context, TRUE);
+
 
   zMapXMLParserDestroy(parser);
   
