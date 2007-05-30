@@ -25,9 +25,9 @@
  * Description: Contains macros, functions etc. useful for testing/debugging.
  *              
  * HISTORY:
- * Last edited: Nov  9 10:08 2006 (edgrif)
+ * Last edited: May 30 14:12 2007 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsDebug.h,v 1.4 2006-11-09 10:10:19 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsDebug.h,v 1.5 2007-05-30 13:12:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DEBUG_H
