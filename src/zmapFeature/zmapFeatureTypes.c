@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 23 14:24 2007 (edgrif)
+ * Last edited: May 30 15:03 2007 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.48 2007-04-23 13:52:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.49 2007-05-30 14:05:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -154,6 +154,28 @@ char *style_scoremode_str_G[] = {
  * control aspects such as foreground colour, column bumping mode etc.
  *
  *  */
+
+
+
+/* Add a style to a set of styles, if the style is already there no action is taken
+ * and FALSE is returned. */
+gboolean zMapStyleSetAdd(GData **style_set, ZMapFeatureTypeStyle style)
+{
+  gboolean result = FALSE ;
+  GQuark style_id ;
+
+  zMapAssert(style_set && style) ;
+
+  style_id = zMapStyleGetUniqueID(style) ;
+
+  if (!(zMapFindStyle(*style_set, style_id)))
+    {
+      g_datalist_id_set_data(style_set, style_id, style) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
 
 
 
@@ -426,6 +448,11 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
       curr_style->fields_set.gff_feature = TRUE ;
     }
 
+
+  /* AGH THIS IS NOT GOOD....WE CAN TURN OFF/ON OPTIONS IN A WAY WE DON'T WANT TO...
+   * 
+   * need to revisit this for sure....
+   *  */
   curr_style->opts = new_style->opts ;		    /* struct copy of all opts. */
 
   return result ;
@@ -950,6 +977,8 @@ void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type)
   if (type->description)
     g_free(type->description) ;
 
+  type->description = "I've been freed !!!" ;
+
   g_free(type) ;
 
   return ;
@@ -1425,10 +1454,24 @@ static void mergeStyle(GQuark style_id, gpointer data, gpointer user_data)
   GData *curr_styles = merge_data->curr_styles ;
   ZMapFeatureTypeStyle curr_style = NULL ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (zMapStyleNameCompare(new_style, "genomic_canonical") || zMapStyleNameCompare(new_style, "orfeome"))
+    printf("found it\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   /* If we find the style then merge it, if not then add a copy to the curr_styles. */
   if ((curr_style = zMapFindStyle(curr_styles, new_style->unique_id)))
     {
-      zMapStyleMerge(curr_style, new_style) ;
+      if (curr_style->mode == ZMAPSTYLE_MODE_INVALID && new_style->mode != ZMAPSTYLE_MODE_INVALID)
+	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  printf("curr_mode is invalid and new one is not so am merging...\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  zMapStyleMerge(curr_style, new_style) ;
+	}
     }
   else
     {
