@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  2 12:22 2007 (rds)
+ * Last edited: May 30 14:50 2007 (edgrif)
  * Created: Thu Feb  1 00:12:49 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteXML.c,v 1.9 2007-03-02 14:29:17 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteXML.c,v 1.10 2007-05-30 13:54:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -132,21 +132,21 @@ static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature,
   ZMapFeatureTypeStyle style, set_style;
   gboolean got_style = TRUE;
 
-  if(!(style = zMapFeatureGetStyle((ZMapFeatureAny)feature)))
+  if (!(style = zMapFeatureGetStyle((ZMapFeatureAny)feature)))
     {
-      if((style = zMapFindStyle(styles, style_id)))
+      if ((style = zMapFindStyle(styles, style_id)))
         feature->style = style;
       else
         got_style = FALSE;
     }
   
   /* inherit styles. */
-  if(!(set_style = zMapFeatureGetStyle((ZMapFeatureAny)set)))
+  if (!(set_style = zMapFeatureGetStyle((ZMapFeatureAny)set)))
     {
-      if(got_style)
+      if (got_style)
         set->style = style;
     }
-  else if(!got_style)
+  else if (!got_style)
     {
       feature->style = set_style;
       got_style = TRUE;
@@ -224,14 +224,17 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
         {
           /* not there...create... */
           align = zMapFeatureAlignmentCreate(align_name, FALSE);
-          zMapFeatureContextAddAlignment(xml_data->context, align, FALSE);
         }
+
       xml_data->align = align;
     }
   else
     {
-      xml_data->align = xml_data->context->master_align;
+      xml_data->align = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)(xml_data->orig_context->master_align)) ;
     }
+  zMapFeatureContextAddAlignment(xml_data->context, xml_data->align, FALSE);
+
+
 
   if((attr = zMapXMLElementGetAttributeByName(set_element, "block")))
     {
@@ -249,33 +252,42 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
               block = zMapFeatureBlockCreate(block_seq,
                                              ref_start, ref_end, ref_strand,
                                              non_start, non_end, non_strand);
-              zMapFeatureAlignmentAddBlock(xml_data->align, block);
             }
         }
       else
         {
           /* Get the first one! */
-          block = zMap_g_datalist_first(&(xml_data->align->blocks));
+          block = zMap_g_hash_table_nth(xml_data->align->blocks, 0) ;
         }
+
       xml_data->block = block;
     }
   else
     {
       /* Get the first one! */
-      xml_data->block = zMap_g_datalist_first(&(xml_data->align->blocks));
+      xml_data->block = (ZMapFeatureBlock)zMapFeatureAnyCopy(zMap_g_hash_table_nth(xml_data->orig_context->master_align->blocks, 0)) ;
     }
+  zMapFeatureAlignmentAddBlock(xml_data->align, xml_data->block);
+
+
 
   if((attr = zMapXMLElementGetAttributeByName(set_element, "set")))
     {
       set_id   = zMapXMLAttributeGetValue(attr);
       set_name = (char *)g_quark_to_string(set_id);
       set_id   = zMapFeatureSetCreateID(set_name);
+
       if(!(feature_set = zMapFeatureBlockGetSetByID(xml_data->block, set_id)))
         {
           feature_set = zMapFeatureSetCreate(set_name, NULL);
           zMapFeatureBlockAddFeatureSet(xml_data->block, feature_set);
         }
       xml_data->feature_set = feature_set;
+
+
+      xml_data->context->feature_set_names = g_list_append(xml_data->context->feature_set_names,
+							   GINT_TO_POINTER(set_id)) ;
+
     }
   else
     {
@@ -381,9 +393,32 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
                                                                       start, end, has_score,
                                                                       score, strand, ZMAPPHASE_NONE)))
               {
-                if(setupStyles(xml_data->feature_set, xml_data->feature, 
-                               xml_data->styles, zMapStyleCreateID(style_name)))
-                  zMapFeatureSetAddFeature(xml_data->feature_set, xml_data->feature);
+                if (setupStyles(xml_data->feature_set, xml_data->feature, 
+				xml_data->styles, zMapStyleCreateID(style_name)))
+		  {
+		    ZMapFeatureTypeStyle orig_set_style = xml_data->feature_set->style ;
+
+		    xml_data->feature_set->style = zMapFeatureStyleCopy(xml_data->feature_set->style) ;
+		    zMapStyleSetAdd(&(xml_data->context->styles), xml_data->feature_set->style) ;
+		    xml_data->context->feature_set_names
+		      = g_list_append(xml_data->context->feature_set_names,
+				      GINT_TO_POINTER(zMapStyleGetUniqueID(xml_data->feature_set->style))) ;
+
+		    if (orig_set_style == xml_data->feature->style)
+		      {
+			xml_data->feature->style = xml_data->feature_set->style ;
+		      }
+		    else
+		      {
+			xml_data->feature->style = zMapFeatureStyleCopy(xml_data->feature->style) ;
+			zMapStyleSetAdd(&(xml_data->context->styles), xml_data->feature->style) ;
+			xml_data->context->feature_set_names
+			  = g_list_append(xml_data->context->feature_set_names,
+					  GINT_TO_POINTER(zMapStyleGetUniqueID(xml_data->feature->style))) ;
+		      }
+
+		    zMapFeatureSetAddFeature(xml_data->feature_set, xml_data->feature);
+		  }
                 else
                   {
                     char *error;
@@ -394,13 +429,13 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
                   }
               }
             
-            if((feature_any = g_new0(ZMapFeatureAnyStruct, 1)))
-              {
-                feature_any->unique_id   = xml_data->feature->unique_id;
-                feature_any->original_id = feature_name_q;
-                feature_any->struct_type = ZMAPFEATURE_STRUCT_FEATURE;
-                xml_data->feature_list   = g_list_prepend(xml_data->feature_list, feature_any);
-              }
+
+	    /* This must go and instead use a feature create call... */
+            feature_any = g_new0(ZMapFeatureAnyStruct, 1) ;
+	    feature_any->unique_id   = xml_data->feature->unique_id;
+	    feature_any->original_id = feature_name_q;
+	    feature_any->struct_type = ZMAPFEATURE_STRUCT_FEATURE;
+	    xml_data->feature_list   = g_list_prepend(xml_data->feature_list, feature_any);
           }
       }
       break;
