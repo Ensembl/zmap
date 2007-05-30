@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar 29 09:56 2007 (edgrif)
+ * Last edited: May  4 10:42 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.29 2007-03-29 09:02:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.30 2007-05-30 13:36:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,7 +94,7 @@ static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *tabl
 static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpointer user_data);
 static void ZoomDataDestroy(gpointer data);
 
-static void datalistRun(GQuark key_id, gpointer list_data, gpointer user_data);
+static void datalistRun(gpointer key, gpointer list_data, gpointer user_data);
 inline 
 static void callItemHandler(ZMapWindowFToIFactory                   factory,
                             FooCanvasItem            *new_item,
@@ -305,7 +305,7 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
 
   run_data.frame   = frame;
 
-  g_datalist_foreach(&(set->features), datalistRun, &run_data);
+  g_hash_table_foreach(set->features, datalistRun, &run_data);
 
   return ;
 }
@@ -413,7 +413,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
               method = &(method_table[ZMAPFEATURE_BASIC]);              
             }
-          else if(feature->feature.homol.align)
+          else if (feature->feature.homol.align)
             {
               if(feature->feature.homol.flags.perfect)
                 {
@@ -619,7 +619,8 @@ static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpoi
   return ;
 }
 
-static void datalistRun(GQuark key_id, gpointer list_data, gpointer user_data)
+
+static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)list_data;
   RunSet run_data = (RunSet)user_data;
@@ -908,7 +909,7 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 
   line_width = factory->line_width;
 
-  if(feature->feature.homol.align)
+  if (feature->feature.homol.align)
     {
       double feature_start, feature_end;
       FooCanvasItem *lastBoxWeDrew   = NULL;
