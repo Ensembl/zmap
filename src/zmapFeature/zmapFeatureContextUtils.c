@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 24 11:24 2007 (rds)
+ * Last edited: May 30 15:06 2007 (edgrif)
  * Created: Thu May 24 10:34:47 2007 (rds)
- * CVS info:   $Id: zmapFeatureContextUtils.c,v 1.1 2007-05-24 10:34:30 rds Exp $
+ * CVS info:   $Id: zmapFeatureContextUtils.c,v 1.2 2007-05-30 14:08:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,9 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 						 gpointer data, 
 						 gpointer user_data,
 						 char **error_out) ;
-static void addFeatureModeCB(GQuark key_id, gpointer data, gpointer user_data) ;
+
+static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data) ;
+
 
 
 
@@ -79,7 +81,6 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 						 char **error_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
-  gboolean *error_ptr = (gboolean *)user_data ;
   ZMapFeatureStructType feature_type ;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
@@ -99,7 +100,7 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 
         feature_set = (ZMapFeatureSet)feature_any ;
 
-	g_datalist_foreach(&(feature_set->features), addFeatureModeCB, feature_set) ;
+	g_hash_table_foreach(feature_set->features, addFeatureModeCB, feature_set) ;
 
 	break;
       }
@@ -121,7 +122,8 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 /* A GDataForeachFunc() to add a mode to the styles for all features in a set, note that
  * this is not efficient as we go through all features but we would need more information
  * stored in the feature set to avoid this. */
-static void addFeatureModeCB(GQuark key_id, gpointer data, gpointer user_data)
+
+static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
   ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data ;
