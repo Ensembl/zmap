@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar 13 17:18 2007 (edgrif)
+ * Last edited: May 24 09:05 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.46 2007-03-14 08:41:20 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.47 2007-05-30 13:40:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -837,12 +837,6 @@ static void makeSequenceMenu(GdkEventButton *button_event, ZMapWindow window, gb
 static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
   gboolean handled = FALSE;
-  ZMap zmap = (ZMap)data ;
-  ZMapWindow window ;
-
-  zMapAssert(zmap->focus_viewwindow) ;
-
-  window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
   switch(event->type)
     {
@@ -854,7 +848,13 @@ static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer dat
           {
           case 3:
 	    {
+	      ZMap zmap = (ZMap)data ;
+	      ZMapWindow window ;
 	      gboolean dna = FALSE, protein = FALSE ;
+
+	      zMapAssert(zmap->focus_viewwindow) ;
+
+	      window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
 	      if (widget == zmap->frame3_but)
 		protein = TRUE ;
@@ -870,8 +870,8 @@ static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer dat
           default:
             break;
           }
+	break;
       }
-      break;
     default:
       break;
     }
