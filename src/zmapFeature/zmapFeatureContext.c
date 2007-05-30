@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 24 11:16 2007 (rds)
+ * Last edited: May 30 15:09 2007 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.23 2007-05-24 10:33:44 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.24 2007-05-30 14:10:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,8 +69,12 @@ static void revcompSpan(GArray *spans, int seq_end) ;
 static gboolean fetchBlockDNAPtr(ZMapFeatureAny feature, char **dna);
 
 
-static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data);
+static void executeDataForeachFunc(gpointer key, gpointer data, gpointer user_data);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void executeListForeachFunc(gpointer data, gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void postExecuteProcess(ContextExecute execute_data);
 
@@ -379,8 +383,9 @@ void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
       full_data.stop           = stop;
       full_data.stopped_at     = ZMAPFEATURE_STRUCT_INVALID;
       full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
       /* Start it all off with the alignments */
-      g_datalist_foreach(&(context->alignments), executeDataForeachFunc, &full_data);
+      g_hash_table_foreach(context->alignments, executeDataForeachFunc, &full_data) ;
 
       postExecuteProcess(&full_data);
     }
@@ -405,7 +410,7 @@ void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
       full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
       if(feature_any->struct_type <= stop)
-        executeDataForeachFunc(feature_any->unique_id, feature_any, &full_data);
+        executeDataForeachFunc(GINT_TO_POINTER(feature_any->unique_id), feature_any, &full_data);
       else
         full_data.error_string = g_strdup("Too far down the hierarchy...");
 
@@ -444,7 +449,7 @@ void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any,
       full_data.stopped_at     = ZMAPFEATURE_STRUCT_INVALID;
       full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
-      executeDataForeachFunc(context->unique_id, context, &full_data);
+      executeDataForeachFunc(GINT_TO_POINTER(context->unique_id), context, &full_data);
 
       postExecuteProcess(&full_data);
     }
@@ -741,8 +746,10 @@ static ZMapFeatureContextExecuteStatus templateDataListForeach(GQuark key,
 }
 #endif /* RDS_TEMPLATE_USER_DATALIST_FOREACH */
 
-static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data)
+/* A GHFunc() */
+static void  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointer user_data)
 {
+  GQuark key = GPOINTER_TO_INT(key_ptr) ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ContextExecute full_data = (ContextExecute)user_data;
   ZMapFeatureContext feature_context = NULL;
@@ -768,7 +775,9 @@ static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data
             {
             case ZMAPFEATURE_STRUCT_CONTEXT:
               feature_context = (ZMapFeatureContext)feature_any;
-              g_datalist_foreach(&(feature_context->alignments), executeDataForeachFunc, full_data);
+
+	      g_hash_table_foreach(feature_context->alignments, executeDataForeachFunc, full_data) ;
+
               if(full_data->end_callback)
                 {
                   if((full_data->status = (full_data->end_callback)(key, data, 
@@ -781,11 +790,9 @@ static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data
               break;
             case ZMAPFEATURE_STRUCT_ALIGN:
               feature_align = (ZMapFeatureAlignment)feature_any;
-              //g_list_foreach(feature_align->blocks, executeListForeachFunc, full_data);
-              //#ifdef RDS_WHEN_BLOCKS_ARE_GDATA
-              /* If blocks is a GData use this instead */
-              g_datalist_foreach(&(feature_align->blocks), executeDataForeachFunc, full_data);
-              //#endif /* RDS_WHEN_BLOCKS_ARE_GDATA */
+
+	      g_hash_table_foreach(feature_align->blocks, executeDataForeachFunc, full_data) ;
+
               if(full_data->end_callback)
                 {
                   if((full_data->status = (full_data->end_callback)(key, data, 
@@ -798,7 +805,9 @@ static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data
               break;
             case ZMAPFEATURE_STRUCT_BLOCK:
               feature_block = (ZMapFeatureBlock)feature_any;
-              g_datalist_foreach(&(feature_block->feature_sets), executeDataForeachFunc, full_data);
+
+	      g_hash_table_foreach(feature_block->feature_sets, executeDataForeachFunc, full_data) ;
+
               if(full_data->end_callback)
                 {
                   if((full_data->status = (full_data->end_callback)(key, data, 
@@ -811,7 +820,9 @@ static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data
               break;
             case ZMAPFEATURE_STRUCT_FEATURESET:
               feature_set   = (ZMapFeatureSet)feature_any;
-              g_datalist_foreach(&(feature_set->features), executeDataForeachFunc, full_data);
+
+	      g_hash_table_foreach(feature_set->features, executeDataForeachFunc, full_data) ;
+
               if(full_data->end_callback)
                 {
                   if((full_data->status = (full_data->end_callback)(key, data, 
@@ -843,6 +854,8 @@ static void executeDataForeachFunc(GQuark key, gpointer data, gpointer user_data
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* This function will be completely useless when blocks are GData */
 static void executeListForeachFunc(gpointer data, gpointer user_data)
 {
@@ -859,6 +872,8 @@ static void executeListForeachFunc(gpointer data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void postExecuteProcess(ContextExecute execute_data)
 {
