@@ -25,9 +25,9 @@
  * Description: Internals for zmapFeature routines.
  *
  * HISTORY:
- * Last edited: Sep 26 15:59 2006 (edgrif)
+ * Last edited: May 10 08:06 2007 (edgrif)
  * Created: Wed Nov 24 11:01:24 2004 (edgrif)
- * CVS info:   $Id: zmapFeature_P.h,v 1.4 2006-11-08 09:24:14 edgrif Exp $
+ * CVS info:   $Id: zmapFeature_P.h,v 1.5 2007-05-30 14:05:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_P_H
@@ -63,10 +63,13 @@ typedef struct
   }
 
 
-void zmapPrintFeatureContext(ZMapFeatureContext context) ;
+#define zmapFeature2HashKey(FEATURE_ANY)  \
+  GINT_TO_POINTER((FEATURE_ANY)->unique_id)
 
+void zmapPrintFeatureContext(ZMapFeatureContext context) ;
 gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_out) ;
 
+ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb) ;
 
 
 
