@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  1 11:29 2007 (rds)
+ * Last edited: May 29 15:09 2007 (edgrif)
  * Created: Thu Feb  1 00:29:43 2007 (rds)
- * CVS info:   $Id: zmapControlRemote_P.h,v 1.3 2007-03-02 14:29:29 rds Exp $
+ * CVS info:   $Id: zmapControlRemote_P.h,v 1.4 2007-05-30 13:48:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -90,9 +90,12 @@ typedef struct
   char *config;
 }ViewConnectDataStruct, *ViewConnectData;
 
-typedef struct {
-  ZMapControlRemoteAction action;
+typedef struct
+{
   ZMapWindow window;
+  ZMapControlRemoteAction action;
+
+  ZMapFeatureContext orig_context ;
 
   ZMapFeatureContext context;   /* Context to do something with. i.e. draw or delete. */
   ZMapFeatureAlignment align;
