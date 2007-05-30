@@ -27,14 +27,16 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan  3 11:40 2007 (rds)
+ * Last edited: May 10 08:47 2007 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.30 2007-01-05 22:28:09 rds Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.31 2007-05-30 13:34:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <zmapWindow_P.h>
+
+#include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
+#include <zmapWindow_P.h>
 
 
 /* THERE IS QUITE A BIT OF DEBUGGING CODE IN HERE WHICH ATTEMPTS TO GET THIS WIDGET
@@ -272,7 +274,7 @@ ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow,
   editor->savePressed  = FALSE;
   editor->table        = g_new0(mainTableStruct, 16);
   editor->appliedChanges = NULL;
-  editor->wcopyFeature   = zMapFeatureCopy(editor->origFeature);
+  editor->wcopyFeature   = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)(editor->origFeature)) ;
 
   switch(editor->origFeature->type)
     {
@@ -1094,7 +1096,7 @@ static void undoChangesCB(GtkWidget *widget, gpointer data)
 	    } 
 	}
     }
-  editor_data->wcopyFeature = zMapFeatureCopy(editor_data->origFeature);
+  editor_data->wcopyFeature = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)(editor_data->origFeature)) ;
 
   parseFeature(editor_data->table, editor_data->origFeature, editor_data->wcopyFeature);
 
@@ -1125,7 +1127,7 @@ static void saveChangesCB(GtkWidget *widget, gpointer data)
     {
       zMapFeatureDestroy(editor_data->origFeature);
 
-      editor_data->origFeature = zMapFeatureCopy(editor_data->wcopyFeature);
+      editor_data->origFeature = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)(editor_data->origFeature)) ;
 
       g_object_set_data(G_OBJECT(editor_data->item), ITEM_FEATURE_DATA, editor_data->origFeature);
 
