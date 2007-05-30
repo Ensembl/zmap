@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  1 09:52 2007 (edgrif)
+ * Last edited: May  3 15:05 2007 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.22 2007-03-01 09:52:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.23 2007-05-30 13:37:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -563,7 +563,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     }
   else
     {
-      if (strcmp(align_txt, g_quark_to_string(search_data->align_original_id)) == 0)
+      if (search_data->align_original_id
+	  && strcmp(align_txt, g_quark_to_string(search_data->align_original_id)) == 0)
 	align_id = search_data->align_id ;
       else
 	align_id = makeCanonID(align_txt) ;
@@ -582,7 +583,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	}
       else
 	{
-	  if (strcmp(block_txt, g_quark_to_string(search_data->block_original_id)) == 0)
+	  if (search_data->block_original_id
+	      && strcmp(block_txt, g_quark_to_string(search_data->block_original_id)) == 0)
 	    block_id = search_data->block_id ;
 	  else
 	    block_id = makeCanonID(block_txt) ;
@@ -603,7 +605,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	}
      else
 	{
-	  if (strcmp(set_txt, g_quark_to_string(search_data->set_original_id)) == 0)
+	  if (search_data->set_original_id
+	      && strcmp(set_txt, g_quark_to_string(search_data->set_original_id)) == 0)
 	    set_id = search_data->set_id ;
 	  else
 	    set_id = makeCanonID(set_txt) ;
@@ -623,7 +626,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	}
       else
 	{
-	  if (strcmp(feature_txt, g_quark_to_string(search_data->feature_original_id)) == 0)
+	  if (search_data->feature_original_id
+	      && strcmp(feature_txt, g_quark_to_string(search_data->feature_original_id)) == 0)
 	    feature_id = search_data->feature_id ;
 	  else
 	    feature_id = makeCanonID(feature_txt) ;
