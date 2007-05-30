@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 29 09:00 2007 (edgrif)
+ * Last edited: May 30 14:57 2007 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.49 2007-03-29 08:59:59 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.50 2007-05-30 13:59:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,14 +74,8 @@ static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
 #endif
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gint findStyle(gconstpointer list_data, gconstpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
-
 static void addTypeQuark(GQuark style_id, gpointer data, gpointer user_data) ;
-
 
 static ZMapFeatureContextExecuteStatus printFeatureContextCB(GQuark key_id,
                                                              gpointer data,
@@ -119,7 +113,23 @@ gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
       && zMapFeatureTypeIsValid(any_feature->struct_type)
       && any_feature->unique_id != ZMAPFEATURE_NULLQUARK
       && any_feature->original_id != ZMAPFEATURE_NULLQUARK)
-    result = TRUE ;
+    {
+      switch (any_feature->struct_type)
+	{
+	case ZMAPFEATURE_STRUCT_CONTEXT:
+	case ZMAPFEATURE_STRUCT_ALIGN: 
+	case ZMAPFEATURE_STRUCT_BLOCK:
+	case ZMAPFEATURE_STRUCT_FEATURESET:
+	  result = TRUE ;
+	  break ;
+	case ZMAPFEATURE_STRUCT_FEATURE:
+	  if (any_feature->children == NULL)
+	    result = TRUE ;
+	  break ;
+	default:
+	  zMapAssertNotReached() ;
+	}
+    }
 
   return result ;
 }
@@ -154,6 +164,27 @@ char *zMapFeatureName(ZMapFeatureAny any_feature)
   feature_name = (char *)g_quark_to_string(any_feature->original_id) ;
 
   return feature_name ;
+}
+
+
+/*!
+ * Does a case <i>insensitive</i> comparison of the features name and
+ * the supplied name, return TRUE if they are the same.
+ * 
+ * @param   any_feature    The feature.
+ * @param   name           The name to be compared..
+ * @return  gboolean       TRUE if the names are the same.
+ *  */
+gboolean zMapFeatureNameCompare(ZMapFeatureAny any_feature, char *name)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(zMapFeatureIsValid(any_feature) && name && *name) ;
+
+  if (g_ascii_strcasecmp(g_quark_to_string(any_feature->original_id), name) == 0)
+    result = TRUE ;
+
+  return result ;
 }
 
 
@@ -193,6 +224,7 @@ ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeature
   return result ;
 }
 
+
 /* Generalised dumping function, caller supplies a callback function that does the actual
  * output and a pointer to somewhere in the feature hierachy (alignment, block, set etc)
  * and this code calls the callback to do the output of the feature in the appropriate
@@ -204,16 +236,6 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
 {
   gboolean result = FALSE ;
   NewDumpFeaturesStruct dump_data ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GDataForeachFunc dataset_start_func = NULL ;
-  GData **dataset = NULL ;
-  GFunc list_start_func = NULL ;
-  GList *list = NULL ;
-  ZMapFeature feature = NULL ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   zMapAssert(file && dump_set && dump_func && error_out) ;
   zMapAssert(dump_set->struct_type == ZMAPFEATURE_STRUCT_CONTEXT
@@ -231,46 +253,6 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
 
   zMapFeatureContextExecute(dump_set, ZMAPFEATURE_STRUCT_FEATURE,
                             dumpFeaturesCB, &dump_data);
-#ifdef RDS_DONT_INCLUDE
-  /* NOTES: I cocked up in that the blocks are a GList, everything else is a GData, that needs
-   * changing then GData could become part of the structAny struct to allow more generalised
-   * handling....
-   * Also, this is simple minded in that it just ends up dumping features, not any other data
-   * about the context.... */
-  switch(dump_set->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_CONTEXT:
-      dataset_start_func = doAlignment ;
-      dataset = &(((ZMapFeatureContext)dump_set)->alignments) ;
-      break ;
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      dataset_start_func = doFeatureSet ;
-      dataset = &(((ZMapFeatureBlock)dump_set)->feature_sets) ;
-      break ;
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      dataset_start_func = doFeature ;
-      dataset = &(((ZMapFeatureSet)dump_set)->features) ;
-      break ;
-    case ZMAPFEATURE_STRUCT_ALIGN:
-      dataset_start_func = doBlock ;
-      dataset = ((ZMapFeatureAlignment)dump_set)->blocks ;
-      break ;
-    case ZMAPFEATURE_STRUCT_FEATURE:			    /* pathological case... */
-      feature = (ZMapFeature)dump_set ;
-      break ;
-    default:
-      zMapAssertNotReached() ;
-      break ;
-    }
-
-  /* Call the appropriate function.... */
-  if (dataset_start_func)
-    g_datalist_foreach(dataset, dataset_start_func, &dump_data) ;
-  else if (list_start_func)
-    g_list_foreach(list, list_start_func, &dump_data) ;
-  else
-    doFeature(feature->unique_id, feature, &dump_data) ;
-#endif
 
   result = dump_data.status ;
 
@@ -564,6 +546,37 @@ static void addTypeQuark(GQuark style_id, gpointer data, gpointer user_data)
   return ;
 }
 
+
+
+/* N.B. call only returns TRUE if the dump _and_ the io channel close succeed. */
+gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GError **error_out)
+{
+  gboolean result = FALSE ;
+  GIOChannel *file ;
+
+  file = g_io_channel_unix_new(STDOUT_FILENO) ;
+  g_io_channel_set_close_on_unref(file, FALSE) ;
+
+  result = zMapFeatureContextDump(file, feature_context, error_out) ;
+
+  if (g_io_channel_flush(file, error_out) != G_IO_STATUS_NORMAL)
+    printf("cannot flush stdout\n") ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* This seems to mess up stdout so I'm leaving the GIOChannel dangling for now,
+   * not sure what to do about it...the g_io_channel_set_close_on_unref() cal
+   * doesn't seem to work....sigh...l*/
+
+  if (g_io_channel_shutdown(file, FALSE, error_out) != G_IO_STATUS_NORMAL)
+    result = FALSE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return result ;
+}
+
+
 /* Dump out a feature context. */
 gboolean zMapFeatureContextDump(GIOChannel *file,
 				ZMapFeatureContext feature_context, GError **error_out)
@@ -612,69 +625,6 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
 }
 
 
-ZMapFeature zMapFeatureCopy(ZMapFeature feature)
-{
-  int i;
-  ZMapFeature newFeature = (ZMapFeature)g_memdup(feature, sizeof(ZMapFeatureStruct));
-
-  if (feature->type == ZMAPFEATURE_ALIGNMENT)
-    {
-      ZMapAlignBlockStruct align;
-      if (feature->feature.homol.align != NULL
-	  && feature->feature.homol.align->len > (guint)0)
-	{
-	  newFeature->feature.homol.align = 
-	    g_array_sized_new(FALSE, TRUE, 
-			      sizeof(ZMapAlignBlockStruct),
-			      feature->feature.homol.align->len);
-
-	  for (i = 0; i < feature->feature.homol.align->len; i++)
-	    {
-	      align = g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
-	      newFeature->feature.homol.align = 
-		g_array_append_val(newFeature->feature.homol.align, align);
-	    }
-	}
-    }
-  else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-    {
-      ZMapSpanStruct span;
-      if (feature->feature.transcript.exons != NULL
-	  && feature->feature.transcript.exons->len > (guint)0)
-	{
-	  newFeature->feature.transcript.exons = 
-	    g_array_sized_new(FALSE, TRUE, 
-			      sizeof(ZMapSpanStruct),
-			      feature->feature.transcript.exons->len);
-
-	  for (i = 0; i < feature->feature.transcript.exons->len; i++)
-	    {
-	      span = g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
-	      newFeature->feature.transcript.exons = 
-		g_array_append_val(newFeature->feature.transcript.exons, span);
-	    }
-	}
-
-      if (feature->feature.transcript.introns != NULL
-	  && feature->feature.transcript.introns->len > (guint)0)
-	{
-	  newFeature->feature.transcript.introns = 
-	    g_array_sized_new(FALSE, TRUE, 
-			      sizeof(ZMapSpanStruct),
-			      feature->feature.transcript.introns->len);
-
-	  for (i = 0; i < feature->feature.transcript.introns->len; i++)
-	    {
-	      span = g_array_index(feature->feature.transcript.introns, ZMapSpanStruct, i);
-	      newFeature->feature.transcript.introns = 
-		g_array_append_val(newFeature->feature.transcript.introns, span);
-	    }
-	}
-    }
-
-  return newFeature;
-}
-
 
 /* Creates the three reading frame translations for a piece of dna. Note that the function
  * will create the three frame set and a feature for each translation if they don't
@@ -703,7 +653,7 @@ gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatu
   /* If we don't have a 3 frame feature set then make one. */
   if (result)
     {
-      if (!(feature_set = (ZMapFeatureSet)(g_datalist_id_get_data(&(block->feature_sets), feature_set_id))))
+      if (!(feature_set = (ZMapFeatureSet)(g_hash_table_lookup(block->feature_sets, GINT_TO_POINTER(feature_set_id)))))
 	{
 	  if ((style = zMapFindStyle(context->styles, style_id)) != NULL)
 	    {
@@ -993,7 +943,7 @@ static gboolean printFeatureContext(ZMapFeatureContext feature_context, DumpFeat
 
   if ((result = printLine(dump, line)))
     {
-      g_datalist_foreach(&(feature_context->alignments), printFeatureAlignment, dump) ;
+      g_hash_table_foreach(feature_context->alignments, printFeatureAlignment, dump) ;
     }
 
   g_free(line) ;
@@ -1004,9 +954,9 @@ static gboolean printFeatureContext(ZMapFeatureContext feature_context, DumpFeat
 
 /* NOTE in all the below callback routines that there is no way to stop the callback being
  * called if an error has occurred so we just have to take no action. */
-
-static void printFeatureAlignment(GQuark key_id, gpointer data, gpointer user_data)
+static void printFeatureAlignment(gpointer key, gpointer data, gpointer user_data)
 {
+  GQuark key_id = GPOINTER_TO_INT(key) ;
   DumpFeatures dump = (DumpFeatures)user_data ;
 
   if (dump->status)
@@ -1018,7 +968,7 @@ static void printFeatureAlignment(GQuark key_id, gpointer data, gpointer user_da
 
       /* Only proceed if there's no problem printing the line */
       if (printLine(dump, line))
-	g_list_foreach(alignment->blocks, printFeatureBlock, (gpointer)dump) ;
+	g_hash_table_foreach(alignment->blocks, printFeatureBlock, (gpointer)dump) ;
       
       g_free(line) ;
     }
@@ -1026,10 +976,9 @@ static void printFeatureAlignment(GQuark key_id, gpointer data, gpointer user_da
   return ;
 }
 
-
-
-static void printFeatureBlock(gpointer data, gpointer user_data)
+static void printFeatureBlock(gpointer key, gpointer data, gpointer user_data)
 {
+  GQuark key_id = GPOINTER_TO_INT(key) ;
   DumpFeatures dump = (DumpFeatures)user_data ;
 
   if (dump->status)
@@ -1044,7 +993,7 @@ static void printFeatureBlock(gpointer data, gpointer user_data)
 			     block->block_to_sequence.q2) ;
 
       if (printLine(dump, line))
-	g_datalist_foreach(&(block->feature_sets), printFeatureSet, dump) ;
+	g_hash_table_foreach(block->feature_sets, printFeatureBlock, (gpointer)dump) ;
 
       g_free(line) ;
     }
@@ -1053,8 +1002,9 @@ static void printFeatureBlock(gpointer data, gpointer user_data)
 }
 
 
-static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
+static void printFeatureFeatureSet(gpointer key, gpointer data, gpointer user_data)
 {
+  GQuark key_id = GPOINTER_TO_INT(key) ;
   DumpFeatures dump = (DumpFeatures)user_data ;
 
   /* Once we have failed then we stop printing, note that there is no way to stop this routine
@@ -1070,7 +1020,7 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 
       /* Only proceed if there's no problem printing the line */
       if (printLine(dump, line))
-	g_datalist_foreach(&(feature_set->features), printFeature, dump) ;
+	g_hash_table_foreach(feature_set->features, printFeature, (gpointer)dump) ;
     
       g_free(line) ;
     }
@@ -1079,8 +1029,9 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
 }
 
 
-static void printFeature(GQuark key_id, gpointer data, gpointer user_data)
+static void printFeatureBlock(gpointer key, gpointer data, gpointer user_data)
 {
+  GQuark key_id = GPOINTER_TO_INT(key) ;
   DumpFeatures dump = (DumpFeatures)user_data ;
 
   if (dump->status)
