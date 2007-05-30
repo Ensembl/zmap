@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Feb 14 17:05 2007 (rds)
+ * Last edited: May  3 08:15 2007 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.21 2007-02-14 17:05:44 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.22 2007-05-30 13:11:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,6 +80,7 @@ static void printCB(gpointer data, gpointer user_data) ;
 static gint caseCompareFunc(gconstpointer a, gconstpointer b) ;
 static void get_datalist_length(GQuark key, gpointer data, gpointer user_data);
 static void get_first_datalist_key(GQuark id, gpointer data, gpointer user_data);
+gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_data) ;
 
 
 /*! @defgroup zmapGLibutils   zMapGLibUtils: glib-derived utilities for ZMap
@@ -407,6 +408,26 @@ GList *zMap_g_list_raise(GList *move, int positions)
   return g_list_first(move);
 }
 
+
+
+
+/* Returns nth hash table element, elements start with the zero'th. */
+gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
+{
+  gpointer entry = NULL ;
+
+  zMapAssert(hash_table && nth >= 0) ;
+
+  if (g_hash_table_size(hash_table) > nth) 
+    entry = g_hash_table_find(hash_table, getNthHashElement, &nth) ;
+
+  return entry ;
+}
+
+
+
+
+
 G_LOCK_DEFINE_STATIC(datalist_first);
 
 gpointer zMap_g_datalist_first(GData **datalist)
@@ -716,4 +737,30 @@ static void get_first_datalist_key(GQuark id, gpointer data, gpointer user_data)
     key->id = id;      
 
   return ;
+}
+
+
+
+
+/* A hack really, this is GHRFunc() called from g_hash_table_find() which
+ * will return TRUE on encountering the nth hash element thus stopping the find function and
+ * returning the nth element of the hash.
+ * 
+ * This function is NOT thread safe.
+ *  */
+gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_data)
+{
+  gboolean found_element = FALSE ;
+  static int n = 0 ;
+  int nth = *((int *)user_data) ;
+
+  if (n == nth)
+    {
+      found_element = TRUE ;
+      n = 0 ;
+    }
+  else
+    n++ ;
+
+  return found_element ;
 }
