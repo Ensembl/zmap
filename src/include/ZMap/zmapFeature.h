@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Mar 21 14:21 2007 (edgrif)
+ * Last edited: May 30 14:08 2007 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.119 2007-03-28 16:01:02 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.120 2007-05-30 14:12:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -167,6 +167,9 @@ typedef struct ZMapFeatureAlignmentStruct_ *ZMapFeatureAlignment ;
 
 typedef struct ZMapFeatureAnyStruct_ *ZMapFeatureAny ;
 
+
+
+
 /* WARNING: READ THIS BEFORE CHANGING ANY FEATURE STRUCTS:
  * 
  * This is the generalised feature struct which can be used to process any feature struct.
@@ -186,6 +189,8 @@ typedef struct ZMapFeatureAnyStruct_
 							     * if this is a feature context. */
   GQuark unique_id ;					    /* Unique id of this feature. */
   GQuark original_id ;					    /* Original id of this feature. */
+
+  GHashTable *children ;				    /* Child objects, e.g. aligns, blocks etc. */
 } ZMapFeatureAnyStruct ;
 
 
@@ -198,10 +203,27 @@ typedef struct ZMapFeatureAnyStruct_
  */
 typedef struct ZMapFeatureContextStruct_
 {
+  /* FeatureAny section. */
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
-  ZMapFeatureAny parent ;				    /* Always NULL in a context. */
+  ZMapFeatureAny no_parent ;				    /* Always NULL in a context. */
   GQuark unique_id ;					    /* Unique id of this feature. */
   GQuark original_id ;					    /* Sequence name. */
+  GHashTable *alignments ;				    /* All the alignments for this zmap
+							       as a set of ZMapFeatureAlignment. */
+
+
+  /* Context only data. */
+
+
+  /* Hack...forced on us because GHash has a global destroy function per hash table, not one
+   * per element of the hashtable (datalists have one per node but they have their own
+   * problems as they are slow). There are two ways a context can be freed
+   * 
+   * See the write up for the zMapFeatureContextMerge() for how this is used.
+   */
+  gboolean diff_context ;				    /* TRUE means this is a diff context. */
+  GHashTable *elements_to_destroy ;			    /* List of elements that we copied
+							       which need to be destroyed. */
 
 
   GQuark sequence_name ;				    /* The sequence to be displayed. */
@@ -237,24 +259,20 @@ typedef struct ZMapFeatureContextStruct_
   ZMapFeatureAlignment master_align ;			    /* The target/master alignment out of
 							       the below set. */
 
-  GData *alignments ;					    /* All the alignments for this zmap
-							       as a set of ZMapFeatureAlignment. */
-
 } ZMapFeatureContextStruct, *ZMapFeatureContext ;
 
 
 
 typedef struct ZMapFeatureAlignmentStruct_
 {
+  /* FeatureAny section. */
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent context. */
   GQuark unique_id ;					    /* Unique id this alignment. */
   GQuark original_id ;					    /* Original id of this sequence. */
+  GHashTable *blocks ;					    /* A set of ZMapFeatureStruct. */
 
-
-  /* Can we change this to be a gdata ? then we would have consistency..... */
-
-  GData *blocks ;					    /* A set of ZMapFeatureStruct. */
+  /* Alignment only data should go here. */
 
 } ZMapFeatureAlignmentStruct;
 
@@ -262,12 +280,15 @@ typedef struct ZMapFeatureAlignmentStruct_
 
 typedef struct ZMapFeatureBlockStruct_
 {
+  /* FeatureAny section. */
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent alignment. */
   GQuark unique_id ;					    /* Unique id for this block. */
   GQuark original_id ;					    /* Original id, probably not needed ? */
+  GHashTable *feature_sets ;				    /* The feature sets for this block as a
+							       set of ZMapFeatureSetStruct. */
 
-
+  /* Block only data. */
   ZMapAlignBlockStruct block_to_sequence ;		    /* Shows how these features map to the
 							       sequence, n.b. this feature set may only
 							       span part of the sequence. */
@@ -276,8 +297,6 @@ typedef struct ZMapFeatureBlockStruct_
 							       n.b. there may not be any dna. */
 
 
-  GData *feature_sets ;					    /* The features for this block as a
-							       set of ZMapFeatureSetStruct. */
 } ZMapFeatureBlockStruct, *ZMapFeatureBlock ;
 
 
@@ -291,16 +310,21 @@ typedef struct ZMapFeatureBlockStruct_
  */
 typedef struct ZMapFeatureSetStruct_
 {
+  /* FeatureAny section. */
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent block. */
   GQuark unique_id ;					    /* Unique id of this feature set. */
   GQuark original_id ;					    /* Original name,
 							       e.g. "Genewise predictions" */
+  GHashTable *features ; 				    /* The features for this set as a
+							       set of ZMapFeatureStruct. */
+
+  /* Feature Set only data. */
   ZMapFeatureTypeStyle style ;				    /* Style defining how this set is
 							       drawn, this applies only to the set
-							       * itself, _not_ the features within
-							       * the set. */
-  GData *features ;					    /* A set of ZMapFeatureStruct. */
+							       itself, _not_ the features within
+							       the set. Should not be freed as
+							       context holds all the styles. */
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
 
@@ -351,14 +375,16 @@ typedef struct
  *  */
 typedef struct ZMapFeatureStruct_ 
 {
-  /* We could embed a structany here... */
+  /* FeatureAny section. */
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our containing set. */
   GQuark unique_id ;					    /* Unique id for just this feature for
 							       use by ZMap. */
   GQuark original_id ;					    /* Original name, e.g. "bA404F10.4.mRNA" */
+  GHashTable *no_children ;				    /* Should always be NULL. */
 
 
+  /* Feature only data. */
   /* flags field holds extra information about various aspects of the feature. */
   /* I'm going to try the bitfields syntax here.... */
   struct
@@ -472,6 +498,14 @@ typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
 
 
 
+
+/* FeatureAny funcs. */
+ZMapFeatureAny zMapFeatureAnyCopy(ZMapFeatureAny orig_feature_any) ;
+ZMapFeatureAny zMapFeatureAnyCreate(ZMapFeatureType feature_type) ;
+
+
+
+
 /* ***************
  * FEATURE METHODS 
  */
@@ -494,8 +528,6 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
                                               int start, int end,
                                               gboolean has_score, double score,
 					      ZMapStrand strand, ZMapPhase phase);
-ZMapFeature zMapFeatureCopy(ZMapFeature feature) ;
-
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
 				    char *sequence, char *ontology,
 				    ZMapFeatureType feature_type, ZMapFeatureTypeStyle style,
@@ -532,9 +564,9 @@ void     zMapFeatureDestroy(ZMapFeature feature) ;
  */
 
 GQuark zMapFeatureSetCreateID(char *feature_set_name) ; 
-ZMapFeatureSet zMapFeatureSetCreate(char *source, GData *features) ;
+ZMapFeatureSet zMapFeatureSetCreate(char *source, GHashTable *features) ;
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
-				      ZMapFeatureTypeStyle style, GData *features) ;
+				      ZMapFeatureTypeStyle style, GHashTable *features) ;
 gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set, 
@@ -559,7 +591,7 @@ ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
 					int ref_start, int ref_end, ZMapStrand ref_strand,
 					int non_start, int non_end, ZMapStrand non_strand) ;
 
-void zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set) ;
+gboolean zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set) ;
 gboolean zMapFeatureBlockFindFeatureSet(ZMapFeatureBlock feature_block,
                                         ZMapFeatureSet   feature_set);
 ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, 
@@ -580,8 +612,8 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
 
 GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean master_alignment) ; 
 ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;
-void zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment feature_align, 
-                                  ZMapFeatureBlock     feature_block) ;
+gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment feature_align, 
+				      ZMapFeatureBlock     feature_block) ;
 gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align, 
                                        ZMapFeatureBlock     feature_block);
 ZMapFeatureBlock zMapFeatureAlignmentGetBlockByID(ZMapFeatureAlignment feature_align, 
@@ -599,17 +631,15 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
 					    GData *styles, GList *feature_set_names) ;
 ZMapFeatureContext zMapFeatureContextCreateEmptyCopy(ZMapFeatureContext feature_context);
-gboolean zMapFeatureContextMergeWithDiff(ZMapFeatureContext *current_context_inout,
-                                         ZMapFeatureContext new_context,
-                                         ZMapFeatureContext *diff_context_out) ;
 gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
-                                 ZMapFeatureContext new_context);
+                                 ZMapFeatureContext *new_context_inout,
+				 ZMapFeatureContext *diff_context_out) ;
 gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext remove_context,
 				 ZMapFeatureContext *diff_context_out);
-void zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
-				    ZMapFeatureAlignment alignment, 
-                                    gboolean master) ;
+gboolean zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
+					ZMapFeatureAlignment alignment, 
+					gboolean master) ;
 gboolean zMapFeatureContextFindAlignment(ZMapFeatureContext   feature_context,
                                          ZMapFeatureAlignment feature_align);
 ZMapFeatureAlignment zMapFeatureContextGetAlignmentByID(ZMapFeatureContext feature_context,
@@ -648,6 +678,7 @@ void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
 
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
+gboolean zMapFeatureNameCompare(ZMapFeatureAny any_feature, char *name) ;
 gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type) ;
 ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
 char *zMapFeatureName(ZMapFeatureAny any_feature) ;
@@ -656,6 +687,7 @@ ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeatureAny feature) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
 /* Probably should be merged at some time.... */
+gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GError **error_out) ;
 gboolean zMapFeatureContextDump(GIOChannel *file,
 				ZMapFeatureContext feature_context, GError **error_out) ;
 gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
