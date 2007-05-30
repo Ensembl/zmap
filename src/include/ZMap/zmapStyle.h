@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: May 24 11:24 2007 (rds)
+ * Last edited: May 30 07:52 2007 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.5 2007-05-24 10:44:47 rds Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.6 2007-05-30 14:11:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -170,8 +170,9 @@ typedef enum
   } ZMapStyleOverlapMode ;
 
 
-gboolean zMapStyleDisplayValid(ZMapFeatureTypeStyle style, GError **error) ;
 
+gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
+gboolean zMapStyleDisplayValid(ZMapFeatureTypeStyle style, GError **error) ;
 GQuark zMapStyleGetID(ZMapFeatureTypeStyle style) ;
 GQuark zMapStyleGetUniqueID(ZMapFeatureTypeStyle style) ;
 char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
@@ -303,6 +304,7 @@ GData *zMapFeatureTypeGetFromFile(char *types_file) ;
 
 /* Style set functions... */
 
+gboolean zMapStyleSetAdd(GData **style_set, ZMapFeatureTypeStyle style) ;
 void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
 void zMapFeatureStylePrintAll(GList *styles, char *user_string) ;
 gboolean zMapStyleInheritAllStyles(GData **style_set) ;
