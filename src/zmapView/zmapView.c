@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar 27 14:45 2007 (edgrif)
+ * Last edited: May 29 09:16 2007 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.111 2007-03-28 16:06:42 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.112 2007-05-30 13:39:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1986,33 +1986,36 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
  *  */
 static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext *context_inout)
 {
-  ZMapFeatureContext new_features;
+  ZMapFeatureContext new_features, diff_context = NULL ;
   gboolean merged = FALSE;
 
   zMapAssert(context_inout && *context_inout);
 
-  new_features = *context_inout;
+  new_features = *context_inout ;
 
-  if(view->revcomped_features)
+  if (view->revcomped_features)
     zMapFeatureReverseComplement(new_features);
 
-  if (!(merged = zMapFeatureContextMerge(&(view->features), new_features)))
-    zMapLogCritical("%s", "Cannot merge feature data from....") ;
+  if (!(merged = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context)))
+    {
+      zMapLogCritical("%s", "Cannot merge feature data from....") ;
+    }
   else
     {
       zMapPrintTimer(NULL, "Merged Features into context and about to display") ;
 
       /* Signal the ZMap that there is work to be done. */
-      displayDataWindows(view, view->features, new_features, FALSE) ;
+      displayDataWindows(view, view->features, diff_context, FALSE) ;
       
       zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features);
       
       /* signal our caller that we have data. */
       (*(view_cbs_G->load_data))(view, view->app_data, NULL) ;
-
     }
   
-  *context_inout = new_features;
+  /* Return the diff_context which is the just the new features (NULL if merge fails). */
+  *context_inout = diff_context ;
+
 
   return merged;
 }
@@ -2045,12 +2048,43 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
     {
       mergeAndDrawContext(zmap_view, &new_features);
 
-      if(zmap_view->features != new_features)
+
+      /* I BELIEVE THIS IS DANGEROUS AS THE DRAWING CODE MAY NOT GET CALLED BEFORE THE
+       * DESTROY HAPPENS AS WE ONLY _SIGNAL_ THE DRAWING CODE, NOT SYNCHRONOUSLY CALL IT.
+       * CURRENTLY WE GET AWAY WITH IT BECAUSE GTK IN FACT DOES THE CALL SYNCHRONOUSLY.... */
+      if (zmap_view->features != new_features)
         {
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  {
+	    GError *err = NULL ;
+
+	    printf("full context:\n") ;
+	    zMapFeatureDumpStdOutFeatures(zmap_view->features, &err) ;
+	  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
           zMapFeatureContextDestroy(new_features, TRUE);
+
           new_features = feature_req->feature_context_out = NULL;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  {
+	    GError *err = NULL ;
+
+	    printf("full context:\n") ;
+	    zMapFeatureDumpStdOutFeatures(zmap_view->features, &err) ;
+	  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
         }
     }
+
 
   return ;
 }
