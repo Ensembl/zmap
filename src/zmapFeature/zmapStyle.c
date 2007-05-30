@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Mar 28 09:19 2007 (edgrif)
+ * Last edited: May 23 14:59 2007 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.2 2007-03-28 16:36:20 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.3 2007-05-30 14:00:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,6 +56,28 @@ typedef struct
 
 
 static void setColours(ZMapStyleColour colour, char *border, char *draw, char *fill) ;
+
+
+
+/*!
+ * Does a case <i>insensitive</i> comparison of the style name and
+ * the supplied name, return TRUE if they are the same.
+ * 
+ * @param   style          The style.
+ * @param   name           The name to be compared..
+ * @return  gboolean       TRUE if the names are the same.
+ *  */
+gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(style && name && *name) ;
+
+  if (g_ascii_strcasecmp(g_quark_to_string(style->original_id), name) == 0)
+    result = TRUE ;
+
+  return result ;
+}
 
 
 
