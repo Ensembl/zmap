@@ -30,13 +30,13 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: May 30 14:47 2007 (edgrif)
+ * Last edited: May 31 07:38 2007 (edgrif)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.48 2007-05-30 13:48:28 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.49 2007-05-31 07:38:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-
+#include <ZMap/zmapFeature.h>
 #include <zmapControlRemote_P.h>
 
 typedef struct
