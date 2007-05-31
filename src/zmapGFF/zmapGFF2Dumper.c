@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb 26 11:20 2007 (edgrif)
+ * Last edited: May 31 08:35 2007 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.8 2007-03-01 09:20:51 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.9 2007-05-31 07:35:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,8 +47,8 @@ typedef struct
 
 static gboolean dumpHeader(GIOChannel *file, ZMapFeatureAny any_feature, GError **error_out) ;
 static gboolean dumpSeqHeaders(GIOChannel *file, ZMapFeatureAny any_feature, GError **error_out) ;
-static void doAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
-static void doBlock(GQuark key_id, gpointer data, gpointer user_data) ;
+static void doAlignment(gpointer key, gpointer data, gpointer user_data) ;
+static void doBlock(gpointer key, gpointer data, gpointer user_data) ;
 static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
 			    ZMapFeatureTypeStyle style,
 			    char *parent_name,
@@ -148,8 +148,8 @@ static gboolean dumpSeqHeaders(GIOChannel *file, ZMapFeatureAny dump_set, GError
 {
   gboolean result = TRUE ;
   NewDumpFeaturesStruct dump_data ;
-  GDataForeachFunc dataset_start_func = NULL ;
-  GData **dataset = NULL ;
+  GHFunc dataset_start_func = NULL ;
+  GHashTable *dataset = NULL ;
   ZMapFeatureAlignment alignment = NULL ;
 
 
@@ -164,7 +164,7 @@ static gboolean dumpSeqHeaders(GIOChannel *file, ZMapFeatureAny dump_set, GError
     {
     case ZMAPFEATURE_STRUCT_CONTEXT:
       dataset_start_func = doAlignment ;
-      dataset = &(((ZMapFeatureContext)dump_set)->alignments) ;
+      dataset = ((ZMapFeatureContext)dump_set)->alignments ;
       break ;
     case ZMAPFEATURE_STRUCT_ALIGN:
       alignment = (ZMapFeatureAlignment)dump_set ;
@@ -184,9 +184,9 @@ static gboolean dumpSeqHeaders(GIOChannel *file, ZMapFeatureAny dump_set, GError
     }
 
   if (dataset_start_func)
-    g_datalist_foreach(dataset, dataset_start_func, &dump_data) ;
+    g_hash_table_foreach(dataset, dataset_start_func, &dump_data) ;
   else
-    doAlignment(alignment->unique_id, alignment, &dump_data) ;
+    doAlignment(GINT_TO_POINTER(alignment->unique_id), alignment, &dump_data) ;
 
   result = dump_data.status ;
 
@@ -197,7 +197,7 @@ static gboolean dumpSeqHeaders(GIOChannel *file, ZMapFeatureAny dump_set, GError
 
 
 
-static void doAlignment(GQuark key_id, gpointer data, gpointer user_data)
+static void doAlignment(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
   NewDumpFeatures dump_data = (NewDumpFeatures)user_data ;
@@ -219,13 +219,14 @@ static void doAlignment(GQuark key_id, gpointer data, gpointer user_data)
   else
     {
       /* Do all the blocks within the alignment. */
-      g_datalist_foreach(&(alignment->blocks), doBlock, dump_data) ;
+      g_hash_table_foreach(alignment->blocks, doBlock, dump_data) ;
     }
 
   return ;
 }
 
-static void doBlock(GQuark key_id, gpointer data, gpointer user_data)
+
+static void doBlock(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock block = (ZMapFeatureBlock)data ;
   NewDumpFeatures dump_data = (NewDumpFeatures)user_data ;
