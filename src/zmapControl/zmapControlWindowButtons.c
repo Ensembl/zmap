@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: May 24 09:05 2007 (edgrif)
+ * Last edited: May 31 08:07 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.47 2007-05-30 13:40:52 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.48 2007-05-31 07:32:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -370,18 +370,18 @@ void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status
 static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
 {
   gboolean handled = FALSE ;
-  ZMap zmap = (ZMap)data ;
-  ZMapWindow window ;
-
-  zMapAssert(zmap->focus_viewwindow) ;
-
-  window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
   switch(event->type)
     {
     case GDK_BUTTON_PRESS:
       {
 	GdkEventButton *button_ev = (GdkEventButton *)event ;
+	ZMap zmap = (ZMap)data ;
+	ZMapWindow window ;
+
+	zMapAssert(zmap->focus_viewwindow) ;
+
+	window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
         switch(button_ev->button)
           {
@@ -393,8 +393,9 @@ static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
           default:
             break;
           }
+
+	break;
       }
-      break;
     default:
       break;
     }
