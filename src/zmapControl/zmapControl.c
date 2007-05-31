@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Mar  7 14:24 2007 (edgrif)
+ * Last edited: May 31 09:38 2007 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.76 2007-03-07 14:35:50 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.77 2007-05-31 08:40:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -789,10 +789,8 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
-  /* We should test to see if the view is still in the list of views.... */
-
-  zmapControlWindowSetGUIState(zmap) ;
-
+  if (zmap->state != ZMAP_DYING)
+    zmapControlWindowSetGUIState(zmap) ;
 
   return ;
 }
