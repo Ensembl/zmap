@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 16 09:37 2004 (edgrif)
+ * Last edited: May 31 15:34 2007 (edgrif)
  * Created: Tue Apr  6 12:30:05 2004 (edgrif)
- * CVS info:   $Id: zmapConfigUtils.c,v 1.3 2006-11-08 09:23:47 edgrif Exp $
+ * CVS info:   $Id: zmapConfigUtils.c,v 1.4 2007-05-31 14:36:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -152,7 +152,7 @@ void zmapConfigCopyElementData(ZMapConfigStanzaElement element_in,
       element_out->data.s = g_strdup(element_in->data.s) ;
       break ;
     default:
-      zMapCrash("%s", "Code Error: unrecognised data type for stanza element union") ;
+      zMapAssertNotReached() ;
       break ;
     }
 

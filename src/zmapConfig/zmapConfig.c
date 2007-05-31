@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Feb 17 12:47 2006 (rds)
+ * Last edited: May 31 15:33 2007 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.16 2006-11-08 09:23:44 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.17 2007-05-31 14:36:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -194,7 +194,7 @@ ZMapConfigStanza zMapConfigMakeStanza(char *stanza_name, ZMapConfigStanzaElement
 	    new_element->data.s = g_strdup(elements[i].data.s) ;
 	  break ;
 	default:
-	  zMapCrash("%s", "Code Error: unrecognised data type for stanza element union") ;
+	  zMapAssertNotReached() ;
 	  break ;
 	}
 

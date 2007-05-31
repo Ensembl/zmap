@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: Sep 27 11:01 2006 (edgrif)
+ * Last edited: May 31 15:34 2007 (edgrif)
  * Created: Thu Apr  1 14:33:04 2004 (edgrif)
- * CVS info:   $Id: zmapConfigRead.c,v 1.7 2006-11-08 09:23:46 edgrif Exp $
+ * CVS info:   $Id: zmapConfigRead.c,v 1.8 2007-05-31 14:36:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -359,7 +359,7 @@ static gboolean parsefile(ZMapConfig config, GScanner *scanner)
 	  }
 	default :
 	  {
-	    zMapCrash("%s", "Code Error: unrecognised state in config file parser") ;
+	    zMapAssertNotReached() ;
 	    break ;
 	  }
 	}
