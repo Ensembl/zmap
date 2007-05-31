@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May 30 14:08 2007 (edgrif)
+ * Last edited: May 31 07:41 2007 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.120 2007-05-30 14:12:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.121 2007-05-31 07:32:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -637,6 +637,8 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext remove_context,
 				 ZMapFeatureContext *diff_context_out);
+gboolean zMapFeatureContextAddModesToStyles(ZMapFeatureContext context) ;
+gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any) ;
 gboolean zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
 					ZMapFeatureAlignment alignment, 
 					gboolean master) ;
