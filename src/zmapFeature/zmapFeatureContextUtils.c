@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 30 15:06 2007 (edgrif)
+ * Last edited: May 31 07:41 2007 (edgrif)
  * Created: Thu May 24 10:34:47 2007 (rds)
- * CVS info:   $Id: zmapFeatureContextUtils.c,v 1.2 2007-05-30 14:08:07 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContextUtils.c,v 1.3 2007-05-31 07:36:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data) ;
 
 
 
-
+/* WHY DO WE NEED BOTH OF THESE........ */
 gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any)
 {
   gboolean result = TRUE;
