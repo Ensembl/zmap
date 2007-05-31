@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May 24 16:20 2007 (rds)
+ * Last edited: May 31 11:26 2007 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.22 2007-05-24 15:36:06 rds Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.23 2007-05-31 10:38:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,30 +74,6 @@ gboolean zmap_debug_G = FALSE ;
  * See the timer macros in zmapUtilsDebug.h */
 GTimer *zmap_global_timer_G = NULL ;
 
-
-
-/*!
- * Use this routine to exit the application with a portable (as in POSIX) return
- * code. If exit_code == 0 then application exits with EXIT_SUCCESS, otherwise
- * exits with EXIT_FAILURE. This routine actually calls gtk_exit() because ZMap
- * is a gtk routine and should use this call to exit.
- *
- * @param exit_code              0 for success, anything else for failure.
- * @return                       nothing
- *  */
-void zMapExit(int exit_code)
-{
-  int true_exit_code ;
-
-  if (exit_code)
-    true_exit_code = EXIT_FAILURE ;
-  else
-    true_exit_code = EXIT_SUCCESS ;
-
-  gtk_exit(true_exit_code) ;
-
-  return ;						    /* we never get here. */
-}
 
 
 

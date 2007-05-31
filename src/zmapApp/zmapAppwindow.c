@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Apr 19 17:22 2007 (edgrif)
+ * Last edited: May 31 11:26 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.41 2007-04-23 13:51:58 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.42 2007-05-31 10:38:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,6 +60,8 @@ static void infoSetCB(void *app_data, void *zmap) ;
 static void removeZMapCB(void *app_data, void *zmap) ;
 void quitReqCB(void *app_data, void *zmap_data_unused) ;
 
+
+static void doTheExit(int exit_code) ;
 static void exitApp(ZMapAppContext app_context) ;
 static void crashExitApp(ZMapAppContext app_context) ;
 
@@ -209,7 +211,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
 
-  zMapExit(EXIT_SUCCESS) ;				    /* exits.... */
+  doTheExit(EXIT_SUCCESS) ;				    /* exits.... */
 
 
   /* We should never get here, hence the failure return code. */
@@ -233,6 +235,8 @@ void zmapAppExit(ZMapAppContext app_context)
 
   return ;
 }
+
+
 
 
 
@@ -408,7 +412,7 @@ static void checkForCmdLineSequenceArgs(int argc, char *argv[],
 	  if (start < 1 || (end != 0 && end < start))
 	    {
 	      fprintf(stderr, "Bad start/end values: start = %d, end = %d\n", start, end) ;
-	      zMapExit(EXIT_FAILURE) ;
+	      doTheExit(EXIT_FAILURE) ;
 	    }
 	}
 
@@ -460,7 +464,7 @@ static void checkConfigDir(void)
       fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
 	      "or file \"%s\" within that directory.\n",
 	      zMapConfigDirGetDir(), zMapConfigDirGetFile()) ;
-      zMapExit(EXIT_FAILURE) ;
+      doTheExit(EXIT_FAILURE) ;
     }
 
   return ;
@@ -513,6 +517,30 @@ void quitReqCB(void *app_data, void *zmap_data_unused)
 
 
 
+/*
+ * Use this routine to exit the application with a portable (as in POSIX) return
+ * code. If exit_code == 0 then application exits with EXIT_SUCCESS, otherwise
+ * exits with EXIT_FAILURE. This routine actually calls gtk_exit() because ZMap
+ * is a gtk routine and should use this call to exit.
+ *
+ * exit_code              0 for success, anything else for failure.
+ *  */
+static void doTheExit(int exit_code)
+{
+  int true_exit_code ;
+
+  if (exit_code)
+    true_exit_code = EXIT_FAILURE ;
+  else
+    true_exit_code = EXIT_SUCCESS ;
+
+  gtk_exit(true_exit_code) ;
+
+  return ;						    /* we never get here. */
+}
+
+
+
 /* Final clean up of zmap. */
 static void exitApp(ZMapAppContext app_context)
 {
@@ -524,7 +552,7 @@ static void exitApp(ZMapAppContext app_context)
 
   destroyAppContext(app_context) ;
 
-  zMapExit(EXIT_SUCCESS) ;
+  doTheExit(EXIT_SUCCESS) ;
 
   return ;
 }
@@ -537,7 +565,7 @@ static void crashExitApp(ZMapAppContext app_context)
 
   destroyAppContext(app_context) ;
 
-  zMapExit(EXIT_FAILURE) ;
+  doTheExit(EXIT_FAILURE) ;
 
   return ;
 }
