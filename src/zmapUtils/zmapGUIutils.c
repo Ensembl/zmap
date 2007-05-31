@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Feb 27 10:43 2007 (rds)
+ * Last edited: May 31 12:13 2007 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.31 2007-02-27 10:43:15 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.32 2007-05-31 11:15:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,6 +36,8 @@
 #include <math.h>
 #include <zmapUtils_P.h>
 #include <ZMap/zmapUtilsGUI.h>
+
+
 
 typedef struct
 {
@@ -73,6 +75,33 @@ static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data) ;
  *
  *  */
 
+
+
+/*!
+ * Formats and displays a message, note that the message may be displayed in a window
+ * or at the terminal depending on how the message system has been initialised.
+ *
+ * @param msg_type      The type of message: information, warning etc.
+ * @param format        A printf() style format string.
+ * @param ...           The parameters matching the format string.
+ * @return              nothing
+ *  */
+void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
+{
+  va_list args ;
+  char *msg_string ;
+
+  va_start(args, format) ;
+  msg_string = g_strdup_vprintf(format, args) ;
+  va_end(args) ;
+
+
+  zMapGUIShowMsg(msg_type, msg_string) ;
+  
+  g_free(msg_string) ;
+
+  return ;
+}
 
 
 

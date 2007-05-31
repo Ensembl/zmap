@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May 31 12:00 2007 (edgrif)
+ * Last edited: May 31 12:14 2007 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.24 2007-05-31 11:01:37 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.25 2007-05-31 11:15:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,8 +36,8 @@
 #include <time.h>
 #include <string.h>
 #include <errno.h>
+#include <stdio.h>
 
-#include <ZMap/zmapUtilsGUI.h>
 #include <zmapUtils_P.h>
 
 
@@ -201,31 +201,6 @@ char *zMapGetLicenseString(void)
 
 
 
-/*!
- * Formats and displays a message, note that the message may be displayed in a window
- * or at the terminal depending on how the message system has been initialised.
- *
- * @param msg_type      The type of message: information, warning etc.
- * @param format        A printf() style format string.
- * @param ...           The parameters matching the format string.
- * @return              nothing
- *  */
-void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
-{
-  va_list args ;
-  char *msg_string ;
-
-  va_start(args, format) ;
-  msg_string = g_strdup_vprintf(format, args) ;
-  va_end(args) ;
-
-
-  zMapGUIShowMsg(msg_type, msg_string) ;
-  
-  g_free(msg_string) ;
-
-  return ;
-}
 
 
 /*!
