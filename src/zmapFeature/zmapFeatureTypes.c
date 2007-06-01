@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 30 15:03 2007 (edgrif)
+ * Last edited: Jun  1 10:48 2007 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.49 2007-05-30 14:05:02 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.50 2007-06-01 10:01:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1171,11 +1171,11 @@ ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name)
 
 
 /* need a func to free a styles list here..... */
-void zMapStyleDestroyStyles(GData *styles)
+void zMapStyleDestroyStyles(GData **styles)
 {
-  g_datalist_foreach(&styles, destroyStyle, NULL) ;
+  g_datalist_foreach(styles, destroyStyle, NULL) ;
 
-  g_datalist_clear(&styles) ;
+  g_datalist_clear(styles) ;
 
   return ;
 }

@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: May 30 07:52 2007 (edgrif)
+ * Last edited: Jun  1 10:48 2007 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.6 2007-05-30 14:11:07 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.7 2007-06-01 10:01:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -313,7 +313,7 @@ ZMapFeatureTypeStyle zMapFindStyle(GData *styles, GQuark style_id) ;
 GList *zMapStylesGetNames(GData *styles) ;
 GData *zMapStyleGetAllPredefined(void) ;
 GData *zMapStyleMergeStyles(GData *curr_styles, GData *new_styles) ;
-void zMapStyleDestroyStyles(GData *styles) ;
+void zMapStyleDestroyStyles(GData **styles) ;
 
 
 
