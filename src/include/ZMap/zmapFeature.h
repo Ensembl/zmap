@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May 31 07:41 2007 (edgrif)
+ * Last edited: May 31 15:49 2007 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.121 2007-05-31 07:32:05 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.122 2007-06-01 10:03:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -465,20 +465,17 @@ typedef struct
 
 
 
-
-
-
 typedef enum
   {
     ZMAP_CONTEXT_EXEC_STATUS_OK,
     ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND,
     ZMAP_CONTEXT_EXEC_STATUS_ERROR
   } ZMapFeatureContextExecuteStatus;
-
 typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
                                                                 gpointer list_data,
                                                                 gpointer user_data,
                                                                 char   **error);
+
 /* Callback function for calls to zMapFeatureDumpFeatures(), caller can use this function to
  * format features in any way they want. */
 typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
@@ -500,9 +497,12 @@ typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
 
 
 /* FeatureAny funcs. */
-ZMapFeatureAny zMapFeatureAnyCopy(ZMapFeatureAny orig_feature_any) ;
 ZMapFeatureAny zMapFeatureAnyCreate(ZMapFeatureType feature_type) ;
-
+ZMapFeatureAny zMapFeatureAnyCopy(ZMapFeatureAny orig_feature_any) ;
+gboolean zMapFeatureAnyFindFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
+ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_set, GQuark feature_id) ;
+gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any) ;
+gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 
 
 
@@ -637,8 +637,6 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext remove_context,
 				 ZMapFeatureContext *diff_context_out);
-gboolean zMapFeatureContextAddModesToStyles(ZMapFeatureContext context) ;
-gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any) ;
 gboolean zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
 					ZMapFeatureAlignment alignment, 
 					gboolean master) ;
