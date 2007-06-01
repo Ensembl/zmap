@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jun  1 10:53 2007 (edgrif)
+ * Last edited: Jun  1 11:35 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.67 2007-06-01 10:06:04 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.68 2007-06-01 11:28:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1476,6 +1476,8 @@ static void destroyContextSubparts(ZMapFeatureContext context)
       g_hash_table_destroy(context->elements_to_destroy) ;
     }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (context->feature_set_names)
     {
       g_list_free(context->feature_set_names) ;
@@ -1485,6 +1487,8 @@ static void destroyContextSubparts(ZMapFeatureContext context)
 
   if (context->styles)
     zMapStyleDestroyStyles(&(context->styles)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
