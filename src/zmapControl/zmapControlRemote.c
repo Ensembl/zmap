@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: May 31 07:38 2007 (edgrif)
+ * Last edited: May 31 10:09 2007 (edgrif)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.49 2007-05-31 07:38:46 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.50 2007-06-01 10:00:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -588,11 +588,11 @@ static void drawNewFeatures(ZMap zmap, XMLData xml_data, ResponseCodeZMap rc_dat
 
   view = zMapViewGetView(zmap->focus_viewwindow);
 
-  zMapFeatureContextAddModesToStyles(xml_data->context);
+  zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(xml_data->context)) ;
 
-  xml_data->context = zMapViewMergeInContext(view, xml_data->context);
+  xml_data->context = zMapViewMergeInContext(view, xml_data->context) ;
 
-  zMapFeatureContextExecute((ZMapFeatureAny)xml_data->context, ZMAPFEATURE_STRUCT_FEATURE,
+  zMapFeatureContextExecute((ZMapFeatureAny)(xml_data->context), ZMAPFEATURE_STRUCT_FEATURE,
                             delete_from_list,
                             &(xml_data->feature_list));
 
