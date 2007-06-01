@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: May 30 14:28 2007 (edgrif)
+ * Last edited: Jun  1 10:59 2007 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.21 2007-05-30 13:29:27 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.22 2007-06-01 10:00:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -296,8 +296,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
 	      context->context->styles = zMapStyleMergeStyles(context->context->styles, styles->styles) ;
 
-	      zMapStyleDestroyStyles(styles->styles) ;
-	      styles->styles = NULL ;
+	      zMapStyleDestroyStyles(&(styles->styles)) ;
 
 	      /* Now we have all the styles do the inheritance for them all. */
 	      if (!zMapStyleInheritAllStyles(&(context->context->styles)))
@@ -423,7 +422,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
   /* If the style modes need to be set from features then do that now. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK && !(styles->server_styles_have_mode))
     {
-      if (!zMapFeatureContextAddModesToStyles(context->context))
+      if (!zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(context->context)))
 	{
 	  *err_msg_out = g_strdup_printf("Inferring Style modes from Features failed.") ;
 	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
