@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jun  1 11:35 2007 (edgrif)
+ * Last edited: Jun  5 13:56 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.68 2007-06-01 11:28:07 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.69 2007-06-05 13:10:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -193,7 +193,7 @@ static gboolean destroy_debug_G = FALSE;
 
 
 /* Currently if we use this we get seg faults so we must not be cleaning up properly somewhere... */
-static gboolean USE_SLICE_ALLOC = FALSE ;
+static gboolean USE_SLICE_ALLOC = TRUE ;
 
 
 
@@ -325,16 +325,16 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
       bytes = sizeof(ZMapFeatureContextStruct) ;
       break ;
     case ZMAPFEATURE_STRUCT_ALIGN:
-      bytes = sizeof(ZMapFeatureContextStruct) ;
+      bytes = sizeof(ZMapFeatureAlignmentStruct) ;
       break ;
     case ZMAPFEATURE_STRUCT_BLOCK:
-      bytes = sizeof(ZMapFeatureContextStruct) ;
+      bytes = sizeof(ZMapFeatureBlockStruct) ;
       break ;
     case ZMAPFEATURE_STRUCT_FEATURESET:
-      bytes = sizeof(ZMapFeatureContextStruct) ;
+      bytes = sizeof(ZMapFeatureSetStruct) ;
       break ;
     case ZMAPFEATURE_STRUCT_FEATURE:
-      bytes = sizeof(ZMapFeatureContextStruct) ;
+      bytes = sizeof(ZMapFeatureStruct) ;
       break ;
     default:
       zMapAssertNotReached();
@@ -1535,7 +1535,7 @@ static void destroyFeatureAny(gpointer data)
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_CONTEXT:
-      nbytes = sizeof(ZMapFeatureStruct) ;
+      nbytes = sizeof(ZMapFeatureContextStruct) ;
       destroyContextSubparts((ZMapFeatureContext)feature_any) ;
       break ;
     case ZMAPFEATURE_STRUCT_ALIGN:
@@ -2220,7 +2220,7 @@ static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureStructType struct_type,
   switch(struct_type)
     {
     case ZMAPFEATURE_STRUCT_CONTEXT:
-      nbytes = sizeof(ZMapFeatureStruct) ;
+      nbytes = sizeof(ZMapFeatureContextStruct) ;
       break ;
     case ZMAPFEATURE_STRUCT_ALIGN:
       nbytes = sizeof(ZMapFeatureAlignmentStruct) ;
