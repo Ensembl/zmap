@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 22 10:40 2007 (edgrif)
+ * Last edited: May 31 10:46 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.184 2007-05-30 13:33:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.185 2007-06-05 12:57:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -666,12 +666,30 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
       feature_any   = (ZMapFeatureAny)g_object_get_data(G_OBJECT(blocks->data), ITEM_FEATURE_DATA);
       feature_block = (ZMapFeatureBlock)feature_any;
 
-      if ((item = zmapWindowFToIFindItemFull(window->context_to_item,
-					     feature_block->parent->unique_id,
-					     feature_block->unique_id,
-					     feature_set_unique,
-					     ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE,
-					     0)) != NULL)
+      if (((item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                              feature_block->parent->unique_id,
+                                              feature_block->unique_id,
+                                              feature_set_unique,
+                                              ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE,
+                                              0)) != NULL) || 
+          ((item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                              feature_block->parent->unique_id,
+                                              feature_block->unique_id,
+                                              feature_set_unique,
+                                              ZMAPSTRAND_FORWARD, ZMAPFRAME_0,
+                                              0)) != NULL) ||
+          ((item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                              feature_block->parent->unique_id,
+                                              feature_block->unique_id,
+                                              feature_set_unique,
+                                              ZMAPSTRAND_FORWARD, ZMAPFRAME_1,
+                                              0)) != NULL) ||
+          ((item = zmapWindowFToIFindItemFull(window->context_to_item,
+                                              feature_block->parent->unique_id,
+                                              feature_block->unique_id,
+                                              feature_set_unique,
+                                              ZMAPSTRAND_FORWARD, ZMAPFRAME_2,
+                                              0)) != NULL) )
         {
           if (force && force_to)
             zmapWindowColumnShow(FOO_CANVAS_GROUP(item)) ;
