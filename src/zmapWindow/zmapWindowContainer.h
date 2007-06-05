@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Jan 15 14:25 2007 (edgrif)
+ * Last edited: Jun  5 11:45 2007 (rds)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.18 2007-01-15 15:30:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.19 2007-06-05 12:50:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -45,7 +45,8 @@ typedef enum
     CONTAINER_PARENT,					    /* Container parent group */
     CONTAINER_OVERLAYS,					    /* Overlay objects. */
     CONTAINER_FEATURES,					    /* Container subgroup containing features. */
-    CONTAINER_BACKGROUND				    /* Rectangular item to form group background. */
+    CONTAINER_BACKGROUND,				    /* Rectangular item to form group background. */
+    CONTAINER_UNDERLAYS
   } ContainerType ;
 
 
@@ -98,6 +99,7 @@ FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *any_container_child)
 FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent) ;
 FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent) ;
 FooCanvasGroup *zmapWindowContainerGetOverlays(FooCanvasGroup *container_parent) ;
+FooCanvasGroup *zmapWindowContainerGetUnderlays(FooCanvasGroup *container_parent);
 void zmapWindowContainerSetOverlayResizing(FooCanvasGroup *container_parent,
 					   gboolean maximise_width, gboolean maximise_height) ;
 ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_parent) ;

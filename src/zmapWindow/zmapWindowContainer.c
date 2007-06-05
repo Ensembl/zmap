@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: May 24 13:32 2007 (rds)
+ * Last edited: Jun  5 11:46 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.33 2007-05-24 12:38:00 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.34 2007-06-05 12:50:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,14 @@
  * containers. The code enforces this with asserts and is available
  * via the zmapWindowContainer{G,S}etStrand() functions. */
 #define CONTAINER_STRAND          "container_strand"
+
+typedef enum
+  {
+    _CONTAINER_BACKGROUND_POSITION = 0,
+    _CONTAINER_UNDERLAY_POSITION   = 1,
+    _CONTAINER_FEATURES_POSITION   = 2,
+    _CONTAINER_OVERLAY_POSITION    = 3,
+  }ContainerPositions;
 
 typedef struct
 {
@@ -192,7 +200,8 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  GdkColor *background_border_colour,
 					  ZMapWindowLongItems long_items)
 {
-  FooCanvasGroup *container_parent = NULL, *container_overlays, *container_features, *parent_container;
+  FooCanvasGroup *container_parent = NULL, *container_underlays,
+    *container_overlays, *container_features, *parent_container;
   FooCanvasItem *container_background ;
   ContainerType parent_type = CONTAINER_INVALID, container_type ;
   ContainerData container_data, parent_data = NULL;
@@ -241,46 +250,56 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
                    G_CALLBACK(containerRootInvokeContainerBGEvent), NULL);
 
   container_data = g_new0(ContainerDataStruct, 1) ;
-  container_data->level = level;
-  container_data->child_spacing = child_spacing ;
-  container_data->this_spacing  = this_spacing ;
+  container_data->level                 = level;
+  container_data->child_spacing         = child_spacing ;
+  container_data->this_spacing          = this_spacing ;
   container_data->child_redraw_required = FALSE ;
-  container_data->orig_background = *background_fill_colour ; /* n.b. struct copy. */
-  container_data->long_items = long_items ;
+  container_data->orig_background       = *background_fill_colour ; /* n.b. struct copy. */
+  container_data->long_items            = long_items ;
 
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_DATA, container_data) ;
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY,
 		    GINT_TO_POINTER(container_type)) ;
   g_signal_connect(G_OBJECT(container_parent), "destroy", G_CALLBACK(containerDestroyCB), NULL) ;
 
-
-  container_features = FOO_CANVAS_GROUP(foo_canvas_item_new(container_parent,
-							    foo_canvas_group_get_type(),
-							    NULL)) ;
-  g_object_set_data(G_OBJECT(container_features), CONTAINER_TYPE_KEY,
-		    GINT_TO_POINTER(CONTAINER_FEATURES)) ;
-
-
-  /* WE SHOULD DO THIS FIRST SO ITS AUTOMATICALLY AT THE BOTTOM.... */
+  /* Add a background item to the container parent, before the groups we're going to add */
+  /* This is the FIRST item (and MUST be) in the parents list of items. */
   /* We don't use the border colour at the moment but we may wish to later.... */
   container_background = zMapDrawBoxSolid(container_parent,
 					  0.0, 0.0, 0.0, 0.0, background_fill_colour) ;
   g_object_set_data(G_OBJECT(container_background), CONTAINER_TYPE_KEY,
 		    GINT_TO_POINTER(CONTAINER_BACKGROUND)) ;
 
- /* Note that we rely on the background being first in parent groups item list which we
-  * we achieve with this lower command. This is both so that the background appears _behind_
-  * the objects that are children of the subgroup and so that we can return the background
-  * and subgroup items correctly. */
-  foo_canvas_item_lower_to_bottom(container_background) ; 
+  /* Now to add the groups which contain other items later in the drawing code */
 
+  /* First we add an underlay group to mirror the overlay group we'll add later */
+  container_underlays = FOO_CANVAS_GROUP(foo_canvas_item_new(container_parent,
+                                                             foo_canvas_group_get_type(),
+                                                             NULL)) ;
+  g_object_set_data(G_OBJECT(container_underlays), CONTAINER_TYPE_KEY,
+		    GINT_TO_POINTER(CONTAINER_UNDERLAYS)) ;
 
+  /* Second we add a group for the features.  This is where all the ZMapFeatures go. */
+  container_features = FOO_CANVAS_GROUP(foo_canvas_item_new(container_parent,
+							    foo_canvas_group_get_type(),
+							    NULL)) ;
+  g_object_set_data(G_OBJECT(container_features), CONTAINER_TYPE_KEY,
+		    GINT_TO_POINTER(CONTAINER_FEATURES)) ;
+
+  /* Thirdly add the group for the overlays.  This later contains items such as the mark */
   container_overlays = FOO_CANVAS_GROUP(foo_canvas_item_new(container_parent,
 							    foo_canvas_group_get_type(),
 							    NULL)) ;
   g_object_set_data(G_OBJECT(container_overlays), CONTAINER_TYPE_KEY,
 		    GINT_TO_POINTER(CONTAINER_OVERLAYS)) ;
 
+  /* Althouigh we add the background to the parent first I've left
+   * this call, together with its comment, in. */
+  /* Note that we rely on the background being first in parent groups item list which we
+   * we achieve with this lower command. This is both so that the background appears _behind_
+   * the objects that are children of the subgroup and so that we can return the background
+   * and subgroup items correctly. */
+  foo_canvas_item_lower_to_bottom(container_background) ; 
 
   return container_parent ;
 }
@@ -586,12 +605,26 @@ FooCanvasItem *zmapWindowContainerGetBackground(FooCanvasGroup *container_parent
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
-  container_background = FOO_CANVAS_ITEM((g_list_nth(container_parent->item_list, 0))->data) ;
+  container_background = FOO_CANVAS_ITEM((g_list_nth(container_parent->item_list, _CONTAINER_BACKGROUND_POSITION))->data) ;
   zMapAssert(FOO_IS_CANVAS_RE(container_background)) ;
 
   return container_background ;
 }
 
+/* Return the sub group of the container that contains all of the "overlays" where
+ * overlays might be text, rectangles etc. */
+FooCanvasGroup *zmapWindowContainerGetUnderlays(FooCanvasGroup *container_parent)
+{
+  FooCanvasGroup *container_overlays ;
+  ContainerType type = CONTAINER_INVALID ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  container_overlays = FOO_CANVAS_GROUP((g_list_nth(container_parent->item_list, _CONTAINER_UNDERLAY_POSITION))->data) ;
+
+  return container_overlays ;
+}
 
 /* Return the sub group of the container that contains all of the "features" where
  * features might be columns, column sets, blocks etc. */
@@ -603,7 +636,7 @@ FooCanvasGroup *zmapWindowContainerGetFeatures(FooCanvasGroup *container_parent)
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
-  container_features = FOO_CANVAS_GROUP((g_list_nth(container_parent->item_list, 1))->data) ;
+  container_features = FOO_CANVAS_GROUP((g_list_nth(container_parent->item_list, _CONTAINER_FEATURES_POSITION))->data) ;
 
   return container_features ;
 }
@@ -619,7 +652,7 @@ FooCanvasGroup *zmapWindowContainerGetOverlays(FooCanvasGroup *container_parent)
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
-  container_overlays = FOO_CANVAS_GROUP((g_list_nth(container_parent->item_list, 2))->data) ;
+  container_overlays = FOO_CANVAS_GROUP((g_list_nth(container_parent->item_list, _CONTAINER_OVERLAY_POSITION))->data) ;
 
   return container_overlays ;
 }
@@ -1143,7 +1176,8 @@ void zmapWindowContainerDestroy(FooCanvasGroup *container_parent)
 }
 
 /*
- * Destroys all a container's children, so long as it's a ContainerType CONTAINER_FEATURES!
+ * Destroys all a container's children, so long as it's a ContainerType CONTAINER_FEATURES, 
+ * CONTAINER_OVERLAYS or CONTAINER_UNDERLAYS
  * Unlike zmapWindowContainerDestroy, zmapWindowContainerPurge does not destroy itself.
  *
  * @param unknown_child   A FooCanvasGroup to empty.
@@ -1158,6 +1192,8 @@ void zmapWindowContainerPurge(FooCanvasGroup *unknown_child)
   switch(type)
     {
     case CONTAINER_FEATURES:
+    case CONTAINER_OVERLAYS:
+    case CONTAINER_UNDERLAYS:
       g_list_foreach(unknown_child->item_list, itemDestroyCB, NULL);
       break ;
     default:
