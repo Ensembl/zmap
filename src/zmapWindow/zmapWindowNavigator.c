@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 30 18:38 2007 (rds)
+ * Last edited: Jun  5 10:56 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.20 2007-03-30 17:40:34 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.21 2007-06-05 10:03:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -160,6 +160,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       gpointer handler_data);
 
 static void printCoordsInfo(ZMapWindowNavigator navigate, char *message, double start, double end);
+static void customiseFactory(ZMapWindowNavigator navigator);
 
 /* ------------------- */
 static GQuark locus_id_G = 0;
@@ -184,7 +185,6 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
     {
       FooCanvas *canvas = NULL;
       FooCanvasGroup *root = NULL;
-      ZMapWindowFToIFactoryProductionTeamStruct factory_helpers = {NULL};
 
       navigate->ftoi_hash = zmapWindowFToICreate();
 
@@ -247,14 +247,7 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
 
       setupLocatorGroup(navigate);
 
-      /* create a factory and set up */
-      navigate->item_factory = zmapWindowFToIFactoryOpen(navigate->ftoi_hash, NULL);
-      factory_helpers.feature_size_request = factoryFeatureSizeReq;
-      factory_helpers.item_created         = factoryItemHandler;
-      zmapWindowFToIFactorySetup(navigate->item_factory, 1, /* line_width hardcoded for now. */
-                                 NULL,
-                                 &factory_helpers, (gpointer)navigate);
-
+      customiseFactory(navigate);
     }
 
   zMapAssert(navigate);
@@ -283,6 +276,9 @@ void zMapWindowNavigatorReset(ZMapWindowNavigator navigate)
   navigate->locus_display_hash = g_hash_table_new_full(NULL, NULL, NULL, destroyLocusEntry);
 
   navigate->is_reversed = !(navigate->is_reversed);
+
+  zmapWindowFToIFactoryClose(navigate->item_factory);
+  customiseFactory(navigate);
   
   return ;
 }
@@ -1437,6 +1433,20 @@ static void printCoordsInfo(ZMapWindowNavigator navigate, char *message, double 
   return ;
 }
 
+static void customiseFactory(ZMapWindowNavigator navigate)
+{
+  ZMapWindowFToIFactoryProductionTeamStruct factory_helpers = {NULL};
+  
+  /* create a factory and set up */
+  navigate->item_factory = zmapWindowFToIFactoryOpen(navigate->ftoi_hash, NULL);
+  factory_helpers.feature_size_request = factoryFeatureSizeReq;
+  factory_helpers.item_created         = factoryItemHandler;
+  zmapWindowFToIFactorySetup(navigate->item_factory, 1, /* line_width hardcoded for now. */
+                             NULL,
+                             &factory_helpers, (gpointer)navigate);
+
+  return ;
+}
 
 
 
